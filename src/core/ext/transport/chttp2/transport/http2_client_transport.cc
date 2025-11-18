@@ -466,9 +466,16 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
       << ", settings length=" << frame.settings.size() << "}";
 
   // The connector code needs us to run this
+  // TODO(akshitpatel) : [PH2][P2] Move this to where settings are applied.
   if (on_receive_settings_ != nullptr) {
-    ExecCtx::Run(DEBUG_LOCATION, on_receive_settings_, absl::OkStatus());
-    on_receive_settings_ = nullptr;
+    event_engine_->Run(
+        [on_receive_settings = std::move(on_receive_settings_)]() mutable {
+          ExecCtx exec_ctx;
+          std::move(on_receive_settings)(
+              // TODO(tjagtap) : [PH2][P2] Send actual MAX_CONCURRENT_STREAMS
+              // value here.
+              std::numeric_limits<uint32_t>::max());
+        });
   }
 
   // TODO(tjagtap) : [PH2][P2] Decide later if we want this only for AckLastSend
@@ -1319,7 +1326,7 @@ void Http2ClientTransport::MaybeGetWindowUpdateFrames(SliceBuffer& output_buf) {
 Http2ClientTransport::Http2ClientTransport(
     PromiseEndpoint endpoint, GRPC_UNUSED const ChannelArgs& channel_args,
     std::shared_ptr<EventEngine> event_engine,
-    grpc_closure* on_receive_settings)
+    absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings)
     : channelz::DataSource(http2::CreateChannelzSocketNode(
           endpoint.GetEventEngineEndpoint(), channel_args)),
       event_engine_(std::move(event_engine)),
@@ -1330,7 +1337,7 @@ Http2ClientTransport::Http2ClientTransport(
       incoming_header_end_stream_(false),
       is_first_write_(true),
       incoming_header_stream_id_(0),
-      on_receive_settings_(on_receive_settings),
+      on_receive_settings_(std::move(on_receive_settings)),
       max_header_list_size_soft_limit_(
           GetSoftLimitFromChannelArgs(channel_args)),
       max_write_size_(kMaxWriteSize),
@@ -1609,9 +1616,15 @@ void Http2ClientTransport::CloseTransport() {
   // settings, we need to still invoke the closure passed to the transport.
   // Additionally, as this function will always run on the transport party, it
   // cannot race with reading a settings frame.
+  // TODO(akshitpatel): [PH2][P2] Pass the actual error that caused the
+  // transport to be closed here.
   if (on_receive_settings_ != nullptr) {
-    ExecCtx::Run(DEBUG_LOCATION, on_receive_settings_, absl::OkStatus());
-    on_receive_settings_ = nullptr;
+    event_engine_->Run(
+        [on_receive_settings = std::move(on_receive_settings_)]() mutable {
+          ExecCtx exec_ctx;
+          std::move(on_receive_settings)(
+              absl::UnavailableError("transport closed"));
+        });
   }
 
   MutexLock lock(&transport_mutex_);
