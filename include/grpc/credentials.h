@@ -27,9 +27,6 @@
 #include <grpc/support/time.h>
 #include <stdbool.h>
 
-#include <optional>
-#include <string>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -1086,17 +1083,6 @@ GRPCAPI void grpc_tls_credentials_options_set_verify_server_cert(
  */
 GRPCAPI void grpc_tls_credentials_options_set_send_client_ca_list(
     grpc_tls_credentials_options* options, bool send_client_ca_list);
-
-/**
- * EXPERIMENTAL API - Subject to change
- *
- * Overrides the SNI that the client sends in the TLS handshake. nullopt
- * indicates that SNI should not be overridden. An empty string value indicates
- * that SNI should not be sent at all.
- */
-GRPCAPI void grpc_tls_credentials_options_set_sni_override(
-    grpc_tls_credentials_options* options,
-    std::optional<std::string> sni_override);
 
 /** --- SSL Session Cache. ---
 

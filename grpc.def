@@ -70,7 +70,6 @@ EXPORTS
     grpc_tls_credentials_options_set_crl_directory
     grpc_tls_credentials_options_set_verify_server_cert
     grpc_tls_credentials_options_set_send_client_ca_list
-    grpc_tls_credentials_options_set_sni_override
     grpc_ssl_session_cache_create_lru
     grpc_ssl_session_cache_destroy
     grpc_ssl_session_cache_create_channel_arg
