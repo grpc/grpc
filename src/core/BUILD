@@ -1850,6 +1850,28 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "stream_quota",
+    srcs = [
+        "lib/resource_quota/stream_quota.cc",
+    ],
+    hdrs = [
+        "lib/resource_quota/stream_quota.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/log:check",
+    ],
+    deps = [
+        "periodic_update",
+        "ref_counted",
+        "sync",
+        ":per_cpu",
+        "//:gpr",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "connection_quota",
     srcs = [
         "lib/resource_quota/connection_quota.cc",
@@ -1910,6 +1932,7 @@ grpc_cc_library(
         "ref_counted",
         "resource_quota_telemetry",
         "single_set_ptr",
+        "stream_quota",
         "thread_quota",
         "useful",
         "//:channel_arg_names",
@@ -2961,6 +2984,8 @@ grpc_cc_library(
     srcs = ["lib/event_engine/windows/native_windows_dns_resolver.cc"],
     hdrs = ["lib/event_engine/windows/native_windows_dns_resolver.h"],
     external_deps = [
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
     ],
@@ -8297,6 +8322,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "incoming_metadata_tracker",
+    hdrs = [
+        "ext/transport/chttp2/transport/incoming_metadata_tracker.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/strings",
+    ],
+    deps = [
+        "grpc_check",
+        "//:chttp2_frame",
+    ],
+)
+
+grpc_cc_library(
     name = "message_assembler",
     hdrs = [
         "ext/transport/chttp2/transport/message_assembler.h",
@@ -8414,6 +8454,7 @@ grpc_cc_library(
         "http2_transport",
         "http2_ztrace_collector",
         "if",
+        "incoming_metadata_tracker",
         "inter_activity_mutex",
         "internal_channel_arg_names",
         "iomgr_fwd",
