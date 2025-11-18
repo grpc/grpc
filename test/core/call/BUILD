@@ -14,9 +14,17 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
-load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "MONITORING", "grpc_cc_benchmark")
 
 grpc_package(name = "test/core/call")
+
+GRPC_CALL_SPINE_BENCHMARK_LABELS = {
+    "BM_ClientToServerStreaming_CallSpineFixture_:CPU(ns)": {
+        "min_threshold": 300,
+        "max_threshold": 400,
+        "relative_median_threshold": 0.05,
+    },
+}
 
 grpc_fuzz_test(
     name = "client_call_test",
@@ -252,7 +260,8 @@ grpc_cc_library(
 grpc_cc_benchmark(
     name = "bm_call_spine",
     srcs = ["bm_call_spine.cc"],
-    monitoring = HISTORY,
+    labels = GRPC_CALL_SPINE_BENCHMARK_LABELS,
+    monitoring = MONITORING,
     deps = [
         ":call_spine_benchmarks",
         "//:gpr",
