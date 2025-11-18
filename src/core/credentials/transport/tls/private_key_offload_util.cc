@@ -120,7 +120,7 @@ void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
 }
 
 enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
-    SSL* ssl, uint8_t* out, size_t* out_len, size_t max_out,
+    SSL* ssl, uint8_t* /*out*/, size_t* /*out_len*/, size_t /*max_out*/,
     uint16_t signature_algorithm, const uint8_t* in, size_t in_len) {
   TlsPrivateKeyOffloadContext* ctx = static_cast<TlsPrivateKeyOffloadContext*>(
       SSL_get_ex_data(ssl, g_ssl_ex_private_key_offload_ex_index));

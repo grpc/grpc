@@ -223,9 +223,9 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
   InMemoryCertificateProvider(const InMemoryCertificateProvider&) = delete;
   InMemoryCertificateProvider(InMemoryCertificateProvider&&) = delete;
   InMemoryCertificateProvider& operator=(const InMemoryCertificateProvider&) =
-      default;
+      delete;
   InMemoryCertificateProvider& operator=(InMemoryCertificateProvider&&) =
-      default;
+      delete;
   InMemoryCertificateProvider(
       std::string root_certificates,
       std::shared_ptr<const PemKeyCertPairList> pem_key_cert_pairs);
