@@ -494,13 +494,20 @@ int64_t FileWatcherCertificateProvider::TestOnlyGetRefreshIntervalSecond()
     const {
   return refresh_interval_sec_;
 }
+std::shared_ptr<InMemoryCertificateProvider>
+InMemoryCertificateProvider::CreateCertificateProvider(
+    std::string root_certificates,
+    std::shared_ptr<const PemKeyCertPairList> pem_key_cert_pairs) {
+  return std::make_shared<InMemoryCertificateProvider>(root_certificates,
+                                                       pem_key_cert_pairs);
+}
 
 InMemoryCertificateProvider::InMemoryCertificateProvider(
     std::string root_certificates,
     std::shared_ptr<const PemKeyCertPairList> pem_key_cert_pairs)
-    : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
-      root_certificates_(root_certificates),
-      pem_key_cert_pairs_(std::move(pem_key_cert_pairs)) {}
+    : pem_key_cert_pairs_(std::move(pem_key_cert_pairs)),
+      distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
+      root_certificates_(root_certificates) {}
 
 void InMemoryCertificateProvider::UpdateRoot(std::string root_certificates) {
   MutexLock lock(&mu_);

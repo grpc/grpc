@@ -140,11 +140,11 @@ _DATA_MEMBERS = [
         test_name="DifferentCertificateProvider",
         test_value_1=(
             'MakeRefCounted<StaticDataCertificateProvider>("root_cert_1",'
-            " nullptr"
+            " nullptr)"
         ),
         test_value_2=(
             'MakeRefCounted<StaticDataCertificateProvider>("root_cert_2",'
-            " nullptr"
+            " nullptr)"
         ),
     ),
     DataMember(
@@ -247,12 +247,12 @@ _DATA_MEMBERS = [
     ),
     DataMember(
         name="identity_certificate_provider",
-        type="grpc_core::RefCountedPtr<grpc_tls_certificate_provider>",
+        type="std::shared_ptr<grpc_tls_certificate_provider>",
         getter_comment=(
             "Returns the distributor from identity_certificate_provider_ if it is set,"
             " nullptr otherwise."
         ),
-        override_getter="""grpc_tls_certificate_distributor* certificate_distributor() {
+        override_getter="""grpc_tls_certificate_distributor* identity_certificate_distributor() {
     if (identity_certificate_provider_ != nullptr) { return identity_certificate_provider_->distributor().get(); }
     return nullptr;
   }""",
@@ -266,22 +266,22 @@ _DATA_MEMBERS = [
         ),
         test_name="DifferentIdentityCertificateProvider",
         test_value_1=(
-            'MakeRefCounted<StaticDataCertificateProvider>("root_cert_1",'
-            " nullptr"
+            'InMemoryCertificateProvider::CreateCertificateProvider("root_cert_1",'
+            " nullptr)"
         ),
         test_value_2=(
-            'MakeRefCounted<StaticDataCertificateProvider>("root_cert_2",'
-            " nullptr"
+            'InMemoryCertificateProvider::CreateCertificateProvider("root_cert_2",'
+            " nullptr)"
         ),
     ),
     DataMember(
         name="root_certificate_provider",
-        type="grpc_core::RefCountedPtr<grpc_tls_certificate_provider>",
+        type="std::shared_ptr<grpc_tls_certificate_provider>",
         getter_comment=(
             "Returns the distributor from root_certificate_provider_ if it is set,"
             " nullptr otherwise."
         ),
-        override_getter="""grpc_tls_certificate_distributor* certificate_distributor() {
+        override_getter="""grpc_tls_certificate_distributor* root_certificate_distributor() {
     if (root_certificate_provider_ != nullptr) { return root_certificate_provider_->distributor().get(); }
     return nullptr;
   }""",
@@ -295,12 +295,12 @@ _DATA_MEMBERS = [
         ),
         test_name="DifferentRootCertificateProvider",
         test_value_1=(
-            'MakeRefCounted<StaticDataCertificateProvider>("root_cert_1",'
-            " nullptr"
+            'InMemoryCertificateProvider::CreateCertificateProvider("root_cert_1",'
+            " nullptr)"
         ),
         test_value_2=(
-            'MakeRefCounted<StaticDataCertificateProvider>("root_cert_2",'
-            " nullptr"
+            'InMemoryCertificateProvider::CreateCertificateProvider("root_cert_2",'
+            " nullptr)"
         ),
     ),
 ]
