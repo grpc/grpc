@@ -158,8 +158,12 @@ void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair* kp,
   if (kp == nullptr) return;
   for (size_t i = 0; i < num_key_cert_pairs; i++) {
     gpr_free(const_cast<char*>(kp[i].cert_chain));
+    if (const auto* key_view =
+            std::get_if<absl::string_view>(&kp[i].private_key)) {
+      gpr_free(const_cast<char*>(key_view->data()));
+    }
   }
-  gpr_free(kp);
+  delete [] kp;
 }
 
 namespace grpc_core {

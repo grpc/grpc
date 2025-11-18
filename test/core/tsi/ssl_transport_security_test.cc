@@ -101,6 +101,9 @@ typedef struct ssl_key_cert_lib {
 
 static void ssl_test_pem_key_cert_pair_destroy(tsi_ssl_pem_key_cert_pair kp) {
   gpr_free(const_cast<char*>(kp.cert_chain));
+  if (const auto* key_view = std::get_if<absl::string_view>(&kp.private_key)) {
+    gpr_free(const_cast<char*>(key_view->data()));
+  }
 }
 
 static bool check_property(tsi_peer* peer, const char* property_name,
@@ -160,7 +163,7 @@ class SslTransportSecurityTest
       base_.test_unused_bytes = true;
       base_.vtable = &kVtable;
       // Create ssl_key_cert_lib.
-      key_cert_lib_ = static_cast<ssl_key_cert_lib*>(gpr_zalloc(sizeof(ssl_key_cert_lib)));
+      key_cert_lib_ = new ssl_key_cert_lib();
       key_cert_lib_->use_bad_server_cert = false;
       key_cert_lib_->use_bad_client_cert = false;
       key_cert_lib_->use_root_store = false;
@@ -173,17 +176,14 @@ class SslTransportSecurityTest
       key_cert_lib_->leaf_signed_by_intermediate_num_key_cert_pairs =
           SSL_TSI_TEST_LEAF_SIGNED_BY_INTERMEDIATE_KEY_CERT_PAIRS_NUM;
       key_cert_lib_->server_pem_key_cert_pairs =
-          static_cast<tsi_ssl_pem_key_cert_pair*>(
-              gpr_malloc(sizeof(tsi_ssl_pem_key_cert_pair) *
-                         key_cert_lib_->server_num_key_cert_pairs));
+          new tsi_ssl_pem_key_cert_pair[key_cert_lib_
+                                            ->server_num_key_cert_pairs]();
       key_cert_lib_->bad_server_pem_key_cert_pairs =
-          static_cast<tsi_ssl_pem_key_cert_pair*>(
-              gpr_malloc(sizeof(tsi_ssl_pem_key_cert_pair) *
-                         key_cert_lib_->bad_server_num_key_cert_pairs));
+          new tsi_ssl_pem_key_cert_pair[key_cert_lib_
+                                            ->bad_server_num_key_cert_pairs]();
       key_cert_lib_->leaf_signed_by_intermediate_key_cert_pairs =
-          static_cast<tsi_ssl_pem_key_cert_pair*>(gpr_malloc(
-              sizeof(tsi_ssl_pem_key_cert_pair) *
-              key_cert_lib_->leaf_signed_by_intermediate_num_key_cert_pairs));
+          new tsi_ssl_pem_key_cert_pair
+              [key_cert_lib_->leaf_signed_by_intermediate_num_key_cert_pairs]();
       key_cert_lib_->server_pem_key_cert_pairs[0].private_key =
           load_file(SSL_TSI_TEST_CREDENTIALS_DIR "server0.key");
       key_cert_lib_->server_pem_key_cert_pairs[0].cert_chain =
@@ -255,20 +255,20 @@ class SslTransportSecurityTest
         ssl_test_pem_key_cert_pair_destroy(
             key_cert_lib_->server_pem_key_cert_pairs[i]);
       }
-      gpr_free(key_cert_lib_->server_pem_key_cert_pairs);
+      delete &key_cert_lib_->server_pem_key_cert_pairs;
       for (size_t i = 0; i < key_cert_lib_->bad_server_num_key_cert_pairs;
            i++) {
         ssl_test_pem_key_cert_pair_destroy(
             key_cert_lib_->bad_server_pem_key_cert_pairs[i]);
       }
-      gpr_free(key_cert_lib_->bad_server_pem_key_cert_pairs);
+      delete &key_cert_lib_->bad_server_pem_key_cert_pairs;
       for (size_t i = 0;
            i < key_cert_lib_->leaf_signed_by_intermediate_num_key_cert_pairs;
            i++) {
         ssl_test_pem_key_cert_pair_destroy(
             key_cert_lib_->leaf_signed_by_intermediate_key_cert_pairs[i]);
       }
-      gpr_free(key_cert_lib_->leaf_signed_by_intermediate_key_cert_pairs);
+      delete &key_cert_lib_->leaf_signed_by_intermediate_key_cert_pairs;
       ssl_test_pem_key_cert_pair_destroy(
           key_cert_lib_->client_pem_key_cert_pair);
       ssl_test_pem_key_cert_pair_destroy(
