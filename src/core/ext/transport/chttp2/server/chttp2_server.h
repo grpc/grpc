@@ -83,7 +83,7 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
       friend class grpc_core::testing::HandshakingStateTestPeer;
 
       void OnTimeoutLocked();
-      static void OnReceiveSettings(void* arg, grpc_error_handle /* error */);
+      void OnReceiveSettings();
       void OnHandshakeDoneLocked(absl::StatusOr<HandshakerArgs*> result);
 
       RefCountedPtr<ActiveConnection> const connection_;
@@ -98,7 +98,6 @@ class NewChttp2ServerListener : public Server::ListenerInterface {
       // State for enforcing handshake timeout on receiving HTTP/2 settings.
       std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
           timer_handle_;
-      grpc_closure on_receive_settings_;
     };
 
     ActiveConnection(RefCountedPtr<Server::ListenerState> listener_state,

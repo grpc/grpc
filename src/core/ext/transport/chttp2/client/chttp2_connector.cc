@@ -176,12 +176,13 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
           (*result)->args, std::move((*result)->endpoint), true);
       GRPC_CHECK_NE(result_->transport, nullptr);
       result_->channel_args = std::move((*result)->args);
-      Ref().release();  // Ref held by OnReceiveSettings()
-      GRPC_CLOSURE_INIT(&on_receive_settings_, OnReceiveSettings, this,
-                        grpc_schedule_on_exec_ctx);
       grpc_chttp2_transport_start_reading(
           result_->transport, (*result)->read_buffer.c_slice_buffer(),
-          &on_receive_settings_, args_.interested_parties, nullptr);
+          [self = RefAsSubclass<Chttp2Connector>()](
+              absl::StatusOr<uint32_t> max_concurrent_streams) {
+            self->OnReceiveSettings(max_concurrent_streams);
+          },
+          args_.interested_parties, nullptr);
       timer_handle_ = event_engine_->RunAfter(
           args_.deadline - Timestamp::Now(),
           [self = RefAsSubclass<Chttp2Connector>()]() mutable {
@@ -217,13 +218,13 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
               (*result)
                   ->args
                   .GetObjectRef<grpc_event_engine::experimental::EventEngine>();
-      Ref().release();  // Ref held by OnReceiveSettings()
-      GRPC_CLOSURE_INIT(&on_receive_settings_, OnReceiveSettings, this,
-                        grpc_schedule_on_exec_ctx);
       // Http2ClientTransport does not take ownership of the channel args.
       result_->transport = new http2::Http2ClientTransport(
           std::move(promise_endpoint), (*result)->args, event_engine_ptr,
-          &on_receive_settings_);
+          [self = RefAsSubclass<Chttp2Connector>()](
+              absl::StatusOr<uint32_t> max_concurrent_streams) {
+            self->OnReceiveSettings(max_concurrent_streams);
+          });
       result_->channel_args = std::move((*result)->args);
       GRPC_DCHECK_NE(result_->transport, nullptr);
       timer_handle_ = event_engine_->RunAfter(
@@ -246,31 +247,31 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
   handshake_mgr_.reset();
 }
 
-void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error_handle error) {
-  Chttp2Connector* self = static_cast<Chttp2Connector*>(arg);
-  {
-    MutexLock lock(&self->mu_);
-    if (!self->notify_error_.has_value()) {
-      if (!error.ok()) {
-        // Transport got an error while waiting on SETTINGS frame.
-        self->result_->Reset();
-      }
-      self->MaybeNotify(error);
-      if (self->timer_handle_.has_value()) {
-        if (self->event_engine_->Cancel(*self->timer_handle_)) {
-          // If we have cancelled the timer successfully, call Notify() again
-          // since the timer callback will not be called now.
-          self->MaybeNotify(absl::OkStatus());
-        }
-        self->timer_handle_.reset();
-      }
-    } else {
-      // OnTimeout() was already invoked. Call Notify() again so that notify_
-      // can be invoked.
-      self->MaybeNotify(absl::OkStatus());
-    }
+void Chttp2Connector::OnReceiveSettings(
+    absl::StatusOr<uint32_t> max_concurrent_streams) {
+  MutexLock lock(&mu_);
+  if (max_concurrent_streams.ok()) {
+    result_->max_concurrent_streams = *max_concurrent_streams;
   }
-  self->Unref();
+  if (!notify_error_.has_value()) {
+    if (!max_concurrent_streams.ok()) {
+      // Transport got an error while waiting on SETTINGS frame.
+      result_->Reset();
+    }
+    MaybeNotify(max_concurrent_streams.status());
+    if (timer_handle_.has_value()) {
+      if (event_engine_->Cancel(*timer_handle_)) {
+        // If we have cancelled the timer successfully, call Notify() again
+        // since the timer callback will not be called now.
+        MaybeNotify(absl::OkStatus());
+      }
+      timer_handle_.reset();
+    }
+  } else {
+    // OnTimeout() was already invoked. Call Notify() again so that notify_
+    // can be invoked.
+    MaybeNotify(absl::OkStatus());
+  }
 }
 
 void Chttp2Connector::OnTimeout() {

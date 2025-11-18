@@ -299,6 +299,9 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   void MaybeNotifyStateWatcherOfPeerMaxConcurrentStreamsLocked();
   void NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked();
 
+  void MaybeNotifyOnReceiveSettingsLocked(
+      absl::StatusOr<uint32_t> max_concurrent_streams);
+
   // We depend on the ep being available for the life of the transport in
   // at least one place - event callback in WriteEventSink. Hence, this should
   // only be orphaned in the destructor.
@@ -327,7 +330,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   // starts a connectivity watch.
   grpc_pollset_set* interested_parties_until_recv_settings = nullptr;
 
-  grpc_closure* notify_on_receive_settings = nullptr;
+  absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> notify_on_receive_settings;
   grpc_closure* notify_on_close = nullptr;
 
   /// has the upper layer closed the transport?
