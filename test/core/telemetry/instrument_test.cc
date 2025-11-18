@@ -40,6 +40,11 @@ class MockMetricsSink : public MetricsSink {
                absl::Span<const std::string> label, absl::string_view name,
                uint64_t value),
               (override));
+  MOCK_METHOD(void, UpDownCounter,
+              (absl::Span<const std::string> label_keys,
+               absl::Span<const std::string> label, absl::string_view name,
+               uint64_t value),
+              (override));
   MOCK_METHOD(void, Histogram,
               (absl::Span<const std::string> label_keys,
                absl::Span<const std::string> label, absl::string_view name,
@@ -109,6 +114,8 @@ class LowContentionDomain final : public InstrumentDomain<LowContentionDomain> {
       RegisterIntGauge("int_gauge", "Desc", "unit");
   static inline const auto kUintGauge =
       RegisterUintGauge("uint_gauge", "Desc", "unit");
+  static inline const auto kUpDownCounter =
+      RegisterUpDownCounter("up_down_counter", "Desc", "unit");
 };
 
 class InstanceCounterDomain final
@@ -158,6 +165,8 @@ class FanOutDomain final : public InstrumentDomain<FanOutDomain> {
 
   static inline const auto kCounter =
       RegisterCounter("fan_out", "Desc", "unit");
+  static inline const auto kUpDownCounter =
+      RegisterUpDownCounter("fan_out_up_down", "Desc", "unit");
   static inline const auto kDoubleGauge =
       RegisterDoubleGauge("fan_out_double", "Desc", "unit");
 };
@@ -491,6 +500,74 @@ TEST_F(MetricsQueryTest, FanOutGauge) {
 
 // Tests the `WithLabelEq` filter in MetricsQuery.
 // Verifies that only metrics matching the specified label values are returned.
+TEST_F(MetricsQueryTest, LowContentionUpDownCounter) {
+  const std::vector<std::string> kLabels = {"grpc.target"};
+  auto scope = CreateCollectionScope({}, kLabels);
+  auto storage = LowContentionDomain::GetStorage(scope, "example.com");
+  std::vector<std::string> label_keys = {"grpc.target"};
+  std::vector<std::string> label = {"example.com"};
+  ::testing::StrictMock<MockMetricsSink> sink;
+  EXPECT_CALL(
+      sink, UpDownCounter(ElementsAreArray(label_keys), ElementsAreArray(label),
+                          "up_down_counter", 0));
+  MetricsQuery().OnlyMetrics({"up_down_counter"}).Run(scope, sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
+  storage->Increment(LowContentionDomain::kUpDownCounter);
+  EXPECT_CALL(
+      sink, UpDownCounter(ElementsAreArray(label_keys), ElementsAreArray(label),
+                          "up_down_counter", 1));
+  MetricsQuery().OnlyMetrics({"up_down_counter"}).Run(scope, sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
+  storage->Decrement(LowContentionDomain::kUpDownCounter);
+  EXPECT_CALL(
+      sink, UpDownCounter(ElementsAreArray(label_keys), ElementsAreArray(label),
+                          "up_down_counter", 0));
+  MetricsQuery().OnlyMetrics({"up_down_counter"}).Run(scope, sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
+  storage.reset();
+  scope = CreateCollectionScope({}, kLabels);
+  storage = LowContentionDomain::GetStorage(scope, "example.com");
+  EXPECT_CALL(
+      sink, UpDownCounter(ElementsAreArray(label_keys), ElementsAreArray(label),
+                          "up_down_counter", 0));
+  MetricsQuery().OnlyMetrics({"up_down_counter"}).Run(scope, sink);
+}
+
+TEST_F(MetricsQueryTest, FanOutUpDownCounter) {
+  const std::vector<std::string> kLabels = {"grpc.target", "grpc.method"};
+  auto scope = CreateCollectionScope({}, kLabels);
+  std::vector<std::string> label_keys = {"grpc.target", "grpc.method"};
+  auto storage_foo = FanOutDomain::GetStorage(scope, "example.com", "foo");
+  std::vector<std::string> label_foo = {"example.com", "foo"};
+  auto storage_bar = FanOutDomain::GetStorage(scope, "example.com", "bar");
+  std::vector<std::string> label_bar = {"example.com", "bar"};
+  storage_foo->Increment(FanOutDomain::kUpDownCounter);
+  storage_bar->Increment(FanOutDomain::kUpDownCounter);
+  storage_bar->Increment(FanOutDomain::kUpDownCounter);
+  {
+    ::testing::StrictMock<MockMetricsSink> sink;
+    EXPECT_CALL(
+        sink, UpDownCounter(ElementsAreArray(label_keys),
+                            ElementsAreArray(label_foo), "fan_out_up_down", 1));
+    EXPECT_CALL(
+        sink, UpDownCounter(ElementsAreArray(label_keys),
+                            ElementsAreArray(label_bar), "fan_out_up_down", 2));
+    MetricsQuery().OnlyMetrics({"fan_out_up_down"}).Run(scope, sink);
+  }
+  {
+    const std::vector<std::string> label_all = {"example.com"};
+    ::testing::StrictMock<MockMetricsSink> sink;
+    EXPECT_CALL(sink,
+                UpDownCounter(
+                    ElementsAreArray(std::vector<std::string>({"grpc.target"})),
+                    ElementsAreArray(label_all), "fan_out_up_down", 3));
+    MetricsQuery()
+        .OnlyMetrics({"fan_out_up_down"})
+        .CollapseLabels({"grpc.method"})
+        .Run(scope, sink);
+  }
+}
+
 TEST_F(MetricsQueryTest, LabelEq) {
   const std::vector<std::string> kLabels = {"grpc.target", "grpc.method"};
   auto scope = CreateCollectionScope({}, kLabels);
@@ -561,6 +638,9 @@ TEST_F(MetricsQueryTest, ThreadStress) {
         void Counter(absl::Span<const std::string> label_keys,
                      absl::Span<const std::string> label,
                      absl::string_view name, uint64_t value) override {}
+        void UpDownCounter(absl::Span<const std::string> label_keys,
+                           absl::Span<const std::string> label,
+                           absl::string_view name, uint64_t value) override {}
         void Histogram(absl::Span<const std::string> label_keys,
                        absl::Span<const std::string> label,
                        absl::string_view name, HistogramBuckets bounds,

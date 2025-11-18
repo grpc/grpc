@@ -226,13 +226,14 @@ class CollectionScope;
 class InstrumentMetadata {
  public:
   struct CounterShape {};
+  struct UpDownCounterShape {};
   struct DoubleGaugeShape {};
   struct IntGaugeShape {};
   struct UintGaugeShape {};
   using HistogramShape = HistogramBuckets;
 
-  using Shape = std::variant<CounterShape, HistogramShape, DoubleGaugeShape,
-                             IntGaugeShape, UintGaugeShape>;
+  using Shape = std::variant<CounterShape, UpDownCounterShape, HistogramShape,
+                             DoubleGaugeShape, IntGaugeShape, UintGaugeShape>;
 
   // A description of a metric.
   struct Description {
@@ -481,6 +482,9 @@ class QueryableDomain {
   const InstrumentMetadata::Description* AllocateCounter(
       absl::string_view name, absl::string_view description,
       absl::string_view unit);
+  const InstrumentMetadata::Description* AllocateUpDownCounter(
+      absl::string_view name, absl::string_view description,
+      absl::string_view unit);
   const InstrumentMetadata::Description* AllocateHistogram(
       absl::string_view name, absl::string_view description,
       absl::string_view unit, HistogramBuckets bounds);
@@ -613,7 +617,14 @@ class LowContentionBackend final {
   void Add(size_t index, uint64_t amount) {
     counters_[index].fetch_add(amount, std::memory_order_relaxed);
   }
+  void Subtract(size_t index, uint64_t amount) {
+    uint64_t old_value =
+        counters_[index].fetch_sub(amount, std::memory_order_relaxed);
+    // Every decrement should have a corresponding increment.
+    GRPC_DCHECK(old_value >= amount);
+  }
   void Increment(size_t index) { Add(index, 1); }
+  void Decrement(size_t index) { Subtract(index, 1); }
 
   uint64_t Sum(size_t index);
 
@@ -632,12 +643,18 @@ class HighContentionBackend final {
   void Add(size_t index, uint64_t amount) {
     counters_.this_cpu()[index].fetch_add(amount, std::memory_order_relaxed);
   }
+  void Subtract(size_t index, uint64_t amount) {
+    counters_.this_cpu()[index].fetch_sub(amount, std::memory_order_relaxed);
+  }
   void Increment(size_t index) { Add(index, 1); }
+  void Decrement(size_t index) { Subtract(index, 1); }
 
   uint64_t Sum(size_t index);
 
  private:
-  PerCpu<std::unique_ptr<std::atomic<uint64_t>[]>> counters_{
+  // Since Increments and Decrements can happen on different CPUs, we need to
+  // use a int64_t counter. The sum should still be a uint64_t.
+  PerCpu<std::unique_ptr<std::atomic<int64_t>[]>> counters_{
       PerCpuOptions().SetMaxShards(16)};
 };
 
@@ -650,6 +667,9 @@ class MetricsSink {
   virtual void Counter(absl::Span<const std::string> label_keys,
                        absl::Span<const std::string> label_values,
                        absl::string_view name, uint64_t value) = 0;
+  virtual void UpDownCounter(absl::Span<const std::string> label_keys,
+                             absl::Span<const std::string> label_values,
+                             absl::string_view name, uint64_t value) = 0;
   virtual void Histogram(absl::Span<const std::string> label_keys,
                          absl::Span<const std::string> label_values,
                          absl::string_view name, HistogramBuckets bounds,
@@ -736,6 +756,8 @@ class InstrumentDomainImpl final : public QueryableDomain {
  public:
   using Self = InstrumentDomainImpl<Backend, N, Tag>;
   using CounterHandle = InstrumentHandle<Counter, Self>;
+  using UpDownCounterHandle =
+      InstrumentHandle<InstrumentMetadata::UpDownCounterShape, Self>;
   using DoubleGaugeHandle =
       InstrumentHandle<InstrumentMetadata::DoubleGaugeShape, Self>;
   using IntGaugeHandle =
@@ -806,6 +828,17 @@ class InstrumentDomainImpl final : public QueryableDomain {
       GRPC_DCHECK_EQ(handle.instrument_domain_, domain());
       backend_.Add(handle.offset_, amount);
     }
+
+    void Increment(UpDownCounterHandle handle, uint64_t amount = 1) {
+      GRPC_DCHECK_EQ(handle.instrument_domain_, domain());
+      backend_.Add(handle.offset_, amount);
+    }
+
+    void Decrement(UpDownCounterHandle handle, uint64_t amount = 1) {
+      GRPC_DCHECK_EQ(handle.instrument_domain_, domain());
+      backend_.Subtract(handle.offset_, amount);
+    }
+
     void Add(DomainStorage* other) override {
       GRPC_DCHECK_EQ(domain(), other->domain());
       for (size_t i = 0; i < domain()->allocated_counter_slots(); ++i) {
@@ -877,6 +910,14 @@ class InstrumentDomainImpl final : public QueryableDomain {
                                 absl::string_view unit) {
     return CounterHandle{this, AllocateCounter(name, description, unit),
                          Counter{}};
+  }
+
+  UpDownCounterHandle RegisterUpDownCounter(absl::string_view name,
+                                            absl::string_view description,
+                                            absl::string_view unit) {
+    return UpDownCounterHandle{this,
+                               AllocateUpDownCounter(name, description, unit),
+                               InstrumentMetadata::UpDownCounterShape{}};
   }
 
   template <typename Shape, typename... Args>
@@ -978,6 +1019,12 @@ class InstrumentDomain {
                               absl::string_view description,
                               absl::string_view unit) {
     return Domain()->RegisterCounter(name, description, unit);
+  }
+
+  static auto RegisterUpDownCounter(absl::string_view name,
+                                    absl::string_view description,
+                                    absl::string_view unit) {
+    return Domain()->RegisterUpDownCounter(name, description, unit);
   }
 
   template <typename Shape, typename... Args>
