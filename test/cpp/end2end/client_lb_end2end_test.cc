@@ -38,6 +38,8 @@
 #include <string>
 #include <thread>
 
+#include "src/core/channelz/channelz.h"
+#include "src/core/channelz/channelz_registry.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/client_channel/config_selector.h"
 #include "src/core/client_channel/global_subchannel_pool.h"
@@ -62,6 +64,8 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "src/cpp/server/secure_server_credentials.h"
+#include "src/proto/grpc/channelz/v2/channelz.pb.h"
+#include "src/proto/grpc/channelz/v2/property_list.pb.h"
 #include "src/proto/grpc/health/v1/health.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
@@ -72,6 +76,7 @@
 #include "test/core/test_util/test_lb_policies.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/test_service_impl.h"
+#include "test/cpp/util/channelz_util.h"
 #include "test/cpp/util/credentials.h"
 #include "xds/data/orca/v3/orca_load_report.pb.h"
 #include "gmock/gmock.h"
@@ -276,13 +281,14 @@ class ClientLbEnd2endTest : public ::testing::Test {
   void CreateServers(
       size_t num_servers, std::vector<int> ports = {},
       std::shared_ptr<ServerCredentials> server_creds = nullptr,
-      std::optional<uint32_t> max_concurrent_streams = std::nullopt) {
+      std::optional<uint32_t> max_concurrent_streams = std::nullopt,
+      uint32_t idle_timeout_ms = 0) {
     servers_.clear();
     for (size_t i = 0; i < num_servers; ++i) {
       int port = 0;
       if (ports.size() == num_servers) port = ports[i];
-      servers_.emplace_back(
-          new ServerData(port, server_creds, max_concurrent_streams));
+      servers_.emplace_back(new ServerData(
+          port, server_creds, max_concurrent_streams, idle_timeout_ms));
     }
   }
 
@@ -291,9 +297,10 @@ class ClientLbEnd2endTest : public ::testing::Test {
   void StartServers(
       size_t num_servers, std::vector<int> ports = {},
       std::shared_ptr<ServerCredentials> server_creds = nullptr,
-      std::optional<uint32_t> max_concurrent_streams = std::nullopt) {
+      std::optional<uint32_t> max_concurrent_streams = std::nullopt,
+      uint32_t idle_timeout_ms = 0) {
     CreateServers(num_servers, std::move(ports), std::move(server_creds),
-                  max_concurrent_streams);
+                  max_concurrent_streams, idle_timeout_ms);
     for (size_t i = 0; i < num_servers; ++i) {
       StartServer(i);
     }
@@ -415,6 +422,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     const int port_;
     const std::shared_ptr<ServerCredentials> server_creds_;
     const std::optional<uint32_t> max_concurrent_streams_;
+    const uint32_t idle_timeout_ms_;
     std::unique_ptr<Server> server_;
     MyTestServiceImpl service_;
     std::unique_ptr<experimental::ServerMetricRecorder> server_metric_recorder_;
@@ -430,7 +438,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
 
     explicit ServerData(
         int port = 0, std::shared_ptr<ServerCredentials> server_creds = nullptr,
-        std::optional<uint32_t> max_concurrent_streams = std::nullopt)
+        std::optional<uint32_t> max_concurrent_streams = std::nullopt,
+        uint32_t idle_timeout_ms = 0)
         : port_(port > 0 ? port : grpc_pick_unused_port_or_die()),
           server_creds_(
               server_creds == nullptr
@@ -439,6 +448,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
                         grpc_fake_transport_security_server_credentials_create()))
                   : std::move(server_creds)),
           max_concurrent_streams_(max_concurrent_streams),
+          idle_timeout_ms_(idle_timeout_ms),
           server_metric_recorder_(experimental::ServerMetricRecorder::Create()),
           orca_service_(
               server_metric_recorder_.get(),
@@ -467,6 +477,10 @@ class ClientLbEnd2endTest : public ::testing::Test {
       if (max_concurrent_streams_.has_value()) {
         builder.AddChannelArgument(GRPC_ARG_MAX_CONCURRENT_STREAMS,
                                    *max_concurrent_streams_);
+      }
+      if (idle_timeout_ms_ > 0) {
+        builder.AddChannelArgument(GRPC_ARG_MAX_CONNECTION_IDLE_MS,
+                                   idle_timeout_ms_);
       }
       if (enable_noop_health_check_service_) {
         builder.RegisterService(&noop_health_check_service_impl_);
@@ -3397,6 +3411,8 @@ class ConnectionScalingTest : public ClientLbEnd2endTest {
   // A class for running a long-running RPC using the callback API.
   class LongRunningRpc {
    public:
+    ~LongRunningRpc() { CancelRpc(); }
+
     // Starts the RPC.
     void StartRpc(grpc::testing::EchoTestService::Stub* stub) {
       LOG(INFO) << "Starting long-running RPC...";
@@ -3433,6 +3449,13 @@ class ConnectionScalingTest : public ClientLbEnd2endTest {
     std::optional<Status> status_ ABSL_GUARDED_BY(&mu_);
   };
 
+  std::unique_ptr<LongRunningRpc> StartLongRunningRpc(
+      grpc::testing::EchoTestService::Stub* stub) {
+    auto rpc = std::make_unique<LongRunningRpc>();
+    rpc->StartRpc(stub);
+    return rpc;
+  }
+
   bool WaitFor(absl::FunctionRef<bool()> is_done,
                absl::Duration timeout = absl::Seconds(10)) {
     const absl::Time kDeadline =
@@ -3445,6 +3468,15 @@ class ConnectionScalingTest : public ClientLbEnd2endTest {
   }
 };
 
+// TODO(roth): We'd also like to test the following connection scaling
+// cases, but they're harder to cover:
+// - one connection closes, but there is another still working, queued
+//   RPCs should trigger a connection attempt (need a way to trigger
+//   just one connection closing)
+// - server changes MCS value dynamically (need a way to trigger the MCS
+//   change on the server -- might be able to do this after the MCS
+//   ResourceQuota changes land)
+
 TEST_F(ConnectionScalingTest, SingleConnection) {
   const int kMaxConcurrentStreams = 3;
   // Start a server with MAX_CONCURRENT_STREAMS set.
@@ -3455,9 +3487,9 @@ TEST_F(ConnectionScalingTest, SingleConnection) {
   auto stub = BuildStub(channel);
   response_generator.SetNextResolution(GetServersPorts());
   // Start kMaxConcurrentStreams long-running RPCs.
-  LongRunningRpc rpcs[kMaxConcurrentStreams + 1];
+  std::vector<std::unique_ptr<LongRunningRpc>> rpcs;
   for (size_t i = 0; i < kMaxConcurrentStreams; ++i) {
-    rpcs[i].StartRpc(stub.get());
+    rpcs.emplace_back(StartLongRunningRpc(stub.get()));
   }
   // Wait for the server to see the first kMaxConcurrentStreams RPCs.
   LOG(INFO) << "Waiting for server to see the initial RPCs...";
@@ -3467,23 +3499,19 @@ TEST_F(ConnectionScalingTest, SingleConnection) {
   })) << "timeout waiting for initial RPCs to start -- RPCs started: "
       << servers_[0]->service_.RpcsWaitingForClientCancel();
   EXPECT_EQ(servers_[0]->service_.request_count(), kMaxConcurrentStreams);
+  // Server should see only one connection.
+  EXPECT_EQ(servers_[0]->service_.clients().size(), 1);
   // Start another RPC, which should get queued.
-  rpcs[kMaxConcurrentStreams].StartRpc(stub.get());
+  rpcs.emplace_back(StartLongRunningRpc(stub.get()));
   // TODO(roth): Use a metric to determine when it's actually queued?
   // Cancel one RPC to allow another one through.
   LOG(INFO) << "Cancelling the first RPC...";
-  rpcs[0].CancelRpc();
+  rpcs[0].reset();
   // Now the server should see the 4th RPC.
   LOG(INFO) << "Waiting for server to see the last RPC...";
   EXPECT_TRUE(WaitFor([&]() {
     return servers_[0]->service_.request_count() == kMaxConcurrentStreams + 1;
   })) << "timeout waiting for last RPC to start";
-  // Clean up.
-  LOG(INFO) << "Cancelling all remaining RPCs...";
-  for (size_t i = 1; i < kMaxConcurrentStreams + 1; ++i) {
-    rpcs[i].CancelRpc();
-  }
-  EXPECT_EQ(servers_[0]->service_.clients().size(), 1);
 }
 
 TEST_F(ConnectionScalingTest, MultipleConnections) {
@@ -3508,9 +3536,9 @@ TEST_F(ConnectionScalingTest, MultipleConnections) {
   auto stub = BuildStub(channel);
   response_generator.SetNextResolution(GetServersPorts(), kServiceConfig);
   // Start kMaxConcurrentStreams long-running RPCs.
-  LongRunningRpc rpcs[kMaxConcurrentStreams + 1];
+  std::vector<std::unique_ptr<LongRunningRpc>> rpcs;
   for (size_t i = 0; i < kMaxConcurrentStreams; ++i) {
-    rpcs[i].StartRpc(stub.get());
+    rpcs.emplace_back(StartLongRunningRpc(stub.get()));
   }
   // Wait for the server to see the first kMaxConcurrentStreams RPCs.
   LOG(INFO) << "Waiting for server to see the initial RPCs...";
@@ -3523,7 +3551,7 @@ TEST_F(ConnectionScalingTest, MultipleConnections) {
   EXPECT_EQ(servers_[0]->service_.clients().size(), 1);
   // Start another RPC, which will trigger the creation of a new
   // connection.
-  rpcs[kMaxConcurrentStreams].StartRpc(stub.get());
+  rpcs.emplace_back(StartLongRunningRpc(stub.get()));
   // Now the server should see the new RPC.
   LOG(INFO) << "Waiting for server to see the last RPC...";
   EXPECT_TRUE(WaitFor([&]() {
@@ -3532,11 +3560,6 @@ TEST_F(ConnectionScalingTest, MultipleConnections) {
   })) << "timeout waiting for last RPC to start";
   // And there should be another connection.
   EXPECT_EQ(servers_[0]->service_.clients().size(), 2);
-  // Clean up.
-  LOG(INFO) << "Cancelling RPCs...";
-  for (size_t i = 0; i < kMaxConcurrentStreams + 1; ++i) {
-    rpcs[i].CancelRpc();
-  }
 }
 
 TEST_F(ConnectionScalingTest, HonorsMaxConnectionsPerSubchannel) {
@@ -3561,10 +3584,10 @@ TEST_F(ConnectionScalingTest, HonorsMaxConnectionsPerSubchannel) {
   auto stub = BuildStub(channel);
   response_generator.SetNextResolution(GetServersPorts(), kServiceConfig);
   // Start enough RPCs for 2 connections.
+  std::vector<std::unique_ptr<LongRunningRpc>> rpcs;
   const int kNumRpcs = kMaxConcurrentStreams * 2;
-  LongRunningRpc rpcs[kNumRpcs + 1];
   for (size_t i = 0; i < kNumRpcs; ++i) {
-    rpcs[i].StartRpc(stub.get());
+    rpcs.emplace_back(StartLongRunningRpc(stub.get()));
   }
   // Wait for the server to see enough RPCs for the first two connections.
   LOG(INFO) << "Waiting for server to see the initial RPCs...";
@@ -3575,11 +3598,11 @@ TEST_F(ConnectionScalingTest, HonorsMaxConnectionsPerSubchannel) {
   // There should be two connections.
   EXPECT_EQ(servers_[0]->service_.clients().size(), 2);
   // Start another RPC, which will wind up being queued.
-  rpcs[kNumRpcs].StartRpc(stub.get());
+  rpcs.emplace_back(StartLongRunningRpc(stub.get()));
   // TODO(roth): Use a metric to determine when it's actually queued?
   // Cancel the first RPC.
   LOG(INFO) << "Cancelling the first RPC...";
-  rpcs[0].CancelRpc();
+  rpcs[0].reset();
   // Now the server should see the new RPC.
   LOG(INFO) << "Waiting for server to see the last RPC...";
   EXPECT_TRUE(WaitFor([&]() {
@@ -3587,11 +3610,6 @@ TEST_F(ConnectionScalingTest, HonorsMaxConnectionsPerSubchannel) {
   })) << "timeout waiting for last RPC to start";
   // There should still be two connections.
   EXPECT_EQ(servers_[0]->service_.clients().size(), 2);
-  // Clean up.
-  LOG(INFO) << "Cancelling RPCs...";
-  for (size_t i = 1; i < kNumRpcs + 1; ++i) {
-    rpcs[i].CancelRpc();
-  }
 }
 
 TEST_F(ConnectionScalingTest,
@@ -3617,9 +3635,9 @@ TEST_F(ConnectionScalingTest,
   auto stub = BuildStub(channel);
   response_generator.SetNextResolution(GetServersPorts(), kServiceConfig);
   // Start kMaxConcurrentStreams long-running RPCs.
-  LongRunningRpc rpcs[kMaxConcurrentStreams + 1];
+  std::vector<std::unique_ptr<LongRunningRpc>> rpcs;
   for (size_t i = 0; i < kMaxConcurrentStreams; ++i) {
-    rpcs[i].StartRpc(stub.get());
+    rpcs.emplace_back(StartLongRunningRpc(stub.get()));
   }
   // Wait for the server to see the first kMaxConcurrentStreams RPCs.
   LOG(INFO) << "Waiting for server to see the initial RPCs...";
@@ -3636,7 +3654,7 @@ TEST_F(ConnectionScalingTest,
   auto hold2 = injector.AddHold(servers_[0]->port_);
   // Start another RPC, which will trigger the creation of a new
   // connection.
-  rpcs[kMaxConcurrentStreams].StartRpc(stub.get());
+  rpcs.emplace_back(StartLongRunningRpc(stub.get()));
   // Fail the connection attempt.
   hold1->Wait();
   hold1->Fail(absl::UnavailableError("nyet"));
@@ -3654,11 +3672,6 @@ TEST_F(ConnectionScalingTest,
   })) << "timeout waiting for last RPC to start";
   // And there should be another connection.
   EXPECT_EQ(servers_[0]->service_.clients().size(), 2);
-  // Clean up.
-  LOG(INFO) << "Cancelling RPCs...";
-  for (size_t i = 0; i < kMaxConcurrentStreams + 1; ++i) {
-    rpcs[i].CancelRpc();
-  }
 }
 
 TEST_F(ConnectionScalingTest, QueuedRpcCancelled) {
@@ -3683,9 +3696,9 @@ TEST_F(ConnectionScalingTest, QueuedRpcCancelled) {
   auto stub = BuildStub(channel);
   response_generator.SetNextResolution(GetServersPorts(), kServiceConfig);
   // Start kMaxConcurrentStreams long-running RPCs.
-  LongRunningRpc rpcs[kMaxConcurrentStreams + 2];
+  std::vector<std::unique_ptr<LongRunningRpc>> rpcs;
   for (size_t i = 0; i < kMaxConcurrentStreams; ++i) {
-    rpcs[i].StartRpc(stub.get());
+    rpcs.emplace_back(StartLongRunningRpc(stub.get()));
   }
   // Wait for the server to see the first kMaxConcurrentStreams RPCs.
   LOG(INFO) << "Waiting for server to see the initial RPCs...";
@@ -3701,14 +3714,14 @@ TEST_F(ConnectionScalingTest, QueuedRpcCancelled) {
   auto hold = injector.AddHold(servers_[0]->port_);
   // Start another RPC, which will trigger the creation of a new
   // connection.
-  rpcs[kMaxConcurrentStreams].StartRpc(stub.get());
+  rpcs.emplace_back(StartLongRunningRpc(stub.get()));
   // Wait for the connection attempt to start.
   hold->Wait();
   // Start yet another RPC, which we'll use to know when the connection
   // attempt is complete.
-  rpcs[kMaxConcurrentStreams + 1].StartRpc(stub.get());
+  rpcs.emplace_back(StartLongRunningRpc(stub.get()));
   // Cancel the first queued RPC.
-  rpcs[kMaxConcurrentStreams].CancelRpc();
+  rpcs[kMaxConcurrentStreams].reset();
   // Allow the connection attempt to complete.
   hold->Resume();
   // Now the server should see the new RPC.
@@ -3719,12 +3732,6 @@ TEST_F(ConnectionScalingTest, QueuedRpcCancelled) {
   })) << "timeout waiting for last RPC to start";
   // And there should be another connection.
   EXPECT_EQ(servers_[0]->service_.clients().size(), 2);
-  // Clean up.
-  LOG(INFO) << "Cancelling RPCs...";
-  for (size_t i = 0; i < kMaxConcurrentStreams; ++i) {
-    rpcs[i].CancelRpc();
-  }
-  rpcs[kMaxConcurrentStreams + 1].CancelRpc();
 }
 
 TEST_F(ConnectionScalingTest, QueuedRpcsFailWhenLastConnectionCloses) {
@@ -3753,9 +3760,9 @@ TEST_F(ConnectionScalingTest, QueuedRpcsFailWhenLastConnectionCloses) {
   auto stub = BuildStub(channel);
   response_generator.SetNextResolution(GetServersPorts(), kServiceConfig);
   // Start kMaxConcurrentStreams long-running RPCs.
-  LongRunningRpc rpcs[kMaxConcurrentStreams + 2];
+  std::vector<std::unique_ptr<LongRunningRpc>> rpcs;
   for (size_t i = 0; i < kMaxConcurrentStreams; ++i) {
-    rpcs[i].StartRpc(stub.get());
+    rpcs.emplace_back(StartLongRunningRpc(stub.get()));
   }
   // Wait for the server to see the first kMaxConcurrentStreams RPCs.
   LOG(INFO) << "Waiting for server to see the initial RPCs...";
@@ -3772,29 +3779,25 @@ TEST_F(ConnectionScalingTest, QueuedRpcsFailWhenLastConnectionCloses) {
   // Start two more RPCs, which will trigger the creation of a new
   // connection.  When the connection attempt starts, we know that the
   // subchannel has queued these RPCs.
-  for (size_t i = kMaxConcurrentStreams; i < kMaxConcurrentStreams + 2; ++i) {
-    rpcs[i].StartRpc(stub.get());
-  }
+  rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  rpcs.emplace_back(StartLongRunningRpc(stub.get()));
   // Wait for the connection attempt to start.
   hold->Wait();
   // Shut down the server, which closes the existing connection.
   servers_[0]->Shutdown();
   // The two queued RPCs should have failed.
   for (size_t i = kMaxConcurrentStreams; i < kMaxConcurrentStreams + 2; ++i) {
-    Status status = rpcs[i].GetStatus();
+    auto& rpc = rpcs[i];
+    Status status = rpc->GetStatus();
     EXPECT_EQ(status.error_code(), GRPC_STATUS_UNAVAILABLE);
     EXPECT_THAT(
         status.error_message(),
         ::testing::MatchesRegex("(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
                                 "subchannel lost all connections"));
+    rpc.reset();
   }
   // Fail the connection attempt.
   hold->Fail(absl::UnavailableError("lo"));
-  // Cancel the RPCs that were already in flight.
-  LOG(INFO) << "Cancelling RPCs...";
-  for (size_t i = 0; i < kMaxConcurrentStreams; ++i) {
-    rpcs[i].CancelRpc();
-  }
 }
 
 TEST_F(ConnectionScalingTest,
@@ -3821,9 +3824,9 @@ TEST_F(ConnectionScalingTest,
   auto stub = BuildStub(channel);
   response_generator.SetNextResolution(GetServersPorts(0, 1), kServiceConfig);
   // Start kMaxConcurrentStreams long-running RPCs.
-  LongRunningRpc rpcs[kMaxConcurrentStreams + 2];
+  std::vector<std::unique_ptr<LongRunningRpc>> rpcs;
   for (size_t i = 0; i < kMaxConcurrentStreams; ++i) {
-    rpcs[i].StartRpc(stub.get());
+    rpcs.emplace_back(StartLongRunningRpc(stub.get()));
   }
   // Wait for the server to see the first kMaxConcurrentStreams RPCs.
   LOG(INFO) << "Waiting for server to see the initial RPCs...";
@@ -3840,9 +3843,8 @@ TEST_F(ConnectionScalingTest,
   // Start two more RPCs, which will trigger the creation of a new
   // connection.  When the connection attempt starts, we know that the
   // subchannel has queued these RPCs.
-  for (size_t i = kMaxConcurrentStreams; i < kMaxConcurrentStreams + 2; ++i) {
-    rpcs[i].StartRpc(stub.get());
-  }
+  rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  rpcs.emplace_back(StartLongRunningRpc(stub.get()));
   // Wait for the connection attempt to start.
   hold->Wait();
   // Send a resolver update to the channel pointing to the second server.
@@ -3867,11 +3869,6 @@ TEST_F(ConnectionScalingTest,
     return servers_[1]->service_.RpcsWaitingForClientCancel() == 2;
   })) << "timeout waiting for initial RPCs to start -- RPCs started: "
       << servers_[1]->service_.RpcsWaitingForClientCancel();
-  // Cancel all RPCs.
-  LOG(INFO) << "Cancelling RPCs...";
-  for (size_t i = 0; i < kMaxConcurrentStreams + 2; ++i) {
-    rpcs[i].CancelRpc();
-  }
 }
 
 TEST_F(ConnectionScalingTest,
@@ -3898,9 +3895,9 @@ TEST_F(ConnectionScalingTest,
   auto stub = BuildStub(channel);
   response_generator.SetNextResolution(GetServersPorts(), kServiceConfig1);
   // Start kMaxConcurrentStreams long-running RPCs.
-  LongRunningRpc rpcs[kMaxConcurrentStreams + 2];
+  std::vector<std::unique_ptr<LongRunningRpc>> rpcs;
   for (size_t i = 0; i < kMaxConcurrentStreams; ++i) {
-    rpcs[i].StartRpc(stub.get());
+    rpcs.emplace_back(StartLongRunningRpc(stub.get()));
   }
   // Wait for the server to see the first kMaxConcurrentStreams RPCs.
   LOG(INFO) << "Waiting for server to see the initial RPCs...";
@@ -3915,9 +3912,8 @@ TEST_F(ConnectionScalingTest,
   ConnectionAttemptInjector injector;
   auto hold = injector.AddHold(servers_[0]->port_);
   // Start two more RPCs, which will be queued.
-  for (size_t i = kMaxConcurrentStreams; i < kMaxConcurrentStreams + 2; ++i) {
-    rpcs[i].StartRpc(stub.get());
-  }
+  rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  rpcs.emplace_back(StartLongRunningRpc(stub.get()));
   // TODO(roth): Use a metric to determine when they're actually queued?
   // No connection attempt should be started yet, since
   // max_connections_per_subchannel is currently 1.
@@ -3943,30 +3939,98 @@ TEST_F(ConnectionScalingTest,
       << servers_[0]->service_.RpcsWaitingForClientCancel();
   // There should be two connections.
   EXPECT_EQ(servers_[0]->service_.clients().size(), 2);
-  // Cancel all RPCs.
-  LOG(INFO) << "Cancelling RPCs...";
-  for (size_t i = 0; i < kMaxConcurrentStreams + 2; ++i) {
-    rpcs[i].CancelRpc();
-  }
 }
 
-// TODO: test cases:
-// - server closes connection (MAX_CONN_IDLE), client does not reconnect
-//   unless needed
-//
-// Cases we'd like to test that are harder:
-// - one connection closes, but there is another still working, queued
-//   RPCs should trigger a connection attempt (how do we trigger just
-//   one connection closing?)
-// - server changes MCS value dynamically (how do we trigger the MCS
-//   change on the server?)
-//   ==> maybe use MCS quota on server side being built for rodos
-//
-// core e2e:
-// - mock transport.  methods to interact with call from server side.
-// - channel arg to select mock transport.
-// - create only client side for e2e test.
-// - mock transport factory that would tell us when new transports are created
+TEST_F(ConnectionScalingTest, IdleConnectionsClosed) {
+  if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
+    GTEST_SKIP()
+        << "this test requires the subchannel_connection_scaling experiment";
+  }
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
+  constexpr char kServiceConfig[] =
+      "{\n"
+      "  \"connectionScaling\": {\n"
+      "    \"maxConnectionsPerSubchannel\": 2\n"
+      "  }\n"
+      "}";
+  const int kMaxConcurrentStreams = 3;
+  // Start a server with MAX_CONCURRENT_STREAMS set and an IDLE timeout
+  // of 10 seconds.
+  const uint32_t kIdleTimeoutMs = 10000;
+  StartServers(1, {}, nullptr, /*max_concurrent_streams=*/kMaxConcurrentStreams,
+               /*idle_timeout_ms=*/kIdleTimeoutMs);
+  FakeResolverResponseGeneratorWrapper response_generator;
+  auto channel = BuildChannel("pick_first", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts(), kServiceConfig);
+  // Start kMaxConcurrentStreams long-running RPCs.
+  std::vector<std::unique_ptr<LongRunningRpc>> rpcs;
+  for (size_t i = 0; i < kMaxConcurrentStreams; ++i) {
+    rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  }
+  // Wait for the server to see the first kMaxConcurrentStreams RPCs.
+  LOG(INFO) << "Waiting for server to see the initial RPCs...";
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+           kMaxConcurrentStreams;
+  })) << "timeout waiting for initial RPCs to start -- RPCs started: "
+      << servers_[0]->service_.RpcsWaitingForClientCancel();
+  // The server should see only one connection.
+  EXPECT_EQ(servers_[0]->service_.clients().size(), 1);
+  // Find the subchannel in channelz, and verify that there's only one
+  // connection there as well.
+  auto subchannel_nodes = ChannelzUtil::GetSubchannelsForAddress(
+      grpc_core::LocalIpUri(servers_[0]->port_));
+  EXPECT_EQ(subchannel_nodes.size(), 1);
+  if (subchannel_nodes.empty()) return;
+  auto socket_nodes =
+      ChannelzUtil::GetSubchannelConnections(subchannel_nodes.front().id());
+  EXPECT_EQ(socket_nodes.size(), 1);
+  // Start another RPC, which will trigger the creation of a new
+  // connection.
+  rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  // Now the server should see the new RPC.
+  LOG(INFO) << "Waiting for server to see the last RPC...";
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+           kMaxConcurrentStreams + 1;
+  })) << "timeout waiting for last RPC to start";
+  // The server should see a second connection.
+  EXPECT_EQ(servers_[0]->service_.clients().size(), 2);
+  // And channelz should too.
+  socket_nodes =
+      ChannelzUtil::GetSubchannelConnections(subchannel_nodes.front().id());
+  EXPECT_EQ(socket_nodes.size(), 2);
+  // Cancel all of the RPCs.
+  LOG(INFO) << "Cancelling RPCs...";
+  rpcs.clear();
+  // Wait for server to see no active RPCs.
+  LOG(INFO) << "Waiting for server to see the RPCs cancelled...";
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() == 0;
+  })) << "timeout waiting for server to see RPCs cancelled";
+  // Send normal, short-lived RPCs in a loop.  These should all go on
+  // the first connection, so after the idle timeout, the server should
+  // close the second connection, and channelz should show only one
+  // connection.  We add 10s fudge factor to account for timing.
+  LOG(INFO) << "Sending short-lived RPCs until second connection closes...";
+  absl::Time deadline =
+      absl::Now() + absl::Milliseconds((kIdleTimeoutMs + 10000) *
+                                       grpc_test_slowdown_factor());
+  while (true) {
+    ASSERT_LT(absl::Now(), deadline)
+        << "timed out waiting for connection to close";
+    CheckRpcSendOk(DEBUG_LOCATION, stub);
+    socket_nodes =
+        ChannelzUtil::GetSubchannelConnections(subchannel_nodes.front().id());
+    LOG(INFO) << "Channelz socket nodes:";
+    for (auto& socket_node : socket_nodes) {
+      LOG(INFO) << "  Socket node: " << socket_node.DebugString();
+    }
+    if (socket_nodes.size() == 1) break;
+  }
+}
 
 }  // namespace
 }  // namespace testing

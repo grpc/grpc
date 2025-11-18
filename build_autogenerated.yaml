@@ -9218,8 +9218,11 @@ targets:
   - test/core/test_util/test_lb_policies.h
   - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/test_service_impl.h
+  - test/cpp/util/channelz_util.h
   - third_party/protoc-gen-validate/validate/validate.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
@@ -9236,6 +9239,7 @@ targets:
   - test/cpp/end2end/client_lb_end2end_test.cc
   - test/cpp/end2end/connection_attempt_injector.cc
   - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/util/channelz_util.cc
   deps:
   - gtest
   - grpc++_test_util
