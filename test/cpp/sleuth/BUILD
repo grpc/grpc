@@ -138,7 +138,7 @@ grpc_cc_test(
 )
 
 grpc_cc_library(
-    name = "sleuth",
+    name = "sleuth_lib",
     srcs = ["sleuth.cc"],
     hdrs = ["sleuth.h"],
     external_deps = [
@@ -163,12 +163,12 @@ grpc_cc_binary(
     name = "sleuth.so",
     linkshared = True,
     deps = [
-        ":sleuth",
+        ":sleuth_lib",
     ],
 )
 
 grpc_cc_binary(
-    name = "sleuth_main",
+    name = "sleuth",
     srcs = ["sleuth_main.cc"],
     external_deps = [
         "absl/flags:parse",
@@ -177,7 +177,7 @@ grpc_cc_binary(
         "//bazel:sleuth",
     ],
     deps = [
-        ":sleuth",
+        ":sleuth_lib",
     ],
 )
 
