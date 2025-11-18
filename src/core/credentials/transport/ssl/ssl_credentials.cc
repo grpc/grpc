@@ -184,9 +184,10 @@ grpc_security_status grpc_ssl_credentials::InitializeClientHandshakerFactory(
     return GRPC_SECURITY_OK;
   }
 
-  bool has_key_cert_pair = config->pem_key_cert_pair != nullptr &&
-                           !grpc_core::IsPrivateKeyEmpty(&config->pem_key_cert_pair->private_key) &&
-                           config->pem_key_cert_pair->cert_chain != nullptr;
+  bool has_key_cert_pair =
+      config->pem_key_cert_pair != nullptr &&
+      !grpc_core::IsPrivateKeyEmpty(&config->pem_key_cert_pair->private_key) &&
+      config->pem_key_cert_pair->cert_chain != nullptr;
   tsi_ssl_client_handshaker_options options;
   if (pem_root_certs == nullptr) {
     LOG(ERROR) << "Handshaker factory creation failed. pem_root_certs cannot "
@@ -292,7 +293,7 @@ tsi_ssl_pem_key_cert_pair* grpc_convert_grpc_to_tsi_cert_pairs(
   tsi_ssl_pem_key_cert_pair* tsi_pairs = nullptr;
   if (num_key_cert_pairs > 0) {
     GRPC_CHECK_NE(pem_key_cert_pairs, nullptr);
-    tsi_pairs =  new tsi_ssl_pem_key_cert_pair[num_key_cert_pairs];
+    tsi_pairs = new tsi_ssl_pem_key_cert_pair[num_key_cert_pairs];
   }
   for (size_t i = 0; i < num_key_cert_pairs; i++) {
     GRPC_CHECK_NE(pem_key_cert_pairs[i].private_key, nullptr);

@@ -54,9 +54,9 @@ int GetPrivateKeyOffloadIndex();
 // A user's implementation MUST invoke `done_callback` with the signed bytes.
 // This will let gRPC take control when the async operation is complete. MUST
 // not block MUST support concurrent calls
-using CustomPrivateKeySign =std::function<void(
+using CustomPrivateKeySign = std::function<void(
     absl::string_view data_to_sign, SignatureAlgorithm signature_algorithm,
-   std::function<void(absl::StatusOr<std::string> signed_data)>
+    std::function<void(absl::StatusOr<std::string> signed_data)>
         done_callback)>;
 
 // State associated with an SSL object for async private key operations.
@@ -78,14 +78,16 @@ struct TlsPrivateKeyOffloadContext {
 // Callback function to be invoked when the user's async sign operation is
 // complete.
 void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
-                                       absl::StatusOr<std::string> signed_data);
+                                absl::StatusOr<std::string> signed_data);
 
 enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
     SSL* ssl, uint8_t* out, size_t* out_len, size_t max_out,
     uint16_t signature_algorithm, const uint8_t* in, size_t in_len);
 
-enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(
-    SSL* ssl, uint8_t* out, size_t* out_len, size_t max_out);
+enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,
+                                                           uint8_t* out,
+                                                           size_t* out_len,
+                                                           size_t max_out);
 
 const SSL_PRIVATE_KEY_METHOD TlsOffloadPrivateKeyMethod = {
     TlsPrivateKeySignWrapper,

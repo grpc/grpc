@@ -163,7 +163,7 @@ void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair* kp,
       gpr_free(const_cast<char*>(key_view->data()));
     }
   }
-  delete [] kp;
+  delete[] kp;
 }
 
 namespace grpc_core {
@@ -581,9 +581,7 @@ bool IsPrivateKeyEmpty(const PrivateKey* private_key) {
       [&](const absl::string_view& pem_root_certs) {
         return pem_root_certs.empty();
       },
-      [&](const grpc_core::CustomPrivateKeySign& key_sign) {
-        return false;
-      });
+      [&](const grpc_core::CustomPrivateKeySign& key_sign) { return false; });
 }
 
 tsi_ssl_root_certs_store* DefaultSslRootStore::default_root_store_;

@@ -55,8 +55,7 @@
 using RootCertInfo = std::variant<std::string, grpc_core::SpiffeBundleMap>;
 
 using PrivateKey =
-    std::variant<absl::string_view,
-                 grpc_core::CustomPrivateKeySign>;
+    std::variant<absl::string_view, grpc_core::CustomPrivateKeySign>;
 
 // --- tsi_ssl_root_certs_store object ---
 

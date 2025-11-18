@@ -951,9 +951,10 @@ static tsi_result populate_ssl_context(
                          &key_cert_pair->private_key)) {
         SSL_CTX_set_private_key_method(context,
                                        &grpc_core::TlsOffloadPrivateKeyMethod);
-        grpc_core::TlsPrivateKeyOffloadContext private_key_offload_context(*key_sign_ptr);
+        grpc_core::TlsPrivateKeyOffloadContext private_key_offload_context(
+            *key_sign_ptr);
         SSL_CTX_set_ex_data(context, grpc_core::GetPrivateKeyOffloadIndex(),
-                        &private_key_offload_context);
+                            &private_key_offload_context);
       }
     }
   }

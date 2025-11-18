@@ -94,8 +94,8 @@ int GetPrivateKeyOffloadIndex() {
   return g_ssl_ex_private_key_offload_ex_index;
 }
 
-void TlsOffloadSignDoneCallback(
-    TlsPrivateKeyOffloadContext* ctx, absl::StatusOr<std::string> signed_data) {
+void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
+                                absl::StatusOr<std::string> signed_data) {
   if (signed_data.ok()) {
     ctx->signed_bytes = std::move(signed_data);
 
@@ -145,8 +145,10 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
   return ssl_private_key_retry;
 }
 
-enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(
-    SSL* ssl, uint8_t* out, size_t* out_len, size_t max_out) {
+enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,
+                                                           uint8_t* out,
+                                                           size_t* out_len,
+                                                           size_t max_out) {
   TlsPrivateKeyOffloadContext* ctx = static_cast<TlsPrivateKeyOffloadContext*>(
       SSL_get_ex_data(ssl, g_ssl_ex_private_key_offload_ex_index));
 
