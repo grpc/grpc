@@ -120,7 +120,7 @@ void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
 }
 
 enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
-    SSL* ssl, uint8_t* out, size_t* out_len, size_t max_out,
+    SSL* ssl, uint8_t* /*out*/, size_t* /*out_len*/, size_t /*max_out*/,
     uint16_t signature_algorithm, const uint8_t* in, size_t in_len) {
   TlsPrivateKeyOffloadContext* ctx = static_cast<TlsPrivateKeyOffloadContext*>(
       SSL_get_ex_data(ssl, g_ssl_ex_private_key_offload_ex_index));
@@ -138,7 +138,7 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
 
   ctx->private_key_sign(
       absl::string_view(reinterpret_cast<const char*>(in), in_len), *algorithm,
-      std::move(done_callback));
+      done_callback);
 
   // The operation is not completed. Tell BoringSSL to wait for the signature
   // result.

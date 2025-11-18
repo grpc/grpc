@@ -198,9 +198,7 @@ class PemKeyCertPair {
 
   const std::string& private_key() const { return private_key_; }
   const std::string& cert_chain() const { return cert_chain_; }
-  const CustomPrivateKeySign private_key_sign() const {
-    return private_key_sign_;
-  }
+  CustomPrivateKeySign private_key_sign() const { return private_key_sign_; }
 
  private:
   std::string private_key_;

@@ -103,12 +103,10 @@ class CrlSslTransportSecurityTest
       expect_client_success_1_2_ = expect_client_success_1_2;
       expect_client_success_1_3_ = expect_client_success_1_3;
 
-      server_pem_key_cert_pairs_ = static_cast<tsi_ssl_pem_key_cert_pair*>(
-          gpr_malloc(sizeof(tsi_ssl_pem_key_cert_pair)));
+      server_pem_key_cert_pairs_ = new tsi_ssl_pem_key_cert_pair[1];
       server_pem_key_cert_pairs_[0].private_key = server_key_.c_str();
       server_pem_key_cert_pairs_[0].cert_chain = server_cert_.c_str();
-      client_pem_key_cert_pairs_ = static_cast<tsi_ssl_pem_key_cert_pair*>(
-          gpr_malloc(sizeof(tsi_ssl_pem_key_cert_pair)));
+      client_pem_key_cert_pairs_ = new tsi_ssl_pem_key_cert_pair[1];
       client_pem_key_cert_pairs_[0].private_key = client_key_.c_str();
       client_pem_key_cert_pairs_[0].cert_chain = client_cert_.c_str();
       GRPC_CHECK_NE(root_store_, nullptr);
@@ -120,8 +118,8 @@ class CrlSslTransportSecurityTest
     }
 
     ~SslTsiTestFixture() {
-      gpr_free(server_pem_key_cert_pairs_);
-      gpr_free(client_pem_key_cert_pairs_);
+      delete[] server_pem_key_cert_pairs_;
+      delete[] client_pem_key_cert_pairs_;
 
       tsi_ssl_root_certs_store_destroy(root_store_);
       tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory_);
