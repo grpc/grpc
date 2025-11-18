@@ -140,17 +140,8 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
             grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_settings_ack_create());
             grpc_chttp2_initiate_write(t,
                                        GRPC_CHTTP2_INITIATE_WRITE_SETTINGS_ACK);
-            if (t->notify_on_receive_settings != nullptr) {
-              if (t->interested_parties_until_recv_settings != nullptr) {
-                grpc_endpoint_delete_from_pollset_set(
-                    t->ep.get(), t->interested_parties_until_recv_settings);
-                t->interested_parties_until_recv_settings = nullptr;
-              }
-              grpc_core::ExecCtx::Run(DEBUG_LOCATION,
-                                      t->notify_on_receive_settings,
-                                      absl::OkStatus());
-              t->notify_on_receive_settings = nullptr;
-            }
+            t->MaybeNotifyOnReceiveSettingsLocked(
+                parser->target_settings->max_concurrent_streams());
           }
           return absl::OkStatus();
         }

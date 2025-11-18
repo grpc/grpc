@@ -233,7 +233,7 @@ void MetricsQuery::Run(RefCountedPtr<CollectionScope> scope,
   GRPC_CHECK_NE(scope.get(), nullptr);
   struct DomainInfo {
     std::vector<const InstrumentMetadata::Description*> metrics;
-    std::vector<instrument_detail::DomainStorage*> storage;
+    std::vector<RefCountedPtr<instrument_detail::DomainStorage>> storage;
   };
   absl::flat_hash_map<instrument_detail::QueryableDomain*, DomainInfo>
       domain_info_map;
@@ -256,7 +256,7 @@ void MetricsQuery::Run(RefCountedPtr<CollectionScope> scope,
   scope->ForEachUniqueStorage([&](instrument_detail::DomainStorage* storage) {
     auto it = domain_info_map.find(storage->domain());
     if (it == domain_info_map.end()) return;
-    it->second.storage.push_back(storage);
+    it->second.storage.push_back(storage->Ref());
   });
   for (const auto& pair : domain_info_map) {
     instrument_detail::QueryableDomain* domain = pair.first;
@@ -267,7 +267,7 @@ void MetricsQuery::Run(RefCountedPtr<CollectionScope> scope,
     this->Apply(
         domain->label_names(),
         [&](MetricsSink& sink) {
-          for (auto* storage : storages) {
+          for (auto& storage : storages) {
             const auto label_values = storage->label();
             const auto label_keys = domain->label_names();
             instrument_detail::GaugeStorage gauge_storage(storage->domain());
@@ -279,6 +279,11 @@ void MetricsQuery::Run(RefCountedPtr<CollectionScope> scope,
                    &label_keys](InstrumentMetadata::CounterShape) {
                     sink.Counter(label_keys, label_values, metric->name,
                                  storage->SumCounter(metric->offset));
+                  },
+                  [metric, &sink, storage, &label_values,
+                   &label_keys](InstrumentMetadata::UpDownCounterShape) {
+                    sink.UpDownCounter(label_keys, label_values, metric->name,
+                                       storage->SumCounter(metric->offset));
                   },
                   [metric, &sink, storage, &label_values,
                    &label_keys](InstrumentMetadata::HistogramShape bounds) {
@@ -351,6 +356,12 @@ void MetricsQuery::Apply(absl::Span<const std::string> label_names,
       uint64_counters_[ConstructKey(label_values, name)] += value;
     }
 
+    void UpDownCounter(absl::Span<const std::string> /* label_keys */,
+                       absl::Span<const std::string> label_values,
+                       absl::string_view name, uint64_t value) override {
+      uint64_up_down_counters_[ConstructKey(label_values, name)] += value;
+    }
+
     void Histogram(absl::Span<const std::string> /* label_keys */,
                    absl::Span<const std::string> label_values,
                    absl::string_view name, HistogramBuckets bounds,
@@ -393,6 +404,10 @@ void MetricsQuery::Apply(absl::Span<const std::string> label_names,
       for (const auto& [key, value] : uint64_counters_) {
         sink.Counter(label_keys_, std::get<0>(key), std::get<1>(key), value);
       }
+      for (const auto& [key, value] : uint64_up_down_counters_) {
+        sink.UpDownCounter(label_keys_, std::get<0>(key), std::get<1>(key),
+                           value);
+      }
       for (const auto& [key, value] : histograms_) {
         sink.Histogram(label_keys_, std::get<0>(key), std::get<1>(key),
                        value.bounds, value.counts);
@@ -416,6 +431,9 @@ void MetricsQuery::Apply(absl::Span<const std::string> label_names,
     absl::flat_hash_map<std::tuple<std::vector<std::string>, absl::string_view>,
                         uint64_t>
         uint64_counters_;
+    absl::flat_hash_map<std::tuple<std::vector<std::string>, absl::string_view>,
+                        uint64_t>
+        uint64_up_down_counters_;
     struct HistogramValue {
       HistogramValue(HistogramBuckets bounds, absl::Span<const uint64_t> counts)
           : bounds(bounds), counts(counts.begin(), counts.end()) {}
@@ -462,6 +480,13 @@ void MetricsQuery::ApplyLabelChecks(absl::Span<const std::string> label_names,
                  absl::string_view name, uint64_t value) override {
       if (!Matches(label_values)) return;
       sink_.Counter(label_keys, label_values, name, value);
+    }
+
+    void UpDownCounter(absl::Span<const std::string> label_keys,
+                       absl::Span<const std::string> label_values,
+                       absl::string_view name, uint64_t value) override {
+      if (!Matches(label_values)) return;
+      sink_.UpDownCounter(label_keys, label_values, name, value);
     }
 
     void Histogram(absl::Span<const std::string> label_keys,
@@ -580,6 +605,11 @@ void DomainStorage::AddData(channelz::DataSink sink) {
                                 channelz::PropertyList().Set(
                                     "value", SumCounter(metric->offset)));
                   },
+                  [&, this](InstrumentMetadata::UpDownCounterShape) {
+                    grid.SetRow(metric->name,
+                                channelz::PropertyList().Set(
+                                    "value", SumCounter(metric->offset)));
+                  },
                   [&](InstrumentMetadata::DoubleGaugeShape) {
                     grid.SetRow(
                         metric->name,
@@ -639,6 +669,10 @@ void QueryableDomain::AddData(channelz::DataSink sink) {
                                     metric->shape,
                                     [](InstrumentMetadata::CounterShape)
                                         -> std::string { return "counter"; },
+                                    [](InstrumentMetadata::UpDownCounterShape)
+                                        -> std::string {
+                                      return "up_down_counter";
+                                    },
                                     [](InstrumentMetadata::DoubleGaugeShape)
                                         -> std::string {
                                       return "double_gauge";
@@ -710,6 +744,17 @@ const InstrumentMetadata::Description* QueryableDomain::AllocateCounter(
   auto* desc =
       InstrumentIndex::Get().Register(this, offset, name, description, unit,
                                       InstrumentMetadata::CounterShape{});
+  metrics_.push_back(desc);
+  return desc;
+}
+
+const InstrumentMetadata::Description* QueryableDomain::AllocateUpDownCounter(
+    absl::string_view name, absl::string_view description,
+    absl::string_view unit) {
+  const size_t offset = allocated_counter_slots_++;
+  auto* desc =
+      InstrumentIndex::Get().Register(this, offset, name, description, unit,
+                                      InstrumentMetadata::UpDownCounterShape{});
   metrics_.push_back(desc);
   return desc;
 }
@@ -802,7 +847,7 @@ uint64_t LowContentionBackend::Sum(size_t index) {
 
 HighContentionBackend::HighContentionBackend(size_t size) {
   for (auto& shard : counters_) {
-    shard = std::make_unique<std::atomic<uint64_t>[]>(size);
+    shard = std::make_unique<std::atomic<int64_t>[]>(size);
     for (size_t i = 0; i < size; ++i) {
       shard[i].store(0, std::memory_order_relaxed);
     }
@@ -810,11 +855,19 @@ HighContentionBackend::HighContentionBackend(size_t size) {
 }
 
 uint64_t HighContentionBackend::Sum(size_t index) {
-  uint64_t sum = 0;
+  uint64_t positive_sum = 0;
+  uint64_t negative_sum = 0;
   for (auto& shard : counters_) {
-    sum += shard[index].load(std::memory_order_relaxed);
+    int64_t value = shard[index].load(std::memory_order_relaxed);
+    if (value > 0) {
+      positive_sum += value;
+    } else if (value < 0) {
+      negative_sum += -value;
+    }
   }
-  return sum;
+  // Every decrement should have a corresponding increment.
+  GRPC_CHECK(positive_sum >= negative_sum);
+  return positive_sum - negative_sum;
 }
 
 namespace {

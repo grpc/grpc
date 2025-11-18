@@ -55,6 +55,7 @@ EXPERIMENT_ENABLES = {
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "secure_endpoint_offload_large_reads": "event_engine_client,event_engine_listener,event_engine_secure_endpoint,secure_endpoint_offload_large_reads",
     "secure_endpoint_offload_large_writes": "event_engine_client,event_engine_listener,event_engine_secure_endpoint,secure_endpoint_offload_large_writes",
+    "skip_clear_peer_on_cancellation": "skip_clear_peer_on_cancellation",
     "sleep_promise_exec_ctx_removal": "sleep_promise_exec_ctx_removal",
     "sleep_use_non_owning_waker": "sleep_use_non_owning_waker",
     "subchannel_wrapper_cleanup_on_orphan": "subchannel_wrapper_cleanup_on_orphan",
