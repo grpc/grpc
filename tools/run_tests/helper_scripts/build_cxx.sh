@@ -23,14 +23,14 @@ set -ex
 
 # Prepend verbose mode commands (xtrace) with the date.
 PS4='+ $(date "+[%H:%M:%S %Z]")\011 '
-echo "Started build_cxx.sh"
+echo "sergiitk@ >> Started build_cxx.sh"
 
 # Set install path to avoid installing to system paths
 cd "$(dirname "$0")/../../.."
 mkdir -p cmake/install
 INSTALL_PATH="$(pwd)/cmake/install"
 
-echo "Install abseil-cpp since opentelemetry CMake uses find_package to find it."
+echo "sergiitk@ >> Install abseil-cpp since opentelemetry CMake uses find_package to find it."
 cd third_party/abseil-cpp
 mkdir build
 cd build
@@ -49,6 +49,8 @@ cd ../../..
 mkdir -p cmake/build
 cd cmake/build
 
+
+echo "sergiitk@ >> Preppin for the main build"
 # TODO(yashykt/veblush): Remove workaround after fixing b/332425004 
 if [ "${GRPC_RUNTESTS_ARCHITECTURE}" = "x86" ]; then
     cmake -DgRPC_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE="${MSBUILD_CONFIG}" "$@" ../..
@@ -57,12 +59,17 @@ else
 fi
 
 if [[ "$*" =~ "-DgRPC_BUILD_TESTS=OFF" ]]; then
-    echo "Just build grpc++ target when gRPC_BUILD_TESTS is OFF (This is a temporary mitigation for gcc 7. Remove this once gcc 7 is removed from the supported compilers)"
+    echo "sergiitk@ >> Just build grpc++ target when gRPC_BUILD_TESTS is OFF (This is a temporary mitigation for gcc 7. Remove this once gcc 7 is removed from the supported compilers)"
     make -j"${GRPC_RUN_TESTS_JOBS}" "grpc++"
 else
     # GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX will be set to either "c" or "cxx"
-    echo "Build with tests"
-    make -j"${GRPC_RUN_TESTS_JOBS}" "buildtests_${GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX}" "tools_${GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX}"
+    echo "sergiitk@ >> Build with tests"
+
+    echo "sergiitk@ >> Running buildtests_${GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX}"
+    make -j"${GRPC_RUN_TESTS_JOBS}" "buildtests_${GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX}"
+
+    echo "sergiitk@ >> Running tools_${GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX}"
+    make -j"${GRPC_RUN_TESTS_JOBS}" "tools_${GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX}"
 fi
 
 echo "Finished build_cxx.sh"
