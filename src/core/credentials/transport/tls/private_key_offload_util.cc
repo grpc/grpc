@@ -18,7 +18,6 @@
 
 #include "src/core/credentials/transport/tls/private_key_offload_util.h"
 
-#include <openssl/base.h>
 #include <openssl/ssl.h>
 
 #include <cstdint>

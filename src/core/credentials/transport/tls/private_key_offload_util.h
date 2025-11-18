@@ -19,7 +19,6 @@
 #ifndef GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_PRIVATE_KEY_OFFLOAD_UTIL_H
 #define GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_PRIVATE_KEY_OFFLOAD_UTIL_H
 
-#include <openssl/base.h>
 #include <openssl/ssl.h>
 
 #include <memory>

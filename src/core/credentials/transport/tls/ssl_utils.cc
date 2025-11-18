@@ -581,7 +581,9 @@ bool IsPrivateKeyEmpty(const PrivateKey* private_key) {
       [&](const absl::string_view& pem_root_certs) {
         return pem_root_certs.empty();
       },
-      [&](const CustomPrivateKeySign& key_sign) { return false; });
+      [&](const CustomPrivateKeySign& key_sign) {
+        return key_sign == nullptr;
+      });
 }
 
 tsi_ssl_root_certs_store* DefaultSslRootStore::default_root_store_;

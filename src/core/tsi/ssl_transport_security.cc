@@ -2008,11 +2008,14 @@ static tsi_result ssl_handshaker_write_output_buffer(tsi_handshaker* self,
   return status;
 }
 
-static tsi_result ssl_handshaker_next(
-    tsi_handshaker* self, const unsigned char* received_bytes,
-    size_t received_bytes_size, const unsigned char** bytes_to_send,
-    size_t* bytes_to_send_size, tsi_handshaker_result** handshaker_result,
-    tsi_handshaker_on_next_done_cb cb, void* user_data, std::string* error) {
+static tsi_result ssl_handshaker_next(tsi_handshaker* self,
+                                      const unsigned char* received_bytes,
+                                      size_t received_bytes_size,
+                                      const unsigned char** bytes_to_send,
+                                      size_t* bytes_to_send_size,
+                                      tsi_handshaker_result** handshaker_result,
+                                      tsi_handshaker_on_next_done_cb /*cb*/,
+                                      void* /*user_data*/, std::string* error) {
   // Input sanity check.
   if ((received_bytes_size > 0 && received_bytes == nullptr) ||
       bytes_to_send == nullptr || bytes_to_send_size == nullptr ||
