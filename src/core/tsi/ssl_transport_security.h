@@ -26,6 +26,7 @@
 
 #include <memory>
 
+#include "src/core/credentials/transport/tls/private_key_offload_util.h"
 #include "src/core/credentials/transport/tls/spiffe_utils.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl_transport_security_utils.h"
@@ -52,6 +53,10 @@
   "x509_verified_root_cert_subject"
 
 using RootCertInfo = std::variant<std::string, grpc_core::SpiffeBundleMap>;
+
+using PrivateKey =
+    std::variant<absl::string_view,
+                 grpc_core::CustomPrivateKeySign>;
 
 // --- tsi_ssl_root_certs_store object ---
 
@@ -105,9 +110,9 @@ typedef struct tsi_ssl_client_handshaker_factory
 
 // Object that holds a private key / certificate chain pair in PEM format.
 struct tsi_ssl_pem_key_cert_pair {
-  // private_key is the NULL-terminated string containing the PEM encoding of
-  // the client's private key.
-  const char* private_key;
+  // private_key is either NULL-terminated string containing the PEM encoding of
+  // the client's private key or custom private key offloading function.
+  PrivateKey private_key;
 
   // cert_chain is the NULL-terminated string containing the PEM encoding of
   // the client's certificate chain.

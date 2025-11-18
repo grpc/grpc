@@ -66,6 +66,16 @@ struct grpc_tls_credentials_options
   // Returns the CRL Provider
   std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider() const { return crl_provider_; }
   bool send_client_ca_list() const { return send_client_ca_list_; }
+  // Returns the distributor from identity_certificate_provider_ if it is set, nullptr otherwise.
+  grpc_tls_certificate_distributor* identity_certificate_distributor() {
+    if (identity_certificate_provider_ != nullptr) { return identity_certificate_provider_->distributor().get(); }
+    return nullptr;
+  }
+  // Returns the distributor from root_certificate_provider_ if it is set, nullptr otherwise.
+  grpc_tls_certificate_distributor* root_certificate_distributor() {
+    if (root_certificate_provider_ != nullptr) { return root_certificate_provider_->distributor().get(); }
+    return nullptr;
+  }
 
   // Setters for member fields.
   void set_cert_request_type(grpc_ssl_client_certificate_request_type cert_request_type) { cert_request_type_ = cert_request_type; }
@@ -74,6 +84,7 @@ struct grpc_tls_credentials_options
   void set_max_tls_version(grpc_tls_version max_tls_version) { max_tls_version_ = max_tls_version; }
   void set_certificate_verifier(grpc_core::RefCountedPtr<grpc_tls_certificate_verifier> certificate_verifier) { certificate_verifier_ = std::move(certificate_verifier); }
   void set_check_call_host(bool check_call_host) { check_call_host_ = check_call_host; }
+  // Deprecated. Use `set_root_certificate_provider` and `set_identity_certificate_provider` instead.
   void set_certificate_provider(grpc_core::RefCountedPtr<grpc_tls_certificate_provider> certificate_provider) { certificate_provider_ = std::move(certificate_provider); }
   // If need to watch the updates of root certificates with name |root_cert_name|. The default value is false. If used in tls_credentials, it should always be set to true unless the root certificates are not needed.
   void set_watch_root_cert(bool watch_root_cert) { watch_root_cert_ = watch_root_cert; }
@@ -88,6 +99,8 @@ struct grpc_tls_credentials_options
   void set_crl_directory(std::string crl_directory) { crl_directory_ = std::move(crl_directory); }
   void set_crl_provider(std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider) { crl_provider_ = std::move(crl_provider); }
   void set_send_client_ca_list(bool send_client_ca_list) { send_client_ca_list_ = send_client_ca_list; }
+  void set_identity_certificate_provider(std::shared_ptr<grpc_tls_certificate_provider> identity_certificate_provider) { identity_certificate_provider_ = std::move(identity_certificate_provider); }
+  void set_root_certificate_provider(std::shared_ptr<grpc_tls_certificate_provider> root_certificate_provider) { root_certificate_provider_ = std::move(root_certificate_provider); }
 
   bool operator==(const grpc_tls_credentials_options& other) const {
     return cert_request_type_ == other.cert_request_type_ &&
@@ -104,7 +117,9 @@ struct grpc_tls_credentials_options
       tls_session_key_log_file_path_ == other.tls_session_key_log_file_path_ &&
       crl_directory_ == other.crl_directory_ &&
       (crl_provider_ == other.crl_provider_) &&
-      send_client_ca_list_ == other.send_client_ca_list_;
+      send_client_ca_list_ == other.send_client_ca_list_ &&
+      (identity_certificate_provider_ == other.identity_certificate_provider_ || (identity_certificate_provider_ != nullptr && other.identity_certificate_provider_ != nullptr && identity_certificate_provider_->Compare(other.identity_certificate_provider_.get()) == 0)) &&
+      (root_certificate_provider_ == other.root_certificate_provider_ || (root_certificate_provider_ != nullptr && other.root_certificate_provider_ != nullptr && root_certificate_provider_->Compare(other.root_certificate_provider_.get()) == 0));
   }
 
   grpc_tls_credentials_options(grpc_tls_credentials_options& other) :
@@ -122,7 +137,9 @@ struct grpc_tls_credentials_options
       tls_session_key_log_file_path_(other.tls_session_key_log_file_path_),
       crl_directory_(other.crl_directory_),
       crl_provider_(other.crl_provider_),
-      send_client_ca_list_(other.send_client_ca_list_)  {}
+      send_client_ca_list_(other.send_client_ca_list_),
+      identity_certificate_provider_(other.identity_certificate_provider_),
+      root_certificate_provider_(other.root_certificate_provider_)  {}
 
  private:
   grpc_ssl_client_certificate_request_type cert_request_type_ = GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE;
@@ -140,6 +157,8 @@ struct grpc_tls_credentials_options
   std::string crl_directory_;
   std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider_;
   bool send_client_ca_list_ = false;
+  std::shared_ptr<grpc_tls_certificate_provider> identity_certificate_provider_;
+  std::shared_ptr<grpc_tls_certificate_provider> root_certificate_provider_;
 };
 
 #endif  // GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_GRPC_TLS_CREDENTIALS_OPTIONS_H

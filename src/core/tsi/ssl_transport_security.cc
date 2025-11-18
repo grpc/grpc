@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include <cstdlib>
+#include <utility>
 
 // TODO(jboeuf): refactor inet_ntop into a portability header.
 // Note: for whomever reads this and tries to refactor this, this
@@ -55,6 +56,7 @@
 
 #include "src/core/credentials/transport/tls/grpc_tls_crl_provider.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
+#include "src/core/handshaker/security/security_handshaker.h"
 #include "src/core/lib/surface/init.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
@@ -288,6 +290,12 @@ static void verified_root_cert_free(void* /*parent*/, void* ptr,
   X509_free(static_cast<X509*>(ptr));
 }
 
+static void private_key_offloading_free(void* /*parent*/, void* ptr,
+                                        CRYPTO_EX_DATA* /*ad*/, int /*index*/,
+                                        long /*argl*/, void* /*argp*/) {
+  X509_free(static_cast<X509*>(ptr));
+}
+
 static void init_openssl(void) {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   OPENSSL_init_ssl(0, nullptr);
@@ -351,6 +359,9 @@ static void init_openssl(void) {
   g_ssl_ex_verified_root_cert_index = SSL_get_ex_new_index(
       0, nullptr, nullptr, nullptr, verified_root_cert_free);
   GRPC_CHECK_NE(g_ssl_ex_verified_root_cert_index, -1);
+
+  grpc_core::SetPrivateKeyOffloadIndex(SSL_CTX_get_ex_new_index(
+      0, nullptr, nullptr, nullptr, private_key_offloading_free));
 }
 
 // --- Ssl utils. ---
@@ -926,12 +937,23 @@ static tsi_result populate_ssl_context(
         return result;
       }
     }
-    if (key_cert_pair->private_key != nullptr) {
-      result = ssl_ctx_use_private_key(context, key_cert_pair->private_key,
-                                       strlen(key_cert_pair->private_key));
-      if (result != TSI_OK || !SSL_CTX_check_private_key(context)) {
-        LOG(ERROR) << "Invalid private key.";
-        return result != TSI_OK ? result : TSI_INVALID_ARGUMENT;
+    if (!grpc_core::IsPrivateKeyEmpty(&key_cert_pair->private_key)) {
+      if (const auto* key_view =
+              std::get_if<absl::string_view>(&key_cert_pair->private_key)) {
+        result = ssl_ctx_use_private_key(context, key_view->data(),
+                                         key_view->length());
+        if (result != TSI_OK || !SSL_CTX_check_private_key(context)) {
+          LOG(ERROR) << "Invalid private key.";
+          return result != TSI_OK ? result : TSI_INVALID_ARGUMENT;
+        }
+      } else if (auto* key_sign_ptr =
+                     std::get_if<grpc_core::CustomPrivateKeySign>(
+                         &key_cert_pair->private_key)) {
+        SSL_CTX_set_private_key_method(context,
+                                       &grpc_core::TlsOffloadPrivateKeyMethod);
+        grpc_core::TlsPrivateKeyOffloadContext private_key_offload_context(*key_sign_ptr);
+        SSL_CTX_set_ex_data(context, grpc_core::GetPrivateKeyOffloadIndex(),
+                        &private_key_offload_context);
       }
     }
   }
@@ -1985,14 +2007,11 @@ static tsi_result ssl_handshaker_write_output_buffer(tsi_handshaker* self,
   return status;
 }
 
-static tsi_result ssl_handshaker_next(tsi_handshaker* self,
-                                      const unsigned char* received_bytes,
-                                      size_t received_bytes_size,
-                                      const unsigned char** bytes_to_send,
-                                      size_t* bytes_to_send_size,
-                                      tsi_handshaker_result** handshaker_result,
-                                      tsi_handshaker_on_next_done_cb /*cb*/,
-                                      void* /*user_data*/, std::string* error) {
+static tsi_result ssl_handshaker_next(
+    tsi_handshaker* self, const unsigned char* received_bytes,
+    size_t received_bytes_size, const unsigned char** bytes_to_send,
+    size_t* bytes_to_send_size, tsi_handshaker_result** handshaker_result,
+    tsi_handshaker_on_next_done_cb cb, void* user_data, std::string* error) {
   // Input sanity check.
   if ((received_bytes_size > 0 && received_bytes == nullptr) ||
       bytes_to_send == nullptr || bytes_to_send_size == nullptr ||

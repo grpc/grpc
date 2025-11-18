@@ -24,14 +24,17 @@
 #include <grpc/grpc_security_constants.h>
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
+#include <openssl/x509.h>
 #include <stddef.h>
 
 #include <memory>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "src/core/credentials/transport/security_connector.h"
+#include "src/core/credentials/transport/tls/private_key_offload_util.h"
 #include "src/core/credentials/transport/tls/spiffe_utils.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
@@ -118,6 +121,10 @@ int grpc_ssl_host_matches_name(const tsi_peer* peer,
 
 // --- Default SSL Root Store. ---
 namespace grpc_core {
+using PrivateKey =
+    std::variant<absl::string_view, CustomPrivateKeySign>;
+
+bool IsPrivateKeyEmpty(const PrivateKey* private_key);
 
 // The class implements default SSL root store.
 class DefaultSslRootStore {
@@ -152,17 +159,26 @@ class DefaultSslRootStore {
 
 class PemKeyCertPair {
  public:
-  PemKeyCertPair(absl::string_view private_key, absl::string_view cert_chain)
-      : private_key_(private_key), cert_chain_(cert_chain) {}
+  PemKeyCertPair(PrivateKey private_key, absl::string_view cert_chain)
+      : cert_chain_(cert_chain) {
+    if (const auto* key_view = std::get_if<absl::string_view>(&private_key)) {
+      private_key_ = std::string(*key_view);
+    } else if (auto* key_sign_ptr =
+                   std::get_if<CustomPrivateKeySign>(&private_key)) {
+      private_key_sign_ = *key_sign_ptr;
+    }
+  }
 
   // Movable.
   PemKeyCertPair(PemKeyCertPair&& other) noexcept {
     private_key_ = std::move(other.private_key_);
     cert_chain_ = std::move(other.cert_chain_);
+    private_key_sign_ = std::move(other.private_key_sign_);
   }
   PemKeyCertPair& operator=(PemKeyCertPair&& other) noexcept {
     private_key_ = std::move(other.private_key_);
     cert_chain_ = std::move(other.cert_chain_);
+    private_key_sign_ = std::move(other.private_key_sign_);
     return *this;
   }
 
@@ -172,6 +188,7 @@ class PemKeyCertPair {
   PemKeyCertPair& operator=(const PemKeyCertPair& other) {
     private_key_ = other.private_key();
     cert_chain_ = other.cert_chain();
+    private_key_sign_ = other.private_key_sign();
     return *this;
   }
 
@@ -182,10 +199,16 @@ class PemKeyCertPair {
 
   const std::string& private_key() const { return private_key_; }
   const std::string& cert_chain() const { return cert_chain_; }
+  const CustomPrivateKeySign private_key_sign() const {
+    return private_key_sign_;
+  }
 
  private:
   std::string private_key_;
   std::string cert_chain_;
+  // Asynchronous private key signing function. Mutually exclusive with
+  // private_key.
+  CustomPrivateKeySign private_key_sign_;
 };
 
 using PemKeyCertPairList = std::vector<PemKeyCertPair>;

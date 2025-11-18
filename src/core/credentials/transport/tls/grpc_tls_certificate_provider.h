@@ -23,8 +23,10 @@
 #include <stdint.h>
 
 #include <map>
+#include <memory>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/credentials/transport/tls/spiffe_utils.h"
@@ -206,6 +208,62 @@ class FileWatcherCertificateProvider final
   // Stores each cert_name we get from the distributor callback and its watcher
   // information.
   std::map<std::string, WatcherInfo> watcher_info_ ABSL_GUARDED_BY(mu_);
+};
+
+// Implements a provider that uses in-memory data that can be modified in a
+// thread-safe manner.
+class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
+ public:
+  static std::shared_ptr<InMemoryCertificateProvider> CreateCertificateProvider(
+      std::string root_certificates, PemKeyCertPairList pem_key_cert_pairs);
+  InMemoryCertificateProvider(std::string root_certificates,
+                              PemKeyCertPairList pem_key_cert_pairs);
+  InMemoryCertificateProvider(const InMemoryCertificateProvider&) = delete;
+  InMemoryCertificateProvider(InMemoryCertificateProvider&&) = delete;
+  InMemoryCertificateProvider& operator=(const InMemoryCertificateProvider&) =
+      delete;
+  InMemoryCertificateProvider& operator=(InMemoryCertificateProvider&&) =
+      delete;
+
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
+    return distributor_;
+  }
+
+  UniqueTypeName type() const override;
+
+  absl::Status ValidateCredentials() const;
+
+  int64_t TestOnlyGetRefreshIntervalSecond() const;
+
+  void UpdateRoot(std::string root_certificates);
+  void UpdateIdentity(PemKeyCertPairList pem_key_cert_pairs);
+
+ private:
+  struct WatcherInfo {
+    bool root_being_watched = false;
+    bool identity_being_watched = false;
+  };
+
+  int CompareImpl(const grpc_tls_certificate_provider* other) const override {
+    return QsortCompare(static_cast<const grpc_tls_certificate_provider*>(this),
+                        other);
+  }
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
+
+  std::shared_ptr<RootCertInfo> root_cert_info_;
+
+  // Guards pem_key_cert_pairs_, root_certificates_ and watcher_info_
+  // respectively.
+  mutable Mutex pem_cert_pairs_mu_;
+  mutable Mutex root_cert_mu_;
+  mutable Mutex watcher_mu_;
+  // The most-recent credential data. It will be empty if the most recent read
+  // attempt failed.
+  PemKeyCertPairList pem_key_cert_pairs_ ABSL_GUARDED_BY(pem_cert_pairs_mu_);
+  std::string root_certificates_ ABSL_GUARDED_BY(root_cert_mu_);
+  // Stores each cert_name we get from the distributor callback and its watcher
+  // information.
+  std::map<std::string, WatcherInfo> watcher_info_ ABSL_GUARDED_BY(watcher_mu_);
 };
 
 //  Checks if the private key matches the certificate's public key.

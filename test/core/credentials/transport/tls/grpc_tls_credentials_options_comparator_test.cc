@@ -182,6 +182,26 @@ TEST(TlsCredentialsOptionsComparatorTest, DifferentSendClientCaListValues) {
   delete options_1;
   delete options_2;
 }
+TEST(TlsCredentialsOptionsComparatorTest, DifferentIdentityCertificateProvider) {
+  auto* options_1 = grpc_tls_credentials_options_create();
+  auto* options_2 = grpc_tls_credentials_options_create();
+  options_1->set_identity_certificate_provider(InMemoryCertificateProvider::CreateCertificateProvider("root_cert_1", PemKeyCertPairList()));
+  options_2->set_identity_certificate_provider(InMemoryCertificateProvider::CreateCertificateProvider("root_cert_2", PemKeyCertPairList()));
+  EXPECT_FALSE(*options_1 == *options_2);
+  EXPECT_FALSE(*options_2 == *options_1);
+  delete options_1;
+  delete options_2;
+}
+TEST(TlsCredentialsOptionsComparatorTest, DifferentRootCertificateProvider) {
+  auto* options_1 = grpc_tls_credentials_options_create();
+  auto* options_2 = grpc_tls_credentials_options_create();
+  options_1->set_root_certificate_provider(InMemoryCertificateProvider::CreateCertificateProvider("root_cert_1", PemKeyCertPairList()));
+  options_2->set_root_certificate_provider(InMemoryCertificateProvider::CreateCertificateProvider("root_cert_2", PemKeyCertPairList()));
+  EXPECT_FALSE(*options_1 == *options_2);
+  EXPECT_FALSE(*options_2 == *options_1);
+  delete options_1;
+  delete options_2;
+}
 
 } // namespace
 } // namespace grpc_core

@@ -113,6 +113,7 @@ CORE_SOURCE_FILES = [
     'src/core/credentials/transport/tls/load_system_roots_fallback.cc',
     'src/core/credentials/transport/tls/load_system_roots_supported.cc',
     'src/core/credentials/transport/tls/load_system_roots_windows.cc',
+    'src/core/credentials/transport/tls/private_key_offload_util.cc',
     'src/core/credentials/transport/tls/spiffe_utils.cc',
     'src/core/credentials/transport/tls/ssl_utils.cc',
     'src/core/credentials/transport/tls/tls_credentials.cc',

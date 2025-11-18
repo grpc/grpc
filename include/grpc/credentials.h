@@ -960,6 +960,25 @@ GRPCAPI void grpc_tls_credentials_options_set_max_tls_version(
 /**
  * EXPERIMENTAL API - Subject to change
  *
+ * Sets the identity ceritifcate provider in the options.
+ * The |options| will implicitly take a new ref to the |provider|.
+ */
+GRPCAPI void grpc_tls_credentials_options_set_identity_certificate_provider(
+    grpc_tls_credentials_options* options,
+    grpc_tls_certificate_provider* provider);
+
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
+ * Sets the root ceritifcate provider in the options.
+ * The |options| will implicitly take a new ref to the |provider|.
+ */
+GRPCAPI void grpc_tls_credentials_options_set_root_certificate_provider(
+    grpc_tls_credentials_options* options,
+    grpc_tls_certificate_provider* provider);
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
  * Copies a grpc_tls_credentials_options.
  */
 GRPCAPI grpc_tls_credentials_options* grpc_tls_credentials_options_copy(
@@ -982,7 +1001,9 @@ GRPCAPI void grpc_tls_credentials_options_destroy(
 typedef struct grpc_tls_certificate_provider grpc_tls_certificate_provider;
 
 /**
- * EXPERIMENTAL API - Subject to change
+/** Deprecated in favor of
+grpc_tls_credentials_options_set_identity_certificate_provider and
+grpc_tls_credentials_options_set_root_certificate_provider.
  *
  * Sets the credential provider in the options.
  * The |options| will implicitly take a new ref to the |provider|.
