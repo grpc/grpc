@@ -505,6 +505,11 @@ class OpenTelemetryPluginImpl::CounterExporter final {
       ExportedMetricKeyValueIterable labels_iterable(label_keys, label_values);
       observer_->Observe(value, labels_iterable);
     }
+    void UpDownCounter(absl::Span<const std::string>,
+                       absl::Span<const std::string>, absl::string_view,
+                       uint64_t) override {
+      LOG(FATAL) << "Expected a counter, got an up/down counter";
+    }
     void Histogram(absl::Span<const std::string>, absl::Span<const std::string>,
                    absl::string_view, grpc_core::HistogramBuckets,
                    absl::Span<const uint64_t>) override {
@@ -714,6 +719,9 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
                   exporter_callbacks_.push_back(
                       std::make_unique<ExporterCallbackImpl<CounterExporter>>(
                           instrument, this, description));
+                },
+                [&](grpc_core::InstrumentMetadata::UpDownCounterShape) {
+                  LOG(FATAL) << "Double gauge shape is not supported yet";
                 },
                 [&](grpc_core::InstrumentMetadata::DoubleGaugeShape) {
                   LOG(FATAL) << "Double gauge shape is not supported yet";
