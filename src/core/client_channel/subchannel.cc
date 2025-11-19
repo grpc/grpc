@@ -53,9 +53,6 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/transport.h"
-#ifdef GRPC_XDS_ENABLED
-#include "src/core/load_balancing/xds/xds_channel_args.h"
-#endif
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/transport/auth_context.h"
@@ -69,9 +66,6 @@
 #include "src/core/util/status_helper.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/useful.h"
-#ifdef GRPC_XDS_ENABLED
-#include "src/core/xds/xds_client/xds_locality.h"
-#endif
 #include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/cord.h"
@@ -678,7 +672,12 @@ Subchannel::Subchannel(SubchannelKey key,
       watcher_list_(this),
       work_serializer_(args_.GetObjectRef<EventEngine>()),
       backoff_(ParseArgsForBackoffValues(args_, &min_connect_timeout_)),
-      event_engine_(args_.GetObjectRef<EventEngine>()) {
+      event_engine_(args_.GetObjectRef<EventEngine>()),
+      stats_plugin_group_(
+          args_.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>()),
+      target_(args_.GetString(GRPC_ARG_DEFAULT_AUTHORITY).value_or("")),
+      backend_service_(args_.GetString(GRPC_ARG_BACKEND_SERVICE).value_or("")),
+      locality_(args_.GetString(GRPC_ARG_LB_LOCALITY).value_or("")) {
   // A grpc_init is added here to ensure that grpc_shutdown does not happen
   // until the subchannel is destroyed. Subchannels can persist longer than
   // channels because they maybe reused/shared among multiple channels. As a
@@ -713,20 +712,6 @@ Subchannel::Subchannel(SubchannelKey key,
     channelz_node_->SetChannelArgs(args_);
     args_ = args_.SetObject<channelz::BaseNode>(channelz_node_);
   }
-  // Extract stats plugin group from channel args
-  stats_plugin_group_ =
-      args_.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>();
-// Extract label values for metrics
-#ifdef GRPC_XDS_ENABLED
-  backend_service_ =
-      std::string(args_.GetString(GRPC_ARG_XDS_CLUSTER_NAME).value_or(""));
-  auto locality_name = args_.GetObjectRef<XdsLocalityName>();
-  locality_ =
-      locality_name != nullptr ? locality_name->human_readable_string() : "";
-#else
-  backend_service_ = "";
-  locality_ = "";
-#endif
 }
 
 Subchannel::~Subchannel() {
