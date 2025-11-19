@@ -14,6 +14,11 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test")
 
+package(features = [
+    "layering_check",
+    "parse_headers",
+])
+
 # This library generates experiment header and source files for RPC frameworks.
 # To ensure its usability for other RPC frameworks, avoid adding any gRPC-specific dependencies.
 grpc_cc_library(

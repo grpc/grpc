@@ -21,7 +21,13 @@ load(
     "grpc_fuzz_test",
 )
 
-grpc_package(name = "test/core/channelz/v2tov1")
+grpc_package(
+    name = "test/core/channelz/v2tov1",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 licenses(["notice"])
 

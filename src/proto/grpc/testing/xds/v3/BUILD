@@ -18,6 +18,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "xds_v3",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "tests",
 )
 

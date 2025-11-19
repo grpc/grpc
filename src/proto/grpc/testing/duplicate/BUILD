@@ -18,6 +18,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "duplicate",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "public",
 )
 

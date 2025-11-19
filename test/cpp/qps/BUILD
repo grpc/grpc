@@ -18,7 +18,13 @@ load("//test/cpp/qps:qps_benchmark_script.bzl", "json_run_localhost_batch", "qps
 
 licenses(["notice"])
 
-grpc_package(name = "test/cpp/qps")
+grpc_package(
+    name = "test/cpp/qps",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_library(
     name = "parse_json",
