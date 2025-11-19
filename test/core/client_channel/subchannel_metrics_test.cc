@@ -20,9 +20,6 @@
 #include <memory>
 #include <string>
 
-#include "absl/status/status.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -31,6 +28,9 @@
 #include "src/core/telemetry/metrics.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace testing {
@@ -40,10 +40,7 @@ class SubchannelTest : public ::testing::Test {
  protected:
   void SetUp() override { grpc_init(); }
 
-  void TearDown() override {
-    // event_engine_.reset();
-    grpc_shutdown_blocking();
-  }
+  void TearDown() override { grpc_shutdown_blocking(); }
 };
 
 TEST_F(SubchannelTest, MetricDefinitionDisconnections) {

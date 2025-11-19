@@ -97,9 +97,6 @@ constexpr absl::string_view kSecurityLevelPrivacyAndIntegrity =
 
 // Metrics for tracking subchannel connection behavior (gRFC A94).
 // These metrics help monitor subchannel health and connection patterns.
-// Total number of times a subchannel becomes disconnected.
-// Labels: grpc.target (required), grpc.lb.backend_service, grpc.lb.locality,
-//         grpc.disconnect_error (optional)
 const auto kMetricDisconnections =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.subchannel.disconnections",
@@ -110,9 +107,6 @@ const auto kMetricDisconnections =
                         "grpc.disconnect_error")
         .Build();
 
-// Total number of successful connection attempts.
-// Labels: grpc.target (required), grpc.lb.backend_service, grpc.lb.locality
-// (optional)
 const auto kMetricConnectionAttemptsSucceeded =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.subchannel.connection_attempts_succeeded",
@@ -121,9 +115,6 @@ const auto kMetricConnectionAttemptsSucceeded =
         .OptionalLabels(kMetricLabelBackendService, kMetricLabelLocality)
         .Build();
 
-// Total number of failed connection attempts.
-// Labels: grpc.target (required), grpc.lb.backend_service, grpc.lb.locality
-// (optional)
 const auto kMetricConnectionAttemptsFailed =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.subchannel.connection_attempts_failed",
@@ -132,11 +123,7 @@ const auto kMetricConnectionAttemptsFailed =
         .OptionalLabels(kMetricLabelBackendService, kMetricLabelLocality)
         .Build();
 
-// Tracks current number of open connections to this subchannel.
-// Labels: grpc.target (required), grpc.security_level, grpc.lb.backend_service,
-//         grpc.lb.locality (optional)
 const auto kMetricOpenConnections =
-    // GlobalInstrumentsRegistry::RegisterDoubleUpDownCounter(
     GlobalInstrumentsRegistry::RegisterUInt64UpDownCounter(
         "grpc.subchannel.open_connections", "Number of open connections.",
         "{connection}", false)
