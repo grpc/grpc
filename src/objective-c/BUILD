@@ -235,7 +235,13 @@ grpc_objc_library(
         ":grpc_objc_interface",
         ":grpc_objc_interface_legacy",
         ":rx_library",
+        ":rx_library_headers",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++_public_hdrs",
+        "//:grpc_core_credentials_header",
         "//:grpc_objc",
+        "//:grpc_security_base",
     ],
 )
 
@@ -253,9 +259,16 @@ grpc_objc_library(
     ],
     deps = [
         ":grpc_objc_client_core_internal_testing",
+        ":grpc_objc_interface",
+        ":grpc_objc_interface_legacy",
         ":proto_objc_rpc_legacy_header",
         ":proto_objc_rpc_v2",
         ":rx_library",
+        ":rx_library_headers",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++_public_hdrs",
+        "//:grpc_core_credentials_header",
         "@com_google_protobuf//:protobuf_objc",
     ],
 )
