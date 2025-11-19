@@ -299,8 +299,7 @@ class Subchannel final : public DualRefCounted<Subchannel> {
   void MaybeUpdateConnectivityStateLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   // Returns true if the connection was removed.
-  bool RemoveConnectionLocked(
-      RefCountedPtr<ConnectedSubchannel> connected_subchannel)
+  bool RemoveConnectionLocked(ConnectedSubchannel* connected_subchannel)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   void ThrottleKeepaliveTimeLocked(Duration new_keepalive_time)
