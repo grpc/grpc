@@ -4013,11 +4013,11 @@ TEST_F(ConnectionScalingTest, IdleConnectionsClosed) {
   // Send normal, short-lived RPCs in a loop.  These should all go on
   // the first connection, so after the idle timeout, the server should
   // close the second connection, and channelz should show only one
-  // connection.  We add 10s fudge factor to account for timing.
+  // connection.  We add a fudge factor to account for timing.
   LOG(INFO) << "Sending short-lived RPCs until second connection closes...";
   absl::Time deadline =
-      absl::Now() + absl::Milliseconds((kIdleTimeoutMs + 10000) *
-                                       grpc_test_slowdown_factor());
+      absl::Now() +
+      absl::Milliseconds(kIdleTimeoutMs * 3 * grpc_test_slowdown_factor());
   while (true) {
     ASSERT_LT(absl::Now(), deadline)
         << "timed out waiting for connection to close";
