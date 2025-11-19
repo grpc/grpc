@@ -22,8 +22,12 @@
 #include <grpc/credentials.h>
 #include <grpc/support/port_platform.h>
 
+#ifdef __cplusplus
+
 #include <optional>
 #include <string>
+
+namespace grpc_core::experimental {
 
 /**
  * EXPERIMENTAL API - Subject to change
@@ -36,4 +40,8 @@ GRPCAPI void grpc_tls_credentials_options_set_sni_override(
     grpc_tls_credentials_options* options,
     std::optional<std::string> sni_override);
 
-#endif // GRPC_CREDENTIALS_CPP_H
+}  // namespace grpc_core::experimental
+
+#endif  // __cplusplus
+
+#endif /* GRPC_CREDENTIALS_CPP_H */
