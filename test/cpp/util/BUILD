@@ -476,8 +476,8 @@ grpc_cc_library(
         "//:channelz",
         "//src/core:down_cast",
         "//src/core:grpc_check",
-        "//test/core/test_util:grpc_test_util",
         "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
