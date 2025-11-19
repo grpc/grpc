@@ -92,7 +92,11 @@ bool XdsCertificateVerifier::Verify(
     grpc_tls_custom_verification_check_request* request,
     std::function<void(absl::Status)>, absl::Status* sync_status) {
   GRPC_CHECK_NE(request, nullptr);
-  if (xds_certificate_provider_->auto_sni_san_validation()) {
+  /* sni_name_ is "" if neither option for setting SNI is configured. In that
+   * case, even if SAN validation is configured, we don't try to do SNI SAN
+   * validation, and instead fall back to regular SAN validation. */
+  if (xds_certificate_provider_->auto_sni_san_validation() &&
+      !sni_name_.empty()) {
     if (!XdsVerifySubjectAlternativeNames(
             request->peer_info.san_names.dns_names,
             request->peer_info.san_names.dns_names_size,
