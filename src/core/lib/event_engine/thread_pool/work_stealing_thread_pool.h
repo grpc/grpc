@@ -69,10 +69,14 @@ class WorkStealingThreadPool final : public ThreadPool {
     void SignalAll();
     // Returns whether a timeout occurred.
     bool WaitWithTimeout(grpc_core::Duration time);
+    // Returns the previous shutdown state.
+    bool SetShutdown(bool is_shutdown);
+    bool IsShutdown();
 
    private:
     grpc_core::Mutex mu_;
     grpc_core::CondVar cv_ ABSL_GUARDED_BY(mu_);
+    bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
   };
 
   // A pool of WorkQueues that participate in work stealing.
@@ -121,8 +125,6 @@ class WorkStealingThreadPool final : public ThreadPool {
     // a new thread has started, it is rate limited.
     // Returns the previous throttling state.
     bool SetThrottled(bool throttle);
-    // Set the shutdown flag.
-    void SetShutdown(bool is_shutdown);
     // Set the forking flag.
     void SetForking(bool is_forking);
     // Forkable
@@ -134,7 +136,6 @@ class WorkStealingThreadPool final : public ThreadPool {
     void TrackThread(gpr_thd_id tid);
     void UntrackThread(gpr_thd_id tid);
     // Accessor methods
-    bool IsShutdown();
     bool IsForking();
     bool IsQuiesced();
     size_t reserve_threads() { return reserve_threads_; }
@@ -181,7 +182,6 @@ class WorkStealingThreadPool final : public ThreadPool {
     // It's possible for a ThreadPool to initiate shut down while fork handlers
     // are running, and similarly possible for a fork event to occur during
     // shutdown.
-    std::atomic<bool> shutdown_{false};
     std::atomic<bool> forking_{false};
     std::atomic<bool> quiesced_{false};
     std::atomic<uint64_t> last_started_thread_{0};
