@@ -93,6 +93,9 @@ namespace grpc_event_engine::experimental {
 
 namespace {
 
+std::atomic<int> num_reads{0};
+std::atomic<int> num_early_exit_reads{0};
+
 // A wrapper around sendmsg. It sends \a msg over \a fd and returns the number
 // of bytes sent.
 PosixErrorOr<int64_t> TcpSend(EventEnginePosixInterface* posix_interface,
@@ -274,11 +277,11 @@ void PosixEndpointImpl::AddToEstimate(size_t bytes) {
 void PosixEndpointImpl::FinishEstimate() {
   // If we read >80% of the target buffer in one read loop, increase the size of
   // the target buffer to either the amount read, or twice its previous value.
-  if (bytes_read_this_round_ > target_length_ * 0.8) {
-    target_length_ = std::max(2 * target_length_, bytes_read_this_round_);
-  } else {
-    target_length_ = 0.99 * target_length_ + 0.01 * bytes_read_this_round_;
-  }
+  // if (bytes_read_this_round_ > target_length_ * 0.8) {
+  //   target_length_ = std::max(2 * target_length_, bytes_read_this_round_);
+  // } else {
+  //   target_length_ = 0.99 * target_length_ + 0.01 * bytes_read_this_round_;
+  // }
   bytes_read_this_round_ = 0;
 }
 
@@ -291,7 +294,6 @@ absl::Status PosixEndpointImpl::TcpAnnotateError(absl::Status src_error) const {
 // Returns true if data available to read or error other than EAGAIN.
 bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
   GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("TcpDoRead");
-
   struct msghdr msg;
   struct iovec iov[MAX_READ_IOVEC];
   size_t total_read_bytes = 0;
@@ -382,20 +384,33 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
 
 #ifdef GRPC_HAVE_TCP_INQ
     if (inq_capable_) {
+      bool inq_found = false;
       GRPC_DCHECK(!(msg.msg_flags & MSG_CTRUNC));
       struct cmsghdr* cmsg = CMSG_FIRSTHDR(&msg);
       for (; cmsg != nullptr; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
         if (cmsg->cmsg_level == SOL_TCP && cmsg->cmsg_type == TCP_CM_INQ &&
             cmsg->cmsg_len == CMSG_LEN(sizeof(int))) {
           inq_ = *reinterpret_cast<int*>(CMSG_DATA(cmsg));
+          inq_found = true;
           break;
         }
+      }
+      if (!inq_found) {
+        inq_ = 1024;
       }
     }
 #endif  // GRPC_HAVE_TCP_INQ
 
     total_read_bytes += read_bytes;
     if (inq_ == 0 || total_read_bytes == incoming_buffer_->Length()) {
+      if (total_read_bytes == incoming_buffer_->Length() && inq_ != 0) {
+        num_early_exit_reads++;
+        LOG_EVERY_N_SEC(INFO, 10)
+            << "[TCP endpoint] finishing read early but " << inq_
+            << " more bytes available. Read bytes = " << total_read_bytes
+            << ". This happened " << num_early_exit_reads << " out of "
+            << num_reads << " times.";
+      }
       break;
     }
 
@@ -432,6 +447,7 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
   }
 
   GRPC_DCHECK_GT(total_read_bytes, 0u);
+  num_reads++;
   status = absl::OkStatus();
   if (grpc_core::IsTcpFrameSizeTuningEnabled()) {
     // Update min progress size based on the total number of bytes read in
@@ -536,8 +552,11 @@ void PosixEndpointImpl::UpdateRcvLowat() {
 void PosixEndpointImpl::MaybeMakeReadSlices() {
   static const int kBigAlloc = 64 * 1024;
   static const int kSmallAlloc = 8 * 1024;
-  if (incoming_buffer_->Length() < std::max<size_t>(min_progress_size_, 1)) {
-    size_t allocate_length = min_progress_size_;
+  size_t allocate_length = std::max(std::max(min_progress_size_, 1), inq_);
+  if (allocate_length < static_cast<size_t>(target_length_)) {
+    allocate_length = static_cast<size_t>(target_length_);
+  }
+  if (incoming_buffer_->Length() < allocate_length) {
     const size_t target_length = static_cast<size_t>(target_length_);
     // If memory pressure is low and we think there will be more than
     // min_progress_size bytes to read, allocate a bit more.
@@ -1308,7 +1327,8 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   if (peer_address.ok()) {
     peer_address_ = *peer_address;
   }
-  target_length_ = static_cast<double>(options.tcp_read_chunk_size);
+  // target_length_ = static_cast<double>(options.tcp_read_chunk_size);
+  target_length_ = 64 * 1024;
   bytes_read_this_round_ = 0;
   min_read_chunk_size_ = options.tcp_min_read_chunk_size;
   max_read_chunk_size_ = options.tcp_max_read_chunk_size;

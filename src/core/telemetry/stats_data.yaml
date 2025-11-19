@@ -214,6 +214,10 @@
     max: 16777216
     buckets: 20
     doc: Number of bytes offered to each syscall_write in the control channel
+  - histogram: big_table_backend_request_latency
+    max: 16777216
+    buckets: 20
+    doc: Big table backend request latency
 # globally scoped http2 metrics
 - scope: http2_global
   metrics:

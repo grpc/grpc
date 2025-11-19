@@ -70,7 +70,7 @@ def grpc_deps():
             ],
             patch_args = ["-p1"],
             repo_mapping = {
-                "@abseil-cpp": "@com_google_absl",
+                #"@abseil-cpp": "@com_google_absl",
                 "@googletest": "@com_google_googletest",
             },
         )
@@ -85,7 +85,7 @@ def grpc_deps():
                 "https://github.com/google/googletest/releases/download/v1.17.0/googletest-1.17.0.tar.gz",
             ],
             repo_mapping = {
-                "@abseil-cpp": "@com_google_absl",
+                #"@abseil-cpp": "@com_google_absl",
                 "@re2": "@com_googlesource_code_re2",
             },
         )
@@ -149,9 +149,9 @@ def grpc_deps():
             ],
         )
 
-    if "com_google_absl" not in native.existing_rules():
+    if "abseil-cpp" not in native.existing_rules():
         http_archive(
-            name = "com_google_absl",
+            name = "abseil-cpp",
             sha256 = "9b7a064305e9fd94d124ffa6cc358592eb42b5da588fb4e07d09254aa40086db",
             strip_prefix = "abseil-cpp-20250512.1",
             urls = [
@@ -359,9 +359,9 @@ def grpc_deps():
             ],
         )
 
-    if "io_opentelemetry_cpp" not in native.existing_rules():
+    if "opentelemetry-cpp" not in native.existing_rules():
         http_archive(
-            name = "io_opentelemetry_cpp",
+            name = "opentelemetry-cpp",
             sha256 = "a85a22521de7426c3e019d50e18d0af16e0391e0353923308eb168b3e624aea1",
             strip_prefix = "opentelemetry-cpp-ced79860f8c8a091a2eabfee6d47783f828a9b59",
             urls = [

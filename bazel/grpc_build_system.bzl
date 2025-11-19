@@ -33,7 +33,6 @@ load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl
 load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
 load("@com_google_protobuf//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
 load("@rules_proto//proto:defs.bzl", "proto_library")
-load("@rules_python//python:defs.bzl", "py_binary")
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("//bazel:copts.bzl", "GRPC_DEFAULT_COPTS")
 load("//bazel:experiments.bzl", "EXPERIMENTS", "EXPERIMENT_ENABLES", "EXPERIMENT_POLLERS")
@@ -64,6 +63,8 @@ def _get_external_deps(external_deps):
     for dep in external_deps:
         if dep.startswith("@"):
             ret.append(dep)
+        elif dep == "address_sorting":
+            ret.append("//third_party/address_sorting")
         elif dep == "xxhash":
             ret.append("//third_party/xxhash")
         elif dep == "cares":
@@ -72,11 +73,11 @@ def _get_external_deps(external_deps):
                 "//conditions:default": ["//third_party:cares"],
             })
         elif dep.startswith("absl/"):
-            ret.append("@com_google_absl//" + dep)
+            ret.append("@abseil-cpp//" + dep)
         elif dep.startswith("google/"):
             ret.append("@com_google_googleapis//" + dep)
         elif dep.startswith("otel/"):
-            ret.append(dep.replace("otel/", "@io_opentelemetry_cpp//"))
+            ret.append(dep.replace("otel/", "@opentelemetry-cpp//"))
         elif dep.startswith("google_cloud_cpp"):
             ret.append(dep.replace("google_cloud_cpp", "@google_cloud_cpp//"))
         else:
@@ -718,7 +719,7 @@ def grpc_py_binary(
         testonly = False,
         python_version = "PY2",
         **kwargs):
-    py_binary(
+    native.py_binary(
         name = name,
         srcs = srcs,
         testonly = testonly,

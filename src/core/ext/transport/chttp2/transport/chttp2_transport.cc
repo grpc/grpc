@@ -1831,26 +1831,50 @@ static void perform_stream_op_locked(void* stream_op,
   }
 
   if (op->send_initial_metadata) {
+    t->http2_ztrace_collector.Append(
+        grpc_core::H2PostSendInitialMetadataOpTrace{
+            static_cast<uint32_t>(s->id),
+            static_cast<uint32_t>(
+                op_payload->send_initial_metadata.send_initial_metadata
+                    ->TransportSize())});
     send_initial_metadata_locked(op, s, op_payload, t, on_complete);
   }
 
   if (op->send_message) {
+    t->http2_ztrace_collector.Append(grpc_core::H2PostSendMessageOpTrace{
+        static_cast<uint32_t>(s->id),
+        static_cast<uint32_t>(
+            op_payload->send_message.send_message->Length())});
     send_message_locked(op, s, op_payload, t, on_complete);
   }
 
   if (op->send_trailing_metadata) {
+    t->http2_ztrace_collector.Append(
+        grpc_core::H2PostSendTrailingMetadataOpTrace{
+            static_cast<uint32_t>(s->id),
+            static_cast<uint32_t>(
+                op_payload->send_trailing_metadata.send_trailing_metadata
+                    ->TransportSize())});
     send_trailing_metadata_locked(op, s, op_payload, t, on_complete);
   }
 
   if (op->recv_initial_metadata) {
+    t->http2_ztrace_collector.Append(
+        grpc_core::H2PostRecvInitialMetadataOpTrace{
+            static_cast<uint32_t>(s->id)});
     recv_initial_metadata_locked(s, op_payload, t);
   }
 
   if (op->recv_message) {
+    t->http2_ztrace_collector.Append(
+        grpc_core::H2PostRecvMessageOpTrace{static_cast<uint32_t>(s->id)});
     recv_message_locked(s, op_payload, t);
   }
 
   if (op->recv_trailing_metadata) {
+    t->http2_ztrace_collector.Append(
+        grpc_core::H2PostRecvTrailingMetadataOpTrace{
+            static_cast<uint32_t>(s->id)});
     recv_trailing_metadata_locked(s, op_payload, t);
   }
 
@@ -2263,6 +2287,25 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_chttp2_transport* t,
     if (s->seen_error) {
       grpc_slice_buffer_reset_and_unref(&s->frame_storage);
     }
+    grpc_core::latent_see::Appender appender;
+    if (appender.Enabled()) {
+      std::string scratch;
+      auto server_timing =
+          s->initial_metadata_buffer.GetStringValue("server-timing", &scratch);
+      if (!server_timing.has_value()) {
+        s->initial_metadata_buffer.GetStringValue("Server-Timing", &scratch);
+      }
+
+      if (server_timing.has_value()) {
+        LOG(INFO) << "Server-Timing: " << *server_timing;
+      } else {
+        LOG(INFO) << "Server-Timing: Not Found";
+      }
+    }
+    t->http2_ztrace_collector.Append(
+        grpc_core::H2CompleteRecvInitialMetadataOpTrace{
+            static_cast<uint32_t>(s->id),
+            static_cast<uint32_t>(s->initial_metadata_buffer.TransportSize())});
     *s->recv_initial_metadata = std::move(s->initial_metadata_buffer);
     s->recv_initial_metadata->Set(grpc_core::PeerString(),
                                   t->peer_string.Ref());
@@ -2345,6 +2388,9 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
     // save the length of the buffer before handing control back to application
     // threads. Needed to support correct flow control bookkeeping
     if (error.ok() && s->recv_message->has_value()) {
+      t->http2_ztrace_collector.Append(grpc_core::H2CompleteRecvMessageOpTrace{
+          static_cast<uint32_t>(s->id),
+          static_cast<uint32_t>(s->recv_message->value().Length())});
       null_then_sched_closure(&s->recv_message_ready);
     } else if (s->published_metadata[1] != GRPC_METADATA_NOT_PUBLISHED) {
       if (s->call_failed_before_recv_message != nullptr) {
@@ -2377,6 +2423,11 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
         s->recv_trailing_metadata_finished != nullptr) {
       grpc_transport_move_stats(&s->stats, s->collecting_stats);
       s->collecting_stats = nullptr;
+      t->http2_ztrace_collector.Append(
+          grpc_core::H2CompleteRecvTrailingMetadataOpTrace{
+              static_cast<uint32_t>(s->id),
+              static_cast<uint32_t>(
+                  s->trailing_metadata_buffer.TransportSize())});
       *s->recv_trailing_metadata = std::move(s->trailing_metadata_buffer);
       null_then_sched_closure(&s->recv_trailing_metadata_finished);
     }

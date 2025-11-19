@@ -201,10 +201,14 @@ class ZTraceCollector {
   // asynchronously before doing an Append, this can be useful to control that
   // work.
   bool IsActive() {
+#ifdef GRPC_EXTRA_LATENT_SEE
+    return true;
+#else
     if (!impl_.is_set()) return false;
     auto impl = impl_.Get();
     MutexLock lock(&impl->mu);
     return !impl->instances.empty();
+#endif
   }
 
   std::unique_ptr<ZTrace> MakeZTrace() {
