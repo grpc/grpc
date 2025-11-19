@@ -88,13 +88,15 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
   virtual void Ping(grpc_closure* on_initiate, grpc_closure* on_ack) = 0;
 
   virtual channelz::SubchannelNode* channelz_node() const = 0;
-  std::string security_level_;
+
+  absl::string_view GetSecurityLevel() { return security_level_; }
 
  protected:
   explicit ConnectedSubchannel(const ChannelArgs& args);
 
  private:
   ChannelArgs args_;
+  absl::string_view security_level_;
 };
 
 class LegacyConnectedSubchannel;
@@ -365,12 +367,6 @@ class Subchannel final : public DualRefCounted<Subchannel> {
   grpc_pollset_set* pollset_set_;
   // Channelz tracking.
   RefCountedPtr<channelz::SubchannelNode> channelz_node_;
-  // Metrics and observability.
-  std::string target_;
-  std::string backend_service_;
-  std::string locality_;
-  std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
-      stats_plugin_group_;
   // Minimum connection timeout.
   Duration min_connect_timeout_;
 
@@ -414,6 +410,13 @@ class Subchannel final : public DualRefCounted<Subchannel> {
   std::map<UniqueTypeName, DataProducerInterface*> data_producer_map_
       ABSL_GUARDED_BY(mu_);
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+
+  // Metrics and observability.
+  std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+      stats_plugin_group_;
+  absl::string_view target_;
+  absl::string_view backend_service_;
+  absl::string_view locality_;
 };
 
 }  // namespace grpc_core

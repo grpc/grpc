@@ -90,6 +90,10 @@
 namespace grpc_core {
 
 using ::grpc_event_engine::experimental::EventEngine;
+constexpr absl::string_view kSecurityLevelNone = "none";
+constexpr absl::string_view kSecurityLevelIntegrityOnly = "integrity_only";
+constexpr absl::string_view kSecurityLevelPrivacyAndIntegrity =
+    "privacy_and_integrity";
 
 // Metrics for tracking subchannel connection behavior (gRFC A94).
 // These metrics help monitor subchannel health and connection patterns.
@@ -149,7 +153,26 @@ ConnectedSubchannel::ConnectedSubchannel(const ChannelArgs& args)
     : RefCounted<ConnectedSubchannel>(
           GRPC_TRACE_FLAG_ENABLED(subchannel_refcount) ? "ConnectedSubchannel"
                                                        : nullptr),
-      args_(args) {}
+      args_(args) {
+  // Extract security level from auth context
+  auto auth_context = args.GetObjectRef<grpc_auth_context>();
+  if (auth_context != nullptr) {
+    grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
+        auth_context.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME);
+    const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
+    if (prop != nullptr) {
+      absl::string_view tsi_level(prop->value, prop->value_length);
+      // Map TSI level to metric label format
+      if (tsi_level == "TSI_SECURITY_NONE") {
+        security_level_ = kSecurityLevelNone;
+      } else if (tsi_level == "TSI_INTEGRITY_ONLY") {
+        security_level_ = kSecurityLevelIntegrityOnly;
+      } else if (tsi_level == "TSI_PRIVACY_AND_INTEGRITY") {
+        security_level_ = kSecurityLevelPrivacyAndIntegrity;
+      }
+    }
+  }
+}
 
 //
 // LegacyConnectedSubchannel
@@ -475,14 +498,14 @@ class Subchannel::ConnectedSubchannelStateWatcher final
             << status;
         // Record disconnection metrics
         if (c->stats_plugin_group_ != nullptr) {
-          std::string disconnect_reason =
+          absl::string_view disconnect_reason =
               c->shutdown_ ? "subchannel shutdown" : "unknown";
           c->stats_plugin_group_->AddCounter(
               kMetricDisconnections, uint64_t(1), {c->target_},
               {c->backend_service_, c->locality_, disconnect_reason});
           c->stats_plugin_group_->AddCounter(
               kMetricOpenConnections, -1.0, {c->target_},
-              {connected_subchannel->security_level_, c->backend_service_,
+              {connected_subchannel->GetSecurityLevel(), c->backend_service_,
                c->locality_});
         }
         // If the subchannel was created from an endpoint, then we report
@@ -537,6 +560,50 @@ class Subchannel::ConnectionStateWatcher final
     RefCountedPtr<ConnectedSubchannel> connected_subchannel =
         std::move(subchannel_->connected_subchannel_);
     if (connected_subchannel == nullptr) return;
+    // Record disconnection metrics
+    if (subchannel_->stats_plugin_group_ != nullptr) {
+      // Determine disconnect reason from DisconnectInfo
+      std::string disconnect_reason;
+      if (subchannel_->shutdown_) {
+        disconnect_reason = "subchannel shutdown";
+      } else {
+        switch (disconnect_info.reason) {
+          case DisconnectReason::kGoaway:
+            if (disconnect_info.http2_error_code.has_value()) {
+              disconnect_reason = absl::StrCat(
+                  "goaway_",
+                  static_cast<int>(*disconnect_info.http2_error_code));
+            } else {
+              disconnect_reason = "goaway";
+            }
+            break;
+          case DisconnectReason::kConnectionReset:
+            disconnect_reason = "connection_reset";
+            break;
+          case DisconnectReason::kConnectionTimedOut:
+            disconnect_reason = "connection_timed_out";
+            break;
+          case DisconnectReason::kConnectionAborted:
+            disconnect_reason = "connection_aborted";
+            break;
+          case DisconnectReason::kSocketError:
+            disconnect_reason = "socket_error";
+            break;
+          case DisconnectReason::kUnknown:
+          default:
+            disconnect_reason = "unknown";
+            break;
+        }
+      }
+      subchannel_->stats_plugin_group_->AddCounter(
+          kMetricDisconnections, uint64_t(1), {subchannel_->target_},
+          {subchannel_->backend_service_, subchannel_->locality_,
+           disconnect_reason});
+      subchannel_->stats_plugin_group_->AddCounter(
+          kMetricOpenConnections, -1.0, {subchannel_->target_},
+          {connected_subchannel->GetSecurityLevel(),
+           subchannel_->backend_service_, subchannel_->locality_});
+    }
     GRPC_TRACE_LOG(subchannel, INFO)
         << "subchannel " << subchannel_.get() << " "
         << subchannel_->key_.ToString() << ": connected subchannel "
@@ -1040,29 +1107,6 @@ bool Subchannel::PublishTransportLocked() {
     connected_subchannel_ = MakeRefCounted<NewConnectedSubchannel>(
         std::move(*call_destination), std::move(transport_destination), args_);
   }
-
-  // Extract security level from auth context
-  std::string security_level = "";
-  auto auth_context =
-      connecting_result_.channel_args.GetObjectRef<grpc_auth_context>();
-  if (auth_context != nullptr) {
-    grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
-        auth_context.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME);
-    const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
-    if (prop != nullptr) {
-      std::string tsi_level(prop->value, strlen(prop->value));
-      // Map TSI level to metric label format
-      if (tsi_level == "TSI_SECURITY_NONE")
-        security_level = "none";
-      else if (tsi_level == "TSI_INTEGRITY_ONLY")
-        security_level = "integrity_only";
-      else if (tsi_level == "TSI_PRIVACY_AND_INTEGRITY")
-        security_level = "privacy_and_integrity";
-    }
-  }
-  // Set it on the connected subchannel
-  connected_subchannel_->security_level_ = security_level;
-
   connecting_result_.Reset();
   // Publish.
   GRPC_TRACE_LOG(subchannel, INFO)
@@ -1083,9 +1127,10 @@ bool Subchannel::PublishTransportLocked() {
     stats_plugin_group_->AddCounter(kMetricConnectionAttemptsSucceeded,
                                     uint64_t(1), {target_},
                                     {backend_service_, locality_});
-    stats_plugin_group_->AddCounter(
-        kMetricOpenConnections, uint64_t(1), {target_},
-        {connected_subchannel_->security_level_, backend_service_, locality_});
+    stats_plugin_group_->AddCounter(kMetricOpenConnections, uint64_t(1),
+                                    {target_},
+                                    {connected_subchannel_->GetSecurityLevel(),
+                                     backend_service_, locality_});
   }
   // Report initial state.
   SetConnectivityStateLocked(GRPC_CHANNEL_READY, absl::Status());
