@@ -141,6 +141,23 @@ inline void GetExpectedHeaderAndContinuationFrames(
   }
 }
 
+inline Http2HeaderFrame GenerateHeaderFrame(absl::string_view str,
+                                            const uint32_t stream_id,
+                                            const bool end_headers,
+                                            const bool end_stream) {
+  SliceBuffer buffer;
+  buffer.Append(Slice::FromCopiedString(str));
+  return Http2HeaderFrame{stream_id, end_headers, end_stream,
+                          std::move(buffer)};
+}
+
+inline Http2ContinuationFrame GenerateContinuationFrame(
+    absl::string_view str, const uint32_t stream_id, const bool end_headers) {
+  SliceBuffer buffer;
+  buffer.Append(Slice::FromCopiedString(str));
+  return Http2ContinuationFrame{stream_id, end_headers, std::move(buffer)};
+}
+
 }  // namespace testing
 }  // namespace http2
 }  // namespace grpc_core

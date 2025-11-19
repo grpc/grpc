@@ -20,14 +20,21 @@
 
 #include <grpc/grpc.h>
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <utility>
+#include <variant>
 
+#include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/grpc_check.h"
@@ -113,27 +120,6 @@ TEST_P(HeaderAssemblerDisassemblerTest, TestTheTestData) {
   EXPECT_EQ(kSimpleRequestEncodedLen, sum);
   EXPECT_EQ(std::string(kSimpleRequestDecoded).size(),
             kSimpleRequestDecodedLen);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// Helpers
-
-Http2HeaderFrame GenerateHeaderFrame(absl::string_view str,
-                                     const uint32_t stream_id,
-                                     const bool end_headers,
-                                     const bool end_stream) {
-  SliceBuffer buffer;
-  buffer.Append(Slice::FromCopiedString(str));
-  return Http2HeaderFrame{stream_id, end_headers, end_stream,
-                          std::move(buffer)};
-}
-
-Http2ContinuationFrame GenerateContinuationFrame(absl::string_view str,
-                                                 const uint32_t stream_id,
-                                                 const bool end_headers) {
-  SliceBuffer buffer;
-  buffer.Append(Slice::FromCopiedString(str));
-  return Http2ContinuationFrame{stream_id, end_headers, std::move(buffer)};
 }
 
 ///////////////////////////////////////////////////////////////////////////////
