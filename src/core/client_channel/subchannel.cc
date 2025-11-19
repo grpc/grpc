@@ -102,7 +102,7 @@ const auto kMetricDisconnections =
         "Number of times the selected subchannel becomes disconnected.",
         "{disconnection}", false)
         .Labels(kMetricLabelTarget)
-        .OptionalLabels("grpc.lb.backend_service", "grpc.lb.locality",
+        .OptionalLabels(kMetricLabelBackendService, kMetricLabelLocality,
                         "grpc.disconnect_error")
         .Build();
 
@@ -114,7 +114,7 @@ const auto kMetricConnectionAttemptsSucceeded =
         "grpc.subchannel.connection_attempts_succeeded",
         "Number of successful connection attempts.", "{attempt}", false)
         .Labels(kMetricLabelTarget)
-        .OptionalLabels("grpc.lb.backend_service", "grpc.lb.locality")
+        .OptionalLabels(kMetricLabelBackendService, kMetricLabelLocality)
         .Build();
 
 // Total number of failed connection attempts.
@@ -125,7 +125,7 @@ const auto kMetricConnectionAttemptsFailed =
         "grpc.subchannel.connection_attempts_failed",
         "Number of failed connection attempts.", "{attempt}", false)
         .Labels(kMetricLabelTarget)
-        .OptionalLabels("grpc.lb.backend_service", "grpc.lb.locality")
+        .OptionalLabels(kMetricLabelBackendService, kMetricLabelLocality)
         .Build();
 
 // Tracks current number of open connections to this subchannel.
@@ -137,8 +137,8 @@ const auto kMetricOpenConnections =
         "grpc.subchannel.open_connections", "Number of open connections.",
         "{connection}", false)
         .Labels(kMetricLabelTarget)
-        .OptionalLabels("grpc.security_level", "grpc.lb.backend_service",
-                        "grpc.lb.locality")
+        .OptionalLabels("grpc.security_level", kMetricLabelBackendService,
+                        kMetricLabelLocality)
         .Build();
 
 //

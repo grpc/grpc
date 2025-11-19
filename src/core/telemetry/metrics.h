@@ -38,6 +38,9 @@
 namespace grpc_core {
 
 constexpr absl::string_view kMetricLabelTarget = "grpc.target";
+constexpr absl::string_view kMetricLabelBackendService =
+    "grpc.lb.backend_service";
+constexpr absl::string_view kMetricLabelLocality = "grpc.lb.locality";
 
 // A global registry of instruments(metrics). This API is designed to be used
 // to register instruments (Counter, Histogram, and Gauge) as part of program
