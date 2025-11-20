@@ -56,6 +56,7 @@ void ConnectionAttemptInjector::Init() {
   grpc_tcp_client_impl = &kDelayedConnectVTable;
 }
 
+// DO NOT SUBMIT: this will need to be updated to use the EventEngine client
 int64_t ConnectionAttemptInjector::TcpConnect(
     grpc_closure* closure, grpc_endpoint** ep,
     grpc_pollset_set* interested_parties, const EndpointConfig& config,
@@ -73,6 +74,7 @@ int64_t ConnectionAttemptInjector::TcpConnect(
   return 0;
 }
 
+// DO NOT SUBMIT: this will need to be updated to use the EventEngine client
 // TODO(vigneshbabu): This method should check whether the connect attempt has
 // actually been started, and if so, it should call
 // g_original_vtable->cancel_connect(). If the attempt has not actually been
