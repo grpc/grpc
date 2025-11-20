@@ -30,34 +30,11 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-static int g_ssl_ex_private_key_offload_ex_index = -1;
+// Indexes to store the private key offload information in the SSL and SSL_CTX data.
+static int g_ssl_ex_private_key_object_index = -1;
+static int g_ssl_ctx_ex_private_key_function_index = -1;
 
 namespace grpc_core {
-
-absl::StatusOr<uint16_t> ToOpenSslSignatureAlgorithm(
-    SignatureAlgorithm algorithm) {
-  switch (algorithm) {
-    case SignatureAlgorithm::kRsaPkcs1Sha256:
-      return SSL_SIGN_RSA_PKCS1_SHA256;
-    case SignatureAlgorithm::kRsaPkcs1Sha384:
-      return SSL_SIGN_RSA_PKCS1_SHA384;
-    case SignatureAlgorithm::kRsaPkcs1Sha512:
-      return SSL_SIGN_RSA_PKCS1_SHA512;
-    case SignatureAlgorithm::kEcdsaSecp256r1Sha256:
-      return SSL_SIGN_ECDSA_SECP256R1_SHA256;
-    case SignatureAlgorithm::kEcdsaSecp384r1Sha384:
-      return SSL_SIGN_ECDSA_SECP384R1_SHA384;
-    case SignatureAlgorithm::kEcdsaSecp521r1Sha512:
-      return SSL_SIGN_ECDSA_SECP521R1_SHA512;
-    case SignatureAlgorithm::kRsaPssRsaeSha256:
-      return SSL_SIGN_RSA_PSS_RSAE_SHA256;
-    case SignatureAlgorithm::kRsaPssRsaeSha384:
-      return SSL_SIGN_RSA_PSS_RSAE_SHA384;
-    case SignatureAlgorithm::kRsaPssRsaeSha512:
-      return SSL_SIGN_RSA_PSS_RSAE_SHA512;
-  }
-  return absl::InvalidArgumentError("Unknown signature algorithm.");
-}
 
 absl::StatusOr<SignatureAlgorithm> ToSignatureAlgorithmClass(
     uint16_t algorithm) {
@@ -84,13 +61,22 @@ absl::StatusOr<SignatureAlgorithm> ToSignatureAlgorithmClass(
   return absl::InvalidArgumentError("Unknown signature algorithm.");
 }
 
-void SetPrivateKeyOffloadIndex(int index) {
-  g_ssl_ex_private_key_offload_ex_index = index;
-  GRPC_CHECK_NE(g_ssl_ex_private_key_offload_ex_index, -1);
+void SetPrivateKeyOffloadObjectIndex(int index) {
+  g_ssl_ex_private_key_object_index = index;
+  GRPC_CHECK_NE(g_ssl_ex_private_key_object_index, -1);
 }
 
-int GetPrivateKeyOffloadIndex() {
-  return g_ssl_ex_private_key_offload_ex_index;
+int GetPrivateKeyOffloadObjectIndex() {
+  return g_ssl_ex_private_key_object_index;
+}
+
+void SetPrivateKeyOffloadFunctionIndex(int index) {
+  g_ssl_ctx_ex_private_key_function_index = index;
+  GRPC_CHECK_NE(g_ssl_ctx_ex_private_key_function_index, -1);
+}
+
+int GetPrivateKeyOffloadFunctionIndex() {
+  return g_ssl_ctx_ex_private_key_function_index;
 }
 
 void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
@@ -122,7 +108,7 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
     SSL* ssl, uint8_t* /*out*/, size_t* /*out_len*/, size_t /*max_out*/,
     uint16_t signature_algorithm, const uint8_t* in, size_t in_len) {
   TlsPrivateKeyOffloadContext* ctx = static_cast<TlsPrivateKeyOffloadContext*>(
-      SSL_get_ex_data(ssl, g_ssl_ex_private_key_offload_ex_index));
+      SSL_get_ex_data(ssl, g_ssl_ex_private_key_object_index));
   // Create the completion callback by binding the current context.
   auto done_callback = absl::bind_front(TlsOffloadSignDoneCallback, ctx);
 
@@ -134,10 +120,11 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
   if (!algorithm.ok()) {
     return ssl_private_key_failure;
   }
-
-  ctx->private_key_sign(
-      absl::string_view(reinterpret_cast<const char*>(in), in_len), *algorithm,
-      done_callback);
+  CustomPrivateKeySign* signature =
+      static_cast<CustomPrivateKeySign*>(SSL_CTX_get_ex_data(
+          SSL_get_SSL_CTX(ssl), g_ssl_ctx_ex_private_key_function_index));
+  (*signature)(absl::string_view(reinterpret_cast<const char*>(in), in_len),
+               *algorithm, std::move(done_callback));
 
   // The operation is not completed. Tell BoringSSL to wait for the signature
   // result.
@@ -149,7 +136,7 @@ enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,
                                                            size_t* out_len,
                                                            size_t max_out) {
   TlsPrivateKeyOffloadContext* ctx = static_cast<TlsPrivateKeyOffloadContext*>(
-      SSL_get_ex_data(ssl, g_ssl_ex_private_key_offload_ex_index));
+      SSL_get_ex_data(ssl, g_ssl_ex_private_key_object_index));
 
   if (!ctx->signed_bytes.ok()) {
     return ssl_private_key_failure;

@@ -43,13 +43,6 @@ enum class SignatureAlgorithm {
   kRsaPssRsaeSha512,
 };
 
-absl::StatusOr<uint16_t> ToOpenSslSignatureAlgorithm(
-    SignatureAlgorithm algorithm);
-
-void SetPrivateKeyOffloadIndex(int index);
-
-int GetPrivateKeyOffloadIndex();
-
 // A user's implementation MUST invoke `done_callback` with the signed bytes.
 // This will let gRPC take control when the async operation is complete. MUST
 // not block MUST support concurrent calls
@@ -58,12 +51,14 @@ using CustomPrivateKeySign = std::function<void(
     std::function<void(absl::StatusOr<std::string> signed_data)>
         done_callback)>;
 
+void SetPrivateKeyOffloadObjectIndex(int index);
+int GetPrivateKeyOffloadObjectIndex();
+
+void SetPrivateKeyOffloadFunctionIndex(int index);
+int GetPrivateKeyOffloadFunctionIndex();
+
 // State associated with an SSL object for async private key operations.
 struct TlsPrivateKeyOffloadContext {
-  explicit TlsPrivateKeyOffloadContext(CustomPrivateKeySign private_key_sign)
-      : private_key_sign(private_key_sign) {}
-
-  const CustomPrivateKeySign private_key_sign;
   absl::StatusOr<std::string> signed_bytes;
 
   // TSI handshake state needed to resume.
