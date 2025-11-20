@@ -785,6 +785,7 @@ class Http2ClientTransport final : public ClientTransport,
                                      RefCountedPtr<Stream> stream,
                                      Http2Status&& original_status,
                                      DebugLocation whence = {});
+  void ReadChannelArgs(const ChannelArgs& channel_args);
 };
 
 // Since the corresponding class in CHTTP2 is about 3.9KB, our goal is to
