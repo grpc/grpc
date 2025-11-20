@@ -126,9 +126,7 @@ void Http2ClientTransport::SpawnGuardedTransportParty(absl::string_view name,
       [self = RefAsSubclass<Http2ClientTransport>()](absl::Status status) {
         if (!status.ok()) {
           GRPC_UNUSED absl::Status error = self->HandleError(
-              /*stream_id=*/std::nullopt,
-              Http2Status::AbslConnectionError(status.code(),
-                                               std::string(status.message())));
+              /*stream_id=*/std::nullopt, ToHttpOkOrConnError(status));
         }
       });
 }
@@ -226,8 +224,8 @@ void Http2ClientTransport::Orphan() {
   // Accessing general_party here is not advisable. It may so happen that
   // the party is already freed/may free up any time. The only guarantee here
   // is that the transport is still valid.
-  MaybeSpawnCloseTransport(Http2Status::AbslConnectionError(
-      absl::StatusCode::kUnavailable, "Orphaned"));
+  MaybeSpawnCloseTransport(
+      ToHttpOkOrConnError(absl::UnavailableError("Orphaned")));
   Unref();
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Orphan End";
 }
@@ -365,10 +363,9 @@ Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
           stream->did_receive_trailing_metadata)) {
     return ParseAndDiscardHeaders(
         std::move(frame.payload), frame.end_headers, stream,
-        Http2Status::Http2StreamError(Http2ErrorCode::kInternalError,
-                                      "gRPC Error : A gRPC server can send "
-                                      "upto 1 initial metadata followed "
-                                      "by upto 1 trailing metadata"));
+        Http2Status::Http2StreamError(
+            Http2ErrorCode::kInternalError,
+            std::string(GrpcErrors::kTooManyMetadata)));
   }
 
   Http2Status append_result = stream->header_assembler.AppendHeaderFrame(frame);
@@ -525,10 +522,7 @@ auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
         // this does not turn out to be true, consider returning absl::Status
         // here.
         return Map(self->TriggerWriteCycle(), [](absl::Status status) {
-          return (status.ok())
-                     ? Http2Status::Ok()
-                     : Http2Status::AbslConnectionError(
-                           status.code(), std::string(status.message()));
+          return ToHttpOkOrConnError(status);
         });
       }));
 }
@@ -1064,9 +1058,7 @@ Http2ClientTransport::DequeueStreamFrames(RefCountedPtr<Stream> stream) {
              "enqueue stream "
           << stream->GetStreamId() << " with status: " << status;
       // Close transport if we fail to enqueue stream.
-      return HandleError(std::nullopt, Http2Status::AbslConnectionError(
-                                           absl::StatusCode::kUnavailable,
-                                           std::string(status.message())));
+      return HandleError(std::nullopt, ToHttpOkOrConnError(status));
     }
   }
 

@@ -378,6 +378,13 @@ inline constexpr uint32_t kMaximumFrameSize = 16777215;
 inline constexpr uint32_t kHttp2InitialWindowSize = 65535u;
 
 }  // namespace RFC9113
+
+namespace GrpcErrors {
+inline constexpr absl::string_view kTooManyMetadata =
+    "gRPC Error : A gRPC server can send upto 1 initial metadata followed by "
+    "upto 1 trailing metadata";
+}  // namespace GrpcErrors
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_H
