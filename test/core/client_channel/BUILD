@@ -249,7 +249,7 @@ grpc_cc_test(
     size = "small",
     srcs = ["subchannel_metrics_test.cc"],
     external_deps = [
-        "gtest_main",
+        "gtest",
     ],
     deps = [
         "//:grpc",

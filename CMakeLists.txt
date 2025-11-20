@@ -33414,7 +33414,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(subchannel_metrics_test
   test/core/client_channel/subchannel_metrics_test.cc
   test/core/test_util/fake_stats_plugin.cc
-  third_party/googletest/googlemock/src/gmock_main.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)

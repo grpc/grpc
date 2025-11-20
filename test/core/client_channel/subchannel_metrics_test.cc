@@ -14,23 +14,12 @@
 // limitations under the License.
 //
 
-#include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
-#include <memory>
-#include <string>
-
 #include "src/core/client_channel/subchannel.h"
-#include "src/core/config/core_configuration.h"
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/telemetry/metrics.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"
-#include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace testing {
