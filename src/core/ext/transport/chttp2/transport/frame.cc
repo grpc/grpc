@@ -803,7 +803,9 @@ void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, const uint8_t flags,
 Http2Status ValidateFrameHeader(const uint32_t max_frame_size_setting,
                                 const bool incoming_header_in_progress,
                                 const uint32_t incoming_header_stream_id,
-                                Http2FrameHeader& current_frame_header) {
+                                Http2FrameHeader& current_frame_header,
+                                const uint32_t last_stream_id,
+                                const bool is_client) {
   if (GPR_UNLIKELY(current_frame_header.length > max_frame_size_setting)) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kFrameSizeError,
@@ -819,6 +821,17 @@ Http2Status ValidateFrameHeader(const uint32_t max_frame_size_setting,
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kProtocolError,
         std::string(RFC9113::kAssemblerContiguousSequenceError));
+  }
+
+  // If a frame is received with a stream id larger than the last stream id sent
+  // by the transport, it is a protocol error. This condition holds for clients
+  // as in gRPC only clients can initiate a stream. last_stream_id is the stream
+  // id of the last stream created by the transport. If no streams were created
+  // by the transport, last_stream_id is 0.
+  // TODO(akshitpatel) : [PH2][P3] : Revisit this for server.
+  if (is_client && current_frame_header.stream_id > last_stream_id) {
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kProtocolError, std::string(RFC9113::kUnknownStreamId));
   }
   // TODO(tjagtap) : [PH2][P2]:Consider validating MAX_CONCURRENT_STREAMS here
   return Http2Status::Ok();
