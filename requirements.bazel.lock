@@ -26,13 +26,13 @@ deprecated==1.2.18
     # via
     #   opentelemetry-api
     #   opentelemetry-semantic-conventions
-gevent==24.2.1
+gevent==25.8.2
     # via -r requirements.bazel.txt
 google-auth==2.38.0
     # via -r requirements.bazel.txt
 googleapis-common-protos==1.66.0
     # via -r requirements.bazel.txt
-greenlet==3.1.1
+greenlet==3.2.4
     # via gevent
 hyperlink==21.0.0
     # via twisted
