@@ -126,7 +126,8 @@ _DATA_MEMBERS = [
     return nullptr;
   }""",
         setter_comment=(
-            "Deprecated. Use `set_root_certificate_provider` and `set_identity_certificate_provider` instead."
+            "Deprecated. Use `set_root_certificate_provider` and"
+            " `set_identity_certificate_provider` instead."
         ),
         setter_move_semantics=True,
         special_comparator=(
@@ -145,7 +146,8 @@ _DATA_MEMBERS = [
             'MakeRefCounted<StaticDataCertificateProvider>("root_cert_2",'
             " PemKeyCertPairList())"
         ),
-    ),DataMember(
+    ),
+    DataMember(
         name="watch_root_cert",
         type="bool",
         default_initializer="false",
@@ -247,8 +249,8 @@ _DATA_MEMBERS = [
         name="identity_certificate_provider",
         type="std::shared_ptr<grpc_tls_certificate_provider>",
         getter_comment=(
-            "Returns the distributor from identity_certificate_provider_ if it is set,"
-            " nullptr otherwise."
+            "Returns the distributor from identity_certificate_provider_ if it"
+            " is set, nullptr otherwise."
         ),
         override_getter="""grpc_tls_certificate_distributor* identity_certificate_distributor() {
     if (identity_certificate_provider_ != nullptr) { return identity_certificate_provider_->distributor().get(); }
@@ -256,9 +258,10 @@ _DATA_MEMBERS = [
   }""",
         setter_move_semantics=True,
         special_comparator=(
-            "(identity_certificate_provider_ == other.identity_certificate_provider_ ||"
-            " (identity_certificate_provider_ != nullptr && other.identity_certificate_provider_"
-            " != nullptr &&"
+            "(identity_certificate_provider_ =="
+            " other.identity_certificate_provider_ ||"
+            " (identity_certificate_provider_ != nullptr &&"
+            " other.identity_certificate_provider_ != nullptr &&"
             " identity_certificate_provider_->Compare(other.identity_certificate_provider_.get())"
             " == 0))"
         ),
@@ -276,8 +279,8 @@ _DATA_MEMBERS = [
         name="root_certificate_provider",
         type="std::shared_ptr<grpc_tls_certificate_provider>",
         getter_comment=(
-            "Returns the distributor from root_certificate_provider_ if it is set,"
-            " nullptr otherwise."
+            "Returns the distributor from root_certificate_provider_ if it is"
+            " set, nullptr otherwise."
         ),
         override_getter="""grpc_tls_certificate_distributor* root_certificate_distributor() {
     if (root_certificate_provider_ != nullptr) { return root_certificate_provider_->distributor().get(); }
@@ -286,8 +289,8 @@ _DATA_MEMBERS = [
         setter_move_semantics=True,
         special_comparator=(
             "(root_certificate_provider_ == other.root_certificate_provider_ ||"
-            " (root_certificate_provider_ != nullptr && other.root_certificate_provider_"
-            " != nullptr &&"
+            " (root_certificate_provider_ != nullptr &&"
+            " other.root_certificate_provider_ != nullptr &&"
             " root_certificate_provider_->Compare(other.root_certificate_provider_.get())"
             " == 0))"
         ),

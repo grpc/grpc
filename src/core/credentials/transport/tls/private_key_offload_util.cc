@@ -30,7 +30,8 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-// Indexes to store the private key offload information in the SSL and SSL_CTX data.
+// Indexes to store the private key offload information in the SSL and SSL_CTX
+// data.
 static int g_ssl_ex_private_key_object_index = -1;
 static int g_ssl_ctx_ex_private_key_function_index = -1;
 
