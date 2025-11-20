@@ -275,7 +275,8 @@ http2::Http2Status ValidateSettingsValues(
 http2::Http2Status ValidateFrameHeader(uint32_t max_frame_size_setting,
                                        bool incoming_header_in_progress,
                                        uint32_t incoming_header_stream_id,
-                                       Http2FrameHeader& current_frame_header);
+                                       Http2FrameHeader& current_frame_header,
+                                       uint32_t last_stream_id, bool is_client);
 
 ///////////////////////////////////////////////////////////////////////////////
 // RFC9113 Related Strings and Consts
@@ -309,6 +310,9 @@ inline constexpr absl::string_view kSettingsStreamIdMustBeZero =
     "RFC9113: If an endpoint receives a SETTINGS frame whose Stream "
     "Identifier field is anything other than 0x00, the endpoint MUST respond "
     "with a connection error";
+inline constexpr absl::string_view kUnknownStreamId =
+    "RFC9113: An endpoint that receives an unexpected stream identifier MUST "
+    "respond with a connection error";
 
 // Frame length related errors
 inline constexpr absl::string_view kRstStreamLength4 =

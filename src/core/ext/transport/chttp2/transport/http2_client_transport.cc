@@ -270,6 +270,8 @@ Http2Status Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
     return Http2Status::Ok();
   }
 
+  // TODO(akshitpatel) : [PH2][P3] : We should add a check to reset stream if
+  // the stream state is kIdle as well.
   if (stream->GetStreamState() == HttpStreamState::kHalfClosedRemote) {
     return Http2Status::Http2StreamError(
         Http2ErrorCode::kStreamClosed,
@@ -331,8 +333,10 @@ Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
       << frame.stream_id << ", end_headers=" << frame.end_headers
       << ", end_stream=" << frame.end_stream
       << ", payload=" << frame.payload.JoinIntoString() << " }";
-  ping_manager_.ReceivedDataFrame();
+  // State update MUST happen before processing the frame.
   incoming_headers_.OnHeaderReceived(frame);
+
+  ping_manager_.ReceivedDataFrame();
 
   RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
   if (stream == nullptr) {
@@ -432,6 +436,7 @@ Http2Status Http2ClientTransport::ProcessHttp2RstStreamFrame(
   GRPC_HTTP2_CLIENT_DLOG
       << "Http2ClientTransport ProcessHttp2RstStreamFrame { stream_id="
       << frame.stream_id << ", error_code=" << frame.error_code << " }";
+
   Http2ErrorCode error_code = FrameErrorCodeToHttp2ErrorCode(frame.error_code);
   absl::Status status = absl::Status(ErrorCodeToAbslStatusCode(error_code),
                                      "Reset stream frame received.");
@@ -618,6 +623,7 @@ Http2Status Http2ClientTransport::ProcessHttp2WindowUpdateFrame(
       << "Http2ClientTransport ProcessHttp2WindowUpdateFrame Promise { "
          " stream_id="
       << frame.stream_id << ", increment=" << frame.increment << "}";
+
   RefCountedPtr<Stream> stream = nullptr;
   if (frame.stream_id != 0) {
     stream = LookupStream(frame.stream_id);
@@ -638,7 +644,10 @@ Http2Status Http2ClientTransport::ProcessHttp2ContinuationFrame(
          "stream_id="
       << frame.stream_id << ", end_headers=" << frame.end_headers
       << ", payload=" << frame.payload.JoinIntoString() << " }";
+
+  // State update MUST happen before processing the frame.
   incoming_headers_.OnContinuationReceived(frame);
+
   RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
   if (stream == nullptr) {
     // TODO(tjagtap) : [PH2][P3] : Implement this.
@@ -801,7 +810,9 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
             self->incoming_headers_.IsWaitingForContinuationFrame(),
             /*incoming_header_stream_id*/
             self->incoming_headers_.GetStreamId(),
-            /*current_frame_header*/ header);
+            /*current_frame_header*/ header,
+            /*last_stream_id=*/self->GetLastStreamId(),
+            /*is_client=*/true);
 
         if (GPR_UNLIKELY(!status.IsOk())) {
           GRPC_DCHECK(status.GetType() ==

@@ -356,6 +356,13 @@ class Http2ClientTransport final : public ClientTransport,
   // transport party.
   uint32_t PeekNextStreamId() const { return next_stream_id_; }
 
+  // Returns the last stream id sent by the transport. If no streams were sent,
+  // returns 0. MUST be called from the transport party.
+  uint32_t GetLastStreamId() const {
+    const uint32_t next_stream_id = PeekNextStreamId();
+    return (next_stream_id > 1) ? (next_stream_id - 2) : 0;
+  }
+
   absl::Status AssignStreamId(RefCountedPtr<Stream> stream);
 
   void AddToStreamList(RefCountedPtr<Stream> stream);
