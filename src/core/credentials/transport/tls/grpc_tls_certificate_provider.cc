@@ -552,7 +552,7 @@ void InMemoryCertificateProvider::UpdateRoot(std::string root_certificates) {
 }
 
 void InMemoryCertificateProvider::UpdateIdentity(
-    PemKeyCertPairList pem_key_cert_pairs) {
+    const PemKeyCertPairList& pem_key_cert_pairs) {
   MutexLock lock_pem(&pem_cert_pairs_mu_);
   pem_key_cert_pairs_ = std::move(pem_key_cert_pairs);
 }

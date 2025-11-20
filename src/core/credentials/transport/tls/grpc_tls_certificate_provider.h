@@ -236,7 +236,7 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
   int64_t TestOnlyGetRefreshIntervalSecond() const;
 
   void UpdateRoot(std::string root_certificates);
-  void UpdateIdentity(PemKeyCertPairList pem_key_cert_pairs);
+  void UpdateIdentity(const PemKeyCertPairList& pem_key_cert_pairs);
 
  private:
   struct WatcherInfo {

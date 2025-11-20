@@ -164,11 +164,9 @@ void grpc_tls_credentials_options_set_identity_certificate_provider(
     grpc_tls_credentials_options* options,
     grpc_tls_certificate_provider* provider) {
   GRPC_CHECK_NE(options, nullptr);
-  grpc_core::RefCountedPtr<grpc_tls_certificate_provider> ref = provider->Ref();
-  options->set_identity_certificate_provider(
-      std::shared_ptr<grpc_tls_certificate_provider>(
-          ref.get(),
-          [ref = std::move(ref)](grpc_tls_certificate_provider*) {}));
+  std::shared_ptr<grpc_tls_certificate_provider> shared_provider(
+      provider->Ref().get(), [](auto p) { p->Unref(); });
+  options->set_identity_certificate_provider(std::move(shared_provider));
 }
 
 void grpc_tls_credentials_options_set_root_certificate_provider(
@@ -176,9 +174,7 @@ void grpc_tls_credentials_options_set_root_certificate_provider(
     grpc_tls_certificate_provider* provider) {
   GRPC_CHECK_NE(options, nullptr);
   GRPC_CHECK_NE(provider, nullptr);
-  grpc_core::RefCountedPtr<grpc_tls_certificate_provider> ref = provider->Ref();
-  options->set_root_certificate_provider(
-      std::shared_ptr<grpc_tls_certificate_provider>(
-          ref.get(),
-          [ref = std::move(ref)](grpc_tls_certificate_provider*) {}));
+  std::shared_ptr<grpc_tls_certificate_provider> shared_provider(
+      provider->Ref().get(), [](auto p) { p->Unref(); });
+  options->set_root_certificate_provider(std::move(shared_provider));
 }
