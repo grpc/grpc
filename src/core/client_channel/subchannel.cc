@@ -655,7 +655,7 @@ void Subchannel::QueuedCall::StartTransportStreamOpBatch(
   }
   // Enqueue the batch.
   buffered_call_.EnqueueBatch(batch);
-  // We hang on to the call combiner for the send_initial_metadata batch,
+  // We hold on to the call combiner for the send_initial_metadata batch,
   // but yield it for other batches.  This ensures that we are holding on
   // to the call combiner exactly once when we are ready to resume.
   if (!batch->send_initial_metadata) {
