@@ -1460,9 +1460,12 @@ RefCountedPtr<Subchannel::Call> Subchannel::CreateCall(
     // channel to re-queue the pick.
     if (connections_.empty()) return nullptr;
     // Otherwise, choose a connection.
-    connected_subchannel = ChooseConnectionLocked();
+    // Optimization: If the queue is non-empty, then we know there won't be
+    // a connection that we can send this RPC on, so we don't bother looking.
+    if (queued_calls_.empty()) connected_subchannel = ChooseConnectionLocked();
     // If we don't have a connection to send the RPC on, queue it.
     if (connected_subchannel == nullptr) {
+      // The QueuedCall object adds itself to queued_calls_.
       return RefCountedPtr<QueuedCall>(
           args.arena->New<QueuedCall>(WeakRef(), args));
     }
