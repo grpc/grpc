@@ -71,6 +71,7 @@ struct TransportChannelArgs {
   Duration settings_timeout;
   bool keepalive_permit_without_calls;
   bool enable_preferred_rx_crypto_frame_advertisement;
+  bool ack_pings;
   uint32_t max_header_list_size_soft_limit;
   int max_usable_hpack_table_size;
   int initial_sequence_number;

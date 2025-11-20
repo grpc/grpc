@@ -534,6 +534,7 @@ class Http2ClientTransport final : public ClientTransport,
 
   // Duration between two consecutive keepalive pings.
   Duration keepalive_time_;
+  bool ack_pings_;
   std::optional<PingManager> ping_manager_;
   std::optional<KeepaliveManager> keepalive_manager_;
 
