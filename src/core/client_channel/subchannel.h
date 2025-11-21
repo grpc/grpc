@@ -71,7 +71,7 @@ namespace grpc_core {
 // different from the SubchannelInterface that is exposed to LB policy
 // implementations.  The client channel provides an adaptor class
 // (SubchannelWrapper) that "converts" between the two.
-class Subchannel final : public DualRefCounted<Subchannel> {
+class Subchannel : public DualRefCounted<Subchannel> {
  public:
   class ConnectivityStateWatcherInterface
       : public RefCounted<ConnectivityStateWatcherInterface> {
@@ -141,24 +141,117 @@ class Subchannel final : public DualRefCounted<Subchannel> {
       OrphanablePtr<SubchannelConnector> connector,
       const grpc_resolved_address& address, const ChannelArgs& args);
 
+  // Throttles keepalive time to \a new_keepalive_time iff \a new_keepalive_time
+  // is larger than the subchannel's current keepalive time. The updated value
+  // will have an affect when the subchannel creates a new ConnectedSubchannel.
+  virtual void ThrottleKeepaliveTime(Duration new_keepalive_time) = 0;
+
+  virtual grpc_pollset_set* pollset_set() const = 0;
+
+  virtual channelz::SubchannelNode* channelz_node() = 0;
+
+  virtual const ChannelArgs& args() const = 0;
+
+  virtual std::string address() const = 0;
+
+  // Starts watching the subchannel's connectivity state.
+  // The first callback to the watcher will be delivered ~immediately.
+  // Subsequent callbacks will be delivered as the subchannel's state
+  // changes.
+  // The watcher will be destroyed either when the subchannel is
+  // destroyed or when CancelConnectivityStateWatch() is called.
+  virtual void WatchConnectivityState(
+      RefCountedPtr<ConnectivityStateWatcherInterface> watcher) = 0;
+
+  // Cancels a connectivity state watch.
+  // If the watcher has already been destroyed, this is a no-op.
+  virtual void CancelConnectivityStateWatch(
+      ConnectivityStateWatcherInterface* watcher) = 0;
+
+  // Starts a call in the v1 stack.
+  // Returns null if there is no connected subchannel.
+  struct CreateCallArgs {
+    grpc_polling_entity* pollent;
+    gpr_cycle_counter start_time;
+    Timestamp deadline;
+    Arena* arena;
+    CallCombiner* call_combiner;
+  };
+  virtual RefCountedPtr<Call> CreateCall(CreateCallArgs args,
+                                         grpc_error_handle* error) = 0;
+
+  // Used for calls in the v3 stack.
+  virtual RefCountedPtr<UnstartedCallDestination> call_destination() = 0;
+
+  // Attempt to connect to the backend.  Has no effect if already connected.
+  virtual void RequestConnection() = 0;
+
+  // Resets the connection backoff of the subchannel.
+  virtual void ResetBackoff() = 0;
+
+  // Access to data producer map.
+  // We do not hold refs to the data producer; the implementation is
+  // expected to register itself upon construction and remove itself
+  // upon destruction.
+  //
+  // Looks up the current data producer for type and invokes get_or_add()
+  // with a pointer to that producer in the map.  The get_or_add() function
+  // can modify the pointed-to value to update the map.  This provides a
+  // way to either re-use an existing producer or register a new one in
+  // a non-racy way.
+  virtual void GetOrAddDataProducer(
+      UniqueTypeName type,
+      std::function<void(DataProducerInterface**)> get_or_add) = 0;
+  // Removes the data producer from the map, if the current producer for
+  // this type is the specified producer.
+  virtual void RemoveDataProducer(DataProducerInterface* data_producer) = 0;
+
+  virtual std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+  event_engine() = 0;
+
+  // Ping API for v3 stack.
+  virtual void Ping(absl::AnyInvocable<void(absl::Status)> on_ack) = 0;
+  // Ping API for v1 stack.
+  // TODO(roth): Remove this when v3 migration is done.
+  virtual absl::Status Ping(grpc_closure* on_initiate,
+                            grpc_closure* on_ack) = 0;
+
+  // Exposed for testing purposes only.
+  static ChannelArgs MakeSubchannelArgs(
+      const ChannelArgs& channel_args, const ChannelArgs& address_args,
+      const RefCountedPtr<SubchannelPoolInterface>& subchannel_pool,
+      const std::string& channel_default_authority);
+
+ protected:
+  Subchannel();
+};
+
+class NewSubchannel final : public Subchannel {
+ public:
+  // Creates a subchannel.
+  static RefCountedPtr<Subchannel> Create(
+      OrphanablePtr<SubchannelConnector> connector,
+      const grpc_resolved_address& address, const ChannelArgs& args);
+
   // The ctor and dtor are not intended to use directly.
-  Subchannel(SubchannelKey key, OrphanablePtr<SubchannelConnector> connector,
-             const ChannelArgs& args);
-  ~Subchannel() override;
+  // Use Subchannel::Create() instead.
+  NewSubchannel(SubchannelKey key, OrphanablePtr<SubchannelConnector> connector,
+                const ChannelArgs& args);
+  ~NewSubchannel() override;
 
   // Throttles keepalive time to \a new_keepalive_time iff \a new_keepalive_time
   // is larger than the subchannel's current keepalive time. The updated value
   // will have an affect when the subchannel creates a new ConnectedSubchannel.
-  void ThrottleKeepaliveTime(Duration new_keepalive_time)
+  void ThrottleKeepaliveTime(Duration new_keepalive_time) override
       ABSL_LOCKS_EXCLUDED(mu_);
 
-  grpc_pollset_set* pollset_set() const { return pollset_set_; }
+  grpc_pollset_set* pollset_set() const override { return pollset_set_; }
 
-  channelz::SubchannelNode* channelz_node();
+  channelz::SubchannelNode* channelz_node() override;
 
-  const ChannelArgs& args() const { return args_; }
+  const ChannelArgs& args() const override { return args_; }
 
-  std::string address() const {
+  std::string address() const override {
     return grpc_sockaddr_to_uri(&key_.address())
         .value_or("<unknown address type>");
   }
@@ -170,33 +263,27 @@ class Subchannel final : public DualRefCounted<Subchannel> {
   // The watcher will be destroyed either when the subchannel is
   // destroyed or when CancelConnectivityStateWatch() is called.
   void WatchConnectivityState(
-      RefCountedPtr<ConnectivityStateWatcherInterface> watcher)
+      RefCountedPtr<ConnectivityStateWatcherInterface> watcher) override
       ABSL_LOCKS_EXCLUDED(mu_);
 
   // Cancels a connectivity state watch.
   // If the watcher has already been destroyed, this is a no-op.
   void CancelConnectivityStateWatch(ConnectivityStateWatcherInterface* watcher)
-      ABSL_LOCKS_EXCLUDED(mu_);
+      override ABSL_LOCKS_EXCLUDED(mu_);
 
   // Starts a call in the v1 stack.
   // Returns null if there is no connected subchannel.
-  struct CreateCallArgs {
-    grpc_polling_entity* pollent;
-    gpr_cycle_counter start_time;
-    Timestamp deadline;
-    Arena* arena;
-    CallCombiner* call_combiner;
-  };
-  RefCountedPtr<Call> CreateCall(CreateCallArgs args, grpc_error_handle* error);
+  RefCountedPtr<Call> CreateCall(CreateCallArgs args,
+                                 grpc_error_handle* error) override;
 
   // Used for calls in the v3 stack.
-  RefCountedPtr<UnstartedCallDestination> call_destination();
+  RefCountedPtr<UnstartedCallDestination> call_destination() override;
 
   // Attempt to connect to the backend.  Has no effect if already connected.
-  void RequestConnection() ABSL_LOCKS_EXCLUDED(mu_);
+  void RequestConnection() override ABSL_LOCKS_EXCLUDED(mu_);
 
   // Resets the connection backoff of the subchannel.
-  void ResetBackoff() ABSL_LOCKS_EXCLUDED(mu_);
+  void ResetBackoff() override ABSL_LOCKS_EXCLUDED(mu_);
 
   // Access to data producer map.
   // We do not hold refs to the data producer; the implementation is
@@ -210,35 +297,30 @@ class Subchannel final : public DualRefCounted<Subchannel> {
   // a non-racy way.
   void GetOrAddDataProducer(
       UniqueTypeName type,
-      std::function<void(DataProducerInterface**)> get_or_add)
+      std::function<void(DataProducerInterface**)> get_or_add) override
       ABSL_LOCKS_EXCLUDED(mu_);
   // Removes the data producer from the map, if the current producer for
   // this type is the specified producer.
-  void RemoveDataProducer(DataProducerInterface* data_producer)
+  void RemoveDataProducer(DataProducerInterface* data_producer) override
       ABSL_LOCKS_EXCLUDED(mu_);
 
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine() {
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine()
+      override {
     return event_engine_;
   }
 
   // Ping API for v3 stack.
-  void Ping(absl::AnyInvocable<void(absl::Status)> on_ack);
+  void Ping(absl::AnyInvocable<void(absl::Status)> on_ack) override;
   // Ping API for v1 stack.
   // TODO(roth): Remove this when v3 migration is done.
-  absl::Status Ping(grpc_closure* on_initiate, grpc_closure* on_ack);
-
-  // Exposed for testing purposes only.
-  static ChannelArgs MakeSubchannelArgs(
-      const ChannelArgs& channel_args, const ChannelArgs& address_args,
-      const RefCountedPtr<SubchannelPoolInterface>& subchannel_pool,
-      const std::string& channel_default_authority);
+  absl::Status Ping(grpc_closure* on_initiate, grpc_closure* on_ack) override;
 
  private:
   // A linked list of ConnectivityStateWatcherInterfaces that are monitoring
   // the subchannel's state.
   class ConnectivityStateWatcherList final {
    public:
-    explicit ConnectivityStateWatcherList(Subchannel* subchannel)
+    explicit ConnectivityStateWatcherList(NewSubchannel* subchannel)
         : subchannel_(subchannel) {}
 
     ~ConnectivityStateWatcherList() { Clear(); }
@@ -261,7 +343,7 @@ class Subchannel final : public DualRefCounted<Subchannel> {
     uint32_t GetMaxConnectionsPerSubchannel() const;
 
    private:
-    Subchannel* subchannel_;
+    NewSubchannel* subchannel_;
     absl::flat_hash_set<RefCountedPtr<ConnectivityStateWatcherInterface>,
                         RefCountedPtrHash<ConnectivityStateWatcherInterface>,
                         RefCountedPtrEq<ConnectivityStateWatcherInterface>>
