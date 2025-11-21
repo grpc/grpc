@@ -2393,8 +2393,8 @@ bool NewSubchannel::PublishTransportLocked() {
       socket_node->AddParent(channelz_node_.get());
     }
   }
-  transport->StartWatch(MakeRefCounted<ConnectionStateWatcher>(
-      connected_subchannel->WeakRef()));
+  transport->StartWatch(
+      MakeRefCounted<ConnectionStateWatcher>(connected_subchannel->WeakRef()));
   connections_.push_back(std::move(connected_subchannel));
   RetryQueuedRpcsLocked();
   MaybeUpdateConnectivityStateLocked();
