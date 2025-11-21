@@ -436,29 +436,10 @@ class Http2ClientTransport final : public ClientTransport,
   }
 
   // HTTP2 Settings
-  void MarkPeerSettingsResolved() {
-    settings_.SetPreviousSettingsPromiseResolved(true);
-  }
-  auto WaitForSettingsTimeoutDone() {
-    return [self = RefAsSubclass<Http2ClientTransport>()](absl::Status status) {
-      if (!status.ok()) {
-        GRPC_UNUSED absl::Status result = self->HandleError(
-            std::nullopt, Http2Status::Http2ConnectionError(
-                              Http2ErrorCode::kProtocolError,
-                              std::string(RFC9113::kSettingsTimeout)));
-      } else {
-        self->MarkPeerSettingsResolved();
-      }
-    };
-  }
-  // TODO(tjagtap) : [PH2][P1] : Plumbing. Call this after the SETTINGS frame
-  // has been written to endpoint_.
-  void SpawnWaitForSettingsTimeout() {
-    settings_.SetPreviousSettingsPromiseResolved(false);
-    general_party_->Spawn("WaitForSettingsTimeout",
-                          transport_settings_.WaitForSettingsTimeout(),
-                          WaitForSettingsTimeoutDone());
-  }
+  void MarkPeerSettingsPromiseResolved();
+  auto WaitForSettingsTimeoutOnDone();
+  void MaybeSpawnWaitForSettingsTimeout();
+  void EnforceLatestIncomingSettings();
 
   auto EndpointRead(const size_t num_bytes) {
     return Map(endpoint_.Read(num_bytes),
@@ -568,14 +549,6 @@ class Http2ClientTransport final : public ClientTransport,
     return ping_manager_.RequestPing(std::move(on_initiate), important);
   }
   auto WaitForPingAck() { return ping_manager_.WaitForPingAck(); }
-
-  void MaybeGetSettingsFrame(SliceBuffer& output_buf) {
-    std::optional<Http2Frame> settings_frame = settings_.MaybeSendUpdate();
-    if (settings_frame.has_value()) {
-      Serialize(absl::Span<Http2Frame>(&settings_frame.value(), 1), output_buf);
-      flow_control_.FlushedSettings();
-    }
-  }
 
   void MaybeGetWindowUpdateFrames(SliceBuffer& output_buf);
 

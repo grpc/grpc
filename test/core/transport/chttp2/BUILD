@@ -1007,6 +1007,7 @@ grpc_cc_test(
         "//src/core:http2_client_transport",
         "//src/core:http2_settings",
         "//src/core:http2_settings_manager",
+        "//src/core:http2_settings_promises",
         "//src/core:http2_status",
         "//src/core:http2_transport",
         "//src/core:message",

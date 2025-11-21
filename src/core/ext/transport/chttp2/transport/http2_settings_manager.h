@@ -32,6 +32,8 @@
 
 namespace grpc_core {
 
+// TODO(tjagtap) [PH2][P1][Settings] : Add new DCHECKs to PH2-Only functions in
+// this class.
 class Http2SettingsManager {
  public:
   // Only local and peer settings can be edited by the transport.
@@ -150,7 +152,14 @@ class Http2SettingsManager {
   Http2Settings sent_;
   Http2Settings acked_;
 
+  // For CHTTP2, MaybeSendUpdate() checks `update_state_` to ensure only one
+  // SETTINGS frame is in flight at a time. PH2 requires an additional
+  // constraint: a new SETTINGS frame cannot be sent until the SETTINGS-ACK
+  // timeout promise for the previous frame has resolved. This flag tracks this
+  // condition for PH2.
+  // TODO(tjagtap) [PH2][P1][Settings] : Refactor this.
   bool did_previous_settings_promise_resolve_ = true;
+
   // Number of incoming SETTINGS frames that we have received but not ACKed yet.
   uint32_t num_acks_to_send_ = 0;
 };
