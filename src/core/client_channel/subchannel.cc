@@ -117,7 +117,7 @@ RefCountedPtr<Subchannel::Call> Subchannel::Call::Ref(
 RefCountedPtr<Subchannel> Subchannel::Create(
     OrphanablePtr<SubchannelConnector> connector,
     const grpc_resolved_address& address, const ChannelArgs& args) {
-  if (!IsTransportStateWatcherEnabled()) {
+  if (!IsSubchannelConnectionScalingEnabled()) {
     return OldSubchannel::Create(std::move(connector), address, args);
   }
   return NewSubchannel::Create(std::move(connector), address, args);

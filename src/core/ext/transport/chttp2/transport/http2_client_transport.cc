@@ -597,7 +597,7 @@ Http2Status Http2ClientTransport::ProcessHttp2GoawayFrame(
         keepalive_time_.millis() > max_keepalive_time_millis
             ? INT_MAX
             : keepalive_time_.millis() * KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
-    if (!IsTransportStateWatcherEnabled()) {
+    if (!IsSubchannelConnectionScalingEnabled()) {
       status.SetPayload(kKeepaliveThrottlingKey,
                         absl::Cord(std::to_string(throttled_keepalive_time)));
     }
