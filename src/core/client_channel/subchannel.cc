@@ -1444,7 +1444,8 @@ class NewSubchannel::QueuedCallInterface {
 //
 
 class NewSubchannel::QueuedCall final
-    : public Subchannel::Call, public NewSubchannel::QueuedCallInterface {
+    : public Subchannel::Call,
+      public NewSubchannel::QueuedCallInterface {
  public:
   QueuedCall(WeakRefCountedPtr<NewSubchannel> subchannel, CreateCallArgs args);
   ~QueuedCall() override;
