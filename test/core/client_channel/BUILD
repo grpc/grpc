@@ -61,6 +61,7 @@ grpc_fuzz_test(
 grpc_fuzz_test(
     name = "subchannel_test",
     srcs = ["subchannel_test.cc"],
+    tags = ["subchannel_test"],
     external_deps = [
         "fuzztest",
         "fuzztest_main",
@@ -74,6 +75,7 @@ grpc_fuzz_test(
         "//:grpc_client_channel",
         "//:parse_address",
         "//test/core/call/yodel:yodel_test",
+        "//test/core/test_util:scoped_env_var",
     ],
 )
 

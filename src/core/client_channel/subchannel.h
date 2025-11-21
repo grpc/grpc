@@ -278,7 +278,9 @@ class Subchannel final : public DualRefCounted<Subchannel> {
 
   class ConnectionStateWatcher;
 
+  class QueuedCallInterface;
   class QueuedCall;
+  class QueuingUnstartedCallDestination;
 
   // Tears down any existing connection, and arranges for destruction
   void Orphaned() override ABSL_LOCKS_EXCLUDED(mu_);
@@ -378,7 +380,7 @@ class Subchannel final : public DualRefCounted<Subchannel> {
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 
   // Entries will be null for calls that have been cancelled.
-  std::deque<QueuedCall*> queued_calls_ ABSL_GUARDED_BY(mu_);
+  std::deque<QueuedCallInterface*> queued_calls_ ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace grpc_core
