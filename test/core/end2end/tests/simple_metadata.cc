@@ -23,11 +23,17 @@
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "gtest/gtest.h"
+#include "absl/log/globals.h"
 
 namespace grpc_core {
 namespace {
 
 CORE_END2END_TEST(CoreEnd2endTests, SimpleMetadata) {
+  // TODO(akshitpatel) : [PH2][P1] : Remove this once the test is fixed.
+  grpc_tracer_set_enabled("http2_ph2_transport", true);
+  absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
+  absl::SetGlobalVLogLevel(2);
+
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   IncomingStatusOnClient server_status;
   IncomingMetadata server_initial_metadata;
@@ -69,6 +75,10 @@ CORE_END2END_TEST(CoreEnd2endTests, SimpleMetadata) {
   EXPECT_EQ(server_initial_metadata.Get("key4"), "val4");
   EXPECT_EQ(server_status.GetTrailingMetadata("key5"), "val5");
   EXPECT_EQ(server_status.GetTrailingMetadata("key6"), "val6");
+
+  // TODO(akshitpatel) : [PH2][P1] : Remove this once the test is fixed.
+  absl::SetGlobalVLogLevel(-1);
+  grpc_tracer_set_enabled("http2_ph2_transport", false);
 }
 
 TEST(Fuzzers, CoreEnd2endTestsSimpleMetadataRegression1) {
