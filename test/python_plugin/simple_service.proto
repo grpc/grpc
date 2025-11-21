@@ -1,0 +1,47 @@
+// Test proto file for standalone Python plugin verification
+
+syntax = "proto3";
+
+package test.python_plugin;
+
+// Simple test service
+service TestService {
+    // Simple unary RPC
+    rpc SayHello(HelloRequest) returns (HelloReply) {}
+    
+    // Server streaming RPC
+    rpc ListNumbers(NumberRequest) returns (stream NumberReply) {}
+    
+    // Client streaming RPC
+    rpc SumNumbers(stream NumberRequest) returns (SumReply) {}
+    
+    // Bidirectional streaming RPC
+    rpc Chat(stream ChatMessage) returns (stream ChatMessage) {}
+}
+
+message HelloRequest {
+    string name = 1;
+}
+
+message HelloReply {
+    string message = 1;
+}
+
+message NumberRequest {
+    int32 start = 1;
+    int32 count = 2;
+}
+
+message NumberReply {
+    int32 number = 1;
+}
+
+message SumReply {
+    int32 sum = 1;
+}
+
+message ChatMessage {
+    string user = 1;
+    string message = 2;
+    int64 timestamp = 3;
+}
