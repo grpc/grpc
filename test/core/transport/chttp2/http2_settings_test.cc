@@ -683,6 +683,39 @@ TEST(Http2SettingsManagerTest, MultipleAcksNeeded) {
   EXPECT_EQ(settings_manager.MaybeSendAck(), 0u);
 }
 
+TEST(Http2SettingsManagerTest, PreviousSettingsPromiseResolved) {
+  Http2SettingsManager settings_manager;
+  EXPECT_TRUE(settings_manager.IsPreviousSettingsPromiseResolved());
+  settings_manager.SetPreviousSettingsPromiseResolved(false);
+  EXPECT_FALSE(settings_manager.IsPreviousSettingsPromiseResolved());
+  settings_manager.SetPreviousSettingsPromiseResolved(true);
+  EXPECT_TRUE(settings_manager.IsPreviousSettingsPromiseResolved());
+}
+
+TEST(Http2SettingsManagerTest, MaybeSendUpdateWithPreviousSettingsPromise) {
+  Http2SettingsManager settings_manager;
+  // Initially, settings should be sent.
+  EXPECT_THAT(settings_manager.MaybeSendUpdate(),
+              SettingsFrame(KeyValueVec{{4, 65535}}));
+  EXPECT_TRUE(settings_manager.AckLastSend());
+  // If we set promise resolved to false, MaybeSendUpdate should return nullopt.
+  settings_manager.SetPreviousSettingsPromiseResolved(false);
+  EXPECT_EQ(settings_manager.MaybeSendUpdate(), std::nullopt);
+  // If we set promise resolved to true, MaybeSendUpdate should return nullopt
+  // as settings are already sent.
+  settings_manager.SetPreviousSettingsPromiseResolved(true);
+  EXPECT_EQ(settings_manager.MaybeSendUpdate(), std::nullopt);
+
+  // Change settings
+  settings_manager.mutable_local().SetMaxFrameSize(100000);
+  settings_manager.SetPreviousSettingsPromiseResolved(false);
+  EXPECT_EQ(settings_manager.MaybeSendUpdate(), std::nullopt);
+  settings_manager.SetPreviousSettingsPromiseResolved(true);
+  EXPECT_THAT(settings_manager.MaybeSendUpdate(),
+              SettingsFrame(KeyValueVec{{5, 100000}}));
+  EXPECT_TRUE(settings_manager.AckLastSend());
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

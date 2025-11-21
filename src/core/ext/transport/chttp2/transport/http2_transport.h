@@ -27,6 +27,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -69,11 +70,9 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
 // A SETTINGS frame is appended if local settings changed.
 // SETTINGS ACK frames are appended for any incoming settings that need
 // acknowledgment.
-// Returns true if a SETTINGS frame was added to output_buf, indicating
-// a settings timeout should be started while waiting for the peer's ACK.
-bool MaybeGetSettingsAndSettingsAckFrames(
+void MaybeGetSettingsAndSettingsAckFrames(
     chttp2::TransportFlowControl& flow_control, Http2SettingsManager& settings,
-    SliceBuffer& output_buf);
+    SettingsTimeoutManager& transport_settings, SliceBuffer& output_buf);
 
 ///////////////////////////////////////////////////////////////////////////////
 // ChannelZ helpers

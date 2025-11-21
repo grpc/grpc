@@ -8248,8 +8248,9 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:function_ref",
-        "absl/log:check",
         "absl/log",
+        "absl/log:check",
+        "absl/status",
         "absl/strings",
     ],
     deps = [
@@ -8262,6 +8263,7 @@ grpc_cc_library(
         "http2_settings_manager",
         "http2_status",
         "poll",
+        "promise_status",
         "race",
         "seq",
         "sleep",
@@ -8270,6 +8272,7 @@ grpc_cc_library(
         "useful",
         "//:chttp2_frame",
         "//:gpr_platform",
+        "//:promise",
     ],
 )
 
@@ -8611,6 +8614,7 @@ grpc_cc_library(
         "header_assembler",
         "http2_settings",
         "http2_settings_manager",
+        "http2_settings_promises",
         "http2_status",
         "loop",
         "map",

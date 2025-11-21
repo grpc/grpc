@@ -45,6 +45,7 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/time.h"
@@ -451,11 +452,6 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingTimeout) {
       });
   mock_endpoint.ExpectWrite(
       {
-          helper_.EventEngineSliceFromHttp2WindowUpdateFrame(0, 4128769),
-      },
-      event_engine().get());
-  mock_endpoint.ExpectWrite(
-      {
           helper_.EventEngineSliceFromHttp2GoawayFrame(
               /*debug_data=*/"Ping timeout", /*last_stream_id=*/0,
               /*error_code=*/
@@ -464,8 +460,9 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingTimeout) {
       event_engine().get());
 
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
-      std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
-      event_engine(), /*on_receive_settings=*/nullptr);
+      std::move(mock_endpoint.promise_endpoint),
+      GetChannelArgs().Set("grpc.http2.ping_timeout_ms", 1000), event_engine(),
+      /*on_receive_settings=*/nullptr);
   client_transport->TestOnlySpawnPromise("PingRequest", [&client_transport] {
     return Map(TrySeq(client_transport->TestOnlyTriggerWriteCycle(),
                       [&client_transport] {
@@ -747,6 +744,11 @@ TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadata) {
                           kPathDemoServiceStep.end()),
               /*stream_id=*/1,
               /*end_headers=*/true, /*end_stream=*/true),
+          helper_.EventEngineSliceFromHttp2HeaderFrame(
+              std::string(kPathDemoServiceStep.begin(),
+                          kPathDemoServiceStep.end()),
+              /*stream_id=*/1,
+              /*end_headers=*/true, /*end_stream=*/true),
       },
       event_engine().get());
   auto read_cb_transport_close = mock_endpoint.ExpectDelayedReadClose(
@@ -771,7 +773,7 @@ TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadata) {
         EXPECT_EQ(out.JoinIntoString(), expect.JoinIntoString());
         read_cb();
       });
-  // Expect half close to be sent.
+
   mock_endpoint.ExpectWriteWithCallback(
       {
           helper_.EventEngineSliceFromEmptyHttp2DataFrame(/*stream_id=*/1,
@@ -781,16 +783,10 @@ TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadata) {
         EXPECT_EQ(out.JoinIntoString(), expect.JoinIntoString());
         on_done.Call();
       });
-
-  mock_endpoint.ExpectWrite(
-      {
-          helper_.EventEngineSliceFromHttp2WindowUpdateFrame(0, 4128769),
-      },
-      event_engine().get());
   mock_endpoint.ExpectWrite(
       {
           helper_.EventEngineSliceFromHttp2GoawayFrame(
-              /*debug_data=*/"Orphaned", /*last_stream_id=*/0,
+              /*debug_data=*/kConnectionClosed, /*last_stream_id=*/0,
               /*error_code=*/
               static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
       },
@@ -811,6 +807,7 @@ TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadata) {
                      (*metadata)->DebugString(),
                      ":path: /demo.Service/Step, GrpcStatusFromWire: true");
                  on_done.Call();
+                 read_cb_transport_close();
                  return absl::OkStatus();
                });
   });
@@ -832,10 +829,17 @@ TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadataWithResetStream) {
               /*stream_id=*/1,
               /*end_headers=*/true, /*end_stream=*/true),
           helper_.EventEngineSliceFromHttp2RstStreamFrame(),
+          helper_.EventEngineSliceFromHttp2HeaderFrame(
+              std::string(kPathDemoServiceStep.begin(),
+                          kPathDemoServiceStep.end()),
+              /*stream_id=*/1,
+              /*end_headers=*/true, /*end_stream=*/true),
+          helper_.EventEngineSliceFromHttp2RstStreamFrame(),
       },
       event_engine().get());
   auto read_cb_transport_close = mock_endpoint.ExpectDelayedReadClose(
       absl::UnavailableError(kConnectionClosed), event_engine().get());
+
   mock_endpoint.ExpectWrite(
       {
           EventEngineSlice(
@@ -857,13 +861,8 @@ TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadataWithResetStream) {
       });
   mock_endpoint.ExpectWrite(
       {
-          helper_.EventEngineSliceFromHttp2WindowUpdateFrame(0, 4128769),
-      },
-      event_engine().get());
-  mock_endpoint.ExpectWrite(
-      {
           helper_.EventEngineSliceFromHttp2GoawayFrame(
-              /*debug_data=*/"Orphaned", /*last_stream_id=*/0,
+              /*debug_data=*/kConnectionClosed, /*last_stream_id=*/0,
               /*error_code=*/
               static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
       },
@@ -883,6 +882,7 @@ TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadataWithResetStream) {
                      (*metadata)->DebugString(),
                      ":path: /demo.Service/Step, GrpcStatusFromWire: true");
                  on_done.Call();
+                 read_cb_transport_close();
                  return absl::OkStatus();
                });
   });
@@ -898,6 +898,7 @@ TEST_F(Http2ClientTransportTest, StreamCleanupResetStream) {
   EXPECT_CALL(on_done, Call());
   auto read_cb = mock_endpoint.ExpectDelayedRead(
       {
+          helper_.EventEngineSliceFromHttp2RstStreamFrame(),
           helper_.EventEngineSliceFromHttp2RstStreamFrame(),
       },
       event_engine().get());
@@ -922,15 +923,11 @@ TEST_F(Http2ClientTransportTest, StreamCleanupResetStream) {
         EXPECT_EQ(out.JoinIntoString(), expect.JoinIntoString());
         read_cb();
       });
-  mock_endpoint.ExpectWrite(
-      {
-          helper_.EventEngineSliceFromHttp2WindowUpdateFrame(0, 4128769),
-      },
-      event_engine().get());
+
   mock_endpoint.ExpectWrite(
       {
           helper_.EventEngineSliceFromHttp2GoawayFrame(
-              /*debug_data=*/"Orphaned", /*last_stream_id=*/0,
+              /*debug_data=*/kConnectionClosed, /*last_stream_id=*/0,
               /*error_code=*/
               static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
       },
@@ -951,6 +948,7 @@ TEST_F(Http2ClientTransportTest, StreamCleanupResetStream) {
                            "grpc-message: Reset stream frame received., "
                            "grpc-status: INTERNAL, GrpcCallWasCancelled: true");
                  on_done.Call();
+                 read_cb_transport_close();
                  return absl::OkStatus();
                });
   });
@@ -984,15 +982,11 @@ TEST_F(Http2ClientTransportTest, Http2ClientTransportAbortTest) {
           helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
       },
       event_engine().get());
-  mock_endpoint.ExpectWrite(
-      {
-          helper_.EventEngineSliceFromHttp2WindowUpdateFrame(0, 4128769),
-      },
-      event_engine().get());
+
   mock_endpoint.ExpectWrite(
       {
           helper_.EventEngineSliceFromHttp2GoawayFrame(
-              /*debug_data=*/"Orphaned", /*last_stream_id=*/0,
+              /*debug_data=*/kConnectionClosed, /*last_stream_id=*/0,
               /*error_code=*/
               static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
       },
@@ -1025,6 +1019,7 @@ TEST_F(Http2ClientTransportTest, Http2ClientTransportAbortTest) {
                                   "grpc-message: CANCELLED, grpc-status: "
                                   "CANCELLED, GrpcCallWasCancelled: true");
                      on_done.Call();
+                     std::move(read_close)();
                      return Empty{};
                    });
       });
@@ -1309,25 +1304,27 @@ TEST_F(Http2ClientTransportTest, TestFlowControlWindow) {
   auto read_close = mock_endpoint.ExpectDelayedReadClose(
       absl::UnavailableError(kConnectionClosed), event_engine().get());
 
-  mock_endpoint.ExpectWriteWithCallback(
+  mock_endpoint.ExpectWrite(
       {
           EventEngineSlice(
               grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
           helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
       },
-      event_engine().get(), [&](SliceBuffer& out, SliceBuffer& expect) {
-        EXPECT_EQ(out.JoinIntoString(), expect.JoinIntoString());
-      });
-  mock_endpoint.ExpectWrite(
+      event_engine().get());
+
+  mock_endpoint.ExpectWriteWithCallback(
       {
           helper_.EventEngineSliceFromHttp2WindowUpdateFrame(0, 4128769),
       },
-      event_engine().get());
+      event_engine().get(), [&](SliceBuffer& out, SliceBuffer& expect) {
+        EXPECT_EQ(out.JoinIntoString(), expect.JoinIntoString());
+        std::move(read_close)();
+      });
 
   mock_endpoint.ExpectWrite(
       {
           helper_.EventEngineSliceFromHttp2GoawayFrame(
-              /*debug_data=*/"Orphaned", /*last_stream_id=*/0,
+              /*debug_data=*/kConnectionClosed, /*last_stream_id=*/0,
               /*error_code=*/
               static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
       },

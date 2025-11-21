@@ -489,10 +489,8 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
   } else {
     // Process the SETTINGS ACK Frame
     if (settings_.AckLastSend()) {
-      // TODO(tjagtap) [PH2][P1][Settings] Fix this bug ASAP.
-      // Causing DCHECKS to fail because of incomplete plumbing.
-      // This is a bug.
-      // transport_settings_.OnSettingsAckReceived();
+      // Stop the settings timeout promise.
+      transport_settings_.OnSettingsAckReceived();
     } else {
       // TODO(tjagtap) [PH2][P4] : The RFC does not say anything about what
       // should happen if we receive an unsolicited SETTINGS ACK. Decide if we
@@ -964,12 +962,13 @@ auto Http2ClientTransport::WriteControlFrames() {
   if (is_first_write_) {
     GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteControlFrames "
                               "GRPC_CHTTP2_CLIENT_CONNECT_STRING";
-    output_buf.Append(Slice(
-        grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)));
+    output_buf.Append(
+        Slice::FromCopiedString(GRPC_CHTTP2_CLIENT_CONNECT_STRING));
     is_first_write_ = false;
     //  SETTINGS MUST be the first frame to be written onto a connection as per
     //  RFC9113.
-    MaybeGetSettingsFrame(output_buf);
+    MaybeGetSettingsAndSettingsAckFrames(flow_control_, settings_,
+                                         transport_settings_, output_buf);
   }
 
   // Order of Control Frames is important.
@@ -982,7 +981,8 @@ auto Http2ClientTransport::WriteControlFrames() {
 
   goaway_manager_.MaybeGetSerializedGoawayFrame(output_buf);
   if (!goaway_manager_.IsImmediateGoAway()) {
-    MaybeGetSettingsFrame(output_buf);
+    MaybeGetSettingsAndSettingsAckFrames(flow_control_, settings_,
+                                         transport_settings_, output_buf);
     ping_manager_.MaybeGetSerializedPingFrames(output_buf,
                                                NextAllowedPingInterval());
     MaybeGetWindowUpdateFrames(output_buf);
@@ -1015,6 +1015,7 @@ void Http2ClientTransport::NotifyControlFramesWriteDone() {
   }
   ping_manager_.NotifyPingSent(ping_timeout_);
   goaway_manager_.NotifyGoawaySent();
+  MaybeSpawnWaitForSettingsTimeout();
 }
 
 auto Http2ClientTransport::SerializeAndWrite(std::vector<Http2Frame>&& frames) {
@@ -1281,13 +1282,60 @@ void Http2ClientTransport::AddToStreamList(RefCountedPtr<Stream> stream) {
   }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Settings and Window Update Management
+
+void Http2ClientTransport::MarkPeerSettingsPromiseResolved() {
+  // TODO(tjagtap) [PH2][P1][Settings] Move this out of the transport into a
+  // Settings class.
+  settings_.SetPreviousSettingsPromiseResolved(true);
+}
+
+// TODO(tjagtap) : [PH2][P1][Settings] : Plumb this
+void Http2ClientTransport::EnforceLatestIncomingSettings() {
+  encoder_.SetMaxTableSize(settings_.peer().header_table_size());
+}
+
+auto Http2ClientTransport::WaitForSettingsTimeoutOnDone() {
+  // TODO(tjagtap) : [PH2][P1][Settings] : Handle Transport Close case.
+  // TODO(tjagtap) : [PH2][P1][Settings] Move this out of the transport into a
+  // Settings class.
+  return [self = RefAsSubclass<Http2ClientTransport>()](absl::Status status) {
+    self->MarkPeerSettingsPromiseResolved();
+    if (!status.ok()) {
+      GRPC_UNUSED absl::Status result = self->HandleError(
+          std::nullopt, Http2Status::Http2ConnectionError(
+                            Http2ErrorCode::kProtocolError,
+                            std::string(RFC9113::kSettingsTimeout)));
+    }
+  };
+}
+
+void Http2ClientTransport::MaybeSpawnWaitForSettingsTimeout() {
+  // TODO(tjagtap) [PH2][P1][Settings] Move this out of the transport into a
+  // Settings class.
+  // TODO(tjagtap) [PH2][P1][Settings] Add more DCHECKs to the new settings
+  // class.
+  if (transport_settings_.ShouldSpawnTimeoutWaiter()) {
+    GRPC_HTTP2_CLIENT_DLOG
+        << "Http2ClientTransport::MaybeSpawnWaitForSettingsTimeout Spawning";
+    settings_.SetPreviousSettingsPromiseResolved(false);
+    general_party_->Spawn("WaitForSettingsTimeout",
+                          transport_settings_.WaitForSettingsTimeout(),
+                          WaitForSettingsTimeoutOnDone());
+  }
+}
+
 void Http2ClientTransport::MaybeGetWindowUpdateFrames(SliceBuffer& output_buf) {
   std::vector<Http2Frame> frames;
   frames.reserve(window_update_list_.size() + 1);
   uint32_t window_size =
       flow_control_.DesiredAnnounceSize(/*writing_anyway=*/true);
   if (window_size > 0) {
-    GRPC_HTTP2_CLIENT_DLOG << "Transport Window Update : " << window_size;
+    GRPC_HTTP2_CLIENT_DLOG
+        << "Http2ClientTransport::MaybeGetWindowUpdateFrames Transport Window "
+           "Update : "
+        << window_size;
     frames.emplace_back(Http2WindowUpdateFrame{/*stream_id=*/0, window_size});
     flow_control_.SentUpdate(window_size);
   }
@@ -1296,15 +1344,20 @@ void Http2ClientTransport::MaybeGetWindowUpdateFrames(SliceBuffer& output_buf) {
     if (stream != nullptr && stream->CanSendWindowUpdateFrames()) {
       const uint32_t increment = stream->flow_control.MaybeSendUpdate();
       if (increment > 0) {
-        GRPC_HTTP2_CLIENT_DLOG << "Stream Window Update { " << stream_id << ", "
-                               << window_size << " }";
+        GRPC_HTTP2_CLIENT_DLOG
+            << "Http2ClientTransport::MaybeGetWindowUpdateFrames Stream Window "
+               "Update { "
+            << stream_id << ", " << window_size << " }";
         frames.emplace_back(Http2WindowUpdateFrame{stream_id, increment});
       }
     }
   }
   window_update_list_.clear();
   if (!frames.empty()) {
-    GRPC_HTTP2_CLIENT_DLOG << "Total Window Update Frames : " << frames.size();
+    GRPC_HTTP2_CLIENT_DLOG
+        << "Http2ClientTransport::MaybeGetWindowUpdateFrames Total Window "
+           "Update Frames : "
+        << frames.size();
     Serialize(absl::Span<Http2Frame>(frames), output_buf);
   }
 }
