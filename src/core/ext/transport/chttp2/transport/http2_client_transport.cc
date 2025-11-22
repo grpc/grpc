@@ -957,7 +957,6 @@ void Http2ClientTransport::ActOnFlowControlAction(
 // Write Related Promises and Promise Factories
 
 auto Http2ClientTransport::WriteControlFrames() {
-  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteControlFrames Factory";
   SliceBuffer output_buf;
   if (is_first_write_) {
     GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteControlFrames "
@@ -988,21 +987,18 @@ auto Http2ClientTransport::WriteControlFrames() {
     MaybeGetWindowUpdateFrames(output_buf);
   }
   const uint64_t buffer_length = output_buf.Length();
-  return If(
+  ztrace_collector_->Append(PromiseEndpointWriteTrace{buffer_length});
+  GRPC_HTTP2_CLIENT_DLOG
+      << "Http2ClientTransport WriteControlFrames Writing buffer of size "
+      << buffer_length << " to endpoint";
+  return AssertResultType<absl::Status>(If(
       buffer_length > 0,
       [self = RefAsSubclass<Http2ClientTransport>(),
-       output_buf = std::move(output_buf), buffer_length]() mutable {
-        GRPC_HTTP2_CLIENT_DLOG
-            << "Http2ClientTransport WriteControlFrames Writing buffer of size "
-            << buffer_length << " to endpoint";
+       output_buf = std::move(output_buf)]() mutable {
         return self->endpoint_.Write(std::move(output_buf),
                                      PromiseEndpoint::WriteArgs{});
       },
-      [self = RefAsSubclass<Http2ClientTransport>(), buffer_length] {
-        self->ztrace_collector_->Append(
-            PromiseEndpointWriteTrace{buffer_length});
-        return absl::OkStatus();
-      });
+      []() { return ImmediateOkStatus(); }));
 }
 
 void Http2ClientTransport::NotifyControlFramesWriteDone() {
