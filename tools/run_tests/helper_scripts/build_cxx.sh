@@ -30,14 +30,14 @@ cd "$(dirname "$0")/../../.."
 mkdir -p cmake/install
 INSTALL_PATH="$(pwd)/cmake/install"
 
-echo "sergiitk@ >> Install abseil-cpp since opentelemetry CMake uses find_package to find it."
+echo 'sergiitk@ >> Install abseil-cpp since opentelemetry CMake uses find_package to find it.'
 cd third_party/abseil-cpp
 mkdir build
 cd build
 cmake -DABSL_BUILD_TESTING=OFF -DCMAKE_BUILD_TYPE="${MSBUILD_CONFIG}" -DCMAKE_INSTALL_PREFIX="${INSTALL_PATH}" "$@" ..
 make -j"${GRPC_RUN_TESTS_JOBS}" install
 
-echo 'Install opentelemetry-cpp since we only support "package" mode for opentelemetry at present.'
+echo 'sergiitk@ >> Install opentelemetry-cpp since we only support "package" mode for opentelemetry at present.'
 cd ../../..
 cd third_party/opentelemetry-cpp
 mkdir build
@@ -49,9 +49,8 @@ cd ../../..
 mkdir -p cmake/build
 cd cmake/build
 
-
-echo "sergiitk@ >> Preppin for the main build"
-# TODO(yashykt/veblush): Remove workaround after fixing b/332425004 
+echo "sergiitk@ >> Prepping for the main build"
+# TODO(yashykt/veblush): Remove workaround after fixing b/332425004
 if [ "${GRPC_RUNTESTS_ARCHITECTURE}" = "x86" ]; then
     cmake -DgRPC_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE="${MSBUILD_CONFIG}" "$@" ../..
 else

@@ -52,17 +52,20 @@ fi
 
 # Passed to build_cxx.sh via GRPC_RUN_TESTS_JOBS
 NPROC="$(nproc)"
-JOBS="$((${NPROC:-0} + 1))"
-# JOBS="$((${NPROC:-1} / 2 + 1))"
+# JOBS="$((${NPROC:-0} + 1))"
+JOBS="$((${NPROC:-1} / 2 + 1))"
 
 python3 tools/run_tests/run_tests.py -t -j "${JOBS}" -x "${REPORT_XML_FILE}" --report_suite_name "${REPORT_SUITE_NAME}" "$@" || FAILED="true"
+
+echo "Finished grpc_run_tests_harness_test.sh"
+
+echo -e "-- Memory --\n$(lsmem --summary)\n$(free -h --si)\n"
+echo -e "-- Block devices --\n$(lsblk --all --fs --paths)\n"
 
 if [ -x "$(command -v ccache)" ]
 then
   ccache --show-stats || true
 fi
-
-echo "Finished grpc_run_tests_harness_test.sh"
 
 if [ "$FAILED" != "" ]
 then
