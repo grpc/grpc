@@ -57,14 +57,43 @@ constexpr uint32_t kMaxWriteSize = /*10 MB*/ 10u * 1024u * 1024u;
 constexpr uint32_t kGoawaySendTimeoutSeconds = 5u;
 
 ///////////////////////////////////////////////////////////////////////////////
-// Settings and ChannelArgs helpers
+// Settings helpers
 
-void InitLocalSettings(Http2Settings& settings, const bool is_client);
+void InitLocalSettings(Http2Settings& settings, bool is_client);
+
+////////////////////////////////////////////////////////////////////////////////
+// Channel Args helpers
+
+constexpr Duration kDefaultPingTimeout = Duration::Minutes(1);
+constexpr Duration kDefaultKeepaliveTimeout = Duration::Seconds(20);
+constexpr bool kDefaultKeepalivePermitWithoutCalls = false;
+constexpr bool kDefaultEnablePreferredRxCryptoFrameAdvertisement = false;
+
+constexpr Duration kClientKeepaliveTime = Duration::Infinity();
+
+constexpr Duration kServerKeepaliveTime = Duration::Hours(2);
+
+struct TransportChannelArgs {
+  Duration keepalive_time;
+  Duration keepalive_timeout;
+  Duration ping_timeout;
+  Duration settings_timeout;
+  bool keepalive_permit_without_calls;
+  bool enable_preferred_rx_crypto_frame_advertisement;
+  uint32_t max_header_list_size_soft_limit;
+  int max_hpack_table_size;
+  uint32_t initial_sequence_number = 0;
+};
+
+void ReadChannelArgs(const ChannelArgs& channel_args,
+                     TransportChannelArgs& args, Http2Settings& local_settings,
+                     chttp2::TransportFlowControl& flow_control,
+                     bool is_client);
 
 void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
                                  Http2Settings& local_settings,
                                  chttp2::TransportFlowControl& flow_control,
-                                 const bool is_client);
+                                 bool is_client);
 
 // Appends SETTINGS and SETTINGS ACK frames to output_buf if needed.
 // A SETTINGS frame is appended if local settings changed.

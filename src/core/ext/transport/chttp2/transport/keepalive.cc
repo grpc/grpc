@@ -17,22 +17,28 @@
 //
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 
+#include <utility>
+
 #include "src/core/lib/promise/all_ok.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/loop.h"
+#include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 namespace http2 {
 KeepaliveManager::KeepaliveManager(
     std::unique_ptr<KeepAliveInterface> keep_alive_interface,
-    Duration keepalive_timeout, const Duration keepalive_time)
+    Duration keepalive_timeout, const Duration keepalive_time, Party* party)
     : keep_alive_interface_(std::move(keep_alive_interface)),
       keepalive_timeout_(keepalive_timeout),
-      keepalive_time_(keepalive_time) {}
+      keepalive_time_(keepalive_time) {
+  MaybeSpawnKeepaliveLoop(party);
+}
 
 auto KeepaliveManager::WaitForKeepAliveTimeout() {
   return AssertResultType<absl::Status>(
@@ -84,7 +90,7 @@ auto KeepaliveManager::MaybeSendKeepAlivePing() {
              }));
 }
 
-void KeepaliveManager::Spawn(Party* party) {
+void KeepaliveManager::MaybeSpawnKeepaliveLoop(Party* party) {
   if (!IsKeepAliveNeeded()) {
     GRPC_HTTP2_KEEPALIVE_LOG << "Not spawning keepalive loop.";
     return;

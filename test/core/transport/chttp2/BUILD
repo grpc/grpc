@@ -1201,6 +1201,7 @@ grpc_fuzz_test(
         "//src/core:loop",
         "//src/core:map",
         "//src/core:sleep",
+        "//src/core:time",
         "//src/core:try_seq",
         "//test/core/call/yodel:yodel_test",
     ],

@@ -17,6 +17,10 @@
 //
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
 
+#include <memory>
+#include <utility>
+
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/party.h"
@@ -55,13 +59,14 @@ Promise<absl::Status> PingManager::PingPromiseCallbacks::WaitForPingAck() {
 }
 
 // Ping System implementation
-PingManager::PingManager(const ChannelArgs& channel_args,
+PingManager::PingManager(const ChannelArgs& channel_args, Duration ping_timeout,
                          std::unique_ptr<PingInterface> ping_interface,
                          std::shared_ptr<EventEngine> event_engine)
     : ping_callbacks_(event_engine),
       ping_abuse_policy_(channel_args),
       ping_rate_policy_(channel_args, /*is_client=*/true),
-      ping_interface_(std::move(ping_interface)) {}
+      ping_interface_(std::move(ping_interface)),
+      ping_timeout_(ping_timeout) {}
 
 void PingManager::TriggerDelayedPing(const Duration wait) {
   // Spawn at most once.
@@ -171,9 +176,9 @@ void PingManager::MaybeGetSerializedPingFrames(
   }
 }
 
-void PingManager::NotifyPingSent(const Duration ping_timeout) {
+void PingManager::NotifyPingSent() {
   if (opaque_data_.has_value()) {
-    SpawnTimeout(ping_timeout, opaque_data_.value());
+    SpawnTimeout(ping_timeout_, opaque_data_.value());
     SentPing();
     opaque_data_.reset();
   }
