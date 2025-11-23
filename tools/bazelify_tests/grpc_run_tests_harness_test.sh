@@ -59,8 +59,10 @@ python3 tools/run_tests/run_tests.py -t -j "${JOBS}" -x "${REPORT_XML_FILE}" --r
 
 echo "Finished grpc_run_tests_harness_test.sh"
 
+{ set +x; } 2>/dev/null
 echo -e "-- Memory --\n$(lsmem --summary)\n$(free -h --si)\n"
 echo -e "-- Block devices --\n$(lsblk --all --fs --paths)\n"
+set -x
 
 if [ -x "$(command -v ccache)" ]
 then
