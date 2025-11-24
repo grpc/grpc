@@ -334,6 +334,14 @@
   expiry: 2026/02/01
   owner: snohria@google.com
   test_tags: [resource_quota_test]
+- name: track_zero_copy_allocations_in_resource_quota
+  description:
+    Track the memory allocattions under the zero copy path in
+    Resource Quota. This includes the encryption / decryption
+    for privacy-and-integrity payloads.
+  expiry: 2026/05/01
+  owner: snohria@google.com
+  test_tags: [resource_quota_test]
 - name: transport_state_watcher
   description: New state watcher API between transport and subchannel.
   expiry: 2026/02/01
