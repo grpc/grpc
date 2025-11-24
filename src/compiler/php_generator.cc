@@ -16,9 +16,9 @@
  *
  */
 
-#include <map>
-
 #include <google/protobuf/compiler/php/php_generator.h>
+
+#include <map>
 
 #include "src/compiler/config.h"
 #include "src/compiler/generator_helpers.h"
@@ -50,7 +50,7 @@ std::string PackageName(const FileDescriptor* file) {
   if (file->options().has_php_namespace()) {
     return file->options().php_namespace();
   } else {
-    return ConvertToPhpNamespace(file->package());
+    return ConvertToPhpNamespace(std::string(file->package()));
   }
 }
 
@@ -108,7 +108,8 @@ void PrintMethod(const MethodDescriptor* method, Printer* out) {
     if (method->server_streaming()) {
       vars["return_type_id"] = "\\Grpc\\ServerStreamingCall";
     } else {
-      vars["return_type_id"] = "\\Grpc\\UnaryCall";
+      vars["return_type_id"] =
+          "\\Grpc\\UnaryCall<\\" + vars["output_type_id"] + ">";
     }
     out->Print(vars,
                " * @param \\$input_type_id$ $$argument input argument\n"

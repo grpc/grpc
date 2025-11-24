@@ -19,9 +19,9 @@
 #ifndef GRPCPP_IMPL_DELEGATING_CHANNEL_H
 #define GRPCPP_IMPL_DELEGATING_CHANNEL_H
 
-#include <memory>
-
 #include <grpcpp/impl/channel_interface.h>
+
+#include <memory>
 
 namespace grpc {
 namespace experimental {
@@ -36,6 +36,11 @@ class DelegatingChannel : public grpc::ChannelInterface {
 
   grpc_connectivity_state GetState(bool try_to_connect) override {
     return delegate_channel()->GetState(try_to_connect);
+  }
+
+  grpc_event_engine::experimental::MemoryAllocator* memory_allocator()
+      const override {
+    return delegate_channel_->memory_allocator();
   }
 
   std::shared_ptr<grpc::ChannelInterface> delegate_channel() {

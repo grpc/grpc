@@ -75,9 +75,11 @@ def _get_server_status(
 def _create_server(config: control_pb2.ServerConfig) -> Tuple[aio.Server, int]:
     """Creates a server object according to the ServerConfig."""
     channel_args = tuple(
-        (arg.name, arg.str_value)
-        if arg.HasField("str_value")
-        else (arg.name, int(arg.int_value))
+        (
+            (arg.name, arg.str_value)
+            if arg.HasField("str_value")
+            else (arg.name, int(arg.int_value))
+        )
         for arg in config.channel_args
     )
 

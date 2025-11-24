@@ -16,15 +16,16 @@
  *
  */
 
+#include <grpc/grpc.h>
+#include <grpcpp/ext/proto_server_reflection_plugin.h>
+#include <grpcpp/grpcpp.h>
+
 #include <iostream>
 #include <string>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-
-#include <grpc/grpc.h>
-#include <grpcpp/ext/proto_server_reflection_plugin.h>
-#include <grpcpp/grpcpp.h>
+#include "absl/log/initialize.h"
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
@@ -72,7 +73,7 @@ class Reader final : public grpc::ClientReadReactor<helloworld::HelloReply> {
 
  private:
   absl::Mutex mu_;
-  absl::optional<grpc::Status> result_;
+  std::optional<grpc::Status> result_;
   helloworld::HelloReply res_;
 };
 
@@ -80,6 +81,7 @@ class Reader final : public grpc::ClientReadReactor<helloworld::HelloReply> {
 
 int main(int argc, char* argv[]) {
   absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
   grpc::ChannelArguments channel_arguments;
   grpc::ResourceQuota quota;
   quota.Resize(absl::GetFlag(FLAGS_quota) * 1024 * 1024);

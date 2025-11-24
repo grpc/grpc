@@ -15,6 +15,7 @@
 #ifndef OBSERVABILITY_MAIN_H
 #define OBSERVABILITY_MAIN_H
 
+#include <grpc/status.h>
 #include <stdint.h>
 
 #include <algorithm>
@@ -25,11 +26,9 @@
 #include <utility>
 #include <vector>
 
-#include "absl/strings/string_view.h"
 #include "constants.h"
 #include "python_observability_context.h"
-
-#include <grpc/status.h>
+#include "absl/strings/string_view.h"
 
 namespace grpc_observability {
 

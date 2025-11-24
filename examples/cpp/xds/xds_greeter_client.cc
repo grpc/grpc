@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpcpp/grpcpp.h>
+
 #include <condition_variable>
 #include <iostream>
 #include <memory>
@@ -24,8 +26,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-
-#include <grpcpp/grpcpp.h>
+#include "absl/log/initialize.h"
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
@@ -34,7 +35,7 @@
 #endif
 
 ABSL_FLAG(std::string, target, "xds:///helloworld:50051", "Target string");
-ABSL_FLAG(bool, secure, true, "Secure mode");
+ABSL_FLAG(bool, xds_creds, true, "Secure mode");
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -96,9 +97,10 @@ class GreeterClient {
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
   GreeterClient greeter(grpc::CreateChannel(
       absl::GetFlag(FLAGS_target),
-      absl::GetFlag(FLAGS_secure)
+      absl::GetFlag(FLAGS_xds_creds)
           ? grpc::XdsCredentials(grpc::InsecureChannelCredentials())
           : grpc::InsecureChannelCredentials()));
   std::string user("world");

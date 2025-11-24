@@ -17,9 +17,9 @@
 
 #include <utility>
 
-#include "src/core/lib/transport/call_spine.h"
-#include "src/core/lib/transport/message.h"
-#include "src/core/lib/transport/metadata.h"
+#include "src/core/call/call_spine.h"
+#include "src/core/call/message.h"
+#include "src/core/call/metadata.h"
 
 namespace grpc_core {
 
@@ -51,7 +51,7 @@ class RequestBuffer {
       return [this]() { return PollPullClientInitialMetadata(); };
     }
     // Pull a message. Returns a promise that resolves to a
-    // ValueOrFailure<absl::optional<MessageHandle>>.
+    // ValueOrFailure<std::optional<MessageHandle>>.
     GRPC_MUST_USE_RESULT auto PullMessage() {
       return [this]() { return PollPullMessage(); };
     }
@@ -62,7 +62,7 @@ class RequestBuffer {
     friend class RequestBuffer;
 
     Poll<ValueOrFailure<ClientMetadataHandle>> PollPullClientInitialMetadata();
-    Poll<ValueOrFailure<absl::optional<MessageHandle>>> PollPullMessage();
+    Poll<ValueOrFailure<std::optional<MessageHandle>>> PollPullMessage();
 
     template <typename T>
     T ClaimObject(T& object) ABSL_EXCLUSIVE_LOCKS_REQUIRED(buffer_->mu_) {
@@ -85,6 +85,8 @@ class RequestBuffer {
     Waker pull_waker_;
   };
 
+  RequestBuffer();
+
   // Push ClientInitialMetadata into the buffer.
   // This is instantaneous, and returns success with the amount of data
   // buffered, or failure.
@@ -105,9 +107,15 @@ class RequestBuffer {
   // reader. All other readers will see failure.
   void Commit(Reader* winner);
 
+  bool committed() const {
+    MutexLock lock(&mu_);
+    return winner_ != nullptr;
+  }
+
  private:
   // Buffering state: we're collecting metadata and messages.
   struct Buffering {
+    Buffering();
     // Initial metadata, or nullptr if not yet received.
     ClientMetadataHandle initial_metadata;
     // Buffered messages.
@@ -135,7 +143,7 @@ class RequestBuffer {
     explicit Cancelled(absl::Status error) : error(std::move(error)) {}
     absl::Status error;
   };
-  using State = absl::variant<Buffering, Buffered, Streaming, Cancelled>;
+  using State = std::variant<Buffering, Buffered, Streaming, Cancelled>;
 
   Poll<ValueOrFailure<size_t>> PollPushMessage(MessageHandle& message);
   Pending PendingPull(Reader* reader) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
@@ -147,7 +155,7 @@ class RequestBuffer {
     return Pending{};
   }
   void MaybeSwitchToStreaming() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    auto& buffering = absl::get<Buffering>(state_);
+    auto& buffering = std::get<Buffering>(state_);
     if (winner_ == nullptr) return;
     if (winner_->message_index_ < buffering.messages.size()) return;
     state_.emplace<Streaming>();
@@ -168,9 +176,11 @@ class RequestBuffer {
     readers_.erase(reader);
   }
 
-  Mutex mu_;
+  std::string DebugString(Reader* caller) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
+  mutable Mutex mu_;
   Reader* winner_ ABSL_GUARDED_BY(mu_){nullptr};
-  State state_ ABSL_GUARDED_BY(mu_){Buffering{}};
+  State state_ ABSL_GUARDED_BY(mu_);
   // TODO(ctiller): change this to an intrusively linked list to avoid
   // allocations.
   absl::flat_hash_set<Reader*> readers_ ABSL_GUARDED_BY(mu_);

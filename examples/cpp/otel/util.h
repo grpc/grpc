@@ -29,5 +29,6 @@ void AddLatencyView(opentelemetry::sdk::metrics::MeterProvider* provider,
                     const std::string& name, const std::string& unit);
 
 void RunServer(uint16_t port);
+void RunXdsEnabledServer(uint16_t port);
 void RunClient(const std::string& target_str);
 #endif  // GRPCPP_EXAMPLES_CPP_OTEL_UTIL_H

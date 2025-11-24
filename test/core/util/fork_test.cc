@@ -18,14 +18,12 @@
 
 #include "src/core/util/fork.h"
 
-#include <stdint.h>
-
-#include "gtest/gtest.h"
-
 #include <grpc/support/time.h>
+#include <stdint.h>
 
 #include "src/core/util/thd.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 TEST(ForkTest, Init) {
   ASSERT_FALSE(grpc_core::Fork::Enabled());

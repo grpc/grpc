@@ -19,13 +19,14 @@
 #ifndef GRPC_TEST_CPP_QPS_QPS_WORKER_H
 #define GRPC_TEST_CPP_QPS_QPS_WORKER_H
 
-#include <memory>
-
 #include <grpc/support/atm.h>
 #include <grpcpp/server.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/config.h>
 
+#include <memory>
+
+#include "src/cpp/latent_see/latent_see_service.h"
 #include "test/cpp/qps/server.h"
 
 namespace grpc {
@@ -51,6 +52,7 @@ class QpsWorker {
 
  private:
   std::unique_ptr<WorkerServiceImpl> impl_;
+  std::unique_ptr<LatentSeeService> latent_see_;
   std::unique_ptr<grpc::Server> server_;
 
   gpr_atm done_;

@@ -35,9 +35,3 @@ cdef extern from "src/core/lib/iomgr/timer_manager.h":
 
 cdef extern from "src/core/lib/iomgr/iomgr_internal.h":
   void grpc_set_default_iomgr_platform()
-
-
-cdef extern from "src/core/lib/iomgr/executor.h" namespace "grpc_core":
-    cdef cppclass Executor:
-        @staticmethod
-        void SetThreadingAll(bint enable)

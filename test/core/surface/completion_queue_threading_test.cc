@@ -16,19 +16,14 @@
 //
 //
 
-#include <inttypes.h>
-#include <stdlib.h>
-
-#include <memory>
-
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "gtest/gtest.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+#include <inttypes.h>
+#include <stdlib.h>
+
+#include <memory>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/completion_queue.h"
@@ -36,6 +31,9 @@
 #include "src/core/util/thd.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
 
 #define LOG_TEST(x) LOG(INFO) << x
 

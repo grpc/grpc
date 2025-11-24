@@ -14,6 +14,9 @@
 
 #include "src/core/lib/resource_quota/memory_quota.h"
 
+#include <grpc/event_engine/internal/memory_allocator_impl.h>
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 
 #include <algorithm>
@@ -25,24 +28,22 @@
 #include <tuple>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-
-#include <grpc/event_engine/internal/memory_allocator_impl.h>
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-
+#include "src/core/channelz/channelz.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
+#include "src/core/lib/resource_tracker/resource_tracker.h"
 #include "src/core/lib/slice/slice_refcount.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/mpscq.h"
 #include "src/core/util/useful.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
@@ -134,6 +135,20 @@ class SliceRefCount : public grpc_slice_refcount {
 
 }  // namespace
 
+double ContainerMemoryPressure() {
+  auto* tracker = ResourceTracker::Get();
+  if (tracker == nullptr) {
+    return 0.0;
+  }
+  auto value = tracker->GetMetricValue("memory");
+  if (!value.ok()) {
+    LOG(WARNING) << "Failed to get 'memory' metric from ResourceTracker: "
+                 << value.status();
+    return 0.0;
+  }
+  return *value;
+}
+
 //
 // Reclaimer
 //
@@ -141,6 +156,15 @@ class SliceRefCount : public grpc_slice_refcount {
 ReclamationSweep::~ReclamationSweep() {
   if (memory_quota_ != nullptr) {
     memory_quota_->FinishReclamation(sweep_token_, std::move(waker_));
+  }
+}
+
+void ReclamationSweep::Finish() {
+  auto memory_quota = std::move(memory_quota_);
+  if (memory_quota != nullptr) {
+    auto sweep_token = sweep_token_;
+    auto waker = std::move(waker_);
+    memory_quota->FinishReclamation(sweep_token, std::move(waker));
   }
 }
 
@@ -170,7 +194,7 @@ struct ReclaimerQueue::State {
 
 void ReclaimerQueue::Handle::Orphan() {
   if (auto* sweep = sweep_.exchange(nullptr, std::memory_order_acq_rel)) {
-    sweep->RunAndDelete(absl::nullopt);
+    sweep->RunAndDelete(std::nullopt);
   }
   Unref();
 }
@@ -253,9 +277,9 @@ GrpcMemoryAllocatorImpl::GrpcMemoryAllocatorImpl(
 }
 
 GrpcMemoryAllocatorImpl::~GrpcMemoryAllocatorImpl() {
-  CHECK_EQ(free_bytes_.load(std::memory_order_acquire) +
-               sizeof(GrpcMemoryAllocatorImpl),
-           taken_bytes_.load(std::memory_order_relaxed));
+  GRPC_CHECK_EQ(free_bytes_.load(std::memory_order_acquire) +
+                    sizeof(GrpcMemoryAllocatorImpl),
+                taken_bytes_.load(std::memory_order_relaxed));
   memory_quota_->Return(taken_bytes_.load(std::memory_order_relaxed));
 }
 
@@ -266,7 +290,7 @@ void GrpcMemoryAllocatorImpl::Shutdown() {
       reclamation_handles[kNumReclamationPasses];
   {
     MutexLock lock(&reclaimer_mu_);
-    CHECK(!shutdown_);
+    GRPC_CHECK(!shutdown_);
     shutdown_ = true;
     memory_quota = memory_quota_;
     for (size_t i = 0; i < kNumReclamationPasses; i++) {
@@ -278,8 +302,8 @@ void GrpcMemoryAllocatorImpl::Shutdown() {
 size_t GrpcMemoryAllocatorImpl::Reserve(MemoryRequest request) {
   // Validate request - performed here so we don't bloat the generated code with
   // inlined asserts.
-  CHECK(request.min() <= request.max());
-  CHECK(request.max() <= MemoryRequest::max_allowed_size());
+  GRPC_CHECK(request.min() <= request.max());
+  GRPC_CHECK(request.max() <= MemoryRequest::max_allowed_size());
   size_t old_free = free_bytes_.load(std::memory_order_relaxed);
 
   while (true) {
@@ -296,7 +320,7 @@ size_t GrpcMemoryAllocatorImpl::Reserve(MemoryRequest request) {
   }
 }
 
-absl::optional<size_t> GrpcMemoryAllocatorImpl::TryReserve(
+std::optional<size_t> GrpcMemoryAllocatorImpl::TryReserve(
     MemoryRequest request) {
   // How much memory should we request? (see the scaling below)
   size_t scaled_size_over_min = request.max() - request.min();
@@ -348,7 +372,7 @@ void GrpcMemoryAllocatorImpl::MaybeDonateBack() {
     size_t ret = 0;
     if (!IsUnconstrainedMaxQuotaBufferSizeEnabled() &&
         free > kMaxQuotaBufferSize / 2) {
-      ret = std::max(ret, free - kMaxQuotaBufferSize / 2);
+      ret = std::max(ret, free - (kMaxQuotaBufferSize / 2));
     }
     ret = std::max(ret, free > 8192 ? free / 2 : free);
     const size_t new_free = free - ret;
@@ -357,7 +381,7 @@ void GrpcMemoryAllocatorImpl::MaybeDonateBack() {
                                           std::memory_order_acquire)) {
       GRPC_TRACE_LOG(resource_quota, INFO)
           << "[" << this << "] Early return " << ret << " bytes";
-      CHECK(taken_bytes_.fetch_sub(ret, std::memory_order_relaxed) >= ret);
+      GRPC_CHECK(taken_bytes_.fetch_sub(ret, std::memory_order_relaxed) >= ret);
       memory_quota_->Return(ret);
       return;
     }
@@ -390,6 +414,20 @@ grpc_slice GrpcMemoryAllocatorImpl::MakeSlice(MemoryRequest request) {
   return slice;
 }
 
+void GrpcMemoryAllocatorImpl::FillChannelzProperties(
+    channelz::PropertyList& list) {
+  list.Set("free_bytes", free_bytes_.load(std::memory_order_relaxed))
+      .Set("taken_bytes", taken_bytes_.load(std::memory_order_relaxed))
+      .Set("chosen_shard_idx",
+           chosen_shard_idx_.load(std::memory_order_relaxed))
+      .Set("donate_back_period", donate_back_.period());
+  donate_back_.Interrupt([&list](Duration so_far) {
+    list.Set("donate_back_period_expired", so_far);
+  });
+  MutexLock lock(&reclaimer_mu_);
+  list.Set("shutdown", shutdown_);
+}
+
 //
 // BasicMemoryQuota
 //
@@ -414,7 +452,20 @@ class BasicMemoryQuota::WaitForSweepPromise {
   uint64_t token_;
 };
 
-BasicMemoryQuota::BasicMemoryQuota(std::string name) : name_(std::move(name)) {}
+BasicMemoryQuota::BasicMemoryQuota(
+    RefCountedPtr<channelz::ResourceQuotaNode> channelz_node,
+    InstrumentStorageRefPtr<ResourceQuotaDomain> telemetry_storage)
+    : channelz::DataSource(channelz_node),
+      GaugeProvider(telemetry_storage),
+      telemetry_storage_(std::move(telemetry_storage)) {
+  ProviderConstructed();
+  channelz::DataSource::SourceConstructed();
+}
+
+BasicMemoryQuota::~BasicMemoryQuota() {
+  ProviderDestructing();
+  channelz::DataSource::SourceDestructing();
+}
 
 void BasicMemoryQuota::Start() {
   auto self = shared_from_this();
@@ -425,59 +476,63 @@ void BasicMemoryQuota::Start() {
   // basically, wait until we are in overcommit (free_bytes_ < 0), and then:
   // while (free_bytes_ < 0) reclaim_memory()
   // ... and repeat
-  auto reclamation_loop = Loop(Seq(
-      [self]() -> Poll<int> {
-        // If there's free memory we no longer need to reclaim memory!
-        if (self->free_bytes_.load(std::memory_order_acquire) > 0) {
-          return Pending{};
-        }
-        return 0;
-      },
-      [self]() {
-        // Race biases to the first thing that completes... so this will
-        // choose the highest priority/least destructive thing to do that's
-        // available.
-        auto annotate = [](const char* name) {
-          return [name](RefCountedPtr<ReclaimerQueue::Handle> f) {
-            return std::make_tuple(name, std::move(f));
+  auto reclamation_loop = Loop([self]() {
+    return Seq(
+        [self]() -> Poll<int> {
+          // If there's free memory we no longer need to reclaim memory!
+          if (self->free_bytes_.load(std::memory_order_acquire) > 0) {
+            return Pending{};
+          }
+          return 0;
+        },
+        [self]() {
+          // Race biases to the first thing that completes... so this will
+          // choose the highest priority/least destructive thing to do that's
+          // available.
+          auto annotate = [](const char* name) {
+            return [name](RefCountedPtr<ReclaimerQueue::Handle> f) {
+              return std::tuple(name, std::move(f));
+            };
           };
-        };
-        return Race(Map(self->reclaimers_[0].Next(), annotate("benign")),
-                    Map(self->reclaimers_[1].Next(), annotate("idle")),
-                    Map(self->reclaimers_[2].Next(), annotate("destructive")));
-      },
-      [self](
-          std::tuple<const char*, RefCountedPtr<ReclaimerQueue::Handle>> arg) {
-        auto reclaimer = std::move(std::get<1>(arg));
-        if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
-          double free = std::max(intptr_t{0}, self->free_bytes_.load());
-          size_t quota_size = self->quota_size_.load();
-          LOG(INFO) << "RQ: " << self->name_ << " perform " << std::get<0>(arg)
-                    << " reclamation. Available free bytes: " << free
-                    << ", total quota_size: " << quota_size;
-        }
-        // One of the reclaimer queues gave us a way to get back memory.
-        // Call the reclaimer with a token that contains enough to wake us
-        // up again.
-        const uint64_t token =
-            self->reclamation_counter_.fetch_add(1, std::memory_order_relaxed) +
-            1;
-        reclaimer->Run(ReclamationSweep(
-            self, token, GetContext<Activity>()->MakeNonOwningWaker()));
-        // Return a promise that will wait for our barrier. This will be
-        // awoken by the token above being destroyed. So, once that token is
-        // destroyed, we'll be able to proceed.
-        return WaitForSweepPromise(self, token);
-      },
-      []() -> LoopCtl<absl::Status> {
-        // Continue the loop!
-        return Continue{};
-      }));
+          return Race(
+              Map(self->reclaimers_[0].Next(), annotate("benign")),
+              Map(self->reclaimers_[1].Next(), annotate("idle")),
+              Map(self->reclaimers_[2].Next(), annotate("destructive")));
+        },
+        [self](std::tuple<const char*, RefCountedPtr<ReclaimerQueue::Handle>>
+                   arg) {
+          auto reclaimer = std::move(std::get<1>(arg));
+          if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
+            double free = std::max(intptr_t{0}, self->free_bytes_.load());
+            size_t quota_size = self->quota_size_.load();
+            LOG(INFO) << "RQ: " << self->name() << " perform "
+                      << std::get<0>(arg)
+                      << " reclamation. Available free bytes: " << free
+                      << ", total quota_size: " << quota_size;
+          }
+          // One of the reclaimer queues gave us a way to get back memory.
+          // Call the reclaimer with a token that contains enough to wake us
+          // up again.
+          const uint64_t token = self->reclamation_counter_.fetch_add(
+                                     1, std::memory_order_relaxed) +
+                                 1;
+          reclaimer->Run(ReclamationSweep(
+              self, token, GetContext<Activity>()->MakeNonOwningWaker()));
+          // Return a promise that will wait for our barrier. This will be
+          // awoken by the token above being destroyed. So, once that token is
+          // destroyed, we'll be able to proceed.
+          return WaitForSweepPromise(self, token);
+        },
+        []() -> LoopCtl<absl::Status> {
+          // Continue the loop!
+          return Continue{};
+        });
+  });
 
   reclaimer_activity_ =
       MakeActivity(std::move(reclamation_loop), ExecCtxWakeupScheduler(),
                    [](absl::Status status) {
-                     CHECK(status.code() == absl::StatusCode::kCancelled);
+                     GRPC_CHECK(status.code() == absl::StatusCode::kCancelled);
                    });
 }
 
@@ -497,7 +552,7 @@ void BasicMemoryQuota::SetSize(size_t new_size) {
 void BasicMemoryQuota::Take(GrpcMemoryAllocatorImpl* allocator, size_t amount) {
   // If there's a request for nothing, then do nothing!
   if (amount == 0) return;
-  DCHECK(amount <= std::numeric_limits<intptr_t>::max());
+  GRPC_DCHECK(amount <= std::numeric_limits<intptr_t>::max());
   // Grab memory from the quota.
   auto prior = free_bytes_.fetch_sub(amount, std::memory_order_acq_rel);
   // If we push into overcommit, awake the reclaimer.
@@ -534,7 +589,7 @@ void BasicMemoryQuota::FinishReclamation(uint64_t token, Waker waker) {
     if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
       double free = std::max(intptr_t{0}, free_bytes_.load());
       size_t quota_size = quota_size_.load();
-      LOG(INFO) << "RQ: " << name_
+      LOG(INFO) << "RQ: " << name()
                 << " reclamation complete. Available free bytes: " << free
                 << ", total quota_size: " << quota_size;
     }
@@ -648,12 +703,60 @@ BasicMemoryQuota::PressureInfo BasicMemoryQuota::GetPressureInfo() {
   double size = quota_size;
   if (size < 1) return PressureInfo{1, 1, 1};
   PressureInfo pressure_info;
-  pressure_info.instantaneous_pressure = std::max(0.0, (size - free) / size);
+  pressure_info.instantaneous_pressure =
+      std::max({0.0, (size - free) / size, ContainerMemoryPressure()});
   pressure_info.pressure_control_value =
       pressure_tracker_.AddSampleAndGetControlValue(
           pressure_info.instantaneous_pressure);
   pressure_info.max_recommended_allocation_size = quota_size / 16;
   return pressure_info;
+}
+
+void BasicMemoryQuota::PopulateGaugeData(GaugeSink<ResourceQuotaDomain>& sink) {
+  auto pressure_info = GetPressureInfo();
+  sink.Set(ResourceQuotaDomain::kInstantaneousMemoryPressure,
+           pressure_info.instantaneous_pressure);
+  sink.Set(ResourceQuotaDomain::kMemoryPressureControlValue,
+           pressure_info.pressure_control_value);
+}
+
+void BasicMemoryQuota::AddData(channelz::DataSink sink) {
+  sink.AddData(
+      "memory_quota",
+      channelz::PropertyList()
+          .Set("free_bytes", free_bytes_.load(std::memory_order_relaxed))
+          .Set("quota_size", quota_size_.load(std::memory_order_relaxed))
+          .Set("container_memory_pressure", ContainerMemoryPressure())
+          .Merge(pressure_tracker_.ChannelzProperties())
+          .Set("allocators",
+               [this]() {
+                 channelz::PropertyTable table;
+                 for (auto& shard : small_allocators_.shards) {
+                   MutexLock l(&shard.shard_mu);
+                   size_t i = 0;
+                   for (auto& allocator : shard.allocators) {
+                     i++;
+                     channelz::PropertyList list;
+                     list.Set("shard", absl::StrCat("small", i));
+                     allocator->FillChannelzProperties(list);
+                     table.AppendRow(std::move(list));
+                   }
+                 }
+                 for (auto& shard : big_allocators_.shards) {
+                   MutexLock l(&shard.shard_mu);
+                   size_t i = 0;
+                   for (auto& allocator : shard.allocators) {
+                     i++;
+                     channelz::PropertyList list;
+                     list.Set("shard", absl::StrCat("big", i));
+                     allocator->FillChannelzProperties(list);
+                     table.AppendRow(std::move(list));
+                   }
+                 }
+                 return table;
+               }())
+          .Set("reclamation_counter",
+               reclamation_counter_.load(std::memory_order_relaxed)));
 }
 
 //
@@ -710,7 +813,7 @@ double PressureController::Update(double error) {
     // The first switchover will have last_control_ being 0, and max_ being 2,
     // so we'll immediately choose 1.0 which will tend to really slow down
     // progress.
-    // If we end up targetting too low, we'll eventually move it back towards
+    // If we end up targeting too low, we'll eventually move it back towards
     // 1.0 after max_ticks_same_ ticks.
     ticks_same_ = 0;
     max_ = (last_control_ + max_) / 2.0;
@@ -721,8 +824,8 @@ double PressureController::Update(double error) {
   // (If we want a control value that's higher than the last one we snap
   // immediately because it's likely that memory pressure is growing unchecked).
   if (new_control < last_control_) {
-    new_control =
-        std::max(new_control, last_control_ - max_reduction_per_tick_ / 1000.0);
+    new_control = std::max(new_control,
+                           last_control_ - (max_reduction_per_tick_ / 1000.0));
   }
   last_control_ = new_control;
   return new_control;
@@ -735,8 +838,6 @@ std::string PressureController::DebugString() const {
 }
 
 double PressureTracker::AddSampleAndGetControlValue(double sample) {
-  static const double kSetPoint = 0.95;
-
   double max_so_far = max_this_round_.load(std::memory_order_relaxed);
   if (sample > max_so_far) {
     max_this_round_.compare_exchange_weak(max_so_far, sample,
@@ -745,7 +846,7 @@ double PressureTracker::AddSampleAndGetControlValue(double sample) {
   }
   // If memory pressure is almost done, immediately hit the brakes and report
   // full memory usage.
-  if (sample >= 0.99) {
+  if (sample >= memory_pressure_threshold_) {
     report_.store(1.0, std::memory_order_relaxed);
   }
   update_.Tick([&](Duration) {
@@ -753,11 +854,11 @@ double PressureTracker::AddSampleAndGetControlValue(double sample) {
     const double current_estimate =
         max_this_round_.exchange(sample, std::memory_order_relaxed);
     double report;
-    if (current_estimate > 0.99) {
+    if (current_estimate > memory_pressure_threshold_) {
       // Under very high memory pressure we... just max things out.
       report = controller_.Update(1e99);
     } else {
-      report = controller_.Update(current_estimate - kSetPoint);
+      report = controller_.Update(current_estimate - target_memory_pressure_);
     }
     GRPC_TRACE_LOG(resource_quota, INFO)
         << "RQ: pressure:" << current_estimate << " report:" << report
@@ -767,6 +868,35 @@ double PressureTracker::AddSampleAndGetControlValue(double sample) {
   return report_.load(std::memory_order_relaxed);
 }
 
+channelz::PropertyList PressureController::ChannelzProperties() const {
+  return channelz::PropertyList()
+      .Set("ticks_same_pressure", ticks_same_)
+      .Set("max_ticks_same_pressure", max_ticks_same_)
+      .Set("max_pressure_reduction_per_tick", max_reduction_per_tick_ * 0.001)
+      .Set("last_pressure_was_low", last_was_low_)
+      .Set("min_pressure", min_)
+      .Set("max_pressure", max_)
+      .Set("last_control", last_control_);
+}
+
+channelz::PropertyList PressureTracker::ChannelzProperties() {
+  return channelz::PropertyList()
+      .Set("max_pressure_this_round",
+           max_this_round_.load(std::memory_order_relaxed))
+      .Set("pressure_report", report_.load(std::memory_order_relaxed))
+      .Merge([this]() {
+        channelz::PropertyList list;
+        if (!update_.Interrupt([&](Duration duration) {
+              list = controller_.ChannelzProperties();
+              list.Set("time_since_last_pressure_update", duration);
+              list.Set("pressure_update_period", update_.period());
+            })) {
+          list.Set("pressure_controller_busy", true)
+              .Set("pressure_update_period", update_.period());
+        }
+        return list;
+      }());
+}
 }  // namespace memory_quota_detail
 
 //

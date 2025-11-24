@@ -16,12 +16,21 @@
 
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 
+#include <grpc/support/json.h>
 #include <stdlib.h>
 
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "src/core/util/down_cast.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/json/json_writer.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/string.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -29,17 +38,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/util/json/json.h"
-#include "src/core/util/json/json_object_loader.h"
-#include "src/core/util/json/json_reader.h"
-#include "src/core/util/json/json_writer.h"
-#include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/string.h"
 
 namespace grpc_core {
 
@@ -86,6 +84,8 @@ const JsonLoaderInterface* GrpcXdsBootstrap::GrpcAuthority::JsonLoader(
               "client_listener_resource_name_template",
               &GrpcAuthority::client_listener_resource_name_template_)
           .OptionalField("xds_servers", &GrpcAuthority::servers_)
+          .OptionalField("fallback_on_reachability_only",
+                         &GrpcAuthority::fallback_on_reachability_only_)
           .Finish();
   return loader;
 }
@@ -148,10 +148,7 @@ void GrpcXdsBootstrap::JsonPostLoad(const Json& /*json*/,
   // client_listener_resource_name_template field.
   {
     ValidationErrors::ScopedField field(errors, ".authorities");
-    for (const auto& p : authorities_) {
-      const std::string& name = p.first;
-      const GrpcAuthority& authority =
-          static_cast<const GrpcAuthority&>(p.second);
+    for (const auto& [name, authority] : authorities_) {
       ValidationErrors::ScopedField field(
           errors, absl::StrCat("[\"", name,
                                "\"].client_listener_resource_name_template"));
@@ -184,8 +181,12 @@ std::string GrpcXdsBootstrap::ToString() const {
                         node_->locality_zone(), node_->locality_sub_zone(),
                         JsonDump(Json::FromObject(node_->metadata()))));
   }
-  parts.push_back(
-      absl::StrFormat("servers=[\n%s\n],\n", JsonDump(servers_[0].ToJson())));
+  std::vector<std::string> server_strings;
+  for (auto& server : servers_) {
+    server_strings.emplace_back(server.Key());
+  }
+  parts.push_back(absl::StrFormat("    servers=[\n%s\n],\n",
+                                  absl::StrJoin(server_strings, ",\n")));
   if (!client_default_listener_resource_name_template_.empty()) {
     parts.push_back(absl::StrFormat(
         "client_default_listener_resource_name_template=\"%s\",\n",
@@ -197,32 +198,31 @@ std::string GrpcXdsBootstrap::ToString() const {
                         server_listener_resource_name_template_));
   }
   parts.push_back("authorities={\n");
-  for (const auto& entry : authorities_) {
-    parts.push_back(absl::StrFormat("  %s={\n", entry.first));
+  for (const auto& [name, authority] : authorities_) {
+    parts.push_back(absl::StrFormat("  %s={\n", name));
     parts.push_back(
         absl::StrFormat("    client_listener_resource_name_template=\"%s\",\n",
-                        entry.second.client_listener_resource_name_template()));
-    std::vector<std::string> server_jsons;
-    for (const XdsServer* server : entry.second.servers()) {
-      server_jsons.emplace_back(
-          JsonDump(static_cast<const GrpcXdsServer*>(server)->ToJson()));
+                        authority.client_listener_resource_name_template()));
+    std::vector<std::string> server_strings;
+    for (const XdsServer* server : authority.servers()) {
+      server_strings.emplace_back(server->Key());
     }
-    if (!server_jsons.empty()) {
+    if (!server_strings.empty()) {
       parts.push_back(absl::StrFormat("    servers=[\n%s\n],\n",
-                                      absl::StrJoin(server_jsons, ",\n")));
+                                      absl::StrJoin(server_strings, ",\n")));
     }
     parts.push_back("      },\n");
   }
   parts.push_back("}\n");
   parts.push_back("certificate_providers={\n");
-  for (const auto& entry : certificate_providers_) {
+  for (const auto& [name, plugin_definition] : certificate_providers_) {
     parts.push_back(
         absl::StrFormat("  %s={\n"
                         "    plugin_name=%s\n"
                         "    config=%s\n"
                         "  },\n",
-                        entry.first, entry.second.plugin_name,
-                        entry.second.config->ToString()));
+                        name, plugin_definition.plugin_name,
+                        plugin_definition.config->ToString()));
   }
   parts.push_back("}");
   return absl::StrJoin(parts, "");

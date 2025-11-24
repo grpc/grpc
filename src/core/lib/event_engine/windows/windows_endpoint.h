@@ -22,8 +22,7 @@
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 class WindowsEndpoint : public EventEngine::Endpoint {
  public:
@@ -33,11 +32,14 @@ class WindowsEndpoint : public EventEngine::Endpoint {
                   ThreadPool* thread_pool, std::shared_ptr<EventEngine> engine);
   ~WindowsEndpoint() override;
   bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
-            const ReadArgs* args) override;
+            ReadArgs args) override;
   bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
-             SliceBuffer* data, const WriteArgs* args) override;
+             SliceBuffer* data, WriteArgs args) override;
   const EventEngine::ResolvedAddress& GetPeerAddress() const override;
   const EventEngine::ResolvedAddress& GetLocalAddress() const override;
+  std::shared_ptr<TelemetryInfo> GetTelemetryInfo() const override {
+    return nullptr;
+  }
 
  private:
   struct AsyncIOState;
@@ -50,7 +52,7 @@ class WindowsEndpoint : public EventEngine::Endpoint {
                absl::AnyInvocable<void(absl::Status)> cb);
     // Resets the per-request data, releasing the ref on io_state_.
     // Returns the previous callback.
-    ABSL_MUST_USE_RESULT absl::AnyInvocable<void(absl::Status)>
+    [[nodiscard]] absl::AnyInvocable<void(absl::Status)>
     ResetAndReturnCallback();
     // Run the callback with whatever data is available, and reset state.
     //
@@ -75,7 +77,7 @@ class WindowsEndpoint : public EventEngine::Endpoint {
                absl::AnyInvocable<void(absl::Status)> cb);
     // Resets the per-request data, releasing the ref on io_state_.
     // Returns the previous callback.
-    ABSL_MUST_USE_RESULT absl::AnyInvocable<void(absl::Status)>
+    [[nodiscard]] absl::AnyInvocable<void(absl::Status)>
     ResetAndReturnCallback();
 
    private:
@@ -115,8 +117,7 @@ class WindowsEndpoint : public EventEngine::Endpoint {
   std::shared_ptr<AsyncIOState> io_state_;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif
 

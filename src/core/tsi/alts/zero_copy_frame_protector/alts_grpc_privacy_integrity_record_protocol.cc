@@ -18,8 +18,6 @@
 
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h"
 
-#include "absl/log/log.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 
@@ -28,6 +26,7 @@
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h"
 #include "src/core/util/crash.h"
+#include "absl/log/log.h"
 
 // Privacy-integrity alts_grpc_record_protocol object uses the same struct
 // defined in alts_grpc_record_protocol_common.h.

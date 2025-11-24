@@ -17,7 +17,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal envoy_type_metadata_v3_MetadataKey_submsgs[1] = {
+static const upb_MiniTableSubInternal envoy_type_metadata_v3_MetadataKey__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &envoy__type__metadata__v3__MetadataKey__PathSegment_msg_init_ptr},
 };
 
@@ -27,7 +27,7 @@ static const upb_MiniTableField envoy_type_metadata_v3_MetadataKey__fields[2] = 
 };
 
 const upb_MiniTable envoy__type__metadata__v3__MetadataKey_msg_init = {
-  &envoy_type_metadata_v3_MetadataKey_submsgs[0],
+  &envoy_type_metadata_v3_MetadataKey__submsgs[0],
   &envoy_type_metadata_v3_MetadataKey__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -60,7 +60,7 @@ const upb_MiniTable envoy__type__metadata__v3__MetadataKey__PathSegment_msg_init
 };
 
 const upb_MiniTable* envoy__type__metadata__v3__MetadataKey__PathSegment_msg_init_ptr = &envoy__type__metadata__v3__MetadataKey__PathSegment_msg_init;
-static const upb_MiniTableSubInternal envoy_type_metadata_v3_MetadataKind_submsgs[4] = {
+static const upb_MiniTableSubInternal envoy_type_metadata_v3_MetadataKind__submsgs[4] = {
   {.UPB_PRIVATE(submsg) = &envoy__type__metadata__v3__MetadataKind__Request_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__type__metadata__v3__MetadataKind__Route_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__type__metadata__v3__MetadataKind__Cluster_msg_init_ptr},
@@ -75,7 +75,7 @@ static const upb_MiniTableField envoy_type_metadata_v3_MetadataKind__fields[4] =
 };
 
 const upb_MiniTable envoy__type__metadata__v3__MetadataKind_msg_init = {
-  &envoy_type_metadata_v3_MetadataKind_submsgs[0],
+  &envoy_type_metadata_v3_MetadataKind__submsgs[0],
   &envoy_type_metadata_v3_MetadataKind__fields[0],
   UPB_SIZE(16, 24), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED

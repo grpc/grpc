@@ -19,11 +19,11 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_GOAWAY_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_GOAWAY_H
 
-#include <stdint.h>
-
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
+#include <stdint.h>
 
+#include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/lib/iomgr/error.h"
 
@@ -57,8 +57,9 @@ grpc_error_handle grpc_chttp2_goaway_parser_parse(void* parser,
                                                   const grpc_slice& slice,
                                                   int is_last);
 
-void grpc_chttp2_goaway_append(uint32_t last_stream_id, uint32_t error_code,
-                               const grpc_slice& debug_data,
-                               grpc_slice_buffer* slice_buffer);
+void grpc_chttp2_goaway_append(
+    uint32_t last_stream_id, uint32_t error_code, const grpc_slice& debug_data,
+    grpc_slice_buffer* slice_buffer,
+    grpc_core::Http2ZTraceCollector* ztrace_collector);
 
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_GOAWAY_H

@@ -18,7 +18,7 @@
 # instead. This file can be regenerated from the template by running
 # `tools/buildgen/generate_projects.sh`.
 
-"""Patches the compile() to allow enable parallel compilation of C/C++.
+"""Patches the compile() to enable parallel compilation of C/C++.
 
 build_ext has lots of C/C++ files and normally them one by one.
 Enabling parallel build helps a lot.

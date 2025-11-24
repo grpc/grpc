@@ -14,40 +14,106 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <cstdint>
+#include <string>
 #include <utility>
+#include <vector>
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/lib/debug/trace_impl.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/memory_usage.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 
-#include <grpc/support/port_platform.h>
+// TODO(tjagtap) TODO(akshitpatel): [PH2][P3] : Write micro benchmarks for
+// framing code
 
-#include "src/core/util/crash.h"
+using grpc_core::http2::Http2ErrorCode;
+using grpc_core::http2::Http2Status;
+using grpc_core::http2::ValueOrHttp2Status;
 
 namespace grpc_core {
 
+#define GRPC_HTTP2_FRAME_DLOG \
+  DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
+
+///////////////////////////////////////////////////////////////////////////////
+// Settings Frame Validations
+
+bool IsUnknownSetting(const uint16_t setting_id) {
+  // RFC9113 : An endpoint that receives a SETTINGS frame with any unknown
+  // or unsupported identifier MUST ignore that setting.
+  return setting_id < Http2Settings::kHeaderTableSizeWireId ||
+         setting_id > Http2Settings::kGrpcAllowSecurityFrameWireId ||
+         (setting_id > Http2Settings::kMaxHeaderListSizeWireId &&
+          setting_id < Http2Settings::kGrpcAllowTrueBinaryMetadataWireId);
+}
+
+Http2Status ValidateSettingsValues(
+    std::vector<Http2SettingsFrame::Setting>& list) {
+  for (const auto& setting : list) {
+    if (GPR_UNLIKELY(setting.id == Http2Settings::kInitialWindowSizeWireId &&
+                     setting.value > RFC9113::kMaxSize31Bit)) {
+      LOG(ERROR)
+          << "ValidateSettingsValues Invalid "
+             "Setting:{setting.id:kInitialWindowSizeWireId, setting.value: "
+          << setting.value << "}";
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kFlowControlError,
+          absl::StrCat(RFC9113::kIncorrectWindowSizeSetting,
+                       "Invalid Setting:{setting.id:kInitialWindowSizeWireId, "
+                       "setting.value: ",
+                       setting.value));
+    } else if (GPR_UNLIKELY(setting.id == Http2Settings::kMaxFrameSizeWireId &&
+                            (setting.value < RFC9113::kMinimumFrameSize ||
+                             setting.value > RFC9113::kMaximumFrameSize))) {
+      LOG(ERROR) << "ValidateSettingsValues Invalid "
+                    "Setting:{setting.id:kMaxFrameSizeWireId, setting.value: "
+                 << setting.value << "}";
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kProtocolError,
+          absl::StrCat(RFC9113::kIncorrectFrameSizeSetting,
+                       "Invalid Setting:{setting.id:kMaxFrameSizeWireId, "
+                       "setting.value: ",
+                       setting.value));
+    }
+  }
+  DVLOG(2) << "Http2Transport ValidateSettingsValues Valid";
+  return Http2Status::Ok();
+}
+
 namespace {
 
-constexpr uint8_t kFrameTypeData = 0;
-constexpr uint8_t kFrameTypeHeader = 1;
-constexpr uint8_t kFrameTypeContinuation = 9;
-constexpr uint8_t kFrameTypeRstStream = 3;
-constexpr uint8_t kFrameTypeSettings = 4;
-constexpr uint8_t kFrameTypePing = 6;
-constexpr uint8_t kFrameTypeGoaway = 7;
-constexpr uint8_t kFrameTypeWindowUpdate = 8;
-constexpr uint8_t kFrameTypePushPromise = 5;
+///////////////////////////////////////////////////////////////////////////////
+// HTTP2 Framing Code
+
+// HTTP2 Frame Types
+enum class FrameType : uint8_t {
+  kData = 0,
+  kHeader = 1,
+  // type 2 was Priority which has been deprecated.
+  kRstStream = 3,
+  kSettings = 4,
+  kPushPromise = 5,
+  kPing = 6,
+  kGoaway = 7,
+  kWindowUpdate = 8,
+  kContinuation = 9,
+  kCustomSecurity = 200,  // Custom Frame Type
+};
 
 constexpr uint8_t kFlagEndStream = 1;
 constexpr uint8_t kFlagAck = 1;
 constexpr uint8_t kFlagEndHeaders = 4;
 constexpr uint8_t kFlagPadded = 8;
 constexpr uint8_t kFlagPriority = 0x20;
-
-constexpr size_t kFrameHeaderSize = 9;
 
 void Write2b(uint16_t x, uint8_t* output) {
   output[0] = static_cast<uint8_t>(x >> 8);
@@ -59,7 +125,7 @@ uint16_t Read2b(const uint8_t* input) {
 }
 
 void Write3b(uint32_t x, uint8_t* output) {
-  CHECK_LT(x, 16777216u);
+  GRPC_CHECK_LT(x, 16777216u);
   output[0] = static_cast<uint8_t>(x >> 16);
   output[1] = static_cast<uint8_t>(x >> 8);
   output[2] = static_cast<uint8_t>(x);
@@ -68,6 +134,21 @@ void Write3b(uint32_t x, uint8_t* output) {
 uint32_t Read3b(const uint8_t* input) {
   return static_cast<uint32_t>(input[0]) << 16 |
          static_cast<uint32_t>(input[1]) << 8 | static_cast<uint32_t>(input[2]);
+}
+
+constexpr uint32_t k8BitMask = 0x7f;
+
+void Write31bits(uint32_t x, uint8_t* output) {
+  output[0] = static_cast<uint8_t>(k8BitMask & (x >> 24));
+  output[1] = static_cast<uint8_t>(x >> 16);
+  output[2] = static_cast<uint8_t>(x >> 8);
+  output[3] = static_cast<uint8_t>(x);
+}
+
+uint32_t Read31bits(const uint8_t* input) {
+  return (k8BitMask & static_cast<uint32_t>(input[0])) << 24 |
+         static_cast<uint32_t>(input[1]) << 16 |
+         static_cast<uint32_t>(input[2]) << 8 | static_cast<uint32_t>(input[3]);
 }
 
 void Write4b(uint32_t x, uint8_t* output) {
@@ -124,62 +205,99 @@ class SerializeExtraBytesRequired {
   size_t operator()(const Http2PingFrame&) { return 8; }
   size_t operator()(const Http2GoawayFrame&) { return 8; }
   size_t operator()(const Http2WindowUpdateFrame&) { return 4; }
+  size_t operator()(const Http2SecurityFrame&) { return 0; }
   size_t operator()(const Http2UnknownFrame&) { Crash("unreachable"); }
+  size_t operator()(const Http2EmptyFrame&) { return 0; }
 };
 
 class SerializeHeaderAndPayload {
  public:
-  SerializeHeaderAndPayload(size_t extra_bytes, SliceBuffer& out)
+  SerializeHeaderAndPayload(size_t extra_bytes, SliceBuffer& out,
+                            SerializeReturn& serialize_return)
       : out_(out),
-        extra_bytes_(MutableSlice::CreateUninitialized(extra_bytes)) {}
+        extra_bytes_(MutableSlice::CreateUninitialized(extra_bytes)),
+        serialize_return_(serialize_return) {}
 
   void operator()(Http2DataFrame& frame) {
+    GRPC_HTTP2_FRAME_DLOG
+        << "SerializeHeaderAndPayload Http2DataFrame Type:0 { stream_id:"
+        << frame.stream_id << ", end_stream:" << frame.end_stream
+        << ", payload_length:" << frame.payload.Length()
+        << ", payload:" << frame.payload.JoinIntoString() << "}";
     auto hdr = extra_bytes_.TakeFirst(kFrameHeaderSize);
-    Http2FrameHeader{
-        static_cast<uint32_t>(frame.payload.Length()), kFrameTypeData,
-        MaybeFlag(frame.end_stream, kFlagEndStream), frame.stream_id}
+    Http2FrameHeader{static_cast<uint32_t>(frame.payload.Length()),
+                     static_cast<uint8_t>(FrameType::kData),
+                     MaybeFlag(frame.end_stream, kFlagEndStream),
+                     frame.stream_id}
         .Serialize(hdr.begin());
     out_.AppendIndexed(Slice(std::move(hdr)));
     out_.TakeAndAppend(frame.payload);
+    serialize_return_.should_reset_ping_clock = true;
   }
 
   void operator()(Http2HeaderFrame& frame) {
+    GRPC_HTTP2_FRAME_DLOG
+        << "SerializeHeaderAndPayload Http2HeaderFrame Type:1 { stream_id:"
+        << frame.stream_id << ", end_headers:" << frame.end_headers
+        << ", end_stream:" << frame.end_stream
+        << ", payload_length:" << frame.payload.Length()
+        << ", payload:" << frame.payload.JoinIntoString() << "}";
     auto hdr = extra_bytes_.TakeFirst(kFrameHeaderSize);
     Http2FrameHeader{
-        static_cast<uint32_t>(frame.payload.Length()), kFrameTypeHeader,
+        static_cast<uint32_t>(frame.payload.Length()),
+        static_cast<uint8_t>(FrameType::kHeader),
         static_cast<uint8_t>(MaybeFlag(frame.end_headers, kFlagEndHeaders) |
                              MaybeFlag(frame.end_stream, kFlagEndStream)),
         frame.stream_id}
         .Serialize(hdr.begin());
     out_.AppendIndexed(Slice(std::move(hdr)));
     out_.TakeAndAppend(frame.payload);
+    serialize_return_.should_reset_ping_clock = true;
   }
 
   void operator()(Http2ContinuationFrame& frame) {
+    GRPC_HTTP2_FRAME_DLOG << "SerializeHeaderAndPayload Http2ContinuationFrame "
+                             "Type:9 { stream_id:"
+                          << frame.stream_id
+                          << ", end_headers:" << frame.end_headers
+                          << ", payload_length:" << frame.payload.Length()
+                          << ", payload:" << frame.payload.JoinIntoString()
+                          << "}";
     auto hdr = extra_bytes_.TakeFirst(kFrameHeaderSize);
     Http2FrameHeader{
-        static_cast<uint32_t>(frame.payload.Length()), kFrameTypeContinuation,
+        static_cast<uint32_t>(frame.payload.Length()),
+        static_cast<uint8_t>(FrameType::kContinuation),
         static_cast<uint8_t>(MaybeFlag(frame.end_headers, kFlagEndHeaders)),
         frame.stream_id}
         .Serialize(hdr.begin());
     out_.AppendIndexed(Slice(std::move(hdr)));
     out_.TakeAndAppend(frame.payload);
+    serialize_return_.should_reset_ping_clock = true;
   }
 
   void operator()(Http2RstStreamFrame& frame) {
+    GRPC_HTTP2_FRAME_DLOG
+        << "SerializeHeaderAndPayload Http2RstStreamFrame Type:3 { stream_id:"
+        << frame.stream_id << ", error_code:" << frame.error_code << "}";
     auto hdr_and_payload = extra_bytes_.TakeFirst(kFrameHeaderSize + 4);
-    Http2FrameHeader{4, kFrameTypeRstStream, 0, frame.stream_id}.Serialize(
-        hdr_and_payload.begin());
+    Http2FrameHeader{4, static_cast<uint8_t>(FrameType::kRstStream), 0,
+                     frame.stream_id}
+        .Serialize(hdr_and_payload.begin());
     Write4b(frame.error_code, hdr_and_payload.begin() + kFrameHeaderSize);
     out_.AppendIndexed(Slice(std::move(hdr_and_payload)));
   }
 
   void operator()(Http2SettingsFrame& frame) {
+    GRPC_HTTP2_FRAME_DLOG
+        << "SerializeHeaderAndPayload Http2SettingsFrame Type:4 { ack:"
+        << frame.ack << ", length:" << frame.settings.size() << ", settings:["
+        << DebugStringSettings(frame.settings) << "] }";
     // Six bytes per setting (u16 id, u32 value)
     const size_t payload_size = 6 * frame.settings.size();
     auto hdr_and_payload =
         extra_bytes_.TakeFirst(kFrameHeaderSize + payload_size);
-    Http2FrameHeader{static_cast<uint32_t>(payload_size), kFrameTypeSettings,
+    Http2FrameHeader{static_cast<uint32_t>(payload_size),
+                     static_cast<uint8_t>(FrameType::kSettings),
                      MaybeFlag(frame.ack, kFlagAck), 0}
         .Serialize(hdr_and_payload.begin());
     size_t offset = kFrameHeaderSize;
@@ -192,20 +310,32 @@ class SerializeHeaderAndPayload {
   }
 
   void operator()(Http2PingFrame& frame) {
+    GRPC_HTTP2_FRAME_DLOG
+        << "SerializeHeaderAndPayload Http2PingFrame Type:6 { ack:" << frame.ack
+        << ", opaque:" << frame.opaque << "}";
     auto hdr_and_payload = extra_bytes_.TakeFirst(kFrameHeaderSize + 8);
-    Http2FrameHeader{8, kFrameTypePing, MaybeFlag(frame.ack, kFlagAck), 0}
+    Http2FrameHeader{8, static_cast<uint8_t>(FrameType::kPing),
+                     MaybeFlag(frame.ack, kFlagAck), 0}
         .Serialize(hdr_and_payload.begin());
     Write8b(frame.opaque, hdr_and_payload.begin() + kFrameHeaderSize);
     out_.AppendIndexed(Slice(std::move(hdr_and_payload)));
   }
 
   void operator()(Http2GoawayFrame& frame) {
+    GRPC_HTTP2_FRAME_DLOG
+        << "SerializeHeaderAndPayload Http2GoawayFrame Type:7 { last_stream_id:"
+        << frame.last_stream_id << ", error_code:" << frame.error_code
+        << ", debug_data:" << frame.debug_data.as_string_view() << "}";
     auto hdr_and_fixed_payload = extra_bytes_.TakeFirst(kFrameHeaderSize + 8);
     Http2FrameHeader{static_cast<uint32_t>(8 + frame.debug_data.length()),
-                     kFrameTypeGoaway, 0, 0}
+                     static_cast<uint8_t>(FrameType::kGoaway), 0, 0}
         .Serialize(hdr_and_fixed_payload.begin());
-    Write4b(frame.last_stream_id,
-            hdr_and_fixed_payload.begin() + kFrameHeaderSize);
+    if (GPR_UNLIKELY(frame.last_stream_id > RFC9113::kMaxStreamId31Bit)) {
+      LOG(ERROR) << "Stream ID will be truncated. The MSB will be set to 0 "
+                 << frame.last_stream_id;
+    }
+    Write31bits(frame.last_stream_id,
+                hdr_and_fixed_payload.begin() + kFrameHeaderSize);
     Write4b(frame.error_code,
             hdr_and_fixed_payload.begin() + kFrameHeaderSize + 4);
     out_.AppendIndexed(Slice(std::move(hdr_and_fixed_payload)));
@@ -213,208 +343,317 @@ class SerializeHeaderAndPayload {
   }
 
   void operator()(Http2WindowUpdateFrame& frame) {
+    GRPC_HTTP2_FRAME_DLOG << "SerializeHeaderAndPayload Http2WindowUpdateFrame "
+                             "Type:8 { stream_id:"
+                          << frame.stream_id
+                          << ", increment:" << frame.increment << "}";
     auto hdr_and_payload = extra_bytes_.TakeFirst(kFrameHeaderSize + 4);
-    Http2FrameHeader{4, kFrameTypeWindowUpdate, 0, frame.stream_id}.Serialize(
-        hdr_and_payload.begin());
-    Write4b(frame.increment, hdr_and_payload.begin() + kFrameHeaderSize);
+    Http2FrameHeader{4, static_cast<uint8_t>(FrameType::kWindowUpdate), 0,
+                     frame.stream_id}
+        .Serialize(hdr_and_payload.begin());
+    if (GPR_UNLIKELY(frame.increment > RFC9113::kMaxStreamId31Bit)) {
+      LOG(ERROR) << "Http2WindowUpdateFrame increment will be truncated to 31 "
+                    "bits. The MSB will be set to 0 "
+                 << frame.increment;
+    }
+    Write31bits(frame.increment, hdr_and_payload.begin() + kFrameHeaderSize);
     out_.AppendIndexed(Slice(std::move(hdr_and_payload)));
+    serialize_return_.should_reset_ping_clock = true;
+  }
+
+  void operator()(Http2SecurityFrame& frame) {
+    GRPC_HTTP2_FRAME_DLOG << "SerializeHeaderAndPayload Http2SecurityFrame "
+                             "Type:200 { payload_length:"
+                          << frame.payload.Length() << ", payload: redacted}";
+    auto hdr = extra_bytes_.TakeFirst(kFrameHeaderSize);
+    Http2FrameHeader{static_cast<uint32_t>(frame.payload.Length()),
+                     static_cast<uint8_t>(FrameType::kCustomSecurity), 0, 0}
+        .Serialize(hdr.begin());
+    out_.AppendIndexed(Slice(std::move(hdr)));
+    out_.TakeAndAppend(frame.payload);
   }
 
   void operator()(Http2UnknownFrame&) { Crash("unreachable"); }
 
+  void operator()(Http2EmptyFrame&) {
+    GRPC_HTTP2_FRAME_DLOG << "SerializeHeaderAndPayload Http2EmptyFrame {}";
+  }
+
  private:
+  std::string DebugStringSettings(
+      const std::vector<Http2SettingsFrame::Setting>& settings) {
+    std::string settings_str;
+    for (const auto& setting : settings) {
+      absl::StrAppend(&settings_str, " {id:", setting.id,
+                      ", value:", setting.value, "}");
+    }
+    return settings_str;
+  }
+
   SliceBuffer& out_;
   MutableSlice extra_bytes_;
+  SerializeReturn& serialize_return_;
 };
 
-absl::Status StripPadding(SliceBuffer& payload) {
-  if (payload.Length() < 1) {
-    return absl::InternalError("padding flag set but no padding byte");
+Http2Status StripPadding(const Http2FrameHeader& hdr, SliceBuffer& payload) {
+  if (GPR_UNLIKELY(payload.Length() < 1)) {
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kProtocolError,
+        absl::StrCat(RFC9113::kFrameParserIncorrectPadding, hdr.ToString()));
   }
+  const size_t payload_size = payload.Length();
   uint8_t padding_bytes;
   payload.MoveFirstNBytesIntoBuffer(1, &padding_bytes);
-  if (payload.Length() < padding_bytes) {
-    return absl::InternalError("padding flag set but not enough padding bytes");
+
+  if (GPR_UNLIKELY(payload_size <= padding_bytes)) {
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kProtocolError,
+        absl::StrCat(RFC9113::kPaddingLengthLargerThanFrameLength,
+                     hdr.ToString()));
   }
+
+  // We dont check for padding being zero.
+  // No point checking bytes that will be discarded.
+  // RFC9113 : A receiver is not obligated to verify padding but MAY treat
+  // non-zero padding as a connection error of type PROTOCOL_ERROR.
   payload.RemoveLastNBytes(padding_bytes);
-  return absl::OkStatus();
+  return Http2Status::Ok();
 }
 
-absl::StatusOr<Http2DataFrame> ParseDataFrame(const Http2FrameHeader& hdr,
+ValueOrHttp2Status<Http2Frame> ParseDataFrame(const Http2FrameHeader& hdr,
                                               SliceBuffer& payload) {
-  if (hdr.stream_id == 0) {
-    return absl::InternalError(
-        absl::StrCat("invalid stream id: ", hdr.ToString()));
+  if (GPR_UNLIKELY((hdr.stream_id % 2) == 0)) {
+    if ((hdr.stream_id == 0)) {
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kProtocolError,
+          absl::StrCat(RFC9113::kDataStreamIdMustBeNonZero, hdr.ToString()));
+    } else {
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kProtocolError,
+          absl::StrCat(RFC9113::kStreamIdMustBeOdd, hdr.ToString()));
+    }
   }
 
   if (hdr.flags & kFlagPadded) {
-    auto s = StripPadding(payload);
-    if (!s.ok()) return s;
+    Http2Status s = StripPadding(hdr, payload);
+    if (GPR_UNLIKELY(!s.IsOk())) {
+      return ValueOrHttp2Status<Http2Frame>(std::move(s));
+    }
   }
 
-  return Http2DataFrame{hdr.stream_id, ExtractFlag(hdr.flags, kFlagEndStream),
-                        std::move(payload)};
+  return ValueOrHttp2Status<Http2Frame>(
+      Http2DataFrame{hdr.stream_id, ExtractFlag(hdr.flags, kFlagEndStream),
+                     std::move(payload)});
 }
 
-absl::StatusOr<Http2HeaderFrame> ParseHeaderFrame(const Http2FrameHeader& hdr,
-                                                  SliceBuffer& payload) {
-  if (hdr.stream_id == 0) {
-    return absl::InternalError(
-        absl::StrCat("invalid stream id: ", hdr.ToString()));
+// This function MUST NOT return a Http2StreamError. Doing this will cause the
+// HPACK state to be corrupted.
+ValueOrHttp2Status<Http2Frame> ParseHeaderFrame(const Http2FrameHeader& hdr,
+                                                SliceBuffer& payload) {
+  if (GPR_UNLIKELY((hdr.stream_id % 2) == 0)) {
+    if (hdr.stream_id == 0) {
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kProtocolError,
+          absl::StrCat(RFC9113::kHeaderStreamIdMustBeNonZero, hdr.ToString()));
+    } else {
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kProtocolError,
+          absl::StrCat(RFC9113::kStreamIdMustBeOdd, hdr.ToString()));
+    }
   }
 
   if (hdr.flags & kFlagPadded) {
-    auto s = StripPadding(payload);
-    if (!s.ok()) return s;
+    Http2Status s = StripPadding(hdr, payload);
+    if (GPR_UNLIKELY(!s.IsOk())) {
+      return ValueOrHttp2Status<Http2Frame>(std::move(s));
+    }
   }
 
-  if (hdr.flags & kFlagPriority) {
-    if (payload.Length() < 5) {
-      return absl::InternalError(
-          absl::StrCat("invalid priority payload: ", hdr.ToString()));
+  if (GPR_UNLIKELY(hdr.flags & kFlagPriority)) {
+    if (GPR_UNLIKELY(payload.Length() < 5)) {
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kProtocolError,
+          absl::StrCat(RFC9113::kIncorrectFrame, hdr.ToString()));
     }
     uint8_t trash[5];
     payload.MoveFirstNBytesIntoBuffer(5, trash);
   }
 
-  return Http2HeaderFrame{
+  return ValueOrHttp2Status<Http2Frame>(Http2HeaderFrame{
       hdr.stream_id, ExtractFlag(hdr.flags, kFlagEndHeaders),
-      ExtractFlag(hdr.flags, kFlagEndStream), std::move(payload)};
+      ExtractFlag(hdr.flags, kFlagEndStream), std::move(payload)});
 }
 
-absl::StatusOr<Http2ContinuationFrame> ParseContinuationFrame(
+// This function MUST NOT return a Http2StreamError. Doing this will cause the
+// HPACK state to be corrupted.
+ValueOrHttp2Status<Http2Frame> ParseContinuationFrame(
     const Http2FrameHeader& hdr, SliceBuffer& payload) {
-  if (hdr.stream_id == 0) {
-    return absl::InternalError(
-        absl::StrCat("invalid stream id: ", hdr.ToString()));
+  if (GPR_UNLIKELY((hdr.stream_id % 2) == 0)) {
+    if (hdr.stream_id == 0) {
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kProtocolError,
+          absl::StrCat(RFC9113::kContinuationStreamIdMustBeNonZero,
+                       hdr.ToString()));
+    } else {
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kProtocolError,
+          absl::StrCat(RFC9113::kStreamIdMustBeOdd, hdr.ToString()));
+    }
   }
 
-  return Http2ContinuationFrame{hdr.stream_id,
-                                ExtractFlag(hdr.flags, kFlagEndHeaders),
-                                std::move(payload)};
+  return ValueOrHttp2Status<Http2Frame>(Http2ContinuationFrame{
+      hdr.stream_id, ExtractFlag(hdr.flags, kFlagEndHeaders),
+      std::move(payload)});
 }
 
-absl::StatusOr<Http2RstStreamFrame> ParseRstStreamFrame(
-    const Http2FrameHeader& hdr, SliceBuffer& payload) {
-  if (payload.Length() != 4) {
-    return absl::InternalError(
-        absl::StrCat("invalid rst stream payload: ", hdr.ToString()));
+ValueOrHttp2Status<Http2Frame> ParseRstStreamFrame(const Http2FrameHeader& hdr,
+                                                   SliceBuffer& payload) {
+  if (GPR_UNLIKELY(payload.Length() != 4)) {
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kFrameSizeError,
+        absl::StrCat(RFC9113::kRstStreamLength4, hdr.ToString()));
   }
 
-  if (hdr.stream_id == 0) {
-    return absl::InternalError(
-        absl::StrCat("invalid stream id: ", hdr.ToString()));
+  if (GPR_UNLIKELY((hdr.stream_id % 2) == 0)) {
+    if ((hdr.stream_id == 0)) {
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kProtocolError,
+          absl::StrCat(RFC9113::kRstStreamStreamIdMustBeNonZero,
+                       hdr.ToString()));
+    } else {
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kProtocolError,
+          absl::StrCat(RFC9113::kStreamIdMustBeOdd, hdr.ToString()));
+    }
   }
 
   uint8_t buffer[4];
   payload.CopyToBuffer(buffer);
 
-  return Http2RstStreamFrame{hdr.stream_id, Read4b(buffer)};
+  return ValueOrHttp2Status<Http2Frame>(
+      Http2RstStreamFrame{hdr.stream_id, Read4b(buffer)});
 }
 
-absl::StatusOr<Http2SettingsFrame> ParseSettingsFrame(
-    const Http2FrameHeader& hdr, SliceBuffer& payload) {
-  if (hdr.stream_id != 0) {
-    return absl::InternalError(
-        absl::StrCat("invalid stream id: ", hdr.ToString()));
+ValueOrHttp2Status<Http2Frame> ParseSettingsFrame(const Http2FrameHeader& hdr,
+                                                  SliceBuffer& payload) {
+  if (GPR_UNLIKELY(hdr.stream_id != 0)) {
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kProtocolError,
+        absl::StrCat(RFC9113::kSettingsStreamIdMustBeZero, hdr.ToString()));
   }
-  if (hdr.flags == kFlagAck) {
-    if (payload.Length() != 0) {
-      return absl::InternalError(
-          absl::StrCat("invalid settings ack length: ", hdr.ToString()));
+
+  if (hdr.flags & kFlagAck) {
+    if (GPR_UNLIKELY(payload.Length() != 0)) {
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kFrameSizeError,
+          absl::StrCat(RFC9113::kSettingsLength0, hdr.ToString()));
     }
-    return Http2SettingsFrame{true, {}};
+    return ValueOrHttp2Status<Http2Frame>(
+        Http2SettingsFrame{/*ack=*/true, /*settings=*/{}});
   }
 
-  if (payload.Length() % 6 != 0) {
-    return absl::InternalError(
-        absl::StrCat("invalid settings payload: ", hdr.ToString(),
-                     " -- settings must be multiples of 6 bytes long"));
+  if (GPR_UNLIKELY(payload.Length() % 6 != 0)) {
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kFrameSizeError,
+        absl::StrCat(RFC9113::kSettingsLength6x, hdr.ToString()));
   }
 
-  Http2SettingsFrame frame{false, {}};
+  Http2SettingsFrame frame{/*ack=*/false, /*settings=*/{}};
   while (payload.Length() != 0) {
     uint8_t buffer[6];
     payload.MoveFirstNBytesIntoBuffer(6, buffer);
+    uint16_t setting_id = Read2b(buffer);
+    uint32_t setting_value = Read4b(buffer + 2);
+    if (GPR_UNLIKELY(IsUnknownSetting(setting_id))) {
+      continue;
+    }
     frame.settings.push_back({
-        Read2b(buffer),
-        Read4b(buffer + 2),
+        setting_id,
+        setting_value,
     });
   }
-  return std::move(frame);
+  return ValueOrHttp2Status<Http2Frame>(std::move(frame));
 }
 
-absl::StatusOr<Http2PingFrame> ParsePingFrame(const Http2FrameHeader& hdr,
+ValueOrHttp2Status<Http2Frame> ParsePingFrame(const Http2FrameHeader& hdr,
                                               SliceBuffer& payload) {
-  if (payload.Length() != 8) {
-    return absl::InternalError(
-        absl::StrCat("invalid ping payload: ", hdr.ToString()));
+  if (GPR_UNLIKELY(payload.Length() != 8)) {
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kFrameSizeError,
+        absl::StrCat(RFC9113::kPingLength8, hdr.ToString()));
   }
 
-  if (hdr.stream_id != 0) {
-    return absl::InternalError(
-        absl::StrCat("invalid ping stream id: ", hdr.ToString()));
+  if (GPR_UNLIKELY(hdr.stream_id != 0)) {
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kProtocolError,
+        absl::StrCat(RFC9113::kPingStreamIdMustBeZero, hdr.ToString()));
   }
 
-  bool ack;
-  switch (hdr.flags) {
-    case 0:
-      ack = false;
-      break;
-    case kFlagAck:
-      ack = true;
-      break;
-    default:
-      return absl::InternalError(
-          absl::StrCat("invalid ping flags: ", hdr.ToString()));
-  }
+  // RFC9113 : Unused flags MUST be ignored on receipt and MUST be left unset
+  // (0x00) when sending.
+  bool ack = ((hdr.flags & kFlagAck) == kFlagAck);
 
   uint8_t buffer[8];
   payload.CopyToBuffer(buffer);
 
-  return Http2PingFrame{ack, Read8b(buffer)};
+  return ValueOrHttp2Status<Http2Frame>(Http2PingFrame{ack, Read8b(buffer)});
 }
 
-absl::StatusOr<Http2GoawayFrame> ParseGoawayFrame(const Http2FrameHeader& hdr,
-                                                  SliceBuffer& payload) {
-  if (payload.Length() < 8) {
-    return absl::InternalError(
-        absl::StrCat("invalid goaway payload: ", hdr.ToString(),
-                     " -- must be at least 8 bytes"));
+ValueOrHttp2Status<Http2Frame> ParseGoawayFrame(const Http2FrameHeader& hdr,
+                                                SliceBuffer& payload) {
+  if (GPR_UNLIKELY(payload.Length() < 8)) {
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kFrameSizeError,
+        absl::StrCat(RFC9113::kGoAwayLength8, hdr.ToString()));
   }
 
-  if (hdr.stream_id != 0) {
-    return absl::InternalError(
-        absl::StrCat("invalid goaway stream id: ", hdr.ToString()));
-  }
-
-  if (hdr.flags != 0) {
-    return absl::InternalError(
-        absl::StrCat("invalid goaway flags: ", hdr.ToString()));
+  if (GPR_UNLIKELY(hdr.stream_id != 0)) {
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kProtocolError,
+        absl::StrCat(RFC9113::kGoAwayStreamIdMustBeZero, hdr.ToString()));
   }
 
   uint8_t buffer[8];
   payload.MoveFirstNBytesIntoBuffer(8, buffer);
-  return Http2GoawayFrame{Read4b(buffer), Read4b(buffer + 4),
-                          payload.JoinIntoSlice()};
+  return ValueOrHttp2Status<Http2Frame>(Http2GoawayFrame{
+      /*Last-Stream-ID (31)*/ Read31bits(buffer),
+      /*Error Code (32)*/ Read4b(buffer + 4),
+      /*Additional Debug Data(variable)*/ payload.JoinIntoSlice()});
 }
 
-absl::StatusOr<Http2WindowUpdateFrame> ParseWindowUpdateFrame(
+ValueOrHttp2Status<Http2Frame> ParseWindowUpdateFrame(
     const Http2FrameHeader& hdr, SliceBuffer& payload) {
-  if (payload.Length() != 4) {
-    return absl::InternalError(
-        absl::StrCat("invalid window update payload: ", hdr.ToString(),
-                     " -- must be 4 bytes"));
+  if (GPR_UNLIKELY(payload.Length() != 4)) {
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kFrameSizeError,
+        absl::StrCat(RFC9113::kWindowUpdateLength4, hdr.ToString()));
   }
-
-  if (hdr.flags != 0) {
-    return absl::InternalError(
-        absl::StrCat("invalid window update flags: ", hdr.ToString()));
+  if (GPR_UNLIKELY(hdr.stream_id > 0u && (hdr.stream_id % 2) == 0)) {
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kProtocolError,
+        absl::StrCat(RFC9113::kStreamIdMustBeOdd, hdr.ToString()));
   }
-
   uint8_t buffer[4];
   payload.CopyToBuffer(buffer);
-  return Http2WindowUpdateFrame{hdr.stream_id, Read4b(buffer)};
+  const uint32_t window_size_increment = Read31bits(buffer);
+  if (GPR_UNLIKELY(window_size_increment == 0)) {
+    // According to RFC9113, if window_size_increment == 0, and (stream id != 0)
+    // the receiver MUST treat this as a stream error of type PROTOCOL_ERROR.
+    // However we will be treating this too as a connection error
+    // 1. To be consistent with CHTTP2 transport
+    // 2. To be less lenient as compared to the RFC9113 for security reasons.
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kProtocolError,
+        absl::StrCat(RFC9113::kWindowSizeIncrement, hdr.ToString()));
+  }
+  return ValueOrHttp2Status<Http2Frame>(
+      Http2WindowUpdateFrame{hdr.stream_id, window_size_increment});
+}
+
+ValueOrHttp2Status<Http2Frame> ParseSecurityFrame(
+    const Http2FrameHeader& /*hdr*/, SliceBuffer& payload) {
+  // TODO(tjagtap) : [PH2][P3] : Add validations
+  return ValueOrHttp2Status<Http2Frame>(Http2SecurityFrame{std::move(payload)});
 }
 
 }  // namespace
@@ -427,79 +666,175 @@ void Http2FrameHeader::Serialize(uint8_t* output) const {
 }
 
 Http2FrameHeader Http2FrameHeader::Parse(const uint8_t* input) {
-  return Http2FrameHeader{Read3b(input), input[3], input[4], Read4b(input + 5)};
+  return Http2FrameHeader{
+      /* Length(24) */ Read3b(input),
+      /* Type(8) */ input[3],
+      /* Flags(8) */ input[4],
+      /* Reserved(1), Stream Identifier(31) */ Read31bits(input + 5)};
 }
 
 namespace {
-std::string Http2FrameTypeString(uint8_t frame_type) {
+
+std::string Http2FrameTypeString(FrameType frame_type) {
   switch (frame_type) {
-    case kFrameTypeData:
+    case FrameType::kData:
       return "DATA";
-    case kFrameTypeHeader:
+    case FrameType::kHeader:
       return "HEADER";
-    case kFrameTypeContinuation:
-      return "CONTINUATION";
-    case kFrameTypeRstStream:
+    case FrameType::kRstStream:
       return "RST_STREAM";
-    case kFrameTypeSettings:
+    case FrameType::kSettings:
       return "SETTINGS";
-    case kFrameTypeGoaway:
-      return "GOAWAY";
-    case kFrameTypeWindowUpdate:
-      return "WINDOW_UPDATE";
-    case kFrameTypePing:
+    case FrameType::kPushPromise:
+      return "PUSH_PROMISE";
+    case FrameType::kPing:
       return "PING";
+    case FrameType::kGoaway:
+      return "GOAWAY";
+    case FrameType::kWindowUpdate:
+      return "WINDOW_UPDATE";
+    case FrameType::kContinuation:
+      return "CONTINUATION";
+    case FrameType::kCustomSecurity:
+      return "SECURITY";
   }
-  return absl::StrCat("UNKNOWN(", frame_type, ")");
+  return absl::StrCat("UNKNOWN(", static_cast<uint8_t>(frame_type), ")");
 }
+
 }  // namespace
 
 std::string Http2FrameHeader::ToString() const {
-  return absl::StrCat("{", Http2FrameTypeString(type), ": flags=", flags,
-                      ", stream_id=", stream_id, ", length=", length, "}");
+  return absl::StrCat("{", Http2FrameTypeString(static_cast<FrameType>(type)),
+                      ": flags=", flags, ", stream_id=", stream_id,
+                      ", length=", length, "}");
 }
 
-void Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out) {
+SerializeReturn Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out) {
   size_t buffer_needed = 0;
+  SerializeReturn serialize_return{/*should_reset_ping_clock=*/false};
   for (auto& frame : frames) {
     // Bytes needed for framing
     buffer_needed += kFrameHeaderSize;
     // Bytes needed for frame payload
-    buffer_needed += absl::visit(SerializeExtraBytesRequired(), frame);
+    buffer_needed += std::visit(SerializeExtraBytesRequired(), frame);
   }
-  SerializeHeaderAndPayload serialize(buffer_needed, out);
+  SerializeHeaderAndPayload serialize(buffer_needed, out, serialize_return);
   for (auto& frame : frames) {
-    absl::visit(serialize, frame);
+    std::visit(serialize, frame);
+  }
+
+  return serialize_return;
+}
+
+http2::ValueOrHttp2Status<Http2Frame> ParseFramePayload(
+    const Http2FrameHeader& hdr, SliceBuffer payload) {
+  GRPC_CHECK(payload.Length() == hdr.length);
+
+  switch (static_cast<FrameType>(hdr.type)) {
+    case FrameType::kData:
+      return ParseDataFrame(hdr, payload);
+    case FrameType::kHeader:
+      return ParseHeaderFrame(hdr, payload);
+    case FrameType::kContinuation:
+      return ParseContinuationFrame(hdr, payload);
+    case FrameType::kRstStream:
+      return ParseRstStreamFrame(hdr, payload);
+    case FrameType::kSettings:
+      return ParseSettingsFrame(hdr, payload);
+    case FrameType::kPing:
+      return ParsePingFrame(hdr, payload);
+    case FrameType::kGoaway:
+      return ParseGoawayFrame(hdr, payload);
+    case FrameType::kWindowUpdate:
+      return ParseWindowUpdateFrame(hdr, payload);
+    case FrameType::kPushPromise:
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kProtocolError,
+          absl::StrCat(RFC9113::kNoPushPromise, hdr.ToString()));
+    case FrameType::kCustomSecurity:
+      return ParseSecurityFrame(hdr, payload);
+    default:
+      return ValueOrHttp2Status<Http2Frame>(Http2UnknownFrame{});
   }
 }
 
-absl::StatusOr<Http2Frame> ParseFramePayload(const Http2FrameHeader& hdr,
-                                             SliceBuffer payload) {
-  CHECK(payload.Length() == hdr.length);
-  switch (hdr.type) {
-    case kFrameTypeData:
-      return ParseDataFrame(hdr, payload);
-    case kFrameTypeHeader:
-      return ParseHeaderFrame(hdr, payload);
-    case kFrameTypeContinuation:
-      return ParseContinuationFrame(hdr, payload);
-    case kFrameTypeRstStream:
-      return ParseRstStreamFrame(hdr, payload);
-    case kFrameTypeSettings:
-      return ParseSettingsFrame(hdr, payload);
-    case kFrameTypePing:
-      return ParsePingFrame(hdr, payload);
-    case kFrameTypeGoaway:
-      return ParseGoawayFrame(hdr, payload);
-    case kFrameTypeWindowUpdate:
-      return ParseWindowUpdateFrame(hdr, payload);
-    case kFrameTypePushPromise:
-      return absl::InternalError(
-          "push promise not supported (and SETTINGS_ENABLE_PUSH explicitly "
-          "disabled).");
-    default:
-      return Http2UnknownFrame{};
+http2::Http2ErrorCode FrameErrorCodeToHttp2ErrorCode(
+    const uint32_t error_code) {
+  if (GPR_UNLIKELY(error_code > http2::GetMaxHttp2ErrorCode())) {
+    LOG(ERROR) << "FrameErrorCodeToHttp2ErrorCode: Invalid error code "
+                  "received from RST_STREAM frame: "
+               << error_code;
+    return http2::Http2ErrorCode::kInternalError;
   }
+  return static_cast<http2::Http2ErrorCode>(error_code);
+}
+
+uint32_t Http2ErrorCodeToFrameErrorCode(
+    const http2::Http2ErrorCode error_code) {
+  GRPC_DCHECK_LE(static_cast<uint8_t>(error_code),
+                 http2::GetMaxHttp2ErrorCode());
+  return static_cast<uint32_t>(error_code);
+}
+
+size_t GetFrameMemoryUsage(const Http2Frame& frame) {
+  return MemoryUsageOf(frame);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// GRPC Header
+
+GrpcMessageHeader ExtractGrpcHeader(SliceBuffer& payload) {
+  GRPC_CHECK_GE(payload.Length(), kGrpcHeaderSizeInBytes);
+  uint8_t buffer[kGrpcHeaderSizeInBytes];
+  payload.CopyFirstNBytesIntoBuffer(kGrpcHeaderSizeInBytes, buffer);
+  GrpcMessageHeader header;
+  header.flags = buffer[0];
+  header.length = Read4b(buffer + 1);
+  return header;
+}
+
+void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, const uint8_t flags,
+                                   const uint32_t length) {
+  uint8_t* frame_hdr = payload.AddTiny(kGrpcHeaderSizeInBytes);
+  frame_hdr[0] = flags;
+  Write4b(length, frame_hdr + 1);
+}
+
+Http2Status ValidateFrameHeader(const uint32_t max_frame_size_setting,
+                                const bool incoming_header_in_progress,
+                                const uint32_t incoming_header_stream_id,
+                                Http2FrameHeader& current_frame_header,
+                                const uint32_t last_stream_id,
+                                const bool is_client) {
+  if (GPR_UNLIKELY(current_frame_header.length > max_frame_size_setting)) {
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kFrameSizeError,
+        absl::StrCat(RFC9113::kFrameSizeLargerThanMaxFrameSizeSetting,
+                     ", Current Size = ", current_frame_header.length,
+                     ", Max Size = ", max_frame_size_setting));
+  }
+  if (GPR_UNLIKELY(
+          incoming_header_in_progress &&
+          (current_frame_header.type !=
+               static_cast<uint8_t>(FrameType::kContinuation) ||
+           current_frame_header.stream_id != incoming_header_stream_id))) {
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kProtocolError,
+        std::string(RFC9113::kAssemblerContiguousSequenceError));
+  }
+
+  // If a frame is received with a stream id larger than the last stream id sent
+  // by the transport, it is a protocol error. This condition holds for clients
+  // as in gRPC only clients can initiate a stream. last_stream_id is the stream
+  // id of the last stream created by the transport. If no streams were created
+  // by the transport, last_stream_id is 0.
+  // TODO(akshitpatel) : [PH2][P3] : Revisit this for server.
+  if (is_client && current_frame_header.stream_id > last_stream_id) {
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kProtocolError, std::string(RFC9113::kUnknownStreamId));
+  }
+  // TODO(tjagtap) : [PH2][P2]:Consider validating MAX_CONCURRENT_STREAMS here
+  return Http2Status::Ok();
 }
 
 }  // namespace grpc_core

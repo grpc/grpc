@@ -16,19 +16,14 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/backup_poller.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/sync.h>
 #include <inttypes.h>
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/sync.h>
-
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr.h"
@@ -37,6 +32,8 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/util/memory.h"
 #include "src/core/util/time.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
 
 #define DEFAULT_POLL_INTERVAL_MS 5000
 
@@ -60,8 +57,23 @@ static backup_poller* g_poller = nullptr;  // guarded by g_poller_mu
 // treated as const.
 static grpc_core::Duration g_poll_interval =
     grpc_core::Duration::Milliseconds(DEFAULT_POLL_INTERVAL_MS);
+// TODO(hork): delete the backup poller when EventEngine is rolled out
+// everywhere.
+static bool g_backup_polling_disabled;
 
 void grpc_client_channel_global_init_backup_polling() {
+  g_backup_polling_disabled = grpc_core::IsEventEngineClientEnabled() &&
+                              grpc_core::IsEventEngineListenerEnabled() &&
+                              grpc_core::IsEventEngineDnsEnabled();
+#ifdef GRPC_PYTHON_BUILD
+  if (!grpc_core::IsEventEnginePollerForPythonEnabled()) {
+    g_backup_polling_disabled = false;
+  }
+#endif
+  if (g_backup_polling_disabled) {
+    return;
+  }
+
   gpr_mu_init(&g_poller_mu);
   int32_t poll_interval_ms =
       grpc_core::ConfigVars::Get().ClientChannelBackupPollIntervalMs();
@@ -147,10 +159,21 @@ static void g_poller_init_locked() {
   }
 }
 
+static bool g_can_poll_in_background() {
+#ifndef GRPC_PYTHON_BUILD
+  return grpc_iomgr_run_in_background();
+#else
+  // No iomgr "event_engines" (not to be confused with the new EventEngine)
+  // are able to run in backgroung.
+  return false;
+#endif
+}
+
 void grpc_client_channel_start_backup_polling(
     grpc_pollset_set* interested_parties) {
-  if (g_poll_interval == grpc_core::Duration::Zero() ||
-      grpc_iomgr_run_in_background()) {
+  if (g_backup_polling_disabled ||
+      g_poll_interval == grpc_core::Duration::Zero() ||
+      g_can_poll_in_background()) {
     return;
   }
   gpr_mu_lock(&g_poller_mu);
@@ -168,8 +191,9 @@ void grpc_client_channel_start_backup_polling(
 
 void grpc_client_channel_stop_backup_polling(
     grpc_pollset_set* interested_parties) {
-  if (g_poll_interval == grpc_core::Duration::Zero() ||
-      grpc_iomgr_run_in_background()) {
+  if (g_backup_polling_disabled ||
+      g_poll_interval == grpc_core::Duration::Zero() ||
+      g_can_poll_in_background()) {
     return;
   }
   grpc_pollset_set_del_pollset(interested_parties, g_poller->pollset);

@@ -25,14 +25,14 @@ namespace testing {
 
 TEST(MatchTest, Test) {
   EXPECT_EQ(Match(
-                absl::variant<int, double>(1.9), [](int) -> int { abort(); },
+                std::variant<int, double>(1.9), [](int) -> int { abort(); },
                 [](double x) -> int {
                   EXPECT_EQ(x, 1.9);
                   return 42;
                 }),
             42);
   EXPECT_EQ(Match(
-                absl::variant<int, double>(3),
+                std::variant<int, double>(3),
                 [](int x) -> int {
                   EXPECT_EQ(x, 3);
                   return 42;
@@ -44,7 +44,7 @@ TEST(MatchTest, Test) {
 TEST(MatchTest, TestVoidReturn) {
   bool triggered = false;
   Match(
-      absl::variant<int, double>(1.9), [](int) { abort(); },
+      std::variant<int, double>(1.9), [](int) { abort(); },
       [&triggered](double x) {
         EXPECT_EQ(x, 1.9);
         triggered = true;
@@ -53,13 +53,13 @@ TEST(MatchTest, TestVoidReturn) {
 }
 
 TEST(MatchTest, TestMutable) {
-  absl::variant<int, double> v = 1.9;
+  std::variant<int, double> v = 1.9;
   MatchMutable(&v, [](int*) { abort(); }, [](double* x) { *x = 0.0; });
-  EXPECT_EQ(v, (absl::variant<int, double>(0.0)));
+  EXPECT_EQ(v, (std::variant<int, double>(0.0)));
 }
 
 TEST(MatchTest, TestMutableWithReturn) {
-  absl::variant<int, double> v = 1.9;
+  std::variant<int, double> v = 1.9;
   EXPECT_EQ(MatchMutable(
                 &v, [](int*) -> int { abort(); },
                 [](double* x) -> int {
@@ -67,7 +67,7 @@ TEST(MatchTest, TestMutableWithReturn) {
                   return 1;
                 }),
             1);
-  EXPECT_EQ(v, (absl::variant<int, double>(0.0)));
+  EXPECT_EQ(v, (std::variant<int, double>(0.0)));
 }
 
 }  // namespace testing

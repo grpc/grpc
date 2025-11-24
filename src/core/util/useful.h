@@ -1,5 +1,3 @@
-//
-//
 // Copyright 2015 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,8 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
 
 #ifndef GRPC_SRC_CORE_UTIL_USEFUL_H
 #define GRPC_SRC_CORE_UTIL_USEFUL_H
@@ -22,11 +18,13 @@
 #include <grpc/support/port_platform.h>
 
 #include <cstddef>
+#include <limits>
+#include <type_traits>
+#include <variant>
 
 #include "absl/log/check.h"
 #include "absl/numeric/bits.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
 
 /// useful utilities that don't belong anywhere else
 
@@ -69,12 +67,12 @@ int QsortCompare(const T& a, const T& b) {
 }
 
 template <typename... X>
-int QsortCompare(const absl::variant<X...>& a, const absl::variant<X...>& b) {
+int QsortCompare(const std::variant<X...>& a, const std::variant<X...>& b) {
   const int index = QsortCompare(a.index(), b.index());
   if (index != 0) return index;
-  return absl::visit(
+  return std::visit(
       [&](const auto& x) {
-        return QsortCompare(x, absl::get<absl::remove_cvref_t<decltype(x)>>(b));
+        return QsortCompare(x, std::get<absl::remove_cvref_t<decltype(x)>>(b));
       },
       a);
 }
@@ -103,21 +101,72 @@ constexpr size_t HashPointer(T* p, size_t range) {
 }
 
 // Compute a+b.
-// If the result is greater than INT64_MAX, return INT64_MAX.
-// If the result is less than INT64_MIN, return INT64_MIN.
-inline int64_t SaturatingAdd(int64_t a, int64_t b) {
+// If the result is greater than MAX, return MAX.
+// If the result is less than MIN, return MIN.
+template <typename T>
+inline T SaturatingAdd(T a, T b) {
   if (a > 0) {
-    if (b > INT64_MAX - a) {
-      return INT64_MAX;
+    if (b > std::numeric_limits<T>::max() - a) {
+      return std::numeric_limits<T>::max();
     }
-  } else if (b < INT64_MIN - a) {
-    return INT64_MIN;
+  } else if (b < std::numeric_limits<T>::min() - a) {
+    return std::numeric_limits<T>::min();
   }
   return a + b;
 }
 
-inline uint32_t MixHash32(uint32_t a, uint32_t b) {
-  return absl::rotl(a, 2u) ^ b;
+template <
+    typename T,
+    std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
+inline T SaturatingMul(T a, T b) {
+  if (a == 0 || b == 0) return 0;
+  if (b > std::numeric_limits<T>::max() / a) {
+    return std::numeric_limits<T>::max();
+  }
+  return a * b;
+}
+
+template <
+    typename T,
+    std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
+inline T SaturatingMul(T a, T b) {
+  if (a == 0 || b == 0) return 0;
+  if (a == std::numeric_limits<T>::min()) {
+    // negation is ub
+    if (b == -1) return std::numeric_limits<T>::max();
+    if (b == 1) return std::numeric_limits<T>::min();
+    if (b > 1) return std::numeric_limits<T>::min();
+    return std::numeric_limits<T>::max();
+  }
+  if (b == std::numeric_limits<T>::min()) {
+    if (a == -1) return std::numeric_limits<T>::max();
+    if (a == 1) return std::numeric_limits<T>::min();
+    if (a > 1) return std::numeric_limits<T>::min();
+    return std::numeric_limits<T>::max();
+  }
+  if (a > 0 && b > 0) {
+    // both positive
+    if (a > std::numeric_limits<T>::max() / b) {
+      return std::numeric_limits<T>::max();
+    }
+  } else if (a < 0 && b < 0) {
+    // both negative
+    if (a < std::numeric_limits<T>::max() / b) {
+      return std::numeric_limits<T>::max();
+    }
+  } else {
+    // one positive, one negative
+    if (a > 0) {
+      if (b < std::numeric_limits<T>::min() / a) {
+        return std::numeric_limits<T>::min();
+      }
+    } else {
+      if (a < std::numeric_limits<T>::min() / b) {
+        return std::numeric_limits<T>::min();
+      }
+    }
+  }
+  return a * b;
 }
 
 inline uint32_t RoundUpToPowerOf2(uint32_t v) {
@@ -146,6 +195,97 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline uint32_t LowestOneBit(uint32_t x) {
 
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline uint64_t LowestOneBit(uint64_t x) {
   return x & -x;
+}
+
+namespace useful_detail {
+
+// Constexpr implementation of std::log for base e.
+// This is a simple implementation using a Taylor series expansion and may not
+// be as accurate as std::log from <cmath>. It is intended for use in constexpr
+// contexts.
+// It uses the identity log(y) = 2 * atanh((y-1)/(y+1))
+// where atanh(x) = x + x^3/3 + x^5/5 + ...
+constexpr double ConstexprLog(double y) {
+  if (y < 0) {
+    return std::numeric_limits<double>::quiet_NaN();
+  }
+  if (y == 0) {
+    return -std::numeric_limits<double>::infinity();
+  }
+  if (y == 1) {
+    return 0.0;
+  }
+  // Bring y into the range [1, 2) to improve convergence.
+  // log(y) = log(y / 2^k) + k*log(2)
+  int k = 0;
+  while (y > 2.0) {
+    y /= 2.0;
+    k++;
+  }
+  while (y < 1.0) {
+    y *= 2.0;
+    k--;
+  }
+  // Now y is in [1, 2).
+  // x = (y-1)/(y+1) is in [0, 1/3).
+  // The series will converge quickly.
+  double x = (y - 1) / (y + 1);
+  double x2 = x * x;
+  double term = x;
+  double sum = term;
+  for (int i = 1; i < 100; ++i) {
+    term *= x2;
+    double next_sum = sum + term / (2 * i + 1);
+    if (next_sum == sum) break;
+    sum = next_sum;
+  }
+  constexpr double kLog2 = 0.693147180559945309417;
+  return 2 * sum + k * kLog2;
+}
+
+// Constexpr implementation of std::exp.
+// This is a simple implementation using a Taylor series expansion and may not
+// be as accurate as std::exp from <cmath>. It is intended for use in constexpr
+// contexts.
+// It uses exp(x) = 1 + x + x^2/2! + x^3/3! + ...
+// For better convergence, we use range reduction via exp(x) = (exp(x/2))^2.
+constexpr double ConstexprExp(double x) {
+  if (x > 2.0 || x < -2.0) {
+    const double half = ConstexprExp(x / 2.0);
+    return half * half;
+  }
+  double sum = 1.0;
+  double term = 1.0;
+  for (int i = 1; i < 30; ++i) {
+    term *= x / i;
+    double next_sum = sum + term;
+    if (next_sum == sum) break;
+    sum = next_sum;
+  }
+  return sum;
+}
+
+}  // namespace useful_detail
+
+// Constexpr implementation of std::pow.
+// This is a simple implementation and may not be as accurate as std::pow from
+// <cmath>. It is intended for use in constexpr contexts.
+// Fuzztests exist in useful_fuzztest.cc to test that the constexpr and
+// non-constexpr implementations are within an acceptable error bound.
+// Replace with std::pow when we move to C++26.
+constexpr double ConstexprPow(double base, double exponent) {
+  // For simplicity, only handle non-negative bases.
+  // std::pow has more complex rules for negative bases.
+  if (base < 0) return std::numeric_limits<double>::quiet_NaN();
+  if (base == 0) {
+    if (exponent > 0) return 0.0;
+    if (exponent == 0) return 1.0;
+    return std::numeric_limits<double>::infinity();
+  }
+  if (exponent == 0.0) return 1.0;
+  if (exponent == 1.0) return base;
+  return useful_detail::ConstexprExp(exponent *
+                                     useful_detail::ConstexprLog(base));
 }
 
 }  // namespace grpc_core

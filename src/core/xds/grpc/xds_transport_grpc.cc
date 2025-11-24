@@ -16,16 +16,6 @@
 
 #include "src/core/xds/grpc/xds_transport_grpc.h"
 
-#include <string.h>
-
-#include <functional>
-#include <memory>
-#include <string_view>
-#include <utility>
-
-#include "absl/log/check.h"
-#include "absl/strings/str_cat.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/event_engine/event_engine.h>
@@ -34,20 +24,27 @@
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
+#include <string.h>
+
+#include <functional>
+#include <memory>
+#include <string_view>
+#include <utility>
 
 #include "src/core/client_channel/client_channel_filter.h"
+#include "src/core/config/core_configuration.h"
+#include "src/core/credentials/call/composite/composite_call_credentials.h"
+#include "src/core/credentials/transport/channel_creds_registry.h"
+#include "src/core/credentials/transport/composite/composite_channel_credentials.h"
+#include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/security/credentials/channel_creds_registry.h"
-#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call.h"
@@ -56,11 +53,14 @@
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/down_cast.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
-#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_server_grpc_interface.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
@@ -77,9 +77,9 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
   call_ = channel->CreateCall(
       /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS, /*cq=*/nullptr,
       factory_->interested_parties(), Slice::FromStaticString(method),
-      /*authority=*/absl::nullopt, Timestamp::InfFuture(),
+      /*authority=*/std::nullopt, Timestamp::InfFuture(),
       /*registered_method=*/true);
-  CHECK_NE(call_, nullptr);
+  GRPC_CHECK_NE(call_, nullptr);
   // Init data associated with the call.
   grpc_metadata_array_init(&initial_metadata_recv_);
   grpc_metadata_array_init(&trailing_metadata_recv_);
@@ -109,7 +109,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
       this->Ref(DEBUG_LOCATION, "OnRecvInitialMetadata").release(), nullptr);
   call_error = grpc_call_start_batch_and_execute(
       call_, ops, static_cast<size_t>(op - ops), &on_recv_initial_metadata_);
-  CHECK_EQ(call_error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(call_error, GRPC_CALL_OK);
   // Start a batch for recv_trailing_metadata.
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -126,7 +126,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
   GRPC_CLOSURE_INIT(&on_status_received_, OnStatusReceived, this, nullptr);
   call_error = grpc_call_start_batch_and_execute(
       call_, ops, static_cast<size_t>(op - ops), &on_status_received_);
-  CHECK_EQ(call_error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(call_error, GRPC_CALL_OK);
   GRPC_CLOSURE_INIT(&on_response_received_, OnResponseReceived, this, nullptr);
 }
 
@@ -136,12 +136,12 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
   grpc_byte_buffer_destroy(send_message_payload_);
   grpc_byte_buffer_destroy(recv_message_payload_);
   CSliceUnref(status_details_);
-  CHECK_NE(call_, nullptr);
+  GRPC_CHECK_NE(call_, nullptr);
   grpc_call_unref(call_);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::Orphan() {
-  CHECK_NE(call_, nullptr);
+  GRPC_CHECK_NE(call_, nullptr);
   // If we are here because xds_client wants to cancel the call,
   // OnStatusReceived() will complete the cancellation and clean up.
   // Otherwise, we are here because xds_client has to orphan a failed call,
@@ -165,7 +165,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::SendMessage(
   Ref(DEBUG_LOCATION, "OnRequestSent").release();
   grpc_call_error call_error =
       grpc_call_start_batch_and_execute(call_, &op, 1, &on_request_sent_);
-  CHECK_EQ(call_error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(call_error, GRPC_CALL_OK);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
@@ -175,10 +175,10 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
   memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_RECV_MESSAGE;
   op.data.recv_message.recv_message = &recv_message_payload_;
-  CHECK_NE(call_, nullptr);
+  GRPC_CHECK_NE(call_, nullptr);
   const grpc_call_error call_error =
       grpc_call_start_batch_and_execute(call_, &op, 1, &on_response_received_);
-  CHECK_EQ(call_error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(call_error, GRPC_CALL_OK);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
@@ -253,10 +253,26 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher final
 namespace {
 
 RefCountedPtr<Channel> CreateXdsChannel(const ChannelArgs& args,
-                                        const GrpcXdsServer& server) {
+                                        const GrpcXdsServerInterface& server) {
   RefCountedPtr<grpc_channel_credentials> channel_creds =
       CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
           server.channel_creds_config());
+  RefCountedPtr<grpc_call_credentials> call_creds;
+  for (const auto& call_creds_config : server.call_creds_configs()) {
+    RefCountedPtr<grpc_call_credentials> creds =
+        CoreConfiguration::Get().call_creds_registry().CreateCallCreds(
+            call_creds_config);
+    if (call_creds == nullptr) {
+      call_creds = std::move(creds);
+    } else {
+      call_creds = MakeRefCounted<grpc_composite_call_credentials>(
+          std::move(call_creds), std::move(creds));
+    }
+  }
+  if (call_creds != nullptr) {
+    channel_creds = MakeRefCounted<grpc_composite_channel_credentials>(
+        std::move(channel_creds), std::move(call_creds));
+  }
   return RefCountedPtr<Channel>(Channel::FromC(grpc_channel_create(
       server.server_uri().c_str(), channel_creds.get(), args.ToC().get())));
 }
@@ -265,7 +281,7 @@ RefCountedPtr<Channel> CreateXdsChannel(const ChannelArgs& args,
 
 GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
     WeakRefCountedPtr<GrpcXdsTransportFactory> factory,
-    const XdsBootstrap::XdsServer& server, absl::Status* status)
+    const XdsBootstrap::XdsServerTarget& server, absl::Status* status)
     : XdsTransport(GRPC_TRACE_FLAG_ENABLED(xds_client_refcount)
                        ? "GrpcXdsTransport"
                        : nullptr),
@@ -274,8 +290,8 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[GrpcXdsTransport " << this << "] created";
   channel_ = CreateXdsChannel(factory_->args_,
-                              static_cast<const GrpcXdsServer&>(server));
-  CHECK(channel_ != nullptr);
+                              DownCast<const GrpcXdsServerInterface&>(server));
+  GRPC_CHECK(channel_ != nullptr);
   if (channel_->IsLame()) {
     *status = absl::UnavailableError("xds client has a lame channel");
   }
@@ -301,7 +317,6 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::Orphaned() {
   // (e.g., when using one control plane to find another control plane).
   grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
       [self = WeakRefAsSubclass<GrpcXdsTransport>()]() mutable {
-        ApplicationCallbackExecCtx application_exec_ctx;
         ExecCtx exec_ctx;
         self.reset();
       });
@@ -375,8 +390,8 @@ GrpcXdsTransportFactory::~GrpcXdsTransportFactory() {
 }
 
 RefCountedPtr<XdsTransportFactory::XdsTransport>
-GrpcXdsTransportFactory::GetTransport(const XdsBootstrap::XdsServer& server,
-                                      absl::Status* status) {
+GrpcXdsTransportFactory::GetTransport(
+    const XdsBootstrap::XdsServerTarget& server, absl::Status* status) {
   std::string key = server.Key();
   RefCountedPtr<GrpcXdsTransport> transport;
   MutexLock lock(&mu_);

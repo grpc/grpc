@@ -14,14 +14,13 @@
 
 #include "src/core/telemetry/metrics.h"
 
-#include <memory>
-
-#include "absl/log/check.h"
-#include "absl/types/optional.h"
-
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+#include <optional>
+
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 
@@ -51,7 +50,7 @@ GlobalInstrumentsRegistry::RegisterInstrument(
     }
   }
   InstrumentID index = instruments.size();
-  CHECK_LT(index, std::numeric_limits<uint32_t>::max());
+  GRPC_CHECK_LT(index, std::numeric_limits<uint32_t>::max());
   GlobalInstrumentDescriptor descriptor;
   descriptor.value_type = value_type;
   descriptor.instrument_type = instrument_type;
@@ -102,67 +101,98 @@ RegisteredMetricCallback::~RegisteredMetricCallback() {
 
 void GlobalStatsPluginRegistry::StatsPluginGroup::AddClientCallTracers(
     const Slice& path, bool registered_method, Arena* arena) {
+  absl::InlinedVector<ClientCallTracerInterface*, 3> tracers;
   for (auto& state : plugins_state_) {
     auto* call_tracer = state.plugin->GetClientCallTracer(
         path, registered_method, state.scope_config);
     if (call_tracer != nullptr) {
-      AddClientCallTracerToContext(arena, call_tracer);
+      tracers.push_back(call_tracer);
     }
   }
+  SetClientCallTracer(arena, tracers);
 }
 
 void GlobalStatsPluginRegistry::StatsPluginGroup::AddServerCallTracers(
-    Arena* arena) {
+    Arena* arena,
+    absl::Span<ServerCallTracerInterface* const> additional_tracers) {
+  absl::InlinedVector<ServerCallTracerInterface*, 3> tracers;
+  for (auto* tracer : additional_tracers) {
+    if (tracer != nullptr) tracers.push_back(tracer);
+  }
   for (auto& state : plugins_state_) {
     auto* call_tracer = state.plugin->GetServerCallTracer(state.scope_config);
     if (call_tracer != nullptr) {
-      AddServerCallTracerToContext(arena, call_tracer);
+      tracers.push_back(call_tracer);
     }
   }
+  SetServerCallTracer(arena, tracers);
 }
 
-NoDestruct<Mutex> GlobalStatsPluginRegistry::mutex_;
-NoDestruct<std::vector<std::shared_ptr<StatsPlugin>>>
+int GlobalStatsPluginRegistry::StatsPluginGroup::ChannelArgsCompare(
+    const StatsPluginGroup* a, const StatsPluginGroup* b) {
+  for (size_t i = 0; i < a->plugins_state_.size(); ++i) {
+    if (b->plugins_state_.size() == i) return 1;  // a is greater
+    auto& a_state = a->plugins_state_[i];
+    auto& b_state = b->plugins_state_[i];
+    int r = QsortCompare(a_state.plugin.get(), b_state.plugin.get());
+    if (r != 0) return r;
+    if (a_state.scope_config == nullptr) {
+      if (b_state.scope_config != nullptr) return -1;  // a is less
+      // If both are null, they're equal.
+    } else {
+      if (b_state.scope_config == nullptr) return 1;  // a is greater
+      // Neither is null, so compare.
+      r = a_state.scope_config->Compare(*b_state.scope_config);
+      if (r != 0) return r;
+    }
+  }
+  if (b->plugins_state_.size() > a->plugins_state_.size()) return -1;
+  return 0;
+}
+
+std::atomic<GlobalStatsPluginRegistry::GlobalStatsPluginNode*>
     GlobalStatsPluginRegistry::plugins_;
 
 void GlobalStatsPluginRegistry::RegisterStatsPlugin(
     std::shared_ptr<StatsPlugin> plugin) {
-  MutexLock lock(&*mutex_);
-  plugins_->push_back(std::move(plugin));
+  GlobalStatsPluginNode* node = new GlobalStatsPluginNode();
+  node->plugin = std::move(plugin);
+  node->next = plugins_.load(std::memory_order_relaxed);
+  while (!plugins_.compare_exchange_weak(
+      node->next, node, std::memory_order_acq_rel, std::memory_order_relaxed)) {
+  }
 }
 
-GlobalStatsPluginRegistry::StatsPluginGroup
+std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
 GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
     const experimental::StatsPluginChannelScope& scope) {
-  MutexLock lock(&*mutex_);
-  StatsPluginGroup group;
-  for (const auto& plugin : *plugins_) {
-    bool is_enabled = false;
-    std::shared_ptr<StatsPlugin::ScopeConfig> config;
-    std::tie(is_enabled, config) = plugin->IsEnabledForChannel(scope);
+  auto group = std::make_shared<StatsPluginGroup>();
+  for (GlobalStatsPluginNode* node = plugins_.load(std::memory_order_acquire);
+       node != nullptr; node = node->next) {
+    auto [is_enabled, config] = node->plugin->IsEnabledForChannel(scope);
     if (is_enabled) {
-      group.AddStatsPlugin(plugin, std::move(config));
+      group->AddStatsPlugin(node->plugin, std::move(config));
     }
   }
+  group->Finish();
   return group;
 }
 
-GlobalStatsPluginRegistry::StatsPluginGroup
+std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
 GlobalStatsPluginRegistry::GetStatsPluginsForServer(const ChannelArgs& args) {
-  MutexLock lock(&*mutex_);
-  StatsPluginGroup group;
-  for (const auto& plugin : *plugins_) {
-    bool is_enabled = false;
-    std::shared_ptr<StatsPlugin::ScopeConfig> config;
-    std::tie(is_enabled, config) = plugin->IsEnabledForServer(args);
+  auto group = std::make_shared<StatsPluginGroup>();
+  for (GlobalStatsPluginNode* node = plugins_.load(std::memory_order_acquire);
+       node != nullptr; node = node->next) {
+    auto [is_enabled, config] = node->plugin->IsEnabledForServer(args);
     if (is_enabled) {
-      group.AddStatsPlugin(plugin, std::move(config));
+      group->AddStatsPlugin(node->plugin, std::move(config));
     }
   }
+  group->Finish();
   return group;
 }
 
-absl::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
+std::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
 GlobalInstrumentsRegistry::FindInstrumentByName(absl::string_view name) {
   const auto& instruments = GetInstrumentList();
   for (const auto& descriptor : instruments) {
@@ -172,7 +202,7 @@ GlobalInstrumentsRegistry::FindInstrumentByName(absl::string_view name) {
       return handle;
     }
   }
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 }  // namespace grpc_core

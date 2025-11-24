@@ -253,18 +253,18 @@ class _LoadBalancerStatsServicer(
         with _global_lock:
             for method in _SUPPORTED_METHODS:
                 caps_method = _METHOD_CAMEL_TO_CAPS_SNAKE[method]
-                response.num_rpcs_started_by_method[
-                    caps_method
-                ] = _global_rpcs_started[method]
-                response.num_rpcs_succeeded_by_method[
-                    caps_method
-                ] = _global_rpcs_succeeded[method]
-                response.num_rpcs_failed_by_method[
-                    caps_method
-                ] = _global_rpcs_failed[method]
-                response.stats_per_method[
-                    caps_method
-                ].rpcs_started = _global_rpcs_started[method]
+                response.num_rpcs_started_by_method[caps_method] = (
+                    _global_rpcs_started[method]
+                )
+                response.num_rpcs_succeeded_by_method[caps_method] = (
+                    _global_rpcs_succeeded[method]
+                )
+                response.num_rpcs_failed_by_method[caps_method] = (
+                    _global_rpcs_failed[method]
+                )
+                response.stats_per_method[caps_method].rpcs_started = (
+                    _global_rpcs_started[method]
+                )
                 for code, count in _global_rpc_statuses[method].items():
                     response.stats_per_method[caps_method].result[code] = count
         logger.info("Returning cumulative stats response.")

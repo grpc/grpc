@@ -19,7 +19,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal xds_type_v3_CelExpression_submsgs[2] = {
+static const upb_MiniTableSubInternal xds_type_v3_CelExpression__submsgs[2] = {
   {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__ParsedExpr_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__api__expr__v1alpha1__CheckedExpr_msg_init_ptr},
 };
@@ -30,7 +30,7 @@ static const upb_MiniTableField xds_type_v3_CelExpression__fields[2] = {
 };
 
 const upb_MiniTable xds__type__v3__CelExpression_msg_init = {
-  &xds_type_v3_CelExpression_submsgs[0],
+  &xds_type_v3_CelExpression__submsgs[0],
   &xds_type_v3_CelExpression__fields[0],
   UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -45,7 +45,7 @@ const upb_MiniTable xds__type__v3__CelExpression_msg_init = {
 };
 
 const upb_MiniTable* xds__type__v3__CelExpression_msg_init_ptr = &xds__type__v3__CelExpression_msg_init;
-static const upb_MiniTableSubInternal xds_type_v3_CelExtractString_submsgs[2] = {
+static const upb_MiniTableSubInternal xds_type_v3_CelExtractString__submsgs[2] = {
   {.UPB_PRIVATE(submsg) = &xds__type__v3__CelExpression_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__StringValue_msg_init_ptr},
 };
@@ -56,7 +56,7 @@ static const upb_MiniTableField xds_type_v3_CelExtractString__fields[2] = {
 };
 
 const upb_MiniTable xds__type__v3__CelExtractString_msg_init = {
-  &xds_type_v3_CelExtractString_submsgs[0],
+  &xds_type_v3_CelExtractString__submsgs[0],
   &xds_type_v3_CelExtractString__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED

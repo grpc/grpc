@@ -15,6 +15,9 @@
 #ifndef GRPC_TEST_CORE_EVENT_ENGINE_EVENT_ENGINE_TEST_UTILS_H
 #define GRPC_TEST_CORE_EVENT_ENGINE_EVENT_ENGINE_TEST_UTILS_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/slice_buffer.h>
+
 #include <functional>
 #include <map>
 #include <memory>
@@ -24,16 +27,13 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/slice_buffer.h>
-
-#include "src/core/lib/resource_quota/memory_quota.h"
-#include "src/core/util/notification.h"
-#include "src/core/util/sync.h"
 
 using EventEngineFactory = std::function<
     std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>;
@@ -46,20 +46,6 @@ std::string ExtractSliceBufferIntoString(SliceBuffer* buf);
 // Returns a random message with bounded length.
 std::string GetNextSendMessage();
 
-// Waits until the use_count of the EventEngine shared_ptr has reached 1
-// and returns.
-// Callers must give up their ref, or this method will block forever.
-// Usage: WaitForSingleOwner(std::move(engine))
-void WaitForSingleOwner(std::shared_ptr<EventEngine> engine);
-
-// Waits until the use_count of the EventEngine shared_ptr has reached 1
-// and returns.
-// Callers must give up their ref, or this method will block forever.
-// This version will CRASH after the given timeout
-// Usage: WaitForSingleOwner(std::move(engine), 30s)
-void WaitForSingleOwnerWithTimeout(std::shared_ptr<EventEngine> engine,
-                                   EventEngine::Duration timeout);
-
 // A helper method to exchange data between two endpoints. It is assumed
 // that both endpoints are connected. The data (specified as a string) is
 // written by the sender_endpoint and read by the receiver_endpoint. It
@@ -67,18 +53,21 @@ void WaitForSingleOwnerWithTimeout(std::shared_ptr<EventEngine> engine,
 // calling thread until said Write and Read operations are complete.
 absl::Status SendValidatePayload(absl::string_view data,
                                  EventEngine::Endpoint* send_endpoint,
-                                 EventEngine::Endpoint* receive_endpoint);
+                                 EventEngine::Endpoint* receive_endpoint,
+                                 int read_hint_bytes = -1);
 
 // A helper class to create clients/listeners and connections between them.
 // The clients and listeners can be created by the oracle EventEngine
 // or the EventEngine under test. The class provides handles into the
-// connections that are created. Inidividual tests can test expected behavior by
+// connections that are created. Individual tests can test expected behavior by
 // exchanging arbitrary data over these connections.
 class ConnectionManager {
  public:
   ConnectionManager(std::unique_ptr<EventEngine> test_event_engine,
                     std::unique_ptr<EventEngine> oracle_event_engine)
-      : memory_quota_(std::make_unique<grpc_core::MemoryQuota>("foo")),
+      : memory_quota_(std::make_unique<grpc_core::MemoryQuota>(
+            grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+                "foo"))),
         test_event_engine_(std::move(test_event_engine)),
         oracle_event_engine_(std::move(oracle_event_engine)) {}
   ~ConnectionManager() = default;
@@ -184,7 +173,7 @@ class ThreadedNoopEndpoint : public EventEngine::Endpoint {
   }
 
   bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
-            const ReadArgs* /* args */) override {
+            ReadArgs /* args */) override {
     buffer->Clear();
     CleanupThread(state_->read);
     state_->read = new std::thread([cb = std::move(on_read)]() mutable {
@@ -194,7 +183,7 @@ class ThreadedNoopEndpoint : public EventEngine::Endpoint {
   }
 
   bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
-             SliceBuffer* data, const WriteArgs* /* args */) override {
+             SliceBuffer* data, WriteArgs /* args */) override {
     data->Clear();
     CleanupThread(state_->write);
     state_->write = new std::thread([cb = std::move(on_writable)]() mutable {
@@ -209,6 +198,10 @@ class ThreadedNoopEndpoint : public EventEngine::Endpoint {
 
   const EventEngine::ResolvedAddress& GetLocalAddress() const override {
     return local_;
+  }
+
+  std::shared_ptr<TelemetryInfo> GetTelemetryInfo() const override {
+    return nullptr;
   }
 
  private:
@@ -231,6 +224,11 @@ class ThreadedNoopEndpoint : public EventEngine::Endpoint {
   EventEngine::ResolvedAddress peer_;
   EventEngine::ResolvedAddress local_;
 };
+
+// We need everything EventEngine to do reasonable timer steps -- without it
+// we need to do a bunch of evil to make sure both timer systems are ticking
+// each step.
+bool IsSaneTimerEnvironment();
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

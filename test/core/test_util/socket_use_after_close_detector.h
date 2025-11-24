@@ -19,17 +19,17 @@
 #ifndef GRPC_TEST_CORE_TEST_UTIL_SOCKET_USE_AFTER_CLOSE_DETECTOR_H
 #define GRPC_TEST_CORE_TEST_UTIL_SOCKET_USE_AFTER_CLOSE_DETECTOR_H
 
-#include <memory>
-#include <thread>
-
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync_generic.h>
+
+#include <memory>
+#include <thread>
 
 namespace grpc_core {
 namespace testing {
 
 // This class is meant to detect file descriptor use-after-close
-// bugs occuring somewhere in the program while the object is in live.
+// bugs occurring somewhere in the program while the object is in live.
 // The implementation currently uses a background thread to open
 // and close sockets in a loop, catching socket use-after-close bugs
 // by watching them manifest as unexpected socket operation failures.

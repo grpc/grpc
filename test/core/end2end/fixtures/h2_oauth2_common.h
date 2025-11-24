@@ -15,10 +15,6 @@
 #ifndef GRPC_TEST_CORE_END2END_FIXTURES_H2_OAUTH2_COMMON_H
 #define GRPC_TEST_CORE_END2END_FIXTURES_H2_OAUTH2_COMMON_H
 
-#include <string.h>
-
-#include "absl/log/check.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -26,13 +22,16 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
+#include <string.h>
 
+#include "src/core/credentials/call/call_credentials.h"
+#include "src/core/credentials/transport/ssl/ssl_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/secure_fixture.h"
+#include "test/core/test_util/test_call_creds.h"
 #include "test/core/test_util/tls_utils.h"
 
 class Oauth2Fixture : public SecureFixture {
@@ -74,7 +73,7 @@ class Oauth2Fixture : public SecureFixture {
                                      void* user_data) {
     const grpc_metadata* oauth2 =
         find_metadata(md, md_count, "authorization", oauth2_md());
-    CHECK_NE(oauth2, nullptr);
+    GRPC_CHECK_NE(oauth2, nullptr);
     cb(user_data, oauth2, 1, nullptr, 0, GRPC_STATUS_OK, nullptr);
   }
 
@@ -84,8 +83,8 @@ class Oauth2Fixture : public SecureFixture {
                                      void* user_data) {
     const grpc_metadata* oauth2 =
         find_metadata(md, md_count, "authorization", oauth2_md());
-    CHECK_NE(state, nullptr);
-    CHECK_NE(oauth2, nullptr);
+    GRPC_CHECK_NE(state, nullptr);
+    GRPC_CHECK_NE(oauth2, nullptr);
     cb(user_data, oauth2, 1, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
   }
 
@@ -160,7 +159,7 @@ class Oauth2Fixture : public SecureFixture {
                                    size_t /*md_count*/,
                                    grpc_process_auth_metadata_done_cb cb,
                                    void* user_data) {
-    CHECK_EQ(state, nullptr);
+    GRPC_CHECK_EQ(state, nullptr);
     cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
   }
 

@@ -16,24 +16,19 @@
 
 #include "src/core/load_balancing/endpoint_list.h"
 
-#include <stdlib.h>
-
-#include <memory>
-#include <utility>
-#include <vector>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/types/optional.h"
-
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/json.h>
 #include <grpc/support/port_platform.h>
+#include <stdlib.h>
 
+#include <memory>
+#include <optional>
+#include <utility>
+#include <vector>
+
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/load_balancing/delegating_helper.h"
 #include "src/core/load_balancing/lb_policy.h"
@@ -41,9 +36,15 @@
 #include "src/core/load_balancing/pick_first/pick_first.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/shared_bit_gen.h"
+#include "absl/log/log.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 
@@ -118,7 +119,7 @@ absl::Status EndpointList::Endpoint::Init(
       CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
           Json::FromArray(
               {Json::FromObject({{"pick_first", Json::FromObject({})}})}));
-  CHECK(config.ok());
+  GRPC_CHECK(config.ok());
   // Update child policy.
   LoadBalancingPolicy::UpdateArgs update_args;
   update_args.addresses = std::make_shared<SingleEndpointIterator>(addresses);
@@ -170,16 +171,50 @@ void EndpointList::Init(
                                               const ChannelArgs&)>
         create_endpoint) {
   if (endpoints == nullptr) return;
+  if (!IsRrWrrConnectFromRandomIndexEnabled()) {
+    endpoints->ForEach([&](const EndpointAddresses& endpoint) {
+      endpoints_.push_back(
+          create_endpoint(Ref(DEBUG_LOCATION, "Endpoint"), endpoint, args));
+    });
+    return;
+  }
+  // If all clients get the same endpoint list in the same order, and they
+  // all start connection attempts in that order, and all connection attempts
+  // take approximately the same amount of time, then all clients are
+  // likely to connect to the first endpoint in the list before any of
+  // the others.  As soon as the client has that initial connection,
+  // it will send all queued RPCs on that connection while it waits for
+  // other endpoints to become connected.  This can result in sending a
+  // potentially large burst of traffic to the first endpoint in the list.
+  // To avoid that, we start connecting from a random index into the list.
+  std::vector<EndpointAddresses> endpoint_list;
   endpoints->ForEach([&](const EndpointAddresses& endpoint) {
-    endpoints_.push_back(
-        create_endpoint(Ref(DEBUG_LOCATION, "Endpoint"), endpoint, args));
+    endpoint_list.push_back(endpoint);
   });
+  endpoints_.resize(endpoint_list.size());
+  size_t start_index = absl::Uniform(SharedBitGen(), 0UL, endpoint_list.size());
+  for (size_t i = 0; i < endpoint_list.size(); ++i) {
+    size_t index = (start_index + i) % endpoint_list.size();
+    EndpointAddresses& endpoint = endpoint_list[index];
+    endpoints_[index] =
+        create_endpoint(Ref(DEBUG_LOCATION, "Endpoint"), endpoint, args);
+  }
 }
 
 void EndpointList::ResetBackoffLocked() {
   for (const auto& endpoint : endpoints_) {
     endpoint->ResetBackoffLocked();
   }
+}
+
+void EndpointList::ReportTransientFailure(absl::Status status) {
+  if (!resolution_note_.empty()) {
+    status = absl::Status(status.code(), absl::StrCat(status.message(), " (",
+                                                      resolution_note_, ")"));
+  }
+  channel_control_helper()->UpdateState(
+      GRPC_CHANNEL_TRANSIENT_FAILURE, status,
+      MakeRefCounted<LoadBalancingPolicy::TransientFailurePicker>(status));
 }
 
 }  // namespace grpc_core

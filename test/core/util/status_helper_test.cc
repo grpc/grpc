@@ -18,14 +18,15 @@
 
 #include <stddef.h>
 
+#include "google/rpc/status.upb.h"
+#include "src/core/lib/experiments/experiments.h"
+#include "upb/mem/arena.hpp"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/civil_time.h"
 #include "absl/time/clock.h"
-#include "gmock/gmock.h"
-#include "google/rpc/status.upb.h"
-#include "gtest/gtest.h"
-#include "upb/mem/arena.hpp"
 
 namespace grpc_core {
 namespace {
@@ -34,15 +35,16 @@ TEST(StatusUtilTest, CreateStatus) {
   absl::Status s =
       StatusCreate(absl::StatusCode::kUnknown, "Test", DEBUG_LOCATION,
                    {absl::OkStatus(), absl::CancelledError()});
-  EXPECT_EQ(absl::StatusCode::kUnknown, s.code());
-  EXPECT_EQ("Test", s.message());
-#ifndef NDEBUG
-  EXPECT_EQ(true, StatusGetStr(s, StatusStrProperty::kFile).has_value());
-  EXPECT_EQ(true, StatusGetInt(s, StatusIntProperty::kFileLine).has_value());
-#endif
-  EXPECT_EQ(true, StatusGetTime(s, StatusTimeProperty::kCreated).has_value());
-  EXPECT_THAT(StatusGetChildren(s),
-              ::testing::ElementsAre(absl::CancelledError()));
+  if (!IsErrorFlattenEnabled()) {
+    EXPECT_EQ(absl::StatusCode::kUnknown, s.code());
+    EXPECT_EQ("Test", s.message());
+    EXPECT_THAT(StatusGetChildren(s),
+                ::testing::ElementsAre(absl::CancelledError()));
+    return;
+  }
+  EXPECT_EQ(absl::StatusCode::kCancelled, s.code());
+  EXPECT_EQ("Test ()", s.message());
+  EXPECT_THAT(StatusGetChildren(s), ::testing::ElementsAre());
 }
 
 TEST(StatusUtilTest, SetAndGetInt) {
@@ -53,51 +55,46 @@ TEST(StatusUtilTest, SetAndGetInt) {
 
 TEST(StatusUtilTest, GetIntNotExistent) {
   absl::Status s = absl::CancelledError();
-  EXPECT_EQ(absl::optional<intptr_t>(),
+  EXPECT_EQ(std::optional<intptr_t>(),
             StatusGetInt(s, StatusIntProperty::kStreamId));
 }
 
 TEST(StatusUtilTest, SetAndGetStr) {
   absl::Status s = absl::CancelledError();
-  StatusSetStr(&s, StatusStrProperty::kFile, "value");
-  EXPECT_EQ("value", StatusGetStr(s, StatusStrProperty::kFile));
+  StatusSetStr(&s, StatusStrProperty::kGrpcMessage, "value");
+  EXPECT_EQ("value", StatusGetStr(s, StatusStrProperty::kGrpcMessage));
 }
 
 TEST(StatusUtilTest, GetStrNotExistent) {
+  if (IsErrorFlattenEnabled()) {
+    GTEST_SKIP() << "This case not possible with this experiment";
+  }
   absl::Status s = absl::CancelledError();
-  EXPECT_EQ(absl::optional<std::string>(),
-            StatusGetStr(s, StatusStrProperty::kFile));
-}
-
-TEST(StatusUtilTest, SetAndGetTime) {
-  absl::Status s = absl::CancelledError();
-  absl::Time t = absl::Now();
-  StatusSetTime(&s, StatusTimeProperty::kCreated, t);
-  EXPECT_EQ(t, StatusGetTime(s, StatusTimeProperty::kCreated));
-}
-
-TEST(StatusUtilTest, GetTimeNotExistent) {
-  absl::Status s = absl::CancelledError();
-  EXPECT_EQ(absl::optional<absl::Time>(),
-            StatusGetTime(s, StatusTimeProperty::kCreated));
+  EXPECT_EQ(std::optional<std::string>(),
+            StatusGetStr(s, StatusStrProperty::kGrpcMessage));
 }
 
 TEST(StatusUtilTest, AddAndGetChildren) {
-  absl::Status s = absl::CancelledError();
-  absl::Status child1 = absl::AbortedError("Message1");
-  absl::Status child2 = absl::DeadlineExceededError("Message2");
+  absl::Status s = absl::UnknownError("Message1");
+  absl::Status child1 = absl::AbortedError("Message2");
+  absl::Status child2 = absl::DeadlineExceededError("Message3");
   absl::Status child3 = absl::UnimplementedError("");
   StatusAddChild(&s, child1);
   StatusAddChild(&s, child2);
   StatusAddChild(&s, child3);
-  EXPECT_THAT(StatusGetChildren(s),
-              ::testing::ElementsAre(child1, child2, child3));
+  if (!IsErrorFlattenEnabled()) {
+    EXPECT_THAT(StatusGetChildren(s),
+                ::testing::ElementsAre(child1, child2, child3));
+    return;
+  }
+  EXPECT_EQ(s.code(), absl::StatusCode::kAborted);
+  EXPECT_EQ(s.message(), "Message1 (Message2) (Message3) ()");
+  EXPECT_THAT(StatusGetChildren(s), ::testing::ElementsAre());
 }
 
 TEST(StatusUtilTest, ToAndFromProto) {
   absl::Status s = absl::CancelledError("Message");
   StatusSetInt(&s, StatusIntProperty::kStreamId, 2021);
-  StatusSetStr(&s, StatusStrProperty::kFile, "value");
   upb::Arena arena;
   google_rpc_Status* msg = internal::StatusToProto(s, arena.ptr());
   size_t len;
@@ -110,7 +107,6 @@ TEST(StatusUtilTest, ToAndFromProto) {
 TEST(StatusUtilTest, ToAndFromProtoWithNonUTF8Characters) {
   absl::Status s = absl::CancelledError("_\xAB\xCD\xEF_");
   StatusSetInt(&s, StatusIntProperty::kStreamId, 2021);
-  StatusSetStr(&s, StatusStrProperty::kFile, "!\xFF\xCC\xAA!");
   upb::Arena arena;
   google_rpc_Status* msg = internal::StatusToProto(s, arena.ptr());
   size_t len;
@@ -141,19 +137,11 @@ TEST(StatusUtilTest, ErrorWithIntPropertyToString) {
 
 TEST(StatusUtilTest, ErrorWithStrPropertyToString) {
   absl::Status s = absl::CancelledError("Message");
-  StatusSetStr(&s, StatusStrProperty::kDescription, "Hey");
+  StatusSetStr(&s, StatusStrProperty::kGrpcMessage, "Hey");
   std::string t = StatusToString(s);
-  EXPECT_EQ("CANCELLED:Message {description:\"Hey\"}", t);
-}
-
-TEST(StatusUtilTest, ErrorWithTimePropertyToString) {
-  absl::Status s = absl::CancelledError("Message");
-  absl::Time t = absl::FromCivil(absl::CivilSecond(2021, 4, 29, 8, 56, 30),
-                                 absl::LocalTimeZone());
-  StatusSetTime(&s, StatusTimeProperty::kCreated, t);
-  EXPECT_EQ(StatusToString(s),
-            absl::StrCat("CANCELLED:Message {created_time:\"",
-                         absl::FormatTime(t), "\"}"));
+  EXPECT_EQ(t, IsErrorFlattenEnabled()
+                   ? "CANCELLED:Hey (Message)"
+                   : "CANCELLED:Message {grpc_message:\"Hey\"}");
 }
 
 TEST(StatusUtilTest, ComplexErrorWithChildrenToString) {
@@ -162,13 +150,16 @@ TEST(StatusUtilTest, ComplexErrorWithChildrenToString) {
   absl::Status s1 = absl::AbortedError("Message1");
   StatusAddChild(&s, s1);
   absl::Status s2 = absl::AlreadyExistsError("Message2");
-  StatusSetStr(&s2, StatusStrProperty::kFile, "value");
+  StatusSetStr(&s2, StatusStrProperty::kGrpcMessage, "value");
   StatusAddChild(&s, s2);
   std::string t = StatusToString(s);
   EXPECT_EQ(
-      "CANCELLED:Message {stream_id:2021, children:["
-      "ABORTED:Message1, ALREADY_EXISTS:Message2 {file:\"value\"}]}",
-      t);
+      t,
+      IsErrorFlattenEnabled()
+          ? "CANCELLED:Message (Message1) (value (Message2)) {stream_id:2021}"
+          : "CANCELLED:Message {stream_id:2021, children:["
+            "ABORTED:Message1, "
+            "ALREADY_EXISTS:Message2 {grpc_message:\"value\"}]}");
 }
 
 TEST(StatusUtilTest, AllocHeapPtr) {

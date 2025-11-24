@@ -20,7 +20,6 @@
 #define GRPC_SRC_CORE_UTIL_GRPC_IF_NAMETOINDEX_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 // Returns the interface index corresponding to the interface "name" provided.

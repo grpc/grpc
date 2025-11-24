@@ -15,6 +15,8 @@
 #ifndef GRPC_SRC_CORE_LIB_DEBUG_TRACE_IMPL_H
 #define GRPC_SRC_CORE_LIB_DEBUG_TRACE_IMPL_H
 
+#include <grpc/support/port_platform.h>
+
 #include <atomic>
 #include <map>
 #include <string>
@@ -22,8 +24,6 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/port_platform.h>
 
 #ifdef _WIN32
 #undef ERROR
@@ -75,7 +75,6 @@ class TraceFlag {
     value_.store(enabled, std::memory_order_relaxed);
   }
 
-  TraceFlag* next_tracer_;
   const char* const name_;
   std::atomic<bool> value_;
 };

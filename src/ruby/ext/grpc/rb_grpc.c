@@ -20,6 +20,9 @@
 
 #include "rb_grpc.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <math.h>
 #include <ruby/vm.h>
 #include <stdbool.h>
@@ -38,10 +41,6 @@
 #include "rb_server_credentials.h"
 #include "rb_xds_channel_credentials.h"
 #include "rb_xds_server_credentials.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
 #ifdef GPR_LINUX
 #include <sys/syscall.h>
@@ -334,7 +333,6 @@ static void grpc_ruby_init_threads() {
   rb_mutex_lock(g_bg_thread_init_rb_mu);
   if (!g_bg_thread_init_done) {
     grpc_rb_event_queue_thread_start();
-    grpc_rb_channel_polling_thread_start();
     g_bg_thread_init_done = true;
   }
   rb_mutex_unlock(g_bg_thread_init_rb_mu);
@@ -382,7 +380,7 @@ static VALUE grpc_rb_prefork(VALUE self) {
     rb_raise(rb_eRuntimeError,
              "GRPC.prefork and fork need to be called from the same thread "
              "that GRPC was initialized on (GRPC lazy-initializes when when "
-             "the first GRPC object is created");
+             "the first GRPC object is created)");
   }
   if (g_grpc_rb_num_fork_unsafe_threads > 0) {
     rb_raise(
@@ -396,7 +394,6 @@ static VALUE grpc_rb_prefork(VALUE self) {
   g_grpc_rb_prefork_pending = true;
   rb_mutex_lock(g_bg_thread_init_rb_mu);
   if (g_bg_thread_init_done) {
-    grpc_rb_channel_polling_thread_stop();
     grpc_rb_event_queue_thread_stop();
     // all ruby-level background threads joined at this point
     g_bg_thread_init_done = false;
@@ -450,9 +447,15 @@ void grpc_rb_fork_unsafe_begin() { g_grpc_rb_num_fork_unsafe_threads++; }
 void grpc_rb_fork_unsafe_end() { g_grpc_rb_num_fork_unsafe_threads--; }
 
 // APIs to mark fork-unsafe sections from ruby code
-static VALUE grpc_rb_fork_unsafe_begin_api() { grpc_rb_fork_unsafe_begin(); }
+static VALUE grpc_rb_fork_unsafe_begin_api() {
+  grpc_rb_fork_unsafe_begin();
+  return Qnil;
+}
 
-static VALUE grpc_rb_fork_unsafe_end_api() { grpc_rb_fork_unsafe_end(); }
+static VALUE grpc_rb_fork_unsafe_end_api() {
+  grpc_rb_fork_unsafe_end();
+  return Qnil;
+}
 
 // One-time initialization
 void Init_grpc_c() {

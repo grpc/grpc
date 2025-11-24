@@ -16,7 +16,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal xds_service_orca_v3_OrcaLoadReportRequest_submsgs[1] = {
+static const upb_MiniTableSubInternal xds_service_orca_v3_OrcaLoadReportRequest__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
 };
 
@@ -26,7 +26,7 @@ static const upb_MiniTableField xds_service_orca_v3_OrcaLoadReportRequest__field
 };
 
 const upb_MiniTable xds__service__orca__v3__OrcaLoadReportRequest_msg_init = {
-  &xds_service_orca_v3_OrcaLoadReportRequest_submsgs[0],
+  &xds_service_orca_v3_OrcaLoadReportRequest__submsgs[0],
   &xds_service_orca_v3_OrcaLoadReportRequest__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED

@@ -19,21 +19,20 @@
 
 #include "test/cpp/util/test_credentials_provider.h"
 
+#include <grpc/support/sync.h>
+#include <grpcpp/security/server_credentials.h>
+
 #include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <mutex>
 #include <unordered_map>
 
-#include "absl/flags/flag.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
-#include <grpc/support/sync.h>
-#include <grpcpp/security/server_credentials.h>
-
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/end2end/data/ssl_test_data.h"
+#include "absl/flags/flag.h"
+#include "absl/log/log.h"
 
 ABSL_FLAG(std::string, tls_cert_file, "",
           "The TLS cert file used when --use_tls=true");
@@ -177,7 +176,7 @@ CredentialsProvider* GetCredentialsProvider() {
 
 void SetCredentialsProvider(CredentialsProvider* provider) {
   // For now, forbids overriding provider.
-  CHECK_EQ(g_provider, nullptr);
+  GRPC_CHECK_EQ(g_provider, nullptr);
   g_provider = provider;
 }
 

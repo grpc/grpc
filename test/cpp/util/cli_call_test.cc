@@ -18,8 +18,6 @@
 
 #include "test/cpp/util/cli_call.h"
 
-#include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -32,6 +30,7 @@
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/string_ref_helper.h"
+#include "gtest/gtest.h"
 
 namespace grpc {
 namespace testing {

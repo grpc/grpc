@@ -15,15 +15,16 @@
 #ifndef GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_IMPL_H
 #define GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_IMPL_H
 
-#include "absl/status/statusor.h"
-
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
+
+class Blackboard;
 
 // Build a channel stack.
 // Allows interested parties to add filters to the stack, and to query an
@@ -34,13 +35,19 @@ class ChannelStackBuilderImpl final : public ChannelStackBuilder {
  public:
   using ChannelStackBuilder::ChannelStackBuilder;
 
+  void SetBlackboard(const Blackboard* blackboard) { blackboard_ = blackboard; }
+
   // Build the channel stack.
   // After success, *result holds the new channel stack,
   // prefix_bytes are allocated before the channel stack,
   // initial_refs, destroy, destroy_arg are as per grpc_channel_stack_init
   // On failure, *result is nullptr.
   absl::StatusOr<RefCountedPtr<grpc_channel_stack>> Build() override;
+
+ private:
+  const Blackboard* blackboard_ = nullptr;
 };
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_IMPL_H

@@ -16,19 +16,6 @@
 //
 //
 
-#include <algorithm>
-#include <condition_variable>
-#include <functional>
-#include <mutex>
-#include <sstream>
-#include <thread>
-
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -39,8 +26,16 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/client_callback.h>
 
+#include <algorithm>
+#include <condition_variable>
+#include <functional>
+#include <mutex>
+#include <sstream>
+#include <thread>
+
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
@@ -49,6 +44,9 @@
 #include "test/cpp/util/byte_buffer_proto_helper.h"
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
 
 namespace grpc {
 namespace testing {
@@ -198,7 +196,7 @@ class ClientCallbackEnd2endTest
           &cli_ctx, &request, &response,
           [&cli_ctx, &request, &response, &done, &mu, &cv, val,
            with_binary_metadata](Status s) {
-            CHECK(s.ok());
+            GRPC_CHECK(s.ok());
 
             EXPECT_EQ(request.message(), response.message());
             if (with_binary_metadata) {
@@ -240,7 +238,7 @@ class ClientCallbackEnd2endTest
       generic_stub_->UnaryCall(
           &cli_ctx, kMethodName, options, send_buf.get(), &recv_buf,
           [&request, &recv_buf, &done, &mu, &cv, maybe_except](Status s) {
-            CHECK(s.ok());
+            GRPC_CHECK(s.ok());
 
             EchoResponse response;
             EXPECT_TRUE(ParseFromByteBuffer(&recv_buf, &response));
@@ -253,7 +251,7 @@ class ClientCallbackEnd2endTest
               throw -1;
             }
 #else
-            CHECK(!maybe_except);
+            GRPC_CHECK(!maybe_except);
 #endif
           });
       std::unique_lock<std::mutex> l(mu);
@@ -488,7 +486,7 @@ TEST_P(ClientCallbackEnd2endTest, SendClientInitialMetadata) {
   bool done = false;
   stub_->async()->CheckClientInitialMetadata(
       &cli_ctx, &request, &response, [&done, &mu, &cv](Status s) {
-        CHECK(s.ok());
+        GRPC_CHECK(s.ok());
 
         std::lock_guard<std::mutex> l(mu);
         done = true;
@@ -1057,7 +1055,7 @@ TEST_P(ClientCallbackEnd2endTest, ResponseStreamServerCancelDuring) {
   }
 }
 
-// Server to cancel after writing all the respones to the stream but before
+// Server to cancel after writing all the responses to the stream but before
 // returning to the client
 TEST_P(ClientCallbackEnd2endTest, ResponseStreamServerCancelAfter) {
   ResetStub();
@@ -1541,7 +1539,7 @@ std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
   if (test_insecure && insec_ok()) {
     credentials_types.push_back(kInsecureCredentialsType);
   }
-  CHECK(!credentials_types.empty());
+  GRPC_CHECK(!credentials_types.empty());
 
   bool barr[]{false, true};
   Protocol parr[]{Protocol::INPROC, Protocol::TCP};

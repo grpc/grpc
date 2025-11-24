@@ -22,12 +22,12 @@ def grpc_deps
 end
 
 target 'TvTests' do
-  platform :tvos, '12.0'
+  platform :tvos, '13.0'
   grpc_deps
 end
 
 target 'MacTests' do
-  platform :osx, '10.12'
+  platform :osx, '11.0'
   grpc_deps
 end
 
@@ -36,25 +36,14 @@ end
   InteropTests
 ).each do |target_name|
   target target_name do
-    platform :ios, '10.0'
+    platform :ios, '15.0'
     grpc_deps
   end
 end
 
-target 'CronetTests' do
-  platform :ios, '10.0'
-  grpc_deps
-
-  pod 'gRPC/GRPCCoreCronet',           :path => GRPC_LOCAL_SRC
-  pod 'CronetFramework', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
-end
-
 target 'PerfTests' do
-  platform :ios, '10.0'
+  platform :ios, '15.0'
   grpc_deps
-
-  pod 'gRPC/GRPCCoreCronet',           :path => GRPC_LOCAL_SRC
-  pod 'CronetFramework', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
 end
 
 post_install do |installer|
@@ -78,19 +67,15 @@ post_install do |installer|
         config.build_settings['GCC_WARN_ABOUT_RETURN_TYPE'] = 'NO'
         # Abseil isn't free from the following warning
         config.build_settings['GCC_WARN_64_TO_32_BIT_CONVERSION'] = 'NO'
-        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_CRONET_WITH_PACKET_COALESCING=1 GRPC_CFSTREAM=1'
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_CFSTREAM=1'
       end
     end
 
-    # Activate Cronet for the dedicated build configuration 'Cronet', which will be used solely by
-    # the test target 'InteropTestsRemoteWithCronet'
     # Activate GRPCCall+InternalTests functions for the dedicated build configuration 'Test', which will
     # be used by all test targets using it.
     if /gRPC(-macOS|-iOS|-tvOS|\.|-[0-9a-f])/.match(target.name)
       target.build_configurations.each do |config|
-        if config.name == 'Cronet'
-          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_COMPILE_WITH_CRONET=1 GRPC_TEST_OBJC=1'
-        elsif config.name == 'Test'
+        if config.name == 'Test'
           config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_TEST_OBJC=1'
         end
       end

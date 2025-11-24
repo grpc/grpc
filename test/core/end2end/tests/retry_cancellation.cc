@@ -16,18 +16,17 @@
 //
 //
 
-#include <memory>
-
-#include "absl/types/optional.h"
-#include "gtest/gtest.h"
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
+
+#include <memory>
+#include <optional>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace {
@@ -35,7 +34,7 @@ namespace {
 // Tests retry cancellation.
 void TestRetryCancellation(CoreEnd2endTest& test,
                            std::unique_ptr<CancellationMode> mode) {
-  test.InitServer(ChannelArgs());
+  test.InitServer(CoreEnd2endTest::DefaultServerArgs());
   test.InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       "{\n"
@@ -56,7 +55,7 @@ void TestRetryCancellation(CoreEnd2endTest& test,
   auto c = test.NewClientCall("/service/method")
                .Timeout(Duration::Seconds(5))
                .Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   // Client starts a batch with all 6 ops.
   IncomingMetadata server_initial_metadata;
   IncomingMessage server_message;
@@ -69,11 +68,11 @@ void TestRetryCancellation(CoreEnd2endTest& test,
       .RecvInitialMetadata(server_initial_metadata)
       .RecvStatusOnClient(server_status);
   // Server gets a call and fails with retryable status.
-  absl::optional<CoreEnd2endTest::IncomingCall> s = test.RequestCall(101);
+  std::optional<CoreEnd2endTest::IncomingCall> s = test.RequestCall(101);
   test.Expect(101, true);
   test.Step();
-  EXPECT_NE(s->GetPeer(), absl::nullopt);
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(s->GetPeer(), std::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingCloseOnServer client_close;
   s->NewBatch(102)
       .SendInitialMetadata({})
@@ -94,11 +93,13 @@ void TestRetryCancellation(CoreEnd2endTest& test,
   EXPECT_FALSE(client_close.was_cancelled());
 }
 
-CORE_END2END_TEST(RetryTest, RetryCancellation) {
+CORE_END2END_TEST(RetryTests, RetryCancellation) {
+  if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   TestRetryCancellation(*this, std::make_unique<CancelCancellationMode>());
 }
 
-CORE_END2END_TEST(RetryTest, RetryDeadline) {
+CORE_END2END_TEST(RetryTests, RetryDeadline) {
+  if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   TestRetryCancellation(*this, std::make_unique<DeadlineCancellationMode>());
 }
 

@@ -13,16 +13,21 @@
 # limitations under the License.
 """Loads the dependencies necessary for the external repositories defined in grpc_deps.bzl."""
 
+load("@bazel_features//:deps.bzl", "bazel_features_deps")
 load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
 load("@build_bazel_apple_support//lib:repositories.bzl", "apple_support_dependencies")
 load("@build_bazel_rules_apple//apple:repositories.bzl", "apple_rules_dependencies")
 load("@com_envoyproxy_protoc_gen_validate//:dependencies.bzl", "go_third_party")
 load("@com_google_googleapis//:repository_rules.bzl", "switched_rules_by_language")
+load("@com_google_googletest//:googletest_deps.bzl", "googletest_deps")
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 load("@envoy_api//bazel:repositories.bzl", "api_dependencies")
 load("@google_cloud_cpp//bazel:google_cloud_cpp_deps.bzl", "google_cloud_cpp_deps")
 load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
+load("@rules_java//java:rules_java_deps.bzl", "rules_java_dependencies")
+load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies")
 load("@rules_python//python:repositories.bzl", "py_repositories")
+load("@rules_shell//shell:repositories.bzl", "rules_shell_dependencies", "rules_shell_toolchains")
 
 def grpc_extra_deps(ignore_version_differences = False):
     """Loads the extra dependencies.
@@ -47,12 +52,20 @@ def grpc_extra_deps(ignore_version_differences = False):
       ignore_version_differences: Plumbed directly to the invocation of
         apple_rules_dependencies.
     """
+    rules_shell_dependencies()
+    rules_shell_toolchains()
+
+    rules_java_dependencies()
+
     protobuf_deps()
+
+    rules_proto_dependencies()
+    bazel_features_deps()
 
     api_dependencies()
 
     go_rules_dependencies()
-    go_register_toolchains(version = "1.20")
+    go_register_toolchains(version = "1.22.5")
     gazelle_dependencies()
 
     # Pull-in the go 3rd party dependencies for protoc_gen_validate, which is
@@ -74,3 +87,5 @@ def grpc_extra_deps(ignore_version_differences = False):
     google_cloud_cpp_deps()
 
     py_repositories()
+
+    googletest_deps()

@@ -12,13 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
-load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_simple_test")
-load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_cc_benchmark")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/transport")
+grpc_package(
+    name = "test/core/transport",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "bdp_estimator_test",
@@ -26,79 +31,16 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     tags = ["no_windows"],  # TODO(jtattermusch): investigate the timeout on windows
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//:iomgr_timer",
+        "//src/core:bdp_estimator",
         "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "call_arena_allocator_test",
-    srcs = ["call_arena_allocator_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    tags = ["no_windows"],  # TODO(jtattermusch): investigate the timeout on windows
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "interception_chain_test",
-    srcs = ["interception_chain_test.cc"],
-    external_deps = [
-        "absl/log:log",
-        "gtest",
-    ],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:grpc",
-        "//src/core:interception_chain",
-        "//src/core:resource_quota",
-        "//test/core/promise:poll_matcher",
-    ],
-)
-
-grpc_cc_test(
-    name = "call_filters_test",
-    srcs = ["call_filters_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//src/core:call_filters",
-        "//test/core/promise:poll_matcher",
-    ],
-)
-
-grpc_cc_test(
-    name = "call_state_test",
-    srcs = ["call_state_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//src/core:call_state",
-        "//test/core/promise:poll_matcher",
     ],
 )
 
@@ -108,10 +50,10 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:connectivity_state",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],
@@ -122,43 +64,18 @@ grpc_cc_test(
     srcs = ["error_utils_test.cc"],
     external_deps = [
         "gtest",
+        "absl/status",
     ],
-    language = "C++",
+    tags = ["error_tests"],
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:error",
+        "//src/core:error_utils",
+        "//src/core:experiments",
+        "//src/core:status_helper",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
-    ],
-)
-
-grpc_cc_test(
-    name = "metadata_map_test",
-    srcs = ["metadata_map_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/test_util:grpc_test_util",
-        "//test/core/test_util:grpc_test_util_base",
-    ],
-)
-
-grpc_cc_test(
-    name = "parsed_metadata_test",
-    srcs = ["parsed_metadata_test.cc"],
-    external_deps = [
-        "absl/log:check",
-        "gtest",
-    ],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -167,14 +84,17 @@ grpc_cc_test(
     srcs = ["promise_endpoint_test.cc"],
     external_deps = [
         "gtest",
+        "absl/functional:any_invocable",
     ],
-    language = "C++",
     deps = [
+        "//:event_engine_base_hdrs",
         "//:grpc",
         "//src/core:activity",
         "//src/core:grpc_promise_endpoint",
         "//src/core:join",
         "//src/core:seq",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
         "//test/core/promise:test_wakeup_schedulers",
     ],
 )
@@ -183,12 +103,13 @@ grpc_cc_test(
     name = "status_conversion_test",
     srcs = ["status_conversion_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//src/core:status_conversion",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],
@@ -199,64 +120,50 @@ grpc_cc_test(
     srcs = ["timeout_encoding_test.cc"],
     external_deps = [
         "gtest",
+        "absl/strings:str_format",
+        "absl/strings:string_view",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:time",
+        "//src/core:timeout_encoding",
+        "//src/core:useful",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
-    ],
-)
-
-grpc_yodel_simple_test(
-    name = "call_spine",
-    srcs = ["call_spine_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    deps = [
-        "//src/core:call_spine",
-        "//test/core/call/yodel:yodel_test",
-    ],
-)
-
-grpc_cc_library(
-    name = "call_spine_benchmarks",
-    testonly = 1,
-    hdrs = ["call_spine_benchmarks.h"],
-    external_deps = ["benchmark"],
-    visibility = ["//test/core:__subpackages__"],
-    deps = [
-        "//:exec_ctx",
-        "//src/core:all_ok",
-        "//src/core:call_spine",
-        "//src/core:default_event_engine",
-        "//src/core:map",
-        "//src/core:notification",
-        "//src/core:resource_quota",
-    ],
-)
-
-grpc_cc_benchmark(
-    name = "bm_call_spine",
-    srcs = ["bm_call_spine.cc"],
-    deps = [
-        ":call_spine_benchmarks",
-        "//:grpc",
-        "//src/core:default_event_engine",
     ],
 )
 
 grpc_cc_benchmark(
     name = "bm_metadata",
     srcs = ["bm_metadata.cc"],
+    monitoring = HISTORY,
     deps = [
-        ":call_spine_benchmarks",
         "//:grpc",
         "//src/core:default_event_engine",
+        "//src/core:metadata",
+        "//test/core/call:call_spine_benchmarks",
+    ],
+)
+
+grpc_cc_test(
+    name = "auth_context_test",
+    srcs = ["auth_context_test.cc"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:config",
+        "//:gpr",
+        "//:grpc",
+        "//:ref_counted_ptr",
+        "//:transport_auth_context",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
     ],
 )

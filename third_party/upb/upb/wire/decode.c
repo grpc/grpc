@@ -288,11 +288,14 @@ static upb_Message* _upb_Decoder_ReuseSubMessage(
   upb_Message* existing =
       UPB_PRIVATE(_upb_TaggedMessagePtr_GetEmptyMessage)(tagged);
   upb_Message* promoted = _upb_Decoder_NewSubMessage(d, subs, field, target);
-  size_t size;
-  const char* unknown = upb_Message_GetUnknown(existing, &size);
-  upb_DecodeStatus status = upb_Decode(unknown, size, promoted, subl, d->extreg,
-                                       d->options, &d->arena);
-  if (status != kUpb_DecodeStatus_Ok) _upb_Decoder_ErrorJmp(d, status);
+  uintptr_t iter = kUpb_Message_UnknownBegin;
+  upb_StringView unknown;
+  while (upb_Message_NextUnknown(existing, &unknown, &iter)) {
+    upb_DecodeStatus status =
+        upb_Decode(unknown.data, unknown.size, promoted, subl, d->extreg,
+                   d->options, &d->arena);
+    if (status != kUpb_DecodeStatus_Ok) _upb_Decoder_ErrorJmp(d, status);
+  }
   return promoted;
 }
 
@@ -366,6 +369,7 @@ const char* _upb_Decoder_DecodeKnownGroup(upb_Decoder* d, const char* ptr,
                                   field->UPB_PRIVATE(number));
 }
 
+#define kUpb_Decoder_EncodeVarint32MaxSize 5
 static char* upb_Decoder_EncodeVarint32(uint32_t val, char* ptr) {
   do {
     uint8_t byte = val & 0x7fU;
@@ -374,18 +378,6 @@ static char* upb_Decoder_EncodeVarint32(uint32_t val, char* ptr) {
     *(ptr++) = byte;
   } while (val);
   return ptr;
-}
-
-static void _upb_Decoder_AddUnknownVarints(upb_Decoder* d, upb_Message* msg,
-                                           uint32_t val1, uint32_t val2) {
-  char buf[20];
-  char* end = buf;
-  end = upb_Decoder_EncodeVarint32(val1, end);
-  end = upb_Decoder_EncodeVarint32(val2, end);
-
-  if (!UPB_PRIVATE(_upb_Message_AddUnknown)(msg, buf, end - buf, &d->arena)) {
-    _upb_Decoder_ErrorJmp(d, kUpb_DecodeStatus_OutOfMemory);
-  }
 }
 
 UPB_FORCEINLINE
@@ -402,9 +394,17 @@ bool _upb_Decoder_CheckEnum(upb_Decoder* d, const char* ptr, upb_Message* msg,
   const uint32_t tag =
       ((uint32_t)field->UPB_PRIVATE(number) << 3) | kUpb_WireType_Varint;
   upb_Message* unknown_msg =
-      field->UPB_PRIVATE(mode) & kUpb_LabelFlags_IsExtension ? d->unknown_msg
+      field->UPB_PRIVATE(mode) & kUpb_LabelFlags_IsExtension ? d->original_msg
                                                              : msg;
-  _upb_Decoder_AddUnknownVarints(d, unknown_msg, tag, v);
+  char buf[2 * kUpb_Decoder_EncodeVarint32MaxSize];
+  char* end = buf;
+  end = upb_Decoder_EncodeVarint32(tag, end);
+  end = upb_Decoder_EncodeVarint32(v, end);
+
+  if (!UPB_PRIVATE(_upb_Message_AddUnknown)(unknown_msg, buf, end - buf,
+                                            &d->arena, false)) {
+    _upb_Decoder_ErrorJmp(d, kUpb_DecodeStatus_OutOfMemory);
+  }
   return false;
 }
 
@@ -626,6 +626,32 @@ static upb_Map* _upb_Decoder_CreateMap(upb_Decoder* d,
   return ret;
 }
 
+UPB_NOINLINE static void _upb_Decoder_AddMapEntryUnknown(
+    upb_Decoder* d, upb_Message* msg, const upb_MiniTableField* field,
+    upb_Message* ent_msg, const upb_MiniTable* entry) {
+  char* buf;
+  size_t size;
+  upb_EncodeStatus status =
+      upb_Encode(ent_msg, entry, 0, &d->arena, &buf, &size);
+  if (status != kUpb_EncodeStatus_Ok) {
+    _upb_Decoder_ErrorJmp(d, kUpb_DecodeStatus_OutOfMemory);
+  }
+  char delim_buf[2 * kUpb_Decoder_EncodeVarint32MaxSize];
+  char* delim_end = delim_buf;
+  uint32_t tag =
+      ((uint32_t)field->UPB_PRIVATE(number) << 3) | kUpb_WireType_Delimited;
+  delim_end = upb_Decoder_EncodeVarint32(tag, delim_end);
+  delim_end = upb_Decoder_EncodeVarint32(size, delim_end);
+  upb_StringView unknown[] = {
+      {delim_buf, delim_end - delim_buf},
+      {buf, size},
+  };
+
+  if (!UPB_PRIVATE(_upb_Message_AddUnknownV)(msg, &d->arena, unknown, 2)) {
+    _upb_Decoder_ErrorJmp(d, kUpb_DecodeStatus_OutOfMemory);
+  }
+}
+
 static const char* _upb_Decoder_DecodeToMap(
     upb_Decoder* d, const char* ptr, upb_Message* msg,
     const upb_MiniTableSubInternal* subs, const upb_MiniTableField* field,
@@ -662,23 +688,8 @@ static const char* _upb_Decoder_DecodeToMap(
 
   ptr = _upb_Decoder_DecodeSubMessage(d, ptr, &ent.message, subs, field,
                                       val->size);
-  // check if ent had any unknown fields
-  size_t size;
-  upb_Message_GetUnknown(&ent.message, &size);
-  if (size != 0) {
-    char* buf;
-    size_t size;
-    uint32_t tag =
-        ((uint32_t)field->UPB_PRIVATE(number) << 3) | kUpb_WireType_Delimited;
-    upb_EncodeStatus status =
-        upb_Encode(&ent.message, entry, 0, &d->arena, &buf, &size);
-    if (status != kUpb_EncodeStatus_Ok) {
-      _upb_Decoder_ErrorJmp(d, kUpb_DecodeStatus_OutOfMemory);
-    }
-    _upb_Decoder_AddUnknownVarints(d, msg, tag, size);
-    if (!UPB_PRIVATE(_upb_Message_AddUnknown)(msg, buf, size, &d->arena)) {
-      _upb_Decoder_ErrorJmp(d, kUpb_DecodeStatus_OutOfMemory);
-    }
+  if (upb_Message_HasUnknown(&ent.message)) {
+    _upb_Decoder_AddMapEntryUnknown(d, msg, field, &ent.message, entry);
   } else {
     if (_upb_Map_Insert(map, &ent.k, map->key_size, &ent.v, map->val_size,
                         &d->arena) == kUpb_MapInsertStatus_OutOfMemory) {
@@ -823,7 +834,7 @@ static void upb_Decoder_AddKnownMessageSetItem(
   }
   upb_Message* submsg = _upb_Decoder_NewSubMessage2(
       d, ext->ext->UPB_PRIVATE(sub).UPB_PRIVATE(submsg),
-      &ext->ext->UPB_PRIVATE(field), (upb_TaggedMessagePtr*)&ext->data);
+      &ext->ext->UPB_PRIVATE(field), &ext->data.tagged_msg_val);
   upb_DecodeStatus status = upb_Decode(
       data, size, submsg, upb_MiniTableExtension_GetSubMessage(item_mt),
       d->extreg, d->options, &d->arena);
@@ -835,7 +846,7 @@ static void upb_Decoder_AddUnknownMessageSetItem(upb_Decoder* d,
                                                  uint32_t type_id,
                                                  const char* message_data,
                                                  uint32_t message_size) {
-  char buf[60];
+  char buf[6 * kUpb_Decoder_EncodeVarint32MaxSize];
   char* ptr = buf;
   ptr = upb_Decoder_EncodeVarint32(kStartItemTag, ptr);
   ptr = upb_Decoder_EncodeVarint32(kTypeIdTag, ptr);
@@ -846,12 +857,12 @@ static void upb_Decoder_AddUnknownMessageSetItem(upb_Decoder* d,
 
   ptr = upb_Decoder_EncodeVarint32(kEndItemTag, ptr);
   char* end = ptr;
-
-  if (!UPB_PRIVATE(_upb_Message_AddUnknown)(msg, buf, split - buf, &d->arena) ||
-      !UPB_PRIVATE(_upb_Message_AddUnknown)(msg, message_data, message_size,
-                                            &d->arena) ||
-      !UPB_PRIVATE(_upb_Message_AddUnknown)(msg, split, end - split,
-                                            &d->arena)) {
+  upb_StringView unknown[] = {
+      {buf, split - buf},
+      {message_data, message_size},
+      {split, end - split},
+  };
+  if (!UPB_PRIVATE(_upb_Message_AddUnknownV)(msg, &d->arena, unknown, 3)) {
     _upb_Decoder_ErrorJmp(d, kUpb_DecodeStatus_OutOfMemory);
   }
 }
@@ -922,56 +933,75 @@ static const char* upb_Decoder_DecodeMessageSetItem(
   _upb_Decoder_ErrorJmp(d, kUpb_DecodeStatus_Malformed);
 }
 
-static const upb_MiniTableField* _upb_Decoder_FindField(upb_Decoder* d,
-                                                        const upb_MiniTable* t,
-                                                        uint32_t field_number,
-                                                        int* last_field_index) {
-  static upb_MiniTableField none = {
-      0, 0, 0, 0, kUpb_FakeFieldType_FieldNotFound, 0};
-  if (t == NULL) return &none;
+static upb_MiniTableField upb_Decoder_FieldNotFoundField = {
+    0, 0, 0, 0, kUpb_FakeFieldType_FieldNotFound, 0};
 
-  size_t idx = ((size_t)field_number) - 1;  // 0 wraps to SIZE_MAX
+UPB_NOINLINE const upb_MiniTableField* _upb_Decoder_FindExtensionField(
+    upb_Decoder* d, const upb_MiniTable* t, uint32_t field_number, int ext_mode,
+    int wire_type) {
+  // Treat a message set as an extendable message if it is a delimited field.
+  // This provides compatibility with encoders that are unaware of message
+  // sets and serialize them as normal extensions.
+  if (ext_mode == kUpb_ExtMode_Extendable ||
+      (ext_mode == kUpb_ExtMode_IsMessageSet &&
+       wire_type == kUpb_WireType_Delimited)) {
+    const upb_MiniTableExtension* ext =
+        upb_ExtensionRegistry_Lookup(d->extreg, t, field_number);
+    if (ext) return &ext->UPB_PRIVATE(field);
+  } else if (ext_mode == kUpb_ExtMode_IsMessageSet) {
+    if (field_number == kUpb_MsgSet_Item) {
+      static upb_MiniTableField item = {
+          0, 0, 0, 0, kUpb_FakeFieldType_MessageSetItem, 0};
+      return &item;
+    }
+  }
+  return &upb_Decoder_FieldNotFoundField;
+}
+
+static const upb_MiniTableField* _upb_Decoder_FindField(
+    upb_Decoder* d, const upb_MiniTable* t, uint32_t field_number,
+    uint32_t* last_field_index, int wire_type) {
+  if (t == NULL) return &upb_Decoder_FieldNotFoundField;
+
+  uint32_t idx = ((uint32_t)field_number) - 1;  // 0 wraps to UINT32_MAX
   if (idx < t->UPB_PRIVATE(dense_below)) {
-    // Fastest case: index into dense fields.
-    goto found;
+    // Fastest case: index into dense fields, and don't update last_field_index.
+    return &t->UPB_PRIVATE(fields)[idx];
   }
 
-  if (t->UPB_PRIVATE(dense_below) < t->UPB_PRIVATE(field_count)) {
+  uint32_t field_count = t->UPB_PRIVATE(field_count);
+  if (t->UPB_PRIVATE(dense_below) < field_count) {
     // Linear search non-dense fields. Resume scanning from last_field_index
     // since fields are usually in order.
-    size_t last = *last_field_index;
-    for (idx = last; idx < t->UPB_PRIVATE(field_count); idx++) {
-      if (t->UPB_PRIVATE(fields)[idx].UPB_PRIVATE(number) == field_number) {
+    idx = *last_field_index;
+    uint32_t candidate;
+    do {
+      candidate = t->UPB_PRIVATE(fields)[idx].UPB_PRIVATE(number);
+      if (candidate == field_number) {
         goto found;
       }
-    }
+    } while (++idx < field_count);
 
-    for (idx = t->UPB_PRIVATE(dense_below); idx < last; idx++) {
-      if (t->UPB_PRIVATE(fields)[idx].UPB_PRIVATE(number) == field_number) {
-        goto found;
-      }
-    }
-  }
-
-  if (d->extreg) {
-    switch (t->UPB_PRIVATE(ext)) {
-      case kUpb_ExtMode_Extendable: {
-        const upb_MiniTableExtension* ext =
-            upb_ExtensionRegistry_Lookup(d->extreg, t, field_number);
-        if (ext) return &ext->UPB_PRIVATE(field);
-        break;
-      }
-      case kUpb_ExtMode_IsMessageSet:
-        if (field_number == kUpb_MsgSet_Item) {
-          static upb_MiniTableField item = {
-              0, 0, 0, 0, kUpb_FakeFieldType_MessageSetItem, 0};
-          return &item;
+    if (UPB_LIKELY(field_number > candidate)) {
+      // The field number we encountered is larger than any of our known fields,
+      // so it's likely that subsequent ones will be too.
+      *last_field_index = idx - 1;
+    } else {
+      // Fields not in tag order - scan from beginning
+      for (idx = t->UPB_PRIVATE(dense_below); idx < *last_field_index; idx++) {
+        if (t->UPB_PRIVATE(fields)[idx].UPB_PRIVATE(number) == field_number) {
+          goto found;
         }
-        break;
+      }
     }
   }
 
-  return &none;  // Unknown field.
+  if (d->extreg && t->UPB_PRIVATE(ext)) {
+    return _upb_Decoder_FindExtensionField(d, t, field_number,
+                                           t->UPB_PRIVATE(ext), wire_type);
+  }
+
+  return &upb_Decoder_FieldNotFoundField;  // Unknown field.
 
 found:
   UPB_ASSERT(t->UPB_PRIVATE(fields)[idx].UPB_PRIVATE(number) == field_number);
@@ -1068,7 +1098,7 @@ static int _upb_Decoder_GetDelimitedOp(upb_Decoder* d, const upb_MiniTable* mt,
       [kUpb_FieldType_SFixed64] = kUpb_DecodeOp_UnknownField,
       [kUpb_FieldType_SInt32] = kUpb_DecodeOp_UnknownField,
       [kUpb_FieldType_SInt64] = kUpb_DecodeOp_UnknownField,
-      [kUpb_FakeFieldType_MessageSetItem] = kUpb_DecodeOp_UnknownField,
+      [kUpb_FakeFieldType_MessageSetItem] = kUpb_DecodeOp_SubMessage,
       // For repeated field type.
       [kRepeatedBase + kUpb_FieldType_Double] = OP_FIXPCK_LG2(3),
       [kRepeatedBase + kUpb_FieldType_Float] = OP_FIXPCK_LG2(2),
@@ -1176,8 +1206,8 @@ const char* _upb_Decoder_DecodeKnownField(upb_Decoder* d, const char* ptr,
     if (UPB_UNLIKELY(!ext)) {
       _upb_Decoder_ErrorJmp(d, kUpb_DecodeStatus_OutOfMemory);
     }
-    d->unknown_msg = msg;
-    msg = (upb_Message*)&ext->data;
+    d->original_msg = msg;
+    msg = &ext->data.UPB_PRIVATE(ext_msg_val);
     if (upb_MiniTableField_IsSubMessage(&ext->ext->UPB_PRIVATE(field))) {
       ext_sub.UPB_PRIVATE(submsg) =
           &ext->ext->UPB_PRIVATE(sub).UPB_PRIVATE(submsg);
@@ -1200,17 +1230,6 @@ const char* _upb_Decoder_DecodeKnownField(upb_Decoder* d, const char* ptr,
   }
 }
 
-static const char* _upb_Decoder_ReverseSkipVarint(const char* ptr,
-                                                  uint32_t val) {
-  uint32_t seen = 0;
-  do {
-    ptr--;
-    seen <<= 7;
-    seen |= *ptr & 0x7f;
-  } while (seen != val);
-  return ptr;
-}
-
 static const char* _upb_Decoder_DecodeUnknownField(upb_Decoder* d,
                                                    const char* ptr,
                                                    upb_Message* msg,
@@ -1221,7 +1240,8 @@ static const char* _upb_Decoder_DecodeUnknownField(upb_Decoder* d,
   // Since unknown fields are the uncommon case, we do a little extra work here
   // to walk backwards through the buffer to find the field start.  This frees
   // up a register in the fast paths (when the field is known), which leads to
-  // significant speedups in benchmarks.
+  // significant speedups in benchmarks. Note that ptr may point into the slop
+  // space, beyond the normal end of the input buffer.
   const char* start = ptr;
 
   if (wire_type == kUpb_WireType_Delimited) ptr += val.size;
@@ -1229,7 +1249,9 @@ static const char* _upb_Decoder_DecodeUnknownField(upb_Decoder* d,
     switch (wire_type) {
       case kUpb_WireType_Varint:
       case kUpb_WireType_Delimited:
+        // Skip the last byte
         start--;
+        // Skip bytes until we encounter the final byte of the tag varint.
         while (start[-1] & 0x80) start--;
         break;
       case kUpb_WireType_32Bit:
@@ -1243,19 +1265,40 @@ static const char* _upb_Decoder_DecodeUnknownField(upb_Decoder* d,
     }
 
     assert(start == d->debug_valstart);
-    uint32_t tag = ((uint32_t)field_number << 3) | wire_type;
-    start = _upb_Decoder_ReverseSkipVarint(start, tag);
+    {
+      // The varint parser does not enforce that integers are encoded with their
+      // minimum size; for example the value 1 could be encoded with three
+      // bytes: 0x81, 0x80, 0x00. These unnecessary trailing zeroes mean that we
+      // cannot skip backwards by the minimum encoded size of the tag; and
+      // unlike the loop for delimited or varint fields, we can't stop at a
+      // sentinel value because anything can precede a tag. Instead, parse back
+      // one byte at a time until we read the same tag value that was parsed
+      // earlier.
+      uint32_t tag = ((uint32_t)field_number << 3) | wire_type;
+      uint32_t seen = 0;
+      do {
+        start--;
+        seen <<= 7;
+        seen |= *start & 0x7f;
+      } while (seen != tag);
+    }
     assert(start == d->debug_tagstart);
 
+    const char* input_start =
+        upb_EpsCopyInputStream_GetInputPtr(&d->input, start);
     if (wire_type == kUpb_WireType_StartGroup) {
-      d->unknown = start;
-      d->unknown_msg = msg;
       ptr = _upb_Decoder_DecodeUnknownGroup(d, ptr, field_number);
-      start = d->unknown;
-      d->unknown = NULL;
     }
-    if (!UPB_PRIVATE(_upb_Message_AddUnknown)(msg, start, ptr - start,
-                                              &d->arena)) {
+    // Normally, bounds checks for fixed or varint fields are performed after
+    // the field is parsed; it's OK for the field to overrun the end of the
+    // buffer, because it'll just read into slop space. However, because this
+    // path reads bytes from the input buffer rather than the patch buffer,
+    // bounds checks are needed before adding the unknown field.
+    _upb_Decoder_IsDone(d, &ptr);
+    const char* input_ptr = upb_EpsCopyInputStream_GetInputPtr(&d->input, ptr);
+    if (!UPB_PRIVATE(_upb_Message_AddUnknown)(msg, input_start,
+                                              input_ptr - input_start,
+                                              &d->arena, d->input.aliasing)) {
       _upb_Decoder_ErrorJmp(d, kUpb_DecodeStatus_OutOfMemory);
     }
   } else if (wire_type == kUpb_WireType_StartGroup) {
@@ -1268,7 +1311,7 @@ UPB_NOINLINE
 static const char* _upb_Decoder_DecodeMessage(upb_Decoder* d, const char* ptr,
                                               upb_Message* msg,
                                               const upb_MiniTable* layout) {
-  int last_field_index = 0;
+  uint32_t last_field_index = 0;
 
 #if UPB_FASTTABLE
   // The first time we want to skip fast dispatch, because we may have just been
@@ -1308,7 +1351,8 @@ static const char* _upb_Decoder_DecodeMessage(upb_Decoder* d, const char* ptr,
       return ptr;
     }
 
-    field = _upb_Decoder_FindField(d, layout, field_number, &last_field_index);
+    field = _upb_Decoder_FindField(d, layout, field_number, &last_field_index,
+                                   wire_type);
     ptr = _upb_Decoder_DecodeWireValue(d, ptr, layout, field, wire_type, &val,
                                        &op);
 
@@ -1376,20 +1420,23 @@ static upb_DecodeStatus upb_Decoder_Decode(upb_Decoder* const decoder,
   return decoder->status;
 }
 
+uint16_t upb_DecodeOptions_GetEffectiveMaxDepth(uint32_t options) {
+  uint16_t max_depth = upb_DecodeOptions_GetMaxDepth(options);
+  return max_depth ? max_depth : kUpb_WireFormat_DefaultDepthLimit;
+}
+
 upb_DecodeStatus upb_Decode(const char* buf, size_t size, upb_Message* msg,
                             const upb_MiniTable* mt,
                             const upb_ExtensionRegistry* extreg, int options,
                             upb_Arena* arena) {
   UPB_ASSERT(!upb_Message_IsFrozen(msg));
   upb_Decoder decoder;
-  unsigned depth = (unsigned)options >> 16;
 
   upb_EpsCopyInputStream_Init(&decoder.input, &buf, size,
                               options & kUpb_DecodeOption_AliasString);
 
   decoder.extreg = extreg;
-  decoder.unknown = NULL;
-  decoder.depth = depth ? depth : kUpb_WireFormat_DefaultDepthLimit;
+  decoder.depth = upb_DecodeOptions_GetEffectiveMaxDepth(options);
   decoder.end_group = DECODE_NOGROUP;
   decoder.options = (uint16_t)options;
   decoder.missing_required = false;

@@ -14,23 +14,23 @@
 // limitations under the License.
 //
 
-#include <memory>
-
-#include "gtest/gtest.h"
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
+
+#include <memory>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace {
 // Tests that we can unref a call whose status is cached but not yet
 // requested by the application.  This should not cause a memory leak.
-CORE_END2END_TEST(RetryTest, RetryUnrefBeforeFinish) {
-  InitServer(ChannelArgs());
+CORE_END2END_TEST(RetryTests, RetryUnrefBeforeFinish) {
+  if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
+  InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       "{\n"

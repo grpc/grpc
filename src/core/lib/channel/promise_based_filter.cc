@@ -14,23 +14,14 @@
 
 #include "src/core/lib/channel/promise_based_filter.h"
 
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
+
 #include <algorithm>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
-
-#include "absl/base/attributes.h"
-#include "absl/functional/function_ref.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-
-#include <grpc/status.h>
-#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
@@ -38,8 +29,17 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/latent_see.h"
 #include "src/core/util/manual_constructor.h"
 #include "src/core/util/status_helper.h"
+#include "absl/base/attributes.h"
+#include "absl/functional/function_ref.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 
 namespace grpc_core {
 namespace promise_filter_detail {
@@ -172,7 +172,7 @@ BaseCallData::CapturedBatch::~CapturedBatch() {
   uintptr_t& refcnt = *RefCountField(batch_);
   if (refcnt == 0) return;  // refcnt==0 ==> cancelled
   --refcnt;
-  CHECK_NE(refcnt, 0u);
+  GRPC_CHECK_NE(refcnt, 0u);
 }
 
 BaseCallData::CapturedBatch::CapturedBatch(const CapturedBatch& rhs)
@@ -203,7 +203,7 @@ BaseCallData::CapturedBatch& BaseCallData::CapturedBatch::operator=(
 
 void BaseCallData::CapturedBatch::ResumeWith(Flusher* releaser) {
   auto* batch = std::exchange(batch_, nullptr);
-  CHECK_NE(batch, nullptr);
+  GRPC_CHECK_NE(batch, nullptr);
   uintptr_t& refcnt = *RefCountField(batch);
   if (refcnt == 0) {
     // refcnt==0 ==> cancelled
@@ -218,7 +218,7 @@ void BaseCallData::CapturedBatch::ResumeWith(Flusher* releaser) {
 
 void BaseCallData::CapturedBatch::CompleteWith(Flusher* releaser) {
   auto* batch = std::exchange(batch_, nullptr);
-  CHECK_NE(batch, nullptr);
+  GRPC_CHECK_NE(batch, nullptr);
   uintptr_t& refcnt = *RefCountField(batch);
   if (refcnt == 0) return;  // refcnt==0 ==> cancelled
   if (--refcnt == 0) {
@@ -229,7 +229,7 @@ void BaseCallData::CapturedBatch::CompleteWith(Flusher* releaser) {
 void BaseCallData::CapturedBatch::CancelWith(grpc_error_handle error,
                                              Flusher* releaser) {
   auto* batch = std::exchange(batch_, nullptr);
-  CHECK_NE(batch, nullptr);
+  GRPC_CHECK_NE(batch, nullptr);
   uintptr_t& refcnt = *RefCountField(batch);
   if (refcnt == 0) {
     // refcnt==0 ==> cancelled
@@ -242,10 +242,7 @@ void BaseCallData::CapturedBatch::CancelWith(grpc_error_handle error,
 ///////////////////////////////////////////////////////////////////////////////
 // BaseCallData::Flusher
 
-BaseCallData::Flusher::Flusher(BaseCallData* call)
-    : latent_see::InnerScope(
-          GRPC_LATENT_SEE_METADATA("PromiseBasedFilter Flusher")),
-      call_(call) {
+BaseCallData::Flusher::Flusher(BaseCallData* call) : call_(call) {
   GRPC_CALL_STACK_REF(call_->call_stack(), "flusher");
 }
 
@@ -354,7 +351,7 @@ template <typename T>
 void BaseCallData::SendMessage::GotPipe(T* pipe_end) {
   GRPC_TRACE_LOG(channel, INFO)
       << base_->LogTag() << " SendMessage.GotPipe st=" << StateString(state_);
-  CHECK_NE(pipe_end, nullptr);
+  GRPC_CHECK_NE(pipe_end, nullptr);
   switch (state_) {
     case State::kInitial:
       state_ = State::kIdle;
@@ -496,9 +493,9 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher,
       } else {
         break;
       }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case State::kPushedToPipe: {
-      CHECK(push_.has_value());
+      GRPC_CHECK(push_.has_value());
       auto r_push = (*push_)();
       if (auto* p = r_push.value_if_ready()) {
         GRPC_TRACE_LOG(channel, INFO)
@@ -507,12 +504,12 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher,
                "result="
             << (*p ? "true" : "false");
         // We haven't pulled through yet, so this certainly shouldn't succeed.
-        CHECK(!*p);
+        GRPC_CHECK(!*p);
         state_ = State::kCancelled;
         batch_.CancelWith(absl::CancelledError(), flusher);
         break;
       }
-      CHECK(next_.has_value());
+      GRPC_CHECK(next_.has_value());
       auto r_next = (*next_)();
       if (auto* p = r_next.value_if_ready()) {
         GRPC_TRACE_LOG(channel, INFO)
@@ -823,12 +820,12 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
                             completed_status_, "recv_message");
         break;
       }
-      CHECK(state_ == State::kPushedToPipe ||
-            state_ == State::kCompletedWhilePushedToPipe);
-      ABSL_FALLTHROUGH_INTENDED;
+      GRPC_CHECK(state_ == State::kPushedToPipe ||
+                 state_ == State::kCompletedWhilePushedToPipe);
+      [[fallthrough]];
     case State::kCompletedWhilePushedToPipe:
     case State::kPushedToPipe: {
-      CHECK(push_.has_value());
+      GRPC_CHECK(push_.has_value());
       auto r_push = (*push_)();
       if (auto* p = r_push.value_if_ready()) {
         GRPC_TRACE_LOG(channel, INFO)
@@ -836,11 +833,11 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
             << " ReceiveMessage.WakeInsideCombiner push complete: "
             << (*p ? "true" : "false");
         // We haven't pulled through yet, so this certainly shouldn't succeed.
-        CHECK(!*p);
+        GRPC_CHECK(!*p);
         state_ = State::kCancelled;
         break;
       }
-      CHECK(next_.has_value());
+      GRPC_CHECK(next_.has_value());
       auto r_next = (*next_)();
       if (auto* p = r_next.value_if_ready()) {
         next_.reset();
@@ -853,7 +850,7 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
             state_ = State::kPulledFromPipe;
           }
         } else {
-          *intercepted_slice_buffer_ = absl::nullopt;
+          *intercepted_slice_buffer_ = std::nullopt;
           *intercepted_flags_ = 0;
           state_ = State::kCancelled;
           flusher->AddClosure(
@@ -872,10 +869,10 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
         break;
       }
     }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case State::kCompletedWhilePulledFromPipe:
     case State::kPulledFromPipe: {
-      CHECK(push_.has_value());
+      GRPC_CHECK(push_.has_value());
       if ((*push_)().ready()) {
         GRPC_TRACE_LOG(channel, INFO)
             << base_->LogTag()
@@ -927,8 +924,8 @@ struct ClientCallData::RecvInitialMetadata final {
   grpc_closure on_ready;
   grpc_metadata_batch* metadata = nullptr;
   PipeSender<ServerMetadataHandle>* server_initial_metadata_publisher = nullptr;
-  absl::optional<PipeSender<ServerMetadataHandle>::PushType> metadata_push_;
-  absl::optional<PipeReceiverNextType<ServerMetadataHandle>> metadata_next_;
+  std::optional<PipeSender<ServerMetadataHandle>::PushType> metadata_push_;
+  std::optional<PipeReceiverNextType<ServerMetadataHandle>> metadata_next_;
 
   static const char* StateString(State state) {
     switch (state) {
@@ -979,7 +976,7 @@ class ClientCallData::PollContext {
  public:
   explicit PollContext(ClientCallData* self, Flusher* flusher)
       : self_(self), flusher_(flusher) {
-    CHECK_EQ(self_->poll_ctx_, nullptr);
+    GRPC_CHECK_EQ(self_->poll_ctx_, nullptr);
 
     self_->poll_ctx_ = this;
     scoped_activity_.Init(self_);
@@ -990,11 +987,11 @@ class ClientCallData::PollContext {
   PollContext& operator=(const PollContext&) = delete;
 
   void Run() {
-    DCHECK(HasContext<Arena>());
+    GRPC_DCHECK(HasContext<Arena>());
     GRPC_TRACE_LOG(channel, INFO)
         << self_->LogTag() << " ClientCallData.PollContext.Run "
         << self_->DebugString();
-    CHECK(have_scoped_activity_);
+    GRPC_CHECK(have_scoped_activity_);
     repoll_ = false;
     if (self_->send_message() != nullptr) {
       self_->send_message()->WakeInsideCombiner(flusher_, true);
@@ -1029,8 +1026,10 @@ class ClientCallData::PollContext {
         case RecvInitialMetadata::kCompleteAndGotPipe:
           self_->recv_initial_metadata_->state =
               RecvInitialMetadata::kCompleteAndPushedToPipe;
-          CHECK(!self_->recv_initial_metadata_->metadata_push_.has_value());
-          CHECK(!self_->recv_initial_metadata_->metadata_next_.has_value());
+          GRPC_CHECK(
+              !self_->recv_initial_metadata_->metadata_push_.has_value());
+          GRPC_CHECK(
+              !self_->recv_initial_metadata_->metadata_next_.has_value());
           self_->recv_initial_metadata_->metadata_push_.emplace(
               self_->recv_initial_metadata_->server_initial_metadata_publisher
                   ->Push(ServerMetadataHandle(
@@ -1039,9 +1038,9 @@ class ClientCallData::PollContext {
           repoll_ = true;  // ensure Push() gets polled.
           self_->recv_initial_metadata_->metadata_next_.emplace(
               self_->server_initial_metadata_pipe()->receiver.Next());
-          ABSL_FALLTHROUGH_INTENDED;
+          [[fallthrough]];
         case RecvInitialMetadata::kCompleteAndPushedToPipe: {
-          CHECK(self_->recv_initial_metadata_->metadata_next_.has_value());
+          GRPC_CHECK(self_->recv_initial_metadata_->metadata_next_.has_value());
           Poll<NextResult<ServerMetadataHandle>> p =
               (*self_->recv_initial_metadata_->metadata_next_)();
           if (NextResult<ServerMetadataHandle>* nr = p.value_if_ready()) {
@@ -1133,7 +1132,7 @@ class ClientCallData::PollContext {
             }
           } else {
             self_->cancelled_error_ = StatusFromMetadata(*md);
-            CHECK(!self_->cancelled_error_.ok());
+            GRPC_CHECK(!self_->cancelled_error_.ok());
             if (self_->recv_initial_metadata_ != nullptr) {
               switch (self_->recv_initial_metadata_->state) {
                 case RecvInitialMetadata::kInitial:
@@ -1171,7 +1170,7 @@ class ClientCallData::PollContext {
               self_->send_initial_metadata_batch_.CancelWith(
                   self_->cancelled_error_, flusher_);
             } else {
-              CHECK(
+              GRPC_CHECK(
                   self_->recv_trailing_state_ == RecvTrailingState::kInitial ||
                   self_->recv_trailing_state_ == RecvTrailingState::kForwarded);
               self_->call_combiner()->Cancel(self_->cancelled_error_);
@@ -1275,7 +1274,7 @@ ClientCallData::ClientCallData(grpc_call_element* elem,
 
 ClientCallData::~ClientCallData() {
   ScopedActivity scoped_activity(this);
-  CHECK_EQ(poll_ctx_, nullptr);
+  GRPC_CHECK_EQ(poll_ctx_, nullptr);
   if (recv_initial_metadata_ != nullptr) {
     recv_initial_metadata_->~RecvInitialMetadata();
   }
@@ -1289,7 +1288,7 @@ std::string ClientCallData::DebugTag() const {
 
 // Activity implementation.
 void ClientCallData::ForceImmediateRepoll(WakeupMask) {
-  CHECK_NE(poll_ctx_, nullptr);
+  GRPC_CHECK_NE(poll_ctx_, nullptr);
   poll_ctx_->Repoll();
 }
 
@@ -1357,9 +1356,10 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
   // If this is a cancel stream, cancel anything we have pending and propagate
   // the cancellation.
   if (batch->cancel_stream) {
-    CHECK(!batch->send_initial_metadata && !batch->send_trailing_metadata &&
-          !batch->send_message && !batch->recv_initial_metadata &&
-          !batch->recv_message && !batch->recv_trailing_metadata);
+    GRPC_CHECK(!batch->send_initial_metadata &&
+               !batch->send_trailing_metadata && !batch->send_message &&
+               !batch->recv_initial_metadata && !batch->recv_message &&
+               !batch->recv_trailing_metadata);
     PollContext poll_ctx(this, &flusher);
     Cancel(batch->payload->cancel_stream.cancel_error, &flusher);
     poll_ctx.Run();
@@ -1430,12 +1430,12 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
       batch.CancelWith(cancelled_error_, &flusher);
     } else {
       // Otherwise, we should not have seen a send_initial_metadata op yet.
-      CHECK(send_initial_state_ == SendInitialState::kInitial);
+      GRPC_CHECK(send_initial_state_ == SendInitialState::kInitial);
       // Mark ourselves as queued.
       send_initial_state_ = SendInitialState::kQueued;
       if (batch->recv_trailing_metadata) {
         // If there's a recv_trailing_metadata op, we queue that too.
-        CHECK(recv_trailing_state_ == RecvTrailingState::kInitial);
+        GRPC_CHECK(recv_trailing_state_ == RecvTrailingState::kInitial);
         recv_trailing_state_ = RecvTrailingState::kQueued;
       }
       // This is the queuing!
@@ -1450,7 +1450,7 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
     if (recv_trailing_state_ == RecvTrailingState::kCancelled) {
       batch.CancelWith(cancelled_error_, &flusher);
     } else {
-      CHECK(recv_trailing_state_ == RecvTrailingState::kInitial);
+      GRPC_CHECK(recv_trailing_state_ == RecvTrailingState::kInitial);
       recv_trailing_state_ = RecvTrailingState::kForwarded;
       HookRecvTrailingMetadata(batch);
     }
@@ -1526,7 +1526,7 @@ void ClientCallData::Cancel(grpc_error_handle error, Flusher* flusher) {
 // Begin running the promise - which will ultimately take some initial
 // metadata and return some trailing metadata.
 void ClientCallData::StartPromise(Flusher* flusher) {
-  CHECK(send_initial_state_ == SendInitialState::kQueued);
+  GRPC_CHECK(send_initial_state_ == SendInitialState::kQueued);
   ChannelFilter* filter = promise_filter_detail::ChannelFilterFromElem(elem());
 
   // Construct the promise.
@@ -1635,8 +1635,8 @@ ArenaPromise<ServerMetadataHandle> ClientCallData::MakeNextPromise(
     CallArgs call_args) {
   GRPC_TRACE_LOG(channel, INFO)
       << LogTag() << " ClientCallData.MakeNextPromise " << DebugString();
-  CHECK_NE(poll_ctx_, nullptr);
-  CHECK(send_initial_state_ == SendInitialState::kQueued);
+  GRPC_CHECK_NE(poll_ctx_, nullptr);
+  GRPC_CHECK(send_initial_state_ == SendInitialState::kQueued);
   send_initial_metadata_batch_->payload->send_initial_metadata
       .send_initial_metadata = call_args.client_initial_metadata.get();
   if (recv_initial_metadata_ != nullptr) {
@@ -1644,7 +1644,7 @@ ArenaPromise<ServerMetadataHandle> ClientCallData::MakeNextPromise(
     // It might be the one we passed in - in which case we know this filter
     // only wants to examine the metadata, or it might be a new instance, in
     // which case we know the filter wants to mutate.
-    CHECK_NE(call_args.server_initial_metadata, nullptr);
+    GRPC_CHECK_NE(call_args.server_initial_metadata, nullptr);
     recv_initial_metadata_->server_initial_metadata_publisher =
         call_args.server_initial_metadata;
     switch (recv_initial_metadata_->state) {
@@ -1673,17 +1673,17 @@ ArenaPromise<ServerMetadataHandle> ClientCallData::MakeNextPromise(
                 recv_initial_metadata_->state)));  // unreachable
     }
   } else {
-    CHECK_EQ(call_args.server_initial_metadata, nullptr);
+    GRPC_CHECK_EQ(call_args.server_initial_metadata, nullptr);
   }
   if (send_message() != nullptr) {
     send_message()->GotPipe(call_args.client_to_server_messages);
   } else {
-    CHECK_EQ(call_args.client_to_server_messages, nullptr);
+    GRPC_CHECK_EQ(call_args.client_to_server_messages, nullptr);
   }
   if (receive_message() != nullptr) {
     receive_message()->GotPipe(call_args.server_to_client_messages);
   } else {
-    CHECK_EQ(call_args.server_to_client_messages, nullptr);
+    GRPC_CHECK_EQ(call_args.server_to_client_messages, nullptr);
   }
   return ArenaPromise<ServerMetadataHandle>(
       [this]() { return PollTrailingMetadata(); });
@@ -1696,10 +1696,10 @@ ArenaPromise<ServerMetadataHandle> ClientCallData::MakeNextPromise(
 Poll<ServerMetadataHandle> ClientCallData::PollTrailingMetadata() {
   GRPC_TRACE_LOG(channel, INFO)
       << LogTag() << " ClientCallData.PollTrailingMetadata " << DebugString();
-  CHECK_NE(poll_ctx_, nullptr);
+  GRPC_CHECK_NE(poll_ctx_, nullptr);
   if (send_initial_state_ == SendInitialState::kQueued) {
     // First poll: pass the send_initial_metadata op down the stack.
-    CHECK(send_initial_metadata_batch_.is_captured());
+    GRPC_CHECK(send_initial_metadata_batch_.is_captured());
     send_initial_state_ = SendInitialState::kForwarded;
     if (recv_trailing_state_ == RecvTrailingState::kQueued) {
       // (and the recv_trailing_metadata op if it's part of the queuing)
@@ -1765,7 +1765,7 @@ void ClientCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
     SetStatusFromError(recv_trailing_metadata_, error);
   }
   // Record that we've got the callback.
-  CHECK(recv_trailing_state_ == RecvTrailingState::kForwarded);
+  GRPC_CHECK(recv_trailing_state_ == RecvTrailingState::kForwarded);
   recv_trailing_state_ = RecvTrailingState::kComplete;
   if (receive_message() != nullptr) {
     receive_message()->Done(*recv_trailing_metadata_, &flusher);
@@ -1793,6 +1793,7 @@ void ClientCallData::SetStatusFromError(grpc_metadata_batch* metadata,
 
 // Wakeup and poll the promise if appropriate.
 void ClientCallData::WakeInsideCombiner(Flusher* flusher) {
+  GRPC_LATENT_SEE_SCOPE("ClientCallData::WakeInsideCombiner");
   PollContext(this, flusher).Run();
 }
 
@@ -1818,8 +1819,8 @@ struct ServerCallData::SendInitialMetadata {
   State state = kInitial;
   CapturedBatch batch;
   PipeSender<ServerMetadataHandle>* server_initial_metadata_publisher = nullptr;
-  absl::optional<PipeSender<ServerMetadataHandle>::PushType> metadata_push_;
-  absl::optional<PipeReceiverNextType<ServerMetadataHandle>> metadata_next_;
+  std::optional<PipeSender<ServerMetadataHandle>::PushType> metadata_push_;
+  std::optional<PipeReceiverNextType<ServerMetadataHandle>> metadata_next_;
 
   static const char* StateString(State state) {
     switch (state) {
@@ -1853,7 +1854,7 @@ class ServerCallData::PollContext {
           created_.line(), "; Old: ", self_->poll_ctx_->created_.file(), ":",
           self_->poll_ctx_->created_.line()));
     }
-    CHECK_EQ(self_->poll_ctx_, nullptr);
+    GRPC_CHECK_EQ(self_->poll_ctx_, nullptr);
     self_->poll_ctx_ = this;
     scoped_activity_.Init(self_);
     have_scoped_activity_ = true;
@@ -1959,7 +1960,7 @@ ServerCallData::~ServerCallData() {
   if (send_initial_metadata_ != nullptr) {
     send_initial_metadata_->~SendInitialMetadata();
   }
-  CHECK_EQ(poll_ctx_, nullptr);
+  GRPC_CHECK_EQ(poll_ctx_, nullptr);
 }
 
 std::string ServerCallData::DebugTag() const {
@@ -1968,7 +1969,7 @@ std::string ServerCallData::DebugTag() const {
 
 // Activity implementation.
 void ServerCallData::ForceImmediateRepoll(WakeupMask) {
-  CHECK_NE(poll_ctx_, nullptr);
+  GRPC_CHECK_NE(poll_ctx_, nullptr);
   poll_ctx_->Repoll();
 }
 
@@ -1985,9 +1986,10 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
   // If this is a cancel stream, cancel anything we have pending and
   // propagate the cancellation.
   if (batch->cancel_stream) {
-    CHECK(!batch->send_initial_metadata && !batch->send_trailing_metadata &&
-          !batch->send_message && !batch->recv_initial_metadata &&
-          !batch->recv_message && !batch->recv_trailing_metadata);
+    GRPC_CHECK(!batch->send_initial_metadata &&
+               !batch->send_trailing_metadata && !batch->send_message &&
+               !batch->recv_initial_metadata && !batch->recv_message &&
+               !batch->recv_trailing_metadata);
     PollContext poll_ctx(this, &flusher);
     Completed(batch->payload->cancel_stream.cancel_error,
               batch->payload->cancel_stream.tarpit, &flusher);
@@ -2002,11 +2004,11 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
   // recv_initial_metadata: we hook the response of this so we can start the
   // promise at an appropriate time.
   if (batch->recv_initial_metadata) {
-    CHECK(!batch->send_initial_metadata && !batch->send_trailing_metadata &&
-          !batch->send_message && !batch->recv_message &&
-          !batch->recv_trailing_metadata);
+    GRPC_CHECK(!batch->send_initial_metadata &&
+               !batch->send_trailing_metadata && !batch->send_message &&
+               !batch->recv_message && !batch->recv_trailing_metadata);
     // Otherwise, we should not have seen a send_initial_metadata op yet.
-    CHECK(recv_initial_state_ == RecvInitialState::kInitial);
+    GRPC_CHECK(recv_initial_state_ == RecvInitialState::kInitial);
     // Hook the callback so we know when to start the promise.
     recv_initial_metadata_ =
         batch->payload->recv_initial_metadata.recv_initial_metadata;
@@ -2184,13 +2186,14 @@ void ServerCallData::Completed(grpc_error_handle error,
 //   - return a wrapper around PollTrailingMetadata as the promise.
 ArenaPromise<ServerMetadataHandle> ServerCallData::MakeNextPromise(
     CallArgs call_args) {
-  CHECK(recv_initial_state_ == RecvInitialState::kComplete);
-  CHECK(std::move(call_args.client_initial_metadata).get() ==
-        recv_initial_metadata_);
+  GRPC_CHECK(recv_initial_state_ == RecvInitialState::kComplete);
+  GRPC_CHECK(std::move(call_args.client_initial_metadata).get() ==
+             recv_initial_metadata_);
   forward_recv_initial_metadata_callback_ = true;
   if (send_initial_metadata_ != nullptr) {
-    CHECK(send_initial_metadata_->server_initial_metadata_publisher == nullptr);
-    CHECK_NE(call_args.server_initial_metadata, nullptr);
+    GRPC_CHECK(send_initial_metadata_->server_initial_metadata_publisher ==
+               nullptr);
+    GRPC_CHECK_NE(call_args.server_initial_metadata, nullptr);
     send_initial_metadata_->server_initial_metadata_publisher =
         call_args.server_initial_metadata;
     switch (send_initial_metadata_->state) {
@@ -2213,24 +2216,24 @@ ArenaPromise<ServerMetadataHandle> ServerCallData::MakeNextPromise(
         break;
     }
   } else {
-    CHECK_EQ(call_args.server_initial_metadata, nullptr);
+    GRPC_CHECK_EQ(call_args.server_initial_metadata, nullptr);
   }
   if (send_message() != nullptr) {
     send_message()->GotPipe(call_args.server_to_client_messages);
   } else {
-    CHECK_EQ(call_args.server_to_client_messages, nullptr);
+    GRPC_CHECK_EQ(call_args.server_to_client_messages, nullptr);
   }
   if (receive_message() != nullptr) {
     receive_message()->GotPipe(call_args.client_to_server_messages);
   } else {
-    CHECK_EQ(call_args.client_to_server_messages, nullptr);
+    GRPC_CHECK_EQ(call_args.client_to_server_messages, nullptr);
   }
   return ArenaPromise<ServerMetadataHandle>(
       [this]() { return PollTrailingMetadata(); });
 }
 
 // Wrapper to make it look like we're calling the next filter as a promise.
-// All polls: await sending the trailing metadata, then foward it down the
+// All polls: await sending the trailing metadata, then forward it down the
 // stack.
 Poll<ServerMetadataHandle> ServerCallData::PollTrailingMetadata() {
   GRPC_TRACE_LOG(channel, INFO)
@@ -2283,7 +2286,7 @@ void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   Flusher flusher(this);
   GRPC_TRACE_LOG(channel, INFO)
       << LogTag() << ": RecvInitialMetadataReady " << error;
-  CHECK(recv_initial_state_ == RecvInitialState::kForwarded);
+  GRPC_CHECK(recv_initial_state_ == RecvInitialState::kForwarded);
   // If there was an error we just propagate that through
   if (!error.ok()) {
     recv_initial_state_ = RecvInitialState::kResponded;
@@ -2343,6 +2346,7 @@ std::string ServerCallData::DebugString() const {
 
 // Wakeup and poll the promise if appropriate.
 void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
+  GRPC_LATENT_SEE_SCOPE("ServerCallData::WakeInsideCombiner");
   PollContext poll_ctx(this, flusher);
   GRPC_TRACE_LOG(channel, INFO)
       << LogTag() << ": WakeInsideCombiner " << DebugString();
@@ -2352,8 +2356,8 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
         SendInitialMetadata::kQueuedAndGotPipe) {
       send_initial_metadata_->state =
           SendInitialMetadata::kQueuedAndPushedToPipe;
-      CHECK(!send_initial_metadata_->metadata_push_.has_value());
-      CHECK(!send_initial_metadata_->metadata_next_.has_value());
+      GRPC_CHECK(!send_initial_metadata_->metadata_push_.has_value());
+      GRPC_CHECK(!send_initial_metadata_->metadata_next_.has_value());
       send_initial_metadata_->metadata_push_.emplace(
           send_initial_metadata_->server_initial_metadata_publisher->Push(
               ServerMetadataHandle(
@@ -2427,7 +2431,7 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
     if (send_initial_metadata_ != nullptr &&
         send_initial_metadata_->state ==
             SendInitialMetadata::kQueuedAndPushedToPipe) {
-      CHECK(send_initial_metadata_->metadata_next_.has_value());
+      GRPC_CHECK(send_initial_metadata_->metadata_next_.has_value());
       auto p = (*send_initial_metadata_->metadata_next_)();
       GRPC_TRACE_LOG(channel, INFO)
           << LogTag() << ": WakeInsideCombiner send_initial_metadata poll="
@@ -2474,7 +2478,7 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
               StateString(send_trailing_state_)));  // unreachable
           break;
         case SendTrailingState::kInitial: {
-          CHECK(*md->get_pointer(GrpcStatusMetadata()) != GRPC_STATUS_OK);
+          GRPC_CHECK(*md->get_pointer(GrpcStatusMetadata()) != GRPC_STATUS_OK);
           Completed(StatusFromMetadata(*md), md->get(GrpcTarPit()).has_value(),
                     flusher);
         } break;

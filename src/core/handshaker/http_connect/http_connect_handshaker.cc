@@ -18,30 +18,23 @@
 
 #include "src/core/handshaker/http_connect/http_connect_handshaker.h"
 
-#include <limits.h>
-#include <string.h>
-
-#include <memory>
-#include <string>
-#include <utility>
-
-#include "absl/base/thread_annotations.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
+#include <limits.h>
+#include <string.h>
 
+#include <memory>
+#include <optional>
+#include <string>
+#include <utility>
+
+#include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_factory.h"
 #include "src/core/handshaker/handshaker_registry.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -55,6 +48,11 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -109,6 +107,12 @@ void HttpConnectHandshaker::HandshakeFailedLocked(absl::Status error) {
     // own error.
     error = GRPC_ERROR_CREATE("Handshaker shutdown");
   }
+  absl::string_view peer_string = "[unknown]";
+  if (args_ != nullptr && args_->endpoint != nullptr) {
+    peer_string = grpc_endpoint_get_peer(args_->endpoint.get());
+  }
+  LOG_EVERY_N_SEC(ERROR, 60)
+      << "HTTP proxy handshake with " << peer_string << " failed: " << error;
   // Invoke callback.
   FinishLocked(std::move(error));
 }
@@ -126,7 +130,6 @@ void HttpConnectHandshaker::OnWriteDoneScheduler(void* arg,
   auto* handshaker = static_cast<HttpConnectHandshaker*>(arg);
   handshaker->args_->event_engine->Run(
       [handshaker, error = std::move(error)]() mutable {
-        ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         handshaker->OnWriteDone(std::move(error));
       });
@@ -162,7 +165,6 @@ void HttpConnectHandshaker::OnReadDoneScheduler(void* arg,
   auto* handshaker = static_cast<HttpConnectHandshaker*>(arg);
   handshaker->args_->event_engine->Run(
       [handshaker, error = std::move(error)]() mutable {
-        ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         handshaker->OnReadDone(std::move(error));
       });
@@ -256,14 +258,14 @@ void HttpConnectHandshaker::DoHandshake(
     absl::AnyInvocable<void(absl::Status)> on_handshake_done) {
   // Check for HTTP CONNECT channel arg.
   // If not found, invoke on_handshake_done without doing anything.
-  absl::optional<absl::string_view> server_name =
+  std::optional<absl::string_view> server_name =
       args->args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER);
   if (!server_name.has_value()) {
     InvokeOnHandshakeDone(args, std::move(on_handshake_done), absl::OkStatus());
     return;
   }
   // Get headers from channel args.
-  absl::optional<absl::string_view> arg_header_string =
+  std::optional<absl::string_view> arg_header_string =
       args->args.GetString(GRPC_ARG_HTTP_CONNECT_HEADERS);
   grpc_http_header* headers = nullptr;
   size_t num_headers = 0;
@@ -316,12 +318,14 @@ void HttpConnectHandshaker::DoHandshake(
   gpr_free(header_strings);
   // Take a new ref to be held by the write callback.
   Ref().release();
+  grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs write_args;
+  write_args.set_max_frame_size(INT_MAX);
   grpc_endpoint_write(
       args->endpoint.get(), write_buffer_.c_slice_buffer(),
       GRPC_CLOSURE_INIT(&on_write_done_scheduler_,
                         &HttpConnectHandshaker::OnWriteDoneScheduler, this,
                         grpc_schedule_on_exec_ctx),
-      nullptr, /*max_frame_size=*/INT_MAX);
+      std::move(write_args));
 }
 
 HttpConnectHandshaker::HttpConnectHandshaker() {

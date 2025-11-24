@@ -25,15 +25,19 @@
 #include <fcntl.h>
 #include <string.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/event_engine/extensions/supports_win_sockets.h"
+#include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
+#include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/tcp_windows.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
 
 static void create_sockets(SOCKET sv[2]) {
   SOCKET svr_sock = INVALID_SOCKET;
@@ -44,24 +48,26 @@ static void create_sockets(SOCKET sv[2]) {
 
   lst_sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
                        grpc_get_default_wsa_socket_flags());
-  CHECK(lst_sock != INVALID_SOCKET);
+  GRPC_CHECK(lst_sock != INVALID_SOCKET);
 
   memset(&addr, 0, sizeof(addr));
   addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
   addr.sin_family = AF_INET;
-  CHECK(bind(lst_sock, (grpc_sockaddr*)&addr, sizeof(addr)) != SOCKET_ERROR);
-  CHECK(listen(lst_sock, SOMAXCONN) != SOCKET_ERROR);
-  CHECK(getsockname(lst_sock, (grpc_sockaddr*)&addr, &addr_len) !=
-        SOCKET_ERROR);
+  GRPC_CHECK(bind(lst_sock, (grpc_sockaddr*)&addr, sizeof(addr)) !=
+             SOCKET_ERROR);
+  GRPC_CHECK(listen(lst_sock, SOMAXCONN) != SOCKET_ERROR);
+  GRPC_CHECK(getsockname(lst_sock, (grpc_sockaddr*)&addr, &addr_len) !=
+             SOCKET_ERROR);
 
   cli_sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
                        grpc_get_default_wsa_socket_flags());
-  CHECK(cli_sock != INVALID_SOCKET);
+  GRPC_CHECK(cli_sock != INVALID_SOCKET);
 
-  CHECK(WSAConnect(cli_sock, (grpc_sockaddr*)&addr, addr_len, NULL, NULL, NULL,
-                   NULL) == 0);
+  GRPC_CHECK_EQ(WSAConnect(cli_sock, (grpc_sockaddr*)&addr, addr_len, NULL,
+                           NULL, NULL, NULL),
+                0);
   svr_sock = accept(lst_sock, (grpc_sockaddr*)&addr, &addr_len);
-  CHECK(svr_sock != INVALID_SOCKET);
+  GRPC_CHECK_NE(svr_sock, INVALID_SOCKET);
 
   closesocket(lst_sock);
   grpc_error_handle error = grpc_tcp_prepare_socket(cli_sock);
@@ -80,15 +86,44 @@ static void create_sockets(SOCKET sv[2]) {
 }
 
 grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
-    const char*, const grpc_channel_args* /* channel_args */) {
+    const char*, const grpc_channel_args* channel_args) {
   SOCKET sv[2];
   grpc_endpoint_pair p;
   create_sockets(sv);
   grpc_core::ExecCtx exec_ctx;
-  p.client = grpc_tcp_create(grpc_winsocket_create(sv[1], "endpoint:client"),
-                             "endpoint:server");
-  p.server = grpc_tcp_create(grpc_winsocket_create(sv[0], "endpoint:server"),
-                             "endpoint:client");
+  if (grpc_core::IsPollsetAlternativeEnabled()) {
+    auto new_args = grpc_core::CoreConfiguration::Get()
+                        .channel_args_preconditioning()
+                        .PreconditionChannelArgs(channel_args);
+    auto* event_engine_supports_win_sockets =
+        grpc_event_engine::experimental::QueryExtension<
+            grpc_event_engine::experimental::EventEngineWindowsSocketSupport>(
+            new_args
+                .GetObjectRef<grpc_event_engine::experimental::EventEngine>()
+                .get());
+    GRPC_CHECK_NE(event_engine_supports_win_sockets, nullptr)
+        << "EventEngine does not support windows SOCKETS, so an endpoint pair "
+           "cannot be created.";
+    auto client_endpoint =
+        event_engine_supports_win_sockets->CreateEndpointFromWinSocket(
+            sv[1], grpc_event_engine::experimental::ChannelArgsEndpointConfig(
+                       new_args));
+    GRPC_CHECK_NE(client_endpoint.get(), nullptr)
+        << "Failed to create client endpoint";
+    auto server_endpoint =
+        event_engine_supports_win_sockets->CreateEndpointFromWinSocket(
+            sv[0], grpc_event_engine::experimental::ChannelArgsEndpointConfig(
+                       new_args));
+    GRPC_CHECK_NE(server_endpoint.get(), nullptr)
+        << "Failed to create server endpoint";
+    p.client = grpc_event_engine_endpoint_create(std::move(client_endpoint));
+    p.server = grpc_event_engine_endpoint_create(std::move(server_endpoint));
+  } else {
+    p.client = grpc_tcp_create(grpc_winsocket_create(sv[1], "endpoint:client"),
+                               "endpoint:server");
+    p.server = grpc_tcp_create(grpc_winsocket_create(sv[0], "endpoint:server"),
+                               "endpoint:client");
+  }
   return p;
 }
 

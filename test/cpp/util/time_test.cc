@@ -16,12 +16,11 @@
 //
 //
 
-#include <gtest/gtest.h>
-
 #include <grpc/support/time.h>
 #include <grpcpp/support/time.h>
 
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 using std::chrono::microseconds;
 using std::chrono::system_clock;
@@ -52,12 +51,6 @@ TEST_F(TimeTest, InfFuture) {
             Timespec2Timepoint(gpr_inf_future(GPR_CLOCK_REALTIME)));
   gpr_timespec from_time_point_max;
   Timepoint2Timespec(system_clock::time_point::max(), &from_time_point_max);
-  EXPECT_EQ(
-      0, gpr_time_cmp(gpr_inf_future(GPR_CLOCK_REALTIME), from_time_point_max));
-  // This will cause an overflow
-  Timepoint2Timespec(
-      std::chrono::time_point<system_clock, std::chrono::seconds>::max(),
-      &from_time_point_max);
   EXPECT_EQ(
       0, gpr_time_cmp(gpr_inf_future(GPR_CLOCK_REALTIME), from_time_point_max));
 }

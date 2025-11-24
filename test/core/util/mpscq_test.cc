@@ -18,20 +18,18 @@
 
 #include "src/core/util/mpscq.h"
 
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <stdlib.h>
 
 #include <memory>
 
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
-
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-
 #include "src/core/util/thd.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 using grpc_core::MultiProducerSingleConsumerQueue;
 

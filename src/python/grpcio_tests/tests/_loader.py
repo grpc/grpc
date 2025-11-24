@@ -55,7 +55,7 @@ class Loader(object):
 
     Attributes:
       suite (unittest.TestSuite): All tests collected by the loader.
-      loader (unittest.TestLoader): Standard Python unittest loader to be ran per
+      loader (unittest.TestLoader): Standard Python unittest loader to be run per
         module discovered.
       module_matcher (re.RegexObject): A regular expression object to match
         against module names and determine whether or not the discovered module

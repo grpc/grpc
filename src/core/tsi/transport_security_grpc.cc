@@ -72,3 +72,11 @@ tsi_result tsi_zero_copy_grpc_protector_max_frame_size(
   if (self->vtable->max_frame_size == nullptr) return TSI_UNIMPLEMENTED;
   return self->vtable->max_frame_size(self, max_frame_size);
 }
+
+bool tsi_zero_copy_grpc_protector_read_frame_size(
+    tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* protected_slices,
+    uint32_t* frame_size) {
+  if (self == nullptr || frame_size == nullptr) return false;
+  if (self->vtable->read_frame_size == nullptr) return false;
+  return self->vtable->read_frame_size(self, protected_slices, frame_size);
+}

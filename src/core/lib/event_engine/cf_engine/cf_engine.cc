@@ -19,13 +19,10 @@
 #ifdef AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 
 #include <CoreFoundation/CoreFoundation.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpc/support/cpu.h>
 
 #include "src/core/lib/event_engine/cf_engine/cf_engine.h"
+#include "src/core/lib/event_engine/cf_engine/cfsocket_listener.h"
 #include "src/core/lib/event_engine/cf_engine/cfstream_endpoint.h"
 #include "src/core/lib/event_engine/cf_engine/dns_service_resolver.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
@@ -33,9 +30,15 @@
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/useful.h"
+#include "absl/log/log.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+#ifndef GRPC_CFSTREAM_MAX_THREADPOOL_SIZE
+#define GRPC_CFSTREAM_MAX_THREADPOOL_SIZE 16u
+#endif  // GRPC_CFSTREAM_MAX_THREADPOOL_SIZE
+
+namespace grpc_event_engine::experimental {
 
 struct CFEventEngine::Closure final : public EventEngine::Closure {
   absl::AnyInvocable<void()> cb;
@@ -56,8 +59,9 @@ struct CFEventEngine::Closure final : public EventEngine::Closure {
 };
 
 CFEventEngine::CFEventEngine()
-    : thread_pool_(
-          MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u))),
+    : thread_pool_(MakeThreadPool(grpc_core::Clamp(
+          gpr_cpu_num_cores(), 2u,
+          static_cast<unsigned int>(GRPC_CFSTREAM_MAX_THREADPOOL_SIZE)))),
       timer_manager_(thread_pool_) {}
 
 CFEventEngine::~CFEventEngine() {
@@ -70,7 +74,7 @@ CFEventEngine::~CFEventEngine() {
                    << HandleToString(handle);
       }
     }
-    CHECK(GPR_LIKELY(known_handles_.empty()));
+    GRPC_CHECK(GPR_LIKELY(known_handles_.empty()));
     timer_manager_.Shutdown();
   }
   thread_pool_->Quiesce();
@@ -78,11 +82,14 @@ CFEventEngine::~CFEventEngine() {
 
 absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
 CFEventEngine::CreateListener(
-    Listener::AcceptCallback /* on_accept */,
-    absl::AnyInvocable<void(absl::Status)> /* on_shutdown */,
-    const EndpointConfig& /* config */,
-    std::unique_ptr<MemoryAllocatorFactory> /* memory_allocator_factory */) {
-  grpc_core::Crash("unimplemented");
+    Listener::AcceptCallback on_accept,
+    absl::AnyInvocable<void(absl::Status)> on_shutdown,
+    const EndpointConfig& config,
+    std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) {
+  return std::make_unique<CFSocketListener>(
+      std::static_pointer_cast<CFEventEngine>(shared_from_this()),
+      std::move(on_accept), std::move(on_shutdown), config,
+      std::move(memory_allocator_factory));
 }
 
 CFEventEngine::ConnectionHandle CFEventEngine::Connect(
@@ -215,8 +222,7 @@ EventEngine::TaskHandle CFEventEngine::RunAfterInternal(
   return handle;
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 #endif  // GPR_APPLE

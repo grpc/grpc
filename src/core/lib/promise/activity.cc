@@ -14,25 +14,25 @@
 
 #include "src/core/lib/promise/activity.h"
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <vector>
 
-#include "absl/log/check.h"
+#include "src/core/util/atomic_utils.h"
+#include "src/core/util/grpc_check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/util/atomic_utils.h"
 
 namespace grpc_core {
 
 ///////////////////////////////////////////////////////////////////////////////
 // GLOBALS
 
+#if !defined(_WIN32) || !defined(_DLL)
 thread_local Activity* Activity::g_current_activity_{nullptr};
+#endif
 
 namespace promise_detail {
 
@@ -55,7 +55,7 @@ class FreestandingActivity::Handle final : public Wakeable {
   // Activity is going away... drop its reference and sever the connection back.
   void DropActivity() ABSL_LOCKS_EXCLUDED(mu_) {
     mu_.Lock();
-    CHECK_NE(activity_, nullptr);
+    GRPC_CHECK_NE(activity_, nullptr);
     activity_ = nullptr;
     mu_.Unlock();
     Unref();

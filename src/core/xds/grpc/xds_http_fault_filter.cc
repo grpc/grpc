@@ -16,29 +16,24 @@
 
 #include "src/core/xds/grpc/xds_http_fault_filter.h"
 
+#include <grpc/status.h>
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <string>
 #include <utility>
+#include <variant>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
 #include "envoy/extensions/filters/common/fault/v3/fault.upb.h"
 #include "envoy/extensions/filters/http/fault/v3/fault.upb.h"
 #include "envoy/extensions/filters/http/fault/v3/fault.upbdefs.h"
 #include "envoy/type/v3/percent.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-
-#include <grpc/status.h>
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
-
+#include "src/core/call/status_util.h"
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 #include "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
@@ -47,6 +42,9 @@
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -85,23 +83,23 @@ void XdsHttpFaultFilter::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_fault_v3_HTTPFault_getmsgdef(symtab);
 }
 
-absl::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpFaultFilter::GenerateFilterConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
-      absl::get_if<absl::string_view>(&extension.value);
+      std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse fault injection filter config");
-    return absl::nullopt;
+    return std::nullopt;
   }
   auto* http_fault = envoy_extensions_filters_http_fault_v3_HTTPFault_parse(
       serialized_filter_config->data(), serialized_filter_config->size(),
       context.arena);
   if (http_fault == nullptr) {
     errors->AddError("could not parse fault injection filter config");
-    return absl::nullopt;
+    return std::nullopt;
   }
   // NOTE(lidiz): Here, we are manually translating the upb messages into the
   // JSON form of the filter config as part of method config, which will be
@@ -118,26 +116,24 @@ XdsHttpFaultFilter::GenerateFilterConfig(
   if (fault_abort != nullptr) {
     ValidationErrors::ScopedField field(errors, ".abort");
     grpc_status_code abort_grpc_status_code = GRPC_STATUS_OK;
-    // Try if gRPC status code is set first
-    int abort_grpc_status_code_raw =
-        envoy_extensions_filters_http_fault_v3_FaultAbort_grpc_status(
-            fault_abort);
-    if (abort_grpc_status_code_raw != 0) {
+    // Try if gRPC status code is set first.  Otherwise, use HTTP status.
+    if (int abort_grpc_status_code_raw =
+            envoy_extensions_filters_http_fault_v3_FaultAbort_grpc_status(
+                fault_abort);
+        abort_grpc_status_code_raw != 0) {
       if (!grpc_status_code_from_int(abort_grpc_status_code_raw,
                                      &abort_grpc_status_code)) {
         ValidationErrors::ScopedField field(errors, ".grpc_status");
         errors->AddError(absl::StrCat("invalid gRPC status code: ",
                                       abort_grpc_status_code_raw));
       }
-    } else {
-      // if gRPC status code is empty, check http status
-      int abort_http_status_code =
-          envoy_extensions_filters_http_fault_v3_FaultAbort_http_status(
-              fault_abort);
-      if (abort_http_status_code != 0 && abort_http_status_code != 200) {
-        abort_grpc_status_code =
-            grpc_http2_status_to_grpc_status(abort_http_status_code);
-      }
+    } else if (
+        int abort_http_status_code =
+            envoy_extensions_filters_http_fault_v3_FaultAbort_http_status(
+                fault_abort);
+        abort_http_status_code != 0 && abort_http_status_code != 200) {
+      abort_grpc_status_code =
+          grpc_http2_status_to_grpc_status(abort_http_status_code);
     }
     // Set the abort_code, even if it's OK
     fault_injection_policy_json["abortCode"] =
@@ -207,7 +203,7 @@ XdsHttpFaultFilter::GenerateFilterConfig(
                       Json::FromObject(std::move(fault_injection_policy_json))};
 }
 
-absl::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpFaultFilter::GenerateFilterConfigOverride(
     absl::string_view instance_name,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
@@ -219,7 +215,7 @@ XdsHttpFaultFilter::GenerateFilterConfigOverride(
 }
 
 void XdsHttpFaultFilter::AddFilter(InterceptionChainBuilder& builder) const {
-  builder.Add<FaultInjectionFilter>();
+  builder.Add<FaultInjectionFilter>(nullptr);
 }
 
 const grpc_channel_filter* XdsHttpFaultFilter::channel_filter() const {

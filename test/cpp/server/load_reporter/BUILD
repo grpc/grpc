@@ -25,6 +25,8 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        "//:gpr_platform",
+        "//:grpc",
         "//:lb_load_data_store",
         "//test/core/test_util:grpc_test_util",
     ],
@@ -39,7 +41,11 @@ grpc_cc_test(
         "gtest",
         "opencensus-stats-test",
     ],
-    tags = ["no_windows"],
+    tags = [
+        # Uses opencensus features not enabled internally.
+        "grpc:broken-internally",
+        "no_windows",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",

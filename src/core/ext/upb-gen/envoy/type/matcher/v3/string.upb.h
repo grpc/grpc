@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_TYPE_MATCHER_V3_STRING_PROTO_UPB_H_
-#define ENVOY_TYPE_MATCHER_V3_STRING_PROTO_UPB_H_
+#ifndef ENVOY_TYPE_MATCHER_V3_STRING_PROTO_UPB_H__UPB_H_
+#define ENVOY_TYPE_MATCHER_V3_STRING_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -82,6 +82,10 @@ UPB_INLINE envoy_type_matcher_v3_StringMatcher_match_pattern_oneofcases envoy_ty
   const upb_MiniTableField field = {1, 16, -13, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   return (envoy_type_matcher_v3_StringMatcher_match_pattern_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void envoy_type_matcher_v3_StringMatcher_clear_match_pattern(envoy_type_matcher_v3_StringMatcher* msg) {
+  const upb_MiniTableField field = {1, 16, -13, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__type__matcher__v3__StringMatcher_msg_init, &field);
 }
 UPB_INLINE void envoy_type_matcher_v3_StringMatcher_clear_exact(envoy_type_matcher_v3_StringMatcher* msg) {
   const upb_MiniTableField field = {1, 16, -13, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
@@ -352,4 +356,4 @@ UPB_INLINE struct envoy_type_matcher_v3_StringMatcher* envoy_type_matcher_v3_Lis
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_TYPE_MATCHER_V3_STRING_PROTO_UPB_H_ */
+#endif  /* ENVOY_TYPE_MATCHER_V3_STRING_PROTO_UPB_H__UPB_H_ */

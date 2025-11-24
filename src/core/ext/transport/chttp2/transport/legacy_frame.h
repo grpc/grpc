@@ -33,6 +33,7 @@ typedef struct grpc_chttp2_transport grpc_chttp2_transport;
 #define GRPC_CHTTP2_FRAME_PING 6
 #define GRPC_CHTTP2_FRAME_GOAWAY 7
 #define GRPC_CHTTP2_FRAME_WINDOW_UPDATE 8
+#define GRPC_CHTTP2_FRAME_SECURITY 200
 
 #define GRPC_CHTTP2_DATA_FLAG_END_STREAM 1
 #define GRPC_CHTTP2_FLAG_ACK 1

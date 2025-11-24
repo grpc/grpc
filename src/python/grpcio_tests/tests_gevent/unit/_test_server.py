@@ -47,7 +47,7 @@ def start_test_server(port: int = 0) -> Tuple[str, Any]:
 
 
 def _create_extra_generic_handler(servicer: TestServiceServicer) -> Any:
-    # Add programatically extra methods not provided by the proto file
+    # Add programmatically extra methods not provided by the proto file
     # that are used during the tests
     rpc_method_handlers = {
         "UnaryCallWithSleep": grpc.unary_unary_rpc_method_handler(

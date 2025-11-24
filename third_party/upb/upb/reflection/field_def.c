@@ -49,7 +49,7 @@ typedef struct {
 } str_t;
 
 struct upb_FieldDef {
-  const UPB_DESC(FieldOptions*) opts;
+  UPB_ALIGN_AS(8) const UPB_DESC(FieldOptions*) opts;
   const UPB_DESC(FeatureSet*) resolved_features;
   const upb_FileDef* file;
   const upb_MessageDef* msgdef;
@@ -590,20 +590,6 @@ static bool _upb_FieldDef_InferLegacyFeatures(
     ret = true;
   }
 
-// begin:google_only
-// #ifndef UPB_BOOTSTRAP_STAGE0
-//   if (syntax == kUpb_Syntax_Proto3 &&
-//       UPB_DESC(FieldOptions_has_enforce_utf8)(options) &&
-//       !UPB_DESC(FieldOptions_enforce_utf8)(options)) {
-//     int val = UPB_DESC(FeatureSet_UNVERIFIED);
-//     UPB_DESC(FeatureSet_set_utf8_validation(features, val));
-//     ret = true;
-//   }
-// #endif
-//   // clang-format off
-// end:google_only
-  // clang-format on
-
   return ret;
 }
 
@@ -795,8 +781,7 @@ upb_FieldDef* _upb_Extensions_New(upb_DefBuilder* ctx, int n,
                                   const UPB_DESC(FeatureSet*) parent_features,
                                   const char* prefix, upb_MessageDef* m) {
   _upb_DefType_CheckPadding(sizeof(upb_FieldDef));
-  upb_FieldDef* defs =
-      (upb_FieldDef*)_upb_DefBuilder_Alloc(ctx, sizeof(upb_FieldDef) * n);
+  upb_FieldDef* defs = UPB_DEFBUILDER_ALLOCARRAY(ctx, upb_FieldDef, n);
 
   for (int i = 0; i < n; i++) {
     upb_FieldDef* f = &defs[i];
@@ -815,8 +800,7 @@ upb_FieldDef* _upb_FieldDefs_New(upb_DefBuilder* ctx, int n,
                                  const char* prefix, upb_MessageDef* m,
                                  bool* is_sorted) {
   _upb_DefType_CheckPadding(sizeof(upb_FieldDef));
-  upb_FieldDef* defs =
-      (upb_FieldDef*)_upb_DefBuilder_Alloc(ctx, sizeof(upb_FieldDef) * n);
+  upb_FieldDef* defs = UPB_DEFBUILDER_ALLOCARRAY(ctx, upb_FieldDef, n);
 
   uint32_t previous = 0;
   for (int i = 0; i < n; i++) {
@@ -982,9 +966,9 @@ void _upb_FieldDef_BuildMiniTableExtension(upb_DefBuilder* ctx,
       const upb_MiniTableEnum* subenum = _upb_EnumDef_MiniTable(f->sub.enumdef);
       sub = upb_MiniTableSub_FromEnum(subenum);
     }
-    bool ok2 = upb_MiniTableExtension_Init(desc.data, desc.size, mut_ext,
-                                           upb_MessageDef_MiniTable(f->msgdef),
-                                           sub, ctx->status);
+    bool ok2 = _upb_MiniTableExtension_Init(desc.data, desc.size, mut_ext,
+                                            upb_MessageDef_MiniTable(f->msgdef),
+                                            sub, ctx->platform, ctx->status);
     if (!ok2) _upb_DefBuilder_Errf(ctx, "Could not build extension mini table");
   }
 

@@ -16,9 +16,8 @@
 
 #include "src/core/util/validation_errors.h"
 
-#include "gtest/gtest.h"
-
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace testing {
@@ -30,7 +29,9 @@ TEST(ValidationErrors, NoErrors) {
   EXPECT_EQ(errors.size(), 0);
   {
     ValidationErrors::ScopedField field(&errors, "foo");
-    { ValidationErrors::ScopedField field(&errors, ".bar"); }
+    {
+      ValidationErrors::ScopedField field(&errors, ".bar");
+    }
   }
   EXPECT_TRUE(errors.ok());
   EXPECT_EQ(errors.size(), 0);

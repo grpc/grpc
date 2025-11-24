@@ -18,12 +18,10 @@
 
 #include "src/core/telemetry/call_tracer.h"
 
-#include <vector>
-
-#include "gtest/gtest.h"
-
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
+
+#include <vector>
 
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -31,6 +29,7 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace {
@@ -43,8 +42,8 @@ class CallTracerTest : public ::testing::Test {
 
 TEST_F(CallTracerTest, BasicClientCallTracer) {
   FakeClientCallTracer client_call_tracer(&annotation_logger_);
-  AddClientCallTracerToContext(arena_.get(), &client_call_tracer);
-  arena_->GetContext<CallTracerAnnotationInterface>()->RecordAnnotation("Test");
+  SetClientCallTracer(arena_.get(), {&client_call_tracer});
+  arena_->GetContext<CallSpan>()->RecordAnnotation("Test");
   EXPECT_EQ(annotation_logger_, std::vector<std::string>{"Test"});
 }
 
@@ -53,10 +52,11 @@ TEST_F(CallTracerTest, MultipleClientCallTracers) {
   FakeClientCallTracer client_call_tracer1(&annotation_logger_);
   FakeClientCallTracer client_call_tracer2(&annotation_logger_);
   FakeClientCallTracer client_call_tracer3(&annotation_logger_);
-  AddClientCallTracerToContext(arena_.get(), &client_call_tracer1);
-  AddClientCallTracerToContext(arena_.get(), &client_call_tracer2);
-  AddClientCallTracerToContext(arena_.get(), &client_call_tracer3);
-  arena_->GetContext<CallTracerAnnotationInterface>()->RecordAnnotation("Test");
+  SetClientCallTracer(
+      arena_.get(),
+      std::vector<ClientCallTracerInterface*>{
+          &client_call_tracer1, &client_call_tracer2, &client_call_tracer3});
+  arena_->GetContext<CallSpan>()->RecordAnnotation("Test");
   EXPECT_EQ(annotation_logger_,
             std::vector<std::string>({"Test", "Test", "Test"}));
 }
@@ -66,24 +66,24 @@ TEST_F(CallTracerTest, MultipleClientCallAttemptTracers) {
   FakeClientCallTracer client_call_tracer1(&annotation_logger_);
   FakeClientCallTracer client_call_tracer2(&annotation_logger_);
   FakeClientCallTracer client_call_tracer3(&annotation_logger_);
-  AddClientCallTracerToContext(arena_.get(), &client_call_tracer1);
-  AddClientCallTracerToContext(arena_.get(), &client_call_tracer2);
-  AddClientCallTracerToContext(arena_.get(), &client_call_tracer3);
+  SetClientCallTracer(
+      arena_.get(),
+      std::vector<ClientCallTracerInterface*>{
+          &client_call_tracer1, &client_call_tracer2, &client_call_tracer3});
   auto* attempt_tracer =
-      DownCast<ClientCallTracer*>(
-          arena_->GetContext<CallTracerAnnotationInterface>())
-          ->StartNewAttempt(true /* is_transparent_retry */);
+      arena_->GetContext<ClientCallTracer>()->StartNewAttempt(
+          true /* is_transparent_retry */);
   attempt_tracer->RecordAnnotation("Test");
   EXPECT_EQ(annotation_logger_,
             std::vector<std::string>({"Test", "Test", "Test"}));
-  attempt_tracer->RecordEnd(gpr_timespec());
+  attempt_tracer->RecordEnd();
 }
 
 TEST_F(CallTracerTest, BasicServerCallTracerTest) {
   FakeServerCallTracer server_call_tracer(&annotation_logger_);
-  AddServerCallTracerToContext(arena_.get(), &server_call_tracer);
-  arena_->GetContext<CallTracerAnnotationInterface>()->RecordAnnotation("Test");
-  arena_->GetContext<CallTracerAnnotationInterface>()->RecordAnnotation("Test");
+  SetServerCallTracer(arena_.get(), {&server_call_tracer});
+  arena_->GetContext<CallSpan>()->RecordAnnotation("Test");
+  arena_->GetContext<CallSpan>()->RecordAnnotation("Test");
   EXPECT_EQ(annotation_logger_, std::vector<std::string>({"Test", "Test"}));
 }
 
@@ -92,10 +92,11 @@ TEST_F(CallTracerTest, MultipleServerCallTracers) {
   FakeServerCallTracer server_call_tracer1(&annotation_logger_);
   FakeServerCallTracer server_call_tracer2(&annotation_logger_);
   FakeServerCallTracer server_call_tracer3(&annotation_logger_);
-  AddServerCallTracerToContext(arena_.get(), &server_call_tracer1);
-  AddServerCallTracerToContext(arena_.get(), &server_call_tracer2);
-  AddServerCallTracerToContext(arena_.get(), &server_call_tracer3);
-  arena_->GetContext<CallTracerAnnotationInterface>()->RecordAnnotation("Test");
+  SetServerCallTracer(
+      arena_.get(),
+      std::vector<ServerCallTracerInterface*>{
+          &server_call_tracer1, &server_call_tracer2, &server_call_tracer3});
+  arena_->GetContext<CallSpan>()->RecordAnnotation("Test");
   EXPECT_EQ(annotation_logger_,
             std::vector<std::string>({"Test", "Test", "Test"}));
 }

@@ -11,13 +11,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "absl/strings/str_cat.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
-namespace grpc_event_engine {
-namespace experimental {
+#include "src/core/telemetry/context_list_entry.h"
+#include "absl/strings/str_cat.h"
+
+namespace grpc_event_engine::experimental {
+
+EventEngine::Endpoint::WriteArgs::~WriteArgs() {
+  if (google_specific_ != nullptr) {
+    delete reinterpret_cast<grpc_core::ContextList*>(google_specific_);
+  }
+}
 
 const EventEngine::TaskHandle EventEngine::TaskHandle::kInvalid = {-1, -1};
 const EventEngine::ConnectionHandle EventEngine::ConnectionHandle::kInvalid = {
@@ -72,5 +78,4 @@ std::ostream& operator<<(std::ostream& out,
   return printout(out, handle);
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

@@ -16,11 +16,6 @@
 //
 //
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/strings/str_cat.h"
-
 #include <grpcpp/ext/admin_services.h>
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
@@ -28,6 +23,9 @@
 #include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc {
 namespace testing {
@@ -79,7 +77,7 @@ TEST_F(AdminServicesTest, ValidateRegisteredServices) {
       ::testing::AllOf(
           ::testing::Contains("grpc.channelz.v1.Channelz"),
           ::testing::Contains("grpc.reflection.v1alpha.ServerReflection")));
-#if defined(GRPC_NO_XDS) || defined(DISABLED_XDS_PROTO_IN_CC)
+#if defined(GRPC_NO_XDS)
   EXPECT_THAT(GetServiceList(),
               ::testing::Not(::testing::Contains(
                   "envoy.service.status.v3.ClientStatusDiscoveryService")));
@@ -87,7 +85,7 @@ TEST_F(AdminServicesTest, ValidateRegisteredServices) {
   EXPECT_THAT(GetServiceList(),
               ::testing::Contains(
                   "envoy.service.status.v3.ClientStatusDiscoveryService"));
-#endif  // GRPC_NO_XDS or DISABLED_XDS_PROTO_IN_CC
+#endif  // GRPC_NO_XDS
 }
 
 }  // namespace testing

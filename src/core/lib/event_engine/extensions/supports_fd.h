@@ -15,15 +15,14 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_EXTENSIONS_SUPPORTS_FD_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_EXTENSIONS_SUPPORTS_FD_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
+
 #include "absl/functional/any_invocable.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
-
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 class EndpointSupportsFdExtension {
  public:
@@ -108,16 +107,33 @@ class EventEngineSupportsFdExtension {
   /// file descriptor. \a config - Additional configuration to applied to the
   /// endpoint. \a memory_allocator - The endpoint may use the provided memory
   /// allocator to track memory allocations.
-  virtual std::unique_ptr<EventEngine::Endpoint> CreatePosixEndpointFromFd(
-      int fd, const EndpointConfig& config,
-      MemoryAllocator memory_allocator) = 0;
+  virtual absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>>
+  CreatePosixEndpointFromFd(int fd, const EndpointConfig& config,
+                            MemoryAllocator memory_allocator) = 0;
 
   /// Creates an EventEngine::Endpoint from an fd which is already assumed to be
   /// connected to a remote peer. See \a CreatePosixEndpointFromFd for details.
   /// This has the same behavior, but the \a memory_allocator is taken from the
   /// EndpointConfig's resource quota.
-  virtual std::unique_ptr<EventEngine::Endpoint> CreateEndpointFromFd(
-      int fd, const EndpointConfig& config) = 0;
+  virtual absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>>
+  CreateEndpointFromFd(int fd, const EndpointConfig& config) = 0;
+
+  /// Creates an EventEngine::Endpoint from a file descriptor that is configured
+  /// and bound locally but not yet connected to a remote peer. Returns a
+  /// connection handle to cancel the connection attempt if needed. Created
+  /// endpoint will be returned through `on_connect` callback.
+  /// \a fd - The socket file descriptor.
+  /// \a on_connect - The callback to invoke once fd is connected to peer.
+  /// \a addr - The remote peer to connect to. This should be the mapped peer
+  /// address returned when creating a new socket.
+  /// \a config - Additional configuration to be applied to the endpoint.
+  /// \a memory_allocator - The endpoint may use the provided memory allocator
+  /// to track memory allocations.
+  /// \a timeout - The timeout to use for the connection attempt.
+  virtual EventEngine::ConnectionHandle CreateEndpointFromUnconnectedFd(
+      int fd, EventEngine::OnConnectCallback on_connect,
+      const EventEngine::ResolvedAddress& addr, const EndpointConfig& config,
+      MemoryAllocator memory_allocator, EventEngine::Duration timeout) = 0;
 
   /// Called when the posix listener has accepted a new client connection.
   /// \a listener_fd - The listening socket fd that accepted the new client
@@ -160,7 +176,6 @@ class EventEngineSupportsFdExtension {
       std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) = 0;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_EXTENSIONS_SUPPORTS_FD_H

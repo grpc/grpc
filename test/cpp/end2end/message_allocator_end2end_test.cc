@@ -16,21 +16,7 @@
 //
 //
 
-#include <algorithm>
-#include <atomic>
-#include <condition_variable>
-#include <functional>
-#include <memory>
-#include <mutex>
-#include <sstream>
-#include <thread>
-
 #include <google/protobuf/arena.h>
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -40,11 +26,23 @@
 #include <grpcpp/support/client_callback.h>
 #include <grpcpp/support/message_allocator.h>
 
+#include <algorithm>
+#include <atomic>
+#include <condition_variable>
+#include <functional>
+#include <memory>
+#include <mutex>
+#include <sstream>
+#include <thread>
+
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace testing {
@@ -175,7 +173,7 @@ class MessageAllocatorEnd2endTestBase
       stub_->async()->Echo(
           &cli_ctx, &request, &response,
           [&request, &response, &done, &mu, &cv, val](Status s) {
-            CHECK(s.ok());
+            GRPC_CHECK(s.ok());
 
             EXPECT_EQ(request.message(), response.message());
             std::lock_guard<std::mutex> l(mu);
@@ -330,7 +328,7 @@ class ArenaAllocatorTest : public MessageAllocatorEnd2endTestBase {
         set_response(google::protobuf::Arena::Create<EchoResponse>(&arena_));
       }
       void Release() override { delete this; }
-      void FreeRequest() override { CHECK(0); }
+      void FreeRequest() override { GRPC_CHECK(0); }
 
      private:
       google::protobuf::Arena arena_;
@@ -365,7 +363,7 @@ std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
   if (test_insecure && insec_ok()) {
     credentials_types.push_back(kInsecureCredentialsType);
   }
-  CHECK(!credentials_types.empty());
+  GRPC_CHECK(!credentials_types.empty());
 
   Protocol parr[]{Protocol::INPROC, Protocol::TCP};
   for (Protocol p : parr) {

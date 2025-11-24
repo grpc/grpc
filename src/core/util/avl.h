@@ -16,7 +16,6 @@
 #define GRPC_SRC_CORE_UTIL_AVL_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stdlib.h>
 
 #include <algorithm>  // IWYU pragma: keep

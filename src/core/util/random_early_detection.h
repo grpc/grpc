@@ -16,7 +16,6 @@
 #define GRPC_SRC_CORE_UTIL_RANDOM_EARLY_DETECTION_H
 
 #include <grpc/support/port_platform.h>
-
 #include <limits.h>
 
 #include <cstdint>

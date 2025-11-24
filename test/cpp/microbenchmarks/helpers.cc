@@ -20,18 +20,18 @@
 
 #include <string.h>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 
 static LibraryInitializer* g_libraryInitializer;
 
 LibraryInitializer::LibraryInitializer() {
-  CHECK_EQ(g_libraryInitializer, nullptr);
+  GRPC_CHECK_EQ(g_libraryInitializer, nullptr);
   g_libraryInitializer = this;
 }
 
 LibraryInitializer::~LibraryInitializer() { g_libraryInitializer = nullptr; }
 
 LibraryInitializer& LibraryInitializer::get() {
-  CHECK_NE(g_libraryInitializer, nullptr);
+  GRPC_CHECK_NE(g_libraryInitializer, nullptr);
   return *g_libraryInitializer;
 }

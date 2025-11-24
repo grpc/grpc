@@ -12,37 +12,71 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package", "grpc_proto_library")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library", "grpc_package")
 
 licenses(["notice"])
 
 grpc_package(
     name = "test/core/event_engine/fuzzing_event_engine",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "tests",
 )
 
 grpc_cc_library(
     name = "fuzzing_event_engine",
+    testonly = True,
     srcs = ["fuzzing_event_engine.cc"],
     hdrs = ["fuzzing_event_engine.h"],
     external_deps = [
         "absl/log:check",
         "absl/log:log",
+        "absl/strings",
+        "absl/memory",
+        "absl/time",
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
+        "absl/status:statusor",
+        "absl/status",
+        "absl/types:span",
     ],
     deps = [
-        ":fuzzing_event_engine_proto",
+        ":fuzzing_event_engine_cc_proto",
         "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//:grpc_slice",
+        "//:grpc_trace",
+        "//:stats",
         "//src/core:default_event_engine",
+        "//src/core:dump_args",
+        "//src/core:event_engine_extensions",
+        "//src/core:event_engine_query_extensions",
+        "//src/core:event_engine_shim",
+        "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:event_engine_time_util",
+        "//src/core:experiments",
+        "//src/core:grpc_check",
+        "//src/core:iomgr_port",
         "//src/core:native_posix_dns_resolver",
+        "//src/core:no_destruct",
+        "//src/core:sync",
         "//src/core:time",
+        "//src/core:useful",
+        "//test/core/event_engine:event_engine_test_utils",
         "//test/core/test_util:grpc_test_util",
     ],
 )
 
-grpc_proto_library(
+grpc_internal_proto_library(
     name = "fuzzing_event_engine_proto",
     srcs = ["fuzzing_event_engine.proto"],
-    has_services = False,
+)
+
+grpc_cc_proto_library(
+    name = "fuzzing_event_engine_cc_proto",
+    deps = [":fuzzing_event_engine_proto"],
 )
 
 grpc_cc_test(
@@ -50,9 +84,11 @@ grpc_cc_test(
     srcs = ["fuzzing_event_engine_unittest.cc"],
     external_deps = [
         "gtest",
+        "absl/synchronization",
     ],
     deps = [
         ":fuzzing_event_engine",
         "//:gpr_platform",
+        "//src/core:time",
     ],
 )

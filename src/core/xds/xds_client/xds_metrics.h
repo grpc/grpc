@@ -17,9 +17,9 @@
 #ifndef GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_METRICS_H
 #define GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_METRICS_H
 
-#include "absl/strings/string_view.h"
-
 #include <grpc/support/port_platform.h>
+
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef SRC_PROTO_GRPC_LB_V1_LOAD_BALANCER_PROTO_UPB_H_
-#define SRC_PROTO_GRPC_LB_V1_LOAD_BALANCER_PROTO_UPB_H_
+#ifndef SRC_PROTO_GRPC_LB_V1_LOAD_BALANCER_PROTO_UPB_H__UPB_H_
+#define SRC_PROTO_GRPC_LB_V1_LOAD_BALANCER_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -82,6 +82,10 @@ UPB_INLINE grpc_lb_v1_LoadBalanceRequest_load_balance_request_type_oneofcases gr
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (grpc_lb_v1_LoadBalanceRequest_load_balance_request_type_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void grpc_lb_v1_LoadBalanceRequest_clear_load_balance_request_type(grpc_lb_v1_LoadBalanceRequest* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &grpc__lb__v1__LoadBalanceRequest_msg_init, &field);
 }
 UPB_INLINE void grpc_lb_v1_LoadBalanceRequest_clear_initial_request(grpc_lb_v1_LoadBalanceRequest* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -515,6 +519,10 @@ UPB_INLINE grpc_lb_v1_LoadBalanceResponse_load_balance_response_type_oneofcases 
   return (grpc_lb_v1_LoadBalanceResponse_load_balance_response_type_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void grpc_lb_v1_LoadBalanceResponse_clear_load_balance_response_type(grpc_lb_v1_LoadBalanceResponse* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &grpc__lb__v1__LoadBalanceResponse_msg_init, &field);
+}
 UPB_INLINE void grpc_lb_v1_LoadBalanceResponse_clear_initial_response(grpc_lb_v1_LoadBalanceResponse* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
@@ -867,13 +875,13 @@ UPB_INLINE upb_StringView grpc_lb_v1_Server_ip_address(const grpc_lb_v1_Server* 
   return ret;
 }
 UPB_INLINE void grpc_lb_v1_Server_clear_port(grpc_lb_v1_Server* msg) {
-  const upb_MiniTableField field = {2, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, 12, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE int32_t grpc_lb_v1_Server_port(const grpc_lb_v1_Server* msg) {
   int32_t default_val = (int32_t)0;
   int32_t ret;
-  const upb_MiniTableField field = {2, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, 12, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -891,13 +899,13 @@ UPB_INLINE upb_StringView grpc_lb_v1_Server_load_balance_token(const grpc_lb_v1_
   return ret;
 }
 UPB_INLINE void grpc_lb_v1_Server_clear_drop(grpc_lb_v1_Server* msg) {
-  const upb_MiniTableField field = {4, 12, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, 8, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE bool grpc_lb_v1_Server_drop(const grpc_lb_v1_Server* msg) {
   bool default_val = false;
   bool ret;
-  const upb_MiniTableField field = {4, 12, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, 8, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -908,7 +916,7 @@ UPB_INLINE void grpc_lb_v1_Server_set_ip_address(grpc_lb_v1_Server *msg, upb_Str
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void grpc_lb_v1_Server_set_port(grpc_lb_v1_Server *msg, int32_t value) {
-  const upb_MiniTableField field = {2, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, 12, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void grpc_lb_v1_Server_set_load_balance_token(grpc_lb_v1_Server *msg, upb_StringView value) {
@@ -916,7 +924,7 @@ UPB_INLINE void grpc_lb_v1_Server_set_load_balance_token(grpc_lb_v1_Server *msg,
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void grpc_lb_v1_Server_set_drop(grpc_lb_v1_Server *msg, bool value) {
-  const upb_MiniTableField field = {4, 12, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {4, 8, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
@@ -926,4 +934,4 @@ UPB_INLINE void grpc_lb_v1_Server_set_drop(grpc_lb_v1_Server *msg, bool value) {
 
 #include "upb/port/undef.inc"
 
-#endif  /* SRC_PROTO_GRPC_LB_V1_LOAD_BALANCER_PROTO_UPB_H_ */
+#endif  /* SRC_PROTO_GRPC_LB_V1_LOAD_BALANCER_PROTO_UPB_H__UPB_H_ */

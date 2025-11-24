@@ -12,29 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+#include <grpcpp/create_channel.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/support/status.h>
+
 #include <memory>
 #include <string>
 #include <string_view>
 #include <type_traits>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/cleanup/cleanup.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/strip.h"
-
-#include <grpcpp/create_channel.h>
-#include <grpcpp/security/credentials.h>
-#include <grpcpp/support/status.h>
-
-#include "src/core/lib/config/config_vars.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "src/core/config/config_vars.h"
+#include "src/proto/grpc/testing/echo.pb.h"
 #include "src/proto/grpc/testing/echo_messages.pb.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "test/cpp/end2end/xds/xds_utils.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/cleanup/cleanup.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/strip.h"
 
 namespace grpc {
 namespace testing {
@@ -149,10 +147,11 @@ TEST_P(XdsFallbackTest, PrimarySecondaryNotAvailable) {
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
       absl::StrFormat(
-          "server.example.com: UNAVAILABLE: xDS channel for server "
-          "localhost:%d: xDS call failed with no responses received; "
-          "status: RESOURCE_EXHAUSTED: test forced ADS stream failure \\(node "
-          "ID:xds_end2end_test\\)",
+          "empty address list \\(LDS resource server.example.com: "
+          "xDS channel for server localhost:%d: "
+          "xDS call failed with no responses received; "
+          "status: RESOURCE_EXHAUSTED: test forced ADS stream failure "
+          "\\(node ID:xds_end2end_test\\)\\)",
           fallback_balancer_->port()));
 }
 

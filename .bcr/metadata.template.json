@@ -1,0 +1,52 @@
+{
+    "homepage": "https://github.com/grpc/grpc",
+    "maintainers": [
+        {
+            "email": "bpawan@google.com",
+            "github": "pawbhard",
+            "name": "Pawan Bhardwaj",
+            "github_user_id": 13415978
+        },
+        {
+            "email": "rishesh@google.com",
+            "github": "rishesh007",
+            "name": "Rishesh Agarwal",
+            "github_user_id": 40896662
+        },
+        {
+            "email": "roth@google.com",
+            "github": "markdroth",
+            "name": "Mark Roth",
+            "github_user_id": 18664614
+        },
+        {
+            "email": "sergiitk@google.com",
+            "github": "sergiitk",
+            "name": "Sergii Tkachenko",
+            "github_user_id": 672669
+        },
+        {
+            "email": "weizheyuan@google.com",
+            "github": "yuanweiz",
+            "name": "Weizhe Yuan",
+            "github_user_id": 5679340
+        },
+        {
+            "email": "asheshvidyut@google.com",
+            "github": "asheshvidyut",
+            "name": "Ashesh Vidyut",
+            "github_user_id": 134911583
+        },
+        {
+            "email": "ssreenithi@google.com",
+            "github": "sreenithi",
+            "name": "Sreenithi Sridharan",
+            "github_user_id": 22791051
+        }
+    ],
+    "repository": [
+        "github:grpc/grpc"
+    ],
+    "versions": [],
+    "yanked_versions": {}
+}

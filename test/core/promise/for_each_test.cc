@@ -14,12 +14,9 @@
 
 #include "src/core/lib/promise/for_each.h"
 
-#include <memory>
-
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-
 #include <grpc/event_engine/memory_allocator.h>
+
+#include <memory>
 
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/inter_activity_pipe.h"
@@ -33,6 +30,8 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 using testing::Mock;
 using testing::MockFunction;

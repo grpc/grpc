@@ -16,6 +16,7 @@
 
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 
+#include <grpc/support/json.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -23,32 +24,31 @@
 #include <map>
 #include <utility>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
+#include "envoy/config/core/v3/address.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/type/matcher/v3/regex.upb.h"
-#include "envoy/type/matcher/v3/string.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/struct.upbdefs.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "upb/base/status.hpp"
-#include "upb/json/encode.h"
-#include "upb/mem/arena.h"
-#include "xds/type/v3/typed_struct.upb.h"
-
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
-
+#include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/env.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/xds_client/xds_client.h"
+#include "upb/base/status.hpp"
+#include "upb/json/encode.h"
+#include "upb/mem/arena.h"
+#include "xds/type/matcher/v3/regex.upb.h"
+#include "xds/type/v3/typed_struct.upb.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 
 namespace grpc_core {
 
@@ -72,18 +72,180 @@ Duration ParseDuration(const google_protobuf_Duration* proto_duration,
 }
 
 //
-// CommonTlsContextParse()
+// ParseXdsAddress()
+//
+
+std::optional<grpc_resolved_address> ParseXdsAddress(
+    const envoy_config_core_v3_Address* address, ValidationErrors* errors) {
+  if (address == nullptr) {
+    errors->AddError("field not present");
+    return std::nullopt;
+  }
+  ValidationErrors::ScopedField field(errors, ".socket_address");
+  const envoy_config_core_v3_SocketAddress* socket_address =
+      envoy_config_core_v3_Address_socket_address(address);
+  if (socket_address == nullptr) {
+    errors->AddError("field not present");
+    return std::nullopt;
+  }
+  std::string address_str = UpbStringToStdString(
+      envoy_config_core_v3_SocketAddress_address(socket_address));
+  uint32_t port;
+  {
+    ValidationErrors::ScopedField field(errors, ".port_value");
+    port = envoy_config_core_v3_SocketAddress_port_value(socket_address);
+    if (GPR_UNLIKELY(port >> 16) != 0) {
+      errors->AddError("invalid port");
+      return std::nullopt;
+    }
+  }
+  auto addr = StringToSockaddr(address_str, port);
+  if (!addr.ok()) {
+    errors->AddError(addr.status().message());
+    return std::nullopt;
+  }
+  return *addr;
+}
+
+//
+// StringMatcherParse()
 //
 
 namespace {
 
-bool XdsSystemRootCertsEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_SYSTEM_ROOT_CERTS");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
+class StringMatcherProtoAccessor {
+ public:
+  virtual ~StringMatcherProtoAccessor() = default;
+
+  virtual bool IsPresent() const = 0;
+  virtual bool HasExact() const = 0;
+  virtual upb_StringView GetExact() const = 0;
+  virtual bool HasPrefix() const = 0;
+  virtual upb_StringView GetPrefix() const = 0;
+  virtual bool HasSuffix() const = 0;
+  virtual upb_StringView GetSuffix() const = 0;
+  virtual bool HasContains() const = 0;
+  virtual upb_StringView GetContains() const = 0;
+  virtual bool HasSafeRegex() const = 0;
+  virtual upb_StringView GetSafeRegex() const = 0;
+  virtual bool IgnoreCase() const = 0;
+};
+
+#define GRPC_STRING_MATCHER_PROTO_ACCESSOR_CLASS(prefix)                    \
+  class ProtoAccessor final : public StringMatcherProtoAccessor {           \
+   public:                                                                  \
+    explicit ProtoAccessor(                                                 \
+        const prefix##_type_matcher_v3_StringMatcher* proto)                \
+        : proto_(proto) {}                                                  \
+                                                                            \
+    bool IsPresent() const override { return proto_ != nullptr; }           \
+    bool HasExact() const override {                                        \
+      return prefix##_type_matcher_v3_StringMatcher_has_exact(proto_);      \
+    }                                                                       \
+    upb_StringView GetExact() const override {                              \
+      return prefix##_type_matcher_v3_StringMatcher_exact(proto_);          \
+    }                                                                       \
+    bool HasPrefix() const override {                                       \
+      return prefix##_type_matcher_v3_StringMatcher_has_prefix(proto_);     \
+    }                                                                       \
+    upb_StringView GetPrefix() const override {                             \
+      return prefix##_type_matcher_v3_StringMatcher_prefix(proto_);         \
+    }                                                                       \
+    bool HasSuffix() const override {                                       \
+      return prefix##_type_matcher_v3_StringMatcher_has_suffix(proto_);     \
+    }                                                                       \
+    upb_StringView GetSuffix() const override {                             \
+      return prefix##_type_matcher_v3_StringMatcher_suffix(proto_);         \
+    }                                                                       \
+    bool HasContains() const override {                                     \
+      return prefix##_type_matcher_v3_StringMatcher_has_contains(proto_);   \
+    }                                                                       \
+    upb_StringView GetContains() const override {                           \
+      return prefix##_type_matcher_v3_StringMatcher_contains(proto_);       \
+    }                                                                       \
+    bool HasSafeRegex() const override {                                    \
+      return prefix##_type_matcher_v3_StringMatcher_has_safe_regex(proto_); \
+    }                                                                       \
+    upb_StringView GetSafeRegex() const override {                          \
+      auto* regex_matcher =                                                 \
+          prefix##_type_matcher_v3_StringMatcher_safe_regex(proto_);        \
+      return prefix##_type_matcher_v3_RegexMatcher_regex(regex_matcher);    \
+    }                                                                       \
+    bool IgnoreCase() const override {                                      \
+      return prefix##_type_matcher_v3_StringMatcher_ignore_case(proto_);    \
+    }                                                                       \
+                                                                            \
+   private:                                                                 \
+    const prefix##_type_matcher_v3_StringMatcher* proto_;                   \
+  };
+
+StringMatcher StringMatcherParseInternal(
+    const StringMatcherProtoAccessor& proto, ValidationErrors* errors) {
+  if (!proto.IsPresent()) {
+    errors->AddError("field not present");
+    return StringMatcher();
+  }
+  StringMatcher::Type type;
+  std::string matcher;
+  if (proto.HasExact()) {
+    type = StringMatcher::Type::kExact;
+    matcher = UpbStringToStdString(proto.GetExact());
+  } else if (proto.HasPrefix()) {
+    type = StringMatcher::Type::kPrefix;
+    matcher = UpbStringToStdString(proto.GetPrefix());
+  } else if (proto.HasSuffix()) {
+    type = StringMatcher::Type::kSuffix;
+    matcher = UpbStringToStdString(proto.GetSuffix());
+  } else if (proto.HasContains()) {
+    type = StringMatcher::Type::kContains;
+    matcher = UpbStringToStdString(proto.GetContains());
+  } else if (proto.HasSafeRegex()) {
+    type = StringMatcher::Type::kSafeRegex;
+    matcher = UpbStringToStdString(proto.GetSafeRegex());
+  } else {
+    errors->AddError("invalid string matcher");
+    return StringMatcher();
+  }
+  const bool ignore_case = proto.IgnoreCase();
+  absl::StatusOr<StringMatcher> string_matcher =
+      StringMatcher::Create(type, matcher,
+                            /*case_sensitive=*/!ignore_case);
+  if (!string_matcher.ok()) {
+    errors->AddError(string_matcher.status().message());
+    return StringMatcher();
+  }
+  if (type == StringMatcher::Type::kSafeRegex && ignore_case) {
+    ValidationErrors::ScopedField field(errors, ".ignore_case");
+    errors->AddError("not supported for regex matcher");
+  }
+  return std::move(*string_matcher);
 }
+
+}  // namespace
+
+StringMatcher StringMatcherParse(
+    const XdsResourceType::DecodeContext& /*context*/,
+    const envoy_type_matcher_v3_StringMatcher* matcher_proto,
+    ValidationErrors* errors) {
+  GRPC_STRING_MATCHER_PROTO_ACCESSOR_CLASS(envoy);
+  ProtoAccessor proto_accessor(matcher_proto);
+  return StringMatcherParseInternal(proto_accessor, errors);
+}
+
+StringMatcher StringMatcherParse(
+    const XdsResourceType::DecodeContext& /*context*/,
+    const xds_type_matcher_v3_StringMatcher* matcher_proto,
+    ValidationErrors* errors) {
+  GRPC_STRING_MATCHER_PROTO_ACCESSOR_CLASS(xds);
+  ProtoAccessor proto_accessor(matcher_proto);
+  return StringMatcherParseInternal(proto_accessor, errors);
+}
+
+//
+// CommonTlsContextParse()
+//
+
+namespace {
 
 // CertificateProviderInstance is deprecated but we are still supporting it for
 // backward compatibility reasons. Note that we still parse the data into the
@@ -101,7 +263,7 @@ CertificateProviderInstanceParse(
       envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProviderInstance_instance_name(
           certificate_provider_instance_proto));
   const auto& bootstrap =
-      static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap());
+      DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap());
   if (bootstrap.certificate_providers().find(cert_provider.instance_name) ==
       bootstrap.certificate_providers().end()) {
     ValidationErrors::ScopedField field(errors, ".instance_name");
@@ -126,7 +288,7 @@ CertificateProviderPluginInstanceParse(
       envoy_extensions_transport_sockets_tls_v3_CertificateProviderPluginInstance_instance_name(
           certificate_provider_plugin_instance_proto));
   const auto& bootstrap =
-      static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap());
+      DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap());
   if (bootstrap.certificate_providers().find(cert_provider.instance_name) ==
       bootstrap.certificate_providers().end()) {
     ValidationErrors::ScopedField field(errors, ".instance_name");
@@ -154,56 +316,10 @@ CertificateValidationContextParse(
   for (size_t i = 0; i < len; ++i) {
     ValidationErrors::ScopedField field(
         errors, absl::StrCat(".match_subject_alt_names[", i, "]"));
-    StringMatcher::Type type;
-    std::string matcher;
-    if (envoy_type_matcher_v3_StringMatcher_has_exact(
-            subject_alt_names_matchers[i])) {
-      type = StringMatcher::Type::kExact;
-      matcher = UpbStringToStdString(envoy_type_matcher_v3_StringMatcher_exact(
-          subject_alt_names_matchers[i]));
-    } else if (envoy_type_matcher_v3_StringMatcher_has_prefix(
-                   subject_alt_names_matchers[i])) {
-      type = StringMatcher::Type::kPrefix;
-      matcher = UpbStringToStdString(envoy_type_matcher_v3_StringMatcher_prefix(
-          subject_alt_names_matchers[i]));
-    } else if (envoy_type_matcher_v3_StringMatcher_has_suffix(
-                   subject_alt_names_matchers[i])) {
-      type = StringMatcher::Type::kSuffix;
-      matcher = UpbStringToStdString(envoy_type_matcher_v3_StringMatcher_suffix(
-          subject_alt_names_matchers[i]));
-    } else if (envoy_type_matcher_v3_StringMatcher_has_contains(
-                   subject_alt_names_matchers[i])) {
-      type = StringMatcher::Type::kContains;
-      matcher =
-          UpbStringToStdString(envoy_type_matcher_v3_StringMatcher_contains(
-              subject_alt_names_matchers[i]));
-    } else if (envoy_type_matcher_v3_StringMatcher_has_safe_regex(
-                   subject_alt_names_matchers[i])) {
-      type = StringMatcher::Type::kSafeRegex;
-      auto* regex_matcher = envoy_type_matcher_v3_StringMatcher_safe_regex(
-          subject_alt_names_matchers[i]);
-      matcher = UpbStringToStdString(
-          envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
-    } else {
-      errors->AddError("invalid StringMatcher specified");
-      continue;
-    }
-    bool ignore_case = envoy_type_matcher_v3_StringMatcher_ignore_case(
-        subject_alt_names_matchers[i]);
-    absl::StatusOr<StringMatcher> string_matcher =
-        StringMatcher::Create(type, matcher,
-                              /*case_sensitive=*/!ignore_case);
-    if (!string_matcher.ok()) {
-      errors->AddError(string_matcher.status().message());
-      continue;
-    }
-    if (type == StringMatcher::Type::kSafeRegex && ignore_case) {
-      ValidationErrors::ScopedField field(errors, ".ignore_case");
-      errors->AddError("not supported for regex matcher");
-      continue;
-    }
+    auto string_matcher =
+        StringMatcherParse(context, subject_alt_names_matchers[i], errors);
     certificate_validation_context.match_subject_alt_names.push_back(
-        std::move(string_matcher.value()));
+        std::move(string_matcher));
   }
   auto* ca_certificate_provider_instance =
       envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_ca_certificate_provider_instance(
@@ -214,7 +330,7 @@ CertificateValidationContextParse(
     certificate_validation_context.ca_certs =
         CertificateProviderPluginInstanceParse(
             context, ca_certificate_provider_instance, errors);
-  } else if (XdsSystemRootCertsEnabled()) {
+  } else {
     auto* system_root_certs =
         envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_system_root_certs(
             certificate_validation_context_proto);
@@ -286,7 +402,7 @@ CommonTlsContext CommonTlsContextParse(
     // 'combined_validation_context'. Note that this way of fetching root
     // certificates is deprecated and will be removed in the future.
     // TODO(yashykt): Remove this once it's no longer needed.
-    if (!absl::holds_alternative<
+    if (!std::holds_alternative<
             CommonTlsContext::CertificateProviderPluginInstance>(
             common_tls_context.certificate_validation_context.ca_certs)) {
       const auto* validation_context_certificate_provider_instance =
@@ -301,22 +417,20 @@ CommonTlsContext CommonTlsContextParse(
                 errors);
       }
     }
-  } else {
-    auto* validation_context =
-        envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_validation_context(
-            common_tls_context_proto);
-    if (validation_context != nullptr) {
-      ValidationErrors::ScopedField field(errors, ".validation_context");
-      common_tls_context.certificate_validation_context =
-          CertificateValidationContextParse(context, validation_context,
-                                            errors);
-    } else if (
-        envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_validation_context_sds_secret_config(
-            common_tls_context_proto)) {
-      ValidationErrors::ScopedField field(
-          errors, ".validation_context_sds_secret_config");
-      errors->AddError("feature unsupported");
-    }
+  } else if (
+      auto* validation_context =
+          envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_validation_context(
+              common_tls_context_proto);
+      validation_context != nullptr) {
+    ValidationErrors::ScopedField field(errors, ".validation_context");
+    common_tls_context.certificate_validation_context =
+        CertificateValidationContextParse(context, validation_context, errors);
+  } else if (
+      envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_validation_context_sds_secret_config(
+          common_tls_context_proto)) {
+    ValidationErrors::ScopedField field(
+        errors, ".validation_context_sds_secret_config");
+    errors->AddError("feature unsupported");
   }
   auto* tls_certificate_provider_instance =
       envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_tls_certificate_provider_instance(
@@ -407,12 +521,12 @@ absl::StatusOr<Json> ParseProtobufStructToJson(
 // ExtractXdsExtension()
 //
 
-absl::optional<XdsExtension> ExtractXdsExtension(
+std::optional<XdsExtension> ExtractXdsExtension(
     const XdsResourceType::DecodeContext& context,
     const google_protobuf_Any* any, ValidationErrors* errors) {
   if (any == nullptr) {
     errors->AddError("field not present");
-    return absl::nullopt;
+    return std::nullopt;
   }
   XdsExtension extension;
   auto strip_type_prefix = [&]() {
@@ -430,7 +544,7 @@ absl::optional<XdsExtension> ExtractXdsExtension(
     return true;
   };
   extension.type = UpbStringToAbsl(google_protobuf_Any_type_url(any));
-  if (!strip_type_prefix()) return absl::nullopt;
+  if (!strip_type_prefix()) return std::nullopt;
   extension.validation_fields.emplace_back(
       errors, absl::StrCat(".value[", extension.type, "]"));
   absl::string_view any_value = UpbStringToAbsl(google_protobuf_Any_value(any));
@@ -440,11 +554,11 @@ absl::optional<XdsExtension> ExtractXdsExtension(
         any_value.data(), any_value.size(), context.arena);
     if (typed_struct == nullptr) {
       errors->AddError("could not parse");
-      return absl::nullopt;
+      return std::nullopt;
     }
     extension.type =
         UpbStringToAbsl(xds_type_v3_TypedStruct_type_url(typed_struct));
-    if (!strip_type_prefix()) return absl::nullopt;
+    if (!strip_type_prefix()) return std::nullopt;
     extension.validation_fields.emplace_back(
         errors, absl::StrCat(".value[", extension.type, "]"));
     auto* protobuf_struct = xds_type_v3_TypedStruct_value(typed_struct);
@@ -454,7 +568,7 @@ absl::optional<XdsExtension> ExtractXdsExtension(
       auto json = ParseProtobufStructToJson(context, protobuf_struct);
       if (!json.ok()) {
         errors->AddError(json.status().message());
-        return absl::nullopt;
+        return std::nullopt;
       }
       extension.value = std::move(*json);
     }

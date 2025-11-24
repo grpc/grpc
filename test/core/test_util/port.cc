@@ -18,17 +18,15 @@
 
 #include "src/core/lib/iomgr/port.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/sync.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include <utility>
 
-#include "absl/log/check.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/sync.h>
-
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/port_server_client.h"
@@ -50,7 +48,7 @@ static int free_chosen_port_locked(int port) {
   // freed.
   for (i = 0; i < num_chosen_ports; i++) {
     if (chosen_ports[i] == port) {
-      CHECK_EQ(found, 0);
+      GRPC_CHECK_EQ(found, 0);
       found = 1;
       found_at = i;
     }
@@ -111,7 +109,7 @@ static int grpc_pick_unused_port_or_die_impl(void) {
 static void grpc_recycle_unused_port_impl(int port) {
   gpr_once_init(&g_default_port_picker_init, init_default_port_picker);
   grpc_core::MutexLock lock(g_default_port_picker_mu);
-  CHECK(free_chosen_port_locked(port));
+  GRPC_CHECK(free_chosen_port_locked(port));
 }
 
 namespace {
@@ -132,7 +130,7 @@ void grpc_recycle_unused_port(int port) {
 
 grpc_pick_port_functions grpc_set_pick_port_functions(
     grpc_pick_port_functions new_functions) {
-  CHECK_NE(new_functions.pick_unused_port_or_die_fn, nullptr);
-  CHECK_NE(new_functions.recycle_unused_port_fn, nullptr);
+  GRPC_CHECK_NE(new_functions.pick_unused_port_or_die_fn, nullptr);
+  GRPC_CHECK_NE(new_functions.recycle_unused_port_fn, nullptr);
   return std::exchange(functions(), new_functions);
 }

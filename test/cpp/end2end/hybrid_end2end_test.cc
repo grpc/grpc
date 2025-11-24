@@ -16,14 +16,6 @@
 //
 //
 
-#include <memory>
-#include <thread>
-
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -33,14 +25,20 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
+#include <memory>
+#include <thread>
+
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace testing {
@@ -215,7 +213,7 @@ void HandleGenericCall(AsyncGenericService* service,
     HandleGenericRequestStream(&stream, cq);
   } else {  // other methods not handled yet.
     LOG(ERROR) << "method: " << srv_ctx.method();
-    CHECK(0);
+    GRPC_CHECK(0);
   }
 }
 
@@ -574,9 +572,9 @@ class StreamedUnaryDupPkg
     uint32_t next_msg_sz;
     stream->NextMessageSize(&next_msg_sz);
     LOG(INFO) << "Streamed Unary Next Message Size is " << next_msg_sz;
-    CHECK(stream->Read(&req));
+    GRPC_CHECK(stream->Read(&req));
     resp.set_message(req.message() + "_dup");
-    CHECK(stream->Write(resp));
+    GRPC_CHECK(stream->Write(resp));
     return Status::OK;
   }
 };
@@ -612,9 +610,9 @@ class FullyStreamedUnaryDupPkg
     uint32_t next_msg_sz;
     stream->NextMessageSize(&next_msg_sz);
     LOG(INFO) << "Streamed Unary Next Message Size is " << next_msg_sz;
-    CHECK(stream->Read(&req));
+    GRPC_CHECK(stream->Read(&req));
     resp.set_message(req.message() + "_dup");
-    CHECK(stream->Write(resp));
+    GRPC_CHECK(stream->Write(resp));
     return Status::OK;
   }
 };
@@ -651,10 +649,10 @@ class SplitResponseStreamDupPkg
     uint32_t next_msg_sz;
     stream->NextMessageSize(&next_msg_sz);
     LOG(INFO) << "Split Streamed Next Message Size is " << next_msg_sz;
-    CHECK(stream->Read(&req));
+    GRPC_CHECK(stream->Read(&req));
     for (int i = 0; i < kServerDefaultResponseStreamsToSend; i++) {
       resp.set_message(req.message() + std::to_string(i) + "_dup");
-      CHECK(stream->Write(resp));
+      GRPC_CHECK(stream->Write(resp));
     }
     return Status::OK;
   }
@@ -691,10 +689,10 @@ class FullySplitStreamedDupPkg
     uint32_t next_msg_sz;
     stream->NextMessageSize(&next_msg_sz);
     LOG(INFO) << "Split Streamed Next Message Size is " << next_msg_sz;
-    CHECK(stream->Read(&req));
+    GRPC_CHECK(stream->Read(&req));
     for (int i = 0; i < kServerDefaultResponseStreamsToSend; i++) {
       resp.set_message(req.message() + std::to_string(i) + "_dup");
-      CHECK(stream->Write(resp));
+      GRPC_CHECK(stream->Write(resp));
     }
     return Status::OK;
   }
@@ -730,9 +728,9 @@ class FullyStreamedDupPkg : public duplicate::EchoTestService::StreamedService {
     uint32_t next_msg_sz;
     stream->NextMessageSize(&next_msg_sz);
     LOG(INFO) << "Streamed Unary Next Message Size is " << next_msg_sz;
-    CHECK(stream->Read(&req));
+    GRPC_CHECK(stream->Read(&req));
     resp.set_message(req.message() + "_dup");
-    CHECK(stream->Write(resp));
+    GRPC_CHECK(stream->Write(resp));
     return Status::OK;
   }
   Status StreamedResponseStream(
@@ -743,10 +741,10 @@ class FullyStreamedDupPkg : public duplicate::EchoTestService::StreamedService {
     uint32_t next_msg_sz;
     stream->NextMessageSize(&next_msg_sz);
     LOG(INFO) << "Split Streamed Next Message Size is " << next_msg_sz;
-    CHECK(stream->Read(&req));
+    GRPC_CHECK(stream->Read(&req));
     for (int i = 0; i < kServerDefaultResponseStreamsToSend; i++) {
       resp.set_message(req.message() + std::to_string(i) + "_dup");
-      CHECK(stream->Write(resp));
+      GRPC_CHECK(stream->Write(resp));
     }
     return Status::OK;
   }

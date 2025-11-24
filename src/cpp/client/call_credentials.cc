@@ -12,19 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "absl/log/check.h"
-#include "absl/strings/str_cat.h"
+#include "src/core/credentials/call/call_credentials.h"
 
 #include <grpc/support/port_platform.h>
 #include <grpcpp/security/credentials.h>
 
-#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc {
 
 CallCredentials::CallCredentials(grpc_call_credentials* c_creds)
     : c_creds_(c_creds) {
-  CHECK_NE(c_creds, nullptr);
+  GRPC_CHECK_NE(c_creds, nullptr);
 }
 
 CallCredentials::~CallCredentials() { grpc_call_credentials_release(c_creds_); }

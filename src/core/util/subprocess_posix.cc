@@ -21,6 +21,7 @@
 #ifdef GPR_POSIX_SUBPROCESS
 
 #include <errno.h>
+#include <grpc/support/alloc.h>
 #include <signal.h>
 #include <string.h>
 #include <sys/wait.h>
@@ -28,15 +29,12 @@
 
 #include <iostream>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/substitute.h"
-
-#include <grpc/support/alloc.h>
-
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/memory.h"
 #include "src/core/util/strerror.h"
 #include "src/core/util/subprocess.h"
+#include "absl/log/log.h"
+#include "absl/strings/substitute.h"
 
 struct gpr_subprocess {
   int pid;
@@ -82,8 +80,8 @@ gpr_subprocess* gpr_subprocess_create_with_envp(int argc, const char** argv,
   int stdout_pipe[2];
   int p0 = pipe(stdin_pipe);
   int p1 = pipe(stdout_pipe);
-  CHECK_NE(p0, -1);
-  CHECK_NE(p1, -1);
+  GRPC_CHECK_NE(p0, -1);
+  GRPC_CHECK_NE(p1, -1);
   pid = fork();
   if (pid == -1) {
     return nullptr;
@@ -146,7 +144,7 @@ bool gpr_subprocess_communicate(gpr_subprocess* p, std::string& input_data,
         continue;
       } else {
         std::cerr << "select: " << strerror(errno) << std::endl;
-        CHECK(0);
+        GRPC_CHECK(0);
       }
     }
 
@@ -193,7 +191,7 @@ bool gpr_subprocess_communicate(gpr_subprocess* p, std::string& input_data,
   while (waitpid(p->pid, &status, 0) == -1) {
     if (errno != EINTR) {
       std::cerr << "waitpid: " << strerror(errno) << std::endl;
-      CHECK(0);
+      GRPC_CHECK(0);
     }
   }
 

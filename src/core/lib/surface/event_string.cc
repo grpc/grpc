@@ -18,16 +18,22 @@
 
 #include "src/core/lib/surface/event_string.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <algorithm>
 #include <vector>
 
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
-#include <grpc/support/port_platform.h>
-
 static void addhdr(grpc_event* ev, std::vector<std::string>* buf) {
-  buf->push_back(absl::StrFormat("tag:%p", ev->tag));
+  if (reinterpret_cast<intptr_t>(ev->tag) < 1024 &&
+      reinterpret_cast<intptr_t>(ev->tag) > -1024) {
+    buf->push_back(
+        absl::StrFormat("tag:%d", reinterpret_cast<int64_t>(ev->tag)));
+  } else {
+    buf->push_back(absl::StrFormat("tag:%p", ev->tag));
+  }
 }
 
 static const char* errstr(int success) { return success ? "OK" : "ERROR"; }

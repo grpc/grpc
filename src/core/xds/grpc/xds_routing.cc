@@ -18,6 +18,7 @@
 
 #include "src/core/xds/grpc/xds_routing.h"
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -25,17 +26,14 @@
 #include <cctype>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/matchers.h"
+#include "src/core/xds/grpc/xds_http_filter.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/util/matchers.h"
-#include "src/core/xds/grpc/xds_http_filter.h"
 
 namespace grpc_core {
 
@@ -94,7 +92,7 @@ MatchType DomainPatternMatchType(absl::string_view domain_pattern) {
 
 }  // namespace
 
-absl::optional<size_t> XdsRouting::FindVirtualHostForDomain(
+std::optional<size_t> XdsRouting::FindVirtualHostForDomain(
     const VirtualHostListIterator& vhost_iterator, absl::string_view domain) {
   // Find the best matched virtual host.
   // The search order for 4 groups of domain patterns:
@@ -105,7 +103,7 @@ absl::optional<size_t> XdsRouting::FindVirtualHostForDomain(
   // Within each group, longest match wins.
   // If the same best matched domain pattern appears in multiple virtual
   // hosts, the first matched virtual host wins.
-  absl::optional<size_t> target_index;
+  std::optional<size_t> target_index;
   MatchType best_match_type = INVALID_MATCH;
   size_t longest_match = 0;
   // Check each domain pattern in each virtual host to determine the best
@@ -117,7 +115,7 @@ absl::optional<size_t> XdsRouting::FindVirtualHostForDomain(
       // than current match.
       const MatchType match_type = DomainPatternMatchType(domain_pattern);
       // This should be caught by RouteConfigParse().
-      CHECK(match_type != INVALID_MATCH);
+      GRPC_CHECK(match_type != INVALID_MATCH);
       if (match_type > best_match_type) continue;
       if (match_type == best_match_type &&
           domain_pattern.size() <= longest_match) {
@@ -158,7 +156,7 @@ bool UnderFraction(const uint32_t fraction_per_million) {
 
 }  // namespace
 
-absl::optional<size_t> XdsRouting::GetRouteForRequest(
+std::optional<size_t> XdsRouting::GetRouteForRequest(
     const RouteListIterator& route_list_iterator, absl::string_view path,
     grpc_metadata_batch* initial_metadata) {
   for (size_t i = 0; i < route_list_iterator.Size(); ++i) {
@@ -171,21 +169,21 @@ absl::optional<size_t> XdsRouting::GetRouteForRequest(
       return i;
     }
   }
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 bool XdsRouting::IsValidDomainPattern(absl::string_view domain_pattern) {
   return DomainPatternMatchType(domain_pattern) != INVALID_MATCH;
 }
 
-absl::optional<absl::string_view> XdsRouting::GetHeaderValue(
+std::optional<absl::string_view> XdsRouting::GetHeaderValue(
     grpc_metadata_batch* initial_metadata, absl::string_view header_name,
     std::string* concatenated_value) {
   // Note: If we ever allow binary headers here, we still need to
   // special-case ignore "grpc-tags-bin" and "grpc-trace-bin", since
   // they are not visible to the LB policy in grpc-go.
   if (absl::EndsWith(header_name, "-bin")) {
-    return absl::nullopt;
+    return std::nullopt;
   } else if (header_name == "content-type") {
     return "application/grpc";
   }
@@ -233,7 +231,7 @@ GeneratePerHTTPFilterConfigs(
     const XdsHttpFilterImpl* filter_impl =
         http_filter_registry.GetFilterForType(
             http_filter.config.config_proto_type_name);
-    CHECK_NE(filter_impl, nullptr);
+    GRPC_CHECK_NE(filter_impl, nullptr);
     // If there is not actually any C-core filter associated with this
     // xDS filter, then it won't need any config, so skip it.
     if (filter_impl->channel_filter() == nullptr) continue;

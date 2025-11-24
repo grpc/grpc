@@ -19,26 +19,24 @@
 #ifndef GRPC_TEST_CPP_END2END_TEST_SERVICE_IMPL_H
 #define GRPC_TEST_CPP_END2END_TEST_SERVICE_IMPL_H
 
+#include <grpc/grpc.h>
+#include <grpcpp/alarm.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/server_context.h>
+
 #include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
 
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
-#include <grpc/grpc.h>
-#include <grpcpp/alarm.h>
-#include <grpcpp/security/credentials.h>
-#include <grpcpp/server_context.h>
-
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/string_ref_helper.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace testing {
@@ -170,7 +168,7 @@ class TestMultipleServiceImpl : public RpcService {
 
     if (request->has_param() && request->param().server_die()) {
       LOG(ERROR) << "The request should not reach application handler.";
-      CHECK(0);
+      GRPC_CHECK(0);
     }
     if (request->has_param() && request->param().has_expected_error()) {
       const auto& error = request->param().expected_error();
@@ -232,18 +230,16 @@ class TestMultipleServiceImpl : public RpcService {
     if (request->has_param() && request->param().echo_metadata_initially()) {
       const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata =
           context->client_metadata();
-      for (const auto& metadatum : client_metadata) {
-        context->AddInitialMetadata(ToString(metadatum.first),
-                                    ToString(metadatum.second));
+      for (const auto& [key, value] : client_metadata) {
+        context->AddInitialMetadata(ToString(key), ToString(value));
       }
     }
 
     if (request->has_param() && request->param().echo_metadata()) {
       const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata =
           context->client_metadata();
-      for (const auto& metadatum : client_metadata) {
-        context->AddTrailingMetadata(ToString(metadatum.first),
-                                     ToString(metadatum.second));
+      for (const auto& [key, value] : client_metadata) {
+        context->AddTrailingMetadata(ToString(key), ToString(value));
       }
       // Terminate rpc with error and debug info in trailer.
       if (request->param().debug_info().stack_entries_size() ||

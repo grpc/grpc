@@ -69,8 +69,8 @@ class Handler {
 // completion.
 // Returns a promise with the same result type as main_fn.
 template <typename MainFn, typename CancelFn>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto OnCancel(MainFn main_fn,
-                                                   CancelFn cancel_fn) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto OnCancel(MainFn main_fn,
+                                                          CancelFn cancel_fn) {
   return [on_cancel =
               cancel_callback_detail::Handler<CancelFn>(std::move(cancel_fn)),
           main_fn = promise_detail::PromiseLike<MainFn>(
@@ -87,8 +87,8 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto OnCancel(MainFn main_fn,
 // resulting promise. If the factory is dropped without being called, cancel_fn
 // is called.
 template <typename MainFn, typename CancelFn>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto OnCancelFactory(MainFn main_fn,
-                                                          CancelFn cancel_fn) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto OnCancelFactory(
+    MainFn main_fn, CancelFn cancel_fn) {
   return [on_cancel =
               cancel_callback_detail::Handler<CancelFn>(std::move(cancel_fn)),
           main_fn = std::move(main_fn)]() mutable {

@@ -7,6 +7,8 @@
 
 load("//upb/bazel:build_defs.bzl", "UPB_DEFAULT_COPTS")
 
+package(default_applicable_licenses = ["//:license"])
+
 cc_library(
     name = "text",
     srcs = [
@@ -20,11 +22,12 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":internal",
-        "//upb:base",
+        "//upb/base",
         "//upb:eps_copy_input_stream",
         "//upb:message",
         "//upb:port",
         "//upb:reflection",
+        "//upb/hash",
         "//upb/lex",
         "//upb/message:internal",
         "//upb/message:types",
@@ -44,8 +47,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":internal",
-        "//upb:base",
-        "//upb:eps_copy_input_stream",
+        "//upb/base",
         "//upb:message",
         "//upb:mini_table",
         "//upb:port",
@@ -70,7 +72,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "//third_party/utf8_range",
-        "//upb:base",
+        "//upb/base",
         "//upb:eps_copy_input_stream",
         "//upb:message",
         "//upb:port",
@@ -87,9 +89,9 @@ cc_test(
     ],
     deps = [
         ":debug",
-        "//upb:base",
+        "//upb/base",
         "//upb:eps_copy_input_stream",
-        "//upb:mem",
+        "//upb/mem",
         "//upb:message",
         "//upb:mini_table",
         "//upb:port",
@@ -97,13 +99,12 @@ cc_test(
         "//upb/message:internal",
         "//upb/test:test_proto_upb_minitable",
         "//upb/test:test_upb_proto",
-        "@com_google_absl//absl/log:absl_log",
-        "@com_google_googletest//:gtest",
-        "@com_google_googletest//:gtest_main",
+        "@abseil-cpp//absl/log:absl_log",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 
-# begin:github_only
 filegroup(
     name = "source_files",
     srcs = glob(
@@ -117,4 +118,3 @@ filegroup(
         "//upb/cmake:__pkg__",
     ],
 )
-# end:github_only

@@ -26,17 +26,20 @@
 #define GRPC_DEPRECATED(reason)
 #endif  // __cplusplus >= 201402L
 
+#ifndef GPR_DISABLE_ABSEIL_SYNC
 /*
  * Defines GPR_ABSEIL_SYNC to use synchronization features from Abseil
+ *
+ * You can opt for gRPC's native synchronization by enabling
+ * GPR_DISABLE_ABSEIL_SYNC. However, this flag is temporary and will be
+ * removed once the Abseil synchronization is stabilized.
+ * If you encounter any issues with this feature, please report them
+ * by filing a bug at https://github.com/grpc/grpc.
  */
 #ifndef GPR_ABSEIL_SYNC
-#if defined(__APPLE__)
-// This is disabled on Apple platforms because macos/grpc_basictests_c_cpp
-// fails with this. https://github.com/grpc/grpc/issues/23661
-#else
 #define GPR_ABSEIL_SYNC 1
-#endif
 #endif  // GPR_ABSEIL_SYNC
+#endif  // GPR_DISABLE_ABSEIL_SYNC
 
 /* Get windows.h included everywhere (we need it) */
 #if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32)
@@ -172,7 +175,6 @@
 #if __ANDROID_API__ < 21
 #error "Requires Android API v21 and above"
 #endif
-#define GPR_SUPPORT_BINDER_TRANSPORT 1
 // TODO(apolcyn): re-evaluate support for c-ares
 // on android after upgrading our c-ares dependency.
 // See https://github.com/grpc/grpc/issues/18038.
@@ -195,6 +197,12 @@
 #define GPR_HAS_PTHREAD_H 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
+#if defined(__has_include)
+#if __has_include(<android/ndk-version.h>)
+#include <android/ndk-version.h>
+#endif /* __has_include(<android/ndk-version.h>) */
+#endif /* defined(__has_include) */
+#include <linux/version.h>
 #elif defined(__linux__)
 #define GPR_PLATFORM_STRING "linux"
 #ifndef _BSD_SOURCE

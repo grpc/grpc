@@ -43,12 +43,12 @@ cdef extern from "grpc_tools/main.h" namespace "grpc_tools":
                         vector[string]* include_path,
                         vector[pair[string, string]]* files_out,
                         vector[cProtocError]* errors,
-                        vector[cProtocWarning]* wrnings) nogil except +
+                        vector[cProtocWarning]* wrnings) except + nogil
   int protoc_get_services(char* protobuf_path, char* version,
                           vector[string]* include_path,
                           vector[pair[string, string]]* files_out,
                           vector[cProtocError]* errors,
-                          vector[cProtocWarning]* wrnings) nogil except +
+                          vector[cProtocWarning]* wrnings) except + nogil
 
 def run_main(list args not None):
   cdef char **argv = <char **>stdlib.malloc(len(args)*sizeof(char *))

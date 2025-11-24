@@ -14,13 +14,14 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_QUERY_EXTENSIONS_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_QUERY_EXTENSIONS_H
 
-#include "absl/strings/string_view.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
-namespace grpc_event_engine {
-namespace experimental {
+#include <type_traits>
+
+#include "absl/strings/string_view.h"
+
+namespace grpc_event_engine::experimental {
 
 namespace endpoint_detail {
 
@@ -57,30 +58,16 @@ class ExtendedType : public EEClass, public Exports... {
 };
 
 /// A helper method which returns a valid pointer if the extension is
-/// supported by the endpoint.
-template <typename T>
-T* QueryExtension(EventEngine::Endpoint* endpoint) {
-  if (endpoint == nullptr) return nullptr;
-  return static_cast<T*>(endpoint->QueryExtension(T::EndpointExtensionName()));
+/// supported by the extending object. Returns nullptr if the extension is not
+/// supported.
+template <typename Extension, class ExtensibleClass>
+std::enable_if_t<std::is_base_of_v<Extensible, ExtensibleClass>, Extension*>
+QueryExtension(ExtensibleClass* extending_obj) {
+  if (extending_obj == nullptr) return nullptr;
+  return static_cast<Extension*>(
+      extending_obj->QueryExtension(Extension::EndpointExtensionName()));
 }
 
-/// A helper method which returns a valid pointer if the extension is
-/// supported by the listener.
-template <typename T>
-T* QueryExtension(EventEngine::Listener* listener) {
-  if (listener == nullptr) return nullptr;
-  return static_cast<T*>(listener->QueryExtension(T::EndpointExtensionName()));
-}
-
-/// A helper method which returns a valid pointer if the extension is
-/// supported by the EventEngine.
-template <typename T>
-T* QueryExtension(EventEngine* engine) {
-  if (engine == nullptr) return nullptr;
-  return static_cast<T*>(engine->QueryExtension(T::EndpointExtensionName()));
-}
-
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_QUERY_EXTENSIONS_H

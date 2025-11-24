@@ -19,8 +19,6 @@
 #ifndef GRPCPP_SERVER_INTERFACE_H
 #define GRPCPP_SERVER_INTERFACE_H
 
-#include "absl/log/absl_check.h"
-
 #include <grpc/grpc.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/port_platform.h>
@@ -32,6 +30,8 @@
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/byte_buffer.h>
+
+#include "absl/log/absl_check.h"
 
 namespace grpc {
 
@@ -110,6 +110,9 @@ class ServerInterface : public internal::CallHook {
   /// \warning The server must be either shutting down or some other thread must
   /// call \a Shutdown for this function to ever return.
   virtual void Wait() = 0;
+
+  virtual grpc_event_engine::experimental::MemoryAllocator*
+  memory_allocator() = 0;
 
  protected:
   friend class grpc::Service;
@@ -265,9 +268,8 @@ class ServerInterface : public internal::CallHook {
         return RegisteredAsyncRequest::FinalizeResult(tag, status);
       }
       if (*status) {
-        if (!payload_.Valid() || !SerializationTraits<Message>::Deserialize(
-                                      payload_.bbuf_ptr(), request_)
-                                      .ok()) {
+        if (!payload_.Valid() ||
+            !grpc::Deserialize(payload_.bbuf_ptr(), request_).ok()) {
           // If deserialization fails, we cancel the call and instantiate
           // a new instance of ourselves to request another call.  We then
           // return false, which prevents the call from being returned to

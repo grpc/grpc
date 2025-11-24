@@ -14,19 +14,18 @@
 // limitations under the License.
 //
 
-#include <memory>
-
-#include "absl/types/optional.h"
-#include "gtest/gtest.h"
-
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
+
+#include <memory>
+#include <optional>
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace {
@@ -39,9 +38,9 @@ namespace {
 // Then, before the first call finishes, the server is shut down and
 // restarted.  The second call will fail in that transport instance and
 // will be transparently retried after the server starts up again.
-CORE_END2END_TEST(RetryHttp2Test, RetryTransparentMaxConcurrentStreams) {
+CORE_END2END_TEST(RetryHttp2Tests, RetryTransparentMaxConcurrentStreams) {
   const auto server_args =
-      ChannelArgs()
+      DefaultServerArgs()
           .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1)
           .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION, false);
   InitServer(server_args);
@@ -102,7 +101,7 @@ CORE_END2END_TEST(RetryHttp2Test, RetryTransparentMaxConcurrentStreams) {
   EXPECT_FALSE(client_close.was_cancelled());
   EXPECT_EQ(server_message.payload(), "baz");
   EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_EQ(server_status.message(), IsErrorFlattenEnabled() ? "" : "xyz");
   // Destroy server and then restart it.
   // TODO(hork): hack to solve PosixEventEngine Listener's async shutdown issue.
   absl::SleepFor(absl::Milliseconds(250));
@@ -117,7 +116,7 @@ CORE_END2END_TEST(RetryHttp2Test, RetryTransparentMaxConcurrentStreams) {
   EXPECT_EQ(s2.method(), "/service/method");
   // Make sure the "grpc-previous-rpc-attempts" header was NOT sent, since
   // we don't do that for transparent retries.
-  EXPECT_EQ(s2.GetInitialMetadata("grpc-previous-rpc-attempts"), absl::nullopt);
+  EXPECT_EQ(s2.GetInitialMetadata("grpc-previous-rpc-attempts"), std::nullopt);
   // Server handles the second call.
   IncomingMessage client_message2;
   IncomingCloseOnServer client_close2;
@@ -138,7 +137,7 @@ CORE_END2END_TEST(RetryHttp2Test, RetryTransparentMaxConcurrentStreams) {
   EXPECT_FALSE(client_close.was_cancelled());
   EXPECT_EQ(server_message2.payload(), "qux");
   EXPECT_EQ(server_status2.status(), GRPC_STATUS_OK);
-  EXPECT_EQ(server_status2.message(), "xyz");
+  EXPECT_EQ(server_status2.message(), IsErrorFlattenEnabled() ? "" : "xyz");
 }
 }  // namespace
 }  // namespace grpc_core

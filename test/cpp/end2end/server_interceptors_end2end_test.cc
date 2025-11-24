@@ -16,23 +16,19 @@
 //
 //
 
-#include <memory>
-#include <vector>
-
-#include <gtest/gtest.h>
-
-#include "absl/memory/memory.h"
-#include "absl/strings/match.h"
-
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/generic/generic_stub.h>
 #include <grpcpp/impl/proto_utils.h>
+#include <grpcpp/impl/serialization_traits.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/server_interceptor.h>
+
+#include <memory>
+#include <vector>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
@@ -40,6 +36,9 @@
 #include "test/cpp/end2end/interceptors_util.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
+#include "gtest/gtest.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/match.h"
 
 namespace grpc {
 namespace testing {
@@ -86,9 +85,7 @@ class LoggingInterceptor : public experimental::Interceptor {
       EchoRequest req;
       auto* buffer = methods->GetSerializedSendMessage();
       auto copied_buffer = *buffer;
-      EXPECT_TRUE(
-          SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
-              .ok());
+      EXPECT_TRUE(Deserialize(&copied_buffer, &req).ok());
       EXPECT_TRUE(req.message().find("Hello") == 0);
     }
     if (methods->QueryInterceptionHookPoint(
@@ -96,9 +93,9 @@ class LoggingInterceptor : public experimental::Interceptor {
       auto* map = methods->GetSendTrailingMetadata();
       bool found = false;
       // Check that we received the metadata as an echo
-      for (const auto& pair : *map) {
-        found = absl::StartsWith(pair.first, "testkey") &&
-                absl::StartsWith(pair.second, "testvalue");
+      for (const auto& [key, value] : *map) {
+        found = absl::StartsWith(key, "testkey") &&
+                absl::StartsWith(value, "testvalue");
         if (found) break;
       }
       EXPECT_EQ(found, true);
@@ -110,9 +107,8 @@ class LoggingInterceptor : public experimental::Interceptor {
       auto* map = methods->GetRecvInitialMetadata();
       bool found = false;
       // Check that we received the metadata as an echo
-      for (const auto& pair : *map) {
-        found = pair.first.starts_with("testkey") &&
-                pair.second.starts_with("testvalue");
+      for (const auto& [key, value] : *map) {
+        found = key.starts_with("testkey") && value.starts_with("testvalue");
         if (found) break;
       }
       EXPECT_EQ(found, true);

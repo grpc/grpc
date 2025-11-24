@@ -17,6 +17,8 @@
 #ifndef GRPC_SRC_CORE_XDS_XDS_CLIENT_LRS_CLIENT_H
 #define GRPC_SRC_CORE_XDS_XDS_CLIENT_LRS_CLIENT_H
 
+#include <grpc/event_engine/event_engine.h>
+
 #include <atomic>
 #include <map>
 #include <memory>
@@ -24,15 +26,8 @@
 #include <string>
 #include <utility>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
-#include "upb/reflection/def.hpp"
-
-#include <grpc/event_engine/event_engine.h>
-
 #include "src/core/lib/debug/trace.h"
+#include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/util/dual_ref_counted.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/per_cpu.h"
@@ -43,13 +38,21 @@
 #include "src/core/util/uri.h"
 #include "src/core/util/work_serializer.h"
 #include "src/core/xds/xds_client/xds_api.h"
+#include "src/core/xds/xds_client/xds_backend_metric_propagation.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_locality.h"
 #include "src/core/xds/xds_client/xds_metrics.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_transport.h"
+#include "upb/reflection/def.hpp"
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
+
+bool XdsOrcaLrsPropagationChangesEnabled();
 
 class LrsClient : public DualRefCounted<LrsClient> {
  public:
@@ -67,16 +70,16 @@ class LrsClient : public DualRefCounted<LrsClient> {
 
       Snapshot& operator+=(const Snapshot& other) {
         uncategorized_drops += other.uncategorized_drops;
-        for (const auto& p : other.categorized_drops) {
-          categorized_drops[p.first] += p.second;
+        for (const auto& [category, drops] : other.categorized_drops) {
+          categorized_drops[category] += drops;
         }
         return *this;
       }
 
       bool IsZero() const {
         if (uncategorized_drops != 0) return false;
-        for (const auto& p : categorized_drops) {
-          if (p.second != 0) return false;
+        for (const auto& [_, drops] : categorized_drops) {
+          if (drops != 0) return false;
         }
         return true;
       }
@@ -114,6 +117,24 @@ class LrsClient : public DualRefCounted<LrsClient> {
       uint64_t num_requests_finished_with_metric = 0;
       double total_metric_value = 0;
 
+      BackendMetric() = default;
+
+      BackendMetric(uint64_t num_requests_finished, double value)
+          : num_requests_finished_with_metric(num_requests_finished),
+            total_metric_value(value) {}
+
+      BackendMetric(BackendMetric&& other) noexcept
+          : num_requests_finished_with_metric(
+                std::exchange(other.num_requests_finished_with_metric, 0)),
+            total_metric_value(std::exchange(other.total_metric_value, 0)) {}
+
+      BackendMetric& operator=(BackendMetric&& other) noexcept {
+        num_requests_finished_with_metric =
+            std::exchange(other.num_requests_finished_with_metric, 0);
+        total_metric_value = std::exchange(other.total_metric_value, 0);
+        return *this;
+      }
+
       BackendMetric& operator+=(const BackendMetric& other) {
         num_requests_finished_with_metric +=
             other.num_requests_finished_with_metric;
@@ -132,6 +153,9 @@ class LrsClient : public DualRefCounted<LrsClient> {
       uint64_t total_requests_in_progress = 0;
       uint64_t total_error_requests = 0;
       uint64_t total_issued_requests = 0;
+      BackendMetric cpu_utilization;
+      BackendMetric mem_utilization;
+      BackendMetric application_utilization;
       std::map<std::string, BackendMetric> backend_metrics;
 
       Snapshot& operator+=(const Snapshot& other) {
@@ -139,19 +163,24 @@ class LrsClient : public DualRefCounted<LrsClient> {
         total_requests_in_progress += other.total_requests_in_progress;
         total_error_requests += other.total_error_requests;
         total_issued_requests += other.total_issued_requests;
-        for (const auto& p : other.backend_metrics) {
-          backend_metrics[p.first] += p.second;
+        cpu_utilization += other.cpu_utilization;
+        mem_utilization += other.mem_utilization;
+        application_utilization += other.application_utilization;
+        for (const auto& [name, value] : other.backend_metrics) {
+          backend_metrics[name] += value;
         }
         return *this;
       }
 
       bool IsZero() const {
         if (total_successful_requests != 0 || total_requests_in_progress != 0 ||
-            total_error_requests != 0 || total_issued_requests != 0) {
+            total_error_requests != 0 || total_issued_requests != 0 ||
+            !cpu_utilization.IsZero() || !mem_utilization.IsZero() ||
+            !application_utilization.IsZero()) {
           return false;
         }
-        for (const auto& p : backend_metrics) {
-          if (!p.second.IsZero()) return false;
+        for (const auto& [_, value] : backend_metrics) {
+          if (!value.IsZero()) return false;
         }
         return true;
       }
@@ -161,16 +190,17 @@ class LrsClient : public DualRefCounted<LrsClient> {
                          absl::string_view lrs_server,
                          absl::string_view cluster_name,
                          absl::string_view eds_service_name,
-                         RefCountedPtr<XdsLocalityName> name);
+                         RefCountedPtr<XdsLocalityName> name,
+                         RefCountedPtr<const BackendMetricPropagation>
+                             backend_metric_propagation);
     ~ClusterLocalityStats() override;
 
     // Returns a snapshot of this instance and resets all the counters.
     Snapshot GetSnapshotAndReset();
 
     void AddCallStarted();
-    void AddCallFinished(
-        const std::map<absl::string_view, double>* named_metrics,
-        bool fail = false);
+    void AddCallFinished(const BackendMetricData* backend_metrics,
+                         bool fail = false);
 
     XdsLocalityName* locality_name() const { return name_.get(); }
 
@@ -181,10 +211,10 @@ class LrsClient : public DualRefCounted<LrsClient> {
       std::atomic<uint64_t> total_error_requests{0};
       std::atomic<uint64_t> total_issued_requests{0};
 
-      // Protects backend_metrics. A mutex is necessary because the length of
-      // backend_metrics_ can be accessed by both the callback intercepting the
-      // call's recv_trailing_metadata and the load reporting thread.
       Mutex backend_metrics_mu;
+      BackendMetric cpu_utilization ABSL_GUARDED_BY(backend_metrics_mu);
+      BackendMetric mem_utilization ABSL_GUARDED_BY(backend_metrics_mu);
+      BackendMetric application_utilization ABSL_GUARDED_BY(backend_metrics_mu);
       std::map<std::string, BackendMetric> backend_metrics
           ABSL_GUARDED_BY(backend_metrics_mu);
     };
@@ -194,6 +224,7 @@ class LrsClient : public DualRefCounted<LrsClient> {
     absl::string_view cluster_name_;
     absl::string_view eds_service_name_;
     RefCountedPtr<XdsLocalityName> name_;
+    RefCountedPtr<const BackendMetricPropagation> backend_metric_propagation_;
     PerCpu<Stats> stats_{PerCpuOptions().SetMaxShards(32).SetCpusPerShard(4)};
   };
 
@@ -204,17 +235,18 @@ class LrsClient : public DualRefCounted<LrsClient> {
       std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine);
   ~LrsClient() override;
 
-  // Adds and removes drop stats for cluster_name and eds_service_name.
+  // Adds drop stats for cluster_name and eds_service_name.
   RefCountedPtr<ClusterDropStats> AddClusterDropStats(
-      std::shared_ptr<const XdsBootstrap::XdsServer> lrs_server,
+      std::shared_ptr<const XdsBootstrap::XdsServerTarget> lrs_server,
       absl::string_view cluster_name, absl::string_view eds_service_name);
 
-  // Adds and removes locality stats for cluster_name and eds_service_name
-  // for the specified locality.
+  // Adds locality stats for cluster_name and eds_service_name for the
+  // specified locality with the specified backend metric propagation.
   RefCountedPtr<ClusterLocalityStats> AddClusterLocalityStats(
-      std::shared_ptr<const XdsBootstrap::XdsServer> lrs_server,
+      std::shared_ptr<const XdsBootstrap::XdsServerTarget> lrs_server,
       absl::string_view cluster_name, absl::string_view eds_service_name,
-      RefCountedPtr<XdsLocalityName> locality);
+      RefCountedPtr<XdsLocalityName> locality,
+      RefCountedPtr<const BackendMetricPropagation> backend_metric_propagation);
 
   // Resets connection backoff state.
   void ResetBackoff();
@@ -238,7 +270,7 @@ class LrsClient : public DualRefCounted<LrsClient> {
     class LrsCall;
 
     LrsChannel(WeakRefCountedPtr<LrsClient> lrs_client,
-               std::shared_ptr<const XdsBootstrap::XdsServer> server);
+               std::shared_ptr<const XdsBootstrap::XdsServerTarget> server);
     ~LrsChannel() override;
 
     LrsClient* lrs_client() const { return lrs_client_.get(); }
@@ -257,7 +289,7 @@ class LrsClient : public DualRefCounted<LrsClient> {
     // The owning LrsClient.
     WeakRefCountedPtr<LrsClient> lrs_client_;
 
-    std::shared_ptr<const XdsBootstrap::XdsServer> server_;
+    std::shared_ptr<const XdsBootstrap::XdsServerTarget> server_;
 
     RefCountedPtr<XdsTransportFactory::XdsTransport> transport_;
 
@@ -267,7 +299,9 @@ class LrsClient : public DualRefCounted<LrsClient> {
 
   struct LoadReportState {
     struct LocalityState {
-      ClusterLocalityStats* locality_stats = nullptr;
+      std::map<RefCountedPtr<const BackendMetricPropagation>,
+               ClusterLocalityStats*, BackendMetricPropagation::Less>
+          propagation_stats;
       ClusterLocalityStats::Snapshot deleted_locality_stats;
     };
 
@@ -303,12 +337,12 @@ class LrsClient : public DualRefCounted<LrsClient> {
   void Orphaned() override;
 
   ClusterLoadReportMap BuildLoadReportSnapshotLocked(
-      const XdsBootstrap::XdsServer& lrs_server, bool send_all_clusters,
+      const XdsBootstrap::XdsServerTarget& lrs_server, bool send_all_clusters,
       const std::set<std::string>& clusters) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   RefCountedPtr<LrsChannel> GetOrCreateLrsChannelLocked(
-      std::shared_ptr<const XdsBootstrap::XdsServer> server, const char* reason)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+      std::shared_ptr<const XdsBootstrap::XdsServerTarget> server,
+      const char* reason) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   static bool LoadReportCountersAreZero(const ClusterLoadReportMap& snapshot);
 
@@ -321,6 +355,8 @@ class LrsClient : public DualRefCounted<LrsClient> {
       absl::string_view lrs_server, absl::string_view cluster_name,
       absl::string_view eds_service_name,
       const RefCountedPtr<XdsLocalityName>& locality,
+      const RefCountedPtr<const BackendMetricPropagation>&
+          backend_metric_propagation,
       ClusterLocalityStats* cluster_locality_stats);
 
   // Creates an initial LRS request.

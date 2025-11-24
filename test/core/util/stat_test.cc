@@ -16,16 +16,14 @@
 
 #include "src/core/util/stat.h"
 
+#include <grpc/support/alloc.h>
 #include <stdio.h>
 
 #include <memory>
 
-#include "gtest/gtest.h"
-
-#include <grpc/support/alloc.h>
-
 #include "src/core/util/tmpfile.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace testing {

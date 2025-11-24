@@ -60,13 +60,13 @@ cdef extern from "<condition_variable>" namespace "std" nogil:
 # gRPC Core Declarations
 
 cdef extern from "src/core/telemetry/call_tracer.h" namespace "grpc_core":
-    cdef cppclass ClientCallTracer:
+    cdef cppclass ClientCallTracerInterface:
         pass
 
     cdef cppclass CallTracerAnnotationInterface:
         pass
 
-    cdef cppclass ServerCallTracer:
+    cdef cppclass ServerCallTracerInterface:
         string TraceId() nogil
         string SpanId() nogil
         bint IsSampled() nogil
@@ -616,6 +616,47 @@ cdef extern from "grpc/credentials.h":
     const char *private_key
     const char *certificate_chain "cert_chain"
 
+  ctypedef struct grpc_tls_credentials_options:
+    # We don't care about the internals (and in fact don't know them)
+    pass
+
+  grpc_tls_credentials_options *grpc_tls_credentials_options_create() nogil
+
+  ctypedef struct grpc_tls_certificate_provider:
+    # We don't care about the internals (and in fact don't know them)
+    pass
+
+  void grpc_tls_credentials_options_set_certificate_provider(
+    grpc_tls_credentials_options *options,
+    grpc_tls_certificate_provider *provider) nogil
+
+  ctypedef struct grpc_tls_identity_pairs:
+    # We don't care about the internals (and in fact don't know them)
+    pass
+
+  grpc_tls_identity_pairs *grpc_tls_identity_pairs_create() nogil
+
+  void grpc_tls_identity_pairs_add_pair(
+    grpc_tls_identity_pairs *pairs,
+    const char *private_key,
+    const char *cert_chain) nogil
+
+  grpc_tls_certificate_provider *grpc_tls_certificate_provider_static_data_create(
+    const char *root_certificate, grpc_tls_identity_pairs *pem_key_cert_pairs) nogil
+
+  void grpc_tls_credentials_options_set_certificate_provider(
+    grpc_tls_credentials_options *options,
+    grpc_tls_certificate_provider *provider) nogil
+
+  void grpc_tls_credentials_options_watch_root_certs(
+    grpc_tls_credentials_options *options) nogil
+
+  void grpc_tls_credentials_options_watch_identity_key_cert_pairs(
+    grpc_tls_credentials_options *options) nogil
+
+  void grpc_tls_certificate_provider_release(
+    grpc_tls_certificate_provider *provider) nogil
+
   ctypedef struct grpc_channel_credentials:
     # We don't care about the internals (and in fact don't know them)
     pass
@@ -628,11 +669,15 @@ cdef extern from "grpc/credentials.h":
     # We don't care about the internals (and in fact don't know them)
     pass
 
-  grpc_channel_credentials *grpc_google_default_credentials_create(grpc_call_credentials* call_credentials) nogil
+  grpc_channel_credentials *grpc_google_default_credentials_create(grpc_call_credentials* call_creds_for_tls, grpc_call_credentials* call_creds_for_alts) nogil
 
   grpc_channel_credentials *grpc_ssl_credentials_create(
       const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair,
       verify_peer_options *verify_options, void *reserved) nogil
+
+  grpc_channel_credentials *grpc_tls_credentials_create(
+    grpc_tls_credentials_options *options) nogil
+
   grpc_channel_credentials *grpc_composite_channel_credentials_create(
       grpc_channel_credentials *creds1, grpc_call_credentials *creds2,
       void *reserved) nogil
@@ -811,7 +856,7 @@ cdef extern from "grpc/grpc_security_constants.h":
     UDS
     LOCAL_TCP
 
-cdef extern from "src/core/lib/config/config_vars.h" namespace "grpc_core":
+cdef extern from "src/core/config/config_vars.h" namespace "grpc_core":
   cdef cppclass ConfigVars:
     @staticmethod
     void Reset()

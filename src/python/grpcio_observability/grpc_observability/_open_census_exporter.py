@@ -41,7 +41,7 @@ from opencensus.trace import tracer
 
 # 60s is the default time for open census to call export.
 CENSUS_UPLOAD_INTERVAL_SECS = int(
-    os.environ.get("GRPC_PYTHON_CENSUS_EXPORT_UPLOAD_INTERVAL_SECS", 20)
+    os.environ.get("GRPC_PYTHON_CENSUS_EXPORT_UPLOAD_INTERVAL_SECS", "20")
 )
 
 
@@ -123,7 +123,7 @@ class OpenCensusExporter(_observability.Exporter):
             if not measure:
                 continue
             # Create a measurement map for each metric, otherwise metrics will
-            # be override instead of accumulate.
+            # be overridden instead of accumulate.
             measurement_map = self.stats_recorder.new_measurement_map()
             # Add data label to default labels.
             labels = data.labels
@@ -203,7 +203,7 @@ class OpenCensusExporter(_observability.Exporter):
 
 
 def _get_span_annotations(
-    span_annotations: List[Tuple[str, str]]
+    span_annotations: List[Tuple[str, str]],
 ) -> List[time_event.Annotation]:
     annotations = []
 
@@ -216,43 +216,44 @@ def _get_span_annotations(
 
 # pylint: disable=too-many-return-statements
 # pylint: disable=too-many-branches
-def _status_to_span_status(span_status: str) -> Optional[status.Status]:
+def _status_to_span_status(  # noqa: PLR0911
+    span_status: str,
+) -> Optional[status.Status]:
     if status == "OK":
         return status.Status(code_pb2.OK, message=span_status)
-    elif status == "CANCELLED":
+    if status == "CANCELLED":
         return status.Status(code_pb2.CANCELLED, message=span_status)
-    elif status == "UNKNOWN":
+    if status == "UNKNOWN":
         return status.Status(code_pb2.UNKNOWN, message=span_status)
-    elif status == "INVALID_ARGUMENT":
+    if status == "INVALID_ARGUMENT":
         return status.Status(code_pb2.INVALID_ARGUMENT, message=span_status)
-    elif status == "DEADLINE_EXCEEDED":
+    if status == "DEADLINE_EXCEEDED":
         return status.Status(code_pb2.DEADLINE_EXCEEDED, message=span_status)
-    elif status == "NOT_FOUND":
+    if status == "NOT_FOUND":
         return status.Status(code_pb2.NOT_FOUND, message=span_status)
-    elif status == "ALREADY_EXISTS":
+    if status == "ALREADY_EXISTS":
         return status.Status(code_pb2.ALREADY_EXISTS, message=span_status)
-    elif status == "PERMISSION_DENIED":
+    if status == "PERMISSION_DENIED":
         return status.Status(code_pb2.PERMISSION_DENIED, message=span_status)
-    elif status == "UNAUTHENTICATED":
+    if status == "UNAUTHENTICATED":
         return status.Status(code_pb2.UNAUTHENTICATED, message=span_status)
-    elif status == "RESOURCE_EXHAUSTED":
+    if status == "RESOURCE_EXHAUSTED":
         return status.Status(code_pb2.RESOURCE_EXHAUSTED, message=span_status)
-    elif status == "FAILED_PRECONDITION":
+    if status == "FAILED_PRECONDITION":
         return status.Status(code_pb2.FAILED_PRECONDITION, message=span_status)
-    elif status == "ABORTED":
+    if status == "ABORTED":
         return status.Status(code_pb2.ABORTED, message=span_status)
-    elif status == "OUT_OF_RANGE":
+    if status == "OUT_OF_RANGE":
         return status.Status(code_pb2.OUT_OF_RANGE, message=span_status)
-    elif status == "UNIMPLEMENTED":
+    if status == "UNIMPLEMENTED":
         return status.Status(code_pb2.UNIMPLEMENTED, message=span_status)
-    elif status == "INTERNAL":
+    if status == "INTERNAL":
         return status.Status(code_pb2.INTERNAL, message=span_status)
-    elif status == "UNAVAILABLE":
+    if status == "UNAVAILABLE":
         return status.Status(code_pb2.UNAVAILABLE, message=span_status)
-    elif status == "DATA_LOSS":
+    if status == "DATA_LOSS":
         return status.Status(code_pb2.DATA_LOSS, message=span_status)
-    else:
-        return None
+    return None
 
 
 def _get_span_data(
@@ -279,9 +280,9 @@ def _get_span_data(
             name=span_data.name,
             context=span_context,
             span_id=span_data.span_id,
-            parent_span_id=span_data.parent_span_id
-            if span_data.parent_span_id
-            else None,
+            parent_span_id=(
+                span_data.parent_span_id if span_data.parent_span_id else None
+            ),
             attributes=span_attributes,
             start_time=span_data.start_time,
             end_time=span_data.end_time,
@@ -291,9 +292,9 @@ def _get_span_data(
             message_events=None,
             links=None,
             status=span_status,
-            same_process_as_parent_span=True
-            if span_data.parent_span_id
-            else None,
+            same_process_as_parent_span=(
+                True if span_data.parent_span_id else None
+            ),
             span_kind=span.SpanKind.UNSPECIFIED,
         )
     ]

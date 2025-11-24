@@ -39,7 +39,7 @@ def _get_hamming_distance(a, b):
 
 
 def _get_substring_hamming_distance(candidate, target):
-    """Calculates the minimum hamming distance between between the target
+    """Calculates the minimum hamming distance between the target
         and any substring of the candidate.
 
     Args:

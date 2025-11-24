@@ -16,19 +16,17 @@
 //
 //
 
+#include <grpc/grpc_security_constants.h>
+#include <grpcpp/security/alts_context.h>
 #include <stddef.h>
 
 #include <map>
 #include <string>
 
-#include "upb/base/string_view.h"
-#include "upb/message/map.h"
-
-#include <grpc/grpc_security_constants.h>
-#include <grpcpp/security/alts_context.h>
-
 #include "src/proto/grpc/gcp/altscontext.upb.h"
 #include "src/proto/grpc/gcp/transport_security_common.upb.h"
+#include "upb/base/string_view.h"
+#include "upb/message/map.h"
 
 namespace grpc {
 namespace experimental {
@@ -89,18 +87,14 @@ AltsContext::AltsContext(const grpc_gcp_AltsContext* ctx) {
         grpc_gcp_AltsContext_security_level(ctx));
   }
   if (grpc_gcp_AltsContext_peer_attributes_size(ctx) != 0) {
+    grpc_gcp_AltsContext* ctx_upb = (grpc_gcp_AltsContext*)ctx;
     size_t iter = kUpb_Map_Begin;
-    const grpc_gcp_AltsContext_PeerAttributesEntry* peer_attributes_entry =
-        grpc_gcp_AltsContext_peer_attributes_next(ctx, &iter);
-    while (peer_attributes_entry != nullptr) {
-      upb_StringView key =
-          grpc_gcp_AltsContext_PeerAttributesEntry_key(peer_attributes_entry);
-      upb_StringView val =
-          grpc_gcp_AltsContext_PeerAttributesEntry_value(peer_attributes_entry);
+    upb_StringView key;
+    upb_StringView val;
+    while (
+        grpc_gcp_AltsContext_peer_attributes_next(ctx_upb, &key, &val, &iter)) {
       peer_attributes_map_[std::string(key.data, key.size)] =
           std::string(val.data, val.size);
-      peer_attributes_entry =
-          grpc_gcp_AltsContext_peer_attributes_next(ctx, &iter);
     }
   }
 }

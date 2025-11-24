@@ -16,25 +16,22 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "absl/log/log.h"
-
-#include <stdio.h>
-#include <string.h>
-
-#include "absl/log/check.h"
-#include "absl/log/globals.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <stdio.h>
+#include <string.h>
 
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/string.h"
+#include "absl/log/check.h"
+#include "absl/log/globals.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
 
 void gpr_unreachable_code(const char* reason, const char* file, int line) {
   grpc_core::Crash(absl::StrCat("UNREACHABLE CODE: ", reason),
@@ -107,6 +104,7 @@ void gpr_log_verbosity_init(void) {
            "ERROR. However if you see this message in a debug environment or "
            "test environment it is safe to ignore this message.";
     absl::SetVLogLevel("*grpc*/*", -1);
+    absl::SetVLogLevel("src/core/util/log", -1);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
   } else if (absl::EqualsIgnoreCase(verbosity, "DEBUG")) {
     LOG_FIRST_N(WARNING, 1)
@@ -114,12 +112,15 @@ void gpr_log_verbosity_init(void) {
            "ERROR. However if you see this message in a debug environment or "
            "test environment it is safe to ignore this message.";
     absl::SetVLogLevel("*grpc*/*", 2);
+    absl::SetVLogLevel("src/core/util/log", 2);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
   } else if (absl::EqualsIgnoreCase(verbosity, "ERROR")) {
     absl::SetVLogLevel("*grpc*/*", -1);
+    absl::SetVLogLevel("src/core/util/log", -1);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kError);
   } else if (absl::EqualsIgnoreCase(verbosity, "NONE")) {
     absl::SetVLogLevel("*grpc*/*", -1);
+    absl::SetVLogLevel("src/core/util/log", -1);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
   } else if (verbosity.empty()) {
     // Do not alter absl settings if GRPC_VERBOSITY flag is not set.

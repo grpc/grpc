@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpcpp/grpcpp.h>
+
 #include <condition_variable>
 #include <iostream>
 #include <memory>
@@ -24,8 +26,8 @@
 #include <vector>
 
 #include "caching_interceptor.h"
-
-#include <grpcpp/grpcpp.h>
+#include "absl/flags/parse.h"
+#include "absl/log/initialize.h"
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/keyvaluestore.grpc.pb.h"
@@ -103,6 +105,8 @@ class KeyValueStoreClient : public grpc::ClientBidiReactor<Request, Response> {
 };
 
 int main(int argc, char** argv) {
+  absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
   // Instantiate the client. It requires a channel, out of which the actual RPCs
   // are created. This channel models a connection to an endpoint (in this case,
   // localhost at port 50051). We indicate that the channel isn't authenticated

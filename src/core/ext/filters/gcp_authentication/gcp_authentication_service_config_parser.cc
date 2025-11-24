@@ -14,13 +14,12 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.h"
 
-#include <vector>
+#include <grpc/support/port_platform.h>
 
-#include "absl/types/optional.h"
+#include <optional>
+#include <vector>
 
 #include "src/core/lib/channel/channel_args.h"
 

@@ -21,28 +21,46 @@
 #include <stdlib.h>
 
 #include <algorithm>
+#include <set>
+#include <thread>
 #include <vector>
 
-#include "gtest/gtest.h"
-
 #include "src/core/channelz/channelz.h"
+#include "src/core/config/config_vars.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/shared_bit_gen.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace channelz {
 namespace testing {
 
-class ChannelzRegistryTest : public ::testing::Test {
+class ChannelzRegistryTest : public ::testing::TestWithParam<int> {
  protected:
   // ensure we always have a fresh registry for tests.
-  void SetUp() override { ChannelzRegistry::TestOnlyReset(); }
+  void SetUp() override {
+    ChannelzRegistry::TestOnlyReset();
+    ConfigVars::Reset();
+    ConfigVars::Overrides overrides;
+    overrides.channelz_max_orphaned_nodes = GetParam();
+    ConfigVars::SetOverrides(overrides);
+    ChannelzRegistry::TestOnlyReset();
+  }
 };
+
+INSTANTIATE_TEST_SUITE_P(ChannelRegistrySuite, ChannelzRegistryTest,
+                         ::testing::Values(0, 1, 32, 1024, 1000000),
+                         [](const ::testing::TestParamInfo<int>& info) {
+                           return absl::StrCat("max_orphaned_nodes_",
+                                               info.param);
+                         });
 
 static RefCountedPtr<BaseNode> CreateTestNode() {
   return MakeRefCounted<ListenSocketNode>("test", "test");
 }
 
-TEST_F(ChannelzRegistryTest, UuidStartsAboveZeroTest) {
+TEST_P(ChannelzRegistryTest, UuidStartsAboveZeroTest) {
   RefCountedPtr<BaseNode> channelz_channel = CreateTestNode();
   intptr_t uuid = channelz_channel->uuid();
   EXPECT_GT(uuid, 0) << "First uuid chose must be greater than zero. Zero if "
@@ -51,47 +69,54 @@ TEST_F(ChannelzRegistryTest, UuidStartsAboveZeroTest) {
                         "A14-channelz.md";
 }
 
-TEST_F(ChannelzRegistryTest, UuidsAreIncreasing) {
+TEST_P(ChannelzRegistryTest, UuidsAreIncreasing) {
   std::vector<RefCountedPtr<BaseNode>> channelz_channels;
   channelz_channels.reserve(10);
   for (int i = 0; i < 10; ++i) {
     channelz_channels.push_back(CreateTestNode());
   }
   for (size_t i = 1; i < channelz_channels.size(); ++i) {
-    EXPECT_LT(channelz_channels[i - 1]->uuid(), channelz_channels[i]->uuid())
-        << "Uuids must always be increasing";
+    const intptr_t prev_uuid = channelz_channels[i - 1]->uuid();
+    const intptr_t curr_uuid = channelz_channels[i]->uuid();
+    EXPECT_LT(prev_uuid, curr_uuid) << "Uuids must always be increasing";
   }
 }
 
-TEST_F(ChannelzRegistryTest, RegisterGetTest) {
+TEST_P(ChannelzRegistryTest, RegisterGetTest) {
   RefCountedPtr<BaseNode> channelz_channel = CreateTestNode();
-  RefCountedPtr<BaseNode> retrieved =
+  WeakRefCountedPtr<BaseNode> retrieved =
       ChannelzRegistry::Get(channelz_channel->uuid());
-  EXPECT_EQ(channelz_channel, retrieved);
+  EXPECT_EQ(channelz_channel.get(), retrieved.get());
 }
 
-TEST_F(ChannelzRegistryTest, RegisterManyItems) {
+TEST_P(ChannelzRegistryTest, RegisterManyItems) {
   std::vector<RefCountedPtr<BaseNode>> channelz_channels;
   for (int i = 0; i < 100; i++) {
     channelz_channels.push_back(CreateTestNode());
-    RefCountedPtr<BaseNode> retrieved =
+    WeakRefCountedPtr<BaseNode> retrieved =
         ChannelzRegistry::Get(channelz_channels[i]->uuid());
-    EXPECT_EQ(channelz_channels[i], retrieved);
+    EXPECT_EQ(channelz_channels[i].get(), retrieved.get());
   }
 }
 
-TEST_F(ChannelzRegistryTest, NullIfNotPresentTest) {
+TEST_P(ChannelzRegistryTest, NullIfNotPresentTest) {
   RefCountedPtr<BaseNode> channelz_channel = CreateTestNode();
   // try to pull out a uuid that does not exist.
-  RefCountedPtr<BaseNode> nonexistent =
+  WeakRefCountedPtr<BaseNode> nonexistent =
       ChannelzRegistry::Get(channelz_channel->uuid() + 1);
-  EXPECT_EQ(nonexistent, nullptr);
-  RefCountedPtr<BaseNode> retrieved =
+  EXPECT_EQ(nonexistent.get(), nullptr);
+  WeakRefCountedPtr<BaseNode> retrieved =
       ChannelzRegistry::Get(channelz_channel->uuid());
-  EXPECT_EQ(channelz_channel, retrieved);
+  EXPECT_EQ(channelz_channel.get(), retrieved.get());
 }
 
-TEST_F(ChannelzRegistryTest, TestUnregistration) {
+TEST_P(ChannelzRegistryTest, TestUnregistration) {
+  if (GetParam() != 0) {
+    GTEST_SKIP()
+        << "Unregistration not possible to test with orphaning like this: we "
+           "don't know the shard that things are orphaned on, so we can't "
+           "predict how to flush it from the orphan list.";
+  }
   const int kLoopIterations = 100;
   // These channels will stay in the registry for the duration of the test.
   std::vector<RefCountedPtr<BaseNode>> even_channels;
@@ -110,11 +135,11 @@ TEST_F(ChannelzRegistryTest, TestUnregistration) {
   }
   // Check that the even channels are present and the odd channels are not.
   for (int i = 0; i < kLoopIterations; i++) {
-    RefCountedPtr<BaseNode> retrieved =
+    WeakRefCountedPtr<BaseNode> retrieved =
         ChannelzRegistry::Get(even_channels[i]->uuid());
-    EXPECT_EQ(even_channels[i], retrieved);
+    EXPECT_EQ(even_channels[i].get(), retrieved.get());
     retrieved = ChannelzRegistry::Get(odd_uuids[i]);
-    EXPECT_EQ(retrieved, nullptr);
+    EXPECT_EQ(retrieved.get(), nullptr);
   }
   // Add more channels and verify that they get added correctly, to make
   // sure that the unregistration didn't leave the registry in a weird state.
@@ -122,10 +147,172 @@ TEST_F(ChannelzRegistryTest, TestUnregistration) {
   more_channels.reserve(kLoopIterations);
   for (int i = 0; i < kLoopIterations; i++) {
     more_channels.push_back(CreateTestNode());
-    RefCountedPtr<BaseNode> retrieved =
+    WeakRefCountedPtr<BaseNode> retrieved =
         ChannelzRegistry::Get(more_channels[i]->uuid());
-    EXPECT_EQ(more_channels[i], retrieved);
+    EXPECT_EQ(more_channels[i].get(), retrieved.get());
   }
+}
+
+TEST_P(ChannelzRegistryTest, ThreadStressTest) {
+  std::vector<std::thread> threads;
+  threads.reserve(30);
+  Notification done;
+  for (int i = 0; i < 10; ++i) {
+    threads.emplace_back(std::thread([&done]() {
+      while (!done.HasBeenNotified()) {
+        auto a = MakeRefCounted<ChannelNode>("x", 1, false);
+        auto b = MakeRefCounted<ChannelNode>("x", 1, false);
+        auto c = MakeRefCounted<ChannelNode>("x", 1, false);
+        auto d = MakeRefCounted<ChannelNode>("x", 1, false);
+      }
+    }));
+  }
+  for (int i = 0; i < 10; ++i) {
+    threads.emplace_back(std::thread([&done]() {
+      intptr_t last_uuid = 0;
+      while (!done.HasBeenNotified()) {
+        intptr_t uuid = MakeRefCounted<ChannelNode>("x", 1, false)->uuid();
+        EXPECT_GT(uuid, last_uuid);
+        last_uuid = uuid;
+      }
+    }));
+  }
+  for (int i = 0; i < 10; ++i) {
+    threads.emplace_back([&done]() {
+      while (!done.HasBeenNotified()) {
+        ChannelzRegistry::GetAllEntities();
+      }
+    });
+  }
+  absl::SleepFor(absl::Seconds(10));
+  done.Notify();
+  for (auto& thread : threads) {
+    thread.join();
+  }
+}
+
+TEST_P(ChannelzRegistryTest, HugeNodeCount) {
+  std::vector<RefCountedPtr<BaseNode>> nodes;
+  nodes.reserve(20000);
+  for (int i = 0; i < 10000; ++i) {
+    nodes.push_back(MakeRefCounted<ChannelNode>("x", 1, false));
+    nodes.push_back(MakeRefCounted<SocketNode>("x", "y", "z", nullptr));
+  }
+  auto [channels1, end] = ChannelzRegistry::GetTopChannels(0);
+  EXPECT_FALSE(end);
+  auto [channels2, end2] =
+      ChannelzRegistry::GetTopChannels(channels1.back()->uuid());
+  EXPECT_FALSE(end2);
+  std::shuffle(nodes.begin(), nodes.end(), SharedBitGen());
+}
+
+TEST_P(ChannelzRegistryTest, HugeNodeCountWithParents) {
+  std::vector<RefCountedPtr<BaseNode>> nodes;
+  for (int i = 0; i < 10; ++i) {
+    nodes.push_back(MakeRefCounted<ChannelNode>("x", 1, false));
+    auto parent = nodes.back();
+    for (int j = 0; j < 1000; ++j) {
+      nodes.push_back(MakeRefCounted<SubchannelNode>("x", 1));
+      nodes.back()->AddParent(parent.get());
+    }
+  }
+  auto [channels1, end] = ChannelzRegistry::GetTopChannels(0);
+  EXPECT_TRUE(end);
+  std::shuffle(nodes.begin(), nodes.end(), SharedBitGen());
+}
+
+TEST_P(ChannelzRegistryTest, GetDescendants) {
+  auto root = MakeRefCounted<ChannelNode>("root", 1, false);
+  auto ch1 = MakeRefCounted<SubchannelNode>("ch1", 1);
+  auto ch2 = MakeRefCounted<SubchannelNode>("ch2", 1);
+  ch1->AddParent(root.get());
+  ch2->AddParent(root.get());
+  auto sock1 = MakeRefCounted<SocketNode>("sock1", "y", "z", nullptr);
+  auto sock2 = MakeRefCounted<SocketNode>("sock2", "y", "z", nullptr);
+  auto sock3 = MakeRefCounted<SocketNode>("sock3", "y", "z", nullptr);
+  auto sock4 = MakeRefCounted<SocketNode>("sock4", "y", "z", nullptr);
+  sock1->AddParent(ch1.get());
+  sock2->AddParent(ch1.get());
+  sock3->AddParent(ch2.get());
+  sock4->AddParent(ch2.get());
+
+  auto descendants = ChannelzRegistry::GetDescendants(root.get(), 10);
+  std::set<intptr_t> descendant_uuids;
+  for (const auto& node : descendants) {
+    descendant_uuids.insert(node->uuid());
+  }
+  EXPECT_EQ(descendants.size(), 7);
+  EXPECT_EQ(descendant_uuids.size(), 7);
+  EXPECT_EQ(descendants[0]->uuid(), root->uuid());
+  EXPECT_TRUE(descendant_uuids.count(root->uuid()));
+  EXPECT_TRUE(descendant_uuids.count(ch1->uuid()));
+  EXPECT_TRUE(descendant_uuids.count(ch2->uuid()));
+  EXPECT_TRUE(descendant_uuids.count(sock1->uuid()));
+  EXPECT_TRUE(descendant_uuids.count(sock2->uuid()));
+  EXPECT_TRUE(descendant_uuids.count(sock3->uuid()));
+  EXPECT_TRUE(descendant_uuids.count(sock4->uuid()));
+
+  // test max_results
+  descendants = ChannelzRegistry::GetDescendants(root.get(), 4);
+  EXPECT_EQ(descendants.size(), 4);
+  descendant_uuids.clear();
+  for (const auto& node : descendants) {
+    descendant_uuids.insert(node->uuid());
+  }
+  EXPECT_EQ(descendant_uuids.size(), 4);
+  EXPECT_EQ(descendants[0]->uuid(), root->uuid());
+  EXPECT_TRUE(descendant_uuids.count(root->uuid()));
+  EXPECT_TRUE(descendant_uuids.count(ch1->uuid()));
+  EXPECT_TRUE(descendant_uuids.count(ch2->uuid()));
+
+  // Null root.
+  EXPECT_EQ(ChannelzRegistry::GetDescendants(nullptr, 10).size(), 0);
+
+  // Zero max_results.
+  EXPECT_EQ(ChannelzRegistry::GetDescendants(root.get(), 0).size(), 0);
+
+  // Node with no children.
+  auto descendants2 = ChannelzRegistry::GetDescendants(sock1.get(), 10);
+  EXPECT_EQ(descendants2.size(), 1);
+  EXPECT_EQ(descendants2[0]->uuid(), sock1->uuid());
+}
+
+TEST_P(ChannelzRegistryTest, GetDescendantsDiamond) {
+  auto root = MakeRefCounted<ChannelNode>("root", 1, false);
+  // Diamond dependency.
+  auto ch1 = MakeRefCounted<SubchannelNode>("ch1", 1);
+  auto ch2 = MakeRefCounted<SubchannelNode>("ch2", 1);
+  auto child = MakeRefCounted<SubchannelNode>("child", 1);
+  ch1->AddParent(root.get());
+  ch2->AddParent(root.get());
+  child->AddParent(ch1.get());
+  child->AddParent(ch2.get());
+  auto descendants = ChannelzRegistry::GetDescendants(root.get(), 10);
+  std::set<intptr_t> descendant_uuids;
+  for (const auto& node : descendants) {
+    descendant_uuids.insert(node->uuid());
+  }
+  EXPECT_EQ(descendants.size(), 4);
+  EXPECT_EQ(descendant_uuids.size(), 4);
+  EXPECT_TRUE(descendant_uuids.count(root->uuid()));
+  EXPECT_TRUE(descendant_uuids.count(ch1->uuid()));
+  EXPECT_TRUE(descendant_uuids.count(ch2->uuid()));
+  EXPECT_TRUE(descendant_uuids.count(child->uuid()));
+}
+
+TEST_P(ChannelzRegistryTest, ServerWithChildren) {
+  auto server = MakeRefCounted<ServerNode>(1);
+  std::vector<RefCountedPtr<BaseNode>> sockets;
+  sockets.reserve(20000);
+  for (int i = 0; i < 20000; ++i) {
+    sockets.push_back(MakeRefCounted<SocketNode>("x", "y", "z", nullptr));
+    sockets.back()->AddParent(server.get());
+  }
+  std::shuffle(sockets.begin(), sockets.end(), SharedBitGen());
+  sockets.resize(10000);
+  auto child_sockets = server->child_sockets();
+  server.reset();
+  sockets.clear();
 }
 
 }  // namespace testing

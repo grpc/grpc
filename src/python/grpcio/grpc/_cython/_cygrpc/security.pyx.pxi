@@ -18,7 +18,7 @@ import pkgutil
 
 
 cdef grpc_ssl_roots_override_result ssl_roots_override_callback(
-    char **pem_root_certs) nogil:
+    char **pem_root_certs) noexcept nogil:
   with gil:
     pkg = __name__
     if pkg.endswith('.cygrpc'):

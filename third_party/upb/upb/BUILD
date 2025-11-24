@@ -8,28 +8,10 @@
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load("@rules_python//python:defs.bzl", "py_binary")
 load("//bazel/private:upb_proto_library_internal/copts.bzl", "upb_proto_library_copts")
+load("//upb/bazel:amalgamation.bzl", "upb_amalgamation")
 load("//upb/bazel:build_defs.bzl", "UPB_DEFAULT_COPTS")
 
-# begin:google_only
-# load("//tools/build_defs/kotlin/native:rules.bzl", "kt_native_interop_hint")
-# load("//tools/build_defs/license:license.bzl", "license")
-# end:google_only
-
-# begin:github_only
-load(
-    "//upb/bazel:amalgamation.bzl",
-    "upb_amalgamation",
-)
-# end:github_only
-
-# begin:google_only
-# package(default_applicable_licenses = [":license"])
-#
-# license(
-#     name = "license",
-#     package_name = "upb",
-# )
-# end:google_only
+package(default_applicable_licenses = ["//:license"])
 
 licenses(["notice"])
 
@@ -38,7 +20,6 @@ exports_files(["LICENSE"])
 exports_files(
     [
         "BUILD",
-        "WORKSPACE",
     ],
     visibility = ["//upb/cmake:__pkg__"],
 )
@@ -86,13 +67,17 @@ package_group(
 # upb_c_proto_library() only. This interface is not stable and by using it you
 # give up any backward compatibility guarantees.
 cc_library(
-    name = "generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
+    name = "generated_code_support",
     hdrs = ["generated_code_support.h"],
     copts = UPB_DEFAULT_COPTS,
     textual_hdrs = [
         ":port_inc",
     ],
-    visibility = ["//visibility:public"],
+    visibility = [
+        "//pkg:__pkg__",
+        "//upb/reflection:__pkg__",
+        "//upb_generator:__subpackages__",
+    ],
     deps = [
         ":base",
         ":mem",
@@ -106,12 +91,12 @@ cc_library(
 
 # Common support code for C++ generated code.
 cc_library(
-    name = "generated_cpp_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
+    name = "generated_cpp_support",
     copts = UPB_DEFAULT_COPTS,
     textual_hdrs = [
         ":port_inc",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//hpb/bazel:__pkg__"],
 )
 
 # Aliases ######################################################################
@@ -124,27 +109,9 @@ alias(
 )
 
 alias(
-    name = "descriptor_upb_proto",
-    actual = "//upb/reflection:descriptor_upb_proto",
-    visibility = ["//visibility:public"],
-)
-
-alias(
-    name = "descriptor_upb_minitable_proto",
-    actual = "//upb/reflection:descriptor_upb_minitable_proto",
-    visibility = ["//visibility:public"],
-)
-
-alias(
-    name = "descriptor_upb_proto_reflection",
-    actual = "//upb/reflection:descriptor_upb_proto_reflection",
-    visibility = ["//visibility:public"],
-)
-
-alias(
-    name = "generated_reflection_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    actual = "//upb/reflection:generated_reflection_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    visibility = ["//visibility:public"],
+    name = "generated_reflection_support",
+    actual = "//upb/reflection:generated_reflection_support",
+    visibility = ["//upb:friends"],
 )
 
 alias(
@@ -238,6 +205,12 @@ alias(
 )
 
 alias(
+    name = "wire_byte_size",
+    actual = "//upb/wire:byte_size",
+    visibility = ["//upb:friends"],
+)
+
+alias(
     name = "wire_reader",
     actual = "//upb/wire:reader",
     visibility = ["//visibility:public"],
@@ -251,8 +224,6 @@ alias(
 
 # Amalgamation #################################################################
 
-# begin:github_only
-
 upb_amalgamation(
     name = "gen_amalgamation",
     outs = [
@@ -261,10 +232,8 @@ upb_amalgamation(
     ],
     libs = [
         ":base",
-        ":descriptor_upb_minitable_proto",
-        ":descriptor_upb_proto",
         ":eps_copy_input_stream",
-        ":generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
+        ":generated_code_support",
         ":mem",
         ":message",
         ":message_compare",
@@ -276,6 +245,8 @@ upb_amalgamation(
         ":reflection",
         ":wire",
         ":wire_reader",
+        "//src/google/protobuf:descriptor_upb_c_proto",
+        "//src/google/protobuf:descriptor_upb_minitable_proto",
         "//upb/base:internal",
         "//upb/hash:hash",
         "//upb/lex:lex",
@@ -285,9 +256,13 @@ upb_amalgamation(
         "//upb/message:types",
         "//upb/mini_descriptor:internal",
         "//upb/mini_table:internal",
+        "//upb/reflection:descriptor_upb_proto",
         "//upb/reflection:internal",
+        "//upb/text:debug",
+        "//upb/text:internal",
     ],
     strip_import_prefix = ["src"],
+    visibility = ["//rust:__pkg__"],
 )
 
 cc_library(
@@ -306,11 +281,8 @@ upb_amalgamation(
     ],
     libs = [
         ":base",
-        ":descriptor_upb_minitable_proto",
-        ":descriptor_upb_proto_reflection",
-        ":descriptor_upb_proto",
         ":eps_copy_input_stream",
-        ":generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
+        ":generated_code_support",
         ":json",
         ":mem",
         ":message",
@@ -323,6 +295,9 @@ upb_amalgamation(
         ":reflection",
         ":wire",
         ":wire_reader",
+        "//src/google/protobuf:descriptor_upb_c_proto",
+        "//src/google/protobuf:descriptor_upb_minitable_proto",
+        "//src/google/protobuf:descriptor_upb_reflection_proto",
         "//upb/base:internal",
         "//upb/hash:hash",
         "//upb/lex:lex",
@@ -332,6 +307,7 @@ upb_amalgamation(
         "//upb/message:types",
         "//upb/mini_descriptor:internal",
         "//upb/mini_table:internal",
+        "//upb/reflection:descriptor_upb_proto",
         "//upb/reflection:internal",
     ],
     prefix = "php-",
@@ -355,10 +331,8 @@ upb_amalgamation(
     ],
     libs = [
         ":base",
-        ":descriptor_upb_minitable_proto",
-        ":descriptor_upb_proto",
         ":eps_copy_input_stream",
-        ":generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
+        ":generated_code_support",
         ":json",
         ":mem",
         ":message",
@@ -371,6 +345,8 @@ upb_amalgamation(
         ":reflection",
         ":wire",
         ":wire_reader",
+        "//src/google/protobuf:descriptor_upb_c_proto",
+        "//src/google/protobuf:descriptor_upb_minitable_proto",
         "//upb/base:internal",
         "//upb/hash:hash",
         "//upb/lex:lex",
@@ -380,7 +356,9 @@ upb_amalgamation(
         "//upb/message:types",
         "//upb/mini_descriptor:internal",
         "//upb/mini_table:internal",
+        "//upb/reflection:descriptor_upb_proto",
         "//upb/reflection:internal",
+        "//upb/util:def_to_proto",
     ],
     prefix = "ruby-",
     strip_import_prefix = ["src"],
@@ -393,14 +371,6 @@ cc_library(
     hdrs = ["ruby-upb.h"],
     copts = UPB_DEFAULT_COPTS,
     deps = ["//third_party/utf8_range"],
-)
-
-exports_files(
-    [
-        "third_party/lunit/console.lua",
-        "third_party/lunit/lunit.lua",
-    ],
-    visibility = ["//lua:__pkg__"],
 )
 
 filegroup(
@@ -455,50 +425,3 @@ filegroup(
     ],
     visibility = ["//pkg:__pkg__"],
 )
-# end:github_only
-
-# begin:google_only
-#
-# py_binary(
-#     name = "update_check_runs",
-#     srcs = ["update_check_runs.py"],
-#     main = "update_check_runs.py",
-#     deps = [
-#         "//third_party/py/absl:app",
-#         "//third_party/py/absl/flags",
-#     ],
-# )
-#
-# kt_native_interop_hint(
-#     name = "upb_kotlin_native_hint",
-#     compatible_with = ["//buildenv/target:non_prod"],
-#     headers_to_exclude = glob([
-#         "**/*.hpp",
-#     ]),
-#     kotlin_package = "upb",
-#     no_string_conversion = [
-#         "_upb_MiniTable_Build",
-#         "upb_Decode",
-#         "upb_StringView_FromDataAndSize",
-#     ],
-#     strict_enums = [
-#         "upb_CType",
-#         "upb_DecodeStatus",
-#         "upb_EncodeStatus",
-#         "upb_FieldType",
-#         "upb_FindUnknown_Status",
-#         "upb_GetExtension_Status",
-#         "upb_GetExtensionAsBytes_Status",
-#         "upb_Label",
-#         "upb_MapInsertStatus",
-#         "upb_UnknownToMessage_Status",
-#         "upb_WireType",
-#     ],
-#     visibility = [
-#         "//third_party/bazel_rules/rules_kotlin/kotlin/native:__subpackages__",
-#         "//third_party/kotlin/protobuf:__subpackages__",
-#         "//upb:__subpackages__",
-#     ],
-# )
-#
-# end:google_only

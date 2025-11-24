@@ -6,13 +6,16 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef GOOGLE_RPC_STATUS_PROTO_UPBDEFS_H_
-#define GOOGLE_RPC_STATUS_PROTO_UPBDEFS_H_
+
+
+#ifndef GOOGLE_RPC_STATUS_PROTO_UPB_H__UPBDEFS_H_
+#define GOOGLE_RPC_STATUS_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
 
-#include "upb/port/def.inc" // Must be last.
+#include "upb/port/def.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -24,10 +27,11 @@ UPB_INLINE const upb_MessageDef *google_rpc_Status_getmsgdef(upb_DefPool *s) {
   return upb_DefPool_FindMessageByName(s, "google.rpc.Status");
 }
 
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
 
 #include "upb/port/undef.inc"
 
-#endif  /* GOOGLE_RPC_STATUS_PROTO_UPBDEFS_H_ */
+#endif  /* GOOGLE_RPC_STATUS_PROTO_UPB_H__UPBDEFS_H_ */

@@ -19,13 +19,12 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CHTTP2_TRANSPORT_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CHTTP2_TRANSPORT_H
 
-#include <cstdint>
-#include <string>
-
-#include "absl/types/optional.h"
-
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
+
+#include <cstdint>
+#include <optional>
+#include <string>
 
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
@@ -47,19 +46,24 @@ grpc_core::Transport* grpc_create_chttp2_transport(
     const grpc_core::ChannelArgs& channel_args,
     grpc_core::OrphanablePtr<grpc_endpoint> ep, bool is_client);
 
-grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode>
-grpc_chttp2_transport_get_socket_node(grpc_core::Transport* transport);
-
 /// Takes ownership of \a read_buffer, which (if non-NULL) contains
 /// leftover bytes previously read from the endpoint (e.g., by handshakers).
+///
 /// If non-null, \a notify_on_receive_settings will be scheduled when
-/// HTTP/2 settings are received from the peer.
+/// HTTP/2 settings are received from the peer.  The argument will be
+/// the peer's MAX_CONCURRENT_STREAMS setting.
+///
 /// If non-null, the endpoint will be removed from
 /// interested_parties_until_recv_settings before
 /// notify_on_receive_settings is invoked.
+//
+// TODO(roth): Consider using the new StateWatcher API in the connector
+// code instead of supporting notify_on_receive_settings and
+// notify_on_close here.  This might be easier after pollset_set goes away.
 void grpc_chttp2_transport_start_reading(
     grpc_core::Transport* transport, grpc_slice_buffer* read_buffer,
-    grpc_closure* notify_on_receive_settings,
+    absl::AnyInvocable<void(absl::StatusOr<uint32_t>)>
+        notify_on_receive_settings,
     grpc_pollset_set* interested_parties_until_recv_settings,
     grpc_closure* notify_on_close);
 
@@ -83,13 +87,10 @@ void TestOnlyGlobalHttp2TransportDisableTransientFailureStateNotification(
 
 typedef void (*WriteTimestampsCallback)(void*, Timestamps*,
                                         grpc_error_handle error);
-typedef void* (*CopyContextFn)(Arena*);
 
 void GrpcHttp2SetWriteTimestampsCallback(WriteTimestampsCallback fn);
-void GrpcHttp2SetCopyContextFn(CopyContextFn fn);
 
 WriteTimestampsCallback GrpcHttp2GetWriteTimestampsCallback();
-CopyContextFn GrpcHttp2GetCopyContextFn();
 
 // Interprets the passed arg as a ContextList type and for each entry in the
 // passed ContextList, it executes the function set using
@@ -137,20 +138,20 @@ class HttpAnnotation : public CallTracerAnnotationInterface::Annotation {
 
   Type http_type() const { return type_; }
   gpr_timespec time() const { return time_; }
-  absl::optional<chttp2::TransportFlowControl::Stats> transport_stats() const {
+  std::optional<chttp2::TransportFlowControl::Stats> transport_stats() const {
     return transport_stats_;
   }
-  absl::optional<chttp2::StreamFlowControl::Stats> stream_stats() const {
+  std::optional<chttp2::StreamFlowControl::Stats> stream_stats() const {
     return stream_stats_;
   }
-  absl::optional<WriteStats> write_stats() const { return write_stats_; }
+  std::optional<WriteStats> write_stats() const { return write_stats_; }
 
  private:
   const Type type_;
   const gpr_timespec time_;
-  absl::optional<chttp2::TransportFlowControl::Stats> transport_stats_;
-  absl::optional<chttp2::StreamFlowControl::Stats> stream_stats_;
-  absl::optional<WriteStats> write_stats_;
+  std::optional<chttp2::TransportFlowControl::Stats> transport_stats_;
+  std::optional<chttp2::StreamFlowControl::Stats> stream_stats_;
+  std::optional<WriteStats> write_stats_;
 };
 
 }  // namespace grpc_core

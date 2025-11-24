@@ -18,13 +18,22 @@
 
 #include "test/core/test_util/fuzz_config_vars.h"
 
-#include "test/core/test_util/fuzz_config_vars_helpers.h"
-
 namespace grpc_core {
 
 ConfigVars::Overrides OverridesFromFuzzConfigVars(
     const grpc::testing::FuzzConfigVars& vars) {
   ConfigVars::Overrides overrides;
+  if (vars.has_channelz_max_orphaned_nodes()) {
+    overrides.channelz_max_orphaned_nodes = vars.channelz_max_orphaned_nodes();
+  }
+  if (vars.has_experimental_target_memory_pressure()) {
+    overrides.experimental_target_memory_pressure =
+        vars.experimental_target_memory_pressure();
+  }
+  if (vars.has_experimental_memory_pressure_threshold()) {
+    overrides.experimental_memory_pressure_threshold =
+        vars.experimental_memory_pressure_threshold();
+  }
   if (vars.has_enable_fork_support()) {
     overrides.enable_fork_support = vars.enable_fork_support();
   }
@@ -35,8 +44,7 @@ ConfigVars::Overrides OverridesFromFuzzConfigVars(
     overrides.verbosity = vars.verbosity();
   }
   if (vars.has_experiments()) {
-    overrides.experiments =
-        ValidateExperimentsStringForFuzzing(vars.experiments());
+    overrides.experiments = vars.experiments();
   }
   if (vars.has_trace()) {
     overrides.trace = vars.trace();

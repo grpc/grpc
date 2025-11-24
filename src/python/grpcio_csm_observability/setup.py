@@ -13,53 +13,26 @@
 # limitations under the License.
 
 import os
+import sys
 
 import setuptools
 
-_PACKAGE_PATH = os.path.realpath(os.path.dirname(__file__))
-_README_PATH = os.path.join(_PACKAGE_PATH, "README.rst")
-
-# Ensure we're in the proper directory whether or not we're being used by pip.
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
-import python_version
+# Manually insert the source directory into the Python path for local module
+# imports to succeed
+sys.path.insert(0, os.path.abspath("."))
 
 import grpc_version
-
-CLASSIFIERS = [
-    "Development Status :: 4 - Beta",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: Apache Software License",
-]
-
-PACKAGE_DIRECTORIES = {
-    "": ".",
-}
+import python_version
 
 INSTALL_REQUIRES = (
     "opentelemetry-sdk>=1.25.0",
     "opentelemetry-resourcedetector-gcp>=1.6.0a0",
     "grpcio=={version}".format(version=grpc_version.VERSION),
-    "protobuf>=5.26.1,<6.0dev",
+    "protobuf>=6.31.1,<7.0.0",
 )
 
-setuptools.setup(
-    name="grpcio-csm-observability",
-    version=grpc_version.VERSION,
-    description="gRPC Python CSM observability package",
-    long_description=open(_README_PATH, "r").read(),
-    author="The gRPC Authors",
-    author_email="grpc-io@googlegroups.com",
-    url="https://grpc.io",
-    project_urls={
-        "Source Code": "https://github.com/grpc/grpc/tree/master/src/python/grpcio_csm_observability",
-        "Bug Tracker": "https://github.com/grpc/grpc/issues",
-    },
-    license="Apache License 2.0",
-    classifiers=CLASSIFIERS,
-    package_dir=PACKAGE_DIRECTORIES,
-    packages=setuptools.find_packages("."),
-    python_requires=f">={python_version.MIN_PYTHON_VERSION}",
-    install_requires=INSTALL_REQUIRES,
-)
+if __name__ == "__main__":
+    setuptools.setup(
+        python_requires=f">={python_version.MIN_PYTHON_VERSION}",
+        install_requires=INSTALL_REQUIRES,
+    )

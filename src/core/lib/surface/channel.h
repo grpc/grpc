@@ -17,35 +17,36 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_H
 #define GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_H
 
-#include <map>
-#include <string>
-
-#include "absl/base/thread_annotations.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/compression_types.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
+#include <map>
+#include <optional>
+#include <string>
+
+#include "src/core/call/call_arena_allocator.h"
+#include "src/core/call/call_destination.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/call_arena_allocator.h"
-#include "src/core/lib/transport/call_destination.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/util/cpp_impl_of.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 // Forward declaration to avoid dependency loop.
 struct grpc_channel_stack;
@@ -60,7 +61,7 @@ class Channel : public UnstartedCallDestination,
  public:
   struct RegisteredCall {
     Slice path;
-    absl::optional<Slice> authority;
+    std::optional<Slice> authority;
 
     explicit RegisteredCall(const char* method_arg, const char* host_arg);
     RegisteredCall(const RegisteredCall& other);
@@ -76,7 +77,7 @@ class Channel : public UnstartedCallDestination,
                                 uint32_t propagation_mask,
                                 grpc_completion_queue* cq,
                                 grpc_pollset_set* pollset_set_alternative,
-                                Slice path, absl::optional<Slice> authority,
+                                Slice path, std::optional<Slice> authority,
                                 Timestamp deadline, bool registered_method) = 0;
 
   virtual grpc_event_engine::experimental::EventEngine* event_engine()
@@ -131,6 +132,13 @@ class Channel : public UnstartedCallDestination,
     return call_arena_allocator_.get();
   }
 
+  grpc_event_engine::experimental::MemoryAllocator* memory_allocator() const {
+    if (IsTrackWritesInResourceQuotaEnabled()) {
+      return memory_allocator_;
+    }
+    return nullptr;
+  }
+
  protected:
   Channel(std::string target, const ChannelArgs& channel_args);
 
@@ -146,6 +154,7 @@ class Channel : public UnstartedCallDestination,
   std::map<std::pair<std::string, std::string>, RegisteredCall>
       registration_table_ ABSL_GUARDED_BY(mu_);
   const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
+  grpc_event_engine::experimental::MemoryAllocator* memory_allocator_ = nullptr;
 };
 
 }  // namespace grpc_core

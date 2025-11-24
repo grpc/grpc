@@ -19,12 +19,10 @@
 #ifndef GRPCPP_SECURITY_CREDENTIALS_H
 #define GRPCPP_SECURITY_CREDENTIALS_H
 
-#include <map>
-#include <memory>
-#include <vector>
-
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpcpp/channel.h>
+#include <grpcpp/create_channel_posix.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/security/auth_context.h>
 #include <grpcpp/security/tls_credentials_options.h>
@@ -32,6 +30,10 @@
 #include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
+
+#include <map>
+#include <memory>
+#include <vector>
 
 struct grpc_call;
 
@@ -77,6 +79,17 @@ class ChannelCredentials : private grpc::internal::GrpcLibrary {
   grpc_channel_credentials* c_creds() { return c_creds_; }
 
  private:
+  friend std::shared_ptr<grpc::Channel>
+  grpc::experimental::CreateChannelFromEndpoint(
+      std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+          endpoint,
+      const std::shared_ptr<ChannelCredentials>& creds,
+      const ChannelArguments& args);
+#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
+  friend std::shared_ptr<grpc::Channel> grpc::experimental::CreateChannelFromFd(
+      int fd, const std::shared_ptr<ChannelCredentials>& creds,
+      const ChannelArguments& args);
+#endif  // GPR_SUPPORT_CHANNELS_FROM_FD
   friend std::shared_ptr<grpc::Channel> CreateCustomChannel(
       const grpc::string& target,
       const std::shared_ptr<grpc::ChannelCredentials>& creds,
@@ -153,18 +166,27 @@ struct SslCredentialsOptions {
   grpc::string pem_cert_chain;
 };
 
+/// Options used to build GoogleDefaultCredentials.
+struct GoogleDefaultCredentialsOptions {
+  /// Indicates if the created credentials should also contain ALTS specific
+  /// credentials. By default, the created credentials will be used for TLS.
+  bool use_alts_call_credentials = false;
+};
+
 // Factories for building different types of Credentials The functions may
 // return empty shared_ptr when credentials cannot be created. If a
 // Credentials pointer is returned, it can still be invalid when used to create
 // a channel. A lame channel will be created then and all rpcs will fail on it.
 
-/// Builds credentials with reasonable defaults.
+/// Builds google default credentials with the given options.
 ///
 /// \warning Only use these credentials when connecting to a Google endpoint.
 /// Using these credentials to connect to any other service may result in this
 /// service being able to impersonate your client for requests to Google
 /// services.
-std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials();
+std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials(
+    const GoogleDefaultCredentialsOptions& options =
+        GoogleDefaultCredentialsOptions());
 
 /// Builds SSL Credentials given SSL specific options
 std::shared_ptr<ChannelCredentials> SslCredentials(

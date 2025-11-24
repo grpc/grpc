@@ -21,16 +21,14 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stddef.h>
-
+#include <cstddef>
 #include <iosfwd>
 #include <type_traits>
 #include <utility>
 
-#include "absl/hash/hash.h"
-
 #include "src/core/util/debug_location.h"
 #include "src/core/util/down_cast.h"
+#include "absl/hash/hash.h"
 
 namespace grpc_core {
 
@@ -406,6 +404,7 @@ struct RefCountedPtrHash {
     return absl::Hash<WeakRefCountedPtr<T>>{}(p);
   }
   size_t operator()(T* p) const { return absl::Hash<T*>{}(p); }
+  size_t operator()(const T* p) const { return absl::Hash<const T*>{}(p); }
 };
 template <typename T>
 struct RefCountedPtrEq {
@@ -439,6 +438,36 @@ struct RefCountedPtrEq {
     return p2 == p1;
   }
 };
+
+// Heterogenous lookup support.
+template <typename T>
+struct WeakRefCountedPtrHash {
+  using is_transparent = void;
+  size_t operator()(const WeakRefCountedPtr<T>& p) const {
+    return absl::Hash<WeakRefCountedPtr<T>>{}(p);
+  }
+  size_t operator()(T* p) const { return absl::Hash<T*>{}(p); }
+  size_t operator()(const T* p) const { return absl::Hash<const T*>{}(p); }
+};
+template <typename T>
+struct WeakRefCountedPtrEq {
+  using is_transparent = void;
+  bool operator()(const WeakRefCountedPtr<T>& p1,
+                  const WeakRefCountedPtr<T>& p2) const {
+    return p1 == p2;
+  }
+  bool operator()(const WeakRefCountedPtr<T>& p1, const T* p2) const {
+    return p1 == p2;
+  }
+  bool operator()(const T* p1, const WeakRefCountedPtr<T>& p2) const {
+    return p2 == p1;
+  }
+};
+
+template <typename To, typename From>
+RefCountedPtr<To> DownCastRefCountedPtr(RefCountedPtr<From> ptr) {
+  return RefCountedPtr<To>(DownCast<To*>(ptr.release()));
+}
 
 }  // namespace grpc_core
 

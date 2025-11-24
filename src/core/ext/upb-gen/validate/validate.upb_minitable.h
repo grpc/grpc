@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef VALIDATE_VALIDATE_PROTO_UPB_MINITABLE_H_
-#define VALIDATE_VALIDATE_PROTO_UPB_MINITABLE_H_
+#ifndef VALIDATE_VALIDATE_PROTO_UPB_H__UPB_MINITABLE_H_
+#define VALIDATE_VALIDATE_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -69,7 +69,7 @@ extern const upb_MiniTableExtension validate_ignored_ext;
 extern const upb_MiniTableExtension validate_required_ext;
 extern const upb_MiniTableExtension validate_rules_ext;
 
-extern const upb_MiniTableEnum validate_KnownRegex_enum_init;
+extern const upb_MiniTableEnum validate__KnownRegex_enum_init;
 extern const upb_MiniTableFile validate_validate_proto_upb_file_layout;
 
 #ifdef __cplusplus
@@ -78,4 +78,4 @@ extern const upb_MiniTableFile validate_validate_proto_upb_file_layout;
 
 #include "upb/port/undef.inc"
 
-#endif  /* VALIDATE_VALIDATE_PROTO_UPB_MINITABLE_H_ */
+#endif  /* VALIDATE_VALIDATE_PROTO_UPB_H__UPB_MINITABLE_H_ */

@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_TYPE_MATCHER_V3_VALUE_PROTO_UPB_H_
-#define ENVOY_TYPE_MATCHER_V3_VALUE_PROTO_UPB_H_
+#ifndef ENVOY_TYPE_MATCHER_V3_VALUE_PROTO_UPB_H__UPB_H_
+#define ENVOY_TYPE_MATCHER_V3_VALUE_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -85,6 +85,10 @@ UPB_INLINE envoy_type_matcher_v3_ValueMatcher_match_pattern_oneofcases envoy_typ
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (envoy_type_matcher_v3_ValueMatcher_match_pattern_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void envoy_type_matcher_v3_ValueMatcher_clear_match_pattern(envoy_type_matcher_v3_ValueMatcher* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__type__matcher__v3__ValueMatcher_msg_init, &field);
 }
 UPB_INLINE void envoy_type_matcher_v3_ValueMatcher_clear_null_match(envoy_type_matcher_v3_ValueMatcher* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -361,6 +365,10 @@ UPB_INLINE envoy_type_matcher_v3_ListMatcher_match_pattern_oneofcases envoy_type
   return (envoy_type_matcher_v3_ListMatcher_match_pattern_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_type_matcher_v3_ListMatcher_clear_match_pattern(envoy_type_matcher_v3_ListMatcher* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__type__matcher__v3__ListMatcher_msg_init, &field);
+}
 UPB_INLINE void envoy_type_matcher_v3_ListMatcher_clear_one_of(envoy_type_matcher_v3_ListMatcher* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
@@ -504,4 +512,4 @@ UPB_INLINE struct envoy_type_matcher_v3_ValueMatcher* envoy_type_matcher_v3_OrMa
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_TYPE_MATCHER_V3_VALUE_PROTO_UPB_H_ */
+#endif  /* ENVOY_TYPE_MATCHER_V3_VALUE_PROTO_UPB_H__UPB_H_ */

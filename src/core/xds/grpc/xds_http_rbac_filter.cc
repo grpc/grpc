@@ -16,17 +16,15 @@
 
 #include "src/core/xds/grpc/xds_http_rbac_filter.h"
 
+#include <grpc/support/json.h>
 #include <stddef.h>
 #include <stdint.h>
 
 #include <algorithm>
 #include <string>
 #include <utility>
+#include <variant>
 
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/rbac/v3/rbac.upb.h"
 #include "envoy/config/route/v3/route_components.upb.h"
@@ -38,14 +36,10 @@
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "envoy/type/v3/range.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "upb/message/map.h"
-
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/rbac/rbac_filter.h"
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/env.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
@@ -55,6 +49,12 @@
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/xds_client/xds_client.h"
+#include "upb/base/string_view.h"
+#include "upb/message/array.h"
+#include "upb/message/map.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -81,6 +81,39 @@ Json ParseInt64RangeToJson(const envoy_type_v3_Int64Range* range) {
   return Json::FromObject(
       {{"start", Json::FromNumber(envoy_type_v3_Int64Range_start(range))},
        {"end", Json::FromNumber(envoy_type_v3_Int64Range_end(range))}});
+}
+
+Json ParseStringMatcherToJson(
+    const envoy_type_matcher_v3_StringMatcher* matcher,
+    ValidationErrors* errors) {
+  Json::Object json;
+  if (envoy_type_matcher_v3_StringMatcher_has_exact(matcher)) {
+    json.emplace("exact",
+                 Json::FromString(UpbStringToStdString(
+                     envoy_type_matcher_v3_StringMatcher_exact(matcher))));
+  } else if (envoy_type_matcher_v3_StringMatcher_has_prefix(matcher)) {
+    json.emplace("prefix",
+                 Json::FromString(UpbStringToStdString(
+                     envoy_type_matcher_v3_StringMatcher_prefix(matcher))));
+  } else if (envoy_type_matcher_v3_StringMatcher_has_suffix(matcher)) {
+    json.emplace("suffix",
+                 Json::FromString(UpbStringToStdString(
+                     envoy_type_matcher_v3_StringMatcher_suffix(matcher))));
+  } else if (envoy_type_matcher_v3_StringMatcher_has_safe_regex(matcher)) {
+    json.emplace("safeRegex",
+                 ParseRegexMatcherToJson(
+                     envoy_type_matcher_v3_StringMatcher_safe_regex(matcher)));
+  } else if (envoy_type_matcher_v3_StringMatcher_has_contains(matcher)) {
+    json.emplace("contains",
+                 Json::FromString(UpbStringToStdString(
+                     envoy_type_matcher_v3_StringMatcher_contains(matcher))));
+  } else {
+    errors->AddError("invalid match pattern");
+  }
+  json.emplace(
+      "ignoreCase",
+      Json::FromBool(envoy_type_matcher_v3_StringMatcher_ignore_case(matcher)));
+  return Json::FromObject(std::move(json));
 }
 
 Json ParseHeaderMatcherToJson(const envoy_config_route_v3_HeaderMatcher* header,
@@ -132,6 +165,11 @@ Json ParseHeaderMatcherToJson(const envoy_config_route_v3_HeaderMatcher* header,
         "containsMatch",
         Json::FromString(UpbStringToStdString(
             envoy_config_route_v3_HeaderMatcher_contains_match(header))));
+  } else if (envoy_config_route_v3_HeaderMatcher_has_string_match(header)) {
+    header_json.emplace(
+        "stringMatch",
+        ParseStringMatcherToJson(
+            envoy_config_route_v3_HeaderMatcher_string_match(header), errors));
   } else {
     errors->AddError("invalid route header matcher specified");
   }
@@ -139,39 +177,6 @@ Json ParseHeaderMatcherToJson(const envoy_config_route_v3_HeaderMatcher* header,
       "invertMatch",
       Json::FromBool(envoy_config_route_v3_HeaderMatcher_invert_match(header)));
   return Json::FromObject(std::move(header_json));
-}
-
-Json ParseStringMatcherToJson(
-    const envoy_type_matcher_v3_StringMatcher* matcher,
-    ValidationErrors* errors) {
-  Json::Object json;
-  if (envoy_type_matcher_v3_StringMatcher_has_exact(matcher)) {
-    json.emplace("exact",
-                 Json::FromString(UpbStringToStdString(
-                     envoy_type_matcher_v3_StringMatcher_exact(matcher))));
-  } else if (envoy_type_matcher_v3_StringMatcher_has_prefix(matcher)) {
-    json.emplace("prefix",
-                 Json::FromString(UpbStringToStdString(
-                     envoy_type_matcher_v3_StringMatcher_prefix(matcher))));
-  } else if (envoy_type_matcher_v3_StringMatcher_has_suffix(matcher)) {
-    json.emplace("suffix",
-                 Json::FromString(UpbStringToStdString(
-                     envoy_type_matcher_v3_StringMatcher_suffix(matcher))));
-  } else if (envoy_type_matcher_v3_StringMatcher_has_safe_regex(matcher)) {
-    json.emplace("safeRegex",
-                 ParseRegexMatcherToJson(
-                     envoy_type_matcher_v3_StringMatcher_safe_regex(matcher)));
-  } else if (envoy_type_matcher_v3_StringMatcher_has_contains(matcher)) {
-    json.emplace("contains",
-                 Json::FromString(UpbStringToStdString(
-                     envoy_type_matcher_v3_StringMatcher_contains(matcher))));
-  } else {
-    errors->AddError("invalid match pattern");
-  }
-  json.emplace(
-      "ignoreCase",
-      Json::FromBool(envoy_type_matcher_v3_StringMatcher_ignore_case(matcher)));
-  return Json::FromObject(std::move(json));
 }
 
 Json ParsePathMatcherToJson(const envoy_type_matcher_v3_PathMatcher* matcher,
@@ -415,7 +420,7 @@ Json ParseAuditLoggerConfigsToJson(
   Json::Array logger_configs_json;
   size_t size;
   const auto& registry =
-      static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap())
+      DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
           .audit_logger_registry();
   const envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig* const*
       logger_configs =
@@ -447,19 +452,17 @@ Json ParseHttpRbacToJson(const XdsResourceType::DecodeContext& context,
         "action", Json::FromNumber(envoy_config_rbac_v3_RBAC_action(rules)));
     if (envoy_config_rbac_v3_RBAC_policies_size(rules) != 0) {
       Json::Object policies_object;
+      envoy_config_rbac_v3_RBAC* rules_upb = (envoy_config_rbac_v3_RBAC*)rules;
       size_t iter = kUpb_Map_Begin;
-      while (true) {
-        auto* entry = envoy_config_rbac_v3_RBAC_policies_next(rules, &iter);
-        if (entry == nullptr) {
-          break;
-        }
-        absl::string_view key =
-            UpbStringToAbsl(envoy_config_rbac_v3_RBAC_PoliciesEntry_key(entry));
+      upb_StringView key_view;
+      const envoy_config_rbac_v3_Policy* val;
+      while (envoy_config_rbac_v3_RBAC_policies_next(rules_upb, &key_view, &val,
+                                                     &iter)) {
+        absl::string_view key = UpbStringToAbsl(key_view);
         ValidationErrors::ScopedField field(
             errors, absl::StrCat(".policies[", key, "]"));
-        Json policy = ParsePolicyToJson(
-            envoy_config_rbac_v3_RBAC_PoliciesEntry_value(entry), errors);
-        policies_object.emplace(std::string(key), std::move(policy));
+        Json policy = ParsePolicyToJson(val, errors);
+        policies_object.emplace(key, std::move(policy));
       }
       inner_rbac_json.emplace("policies",
                               Json::FromObject(std::move(policies_object)));
@@ -513,38 +516,38 @@ void XdsHttpRbacFilter::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_rbac_v3_RBAC_getmsgdef(symtab);
 }
 
-absl::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpRbacFilter::GenerateFilterConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
-      absl::get_if<absl::string_view>(&extension.value);
+      std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse HTTP RBAC filter config");
-    return absl::nullopt;
+    return std::nullopt;
   }
   auto* rbac = envoy_extensions_filters_http_rbac_v3_RBAC_parse(
       serialized_filter_config->data(), serialized_filter_config->size(),
       context.arena);
   if (rbac == nullptr) {
     errors->AddError("could not parse HTTP RBAC filter config");
-    return absl::nullopt;
+    return std::nullopt;
   }
   return FilterConfig{ConfigProtoName(),
                       ParseHttpRbacToJson(context, rbac, errors)};
 }
 
-absl::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpRbacFilter::GenerateFilterConfigOverride(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
-      absl::get_if<absl::string_view>(&extension.value);
+      std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse RBACPerRoute");
-    return absl::nullopt;
+    return std::nullopt;
   }
   auto* rbac_per_route =
       envoy_extensions_filters_http_rbac_v3_RBACPerRoute_parse(
@@ -552,7 +555,7 @@ XdsHttpRbacFilter::GenerateFilterConfigOverride(
           context.arena);
   if (rbac_per_route == nullptr) {
     errors->AddError("could not parse RBACPerRoute");
-    return absl::nullopt;
+    return std::nullopt;
   }
   Json rbac_json;
   const auto* rbac =
@@ -567,7 +570,7 @@ XdsHttpRbacFilter::GenerateFilterConfigOverride(
 }
 
 void XdsHttpRbacFilter::AddFilter(InterceptionChainBuilder& builder) const {
-  builder.Add<RbacFilter>();
+  builder.Add<RbacFilter>(nullptr);
 }
 
 const grpc_channel_filter* XdsHttpRbacFilter::channel_filter() const {

@@ -4,6 +4,8 @@ load(
     "UPB_DEFAULT_CPPOPTS",
 )
 
+package(default_applicable_licenses = ["//:license"])
+
 cc_library(
     name = "mini_descriptor",
     srcs = [
@@ -20,8 +22,8 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":internal",
-        "//upb:base",
-        "//upb:mem",
+        "//upb/base",
+        "//upb/mem",
         "//upb:mini_table",
         "//upb:port",
         "//upb/base:internal",
@@ -47,7 +49,7 @@ cc_library(
     copts = UPB_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
-        "//upb:base",
+        "//upb/base",
         "//upb:port",
         "//upb/base:internal",
     ],
@@ -60,21 +62,20 @@ cc_test(
     deps = [
         ":internal",
         ":mini_descriptor",
-        "//:protobuf",
-        "//upb:base",
-        "//upb:mem",
+        "//src/google/protobuf",
+        "//upb/base",
+        "//upb/mem",
         "//upb:message",
         "//upb:mini_table",
         "//upb:port",
         "//upb:wire",
         "//upb/message:internal",
-        "@com_google_absl//absl/container:flat_hash_set",
-        "@com_google_googletest//:gtest",
-        "@com_google_googletest//:gtest_main",
+        "@abseil-cpp//absl/container:flat_hash_set",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 
-# begin:github_only
 filegroup(
     name = "source_files",
     srcs = glob(
@@ -88,9 +89,7 @@ filegroup(
         "//upb/cmake:__pkg__",
     ],
 )
-# end:github_only
 
-# begin:github_only
 filegroup(
     name = "test_srcs",
     srcs = glob(
@@ -100,4 +99,3 @@ filegroup(
     ),
     visibility = ["//pkg:__pkg__"],
 )
-# end:github_only

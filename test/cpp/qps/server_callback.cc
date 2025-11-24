@@ -16,8 +16,6 @@
 //
 //
 
-#include "absl/log/log.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpcpp/security/server_credentials.h>
@@ -29,6 +27,7 @@
 #include "test/cpp/qps/qps_server_builder.h"
 #include "test/cpp/qps/server.h"
 #include "test/cpp/qps/usage_timer.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace testing {

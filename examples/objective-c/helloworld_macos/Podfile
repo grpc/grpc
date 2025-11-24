@@ -1,5 +1,5 @@
 source 'https://github.com/CocoaPods/Specs.git'
-platform :macos, '10.12'
+platform :macos, '10.14'
 
 install! 'cocoapods', :deterministic_uuids => false
 

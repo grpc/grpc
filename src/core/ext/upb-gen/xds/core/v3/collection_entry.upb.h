@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_CORE_V3_COLLECTION_ENTRY_PROTO_UPB_H_
-#define XDS_CORE_V3_COLLECTION_ENTRY_PROTO_UPB_H_
+#ifndef XDS_CORE_V3_COLLECTION_ENTRY_PROTO_UPB_H__UPB_H_
+#define XDS_CORE_V3_COLLECTION_ENTRY_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -77,6 +77,10 @@ UPB_INLINE xds_core_v3_CollectionEntry_resource_specifier_oneofcases xds_core_v3
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (xds_core_v3_CollectionEntry_resource_specifier_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void xds_core_v3_CollectionEntry_clear_resource_specifier(xds_core_v3_CollectionEntry* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &xds__core__v3__CollectionEntry_msg_init, &field);
 }
 UPB_INLINE void xds_core_v3_CollectionEntry_clear_locator(xds_core_v3_CollectionEntry* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -246,4 +250,4 @@ UPB_INLINE struct google_protobuf_Any* xds_core_v3_CollectionEntry_InlineEntry_m
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_CORE_V3_COLLECTION_ENTRY_PROTO_UPB_H_ */
+#endif  /* XDS_CORE_V3_COLLECTION_ENTRY_PROTO_UPB_H__UPB_H_ */

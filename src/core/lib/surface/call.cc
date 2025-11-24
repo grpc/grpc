@@ -18,6 +18,19 @@
 
 #include "src/core/lib/surface/call.h"
 
+#include <grpc/byte_buffer.h>
+#include <grpc/compression.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/call.h>
+#include <grpc/impl/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -34,33 +47,12 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
-
-#include <grpc/byte_buffer.h>
-#include <grpc/compression.h>
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/call.h>
-#include <grpc/impl/propagation_bits.h>
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/atm.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-
+#include "src/core/call/call_finalization.h"
+#include "src/core/call/metadata.h"
+#include "src/core/call/metadata_batch.h"
+#include "src/core/call/status_util.h"
 #include "src/core/channelz/channelz.h"
-#include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -88,8 +80,6 @@
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/metadata.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server_interface.h"
 #include "src/core/telemetry/call_tracer.h"
@@ -100,6 +90,7 @@
 #include "src/core/util/cpp_impl_of.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -107,6 +98,13 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/time_precise.h"
 #include "src/core/util/useful.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -121,9 +119,10 @@ Call::Call(bool is_client, Timestamp send_deadline, RefCountedPtr<Arena> arena)
     : arena_(std::move(arena)),
       send_deadline_(send_deadline),
       is_client_(is_client) {
-  DCHECK_NE(arena_.get(), nullptr);
-  DCHECK_NE(arena_->GetContext<grpc_event_engine::experimental::EventEngine>(),
-            nullptr);
+  GRPC_DCHECK_NE(arena_.get(), nullptr);
+  GRPC_DCHECK_NE(
+      arena_->GetContext<grpc_event_engine::experimental::EventEngine>(),
+      nullptr);
   arena_->SetContext<Call>(this);
 }
 
@@ -150,8 +149,8 @@ absl::Status Call::InitParent(Call* parent, uint32_t propagation_mask) {
   child_ = arena()->New<ChildCall>(parent);
 
   parent->InternalRef("child");
-  CHECK(is_client_);
-  CHECK(!parent->is_client_);
+  GRPC_CHECK(is_client_);
+  GRPC_CHECK(!parent->is_client_);
 
   if (propagation_mask & GRPC_PROPAGATE_DEADLINE) {
     send_deadline_ = std::min(send_deadline_, parent->send_deadline_);
@@ -193,7 +192,7 @@ void Call::PublishToParent(Call* parent) {
         cc->sibling_prev->child_->sibling_next = this;
   }
   if (parent->Completed()) {
-    CancelWithError(absl::CancelledError());
+    CancelWithError(absl::CancelledError("CANCELLED"));
   }
 }
 
@@ -217,16 +216,20 @@ void Call::MaybeUnpublishFromParent() {
 }
 
 void Call::CancelWithStatus(grpc_status_code status, const char* description) {
-  // copying 'description' is needed to ensure the grpc_call_cancel_with_status
-  // guarantee that can be short-lived.
-  // TODO(ctiller): change to
-  // absl::Status(static_cast<absl::StatusCode>(status), description)
-  // (ie remove the set_int, set_str).
-  CancelWithError(grpc_error_set_int(
-      grpc_error_set_str(
-          absl::Status(static_cast<absl::StatusCode>(status), description),
-          StatusStrProperty::kGrpcMessage, description),
-      StatusIntProperty::kRpcStatus, status));
+  if (!IsErrorFlattenEnabled()) {
+    CancelWithError(grpc_error_set_int(
+        grpc_error_set_str(
+            absl::Status(static_cast<absl::StatusCode>(status), description),
+            StatusStrProperty::kGrpcMessage, description),
+        StatusIntProperty::kRpcStatus, status));
+    return;
+  }
+  if (status == GRPC_STATUS_OK) {
+    VLOG(2) << "CancelWithStatus() called with OK status, using UNKNOWN";
+    status = GRPC_STATUS_UNKNOWN;
+  }
+  CancelWithError(
+      absl::Status(static_cast<absl::StatusCode>(status), description));
 }
 
 void Call::PropagateCancellationToChildren() {
@@ -240,7 +243,7 @@ void Call::PropagateCancellationToChildren() {
         Call* next_child_call = child->child_->sibling_next;
         if (child->cancellation_is_inherited_) {
           child->InternalRef("propagate_cancel");
-          child->CancelWithError(absl::CancelledError());
+          child->CancelWithError(absl::CancelledError("CANCELLED"));
           child->InternalUnref("propagate_cancel");
         }
         child = next_child_call;
@@ -305,7 +308,7 @@ void Call::ProcessIncomingInitialMetadata(grpc_metadata_batch& md) {
     HandleCompressionAlgorithmDisabled(compression_algorithm);
   }
   // GRPC_COMPRESS_NONE is always set.
-  DCHECK(encodings_accepted_by_peer_.IsSet(GRPC_COMPRESS_NONE));
+  GRPC_DCHECK(encodings_accepted_by_peer_.IsSet(GRPC_COMPRESS_NONE));
   if (GPR_UNLIKELY(!encodings_accepted_by_peer_.IsSet(compression_algorithm))) {
     if (GRPC_TRACE_FLAG_ENABLED(compression)) {
       HandleCompressionAlgorithmNotAccepted(compression_algorithm);
@@ -334,28 +337,30 @@ void Call::HandleCompressionAlgorithmDisabled(
                                      GRPC_STATUS_UNIMPLEMENTED));
 }
 
-void Call::UpdateDeadline(Timestamp deadline) {
+grpc_error_handle Call::UpdateDeadline(Timestamp deadline) {
   ReleasableMutexLock lock(&deadline_mu_);
   GRPC_TRACE_LOG(call, INFO)
       << "[call " << this << "] UpdateDeadline from=" << deadline_.ToString()
       << " to=" << deadline.ToString();
-  if (deadline >= deadline_) return;
+  if (deadline >= deadline_) return absl::OkStatus();
   if (deadline < Timestamp::Now()) {
     lock.Release();
-    CancelWithError(grpc_error_set_int(
+    grpc_error_handle error = grpc_error_set_int(
         absl::DeadlineExceededError("Deadline Exceeded"),
-        StatusIntProperty::kRpcStatus, GRPC_STATUS_DEADLINE_EXCEEDED));
-    return;
+        StatusIntProperty::kRpcStatus, GRPC_STATUS_DEADLINE_EXCEEDED);
+    CancelWithError(error);
+    return error;
   }
   auto* event_engine =
       arena_->GetContext<grpc_event_engine::experimental::EventEngine>();
   if (deadline_ != Timestamp::InfFuture()) {
-    if (!event_engine->Cancel(deadline_task_)) return;
+    if (!event_engine->Cancel(deadline_task_)) return absl::OkStatus();
   } else {
     InternalRef("deadline");
   }
   deadline_ = deadline;
   deadline_task_ = event_engine->RunAfter(deadline - Timestamp::Now(), this);
+  return absl::OkStatus();
 }
 
 void Call::ResetDeadline() {
@@ -372,7 +377,6 @@ void Call::ResetDeadline() {
 }
 
 void Call::Run() {
-  ApplicationCallbackExecCtx callback_exec_ctx;
   ExecCtx exec_ctx;
   GRPC_TRACE_LOG(call, INFO)
       << "call deadline expired "
@@ -412,13 +416,13 @@ char* grpc_call_get_peer(grpc_call* call) {
 grpc_call_error grpc_call_cancel(grpc_call* call, void* reserved) {
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_call_cancel(call=" << call << ", reserved=" << reserved << ")";
-  CHECK_EQ(reserved, nullptr);
+  GRPC_CHECK_EQ(reserved, nullptr);
   if (call == nullptr) {
     return GRPC_CALL_ERROR;
   }
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  grpc_core::Call::FromC(call)->CancelWithError(absl::CancelledError());
+  grpc_core::Call::FromC(call)->CancelWithError(
+      absl::CancelledError("CANCELLED"));
   return GRPC_CALL_OK;
 }
 
@@ -429,18 +433,18 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call* c,
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_call_cancel_with_status(c=" << c << ", status=" << (int)status
       << ", description=" << description << ", reserved=" << reserved << ")";
-  CHECK_EQ(reserved, nullptr);
+  GRPC_CHECK_EQ(reserved, nullptr);
   if (c == nullptr) {
     return GRPC_CALL_ERROR;
   }
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Call::FromC(c)->CancelWithStatus(status, description);
   return GRPC_CALL_OK;
 }
 
 void grpc_call_cancel_internal(grpc_call* call) {
-  grpc_core::Call::FromC(call)->CancelWithError(absl::CancelledError());
+  grpc_core::Call::FromC(call)->CancelWithError(
+      absl::CancelledError("CANCELLED"));
 }
 
 grpc_compression_algorithm grpc_call_test_only_get_compression_algorithm(
@@ -476,7 +480,6 @@ grpc_call_error grpc_call_start_batch(grpc_call* call, const grpc_op* ops,
   if (reserved != nullptr || call == nullptr) {
     return GRPC_CALL_ERROR;
   } else {
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     return grpc_core::Call::FromC(call)->StartBatch(ops, nops, tag, false);
   }
@@ -490,22 +493,23 @@ grpc_call_error grpc_call_start_batch_and_execute(grpc_call* call,
 }
 
 void grpc_call_tracer_set(grpc_call* call,
-                          grpc_core::ClientCallTracer* tracer) {
-  grpc_core::Arena* arena = grpc_call_get_arena(call);
-  return arena->SetContext<grpc_core::CallTracerAnnotationInterface>(tracer);
+                          grpc_core::ClientCallTracerInterface* tracer) {
+  auto* arena = grpc_call_get_arena(call);
+  arena->SetContext<grpc_core::CallSpan>(
+      grpc_core::WrapClientCallTracer(tracer, arena));
 }
 
-void grpc_call_tracer_set_and_manage(grpc_call* call,
-                                     grpc_core::ClientCallTracer* tracer) {
+void grpc_call_tracer_set_and_manage(
+    grpc_call* call, grpc_core::ClientCallTracerInterface* tracer) {
   grpc_core::Arena* arena = grpc_call_get_arena(call);
   arena->ManagedNew<ClientCallTracerWrapper>(tracer);
-  return arena->SetContext<grpc_core::CallTracerAnnotationInterface>(tracer);
+  arena->SetContext<grpc_core::CallSpan>(
+      grpc_core::WrapClientCallTracer(tracer, arena));
 }
 
 void* grpc_call_tracer_get(grpc_call* call) {
   grpc_core::Arena* arena = grpc_call_get_arena(call);
-  auto* call_tracer =
-      arena->GetContext<grpc_core::CallTracerAnnotationInterface>();
+  auto* call_tracer = arena->GetContext<grpc_core::CallSpan>();
   return call_tracer;
 }
 

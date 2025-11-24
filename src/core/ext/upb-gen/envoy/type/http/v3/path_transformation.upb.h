@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_TYPE_HTTP_V3_PATH_TRANSFORMATION_PROTO_UPB_H_
-#define ENVOY_TYPE_HTTP_V3_PATH_TRANSFORMATION_PROTO_UPB_H_
+#ifndef ENVOY_TYPE_HTTP_V3_PATH_TRANSFORMATION_PROTO_UPB_H__UPB_H_
+#define ENVOY_TYPE_HTTP_V3_PATH_TRANSFORMATION_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -181,6 +181,10 @@ UPB_INLINE envoy_type_http_v3_PathTransformation_Operation_operation_specifier_o
   return (envoy_type_http_v3_PathTransformation_Operation_operation_specifier_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_type_http_v3_PathTransformation_Operation_clear_operation_specifier(envoy_type_http_v3_PathTransformation_Operation* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__type__http__v3__PathTransformation__Operation_msg_init, &field);
+}
 UPB_INLINE void envoy_type_http_v3_PathTransformation_Operation_clear_normalize_path_rfc_3986(envoy_type_http_v3_PathTransformation_Operation* msg) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
@@ -325,4 +329,4 @@ UPB_INLINE char* envoy_type_http_v3_PathTransformation_Operation_MergeSlashes_se
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_TYPE_HTTP_V3_PATH_TRANSFORMATION_PROTO_UPB_H_ */
+#endif  /* ENVOY_TYPE_HTTP_V3_PATH_TRANSFORMATION_PROTO_UPB_H__UPB_H_ */

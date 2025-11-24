@@ -19,21 +19,22 @@
 #ifndef GRPCPP_EXT_OTEL_PLUGIN_H
 #define GRPCPP_EXT_OTEL_PLUGIN_H
 
+#include <grpc/support/metrics.h>
+#include <grpc/support/port_platform.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/support/channel_arguments.h>
 #include <stddef.h>
 #include <stdint.h>
 
 #include <memory>
 
+#include "opentelemetry/context/propagation/text_map_propagator.h"
+#include "opentelemetry/metrics/meter_provider.h"
+#include "opentelemetry/trace/tracer_provider.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "opentelemetry/metrics/meter_provider.h"
-
-#include <grpc/support/metrics.h>
-#include <grpc/support/port_platform.h>
-#include <grpcpp/server_builder.h>
-#include <grpcpp/support/channel_arguments.h>
 
 namespace grpc {
 namespace internal {
@@ -99,6 +100,15 @@ class OpenTelemetryPluginBuilder {
       kServerCallRcvdTotalCompressedMessageSizeInstrumentName =
           "grpc.server.call.rcvd_total_compressed_message_size";
 
+  /// Experimental Retry Metrics
+  static constexpr absl::string_view kClientCallRetriesInstrumentName =
+      "grpc.client.call.retries";
+  static constexpr absl::string_view
+      kClientCallTransparentRetriesInstrumentName =
+          "grpc.client.call.transparent_retries";
+  static constexpr absl::string_view kClientCallRetryDelayInstrumentName =
+      "grpc.client.call.retry_delay";
+
   OpenTelemetryPluginBuilder();
   ~OpenTelemetryPluginBuilder();
   /// If `SetMeterProvider()` is not called, no metrics are collected.
@@ -150,6 +160,21 @@ class OpenTelemetryPluginBuilder {
   /// Records \a optional_label_key on all metrics that provide it.
   OpenTelemetryPluginBuilder& AddOptionalLabel(
       absl::string_view optional_label_key);
+  /// EXPERIMENTAL API
+  /// If `SetTracerProvider()` is not called, no traces are collected.
+  OpenTelemetryPluginBuilder& SetTracerProvider(
+      std::shared_ptr<opentelemetry::trace::TracerProvider> tracer_provider);
+  /// EXPERIMENTAL API
+  /// Set one or multiple text map propagators for span context propagation,
+  /// e.g. the community standard ones like W3C, etc.
+  OpenTelemetryPluginBuilder& SetTextMapPropagator(
+      std::unique_ptr<opentelemetry::context::propagation::TextMapPropagator>
+          text_map_propagator);
+  /// EXPERIMENTAL API
+  /// Returns a TextMapPropagator that uses gRPC's "grpc-trace-bin" metadata to
+  /// propagate span contexts.
+  static std::unique_ptr<opentelemetry::context::propagation::TextMapPropagator>
+  MakeGrpcTraceBinTextMapPropagator();
   /// Set scope filter to choose which channels are recorded by this plugin.
   /// Server-side recording remains unaffected.
   OpenTelemetryPluginBuilder& SetChannelScopeFilter(

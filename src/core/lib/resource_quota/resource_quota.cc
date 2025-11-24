@@ -16,18 +16,37 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
+#include <utility>
+
+#include "src/core/channelz/channelz.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/stream_quota.h"
+#include "src/core/lib/resource_quota/thread_quota.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/single_set_ptr.h"
+
 namespace grpc_core {
 
 ResourceQuota::ResourceQuota(std::string name)
-    : memory_quota_(MakeMemoryQuota(std::move(name))),
+    : channelz_node_(
+          MakeRefCounted<channelz::ResourceQuotaNode>(std::move(name))),
+      memory_quota_(MakeMemoryQuota(channelz_node_)),
       thread_quota_(MakeRefCounted<ThreadQuota>()) {}
 
 ResourceQuota::~ResourceQuota() = default;
 
+namespace {
+NoDestruct<SingleSetRefCountedPtr<ResourceQuota>> default_resource_quota{};
+}  // namespace
+
 ResourceQuotaRefPtr ResourceQuota::Default() {
-  static auto default_resource_quota =
-      MakeResourceQuota("default_resource_quota").release();
-  return default_resource_quota->Ref();
+  return default_resource_quota->GetOrCreate("default_resource_quota");
+}
+
+void ResourceQuota::TestOnlyResetDefaultResourceQuota() {
+  default_resource_quota->Reset();
 }
 
 }  // namespace grpc_core

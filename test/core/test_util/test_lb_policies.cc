@@ -16,24 +16,18 @@
 
 #include "test/core/test_util/test_lb_policies.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/json.h>
 #include <stdint.h>
 
 #include <memory>
 #include <string>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/json.h>
+#include <variant>
 
 #include "src/core/client_channel/lb_metadata.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolved_address.h"
@@ -44,6 +38,7 @@
 #include "src/core/load_balancing/oob_backend_metric.h"
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/util/down_cast.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_util.h"
 #include "src/core/util/orphanable.h"
@@ -51,6 +46,9 @@
 #include "src/core/util/status_helper.h"
 #include "src/core/util/time.h"
 #include "src/core/util/uri.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -86,7 +84,7 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
         CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
             Json::FromArray({Json::FromObject(
                 {{std::string(delegate_->name()), Json::FromObject({})}})}));
-    CHECK_OK(config);
+    GRPC_CHECK_OK(config);
     args.config = *config;
     return delegate_->UpdateLocked(std::move(args));
   }
@@ -228,7 +226,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
       // Do pick.
       PickResult result = delegate_picker_->Pick(args);
       // Intercept trailing metadata.
-      auto* complete_pick = absl::get_if<PickResult::Complete>(&result.result);
+      auto* complete_pick = std::get_if<PickResult::Complete>(&result.result);
       if (complete_pick != nullptr) {
         complete_pick->subchannel_call_tracker =
             std::make_unique<SubchannelCallTracker>(cb_);
@@ -422,7 +420,7 @@ class FixedAddressLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
     EndpointAddressesList addresses;
     if (uri.ok()) {
       grpc_resolved_address address;
-      CHECK(grpc_parse_uri(*uri, &address));
+      GRPC_CHECK(grpc_parse_uri(*uri, &address));
       addresses.emplace_back(address, ChannelArgs());
     } else {
       LOG(ERROR) << kFixedAddressLbPolicyName << ": could not parse URI ("
@@ -759,7 +757,7 @@ class AuthorityOverrideLoadBalancingPolicy
     PickResult Pick(PickArgs args) override {
       auto pick_result = picker_->Pick(args);
       auto* complete_pick =
-          absl::get_if<PickResult::Complete>(&pick_result.result);
+          std::get_if<PickResult::Complete>(&pick_result.result);
       if (complete_pick != nullptr) {
         complete_pick->authority_override = authority_override_.Ref();
       }

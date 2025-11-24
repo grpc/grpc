@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_TYPE_MATCHER_V3_REGEX_PROTO_UPB_H_
-#define XDS_TYPE_MATCHER_V3_REGEX_PROTO_UPB_H_
+#ifndef XDS_TYPE_MATCHER_V3_REGEX_PROTO_UPB_H__UPB_H_
+#define XDS_TYPE_MATCHER_V3_REGEX_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -71,6 +71,10 @@ UPB_INLINE xds_type_matcher_v3_RegexMatcher_engine_type_oneofcases xds_type_matc
   const upb_MiniTableField field = {1, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (xds_type_matcher_v3_RegexMatcher_engine_type_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void xds_type_matcher_v3_RegexMatcher_clear_engine_type(xds_type_matcher_v3_RegexMatcher* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &xds__type__matcher__v3__RegexMatcher_msg_init, &field);
 }
 UPB_INLINE void xds_type_matcher_v3_RegexMatcher_clear_google_re2(xds_type_matcher_v3_RegexMatcher* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -164,4 +168,4 @@ UPB_INLINE char* xds_type_matcher_v3_RegexMatcher_GoogleRE2_serialize_ex(const x
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_TYPE_MATCHER_V3_REGEX_PROTO_UPB_H_ */
+#endif  /* XDS_TYPE_MATCHER_V3_REGEX_PROTO_UPB_H__UPB_H_ */

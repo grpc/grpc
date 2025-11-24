@@ -19,20 +19,19 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_FILE_WATCHER_CERTIFICATE_PROVIDER_FACTORY_H
 #define GRPC_SRC_CORE_XDS_GRPC_FILE_WATCHER_CERTIFICATE_PROVIDER_FACTORY_H
 
-#include <string>
-
-#include "absl/strings/string_view.h"
-
 #include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/security/certificate_provider/certificate_provider_factory.h"
+#include <string>
+
+#include "src/core/credentials/transport/tls/certificate_provider_factory.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -53,6 +52,10 @@ class FileWatcherCertificateProviderFactory final
 
     const std::string& root_cert_file() const { return root_cert_file_; }
 
+    const std::string& spiffe_bundle_map_file() const {
+      return spiffe_bundle_map_file_;
+    }
+
     Duration refresh_interval() const { return refresh_interval_; }
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs& args);
@@ -63,6 +66,7 @@ class FileWatcherCertificateProviderFactory final
     std::string identity_cert_file_;
     std::string private_key_file_;
     std::string root_cert_file_;
+    std::string spiffe_bundle_map_file_;
     Duration refresh_interval_ = Duration::Minutes(10);
   };
 

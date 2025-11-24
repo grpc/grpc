@@ -46,11 +46,11 @@ GRPC_TRACE=call_error,connectivity_state,pick_first,round_robin,glb
 ## How to debug your application?
 
 `pdb` is a debugging tool that is available for Python interpreters natively.
-You can set breakpoint, and execute commands while the application is stopped.
+You can set breakpoints, and execute commands while the application is stopped.
 
 The simplest usage is add a single line in the place you want to inspect:
 `import pdb; pdb.set_trace()`. When interpreter see this line, it would pop out
-a interactive command line interface for you to inspect the application state.
+an interactive command line interface for you to inspect the application state.
 
 For more detailed usage, see https://docs.python.org/3/library/pdb.html.
 

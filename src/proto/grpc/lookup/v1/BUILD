@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@rules_proto//proto:defs.bzl", "proto_library")
-load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_grpc_library", "grpc_cc_proto_library", "grpc_internal_proto_library", "grpc_package")
 
 licenses(["notice"])
 
@@ -22,27 +21,38 @@ grpc_package(
     visibility = "public",
 )
 
-grpc_proto_library(
+grpc_internal_proto_library(
     name = "rls_proto",
     srcs = ["rls.proto"],
-    well_known_protos = True,
+    has_services = True,
 )
 
-grpc_proto_library(
+grpc_cc_proto_library(
+    name = "rls_cc_proto",
+    deps = ["rls_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "rls_cc_grpc",
+    srcs = ["rls_proto"],
+    deps = ["rls_cc_proto"],
+)
+
+grpc_internal_proto_library(
     name = "rls_config_proto",
-    srcs = ["rls_config.proto"],
-    well_known_protos = True,
-)
-
-proto_library(
-    name = "rls_proto_descriptor",
-    srcs = ["rls.proto"],
-)
-
-proto_library(
-    name = "rls_config_proto_descriptor",
     srcs = ["rls_config.proto"],
     deps = [
         "@com_google_protobuf//:duration_proto",
     ],
+)
+
+grpc_cc_proto_library(
+    name = "rls_config_cc_proto",
+    deps = ["rls_config_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "rls_config_cc_grpc",
+    srcs = ["rls_config_proto"],
+    deps = ["rls_config_cc_proto"],
 )

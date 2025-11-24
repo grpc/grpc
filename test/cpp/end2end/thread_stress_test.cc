@@ -16,14 +16,6 @@
 //
 //
 
-#include <cinttypes>
-#include <mutex>
-#include <thread>
-
-#include <gtest/gtest.h>
-
-#include "absl/log/log.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
@@ -35,11 +27,17 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
+#include <cinttypes>
+#include <mutex>
+#include <thread>
+
 #include "src/core/util/env.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 const int kNumThreads = 10;  // Number of threads
 const int kNumAsyncSendThreads = 2;

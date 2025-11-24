@@ -41,13 +41,13 @@ inline std::string ClassName(const grpc::protobuf::Descriptor* descriptor,
   const grpc::protobuf::Descriptor* outer = descriptor;
   while (outer->containing_type() != NULL) outer = outer->containing_type();
 
-  const std::string& outer_name = outer->full_name();
-  std::string inner_name = descriptor->full_name().substr(outer_name.size());
+  std::string outer_name(outer->full_name());
+  std::string inner_name(descriptor->full_name().substr(outer_name.size()));
 
   if (qualified) {
     return "::" + DotsToColons(outer_name) + DotsToUnderscores(inner_name);
   } else {
-    return outer->name() + DotsToUnderscores(inner_name);
+    return std::string(outer->name()) + DotsToUnderscores(inner_name);
   }
 }
 

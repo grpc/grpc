@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_testing'))
 # -- Project information -----------------------------------------------------
 
 project = 'gRPC Python'
-copyright = '2020, The gRPC Authors'
+copyright = '2025, The gRPC Authors'
 author = 'The gRPC Authors'
 
 # Import generated grpc_version after the path been modified
@@ -77,7 +77,7 @@ autodoc_typehints = 'description'
 html_theme = 'alabaster'
 html_theme_options = {
     'fixed_sidebar': True,
-    'page_width': '1140px',
+    'page_width': 'auto',
     'show_related': True,
     'analytics_id': 'UA-60127042-1',
     'description': grpc_version.VERSION,

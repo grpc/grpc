@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/event_engine/memory_allocator.h>
 #include <stddef.h>
 
 #include <algorithm>
@@ -20,16 +21,13 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-
+#include "fuzztest/fuzztest.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/util/chunked_vector.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/util/chunked_vector_fuzzer.pb.h"
 
 bool squelch = true;
@@ -47,15 +45,15 @@ struct Comparison {
 
   // Check that both chunked and std are equivalent.
   void AssertOk() const {
-    CHECK(std.size() == chunked.size());
+    GRPC_CHECK(std.size() == chunked.size());
     auto it_chunked = chunked.cbegin();
     auto it_std = std.cbegin();
     while (it_std != std.cend()) {
-      CHECK(**it_std == **it_chunked);
+      GRPC_CHECK(**it_std == **it_chunked);
       ++it_chunked;
       ++it_std;
     }
-    CHECK(it_chunked == chunked.cend());
+    GRPC_CHECK(it_chunked == chunked.cend());
   }
 };
 
@@ -171,11 +169,12 @@ class Fuzzer {
   RefCountedPtr<Arena> arena_ = SimpleArenaAllocator(128)->MakeArena();
   std::map<int, Comparison> vectors_;
 };
-}  // namespace grpc_core
 
-DEFINE_PROTO_FUZZER(const chunked_vector_fuzzer::Msg& msg) {
-  grpc_core::Fuzzer fuzzer;
+void SameAsVector(const chunked_vector_fuzzer::Msg& msg) {
+  Fuzzer fuzzer;
   for (int i = 0; i < msg.actions_size(); i++) {
     fuzzer.Act(msg.actions(i));
   }
 }
+FUZZ_TEST(ChunkedVectorTest, SameAsVector);
+}  // namespace grpc_core

@@ -15,18 +15,16 @@
 // limitations under the License.
 //
 //
-#include "absl/log/check.h"
-
 #include <grpc/support/port_platform.h>
 
 #include "src/core/tsi/ssl/session_cache/ssl_session.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 
 #ifndef OPENSSL_IS_BORINGSSL
 
-#include "absl/memory/memory.h"
-
 #include "src/core/lib/slice/slice.h"
+#include "absl/memory/memory.h"
 
 // OpenSSL invalidates SSL_SESSION on SSL destruction making it pointless
 // to cache sessions. The workaround is to serialize (relatively expensive)
@@ -43,11 +41,11 @@ class OpenSslCachedSession : public SslCachedSession {
  public:
   OpenSslCachedSession(SslSessionPtr session) {
     int size = i2d_SSL_SESSION(session.get(), nullptr);
-    CHECK_GT(size, 0);
+    GRPC_CHECK_GT(size, 0);
     grpc_slice slice = grpc_slice_malloc(size_t(size));
     unsigned char* start = GRPC_SLICE_START_PTR(slice);
     int second_size = i2d_SSL_SESSION(session.get(), &start);
-    CHECK(size == second_size);
+    GRPC_CHECK(size == second_size);
     serialized_session_ = slice;
   }
 

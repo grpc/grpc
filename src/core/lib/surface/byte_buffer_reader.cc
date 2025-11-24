@@ -16,19 +16,17 @@
 //
 //
 
-#include <stdint.h>
-#include <string.h>
-
-#include "absl/log/check.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
+#include <stdint.h>
+#include <string.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/grpc_check.h"
 
 int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
                                  grpc_byte_buffer* buffer) {
@@ -94,7 +92,7 @@ grpc_slice grpc_byte_buffer_reader_readall(grpc_byte_buffer_reader* reader) {
     memcpy(&(outbuf[bytes_read]), GRPC_SLICE_START_PTR(in_slice), slice_length);
     bytes_read += slice_length;
     grpc_core::CSliceUnref(in_slice);
-    CHECK(bytes_read <= input_size);
+    GRPC_CHECK(bytes_read <= input_size);
   }
 
   return out_slice;

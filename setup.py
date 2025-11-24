@@ -36,14 +36,12 @@ from subprocess import PIPE
 import sys
 import sysconfig
 
-import _metadata
 from setuptools import Extension
 from setuptools.command import egg_info
 
 # Redirect the manifest template from MANIFEST.in to PYTHON-MANIFEST.in.
 egg_info.manifest_maker.template = "PYTHON-MANIFEST.in"
 
-PY3 = sys.version_info.major == 3
 PYTHON_STEM = os.path.join("src", "python", "grpcio")
 CORE_INCLUDE = (
     "include",
@@ -57,6 +55,8 @@ CARES_INCLUDE = (
     os.path.join("third_party", "cares", "cares", "include"),
     os.path.join("third_party", "cares"),
     os.path.join("third_party", "cares", "cares"),
+    os.path.join("third_party", "cares", "cares", "src", "lib", "include"),
+    os.path.join("third_party", "cares", "cares", "src", "lib"),
 )
 if "darwin" in sys.platform:
     CARES_INCLUDE += (os.path.join("third_party", "cares", "config_darwin"),)
@@ -81,17 +81,15 @@ ZLIB_INCLUDE = (os.path.join("third_party", "zlib"),)
 README = os.path.join(PYTHON_STEM, "README.rst")
 
 # Ensure we're in the proper directory whether or not we're being used by pip.
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.abspath(PYTHON_STEM))
 
-# Break import-style to ensure we can actually find our in-repo dependencies.
 import _parallel_compile_patch
 import _spawn_patch
 import grpc_core_dependencies
-import python_version
 
 import commands
 import grpc_version
+import python_version
 
 _parallel_compile_patch.monkeypatch_compile_maybe()
 _spawn_patch.monkeypatch_spawn()
@@ -99,18 +97,14 @@ _spawn_patch.monkeypatch_spawn()
 
 LICENSE = "Apache License 2.0"
 
-CLASSIFIERS = (
-    [
-        "Development Status :: 5 - Production/Stable",
-        "Programming Language :: Python",
-        "Programming Language :: Python :: 3",
-    ]
-    + [
-        f"Programming Language :: Python :: {x}"
-        for x in python_version.SUPPORTED_PYTHON_VERSIONS
-    ]
-    + ["License :: OSI Approved :: Apache Software License"]
-)
+CLASSIFIERS = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+] + [
+    f"Programming Language :: Python :: {x}"
+    for x in python_version.SUPPORTED_PYTHON_VERSIONS
+]
 
 
 def _env_bool_value(env_name, default):
@@ -125,7 +119,7 @@ BUILD_WITH_BORING_SSL_ASM = _env_bool_value(
 # Export this environment variable to override the platform variant that will
 # be chosen for boringssl assembly optimizations. This option is useful when
 # crosscompiling and the host platform as obtained by sysconfig.get_platform()
-# doesn't match the platform we are targetting.
+# doesn't match the platform we are targeting.
 # Example value: "linux-aarch64"
 BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM = os.environ.get(
     "GRPC_BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM", ""
@@ -216,7 +210,7 @@ def check_linker_need_libatomic():
     )
     cxx = shlex.split(os.environ.get("CXX", "c++"))
     cpp_test = subprocess.Popen(
-        cxx + ["-x", "c++", "-std=c++14", "-"],
+        cxx + ["-x", "c++", "-std=c++17", "-"],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE,
@@ -227,7 +221,7 @@ def check_linker_need_libatomic():
     # Double-check to see if -latomic actually can solve the problem.
     # https://github.com/grpc/grpc/issues/22491
     cpp_test = subprocess.Popen(
-        cxx + ["-x", "c++", "-std=c++14", "-", "-latomic"],
+        cxx + ["-x", "c++", "-std=c++17", "-", "-latomic"],
         stdin=PIPE,
         stdout=PIPE,
         stderr=PIPE,
@@ -235,6 +229,21 @@ def check_linker_need_libatomic():
     cpp_test.communicate(input=code_test)
     return cpp_test.returncode == 0
 
+
+# When building extensions for macOS on a system running macOS 11.0 or newer,
+# make sure they target macOS 11.0 or newer to use C++17 stdlib properly.
+# This overrides the default behavior of distutils, which targets the macOS
+# version Python was built on. You can further customize the target macOS
+# version by setting the MACOSX_DEPLOYMENT_TARGET environment variable before
+# running setup.py.
+if sys.platform == "darwin":
+    if "MACOSX_DEPLOYMENT_TARGET" not in os.environ:
+        target_ver = sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET")
+        if target_ver == "" or tuple(int(p) for p in target_ver.split(".")) < (
+            10,
+            14,
+        ):
+            os.environ["MACOSX_DEPLOYMENT_TARGET"] = "11.0"
 
 # There are some situations (like on Windows) where CC, CFLAGS, and LDFLAGS are
 # entirely ignored/dropped/forgotten by distutils and its Cygwin/MinGW support.
@@ -246,22 +255,29 @@ def check_linker_need_libatomic():
 EXTRA_ENV_COMPILE_ARGS = os.environ.get("GRPC_PYTHON_CFLAGS", None)
 EXTRA_ENV_LINK_ARGS = os.environ.get("GRPC_PYTHON_LDFLAGS", None)
 if EXTRA_ENV_COMPILE_ARGS is None:
+
+    # NOTE: Keep in sync with c- and cpp-specific arg filters!
+    #       For Linux and Darwin args, update
+    #       BuildExt.build_extensions#new_compile() in commands.py
+    #       For Windows, update _commandfile_spawn() in _spawn_patch.py.
+
     EXTRA_ENV_COMPILE_ARGS = ""
     if "win32" in sys.platform:
-        # MSVC by defaults uses C++14 so C11 needs to be specified.
+        # MSVC by defaults uses C++14 and C89 so both needs to be configured.
+        EXTRA_ENV_COMPILE_ARGS += " /std:c++17"
         EXTRA_ENV_COMPILE_ARGS += " /std:c11"
         # We need to statically link the C++ Runtime, only the C runtime is
         # available dynamically
         EXTRA_ENV_COMPILE_ARGS += " /MT"
     elif "linux" in sys.platform:
-        # GCC by defaults uses C17 so only C++14 needs to be specified.
-        EXTRA_ENV_COMPILE_ARGS += " -std=c++14"
+        # GCC by defaults uses C17 so only C++17 needs to be specified.
+        EXTRA_ENV_COMPILE_ARGS += " -std=c++17"
         EXTRA_ENV_COMPILE_ARGS += (
             " -fvisibility=hidden -fno-wrapv -fno-exceptions"
         )
     elif "darwin" in sys.platform:
-        # AppleClang by defaults uses C17 so only C++14 needs to be specified.
-        EXTRA_ENV_COMPILE_ARGS += " -std=c++14"
+        # AppleClang by defaults uses C17 so only C++17 needs to be specified.
+        EXTRA_ENV_COMPILE_ARGS += " -std=c++17"
         EXTRA_ENV_COMPILE_ARGS += (
             " -stdlib=libc++ -fvisibility=hidden -fno-wrapv -fno-exceptions"
             " -DHAVE_UNISTD_H"
@@ -384,7 +400,7 @@ DEFINE_MACROS += (
     ("GRPC_XDS_USER_AGENT_NAME_SUFFIX", _quote_build_define("Python")),
     (
         "GRPC_XDS_USER_AGENT_VERSION_SUFFIX",
-        _quote_build_define(_metadata.__version__),
+        _quote_build_define(grpc_version.VERSION),
     ),
 )
 
@@ -440,7 +456,7 @@ else:
 
 # Fix for multiprocessing support on Apple devices.
 # TODO(vigneshbabu): Remove this once the poll poller gets fork support.
-DEFINE_MACROS += (("GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER", 1),)
+DEFINE_MACROS += (("GRPC_PYTHON_BUILD", 1),)
 
 # Fix for Cython build issue in aarch64.
 # It's required to define this macro before include <inttypes.h>.
@@ -454,7 +470,7 @@ DEFINE_MACROS += (("__STDC_FORMAT_MACROS", None),)
 LDFLAGS = tuple(EXTRA_LINK_ARGS)
 CFLAGS = tuple(EXTRA_COMPILE_ARGS)
 if "linux" in sys.platform or "darwin" in sys.platform:
-    pymodinit_type = "PyObject*" if PY3 else "void"
+    pymodinit_type = "PyObject*"
     pymodinit = 'extern "C" __attribute__((visibility ("default"))) {}'.format(
         pymodinit_type
     )
@@ -520,11 +536,7 @@ def cython_extensions_and_necessity():
 
 CYTHON_EXTENSION_MODULES, need_cython = cython_extensions_and_necessity()
 
-PACKAGE_DIRECTORIES = {
-    "": PYTHON_STEM,
-}
-
-INSTALL_REQUIRES = ()
+INSTALL_REQUIRES = ("typing-extensions~=4.12",)
 
 EXTRAS_REQUIRES = {
     "protobuf": "grpcio-tools>={version}".format(version=grpc_version.VERSION),
@@ -547,7 +559,7 @@ except ImportError:
         sys.stderr.write(
             "We could not find Cython. Setup may take 10-20 minutes.\n"
         )
-        SETUP_REQUIRES += ("cython>=3.0.0",)
+        SETUP_REQUIRES += ("cython==3.1.1",)
 
 COMMAND_CLASS = {
     "doc": commands.SphinxDocumentation,
@@ -568,40 +580,13 @@ shutil.copyfile(
     os.path.join("etc", "roots.pem"), os.path.join(credentials_dir, "roots.pem")
 )
 
-PACKAGE_DATA = {
-    # Binaries that may or may not be present in the final installation, but are
-    # mentioned here for completeness.
-    "grpc._cython": [
-        "_credentials/roots.pem",
-        "_windows/grpc_c.32.python",
-        "_windows/grpc_c.64.python",
-    ],
-}
-PACKAGES = setuptools.find_packages(PYTHON_STEM)
-
-setuptools.setup(
-    name="grpcio",
-    version=grpc_version.VERSION,
-    description="HTTP/2-based RPC framework",
-    author="The gRPC Authors",
-    author_email="grpc-io@googlegroups.com",
-    url="https://grpc.io",
-    project_urls={
-        "Source Code": "https://github.com/grpc/grpc",
-        "Bug Tracker": "https://github.com/grpc/grpc/issues",
-        "Documentation": "https://grpc.github.io/grpc/python",
-    },
-    license=LICENSE,
-    classifiers=CLASSIFIERS,
-    long_description_content_type="text/x-rst",
-    long_description=open(README).read(),
-    ext_modules=CYTHON_EXTENSION_MODULES,
-    packages=list(PACKAGES),
-    package_dir=PACKAGE_DIRECTORIES,
-    package_data=PACKAGE_DATA,
-    python_requires=f">={python_version.MIN_PYTHON_VERSION}",
-    install_requires=INSTALL_REQUIRES,
-    extras_require=EXTRAS_REQUIRES,
-    setup_requires=SETUP_REQUIRES,
-    cmdclass=COMMAND_CLASS,
-)
+if __name__ == "__main__":
+    setuptools.setup(
+        classifiers=CLASSIFIERS,
+        ext_modules=CYTHON_EXTENSION_MODULES,
+        python_requires=f">={python_version.MIN_PYTHON_VERSION}",
+        install_requires=INSTALL_REQUIRES,
+        extras_require=EXTRAS_REQUIRES,
+        setup_requires=SETUP_REQUIRES,
+        cmdclass=COMMAND_CLASS,
+    )

@@ -19,17 +19,20 @@
 #ifndef GRPC_SRC_CORE_CHANNELZ_CHANNELZ_REGISTRY_H
 #define GRPC_SRC_CORE_CHANNELZ_CHANNELZ_REGISTRY_H
 
+#include <grpc/support/port_platform.h>
+
+#include <cstddef>
 #include <cstdint>
 #include <map>
 #include <string>
 
-#include "absl/base/thread_annotations.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/channelz/channelz.h"
+#include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "absl/container/btree_map.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/functional/function_ref.h"
 
 namespace grpc_core {
 namespace channelz {
@@ -41,36 +44,162 @@ class ChannelzRegistry final {
   static void Register(BaseNode* node) {
     return Default()->InternalRegister(node);
   }
-  static void Unregister(intptr_t uuid) { Default()->InternalUnregister(uuid); }
-  static RefCountedPtr<BaseNode> Get(intptr_t uuid) {
+  static void Unregister(BaseNode* node) {
+    Default()->InternalUnregister(node);
+  }
+  static WeakRefCountedPtr<BaseNode> Get(intptr_t uuid) {
     return Default()->InternalGet(uuid);
+  }
+  static intptr_t NumberNode(BaseNode* node) {
+    return Default()->InternalNumberNode(node);
+  }
+
+  static WeakRefCountedPtr<SubchannelNode> GetSubchannel(intptr_t uuid) {
+    return Default()
+        ->InternalGetTyped<SubchannelNode, BaseNode::EntityType::kSubchannel>(
+            uuid);
+  }
+
+  static WeakRefCountedPtr<ChannelNode> GetChannel(intptr_t uuid) {
+    auto node = Default()->InternalGet(uuid);
+    if (node == nullptr) return nullptr;
+    if (node->type() == BaseNode::EntityType::kTopLevelChannel) {
+      return node->WeakRefAsSubclass<ChannelNode>();
+    }
+    if (node->type() == BaseNode::EntityType::kInternalChannel) {
+      return node->WeakRefAsSubclass<ChannelNode>();
+    }
+    return nullptr;
+  }
+
+  static WeakRefCountedPtr<ServerNode> GetServer(intptr_t uuid) {
+    return Default()
+        ->InternalGetTyped<ServerNode, BaseNode::EntityType::kServer>(uuid);
+  }
+
+  static WeakRefCountedPtr<SocketNode> GetSocket(intptr_t uuid) {
+    return Default()
+        ->InternalGetTyped<SocketNode, BaseNode::EntityType::kSocket>(uuid);
   }
 
   // Returns the allocated JSON string that represents the proto
   // GetTopChannelsResponse as per channelz.proto.
-  static std::string GetTopChannels(intptr_t start_channel_id) {
-    return Default()->InternalGetTopChannels(start_channel_id);
+  static auto GetTopChannels(intptr_t start_channel_id) {
+    return Default()
+        ->InternalGetObjects<ChannelNode,
+                             BaseNode::EntityType::kTopLevelChannel>(
+            start_channel_id);
+  }
+
+  static auto GetTopSockets(intptr_t start_socket_id) {
+    return Default()
+        ->InternalGetObjects<SocketNode, BaseNode::EntityType::kSocket>(
+            start_socket_id);
   }
 
   // Returns the allocated JSON string that represents the proto
   // GetServersResponse as per channelz.proto.
-  static std::string GetServers(intptr_t start_server_id) {
-    return Default()->InternalGetServers(start_server_id);
+  static auto GetServers(intptr_t start_server_id) {
+    return Default()
+        ->InternalGetObjects<ServerNode, BaseNode::EntityType::kServer>(
+            start_server_id);
+  }
+
+  static std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool> GetChildren(
+      const BaseNode* parent, intptr_t start_node, size_t max_results) {
+    return Default()->InternalGetChildren(parent, start_node, max_results);
+  }
+
+  static std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool>
+  GetChildrenOfType(intptr_t start_node, const BaseNode* parent,
+                    BaseNode::EntityType type, size_t max_results) {
+    return Default()->InternalGetChildrenOfType(start_node, parent, type,
+                                                max_results);
+  }
+
+  static std::vector<WeakRefCountedPtr<BaseNode>> GetDescendants(
+      BaseNode* root, size_t max_results) {
+    return Default()->InternalGetDescendants(root, max_results);
+  }
+
+  static WeakRefCountedPtr<BaseNode> GetNode(intptr_t uuid) {
+    return Default()->InternalGet(uuid);
+  }
+
+  static std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool>
+  GetNodesOfType(intptr_t start_node, BaseNode::EntityType type,
+                 size_t max_results) {
+    return Default()->InternalGetNodesOfType(start_node, type, max_results);
+  }
+
+  static std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool> GetNodes(
+      intptr_t start_node, size_t max_results) {
+    return Default()->InternalGetNodes(start_node, max_results);
   }
 
   // Test only helper function to dump the JSON representation to std out.
   // This can aid in debugging channelz code.
   static void LogAllEntities() { Default()->InternalLogAllEntities(); }
 
-  // Test only helper function to reset to initial state.
-  static void TestOnlyReset() {
-    auto* p = Default();
-    MutexLock lock(&p->mu_);
-    p->node_map_.clear();
-    p->uuid_generator_ = 0;
+  static std::vector<WeakRefCountedPtr<BaseNode>> GetAllEntities() {
+    return Default()->InternalGetAllEntities();
   }
 
+  // Test only helper function to reset to initial state.
+  static void TestOnlyReset();
+
  private:
+  ChannelzRegistry() { LoadConfig(); }
+
+  void LoadConfig();
+
+  // Takes a callable F: (WeakRefCountedPtr<BaseNode>) -> bool, and returns
+  // a (BaseNode*) -> bool that filters unreffed objects and returns true.
+  // The ref must be unreffed outside the NodeMapInterface iteration.
+  template <typename F>
+  static auto CollectReferences(F fn) {
+    return [fn = std::move(fn)](BaseNode* n) {
+      auto node = n->RefIfNonZero();
+      if (node == nullptr) return true;
+      return fn(std::move(node));
+    };
+  }
+
+  struct NodeList {
+    BaseNode* head = nullptr;
+    BaseNode* tail = nullptr;
+    size_t count = 0;
+    bool Holds(BaseNode* node) const;
+    void AddToHead(BaseNode* node);
+    void Remove(BaseNode* node);
+  };
+  // Nodes traverse through up to four lists, depending on
+  // whether they have a uuid (this is becoming numbered),
+  // and whether they have been orphaned or not.
+  // The lists help us find un-numbered nodes when needed for
+  // queries, and the oldest orphaned node when needed for
+  // garbage collection.
+  // Nodes are organized into shards based on their pointer
+  // address. A shard tracks the four lists of nodes
+  // independently - we strive to have no cross-talk between
+  // shards as these are very global objects.
+  struct alignas(GPR_CACHELINE_SIZE) NodeShard {
+    Mutex mu;
+    // Nursery nodes have no uuid and are not orphaned.
+    NodeList nursery ABSL_GUARDED_BY(mu);
+    // Numbered nodes have been assigned a uuid, and are not orphaned.
+    NodeList numbered ABSL_GUARDED_BY(mu);
+    // Orphaned nodes have no uuid, but have been orphaned.
+    NodeList orphaned ABSL_GUARDED_BY(mu);
+    // Finally, orphaned numbered nodes are orphaned, and have been assigned a
+    // uuid.
+    NodeList orphaned_numbered ABSL_GUARDED_BY(mu);
+    uint64_t next_orphan_index ABSL_GUARDED_BY(mu) = 1;
+    size_t TotalOrphaned() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu) {
+      return orphaned.count + orphaned_numbered.count;
+    }
+  };
+
   // Returned the singleton instance of ChannelzRegistry;
   static ChannelzRegistry* Default();
 
@@ -79,21 +208,131 @@ class ChannelzRegistry final {
 
   // globally unregisters the object that is associated to uuid. Also does
   // sanity check that an object doesn't try to unregister the wrong type.
-  void InternalUnregister(intptr_t uuid);
+  void InternalUnregister(BaseNode* node);
+
+  intptr_t InternalNumberNode(BaseNode* node);
 
   // if object with uuid has previously been registered as the correct type,
   // returns the void* associated with that uuid. Else returns nullptr.
-  RefCountedPtr<BaseNode> InternalGet(intptr_t uuid);
+  WeakRefCountedPtr<BaseNode> InternalGet(intptr_t uuid);
 
-  std::string InternalGetTopChannels(intptr_t start_channel_id);
-  std::string InternalGetServers(intptr_t start_server_id);
+  // Generic query over nodes.
+  // This function takes care of all the gnarly locking, and allows high level
+  // code to request a start node and maximum number of results (for pagination
+  // purposes).
+  // `discriminator` allows callers to choose which nodes will be returned - if
+  // it returns true, the node is included in the result.
+  // `discriminator` *MUST NOT* ref the node, nor call into ChannelzRegistry via
+  // any code path (locks are held during the call).
+  std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool> QueryNodes(
+      intptr_t start_node,
+      absl::FunctionRef<bool(const BaseNode*)> discriminator,
+      size_t max_results);
+
+  std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool>
+  InternalGetChildren(const BaseNode* parent, intptr_t start_node,
+                      size_t max_results) {
+    return QueryNodes(
+        start_node,
+        [parent](const BaseNode* n) { return n->HasParent(parent); },
+        max_results);
+  }
+
+  std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool>
+  InternalGetChildrenOfType(intptr_t start_node, const BaseNode* parent,
+                            BaseNode::EntityType type, size_t max_results) {
+    return QueryNodes(
+        start_node,
+        [type, parent](const BaseNode* n) {
+          return n->type() == type && n->HasParent(parent);
+        },
+        max_results);
+  }
+
+  std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool>
+  InternalGetNodesOfType(intptr_t start_node, BaseNode::EntityType type,
+                         size_t max_results) {
+    return QueryNodes(
+        start_node, [type](const BaseNode* n) { return n->type() == type; },
+        max_results);
+  }
+
+  std::vector<WeakRefCountedPtr<BaseNode>> InternalGetDescendants(
+      BaseNode* root, size_t max_results) {
+    std::vector<WeakRefCountedPtr<BaseNode>> descendants;
+    if (root == nullptr || max_results == 0) return descendants;
+
+    // To prevent duplicate nodes and to prevent infinite loops.
+    absl::flat_hash_set<intptr_t> visited;
+
+    descendants.reserve(max_results);
+    visited.insert(root->uuid());
+    descendants.push_back(root->WeakRef());
+
+    size_t next_id = 0;
+
+    // BFS to find all descendants.
+    do {
+      BaseNode* current_node = descendants[next_id].get();
+
+      auto [children, _] = InternalGetChildren(
+          current_node, current_node->uuid(), max_results - descendants.size());
+
+      for (const auto& child : children) {
+        if (visited.insert(child->uuid()).second) {
+          descendants.push_back(child);
+        }
+      }
+
+      ++next_id;
+    } while (descendants.size() < max_results && next_id < descendants.size());
+
+    return descendants;
+  }
+
+  std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool> InternalGetNodes(
+      intptr_t start_node, size_t max_results) {
+    return QueryNodes(
+        start_node, [](const BaseNode*) { return true; }, max_results);
+  }
+
+  template <typename T, BaseNode::EntityType entity_type>
+  WeakRefCountedPtr<T> InternalGetTyped(intptr_t uuid) {
+    WeakRefCountedPtr<BaseNode> node = InternalGet(uuid);
+    if (node == nullptr || node->type() != entity_type) {
+      return nullptr;
+    }
+    return node->WeakRefAsSubclass<T>();
+  }
+
+  template <typename T, BaseNode::EntityType entity_type>
+  std::tuple<std::vector<WeakRefCountedPtr<T>>, bool> InternalGetObjects(
+      intptr_t start_id) {
+    const int kPaginationLimit = 100;
+    std::vector<WeakRefCountedPtr<T>> top_level_channels;
+    const auto [nodes, end] = QueryNodes(
+        start_id,
+        [](const BaseNode* node) { return node->type() == entity_type; },
+        kPaginationLimit);
+    for (const auto& p : nodes) {
+      top_level_channels.emplace_back(p->template WeakRefAsSubclass<T>());
+    }
+    return std::tuple(std::move(top_level_channels), end);
+  }
 
   void InternalLogAllEntities();
+  std::vector<WeakRefCountedPtr<BaseNode>> InternalGetAllEntities();
 
-  // protects members
-  Mutex mu_;
-  std::map<intptr_t, BaseNode*> node_map_ ABSL_GUARDED_BY(mu_);
-  intptr_t uuid_generator_ ABSL_GUARDED_BY(mu_) = 0;
+  static constexpr size_t kNodeShards = 63;
+  size_t NodeShardIndex(BaseNode* node) {
+    return absl::HashOf(node) % kNodeShards;
+  }
+
+  int64_t uuid_generator_{1};
+  std::vector<NodeShard> node_shards_{kNodeShards};
+  Mutex index_mu_;
+  absl::btree_map<intptr_t, BaseNode*> index_ ABSL_GUARDED_BY(index_mu_);
+  size_t max_orphaned_per_shard_;
 };
 
 }  // namespace channelz

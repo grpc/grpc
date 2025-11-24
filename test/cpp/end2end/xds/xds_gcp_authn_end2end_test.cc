@@ -14,24 +14,22 @@
 // limitations under the License.
 //
 
+#include <grpc/support/string_util.h>
+
 #include <string>
 #include <vector>
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-
-#include <grpc/support/string_util.h>
-
+#include "envoy/config/cluster/v3/cluster.pb.h"
+#include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.pb.h"
+#include "envoy/extensions/filters/http/router/v3/router.pb.h"
+#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
 #include "src/core/client_channel/backup_poller.h"
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/util/http_client/httpcli.h"
-#include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/gcp_authn.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
-#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc {
 namespace testing {
@@ -50,6 +48,7 @@ class XdsGcpAuthnEnd2endTest : public XdsEnd2endTest {
   void SetUp() override {
     g_audience = "";
     g_token = nullptr;
+    g_num_token_fetches = 0;
     grpc_core::HttpRequest::SetOverride(HttpGetOverride, nullptr, nullptr);
     InitClient(MakeBootstrapBuilder(), /*lb_expected_authority=*/"",
                /*xds_resource_does_not_exist_timeout_ms=*/0,
@@ -83,6 +82,7 @@ class XdsGcpAuthnEnd2endTest : public XdsEnd2endTest {
             "/computeMetadata/v1/instance/service-accounts/default/identity") {
       return 0;
     }
+    g_num_token_fetches.fetch_add(1);
     // Validate request.
     ValidateHttpRequest(request, uri);
     // Generate response.
@@ -126,17 +126,17 @@ class XdsGcpAuthnEnd2endTest : public XdsEnd2endTest {
 
   static absl::string_view g_audience;
   static const char* g_token;
+  static std::atomic<size_t> g_num_token_fetches;
 };
 
 absl::string_view XdsGcpAuthnEnd2endTest::g_audience;
 const char* XdsGcpAuthnEnd2endTest::g_token;
+std::atomic<size_t> XdsGcpAuthnEnd2endTest::g_num_token_fetches;
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, XdsGcpAuthnEnd2endTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
 TEST_P(XdsGcpAuthnEnd2endTest, Basic) {
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_GCP_AUTHENTICATION_FILTER");
   // Construct auth token.
   g_audience = kAudience;
   std::string token = MakeToken(grpc_core::Timestamp::InfFuture());
@@ -159,11 +159,10 @@ TEST_P(XdsGcpAuthnEnd2endTest, Basic) {
   EXPECT_THAT(server_initial_metadata,
               ::testing::Contains(::testing::Pair(
                   "authorization", absl::StrCat("Bearer ", g_token))));
+  EXPECT_EQ(g_num_token_fetches.load(), 1);
 }
 
 TEST_P(XdsGcpAuthnEnd2endTest, NoOpWhenClusterHasNoAudience) {
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_GCP_AUTHENTICATION_FILTER");
   // Set xDS resources.
   CreateAndStartBackends(1, /*xds_enabled=*/false,
                          CreateTlsServerCredentials());
@@ -183,7 +182,7 @@ TEST_P(XdsGcpAuthnEnd2endTest, NoOpWhenClusterHasNoAudience) {
       ::testing::Not(::testing::Contains(::testing::Key("authorization"))));
 }
 
-TEST_P(XdsGcpAuthnEnd2endTest, FilterIgnoredWhenEnvVarNotSet) {
+TEST_P(XdsGcpAuthnEnd2endTest, CacheRetainedAcrossXdsUpdates) {
   // Construct auth token.
   g_audience = kAudience;
   std::string token = MakeToken(grpc_core::Timestamp::InfFuture());
@@ -191,21 +190,52 @@ TEST_P(XdsGcpAuthnEnd2endTest, FilterIgnoredWhenEnvVarNotSet) {
   // Set xDS resources.
   CreateAndStartBackends(1, /*xds_enabled=*/false,
                          CreateTlsServerCredentials());
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithGcpAuthnFilter(/*optional=*/true),
-      default_route_config_);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithGcpAuthnFilter(),
+                                   default_route_config_);
   balancer_->ads_service()->SetCdsResource(BuildClusterWithAudience(kAudience));
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  EdsResourceArgs args({{"locality0", {CreateEndpoint(0)}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Send an RPC and check that it does not have an auth token.
+  // Send an RPC and check that it arrives with the right auth token.
   std::multimap<std::string, std::string> server_initial_metadata;
   Status status = SendRpc(RpcOptions().set_echo_metadata_initially(true),
                           /*response=*/nullptr, &server_initial_metadata);
   EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
                            << " message=" << status.error_message();
-  EXPECT_THAT(
-      server_initial_metadata,
-      ::testing::Not(::testing::Contains(::testing::Key("authorization"))));
+  EXPECT_THAT(server_initial_metadata,
+              ::testing::Contains(::testing::Pair(
+                  "authorization", absl::StrCat("Bearer ", g_token))));
+  EXPECT_EQ(g_num_token_fetches.load(), 1);
+  // Trigger update that changes the route config, thus causing the
+  // dynamic filters to be recreated.
+  // We insert a route that matches requests with the header "foo" and
+  // has a non-forwarding action, which will cause the client to fail RPCs
+  // that hit this route.
+  RouteConfiguration route_config = default_route_config_;
+  *route_config.mutable_virtual_hosts(0)->add_routes() =
+      route_config.virtual_hosts(0).routes(0);
+  auto* header_matcher = route_config.mutable_virtual_hosts(0)
+                             ->mutable_routes(0)
+                             ->mutable_match()
+                             ->add_headers();
+  header_matcher->set_name("foo");
+  header_matcher->set_present_match(true);
+  route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_non_forwarding_action();
+  SetListenerAndRouteConfiguration(
+      balancer_.get(), BuildListenerWithGcpAuthnFilter(), route_config);
+  // Send RPCs with the header "foo" and wait for them to start failing.
+  // When they do, we know that the client has seen the update.
+  SendRpcsUntilFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                       "Matching route has inappropriate action",
+                       /*timeout_ms=*/15000,
+                       RpcOptions().set_metadata({{"foo", "bar"}}));
+  // Now send an RPC without the header, which will go through the new
+  // instance of the GCP auth filter.
+  CheckRpcSendOk(DEBUG_LOCATION);
+  // Make sure we didn't re-fetch the token.
+  EXPECT_EQ(g_num_token_fetches.load(), 1);
 }
 
 }  // namespace

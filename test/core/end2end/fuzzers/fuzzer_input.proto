@@ -20,6 +20,7 @@ import "test/core/end2end/fuzzers/api_fuzzer.proto";
 import "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto";
 import "test/core/test_util/fuzz_config_vars.proto";
 import "test/core/test_util/fuzzing_channel_args.proto";
+import "src/core/ext/transport/chaotic_good/chaotic_good_frame.proto";
 
 message Empty{};
 
@@ -121,6 +122,10 @@ message H2WindowUpdateFrame {
     uint32 increment = 2;
 }
 
+message H2SecurityFrame {
+    bytes payload = 1;
+}
+
 message H2ClientPrefix {}
 
 message ChaoticGoodServerFragment {
@@ -141,36 +146,36 @@ message ChaoticGoodServerFragment {
     }
 }
 
-message ChaoticGoodMessageData {
-    uint32 length = 1;
-    uint32 padding = 2;
+message ChaoticGoodPayloadOtherConnection {
+    uint32 connection_id = 1;
+    uint32 length = 2;
 }
 
 message ChaoticGoodFrame {
     enum FrameType {
         SETTINGS = 0;
-        FRAGMENT = 1;
-        CANCEL = 2;
+        CLIENT_INITIAL_METADATA = 1;
+        MESSAGE = 2;
+        CLIENT_END_OF_STREAM = 3;
+        SERVER_INITIAL_METADATA = 4;
+        SERVER_TRAILING_METADATA = 5;
+        CANCEL = 6;
     };
     uint32 stream_id = 1;
-    FrameType type = 2;
-    oneof headers {
-        Empty headers_none = 11;
-        bytes headers_raw_bytes = 12;
-        SimpleHeaders headers_simple_header = 13;
+    oneof frame_type {
+        FrameType known_type = 2;
+        uint32 unknown_type = 3;
     }
-    oneof data {
-        Empty data_none = 21;
-        ChaoticGoodMessageData data_sized = 23;
-    }
-    oneof trailers {
-        Empty trailers_none = 31;
-        bytes trailers_raw_bytes = 32;
-        SimpleHeaders trailers_simple_header = 33;
+    oneof payload {
+        ChaoticGoodPayloadOtherConnection payload_other_connection_id = 10;
+        Empty payload_none = 11;
+        bytes payload_raw_bytes = 12;
+        uint32 payload_empty_of_length = 13;
+        chaotic_good_frame.Settings settings = 14;
+        chaotic_good_frame.ClientMetadata client_metadata = 15;
+        chaotic_good_frame.ServerMetadata server_metadata = 16;
     }
 }
-
-message ChaoticGoodSettings {}
 
 message FakeTransportFrame {
     enum MessageString {
@@ -202,6 +207,7 @@ message InputSegment {
         uint32 repeated_zeros = 12;
         ChaoticGoodFrame chaotic_good = 13;
         FakeTransportFrame fake_transport_frame = 14;
+        H2SecurityFrame security_frame = 15;
     }
 }
 

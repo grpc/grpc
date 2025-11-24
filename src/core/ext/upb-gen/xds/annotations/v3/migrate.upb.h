@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_ANNOTATIONS_V3_MIGRATE_PROTO_UPB_H_
-#define XDS_ANNOTATIONS_V3_MIGRATE_PROTO_UPB_H_
+#ifndef XDS_ANNOTATIONS_V3_MIGRATE_PROTO_UPB_H__UPB_H_
+#define XDS_ANNOTATIONS_V3_MIGRATE_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -221,7 +221,7 @@ UPB_INLINE const xds_annotations_v3_MigrateAnnotation* xds_annotations_v3_messag
   const upb_MiniTableExtension* ext = &xds_annotations_v3_message_migrate_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
-                 &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_8Byte);
+                 &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
   const xds_annotations_v3_MigrateAnnotation* default_val = NULL;
   const xds_annotations_v3_MigrateAnnotation* ret;
   _upb_Message_GetExtensionField((upb_Message*)msg, ext, &default_val, &ret);
@@ -231,7 +231,7 @@ UPB_INLINE void xds_annotations_v3_set_message_migrate(struct google_protobuf_Me
   const upb_MiniTableExtension* ext = &xds_annotations_v3_message_migrate_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
-                 &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_8Byte);
+                 &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
   bool ok = upb_Message_SetExtension((upb_Message*)msg, ext, &val, arena);
   UPB_ASSERT(ok);
 }
@@ -254,7 +254,7 @@ UPB_INLINE const xds_annotations_v3_FieldMigrateAnnotation* xds_annotations_v3_f
   const upb_MiniTableExtension* ext = &xds_annotations_v3_field_migrate_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
-                 &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_8Byte);
+                 &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
   const xds_annotations_v3_FieldMigrateAnnotation* default_val = NULL;
   const xds_annotations_v3_FieldMigrateAnnotation* ret;
   _upb_Message_GetExtensionField((upb_Message*)msg, ext, &default_val, &ret);
@@ -264,7 +264,7 @@ UPB_INLINE void xds_annotations_v3_set_field_migrate(struct google_protobuf_Fiel
   const upb_MiniTableExtension* ext = &xds_annotations_v3_field_migrate_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
-                 &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_8Byte);
+                 &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
   bool ok = upb_Message_SetExtension((upb_Message*)msg, ext, &val, arena);
   UPB_ASSERT(ok);
 }
@@ -287,7 +287,7 @@ UPB_INLINE const xds_annotations_v3_MigrateAnnotation* xds_annotations_v3_enum_m
   const upb_MiniTableExtension* ext = &xds_annotations_v3_enum_migrate_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
-                 &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_8Byte);
+                 &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
   const xds_annotations_v3_MigrateAnnotation* default_val = NULL;
   const xds_annotations_v3_MigrateAnnotation* ret;
   _upb_Message_GetExtensionField((upb_Message*)msg, ext, &default_val, &ret);
@@ -297,7 +297,7 @@ UPB_INLINE void xds_annotations_v3_set_enum_migrate(struct google_protobuf_EnumO
   const upb_MiniTableExtension* ext = &xds_annotations_v3_enum_migrate_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
-                 &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_8Byte);
+                 &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
   bool ok = upb_Message_SetExtension((upb_Message*)msg, ext, &val, arena);
   UPB_ASSERT(ok);
 }
@@ -320,7 +320,7 @@ UPB_INLINE const xds_annotations_v3_MigrateAnnotation* xds_annotations_v3_enum_v
   const upb_MiniTableExtension* ext = &xds_annotations_v3_enum_value_migrate_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
-                 &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_8Byte);
+                 &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
   const xds_annotations_v3_MigrateAnnotation* default_val = NULL;
   const xds_annotations_v3_MigrateAnnotation* ret;
   _upb_Message_GetExtensionField((upb_Message*)msg, ext, &default_val, &ret);
@@ -330,7 +330,7 @@ UPB_INLINE void xds_annotations_v3_set_enum_value_migrate(struct google_protobuf
   const upb_MiniTableExtension* ext = &xds_annotations_v3_enum_value_migrate_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
-                 &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_8Byte);
+                 &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
   bool ok = upb_Message_SetExtension((upb_Message*)msg, ext, &val, arena);
   UPB_ASSERT(ok);
 }
@@ -353,7 +353,7 @@ UPB_INLINE const xds_annotations_v3_FileMigrateAnnotation* xds_annotations_v3_fi
   const upb_MiniTableExtension* ext = &xds_annotations_v3_file_migrate_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
-                 &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_8Byte);
+                 &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
   const xds_annotations_v3_FileMigrateAnnotation* default_val = NULL;
   const xds_annotations_v3_FileMigrateAnnotation* ret;
   _upb_Message_GetExtensionField((upb_Message*)msg, ext, &default_val, &ret);
@@ -363,7 +363,7 @@ UPB_INLINE void xds_annotations_v3_set_file_migrate(struct google_protobuf_FileO
   const upb_MiniTableExtension* ext = &xds_annotations_v3_file_migrate_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
-                 &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_8Byte);
+                 &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
   bool ok = upb_Message_SetExtension((upb_Message*)msg, ext, &val, arena);
   UPB_ASSERT(ok);
 }
@@ -382,4 +382,4 @@ UPB_INLINE struct xds_annotations_v3_FileMigrateAnnotation* xds_annotations_v3_m
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_ANNOTATIONS_V3_MIGRATE_PROTO_UPB_H_ */
+#endif  /* XDS_ANNOTATIONS_V3_MIGRATE_PROTO_UPB_H__UPB_H_ */

@@ -15,24 +15,6 @@
 // limitations under the License.
 //
 //
-#include <unistd.h>
-
-#include <cstdlib>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <memory>
-#include <ostream>
-#include <queue>
-#include <string>
-
-#include "absl/flags/flag.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "google/protobuf/text_format.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 #include <grpcpp/channel.h>
@@ -45,7 +27,19 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <unistd.h>
 
+#include <cstdlib>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <memory>
+#include <ostream>
+#include <queue>
+#include <string>
+
+#include "google/protobuf/text_format.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/cpp/server/channelz/channelz_service.h"
@@ -53,6 +47,10 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/test_config.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "absl/flags/flag.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 
 ABSL_FLAG(std::string, server_address, "", "channelz server address");
 ABSL_FLAG(std::string, custom_credentials_type, "", "custom credentials type");
@@ -136,7 +134,7 @@ class ChannelzSampler final {
     if (!status.ok()) {
       LOG(ERROR) << "GetChannelRPC failed: "
                  << get_channel_context.debug_error_string();
-      CHECK(0);
+      GRPC_CHECK(0);
     }
     return get_channel_response.channel();
   }
@@ -155,7 +153,7 @@ class ChannelzSampler final {
     if (!status.ok()) {
       LOG(ERROR) << "GetSubchannelRPC failed: "
                  << get_subchannel_context.debug_error_string();
-      CHECK(0);
+      GRPC_CHECK(0);
     }
     return get_subchannel_response.subchannel();
   }
@@ -173,7 +171,7 @@ class ChannelzSampler final {
     if (!status.ok()) {
       LOG(ERROR) << "GetSocketRPC failed: "
                  << get_socket_context.debug_error_string();
-      CHECK(0);
+      GRPC_CHECK(0);
     }
     return get_socket_response.socket();
   }
@@ -301,7 +299,7 @@ class ChannelzSampler final {
       LOG(ERROR) << "Wrong user credential type: " << custom_credentials_type
                  << ". Allowed credential types: INSECURE_CREDENTIALS, ssl, "
                     "alts, google_default_credentials.";
-      CHECK(0);
+      GRPC_CHECK(0);
     }
     std::shared_ptr<grpc::Channel> channel =
         CreateChannel(server_address, channel_creds);
@@ -333,7 +331,7 @@ class ChannelzSampler final {
                      << server_start_id << ", failed: "
                      << get_servers_context.debug_error_string();
         }
-        CHECK(0);
+        GRPC_CHECK(0);
       }
       for (const auto& _server : get_servers_response.server()) {
         all_servers_.push_back(_server);
@@ -387,7 +385,7 @@ class ChannelzSampler final {
                       "GetTopChannelsRequest.channel_start_id="
                    << channel_start_id << " failed: "
                    << get_top_channels_context.debug_error_string();
-        CHECK(0);
+        GRPC_CHECK(0);
       }
       for (const auto& _topchannel : get_top_channels_response.channel()) {
         top_channels_.push_back(_topchannel);

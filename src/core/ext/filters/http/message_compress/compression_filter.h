@@ -19,24 +19,24 @@
 #ifndef GRPC_SRC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_COMPRESSION_FILTER_H
 #define GRPC_SRC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_COMPRESSION_FILTER_H
 
+#include <grpc/impl/compression_types.h>
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
+#include <cstddef>
+#include <optional>
 
-#include <grpc/impl/compression_types.h>
-
+#include "src/core/call/metadata_batch.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -68,7 +68,7 @@ class ChannelCompression {
 
   struct DecompressArgs {
     grpc_compression_algorithm algorithm;
-    absl::optional<uint32_t> max_recv_message_length;
+    std::optional<uint32_t> max_recv_message_length;
   };
 
   grpc_compression_algorithm default_compression_algorithm() const {
@@ -86,15 +86,27 @@ class ChannelCompression {
 
   // Compress one message synchronously.
   MessageHandle CompressMessage(MessageHandle message,
-                                grpc_compression_algorithm algorithm) const;
+                                grpc_compression_algorithm algorithm,
+                                CallTracer* call_tracer) const;
   // Decompress one message synchronously.
-  absl::StatusOr<MessageHandle> DecompressMessage(bool is_client,
-                                                  MessageHandle message,
-                                                  DecompressArgs args) const;
+  absl::StatusOr<MessageHandle> DecompressMessage(
+      bool is_client, MessageHandle message, DecompressArgs args,
+      CallTracer* call_tracer) const;
+
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("max_recv_size", max_recv_size_)
+        .Set("default_compression_algorithm",
+             CompressionAlgorithmAsString(default_compression_algorithm_))
+        .Set("enabled_compression_algorithms",
+             enabled_compression_algorithms_.ToString())
+        .Set("enable_compression", enable_compression_)
+        .Set("enable_decompression", enable_decompression_);
+  }
 
  private:
   // Max receive message length, if set.
-  absl::optional<uint32_t> max_recv_size_;
+  std::optional<uint32_t> max_recv_size_;
   size_t message_size_service_config_parser_index_;
   // The default, channel-level, compression algorithm.
   grpc_compression_algorithm default_compression_algorithm_;
@@ -107,7 +119,8 @@ class ChannelCompression {
 };
 
 class ClientCompressionFilter final
-    : public ImplementChannelFilter<ClientCompressionFilter> {
+    : public ImplementChannelFilter<ClientCompressionFilter>,
+      public channelz::DataSource {
  public:
   static const grpc_channel_filter kFilter;
 
@@ -117,7 +130,16 @@ class ClientCompressionFilter final
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
   explicit ClientCompressionFilter(const ChannelArgs& args)
-      : compression_engine_(args) {}
+      : channelz::DataSource(args.GetObjectRef<channelz::BaseNode>()),
+        compression_engine_(args) {
+    SourceConstructed();
+  }
+  ~ClientCompressionFilter() override { SourceDestructing(); }
+
+  void AddData(channelz::DataSink sink) override {
+    sink.AddData("clientCompressionFilter",
+                 compression_engine_.ChannelzProperties());
+  }
 
   // Construct a promise for one call.
   class Call {
@@ -132,13 +154,16 @@ class ClientCompressionFilter final
     absl::StatusOr<MessageHandle> OnServerToClientMessage(
         MessageHandle message, ClientCompressionFilter* filter);
 
-    static const NoInterceptor OnClientToServerHalfClose;
-    static const NoInterceptor OnServerTrailingMetadata;
-    static const NoInterceptor OnFinalize;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerTrailingMetadata;
+    static inline const NoInterceptor OnFinalize;
 
    private:
     grpc_compression_algorithm compression_algorithm_;
     ChannelCompression::DecompressArgs decompress_args_;
+    // TODO(yashykt): Remove call_tracer_ after migration to call v3 stack. (See
+    // https://github.com/grpc/grpc/pull/38729 for more information.)
+    CallTracer* call_tracer_ = nullptr;
   };
 
  private:
@@ -146,7 +171,8 @@ class ClientCompressionFilter final
 };
 
 class ServerCompressionFilter final
-    : public ImplementChannelFilter<ServerCompressionFilter> {
+    : public ImplementChannelFilter<ServerCompressionFilter>,
+      public channelz::DataSource {
  public:
   static const grpc_channel_filter kFilter;
 
@@ -156,7 +182,16 @@ class ServerCompressionFilter final
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
   explicit ServerCompressionFilter(const ChannelArgs& args)
-      : compression_engine_(args) {}
+      : channelz::DataSource(args.GetObjectRef<channelz::BaseNode>()),
+        compression_engine_(args) {
+    SourceConstructed();
+  }
+  ~ServerCompressionFilter() override { SourceDestructing(); }
+
+  void AddData(channelz::DataSink sink) override {
+    sink.AddData("serverCompressionFilter",
+                 compression_engine_.ChannelzProperties());
+  }
 
   // Construct a promise for one call.
   class Call {
@@ -171,9 +206,9 @@ class ServerCompressionFilter final
     MessageHandle OnServerToClientMessage(MessageHandle message,
                                           ServerCompressionFilter* filter);
 
-    static const NoInterceptor OnClientToServerHalfClose;
-    static const NoInterceptor OnServerTrailingMetadata;
-    static const NoInterceptor OnFinalize;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerTrailingMetadata;
+    static inline const NoInterceptor OnFinalize;
 
    private:
     ChannelCompression::DecompressArgs decompress_args_;

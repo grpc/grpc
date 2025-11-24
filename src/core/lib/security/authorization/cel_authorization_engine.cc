@@ -14,19 +14,18 @@
 
 #include "src/core/lib/security/authorization/cel_authorization_engine.h"
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <algorithm>
+#include <optional>
 #include <utility>
 
-#include "absl/log/log.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "absl/types/span.h"
 #include "upb/base/string_view.h"
 #include "upb/message/map.h"
-
-#include <grpc/support/port_platform.h>
+#include "absl/log/log.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 
@@ -70,16 +69,12 @@ CelAuthorizationEngine::CelAuthorizationEngine(
     // Extract array of policies and store their condition fields in either
     // allow_if_matched_ or deny_if_matched_, depending on the policy action.
     upb::Arena temp_arena;
-    size_t policy_num = kUpb_Map_Begin;
-    const envoy_config_rbac_v3_RBAC_PoliciesEntry* policy_entry;
-    while ((policy_entry = envoy_config_rbac_v3_RBAC_policies_next(
-                rbac_policy, &policy_num)) != nullptr) {
-      const upb_StringView policy_name_strview =
-          envoy_config_rbac_v3_RBAC_PoliciesEntry_key(policy_entry);
-      const std::string policy_name(policy_name_strview.data,
-                                    policy_name_strview.size);
-      const envoy_config_rbac_v3_Policy* policy =
-          envoy_config_rbac_v3_RBAC_PoliciesEntry_value(policy_entry);
+    size_t iter = kUpb_Map_Begin;
+    upb_StringView name;
+    const envoy_config_rbac_v3_Policy* policy;
+    while (envoy_config_rbac_v3_RBAC_policies_next(rbac_policy, &name, &policy,
+                                                   &iter)) {
+      const std::string policy_name(name.data, name.size);
       const google_api_expr_v1alpha1_Expr* condition =
           envoy_config_rbac_v3_Policy_condition(policy);
       // Parse condition to make a pointer tied to the lifetime of arena_.
@@ -90,9 +85,9 @@ CelAuthorizationEngine::CelAuthorizationEngine(
           google_api_expr_v1alpha1_Expr_parse(serialized, serial_len,
                                               arena_.ptr());
       if (envoy_config_rbac_v3_RBAC_action(rbac_policy) == kAllow) {
-        allow_if_matched_.insert(std::make_pair(policy_name, parsed_condition));
+        allow_if_matched_.insert(std::pair(policy_name, parsed_condition));
       } else {
-        deny_if_matched_.insert(std::make_pair(policy_name, parsed_condition));
+        deny_if_matched_.insert(std::pair(policy_name, parsed_condition));
       }
     }
   }
@@ -125,7 +120,7 @@ std::unique_ptr<mock_cel::Activation> CelAuthorizationEngine::CreateActivation(
           header_items;
       for (const auto& header_key : header_keys_) {
         std::string temp_value;
-        absl::optional<absl::string_view> header_value =
+        std::optional<absl::string_view> header_value =
             args.GetHeaderValue(header_key, &temp_value);
         if (header_value.has_value()) {
           header_items.push_back(

@@ -20,18 +20,17 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
-
-#include "absl/container/flat_hash_map.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
 
 #include "src/core/util/ref_counted.h"
 #include "src/core/xds/grpc/xds_cluster.h"
 #include "src/core/xds/grpc/xds_endpoint.h"
 #include "src/core/xds/grpc/xds_listener.h"
 #include "src/core/xds/grpc/xds_route_config.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -67,14 +66,18 @@ struct XdsConfig : public RefCounted<XdsConfig> {
     // The list of leaf clusters for an aggregate cluster.
     struct AggregateConfig {
       std::vector<absl::string_view> leaf_clusters;
+      std::string resolution_note;
 
-      explicit AggregateConfig(std::vector<absl::string_view> leaf_clusters)
-          : leaf_clusters(std::move(leaf_clusters)) {}
+      AggregateConfig(std::vector<absl::string_view> leaf_clusters,
+                      std::string resolution_note)
+          : leaf_clusters(std::move(leaf_clusters)),
+            resolution_note(std::move(resolution_note)) {}
       bool operator==(const AggregateConfig& other) const {
-        return leaf_clusters == other.leaf_clusters;
+        return leaf_clusters == other.leaf_clusters &&
+               resolution_note == other.resolution_note;
       }
     };
-    absl::variant<EndpointConfig, AggregateConfig> children;
+    std::variant<EndpointConfig, AggregateConfig> children;
 
     // Ctor for leaf clusters.
     ClusterConfig(std::shared_ptr<const XdsClusterResource> cluster,
@@ -82,7 +85,8 @@ struct XdsConfig : public RefCounted<XdsConfig> {
                   std::string resolution_note);
     // Ctor for aggregate clusters.
     ClusterConfig(std::shared_ptr<const XdsClusterResource> cluster,
-                  std::vector<absl::string_view> leaf_clusters);
+                  std::vector<absl::string_view> leaf_clusters,
+                  std::string resolution_note);
 
     bool operator==(const ClusterConfig& other) const {
       return cluster == other.cluster && children == other.children;

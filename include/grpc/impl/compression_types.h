@@ -41,8 +41,9 @@ extern "C" {
  * Its value is an int from the \a grpc_compression_algorithm enum. */
 #define GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM \
   "grpc.default_compression_algorithm"
-/** Default compression level for the channel.
- * Its value is an int from the \a grpc_compression_level enum. */
+/** Set the default compression level for the channel.
+ * Valid values are defined by the enum type grpc_compression_level, defaults to
+ * GRPC_COMPRESS_LEVEL_NONE. */
 #define GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL "grpc.default_compression_level"
 /** Compression algorithms supported by the channel.
  * Its value is a bitset (an int). Bits correspond to algorithms in \a

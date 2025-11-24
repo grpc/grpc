@@ -13,36 +13,33 @@
 // limitations under the License.
 //
 
-#include <vector>
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-
 #include <grpc/event_engine/endpoint_config.h>
 
+#include <vector>
+
+#include "envoy/extensions/clusters/aggregate/v3/cluster.pb.h"
 #include "src/core/client_channel/backup_poller.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/config/config_vars.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/util/env.h"
-#include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc {
 namespace testing {
 namespace {
 
-using ::envoy::config::cluster::v3::CustomClusterType;
 using ::envoy::extensions::clusters::aggregate::v3::ClusterConfig;
 
 class ClusterTypeTest : public XdsEnd2endTest {
@@ -54,7 +51,7 @@ class ClusterTypeTest : public XdsEnd2endTest {
 
   // Subclasses must call this to initialize.
   void LogicalDnsInitClient(
-      absl::optional<XdsBootstrapBuilder> builder = absl::nullopt,
+      std::optional<XdsBootstrapBuilder> builder = std::nullopt,
       std::shared_ptr<ChannelCredentials> credentials = nullptr) {
     ChannelArguments args;
     args.SetPointerWithVtable(
@@ -73,9 +70,9 @@ class ClusterTypeTest : public XdsEnd2endTest {
     for (int port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri =
           grpc_core::URI::Parse(grpc_core::LocalIpUri(port));
-      CHECK_OK(lb_uri);
+      GRPC_CHECK_OK(lb_uri);
       grpc_resolved_address address;
-      CHECK(grpc_parse_uri(*lb_uri, &address));
+      GRPC_CHECK(grpc_parse_uri(*lb_uri, &address));
       addresses.emplace_back(address, grpc_core::ChannelArgs());
     }
     return addresses;
@@ -169,15 +166,13 @@ TEST_P(LogicalDNSClusterTest, FailedBackendConnectionCausesReresolution) {
     if (!result.status.ok()) {
       EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
       EXPECT_THAT(result.status.error_message(),
-                  MakeConnectionFailureRegex(
-                      "connections to all backends failing; last error: "));
+                  ::testing::MatchesRegex(MakeConnectionFailureRegex(
+                      "connections to all backends failing; last error: ")));
     }
   });
 }
 
 TEST_P(LogicalDNSClusterTest, AutoHostRewrite) {
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_AUTHORITY_REWRITE");
   constexpr char kDnsName[] = "dns.example.com";
   // Set auto_host_rewrite in the RouteConfig.
   RouteConfiguration new_route_config = default_route_config_;
@@ -222,51 +217,7 @@ TEST_P(LogicalDNSClusterTest, AutoHostRewrite) {
   EXPECT_EQ(response.param().host(), absl::StrCat(kDnsName, ":443"));
 }
 
-TEST_P(LogicalDNSClusterTest, NoAuthorityRewriteWithoutEnvVar) {
-  constexpr char kDnsName[] = "dns.example.com";
-  // Set auto_host_rewrite in the RouteConfig.
-  RouteConfiguration new_route_config = default_route_config_;
-  new_route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->mutable_auto_host_rewrite()
-      ->set_value(true);
-  SetRouteConfiguration(balancer_.get(), new_route_config);
-  // Create Logical DNS Cluster
-  auto cluster = default_cluster_;
-  cluster.set_type(Cluster::LOGICAL_DNS);
-  auto* address = cluster.mutable_load_assignment()
-                      ->add_endpoints()
-                      ->add_lb_endpoints()
-                      ->mutable_endpoint()
-                      ->mutable_address()
-                      ->mutable_socket_address();
-  address->set_address(kDnsName);
-  address->set_port_value(443);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  // Create client and server.
-  LogicalDnsInitClient(MakeBootstrapBuilder().SetTrustedXdsServer());
-  CreateAndStartBackends(1);
-  // Set Logical DNS result
-  {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_core::Resolver::Result result;
-    result.addresses = CreateAddressListFromPortList(GetBackendPorts());
-    logical_dns_cluster_resolver_response_generator_->SetResponseSynchronously(
-        std::move(result));
-  }
-  // Send RPC and verify the authority seen by the server.
-  EchoResponse response;
-  Status status = SendRpc(
-      RpcOptions().set_echo_host_from_authority_header(true), &response);
-  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
-                           << " message=" << status.error_message();
-  EXPECT_EQ(response.param().host(), kServerName);
-}
-
 TEST_P(LogicalDNSClusterTest, NoAuthorityRewriteIfServerNotTrustedInBootstrap) {
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_AUTHORITY_REWRITE");
   constexpr char kDnsName[] = "dns.example.com";
   // Set auto_host_rewrite in the RouteConfig.
   RouteConfiguration new_route_config = default_route_config_;
@@ -309,8 +260,6 @@ TEST_P(LogicalDNSClusterTest, NoAuthorityRewriteIfServerNotTrustedInBootstrap) {
 }
 
 TEST_P(LogicalDNSClusterTest, NoAuthorityRewriteIfNotEnabledInRoute) {
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_AUTHORITY_REWRITE");
   constexpr char kDnsName[] = "dns.example.com";
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
@@ -389,7 +338,7 @@ TEST_P(AggregateClusterTest, Basic) {
   balancer_->ads_service()->SetCdsResource(new_cluster2);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  auto* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kNewCluster1Name);
@@ -442,7 +391,7 @@ TEST_P(AggregateClusterTest, LoadBalancingPolicyComesFromUnderlyingCluster) {
   balancer_->ads_service()->SetCdsResource(new_cluster2);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  auto* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kNewCluster1Name);
@@ -515,7 +464,7 @@ TEST_P(AggregateClusterTest, LoadBalancingPolicyComesFromAggregateCluster) {
   balancer_->ads_service()->SetCdsResource(new_cluster2);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  auto* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kNewCluster1Name);
@@ -577,7 +526,7 @@ TEST_P(AggregateClusterTest, FallBackWithConnectivityChurn) {
   balancer_->ads_service()->SetCdsResource(cluster2);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  auto* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kClusterName1);
@@ -652,7 +601,7 @@ TEST_P(AggregateClusterTest, EdsToLogicalDns) {
   balancer_->ads_service()->SetCdsResource(logical_dns_cluster);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  auto* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kNewCluster1Name);
@@ -713,7 +662,7 @@ TEST_P(AggregateClusterTest, LogicalDnsToEds) {
   balancer_->ads_service()->SetCdsResource(logical_dns_cluster);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  auto* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kLogicalDNSClusterName);
@@ -784,7 +733,7 @@ TEST_P(AggregateClusterTest, ReconfigEdsWhileLogicalDnsChildFails) {
   balancer_->ads_service()->SetCdsResource(logical_dns_cluster);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  auto* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kNewCluster1Name);
@@ -801,8 +750,8 @@ TEST_P(AggregateClusterTest, ReconfigEdsWhileLogicalDnsChildFails) {
   }
   // When an RPC fails, we know the channel has seen the update.
   constexpr char kErrorMessage[] =
-      "empty address list: DNS resolution failed for server.example.com:443: "
-      "UNAVAILABLE: injected error";
+      "no children in weighted_target policy \\(DNS resolution failed for "
+      "server.example.com:443: UNAVAILABLE: injected error\\)";
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, kErrorMessage);
   // Send an EDS update that moves locality1 to priority 0.
   args1 = EdsResourceArgs({
@@ -850,7 +799,7 @@ TEST_P(AggregateClusterTest, MultipleClustersWithSameLocalities) {
   balancer_->ads_service()->SetCdsResource(new_cluster2);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  auto* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kNewClusterName1);
@@ -896,7 +845,7 @@ TEST_P(AggregateClusterTest, UpdateOfChildCluster) {
   balancer_->ads_service()->SetCdsResource(new_cluster1);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  auto* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kNewCluster1Name);
@@ -947,7 +896,7 @@ TEST_P(AggregateClusterTest, DiamondDependency) {
   // Populate top-level aggregate cluster pointing to kNewClusterName1
   // and kNewAggregateClusterName.
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  auto* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kNewClusterName1);
@@ -983,7 +932,7 @@ TEST_P(AggregateClusterTest, DependencyLoopWithNoLeafClusters) {
   const char* kNewClusterName1 = "new_cluster_1";
   // Default cluster is an aggregate cluster pointing to kNewClusterName1.
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  auto* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kNewClusterName1);
@@ -1014,7 +963,7 @@ TEST_P(AggregateClusterTest, DependencyLoopWithLeafClusters) {
   // Populate top-level aggregate cluster pointing to itself and the new
   // CDS cluster.
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  auto* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kNewClusterName1);
@@ -1038,7 +987,7 @@ TEST_P(AggregateClusterTest, RecursionDepthJustBelowMax) {
   for (int i = 14; i >= 0; --i) {
     auto cluster = default_cluster_;
     if (i > 0) cluster.set_name(absl::StrCat(kDefaultClusterName, i));
-    CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+    auto* custom_cluster = cluster.mutable_cluster_type();
     custom_cluster->set_name("envoy.clusters.aggregate");
     ClusterConfig cluster_config;
     cluster_config.add_clusters(absl::StrCat(kDefaultClusterName, i + 1));
@@ -1062,7 +1011,7 @@ TEST_P(AggregateClusterTest, RecursionMaxDepth) {
   for (int i = 15; i >= 0; --i) {
     auto cluster = default_cluster_;
     if (i > 0) cluster.set_name(absl::StrCat(kDefaultClusterName, i));
-    CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+    auto* custom_cluster = cluster.mutable_cluster_type();
     custom_cluster->set_name("envoy.clusters.aggregate");
     ClusterConfig cluster_config;
     cluster_config.add_clusters(absl::StrCat(kDefaultClusterName, i + 1));
@@ -1075,6 +1024,45 @@ TEST_P(AggregateClusterTest, RecursionMaxDepth) {
   EXPECT_THAT(
       status.error_message(),
       ::testing::HasSubstr("aggregate cluster graph exceeds max depth"));
+}
+
+TEST_P(AggregateClusterTest, UnderlyingClusterDoesNotExist) {
+  CreateAndStartBackends(1);
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewEdsService1Name = "new_eds_service_name_1";
+  const char* kNewCluster2Name = "new_cluster_2";
+  // Populate new EDS resource.
+  EdsResourceArgs args1({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsService1Name));
+  // Populate new CDS resource.
+  Cluster new_cluster1 = default_cluster_;
+  new_cluster1.set_name(kNewCluster1Name);
+  new_cluster1.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService1Name);
+  balancer_->ads_service()->SetCdsResource(new_cluster1);
+  // Create Aggregate Cluster.
+  auto cluster = default_cluster_;
+  auto* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters(kNewCluster1Name);
+  cluster_config.add_clusters(kNewCluster2Name);  // Does not exist.
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // Wait for traffic to go to backend 0.
+  // Use a longer deadline to wait for xDS resource does-not-exist timeout.
+  WaitForBackend(DEBUG_LOCATION, 0, nullptr, WaitForBackendOptions(),
+                 RpcOptions().set_timeout_ms(20000));
+  // Shutdown backend 0.  RPCs should fail, and the error message should
+  // include the fact that kNewCluster2Name doesn't exist.
+  backends_[0]->StopListeningAndSendGoaways();
+  SendRpcsUntilFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                       MakeConnectionFailureRegex(
+                           "connections to all backends failing; last error: ",
+                           "CDS resource new_cluster_2: does not exist "
+                           "\\(node ID:xds_end2end_test\\); "
+                           "xDS node ID:xds_end2end_test"));
 }
 
 }  // namespace

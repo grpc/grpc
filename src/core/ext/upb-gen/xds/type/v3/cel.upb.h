@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_TYPE_V3_CEL_PROTO_UPB_H_
-#define XDS_TYPE_V3_CEL_PROTO_UPB_H_
+#ifndef XDS_TYPE_V3_CEL_PROTO_UPB_H__UPB_H_
+#define XDS_TYPE_V3_CEL_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -79,6 +79,10 @@ UPB_INLINE xds_type_v3_CelExpression_expr_specifier_oneofcases xds_type_v3_CelEx
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (xds_type_v3_CelExpression_expr_specifier_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void xds_type_v3_CelExpression_clear_expr_specifier(xds_type_v3_CelExpression* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &xds__type__v3__CelExpression_msg_init, &field);
 }
 UPB_INLINE void xds_type_v3_CelExpression_clear_parsed_expr(xds_type_v3_CelExpression* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -246,4 +250,4 @@ UPB_INLINE struct google_protobuf_StringValue* xds_type_v3_CelExtractString_muta
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_TYPE_V3_CEL_PROTO_UPB_H_ */
+#endif  /* XDS_TYPE_V3_CEL_PROTO_UPB_H__UPB_H_ */

@@ -54,9 +54,8 @@ class _FaceServicerContext(face.ServicerContext):
         return self._servicer_context.time_remaining()
 
     def add_abortion_callback(self, abortion_callback):
-        raise NotImplementedError(
-            "add_abortion_callback no longer supported server-side!"
-        )
+        error_msg = "add_abortion_callback no longer supported server-side!"
+        raise NotImplementedError(error_msg)
 
     def cancel(self):
         self._servicer_context.cancel()
@@ -135,24 +134,22 @@ class _Callback(stream.Consumer):
             while True:
                 if self._cancelled:
                     raise abandonment.Abandoned()
-                elif self._values:
+                if self._values:
                     return self._values.pop(0)
-                elif self._terminated:
+                if self._terminated:
                     return None
-                else:
-                    self._condition.wait()
+                self._condition.wait()
 
     def draw_all_values(self):
         with self._condition:
             while True:
                 if self._cancelled:
                     raise abandonment.Abandoned()
-                elif self._terminated:
+                if self._terminated:
                     all_values = tuple(self._values)
                     self._values = None
                     return all_values
-                else:
-                    self._condition.wait()
+                self._condition.wait()
 
 
 def _run_request_pipe_thread(
@@ -264,7 +261,7 @@ class _SimpleMethodHandler(
     pass
 
 
-def _simple_method_handler(
+def _simple_method_handler(  # noqa: PLR0911
     implementation, request_deserializer, response_serializer
 ):
     if implementation.style is style.Service.INLINE:
@@ -279,7 +276,7 @@ def _simple_method_handler(
                 None,
                 None,
             )
-        elif implementation.cardinality is cardinality.Cardinality.UNARY_STREAM:
+        if implementation.cardinality is cardinality.Cardinality.UNARY_STREAM:
             return _SimpleMethodHandler(
                 False,
                 True,
@@ -290,7 +287,7 @@ def _simple_method_handler(
                 None,
                 None,
             )
-        elif implementation.cardinality is cardinality.Cardinality.STREAM_UNARY:
+        if implementation.cardinality is cardinality.Cardinality.STREAM_UNARY:
             return _SimpleMethodHandler(
                 True,
                 False,
@@ -303,9 +300,7 @@ def _simple_method_handler(
                 ),
                 None,
             )
-        elif (
-            implementation.cardinality is cardinality.Cardinality.STREAM_STREAM
-        ):
+        if implementation.cardinality is cardinality.Cardinality.STREAM_STREAM:
             return _SimpleMethodHandler(
                 True,
                 True,
@@ -330,7 +325,7 @@ def _simple_method_handler(
                 None,
                 None,
             )
-        elif implementation.cardinality is cardinality.Cardinality.UNARY_STREAM:
+        if implementation.cardinality is cardinality.Cardinality.UNARY_STREAM:
             return _SimpleMethodHandler(
                 False,
                 True,
@@ -341,7 +336,7 @@ def _simple_method_handler(
                 None,
                 None,
             )
-        elif implementation.cardinality is cardinality.Cardinality.STREAM_UNARY:
+        if implementation.cardinality is cardinality.Cardinality.STREAM_UNARY:
             return _SimpleMethodHandler(
                 True,
                 False,
@@ -352,9 +347,7 @@ def _simple_method_handler(
                 _adapt_stream_unary_event(implementation.stream_unary_event),
                 None,
             )
-        elif (
-            implementation.cardinality is cardinality.Cardinality.STREAM_STREAM
-        ):
+        if implementation.cardinality is cardinality.Cardinality.STREAM_STREAM:
             return _SimpleMethodHandler(
                 True,
                 True,
@@ -406,13 +399,12 @@ class _GenericRpcHandler(grpc.GenericRpcHandler):
                 self._request_deserializers.get(handler_call_details.method),
                 self._response_serializers.get(handler_call_details.method),
             )
-        elif self._multi_method_implementation is None:
+        if self._multi_method_implementation is None:
             return None
-        else:
-            try:
-                return None  # TODO(nathaniel): call the multimethod.
-            except face.NoSuchMethodError:
-                return None
+        try:
+            return None  # TODO(nathaniel): call the multimethod.
+        except face.NoSuchMethodError:
+            return None
 
 
 class _Server(interfaces.Server):

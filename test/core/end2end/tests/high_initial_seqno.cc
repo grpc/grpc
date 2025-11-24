@@ -16,16 +16,15 @@
 //
 //
 
-#include <memory>
-
-#include "gtest/gtest.h"
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
+
+#include <memory>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace {
@@ -62,7 +61,7 @@ void SimpleRequest(CoreEnd2endTest& test) {
 }
 
 void TenRequests(CoreEnd2endTest& test, int initial_sequence_number) {
-  test.InitServer(ChannelArgs());
+  test.InitServer(CoreEnd2endTest::DefaultServerArgs());
   test.InitClient(ChannelArgs().Set(GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER,
                                     initial_sequence_number));
   for (int i = 0; i < 10; i++) {
@@ -70,8 +69,10 @@ void TenRequests(CoreEnd2endTest& test, int initial_sequence_number) {
   }
 }
 
-CORE_END2END_TEST(Http2Test, HighInitialSeqno) { TenRequests(*this, 16777213); }
-CORE_END2END_TEST(RetryHttp2Test, HighInitialSeqno) {
+CORE_END2END_TEST(Http2Tests, HighInitialSeqno) {
+  TenRequests(*this, 16777213);
+}
+CORE_END2END_TEST(RetryHttp2Tests, HighInitialSeqno) {
   TenRequests(*this, 2147483645);
 }
 

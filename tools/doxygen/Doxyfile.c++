@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.68.0-dev
+PROJECT_NUMBER         = 1.77.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -66,7 +66,7 @@ OUTPUT_DIRECTORY       = doc/ref/c++
 # directories (in 2 levels) under the output directory of each output format and
 # will distribute the generated files over these directories. Enabling this
 # option can be useful when feeding doxygen a huge amount of source files, where
-# putting all generated files in the same directory would otherwise causes
+# putting all generated files in the same directory would otherwise cause
 # performance problems for the file system.
 # The default value is: NO.
 
@@ -450,7 +450,7 @@ EXTRACT_LOCAL_METHODS  = NO
 # If this flag is set to YES, the members of anonymous namespaces will be
 # extracted and appear in the documentation as a namespace called
 # 'anonymous_namespace{file}', where file will be replaced with the base name of
-# the file that contains the anonymous namespace. By default anonymous namespace
+# the file that contains the anonymous namespace. By default anonymous namespaces
 # are hidden.
 # The default value is: NO.
 
@@ -882,12 +882,14 @@ include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
 include/grpc/compression.h \
+include/grpc/create_channel_from_endpoint.h \
 include/grpc/credentials.h \
 include/grpc/event_engine/endpoint_config.h \
 include/grpc/event_engine/event_engine.h \
 include/grpc/event_engine/extensible.h \
 include/grpc/event_engine/internal/memory_allocator_impl.h \
 include/grpc/event_engine/internal/slice_cast.h \
+include/grpc/event_engine/internal/write_event.h \
 include/grpc/event_engine/memory_allocator.h \
 include/grpc/event_engine/memory_request.h \
 include/grpc/event_engine/port.h \
@@ -960,7 +962,6 @@ include/grpcpp/channel.h \
 include/grpcpp/client_context.h \
 include/grpcpp/completion_queue.h \
 include/grpcpp/create_channel.h \
-include/grpcpp/create_channel_binder.h \
 include/grpcpp/create_channel_posix.h \
 include/grpcpp/ext/call_metric_recorder.h \
 include/grpcpp/ext/health_check_service_server_builder_option.h \
@@ -1029,6 +1030,7 @@ include/grpcpp/impl/codegen/time.h \
 include/grpcpp/impl/completion_queue_tag.h \
 include/grpcpp/impl/create_auth_context.h \
 include/grpcpp/impl/delegating_channel.h \
+include/grpcpp/impl/generic_serialize.h \
 include/grpcpp/impl/generic_stub_internal.h \
 include/grpcpp/impl/grpc_library.h \
 include/grpcpp/impl/intercepted_channel.h \
@@ -1047,13 +1049,13 @@ include/grpcpp/impl/service_type.h \
 include/grpcpp/impl/status.h \
 include/grpcpp/impl/sync.h \
 include/grpcpp/passive_listener.h \
+include/grpcpp/ports_def.inc \
+include/grpcpp/ports_undef.inc \
 include/grpcpp/resource_quota.h \
 include/grpcpp/security/audit_logging.h \
 include/grpcpp/security/auth_context.h \
 include/grpcpp/security/auth_metadata_processor.h \
 include/grpcpp/security/authorization_policy_provider.h \
-include/grpcpp/security/binder_credentials.h \
-include/grpcpp/security/binder_security_policy.h \
 include/grpcpp/security/credentials.h \
 include/grpcpp/security/server_credentials.h \
 include/grpcpp/security/tls_certificate_provider.h \

@@ -19,10 +19,10 @@
 #ifndef GRPC_TEST_CORE_TSI_ALTS_FAKE_HANDSHAKER_FAKE_HANDSHAKER_SERVER_H
 #define GRPC_TEST_CORE_TSI_ALTS_FAKE_HANDSHAKER_FAKE_HANDSHAKER_SERVER_H
 
+#include <grpcpp/grpcpp.h>
+
 #include <memory>
 #include <string>
-
-#include <grpcpp/grpcpp.h>
 
 namespace grpc {
 namespace gcp {

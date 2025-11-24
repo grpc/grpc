@@ -16,18 +16,6 @@
 //
 //
 
-#include <algorithm>
-#include <condition_variable>
-#include <memory>
-#include <mutex>
-#include <random>
-#include <thread>
-
-#include <gtest/gtest.h>
-
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
@@ -41,6 +29,13 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
+#include <algorithm>
+#include <condition_variable>
+#include <memory>
+#include <mutex>
+#include <random>
+#include <thread>
+
 #include "src/core/util/backoff.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
@@ -49,6 +44,9 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
 
 #ifdef GPR_LINUX
 

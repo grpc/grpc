@@ -16,20 +16,18 @@
 //
 //
 
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "google/protobuf/duration.upb.h"
-#include "upb/mem/arena.hpp"
-
 #include <grpc/grpc.h>
 #include <grpcpp/support/config.h>
 
+#include "google/protobuf/duration.upb.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/load_balancing/grpclb/load_balancer_api.h"
+#include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/lb/v1/load_balancer.pb.h"  // C++ version
 #include "test/core/test_util/test_config.h"
+#include "upb/mem/arena.hpp"
+#include "gtest/gtest.h"
 
 namespace grpc {
 namespace {
@@ -46,7 +44,7 @@ class GrpclbTest : public ::testing::Test {
 
 std::string Ip4ToPackedString(const char* ip_str) {
   struct in_addr ip4;
-  CHECK_EQ(inet_pton(AF_INET, ip_str, &ip4), 1);
+  GRPC_CHECK_EQ(inet_pton(AF_INET, ip_str, &ip4), 1);
   return std::string(reinterpret_cast<const char*>(&ip4), sizeof(ip4));
 }
 
@@ -60,7 +58,7 @@ std::string PackedStringToIp(const grpc_core::GrpcLbServer& server) {
   } else {
     abort();
   }
-  CHECK_NE(inet_ntop(af, (void*)server.ip_addr, ip_str, 46), nullptr);
+  GRPC_CHECK_NE(inet_ntop(af, (void*)server.ip_addr, ip_str, 46), nullptr);
   return ip_str;
 }
 

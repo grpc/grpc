@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_LISTENER_V3_API_LISTENER_PROTO_UPB_H_
-#define ENVOY_CONFIG_LISTENER_V3_API_LISTENER_PROTO_UPB_H_
+#ifndef ENVOY_CONFIG_LISTENER_V3_API_LISTENER_PROTO_UPB_H__UPB_H_
+#define ENVOY_CONFIG_LISTENER_V3_API_LISTENER_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -103,4 +103,4 @@ UPB_INLINE struct google_protobuf_Any* envoy_config_listener_v3_ApiListener_muta
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_LISTENER_V3_API_LISTENER_PROTO_UPB_H_ */
+#endif  /* ENVOY_CONFIG_LISTENER_V3_API_LISTENER_PROTO_UPB_H__UPB_H_ */

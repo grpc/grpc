@@ -15,23 +15,17 @@
 #ifndef GRPC_TEST_CORE_END2END_FIXTURES_SOCKPAIR_FIXTURE_H
 #define GRPC_TEST_CORE_END2END_FIXTURES_SOCKPAIR_FIXTURE_H
 
-#include <utility>
-
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "gtest/gtest.h"
-
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
+#include <utility>
+
 #include "src/core/channelz/channelz.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/error.h"
@@ -42,8 +36,13 @@
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 
@@ -86,7 +85,7 @@ class SockpairFixture : public CoreTestFixture {
                                              std::move(server_endpoint), false);
     Server* core_server = Server::FromC(server);
     grpc_error_handle error = core_server->SetupTransport(
-        transport, nullptr, core_server->channel_args(), nullptr);
+        transport, nullptr, core_server->channel_args());
     if (error.ok()) {
       grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
                                           nullptr);
@@ -124,7 +123,7 @@ class SockpairFixture : public CoreTestFixture {
           "lame channel");
       transport->Orphan();
     }
-    CHECK(client);
+    GRPC_CHECK(client);
     return client;
   }
 

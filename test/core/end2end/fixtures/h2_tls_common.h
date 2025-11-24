@@ -19,14 +19,6 @@
 #ifndef GRPC_TEST_CORE_END2END_FIXTURES_H2_TLS_COMMON_H
 #define GRPC_TEST_CORE_END2END_FIXTURES_H2_TLS_COMMON_H
 
-#include <stdint.h>
-#include <string.h>
-
-#include <string>
-
-#include "absl/log/check.h"
-#include "absl/strings/string_view.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -34,14 +26,20 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
+#include <stdint.h>
+#include <string.h>
 
+#include <string>
+
+#include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/secure_fixture.h"
 #include "test/core/test_util/tls_utils.h"
+#include "absl/strings/string_view.h"
 
 // For normal TLS connections.
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
@@ -63,7 +61,7 @@ inline void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
                                  size_t /*md_count*/,
                                  grpc_process_auth_metadata_done_cb cb,
                                  void* user_data) {
-  CHECK_EQ(state, nullptr);
+  GRPC_CHECK_EQ(state, nullptr);
   cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
 }
 
@@ -106,9 +104,11 @@ class TlsFixture : public SecureFixture {
       }
       case SecurityPrimitives::ProviderType::FILE_PROVIDER: {
         client_provider_ = grpc_tls_certificate_provider_file_watcher_create(
-            SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
+            SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH,
+            /*spiffe_bundle_map_path=*/"", 1);
         server_provider_ = grpc_tls_certificate_provider_file_watcher_create(
-            SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
+            SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH,
+            /*spiffe_bundle_map_path=*/"", 1);
         break;
       }
     }

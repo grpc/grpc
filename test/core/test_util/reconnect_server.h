@@ -19,9 +19,9 @@
 #ifndef GRPC_TEST_CORE_TEST_UTIL_RECONNECT_SERVER_H
 #define GRPC_TEST_CORE_TEST_UTIL_RECONNECT_SERVER_H
 
-#include <string>
-
 #include <grpc/support/time.h>
+
+#include <string>
 
 #include "test/core/test_util/test_tcp_server.h"
 

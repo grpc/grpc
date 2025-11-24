@@ -16,21 +16,19 @@
 //
 //
 
-#include <sys/socket.h>
-
-#include <gtest/gtest.h>
-
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/grpc.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/config.h>
+#include <sys/socket.h>
 
 #include "src/core/util/notification.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 namespace grpc {
 namespace {

@@ -19,19 +19,17 @@
 #ifndef GRPC_SRC_CORE_LIB_SLICE_SLICE_INTERNAL_H
 #define GRPC_SRC_CORE_LIB_SLICE_SLICE_INTERNAL_H
 
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <cstddef>
 #include <string>
 
+#include "src/core/util/memory.h"
 #include "absl/hash/hash.h"
 #include "absl/log/check.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/util/memory.h"
 
 // Returns a pointer to the first slice in the slice buffer without giving
 // ownership to or a reference count on that slice.

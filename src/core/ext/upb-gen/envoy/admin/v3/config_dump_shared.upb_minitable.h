@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_ADMIN_V3_CONFIG_DUMP_SHARED_PROTO_UPB_MINITABLE_H_
-#define ENVOY_ADMIN_V3_CONFIG_DUMP_SHARED_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_ADMIN_V3_CONFIG_DUMP_SHARED_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_ADMIN_V3_CONFIG_DUMP_SHARED_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -65,4 +65,4 @@ extern const upb_MiniTableFile envoy_admin_v3_config_dump_shared_proto_upb_file_
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_ADMIN_V3_CONFIG_DUMP_SHARED_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_ADMIN_V3_CONFIG_DUMP_SHARED_PROTO_UPB_H__UPB_MINITABLE_H_ */

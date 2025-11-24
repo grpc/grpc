@@ -18,14 +18,12 @@
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 #include <string.h>
 
-#include "absl/log/check.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/huffsyms.h"
+#include "src/core/util/grpc_check.h"
 
 static const char alphabet[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -53,7 +51,7 @@ grpc_slice grpc_chttp2_base64_encode(const grpc_slice& input) {
   size_t input_length = GRPC_SLICE_LENGTH(input);
   size_t input_triplets = input_length / 3;
   size_t tail_case = input_length % 3;
-  size_t output_length = input_triplets * 4 + tail_xtra[tail_case];
+  size_t output_length = (input_triplets * 4) + tail_xtra[tail_case];
   grpc_slice output = GRPC_SLICE_MALLOC(output_length);
   const uint8_t* in = GRPC_SLICE_START_PTR(input);
   char* out = reinterpret_cast<char*> GRPC_SLICE_START_PTR(output);
@@ -88,8 +86,8 @@ grpc_slice grpc_chttp2_base64_encode(const grpc_slice& input) {
       break;
   }
 
-  CHECK(out == (char*)GRPC_SLICE_END_PTR(output));
-  CHECK(in == GRPC_SLICE_END_PTR(input));
+  GRPC_CHECK(out == (char*)GRPC_SLICE_END_PTR(output));
+  GRPC_CHECK(in == GRPC_SLICE_END_PTR(input));
   return output;
 }
 
@@ -132,7 +130,7 @@ grpc_slice grpc_chttp2_huffman_compress(const grpc_slice& input) {
                              static_cast<uint8_t>(0xffu >> temp_length));
   }
 
-  CHECK(out == GRPC_SLICE_END_PTR(output));
+  GRPC_CHECK(out == GRPC_SLICE_END_PTR(output));
 
   return output;
 }
@@ -173,9 +171,9 @@ grpc_slice grpc_chttp2_base64_encode_and_huffman_compress(
   size_t input_length = GRPC_SLICE_LENGTH(input);
   size_t input_triplets = input_length / 3;
   size_t tail_case = input_length % 3;
-  size_t output_syms = input_triplets * 4 + tail_xtra[tail_case];
+  size_t output_syms = (input_triplets * 4) + tail_xtra[tail_case];
   size_t max_output_bits = 11 * output_syms;
-  size_t max_output_length = max_output_bits / 8 + (max_output_bits % 8 != 0);
+  size_t max_output_length = (max_output_bits / 8) + (max_output_bits % 8 != 0);
   grpc_slice output = GRPC_SLICE_MALLOC(max_output_length);
   const uint8_t* in = GRPC_SLICE_START_PTR(input);
   uint8_t* start_out = GRPC_SLICE_START_PTR(output);
@@ -228,9 +226,9 @@ grpc_slice grpc_chttp2_base64_encode_and_huffman_compress(
         static_cast<uint8_t>(0xffu >> out.temp_length));
   }
 
-  CHECK(out.out <= GRPC_SLICE_END_PTR(output));
+  GRPC_CHECK(out.out <= GRPC_SLICE_END_PTR(output));
   GRPC_SLICE_SET_LENGTH(output, out.out - start_out);
 
-  CHECK(in == GRPC_SLICE_END_PTR(input));
+  GRPC_CHECK(in == GRPC_SLICE_END_PTR(input));
   return output;
 }

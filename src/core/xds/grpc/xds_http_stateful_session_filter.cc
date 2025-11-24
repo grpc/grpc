@@ -16,22 +16,19 @@
 
 #include "src/core/xds/grpc/xds_http_stateful_session_filter.h"
 
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
+
 #include <string>
 #include <utility>
+#include <variant>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/variant.h"
 #include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/extensions/filters/http/stateful_session/v3/stateful_session.upb.h"
 #include "envoy/extensions/filters/http/stateful_session/v3/stateful_session.upbdefs.h"
 #include "envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.h"
 #include "envoy/extensions/http/stateful_session/cookie/v3/cookie.upbdefs.h"
 #include "envoy/type/http/v3/cookie.upb.h"
-
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -43,6 +40,8 @@
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -91,7 +90,7 @@ Json::Object ValidateStatefulSession(
     return {};
   }
   absl::string_view* serialized_session_state =
-      absl::get_if<absl::string_view>(&extension->value);
+      std::get_if<absl::string_view>(&extension->value);
   if (serialized_session_state == nullptr) {
     errors->AddError("could not parse session state config");
     return {};
@@ -139,16 +138,16 @@ Json::Object ValidateStatefulSession(
 
 }  // namespace
 
-absl::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpStatefulSessionFilter::GenerateFilterConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
-      absl::get_if<absl::string_view>(&extension.value);
+      std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse stateful session filter config");
-    return absl::nullopt;
+    return std::nullopt;
   }
   auto* stateful_session =
       envoy_extensions_filters_http_stateful_session_v3_StatefulSession_parse(
@@ -156,23 +155,23 @@ XdsHttpStatefulSessionFilter::GenerateFilterConfig(
           context.arena);
   if (stateful_session == nullptr) {
     errors->AddError("could not parse stateful session filter config");
-    return absl::nullopt;
+    return std::nullopt;
   }
   return FilterConfig{ConfigProtoName(),
                       Json::FromObject(ValidateStatefulSession(
                           context, stateful_session, errors))};
 }
 
-absl::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpStatefulSessionFilter::GenerateFilterConfigOverride(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
-      absl::get_if<absl::string_view>(&extension.value);
+      std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse stateful session filter override config");
-    return absl::nullopt;
+    return std::nullopt;
   }
   auto* stateful_session_per_route =
       envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute_parse(
@@ -180,7 +179,7 @@ XdsHttpStatefulSessionFilter::GenerateFilterConfigOverride(
           context.arena);
   if (stateful_session_per_route == nullptr) {
     errors->AddError("could not parse stateful session filter override config");
-    return absl::nullopt;
+    return std::nullopt;
   }
   Json::Object config;
   if (!envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute_disabled(
@@ -199,7 +198,7 @@ XdsHttpStatefulSessionFilter::GenerateFilterConfigOverride(
 
 void XdsHttpStatefulSessionFilter::AddFilter(
     InterceptionChainBuilder& builder) const {
-  builder.Add<StatefulSessionFilter>();
+  builder.Add<StatefulSessionFilter>(nullptr);
 }
 
 const grpc_channel_filter* XdsHttpStatefulSessionFilter::channel_filter()

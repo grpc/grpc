@@ -16,17 +16,16 @@
 
 #include "src/core/xds/grpc/xds_http_filter_registry.h"
 
-#include <map>
-#include <utility>
-#include <vector>
-
-#include "absl/log/check.h"
-#include "absl/types/variant.h"
-#include "envoy/extensions/filters/http/router/v3/router.upb.h"
-#include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
-
 #include <grpc/support/port_platform.h>
 
+#include <map>
+#include <utility>
+#include <variant>
+#include <vector>
+
+#include "envoy/extensions/filters/http/router/v3/router.upb.h"
+#include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/xds/grpc/xds_http_fault_filter.h"
 #include "src/core/xds/grpc/xds_http_gcp_authn_filter.h"
@@ -52,33 +51,33 @@ void XdsHttpRouterFilter::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_router_v3_Router_getmsgdef(symtab);
 }
 
-absl::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpRouterFilter::GenerateFilterConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
-      absl::get_if<absl::string_view>(&extension.value);
+      std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse router filter config");
-    return absl::nullopt;
+    return std::nullopt;
   }
   if (envoy_extensions_filters_http_router_v3_Router_parse(
           serialized_filter_config->data(), serialized_filter_config->size(),
           context.arena) == nullptr) {
     errors->AddError("could not parse router filter config");
-    return absl::nullopt;
+    return std::nullopt;
   }
   return FilterConfig{ConfigProtoName(), Json()};
 }
 
-absl::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpRouterFilter::GenerateFilterConfigOverride(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& /*context*/,
     XdsExtension /*extension*/, ValidationErrors* errors) const {
   errors->AddError("router filter does not support config override");
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 //
@@ -91,18 +90,17 @@ XdsHttpFilterRegistry::XdsHttpFilterRegistry(bool register_builtins) {
     RegisterFilter(std::make_unique<XdsHttpFaultFilter>());
     RegisterFilter(std::make_unique<XdsHttpRbacFilter>());
     RegisterFilter(std::make_unique<XdsHttpStatefulSessionFilter>());
-    if (XdsGcpAuthFilterEnabled()) {
-      RegisterFilter(std::make_unique<XdsHttpGcpAuthnFilter>());
-    }
+    RegisterFilter(std::make_unique<XdsHttpGcpAuthnFilter>());
   }
 }
 
 void XdsHttpFilterRegistry::RegisterFilter(
     std::unique_ptr<XdsHttpFilterImpl> filter) {
-  CHECK(registry_map_.emplace(filter->ConfigProtoName(), filter.get()).second);
+  GRPC_CHECK(
+      registry_map_.emplace(filter->ConfigProtoName(), filter.get()).second);
   auto override_proto_name = filter->OverrideConfigProtoName();
   if (!override_proto_name.empty()) {
-    CHECK(registry_map_.emplace(override_proto_name, filter.get()).second);
+    GRPC_CHECK(registry_map_.emplace(override_proto_name, filter.get()).second);
   }
   owning_list_.push_back(std::move(filter));
 }

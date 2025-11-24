@@ -14,20 +14,17 @@
 // limitations under the License.
 //
 
-#include <memory>
-#include <new>
-
-#include "absl/status/status.h"
-#include "absl/types/optional.h"
-#include "gtest/gtest.h"
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
+#include <memory>
+#include <new>
+#include <optional>
+
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/surface/channel_stack_type.h"
@@ -36,6 +33,8 @@
 #include "src/core/util/status_helper.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace {
@@ -122,15 +121,17 @@ grpc_channel_filter InjectStatusFilter::kFilterVtable = {
 // - 1 retry allowed for ABORTED status
 // - server returns ABORTED, but filter overwrites to INVALID_ARGUMENT,
 //   so no retry is done
-CORE_END2END_TEST(RetryTest, RetryRecvTrailingMetadataError) {
-  CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
-    builder->channel_init()
-        ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
-                         &InjectStatusFilter::kFilterVtable)
-        // Skip on proxy (which explicitly disables retries).
-        .IfChannelArg(GRPC_ARG_ENABLE_RETRIES, true);
-  });
-  InitServer(ChannelArgs());
+CORE_END2END_TEST(RetryTests, RetryRecvTrailingMetadataError) {
+  SKIP_IF_V3();  // Need to convert filter
+  CoreConfiguration::RegisterEphemeralBuilder(
+      [](CoreConfiguration::Builder* builder) {
+        builder->channel_init()
+            ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
+                             &InjectStatusFilter::kFilterVtable)
+            // Skip on proxy (which explicitly disables retries).
+            .IfChannelArg(GRPC_ARG_ENABLE_RETRIES, true);
+      });
+  InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       "{\n"
@@ -149,7 +150,7 @@ CORE_END2END_TEST(RetryTest, RetryRecvTrailingMetadataError) {
       "}"));
   auto c =
       NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingMessage server_message;
   IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
@@ -161,8 +162,8 @@ CORE_END2END_TEST(RetryTest, RetryRecvTrailingMetadataError) {
   auto s = RequestCall(101);
   Expect(101, true);
   Step();
-  EXPECT_NE(s.GetPeer(), absl::nullopt);
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(s.GetPeer(), std::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})

@@ -21,7 +21,7 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
@@ -30,8 +30,9 @@ namespace grpc_core {
 
 void XdsMetadataMap::Insert(absl::string_view key,
                             std::unique_ptr<XdsMetadataValue> value) {
-  CHECK(value != nullptr);
-  CHECK(map_.emplace(key, std::move(value)).second) << "duplicate key: " << key;
+  GRPC_CHECK(value != nullptr);
+  GRPC_CHECK(map_.emplace(key, std::move(value)).second)
+      << "duplicate key: " << key;
 }
 
 const XdsMetadataValue* XdsMetadataMap::Find(absl::string_view key) const {
@@ -42,18 +43,18 @@ const XdsMetadataValue* XdsMetadataMap::Find(absl::string_view key) const {
 
 bool XdsMetadataMap::operator==(const XdsMetadataMap& other) const {
   if (map_.size() != other.map_.size()) return false;
-  for (const auto& p : map_) {
-    auto it = other.map_.find(p.first);
+  for (const auto& [key, value] : map_) {
+    auto it = other.map_.find(key);
     if (it == other.map_.end()) return false;
-    if (*p.second != *it->second) return false;
+    if (*value != *it->second) return false;
   }
   return true;
 }
 
 std::string XdsMetadataMap::ToString() const {
   std::vector<std::string> entries;
-  for (const auto& p : map_) {
-    entries.push_back(absl::StrCat(p.first, "=", p.second->ToString()));
+  for (const auto& [key, value] : map_) {
+    entries.push_back(absl::StrCat(key, "=", value->ToString()));
   }
   std::sort(entries.begin(), entries.end());
   return absl::StrCat("{", absl::StrJoin(entries, ", "), "}");

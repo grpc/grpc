@@ -5,11 +5,14 @@ This directory contains scripts that facilitate building and running gRPC intero
 The setup builds gRPC docker images for each language/runtime and upload it to Artifact Registry (AR). These images, encapsulating gRPC stack
 from specific releases/tag, are used to test version compatibility between gRPC release versions.
 
-## Step-by-step instructions for adding a AR docker image for a new release for compatibility test
+## Step-by-step instructions for adding an AR docker image for a new release for compatibility test
 
 We have continuous nightly test setup to test gRPC backward compatibility between old clients and latest server.
 When a gRPC developer creates a new gRPC release, s/he is also responsible to add the just-released gRPC client to the nightly test.
 The steps are:
+- Grant permissions:
+  - `gcloud auth login` (this will open a browser window; non-browser auth methods are available; use `--help`)
+  - `gcloud auth configure-docker us-docker.pkg.dev`
 - Add (or update) an entry in `./client_matrix.py` file to reference the github tag for the release.
 - Build new client docker image(s).  For example, for C and wrapper languages release `v1.9.9`, do
   - `tools/interop_matrix/create_matrix_images.py --git_checkout --release=v1.9.9 --upload_images --language cxx python ruby php`

@@ -18,18 +18,16 @@
 
 #include "src/core/lib/transport/bdp_estimator.h"
 
+#include <grpc/grpc.h>
 #include <stdlib.h>
 
 #include <algorithm>
 #include <atomic>
 
-#include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 

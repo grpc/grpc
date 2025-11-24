@@ -18,10 +18,8 @@
 
 #include "test/core/tsi/transport_security_test_lib.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 #include <openssl/asn1.h>
 #include <openssl/bio.h>
 #include <openssl/bn.h>
@@ -30,16 +28,16 @@
 #include <openssl/rsa.h>
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
-
-#include "absl/log/check.h"
-#include "absl/strings/str_cat.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/memory.h"
+#include "absl/strings/str_cat.h"
 
 static void notification_signal(tsi_test_fixture* fixture) {
   gpr_mu_lock(&fixture->mu);
@@ -69,8 +67,8 @@ typedef struct handshaker_args {
 
 static handshaker_args* handshaker_args_create(tsi_test_fixture* fixture,
                                                bool is_client) {
-  CHECK_NE(fixture, nullptr);
-  CHECK_NE(fixture->config, nullptr);
+  GRPC_CHECK_NE(fixture, nullptr);
+  GRPC_CHECK_NE(fixture->config, nullptr);
   handshaker_args* args = new handshaker_args();
   args->fixture = fixture;
   args->handshake_buffer_size = fixture->handshake_buffer_size;
@@ -89,9 +87,9 @@ static void handshaker_args_destroy(handshaker_args* args) {
 static void do_handshaker_next(handshaker_args* args);
 
 static void setup_handshakers(tsi_test_fixture* fixture) {
-  CHECK_NE(fixture, nullptr);
-  CHECK_NE(fixture->vtable, nullptr);
-  CHECK_NE(fixture->vtable->setup_handshakers, nullptr);
+  GRPC_CHECK_NE(fixture, nullptr);
+  GRPC_CHECK_NE(fixture->vtable, nullptr);
+  GRPC_CHECK_NE(fixture->vtable->setup_handshakers, nullptr);
   fixture->vtable->setup_handshakers(fixture);
 }
 
@@ -104,20 +102,20 @@ static void check_unused_bytes(tsi_test_fixture* fixture) {
                                          : fixture->server_result;
   const unsigned char* bytes = nullptr;
   size_t bytes_size = 0;
-  CHECK(tsi_handshaker_result_get_unused_bytes(result_with_unused_bytes, &bytes,
-                                               &bytes_size) == TSI_OK);
-  CHECK_EQ(bytes_size, strlen(TSI_TEST_UNUSED_BYTES));
-  CHECK_EQ(memcmp(bytes, TSI_TEST_UNUSED_BYTES, bytes_size), 0);
-  CHECK(tsi_handshaker_result_get_unused_bytes(result_without_unused_bytes,
-                                               &bytes, &bytes_size) == TSI_OK);
-  CHECK_EQ(bytes_size, 0u);
-  CHECK_EQ(bytes, nullptr);
+  GRPC_CHECK(tsi_handshaker_result_get_unused_bytes(
+                 result_with_unused_bytes, &bytes, &bytes_size) == TSI_OK);
+  GRPC_CHECK_EQ(bytes_size, strlen(TSI_TEST_UNUSED_BYTES));
+  GRPC_CHECK_EQ(memcmp(bytes, TSI_TEST_UNUSED_BYTES, bytes_size), 0);
+  GRPC_CHECK(tsi_handshaker_result_get_unused_bytes(
+                 result_without_unused_bytes, &bytes, &bytes_size) == TSI_OK);
+  GRPC_CHECK_EQ(bytes_size, 0u);
+  GRPC_CHECK_EQ(bytes, nullptr);
 }
 
 static void check_handshake_results(tsi_test_fixture* fixture) {
-  CHECK_NE(fixture, nullptr);
-  CHECK_NE(fixture->vtable, nullptr);
-  CHECK_NE(fixture->vtable->check_handshaker_peers, nullptr);
+  GRPC_CHECK_NE(fixture, nullptr);
+  GRPC_CHECK_NE(fixture->vtable, nullptr);
+  GRPC_CHECK_NE(fixture->vtable->check_handshaker_peers, nullptr);
   // Check handshaker peers.
   fixture->vtable->check_handshaker_peers(fixture);
   // Check unused bytes.
@@ -137,25 +135,25 @@ static void check_handshake_results(tsi_test_fixture* fixture) {
 static void send_bytes_to_peer(tsi_test_channel* test_channel,
                                const unsigned char* buf, size_t buf_size,
                                bool is_client) {
-  CHECK_NE(test_channel, nullptr);
-  CHECK_NE(buf, nullptr);
+  GRPC_CHECK_NE(test_channel, nullptr);
+  GRPC_CHECK_NE(buf, nullptr);
   uint8_t* channel =
       is_client ? test_channel->server_channel : test_channel->client_channel;
-  CHECK_NE(channel, nullptr);
+  GRPC_CHECK_NE(channel, nullptr);
   size_t* bytes_written = is_client
                               ? &test_channel->bytes_written_to_server_channel
                               : &test_channel->bytes_written_to_client_channel;
-  CHECK_NE(bytes_written, nullptr);
-  CHECK_LE(*bytes_written + buf_size,
-           static_cast<size_t>(TSI_TEST_DEFAULT_CHANNEL_SIZE));
+  GRPC_CHECK_NE(bytes_written, nullptr);
+  GRPC_CHECK_LE(*bytes_written + buf_size,
+                static_cast<size_t>(TSI_TEST_DEFAULT_CHANNEL_SIZE));
   // Write data to channel.
   memcpy(channel + *bytes_written, buf, buf_size);
   *bytes_written += buf_size;
 }
 
 static void maybe_append_unused_bytes(handshaker_args* args) {
-  CHECK_NE(args, nullptr);
-  CHECK_NE(args->fixture, nullptr);
+  GRPC_CHECK_NE(args, nullptr);
+  GRPC_CHECK_NE(args->fixture, nullptr);
   tsi_test_fixture* fixture = args->fixture;
   if (fixture->test_unused_bytes && !args->appended_unused_bytes) {
     args->appended_unused_bytes = true;
@@ -173,20 +171,20 @@ static void maybe_append_unused_bytes(handshaker_args* args) {
 static void receive_bytes_from_peer(tsi_test_channel* test_channel,
                                     unsigned char** buf, size_t* buf_size,
                                     bool is_client) {
-  CHECK_NE(test_channel, nullptr);
-  CHECK_NE(*buf, nullptr);
-  CHECK_NE(buf_size, nullptr);
+  GRPC_CHECK_NE(test_channel, nullptr);
+  GRPC_CHECK_NE(*buf, nullptr);
+  GRPC_CHECK_NE(buf_size, nullptr);
   uint8_t* channel =
       is_client ? test_channel->client_channel : test_channel->server_channel;
-  CHECK_NE(channel, nullptr);
+  GRPC_CHECK_NE(channel, nullptr);
   size_t* bytes_read = is_client
                            ? &test_channel->bytes_read_from_client_channel
                            : &test_channel->bytes_read_from_server_channel;
   size_t* bytes_written = is_client
                               ? &test_channel->bytes_written_to_client_channel
                               : &test_channel->bytes_written_to_server_channel;
-  CHECK_NE(bytes_read, nullptr);
-  CHECK_NE(bytes_written, nullptr);
+  GRPC_CHECK_NE(bytes_read, nullptr);
+  GRPC_CHECK_NE(bytes_written, nullptr);
   size_t to_read = *buf_size < *bytes_written - *bytes_read
                        ? *buf_size
                        : *bytes_written - *bytes_read;
@@ -200,16 +198,16 @@ void tsi_test_frame_protector_send_message_to_peer(
     tsi_test_frame_protector_config* config, tsi_test_channel* channel,
     tsi_frame_protector* protector, bool is_client) {
   // Initialization.
-  CHECK_NE(config, nullptr);
-  CHECK_NE(channel, nullptr);
-  CHECK_NE(protector, nullptr);
+  GRPC_CHECK_NE(config, nullptr);
+  GRPC_CHECK_NE(channel, nullptr);
+  GRPC_CHECK_NE(protector, nullptr);
   unsigned char* protected_buffer =
       static_cast<unsigned char*>(gpr_zalloc(config->protected_buffer_size));
   size_t message_size =
       is_client ? config->client_message_size : config->server_message_size;
   uint8_t* message =
       is_client ? config->client_message : config->server_message;
-  CHECK_NE(message, nullptr);
+  GRPC_CHECK_NE(message, nullptr);
   const unsigned char* message_bytes =
       reinterpret_cast<unsigned char*>(message);
   tsi_result result = TSI_OK;
@@ -221,7 +219,7 @@ void tsi_test_frame_protector_send_message_to_peer(
     result = tsi_frame_protector_protect(
         protector, message_bytes, &processed_message_size, protected_buffer,
         &protected_buffer_size_to_send);
-    CHECK(result == TSI_OK);
+    GRPC_CHECK(result == TSI_OK);
     // Send protected data to peer.
     send_bytes_to_peer(channel, protected_buffer, protected_buffer_size_to_send,
                        is_client);
@@ -235,14 +233,14 @@ void tsi_test_frame_protector_send_message_to_peer(
         result = tsi_frame_protector_protect_flush(
             protector, protected_buffer, &protected_buffer_size_to_send,
             &still_pending_size);
-        CHECK(result == TSI_OK);
+        GRPC_CHECK(result == TSI_OK);
         send_bytes_to_peer(channel, protected_buffer,
                            protected_buffer_size_to_send, is_client);
       } while (still_pending_size > 0 && result == TSI_OK);
-      CHECK(result == TSI_OK);
+      GRPC_CHECK(result == TSI_OK);
     }
   }
-  CHECK(result == TSI_OK);
+  GRPC_CHECK(result == TSI_OK);
   gpr_free(protected_buffer);
 }
 
@@ -251,11 +249,11 @@ void tsi_test_frame_protector_receive_message_from_peer(
     tsi_frame_protector* protector, unsigned char* message,
     size_t* bytes_received, bool is_client) {
   // Initialization.
-  CHECK_NE(config, nullptr);
-  CHECK_NE(channel, nullptr);
-  CHECK_NE(protector, nullptr);
-  CHECK_NE(message, nullptr);
-  CHECK_NE(bytes_received, nullptr);
+  GRPC_CHECK_NE(config, nullptr);
+  GRPC_CHECK_NE(channel, nullptr);
+  GRPC_CHECK_NE(protector, nullptr);
+  GRPC_CHECK_NE(message, nullptr);
+  GRPC_CHECK_NE(bytes_received, nullptr);
   size_t read_offset = 0;
   size_t message_offset = 0;
   size_t read_from_peer_size = 0;
@@ -285,7 +283,7 @@ void tsi_test_frame_protector_receive_message_from_peer(
       result = tsi_frame_protector_unprotect(
           protector, read_buffer + read_offset, &processed_size, message_buffer,
           &message_buffer_size);
-      CHECK(result == TSI_OK);
+      GRPC_CHECK(result == TSI_OK);
       if (message_buffer_size > 0) {
         memcpy(message + message_offset, message_buffer, message_buffer_size);
         message_offset += message_buffer_size;
@@ -294,9 +292,9 @@ void tsi_test_frame_protector_receive_message_from_peer(
       read_from_peer_size -= processed_size;
     } while ((read_from_peer_size > 0 || message_buffer_size > 0) &&
              result == TSI_OK);
-    CHECK(result == TSI_OK);
+    GRPC_CHECK(result == TSI_OK);
   }
-  CHECK(result == TSI_OK);
+  GRPC_CHECK(result == TSI_OK);
   *bytes_received = message_offset;
   gpr_free(read_buffer);
   gpr_free(message_buffer);
@@ -306,13 +304,13 @@ grpc_error_handle on_handshake_next_done(
     tsi_result result, void* user_data, const unsigned char* bytes_to_send,
     size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result) {
   handshaker_args* args = static_cast<handshaker_args*>(user_data);
-  CHECK_NE(args, nullptr);
-  CHECK_NE(args->fixture, nullptr);
+  GRPC_CHECK_NE(args, nullptr);
+  GRPC_CHECK_NE(args->fixture, nullptr);
   tsi_test_fixture* fixture = args->fixture;
   grpc_error_handle error;
   // Read more data if we need to.
   if (result == TSI_INCOMPLETE_DATA) {
-    CHECK_EQ(bytes_to_send_size, 0u);
+    GRPC_CHECK_EQ(bytes_to_send_size, 0u);
     notification_signal(fixture);
     return error;
   }
@@ -325,7 +323,7 @@ grpc_error_handle on_handshake_next_done(
   if (handshaker_result != nullptr) {
     tsi_handshaker_result** result_to_write =
         args->is_client ? &fixture->client_result : &fixture->server_result;
-    CHECK_EQ(*result_to_write, nullptr);
+    GRPC_CHECK_EQ(*result_to_write, nullptr);
     *result_to_write = handshaker_result;
   }
   // Send data to peer, if needed.
@@ -350,8 +348,8 @@ static void on_handshake_next_done_wrapper(
 }
 
 static bool is_handshake_finished_properly(handshaker_args* args) {
-  CHECK_NE(args, nullptr);
-  CHECK_NE(args->fixture, nullptr);
+  GRPC_CHECK_NE(args, nullptr);
+  GRPC_CHECK_NE(args->fixture, nullptr);
   tsi_test_fixture* fixture = args->fixture;
   return (args->is_client && fixture->client_result != nullptr) ||
          (!args->is_client && fixture->server_result != nullptr);
@@ -359,8 +357,8 @@ static bool is_handshake_finished_properly(handshaker_args* args) {
 
 static void do_handshaker_next(handshaker_args* args) {
   // Initialization.
-  CHECK_NE(args, nullptr);
-  CHECK_NE(args->fixture, nullptr);
+  GRPC_CHECK_NE(args, nullptr);
+  GRPC_CHECK_NE(args->fixture, nullptr);
   tsi_test_fixture* fixture = args->fixture;
   tsi_handshaker* handshaker =
       args->is_client ? fixture->client_handshaker : fixture->server_handshaker;
@@ -379,7 +377,7 @@ static void do_handshaker_next(handshaker_args* args) {
     if (buf_size > 0) {
       args->transferred_data = true;
     }
-    // Peform handshaker next.
+    // Perform handshaker next.
     result = tsi_handshaker_next(
         handshaker, args->handshake_buffer, buf_size,
         const_cast<const unsigned char**>(&bytes_to_send), &bytes_to_send_size,
@@ -396,7 +394,7 @@ static void do_handshaker_next(handshaker_args* args) {
 }
 
 void tsi_test_do_handshake(tsi_test_fixture* fixture) {
-  // Initializaiton.
+  // Initialization.
   setup_handshakers(fixture);
   handshaker_args* client_args =
       handshaker_args_create(fixture, true /* is_client */);
@@ -419,7 +417,7 @@ void tsi_test_do_handshake(tsi_test_fixture* fixture) {
     // responsible for sending the next chunk of bytes to the other. This can
     // happen e.g. when a bug in the handshaker code results in some bytes being
     // dropped instead of passed to the BIO or SSL objects.
-    CHECK(client_args->transferred_data || server_args->transferred_data);
+    GRPC_CHECK(client_args->transferred_data || server_args->transferred_data);
   } while (fixture->client_result == nullptr ||
            fixture->server_result == nullptr);
   // Verify handshake results.
@@ -433,10 +431,10 @@ static void tsi_test_do_ping_pong(tsi_test_frame_protector_config* config,
                                   tsi_test_channel* channel,
                                   tsi_frame_protector* client_frame_protector,
                                   tsi_frame_protector* server_frame_protector) {
-  CHECK_NE(config, nullptr);
-  CHECK_NE(channel, nullptr);
-  CHECK_NE(client_frame_protector, nullptr);
-  CHECK_NE(server_frame_protector, nullptr);
+  GRPC_CHECK_NE(config, nullptr);
+  GRPC_CHECK_NE(channel, nullptr);
+  GRPC_CHECK_NE(client_frame_protector, nullptr);
+  GRPC_CHECK_NE(server_frame_protector, nullptr);
   // Client sends a message to server.
   tsi_test_frame_protector_send_message_to_peer(
       config, channel, client_frame_protector, true /* is_client */);
@@ -446,10 +444,10 @@ static void tsi_test_do_ping_pong(tsi_test_frame_protector_config* config,
   tsi_test_frame_protector_receive_message_from_peer(
       config, channel, server_frame_protector, server_received_message,
       &server_received_message_size, false /* is_client */);
-  CHECK(config->client_message_size == server_received_message_size);
-  CHECK_EQ(memcmp(config->client_message, server_received_message,
-                  server_received_message_size),
-           0);
+  GRPC_CHECK(config->client_message_size == server_received_message_size);
+  GRPC_CHECK_EQ(memcmp(config->client_message, server_received_message,
+                       server_received_message_size),
+                0);
   // Server sends a message to client.
   tsi_test_frame_protector_send_message_to_peer(
       config, channel, server_frame_protector, false /* is_client */);
@@ -459,17 +457,17 @@ static void tsi_test_do_ping_pong(tsi_test_frame_protector_config* config,
   tsi_test_frame_protector_receive_message_from_peer(
       config, channel, client_frame_protector, client_received_message,
       &client_received_message_size, true /* is_client */);
-  CHECK_EQ(config->server_message_size, client_received_message_size);
-  CHECK_EQ(memcmp(config->server_message, client_received_message,
-                  client_received_message_size),
-           0);
+  GRPC_CHECK_EQ(config->server_message_size, client_received_message_size);
+  GRPC_CHECK_EQ(memcmp(config->server_message, client_received_message,
+                       client_received_message_size),
+                0);
   gpr_free(server_received_message);
   gpr_free(client_received_message);
 }
 
 void tsi_test_frame_protector_do_round_trip_no_handshake(
     tsi_test_frame_protector_fixture* fixture) {
-  CHECK_NE(fixture, nullptr);
+  GRPC_CHECK_NE(fixture, nullptr);
   tsi_test_do_ping_pong(fixture->config, fixture->channel,
                         fixture->client_frame_protector,
                         fixture->server_frame_protector);
@@ -477,8 +475,8 @@ void tsi_test_frame_protector_do_round_trip_no_handshake(
 
 void tsi_test_do_round_trip(tsi_test_fixture* fixture) {
   // Initialization.
-  CHECK_NE(fixture, nullptr);
-  CHECK_NE(fixture->config, nullptr);
+  GRPC_CHECK_NE(fixture, nullptr);
+  GRPC_CHECK_NE(fixture->config, nullptr);
   tsi_test_frame_protector_config* config = fixture->config;
   tsi_frame_protector* client_frame_protector = nullptr;
   tsi_frame_protector* server_frame_protector = nullptr;
@@ -487,20 +485,20 @@ void tsi_test_do_round_trip(tsi_test_fixture* fixture) {
   // Create frame protectors.
   size_t client_max_output_protected_frame_size =
       config->client_max_output_protected_frame_size;
-  CHECK(tsi_handshaker_result_create_frame_protector(
-            fixture->client_result,
-            client_max_output_protected_frame_size == 0
-                ? nullptr
-                : &client_max_output_protected_frame_size,
-            &client_frame_protector) == TSI_OK);
+  GRPC_CHECK(tsi_handshaker_result_create_frame_protector(
+                 fixture->client_result,
+                 client_max_output_protected_frame_size == 0
+                     ? nullptr
+                     : &client_max_output_protected_frame_size,
+                 &client_frame_protector) == TSI_OK);
   size_t server_max_output_protected_frame_size =
       config->server_max_output_protected_frame_size;
-  CHECK(tsi_handshaker_result_create_frame_protector(
-            fixture->server_result,
-            server_max_output_protected_frame_size == 0
-                ? nullptr
-                : &server_max_output_protected_frame_size,
-            &server_frame_protector) == TSI_OK);
+  GRPC_CHECK(tsi_handshaker_result_create_frame_protector(
+                 fixture->server_result,
+                 server_max_output_protected_frame_size == 0
+                     ? nullptr
+                     : &server_max_output_protected_frame_size,
+                 &server_frame_protector) == TSI_OK);
   tsi_test_do_ping_pong(config, fixture->channel, client_frame_protector,
                         server_frame_protector);
   // Destroy server and client frame protectors.
@@ -581,7 +579,7 @@ void tsi_test_frame_protector_config_set_buffer_size(
     size_t message_buffer_allocated_size, size_t protected_buffer_size,
     size_t client_max_output_protected_frame_size,
     size_t server_max_output_protected_frame_size) {
-  CHECK_NE(config, nullptr);
+  GRPC_CHECK_NE(config, nullptr);
   config->read_buffer_allocated_size = read_buffer_allocated_size;
   config->message_buffer_allocated_size = message_buffer_allocated_size;
   config->protected_buffer_size = protected_buffer_size;
@@ -646,8 +644,8 @@ void tsi_test_fixture_destroy(tsi_test_fixture* fixture) {
   tsi_handshaker_result_destroy(fixture->client_result);
   tsi_handshaker_result_destroy(fixture->server_result);
   tsi_test_channel_destroy(fixture->channel);
-  CHECK_NE(fixture->vtable, nullptr);
-  CHECK_NE(fixture->vtable->destruct, nullptr);
+  GRPC_CHECK_NE(fixture->vtable, nullptr);
+  GRPC_CHECK_NE(fixture->vtable->destruct, nullptr);
   gpr_mu_destroy(&fixture->mu);
   gpr_cv_destroy(&fixture->cv);
   fixture->vtable->destruct(fixture);
@@ -667,7 +665,7 @@ void tsi_test_frame_protector_fixture_init(
     tsi_test_frame_protector_fixture* fixture,
     tsi_frame_protector* client_frame_protector,
     tsi_frame_protector* server_frame_protector) {
-  CHECK_NE(fixture, nullptr);
+  GRPC_CHECK_NE(fixture, nullptr);
   fixture->client_frame_protector = client_frame_protector;
   fixture->server_frame_protector = server_frame_protector;
 }
@@ -688,70 +686,73 @@ std::string GenerateSelfSignedCertificate(
     const SelfSignedCertificateOptions& options) {
   // Generate an RSA keypair.
   BIGNUM* bignum = BN_new();
-  CHECK(BN_set_word(bignum, RSA_F4));
+  GRPC_CHECK(BN_set_word(bignum, RSA_F4));
   BIGNUM* n = BN_new();
-  CHECK(BN_set_word(n, 2048));
+  GRPC_CHECK(BN_set_word(n, 2048));
   EVP_PKEY* key = EVP_PKEY_new();
   // Create the X509 object.
   X509* x509 = X509_new();
 
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
   RSA* rsa = RSA_new();
-  CHECK(RSA_generate_key_ex(rsa, /*key_size=*/2048, bignum, /*cb=*/nullptr));
-  CHECK(EVP_PKEY_assign_RSA(key, rsa));
-  CHECK(X509_set_version(x509, 2));  // TODO(gtcooke94) make a const
+  GRPC_CHECK(
+      RSA_generate_key_ex(rsa, /*key_size=*/2048, bignum, /*cb=*/nullptr));
+  GRPC_CHECK(EVP_PKEY_assign_RSA(key, rsa));
+  GRPC_CHECK(X509_set_version(x509, 2));  // TODO(gtcooke94) make a const
 #else
   key = EVP_RSA_gen(2048);
-  CHECK(X509_set_version(x509, X509_VERSION_3));
+  GRPC_CHECK(X509_set_version(x509, X509_VERSION_3));
 #endif
   // Set the not_before/after fields to infinite past/future. The value for
   // infinite future is from RFC 5280 Section 4.1.2.5.1.
   ASN1_UTCTIME* infinite_past = ASN1_UTCTIME_new();
-  CHECK(ASN1_UTCTIME_set(infinite_past, /*posix_time=*/0));
+  GRPC_CHECK(ASN1_UTCTIME_set(infinite_past, /*posix_time=*/0));
 #if OPENSSL_VERSION_NUMBER < 0x10100000
-  CHECK(X509_set_notBefore(x509, infinite_past));
+  GRPC_CHECK(X509_set_notBefore(x509, infinite_past));
 #else
-  CHECK(X509_set1_notBefore(x509, infinite_past));
+  GRPC_CHECK(X509_set1_notBefore(x509, infinite_past));
 #endif
   ASN1_UTCTIME_free(infinite_past);
   ASN1_GENERALIZEDTIME* infinite_future = ASN1_GENERALIZEDTIME_new();
-  CHECK(ASN1_GENERALIZEDTIME_set_string(infinite_future, "99991231235959Z"));
+  GRPC_CHECK(
+      ASN1_GENERALIZEDTIME_set_string(infinite_future, "99991231235959Z"));
 #if OPENSSL_VERSION_NUMBER < 0x10100000
-  CHECK(X509_set_notAfter(x509, infinite_future));
+  GRPC_CHECK(X509_set_notAfter(x509, infinite_future));
 #else
-  CHECK(X509_set1_notAfter(x509, infinite_future));
+  GRPC_CHECK(X509_set1_notAfter(x509, infinite_future));
 #endif
   ASN1_GENERALIZEDTIME_free(infinite_future);
   // Set the subject DN.
   X509_NAME* subject_name = X509_NAME_new();
-  CHECK(X509_NAME_add_entry_by_txt(
+  GRPC_CHECK(X509_NAME_add_entry_by_txt(
       subject_name, /*field=*/"CN", MBSTRING_ASC,
       reinterpret_cast<const unsigned char*>(options.common_name.c_str()),
       /*len=*/-1, /*loc=*/-1,
       /*set=*/0));
-  CHECK(X509_NAME_add_entry_by_txt(
+  GRPC_CHECK(X509_NAME_add_entry_by_txt(
       subject_name, /*field=*/"O", MBSTRING_ASC,
       reinterpret_cast<const unsigned char*>(options.organization.c_str()),
       /*len=*/-1, /*loc=*/-1,
       /*set=*/0));
-  CHECK(X509_NAME_add_entry_by_txt(subject_name, /*field=*/"OU", MBSTRING_ASC,
-                                   reinterpret_cast<const unsigned char*>(
-                                       options.organizational_unit.c_str()),
-                                   /*len=*/-1, /*loc=*/-1,
-                                   /*set=*/0));
-  CHECK(X509_set_subject_name(x509, subject_name));
+  GRPC_CHECK(
+      X509_NAME_add_entry_by_txt(subject_name, /*field=*/"OU", MBSTRING_ASC,
+                                 reinterpret_cast<const unsigned char*>(
+                                     options.organizational_unit.c_str()),
+                                 /*len=*/-1, /*loc=*/-1,
+                                 /*set=*/0));
+  GRPC_CHECK(X509_set_subject_name(x509, subject_name));
   X509_NAME_free(subject_name);
   // Set the public key and sign the certificate.
-  CHECK(X509_set_pubkey(x509, key));
-  CHECK(X509_sign(x509, key, EVP_sha256()));
+  GRPC_CHECK(X509_set_pubkey(x509, key));
+  GRPC_CHECK(X509_sign(x509, key, EVP_sha256()));
   // Convert to PEM.
   BIO* bio = BIO_new(BIO_s_mem());
-  CHECK(PEM_write_bio_X509(bio, x509));
+  GRPC_CHECK(PEM_write_bio_X509(bio, x509));
   const uint8_t* data = nullptr;
   size_t len = 0;
 
 #ifdef OPENSSL_IS_BORINGSSL
-  CHECK(BIO_mem_contents(bio, &data, &len));
+  GRPC_CHECK(BIO_mem_contents(bio, &data, &len));
 #else
   len = BIO_get_mem_data(bio, &data);
 #endif
@@ -787,4 +788,80 @@ X509_CRL* ReadCrl(absl::string_view crl_pem) {
   X509_CRL* crl = PEM_read_bio_X509_CRL(crl_bio, nullptr, nullptr, nullptr);
   BIO_free(crl_bio);
   return crl;
+}
+
+std::string Protect(tsi_frame_protector* protector, absl::string_view buffer) {
+  static constexpr size_t kMaxBufferSize = 4096;
+  GRPC_CHECK(protector != nullptr);
+  GRPC_CHECK(buffer.size() < kMaxBufferSize);
+  uint8_t* message_bytes =
+      const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(buffer.data()));
+  size_t message_size = buffer.size();
+  uint8_t protected_buffer[kMaxBufferSize];
+  uint8_t* cur = protected_buffer;
+  uint8_t* end = cur + sizeof(protected_buffer);
+  tsi_result result = TSI_OK;
+  while (message_size > 0) {
+    size_t protected_buffer_size_to_send = static_cast<size_t>(end - cur);
+    size_t processed_message_size = message_size;
+    result = tsi_frame_protector_protect(protector, message_bytes,
+                                         &processed_message_size, cur,
+                                         &protected_buffer_size_to_send);
+    if (result != TSI_OK) break;
+    message_bytes += processed_message_size;
+    message_size -= processed_message_size;
+    cur += protected_buffer_size_to_send;
+    if (cur == end) break;
+  }
+  size_t still_pending_size;
+  do {
+    size_t protected_buffer_size_to_send = static_cast<size_t>(end - cur);
+    result = tsi_frame_protector_protect_flush(
+        protector, cur, &protected_buffer_size_to_send, &still_pending_size);
+    if (result != TSI_OK) break;
+    cur += protected_buffer_size_to_send;
+    if (cur == end) break;
+  } while (still_pending_size > 0);
+  GRPC_CHECK_EQ(result, TSI_OK);
+  std::string protected_bytes(reinterpret_cast<const char*>(protected_buffer),
+                              cur - protected_buffer);
+  return protected_bytes;
+}
+
+std::string Unprotect(tsi_frame_protector* protector,
+                      absl::string_view buffer) {
+  static constexpr size_t kMaxBufferSize = 4096;
+  GRPC_CHECK(protector != nullptr);
+  GRPC_CHECK(buffer.size() < kMaxBufferSize);
+  uint8_t* protected_bytes =
+      const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(buffer.data()));
+  size_t protected_size = buffer.size();
+  uint8_t message_buffer[kMaxBufferSize];
+  uint8_t* cur = message_buffer;
+  uint8_t* end = cur + sizeof(message_buffer);
+  tsi_result result = TSI_OK;
+  bool keep_looping = false;
+  while (protected_size > 0 || keep_looping) {
+    size_t unprotected_buffer_size_written = static_cast<size_t>(end - cur);
+    size_t processed_message_size = protected_size;
+    result = tsi_frame_protector_unprotect(protector, protected_bytes,
+                                           &processed_message_size, cur,
+                                           &unprotected_buffer_size_written);
+    if (result != TSI_OK) break;
+    protected_bytes += processed_message_size;
+    protected_size -= processed_message_size;
+    cur += unprotected_buffer_size_written;
+
+    if (cur == end) {
+      GRPC_CHECK(false) << "message_buffer too small";
+    } else if (unprotected_buffer_size_written > 0) {
+      keep_looping = true;
+    } else {
+      keep_looping = false;
+    }
+  }
+  GRPC_CHECK_EQ(result, TSI_OK);
+  std::string message_bytes(reinterpret_cast<const char*>(message_buffer),
+                            cur - message_buffer);
+  return message_bytes;
 }

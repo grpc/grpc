@@ -18,23 +18,21 @@
 
 #include "src/cpp/server/health/default_health_check_service.h"
 
-#include <stdint.h>
-
-#include <memory>
-#include <utility>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "upb/base/string_view.h"
-#include "upb/mem/arena.hpp"
-
 #include <grpc/slice.h>
 #include <grpcpp/impl/rpc_method.h>
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/impl/server_callback_handlers.h>
 #include <grpcpp/support/slice.h>
+#include <stdint.h>
 
+#include <memory>
+#include <utility>
+
+#include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/health/v1/health.upb.h"
+#include "upb/base/string_view.h"
+#include "upb/mem/arena.hpp"
+#include "absl/log/log.h"
 
 #define MAX_SERVICE_NAME_LENGTH 200
 
@@ -110,7 +108,7 @@ void DefaultHealthCheckService::UnregisterWatch(
 
 DefaultHealthCheckService::HealthCheckServiceImpl*
 DefaultHealthCheckService::GetHealthCheckService() {
-  CHECK(impl_ == nullptr);
+  GRPC_CHECK(impl_ == nullptr);
   impl_ = std::make_unique<HealthCheckServiceImpl>(this);
   return impl_.get();
 }

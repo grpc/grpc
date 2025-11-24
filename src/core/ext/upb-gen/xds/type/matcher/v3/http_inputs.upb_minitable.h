@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_TYPE_MATCHER_V3_HTTP_INPUTS_PROTO_UPB_MINITABLE_H_
-#define XDS_TYPE_MATCHER_V3_HTTP_INPUTS_PROTO_UPB_MINITABLE_H_
+#ifndef XDS_TYPE_MATCHER_V3_HTTP_INPUTS_PROTO_UPB_H__UPB_MINITABLE_H_
+#define XDS_TYPE_MATCHER_V3_HTTP_INPUTS_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -29,4 +29,4 @@ extern const upb_MiniTableFile xds_type_matcher_v3_http_inputs_proto_upb_file_la
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_TYPE_MATCHER_V3_HTTP_INPUTS_PROTO_UPB_MINITABLE_H_ */
+#endif  /* XDS_TYPE_MATCHER_V3_HTTP_INPUTS_PROTO_UPB_H__UPB_MINITABLE_H_ */

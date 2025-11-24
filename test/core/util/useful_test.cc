@@ -18,14 +18,13 @@
 
 #include "src/core/util/useful.h"
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <limits>
 #include <memory>
 
 #include "gtest/gtest.h"
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 
@@ -53,20 +52,6 @@ TEST(UsefulTest, BitOps) {
   EXPECT_EQ(SetBit(&bitset, 1), 10);
   EXPECT_EQ(ClearBit(&bitset, 3), 2);
   EXPECT_EQ(GetBit(bitset, 3), 0);
-}
-
-TEST(UsefulTest, SaturatingAdd) {
-  EXPECT_EQ(SaturatingAdd(0, 0), 0);
-  EXPECT_EQ(SaturatingAdd(0, 1), 1);
-  EXPECT_EQ(SaturatingAdd(1, 0), 1);
-  EXPECT_EQ(SaturatingAdd(1, 1), 2);
-  EXPECT_EQ(SaturatingAdd(std::numeric_limits<int64_t>::max(), 1),
-            std::numeric_limits<int64_t>::max());
-  EXPECT_EQ(SaturatingAdd(std::numeric_limits<int64_t>::max(),
-                          std::numeric_limits<int64_t>::max()),
-            std::numeric_limits<int64_t>::max());
-  EXPECT_EQ(SaturatingAdd(std::numeric_limits<int64_t>::min(), -1),
-            std::numeric_limits<int64_t>::min());
 }
 
 TEST(UsefulTest, RoundUpToPowerOf2) {

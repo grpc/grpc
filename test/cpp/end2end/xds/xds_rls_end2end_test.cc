@@ -15,21 +15,18 @@
 
 #include <memory>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/memory/memory.h"
-#include "absl/strings/str_cat.h"
-
 #include "src/core/client_channel/backup_poller.h"
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/util/env.h"
-#include "src/proto/grpc/lookup/v1/rls.grpc.pb.h"
 #include "src/proto/grpc/lookup/v1/rls.pb.h"
 #include "src/proto/grpc/lookup/v1/rls_config.pb.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/cpp/end2end/rls_server.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc {
 namespace testing {

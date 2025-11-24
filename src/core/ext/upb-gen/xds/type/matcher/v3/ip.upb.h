@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_TYPE_MATCHER_V3_IP_PROTO_UPB_H_
-#define XDS_TYPE_MATCHER_V3_IP_PROTO_UPB_H_
+#ifndef XDS_TYPE_MATCHER_V3_IP_PROTO_UPB_H__UPB_H_
+#define XDS_TYPE_MATCHER_V3_IP_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -226,13 +226,13 @@ UPB_INLINE bool xds_type_matcher_v3_IPMatcher_IPRangeMatcher_has_on_match(const 
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void xds_type_matcher_v3_IPMatcher_IPRangeMatcher_clear_exclusive(xds_type_matcher_v3_IPMatcher_IPRangeMatcher* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(20, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE bool xds_type_matcher_v3_IPMatcher_IPRangeMatcher_exclusive(const xds_type_matcher_v3_IPMatcher_IPRangeMatcher* msg) {
   bool default_val = false;
   bool ret;
-  const upb_MiniTableField field = {3, UPB_SIZE(20, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -284,7 +284,7 @@ UPB_INLINE struct xds_type_matcher_v3_Matcher_OnMatch* xds_type_matcher_v3_IPMat
   return sub;
 }
 UPB_INLINE void xds_type_matcher_v3_IPMatcher_IPRangeMatcher_set_exclusive(xds_type_matcher_v3_IPMatcher_IPRangeMatcher *msg, bool value) {
-  const upb_MiniTableField field = {3, UPB_SIZE(20, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
@@ -294,4 +294,4 @@ UPB_INLINE void xds_type_matcher_v3_IPMatcher_IPRangeMatcher_set_exclusive(xds_t
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_TYPE_MATCHER_V3_IP_PROTO_UPB_H_ */
+#endif  /* XDS_TYPE_MATCHER_V3_IP_PROTO_UPB_H__UPB_H_ */

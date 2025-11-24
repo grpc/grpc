@@ -20,12 +20,12 @@
 
 #include <vector>
 
-#include "absl/status/status.h"
-#include "gtest/gtest.h"
-
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/status_helper.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 namespace {
 
@@ -64,7 +64,9 @@ TEST(ErrorUtilsTest, GetErrorGetStatusChild) {
   grpc_error_get_status(error, grpc_core::Timestamp(), &code, &message, nullptr,
                         nullptr);
   ASSERT_EQ(code, GRPC_STATUS_RESOURCE_EXHAUSTED);
-  ASSERT_EQ(message, "Child2");
+  ASSERT_EQ(message, grpc_core::IsErrorFlattenEnabled()
+                         ? "Parent (Child1) (Child2)"
+                         : "Child2");
 }
 
 // ---- Ok Status ----
@@ -87,12 +89,18 @@ TEST(ErrorUtilsTest, AbslStatusToGrpcErrorDoesNotReturnSpecialVariables) {
 }
 
 TEST(ErrorUtilsTest, GrpcSpecialErrorCancelledToAbslStatus) {
+  if (grpc_core::IsErrorFlattenEnabled()) {
+    GTEST_SKIP() << "This functionality not available with this experiment";
+  }
   absl::Status status = grpc_error_to_absl_status(absl::CancelledError());
   ASSERT_TRUE(absl::IsCancelled(status));
   ASSERT_EQ(status.message(), "CANCELLED");
 }
 
 TEST(ErrorUtilsTest, GrpcSpecialErrorOOMToAbslStatus) {
+  if (grpc_core::IsErrorFlattenEnabled()) {
+    GTEST_SKIP() << "This functionality not available with this experiment";
+  }
   absl::Status status =
       grpc_error_to_absl_status(absl::ResourceExhaustedError(""));
   ASSERT_TRUE(absl::IsResourceExhausted(status));
@@ -109,10 +117,7 @@ TEST(ErrorUtilsTest, AbslUnavailableToGrpcError) {
       error, grpc_core::StatusIntProperty::kRpcStatus, &code));
   ASSERT_EQ(static_cast<grpc_status_code>(code), GRPC_STATUS_UNAVAILABLE);
   // Status message checks
-  std::string message;
-  ASSERT_TRUE(grpc_error_get_str(
-      error, grpc_core::StatusStrProperty::kDescription, &message));
-  ASSERT_EQ(message, "Making tea");
+  ASSERT_EQ(error.message(), "Making tea");
 }
 
 TEST(ErrorUtilsTest, GrpcErrorUnavailableToAbslStatus) {

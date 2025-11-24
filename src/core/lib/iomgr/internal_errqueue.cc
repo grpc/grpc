@@ -14,11 +14,10 @@
 
 #include "src/core/lib/iomgr/internal_errqueue.h"
 
-#include "absl/log/log.h"
-
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"
+#include "absl/log/log.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 

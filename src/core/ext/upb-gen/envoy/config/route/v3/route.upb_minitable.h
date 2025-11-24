@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_ROUTE_V3_ROUTE_PROTO_UPB_MINITABLE_H_
-#define ENVOY_CONFIG_ROUTE_V3_ROUTE_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_CONFIG_ROUTE_V3_ROUTE_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_CONFIG_ROUTE_V3_ROUTE_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -33,4 +33,4 @@ extern const upb_MiniTableFile envoy_config_route_v3_route_proto_upb_file_layout
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_ROUTE_V3_ROUTE_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_CONFIG_ROUTE_V3_ROUTE_PROTO_UPB_H__UPB_MINITABLE_H_ */

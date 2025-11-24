@@ -12,20 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/grpc.h>
+
 #include <atomic>
 #include <memory>
 
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
-#include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/client_channel/client_channel.h"
 #include "src/core/client_channel/local_subchannel_pool.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/parse_address.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "test/core/call/yodel/yodel_test.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -107,14 +106,26 @@ class ConnectedSubchannelTest : public YodelTest {
       }
       ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
     }
+    void StartWatch(RefCountedPtr<StateWatcher> watcher) override {
+      GRPC_CHECK(watcher_ == nullptr);
+      watcher_ = std::move(watcher);
+    }
+    void StopWatch(RefCountedPtr<StateWatcher> watcher) override {
+      if (watcher_ == watcher) watcher_.reset();
+    }
 
     void StartCall(CallHandler call_handler) override {
       test_->handlers_.push(std::move(call_handler));
     }
 
+    RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
+      return nullptr;
+    }
+
    private:
     ConnectedSubchannelTest* const test_;
     ConnectivityStateTracker state_tracker_{"test-transport"};
+    RefCountedPtr<StateWatcher> watcher_;
   };
 
   class TestConnector final : public SubchannelConnector {
@@ -145,8 +156,8 @@ class ConnectedSubchannelTest : public YodelTest {
 
   void Shutdown() override {}
 
-  absl::optional<CallHandler> PopHandler() {
-    if (handlers_.empty()) return absl::nullopt;
+  std::optional<CallHandler> PopHandler() {
+    if (handlers_.empty()) return std::nullopt;
     auto handler = std::move(handlers_.front());
     handlers_.pop();
     return handler;
@@ -166,7 +177,6 @@ CONNECTED_SUBCHANNEL_CHANNEL_TEST(StartCall) {
   SpawnTestSeq(
       call.handler, "start-call", [channel, handler = call.handler]() mutable {
         channel->unstarted_call_destination()->StartCall(std::move(handler));
-        return Empty{};
       });
   auto handler = TickUntilCallStarted();
   WaitForAllPendingWork();

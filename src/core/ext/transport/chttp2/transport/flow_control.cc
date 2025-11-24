@@ -18,27 +18,29 @@
 
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <ostream>
 #include <string>
 #include <tuple>
 #include <vector>
 
-#include "absl/log/check.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
+#include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/useful.h"
 #include "absl/log/log.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
-#include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
-#include "src/core/util/useful.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace chttp2 {
@@ -184,7 +186,7 @@ TransportFlowControl::TargetInitialWindowSizeBasedOnMemoryPressureAndBdp()
   // and a value t such that t_min <= t <= t_max, return the value on the line
   // segment at t.
   auto lerp = [](double t, double t_min, double t_max, double a, double b) {
-    return a + (b - a) * (t - t_min) / (t_max - t_min);
+    return a + ((b - a) * (t - t_min) / (t_max - t_min));
   };
   // We split memory pressure into three broad regions:
   // 1. Low memory pressure, the "anything goes" case - we assume no memory
@@ -297,7 +299,7 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
       // Advertise PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE to peer. By advertising
       // PREFERRED_RECEIVE_CRYPTO_FRAME_SIZE to the peer, we are informing the
       // peer that we have tcp frame size tuning enabled and we inform it of our
-      // prefered rx frame sizes. The prefered rx frame size is determined as:
+      // preferred rx frame sizes. The preferred rx frame size is determined as:
       // Clamp(target_frame_size_ * 2, 16384, 0x7fffffff). In the future, this
       // maybe updated to a different function of the memory pressure.
       UpdateSetting(
@@ -332,9 +334,9 @@ std::string TransportFlowControl::Stats::ToString() const {
 
 void StreamFlowControl::SentUpdate(uint32_t announce) {
   TransportFlowControl::IncomingUpdateContext tfc_upd(tfc_);
-  pending_size_ = absl::nullopt;
+  pending_size_ = std::nullopt;
   tfc_upd.UpdateAnnouncedWindowDelta(&announced_window_delta_, announce);
-  CHECK_EQ(DesiredAnnounceSize(), 0u);
+  GRPC_CHECK_EQ(DesiredAnnounceSize(), 0u);
   std::ignore = tfc_upd.MakeAction();
 }
 
@@ -384,7 +386,7 @@ FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
 
 void StreamFlowControl::IncomingUpdateContext::SetPendingSize(
     int64_t pending_size) {
-  CHECK_GE(pending_size, 0);
+  GRPC_CHECK_GE(pending_size, 0);
   sfc_->pending_size_ = pending_size;
 }
 

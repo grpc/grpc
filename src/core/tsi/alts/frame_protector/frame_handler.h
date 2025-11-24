@@ -19,10 +19,9 @@
 #ifndef GRPC_SRC_CORE_TSI_ALTS_FRAME_PROTECTOR_FRAME_HANDLER_H
 #define GRPC_SRC_CORE_TSI_ALTS_FRAME_PROTECTOR_FRAME_HANDLER_H
 
+#include <grpc/support/port_platform.h>
 #include <stdbool.h>
 #include <stdlib.h>
-
-#include <grpc/support/port_platform.h>
 
 const size_t kFrameMessageType = 0x06;
 const size_t kFrameLengthFieldSize = 4;

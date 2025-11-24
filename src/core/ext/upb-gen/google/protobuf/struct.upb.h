@@ -6,12 +6,13 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef GOOGLE_PROTOBUF_STRUCT_PROTO_UPB_H_
-#define GOOGLE_PROTOBUF_STRUCT_PROTO_UPB_H_
+#ifndef GOOGLE_PROTOBUF_STRUCT_PROTO_UPB_H__UPB_H_
+#define GOOGLE_PROTOBUF_STRUCT_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
 #include "google/protobuf/struct.upb_minitable.h"
+
 
 // Must be last.
 #include "upb/port/def.inc"
@@ -21,7 +22,6 @@ extern "C" {
 #endif
 
 typedef struct google_protobuf_Struct { upb_Message UPB_PRIVATE(base); } google_protobuf_Struct;
-typedef struct google_protobuf_Struct_FieldsEntry { upb_Message UPB_PRIVATE(base); } google_protobuf_Struct_FieldsEntry;
 typedef struct google_protobuf_Value { upb_Message UPB_PRIVATE(base); } google_protobuf_Value;
 typedef struct google_protobuf_ListValue { upb_Message UPB_PRIVATE(base); } google_protobuf_ListValue;
 
@@ -84,13 +84,19 @@ UPB_INLINE bool google_protobuf_Struct_fields_get(const google_protobuf_Struct* 
   if (!map) return false;
   return _upb_Map_Get(map, &key, 0, val, sizeof(*val));
 }
-UPB_INLINE const google_protobuf_Struct_FieldsEntry* google_protobuf_Struct_fields_next(const google_protobuf_Struct* msg, size_t* iter) {
+UPB_INLINE bool google_protobuf_Struct_fields_next(const google_protobuf_Struct* msg, upb_StringView* key, const google_protobuf_Value** val,
+                           size_t* iter) {
   const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Struct__FieldsEntry_msg_init);
   UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Value_msg_init);
   const upb_Map* map = upb_Message_GetMap(UPB_UPCAST(msg), &field);
-  if (!map) return NULL;
-  return (const google_protobuf_Struct_FieldsEntry*)_upb_map_next(map, iter);
+  if (!map) return false;
+  upb_MessageValue k;
+  upb_MessageValue v;
+  if (!upb_Map_Next(map, &k, &v, iter)) return false;
+  memcpy(key, &k, sizeof(*key));
+  memcpy(val, &v, sizeof(*val));
+  return true;
 }
 UPB_INLINE const upb_Map* _google_protobuf_Struct_fields_upb_map(google_protobuf_Struct* msg) {
   const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -125,35 +131,6 @@ UPB_INLINE bool google_protobuf_Struct_fields_delete(google_protobuf_Struct* msg
   upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return false;
   return _upb_Map_Delete(map, &key, 0, NULL);
-}
-UPB_INLINE google_protobuf_Struct_FieldsEntry* google_protobuf_Struct_fields_nextmutable(google_protobuf_Struct* msg, size_t* iter) {
-  const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Struct__FieldsEntry_msg_init);
-  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Value_msg_init);
-  upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
-  if (!map) return NULL;
-  return (google_protobuf_Struct_FieldsEntry*)_upb_map_next(map, iter);
-}
-
-/* google.protobuf.Struct.FieldsEntry */
-
-UPB_INLINE upb_StringView google_protobuf_Struct_FieldsEntry_key(const google_protobuf_Struct_FieldsEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_key(msg, &ret, 0);
-  return ret;
-}
-UPB_INLINE const google_protobuf_Value* google_protobuf_Struct_FieldsEntry_value(const google_protobuf_Struct_FieldsEntry* msg) {
-  google_protobuf_Value* ret;
-  _upb_msg_map_value(msg, &ret, sizeof(ret));
-  return ret;
-}
-UPB_INLINE bool google_protobuf_Struct_FieldsEntry_has_value(const google_protobuf_Struct_FieldsEntry* msg) {
-  const upb_MiniTableField field = {2, 32, 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
-}
-
-UPB_INLINE void google_protobuf_Struct_FieldsEntry_set_value(google_protobuf_Struct_FieldsEntry *msg, google_protobuf_Value* value) {
-  _upb_msg_map_set_value(msg, &value, sizeof(google_protobuf_Value*));
 }
 
 /* google.protobuf.Value */
@@ -205,6 +182,10 @@ UPB_INLINE google_protobuf_Value_kind_oneofcases google_protobuf_Value_kind_case
   const upb_MiniTableField field = {1, 16, -9, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
   return (google_protobuf_Value_kind_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void google_protobuf_Value_clear_kind(google_protobuf_Value* msg) {
+  const upb_MiniTableField field = {1, 16, -9, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &google__protobuf__Value_msg_init, &field);
 }
 UPB_INLINE void google_protobuf_Value_clear_null_value(google_protobuf_Value* msg) {
   const upb_MiniTableField field = {1, 16, -9, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
@@ -459,4 +440,4 @@ UPB_INLINE struct google_protobuf_Value* google_protobuf_ListValue_add_values(go
 
 #include "upb/port/undef.inc"
 
-#endif  /* GOOGLE_PROTOBUF_STRUCT_PROTO_UPB_H_ */
+#endif  /* GOOGLE_PROTOBUF_STRUCT_PROTO_UPB_H__UPB_H_ */

@@ -18,6 +18,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/core/tsi",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "public",
 )
 
@@ -29,9 +33,14 @@ grpc_cc_library(
         "absl/log:check",
         "libssl",
         "libcrypto",
+        "absl/strings",
     ],
     deps = [
+        "//:gpr",
         "//:grpc",
+        "//:tsi_base",
+        "//src/core:error",
+        "//src/core:grpc_check",
     ],
 )
 
@@ -39,11 +48,13 @@ grpc_cc_test(
     name = "fake_transport_security_test",
     srcs = ["fake_transport_security_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     deps = [
         ":transport_security_test_lib",
         "//:gpr",
         "//:grpc",
+        "//:grpc_security_base",
+        "//:tsi_base",
+        "//:tsi_fake_credentials",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -55,10 +66,11 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:tsi_ssl_session_cache",
+        "//src/core:grpc_check",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -78,12 +90,22 @@ grpc_cc_test(
         "//test/core/tsi/test_creds/crl_data/crls:current.crl",
         "//test/core/tsi/test_creds/crl_data/crls:intermediate.crl",
     ],
-    external_deps = ["gtest"],
-    language = "C++",
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "gtest",
+        "libcrypto",
+        "libssl",
+    ],
     tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:tsi_base",
+        "//src/core:load_file",
+        "//src/core:slice",
+        "//src/core:ssl_transport_security_utils",
         "//test/core/test_util:grpc_test_util",
         "//test/core/tsi:transport_security_test_lib",
     ],
@@ -114,14 +136,21 @@ grpc_cc_test(
         "absl/log:log",
         "absl/strings",
         "gtest",
+        "libcrypto",
     ],
-    language = "C++",
     shard_count = 5,
-    tags = ["no_windows"],
+    tags = [
+        # TODO: cannot load data
+        "grpc:fails-internally",
+        "no_windows",
+    ],
     deps = [
         ":transport_security_test_lib",
         "//:gpr",
         "//:grpc",
+        "//:tsi_base",
+        "//:tsi_ssl_credentials",
+        "//test/core/test_util:build",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -152,15 +181,68 @@ grpc_cc_test(
     ],
     external_deps = [
         "absl/log:check",
+        "absl/status:statusor",
+        "absl/strings",
         "gtest",
+        "libcrypto",
+        "libssl",
     ],
-    language = "C++",
     tags = ["no_windows"],
     deps = [
         ":transport_security_test_lib",
         "//:gpr",
         "//:grpc",
+        "//:grpc_security_base",
         "//:tsi",
+        "//:tsi_base",
+        "//:tsi_ssl_credentials",
+        "//src/core:grpc_check",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "spiffe_ssl_transport_security_test",
+    srcs = ["spiffe_ssl_transport_security_test.cc"],
+    data = [
+        "//test/core/tsi/test_creds/crl_data:ca.pem",
+        "//test/core/tsi/test_creds/crl_data:valid.key",
+        "//test/core/tsi/test_creds/crl_data:valid.pem",
+        "//test/core/tsi/test_creds/spiffe_end2end:ca.pem",
+        "//test/core/tsi/test_creds/spiffe_end2end:client.key",
+        "//test/core/tsi/test_creds/spiffe_end2end:client_spiffe.pem",
+        "//test/core/tsi/test_creds/spiffe_end2end:client_spiffebundle.json",
+        "//test/core/tsi/test_creds/spiffe_end2end:intermediate.cnf",
+        "//test/core/tsi/test_creds/spiffe_end2end:intermediate_ca.key",
+        "//test/core/tsi/test_creds/spiffe_end2end:intermediate_ca.pem",
+        "//test/core/tsi/test_creds/spiffe_end2end:intermediate_gen.sh",
+        "//test/core/tsi/test_creds/spiffe_end2end:invalid_utf8_san.key",
+        "//test/core/tsi/test_creds/spiffe_end2end:invalid_utf8_san_spiffe.pem",
+        "//test/core/tsi/test_creds/spiffe_end2end:leaf_and_intermediate_chain.pem",
+        "//test/core/tsi/test_creds/spiffe_end2end:leaf_signed_by_intermediate.key",
+        "//test/core/tsi/test_creds/spiffe_end2end:leaf_signed_by_intermediate.pem",
+        "//test/core/tsi/test_creds/spiffe_end2end:multi_san.key",
+        "//test/core/tsi/test_creds/spiffe_end2end:multi_san_spiffe.pem",
+        "//test/core/tsi/test_creds/spiffe_end2end:server.key",
+        "//test/core/tsi/test_creds/spiffe_end2end:server_spiffe.pem",
+        "//test/core/tsi/test_creds/spiffe_end2end:server_spiffebundle.json",
+    ],
+    external_deps = [
+        "absl/log:check",
+        "absl/status:statusor",
+        "absl/strings",
+        "gtest",
+        "libcrypto",
+    ],
+    tags = ["no_windows"],
+    deps = [
+        ":transport_security_test_lib",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_security_base",
+        "//:tsi",
+        "//:tsi_base",
+        "//:tsi_ssl_credentials",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -170,12 +252,17 @@ grpc_cc_test(
     srcs = ["transport_security_test.cc"],
     external_deps = [
         "absl/log:log",
+        "absl/strings:str_format",
         "gtest",
+        "libcrypto",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:tsi_base",
+        "//:tsi_fake_credentials",
+        "//:tsi_ssl_credentials",
+        "//src/core:useful",
         "//test/core/test_util:grpc_test_util",
     ],
 )

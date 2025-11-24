@@ -225,7 +225,7 @@ class TestUnaryUnaryClientInterceptor(AioTestBase):
             self.assertEqual(grpc.StatusCode.OK, await call.code())
 
             # Check that two calls were made, first one finishing with
-            # a deadline and second one finishing ok..
+            # a deadline and second one finishing ok.
             self.assertEqual(len(interceptor.calls), 2)
             self.assertEqual(
                 await interceptor.calls[0].code(),

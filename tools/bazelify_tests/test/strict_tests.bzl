@@ -31,7 +31,7 @@ def generate_strict_tests(name = ""):
     strict_warning_jobs = []
 
     for source in [
-        ":all //src/core/... //src/compiler/... //examples/... -//examples/android/binder/...",
+        ":all //src/core/... //src/compiler/... //examples/cpp/...",
         "//test/... -//test/core/... -//test/cpp/...",
         "//test/core/end2end/...",
         "//test/core/... -//test/core/end2end/...",

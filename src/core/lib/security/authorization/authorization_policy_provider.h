@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_AUTHORIZATION_POLICY_PROVIDER_H
 #define GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_AUTHORIZATION_POLICY_PROVIDER_H
 
-#include "absl/strings/string_view.h"
-
 #include <grpc/grpc_security.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>
@@ -25,6 +23,7 @@
 #include "src/core/util/dual_ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/useful.h"
+#include "absl/strings/string_view.h"
 
 struct grpc_authorization_policy_provider
     : public grpc_core::DualRefCounted<grpc_authorization_policy_provider> {

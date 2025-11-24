@@ -17,14 +17,13 @@
 #include <memory>
 #include <optional>
 
-#include "absl/status/status.h"
-#include "gtest/gtest.h"
-
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace {
@@ -34,24 +33,20 @@ TEST(PromiseMutexTest, Basic) {
   bool done = false;
   MakeActivity(
       [&]() {
-        return Seq(Join(Seq(mutex.Acquire(),
-                            [](PromiseMutex<int>::Lock l) {
-                              EXPECT_EQ(*l, 1);
-                              *l = 2;
-                              return Empty{};
-                            }),
-                        Seq(mutex.Acquire(),
-                            [](PromiseMutex<int>::Lock l) {
-                              EXPECT_EQ(*l, 2);
-                              *l = 3;
-                              return Empty{};
-                            }),
-                        Seq(mutex.Acquire(),
-                            [](PromiseMutex<int>::Lock l) {
-                              EXPECT_EQ(*l, 3);
-                              return Empty{};
-                            })),
-                   []() { return absl::OkStatus(); });
+        return Seq(
+            Join(Seq(mutex.Acquire(),
+                     [](PromiseMutex<int>::Lock l) {
+                       EXPECT_EQ(*l, 1);
+                       *l = 2;
+                     }),
+                 Seq(mutex.Acquire(),
+                     [](PromiseMutex<int>::Lock l) {
+                       EXPECT_EQ(*l, 2);
+                       *l = 3;
+                     }),
+                 Seq(mutex.Acquire(),
+                     [](PromiseMutex<int>::Lock l) { EXPECT_EQ(*l, 3); })),
+            []() { return absl::OkStatus(); });
       },
       InlineWakeupScheduler(),
       [&done](absl::Status status) {

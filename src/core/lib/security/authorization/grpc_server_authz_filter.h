@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_GRPC_SERVER_AUTHZ_FILTER_H
 #define GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_GRPC_SERVER_AUTHZ_FILTER_H
 
-#include "absl/status/statusor.h"
-
 #include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
 
@@ -26,9 +24,10 @@
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/security/authorization/authorization_policy_provider.h"
 #include "src/core/lib/security/authorization/evaluate_args.h"
-#include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/transport/auth_context.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 
@@ -50,12 +49,12 @@ class GrpcServerAuthzFilter final
    public:
     absl::Status OnClientInitialMetadata(ClientMetadata& md,
                                          GrpcServerAuthzFilter* filter);
-    static const NoInterceptor OnServerInitialMetadata;
-    static const NoInterceptor OnServerTrailingMetadata;
-    static const NoInterceptor OnClientToServerMessage;
-    static const NoInterceptor OnClientToServerHalfClose;
-    static const NoInterceptor OnServerToClientMessage;
-    static const NoInterceptor OnFinalize;
+    static inline const NoInterceptor OnServerInitialMetadata;
+    static inline const NoInterceptor OnServerTrailingMetadata;
+    static inline const NoInterceptor OnClientToServerMessage;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerToClientMessage;
+    static inline const NoInterceptor OnFinalize;
   };
 
  private:

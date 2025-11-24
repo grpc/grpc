@@ -16,18 +16,6 @@
 //
 //
 
-#include <limits.h>
-#include <string.h>
-
-#include <algorithm>
-#include <memory>
-#include <string>
-#include <utility>
-#include <vector>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/compression_types.h>
@@ -47,12 +35,22 @@
 #include <grpcpp/server_interface.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/server_interceptor.h>
+#include <limits.h>
+#include <string.h>
+
+#include <algorithm>
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "src/core/ext/transport/chttp2/server/chttp2_server.h"
 #include "src/core/server/server.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/string.h"
 #include "src/core/util/useful.h"
 #include "src/cpp/server/external_connection_acceptor_impl.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace {
@@ -188,7 +186,7 @@ void ServerBuilder::experimental_type::SetAuthorizationPolicyProvider(
 void ServerBuilder::experimental_type::EnableCallMetricRecording(
     experimental::ServerMetricRecorder* server_metric_recorder) {
   builder_->AddChannelArgument(GRPC_ARG_SERVER_CALL_METRIC_RECORDING, 1);
-  CHECK_EQ(builder_->server_metric_recorder_, nullptr);
+  GRPC_CHECK_EQ(builder_->server_metric_recorder_, nullptr);
   builder_->server_metric_recorder_ = server_metric_recorder;
 }
 
@@ -517,8 +515,6 @@ void ServerBuilder::InternalAddPluginFactory(
 
 ServerBuilder& ServerBuilder::EnableWorkaround(grpc_workaround_list id) {
   switch (id) {
-    case GRPC_WORKAROUND_ID_CRONET_COMPRESSION:
-      return AddChannelArgument(GRPC_ARG_WORKAROUND_CRONET_COMPRESSION, 1);
     default:
       LOG(ERROR) << "Workaround " << id << " does not exist or is obsolete.";
       return *this;

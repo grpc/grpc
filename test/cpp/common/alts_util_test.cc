@@ -16,10 +16,6 @@
 //
 //
 
-#include <gtest/gtest.h>
-
-#include "upb/mem/arena.hpp"
-
 #include <grpcpp/security/alts_context.h>
 #include <grpcpp/security/alts_util.h>
 #include <grpcpp/security/auth_context.h>
@@ -29,6 +25,8 @@
 #include "src/proto/grpc/gcp/altscontext.upb.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/string_ref_helper.h"
+#include "upb/mem/arena.hpp"
+#include "gtest/gtest.h"
 
 namespace grpc {
 namespace {

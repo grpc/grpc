@@ -29,14 +29,14 @@
 
 namespace grpc_core {
 
-absl::optional<std::string> GetEnv(const char* name) {
+std::optional<std::string> GetEnv(const char* name) {
   auto tname = CharToTchar(name);
   DWORD ret = GetEnvironmentVariable(tname.c_str(), NULL, 0);
-  if (ret == 0) return absl::nullopt;
+  if (ret == 0) return std::nullopt;
   std::unique_ptr<TCHAR[]> tresult(new TCHAR[ret]);
   ret =
       GetEnvironmentVariable(tname.c_str(), tresult.get(), ret * sizeof(TCHAR));
-  if (ret == 0) return absl::nullopt;
+  if (ret == 0) return std::nullopt;
   return TcharToChar(tresult.get());
 }
 

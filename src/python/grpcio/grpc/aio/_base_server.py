@@ -136,7 +136,9 @@ class Server(abc.ABC):
           A bool indicates if the operation times out.
         """
 
-    def add_registered_method_handlers(self, service_name, method_handlers):
+    def add_registered_method_handlers(  # noqa: B027
+        self, service_name, method_handlers
+    ):
         """Registers GenericRpcHandlers with this Server.
 
         This method is only safe to call before the server is started.
@@ -193,11 +195,11 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         self,
         code: grpc.StatusCode,
         details: str = "",
-        trailing_metadata: MetadataType = tuple(),
+        trailing_metadata: MetadataType = (),
     ) -> NoReturn:
         """Raises an exception to terminate the RPC with a non-OK status.
 
-        The code and details passed as arguments will supercede any existing
+        The code and details passed as arguments will supersede any existing
         ones.
 
         Args:

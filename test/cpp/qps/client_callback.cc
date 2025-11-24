@@ -16,6 +16,12 @@
 //
 //
 
+#include <grpc/grpc.h>
+#include <grpc/support/cpu.h>
+#include <grpcpp/alarm.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+
 #include <list>
 #include <memory>
 #include <mutex>
@@ -25,19 +31,12 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/cpu.h>
-#include <grpcpp/alarm.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/client_context.h>
-
 #include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/usage_timer.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
 
 namespace grpc {
 namespace testing {

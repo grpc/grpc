@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 
 #include "gtest/gtest.h"
-
-#include <grpc/support/port_platform.h>
 
 // Make a template argument to test which bit pattern remains in A's destructor
 // to try and detect similar bugs in non-MSAN builds (none have been detected

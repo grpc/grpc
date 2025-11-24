@@ -14,18 +14,14 @@
 
 #include "src/core/server/server_config_selector_filter.h"
 
-#include <functional>
-#include <memory>
-#include <utility>
-
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/types/optional.h"
-
 #include <grpc/support/port_platform.h>
 
+#include <functional>
+#include <memory>
+#include <optional>
+#include <utility>
+
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
@@ -33,14 +29,18 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server_config_selector.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_call_data.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/latent_see.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 
@@ -71,12 +71,12 @@ class ServerConfigSelectorFilter final
    public:
     absl::Status OnClientInitialMetadata(ClientMetadata& md,
                                          ServerConfigSelectorFilter* filter);
-    static const NoInterceptor OnServerInitialMetadata;
-    static const NoInterceptor OnServerTrailingMetadata;
-    static const NoInterceptor OnClientToServerMessage;
-    static const NoInterceptor OnClientToServerHalfClose;
-    static const NoInterceptor OnServerToClientMessage;
-    static const NoInterceptor OnFinalize;
+    static inline const NoInterceptor OnServerInitialMetadata;
+    static inline const NoInterceptor OnServerTrailingMetadata;
+    static inline const NoInterceptor OnClientToServerMessage;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerToClientMessage;
+    static inline const NoInterceptor OnFinalize;
   };
 
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector() {
@@ -103,7 +103,7 @@ class ServerConfigSelectorFilter final
 
   RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider_;
   Mutex mu_;
-  absl::optional<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
+  std::optional<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
       config_selector_ ABSL_GUARDED_BY(mu_);
 };
 
@@ -123,7 +123,7 @@ ServerConfigSelectorFilter::ServerConfigSelectorFilter(
     RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider)
     : server_config_selector_provider_(
           std::move(server_config_selector_provider)) {
-  CHECK(server_config_selector_provider_ != nullptr);
+  GRPC_CHECK(server_config_selector_provider_ != nullptr);
   auto server_config_selector_watcher =
       std::make_unique<ServerConfigSelectorWatcher>(Ref());
   auto config_selector = server_config_selector_provider_->Watch(
@@ -144,6 +144,8 @@ void ServerConfigSelectorFilter::Orphan() {
 
 absl::Status ServerConfigSelectorFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, ServerConfigSelectorFilter* filter) {
+  GRPC_LATENT_SEE_SCOPE(
+      "ServerConfigSelectorFilter::Call::OnClientInitialMetadata");
   auto sel = filter->config_selector();
   if (!sel.ok()) return sel.status();
   auto call_config = sel.value()->GetCallConfig(&md);
@@ -156,13 +158,6 @@ absl::Status ServerConfigSelectorFilter::Call::OnClientInitialMetadata(
       std::move(call_config->service_config), call_config->method_configs);
   return absl::OkStatus();
 }
-
-const NoInterceptor ServerConfigSelectorFilter::Call::OnServerInitialMetadata;
-const NoInterceptor ServerConfigSelectorFilter::Call::OnServerTrailingMetadata;
-const NoInterceptor ServerConfigSelectorFilter::Call::OnClientToServerMessage;
-const NoInterceptor ServerConfigSelectorFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor ServerConfigSelectorFilter::Call::OnServerToClientMessage;
-const NoInterceptor ServerConfigSelectorFilter::Call::OnFinalize;
 
 }  // namespace
 

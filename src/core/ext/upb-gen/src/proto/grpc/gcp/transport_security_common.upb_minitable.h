@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef SRC_PROTO_GRPC_GCP_TRANSPORT_SECURITY_COMMON_PROTO_UPB_MINITABLE_H_
-#define SRC_PROTO_GRPC_GCP_TRANSPORT_SECURITY_COMMON_PROTO_UPB_MINITABLE_H_
+#ifndef SRC_PROTO_GRPC_GCP_TRANSPORT_SECURITY_COMMON_PROTO_UPB_H__UPB_MINITABLE_H_
+#define SRC_PROTO_GRPC_GCP_TRANSPORT_SECURITY_COMMON_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -22,6 +22,10 @@ extern const upb_MiniTable grpc__gcp__RpcProtocolVersions_msg_init;
 extern const upb_MiniTable* grpc__gcp__RpcProtocolVersions_msg_init_ptr;
 extern const upb_MiniTable grpc__gcp__RpcProtocolVersions__Version_msg_init;
 extern const upb_MiniTable* grpc__gcp__RpcProtocolVersions__Version_msg_init_ptr;
+extern const upb_MiniTable grpc__gcp__TransportProtocolPreferences_msg_init;
+extern const upb_MiniTable* grpc__gcp__TransportProtocolPreferences_msg_init_ptr;
+extern const upb_MiniTable grpc__gcp__NegotiatedTransportProtocol_msg_init;
+extern const upb_MiniTable* grpc__gcp__NegotiatedTransportProtocol_msg_init_ptr;
 
 extern const upb_MiniTableFile src_proto_grpc_gcp_transport_security_common_proto_upb_file_layout;
 
@@ -31,4 +35,4 @@ extern const upb_MiniTableFile src_proto_grpc_gcp_transport_security_common_prot
 
 #include "upb/port/undef.inc"
 
-#endif  /* SRC_PROTO_GRPC_GCP_TRANSPORT_SECURITY_COMMON_PROTO_UPB_MINITABLE_H_ */
+#endif  /* SRC_PROTO_GRPC_GCP_TRANSPORT_SECURITY_COMMON_PROTO_UPB_H__UPB_MINITABLE_H_ */

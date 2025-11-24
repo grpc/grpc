@@ -19,14 +19,14 @@
 #ifndef GRPCPP_SECURITY_AUDIT_LOGGING_H
 #define GRPCPP_SECURITY_AUDIT_LOGGING_H
 
+#include <grpc/grpc_audit_logging.h>
+#include <grpcpp/support/string_ref.h>
+
 #include <memory>
 #include <string>
 #include <utility>
 
 #include "absl/status/statusor.h"
-
-#include <grpc/grpc_audit_logging.h>
-#include <grpcpp/support/string_ref.h>
 
 namespace grpc {
 namespace experimental {

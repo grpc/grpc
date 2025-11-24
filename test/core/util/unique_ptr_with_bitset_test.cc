@@ -18,14 +18,13 @@
 
 #include "src/core/util/unique_ptr_with_bitset.h"
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <limits>
 #include <memory>
 
 #include "gtest/gtest.h"
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

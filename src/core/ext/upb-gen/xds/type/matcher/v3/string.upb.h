@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_TYPE_MATCHER_V3_STRING_PROTO_UPB_H_
-#define XDS_TYPE_MATCHER_V3_STRING_PROTO_UPB_H_
+#ifndef XDS_TYPE_MATCHER_V3_STRING_PROTO_UPB_H__UPB_H_
+#define XDS_TYPE_MATCHER_V3_STRING_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -77,6 +77,10 @@ UPB_INLINE xds_type_matcher_v3_StringMatcher_match_pattern_oneofcases xds_type_m
   const upb_MiniTableField field = {1, 16, -13, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   return (xds_type_matcher_v3_StringMatcher_match_pattern_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void xds_type_matcher_v3_StringMatcher_clear_match_pattern(xds_type_matcher_v3_StringMatcher* msg) {
+  const upb_MiniTableField field = {1, 16, -13, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &xds__type__matcher__v3__StringMatcher_msg_init, &field);
 }
 UPB_INLINE void xds_type_matcher_v3_StringMatcher_clear_exact(xds_type_matcher_v3_StringMatcher* msg) {
   const upb_MiniTableField field = {1, 16, -13, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
@@ -317,4 +321,4 @@ UPB_INLINE struct xds_type_matcher_v3_StringMatcher* xds_type_matcher_v3_ListStr
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_TYPE_MATCHER_V3_STRING_PROTO_UPB_H_ */
+#endif  /* XDS_TYPE_MATCHER_V3_STRING_PROTO_UPB_H__UPB_H_ */

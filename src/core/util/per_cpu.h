@@ -15,16 +15,14 @@
 #ifndef GRPC_SRC_CORE_UTIL_PER_CPU_H
 #define GRPC_SRC_CORE_UTIL_PER_CPU_H
 
+#include <grpc/support/cpu.h>
 #include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <algorithm>
 #include <cstddef>
 #include <limits>
 #include <memory>
-
-#include <grpc/support/cpu.h>
 
 // Sharded collections of objects
 // This used to be per-cpu, now it's much less so - but still a way to limit
@@ -57,6 +55,12 @@ class PerCpuOptions {
   size_t max_shards_ = std::numeric_limits<size_t>::max();
 };
 
+#ifdef GPR_CPU_CUSTOM
+class PerCpuShardingHelper {
+ public:
+  size_t GetShardingBits() { return gpr_cpu_current_cpu(); }
+};
+#else
 class PerCpuShardingHelper {
  public:
   size_t GetShardingBits() {
@@ -78,6 +82,7 @@ class PerCpuShardingHelper {
   };
   static thread_local State state_;
 };
+#endif  // GPR_CPU_CUSTOM
 
 template <typename T>
 class PerCpu {

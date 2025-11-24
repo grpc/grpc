@@ -16,11 +16,12 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/util/string.h"
 
 #include <ctype.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <limits.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -28,14 +29,10 @@
 #include <string.h>
 #include <time.h>
 
-#include "absl/strings/str_cat.h"
-#include "absl/time/time.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-
 #include "src/core/util/crash.h"
 #include "src/core/util/useful.h"
+#include "absl/strings/str_cat.h"
+#include "absl/time/time.h"
 
 char* gpr_strdup(const char* src) {
   char* dst;
@@ -186,7 +183,7 @@ int gpr_ltoa(long value, char* output) {
 
   sign = value < 0 ? -1 : 1;
   while (value) {
-    output[i++] = static_cast<char>('0' + sign * (value % 10));
+    output[i++] = static_cast<char>('0' + (sign * (value % 10)));
     value /= 10;
   }
   if (sign < 0) output[i++] = '-';
@@ -207,7 +204,7 @@ int int64_ttoa(int64_t value, char* output) {
 
   sign = value < 0 ? -1 : 1;
   while (value) {
-    output[i++] = static_cast<char>('0' + sign * (value % 10));
+    output[i++] = static_cast<char>('0' + (sign * (value % 10)));
     value /= 10;
   }
   if (sign < 0) output[i++] = '-';

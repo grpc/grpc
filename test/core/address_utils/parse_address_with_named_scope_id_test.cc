@@ -16,25 +16,18 @@
 //
 //
 
+#include <grpc/support/alloc.h>
 #include <inttypes.h>
 #include <net/if.h>
 #include <netdb.h>
 #include <string.h>
-
-#include <grpc/support/alloc.h>
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #include <sys/un.h>
 #endif
 
-#include <string>
-
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
-#include "gtest/gtest.h"
-
 #include <grpc/grpc.h>
+
+#include <string>
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -44,6 +37,11 @@
 #include "src/core/util/host_port.h"
 #include "src/core/util/uri.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 
 static void test_grpc_parse_ipv6_parity_with_getaddrinfo(
     const char* target, const struct sockaddr_in6 result_from_getaddrinfo) {

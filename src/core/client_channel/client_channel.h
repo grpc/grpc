@@ -19,21 +19,21 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
-
+#include "src/core/call/metadata.h"
 #include "src/core/client_channel/client_channel_factory.h"
 #include "src/core/client_channel/config_selector.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/ext/filters/channel_idle/idle_filter_state.h"
+#include "src/core/filter/blackboard.h"
 #include "src/core/lib/promise/observable.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/transport/metadata.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/util/single_set_ptr.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -74,7 +74,7 @@ class ClientChannel : public Channel {
   grpc_call* CreateCall(grpc_call* parent_call, uint32_t propagation_mask,
                         grpc_completion_queue* cq,
                         grpc_pollset_set* /*pollset_set_alternative*/,
-                        Slice path, absl::optional<Slice> authority,
+                        Slice path, std::optional<Slice> authority,
                         Timestamp deadline, bool registered_method) override;
 
   void StartCall(UnstartedCallHandler unstarted_handler) override;
@@ -139,7 +139,7 @@ class ClientChannel : public Channel {
 
   absl::Status CreateOrUpdateLbPolicyLocked(
       RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config,
-      const absl::optional<std::string>& health_check_service_name,
+      const std::optional<std::string>& health_check_service_name,
       Resolver::Result result) ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
   OrphanablePtr<LoadBalancingPolicy> CreateLbPolicyLocked(
       const ChannelArgs& args) ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
@@ -170,6 +170,9 @@ class ClientChannel : public Channel {
       ConfigSelector& config_selector,
       ClientMetadata& client_initial_metadata) const;
 
+  const std::string default_authority_;
+  const std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+      stats_plugin_group_;
   const ChannelArgs channel_args_;
   const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
       event_engine_;
@@ -177,9 +180,7 @@ class ClientChannel : public Channel {
   const size_t service_config_parser_index_;
   const RefCountedPtr<ServiceConfig> default_service_config_;
   ClientChannelFactory* const client_channel_factory_;
-  const std::string default_authority_;
   channelz::ChannelNode* const channelz_node_;
-  GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group_;
 
   //
   // Idleness state.
@@ -215,19 +216,18 @@ class ClientChannel : public Channel {
       ABSL_GUARDED_BY(*work_serializer_);
   RefCountedPtr<ConfigSelector> saved_config_selector_
       ABSL_GUARDED_BY(*work_serializer_);
+  RefCountedPtr<const Blackboard> blackboard_
+      ABSL_GUARDED_BY(*work_serializer_);
   OrphanablePtr<LoadBalancingPolicy> lb_policy_
       ABSL_GUARDED_BY(*work_serializer_);
   RefCountedPtr<SubchannelPoolInterface> subchannel_pool_
       ABSL_GUARDED_BY(*work_serializer_);
-  // The number of SubchannelWrapper instances referencing a given Subchannel.
-  std::map<Subchannel*, int> subchannel_refcount_map_
-      ABSL_GUARDED_BY(*work_serializer_);
-  // The set of SubchannelWrappers that currently exist.
-  // No need to hold a ref, since the set is updated in the control-plane
+  // The set of SubchannelWrapper instances referencing a given Subchannel.
+  // No need to hold refs, since the map is updated in the control-plane
   // work_serializer when the SubchannelWrappers are created and destroyed.
-  absl::flat_hash_set<SubchannelWrapper*> subchannel_wrappers_
-      ABSL_GUARDED_BY(*work_serializer_);
-  int keepalive_time_ ABSL_GUARDED_BY(*work_serializer_) = -1;
+  absl::flat_hash_map<Subchannel*, absl::flat_hash_set<SubchannelWrapper*>>
+      subchannel_map_ ABSL_GUARDED_BY(*work_serializer_);
+  Duration keepalive_time_ ABSL_GUARDED_BY(*work_serializer_);
   absl::Status disconnect_error_ ABSL_GUARDED_BY(*work_serializer_);
 
   //

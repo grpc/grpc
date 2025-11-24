@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@rules_proto//proto:defs.bzl", "proto_library")
+load("//bazel:grpc_build_system.bzl", "grpc_internal_proto_library")
 
 licenses(["notice"])
 
-proto_library(
+grpc_internal_proto_library(
     name = "alts_handshaker_proto",
     srcs = [
         "altscontext.proto",

@@ -26,13 +26,14 @@ grpc_cc_test(
     srcs = ["mock_stream_test.cc"],
     external_deps = [
         "gtest",
+        "absl/memory",
     ],
     deps = [
         "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//:grpc++_test",
-        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],

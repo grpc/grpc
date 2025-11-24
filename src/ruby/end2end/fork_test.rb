@@ -15,6 +15,8 @@
 # limitations under the License.
 
 ENV['GRPC_ENABLE_FORK_SUPPORT'] = "1"
+# TODO(apolcyn): remove after this experiment is on by default
+ENV['GRPC_EXPERIMENTS'] = "event_engine_fork"
 fail "forking only supported on linux" unless RUBY_PLATFORM =~ /linux/
 
 this_dir = File.expand_path(File.dirname(__FILE__))
@@ -32,7 +34,7 @@ def do_rpc(stub)
   stub.echo(Echo::EchoRequest.new(request: 'hello'), deadline: Time.now + 300)
 end
 
-def run_client(stub)
+def run_client(stub, child_port)
   do_rpc(stub)
   with_logging("parent: GRPC.prefork") { GRPC.prefork }
   pid = fork do
@@ -43,18 +45,15 @@ def run_client(stub)
       with_logging("child2: GRPC.postfork_child") { GRPC.postfork_child }
       with_logging("child2: first post-fork RPC") { do_rpc(stub) }
       with_logging("child2: second post-fork RPC") { do_rpc(stub) }
-      STDERR.puts "child2: done"
     end
     with_logging("child1: GRPC.postfork_parent") { GRPC.postfork_parent }
     with_logging("child1: second post-fork RPC") { do_rpc(stub) }
-    Process.wait(pid2)
-    STDERR.puts "child1: done"
+    with_logging("child1: wait for child2") { Process.wait(pid2) }
   end
   with_logging("parent: GRPC.postfork_parent") { GRPC.postfork_parent }
   with_logging("parent: first post-fork RPC") { do_rpc(stub) }
   with_logging("parent: second post-fork RPC") { do_rpc(stub) }
-  Process.wait pid
-  STDERR.puts "parent: done"
+  with_logging("parent: wait for child1") { Process.wait pid }
 end
 
 def main
@@ -72,7 +71,7 @@ def main
   STDERR.puts "server running on port: #{child_port}"
   stub = Echo::EchoServer::Stub.new("localhost:#{child_port}", :this_channel_is_insecure)
   2.times do
-    run_client(stub)
+    run_client(stub, child_port)
   end
 end
 

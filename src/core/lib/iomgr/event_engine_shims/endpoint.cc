@@ -13,23 +13,16 @@
 // limitations under the License.
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 
-#include <atomic>
-#include <memory>
-#include <utility>
-
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
+
+#include <atomic>
+#include <memory>
+#include <utility>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/extensions/can_track_errors.h"
@@ -46,8 +39,14 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/util/construct_destruct.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/string.h"
 #include "src/core/util/sync.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -97,7 +96,7 @@ class EventEngineEndpointWrapper {
 
   // Read using the underlying EventEngine endpoint object.
   bool Read(grpc_closure* read_cb, grpc_slice_buffer* pending_read_buffer,
-            const EventEngine::Endpoint::ReadArgs* args) {
+            EventEngine::Endpoint::ReadArgs args) {
     Ref();
     pending_read_cb_ = read_cb;
     pending_read_buffer_ = pending_read_buffer;
@@ -109,7 +108,7 @@ class EventEngineEndpointWrapper {
     read_buffer->Clear();
     return endpoint_->Read(
         [this](absl::Status status) { FinishPendingRead(status); }, read_buffer,
-        args);
+        std::move(args));
   }
 
   void FinishPendingRead(absl::Status status) {
@@ -133,7 +132,6 @@ class EventEngineEndpointWrapper {
     grpc_closure* cb = pending_read_cb_;
     pending_read_cb_ = nullptr;
     if (grpc_core::ExecCtx::Get() == nullptr) {
-      grpc_core::ApplicationCallbackExecCtx app_ctx;
       grpc_core::ExecCtx exec_ctx;
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, status);
     } else {
@@ -145,7 +143,7 @@ class EventEngineEndpointWrapper {
 
   // Write using the underlying EventEngine endpoint object
   bool Write(grpc_closure* write_cb, grpc_slice_buffer* slices,
-             const EventEngine::Endpoint::WriteArgs* args) {
+             EventEngine::Endpoint::WriteArgs args) {
     Ref();
     if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
       size_t i;
@@ -167,7 +165,7 @@ class EventEngineEndpointWrapper {
     pending_write_cb_ = write_cb;
     return endpoint_->Write(
         [this](absl::Status status) { FinishPendingWrite(status); },
-        write_buffer, args);
+        write_buffer, std::move(args));
   }
 
   void FinishPendingWrite(absl::Status status) {
@@ -179,7 +177,6 @@ class EventEngineEndpointWrapper {
     grpc_closure* cb = pending_write_cb_;
     pending_write_cb_ = nullptr;
     if (grpc_core::ExecCtx::Get() == nullptr) {
-      grpc_core::ApplicationCallbackExecCtx app_ctx;
       grpc_core::ExecCtx exec_ctx;
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, status);
     } else {
@@ -303,8 +300,9 @@ void EndpointRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
     return;
   }
 
-  EventEngine::Endpoint::ReadArgs read_args = {min_progress_size};
-  if (eeep->wrapper->Read(cb, slices, &read_args)) {
+  EventEngine::Endpoint::ReadArgs read_args;
+  read_args.set_read_hint_bytes(min_progress_size);
+  if (eeep->wrapper->Read(cb, slices, std::move(read_args))) {
     // Read succeeded immediately. Run the callback inline.
     eeep->wrapper->FinishPendingRead(absl::OkStatus());
   }
@@ -314,8 +312,9 @@ void EndpointRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
 
 // Write the data from slices and invoke the provided closure asynchronously
 // after the write is complete.
-void EndpointWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                   grpc_closure* cb, void* arg, int max_frame_size) {
+void EndpointWrite(
+    grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb,
+    grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args) {
   auto* eeep =
       reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
           ep);
@@ -325,8 +324,7 @@ void EndpointWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
     return;
   }
 
-  EventEngine::Endpoint::WriteArgs write_args = {arg, max_frame_size};
-  if (eeep->wrapper->Write(cb, slices, &write_args)) {
+  if (eeep->wrapper->Write(cb, slices, std::move(args))) {
     // Write succeeded immediately. Run the callback inline.
     eeep->wrapper->FinishPendingWrite(absl::OkStatus());
   }
@@ -414,9 +412,10 @@ EventEngineEndpointWrapper::EventEngineEndpointWrapper(
 }  // namespace
 
 grpc_endpoint* grpc_event_engine_endpoint_create(
-    std::unique_ptr<EventEngine::Endpoint> ee_endpoint) {
-  DCHECK(ee_endpoint != nullptr);
-  auto wrapper = new EventEngineEndpointWrapper(std::move(ee_endpoint));
+    absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ee_endpoint) {
+  GRPC_DCHECK(ee_endpoint.ok()) << ee_endpoint.status();
+  GRPC_DCHECK(ee_endpoint.value() != nullptr);
+  auto wrapper = new EventEngineEndpointWrapper(std::move(ee_endpoint).value());
   return wrapper->GetGrpcEndpoint();
 }
 
@@ -444,7 +443,7 @@ std::unique_ptr<EventEngine::Endpoint> grpc_take_wrapped_event_engine_endpoint(
       reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
           ep);
   auto endpoint = eeep->wrapper->ReleaseEndpoint();
-  delete eeep->wrapper;
+  eeep->wrapper->Unref();
   return endpoint;
 }
 

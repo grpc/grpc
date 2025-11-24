@@ -19,11 +19,10 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_TIMEOUT_ENCODING_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_TIMEOUT_ENCODING_H
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
-#include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
+#include <optional>
 
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/time.h"
@@ -65,7 +64,7 @@ class Timeout {
   Unit unit_ = Unit::kNanoseconds;
 };
 
-absl::optional<Duration> ParseTimeout(const Slice& text);
+std::optional<Duration> ParseTimeout(const Slice& text);
 
 }  // namespace grpc_core
 

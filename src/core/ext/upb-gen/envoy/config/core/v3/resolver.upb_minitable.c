@@ -38,7 +38,7 @@ const upb_MiniTable envoy__config__core__v3__DnsResolverOptions_msg_init = {
 };
 
 const upb_MiniTable* envoy__config__core__v3__DnsResolverOptions_msg_init_ptr = &envoy__config__core__v3__DnsResolverOptions_msg_init;
-static const upb_MiniTableSubInternal envoy_config_core_v3_DnsResolutionConfig_submsgs[2] = {
+static const upb_MiniTableSubInternal envoy_config_core_v3_DnsResolutionConfig__submsgs[2] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Address_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DnsResolverOptions_msg_init_ptr},
 };
@@ -49,7 +49,7 @@ static const upb_MiniTableField envoy_config_core_v3_DnsResolutionConfig__fields
 };
 
 const upb_MiniTable envoy__config__core__v3__DnsResolutionConfig_msg_init = {
-  &envoy_config_core_v3_DnsResolutionConfig_submsgs[0],
+  &envoy_config_core_v3_DnsResolutionConfig__submsgs[0],
   &envoy_config_core_v3_DnsResolutionConfig__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED

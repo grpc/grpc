@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_CORE_V3_BASE_PROTO_UPB_MINITABLE_H_
-#define ENVOY_CONFIG_CORE_V3_BASE_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_CONFIG_CORE_V3_BASE_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_CONFIG_CORE_V3_BASE_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -44,6 +44,8 @@ extern const upb_MiniTable envoy__config__core__v3__RuntimeFeatureFlag_msg_init;
 extern const upb_MiniTable* envoy__config__core__v3__RuntimeFeatureFlag_msg_init_ptr;
 extern const upb_MiniTable envoy__config__core__v3__KeyValue_msg_init;
 extern const upb_MiniTable* envoy__config__core__v3__KeyValue_msg_init_ptr;
+extern const upb_MiniTable envoy__config__core__v3__KeyValuePair_msg_init;
+extern const upb_MiniTable* envoy__config__core__v3__KeyValuePair_msg_init_ptr;
 extern const upb_MiniTable envoy__config__core__v3__KeyValueAppend_msg_init;
 extern const upb_MiniTable* envoy__config__core__v3__KeyValueAppend_msg_init_ptr;
 extern const upb_MiniTable envoy__config__core__v3__KeyValueMutation_msg_init;
@@ -85,4 +87,4 @@ extern const upb_MiniTableFile envoy_config_core_v3_base_proto_upb_file_layout;
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_CORE_V3_BASE_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_CONFIG_CORE_V3_BASE_PROTO_UPB_H__UPB_MINITABLE_H_ */

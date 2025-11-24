@@ -25,14 +25,9 @@
 #include <winsock2.h>
 
 // must be included after winsock2.h
-#include <mswsock.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_format.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log_windows.h>
+#include <mswsock.h>
 
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -41,6 +36,9 @@
 #include "src/core/lib/iomgr/sockaddr_windows.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_format.h"
 
 static DWORD s_wsa_socket_flags;
 
@@ -159,7 +157,7 @@ void grpc_winsocket_finish(grpc_winsocket* winsocket) {
 
 void grpc_winsocket_destroy(grpc_winsocket* winsocket) {
   gpr_mu_lock(&winsocket->state_mu);
-  CHECK(!winsocket->destroy_called);
+  GRPC_CHECK(!winsocket->destroy_called);
   winsocket->destroy_called = true;
   bool should_destroy = check_destroyable(winsocket);
   gpr_mu_unlock(&winsocket->state_mu);
@@ -174,7 +172,7 @@ void grpc_winsocket_destroy(grpc_winsocket* winsocket) {
 //-) The IOCP hasn't completed yet, and we're queuing it for later.
 static void socket_notify_on_iocp(grpc_winsocket* socket, grpc_closure* closure,
                                   grpc_winsocket_callback_info* info) {
-  CHECK(info->closure == NULL);
+  GRPC_CHECK(info->closure == NULL);
   gpr_mu_lock(&socket->state_mu);
   if (info->has_pending_iocp) {
     info->has_pending_iocp = 0;
@@ -196,7 +194,7 @@ void grpc_socket_notify_on_read(grpc_winsocket* socket, grpc_closure* closure) {
 
 bool grpc_socket_become_ready(grpc_winsocket* socket,
                               grpc_winsocket_callback_info* info) {
-  CHECK(!info->has_pending_iocp);
+  GRPC_CHECK(!info->has_pending_iocp);
   if (info->closure) {
     // Only run the closure once at shutdown.
     if (!info->closure_already_executed_at_shutdown) {

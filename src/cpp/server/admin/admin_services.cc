@@ -23,25 +23,25 @@
 // TODO(lidiz) build a real registration system that can pull in services
 // automatically with minimum amount of code.
 #include "src/cpp/server/channelz/channelz_service.h"
-#if !defined(GRPC_NO_XDS) && !defined(DISABLED_XDS_PROTO_IN_CC)
+#if !defined(GRPC_NO_XDS)
 #include "src/cpp/server/csds/csds.h"
-#endif  // GRPC_NO_XDS or DISABLED_XDS_PROTO_IN_CC
+#endif  // GRPC_NO_XDS
 namespace grpc {
 
 namespace {
 
 auto* g_channelz_service = new ChannelzService();
-#if !defined(GRPC_NO_XDS) && !defined(DISABLED_XDS_PROTO_IN_CC)
+#if !defined(GRPC_NO_XDS)
 auto* g_csds = new xds::experimental::ClientStatusDiscoveryService();
-#endif  // GRPC_NO_XDS or DISABLED_XDS_PROTO_IN_CC
+#endif  // GRPC_NO_XDS
 
 }  // namespace
 
 void AddAdminServices(ServerBuilder* builder) {
   builder->RegisterService(g_channelz_service);
-#if !defined(GRPC_NO_XDS) && !defined(DISABLED_XDS_PROTO_IN_CC)
+#if !defined(GRPC_NO_XDS)
   builder->RegisterService(g_csds);
-#endif  // GRPC_NO_XDS or DISABLED_XDS_PROTO_IN_CC
+#endif  // GRPC_NO_XDS
 }
 
 }  // namespace grpc

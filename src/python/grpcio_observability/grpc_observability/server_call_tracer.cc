@@ -14,6 +14,7 @@
 
 #include "server_call_tracer.h"
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -23,26 +24,23 @@
 #include <utility>
 #include <vector>
 
-#include "absl/strings/escaping.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
 #include "constants.h"
 #include "observability_util.h"
 #include "python_observability_context.h"
-
-#include <grpc/support/port_platform.h>
-
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "absl/strings/escaping.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 namespace grpc_observability {
 
@@ -143,29 +141,31 @@ void PythonOpenCensusServerCallTracer::RecordSendTrailingMetadata(
 }
 
 void PythonOpenCensusServerCallTracer::RecordSendMessage(
-    const grpc_core::SliceBuffer& send_message) {
-  RecordAnnotation(
-      absl::StrFormat("Send message: %ld bytes", send_message.Length()));
+    const grpc_core::Message& send_message) {
+  RecordAnnotation(absl::StrFormat("Send message: %ld bytes",
+                                   send_message.payload()->Length()));
   ++sent_message_count_;
 }
 
 void PythonOpenCensusServerCallTracer::RecordSendCompressedMessage(
-    const grpc_core::SliceBuffer& send_compressed_message) {
-  RecordAnnotation(absl::StrFormat("Send compressed message: %ld bytes",
-                                   send_compressed_message.Length()));
+    const grpc_core::Message& send_compressed_message) {
+  RecordAnnotation(
+      absl::StrFormat("Send compressed message: %ld bytes",
+                      send_compressed_message.payload()->Length()));
 }
 
 void PythonOpenCensusServerCallTracer::RecordReceivedMessage(
-    const grpc_core::SliceBuffer& recv_message) {
-  RecordAnnotation(
-      absl::StrFormat("Received message: %ld bytes", recv_message.Length()));
+    const grpc_core::Message& recv_message) {
+  RecordAnnotation(absl::StrFormat("Received message: %ld bytes",
+                                   recv_message.payload()->Length()));
   ++recv_message_count_;
 }
 
 void PythonOpenCensusServerCallTracer::RecordReceivedDecompressedMessage(
-    const grpc_core::SliceBuffer& recv_decompressed_message) {
-  RecordAnnotation(absl::StrFormat("Received decompressed message: %ld bytes",
-                                   recv_decompressed_message.Length()));
+    const grpc_core::Message& recv_decompressed_message) {
+  RecordAnnotation(
+      absl::StrFormat("Received decompressed message: %ld bytes",
+                      recv_decompressed_message.payload()->Length()));
 }
 
 void PythonOpenCensusServerCallTracer::RecordCancel(
@@ -221,8 +221,8 @@ void PythonOpenCensusServerCallTracer::RecordEnd(
     }
   }
 
-  // After RecordEnd, Core will make no further usage of this ServerCallTracer,
-  // so we are free it here.
+  // After RecordEnd, Core will make no further usage of this
+  // ServerCallTracerInterface, so we are free it here.
   delete this;
 }
 
@@ -261,7 +261,7 @@ void PythonOpenCensusServerCallTracer::RecordAnnotation(
   }
 }
 
-std::shared_ptr<grpc_core::TcpTracerInterface>
+std::shared_ptr<grpc_core::TcpCallTracer>
 PythonOpenCensusServerCallTracer::StartNewTcpTrace() {
   return nullptr;
 }
@@ -284,7 +284,7 @@ bool PythonOpenCensusServerCallTracer::IsSampled() {
 // PythonOpenCensusServerCallTracerFactory
 //
 
-grpc_core::ServerCallTracer*
+grpc_core::ServerCallTracerInterface*
 PythonOpenCensusServerCallTracerFactory::CreateNewServerCallTracer(
     grpc_core::Arena* arena, const grpc_core::ChannelArgs& channel_args) {
   // We don't use arena here to to ensure that memory is allocated and freed in

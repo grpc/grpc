@@ -18,8 +18,6 @@
 #ifndef GRPCPP_IMPL_SERVER_CALLBACK_HANDLERS_H
 #define GRPCPP_IMPL_SERVER_CALLBACK_HANDLERS_H
 
-#include "absl/log/absl_check.h"
-
 #include <grpc/grpc.h>
 #include <grpc/impl/call.h>
 #include <grpcpp/impl/rpc_service_method.h>
@@ -27,6 +25,8 @@
 #include <grpcpp/support/message_allocator.h>
 #include <grpcpp/support/server_callback.h>
 #include <grpcpp/support/status.h>
+
+#include "absl/log/absl_check.h"
 
 namespace grpc {
 namespace internal {
@@ -95,8 +95,7 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
     }
     *handler_data = allocator_state;
     request = allocator_state->request();
-    *status =
-        grpc::SerializationTraits<RequestType>::Deserialize(&buf, request);
+    *status = grpc::Deserialize(&buf, request);
     buf.Release();
     if (status->ok()) {
       return request;
@@ -116,8 +115,8 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
       // A callback that only contains a call to MaybeDone can be run as an
       // inline callback regardless of whether or not OnDone is inlineable
       // because if the actual OnDone callback needs to be scheduled, MaybeDone
-      // is responsible for dispatching to an executor thread if needed. Thus,
-      // when setting up the finish_tag_, we can set its own callback to
+      // is responsible for dispatching to an EventEngine thread if needed.
+      // Thus, when setting up the finish_tag_, we can set its own callback to
       // inlineable.
       finish_tag_.Set(
           call_.call(),
@@ -138,8 +137,9 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
       }
       // The response is dropped if the status is not OK.
       if (s.ok()) {
-        finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_,
-                                     finish_ops_.SendMessagePtr(response()));
+        finish_ops_.ServerSendStatus(
+            &ctx_->trailing_metadata_,
+            finish_ops_.SendMessagePtr(response(), ctx_->memory_allocator()));
       } else {
         finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_, s);
       }
@@ -152,9 +152,9 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
       this->Ref();
       // The callback for this function should not be marked inline because it
       // is directly invoking a user-controlled reaction
-      // (OnSendInitialMetadataDone). Thus it must be dispatched to an executor
-      // thread. However, any OnDone needed after that can be inlined because it
-      // is already running on an executor thread.
+      // (OnSendInitialMetadataDone). Thus it must be dispatched to an
+      // EventEngine thread. However, any OnDone needed after that can be
+      // inlined because it is already running on an EventEngine thread.
       meta_tag_.Set(
           call_.call(),
           [this](bool ok) {
@@ -326,8 +326,9 @@ class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
       }
       // The response is dropped if the status is not OK.
       if (s.ok()) {
-        finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_,
-                                     finish_ops_.SendMessagePtr(&resp_));
+        finish_ops_.ServerSendStatus(
+            &ctx_->trailing_metadata_,
+            finish_ops_.SendMessagePtr(&resp_, ctx_->memory_allocator()));
       } else {
         finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_, s);
       }
@@ -340,7 +341,7 @@ class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
       this->Ref();
       // The callback for this function should not be inlined because it invokes
       // a user-controlled reaction, but any resulting OnDone can be inlined in
-      // the executor to which this callback is dispatched.
+      // the EventEngine thread to which this callback is dispatched.
       meta_tag_.Set(
           call_.call(),
           [this](bool ok) {
@@ -380,7 +381,7 @@ class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
       reactor_.store(reactor, std::memory_order_relaxed);
       // The callback for this function should not be inlined because it invokes
       // a user-controlled reaction, but any resulting OnDone can be inlined in
-      // the executor to which this callback is dispatched.
+      // the EventEngine thread to which this callback is dispatched.
       read_tag_.Set(
           call_.call(),
           [this, reactor](bool ok) {
@@ -495,8 +496,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
     buf.set_buffer(req);
     auto* request =
         new (grpc_call_arena_alloc(call, sizeof(RequestType))) RequestType();
-    *status =
-        grpc::SerializationTraits<RequestType>::Deserialize(&buf, request);
+    *status = grpc::Deserialize(&buf, request);
     buf.Release();
     if (status->ok()) {
       return request;
@@ -544,7 +544,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
       this->Ref();
       // The callback for this function should not be inlined because it invokes
       // a user-controlled reaction, but any resulting OnDone can be inlined in
-      // the executor to which this callback is dispatched.
+      // the EventEngine thread to which this callback is dispatched.
       meta_tag_.Set(
           call_.call(),
           [this](bool ok) {
@@ -578,7 +578,9 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
         ctx_->sent_initial_metadata_ = true;
       }
       // TODO(vjpai): don't assert
-      ABSL_CHECK(write_ops_.SendMessagePtr(resp, options).ok());
+      ABSL_CHECK(
+          write_ops_.SendMessagePtr(resp, options, ctx_->memory_allocator())
+              .ok());
       call_.PerformOps(&write_ops_);
     }
 
@@ -586,7 +588,9 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
                         grpc::Status s) override {
       // This combines the write into the finish callback
       // TODO(vjpai): don't assert
-      ABSL_CHECK(finish_ops_.SendMessagePtr(resp, options).ok());
+      ABSL_CHECK(
+          finish_ops_.SendMessagePtr(resp, options, ctx_->memory_allocator())
+              .ok());
       Finish(std::move(s));
     }
 
@@ -607,7 +611,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
       reactor_.store(reactor, std::memory_order_relaxed);
       // The callback for this function should not be inlined because it invokes
       // a user-controlled reaction, but any resulting OnDone can be inlined in
-      // the executor to which this callback is dispatched.
+      // the EventEngine thread to which this callback is dispatched.
       write_tag_.Set(
           call_.call(),
           [this, reactor](bool ok) {
@@ -756,7 +760,7 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
       this->Ref();
       // The callback for this function should not be inlined because it invokes
       // a user-controlled reaction, but any resulting OnDone can be inlined in
-      // the executor to which this callback is dispatched.
+      // the EventEngine thread to which this callback is dispatched.
       meta_tag_.Set(
           call_.call(),
           [this](bool ok) {
@@ -790,14 +794,18 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
         ctx_->sent_initial_metadata_ = true;
       }
       // TODO(vjpai): don't assert
-      ABSL_CHECK(write_ops_.SendMessagePtr(resp, options).ok());
+      ABSL_CHECK(
+          write_ops_.SendMessagePtr(resp, options, ctx_->memory_allocator())
+              .ok());
       call_.PerformOps(&write_ops_);
     }
 
     void WriteAndFinish(const ResponseType* resp, grpc::WriteOptions options,
                         grpc::Status s) override {
       // TODO(vjpai): don't assert
-      ABSL_CHECK(finish_ops_.SendMessagePtr(resp, options).ok());
+      ABSL_CHECK(
+          finish_ops_.SendMessagePtr(resp, options, ctx_->memory_allocator())
+              .ok());
       Finish(std::move(s));
     }
 
@@ -821,7 +829,7 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
       reactor_.store(reactor, std::memory_order_relaxed);
       // The callbacks for these functions should not be inlined because they
       // invoke user-controlled reactions, but any resulting OnDones can be
-      // inlined in the executor to which a callback is dispatched.
+      // inlined in the EventEngine thread to which a callback is dispatched.
       write_tag_.Set(
           call_.call(),
           [this, reactor](bool ok) {

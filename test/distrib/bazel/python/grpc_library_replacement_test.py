@@ -15,7 +15,7 @@
 import sys
 
 try:
-    import grpc
+    from grpc import aio
 except ImportError:
     pass
 else:

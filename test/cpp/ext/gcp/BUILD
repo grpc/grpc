@@ -26,11 +26,14 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
+    tags = [
+        # TODO(b/244316297): //test/cpp/ext/gcp:observability_test does not build internally yet
+        "grpc:broken-internally",
+    ],
     uses_polling = False,
     deps = [
         "//:grpcpp_gcp_observability",
-        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/cpp/end2end:test_service_impl",
         "//test/cpp/util:test_util",
     ],
@@ -44,10 +47,14 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
     uses_polling = False,
     deps = [
+        "//:config",
+        "//:gpr",
+        "//src/core:env",
+        "//src/core:json_reader",
         "//src/cpp/ext/gcp:observability_config",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
 )
@@ -60,7 +67,10 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    language = "C++",
+    tags = [
+        # TODO(b/259460965): Re-enable after fixing
+        "grpc:broken-internally",
+    ],
     uses_polling = False,
     deps = [
         "//src/cpp/ext/gcp:observability_logging_sink",
@@ -75,10 +85,14 @@ grpc_cc_test(
     ],
     external_deps = [
         "gtest",
+        "absl/strings",
+        "absl/synchronization",
     ],
-    language = "C++",
     linkstatic = True,
     deps = [
+        "//:grpc",
+        "//src/core:env",
+        "//src/core:notification",
         "//src/cpp/ext/gcp:environment_autodetect",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",

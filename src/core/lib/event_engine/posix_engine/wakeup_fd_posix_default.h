@@ -14,14 +14,14 @@
 
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_WAKEUP_FD_POSIX_DEFAULT_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_WAKEUP_FD_POSIX_DEFAULT_H
-#include <memory>
-
-#include "absl/status/statusor.h"
-
 #include <grpc/support/port_platform.h>
 
-namespace grpc_event_engine {
-namespace experimental {
+#include <memory>
+
+#include "src/core/lib/event_engine/posix_engine/posix_interface.h"
+#include "absl/status/statusor.h"
+
+namespace grpc_event_engine::experimental {
 
 class WakeupFd;
 
@@ -29,9 +29,9 @@ class WakeupFd;
 bool SupportsWakeupFd();
 
 // Create and return an initialized WakeupFd instance if supported.
-absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd();
+absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd(
+    EventEnginePosixInterface* posix_interface);
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_WAKEUP_FD_POSIX_DEFAULT_H

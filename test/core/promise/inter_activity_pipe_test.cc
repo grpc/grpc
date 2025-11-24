@@ -16,11 +16,10 @@
 
 #include <memory>
 
-#include "absl/status/status.h"
-#include "gtest/gtest.h"
-
 #include "src/core/lib/promise/seq.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 
@@ -103,7 +102,9 @@ TEST(InterActivityPipe, CanClose) {
                             }));
   EXPECT_FALSE(done);
   // Drop the sender
-  { auto x = std::move(pipe.sender); }
+  {
+    auto x = std::move(pipe.sender);
+  }
   EXPECT_TRUE(done);
 }
 

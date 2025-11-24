@@ -6,8 +6,8 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_TYPE_V3_RATELIMIT_STRATEGY_PROTO_UPB_H_
-#define ENVOY_TYPE_V3_RATELIMIT_STRATEGY_PROTO_UPB_H_
+#ifndef ENVOY_TYPE_V3_RATELIMIT_STRATEGY_PROTO_UPB_H__UPB_H_
+#define ENVOY_TYPE_V3_RATELIMIT_STRATEGY_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -83,6 +83,10 @@ UPB_INLINE envoy_type_v3_RateLimitStrategy_strategy_oneofcases envoy_type_v3_Rat
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
   return (envoy_type_v3_RateLimitStrategy_strategy_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void envoy_type_v3_RateLimitStrategy_clear_strategy(envoy_type_v3_RateLimitStrategy* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__type__v3__RateLimitStrategy_msg_init, &field);
 }
 UPB_INLINE void envoy_type_v3_RateLimitStrategy_clear_blanket_rule(envoy_type_v3_RateLimitStrategy* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
@@ -242,4 +246,4 @@ UPB_INLINE void envoy_type_v3_RateLimitStrategy_RequestsPerTimeUnit_set_time_uni
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_TYPE_V3_RATELIMIT_STRATEGY_PROTO_UPB_H_ */
+#endif  /* ENVOY_TYPE_V3_RATELIMIT_STRATEGY_PROTO_UPB_H__UPB_H_ */

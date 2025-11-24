@@ -18,15 +18,14 @@
 
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 
-#include <memory>
-
-#include "absl/log/log.h"
-#include "absl/strings/str_format.h"
-#include "gtest/gtest.h"
-
 #include <grpc/slice.h>
 
+#include <memory>
+
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_format.h"
 
 template <uint8_t kPrefixBits>
 static void test_varint(uint32_t value, uint8_t prefix_or,

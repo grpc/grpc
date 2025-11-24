@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-""" Proxies a TCP connection between a single client-server pair.
+"""Proxies a TCP connection between a single client-server pair.
 
 This proxy is not suitable for production, but should work well for cases in
 which a test needs to spy on the bytes put on the wire between a server and

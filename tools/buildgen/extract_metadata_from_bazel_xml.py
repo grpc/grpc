@@ -88,6 +88,10 @@ EXTERNAL_PROTO_LIBRARIES = {
     "com_github_cncf_xds": ExternalProtoLibrary(
         destination="third_party/xds", proto_prefix="third_party/xds/"
     ),
+    "com_envoyproxy_protoc_gen_validate": ExternalProtoLibrary(
+        destination="third_party/protoc-gen-validate",
+        proto_prefix="third_party/protoc-gen-validate/",
+    ),
     "opencensus_proto": ExternalProtoLibrary(
         destination="third_party/opencensus-proto/src",
         proto_prefix="third_party/opencensus-proto/src/",
@@ -103,6 +107,7 @@ EXTERNAL_SOURCE_PREFIXES = {
     "@utf8_range//": "third_party/utf8_range",
     "@com_googlesource_code_re2//": "third_party/re2",
     "@com_google_googletest//": "third_party/googletest",
+    "@@googletest//": "third_party/googletest",
     "@com_google_protobuf//upb": "third_party/upb/upb",
     "@com_google_protobuf//third_party/utf8_range": "third_party/utf8_range",
     "@zlib//": "third_party/zlib",
@@ -119,9 +124,10 @@ def _bazel_query_xml_tree(query: str) -> ET.Element:
 
 def _rule_dict_from_xml_node(rule_xml_node):
     """Converts XML node representing a rule (obtained from "bazel query --output xml") to a dictionary that contains all the metadata we will need."""
+    rule_name = rule_xml_node.attrib.get("name")
     result = {
         "class": rule_xml_node.attrib.get("class"),
-        "name": rule_xml_node.attrib.get("name"),
+        "name": rule_name,
         "srcs": [],
         "hdrs": [],
         "textual_hdrs": [],
@@ -167,6 +173,13 @@ def _rule_dict_from_xml_node(rule_xml_node):
                     # make it seem that the actual name is a dependency of the alias or bind rule
                     # (aliases don't have dependencies themselves)
                     result["deps"].append(actual_name)
+                elif rule_name == "//third_party:libssl":
+                    # //third_party:libssl is a conditional alias so let's handle it manually.
+                    result["deps"].append("@boringssl//:ssl")
+                elif rule_name == "//third_party:libcrypto":
+                    # //third_party:libcrypto is a conditional alias so let's handle it manually.
+                    result["deps"].append("@boringssl//:crypto")
+
     return result
 
 
@@ -189,6 +202,7 @@ def _extract_rules_from_bazel_xml(xml_tree):
                 "upb_proto_reflection_library",
                 "alias",
                 "bind",
+                "genrule",
             ]:
                 if rule_name in result:
                     raise Exception("Rule %s already present" % rule_name)
@@ -198,7 +212,11 @@ def _extract_rules_from_bazel_xml(xml_tree):
 
 def _get_bazel_label(target_name: str) -> str:
     if target_name.startswith("@"):
-        return target_name
+        if ":" in target_name:
+            return target_name
+        else:
+            # @foo//bar/baz -> @foo//bar/baz:baz
+            return target_name + ":" + target_name.split("/")[-1]
     if ":" in target_name:
         return "//%s" % target_name
     else:
@@ -292,7 +310,7 @@ def _extract_sources(bazel_rule: BuildMetadata) -> List[str]:
 def _extract_deps(
     bazel_rule: BuildMetadata, bazel_rules: BuildDict
 ) -> List[str]:
-    """Gets list of deps from from a bazel rule"""
+    """Gets list of deps from a bazel rule"""
     deps = set(bazel_rule["deps"])
     for src in bazel_rule["srcs"]:
         if (
@@ -355,6 +373,13 @@ def _external_dep_name_from_bazel_dependency(bazel_dep: str) -> Optional[str]:
         return "opentelemetry-cpp::api"
     elif bazel_dep == "@io_opentelemetry_cpp//sdk/src/metrics:metrics":
         return "opentelemetry-cpp::metrics"
+    elif bazel_dep == "@io_opentelemetry_cpp//sdk/src/trace:trace":
+        return "opentelemetry-cpp::trace"
+    elif (
+        bazel_dep
+        == "@io_opentelemetry_cpp//exporters/memory:in_memory_span_exporter"
+    ):
+        return "opentelemetry-cpp::in_memory_span_exporter"
     else:
         # Two options here:
         # * either this is not external dependency at all (which is fine, we will treat it as internal library)
@@ -491,7 +516,7 @@ def _compute_transitive_metadata(
                 )
     # This item is a "visited" flag
     bazel_rule["_PROCESSING_DONE"] = True
-    # Following items are described in the docstinrg.
+    # Following items are described in the docstring.
     bazel_rule["_TRANSITIVE_DEPS"] = list(sorted(transitive_deps))
     bazel_rule["_COLLAPSED_DEPS"] = list(sorted(collapsed_deps))
     bazel_rule["_COLLAPSED_SRCS"] = list(sorted(collapsed_srcs))
@@ -535,7 +560,7 @@ def update_test_metadata_with_transitive_metadata(
 ) -> None:
     """Patches test build metadata with transitive metadata."""
     for lib_name, lib_dict in list(all_extra_metadata.items()):
-        # Skip if it isn't not an test
+        # Skip if it isn't a test
         if (
             lib_dict.get("build") != "test"
             and lib_dict.get("build") != "plugin_test"
@@ -604,8 +629,8 @@ def _expand_upb_proto_library_rules(bazel_rules):
             # deps is not properly fetched from bazel query for upb_c_proto_library target
             # so add the upb dependency manually
             bazel_rule["deps"] = [
-                "@com_google_protobuf//upb:descriptor_upb_proto",
-                "@com_google_protobuf//upb:generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
+                "@com_google_protobuf//upb/reflection:descriptor_upb_proto",
+                "@com_google_protobuf//upb:generated_code_support",
             ]
             # populate the upb_c_proto_library rule with pre-generated upb headers
             # and sources using proto_rule
@@ -661,15 +686,10 @@ def _expand_upb_proto_library_rules(bazel_rules):
 
 def _patch_grpc_proto_library_rules(bazel_rules):
     for name, bazel_rule in bazel_rules.items():
-        contains_proto = any(
-            src.endswith(".proto") for src in bazel_rule.get("srcs", [])
-        )
         generator_func = bazel_rule.get("generator_function", None)
-
-        if (
-            name.startswith("//")
-            and contains_proto
-            and generator_func == "grpc_proto_library"
+        if name.startswith("//") and (
+            generator_func == "grpc_proto_library"
+            or bazel_rule["class"] == "cc_proto_library"
         ):
             # Add explicit protobuf dependency for internal c++ proto targets.
             bazel_rule["deps"].append("//third_party:protobuf")
@@ -679,7 +699,7 @@ def _patch_descriptor_upb_proto_library(bazel_rules):
     # The upb's descriptor_upb_proto library doesn't reference the generated descriptor.proto
     # sources explicitly, so we add them manually.
     bazel_rule = bazel_rules.get(
-        "@com_google_protobuf//upb:descriptor_upb_proto", None
+        "@com_google_protobuf//upb/reflection:descriptor_upb_proto", None
     )
     if bazel_rule:
         bazel_rule["srcs"].append(
@@ -709,7 +729,7 @@ def _generate_build_metadata(
     # Rename targets marked with "_RENAME" extra metadata.
     # This is mostly a cosmetic change to ensure that we end up with build.yaml target
     # names we're used to from the past (and also to avoid too long target names).
-    # The rename step needs to be made after we're done with most of processing logic
+    # The rename step needs to be made after we're done with most processing logic
     # otherwise the already-renamed libraries will have different names than expected
     for lib_name in lib_names:
         to_name = build_extra_metadata.get(lib_name, {}).get("_RENAME", None)
@@ -953,6 +973,11 @@ def _generate_build_extra_metadata_for_tests(
         if "bazel_only" in bazel_tags:
             continue
 
+        # Only run OTel tests if building with the OTel plugin
+        if test.startswith("test/cpp/ext/otel"):
+            test_dict["build"] = "plugin_test"
+            test_dict["plugin_option"] = "gRPC_BUILD_GRPCPP_OTEL_PLUGIN"
+
         # if any tags that restrict platform compatibility are present,
         # generate the "platforms" field accordingly
         # TODO(jtattermusch): there is also a "no_linux" tag, but we cannot take
@@ -1011,7 +1036,6 @@ def _generate_build_extra_metadata_for_tests(
                     " to %s" % (test_name, long_name)
                 )
                 test_metadata[test_name]["_RENAME"] = long_name
-    print(test_metadata["test/cpp/ext/otel:otel_plugin_test"])
     return test_metadata
 
 
@@ -1085,17 +1109,27 @@ _BUILD_EXTRA_METADATA = {
         "build": "all",
         "_RENAME": "address_sorting",
     },
-    "@com_google_protobuf//upb:base": {
+    "@com_google_protobuf//upb/base": {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_base_lib",
     },
-    "@com_google_protobuf//upb:mem": {
+    "@com_google_protobuf//upb/hash:hash": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_hash_lib",
+    },
+    "@com_google_protobuf//upb/mem": {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_mem_lib",
     },
-    "@com_google_protobuf//upb:message": {
+    "@com_google_protobuf//upb/lex:lex": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_lex_lib",
+    },
+    "@com_google_protobuf//upb/message": {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_message_lib",
@@ -1109,6 +1143,16 @@ _BUILD_EXTRA_METADATA = {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_mini_descriptor_lib",
+    },
+    "@com_google_protobuf//upb/mini_table:mini_table": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_mini_table_lib",
+    },
+    "@com_google_protobuf//upb/reflection:reflection": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_reflection_lib",
     },
     "@com_google_protobuf//upb/text:text": {
         "language": "c",
@@ -1316,13 +1360,6 @@ _BUILD_EXTRA_METADATA = {
         "_TYPE": "target",
         "_RENAME": "grpc_cli",
     },
-    "test/cpp/ext/otel:otel_plugin_test": {
-        "language": "c++",
-        "build": "plugin_test",
-        "_TYPE": "target",
-        "plugin_option": "gRPC_BUILD_GRPCPP_OTEL_PLUGIN",
-        "_RENAME": "otel_plugin_test",
-    },
     # TODO(jtattermusch): create_jwt and verify_jwt breaks distribtests because it depends on grpc_test_utils and thus requires tests to be built
     # For now it's ok to disable them as these binaries aren't very useful anyway.
     # 'test/core/security:create_jwt': { 'language': 'c', 'build': 'tool', '_TYPE': 'target', '_RENAME': 'grpc_create_jwt' },
@@ -1349,7 +1386,7 @@ _BAZEL_DEPS_QUERIES = [
     'deps(kind("^proto_library", @envoy_api//envoy/...))',
     # Make sure we have source info for all the targets that _expand_upb_proto_library_rules artificially adds
     # as upb_c_proto_library dependencies.
-    'deps("@com_google_protobuf//upb:generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me")',
+    'deps("@com_google_protobuf//upb:generated_code_support")',
 ]
 
 # Step 1: run a bunch of "bazel query --output xml" queries to collect
@@ -1431,15 +1468,6 @@ tests = _exclude_unwanted_cc_tests(_extract_cc_tests(bazel_rules))
 # only very little "extra metadata" would be needed and/or it would be trivial
 # to generate it automatically.
 all_extra_metadata = {}
-# TODO(veblush): Remove this workaround once protobuf is upgraded to 26.x
-if "@com_google_protobuf//third_party/utf8_range:utf8_range" not in bazel_rules:
-    md = _BUILD_EXTRA_METADATA[
-        "@com_google_protobuf//third_party/utf8_range:utf8_range"
-    ]
-    del _BUILD_EXTRA_METADATA[
-        "@com_google_protobuf//third_party/utf8_range:utf8_range"
-    ]
-    _BUILD_EXTRA_METADATA["@utf8_range//:utf8_range"] = md
 all_extra_metadata.update(
     _generate_build_extra_metadata_for_tests(tests, bazel_rules)
 )
@@ -1513,9 +1541,9 @@ build_yaml_like = _convert_to_build_yaml_like(all_targets_dict)
 # to download these libraries if not existed. Even if the download failed, it
 # will be a soft error that doesn't block existing target from successfully
 # built.
-build_yaml_like[
-    "external_proto_libraries"
-] = _generate_external_proto_libraries()
+build_yaml_like["external_proto_libraries"] = (
+    _generate_external_proto_libraries()
+)
 
 # detect and report some suspicious situations we've seen before
 _detect_and_print_issues(build_yaml_like)

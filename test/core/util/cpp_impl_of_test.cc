@@ -16,7 +16,7 @@
 
 #include <memory>
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 typedef struct grpc_foo grpc_foo;
 

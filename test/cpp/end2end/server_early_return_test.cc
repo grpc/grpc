@@ -16,8 +16,6 @@
 //
 //
 
-#include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
@@ -35,6 +33,7 @@
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/string_ref_helper.h"
+#include "gtest/gtest.h"
 
 namespace grpc {
 namespace testing {
