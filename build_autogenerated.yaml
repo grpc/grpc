@@ -195,6 +195,7 @@ libs:
   - src/core/call/call_finalization.h
   - src/core/call/call_spine.h
   - src/core/call/call_state.h
+  - src/core/call/channelz_context.h
   - src/core/call/client_call.h
   - src/core/call/custom_metadata.h
   - src/core/call/filter_fusion.h
@@ -219,6 +220,14 @@ libs:
   - src/core/channelz/v2tov1/legacy_api.h
   - src/core/channelz/v2tov1/property_list.h
   - src/core/channelz/ztrace_collector.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/client_channel/backup_poller.h
   - src/core/client_channel/buffered_call.h
   - src/core/client_channel/client_channel.h
@@ -1338,6 +1347,9 @@ libs:
   - third_party/upb/upb/generated_code_support.h
   - third_party/xxhash/xxhash.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/call/call_arena_allocator.cc
   - src/core/call/call_filters.cc
   - src/core/call/call_spine.cc
@@ -1361,6 +1373,14 @@ libs:
   - src/core/channelz/v2tov1/convert.cc
   - src/core/channelz/v2tov1/legacy_api.cc
   - src/core/channelz/v2tov1/property_list.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/client_channel/backup_poller.cc
   - src/core/client_channel/buffered_call.cc
   - src/core/client_channel/client_channel.cc
@@ -2243,6 +2263,7 @@ libs:
   - cares
   - gpr
   - libssl
+  - protobuf
   - address_sorting
   baselib: true
   generate_plugin_registry: true
@@ -2397,6 +2418,7 @@ libs:
   - src/core/call/call_finalization.h
   - src/core/call/call_spine.h
   - src/core/call/call_state.h
+  - src/core/call/channelz_context.h
   - src/core/call/client_call.h
   - src/core/call/custom_metadata.h
   - src/core/call/filter_fusion.h
@@ -2418,6 +2440,14 @@ libs:
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
   - src/core/channelz/ztrace_collector.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/client_channel/backup_poller.h
   - src/core/client_channel/buffered_call.h
   - src/core/client_channel/client_channel.h
@@ -2959,6 +2989,9 @@ libs:
   - third_party/upb/upb/generated_code_support.h
   - third_party/xxhash/xxhash.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/call/call_arena_allocator.cc
   - src/core/call/call_filters.cc
   - src/core/call/call_spine.cc
@@ -2979,6 +3012,14 @@ libs:
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/client_channel/backup_poller.cc
   - src/core/client_channel/buffered_call.cc
   - src/core/client_channel/client_channel.cc
@@ -3429,6 +3470,7 @@ libs:
   - absl/utility:utility
   - cares
   - gpr
+  - protobuf
   - address_sorting
   baselib: true
   generate_plugin_registry: true
@@ -4174,7 +4216,6 @@ libs:
   - absl/log:absl_log
   - absl/strings:internal
   - grpc
-  - protobuf
   baselib: true
 - name: grpc++_alts
   build: all
@@ -4542,7 +4583,6 @@ libs:
   - absl/log:absl_log
   - absl/strings:internal
   - grpc_unsecure
-  - protobuf
   baselib: true
 - name: grpc_authorization_provider
   build: all
@@ -4600,6 +4640,7 @@ libs:
   - src/core/call/call_finalization.h
   - src/core/call/call_spine.h
   - src/core/call/call_state.h
+  - src/core/call/channelz_context.h
   - src/core/call/client_call.h
   - src/core/call/custom_metadata.h
   - src/core/call/interception_chain.h
@@ -4617,6 +4658,14 @@ libs:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/config/core_configuration.h
   - src/core/credentials/call/call_credentials.h
   - src/core/credentials/call/call_creds_registry.h
@@ -4986,6 +5035,9 @@ libs:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/call/call_arena_allocator.cc
   - src/core/call/call_filters.cc
   - src/core/call/call_spine.cc
@@ -5004,6 +5056,14 @@ libs:
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/config/core_configuration.cc
   - src/core/credentials/call/call_creds_util.cc
   - src/core/credentials/call/composite/composite_call_credentials.cc
@@ -5306,6 +5366,7 @@ libs:
   - absl/utility:utility
   - cares
   - gpr
+  - protobuf
   - address_sorting
 - name: grpc_plugin_support
   build: protoc
@@ -5398,7 +5459,6 @@ libs:
   - src/cpp/server/channelz/channelz_service.h
   src:
   - src/proto/grpc/channelz/channelz.proto
-  - src/proto/grpc/channelz/v2/channelz.proto
   - src/proto/grpc/channelz/v2/service.proto
   - src/cpp/server/channelz/channelz_service.cc
   - src/cpp/server/channelz/channelz_service_plugin.cc
@@ -5465,6 +5525,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -5574,11 +5642,22 @@ targets:
   - test/core/promise/test_wakeup_schedulers.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -5654,6 +5733,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: address_sorting_test
   gtest: true
@@ -5866,6 +5946,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -5968,11 +6056,22 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -6045,6 +6144,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: alloc_test
   gtest: true
@@ -6538,6 +6638,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -6631,11 +6739,22 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -6708,6 +6827,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: buffer_list_test
   gtest: true
@@ -6772,7 +6892,6 @@ targets:
   - test/core/test_util/test_call_creds.cc
   deps:
   - gtest
-  - protobuf
   - grpc_test_util
 - name: call_creds_registry_test
   gtest: true
@@ -6805,6 +6924,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -6940,6 +7067,9 @@ targets:
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/call/call_filters.cc
   - src/core/call/call_state.cc
   - src/core/call/message.cc
@@ -6951,6 +7081,14 @@ targets:
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -7040,6 +7178,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: call_finalization_test
   gtest: true
@@ -7063,6 +7202,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -7165,12 +7312,23 @@ targets:
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/call/call_state.cc
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -7245,6 +7403,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: call_tracer_test
   gtest: true
@@ -7270,6 +7429,7 @@ targets:
   - src/core/call/call_finalization.h
   - src/core/call/call_spine.h
   - src/core/call/call_state.h
+  - src/core/call/channelz_context.h
   - src/core/call/client_call.h
   - src/core/call/custom_metadata.h
   - src/core/call/interception_chain.h
@@ -7286,6 +7446,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/config/core_configuration.h
   - src/core/credentials/call/call_creds_registry.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
@@ -7622,6 +7790,9 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/call/call_arena_allocator.cc
   - src/core/call/call_filters.cc
   - src/core/call/call_spine.cc
@@ -7639,6 +7810,14 @@ targets:
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/config/core_configuration.cc
   - src/core/credentials/transport/alts/check_gcp_environment.cc
   - src/core/credentials/transport/alts/check_gcp_environment_linux.cc
@@ -7907,6 +8086,7 @@ targets:
   - absl/utility:utility
   - cares
   - gpr
+  - protobuf
   - address_sorting
 - name: cancel_ares_query_test
   gtest: true
@@ -7935,6 +8115,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -8055,11 +8243,22 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -8143,6 +8342,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: cel_authorization_engine_test
   gtest: true
@@ -8664,16 +8864,8 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/channelz/zviz/data.h
-  - src/core/channelz/zviz/entity.h
-  - src/core/channelz/zviz/environment.h
   - src/core/channelz/zviz/format_entity_list.h
-  - src/core/channelz/zviz/layout.h
-  - src/core/channelz/zviz/layout_text.h
   - src/core/channelz/zviz/property_list.h
-  - src/core/channelz/zviz/strings.h
-  - src/core/channelz/zviz/style.h
-  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chaotic_good/chaotic_good.h
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good/client_transport.h
@@ -8731,19 +8923,9 @@ targets:
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
   - src/proto/grpc/channelz/v2/latent_see.proto
-  - src/proto/grpc/channelz/v2/promise.proto
-  - src/proto/grpc/channelz/v2/property_list.proto
   - src/proto/grpc/reflection/v1alpha/reflection.proto
-  - src/core/channelz/zviz/data.cc
-  - src/core/channelz/zviz/entity.cc
-  - src/core/channelz/zviz/environment.cc
   - src/core/channelz/zviz/format_entity_list.cc
-  - src/core/channelz/zviz/layout.cc
-  - src/core/channelz/zviz/layout_text.cc
   - src/core/channelz/zviz/property_list.cc
-  - src/core/channelz/zviz/strings.cc
-  - src/core/channelz/zviz/style.cc
-  - src/core/channelz/zviz/trace.cc
   - src/core/ext/transport/chaotic_good/chaotic_good.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
@@ -8851,6 +9033,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -8971,11 +9161,22 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -9059,6 +9260,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: cli_call_test
   gtest: true
@@ -9109,7 +9311,6 @@ targets:
   - test/core/filters/filter_test.cc
   deps:
   - gtest
-  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: client_authority_filter_test
@@ -9128,7 +9329,6 @@ targets:
   - test/core/filters/filter_test.cc
   deps:
   - gtest
-  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: client_callback_end2end_test
@@ -9281,7 +9481,6 @@ targets:
   - test/cpp/sleuth/client.h
   src:
   - src/proto/grpc/channelz/v2/latent_see.proto
-  - src/proto/grpc/channelz/v2/property_list.proto
   - src/cpp/latent_see/latent_see_client.cc
   - test/cpp/sleuth/client.cc
   - test/cpp/sleuth/client_test.cc
@@ -9476,6 +9675,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -9567,11 +9774,22 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -9642,6 +9860,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: core_configuration_test
   gtest: true
@@ -9982,7 +10201,6 @@ targets:
   - absl/log:log_sink
   - absl/log:log_sink_registry
   - grpc_authorization_provider
-  - protobuf
   - grpc_test_util
   platforms:
   - linux
@@ -10199,7 +10417,6 @@ targets:
   - absl/log:log_sink
   - absl/log:log_sink_registry
   - grpc_authorization_provider
-  - protobuf
   - grpc_test_util
   platforms:
   - linux
@@ -10328,7 +10545,6 @@ targets:
   - absl/log:log_sink
   - absl/log:log_sink_registry
   - grpc_authorization_provider
-  - protobuf
   - grpc_test_util
 - name: end2end_http2_security_no_logging_test
   gtest: true
@@ -10453,7 +10669,6 @@ targets:
   - absl/log:log_sink
   - absl/log:log_sink_registry
   - grpc_authorization_provider
-  - protobuf
   - grpc_test_util
 - name: end2end_http2_security_test
   gtest: true
@@ -10666,7 +10881,6 @@ targets:
   - absl/log:log_sink
   - absl/log:log_sink_registry
   - grpc_authorization_provider
-  - protobuf
   - grpc_test_util
 - name: end2end_http2_test
   gtest: true
@@ -10879,7 +11093,6 @@ targets:
   - absl/log:log_sink
   - absl/log:log_sink_registry
   - grpc_authorization_provider
-  - protobuf
   - grpc_test_util
 - name: end2end_inproc_no_logging_test
   gtest: true
@@ -11004,7 +11217,6 @@ targets:
   - absl/log:log_sink
   - absl/log:log_sink_registry
   - grpc_authorization_provider
-  - protobuf
   - grpc_test_util
 - name: end2end_inproc_test
   gtest: true
@@ -11217,7 +11429,6 @@ targets:
   - absl/log:log_sink
   - absl/log:log_sink_registry
   - grpc_authorization_provider
-  - protobuf
   - grpc_test_util
 - name: end2end_ph2_no_logging_test
   gtest: true
@@ -11342,7 +11553,6 @@ targets:
   - absl/log:log_sink
   - absl/log:log_sink_registry
   - grpc_authorization_provider
-  - protobuf
   - grpc_test_util
 - name: end2end_ph2_test
   gtest: true
@@ -11555,7 +11765,6 @@ targets:
   - absl/log:log_sink
   - absl/log:log_sink_registry
   - grpc_authorization_provider
-  - protobuf
   - grpc_test_util
 - name: end2end_posix_no_logging_test
   gtest: true
@@ -11680,7 +11889,6 @@ targets:
   - absl/log:log_sink
   - absl/log:log_sink_registry
   - grpc_authorization_provider
-  - protobuf
   - grpc_test_util
 - name: end2end_posix_test
   gtest: true
@@ -11893,7 +12101,6 @@ targets:
   - absl/log:log_sink
   - absl/log:log_sink_registry
   - grpc_authorization_provider
-  - protobuf
   - grpc_test_util
 - name: end2end_test
   gtest: true
@@ -12158,6 +12365,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -12259,11 +12474,22 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -12338,6 +12564,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: experiments_tag_test
   gtest: true
@@ -12460,6 +12687,7 @@ targets:
   - src/core/call/call_finalization.h
   - src/core/call/call_spine.h
   - src/core/call/call_state.h
+  - src/core/call/channelz_context.h
   - src/core/call/client_call.h
   - src/core/call/custom_metadata.h
   - src/core/call/filter_fusion.h
@@ -12477,6 +12705,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/config/core_configuration.h
   - src/core/credentials/call/call_creds_registry.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
@@ -12813,6 +13049,9 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/call/call_arena_allocator.cc
   - src/core/call/call_filters.cc
   - src/core/call/call_spine.cc
@@ -12830,6 +13069,14 @@ targets:
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/config/core_configuration.cc
   - src/core/credentials/transport/alts/check_gcp_environment.cc
   - src/core/credentials/transport/alts/check_gcp_environment_linux.cc
@@ -13098,6 +13345,7 @@ targets:
   - absl/utility:utility
   - cares
   - gpr
+  - protobuf
   - address_sorting
 - name: filter_test_test
   gtest: true
@@ -13116,7 +13364,6 @@ targets:
   deps:
   - gtest
   - grpc_unsecure
-  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: flaky_network_test
@@ -13150,6 +13397,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/flow_control.h
   - src/core/ext/transport/chttp2/transport/flow_control_manager.h
   - src/core/ext/transport/chttp2/transport/frame.h
@@ -13270,11 +13525,22 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/transport/chttp2/transport/flow_control.cc
   - src/core/ext/transport/chttp2/transport/frame.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
@@ -13359,6 +13625,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
 - name: flow_control_test
   gtest: true
   build: test
@@ -13369,6 +13636,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/flow_control.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
@@ -13492,11 +13767,22 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/transport/chttp2/transport/flow_control.cc
   - src/core/ext/transport/chttp2/transport/frame.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
@@ -13584,6 +13870,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: for_each_test
   gtest: true
@@ -13595,6 +13882,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -13724,11 +14019,22 @@ targets:
   - test/core/promise/test_wakeup_schedulers.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -13812,6 +14118,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: fork_test
   gtest: true
@@ -13865,6 +14172,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
@@ -13957,11 +14272,22 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/transport/chttp2/transport/frame.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
@@ -14034,6 +14360,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: function_signature_test
   gtest: true
@@ -14069,7 +14396,6 @@ targets:
   - test/core/event_engine/test_suite/tests/timer_test.cc
   deps:
   - gtest
-  - protobuf
   - grpc_test_util
   platforms:
   - linux
@@ -14089,7 +14415,6 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine_unittest.cc
   deps:
   - gtest
-  - protobuf
   - grpc_test_util
 - name: gcp_authentication_filter_test
   gtest: true
@@ -14107,7 +14432,6 @@ targets:
   - test/core/filters/gcp_authentication_filter_test.cc
   deps:
   - gtest
-  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: generic_end2end_test
@@ -14467,7 +14791,6 @@ targets:
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - gtest
-  - protobuf
   - grpc_test_util
 - name: grpc_tool_test
   gtest: true
@@ -14680,7 +15003,6 @@ targets:
   - test/core/test_util/test_call_creds.cc
   deps:
   - gtest
-  - protobuf
   - grpc_test_util
 - name: h2_ssl_session_reuse_test
   gtest: true
@@ -14885,7 +15207,6 @@ targets:
   - test/core/transport/util/mock_promise_endpoint.cc
   deps:
   - gtest
-  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: http2_server_transport_test
@@ -14908,7 +15229,6 @@ targets:
   - test/core/transport/util/mock_promise_endpoint.cc
   deps:
   - gtest
-  - protobuf
   - grpc_test_util
   platforms:
   - linux
@@ -14935,6 +15255,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
@@ -15028,11 +15356,22 @@ targets:
   - test/core/transport/chttp2/http2_common_test_inputs.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/transport/chttp2/transport/frame.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
@@ -15105,6 +15444,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
 - name: http2_transport_test
   gtest: true
   build: test
@@ -15125,7 +15465,6 @@ targets:
   - test/core/transport/util/mock_promise_endpoint.cc
   deps:
   - gtest
-  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: http_proxy_mapper_test
@@ -15234,6 +15573,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -15331,11 +15678,22 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -15408,6 +15766,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: incoming_metadata_tracker_test
   gtest: true
@@ -15420,6 +15779,7 @@ targets:
   - src/core/call/call_finalization.h
   - src/core/call/call_spine.h
   - src/core/call/call_state.h
+  - src/core/call/channelz_context.h
   - src/core/call/client_call.h
   - src/core/call/custom_metadata.h
   - src/core/call/interception_chain.h
@@ -15436,6 +15796,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/config/core_configuration.h
   - src/core/credentials/call/call_creds_registry.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
@@ -15776,6 +16144,9 @@ targets:
   - test/core/transport/chttp2/http2_common_test_inputs.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/call/call_arena_allocator.cc
   - src/core/call/call_filters.cc
   - src/core/call/call_spine.cc
@@ -15793,6 +16164,14 @@ targets:
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/config/core_configuration.cc
   - src/core/credentials/transport/alts/check_gcp_environment.cc
   - src/core/credentials/transport/alts/check_gcp_environment_linux.cc
@@ -16063,6 +16442,7 @@ targets:
   - absl/utility:utility
   - cares
   - gpr
+  - protobuf
   - address_sorting
 - name: info_tool_test
   gtest: true
@@ -16075,6 +16455,7 @@ targets:
   - src/core/call/call_finalization.h
   - src/core/call/call_spine.h
   - src/core/call/call_state.h
+  - src/core/call/channelz_context.h
   - src/core/call/client_call.h
   - src/core/call/custom_metadata.h
   - src/core/call/interception_chain.h
@@ -16091,6 +16472,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/config/core_configuration.h
   - src/core/credentials/call/call_creds_registry.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
@@ -16430,6 +16819,9 @@ targets:
   - test/cpp/sleuth/version.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/call/call_arena_allocator.cc
   - src/core/call/call_filters.cc
   - src/core/call/call_spine.cc
@@ -16447,6 +16839,14 @@ targets:
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/config/core_configuration.cc
   - src/core/credentials/transport/alts/check_gcp_environment.cc
   - src/core/credentials/transport/alts/check_gcp_environment_linux.cc
@@ -16719,6 +17119,7 @@ targets:
   - absl/utility:utility
   - cares
   - gpr
+  - protobuf
   - address_sorting
 - name: init_test
   gtest: true
@@ -16811,6 +17212,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -16917,11 +17326,22 @@ targets:
   - test/core/promise/test_wakeup_schedulers.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -16996,6 +17416,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: interception_chain_test
   gtest: true
@@ -17019,6 +17440,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -17140,11 +17569,22 @@ targets:
   - test/core/promise/test_context.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -17228,6 +17668,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: interop_client
   build: test
@@ -17322,6 +17763,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -17424,11 +17873,22 @@ targets:
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -17501,6 +17961,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: json_object_loader_test
   gtest: true
@@ -17579,6 +18040,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -17688,11 +18157,22 @@ targets:
   - test/core/promise/test_wakeup_schedulers.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -17767,6 +18247,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: latent_see_service_test
   gtest: true
@@ -17787,7 +18268,6 @@ targets:
   - src/cpp/latent_see/latent_see_service.h
   src:
   - src/proto/grpc/channelz/v2/latent_see.proto
-  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -17810,6 +18290,14 @@ targets:
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
   - src/core/channelz/ztrace_collector.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
@@ -17909,11 +18397,22 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/transport/chttp2/transport/frame.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
@@ -17989,6 +18488,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: latent_see_tool_test
   gtest: true
@@ -18062,9 +18562,7 @@ targets:
   - test/cpp/util/service_describer.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
-  - src/proto/grpc/channelz/v2/channelz.proto
   - src/proto/grpc/channelz/v2/latent_see.proto
-  - src/proto/grpc/channelz/v2/property_list.proto
   - src/proto/grpc/channelz/v2/service.proto
   - src/proto/grpc/reflection/v1alpha/reflection.proto
   - src/core/ext/transport/chaotic_good/chaotic_good.cc
@@ -18216,6 +18714,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -18321,11 +18827,22 @@ targets:
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -18401,6 +18918,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
 - name: log_too_many_open_files_test
   gtest: true
   build: test
@@ -18426,6 +18944,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -18531,11 +19057,22 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -18610,6 +19147,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: lru_cache_test
   gtest: true
@@ -18621,6 +19159,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -18712,11 +19258,22 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -18787,6 +19344,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: map_pipe_test
   gtest: true
@@ -18798,6 +19356,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -18927,11 +19493,22 @@ targets:
   - test/core/promise/test_wakeup_schedulers.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -19015,6 +19592,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: match_promise_test
   gtest: true
@@ -19026,6 +19604,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -19126,11 +19712,22 @@ targets:
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -19203,6 +19800,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: match_test
   gtest: true
@@ -19515,6 +20113,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -19623,11 +20229,22 @@ targets:
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -19702,6 +20319,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: oracle_event_engine_posix_test
   gtest: true
@@ -19965,7 +20583,6 @@ targets:
   - test/core/load_balancing/outlier_detection_test.cc
   deps:
   - gtest
-  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: overload_test
@@ -20196,7 +20813,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.cc
   deps:
   - gtest
-  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: ping_abuse_policy_test
@@ -20267,6 +20883,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -20358,11 +20982,22 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -20433,6 +21068,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: poller_fork_test
   gtest: true
@@ -20771,6 +21407,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -20867,11 +21511,22 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -20944,6 +21599,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: promise_endpoint_test
   gtest: true
@@ -20967,6 +21623,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -21063,11 +21727,22 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -21140,6 +21815,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: promise_map_test
   gtest: true
@@ -21151,6 +21827,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -21249,11 +21933,22 @@ targets:
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -21326,6 +22021,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: promise_mutex_test
   gtest: true
@@ -21337,6 +22033,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -21446,11 +22150,22 @@ targets:
   - test/core/promise/test_wakeup_schedulers.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -21525,6 +22240,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
 - name: promise_test
   gtest: true
   build: test
@@ -21535,6 +22251,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -21631,11 +22355,22 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -21708,6 +22443,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: property_list_test
   gtest: true
@@ -21896,7 +22632,6 @@ targets:
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
   - src/proto/grpc/channelz/v2/latent_see.proto
-  - src/proto/grpc/channelz/v2/property_list.proto
   - src/proto/grpc/testing/benchmark_service.proto
   - src/proto/grpc/testing/control.proto
   - src/proto/grpc/testing/messages.proto
@@ -22020,7 +22755,6 @@ targets:
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
   - src/proto/grpc/channelz/v2/latent_see.proto
-  - src/proto/grpc/channelz/v2/property_list.proto
   - src/proto/grpc/testing/benchmark_service.proto
   - src/proto/grpc/testing/control.proto
   - src/proto/grpc/testing/messages.proto
@@ -22079,6 +22813,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -22174,11 +22916,22 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -22254,6 +23007,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: race_test
   gtest: true
@@ -22265,6 +23019,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -22359,11 +23121,22 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -22435,6 +23208,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: random_early_detection_test
   gtest: true
@@ -22539,6 +23313,7 @@ targets:
   - src/core/call/call_filters.h
   - src/core/call/call_spine.h
   - src/core/call/call_state.h
+  - src/core/call/channelz_context.h
   - src/core/call/custom_metadata.h
   - src/core/call/message.h
   - src/core/call/metadata.h
@@ -22552,6 +23327,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -22693,6 +23476,9 @@ targets:
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/call/call_arena_allocator.cc
   - src/core/call/call_filters.cc
   - src/core/call/call_spine.cc
@@ -22707,6 +23493,14 @@ targets:
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -22797,6 +23591,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
 - name: resolve_address_using_ares_resolver_posix_test
   gtest: true
   build: test
@@ -22950,7 +23745,6 @@ targets:
   - test/core/load_balancing/ring_hash_test.cc
   deps:
   - gtest
-  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: rls_end2end_test
@@ -23014,7 +23808,6 @@ targets:
   - test/core/load_balancing/round_robin_test.cc
   deps:
   - gtest
-  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: secure_auth_context_test
@@ -23070,6 +23863,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -23170,11 +23971,22 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -23247,6 +24059,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: sequential_connectivity_test
   gtest: true
@@ -23523,7 +24336,6 @@ targets:
   - test/core/transport/util/mock_promise_endpoint.cc
   deps:
   - gtest
-  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: settings_timeout_test
@@ -23813,6 +24625,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -23904,11 +24724,22 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -23980,6 +24811,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: status_conversion_test
   gtest: true
@@ -24002,6 +24834,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -24094,11 +24934,22 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -24169,6 +25020,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: status_helper_test
   gtest: true
@@ -24208,7 +25060,6 @@ targets:
   - test/core/transport/chttp2/stream_data_queue_test.cc
   deps:
   - gtest
-  - protobuf
   - grpc_test_util
 - name: stream_leak_with_queued_flow_control_update_test
   gtest: true
@@ -24327,6 +25178,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -24426,11 +25285,22 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -24503,6 +25373,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: sync_test
   gtest: true
@@ -24623,6 +25494,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -24714,11 +25593,22 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -24791,6 +25681,7 @@ targets:
   - absl/utility:utility
   - benchmark
   - gpr
+  - protobuf
   benchmark: true
   defaults: benchmark
   uses_polling: false
@@ -24824,6 +25715,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -24917,11 +25816,22 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -24995,6 +25905,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: test_core_event_engine_slice_buffer_test
   gtest: true
@@ -25006,6 +25917,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -25100,11 +26019,22 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -25180,6 +26110,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: test_core_iomgr_timer_heap_test
   gtest: true
@@ -25366,6 +26297,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -25457,11 +26396,22 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -25533,6 +26483,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: thread_stress_test
   gtest: true
@@ -25735,6 +26686,7 @@ targets:
   - src/core/call/call_finalization.h
   - src/core/call/call_spine.h
   - src/core/call/call_state.h
+  - src/core/call/channelz_context.h
   - src/core/call/client_call.h
   - src/core/call/custom_metadata.h
   - src/core/call/interception_chain.h
@@ -25751,6 +26703,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/config/core_configuration.h
   - src/core/credentials/call/call_creds_registry.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
@@ -26089,6 +27049,9 @@ targets:
   - test/cpp/sleuth/tool_test.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/call/call_arena_allocator.cc
   - src/core/call/call_filters.cc
   - src/core/call/call_spine.cc
@@ -26106,6 +27069,14 @@ targets:
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/config/core_configuration.cc
   - src/core/credentials/transport/alts/check_gcp_environment.cc
   - src/core/credentials/transport/alts/check_gcp_environment_linux.cc
@@ -26377,6 +27348,7 @@ targets:
   - absl/utility:utility
   - cares
   - gpr
+  - protobuf
   - address_sorting
 - name: trace_flags_test
   gtest: true
@@ -26445,6 +27417,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -26545,11 +27525,22 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -26622,6 +27613,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: try_seq_metadata_test
   gtest: true
@@ -26644,6 +27636,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -26747,11 +27747,22 @@ targets:
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -26824,6 +27835,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: unique_ptr_with_bitset_test
   gtest: true
@@ -26835,6 +27847,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -26926,11 +27946,22 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -27001,6 +28032,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: unique_type_name_test
   gtest: true
@@ -27101,6 +28133,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -27204,11 +28244,22 @@ targets:
   - test/core/promise/test_wakeup_schedulers.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -27283,6 +28334,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: wait_for_single_owner_test
   gtest: true
@@ -27339,7 +28391,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.cc
   deps:
   - gtest
-  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: win_socket_test
@@ -27423,7 +28474,6 @@ targets:
   - test/core/transport/chttp2/writable_streams_test.cc
   deps:
   - gtest
-  - protobuf
   - grpc_test_util
 - name: write_size_policy_test
   gtest: true
@@ -27435,6 +28485,14 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
   - src/core/channelz/text_encode.h
+  - src/core/channelz/zviz/data.h
+  - src/core/channelz/zviz/entity.h
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/strings.h
+  - src/core/channelz/zviz/style.h
+  - src/core/channelz/zviz/trace.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/transport/chttp2/transport/write_size_policy.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
@@ -27526,11 +28584,22 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/promise.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
+  - src/core/channelz/zviz/data.cc
+  - src/core/channelz/zviz/entity.cc
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/strings.cc
+  - src/core/channelz/zviz/style.cc
+  - src/core/channelz/zviz/trace.cc
   - src/core/ext/transport/chttp2/transport/write_size_policy.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
@@ -27602,6 +28671,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: writes_per_rpc_test
   gtest: true
@@ -27924,7 +28994,6 @@ targets:
   - absl/log:absl_check
   - absl/log:absl_log
   - absl/strings:internal
-  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: xds_cluster_end2end_test
@@ -28214,7 +29283,6 @@ targets:
   - absl/log:absl_check
   - absl/log:absl_log
   - absl/strings:internal
-  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: xds_cluster_type_end2end_test
@@ -29282,7 +30350,6 @@ targets:
   - absl/log:absl_check
   - absl/log:absl_log
   - absl/strings:internal
-  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: xds_fallback_end2end_test
@@ -30462,7 +31529,6 @@ targets:
   - test/core/xds/xds_matcher_parse_test.cc
   deps:
   - gtest
-  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: xds_matcher_test
@@ -30551,7 +31617,6 @@ targets:
   - test/core/xds/xds_metadata_test.cc
   deps:
   - gtest
-  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: xds_outlier_detection_end2end_test
@@ -30878,7 +31943,6 @@ targets:
   - test/core/load_balancing/xds_override_host_test.cc
   deps:
   - gtest
-  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: xds_pick_first_end2end_test
@@ -32221,8 +33285,6 @@ targets:
   language: c++
   headers: []
   src:
-  - src/proto/grpc/channelz/v2/channelz.proto
-  - src/proto/grpc/channelz/v2/property_list.proto
   - src/proto/grpc/channelz/v2/service.proto
   - test/core/channelz/ztrace_collector_test.cc
   - third_party/googletest/googlemock/src/gmock_main.cc

@@ -2203,7 +2203,20 @@ if(gRPC_INSTALL)
 endif()
 
 
+if(gRPC_BUILD_CODEGEN)
 add_library(grpc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/call/call_arena_allocator.cc
   src/core/call/call_filters.cc
   src/core/call/call_spine.cc
@@ -2227,6 +2240,14 @@ add_library(grpc
   src/core/channelz/v2tov1/convert.cc
   src/core/channelz/v2tov1/legacy_api.cc
   src/core/channelz/v2tov1/property_list.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/client_channel/backup_poller.cc
   src/core/client_channel/buffered_call.cc
   src/core/client_channel/client_channel.cc
@@ -3150,6 +3171,7 @@ target_link_libraries(grpc
   ${_gRPC_CARES_LIBRARIES}
   gpr
   ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ADDRESS_SORTING_LIBRARIES}
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
@@ -3210,7 +3232,9 @@ foreach(_hdr
     DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
+endif()
 
+if(gRPC_BUILD_CODEGEN)
 
 if(gRPC_INSTALL)
   install(TARGETS grpc EXPORT gRPCTargets
@@ -3221,6 +3245,7 @@ if(gRPC_INSTALL)
   )
 endif()
 
+endif()
 if(gRPC_BUILD_TESTS)
 
 add_library(grpc_test_util
@@ -3371,7 +3396,20 @@ endif()
 
 endif()
 
+if(gRPC_BUILD_CODEGEN)
 add_library(grpc_unsecure
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/call/call_arena_allocator.cc
   src/core/call/call_filters.cc
   src/core/call/call_spine.cc
@@ -3392,6 +3430,14 @@ add_library(grpc_unsecure
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/client_channel/backup_poller.cc
   src/core/client_channel/buffered_call.cc
   src/core/client_channel/client_channel.cc
@@ -3884,6 +3930,7 @@ target_link_libraries(grpc_unsecure
   absl::utility
   ${_gRPC_CARES_LIBRARIES}
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ADDRESS_SORTING_LIBRARIES}
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
@@ -3944,7 +3991,9 @@ foreach(_hdr
     DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
+endif()
 
+if(gRPC_BUILD_CODEGEN)
 
 if(gRPC_INSTALL)
   install(TARGETS grpc_unsecure EXPORT gRPCTargets
@@ -3955,6 +4004,7 @@ if(gRPC_INSTALL)
   )
 endif()
 
+endif()
 if(gRPC_BUILD_TESTS)
 
 add_library(gtest
@@ -4891,7 +4941,6 @@ target_link_libraries(grpc++
   absl::absl_log
   absl::strings_internal
   grpc
-  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 foreach(_hdr
@@ -5635,7 +5684,6 @@ target_link_libraries(grpc++_unsecure
   absl::absl_log
   absl::strings_internal
   grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 foreach(_hdr
@@ -5867,7 +5915,20 @@ if(gRPC_INSTALL)
 endif()
 
 
+if(gRPC_BUILD_CODEGEN)
 add_library(grpc_authorization_provider
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/call/call_arena_allocator.cc
   src/core/call/call_filters.cc
   src/core/call/call_spine.cc
@@ -5886,6 +5947,14 @@ add_library(grpc_authorization_provider
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/config/core_configuration.cc
   src/core/credentials/call/call_creds_util.cc
   src/core/credentials/call/composite/composite_call_credentials.cc
@@ -6229,6 +6298,7 @@ target_link_libraries(grpc_authorization_provider
   absl::utility
   ${_gRPC_CARES_LIBRARIES}
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ADDRESS_SORTING_LIBRARIES}
 )
 
@@ -6285,7 +6355,9 @@ foreach(_hdr
     DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
+endif()
 
+if(gRPC_BUILD_CODEGEN)
 
 if(gRPC_INSTALL)
   install(TARGETS grpc_authorization_provider EXPORT gRPCTargets
@@ -6296,6 +6368,7 @@ if(gRPC_INSTALL)
   )
 endif()
 
+endif()
 
 add_library(grpc_plugin_support
   src/compiler/cpp_generator.cc
@@ -6414,10 +6487,6 @@ add_library(grpcpp_channelz ${_gRPC_STATIC_WIN32}
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/service.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/service.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/service.pb.h
@@ -6687,11 +6756,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(activity_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -6797,6 +6886,7 @@ target_link_libraries(activity_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -7511,11 +7601,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(all_ok_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -7618,6 +7728,7 @@ target_link_libraries(all_ok_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -9242,11 +9353,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(blackboard_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -9349,6 +9480,7 @@ target_link_libraries(blackboard_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -9568,7 +9700,6 @@ target_include_directories(call_credentials_test
 target_link_libraries(call_credentials_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -9620,6 +9751,18 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(call_filters_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/call/call_filters.cc
   src/core/call/call_state.cc
   src/core/call/message.cc
@@ -9631,6 +9774,14 @@ add_executable(call_filters_test
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -9750,6 +9901,7 @@ target_link_libraries(call_filters_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -9799,12 +9951,32 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(call_state_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/call/call_state.cc
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -9909,6 +10081,7 @@ target_link_libraries(call_state_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -9959,6 +10132,18 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(call_utils_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/call/call_arena_allocator.cc
   src/core/call/call_filters.cc
   src/core/call/call_spine.cc
@@ -9976,6 +10161,14 @@ add_executable(call_utils_test
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/config/core_configuration.cc
   src/core/credentials/transport/alts/check_gcp_environment.cc
   src/core/credentials/transport/alts/check_gcp_environment_linux.cc
@@ -10274,6 +10467,7 @@ target_link_libraries(call_utils_test
   absl::utility
   ${_gRPC_CARES_LIBRARIES}
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ADDRESS_SORTING_LIBRARIES}
 )
 
@@ -10329,11 +10523,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(cancel_callback_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -10447,6 +10661,7 @@ target_link_libraries(cancel_callback_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -11330,28 +11545,12 @@ add_executable(channelz_tool_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
-  src/core/channelz/zviz/data.cc
-  src/core/channelz/zviz/entity.cc
-  src/core/channelz/zviz/environment.cc
   src/core/channelz/zviz/format_entity_list.cc
-  src/core/channelz/zviz/layout.cc
-  src/core/channelz/zviz/layout_text.cc
   src/core/channelz/zviz/property_list.cc
-  src/core/channelz/zviz/strings.cc
-  src/core/channelz/zviz/style.cc
-  src/core/channelz/zviz/trace.cc
   src/core/ext/transport/chaotic_good/chaotic_good.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
@@ -11638,11 +11837,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(chunked_vector_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -11756,6 +11975,7 @@ target_link_libraries(chunked_vector_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -11890,7 +12110,6 @@ target_include_directories(client_auth_filter_test
 target_link_libraries(client_auth_filter_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -11940,7 +12159,6 @@ target_include_directories(client_authority_filter_test
 target_link_libraries(client_authority_filter_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -12412,10 +12630,6 @@ add_executable(client_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/cpp/latent_see/latent_see_client.cc
   test/cpp/sleuth/client.cc
   test/cpp/sleuth/client_test.cc
@@ -13097,11 +13311,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(context_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -13202,6 +13436,7 @@ target_link_libraries(context_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -14040,7 +14275,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     absl::log_sink
     absl::log_sink_registry
     grpc_authorization_provider
-    ${_gRPC_PROTOBUF_LIBRARIES}
     grpc_test_util
   )
 
@@ -14233,7 +14467,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     absl::log_sink
     absl::log_sink_registry
     grpc_authorization_provider
-    ${_gRPC_PROTOBUF_LIBRARIES}
     grpc_test_util
   )
 
@@ -14337,7 +14570,6 @@ target_link_libraries(end2end_http2_no_logging_test
   absl::log_sink
   absl::log_sink_registry
   grpc_authorization_provider
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -14440,7 +14672,6 @@ target_link_libraries(end2end_http2_security_no_logging_test
   absl::log_sink
   absl::log_sink_registry
   grpc_authorization_provider
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -14631,7 +14862,6 @@ target_link_libraries(end2end_http2_security_test
   absl::log_sink
   absl::log_sink_registry
   grpc_authorization_provider
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -14822,7 +15052,6 @@ target_link_libraries(end2end_http2_test
   absl::log_sink
   absl::log_sink_registry
   grpc_authorization_provider
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -14925,7 +15154,6 @@ target_link_libraries(end2end_inproc_no_logging_test
   absl::log_sink
   absl::log_sink_registry
   grpc_authorization_provider
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -15116,7 +15344,6 @@ target_link_libraries(end2end_inproc_test
   absl::log_sink
   absl::log_sink_registry
   grpc_authorization_provider
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -15219,7 +15446,6 @@ target_link_libraries(end2end_ph2_no_logging_test
   absl::log_sink
   absl::log_sink_registry
   grpc_authorization_provider
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -15410,7 +15636,6 @@ target_link_libraries(end2end_ph2_test
   absl::log_sink
   absl::log_sink_registry
   grpc_authorization_provider
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -15513,7 +15738,6 @@ target_link_libraries(end2end_posix_no_logging_test
   absl::log_sink
   absl::log_sink_registry
   grpc_authorization_provider
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -15704,7 +15928,6 @@ target_link_libraries(end2end_posix_test
   absl::log_sink
   absl::log_sink_registry
   grpc_authorization_provider
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -16431,11 +16654,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(exec_ctx_wakeup_scheduler_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -16540,6 +16783,7 @@ target_link_libraries(exec_ctx_wakeup_scheduler_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -16893,6 +17137,18 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(filter_fusion_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/call/call_arena_allocator.cc
   src/core/call/call_filters.cc
   src/core/call/call_spine.cc
@@ -16910,6 +17166,14 @@ add_executable(filter_fusion_test
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/config/core_configuration.cc
   src/core/credentials/transport/alts/check_gcp_environment.cc
   src/core/credentials/transport/alts/check_gcp_environment_linux.cc
@@ -17208,6 +17472,7 @@ target_link_libraries(filter_fusion_test
   absl::utility
   ${_gRPC_CARES_LIBRARIES}
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ADDRESS_SORTING_LIBRARIES}
 )
 
@@ -17258,7 +17523,6 @@ target_link_libraries(filter_test_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_unsecure
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -17343,11 +17607,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(flow_control_manager_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/transport/chttp2/transport/flow_control.cc
   src/core/ext/transport/chttp2/transport/frame.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
@@ -17462,6 +17746,7 @@ target_link_libraries(flow_control_manager_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -17469,11 +17754,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(flow_control_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/transport/chttp2/transport/flow_control.cc
   src/core/ext/transport/chttp2/transport/frame.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
@@ -17591,6 +17896,7 @@ target_link_libraries(flow_control_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -17598,11 +17904,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(for_each_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -17716,6 +18042,7 @@ target_link_libraries(for_each_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -17856,11 +18183,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(frame_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/transport/chttp2/transport/frame.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
@@ -17963,6 +18310,7 @@ target_link_libraries(frame_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -18049,7 +18397,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(fuzzing_event_engine_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    ${_gRPC_PROTOBUF_LIBRARIES}
     grpc_test_util
   )
 
@@ -18099,7 +18446,6 @@ target_include_directories(fuzzing_event_engine_unittest
 target_link_libraries(fuzzing_event_engine_unittest
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -18149,7 +18495,6 @@ target_include_directories(gcp_authentication_filter_test
 target_link_libraries(gcp_authentication_filter_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -19488,7 +19833,6 @@ target_include_directories(grpc_tls_crl_provider_test
 target_link_libraries(grpc_tls_crl_provider_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -19853,7 +20197,6 @@ target_include_directories(h2_ssl_cert_test
 target_link_libraries(h2_ssl_cert_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -20552,7 +20895,6 @@ target_include_directories(http2_client_transport_test
 target_link_libraries(http2_client_transport_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -20604,7 +20946,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(http2_server_transport_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    ${_gRPC_PROTOBUF_LIBRARIES}
     grpc_test_util
   )
 
@@ -20656,11 +20997,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(http2_status_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/transport/chttp2/transport/frame.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
@@ -20763,6 +21124,7 @@ target_link_libraries(http2_status_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -20811,7 +21173,6 @@ target_include_directories(http2_transport_test
 target_link_libraries(http2_transport_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -21105,11 +21466,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(if_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -21212,6 +21593,7 @@ target_link_libraries(if_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -21219,6 +21601,18 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(incoming_metadata_tracker_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/call/call_arena_allocator.cc
   src/core/call/call_filters.cc
   src/core/call/call_spine.cc
@@ -21236,6 +21630,14 @@ add_executable(incoming_metadata_tracker_test
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/config/core_configuration.cc
   src/core/credentials/transport/alts/check_gcp_environment.cc
   src/core/credentials/transport/alts/check_gcp_environment_linux.cc
@@ -21536,6 +21938,7 @@ target_link_libraries(incoming_metadata_tracker_test
   absl::utility
   ${_gRPC_CARES_LIBRARIES}
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ADDRESS_SORTING_LIBRARIES}
 )
 
@@ -21544,6 +21947,18 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(info_tool_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/call/call_arena_allocator.cc
   src/core/call/call_filters.cc
   src/core/call/call_spine.cc
@@ -21561,6 +21976,14 @@ add_executable(info_tool_test
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/config/core_configuration.cc
   src/core/credentials/transport/alts/check_gcp_environment.cc
   src/core/credentials/transport/alts/check_gcp_environment_linux.cc
@@ -21863,6 +22286,7 @@ target_link_libraries(info_tool_test
   absl::utility
   ${_gRPC_CARES_LIBRARIES}
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ADDRESS_SORTING_LIBRARIES}
 )
 
@@ -22169,11 +22593,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(inter_activity_pipe_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -22278,6 +22722,7 @@ target_link_libraries(inter_activity_pipe_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -22327,11 +22772,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(interceptor_list_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -22445,6 +22910,7 @@ target_link_libraries(interceptor_list_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -22699,11 +23165,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(join_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -22806,6 +23292,7 @@ target_link_libraries(join_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -23066,11 +23553,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(latch_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -23175,6 +23682,7 @@ target_link_libraries(latch_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -23186,10 +23694,6 @@ add_executable(latent_see_service_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -23240,11 +23744,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(latent_see_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/transport/chttp2/transport/frame.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
@@ -23350,6 +23874,7 @@ target_link_libraries(latent_see_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -23361,18 +23886,10 @@ add_executable(latent_see_tool_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/service.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/service.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/service.pb.h
@@ -23769,11 +24286,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(lock_based_mpsc_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -23879,6 +24416,7 @@ target_link_libraries(lock_based_mpsc_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -23930,11 +24468,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(loop_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -24039,6 +24597,7 @@ target_link_libraries(loop_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -24046,11 +24605,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(lru_cache_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -24151,6 +24730,7 @@ target_link_libraries(lru_cache_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -24158,11 +24738,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(map_pipe_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -24276,6 +24876,7 @@ target_link_libraries(map_pipe_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -24283,11 +24884,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(match_promise_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -24390,6 +25011,7 @@ target_link_libraries(match_promise_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -25410,11 +26032,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(observable_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -25519,6 +26161,7 @@ target_link_libraries(observable_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -26224,7 +26867,6 @@ target_include_directories(outlier_detection_test
 target_link_libraries(outlier_detection_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -26692,7 +27334,6 @@ target_include_directories(pick_first_test
 target_link_libraries(pick_first_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -26911,11 +27552,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(poll_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -27016,6 +27677,7 @@ target_link_libraries(poll_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -28025,11 +28687,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(prioritized_race_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -28132,6 +28814,7 @@ target_link_libraries(prioritized_race_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -28181,11 +28864,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(promise_factory_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -28288,6 +28991,7 @@ target_link_libraries(promise_factory_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -28295,11 +28999,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(promise_map_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -28402,6 +29126,7 @@ target_link_libraries(promise_map_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -28409,11 +29134,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(promise_mutex_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -28518,6 +29263,7 @@ target_link_libraries(promise_mutex_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -28525,11 +29271,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(promise_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -28632,6 +29398,7 @@ target_link_libraries(promise_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -28920,10 +29687,6 @@ add_executable(qps_json_driver
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.pb.h
@@ -29042,10 +29805,6 @@ add_executable(qps_worker
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.pb.h
@@ -29147,11 +29906,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(query_extensions_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -29257,6 +30036,7 @@ target_link_libraries(query_extensions_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -29264,11 +30044,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(race_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -29370,6 +30170,7 @@ target_link_libraries(race_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -29708,6 +30509,18 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(request_buffer_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/call/call_arena_allocator.cc
   src/core/call/call_filters.cc
   src/core/call/call_spine.cc
@@ -29722,6 +30535,14 @@ add_executable(request_buffer_test
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -29842,6 +30663,7 @@ target_link_libraries(request_buffer_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -30337,7 +31159,6 @@ target_include_directories(ring_hash_test
 target_link_libraries(ring_hash_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -30518,7 +31339,6 @@ target_include_directories(round_robin_test
 target_link_libraries(round_robin_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -30697,11 +31517,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(seq_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -30804,6 +31644,7 @@ target_link_libraries(seq_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -31783,7 +32624,6 @@ target_include_directories(settings_timeout_manager_test
 target_link_libraries(settings_timeout_manager_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -32667,11 +33507,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(static_stride_scheduler_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -32773,6 +33633,7 @@ target_link_libraries(static_stride_scheduler_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -32822,11 +33683,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(status_flag_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -32927,6 +33808,7 @@ target_link_libraries(status_flag_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -33058,7 +33940,6 @@ target_include_directories(stream_data_queue_test
 target_link_libraries(stream_data_queue_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -33411,11 +34292,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(switch_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -33518,6 +34419,7 @@ target_link_libraries(switch_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -33866,11 +34768,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(tdigest_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -33973,6 +34895,7 @@ target_link_libraries(tdigest_test
   absl::utility
   ${_gRPC_BENCHMARK_LIBRARIES}
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -34064,11 +34987,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_event_engine_posix_timer_heap_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -34172,6 +35115,7 @@ target_link_libraries(test_core_event_engine_posix_timer_heap_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -34179,11 +35123,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_event_engine_slice_buffer_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -34289,6 +35253,7 @@ target_link_libraries(test_core_event_engine_slice_buffer_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -34926,11 +35891,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(thread_quota_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -35032,6 +36017,7 @@ target_link_libraries(thread_quota_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -35643,6 +36629,18 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(tool_test_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/call/call_arena_allocator.cc
   src/core/call/call_filters.cc
   src/core/call/call_spine.cc
@@ -35660,6 +36658,14 @@ add_executable(tool_test_test
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/config/core_configuration.cc
   src/core/credentials/transport/alts/check_gcp_environment.cc
   src/core/credentials/transport/alts/check_gcp_environment_linux.cc
@@ -35961,6 +36967,7 @@ target_link_libraries(tool_test_test
   absl::utility
   ${_gRPC_CARES_LIBRARIES}
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ADDRESS_SORTING_LIBRARIES}
 )
 
@@ -36172,11 +37179,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(try_join_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -36279,6 +37306,7 @@ target_link_libraries(try_join_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -36328,11 +37356,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(try_seq_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -36435,6 +37483,7 @@ target_link_libraries(try_seq_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -36442,11 +37491,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(unique_ptr_with_bitset_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -36547,6 +37616,7 @@ target_link_libraries(unique_ptr_with_bitset_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -36840,11 +37910,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(wait_for_callback_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -36949,6 +38039,7 @@ target_link_libraries(wait_for_callback_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -37126,7 +38217,6 @@ target_include_directories(weighted_round_robin_test
 target_link_libraries(weighted_round_robin_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -37354,7 +38444,6 @@ target_include_directories(writable_streams_test
 target_link_libraries(writable_streams_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -37363,11 +38452,31 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(write_size_policy_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/channelz/text_encode.cc
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   src/core/ext/transport/chttp2/transport/write_size_policy.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
@@ -37469,6 +38578,7 @@ target_link_libraries(write_size_policy_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -38612,7 +39722,6 @@ target_link_libraries(xds_client_test
   absl::absl_check
   absl::absl_log
   absl::strings_internal
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -39659,7 +40768,6 @@ target_link_libraries(xds_cluster_resource_type_test
   absl::absl_check
   absl::absl_log
   absl::strings_internal
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -42745,7 +43853,6 @@ target_link_libraries(xds_endpoint_resource_type_test
   absl::absl_check
   absl::absl_log
   absl::strings_internal
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -46656,7 +47763,6 @@ target_include_directories(xds_matcher_parse_test
 target_link_libraries(xds_matcher_parse_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -47001,7 +48107,6 @@ target_include_directories(xds_metadata_test
 target_link_libraries(xds_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -48168,7 +49273,6 @@ target_include_directories(xds_override_host_test
 target_link_libraries(xds_override_host_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 
@@ -52960,14 +54064,6 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(ztrace_collector_test
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/service.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/service.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/service.pb.h

@@ -404,6 +404,9 @@ class TestFilter1 {
     static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnServerToClientMessage;
     static const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList().Set("filter_id", 1);
+    }
   };
 
  private:
