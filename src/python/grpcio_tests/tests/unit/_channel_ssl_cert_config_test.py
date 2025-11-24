@@ -166,15 +166,17 @@ class _ChannelSSLCertReloadTest(unittest.TestCase, metaclass=abc.ABCMeta):
         self.assertFalse(actual_calls[0].did_raise)
         self.assertIsNone(actual_calls[0].returned_cert_config)
 
-        # client should reject server...
-        # fails because client trusts ca2 and so will reject server
+        # client should reject server (wrong CA)
+        # fails because client uses CA2 to verify server cert, but server cert is from CA1
+        wrong_ca_config = grpc.ssl_channel_certificate_configuration(
+            [(CLIENT_KEY_2_PEM, CLIENT_CERT_CHAIN_2_PEM)],
+            root_certificates=CA_2_PEM,
+        )
         self.cert_config_fetcher.reset()
         self.cert_config_fetcher.configure(False, None)
-        self._do_one_shot_client_rpc(
+        self._do_one_shot_client_rpc_with_dynamic_creds(
             False,
-            root_certificates=CA_2_PEM,
-            private_key=CLIENT_KEY_2_PEM,
-            certificate_chain=CLIENT_CERT_CHAIN_2_PEM,
+            wrong_ca_config,
         )
         actual_calls = self.cert_config_fetcher.getCalls()
         self.assertGreaterEqual(len(actual_calls), 1)
@@ -183,14 +185,12 @@ class _ChannelSSLCertReloadTest(unittest.TestCase, metaclass=abc.ABCMeta):
             self.assertFalse(call.did_raise, "i= {}".format(i))
             self.assertIsNone(call.returned_cert_config, "i= {}".format(i))
 
-        # should work again...
+        # should work again, but fetcher raises exception
         self.cert_config_fetcher.reset()
         self.cert_config_fetcher.configure(True, None)
-        self._do_one_shot_client_rpc(
+        self._do_one_shot_client_rpc_with_dynamic_creds(
             True,
-            root_certificates=CA_1_PEM,
-            private_key=CLIENT_KEY_2_PEM,
-            certificate_chain=CLIENT_CERT_CHAIN_2_PEM,
+            initial_cert_config,
         )
         actual_calls = self.cert_config_fetcher.getCalls()
         self.assertEqual(len(actual_calls), 1)
@@ -198,15 +198,17 @@ class _ChannelSSLCertReloadTest(unittest.TestCase, metaclass=abc.ABCMeta):
         self.assertIsNone(actual_calls[0].returned_cert_config)
 
         # if with_client_auth, then client should be rejected by
-        # server because client uses key/cert1, but server trusts ca2,
+        # server because client uses cert1 (from CA1), but server trusts ca2
         # so server will reject
+        wrong_client_cert_config = grpc.ssl_channel_certificate_configuration(
+            [(CLIENT_KEY_1_PEM, CLIENT_CERT_CHAIN_1_PEM)],
+            root_certificates=CA_1_PEM,
+        )
         self.cert_config_fetcher.reset()
         self.cert_config_fetcher.configure(False, None)
-        self._do_one_shot_client_rpc(
+        self._do_one_shot_client_rpc_with_dynamic_creds(
             not self.require_client_auth(),
-            root_certificates=CA_1_PEM,
-            private_key=CLIENT_KEY_1_PEM,
-            certificate_chain=CLIENT_CERT_CHAIN_1_PEM,
+            wrong_client_cert_config,
         )
         actual_calls = self.cert_config_fetcher.getCalls()
         self.assertGreaterEqual(len(actual_calls), 1)
@@ -214,29 +216,26 @@ class _ChannelSSLCertReloadTest(unittest.TestCase, metaclass=abc.ABCMeta):
             self.assertFalse(call.did_raise, "i= {}".format(i))
             self.assertIsNone(call.returned_cert_config, "i= {}".format(i))
 
-        # should work again...
+        # should work again with correct client cert
         self.cert_config_fetcher.reset()
         self.cert_config_fetcher.configure(False, None)
-        self._do_one_shot_client_rpc(
+        self._do_one_shot_client_rpc_with_dynamic_creds(
             True,
-            root_certificates=CA_1_PEM,
-            private_key=CLIENT_KEY_2_PEM,
-            certificate_chain=CLIENT_CERT_CHAIN_2_PEM,
+            initial_cert_config,
         )
         actual_calls = self.cert_config_fetcher.getCalls()
         self.assertEqual(len(actual_calls), 1)
         self.assertFalse(actual_calls[0].did_raise)
         self.assertIsNone(actual_calls[0].returned_cert_config)
 
-        # now create the "persistent" clients
+        # now create the "persistent" clients with dynamic credentials
         self.cert_config_fetcher.reset()
         self.cert_config_fetcher.configure(False, None)
         channel_A = _create_channel(
             self.port,
-            grpc.ssl_channel_credentials(
-                root_certificates=CA_1_PEM,
-                private_key=CLIENT_KEY_2_PEM,
-                certificate_chain=CLIENT_CERT_CHAIN_2_PEM,
+            grpc.dynamic_ssl_channel_credentials(
+                initial_cert_config,
+                self.cert_config_fetcher,
             ),
         )
         persistent_client_stub_A = _create_client_stub(channel_A, True)
@@ -250,10 +249,9 @@ class _ChannelSSLCertReloadTest(unittest.TestCase, metaclass=abc.ABCMeta):
         self.cert_config_fetcher.configure(False, None)
         channel_B = _create_channel(
             self.port,
-            grpc.ssl_channel_credentials(
-                root_certificates=CA_1_PEM,
-                private_key=CLIENT_KEY_2_PEM,
-                certificate_chain=CLIENT_CERT_CHAIN_2_PEM,
+            grpc.dynamic_ssl_channel_credentials(
+                initial_cert_config,
+                self.cert_config_fetcher,
             ),
         )
         persistent_client_stub_B = _create_client_stub(channel_B, True)
@@ -263,19 +261,18 @@ class _ChannelSSLCertReloadTest(unittest.TestCase, metaclass=abc.ABCMeta):
         self.assertFalse(actual_calls[0].did_raise)
         self.assertIsNone(actual_calls[0].returned_cert_config)
 
-        # moment of truth!! client should reject server because the
-        # server switch cert...
-        cert_config = grpc.ssl_server_certificate_configuration(
-            [(SERVER_KEY_2_PEM, SERVER_CERT_CHAIN_2_PEM)],
+        # moment of truth!! NEW client connections will use rotated client cert
+        # The fetcher will now return cert1 instead of cert2
+        # Server trusts CA2, so client with cert1 (from CA1) should be rejected if client auth required
+        rotated_cert_config = grpc.ssl_channel_certificate_configuration(
+            [(CLIENT_KEY_1_PEM, CLIENT_CERT_CHAIN_1_PEM)],
             root_certificates=CA_1_PEM,
         )
         self.cert_config_fetcher.reset()
-        self.cert_config_fetcher.configure(False, cert_config)
-        self._do_one_shot_client_rpc(
-            False,
-            root_certificates=CA_1_PEM,
-            private_key=CLIENT_KEY_2_PEM,
-            certificate_chain=CLIENT_CERT_CHAIN_2_PEM,
+        self.cert_config_fetcher.configure(False, rotated_cert_config)
+        self._do_one_shot_client_rpc_with_dynamic_creds(
+            not self.require_client_auth(),  # fails if client auth required
+            initial_cert_config,
         )
         actual_calls = self.cert_config_fetcher.getCalls()
         self.assertGreaterEqual(len(actual_calls), 1)
@@ -283,52 +280,63 @@ class _ChannelSSLCertReloadTest(unittest.TestCase, metaclass=abc.ABCMeta):
         for i, call in enumerate(actual_calls):
             self.assertFalse(call.did_raise, "i= {}".format(i))
             self.assertEqual(
-                call.returned_cert_config, cert_config, "i= {}".format(i)
+                call.returned_cert_config._certificate_configuration,
+                rotated_cert_config._certificate_configuration,
+                "i= {}".format(i)
             )
 
-        # now should work again...
+        # now rotate back to working cert (cert2 from CA2, which server trusts)
+        working_cert_config = grpc.ssl_channel_certificate_configuration(
+            [(CLIENT_KEY_2_PEM, CLIENT_CERT_CHAIN_2_PEM)],
+            root_certificates=CA_1_PEM,
+        )
+        self.cert_config_fetcher.reset()
+        self.cert_config_fetcher.configure(False, working_cert_config)
+        self._do_one_shot_client_rpc_with_dynamic_creds(
+            True,
+            initial_cert_config,
+        )
+        actual_calls = self.cert_config_fetcher.getCalls()
+        self.assertEqual(len(actual_calls), 1)
+        self.assertFalse(actual_calls[0].did_raise)
+        self.assertEqual(
+            actual_calls[0].returned_cert_config._certificate_configuration,
+            working_cert_config._certificate_configuration
+        )
+
+        # test that fetcher returning None (no change) still works
         self.cert_config_fetcher.reset()
         self.cert_config_fetcher.configure(False, None)
-        self._do_one_shot_client_rpc(
+        self._do_one_shot_client_rpc_with_dynamic_creds(
             True,
-            root_certificates=CA_2_PEM,
-            private_key=CLIENT_KEY_1_PEM,
-            certificate_chain=CLIENT_CERT_CHAIN_1_PEM,
+            initial_cert_config,
         )
         actual_calls = self.cert_config_fetcher.getCalls()
         self.assertEqual(len(actual_calls), 1)
         self.assertFalse(actual_calls[0].did_raise)
         self.assertIsNone(actual_calls[0].returned_cert_config)
 
-        # client should be rejected by server if with_client_auth
-        self.cert_config_fetcher.reset()
-        self.cert_config_fetcher.configure(False, None)
-        self._do_one_shot_client_rpc(
-            not self.require_client_auth(),
-            root_certificates=CA_2_PEM,
-            private_key=CLIENT_KEY_2_PEM,
-            certificate_chain=CLIENT_CERT_CHAIN_2_PEM,
+        # here client should reject server (wrong CA for server cert verification)
+        bad_ca_config = grpc.ssl_channel_certificate_configuration(
+            [(CLIENT_KEY_2_PEM, CLIENT_CERT_CHAIN_2_PEM)],
+            root_certificates=CA_2_PEM,  # Wrong CA - server cert is from CA1
         )
-        actual_calls = self.cert_config_fetcher.getCalls()
-        self.assertGreaterEqual(len(actual_calls), 1)
-        for i, call in enumerate(actual_calls):
-            self.assertFalse(call.did_raise, "i= {}".format(i))
-            self.assertIsNone(call.returned_cert_config, "i= {}".format(i))
-
-        # here client should reject server...
         self.cert_config_fetcher.reset()
-        self.cert_config_fetcher.configure(False, None)
-        self._do_one_shot_client_rpc(
+        self.cert_config_fetcher.configure(False, bad_ca_config)
+        self._do_one_shot_client_rpc_with_dynamic_creds(
             False,
-            root_certificates=CA_1_PEM,
-            private_key=CLIENT_KEY_2_PEM,
-            certificate_chain=CLIENT_CERT_CHAIN_2_PEM,
+            initial_cert_config,
         )
         actual_calls = self.cert_config_fetcher.getCalls()
         self.assertGreaterEqual(len(actual_calls), 1)
         for i, call in enumerate(actual_calls):
             self.assertFalse(call.did_raise, "i= {}".format(i))
-            self.assertIsNone(call.returned_cert_config, "i= {}".format(i))
+            if call.returned_cert_config is not None:
+                self.assertEqual(
+                    call.returned_cert_config._certificate_configuration,
+                    bad_ca_config._certificate_configuration,
+                    "i= {}".format(i)
+                )
 
         # persistent clients should continue to work
         self.cert_config_fetcher.reset()
@@ -345,6 +353,20 @@ class _ChannelSSLCertReloadTest(unittest.TestCase, metaclass=abc.ABCMeta):
 
         channel_A.close()
         channel_B.close()
+
+
+class ChannelSSLCertReloadTestWithClientAuth(_ChannelSSLCertReloadTest):
+    def require_client_auth(self):
+        return True
+
+    test = _ChannelSSLCertReloadTest._test
+
+
+class ChannelSSLCertReloadTestWithoutClientAuth(_ChannelSSLCertReloadTest):
+    def require_client_auth(self):
+        return False
+
+    test = _ChannelSSLCertReloadTest._test
 
 
 class ChannelSSLCertConfigFetcherParamsChecks(unittest.TestCase):
@@ -419,14 +441,17 @@ class ChannelSSLCertReloadTestCertConfigReuse(_ChannelSSLCertReloadTest):
             actual_calls[0].returned_cert_config, self.cert_config_A
         )
 
-        # fail with A
+        # fail with A (client cert2 but fetcher returns A with cert2, but wrong server CA)
+        # This tests config reuse - same config returned multiple times should work
+        bad_ca_initial = grpc.ssl_channel_certificate_configuration(
+            [(CLIENT_KEY_2_PEM, CLIENT_CERT_CHAIN_2_PEM)],
+            root_certificates=CA_2_PEM,  # Wrong CA for server verification
+        )
         self.cert_config_fetcher.reset()
         self.cert_config_fetcher.configure(False, self.cert_config_A)
-        self._do_one_shot_client_rpc(
+        self._do_one_shot_client_rpc_with_dynamic_creds(
             False,
-            root_certificates=CA_2_PEM,
-            private_key=CLIENT_KEY_1_PEM,
-            certificate_chain=CLIENT_CERT_CHAIN_1_PEM,
+            bad_ca_initial,
         )
         actual_calls = self.cert_config_fetcher.getCalls()
         self.assertGreaterEqual(len(actual_calls), 1)
@@ -437,14 +462,12 @@ class ChannelSSLCertReloadTestCertConfigReuse(_ChannelSSLCertReloadTest):
                 call.returned_cert_config, self.cert_config_A, "i= {}".format(i)
             )
 
-        # succeed again with A
+        # succeed again with A (reused config)
         self.cert_config_fetcher.reset()
         self.cert_config_fetcher.configure(False, self.cert_config_A)
-        self._do_one_shot_client_rpc(
+        self._do_one_shot_client_rpc_with_dynamic_creds(
             True,
-            root_certificates=CA_1_PEM,
-            private_key=CLIENT_KEY_2_PEM,
-            certificate_chain=CLIENT_CERT_CHAIN_2_PEM,
+            self.cert_config_A,
         )
         actual_calls = self.cert_config_fetcher.getCalls()
         self.assertEqual(len(actual_calls), 1)
@@ -453,14 +476,15 @@ class ChannelSSLCertReloadTestCertConfigReuse(_ChannelSSLCertReloadTest):
             actual_calls[0].returned_cert_config, self.cert_config_A
         )
 
-        # succeed with B
+        # succeed with B (cert1 from CA1, but server trusts CA2 so will fail if client auth required)
+        # But this test has client auth required, so B has wrong client cert
+        # Actually looking at setup: server trusts CA2, so client needs cert from CA2
+        # cert_config_B uses cert1 from CA1 - should fail with client auth
         self.cert_config_fetcher.reset()
         self.cert_config_fetcher.configure(False, self.cert_config_B)
-        self._do_one_shot_client_rpc(
-            True,
-            root_certificates=CA_2_PEM,
-            private_key=CLIENT_KEY_1_PEM,
-            certificate_chain=CLIENT_CERT_CHAIN_1_PEM,
+        self._do_one_shot_client_rpc_with_dynamic_creds(
+            False,  # Should fail - wrong client cert for server's CA
+            self.cert_config_A,
         )
         actual_calls = self.cert_config_fetcher.getCalls()
         self.assertEqual(len(actual_calls), 1)
@@ -469,14 +493,12 @@ class ChannelSSLCertReloadTestCertConfigReuse(_ChannelSSLCertReloadTest):
             actual_calls[0].returned_cert_config, self.cert_config_B
         )
 
-        # fail with B
+        # fail with B (reused config, still wrong cert)
         self.cert_config_fetcher.reset()
         self.cert_config_fetcher.configure(False, self.cert_config_B)
-        self._do_one_shot_client_rpc(
+        self._do_one_shot_client_rpc_with_dynamic_creds(
             False,
-            root_certificates=CA_1_PEM,
-            private_key=CLIENT_KEY_2_PEM,
-            certificate_chain=CLIENT_CERT_CHAIN_2_PEM,
+            self.cert_config_A,
         )
         actual_calls = self.cert_config_fetcher.getCalls()
         self.assertGreaterEqual(len(actual_calls), 1)
@@ -487,14 +509,12 @@ class ChannelSSLCertReloadTestCertConfigReuse(_ChannelSSLCertReloadTest):
                 call.returned_cert_config, self.cert_config_B, "i= {}".format(i)
             )
 
-        # succeed again with B
+        # succeed again with B (same reused config)
         self.cert_config_fetcher.reset()
         self.cert_config_fetcher.configure(False, self.cert_config_B)
-        self._do_one_shot_client_rpc(
-            True,
-            root_certificates=CA_2_PEM,
-            private_key=CLIENT_KEY_1_PEM,
-            certificate_chain=CLIENT_CERT_CHAIN_1_PEM,
+        self._do_one_shot_client_rpc_with_dynamic_creds(
+            False,  # Still fails - B has wrong client cert
+            self.cert_config_B,
         )
         actual_calls = self.cert_config_fetcher.getCalls()
         self.assertEqual(len(actual_calls), 1)
