@@ -388,6 +388,38 @@ def server_credentials_ssl_dynamic_cert_config(initial_cert_config,
   credentials.c_credentials = grpc_ssl_server_credentials_create_with_options(c_options)
   return credentials
 
+def channel_certificate_config_ssl(pem_root_certs, pem_key_cert_pairs):
+  pem_root_certs = str_to_bytes(pem_root_certs)
+  pem_key_cert_pairs = list(pem_key_cert_pairs)
+  cdef ChannelCertificateConfiguration cert_config = ChannelCertificateConfiguration()
+  cert_config.references.append(pem_root_certs)
+  cert_config.references.append(pem_key_cert_pairs)
+  cdef const char * c_pem_root_certs = _get_c_pem_root_certs(pem_root_certs)
+  cdef size_t c_ssl_pem_key_cert_pairs_count = len(pem_key_cert_pairs)
+  cdef grpc_ssl_pem_key_cert_pair* c_ssl_pem_key_cert_pairs = _create_c_ssl_pem_key_cert_pairs(pem_key_cert_pairs)
+  cert_config.c_cert_config = grpc_ssl_certificate_config_create(
+    c_pem_root_certs, c_ssl_pem_key_cert_pairs,
+    c_ssl_pem_key_cert_pairs_count)
+  return cert_config
+
+def channel_credentials_ssl_dynamic_cert_config(initial_cert_config,
+                                                 cert_config_fetcher):
+  if not isinstance(initial_cert_config, grpc.ChannelCertificateConfiguration):
+    raise TypeError(
+        'initial_cert_config must be a grpc.ChannelCertificateConfiguration')
+  if not callable(cert_config_fetcher):
+    raise TypeError('cert_config_fetcher must be callable')
+  cdef ChannelCredentials credentials = ChannelCredentials()
+  credentials.initial_cert_config = initial_cert_config
+  credentials.cert_config_fetcher = cert_config_fetcher
+  cdef grpc_ssl_credentials_options* c_options = NULL
+  c_options = grpc_ssl_credentials_create_options_using_config_fetcher(
+    _channel_cert_config_fetcher_wrapper,
+    <void*>credentials)
+  # C-core assumes ownership of c_options
+  credentials.c_credentials = grpc_ssl_credentials_create_with_options(c_options)
+  return credentials
+
 cdef grpc_ssl_certificate_config_reload_status _server_cert_config_fetcher_wrapper(
         void* user_data, grpc_ssl_server_certificate_config **config) noexcept with gil:
   # This is a credentials.ServerCertificateConfig
@@ -424,6 +456,46 @@ cdef grpc_ssl_certificate_config_reload_status _server_cert_config_fetcher_wrapp
       cert_config.c_pem_root_certs, cert_config.c_ssl_pem_key_cert_pairs,
       cert_config.c_ssl_pem_key_cert_pairs_count)
   return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW
+
+cdef grpc_ssl_channel_certificate_config_reload_status _channel_cert_config_fetcher_wrapper(
+        void* user_data, grpc_ssl_certificate_config **config) noexcept with gil:
+  # This is a credentials.ChannelCertificateConfiguration
+  cdef ChannelCertificateConfiguration cert_config = None
+  if not user_data:
+    raise ValueError('internal error: user_data must be specified')
+  credentials = <ChannelCredentials>user_data
+  if not credentials.initial_cert_config_fetched:
+    # C-core is asking for the initial cert config
+    credentials.initial_cert_config_fetched = True
+    cert_config = credentials.initial_cert_config._certificate_configuration
+  else:
+    user_cb = credentials.cert_config_fetcher
+    try:
+      cert_config_wrapper = user_cb()
+    except Exception:
+      _LOGGER.exception('Error fetching certificate config')
+      return GRPC_SSL_CHANNEL_CERTIFICATE_CONFIG_RELOAD_FAIL
+    if cert_config_wrapper is None:
+      return GRPC_SSL_CHANNEL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED
+    elif not isinstance(
+        cert_config_wrapper, grpc.ChannelCertificateConfiguration):
+      _LOGGER.error(
+          'Error fetching certificate configuration: certificate '
+          'configuration must be of type grpc.ChannelCertificateConfiguration, '
+          'not %s' % type(cert_config_wrapper).__name__)
+      return GRPC_SSL_CHANNEL_CERTIFICATE_CONFIG_RELOAD_FAIL
+    else:
+      cert_config = cert_config_wrapper._certificate_configuration
+  config[0] = <grpc_ssl_certificate_config*>cert_config.c_cert_config
+  # our caller will assume ownership of memory, so we have to recreate
+  # a copy of c_cert_config here
+  cdef const char * c_pem_root_certs = _get_c_pem_root_certs(cert_config.references[0])
+  cdef size_t c_ssl_pem_key_cert_pairs_count = len(cert_config.references[1])
+  cdef grpc_ssl_pem_key_cert_pair* c_ssl_pem_key_cert_pairs = _create_c_ssl_pem_key_cert_pairs(cert_config.references[1])
+  cert_config.c_cert_config = grpc_ssl_certificate_config_create(
+      c_pem_root_certs, c_ssl_pem_key_cert_pairs,
+      c_ssl_pem_key_cert_pairs_count)
+  return GRPC_SSL_CHANNEL_CERTIFICATE_CONFIG_RELOAD_NEW
 
 
 def credentials_ssl(pem_root_certs, pem_key_cert_pairs,

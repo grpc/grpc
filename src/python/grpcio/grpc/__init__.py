@@ -1962,6 +1962,66 @@ def dynamic_ssl_server_credentials(
     )
 
 
+def ssl_channel_certificate_configuration(
+    private_key_certificate_chain_pairs, root_certificates=None
+):
+    """Creates a ChannelCertificateConfiguration for use with a Channel.
+
+    Args:
+      private_key_certificate_chain_pairs: A collection of pairs of
+        the form [PEM-encoded private key, PEM-encoded certificate
+        chain].
+      root_certificates: An optional byte string of PEM-encoded server root
+        certificates that the client will use to verify server authentication.
+
+    Returns:
+      A ChannelCertificateConfiguration that can be returned in the certificate
+        configuration fetching callback.
+    """
+    if private_key_certificate_chain_pairs:
+        return ChannelCertificateConfiguration(
+            _cygrpc.channel_certificate_config_ssl(
+                root_certificates,
+                [
+                    _cygrpc.SslPemKeyCertPair(key, pem)
+                    for key, pem in private_key_certificate_chain_pairs
+                ],
+            )
+        )
+    error_msg = "At least one private key-certificate chain pair is required!"
+    raise ValueError(error_msg)
+
+
+def dynamic_ssl_channel_credentials(
+    initial_certificate_configuration,
+    certificate_configuration_fetcher,
+):
+    """Creates a ChannelCredentials for use with an SSL-enabled Channel.
+
+    Args:
+      initial_certificate_configuration (ChannelCertificateConfiguration): The
+        certificate configuration with which the channel will be initialized.
+      certificate_configuration_fetcher (callable): A callable that takes no
+        arguments and should return a ChannelCertificateConfiguration to
+        replace the channel's current certificate, or None for no change
+        (i.e., the channel will continue its current certificate
+        config). The library will call this callback on *every* new
+        server connection before starting the TLS handshake with the
+        server, thus allowing the user application to optionally
+        return a new ChannelCertificateConfiguration that the channel will then
+        use for the handshake.
+
+    Returns:
+      A ChannelCredentials.
+    """
+    return ChannelCredentials(
+        _cygrpc.channel_credentials_ssl_dynamic_cert_config(
+            initial_certificate_configuration,
+            certificate_configuration_fetcher,
+        )
+    )
+
+
 @enum.unique
 class LocalConnectionType(enum.Enum):
     """Types of local connection for local credential creation.
