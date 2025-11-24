@@ -15,6 +15,7 @@
 
 echo -e "System: $(uname -a)\n"
 echo -e "Hostname: $(hostname)\n"
+echo -e "Cmake: $(cmake --version)\n"
 echo -e "-- OS --\n$(lsb_release -a 2>/dev/null)\n"
 echo -e "-- CPU --\n$(lscpu)\n"
 echo -e "-- Memory --\n$(lsmem --summary)\n$(free -h --si)\n"
