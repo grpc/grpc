@@ -70,7 +70,7 @@ class grpc_ssl_credentials : public grpc_channel_credentials {
     return certificate_config_fetcher_.cb != nullptr;
   }
 
-  grpc_ssl_channel_certificate_config_reload_status FetchCertConfig(
+  grpc_ssl_certificate_config_reload_status FetchCertConfig(
       grpc_ssl_certificate_config** config) {
     GRPC_DCHECK(has_cert_config_fetcher());
     return certificate_config_fetcher_.cb(certificate_config_fetcher_.user_data,

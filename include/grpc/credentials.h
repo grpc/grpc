@@ -322,7 +322,7 @@ GRPCAPI void grpc_ssl_certificate_config_destroy(
       callback.
     - Use grpc_ssl_certificate_config_create to create the config.
     - The caller assumes ownership of the config. */
-typedef grpc_ssl_channel_certificate_config_reload_status (
+typedef grpc_ssl_certificate_config_reload_status (
     *grpc_ssl_certificate_config_callback)(
     void* user_data, grpc_ssl_certificate_config** config);
 

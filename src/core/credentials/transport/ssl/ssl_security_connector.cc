@@ -203,11 +203,11 @@ class grpc_ssl_channel_security_connector final
     grpc_core::MutexLock lock(&mu_);
     grpc_ssl_credentials* channel_creds =
         static_cast<grpc_ssl_credentials*>(this->mutable_channel_creds());
-    grpc_ssl_channel_certificate_config_reload_status cb_result =
+    grpc_ssl_certificate_config_reload_status cb_result =
         channel_creds->FetchCertConfig(&certificate_config);
-    if (cb_result == GRPC_SSL_CHANNEL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED) {
+    if (cb_result == GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED) {
       status = false;
-    } else if (cb_result == GRPC_SSL_CHANNEL_CERTIFICATE_CONFIG_RELOAD_NEW) {
+    } else if (cb_result == GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW) {
       status = try_replace_client_handshaker_factory(certificate_config);
     } else {
       // Log error, continue using previously-loaded credentials.
