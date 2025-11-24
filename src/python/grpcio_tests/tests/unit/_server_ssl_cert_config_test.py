@@ -42,87 +42,29 @@ import grpc
 from tests.testing import _application_common
 from tests.testing import _server_application
 from tests.testing.proto import services_pb2_grpc
-from tests.unit import resources
 from tests.unit import test_common
+from tests.unit import _ssl_cert_config_test_common
 
-CA_1_PEM = resources.cert_hier_1_root_ca_cert()
-CA_2_PEM = resources.cert_hier_2_root_ca_cert()
-
-CLIENT_KEY_1_PEM = resources.cert_hier_1_client_1_key()
-CLIENT_CERT_CHAIN_1_PEM = (
-    resources.cert_hier_1_client_1_cert()
-    + resources.cert_hier_1_intermediate_ca_cert()
-)
-
-CLIENT_KEY_2_PEM = resources.cert_hier_2_client_1_key()
-CLIENT_CERT_CHAIN_2_PEM = (
-    resources.cert_hier_2_client_1_cert()
-    + resources.cert_hier_2_intermediate_ca_cert()
-)
-
-SERVER_KEY_1_PEM = resources.cert_hier_1_server_1_key()
-SERVER_CERT_CHAIN_1_PEM = (
-    resources.cert_hier_1_server_1_cert()
-    + resources.cert_hier_1_intermediate_ca_cert()
-)
-
-SERVER_KEY_2_PEM = resources.cert_hier_2_server_1_key()
-SERVER_CERT_CHAIN_2_PEM = (
-    resources.cert_hier_2_server_1_cert()
-    + resources.cert_hier_2_intermediate_ca_cert()
-)
-
-# for use with the CertConfigFetcher. Roughly a simple custom mock
-# implementation
-Call = collections.namedtuple("Call", ["did_raise", "returned_cert_config"])
+# Import shared test utilities
+CA_1_PEM = _ssl_cert_config_test_common.CA_1_PEM
+CA_2_PEM = _ssl_cert_config_test_common.CA_2_PEM
+CLIENT_KEY_1_PEM = _ssl_cert_config_test_common.CLIENT_KEY_1_PEM
+CLIENT_CERT_CHAIN_1_PEM = _ssl_cert_config_test_common.CLIENT_CERT_CHAIN_1_PEM
+CLIENT_KEY_2_PEM = _ssl_cert_config_test_common.CLIENT_KEY_2_PEM
+CLIENT_CERT_CHAIN_2_PEM = _ssl_cert_config_test_common.CLIENT_CERT_CHAIN_2_PEM
+SERVER_KEY_1_PEM = _ssl_cert_config_test_common.SERVER_KEY_1_PEM
+SERVER_CERT_CHAIN_1_PEM = _ssl_cert_config_test_common.SERVER_CERT_CHAIN_1_PEM
+SERVER_KEY_2_PEM = _ssl_cert_config_test_common.SERVER_KEY_2_PEM
+SERVER_CERT_CHAIN_2_PEM = _ssl_cert_config_test_common.SERVER_CERT_CHAIN_2_PEM
+CertConfigFetcher = _ssl_cert_config_test_common.CertConfigFetcher
 
 
 def _create_channel(port, credentials):
-    return grpc.secure_channel("localhost:{}".format(port), credentials)
+    return _ssl_cert_config_test_common.create_channel(port, credentials)
 
 
 def _create_client_stub(channel, expect_success):
-    if expect_success:
-        # per Nathaniel: there's some robustness issue if we start
-        # using a channel without waiting for it to be actually ready
-        grpc.channel_ready_future(channel).result(timeout=10)
-    return services_pb2_grpc.FirstServiceStub(channel)
-
-
-class CertConfigFetcher(object):
-    def __init__(self):
-        self._lock = threading.Lock()
-        self._calls = []
-        self._should_raise = False
-        self._cert_config = None
-
-    def reset(self):
-        with self._lock:
-            self._calls = []
-            self._should_raise = False
-            self._cert_config = None
-
-    def configure(self, should_raise, cert_config):
-        assert not (should_raise and cert_config), (
-            "should not specify both should_raise and a cert_config at the same"
-            " time"
-        )
-        with self._lock:
-            self._should_raise = should_raise
-            self._cert_config = cert_config
-
-    def getCalls(self):
-        with self._lock:
-            return self._calls
-
-    def __call__(self):
-        with self._lock:
-            if self._should_raise:
-                self._calls.append(Call(True, None))
-                raise ValueError("just for fun, should not affect the test")
-            else:
-                self._calls.append(Call(False, self._cert_config))
-                return self._cert_config
+    return _ssl_cert_config_test_common.create_client_stub(channel, expect_success)
 
 
 class _ServerSSLCertReloadTest(unittest.TestCase, metaclass=abc.ABCMeta):
