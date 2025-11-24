@@ -26,6 +26,9 @@ fi
 
 # change to grpc's ruby directory
 cd "$(dirname "$0")/../../.."
+if [ -f generate_artifacts.sh ]; then
+  ./generate_artifacts.sh
+fi
 
 rm -rf ./tmp
 

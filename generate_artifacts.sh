@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015 gRPC authors.
+# Copyright 2024 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,12 +15,8 @@
 
 set -ex
 
-cd "$(dirname "$0")/../../.."
-if [ -f generate_artifacts.sh ]; then
-  ./generate_artifacts.sh
-fi
+# Change to the root of the repository
+cd "$(dirname "$0")"
 
-pushd src/csharp
-
-# remove once Grpc.Tools has been removed from this repository
-dotnet build --configuration "$MSBUILD_CONFIG" Grpc.sln
+# Generate upb files
+tools/codegen/core/gen_upb_api.sh
