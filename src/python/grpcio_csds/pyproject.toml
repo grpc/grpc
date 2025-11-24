@@ -37,6 +37,7 @@ dynamic = ["dependencies", "version", "requires-python"]
 [project.urls]
 Homepage = "https://grpc.io"
 Documentation = "https://grpc.github.io/grpc/python/grpc_csds.html"
+"Source Code" = "https://github.com/grpc/grpc/tree/master/src/python/grpcio_csds"
 
 [tool.setuptools.dynamic]
 version = {attr = "grpc_version.VERSION"}

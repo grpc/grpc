@@ -35,6 +35,7 @@ dynamic = ["dependencies", "version", "requires-python"]
 
 [project.urls]
 Homepage = "https://grpc.io"
+"Source Code" = "https://github.com/grpc/grpc/tree/master/tools/distrib/python/xds_protos"
 
 [tool.setuptools.dynamic]
 version = {attr = "grpc_version.VERSION"}
