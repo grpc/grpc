@@ -2943,6 +2943,7 @@ grpc_cc_library(
         "//src/core:experiments",
         "//src/core:notification",
         "//src/proto/grpc/channelz:channelz_cc_proto",
+        "//src/proto/grpc/channelz:channelz_cc_grpc",
         "//src/proto/grpc/channelz/v2:service_cc_grpc",
     ],
     alwayslink = 1,

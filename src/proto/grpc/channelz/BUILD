@@ -47,6 +47,7 @@ grpc_cc_proto_library(
 grpc_cc_grpc_library(
     name = "channelz_cc_grpc",
     srcs = [":channelz_proto"],
+    deps = ["channelz_cc_proto"]
 )
 
 filegroup(
