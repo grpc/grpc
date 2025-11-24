@@ -616,12 +616,16 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log",
     ],
     tags = ["nobuilder"],
     deps = [
         ":interop_server_lib",
         "//:grpc++",
         "//:grpcpp_gcp_observability",
+        "//test/core/test_util:grpc_test_util",
+        "//test/cpp/interop:server_helper_lib",
+        "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
 )
@@ -667,6 +671,8 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log",
+        "absl/strings",
     ],
     tags = [
         "no_windows",
@@ -676,6 +682,7 @@ grpc_cc_binary(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//:iomgr",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",

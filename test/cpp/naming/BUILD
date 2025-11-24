@@ -67,6 +67,7 @@ grpc_cc_test(
         "//src/core:default_event_engine",
         "//src/core:env",
         "//src/core:experiments",
+        "//src/core:grpc_check",
         "//src/core:grpc_sockaddr",
         "//src/core:notification",
         "//src/core:pollset_set",

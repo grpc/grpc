@@ -123,7 +123,7 @@ grpc_cc_library(
         "//src/core:json",
         "//src/core:json_reader",
         "//src/core:json_writer",
-        "//src/proto/grpc/channelz:channelz_proto",
+        "//src/proto/grpc/channelz:channelz_cc_proto",
     ],
 )
 
@@ -176,6 +176,7 @@ grpc_cc_library(
         "//src/core:grpc_check",
         "//src/core:load_file",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
+        "@com_google_protobuf//src/google/protobuf/compiler:importer",
     ],
 )
 
@@ -410,17 +411,24 @@ grpc_cc_binary(
         "absl/log:check",
         "absl/log:log",
         "absl/strings",
+        "absl/strings:str_format",
     ],
     tags = [
         "no_windows",  # unistd.h
     ],
     deps = [
         "//:gpr",
+        "//:grpc",
         "//:grpc++",
         "//:grpcpp_channelz",
-        "//src/proto/grpc/channelz:channelz_proto",
+        "//src/core:grpc_check",
+        "//src/core:json",
+        "//src/core:json_writer",
+        "//src/proto/grpc/channelz:channelz_cc_proto",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 
@@ -436,6 +444,8 @@ grpc_cc_test(
         "absl/log:check",
         "absl/log:log",
         "gtest",
+        "absl/strings",
+        "absl/strings:str_format",
     ],
     flaky = True,
     tags = [
@@ -452,7 +462,9 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//:grpcpp_channelz",
-        "//src/proto/grpc/channelz:channelz_proto",
+        "//src/core:env",
+        "//src/core:grpc_check",
+        "//src/proto/grpc/channelz:channelz_cc_proto",
         "//src/proto/grpc/testing:test_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",

@@ -30,6 +30,7 @@ grpc_cc_test(
         "google_cloud_cpp:opentelemetry",
         "gtest",
         "otel/sdk/src/metrics",
+        "otel/sdk:headers",
     ],
     tags = [
         # TODO(b/406886630): Remove after fixing
@@ -39,6 +40,7 @@ grpc_cc_test(
     ],
     deps = [
         "//:grpc++",
+        "//src/core:xds_enabled_server",
         "//src/cpp/ext/csm:csm_observability",
         "//src/cpp/ext/otel:otel_plugin",
         "//test/core/test_util:grpc_test_util",
