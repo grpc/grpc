@@ -1639,9 +1639,19 @@ void Http2ClientTransport::BeginCloseStream(
   // If the call was cancelled, the stream MUST be closed for reads.
   GRPC_DCHECK(metadata->get(GrpcCallWasCancelled()) ? close_reads : true);
 
-  // This maybe called multiple times while closing a stream. This should be
-  // fine as the the call spine ignores the subsequent calls.
-  stream->call.SpawnPushServerTrailingMetadata(std::move(metadata));
+  // This maybe called multiple times while closing a stream. In CallV3, the
+  // flow for pushing server trailing metadata is idempotent. However, there is
+  // a subtle difference. When we push server trailing metadata with a cancelled
+  // status PushServerTrailingMetadata is spawned inline on the Call party
+  // whereas for the non-cancelled status, PushServerTrailingMetadata is
+  // spawned in the server_to_client spawn serializer. Because of this, in
+  // case when the server pushes trailing metadata (non-cancelled) followed by a
+  // RST stream with cancelled status, it is possible that the cancelled
+  // trailing metadata (for RST stream) is processed before. This would result
+  // in losing the actual status/message pushed by the server.
+  // To address this, we push the server trailing metadata to the stream only
+  // if it is not pushed already.
+  stream->MaybePushServerTrailingMetadata(std::move(metadata));
 }
 
 void Http2ClientTransport::CloseTransport() {
