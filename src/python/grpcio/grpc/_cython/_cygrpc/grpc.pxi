@@ -539,6 +539,11 @@ cdef extern from "grpc/grpc_security_constants.h":
     GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW
     GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL
 
+  ctypedef enum grpc_ssl_channel_certificate_config_reload_status:
+    GRPC_SSL_CHANNEL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED
+    GRPC_SSL_CHANNEL_CERTIFICATE_CONFIG_RELOAD_NEW
+    GRPC_SSL_CHANNEL_CERTIFICATE_CONFIG_RELOAD_FAIL
+
   ctypedef grpc_ssl_certificate_config_reload_status (*grpc_ssl_server_certificate_config_callback)(
     void *user_data,
     grpc_ssl_server_certificate_config **config)
@@ -609,7 +614,7 @@ cdef extern from "grpc/credentials.h":
     grpc_ssl_certificate_config_callback cb,
     void *user_data)
 
-  grpc_credentials *grpc_ssl_credentials_create_with_options(
+  grpc_channel_credentials *grpc_ssl_credentials_create_with_options(
       grpc_ssl_credentials_options *options)
 
   ctypedef struct grpc_ssl_pem_key_cert_pair:

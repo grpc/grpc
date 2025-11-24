@@ -463,7 +463,7 @@ GRPCAPI void grpc_ssl_credentials_options_destroy(
 
 /** Creates an SSL credentials object using the provided options struct.
     - Takes ownership of the options parameter. */
-GRPCAPI grpc_credentials*
+GRPCAPI grpc_channel_credentials*
 grpc_ssl_credentials_create_with_options(
     grpc_ssl_credentials_options* options);
 

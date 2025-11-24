@@ -491,7 +491,7 @@ cdef _calls_drained(_ChannelState state):
 
 
 cdef grpc_ssl_channel_certificate_config_reload_status _cert_config_fetcher_wrapper(
-        void* user_data, grpc_ssl_certificate_config **config) with gil:
+        void* user_data, grpc_ssl_certificate_config **config) noexcept with gil:
   # This is a credentials.ChannelCertificateConfiguration
   cdef ChannelCertificateConfiguration cert_config = None
   if not user_data:
@@ -507,14 +507,14 @@ cdef grpc_ssl_channel_certificate_config_reload_status _cert_config_fetcher_wrap
       cert_config_wrapper = user_cb()
     except Exception:
       logging.exception('Error fetching certificate config')
-      return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL
+      return GRPC_SSL_CHANNEL_CERTIFICATE_CONFIG_RELOAD_FAIL
     if cert_config_wrapper is None:
-      return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED
+      return GRPC_SSL_CHANNEL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED
     elif not isinstance(cert_config_wrapper, grpc.ChannelCertificateConfiguration):
       logging.error('Error fetching certificate config: certificate '
                     'config must be of type grpc.ChannelCertificateConfiguration, '
                     'not %s' % type(cert_config_wrapper).__name__)
-      return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL
+      return GRPC_SSL_CHANNEL_CERTIFICATE_CONFIG_RELOAD_FAIL
     else:
       cert_config = cert_config_wrapper._cert_config
   config[0] = <grpc_ssl_certificate_config*>cert_config.c_cert_config
@@ -523,7 +523,7 @@ cdef grpc_ssl_channel_certificate_config_reload_status _cert_config_fetcher_wrap
   cert_config.c_cert_config = grpc_ssl_certificate_config_create(
       cert_config.c_pem_root_certs, cert_config.c_ssl_pem_key_cert_pairs,
       cert_config.c_ssl_pem_key_cert_pairs_count)
-  return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW
+  return GRPC_SSL_CHANNEL_CERTIFICATE_CONFIG_RELOAD_NEW
 
 cdef class Channel:
 

@@ -17,8 +17,8 @@ Here we test various aspects of gRPC Python, and in some cases gRPC
 Core by extension, support for server certificate rotation.
 
 * ChannelSSLCertReloadTestWithClientAuth: test ability to rotate
-  server's SSL cert for use in future channels with clients while not
-  affecting any existing channel. The server requires client
+  server's SSL cert for use in future connections with clients while not
+  affecting any existing connections. The server requires client
   authentication.
 
 * ChannelSSLCertReloadTestWithoutClientAuth: like
@@ -26,7 +26,7 @@ Core by extension, support for server certificate rotation.
   not authenticate the client.
 
 * ChannelSSLCertReloadTestCertConfigReuse: tests gRPC Python's ability
-  to deal with user's reuse of ChannelCertificateConfiguration instances.
+  to deal with user's reuse of ServerCertificateConfiguration instances.
 """
 
 import abc
@@ -141,12 +141,12 @@ class _ChannelSSLCertReloadTest(unittest.TestCase, metaclass=abc.ABCMeta):
             _server_application.FirstServiceServicer(), self.server
         )
         switch_cert_on_client_num = 10
-        initial_cert_config = grpc.ssl_channel_certificate_configuration(
+        initial_cert_config = grpc.ssl_server_certificate_configuration(
             [(SERVER_KEY_1_PEM, SERVER_CERT_CHAIN_1_PEM)],
             root_certificates=CA_2_PEM,
         )
         self.cert_config_fetcher = CertConfigFetcher()
-        server_credentials = grpc.dynamic_ssl_channel_credentials(
+        server_credentials = grpc.dynamic_ssl_server_credentials(
             initial_cert_config,
             self.cert_config_fetcher,
             require_client_authentication=self.require_client_auth(),
@@ -309,7 +309,7 @@ class _ChannelSSLCertReloadTest(unittest.TestCase, metaclass=abc.ABCMeta):
 
         # moment of truth!! client should reject server because the
         # server switch cert...
-        cert_config = grpc.ssl_channel_certificate_configuration(
+        cert_config = grpc.ssl_server_certificate_configuration(
             [(SERVER_KEY_2_PEM, SERVER_CERT_CHAIN_2_PEM)],
             root_certificates=CA_1_PEM,
         )
@@ -394,19 +394,19 @@ class _ChannelSSLCertReloadTest(unittest.TestCase, metaclass=abc.ABCMeta):
 class ChannelSSLCertConfigFetcherParamsChecks(unittest.TestCase):
     def test_check_on_initial_config(self):
         with self.assertRaises(TypeError):
-            grpc.dynamic_ssl_channel_credentials(None, str)
+            grpc.dynamic_ssl_server_credentials(None, str)
         with self.assertRaises(TypeError):
-            grpc.dynamic_ssl_channel_credentials(1, str)
+            grpc.dynamic_ssl_server_credentials(1, str)
 
     def test_check_on_config_fetcher(self):
-        cert_config = grpc.ssl_channel_certificate_configuration(
+        cert_config = grpc.ssl_server_certificate_configuration(
             [(SERVER_KEY_2_PEM, SERVER_CERT_CHAIN_2_PEM)],
             root_certificates=CA_1_PEM,
         )
         with self.assertRaises(TypeError):
-            grpc.dynamic_ssl_channel_credentials(cert_config, None)
+            grpc.dynamic_ssl_server_credentials(cert_config, None)
         with self.assertRaises(TypeError):
-            grpc.dynamic_ssl_channel_credentials(cert_config, 1)
+            grpc.dynamic_ssl_server_credentials(cert_config, 1)
 
 
 class ChannelSSLCertReloadTestCertConfigReuse(_ChannelSSLCertReloadTest):
@@ -429,16 +429,16 @@ class ChannelSSLCertReloadTestCertConfigReuse(_ChannelSSLCertReloadTest):
         services_pb2_grpc.add_FirstServiceServicer_to_server(
             _server_application.FirstServiceServicer(), self.server
         )
-        self.cert_config_A = grpc.ssl_channel_certificate_configuration(
+        self.cert_config_A = grpc.ssl_server_certificate_configuration(
             [(SERVER_KEY_1_PEM, SERVER_CERT_CHAIN_1_PEM)],
             root_certificates=CA_2_PEM,
         )
-        self.cert_config_B = grpc.ssl_channel_certificate_configuration(
+        self.cert_config_B = grpc.ssl_server_certificate_configuration(
             [(SERVER_KEY_2_PEM, SERVER_CERT_CHAIN_2_PEM)],
             root_certificates=CA_1_PEM,
         )
         self.cert_config_fetcher = CertConfigFetcher()
-        server_credentials = grpc.dynamic_ssl_channel_credentials(
+        server_credentials = grpc.dynamic_ssl_server_credentials(
             self.cert_config_A,
             self.cert_config_fetcher,
             require_client_authentication=True,

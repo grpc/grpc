@@ -76,6 +76,13 @@ typedef enum {
   GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL
 } grpc_ssl_certificate_config_reload_status;
 
+/** Callback results for dynamically loading a SSL channel certificate config. */
+typedef enum {
+  GRPC_SSL_CHANNEL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED,
+  GRPC_SSL_CHANNEL_CERTIFICATE_CONFIG_RELOAD_NEW,
+  GRPC_SSL_CHANNEL_CERTIFICATE_CONFIG_RELOAD_FAIL
+} grpc_ssl_channel_certificate_config_reload_status;
+
 typedef enum {
   /** Server does not request client certificate.
      The certificate presented by the client is not checked by the server at

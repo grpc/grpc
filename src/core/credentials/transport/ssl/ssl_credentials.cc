@@ -70,6 +70,55 @@ grpc_ssl_credentials::grpc_ssl_credentials(
       &client_handshaker_factory_);
 }
 
+grpc_ssl_credentials::grpc_ssl_credentials(
+    const grpc_ssl_credentials_options& options) {
+  if (options.certificate_config_fetcher != nullptr) {
+    // Dynamic certificate reloading mode
+    certificate_config_fetcher_ = *options.certificate_config_fetcher;
+    // Initialize config to empty - will be populated on first use
+    memset(&config_, 0, sizeof(config_));
+    root_store_ = nullptr;
+    client_handshaker_factory_ = nullptr;
+    client_handshaker_initialization_status_ = GRPC_SECURITY_OK;
+  } else if (options.certificate_config != nullptr) {
+    // Static certificate mode
+    const grpc_ssl_certificate_config* cert_config = options.certificate_config;
+    grpc_ssl_pem_key_cert_pair* pem_key_cert_pair = nullptr;
+    if (cert_config->num_key_cert_pairs > 0) {
+      pem_key_cert_pair = &cert_config->pem_key_cert_pairs[0];
+    }
+    build_config(cert_config->pem_root_certs, pem_key_cert_pair, nullptr);
+
+    // Use default root certs if not provided
+    if (config_.pem_root_certs == nullptr) {
+      const char* pem_root_certs =
+          grpc_core::DefaultSslRootStore::GetPemRootCerts();
+      if (pem_root_certs == nullptr) {
+        LOG(ERROR) << "Could not get default pem root certs.";
+      } else {
+        config_.pem_root_certs = gpr_strdup(pem_root_certs);
+        root_store_ = grpc_core::DefaultSslRootStore::GetRootStore();
+      }
+    } else {
+      root_store_ = nullptr;
+    }
+
+    client_handshaker_initialization_status_ = InitializeClientHandshakerFactory(
+        &config_, config_.pem_root_certs, root_store_, nullptr,
+        &client_handshaker_factory_);
+
+    memset(&certificate_config_fetcher_, 0, sizeof(certificate_config_fetcher_));
+  } else {
+    // Should not happen - validation should occur in calling code
+    LOG(ERROR) << "SSL credentials options must have either config or fetcher";
+    memset(&config_, 0, sizeof(config_));
+    memset(&certificate_config_fetcher_, 0, sizeof(certificate_config_fetcher_));
+    root_store_ = nullptr;
+    client_handshaker_factory_ = nullptr;
+    client_handshaker_initialization_status_ = GRPC_SECURITY_ERROR;
+  }
+}
+
 grpc_ssl_credentials::~grpc_ssl_credentials() {
   gpr_free(config_.pem_root_certs);
   grpc_tsi_ssl_pem_key_cert_pairs_destroy(config_.pem_key_cert_pair, 1);
@@ -84,9 +133,11 @@ grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_ssl_credentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
     const char* target, grpc_core::ChannelArgs* args) {
-  if (config_.pem_root_certs == nullptr) {
+  // For dynamic cert reloading, we allow nullptr root certs initially
+  // The fetcher will provide them on first connection
+  if (config_.pem_root_certs == nullptr && !has_cert_config_fetcher()) {
     LOG(ERROR) << "No root certs in config. Client-side security connector "
-                  "must have root certs.";
+                  "must have root certs or a certificate fetcher.";
     return nullptr;
   }
   std::optional<std::string> overridden_target_name =
@@ -97,7 +148,16 @@ grpc_ssl_credentials::create_security_connector(
 
   grpc_core::RefCountedPtr<grpc_channel_security_connector> security_connector =
       nullptr;
-  if (session_cache != nullptr) {
+
+  // For dynamic cert reloading, we pass nullptr factory and let the connector
+  // fetch certs on first use
+  if (has_cert_config_fetcher()) {
+    security_connector = grpc_ssl_channel_security_connector_create(
+        this->Ref(), std::move(call_creds), &config_, target,
+        overridden_target_name.has_value() ? overridden_target_name->c_str()
+                                           : nullptr,
+        nullptr);
+  } else if (session_cache != nullptr) {
     // We need a separate factory and SSL_CTX if there's a cache in the channel
     // args. SSL_CTX should live with the factory and that should live on the
     // credentials. However, there is a way to configure a session cache in the
@@ -317,24 +377,19 @@ grpc_channel_credentials* grpc_ssl_credentials_create_ex(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
     const grpc_ssl_verify_peer_options* verify_options, void* reserved) {
   GRPC_TRACE_LOG(api, INFO)
-      << "grpc_ssl_credentials_create(pem_root_certs=" << pem_root_certs
+      << "grpc_ssl_credentials_create_ex(pem_root_certs=" << pem_root_certs
       << ", pem_key_cert_pair=" << pem_key_cert_pair
       << ", verify_options=" << verify_options << ", reserved=" << reserved
       << ")";
   GRPC_CHECK_EQ(reserved, nullptr);
 
-  grpc_ssl_certificate_config* cert_config =
-    grpc_ssl_certificate_config_create(
-        pem_root_certs, pem_key_cert_pairs, num_key_cert_pairs);
-  grpc_ssl_credentials_options* options =
-      grpc_ssl_credentials_create_options_using_config(cert_config);
-
-  return grpc_ssl_credentials_create_with_options(options);
+  return new grpc_ssl_credentials(pem_root_certs, pem_key_cert_pair,
+                                  verify_options);
 }
 
-grpc_credentials* grpc_ssl_credentials_create_with_options(
+grpc_channel_credentials* grpc_ssl_credentials_create_with_options(
     grpc_ssl_credentials_options* options) {
-  grpc_credentials* retval = nullptr;
+  grpc_channel_credentials* retval = nullptr;
 
   if (options == nullptr) {
     LOG(ERROR) << "Invalid options trying to create SSL server credentials.";

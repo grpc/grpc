@@ -52,6 +52,10 @@ cdef class CompositeCallCredentials(CallCredentials):
 cdef class ChannelCredentials:
 
   cdef grpc_channel_credentials *c(self) except *
+  cdef grpc_channel_credentials *c_credentials
+  cdef grpc_ssl_pem_key_cert_pair *c_ssl_pem_key_cert_pairs
+  cdef size_t c_ssl_pem_key_cert_pairs_count
+  cdef list references
   # the cert config related state is used only if this credentials is
   # created with cert config/fetcher
   cdef object initial_cert_config
@@ -60,9 +64,9 @@ cdef class ChannelCredentials:
   cdef bint initial_cert_config_fetched
 
 
-cdef class ChannelCertificateConfig:
+cdef class ChannelCertificateConfiguration:
 
-  cdef grpc_ssl_server_certificate_config *c_cert_config
+  cdef grpc_ssl_certificate_config *c_cert_config
   cdef const char *c_pem_root_certs
   cdef grpc_ssl_pem_key_cert_pair *c_ssl_pem_key_cert_pairs
   cdef size_t c_ssl_pem_key_cert_pairs_count

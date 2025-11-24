@@ -35,11 +35,15 @@
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
 
+struct grpc_ssl_credentials_options;
+
 class grpc_ssl_credentials : public grpc_channel_credentials {
  public:
   grpc_ssl_credentials(const char* pem_root_certs,
                        grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
                        const grpc_ssl_verify_peer_options* verify_options);
+
+  explicit grpc_ssl_credentials(const grpc_ssl_credentials_options& options);
 
   ~grpc_ssl_credentials() override;
 
@@ -56,6 +60,19 @@ class grpc_ssl_credentials : public grpc_channel_credentials {
   // version should be done for testing purposes only.
   void set_min_tls_version(grpc_tls_version min_tls_version);
   void set_max_tls_version(grpc_tls_version max_tls_version);
+
+  bool has_cert_config_fetcher() const {
+    return certificate_config_fetcher_.cb != nullptr;
+  }
+
+  grpc_ssl_channel_certificate_config_reload_status FetchCertConfig(
+      grpc_ssl_certificate_config** config) {
+    GRPC_DCHECK(has_cert_config_fetcher());
+    return certificate_config_fetcher_.cb(certificate_config_fetcher_.user_data,
+                                          config);
+  }
+
+  const grpc_ssl_config& config() const { return config_; }
 
  private:
   int cmp_impl(const grpc_channel_credentials* other) const override {
