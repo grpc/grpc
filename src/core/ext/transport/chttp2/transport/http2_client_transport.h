@@ -492,7 +492,7 @@ class Http2ClientTransport final : public ClientTransport,
   }
 
   bool should_reset_ping_clock_;
-  bool is_first_write_;
+  TransportInitializationStates transport_state_;
   IncomingMetadataTracker incoming_headers_;
   absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings_;
 

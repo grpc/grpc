@@ -958,16 +958,16 @@ void Http2ClientTransport::ActOnFlowControlAction(
 
 auto Http2ClientTransport::WriteControlFrames() {
   SliceBuffer output_buf;
-  if (is_first_write_) {
+  if (transport_state_ == TransportInitializationStates::kNotReady) {
     GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteControlFrames "
                               "GRPC_CHTTP2_CLIENT_CONNECT_STRING";
     output_buf.Append(
         Slice::FromCopiedString(GRPC_CHTTP2_CLIENT_CONNECT_STRING));
-    is_first_write_ = false;
     //  SETTINGS MUST be the first frame to be written onto a connection as per
     //  RFC9113.
     MaybeGetSettingsAndSettingsAckFrames(flow_control_, settings_,
                                          transport_settings_, output_buf);
+    transport_state_ = TransportInitializationStates::kReadyForWrite;
   }
 
   // Order of Control Frames is important.
@@ -1005,6 +1005,12 @@ void Http2ClientTransport::NotifyControlFramesWriteDone() {
   // Notify Control modules that we have sent the frames.
   // All notifications are expected to be synchronous.
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport NotifyControlFramesWriteDone";
+  if (transport_state_ == TransportInitializationStates::kReadyForWrite) {
+    // TODO(tjagtap) [PH2][P2] : This is going to be quite different for the
+    // server. Do not copy paste this part for Server transport.
+    SpawnGuardedTransportParty("ReadLoop", UntilTransportClosed(ReadLoop()));
+    transport_state_ = TransportInitializationStates::kReadyForReadWrite;
+  }
   if (should_stall_read_loop_) {
     should_stall_read_loop_ = false;
     read_loop_waker_.Wakeup();
@@ -1371,7 +1377,7 @@ Http2ClientTransport::Http2ClientTransport(
       endpoint_(std::move(endpoint)),
       next_stream_id_(/*Initial Stream ID*/ 1),
       should_reset_ping_clock_(false),
-      is_first_write_(true),
+      transport_state_(TransportInitializationStates::kNotReady),
       on_receive_settings_(std::move(on_receive_settings)),
       max_header_list_size_soft_limit_(
           GetSoftLimitFromChannelArgs(channel_args)),
@@ -1452,13 +1458,18 @@ Http2ClientTransport::Http2ClientTransport(
 
   // Spawn a promise to flush the gRPC initial connection string and settings
   // frames.
-  SpawnGuardedTransportParty("FlushInitialFrames", TriggerWriteCycle());
-  SpawnGuardedTransportParty("ReadLoop", UntilTransportClosed(ReadLoop()));
-  SpawnGuardedTransportParty("MultiplexerLoop",
-                             UntilTransportClosed(MultiplexerLoop()));
   SpawnGuardedTransportParty(
       "FlowControlPeriodicUpdateLoop",
       UntilTransportClosed(FlowControlPeriodicUpdateLoop()));
+  // TODO(akshitpatel) [PH2][P0] What would be the right order for these two?
+  // MultiplexerLoop and TriggerWriteCycle?
+  // TODO(tjagtap) [PH2][P2] : This is going to be quite different for the
+  // server. Do not copy paste this part for Server transport.
+  SpawnGuardedTransportParty("MultiplexerLoop",
+                             UntilTransportClosed(MultiplexerLoop()));
+  // TODO(tjagtap) [PH2][P2] : This is going to be quite different for the
+  // server. Do not copy paste this part for Server transport.
+  SpawnGuardedTransportParty("FlushInitialFrames", TriggerWriteCycle());
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor End";
 }
 

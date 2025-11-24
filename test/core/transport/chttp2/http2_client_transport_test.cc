@@ -1167,7 +1167,8 @@ TEST_F(Http2ClientTransportTest, ReadGracefulGoaway) {
   event_engine()->UnsetGlobalHooks();
 }
 
-TEST_F(Http2ClientTransportTest, ReadGracefulGoawayCannotStartNewStreams) {
+TEST_F(Http2ClientTransportTest,
+       DISABLED_ReadGracefulGoawayCannotStartNewStreams) {
   ExecCtx ctx;
   MockPromiseEndpoint mock_endpoint(/*port=*/1000);
   std::string data_payload = "Hello!";

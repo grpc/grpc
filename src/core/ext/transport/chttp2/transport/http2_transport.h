@@ -56,6 +56,13 @@ constexpr uint32_t kMaxWriteSize = /*10 MB*/ 10u * 1024u * 1024u;
 
 constexpr uint32_t kGoawaySendTimeoutSeconds = 5u;
 
+enum class TransportInitializationStates : uint8_t {
+  // TODO(tjagtap) [PH2][P2] : Relook at this when writing the Server.
+  kNotReady,
+  kReadyForWrite,
+  kReadyForReadWrite
+};
+
 ///////////////////////////////////////////////////////////////////////////////
 // Settings and ChannelArgs helpers
 
