@@ -160,3 +160,15 @@ test --nozip_undeclared_test_outputs
 
 # Custom checks
 test:postmortem --copt=-DGRPC_POSTMORTEM_CHECKS
+build --override_repository=com_google_protobuf=/Users/jaredcrawford/PycharmProjects/grpc/third_party/protobuf
+query --override_repository=com_google_protobuf=/Users/jaredcrawford/PycharmProjects/grpc/third_party/protobuf
+build --override_repository=com_google_protobuf=/Users/jaredcrawford/PycharmProjects/grpc/third_party/protobuf
+query --override_repository=com_google_protobuf=/Users/jaredcrawford/PycharmProjects/grpc/third_party/protobuf
+build --override_repository=com_google_protobuf=/Users/jaredcrawford/PycharmProjects/grpc/third_party/protobuf
+query --override_repository=com_google_protobuf=/Users/jaredcrawford/PycharmProjects/grpc/third_party/protobuf
+build --override_repository=com_google_protobuf=/Users/jaredcrawford/PycharmProjects/grpc/third_party/protobuf
+query --override_repository=com_google_protobuf=/Users/jaredcrawford/PycharmProjects/grpc/third_party/protobuf
+build --override_repository=com_google_protobuf=/Users/jaredcrawford/PycharmProjects/grpc/third_party/protobuf
+query --override_repository=com_google_protobuf=/Users/jaredcrawford/PycharmProjects/grpc/third_party/protobuf
+build --override_repository=com_google_protobuf=/Users/jaredcrawford/PycharmProjects/grpc/third_party/protobuf
+query --override_repository=com_google_protobuf=/Users/jaredcrawford/PycharmProjects/grpc/third_party/protobuf

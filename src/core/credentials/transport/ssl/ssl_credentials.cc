@@ -291,14 +291,14 @@ grpc_ssl_certificate_config *grpc_ssl_certificate_config_create(
     config->pem_root_certs = gpr_strdup(pem_root_certs);
   }
   if (num_key_cert_pairs > 0) {
-    GPR_ASSERT(pem_key_cert_pairs != NULL);
+    GRPC_CHECK_NE(pem_key_cert_pairs, nullptr);
     config->pem_key_cert_pairs = (grpc_ssl_pem_key_cert_pair *)gpr_zalloc(
         num_key_cert_pairs * sizeof(grpc_ssl_pem_key_cert_pair));
   }
   config->num_key_cert_pairs = num_key_cert_pairs;
   for (size_t i = 0; i < num_key_cert_pairs; i++) {
-    GPR_ASSERT(pem_key_cert_pairs[i].private_key != NULL);
-    GPR_ASSERT(pem_key_cert_pairs[i].cert_chain != NULL);
+    GRPC_CHECK_NE(pem_key_cert_pairs[i].private_key, nullptr);
+    GRPC_CHECK_NE(pem_key_cert_pairs[i].cert_chain, nullptr);
     config->pem_key_cert_pairs[i].cert_chain =
         gpr_strdup(pem_key_cert_pairs[i].cert_chain);
     config->pem_key_cert_pairs[i].private_key =
@@ -324,7 +324,7 @@ grpc_ssl_credentials_create_options_using_config(
     grpc_ssl_certificate_config *config) {
   grpc_ssl_credentials_options *options = NULL;
   if (config == NULL) {
-    gpr_log(GPR_ERROR, "Certificate config must not be NULL.");
+    LOG(ERROR) << "Certificate config must not be NULL.";
     goto done;
   }
   options = (grpc_ssl_credentials_options *)gpr_zalloc(
@@ -338,7 +338,7 @@ grpc_ssl_credentials_options *
 grpc_ssl_credentials_create_options_using_config_fetcher(
     grpc_ssl_certificate_config_callback cb, void *user_data) {
   if (cb == NULL) {
-    gpr_log(GPR_ERROR, "Invalid certificate config callback parameter.");
+    LOG(ERROR) << "Invalid certificate config callback parameter.";
     return NULL;
   }
 

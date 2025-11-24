@@ -544,14 +544,6 @@ cdef extern from "grpc/grpc_security_constants.h":
     GRPC_SSL_CHANNEL_CERTIFICATE_CONFIG_RELOAD_NEW
     GRPC_SSL_CHANNEL_CERTIFICATE_CONFIG_RELOAD_FAIL
 
-  ctypedef grpc_ssl_certificate_config_reload_status (*grpc_ssl_server_certificate_config_callback)(
-    void *user_data,
-    grpc_ssl_server_certificate_config **config)
-
-  ctypedef grpc_ssl_channel_certificate_config_reload_status (*grpc_ssl_certificate_config_callback)(
-    void *user_data,
-    grpc_ssl_certificate_config **config)
-
   ctypedef struct grpc_auth_property_iterator:
     pass
 
@@ -562,6 +554,14 @@ cdef extern from "grpc/grpc_security_constants.h":
 
 
 cdef extern from "grpc/credentials.h":
+
+  ctypedef grpc_ssl_certificate_config_reload_status (*grpc_ssl_server_certificate_config_callback)(
+    void *user_data,
+    grpc_ssl_server_certificate_config **config)
+
+  ctypedef grpc_ssl_channel_certificate_config_reload_status (*grpc_ssl_certificate_config_callback)(
+    void *user_data,
+    grpc_ssl_certificate_config **config)
 
   ctypedef struct grpc_ssl_server_certificate_config:
     # We don't care about the internals
