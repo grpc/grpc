@@ -80,3 +80,11 @@ bool tsi_zero_copy_grpc_protector_read_frame_size(
   if (self->vtable->read_frame_size == nullptr) return false;
   return self->vtable->read_frame_size(self, protected_slices, frame_size);
 }
+
+void tsi_zero_copy_grpc_protector_set_allocator(
+    tsi_zero_copy_grpc_protector* self,
+    tsi_zero_copy_grpc_protector_allocator_cb alloc_cb, void* user_data) {
+  if (self != nullptr && self->vtable->set_allocator != nullptr) {
+    self->vtable->set_allocator(self, alloc_cb, user_data);
+  }
+}
