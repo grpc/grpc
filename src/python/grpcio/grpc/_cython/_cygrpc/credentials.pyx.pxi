@@ -457,7 +457,7 @@ cdef grpc_ssl_certificate_config_reload_status _server_cert_config_fetcher_wrapp
       cert_config.c_ssl_pem_key_cert_pairs_count)
   return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW
 
-cdef grpc_ssl_channel_certificate_config_reload_status _channel_cert_config_fetcher_wrapper(
+cdef grpc_ssl_certificate_config_reload_status _channel_cert_config_fetcher_wrapper(
         void* user_data, grpc_ssl_certificate_config **config) noexcept with gil:
   # This is a credentials.ChannelCertificateConfiguration
   cdef ChannelCertificateConfiguration cert_config = None
