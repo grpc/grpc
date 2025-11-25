@@ -33,6 +33,10 @@ COPY . .
 RUN pear package && \
   find . -name grpc-*.tgz | xargs -I{} pecl install {}
 
+RUN adduser -D -s /bin/sh grpcuser && \
+  chown -R grpcuser:grpcuser /github/grpc
+
+USER grpcuser
 
 CMD ["/github/grpc/src/php/bin/run_tests.sh", "--skip-persistent-channel-tests", \
      "--ignore-valgrind-undef-errors"]
