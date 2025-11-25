@@ -968,6 +968,7 @@ auto Http2ClientTransport::WriteControlFrames() {
     //  RFC9113.
     MaybeGetSettingsAndSettingsAckFrames(flow_control_, settings_,
                                          transport_settings_, output_buf);
+    SpawnGuardedTransportParty("ReadLoop", UntilTransportClosed(ReadLoop()));
   }
 
   // Order of Control Frames is important.
@@ -1451,16 +1452,18 @@ Http2ClientTransport::Http2ClientTransport(
     // allow_security_frame too.
   }
 
-  // Spawn a promise to flush the gRPC initial connection string and settings
-  // frames.
-  SpawnGuardedTransportParty("FlushInitialFrames", TriggerWriteCycle());
-  SpawnGuardedTransportParty("ReadLoop", UntilTransportClosed(ReadLoop()));
-  SpawnGuardedTransportParty("MultiplexerLoop",
-                             UntilTransportClosed(MultiplexerLoop()));
+  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor End";
+}
+
+void Http2ClientTransport::SpawnTransportLoops() {
+  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::SpawnTransportLoops Begin";
   SpawnGuardedTransportParty(
       "FlowControlPeriodicUpdateLoop",
       UntilTransportClosed(FlowControlPeriodicUpdateLoop()));
-  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor End";
+  SpawnGuardedTransportParty("FlushInitialFrames", TriggerWriteCycle());
+  SpawnGuardedTransportParty("MultiplexerLoop",
+                             UntilTransportClosed(MultiplexerLoop()));
+  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::SpawnTransportLoops End";
 }
 
 // This function MUST be idempotent. This function MUST be called from the
