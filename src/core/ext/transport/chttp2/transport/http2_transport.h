@@ -72,7 +72,8 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
 // acknowledgment.
 void MaybeGetSettingsAndSettingsAckFrames(
     chttp2::TransportFlowControl& flow_control, Http2SettingsManager& settings,
-    SettingsTimeoutManager& transport_settings, SliceBuffer& output_buf);
+    RefCountedPtr<SettingsTimeoutManager> transport_settings,
+    SliceBuffer& output_buf);
 
 ///////////////////////////////////////////////////////////////////////////////
 // ChannelZ helpers
