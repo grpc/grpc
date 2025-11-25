@@ -65,7 +65,7 @@ class CommonStressTest {
   CommonStressTest() : kMaxMessageSize_(8192) {
 #if TARGET_OS_IPHONE
     // Workaround Apple CFStream bug
-    grpc_core::SetEnv("grpc_cfstream", "0");
+    // grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
   }
   virtual ~CommonStressTest() {}
