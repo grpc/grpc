@@ -25,6 +25,7 @@
 #include <memory>
 #include <type_traits>
 #include <utility>
+#include <variant>
 
 #include "opentelemetry/metrics/async_instruments.h"
 #include "opentelemetry/metrics/meter.h"
@@ -485,7 +486,8 @@ class OpenTelemetryPluginImpl::CounterExporter final {
 
   void Export(opentelemetry::metrics::ObserverResult result) {
     Sink sink(std::get<opentelemetry::nostd::shared_ptr<
-                  opentelemetry::metrics::ObserverResultT<int64_t>>>(result));
+                  opentelemetry::metrics::ObserverResultT<int64_t>>>(result),
+              md_->shape);
     impl_->QueryMetrics({md_->name}, sink);
   }
 
@@ -493,22 +495,32 @@ class OpenTelemetryPluginImpl::CounterExporter final {
   class Sink final : public grpc_core::MetricsSink {
    public:
     explicit Sink(opentelemetry::nostd::shared_ptr<
-                  opentelemetry::metrics::ObserverResultT<int64_t>>
-                      observer)
-        : observer_(std::move(observer)) {}
+                      opentelemetry::metrics::ObserverResultT<int64_t>>
+                      observer,
+                  grpc_core::InstrumentMetadata::Shape shape)
+        : observer_(std::move(observer)), shape_(shape) {}
     void Counter(absl::Span<const std::string> label_keys,
                  absl::Span<const std::string> label_values, absl::string_view,
                  uint64_t value) override {
+      GRPC_DCHECK(
+          std::holds_alternative<grpc_core::InstrumentMetadata::CounterShape>(
+              shape_));
       LOG(ERROR) << "Counter: " << value
                  << " label_keys: " << absl::StrJoin(label_keys, ",")
                  << " label_values: " << absl::StrJoin(label_values, ",");
       ExportedMetricKeyValueIterable labels_iterable(label_keys, label_values);
       observer_->Observe(value, labels_iterable);
     }
-    void UpDownCounter(absl::Span<const std::string>,
-                       absl::Span<const std::string>, absl::string_view,
-                       uint64_t) override {
-      LOG(FATAL) << "Expected a counter, got an up/down counter";
+    void UpDownCounter(absl::Span<const std::string> label_keys,
+                       absl::Span<const std::string> label_values,
+                       absl::string_view, uint64_t value) override {
+      GRPC_DCHECK(std::holds_alternative<
+                  grpc_core::InstrumentMetadata::UpDownCounterShape>(shape_));
+      LOG(ERROR) << "UpDownCounter: " << value
+                 << " label_keys: " << absl::StrJoin(label_keys, ",")
+                 << " label_values: " << absl::StrJoin(label_values, ",");
+      ExportedMetricKeyValueIterable labels_iterable(label_keys, label_values);
+      observer_->Observe(value, labels_iterable);
     }
     void Histogram(absl::Span<const std::string>, absl::Span<const std::string>,
                    absl::string_view, grpc_core::HistogramBuckets,
@@ -533,6 +545,7 @@ class OpenTelemetryPluginImpl::CounterExporter final {
     const opentelemetry::nostd::shared_ptr<
         opentelemetry::metrics::ObserverResultT<int64_t>>
         observer_;
+    const grpc_core::InstrumentMetadata::Shape shape_;
   };
 
   OpenTelemetryPluginImpl* const impl_;
@@ -721,7 +734,13 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
                           instrument, this, description));
                 },
                 [&](grpc_core::InstrumentMetadata::UpDownCounterShape) {
-                  LOG(FATAL) << "Double gauge shape is not supported yet";
+                  auto instrument = meter->CreateInt64ObservableUpDownCounter(
+                      std::string(description->name),
+                      std::string(description->description),
+                      std::string(description->unit));
+                  exporter_callbacks_.push_back(
+                      std::make_unique<ExporterCallbackImpl<CounterExporter>>(
+                          instrument, this, description));
                 },
                 [&](grpc_core::InstrumentMetadata::DoubleGaugeShape) {
                   LOG(FATAL) << "Double gauge shape is not supported yet";
