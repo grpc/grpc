@@ -93,6 +93,9 @@
 
 namespace grpc_core {
 
+#define GRPC_HTTP2_CONNECTOR_DLOG \
+  DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
+
 using ::grpc_event_engine::experimental::EventEngine;
 
 namespace {
@@ -169,9 +172,13 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
     result_->Reset();
     NullThenSchedClosure(DEBUG_LOCATION, &notify_, result.status());
   } else if ((*result)->endpoint != nullptr) {
+    GRPC_HTTP2_CONNECTOR_DLOG
+        << "Chttp2Connector::OnHandshakeDone handshake succeeded with endpoint";
     const bool is_callv1 =
         !((*result)->args.GetBool(GRPC_ARG_USE_V3_STACK).value_or(false));
     if (is_callv1) {
+      GRPC_HTTP2_CONNECTOR_DLOG
+          << "Chttp2Connector::OnHandshakeDone creating chttp2 transport";
       result_->transport = grpc_create_chttp2_transport(
           (*result)->args, std::move((*result)->endpoint), true);
       GRPC_CHECK_NE(result_->transport, nullptr);
@@ -200,6 +207,8 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
     }
 #else
     } else {
+      GRPC_HTTP2_CONNECTOR_DLOG
+          << "Chttp2Connector::OnHandshakeDone creating PH2 transport";
       // TODO(tjagtap) : [PH2][P1] : Validate this code block thoroughly once
       // the ping pong test is in place.
       std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
