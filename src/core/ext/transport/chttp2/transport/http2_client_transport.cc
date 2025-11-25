@@ -490,7 +490,7 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
     // Process the SETTINGS ACK Frame
     if (settings_.AckLastSend()) {
       // Stop the settings timeout promise.
-      transport_settings_.OnSettingsAckReceived();
+      transport_settings_->OnSettingsAckReceived();
     } else {
       // TODO(tjagtap) [PH2][P4] : The RFC does not say anything about what
       // should happen if we receive an unsolicited SETTINGS ACK. Decide if we
@@ -1312,12 +1312,12 @@ void Http2ClientTransport::MaybeSpawnWaitForSettingsTimeout() {
   // Settings class.
   // TODO(tjagtap) [PH2][P1][Settings] Add more DCHECKs to the new settings
   // class.
-  if (transport_settings_.ShouldSpawnTimeoutWaiter()) {
+  if (transport_settings_->ShouldSpawnTimeoutWaiter()) {
     GRPC_HTTP2_CLIENT_DLOG
         << "Http2ClientTransport::MaybeSpawnWaitForSettingsTimeout Spawning";
     settings_.SetPreviousSettingsPromiseResolved(false);
     general_party_->Spawn("WaitForSettingsTimeout",
-                          transport_settings_.WaitForSettingsTimeout(),
+                          transport_settings_->WaitForSettingsTimeout(),
                           WaitForSettingsTimeoutOnDone());
   }
 }
@@ -1369,6 +1369,7 @@ Http2ClientTransport::Http2ClientTransport(
           endpoint.GetEventEngineEndpoint(), channel_args)),
       event_engine_(std::move(event_engine)),
       endpoint_(std::move(endpoint)),
+      transport_settings_(MakeRefCounted<SettingsTimeoutManager>()),
       next_stream_id_(/*Initial Stream ID*/ 1),
       should_reset_ping_clock_(false),
       is_first_write_(true),
@@ -1441,7 +1442,7 @@ Http2ClientTransport::Http2ClientTransport(
     encoder_.SetMaxUsableSize(max_hpack_table_size);
   }
 
-  transport_settings_.SetSettingsTimeout(channel_args, keepalive_timeout_);
+  transport_settings_->SetSettingsTimeout(channel_args, keepalive_timeout_);
 
   if (settings_.local().allow_security_frame()) {
     // TODO(tjagtap) : [PH2][P3] : Setup the plumbing to pass the security frame

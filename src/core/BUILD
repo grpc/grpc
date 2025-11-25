@@ -8266,6 +8266,7 @@ grpc_cc_library(
         "poll",
         "promise_status",
         "race",
+        "ref_counted",
         "seq",
         "sleep",
         "time",
@@ -8274,6 +8275,7 @@ grpc_cc_library(
         "//:chttp2_frame",
         "//:gpr_platform",
         "//:promise",
+        "//:ref_counted_ptr",
     ],
 )
 

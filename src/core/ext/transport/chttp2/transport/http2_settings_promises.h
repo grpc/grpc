@@ -35,6 +35,7 @@
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/ref_counted.h"
 #include "src/core/util/time.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
@@ -51,7 +52,7 @@ namespace grpc_core {
 // This class is designed with the assumption that only 1 SETTINGS frame will be
 // in flight at a time. And we do not send a second SETTINGS frame till we
 // receive and process the SETTINGS ACK.
-class SettingsTimeoutManager {
+class SettingsTimeoutManager : public RefCounted<SettingsTimeoutManager> {
   // TODO(tjagtap) [PH2][P1][Settings] : Add new DCHECKs
  public:
   // Assumption : This would be set only once in the life of the transport.
@@ -81,25 +82,23 @@ class SettingsTimeoutManager {
         << "SettingsTimeoutManager::WaitForSettingsTimeout Factory timeout_"
         << timeout_;
     StartSettingsTimeoutTimer();
-    // TODO(tjagtap) : [PH2][P1] : Make this a ref counted class and manage the
-    // lifetime
     return AssertResultType<absl::Status>(Race(
-        [this]() -> Poll<absl::Status> {
+        [self = this->Ref()]() -> Poll<absl::Status> {
           GRPC_SETTINGS_TIMEOUT_DLOG
               << "SettingsTimeoutManager::WaitForSettingsTimeout Race";
           // This Promise will "win" the race if we receive the SETTINGS
           // ACK from the peer within the timeout time.
-          if (HasReceivedAck()) {
+          if (self->HasReceivedAck()) {
             GRPC_DCHECK(
-                sent_time_ +
-                    (timeout_ *
+                self->sent_time_ +
+                    (self->timeout_ *
                      1.2 /* Grace time for this promise to be scheduled*/) >
                 Timestamp::Now())
                 << "Should have timed out";
-            MarkReceivedAckAsProcessed();
+            self->MarkReceivedAckAsProcessed();
             return absl::OkStatus();
           }
-          AddWaitingForAck();
+          self->AddWaitingForAck();
           return Pending{};
         },
         // This promise will "Win" the Race if timeout is crossed and we did
