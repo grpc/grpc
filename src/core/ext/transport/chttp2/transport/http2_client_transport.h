@@ -208,6 +208,7 @@ class Http2ClientTransport final : public ClientTransport,
   bool AreTransportFlowControlTokensAvailable() {
     return flow_control_.remote_window() > 0;
   }
+  void SpawnTransportLoops();
 
  private:
   // Promise factory for processing each type of frame
