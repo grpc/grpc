@@ -66,6 +66,7 @@ class Http2SettingsManager {
   // function to the peer.
   // This function is not idempotent.
   uint32_t MaybeSendAck();
+  void OnSettingsReceived() { ++num_acks_to_send_; }
 
   // To be called from a promise based HTTP2 transport only
   http2::Http2ErrorCode ApplyIncomingSettings(
@@ -81,7 +82,6 @@ class Http2SettingsManager {
         return error;
       }
     }
-    num_acks_to_send_++;
     return http2::Http2ErrorCode::kNoError;
   }
 

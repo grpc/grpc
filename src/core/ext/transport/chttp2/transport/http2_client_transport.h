@@ -244,7 +244,7 @@ class Http2ClientTransport final : public ClientTransport,
   // module needs to take action after the write (for cases like spawning
   // timeout promises), they MUST plug the call in the
   // NotifyControlFramesWriteDone.
-  auto WriteControlFrames();
+  auto ProcessAndWriteControlFrames();
 
   // Notify the control frames modules that the endpoint write is done.
   void NotifyControlFramesWriteDone();
@@ -286,6 +286,7 @@ class Http2ClientTransport final : public ClientTransport,
   PromiseEndpoint endpoint_;
   Http2SettingsManager settings_;
   RefCountedPtr<SettingsTimeoutManager> transport_settings_;
+  PendingIncomingSettings pending_incoming_settings_;
 
   Http2FrameHeader current_frame_header_;
   // Returns the number of active streams. A stream is removed from the `active`
