@@ -59,6 +59,9 @@ namespace grpc_core {
 #if defined(GRPC_CFSTREAM)
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
+inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
+  return false;
+}
 inline bool IsChannelzUseV2ForV1ApiEnabled() { return false; }
 inline bool IsChannelzUseV2ForV1ServiceEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
@@ -122,6 +125,9 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #elif defined(GPR_WINDOWS)
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
+inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
+  return false;
+}
 inline bool IsChannelzUseV2ForV1ApiEnabled() { return false; }
 inline bool IsChannelzUseV2ForV1ServiceEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
@@ -185,6 +191,9 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #else
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
+inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
+  return false;
+}
 inline bool IsChannelzUseV2ForV1ApiEnabled() { return false; }
 inline bool IsChannelzUseV2ForV1ServiceEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
@@ -249,6 +258,7 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #else
 enum ExperimentIds {
   kExperimentIdCallTracerInTransport,
+  kExperimentIdCallTracerSendInitialMetadataIsAnAnnotation,
   kExperimentIdChannelzUseV2ForV1Api,
   kExperimentIdChannelzUseV2ForV1Service,
   kExperimentIdChaoticGoodFramingLayer,
@@ -301,6 +311,11 @@ enum ExperimentIds {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() {
   return IsExperimentEnabled<kExperimentIdCallTracerInTransport>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_SEND_INITIAL_METADATA_IS_AN_ANNOTATION
+inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
+  return IsExperimentEnabled<
+      kExperimentIdCallTracerSendInitialMetadataIsAnAnnotation>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHANNELZ_USE_V2_FOR_V1_API
 inline bool IsChannelzUseV2ForV1ApiEnabled() {

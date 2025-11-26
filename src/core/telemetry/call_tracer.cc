@@ -18,17 +18,43 @@
 
 #include "src/core/telemetry/call_tracer.h"
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 
+#include "src/core/call/message.h"
+#include "src/core/call/metadata_batch.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/context.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/transport/call_final_info.h"
 #include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/ref_counted_string.h"
+#include "absl/functional/function_ref.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
+
+std::string SendInitialMetadataAnnotation::ToString() const {
+  return "SendInitialMetadata";
+}
+
+void SendInitialMetadataAnnotation::ForEachKeyValue(
+    absl::FunctionRef<void(absl::string_view, ValueType)> f) const {
+  metadata_->Log([f](absl::string_view key, absl::string_view value) {
+    if (IsMetadataKeyAllowedInDebugOutput(key)) {
+      f(key, value);
+    } else {
+      f(key, "[REDACTED]");
+    }
+  });
+}
 
 CallTracerInterface::TransportByteSize&
 CallTracerInterface::TransportByteSize::operator+=(
@@ -93,6 +119,12 @@ class DelegatingClientCallTracer : public ClientCallTracerInterface {
         grpc_metadata_batch* send_initial_metadata) override {
       for (auto* tracer : tracers_) {
         tracer->RecordSendInitialMetadata(send_initial_metadata);
+      }
+    }
+    void MutateSendInitialMetadata(
+        grpc_metadata_batch* send_initial_metadata) override {
+      for (auto* tracer : tracers_) {
+        tracer->MutateSendInitialMetadata(send_initial_metadata);
       }
     }
     void RecordSendTrailingMetadata(
@@ -249,6 +281,12 @@ class DelegatingServerCallTracer : public ServerCallTracerInterface {
       tracer->RecordSendInitialMetadata(send_initial_metadata);
     }
   }
+  void MutateSendInitialMetadata(
+      grpc_metadata_batch* send_initial_metadata) override {
+    for (auto* tracer : tracers_) {
+      tracer->MutateSendInitialMetadata(send_initial_metadata);
+    }
+  }
   void RecordSendTrailingMetadata(
       grpc_metadata_batch* send_trailing_metadata) override {
     for (auto* tracer : tracers_) {
@@ -338,6 +376,16 @@ class DelegatingServerCallTracer : public ServerCallTracerInterface {
   // sequentially, removing the need for any synchronization.
   std::vector<ServerCallTracerInterface*> tracers_;
 };
+
+void CallTracer::RecordSendInitialMetadata(
+    grpc_metadata_batch* send_initial_metadata) {
+  if (IsCallTracerSendInitialMetadataIsAnAnnotationEnabled()) {
+    RecordAnnotation(SendInitialMetadataAnnotation(send_initial_metadata));
+    interface_->MutateSendInitialMetadata(send_initial_metadata);
+  } else {
+    interface_->RecordSendInitialMetadata(send_initial_metadata);
+  }
+}
 
 void SetClientCallTracer(Arena* arena,
                          absl::Span<ClientCallTracerInterface* const> tracer) {
