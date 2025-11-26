@@ -120,7 +120,8 @@ class Metadata(abc.Collection):  # noqa: PLW1641
 
     def items(self) -> abc.ItemsView:
         """Get all the key value pairs in the metadata object similar to
-        dict.items()"""
+        dict.items()
+        """
         return abc.ItemsView(self)
 
     def get(
@@ -140,7 +141,8 @@ class Metadata(abc.Collection):  # noqa: PLW1641
 
     def set_all(self, key: MetadataKey, values: List[MetadataValue]) -> None:
         """Set a list of values to the key. This will overwrite any existing
-        values associated with the key"""
+        values associated with the key
+        """
         self._metadata[key] = values
 
     def __contains__(self, key: MetadataKey) -> bool:
