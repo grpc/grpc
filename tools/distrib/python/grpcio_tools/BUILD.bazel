@@ -16,11 +16,17 @@ load("@rules_python//python:defs.bzl", "py_library")
 load("//bazel:cython_library.bzl", "pyx_library")
 load("grpcio_tools.bzl", "internal_copied_filegroup")
 
-package(default_visibility = [
-    "//examples/python:__subpackages__",
-    "//src/python:__subpackages__",
-    "//tools/distrib/python/grpcio_tools:__subpackages__",
-])
+package(
+    default_visibility = [
+        "//examples/python:__subpackages__",
+        "//src/python:__subpackages__",
+        "//tools/distrib/python/grpcio_tools:__subpackages__",
+    ],
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 cc_library(
     name = "protoc_lib",
