@@ -35,6 +35,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
@@ -43,6 +44,7 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "test/core/promise/poll_matcher.h"
 #include "test/core/test_util/postmortem.h"
@@ -167,7 +169,8 @@ TEST(Http2CommonTransportTest, MaybeGetSettingsAndSettingsAckFramesIdle) {
       /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   Http2SettingsManager settings_manager;
-  SettingsTimeoutManager timeout_manager;
+  RefCountedPtr<SettingsTimeoutManager> timeout_manager =
+      MakeRefCounted<SettingsTimeoutManager>();
   SliceBuffer output_buf;
   // We add "hello" to output_buf to ensure that
   // MaybeGetSettingsAndSettingsAckFrames appends to it and does not overwrite
@@ -175,15 +178,15 @@ TEST(Http2CommonTransportTest, MaybeGetSettingsAndSettingsAckFramesIdle) {
   output_buf.Append(Slice::FromCopiedString("hello"));
   MaybeGetSettingsAndSettingsAckFrames(transport_flow_control, settings_manager,
                                        timeout_manager, output_buf);
-  EXPECT_TRUE(timeout_manager.ShouldSpawnTimeoutWaiter());
-  timeout_manager.TestOnlyTimeoutWaiterSpawned();
+  EXPECT_TRUE(timeout_manager->ShouldSpawnTimeoutWaiter());
+  timeout_manager->TestOnlyTimeoutWaiterSpawned();
   ASSERT_THAT(output_buf.JoinIntoString(), ::testing::StartsWith("hello"));
   EXPECT_GT(output_buf.Length(), 5);
   output_buf.Clear();
   output_buf.Append(Slice::FromCopiedString("hello"));
   MaybeGetSettingsAndSettingsAckFrames(transport_flow_control, settings_manager,
                                        timeout_manager, output_buf);
-  EXPECT_FALSE(timeout_manager.ShouldSpawnTimeoutWaiter());
+  EXPECT_FALSE(timeout_manager->ShouldSpawnTimeoutWaiter());
   EXPECT_EQ(output_buf.Length(), 5);
   EXPECT_EQ(output_buf.JoinIntoString(), "hello");
 }
@@ -195,22 +198,22 @@ TEST(Http2CommonTransportTest,
       /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   Http2SettingsManager settings_manager;
-  SettingsTimeoutManager timeout_manager;
+  RefCountedPtr<SettingsTimeoutManager> timeout_manager =
+      MakeRefCounted<SettingsTimeoutManager>();
   SliceBuffer output_buf;
   MaybeGetSettingsAndSettingsAckFrames(transport_flow_control, settings_manager,
                                        timeout_manager, output_buf);
-  EXPECT_TRUE(timeout_manager.ShouldSpawnTimeoutWaiter());
-  timeout_manager.TestOnlyTimeoutWaiterSpawned();
+  EXPECT_TRUE(timeout_manager->ShouldSpawnTimeoutWaiter());
+  timeout_manager->TestOnlyTimeoutWaiterSpawned();
   output_buf.Clear();
   output_buf.Append(Slice::FromCopiedString("hello"));
   for (int i = 0; i < 5; ++i) {
-    EXPECT_EQ(settings_manager.ApplyIncomingSettings({}),
-              http2::Http2ErrorCode::kNoError);
+    settings_manager.OnSettingsReceived();
   }
 
   MaybeGetSettingsAndSettingsAckFrames(transport_flow_control, settings_manager,
                                        timeout_manager, output_buf);
-  EXPECT_FALSE(timeout_manager.ShouldSpawnTimeoutWaiter());
+  EXPECT_FALSE(timeout_manager->ShouldSpawnTimeoutWaiter());
 
   SliceBuffer expected_buf;
   expected_buf.Append(Slice::FromCopiedString("hello"));
@@ -232,7 +235,8 @@ TEST(Http2CommonTransportTest,
       /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   Http2SettingsManager settings_manager;
-  SettingsTimeoutManager timeout_manager;
+  RefCountedPtr<SettingsTimeoutManager> timeout_manager =
+      MakeRefCounted<SettingsTimeoutManager>();
   const uint32_t kSetMaxFrameSize = 16385;
   SliceBuffer output_buf;
   // We add "hello" to output_buf to ensure that
@@ -242,8 +246,8 @@ TEST(Http2CommonTransportTest,
   // Initial settings
   MaybeGetSettingsAndSettingsAckFrames(transport_flow_control, settings_manager,
                                        timeout_manager, output_buf);
-  EXPECT_TRUE(timeout_manager.ShouldSpawnTimeoutWaiter());
-  timeout_manager.TestOnlyTimeoutWaiterSpawned();
+  EXPECT_TRUE(timeout_manager->ShouldSpawnTimeoutWaiter());
+  timeout_manager->TestOnlyTimeoutWaiterSpawned();
   ASSERT_THAT(output_buf.JoinIntoString(), ::testing::StartsWith("hello"));
   EXPECT_GT(output_buf.Length(), 5);
   // Ack settings
@@ -253,7 +257,7 @@ TEST(Http2CommonTransportTest,
   // No changes - no frames
   MaybeGetSettingsAndSettingsAckFrames(transport_flow_control, settings_manager,
                                        timeout_manager, output_buf);
-  EXPECT_FALSE(timeout_manager.ShouldSpawnTimeoutWaiter());
+  EXPECT_FALSE(timeout_manager->ShouldSpawnTimeoutWaiter());
   EXPECT_EQ(output_buf.Length(), 5);
   EXPECT_EQ(output_buf.JoinIntoString(), "hello");
   output_buf.Clear();
@@ -262,8 +266,8 @@ TEST(Http2CommonTransportTest,
   output_buf.Append(Slice::FromCopiedString("hello"));
   MaybeGetSettingsAndSettingsAckFrames(transport_flow_control, settings_manager,
                                        timeout_manager, output_buf);
-  EXPECT_TRUE(timeout_manager.ShouldSpawnTimeoutWaiter());
-  timeout_manager.TestOnlyTimeoutWaiterSpawned();
+  EXPECT_TRUE(timeout_manager->ShouldSpawnTimeoutWaiter());
+  timeout_manager->TestOnlyTimeoutWaiterSpawned();
   // Check frame
   Http2SettingsFrame expected_settings;
   expected_settings.ack = false;
@@ -283,7 +287,7 @@ TEST(Http2CommonTransportTest,
   output_buf.Append(Slice::FromCopiedString("hello"));
   MaybeGetSettingsAndSettingsAckFrames(transport_flow_control, settings_manager,
                                        timeout_manager, output_buf);
-  EXPECT_FALSE(timeout_manager.ShouldSpawnTimeoutWaiter());
+  EXPECT_FALSE(timeout_manager->ShouldSpawnTimeoutWaiter());
   EXPECT_EQ(output_buf.Length(), 5);
   EXPECT_EQ(output_buf.JoinIntoString(), "hello");
 }
@@ -295,18 +299,18 @@ TEST(Http2CommonTransportTest, MaybeGetSettingsAndSettingsAckFramesWithAck) {
       /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   Http2SettingsManager settings_manager;
-  SettingsTimeoutManager timeout_manager;
+  RefCountedPtr<SettingsTimeoutManager> timeout_manager =
+      MakeRefCounted<SettingsTimeoutManager>();
   SliceBuffer output_buf;
   // We add "hello" to output_buf to ensure that
   // MaybeGetSettingsAndSettingsAckFrames appends to it and does not overwrite
   // it, i.e. the original contents of output_buf are not erased.
   output_buf.Append(Slice::FromCopiedString("hello"));
-  EXPECT_EQ(settings_manager.ApplyIncomingSettings({}),
-            http2::Http2ErrorCode::kNoError);
+  settings_manager.OnSettingsReceived();
   MaybeGetSettingsAndSettingsAckFrames(transport_flow_control, settings_manager,
                                        timeout_manager, output_buf);
-  EXPECT_TRUE(timeout_manager.ShouldSpawnTimeoutWaiter());
-  timeout_manager.TestOnlyTimeoutWaiterSpawned();
+  EXPECT_TRUE(timeout_manager->ShouldSpawnTimeoutWaiter());
+  timeout_manager->TestOnlyTimeoutWaiterSpawned();
   Http2SettingsFrame expected_settings;
   expected_settings.ack = false;
   settings_manager.local().Diff(

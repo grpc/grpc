@@ -24,6 +24,8 @@
 #include <algorithm>
 #include <optional>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -35,6 +37,7 @@
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/ref_counted.h"
 #include "src/core/util/time.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
@@ -44,14 +47,15 @@ namespace grpc_core {
 // Timeout for getting an ack back on settings changes
 #define GRPC_ARG_SETTINGS_TIMEOUT "grpc.http2.settings_timeout"
 
-#define GRPC_SETTINGS_TIMEOUT_DLOG DLOG(INFO)
+#define GRPC_SETTINGS_TIMEOUT_DLOG \
+  DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
 
 // This class can only be used only from a promise based HTTP2 transports
 // general_party_ .
 // This class is designed with the assumption that only 1 SETTINGS frame will be
 // in flight at a time. And we do not send a second SETTINGS frame till we
 // receive and process the SETTINGS ACK.
-class SettingsTimeoutManager {
+class SettingsTimeoutManager : public RefCounted<SettingsTimeoutManager> {
   // TODO(tjagtap) [PH2][P1][Settings] : Add new DCHECKs
  public:
   // Assumption : This would be set only once in the life of the transport.
@@ -81,25 +85,23 @@ class SettingsTimeoutManager {
         << "SettingsTimeoutManager::WaitForSettingsTimeout Factory timeout_"
         << timeout_;
     StartSettingsTimeoutTimer();
-    // TODO(tjagtap) : [PH2][P1] : Make this a ref counted class and manage the
-    // lifetime
     return AssertResultType<absl::Status>(Race(
-        [this]() -> Poll<absl::Status> {
+        [self = this->Ref()]() -> Poll<absl::Status> {
           GRPC_SETTINGS_TIMEOUT_DLOG
               << "SettingsTimeoutManager::WaitForSettingsTimeout Race";
           // This Promise will "win" the race if we receive the SETTINGS
           // ACK from the peer within the timeout time.
-          if (HasReceivedAck()) {
+          if (self->HasReceivedAck()) {
             GRPC_DCHECK(
-                sent_time_ +
-                    (timeout_ *
+                self->sent_time_ +
+                    (self->timeout_ *
                      1.2 /* Grace time for this promise to be scheduled*/) >
                 Timestamp::Now())
                 << "Should have timed out";
-            MarkReceivedAckAsProcessed();
+            self->MarkReceivedAckAsProcessed();
             return absl::OkStatus();
           }
-          AddWaitingForAck();
+          self->AddWaitingForAck();
           return Pending{};
         },
         // This promise will "Win" the Race if timeout is crossed and we did
@@ -182,6 +184,33 @@ class SettingsTimeoutManager {
   bool did_register_waker_ = false;
   int number_of_acks_unprocessed_ = 0;
   bool should_spawn_settings_timeout_ = false;
+};
+
+class PendingIncomingSettings {
+  // TODO(tjagtap) [PH2][P1][Settings] : Add new DCHECKs
+  // TODO(tjagtap) [PH2][P1][Settings] : Refactor full class
+ public:
+  PendingIncomingSettings() = default;
+  ~PendingIncomingSettings() = default;
+  PendingIncomingSettings(const PendingIncomingSettings&) = delete;
+  PendingIncomingSettings& operator=(const PendingIncomingSettings&) = delete;
+  PendingIncomingSettings(PendingIncomingSettings&&) = delete;
+  PendingIncomingSettings& operator=(PendingIncomingSettings&&) = delete;
+
+  void AddSettingsToPendingList(
+      std::vector<Http2SettingsFrame::Setting>&& settings) {
+    settings_.reserve(settings_.size() + settings.size());
+    settings_.insert(settings_.end(), settings.begin(), settings.end());
+  };
+
+  std::vector<Http2SettingsFrame::Setting> TakePendingSettings() {
+    std::vector<Http2SettingsFrame::Setting> settings = std::move(settings_);
+    settings_.clear();
+    return settings;
+  }
+
+ private:
+  std::vector<Http2SettingsFrame::Setting> settings_;
 };
 
 }  // namespace grpc_core

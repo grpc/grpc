@@ -148,6 +148,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
   client_transport_ = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine(), /*on_receive_settings=*/nullptr);
+  client_transport_->SpawnTransportLoops();
 
   EXPECT_EQ(client_transport_->filter_stack_transport(), nullptr);
   EXPECT_NE(client_transport_->client_transport(), nullptr);
@@ -238,6 +239,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromCall) {
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine(), /*on_receive_settings=*/nullptr);
+  client_transport->SpawnTransportLoops();
   auto call = MakeCall(TestInitialMetadata());
   client_transport->StartCall(call.handler.StartCall());
 
@@ -325,6 +327,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingRead) {
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine(), /*on_receive_settings=*/nullptr);
+  client_transport->SpawnTransportLoops();
 
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
@@ -399,6 +402,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingWrite) {
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine(), /*on_receive_settings=*/nullptr);
+  client_transport->SpawnTransportLoops();
   client_transport->TestOnlySpawnPromise(
       "PingRequest", [&client_transport, &ping_ack_received] {
         return Map(TrySeq(client_transport->TestOnlyTriggerWriteCycle(),
@@ -463,6 +467,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingTimeout) {
       std::move(mock_endpoint.promise_endpoint),
       GetChannelArgs().Set("grpc.http2.ping_timeout_ms", 1000), event_engine(),
       /*on_receive_settings=*/nullptr);
+  client_transport->SpawnTransportLoops();
   client_transport->TestOnlySpawnPromise("PingRequest", [&client_transport] {
     return Map(TrySeq(client_transport->TestOnlyTriggerWriteCycle(),
                       [&client_transport] {
@@ -567,6 +572,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
           .Set(GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS, 2)
           .Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, true),
       event_engine(), /*on_receive_settings=*/nullptr);
+  client_transport->SpawnTransportLoops();
 
   client_transport->TestOnlySpawnPromise(
       "PingRequest", [&client_transport, &ping_ack_received, ping_complete] {
@@ -661,6 +667,7 @@ TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine(), /*on_receive_settings=*/nullptr);
+  client_transport->SpawnTransportLoops();
   LOG(INFO) << "Initiating CallSpine";
   auto call = MakeCall(TestInitialMetadata());
 
@@ -795,6 +802,7 @@ TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadata) {
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine(), /*on_receive_settings=*/nullptr);
+  client_transport->SpawnTransportLoops();
 
   auto call = MakeCall(TestInitialMetadata());
   client_transport->StartCall(call.handler.StartCall());
@@ -870,6 +878,7 @@ TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadataWithResetStream) {
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine(), /*on_receive_settings=*/nullptr);
+  client_transport->SpawnTransportLoops();
 
   auto call = MakeCall(TestInitialMetadata());
   client_transport->StartCall(call.handler.StartCall());
@@ -936,6 +945,7 @@ TEST_F(Http2ClientTransportTest, StreamCleanupResetStream) {
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine(), /*on_receive_settings=*/nullptr);
+  client_transport->SpawnTransportLoops();
 
   auto call = MakeCall(TestInitialMetadata());
   client_transport->StartCall(call.handler.StartCall());
@@ -995,6 +1005,7 @@ TEST_F(Http2ClientTransportTest, Http2ClientTransportAbortTest) {
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine(), /*on_receive_settings=*/nullptr);
+  client_transport->SpawnTransportLoops();
   auto call = MakeCall(TestInitialMetadata());
   client_transport->StartCall(call.handler.StartCall());
 
@@ -1062,6 +1073,7 @@ TEST_F(Http2ClientTransportTest, ReadImmediateGoaway) {
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine(), /*on_receive_settings=*/nullptr);
+  client_transport->SpawnTransportLoops();
 
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
@@ -1133,6 +1145,7 @@ TEST_F(Http2ClientTransportTest, ReadGracefulGoaway) {
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine(), /*on_receive_settings=*/nullptr);
+  client_transport->SpawnTransportLoops();
 
   auto call = MakeCall(TestInitialMetadata());
   client_transport->StartCall(call.handler.StartCall());
@@ -1231,6 +1244,7 @@ TEST_F(Http2ClientTransportTest, ReadGracefulGoawayCannotStartNewStreams) {
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine(), /*on_receive_settings=*/nullptr);
+  client_transport->SpawnTransportLoops();
 
   auto call = MakeCall(TestInitialMetadata());
   start_new_stream_cb = [&]() {
@@ -1314,7 +1328,7 @@ TEST_F(Http2ClientTransportTest, TestFlowControlWindow) {
 
   mock_endpoint.ExpectWriteWithCallback(
       {
-          helper_.EventEngineSliceFromHttp2WindowUpdateFrame(0, 4128769),
+          helper_.EventEngineSliceFromHttp2SettingsFrameAck(),
       },
       event_engine().get(), [&](SliceBuffer& out, SliceBuffer& expect) {
         EXPECT_EQ(out.JoinIntoString(), expect.JoinIntoString());
@@ -1333,6 +1347,7 @@ TEST_F(Http2ClientTransportTest, TestFlowControlWindow) {
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine(), nullptr);
+  client_transport->SpawnTransportLoops();
 
   // Wait for Http2ClientTransport's internal activities to finish.
   event_engine()->TickUntilIdle();
@@ -1360,6 +1375,9 @@ TEST_F(Http2ClientTransportTest, TestFlowControlWindow) {
 
 }  // namespace http2
 }  // namespace grpc_core
+
+// TODO(tjagtap) : [PH2][P1] BURNING : Write a test for Settings, and Settings
+// Acks, Incoming and Outgoing
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);

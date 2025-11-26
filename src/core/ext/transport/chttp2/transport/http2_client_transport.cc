@@ -224,6 +224,7 @@ void Http2ClientTransport::Orphan() {
   // Accessing general_party here is not advisable. It may so happen that
   // the party is already freed/may free up any time. The only guarantee here
   // is that the transport is still valid.
+  SourceDestructing();
   MaybeSpawnCloseTransport(
       ToHttpOkOrConnError(absl::UnavailableError("Orphaned")));
   Unref();
@@ -473,24 +474,24 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
         });
   }
 
-  // TODO(tjagtap) : [PH2][P2] Decide later if we want this only for AckLastSend
-  // or does any other operation also need this lock.
-  MutexLock lock(&transport_mutex_);
   if (!frame.ack) {
-    // Check if the received settings have legal values
     Http2Status status = ValidateSettingsValues(frame.settings);
     if (!status.IsOk()) {
       return status;
     }
-    // TODO(tjagtap) : [PH2][P1]
-    // Apply the new settings
-    // Quickly send the ACK to the peer once the settings are applied
-    // When the peer changes MAX_CONCURRENT_STREAMS, notify the state watcher.
+    pending_incoming_settings_.AddSettingsToPendingList(
+        std::move(frame.settings));
+    settings_.OnSettingsReceived();
+    SpawnGuardedTransportParty("SettingsAck", TriggerWriteCycle());
   } else {
     // Process the SETTINGS ACK Frame
     if (settings_.AckLastSend()) {
       // Stop the settings timeout promise.
-      transport_settings_.OnSettingsAckReceived();
+      transport_settings_->OnSettingsAckReceived();
+      parser_.hpack_table()->SetMaxBytes(settings_.acked().header_table_size());
+      ActOnFlowControlAction(flow_control_.SetAckedInitialWindow(
+                                 settings_.acked().initial_window_size()),
+                             /*stream=*/nullptr);
     } else {
       // TODO(tjagtap) [PH2][P4] : The RFC does not say anything about what
       // should happen if we receive an unsolicited SETTINGS ACK. Decide if we
@@ -956,30 +957,36 @@ void Http2ClientTransport::ActOnFlowControlAction(
 ///////////////////////////////////////////////////////////////////////////////
 // Write Related Promises and Promise Factories
 
-auto Http2ClientTransport::WriteControlFrames() {
+auto Http2ClientTransport::ProcessAndWriteControlFrames() {
   SliceBuffer output_buf;
   if (is_first_write_) {
+    // RFC9113: That is, the connection preface starts with the string
+    // "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
+    // This sequence MUST be followed by a SETTINGS frame, which MAY be empty.
     GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteControlFrames "
                               "GRPC_CHTTP2_CLIENT_CONNECT_STRING";
     output_buf.Append(
         Slice::FromCopiedString(GRPC_CHTTP2_CLIENT_CONNECT_STRING));
-    is_first_write_ = false;
-    //  SETTINGS MUST be the first frame to be written onto a connection as per
-    //  RFC9113.
     MaybeGetSettingsAndSettingsAckFrames(flow_control_, settings_,
                                          transport_settings_, output_buf);
+    SpawnGuardedTransportParty("ReadLoop", UntilTransportClosed(ReadLoop()));
+    is_first_write_ = false;
   }
 
   // Order of Control Frames is important.
   // 1. GOAWAY - This is first because if this is the final GoAway, then we may
   //             not need to send anything else to the peer.
-  // 2. SETTINGS
+  // 2. SETTINGS and SETTINGS ACK
   // 3. PING and PING acks.
   // 4. WINDOW_UPDATE
   // 5. Custom gRPC security frame
 
   goaway_manager_.MaybeGetSerializedGoawayFrame(output_buf);
-  if (!goaway_manager_.IsImmediateGoAway()) {
+  http2::Http2ErrorCode apply_status = settings_.ApplyIncomingSettings(
+      pending_incoming_settings_.TakePendingSettings());
+  if (!goaway_manager_.IsImmediateGoAway() &&
+      apply_status == http2::Http2ErrorCode::kNoError) {
+    EnforceLatestIncomingSettings();
     MaybeGetSettingsAndSettingsAckFrames(flow_control_, settings_,
                                          transport_settings_, output_buf);
     ping_manager_.MaybeGetSerializedPingFrames(output_buf,
@@ -988,17 +995,24 @@ auto Http2ClientTransport::WriteControlFrames() {
   }
   const uint64_t buffer_length = output_buf.Length();
   ztrace_collector_->Append(PromiseEndpointWriteTrace{buffer_length});
-  GRPC_HTTP2_CLIENT_DLOG
-      << "Http2ClientTransport WriteControlFrames Writing buffer of size "
-      << buffer_length << " to endpoint";
-  return AssertResultType<absl::Status>(If(
-      buffer_length > 0,
-      [self = RefAsSubclass<Http2ClientTransport>(),
-       output_buf = std::move(output_buf)]() mutable {
-        return self->endpoint_.Write(std::move(output_buf),
-                                     PromiseEndpoint::WriteArgs{});
-      },
-      []() { return ImmediateOkStatus(); }));
+  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteControlFrames Size : "
+                         << buffer_length;
+  return AssertResultType<absl::Status>(
+      If((buffer_length > 0 && apply_status == http2::Http2ErrorCode::kNoError),
+         [self = RefAsSubclass<Http2ClientTransport>(),
+          output_buf = std::move(output_buf)]() mutable {
+           return self->endpoint_.Write(std::move(output_buf),
+                                        PromiseEndpoint::WriteArgs{});
+         },
+         [self = RefAsSubclass<Http2ClientTransport>(), apply_status]() {
+           if (apply_status != http2::Http2ErrorCode::kNoError) {
+             return self->HandleError(
+                 std::nullopt,
+                 Http2Status::Http2ConnectionError(
+                     apply_status, "Failed to apply incoming settings"));
+           }
+           return absl::OkStatus();
+         }));
 }
 
 void Http2ClientTransport::NotifyControlFramesWriteDone() {
@@ -1144,17 +1158,19 @@ auto Http2ClientTransport::MultiplexerLoop() {
           // WriteControlFrames() to indicate if we should do a separate write
           // for the queued control frames or send the queued frames with the
           // data frames(if any).
-          return Map(self->WriteControlFrames(), [self](absl::Status status) {
-            if (GPR_UNLIKELY(!status.ok())) {
-              GRPC_HTTP2_CLIENT_DLOG
-                  << "Http2ClientTransport MultiplexerLoop Failed to "
-                     "write control frames with status: "
-                  << status;
-              return status;
-            }
-            self->NotifyControlFramesWriteDone();
-            return absl::OkStatus();
-          });
+          return Map(
+              self->ProcessAndWriteControlFrames(),
+              [self](absl::Status status) {
+                if (GPR_UNLIKELY(!status.ok())) {
+                  GRPC_HTTP2_CLIENT_DLOG
+                      << "Http2ClientTransport MultiplexerLoop Failed to "
+                         "write control frames with status: "
+                      << status;
+                  return status;
+                }
+                self->NotifyControlFramesWriteDone();
+                return absl::OkStatus();
+              });
         },
         [self]() -> absl::StatusOr<std::vector<Http2Frame>> {
           std::vector<Http2Frame> frames;
@@ -1312,12 +1328,12 @@ void Http2ClientTransport::MaybeSpawnWaitForSettingsTimeout() {
   // Settings class.
   // TODO(tjagtap) [PH2][P1][Settings] Add more DCHECKs to the new settings
   // class.
-  if (transport_settings_.ShouldSpawnTimeoutWaiter()) {
+  if (transport_settings_->ShouldSpawnTimeoutWaiter()) {
     GRPC_HTTP2_CLIENT_DLOG
         << "Http2ClientTransport::MaybeSpawnWaitForSettingsTimeout Spawning";
     settings_.SetPreviousSettingsPromiseResolved(false);
     general_party_->Spawn("WaitForSettingsTimeout",
-                          transport_settings_.WaitForSettingsTimeout(),
+                          transport_settings_->WaitForSettingsTimeout(),
                           WaitForSettingsTimeoutOnDone());
   }
 }
@@ -1369,6 +1385,7 @@ Http2ClientTransport::Http2ClientTransport(
           endpoint.GetEventEngineEndpoint(), channel_args)),
       event_engine_(std::move(event_engine)),
       endpoint_(std::move(endpoint)),
+      transport_settings_(MakeRefCounted<SettingsTimeoutManager>()),
       next_stream_id_(/*Initial Stream ID*/ 1),
       should_reset_ping_clock_(false),
       is_first_write_(true),
@@ -1441,7 +1458,7 @@ Http2ClientTransport::Http2ClientTransport(
     encoder_.SetMaxUsableSize(max_hpack_table_size);
   }
 
-  transport_settings_.SetSettingsTimeout(channel_args, keepalive_timeout_);
+  transport_settings_->SetSettingsTimeout(channel_args, keepalive_timeout_);
 
   if (settings_.local().allow_security_frame()) {
     // TODO(tjagtap) : [PH2][P3] : Setup the plumbing to pass the security frame
@@ -1450,16 +1467,18 @@ Http2ClientTransport::Http2ClientTransport(
     // allow_security_frame too.
   }
 
-  // Spawn a promise to flush the gRPC initial connection string and settings
-  // frames.
-  SpawnGuardedTransportParty("FlushInitialFrames", TriggerWriteCycle());
-  SpawnGuardedTransportParty("ReadLoop", UntilTransportClosed(ReadLoop()));
-  SpawnGuardedTransportParty("MultiplexerLoop",
-                             UntilTransportClosed(MultiplexerLoop()));
+  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor End";
+}
+
+void Http2ClientTransport::SpawnTransportLoops() {
+  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::SpawnTransportLoops Begin";
   SpawnGuardedTransportParty(
       "FlowControlPeriodicUpdateLoop",
       UntilTransportClosed(FlowControlPeriodicUpdateLoop()));
-  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor End";
+  SpawnGuardedTransportParty("FlushInitialFrames", TriggerWriteCycle());
+  SpawnGuardedTransportParty("MultiplexerLoop",
+                             UntilTransportClosed(MultiplexerLoop()));
+  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::SpawnTransportLoops End";
 }
 
 // This function MUST be idempotent. This function MUST be called from the
@@ -1772,7 +1791,6 @@ Http2ClientTransport::~Http2ClientTransport() {
   GRPC_DCHECK(general_party_ == nullptr);
   GRPC_DCHECK(on_receive_settings_ == nullptr);
   memory_owner_.Reset();
-  SourceDestructing();
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Destructor End";
 }
 
@@ -1898,9 +1916,13 @@ std::optional<RefCountedPtr<Stream>> Http2ClientTransport::MakeStream(
     // TODO(akshitpatel) : [PH2][P3] : Remove this mutex once settings is in
     // place.
     MutexLock lock(&transport_mutex_);
+    // TODO(tjagtap) : [PH2][P1][Settings] : Accessing settings here is causing
+    // a data race. Since plumbing for allow_true_binary_metadata is not yet
+    // complete, passing true now. We need to find a way to avoid data race.
     stream = MakeRefCounted<Stream>(
-        call_handler, settings_.peer().allow_true_binary_metadata(),
-        settings_.acked().allow_true_binary_metadata(), flow_control_);
+        call_handler, /* settings_.peer().allow_true_binary_metadata() */ true,
+        /* settings_.acked().allow_true_binary_metadata() */ true,
+        flow_control_);
   }
   const bool on_done_added = SetOnDone(call_handler, stream);
   if (!on_done_added) return std::nullopt;

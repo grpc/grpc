@@ -228,14 +228,17 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
                   ->args
                   .GetObjectRef<grpc_event_engine::experimental::EventEngine>();
       // Http2ClientTransport does not take ownership of the channel args.
-      result_->transport = new http2::Http2ClientTransport(
-          std::move(promise_endpoint), (*result)->args, event_engine_ptr,
-          [self = RefAsSubclass<Chttp2Connector>()](
-              absl::StatusOr<uint32_t> max_concurrent_streams) {
-            self->OnReceiveSettings(max_concurrent_streams);
-          });
+      http2::Http2ClientTransport* client_transport =
+          new http2::Http2ClientTransport(
+              std::move(promise_endpoint), (*result)->args, event_engine_ptr,
+              [self = RefAsSubclass<Chttp2Connector>()](
+                  absl::StatusOr<uint32_t> max_concurrent_streams) {
+                self->OnReceiveSettings(max_concurrent_streams);
+              });
+      GRPC_DCHECK_NE(client_transport, nullptr);
+      result_->transport = client_transport;
       result_->channel_args = std::move((*result)->args);
-      GRPC_DCHECK_NE(result_->transport, nullptr);
+      client_transport->SpawnTransportLoops();
       timer_handle_ = event_engine_->RunAfter(
           args_.deadline - Timestamp::Now(),
           [self = RefAsSubclass<Chttp2Connector>()]() mutable {
