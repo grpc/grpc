@@ -19,6 +19,7 @@
 #include "src/cpp/ext/filters/census/server_call_tracer.h"
 
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpcpp/opencensus.h>
 #include <stdint.h>
@@ -47,6 +48,7 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/grpc_check.h"
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/measures.h"
@@ -113,6 +115,12 @@ class OpenCensusServerCallTracer : public grpc_core::ServerCallTracerInterface {
   // Please refer to `grpc_transport_stream_op_batch_payload` for details on
   // arguments.
   void RecordSendInitialMetadata(
+      grpc_metadata_batch* send_initial_metadata) override {
+    GRPC_CHECK(
+        !grpc_core::IsCallTracerSendInitialMetadataIsAnAnnotationEnabled());
+    MutateSendInitialMetadata(send_initial_metadata);
+  }
+  void MutateSendInitialMetadata(
       grpc_metadata_batch* /*send_initial_metadata*/) override {}
 
   void RecordSendTrailingMetadata(
@@ -167,6 +175,13 @@ class OpenCensusServerCallTracer : public grpc_core::ServerCallTracerInterface {
   }
 
   void RecordAnnotation(const Annotation& annotation) override {
+    if (annotation.type() == grpc_core::CallTracerAnnotationInterface::
+                                 AnnotationType::kSendInitialMetadata) {
+      // Census does not have any immutable tracing for send initial metadata.
+      // All Census work for send initial metadata is mutation, which is handled
+      // in MutateSendInitialMetadata.
+      return;
+    }
     if (!context_.Span().IsRecording()) {
       return;
     }

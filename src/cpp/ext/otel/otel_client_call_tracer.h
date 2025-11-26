@@ -75,6 +75,8 @@ class OpenTelemetryPluginImpl::ClientCallTracerInterface
 
     void RecordSendInitialMetadata(
         grpc_metadata_batch* send_initial_metadata) override;
+    void MutateSendInitialMetadata(
+        grpc_metadata_batch* send_initial_metadata) override;
     void RecordSendTrailingMetadata(
         grpc_metadata_batch* /*send_trailing_metadata*/) override {}
     void RecordSendMessage(const grpc_core::Message& send_message) override;

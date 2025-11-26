@@ -1696,6 +1696,7 @@ grpc_cc_library(
         "//src/core:telemetry/call_tracer.h",
     ],
     external_deps = [
+        "absl/functional:function_ref",
         "absl/status",
         "absl/strings",
     ],
@@ -1707,6 +1708,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:context",
         "//src/core:error",
+        "//src/core:experiments",
         "//src/core:grpc_check",
         "//src/core:message",
         "//src/core:metadata_batch",

@@ -26,6 +26,12 @@ namespace {
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const
+    description_call_tracer_send_initial_metadata_is_an_annotation =
+        "Use the new annotation-based CallTracer API.";
+const char* const
+    additional_constraints_call_tracer_send_initial_metadata_is_an_annotation =
+        "{}";
 const char* const description_channelz_use_v2_for_v1_api =
     "Use the v2 channelz API for the v1 channelz API.";
 const char* const additional_constraints_channelz_use_v2_for_v1_api = "{}";
@@ -232,6 +238,10 @@ namespace grpc_core {
 const ExperimentMetadata g_experiment_metadata[] = {
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
+    {"call_tracer_send_initial_metadata_is_an_annotation",
+     description_call_tracer_send_initial_metadata_is_an_annotation,
+     additional_constraints_call_tracer_send_initial_metadata_is_an_annotation,
+     nullptr, 0, false, true},
     {"channelz_use_v2_for_v1_api", description_channelz_use_v2_for_v1_api,
      additional_constraints_channelz_use_v2_for_v1_api, nullptr, 0, false,
      true},
@@ -393,6 +403,12 @@ namespace {
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const
+    description_call_tracer_send_initial_metadata_is_an_annotation =
+        "Use the new annotation-based CallTracer API.";
+const char* const
+    additional_constraints_call_tracer_send_initial_metadata_is_an_annotation =
+        "{}";
 const char* const description_channelz_use_v2_for_v1_api =
     "Use the v2 channelz API for the v1 channelz API.";
 const char* const additional_constraints_channelz_use_v2_for_v1_api = "{}";
@@ -599,6 +615,10 @@ namespace grpc_core {
 const ExperimentMetadata g_experiment_metadata[] = {
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
+    {"call_tracer_send_initial_metadata_is_an_annotation",
+     description_call_tracer_send_initial_metadata_is_an_annotation,
+     additional_constraints_call_tracer_send_initial_metadata_is_an_annotation,
+     nullptr, 0, false, true},
     {"channelz_use_v2_for_v1_api", description_channelz_use_v2_for_v1_api,
      additional_constraints_channelz_use_v2_for_v1_api, nullptr, 0, false,
      true},
@@ -760,6 +780,12 @@ namespace {
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const
+    description_call_tracer_send_initial_metadata_is_an_annotation =
+        "Use the new annotation-based CallTracer API.";
+const char* const
+    additional_constraints_call_tracer_send_initial_metadata_is_an_annotation =
+        "{}";
 const char* const description_channelz_use_v2_for_v1_api =
     "Use the v2 channelz API for the v1 channelz API.";
 const char* const additional_constraints_channelz_use_v2_for_v1_api = "{}";
@@ -966,6 +992,10 @@ namespace grpc_core {
 const ExperimentMetadata g_experiment_metadata[] = {
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
+    {"call_tracer_send_initial_metadata_is_an_annotation",
+     description_call_tracer_send_initial_metadata_is_an_annotation,
+     additional_constraints_call_tracer_send_initial_metadata_is_an_annotation,
+     nullptr, 0, false, true},
     {"channelz_use_v2_for_v1_api", description_channelz_use_v2_for_v1_api,
      additional_constraints_channelz_use_v2_for_v1_api, nullptr, 0, false,
      true},
