@@ -14,13 +14,10 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test")
 
-package(
-    default_applicable_licenses = ["//:license"],
-    features = [
-        "layering_check",
-        "parse_headers",
-    ],
-)
+package(features = [
+    "layering_check",
+    "parse_headers",
+])
 
 grpc_cc_library(
     name = "gen_stats_utils",
