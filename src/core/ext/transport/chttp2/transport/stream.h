@@ -23,14 +23,17 @@
 
 #include <cstdint>
 #include <limits>
+#include <string>
 #include <utility>
 
 #include "src/core/call/call_spine.h"
 #include "src/core/call/message.h"
 #include "src/core/call/metadata.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
+#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/header_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
 #include "src/core/util/grpc_check.h"
@@ -134,7 +137,7 @@ struct Stream : public RefCounted<Stream> {
   auto DequeueFrames(const uint32_t transport_tokens,
                      const uint32_t max_frame_length,
                      HPackCompressor& encoder) {
-    HttpStreamState state = GetStreamState();
+    HttpStreamState state = stream_state;
     // Reset stream MUST not be sent if the stream is idle or closed.
     // TODO(tjagtap) : [PH2][P1][FlowControl] : Populate the correct stream flow
     // control tokens.
@@ -215,7 +218,12 @@ struct Stream : public RefCounted<Stream> {
     }
   }
 
-  inline HttpStreamState GetStreamState() const { return stream_state; }
+  inline bool IsStreamIdle() const {
+    return stream_state == HttpStreamState::kIdle;
+  }
+  inline bool IsStreamHalfClosedRemote() const {
+    return stream_state == HttpStreamState::kHalfClosedRemote;
+  }
   inline uint32_t GetStreamId() const { return stream_id; }
 
   inline bool IsClosedForWrites() const { return is_write_closed; }
@@ -224,6 +232,20 @@ struct Stream : public RefCounted<Stream> {
   inline bool CanSendWindowUpdateFrames() const {
     return stream_state == HttpStreamState::kOpen ||
            stream_state == HttpStreamState::kHalfClosedLocal;
+  }
+
+  inline Http2Status CanStreamReceiveDataFrames() const {
+    if (IsStreamHalfClosedRemote()) {
+      return Http2Status::Http2StreamError(
+          Http2ErrorCode::kStreamClosed,
+          std::string(RFC9113::kHalfClosedRemoteState));
+    }
+    if (!did_receive_initial_metadata || did_receive_trailing_metadata) {
+      return Http2Status::Http2StreamError(
+          Http2ErrorCode::kStreamClosed,
+          std::string(GrpcErrors::kOutOfOrderDataFrame));
+    }
+    return Http2Status::Ok();
   }
 
   void MaybePushServerTrailingMetadata(ServerMetadataHandle&& metadata) {

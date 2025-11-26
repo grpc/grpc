@@ -386,7 +386,10 @@ inline constexpr uint32_t kHttp2InitialWindowSize = 65535u;
 namespace GrpcErrors {
 inline constexpr absl::string_view kTooManyMetadata =
     "gRPC Error : A gRPC server can send upto 1 initial metadata followed by "
-    "upto 1 trailing metadata";
+    "upto 1 trailing metadata.";
+inline constexpr absl::string_view kOutOfOrderDataFrame =
+    "gRPC Error : DATA frames must follow initial metadata and precede "
+    "trailing metadata.";
 }  // namespace GrpcErrors
 
 }  // namespace grpc_core
