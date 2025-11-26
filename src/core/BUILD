@@ -30,6 +30,7 @@ package(
     default_visibility = ["//:__subpackages__"],
     features = [
         "layering_check",
+        "parse_headers",
     ],
 )
 
@@ -2984,6 +2985,8 @@ grpc_cc_library(
     srcs = ["lib/event_engine/windows/native_windows_dns_resolver.cc"],
     hdrs = ["lib/event_engine/windows/native_windows_dns_resolver.h"],
     external_deps = [
+        "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
     ],
@@ -8246,8 +8249,9 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:function_ref",
-        "absl/log:check",
         "absl/log",
+        "absl/log:check",
+        "absl/status",
         "absl/strings",
     ],
     deps = [
@@ -8260,7 +8264,9 @@ grpc_cc_library(
         "http2_settings_manager",
         "http2_status",
         "poll",
+        "promise_status",
         "race",
+        "ref_counted",
         "seq",
         "sleep",
         "time",
@@ -8268,6 +8274,8 @@ grpc_cc_library(
         "useful",
         "//:chttp2_frame",
         "//:gpr_platform",
+        "//:promise",
+        "//:ref_counted_ptr",
     ],
 )
 
@@ -8609,6 +8617,7 @@ grpc_cc_library(
         "header_assembler",
         "http2_settings",
         "http2_settings_manager",
+        "http2_settings_promises",
         "http2_status",
         "loop",
         "map",

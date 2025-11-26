@@ -14,7 +14,13 @@
 
 load("@rules_python//python:defs.bzl", "py_library")
 
-package(default_visibility = ["//src/python/grpcio_csds:__subpackages__"])
+package(
+    default_visibility = ["//src/python/grpcio_csds:__subpackages__"],
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 _XDS_PROTO_DIRECTORIES = [
     "contrib",

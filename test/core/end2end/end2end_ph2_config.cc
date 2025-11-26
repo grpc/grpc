@@ -51,6 +51,27 @@ class Ph2InsecureFixture : public InsecureFixture {
   }
 };
 
+// This macro defines a set of cancellation and deadline tests that are
+// frequently broken and have been temporarily disabled. Grouping them here
+// allows them to be added to the GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST
+// list easily.
+#define CANCEL_SUITE                        \
+  "|CoreEnd2endTests.CancelAfterAccept"     \
+  "|CoreEnd2endTests.CancelAfterClientDone" \
+  "|CoreEnd2endTests.CancelAfterInvoke3"    \
+  "|CoreEnd2endTests.CancelAfterInvoke4"    \
+  "|CoreEnd2endTests.CancelAfterInvoke5"    \
+  "|CoreEnd2endTests.CancelAfterInvoke6"    \
+  "|CoreEnd2endTests.CancelAfterRoundTrip"  \
+  "|CoreEnd2endTests.CancelWithStatus1"     \
+  "|CoreEnd2endTests.CancelWithStatus2"     \
+  "|CoreEnd2endTests.CancelWithStatus3"     \
+  "|CoreEnd2endTests.CancelWithStatus4"     \
+  "|CoreDeadlineTests.DeadlineAfterInvoke3" \
+  "|CoreDeadlineTests.DeadlineAfterInvoke4" \
+  "|CoreDeadlineTests.DeadlineAfterInvoke5" \
+  "|CoreDeadlineTests.DeadlineAfterInvoke6"
+
 #define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST                         \
   "CoreClientChannelTests.DeadlineAfterAcceptWithServiceConfig"                \
   "|CoreClientChannelTests.DeadlineAfterRoundTripWithServiceConfig"            \
