@@ -224,6 +224,7 @@ void Http2ClientTransport::Orphan() {
   // Accessing general_party here is not advisable. It may so happen that
   // the party is already freed/may free up any time. The only guarantee here
   // is that the transport is still valid.
+  SourceDestructing();
   MaybeSpawnCloseTransport(
       ToHttpOkOrConnError(absl::UnavailableError("Orphaned")));
   Unref();
@@ -1790,7 +1791,6 @@ Http2ClientTransport::~Http2ClientTransport() {
   GRPC_DCHECK(general_party_ == nullptr);
   GRPC_DCHECK(on_receive_settings_ == nullptr);
   memory_owner_.Reset();
-  SourceDestructing();
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Destructor End";
 }
 
