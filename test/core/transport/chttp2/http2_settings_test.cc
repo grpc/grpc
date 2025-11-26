@@ -653,8 +653,7 @@ TEST(Http2SettingsManagerTest, NoAckNeededInitially) {
 TEST(Http2SettingsManagerTest, AckNeededAfterEmptySettings) {
   // If we receive an empty SETTINGS frame, we should send an ACK.
   Http2SettingsManager settings_manager;
-  EXPECT_EQ(settings_manager.ApplyIncomingSettings({}),
-            Http2ErrorCode::kNoError);
+  settings_manager.OnSettingsReceived();
   EXPECT_EQ(settings_manager.MaybeSendAck(), 1u);
   EXPECT_EQ(settings_manager.MaybeSendAck(), 0u);
 }
@@ -665,8 +664,7 @@ TEST(Http2SettingsManagerTest, AckNeededAfterValidSettings) {
   std::vector<Http2SettingsFrame::Setting> settings = {
       {Http2Settings::kHeaderTableSizeWireId, 1000},
       {Http2Settings::kMaxConcurrentStreamsWireId, 200}};
-  EXPECT_EQ(settings_manager.ApplyIncomingSettings(settings),
-            Http2ErrorCode::kNoError);
+  settings_manager.OnSettingsReceived();
   EXPECT_EQ(settings_manager.MaybeSendAck(), 1u);
   EXPECT_EQ(settings_manager.MaybeSendAck(), 0u);
 }
@@ -675,10 +673,8 @@ TEST(Http2SettingsManagerTest, MultipleAcksNeeded) {
   // If we receive multiple SETTINGS frames before sending an ACK,
   // we should send an ACK for each.
   Http2SettingsManager settings_manager;
-  EXPECT_EQ(settings_manager.ApplyIncomingSettings({}),
-            Http2ErrorCode::kNoError);
-  EXPECT_EQ(settings_manager.ApplyIncomingSettings({}),
-            Http2ErrorCode::kNoError);
+  settings_manager.OnSettingsReceived();
+  settings_manager.OnSettingsReceived();
   EXPECT_EQ(settings_manager.MaybeSendAck(), 2u);
   EXPECT_EQ(settings_manager.MaybeSendAck(), 0u);
 }

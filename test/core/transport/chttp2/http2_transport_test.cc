@@ -208,8 +208,7 @@ TEST(Http2CommonTransportTest,
   output_buf.Clear();
   output_buf.Append(Slice::FromCopiedString("hello"));
   for (int i = 0; i < 5; ++i) {
-    EXPECT_EQ(settings_manager.ApplyIncomingSettings({}),
-              http2::Http2ErrorCode::kNoError);
+    settings_manager.OnSettingsReceived();
   }
 
   MaybeGetSettingsAndSettingsAckFrames(transport_flow_control, settings_manager,
@@ -307,8 +306,7 @@ TEST(Http2CommonTransportTest, MaybeGetSettingsAndSettingsAckFramesWithAck) {
   // MaybeGetSettingsAndSettingsAckFrames appends to it and does not overwrite
   // it, i.e. the original contents of output_buf are not erased.
   output_buf.Append(Slice::FromCopiedString("hello"));
-  EXPECT_EQ(settings_manager.ApplyIncomingSettings({}),
-            http2::Http2ErrorCode::kNoError);
+  settings_manager.OnSettingsReceived();
   MaybeGetSettingsAndSettingsAckFrames(transport_flow_control, settings_manager,
                                        timeout_manager, output_buf);
   EXPECT_TRUE(timeout_manager->ShouldSpawnTimeoutWaiter());

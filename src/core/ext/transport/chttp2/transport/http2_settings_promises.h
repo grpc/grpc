@@ -24,6 +24,8 @@
 #include <algorithm>
 #include <optional>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -45,7 +47,8 @@ namespace grpc_core {
 // Timeout for getting an ack back on settings changes
 #define GRPC_ARG_SETTINGS_TIMEOUT "grpc.http2.settings_timeout"
 
-#define GRPC_SETTINGS_TIMEOUT_DLOG DLOG(INFO)
+#define GRPC_SETTINGS_TIMEOUT_DLOG \
+  DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
 
 // This class can only be used only from a promise based HTTP2 transports
 // general_party_ .
@@ -181,6 +184,33 @@ class SettingsTimeoutManager : public RefCounted<SettingsTimeoutManager> {
   bool did_register_waker_ = false;
   int number_of_acks_unprocessed_ = 0;
   bool should_spawn_settings_timeout_ = false;
+};
+
+class PendingIncomingSettings {
+  // TODO(tjagtap) [PH2][P1][Settings] : Add new DCHECKs
+  // TODO(tjagtap) [PH2][P1][Settings] : Refactor full class
+ public:
+  PendingIncomingSettings() = default;
+  ~PendingIncomingSettings() = default;
+  PendingIncomingSettings(const PendingIncomingSettings&) = delete;
+  PendingIncomingSettings& operator=(const PendingIncomingSettings&) = delete;
+  PendingIncomingSettings(PendingIncomingSettings&&) = delete;
+  PendingIncomingSettings& operator=(PendingIncomingSettings&&) = delete;
+
+  void AddSettingsToPendingList(
+      std::vector<Http2SettingsFrame::Setting>&& settings) {
+    settings_.reserve(settings_.size() + settings.size());
+    settings_.insert(settings_.end(), settings.begin(), settings.end());
+  };
+
+  std::vector<Http2SettingsFrame::Setting> TakePendingSettings() {
+    std::vector<Http2SettingsFrame::Setting> settings = std::move(settings_);
+    settings_.clear();
+    return settings;
+  }
+
+ private:
+  std::vector<Http2SettingsFrame::Setting> settings_;
 };
 
 }  // namespace grpc_core
