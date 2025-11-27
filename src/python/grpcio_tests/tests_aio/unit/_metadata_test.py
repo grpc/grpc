@@ -147,10 +147,14 @@ class TestTypeMetadata(unittest.TestCase):
         self.assertEqual(metadata.get_all("key"), ["value", "second value"])
 
         with self.assertRaises(ValueError):
-            metadata.append(("invalid_key", "invalid_value1", "invalid_value2"))
+            metadata.append(
+                ("invalid_key", "invalid_value1", "invalid_value2")
+            )  # pytype: disable=wrong-arg-types
 
         with self.assertRaises(ValueError):
-            metadata.append(["invalid_key_in_list", "invalid_value_in_list"])
+            metadata.append(
+                ["invalid_key_in_list", "invalid_value_in_list"]
+            )  # pytype: disable=wrong-arg-types
 
     def test_container(self):
         metadata = Metadata(*self._MULTI_ENTRY_DATA)

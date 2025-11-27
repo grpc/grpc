@@ -127,15 +127,17 @@ class Metadata(abc.Collection):  # noqa: PLW1641
     def get(
         self, key: MetadataKey, default: MetadataValue = None
     ) -> Optional[MetadataValue]:
-        """Get all the values associated with an existing key or the supplied default value if the key doesn't exist"""
+        """Get all the values associated with an existing key or the supplied
+        default value if the key doesn't exist
+        """
         try:
             return self[key]
         except KeyError:
             return default
 
     def get_all(self, key: MetadataKey) -> List[MetadataValue]:
-        """For compatibility with other Metadata abstraction objects (like in Java),
-        this would return all items under the desired <key>.
+        """For compatibility with other Metadata abstraction objects (like in
+        Java), this would return all items under the desired <key>.
         """
         return self._metadata.get(key, [])
 
