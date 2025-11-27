@@ -19,8 +19,6 @@
 
 #include <optional>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/util/validation_errors.h"
@@ -28,6 +26,8 @@
 #include "src/core/xds/grpc/xds_http_filter.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "upb/reflection/def.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -52,6 +52,9 @@ class XdsHttpGcpAuthnFilter final : public XdsHttpFilterImpl {
       const FilterConfig* filter_config_override) const override;
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
       const FilterConfig& hcm_filter_config) const override;
+  void UpdateBlackboard(const FilterConfig& hcm_filter_config,
+                        const Blackboard* old_blackboard,
+                        Blackboard* new_blackboard) const override;
   bool IsSupportedOnClients() const override { return true; }
   bool IsSupportedOnServers() const override { return false; }
 };

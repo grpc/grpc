@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/credentials/transport/composite")
+grpc_package(
+    name = "test/core/credentials/transport/composite",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "composite_credentials_test",
@@ -27,6 +33,8 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:grpc_security_base",
+        "//src/core:grpc_fake_credentials",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:test_call_creds",
     ],

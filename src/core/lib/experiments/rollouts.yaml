@@ -62,17 +62,27 @@
   default: true
 - name: event_engine_secure_endpoint
   default: true
+- name: fail_recv_metadata_on_deadline_exceeded
+  default: false
 - name: free_large_allocator
   default: false
+- name: fuse_filters
+  default: false
+- name: graceful_external_connection_failure
+  default: true
 - name: keep_alive_ping_timer_batch
   default: false
 - name: local_connector_secure
   default: false
+- name: max_age_filter_float_to_top
+  default: true
 - name: max_inflight_pings_strict_limit
   default: true
 - name: monitoring_experiment
   default: true
 - name: pollset_alternative
+  default: false
+- name: prioritize_finished_requests
   default: false
 - name: promise_based_http2_client_transport
   default: false
@@ -80,15 +90,19 @@
   default: false
 - name: schedule_cancellation_over_write
   default: false
-- name: server_global_callbacks_ownership
+- name: skip_clear_peer_on_cancellation
   default: false
-- name: shard_global_connection_pool
-  default: true
 - name: sleep_promise_exec_ctx_removal
+  default: false
+- name: sleep_use_non_owning_waker
   default: false
 - name: tcp_frame_size_tuning
   default: false
 - name: tcp_rcv_lowat
+  default: false
+- name: track_writes_in_resource_quota
+  default: false
+- name: track_zero_copy_allocations_in_resource_quota
   default: false
 - name: tsi_frame_protector_without_locks
   default: false

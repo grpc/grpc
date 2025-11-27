@@ -22,19 +22,19 @@ module(
 # Regular dependencies
 # ====================
 
-bazel_dep(name = "abseil-cpp", version = "20250127.1", repo_name = "com_google_absl")
+bazel_dep(name = "abseil-cpp", version = "20250512.1", repo_name = "com_google_absl")
 bazel_dep(name = "apple_support", version = "1.17.1", repo_name = "build_bazel_apple_support")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "boringssl", version = "0.20241024.0")  # mistmatched 20241211
 bazel_dep(name = "c-ares", version = "1.19.1", repo_name = "com_github_cares_cares")
 bazel_dep(name = "envoy_api", version = "0.0.0-20250128-4de3c74")
 bazel_dep(name = "googleapis", version = "0.0.0-20240819-fe8ba054a", repo_name = "com_google_googleapis")
-bazel_dep(name = "googletest", version = "1.16.0", repo_name = "com_google_googletest")
-bazel_dep(name = "opencensus-cpp", version = "0.0.0-20230502-50eb5de", repo_name = "io_opencensus_cpp")
+bazel_dep(name = "googletest", version = "1.17.0", repo_name = "com_google_googletest")
+bazel_dep(name = "opencensus-cpp", version = "0.0.0-20230502-50eb5de.bcr.2", repo_name = "io_opencensus_cpp")
 bazel_dep(name = "openssl", version = "3.3.1.bcr.1")
 bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opentelemetry_cpp")
 bazel_dep(name = "platforms", version = "0.0.10")
-bazel_dep(name = "protobuf", version = "30.0", repo_name = "com_google_protobuf")
+bazel_dep(name = "protobuf", version = "31.1", repo_name = "com_google_protobuf")
 bazel_dep(name = "protoc-gen-validate", version = "1.2.1.bcr.1", repo_name = "com_envoyproxy_protoc_gen_validate")  # Not needed directly
 bazel_dep(name = "re2", version = "2024-07-02", repo_name = "com_googlesource_code_re2")  # mistmached 2022-04-01
 bazel_dep(name = "rules_apple", version = "3.16.0", repo_name = "build_bazel_rules_apple")
@@ -60,15 +60,15 @@ bazel_dep(name = "rules_shell", version = "0.4.0", dev_dependency = True)
 # Python dependencies
 # ===================
 
-bazel_dep(name = "rules_python", version = "0.37.1")
+bazel_dep(name = "rules_python", version = "1.5.4")
 
 PYTHON_VERSIONS = [
-    "3.8",
     "3.9",
     "3.10",
     "3.11",
     "3.12",
     "3.13",
+    "3.14.0b2",
 ]
 
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
@@ -95,3 +95,13 @@ pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 use_repo(pip, "grpc_python_dependencies")
 
 bazel_dep(name = "cython", version = "3.0.11-1")
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "typing_extensions",
+    build_file = "//third_party:typing_extensions.BUILD",
+    sha256 = "bf6f56b36d8bc9156e518eb1cc37a146284082fa53522033f772aefbecfd15fc",
+    strip_prefix = "typing_extensions-4.12.2",
+    url = "https://github.com/python/typing_extensions/archive/4.12.2.tar.gz",
+)

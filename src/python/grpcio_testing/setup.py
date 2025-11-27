@@ -18,14 +18,13 @@ import sys
 
 import setuptools
 
-_PACKAGE_PATH = os.path.realpath(os.path.dirname(__file__))
-_README_PATH = os.path.join(_PACKAGE_PATH, "README.rst")
-
-# Ensure we're in the proper directory whether or not we're being used by pip.
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
+# Manually insert the source directory into the Python path for local module
+# imports to succeed
+sys.path.insert(0, os.path.abspath("."))
 
 # Break import style to ensure that we can find same-directory modules.
 import grpc_version
+import python_version
 
 
 class _NoOpCommand(setuptools.Command):
@@ -44,12 +43,8 @@ class _NoOpCommand(setuptools.Command):
         pass
 
 
-PACKAGE_DIRECTORIES = {
-    "": ".",
-}
-
 INSTALL_REQUIRES = (
-    "protobuf>=6.30.0,<7.0.0",
+    "protobuf>=6.31.1,<7.0.0",
     "grpcio>={version}".format(version=grpc_version.VERSION),
 )
 
@@ -67,17 +62,15 @@ except ImportError:
         "preprocess": _NoOpCommand,
     }
 
-setuptools.setup(
-    name="grpcio-testing",
-    version=grpc_version.VERSION,
-    license="Apache License 2.0",
-    description="Testing utilities for gRPC Python",
-    long_description=open(_README_PATH, "r").read(),
-    author="The gRPC Authors",
-    author_email="grpc-io@googlegroups.com",
-    url="https://grpc.io",
-    package_dir=PACKAGE_DIRECTORIES,
-    packages=setuptools.find_packages("."),
-    install_requires=INSTALL_REQUIRES,
-    cmdclass=COMMAND_CLASS,
-)
+CLASSIFIERS = [
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+
+if __name__ == "__main__":
+    setuptools.setup(
+        python_requires=f">={python_version.MIN_PYTHON_VERSION}",
+        install_requires=INSTALL_REQUIRES,
+        cmdclass=COMMAND_CLASS,
+        classifiers=CLASSIFIERS,
+    )

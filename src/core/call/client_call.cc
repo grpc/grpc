@@ -39,9 +39,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/metadata.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/promise/all_ok.h"
@@ -54,9 +51,12 @@
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/latent_see.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -120,14 +120,14 @@ ClientCall::ClientCall(grpc_call*, uint32_t, grpc_completion_queue* cq,
       reinterpret_cast<void*>(static_cast<uintptr_t>(registered_method)));
   if (deadline != Timestamp::InfFuture()) {
     send_initial_metadata_->Set(GrpcTimeoutMetadata(), deadline);
-    UpdateDeadline(deadline);
+    UpdateDeadline(deadline).IgnoreError();
   }
 }
 
 grpc_call_error ClientCall::StartBatch(const grpc_op* ops, size_t nops,
                                        void* notify_tag,
                                        bool is_notify_tag_closure) {
-  GRPC_LATENT_SEE_PARENT_SCOPE("ClientCall::StartBatch");
+  GRPC_LATENT_SEE_SCOPE("ClientCall::StartBatch");
   if (nops == 0) {
     EndOpImmediately(cq_, notify_tag, is_notify_tag_closure);
     return GRPC_CALL_OK;
@@ -183,7 +183,7 @@ void ClientCall::CancelWithError(grpc_error_handle error) {
 
 template <typename Batch>
 void ClientCall::ScheduleCommittedBatch(Batch batch) {
-  GRPC_LATENT_SEE_INNER_SCOPE("ClientCall::ScheduleCommittedBatch");
+  GRPC_LATENT_SEE_SCOPE("ClientCall::ScheduleCommittedBatch");
   auto cur_state = call_state_.load(std::memory_order_acquire);
   while (true) {
     switch (cur_state) {
@@ -226,7 +226,7 @@ void ClientCall::ScheduleCommittedBatch(Batch batch) {
 
 Party::WakeupHold ClientCall::StartCall(
     const grpc_op& send_initial_metadata_op) {
-  GRPC_LATENT_SEE_INNER_SCOPE("ClientCall::StartCall");
+  GRPC_LATENT_SEE_SCOPE("ClientCall::StartCall");
   auto cur_state = call_state_.load(std::memory_order_acquire);
   CToMetadata(send_initial_metadata_op.data.send_initial_metadata.metadata,
               send_initial_metadata_op.data.send_initial_metadata.count,
@@ -279,7 +279,7 @@ bool ClientCall::StartCallMaybeUpdateState(uintptr_t& cur_state,
 
 void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                              bool is_notify_tag_closure) {
-  GRPC_LATENT_SEE_INNER_SCOPE("ClientCall::CommitBatch");
+  GRPC_LATENT_SEE_SCOPE("ClientCall::CommitBatch");
   if (nops == 1 && ops[0].op == GRPC_OP_SEND_INITIAL_METADATA) {
     StartCall(ops[0]);
     EndOpImmediately(cq_, notify_tag, is_notify_tag_closure);
@@ -376,7 +376,7 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
             [this, out_status, out_status_details, out_error_string,
              out_trailing_metadata]() {
               auto* status = cancel_status_.Get();
-              CHECK_NE(status, nullptr);
+              GRPC_CHECK_NE(status, nullptr);
               *out_status = static_cast<grpc_status_code>(status->code());
               *out_status_details =
                   Slice::FromCopiedString(status->message()).TakeCSlice();
@@ -445,9 +445,10 @@ grpc_call* MakeClientCall(grpc_call* parent_call, uint32_t propagation_mask,
                           grpc_compression_options compression_options,
                           RefCountedPtr<Arena> arena,
                           RefCountedPtr<UnstartedCallDestination> destination) {
-  DCHECK_NE(arena.get(), nullptr);
-  DCHECK_NE(arena->GetContext<grpc_event_engine::experimental::EventEngine>(),
-            nullptr);
+  GRPC_DCHECK_NE(arena.get(), nullptr);
+  GRPC_DCHECK_NE(
+      arena->GetContext<grpc_event_engine::experimental::EventEngine>(),
+      nullptr);
   return arena
       ->New<ClientCall>(parent_call, propagation_mask, cq, std::move(path),
                         std::move(authority), registered_method, deadline,

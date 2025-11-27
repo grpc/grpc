@@ -17,9 +17,9 @@
 
 #include <memory>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"  // IWYU pragma: keep
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/grpc_check.h"  // IWYU pragma: keep
+#include "absl/functional/any_invocable.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
@@ -39,7 +39,7 @@ CustomEventEngineFactory() {
 absl::AnyInvocable<
     std::shared_ptr<grpc_event_engine::experimental::EventEngine>(void)>
 CustomEventEngineFactory() {
-  CHECK(false) <<  "This tool was not built for Posix environments.");
+  GRPC_CHECK(false) <<  "This tool was not built for Posix environments.");
 }
 
 #endif

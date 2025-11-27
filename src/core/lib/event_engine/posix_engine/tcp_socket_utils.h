@@ -24,8 +24,8 @@
 #include <utility>
 
 #include "src/core/lib/iomgr/port.h"
-#include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/net/socket_mutator.h"
 #include "src/core/util/ref_counted_ptr.h"
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
@@ -46,7 +46,7 @@ namespace grpc_event_engine::experimental {
 struct PosixTcpOptions {
   static constexpr int kDefaultReadChunkSize = 8192;
   static constexpr int kDefaultMinReadChunksize = 256;
-  static constexpr int kDefaultMaxReadChunksize = 4 * 1024 * 1024;
+  static constexpr int kDefaultMaxReadChunksize = 64 * 1024;
   static constexpr int kZerocpTxEnabledDefault = 0;
   static constexpr int kMaxChunkSize = 32 * 1024 * 1024;
   static constexpr int kDefaultMaxSends = 4;

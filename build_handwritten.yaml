@@ -12,17 +12,18 @@ settings:
   '#08': Use "-preN" suffixes to identify pre-release versions
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
-  core_version: 48.0.0
+  core_version: 51.0.0
   csharp_major_version: 2
-  g_stands_for: gee
-  protobuf_version: 4.31.0
+  g_stands_for: gutsy
+  protobuf_version: 4.31.1
   supported_python_versions:
   - '3.9'
   - '3.10'
   - '3.11'
   - '3.12'
   - '3.13'
-  version: 1.74.0-dev
+  - '3.14'
+  version: 1.77.0-dev
 configs:
   asan:
     CC: clang
@@ -127,7 +128,7 @@ configs:
     CXX: clang++
     DEFINES: NDEBUG GRPC_UBSAN
     LD: clang++
-    LDFLAGS: -stdlib=libc++ -fsanitize=undefined,unsigned-integer-overflow
+    LDFLAGS: -stdlib=libc++ -fsanitize=undefined
     LDXX: clang++
     compile_the_world: true
     test_environ:
@@ -141,10 +142,12 @@ defaults:
   cares:
     CFLAGS: -g
     CPPFLAGS: -Ithird_party/cares/cares/include -Ithird_party/cares -Ithird_party/cares/cares
+      -Ithird_party/cares/cares/src/lib/include -Ithird_party/cares/cares/src/lib
       -fvisibility=hidden -D_GNU_SOURCE $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin)
       $(if $(subst FreeBSD,,$(SYSTEM)),,-Ithird_party/cares/config_freebsd) $(if $(subst
       Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux) $(if $(subst OpenBSD,,$(SYSTEM)),,-Ithird_party/cares/config_openbsd)
-      -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX $(if $(subst MINGW32,,$(SYSTEM)),-DHAVE_CONFIG_H,)
+      $(if $(subst MINGW32,,$(SYSTEM)),,-Ithird_party/cares/config_windows) -DWIN32_LEAN_AND_MEAN
+      -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DHAVE_CONFIG_H
   global:
     CFLAGS: -g
     COREFLAGS: -fno-exceptions

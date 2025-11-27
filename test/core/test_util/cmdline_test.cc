@@ -20,10 +20,10 @@
 
 #include <string.h>
 
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 #define LOG_TEST() LOG(INFO) << "test at " << __FILE__ << ":" << __LINE__
 

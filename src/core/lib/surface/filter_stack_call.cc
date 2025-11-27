@@ -37,12 +37,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/escaping.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -67,10 +61,16 @@
 #include "src/core/util/alloc.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/time_precise.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/escaping.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -110,8 +110,8 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
   arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       args->channel->event_engine());
   call = new (arena->Alloc(call_alloc_size)) FilterStackCall(arena, *args);
-  DCHECK(FromC(call->c_ptr()) == call);
-  DCHECK(FromCallStack(call->call_stack()) == call);
+  GRPC_DCHECK(FromC(call->c_ptr()) == call);
+  GRPC_DCHECK(FromCallStack(call->call_stack()) == call);
   *out_call = call->c_ptr();
   grpc_slice path = grpc_empty_slice();
   ScopedContext ctx(call);
@@ -148,25 +148,15 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
     // collecting from when the call is created at the transport. The idea is
     // that the transport would create the call tracer and pass it in as part of
     // the metadata.
-    // TODO(yijiem): OpenCensus and internal Census is still using this way to
-    // set server call tracer. We need to refactor them to stats plugins
-    // (including removing the client channel filters).
+    ServerCallTracerInterface* server_call_tracer_from_factory = nullptr;
     if (args->server != nullptr &&
         args->server->server_call_tracer_factory() != nullptr) {
-      auto* server_call_tracer =
+      server_call_tracer_from_factory =
           args->server->server_call_tracer_factory()->CreateNewServerCallTracer(
               arena.get(), args->server->channel_args());
-      if (server_call_tracer != nullptr) {
-        // Note that we are setting both
-        // GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE and
-        // GRPC_CONTEXT_CALL_TRACER as a matter of convenience. In the future
-        // promise-based world, we would just a single tracer object for each
-        // stack (call, subchannel_call, server_call.)
-        arena->SetContext<CallTracerAnnotationInterface>(server_call_tracer);
-        arena->SetContext<CallTracerInterface>(server_call_tracer);
-      }
     }
-    (*channel_stack->stats_plugin_group)->AddServerCallTracers(arena.get());
+    (*channel_stack->stats_plugin_group)
+        ->AddServerCallTracers(arena.get(), {server_call_tracer_from_factory});
   }
 
   // initial refcount dropped by grpc_call_unref
@@ -185,7 +175,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
     call->CancelWithError(error);
   }
   if (args->cq != nullptr) {
-    CHECK(args->pollset_set_alternative == nullptr)
+    GRPC_CHECK(args->pollset_set_alternative == nullptr)
         << "Only one of 'cq' and 'pollset_set_alternative' should be "
            "non-nullptr.";
     GRPC_CQ_INTERNAL_REF(args->cq, "bind");
@@ -215,7 +205,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
   }
 
   if (args->send_deadline != Timestamp::InfFuture()) {
-    call->UpdateDeadline(args->send_deadline);
+    call->UpdateDeadline(args->send_deadline).IgnoreError();
   }
 
   CSliceUnref(path);
@@ -224,7 +214,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
 }
 
 void FilterStackCall::SetCompletionQueue(grpc_completion_queue* cq) {
-  CHECK(cq);
+  GRPC_CHECK(cq);
 
   if (grpc_polling_entity_pollset_set(&pollent_) != nullptr) {
     Crash("A pollset_set is already registered for this call.");
@@ -273,7 +263,7 @@ void FilterStackCall::ExternalUnref() {
 
   MaybeUnpublishFromParent();
 
-  CHECK(!destroy_called_);
+  GRPC_CHECK(!destroy_called_);
   destroy_called_ = true;
   bool cancel = gpr_atm_acq_load(&received_final_op_atm_) == 0;
   if (cancel) {
@@ -337,7 +327,9 @@ void FilterStackCall::CancelWithError(grpc_error_handle error) {
   GRPC_TRACE_LOG(call_error, INFO)
       << "CancelWithError " << (is_client() ? "CLI" : "SVR") << " "
       << StatusToString(error);
-  ClearPeerString();
+  if (!IsSkipClearPeerOnCancellationEnabled()) {
+    ClearPeerString();
+  }
   InternalRef("termination");
   ResetDeadline();
   // Inform the call combiner of the cancellation, so that it can cancel
@@ -542,7 +534,6 @@ FilterStackCall::BatchControl* FilterStackCall::ReuseOrAllocateBatchControl(
     *pslot = bctl;
   }
   bctl->call_ = this;
-  bctl->call_tracer_ = arena()->GetContext<CallTracerAnnotationInterface>();
   bctl->op_.payload = &stream_op_payload_;
   return bctl;
 }
@@ -693,7 +684,7 @@ void FilterStackCall::BatchControl::ReceivingInitialMetadataReady(
   while (true) {
     gpr_atm rsr_bctlp = gpr_atm_acq_load(&call->recv_state_);
     // Should only receive initial metadata once
-    CHECK_NE(rsr_bctlp, 1);
+    GRPC_CHECK_NE(rsr_bctlp, 1);
     if (rsr_bctlp == 0) {
       // We haven't seen initial metadata and messages before, thus initial
       // metadata is received first.
@@ -746,7 +737,7 @@ void FilterStackCall::BatchControl::FinishBatch(grpc_error_handle error) {
 grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
                                             void* notify_tag,
                                             bool is_notify_tag_closure) {
-  GRPC_LATENT_SEE_INNER_SCOPE("FilterStackCall::StartBatch");
+  GRPC_LATENT_SEE_SCOPE("FilterStackCall::StartBatch");
 
   size_t i;
   const grpc_op* op;
@@ -1101,7 +1092,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
 
   InternalRef("completion");
   if (!is_notify_tag_closure) {
-    CHECK(grpc_cq_begin_op(cq_, notify_tag));
+    GRPC_CHECK(grpc_cq_begin_op(cq_, notify_tag));
   }
   bctl->set_pending_ops(pending_ops);
 

@@ -13,7 +13,7 @@
 # limitations under the License.
 """Generates grpc-prefixed packages using template renderer.
 
-To use this script, please use 3.7+ interpreter. This script is work-directory
+To use this script, please use 3.9+ interpreter. This script is work-directory
 agnostic. A quick executable command:
 
     python3 tools/distrib/python/grpc_prefixed/generate.py
@@ -109,7 +109,9 @@ def main():
 
     generate_package(
         PackageMeta(
-            name="grpc", name_long="gRPC Python", destination_package="grpcio"
+            name="grpc",
+            name_long="gRPC Python",
+            destination_package="grpcio",
         )
     )
 
@@ -174,6 +176,22 @@ def main():
             name="grpc-admin",
             name_long="gRPC Admin Interface",
             destination_package="grpcio-admin",
+        )
+    )
+
+    generate_package(
+        PackageMeta(
+            name="grpc-observability",
+            name_long="gRPC Python observability package",
+            destination_package="grpcio-observability",
+        )
+    )
+
+    generate_package(
+        PackageMeta(
+            name="grpc-csm-observability",
+            name_long="gRPC Python CSM observability package",
+            destination_package="grpcio-csm-observability",
         )
     )
 

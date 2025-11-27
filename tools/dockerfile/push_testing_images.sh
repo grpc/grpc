@@ -28,6 +28,7 @@ cd $(dirname $0)/../..
 #  SKIP_UPLOAD: if set, script won't push docker images it built to artifact registry.
 #  HOST_ARCH_ONLY: if set, script will build docker images with the same architecture as the machine running the script.
 #  ALWAYS_BUILD: if set, script will build docker images all the time.
+#  KEEP_GOING: if set, script will not stop in case of docker error
 
 # How to configure docker before running this script for the first time:
 # Configure docker:
@@ -40,7 +41,7 @@ cd $(dirname $0)/../..
 if [ "${CHECK_MODE}" == "" ]
 then
   # Check that docker is installed and sudoless docker works.
-  docker run --rm -it debian:11 bash -c 'echo "sudoless docker run works!"' || \
+  docker run --rm debian:11 bash -c 'echo "sudoless docker run works!"' || \
       (echo "Error: docker not installed or sudoless docker doesn't work?" && exit 1)
 
   if [ "${HOST_ARCH_ONLY}" == "" ]; then
@@ -50,7 +51,7 @@ then
     # an emulator.
     # Perform a check that "qemu-user-static" with binfmt-misc hook
     # is installed, to give an early warning (otherwise building arm64 images won't work)
-    docker run --rm --platform=linux/arm64 -it arm64v8/debian:11 bash -c 'echo "able to run arm64 docker images with an emulator!"' || \
+    docker run --rm --platform=linux/arm64 arm64v8/debian:11 bash -c 'echo "able to run arm64 docker images with an emulator!"' || \
         (echo "Error: can't run arm64 images under an emulator. Have you run 'sudo apt-get install qemu-user-static'?" && exit 1)
   fi
 fi
@@ -69,14 +70,19 @@ ALL_DOCKERFILE_DIRS=(
 # These Docker directories contain obsolete images that cannot be built.
 # They are excluded from build processes, but the Dockerfiles are retained for archival purposes.
 EXCLUDE_DIRS=(
+  tools/dockerfile/distribtest/csharp_dotnet31_x64
+  tools/dockerfile/distribtest/csharp_dotnet5_x64
   tools/dockerfile/interoptest/grpc_interop_go1.8
+  tools/dockerfile/interoptest/grpc_interop_go1.11
+  tools/dockerfile/test/cxx_gcc_7_x64
+  tools/dockerfile/test/cxx_gcc_8_x64
 )
 
 # a list of docker directories that are based on ARM64 base images
 ARM_DOCKERFILE_DIRS=(
   tools/dockerfile/distribtest/python_alpine_aarch64
   tools/dockerfile/distribtest/python_python39_buster_aarch64
-  tools/dockerfile/grpc_artifact_python_musllinux_1_1_aarch64
+  tools/dockerfile/grpc_artifact_python_musllinux_1_2_aarch64
   tools/dockerfile/test/bazel_arm64
   tools/dockerfile/test/csharp_debian11_arm64
   tools/dockerfile/test/php8_debian12_arm64
@@ -102,6 +108,7 @@ then
   done
 fi
 
+failed_docker_list=()
 for DOCKERFILE_DIR in "${ALL_DOCKERFILE_DIRS[@]}"
 do
   # Generate image name based on Dockerfile checksum. That works well as long
@@ -229,11 +236,19 @@ do
   # Building a docker image with two tags;
   # - one for image identification based on Dockerfile hash
   # - one to exclude it from the GCP Vulnerability Scanner
+  docker_exit_code=0
   docker build \
     ${ALWAYS_BUILD:+--no-cache --pull} \
     -t ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} \
     -t ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:infrastructure-public-image-${DOCKER_IMAGE_TAG} \
-    ${DOCKERFILE_DIR}
+    ${DOCKERFILE_DIR} || docker_exit_code=$?
+  if [ "${docker_exit_code}" -ne 0 ]; then
+    if [ -z "${KEEP_GOING}" ]; then
+      exit "${docker_exit_code}"
+    else
+      failed_docker_list+=(${DOCKER_IMAGE_NAME})
+    fi
+  fi
   echo "=========="
 
   # After building the docker image locally, we don't know the image's RepoDigest (which is distinct from image's "Id" digest) yet
@@ -253,6 +268,16 @@ do
     echo -n "${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}@${DOCKER_IMAGE_DIGEST_REMOTE}" >${DOCKERFILE_DIR}.current_version
   fi
 done
+
+if [ ${#failed_docker_list[@]} -gt 0 ]; then
+  echo "Failed docker list"
+  echo "=================="
+  for item in "${failed_docker_list[@]}"; do
+    echo "- $item"
+  done
+  echo "=================="
+  exit 1
+fi
 
 if [ "${CHECK_MODE}" != "" ]
 then

@@ -30,20 +30,20 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/credentials/call/call_creds_util.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/uri.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 using grpc_core::Json;
 
@@ -161,7 +161,7 @@ grpc_call_credentials* grpc_service_account_jwt_access_credentials_create(
             << " }, reserved=" << reserved << ")";
     gpr_free(clean_json);
   }
-  CHECK_EQ(reserved, nullptr);
+  GRPC_CHECK_EQ(reserved, nullptr);
   grpc_core::ExecCtx exec_ctx;
   return grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
              grpc_auth_json_key_create_from_string(json_key), token_lifetime)

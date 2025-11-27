@@ -23,18 +23,18 @@
 #include <memory>
 #include <vector>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
-#include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "gtest/gtest.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
 // IWYU pragma: no_include <ratio>
@@ -52,8 +52,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
@@ -65,6 +63,8 @@
 #include "src/core/util/strerror.h"
 #include "test/core/event_engine/posix/posix_engine_test_utils.h"
 #include "test/core/test_util/port.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
 
 static gpr_mu g_mu;
 static std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
@@ -379,23 +379,23 @@ class EventPollerTest : public ::testing::Test {
   void SetUp() override {
     engine_ = PosixEventEngine::MakePosixEventEngine();
     EXPECT_NE(engine_, nullptr);
-    scheduler_ = std::make_unique<TestScheduler>(engine_.get());
-    EXPECT_NE(scheduler_, nullptr);
-    g_event_poller = MakeDefaultPoller(scheduler_.get());
+    thread_pool_ = std::make_shared<TestThreadPool>(engine_.get());
+    EXPECT_NE(thread_pool_, nullptr);
+    g_event_poller = MakeDefaultPoller(thread_pool_);
     engine_ = PosixEventEngine::MakeTestOnlyPosixEventEngine(g_event_poller);
     EXPECT_NE(engine_, nullptr);
-    scheduler_->ChangeCurrentEventEngine(engine_.get());
+    thread_pool_->ChangeCurrentEventEngine(engine_.get());
     if (g_event_poller != nullptr) {
       LOG(INFO) << "Using poller: " << g_event_poller->Name();
     }
   }
 
  public:
-  TestScheduler* Scheduler() { return scheduler_.get(); }
+  TestThreadPool* thread_pool() const { return thread_pool_.get(); }
 
  private:
   std::shared_ptr<PosixEventEngine> engine_;
-  std::unique_ptr<TestScheduler> scheduler_;
+  std::shared_ptr<TestThreadPool> thread_pool_;
 };
 
 // Test grpc_fd. Start an upload server and client, upload a stream of bytes
@@ -524,10 +524,10 @@ std::atomic<int> kTotalActiveWakeupFdHandles{0};
 // a specified number of read events.
 class WakeupFdHandle : public grpc_core::DualRefCounted<WakeupFdHandle> {
  public:
-  WakeupFdHandle(int num_wakeups, Scheduler* scheduler,
+  WakeupFdHandle(int num_wakeups, ThreadPool* thread_pool,
                  PosixEventPoller* poller)
       : num_wakeups_(num_wakeups),
-        scheduler_(scheduler),
+        thread_pool_(thread_pool),
         poller_(poller),
         on_read_(
             PosixEngineClosure::ToPermanentClosure([this](absl::Status status) {
@@ -555,7 +555,7 @@ class WakeupFdHandle : public grpc_core::DualRefCounted<WakeupFdHandle> {
                 Ref().release();
                 // Schedule next wakeup to trigger the registered NotifyOnRead
                 // callback.
-                scheduler_->Run(SelfDeletingClosure::Create([this]() {
+                thread_pool_->Run(SelfDeletingClosure::Create([this]() {
                   // Send next wakeup.
                   EXPECT_TRUE(wakeup_fd_->Wakeup().ok());
                   Unref();
@@ -565,7 +565,7 @@ class WakeupFdHandle : public grpc_core::DualRefCounted<WakeupFdHandle> {
     WeakRef().release();
     ++kTotalActiveWakeupFdHandles;
     EXPECT_GT(num_wakeups_, 0);
-    EXPECT_NE(scheduler_, nullptr);
+    EXPECT_NE(thread_pool_, nullptr);
     EXPECT_NE(poller_, nullptr);
     wakeup_fd_ = *PipeWakeupFd::CreatePipeWakeupFd(&poller_->posix_interface());
     handle_ = poller_->CreateHandle(wakeup_fd_->ReadFd(), "test", false);
@@ -619,7 +619,7 @@ class WakeupFdHandle : public grpc_core::DualRefCounted<WakeupFdHandle> {
     }
   }
   int num_wakeups_;
-  Scheduler* scheduler_;
+  ThreadPool* thread_pool_;
   PosixEventPoller* poller_;
   PosixEngineClosure* on_read_;
   std::unique_ptr<WakeupFd> wakeup_fd_;
@@ -632,20 +632,20 @@ class WakeupFdHandle : public grpc_core::DualRefCounted<WakeupFdHandle> {
 // pending events. This continues until all Fds have orphaned themselves.
 class Worker : public grpc_core::DualRefCounted<Worker> {
  public:
-  Worker(Scheduler* scheduler, PosixEventPoller* poller, int num_handles,
+  Worker(ThreadPool* thread_pool, PosixEventPoller* poller, int num_handles,
          int num_wakeups_per_handle)
-      : scheduler_(scheduler), poller_(poller) {
+      : thread_pool_(thread_pool), poller_(poller) {
     handles_.reserve(num_handles);
     for (int i = 0; i < num_handles; i++) {
       handles_.push_back(
-          new WakeupFdHandle(num_wakeups_per_handle, scheduler_, poller_));
+          new WakeupFdHandle(num_wakeups_per_handle, thread_pool_, poller_));
     }
     WeakRef().release();
   }
   void Orphaned() override { signal.Notify(); }
   void Start() {
     // Start executing Work(..).
-    scheduler_->Run([this]() { Work(); });
+    thread_pool_->Run([this]() { Work(); });
   }
 
   void Wait() {
@@ -659,7 +659,7 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
       // Schedule next work instantiation immediately and take a Ref for
       // the next instantiation.
       Ref().release();
-      scheduler_->Run([this]() { Work(); });
+      thread_pool_->Run([this]() { Work(); });
     });
     ASSERT_TRUE(result == Poller::WorkResult::kOk ||
                 result == Poller::WorkResult::kKicked);
@@ -669,7 +669,7 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
     // been deleted.
     Unref();
   }
-  Scheduler* scheduler_;
+  ThreadPool* thread_pool_;
   PosixEventPoller* poller_;
   grpc_core::Notification signal;
   std::vector<WakeupFdHandle*> handles_;
@@ -687,7 +687,7 @@ TEST_F(EventPollerTest, TestMultipleHandles) {
   if (g_event_poller == nullptr) {
     return;
   }
-  Worker* worker = new Worker(Scheduler(), g_event_poller.get(), kNumHandles,
+  Worker* worker = new Worker(thread_pool(), g_event_poller.get(), kNumHandles,
                               kNumWakeupsPerHandle);
   worker->Start();
   worker->Wait();

@@ -18,6 +18,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/core/event_engine/fuzzing_event_engine",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "tests",
 )
 
@@ -29,13 +33,37 @@ grpc_cc_library(
     external_deps = [
         "absl/log:check",
         "absl/log:log",
+        "absl/strings",
+        "absl/memory",
+        "absl/time",
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
+        "absl/status:statusor",
+        "absl/status",
+        "absl/types:span",
     ],
     deps = [
         ":fuzzing_event_engine_cc_proto",
         "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//:grpc_slice",
+        "//:grpc_trace",
+        "//:stats",
         "//src/core:default_event_engine",
+        "//src/core:dump_args",
+        "//src/core:event_engine_extensions",
+        "//src/core:event_engine_query_extensions",
+        "//src/core:event_engine_shim",
+        "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:event_engine_time_util",
+        "//src/core:experiments",
+        "//src/core:grpc_check",
+        "//src/core:iomgr_port",
         "//src/core:native_posix_dns_resolver",
+        "//src/core:no_destruct",
+        "//src/core:sync",
         "//src/core:time",
+        "//src/core:useful",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/test_util:grpc_test_util",
     ],
@@ -56,9 +84,11 @@ grpc_cc_test(
     srcs = ["fuzzing_event_engine_unittest.cc"],
     external_deps = [
         "gtest",
+        "absl/synchronization",
     ],
     deps = [
         ":fuzzing_event_engine",
         "//:gpr_platform",
+        "//src/core:time",
     ],
 )

@@ -20,16 +20,16 @@
 
 #include <grpc/grpc.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 #ifdef GRPC_POSIX_SOCKET_EV
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -77,7 +77,7 @@ TEST_F(TimerTest, NoTimers) {
   // We expect to get 1 wakeup per second. Sometimes we also get a wakeup
   // during initialization, so in 1.5 seconds we expect to get 1 or 2 wakeups.
   int64_t wakeups = grpc_timer_manager_get_wakeups_testonly();
-  CHECK(wakeups == 1 || wakeups == 2);
+  GRPC_CHECK(wakeups == 1 || wakeups == 2);
 }
 #endif
 
@@ -96,7 +96,7 @@ TEST_F(TimerTest, OneTimerExpires) {
           },
           &timer_fired, grpc_schedule_on_exec_ctx));
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(1500));
-  CHECK_EQ(timer_fired, 1);
+  GRPC_CHECK_EQ(timer_fired, 1);
 
   // We expect to get 1 wakeup/second + 1 wakeup for the expired timer + maybe 1
   // wakeup during initialization. i.e. in 1.5 seconds we expect 2 or 3 wakeups.
@@ -126,7 +126,7 @@ TEST_F(TimerTest, MultipleTimersExpire) {
   }
 
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(1500));
-  CHECK(kNumTimers == timer_fired);
+  GRPC_CHECK(kNumTimers == timer_fired);
 
   // We expect to get 1 wakeup/second + 1 wakeup for per timer fired + maybe 1
   // wakeup during initialization. i.e. in 1.5 seconds we expect 11 or 12
@@ -168,7 +168,7 @@ TEST_F(TimerTest, CancelSomeTimers) {
   }
 
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(1500));
-  CHECK(kNumTimers / 2 == timer_fired);
+  GRPC_CHECK(kNumTimers / 2 == timer_fired);
 
   // We expect to get 1 wakeup/second + 1 wakeup per timer fired + maybe 1
   // wakeup during initialization. i.e. in 1.5 seconds we expect 6 or 7 wakeups.

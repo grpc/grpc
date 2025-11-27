@@ -30,12 +30,7 @@
 #include <variant>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
+#include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -50,6 +45,7 @@
 #include "src/core/resolver/xds/xds_dependency_manager.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
@@ -63,6 +59,11 @@
 #include "src/core/xds/grpc/xds_cluster.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_health_status.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -121,8 +122,43 @@ class CdsLb final : public LoadBalancingPolicy {
   void ExitIdleLocked() override;
 
  private:
+  class Picker final : public SubchannelPicker {
+   public:
+    Picker(CdsLb* cds_lb, RefCountedPtr<SubchannelPicker> child_picker)
+        : cluster_name_(cds_lb->cluster_name_),
+          child_picker_(std::move(child_picker)) {}
+
+    PickResult Pick(PickArgs args) override {
+      auto* call_state =
+          static_cast<ClientChannelLbCallState*>(args.call_state);
+      auto* call_attempt_tracer = call_state->GetCallAttemptTracer();
+      if (call_attempt_tracer != nullptr) {
+        call_attempt_tracer->SetOptionalLabel(
+            ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey::
+                kBackendService,
+            cluster_name_);
+      }
+      return child_picker_->Pick(args);
+    }
+
+   private:
+    RefCountedStringValue cluster_name_;
+    RefCountedPtr<SubchannelPicker> child_picker_;
+  };
+
   // Delegating helper to be passed to child policy.
-  using Helper = ParentOwningDelegatingChannelControlHelper<CdsLb>;
+  class Helper final
+      : public ParentOwningDelegatingChannelControlHelper<CdsLb> {
+   public:
+    using ParentOwningDelegatingChannelControlHelper::
+        ParentOwningDelegatingChannelControlHelper;
+
+    void UpdateState(grpc_connectivity_state state, const absl::Status& status,
+                     RefCountedPtr<SubchannelPicker> picker) override {
+      parent_helper()->UpdateState(
+          state, status, MakeRefCounted<Picker>(parent(), std::move(picker)));
+    }
+  };
 
   // State used to retain child policy names for the priority policy.
   struct ChildNameState {
@@ -160,7 +196,7 @@ class CdsLb final : public LoadBalancingPolicy {
 
   void ReportTransientFailure(absl::Status status);
 
-  std::string cluster_name_;
+  RefCountedStringValue cluster_name_;
   RefCountedPtr<const XdsConfig> xds_config_;
 
   // Cluster subscription, for dynamic clusters (e.g., RLS).
@@ -225,7 +261,7 @@ std::string MakeChildPolicyName(absl::string_view cluster,
 class PriorityEndpointIterator final : public EndpointAddressesIterator {
  public:
   PriorityEndpointIterator(
-      std::string cluster_name, bool use_http_connect,
+      RefCountedStringValue cluster_name, bool use_http_connect,
       std::shared_ptr<const XdsEndpointResource> endpoints,
       std::vector<size_t /*child_number*/> priority_child_numbers)
       : cluster_name_(std::move(cluster_name)),
@@ -238,8 +274,8 @@ class PriorityEndpointIterator final : public EndpointAddressesIterator {
     const auto& priority_list = GetUpdatePriorityList(endpoints_.get());
     for (size_t priority = 0; priority < priority_list.size(); ++priority) {
       const auto& priority_entry = priority_list[priority];
-      std::string priority_child_name =
-          MakeChildPolicyName(cluster_name_, priority_child_numbers_[priority]);
+      std::string priority_child_name = MakeChildPolicyName(
+          cluster_name_.as_string_view(), priority_child_numbers_[priority]);
       for (const auto& [locality_name, locality] : priority_entry.localities) {
         std::vector<RefCountedStringValue> hierarchical_path = {
             RefCountedStringValue(priority_child_name),
@@ -264,7 +300,7 @@ class PriorityEndpointIterator final : public EndpointAddressesIterator {
   }
 
  private:
-  std::string cluster_name_;
+  RefCountedStringValue cluster_name_;
   bool use_http_connect_;
   std::shared_ptr<const XdsEndpointResource> endpoints_;
   std::vector<size_t /*child_number*/> priority_child_numbers_;
@@ -277,19 +313,19 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
       << "[cdslb " << this
       << "] received update: cluster=" << new_config->cluster()
       << " is_dynamic=" << new_config->is_dynamic();
-  CHECK(new_config != nullptr);
+  GRPC_CHECK(new_config != nullptr);
   // Cluster name should never change, because we should use a different
   // child name in xds_cluster_manager in that case.
-  if (cluster_name_.empty()) {
-    cluster_name_ = new_config->cluster();
+  if (cluster_name_.as_string_view().empty()) {
+    cluster_name_ = RefCountedStringValue(new_config->cluster());
   } else {
-    CHECK(cluster_name_ == new_config->cluster());
+    GRPC_CHECK_EQ(cluster_name_.as_string_view(), new_config->cluster());
   }
   // Start dynamic subscription if needed.
   if (new_config->is_dynamic() && subscription_ == nullptr) {
     GRPC_TRACE_LOG(cds_lb, INFO)
         << "[cdslb " << this << "] obtaining dynamic subscription for cluster "
-        << cluster_name_;
+        << cluster_name_.as_string_view();
     auto* dependency_mgr = args.args.GetObject<XdsDependencyManager>();
     if (dependency_mgr == nullptr) {
       // Should never happen.
@@ -298,7 +334,8 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
       ReportTransientFailure(status);
       return status;
     }
-    subscription_ = dependency_mgr->GetClusterSubscription(cluster_name_);
+    subscription_ =
+        dependency_mgr->GetClusterSubscription(cluster_name_.as_string_view());
   }
   // Get xDS config.
   auto new_xds_config = args.args.GetObjectRef<XdsConfig>();
@@ -309,7 +346,7 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
     ReportTransientFailure(status);
     return status;
   }
-  auto it = new_xds_config->clusters.find(cluster_name_);
+  auto it = new_xds_config->clusters.find(cluster_name_.as_string_view());
   if (it == new_xds_config->clusters.end()) {
     // Cluster not present.
     if (new_config->is_dynamic()) {
@@ -318,14 +355,16 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
       // got the new cluster, in which case it will still be missing.
       GRPC_TRACE_LOG(cds_lb, INFO)
           << "[cdslb " << this
-          << "] xDS config has no entry for dynamic cluster " << cluster_name_
+          << "] xDS config has no entry for dynamic cluster "
+          << cluster_name_.as_string_view()
           << ", waiting for subsequent update";
       // Stay in CONNECTING until we get an update that has the cluster.
       return absl::OkStatus();
     }
     // Not a dynamic cluster.  This should never happen.
-    absl::Status status = absl::UnavailableError(absl::StrCat(
-        "xDS config has no entry for static cluster ", cluster_name_));
+    absl::Status status = absl::UnavailableError(
+        absl::StrCat("xDS config has no entry for static cluster ",
+                     cluster_name_.as_string_view()));
     ReportTransientFailure(status);
     return status;
   }
@@ -335,11 +374,11 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
     ReportTransientFailure(new_cluster_config.status());
     return new_cluster_config.status();
   }
-  CHECK_NE(new_cluster_config->cluster, nullptr);
+  GRPC_CHECK_NE(new_cluster_config->cluster, nullptr);
   // Find old cluster, if any.
   const XdsConfig::ClusterConfig* old_cluster_config = nullptr;
   if (xds_config_ != nullptr) {
-    auto it_old = xds_config_->clusters.find(cluster_name_);
+    auto it_old = xds_config_->clusters.find(cluster_name_.as_string_view());
     if (it_old != xds_config_->clusters.end() && it_old->second.ok()) {
       old_cluster_config = &*it_old->second;
       // If nothing changed for a leaf cluster, then ignore the update.
@@ -375,11 +414,12 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
           ReportTransientFailure(aggregate_cluster_config.status());
           return aggregate_cluster_config.status();
         }
-        CHECK_NE(aggregate_cluster_config->cluster, nullptr);
+        GRPC_CHECK_NE(aggregate_cluster_config->cluster, nullptr);
         aggregate_cluster_resource = aggregate_cluster_config->cluster.get();
       }
     } else {
-      args.args = args.args.Set(kArgXdsAggregateClusterName, cluster_name_);
+      args.args = args.args.Set(kArgXdsAggregateClusterName,
+                                cluster_name_.as_string_view());
     }
   }
   // Construct child policy config and update state based on the cluster type.
@@ -408,6 +448,9 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
         // Construct child policy config.
         child_policy_config_json = CreateChildPolicyConfigForLeafCluster(
             *new_cluster_config, endpoint_config, aggregate_cluster_resource);
+        // Pass backend service label to child policy.
+        args.args = args.args.Set(GRPC_ARG_BACKEND_SERVICE,
+                                  cluster_name_.as_string_view());
       },
       // Aggregate cluster.
       [&](const XdsConfig::ClusterConfig::AggregateConfig& aggregate_config) {
@@ -426,9 +469,9 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
           child_policy_config_json);
   if (!child_config.ok()) {
     // Should never happen.
-    absl::Status status = absl::InternalError(
-        absl::StrCat(cluster_name_, ": error parsing child policy config: ",
-                     child_config.status().message()));
+    absl::Status status = absl::InternalError(absl::StrCat(
+        cluster_name_.as_string_view(), ": error parsing child policy config: ",
+        child_config.status().message()));
     ReportTransientFailure(status);
     return status;
   }
@@ -444,8 +487,8 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
             (*child_config)->name(), std::move(lb_args));
     if (child_policy_ == nullptr) {
       // Should never happen.
-      absl::Status status = absl::UnavailableError(
-          absl::StrCat(cluster_name_, ": failed to create child policy"));
+      absl::Status status = absl::UnavailableError(absl::StrCat(
+          cluster_name_.as_string_view(), ": failed to create child policy"));
       ReportTransientFailure(status);
       return status;
     }
@@ -465,7 +508,7 @@ CdsLb::ChildNameState CdsLb::ComputeChildNames(
     const XdsConfig::ClusterConfig* old_cluster,
     const XdsConfig::ClusterConfig& new_cluster,
     const XdsConfig::ClusterConfig::EndpointConfig& endpoint_config) const {
-  CHECK(!std::holds_alternative<XdsConfig::ClusterConfig::AggregateConfig>(
+  GRPC_CHECK(!std::holds_alternative<XdsConfig::ClusterConfig::AggregateConfig>(
       new_cluster.children));
   // First, build some maps from locality to child number and the reverse
   // from old_cluster and child_name_state_.
@@ -566,8 +609,9 @@ Json CdsLb::CreateChildPolicyConfigForLeafCluster(
       GetUpdatePriorityList(endpoint_config.endpoints.get());
   for (size_t priority = 0; priority < priority_list.size(); ++priority) {
     // Add priority entry, with the appropriate child name.
-    std::string child_name = MakeChildPolicyName(
-        cluster_name_, child_name_state_.priority_child_numbers[priority]);
+    std::string child_name =
+        MakeChildPolicyName(cluster_name_.as_string_view(),
+                            child_name_state_.priority_child_numbers[priority]);
     priority_priorities.emplace_back(Json::FromString(child_name));
     Json::Object child_config = {{"config", xds_lb_policy}};
     if (!is_logical_dns) {
@@ -586,7 +630,7 @@ Json CdsLb::CreateChildPolicyConfigForLeafCluster(
   Json xds_override_host_policy = Json::FromArray({Json::FromObject({
       {"xds_override_host_experimental",
        Json::FromObject({
-           {"clusterName", Json::FromString(cluster_name_)},
+           {"clusterName", Json::FromString(cluster_name_.c_str())},
            {"childPolicy", std::move(priority_policy)},
        })},
   })});
@@ -594,7 +638,7 @@ Json CdsLb::CreateChildPolicyConfigForLeafCluster(
   Json xds_cluster_impl_policy = Json::FromArray({Json::FromObject({
       {"xds_cluster_impl_experimental",
        Json::FromObject({
-           {"clusterName", Json::FromString(cluster_name_)},
+           {"clusterName", Json::FromString(cluster_name_.c_str())},
            {"childPolicy", std::move(xds_override_host_policy)},
        })},
   })});
@@ -689,7 +733,7 @@ Json CdsLb::CreateChildPolicyConfigForAggregateCluster(
 }
 
 void CdsLb::ResetState() {
-  cluster_name_.clear();
+  cluster_name_ = RefCountedStringValue("");
   xds_config_.reset();
   child_name_state_.Reset();
   if (child_policy_ != nullptr) {

@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/credentials/transport/insecure")
+grpc_package(
+    name = "test/core/credentials/transport/insecure",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "insecure_credentials_test",
@@ -27,6 +33,8 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:grpc_fake_credentials",
+        "//src/core:grpc_insecure_credentials",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -40,6 +48,10 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:transport_auth_context",
+        "//:tsi_base",
+        "//:tsi_ssl_credentials",
+        "//src/core:grpc_insecure_credentials",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],

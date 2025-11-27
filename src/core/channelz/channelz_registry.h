@@ -21,16 +21,18 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <map>
 #include <string>
 
-#include "absl/container/btree_map.h"
-#include "absl/functional/function_ref.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "absl/container/btree_map.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/functional/function_ref.h"
 
 namespace grpc_core {
 namespace channelz {
@@ -95,9 +97,6 @@ class ChannelzRegistry final {
             start_socket_id);
   }
 
-  static std::string GetTopChannelsJson(intptr_t start_channel_id);
-  static std::string GetServersJson(intptr_t start_server_id);
-
   // Returns the allocated JSON string that represents the proto
   // GetServersResponse as per channelz.proto.
   static auto GetServers(intptr_t start_server_id) {
@@ -106,11 +105,36 @@ class ChannelzRegistry final {
             start_server_id);
   }
 
+  static std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool> GetChildren(
+      const BaseNode* parent, intptr_t start_node, size_t max_results) {
+    return Default()->InternalGetChildren(parent, start_node, max_results);
+  }
+
   static std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool>
   GetChildrenOfType(intptr_t start_node, const BaseNode* parent,
                     BaseNode::EntityType type, size_t max_results) {
     return Default()->InternalGetChildrenOfType(start_node, parent, type,
                                                 max_results);
+  }
+
+  static std::vector<WeakRefCountedPtr<BaseNode>> GetDescendants(
+      BaseNode* root, size_t max_results) {
+    return Default()->InternalGetDescendants(root, max_results);
+  }
+
+  static WeakRefCountedPtr<BaseNode> GetNode(intptr_t uuid) {
+    return Default()->InternalGet(uuid);
+  }
+
+  static std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool>
+  GetNodesOfType(intptr_t start_node, BaseNode::EntityType type,
+                 size_t max_results) {
+    return Default()->InternalGetNodesOfType(start_node, type, max_results);
+  }
+
+  static std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool> GetNodes(
+      intptr_t start_node, size_t max_results) {
+    return Default()->InternalGetNodes(start_node, max_results);
   }
 
   // Test only helper function to dump the JSON representation to std out.
@@ -206,6 +230,15 @@ class ChannelzRegistry final {
       size_t max_results);
 
   std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool>
+  InternalGetChildren(const BaseNode* parent, intptr_t start_node,
+                      size_t max_results) {
+    return QueryNodes(
+        start_node,
+        [parent](const BaseNode* n) { return n->HasParent(parent); },
+        max_results);
+  }
+
+  std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool>
   InternalGetChildrenOfType(intptr_t start_node, const BaseNode* parent,
                             BaseNode::EntityType type, size_t max_results) {
     return QueryNodes(
@@ -214,6 +247,53 @@ class ChannelzRegistry final {
           return n->type() == type && n->HasParent(parent);
         },
         max_results);
+  }
+
+  std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool>
+  InternalGetNodesOfType(intptr_t start_node, BaseNode::EntityType type,
+                         size_t max_results) {
+    return QueryNodes(
+        start_node, [type](const BaseNode* n) { return n->type() == type; },
+        max_results);
+  }
+
+  std::vector<WeakRefCountedPtr<BaseNode>> InternalGetDescendants(
+      BaseNode* root, size_t max_results) {
+    std::vector<WeakRefCountedPtr<BaseNode>> descendants;
+    if (root == nullptr || max_results == 0) return descendants;
+
+    // To prevent duplicate nodes and to prevent infinite loops.
+    absl::flat_hash_set<intptr_t> visited;
+
+    descendants.reserve(max_results);
+    visited.insert(root->uuid());
+    descendants.push_back(root->WeakRef());
+
+    size_t next_id = 0;
+
+    // BFS to find all descendants.
+    do {
+      BaseNode* current_node = descendants[next_id].get();
+
+      auto [children, _] = InternalGetChildren(
+          current_node, current_node->uuid(), max_results - descendants.size());
+
+      for (const auto& child : children) {
+        if (visited.insert(child->uuid()).second) {
+          descendants.push_back(child);
+        }
+      }
+
+      ++next_id;
+    } while (descendants.size() < max_results && next_id < descendants.size());
+
+    return descendants;
+  }
+
+  std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool> InternalGetNodes(
+      intptr_t start_node, size_t max_results) {
+    return QueryNodes(
+        start_node, [](const BaseNode*) { return true; }, max_results);
   }
 
   template <typename T, BaseNode::EntityType entity_type>
@@ -254,10 +334,6 @@ class ChannelzRegistry final {
   absl::btree_map<intptr_t, BaseNode*> index_ ABSL_GUARDED_BY(index_mu_);
   size_t max_orphaned_per_shard_;
 };
-
-// `additionalInfo` section is not yet in the protobuf format, so we
-// provide a utility to strip it for compatibility.
-std::string StripAdditionalInfoFromJson(absl::string_view json);
 
 }  // namespace channelz
 }  // namespace grpc_core

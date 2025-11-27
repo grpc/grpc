@@ -22,20 +22,22 @@
 #include <cstdint>
 #include <type_traits>
 
-#include "absl/container/flat_hash_map.h"
 #include "src/core/call/call_destination.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "absl/container/flat_hash_map.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -66,6 +68,15 @@ class Http2ServerTransport final : public ServerTransport {
   // is complete.
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
+
+  void StartWatch(RefCountedPtr<StateWatcher>) override {
+    // TODO(roth): Implement as part of migrating server side to new
+    // watcher API.
+  }
+  void StopWatch(RefCountedPtr<StateWatcher>) override {
+    // TODO(roth): Implement as part of migrating server side to new
+    // watcher API.
+  }
 
   void SetCallDestination(
       RefCountedPtr<UnstartedCallDestination> call_destination) override;
@@ -156,7 +167,7 @@ class Http2ServerTransport final : public ServerTransport {
   // corresponding (failed) absl status.
   absl::Status HandleError(Http2Status status, DebugLocation whence = {}) {
     auto error_type = status.GetType();
-    DCHECK(error_type != Http2Status::Http2ErrorType::kOk);
+    GRPC_DCHECK(error_type != Http2Status::Http2ErrorType::kOk);
 
     if (error_type == Http2Status::Http2ErrorType::kStreamError) {
       CloseStream(current_frame_header_.stream_id, status.GetAbslStreamError(),

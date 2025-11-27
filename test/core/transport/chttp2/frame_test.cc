@@ -15,14 +15,16 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <initializer_list>
 #include <utility>
 
-#include "absl/status/status.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace {
@@ -404,23 +406,30 @@ TEST(Frame, ParseHttp2SettingsFrame) {
                        /* Stream Identifier (31 bits) */ 0, 0, 0, 0),
             Http2Frame(Http2SettingsFrame{}));
 
-  EXPECT_EQ(ParseFrame(/* Length (3 octets) */ 0, 0, 6,
-                       /* Type (1 octet) */ 4,
-                       /* Unused Flags (7), ACK Flag (1) */ 0,
-                       /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                       /* Setting (6 octets each) */ 0x12, 0x34, 0x9a, 0xbc,
-                       0xde, 0xf0),
-            Http2Frame(Http2SettingsFrame{false, {{0x1234, 0x9abcdef0}}}));
-  EXPECT_EQ(ParseFrame(/* Length (3 octets) */ 0, 0, 12,
-                       /* Type (1 octet) */ 4,
-                       /* Unused Flags (7), ACK Flag (1) */ 0,
-                       /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                       /* Setting (6 octets each) */ 0x12, 0x34, 0x9a, 0xbc,
-                       0xde, 0xf0,
-                       /* Setting (6 octets each) */ 0x43, 0x21, 0x12, 0x34,
-                       0x56, 0x78),
+  EXPECT_EQ(ParseFrame(
+                /* Length (3 octets) */ 0, 0, 6,
+                /* Type (1 octet) */ 4,
+                /* Unused Flags (7), ACK Flag (1) */ 0,
+                /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                /* Setting (6 octets each) */
+                0xFE, 0x04, 0x9a, 0xbc, 0xde, 0xf0),
             Http2Frame(Http2SettingsFrame{
-                false, {{0x1234, 0x9abcdef0}, {0x4321, 0x12345678}}}));
+                false,
+                {{/*kGrpcPreferredReceiveCryptoFrameSizeWireId*/ 0xFE04,
+                  0x9abcdef0}}}));
+  EXPECT_EQ(
+      ParseFrame(/* Length (3 octets) */ 0, 0, 12,
+                 /* Type (1 octet) */ 4,
+                 /* Unused Flags (7), ACK Flag (1) */ 0,
+                 /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                 /* Setting (6 octets each) */
+                 0xFE, 0x04, 0x9a, 0xbc, 0xde, 0xf0,
+                 /* Setting (6 octets each) */
+                 0xFE, 0x05, 0x12, 0x34, 0x56, 0x78),
+      Http2Frame(Http2SettingsFrame{
+          false,
+          {{/*kGrpcPreferredReceiveCryptoFrameSizeWireId*/ 0xFE04, 0x9abcdef0},
+           {/*kGrpcAllowSecurityFrameWireId*/ 0xFE05, 0x12345678}}}));
   EXPECT_EQ(ParseFrame(/* Length (3 octets) */ 0, 0, 0,
                        /* Type (1 octet) */ 4,
                        /* Unused Flags (7), ACK Flag (1) */ 1,
@@ -433,6 +442,64 @@ TEST(Frame, ParseHttp2SettingsFrame) {
                        /* Unused Flags (7), ACK Flag (1) */ 0xff,
                        /* Stream Identifier (31 bits) */ 0x80, 0, 0, 0),
             Http2Frame(Http2SettingsFrame{true}));
+}
+
+TEST(Frame, ParseHttp2SettingsFrameInvalidSettings) {
+  // RFC9113 : An endpoint that receives a SETTINGS frame with any unknown
+  // or unsupported identifier MUST ignore that setting.
+  EXPECT_EQ(ParseFrame(/* Length (3 octets) */ 0, 0, 6,
+                       /* Type (1 octet) */ 4,
+                       /* Unused Flags (7), ACK Flag (1) */ 0,
+                       /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                       /* Setting (6 octets each) */ /* Unknown Setting */ 0,
+                       (Http2Settings::kHeaderTableSizeWireId - 1), 0, 0, 0, 0),
+            Http2Frame(Http2SettingsFrame{}));
+
+  EXPECT_EQ(
+      ParseFrame(/* Length (3 octets) */ 0, 0, 6,
+                 /* Type (1 octet) */ 4,
+                 /* Unused Flags (7), ACK Flag (1) */ 0,
+                 /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                 /* Setting (6 octets each) */ /* Unknown Setting */
+                     (Http2Settings::kGrpcAllowSecurityFrameWireId + 1) >> 8,
+                 (Http2Settings::kGrpcAllowSecurityFrameWireId + 1) & 0xff, 0,
+                 0, 0, 0),
+      Http2Frame(Http2SettingsFrame{}));
+
+  EXPECT_EQ(
+      ParseFrame(/* Length (3 octets) */ 0, 0, 6,
+                 /* Type (1 octet) */ 4,
+                 /* Unused Flags (7), ACK Flag (1) */ 0,
+                 /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                 /* Setting (6 octets each) */ /* Unknown Setting */ 0,
+                 (Http2Settings::kMaxHeaderListSizeWireId + 1), 0, 0, 0, 0),
+      Http2Frame(Http2SettingsFrame{}));
+
+  EXPECT_EQ(
+      ParseFrame(/* Length (3 octets) */ 0, 0, 6,
+                 /* Type (1 octet) */ 4,
+                 /* Unused Flags (7), ACK Flag (1) */ 0,
+                 /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                 /* Setting (6 octets each) */ /* Unknown Setting */
+                     (Http2Settings::kGrpcAllowTrueBinaryMetadataWireId - 1) >>
+                     8,
+                 (Http2Settings::kGrpcAllowTrueBinaryMetadataWireId - 1) & 0xff,
+                 0, 0, 0, 0),
+      Http2Frame(Http2SettingsFrame{}));
+
+  // One Valid and one Unknown Setting
+  EXPECT_EQ(ParseFrame(/* Length (3 octets) */ 0, 0, 12,
+                       /* Type (1 octet) */ 4,
+                       /* Unused Flags (7), ACK Flag (1) */ 0,
+                       /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                       /* Setting (6 octets each) */ /* Valid Setting */
+                       0xFE, 0x04, 0x9a, 0xbc, 0xde, 0xf0,
+                       /* Setting (6 octets each) */ /* Unknown Setting */ 0,
+                       (Http2Settings::kHeaderTableSizeWireId - 1), 0, 0, 0, 0),
+            Http2Frame(Http2SettingsFrame{
+                false,
+                {{/*kGrpcPreferredReceiveCryptoFrameSizeWireId*/ 0xFE04,
+                  0x9abcdef0}}}));
 }
 
 TEST(Frame, ParseHttp2PingFrame) {
@@ -1038,7 +1105,7 @@ TEST(Frame, ParseRejectsWindowUpdateFrameZeroIncrement) {
                     /* Stream Identifier (31 bits) */ 0x7f, 0xff, 0xff, 0xff,
                     /* Window Size Increment (31 bits) */ 0, 0, 0, 0),
       Http2StatusIs(
-          Http2Status::Http2ErrorType::kStreamError,
+          Http2Status::Http2ErrorType::kConnectionError,
           Http2ErrorCode::kProtocolError,
           absl::StrCat(
               RFC9113::kWindowSizeIncrement,
@@ -1059,6 +1126,171 @@ TEST(Frame, GrpcHeaderTest) {
   EXPECT_EQ(payload.Length(), kGrpcHeaderSizeInBytes);
   EXPECT_EQ(header.flags, kFlags);
   EXPECT_EQ(header.length, kLength);
+}
+
+TEST(Frame, ValidateSettingsValuesInvalidInitialWindowSize) {
+  std::vector<Http2SettingsFrame::Setting> settings;
+  settings.push_back(
+      {Http2Settings::kInitialWindowSizeWireId, RFC9113::kMaxSize31Bit + 1});
+  EXPECT_THAT(
+      ValidateSettingsValues(settings),
+      Http2StatusIs(
+          Http2Status::Http2ErrorType::kConnectionError,
+          Http2ErrorCode::kFlowControlError,
+          absl::StrCat(RFC9113::kIncorrectWindowSizeSetting,
+                       "Invalid Setting:{setting.id:kInitialWindowSizeWireId, "
+                       "setting.value: ",
+                       RFC9113::kMaxSize31Bit + 1)));
+}
+
+TEST(Frame, ValidateSettingsValuesInvalidMaxFrameSize) {
+  std::vector<Http2SettingsFrame::Setting> settings;
+  settings.push_back(
+      {Http2Settings::kMaxFrameSizeWireId, RFC9113::kMinimumFrameSize - 1});
+  EXPECT_THAT(
+      ValidateSettingsValues(settings),
+      Http2StatusIs(
+          Http2Status::Http2ErrorType::kConnectionError,
+          Http2ErrorCode::kProtocolError,
+          absl::StrCat(RFC9113::kIncorrectFrameSizeSetting,
+                       "Invalid Setting:{setting.id:kMaxFrameSizeWireId, "
+                       "setting.value: ",
+                       RFC9113::kMinimumFrameSize - 1)));
+
+  settings.clear();
+  settings.push_back(
+      {Http2Settings::kMaxFrameSizeWireId, RFC9113::kMaximumFrameSize + 1});
+  EXPECT_THAT(
+      ValidateSettingsValues(settings),
+      Http2StatusIs(
+          Http2Status::Http2ErrorType::kConnectionError,
+          Http2ErrorCode::kProtocolError,
+          absl::StrCat(RFC9113::kIncorrectFrameSizeSetting,
+                       "Invalid Setting:{setting.id:kMaxFrameSizeWireId, "
+                       "setting.value: ",
+                       RFC9113::kMaximumFrameSize + 1)));
+}
+
+TEST(Frame, ValidateSettingsValuesValidSettings) {
+  std::vector<Http2SettingsFrame::Setting> settings;
+  settings.push_back(
+      {Http2Settings::kInitialWindowSizeWireId, RFC9113::kMaxSize31Bit});
+  settings.push_back(
+      {Http2Settings::kMaxFrameSizeWireId, RFC9113::kMinimumFrameSize});
+  settings.push_back(
+      {Http2Settings::kMaxFrameSizeWireId, RFC9113::kMaximumFrameSize});
+  EXPECT_TRUE(ValidateSettingsValues(settings).IsOk());
+}
+
+TEST(Frame, ValidateFrameHeaderTest) {
+  constexpr uint32_t kLastStreamId = 1;
+
+  // Valid frame header
+  Http2FrameHeader header{/*length=*/10, /*type=kData */ 0, /*flags=*/0,
+                          /*stream_id=*/1};
+  EXPECT_TRUE(ValidateFrameHeader(/*max_frame_size_setting=*/100,
+                                  /*incoming_header_in_progress=*/false,
+                                  /*incoming_header_stream_id=*/0, header,
+                                  kLastStreamId, /*is_client=*/true)
+                  .IsOk());
+
+  // Frame size larger than max frame size setting
+  header = {/*length=*/101, /*type=kData */ 0, /*flags=*/0, /*stream_id=*/1};
+  EXPECT_THAT(ValidateFrameHeader(/*max_frame_size_setting=*/100,
+                                  /*incoming_header_in_progress=*/false,
+                                  /*incoming_header_stream_id=*/0, header,
+                                  kLastStreamId, /*is_client=*/true),
+              Http2StatusIs(
+                  Http2Status::Http2ErrorType::kConnectionError,
+                  Http2ErrorCode::kFrameSizeError,
+                  absl::StrCat(RFC9113::kFrameSizeLargerThanMaxFrameSizeSetting,
+                               ", Current Size = 101, Max Size = 100")));
+
+  // Header in progress, but current frame is not continuation
+  header = {/*length=*/10, /*type=kData */ 0, /*flags=*/0, /*stream_id=*/1};
+  EXPECT_THAT(ValidateFrameHeader(/*max_frame_size_setting=*/100,
+                                  /*incoming_header_in_progress=*/true,
+                                  /*incoming_header_stream_id=*/1, header,
+                                  kLastStreamId, /*is_client=*/true),
+              Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                            Http2ErrorCode::kProtocolError,
+                            RFC9113::kAssemblerContiguousSequenceError));
+
+  // Header in progress, current frame is continuation, but stream id mismatch
+  header = {/*length=*/10, /*type=kContinuation */ 9, /*flags=*/0,
+            /*stream_id=*/3};
+  EXPECT_THAT(ValidateFrameHeader(/*max_frame_size_setting=*/100,
+                                  /*incoming_header_in_progress=*/true,
+                                  /*incoming_header_stream_id=*/1, header,
+                                  kLastStreamId, /*is_client=*/true),
+              Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                            Http2ErrorCode::kProtocolError,
+                            RFC9113::kAssemblerContiguousSequenceError));
+
+  // Header in progress, current frame is continuation, stream id matches
+  header = {/*length=*/100, /*type=kContinuation */ 9, /*flags=*/0,
+            /*stream_id=*/1};
+  EXPECT_TRUE(ValidateFrameHeader(/*max_frame_size_setting=*/100,
+                                  /*incoming_header_in_progress=*/true,
+                                  /*incoming_header_stream_id=*/1, header,
+                                  kLastStreamId, /*is_client=*/true)
+                  .IsOk());
+
+  // Received a data frame with a stream id larger than the last stream id sent
+  header = {/*length=*/10, /*type=kData*/ 0, /*flags=*/0, /*stream_id=*/5};
+  EXPECT_THAT(
+      ValidateFrameHeader(/*max_frame_size_setting=*/100,
+                          /*incoming_header_in_progress=*/false,
+                          /*incoming_header_stream_id=*/0, header,
+                          kLastStreamId, /*is_client=*/true),
+      Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                    Http2ErrorCode::kProtocolError, RFC9113::kUnknownStreamId));
+}
+
+TEST(FrameSize, Http2FrameSizeTest) {
+  constexpr absl::string_view kPayload = "hello";
+  constexpr size_t kPayloadSize = kPayload.size();
+  EXPECT_EQ(GetFrameMemoryUsage(
+                Http2DataFrame{/*stream_id=*/1, /*end_stream=*/false,
+                               /*payload=*/SliceBufferFromString(kPayload)}),
+            sizeof(Http2DataFrame) + kPayloadSize);
+  EXPECT_EQ(GetFrameMemoryUsage(Http2HeaderFrame{
+                /*stream_id=*/1, /*end_headers=*/false, /*end_stream=*/false,
+                /*payload=*/SliceBufferFromString(kPayload)}),
+            sizeof(Http2HeaderFrame) + kPayloadSize);
+  EXPECT_EQ(GetFrameMemoryUsage(Http2ContinuationFrame{
+                /*stream_id=*/1, /*end_headers=*/false,
+                /*payload=*/SliceBufferFromString(kPayload)}),
+            sizeof(Http2ContinuationFrame) + kPayloadSize);
+  EXPECT_EQ(
+      GetFrameMemoryUsage(Http2RstStreamFrame{
+          /*stream_id=*/1,
+          /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kConnectError)}),
+      sizeof(Http2RstStreamFrame));
+  EXPECT_EQ(GetFrameMemoryUsage(Http2SettingsFrame{}),
+            sizeof(Http2SettingsFrame));
+  EXPECT_EQ(
+      GetFrameMemoryUsage(Http2SettingsFrame{
+          /*ack=*/false,
+          /*settings=*/{{/*id=*/0x1234, /*value=*/0x9abcdef0},
+                        {/*id=*/0x5678, /*value=*/0x12345678}}}),
+      sizeof(Http2SettingsFrame) + (2 * sizeof(Http2SettingsFrame::Setting)));
+  EXPECT_EQ(GetFrameMemoryUsage(
+                Http2PingFrame{/*ack=*/false, /*opaque=*/0x123456789abcdef0}),
+            sizeof(Http2PingFrame));
+  EXPECT_EQ(GetFrameMemoryUsage(Http2GoawayFrame{
+                /*last_stream_id=*/0x12345678,
+                /*error_code=*/
+                static_cast<uint32_t>(Http2ErrorCode::kEnhanceYourCalm),
+                /*debug_data=*/Slice::FromCopiedString(kPayload)}),
+            sizeof(Http2GoawayFrame) + kPayloadSize);
+  EXPECT_EQ(GetFrameMemoryUsage(Http2WindowUpdateFrame{/*stream_id=*/1,
+                                                       /*increment=*/12345678}),
+            sizeof(Http2WindowUpdateFrame));
+  EXPECT_EQ(GetFrameMemoryUsage(Http2SecurityFrame{
+                /*payload=*/SliceBufferFromString(kPayload)}),
+            sizeof(Http2SecurityFrame) + kPayloadSize);
+  EXPECT_EQ(GetFrameMemoryUsage(Http2EmptyFrame{}), sizeof(Http2EmptyFrame));
 }
 
 }  // namespace

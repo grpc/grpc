@@ -24,7 +24,6 @@
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/port_platform.h>
 
-#include "absl/status/statusor.h"
 #include "src/core/call/status_util.h"
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/credentials/transport/security_connector.h"
@@ -36,6 +35,7 @@
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 
@@ -173,12 +173,12 @@ class ServerAuthFilter final : public ImplementChannelFilter<ServerAuthFilter> {
    public:
     explicit Call(ServerAuthFilter* filter);
     auto OnClientInitialMetadata(ClientMetadata& md, ServerAuthFilter* filter) {
-      return If(
+      return AssertResultType<absl::Status>(If(
           filter->server_credentials_ == nullptr ||
               filter->server_credentials_->auth_metadata_processor().process ==
                   nullptr,
           ImmediateOkStatus(),
-          [filter, md = &md]() { return RunApplicationCode(filter, *md); });
+          [filter, md = &md]() { return RunApplicationCode(filter, *md); }));
     }
     static inline const NoInterceptor OnServerInitialMetadata;
     static inline const NoInterceptor OnClientToServerMessage;

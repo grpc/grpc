@@ -25,10 +25,10 @@
 #include <string>
 #include <variant>
 
+#include "src/core/util/time.h"
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-#include "src/core/util/time.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -51,6 +51,7 @@ enum class Http2ErrorCode : uint8_t {
   kConnectError = 0xa,
   kEnhanceYourCalm = 0xb,
   kInadequateSecurity = 0xc,
+  kHTTP11Required = 0xd,
   kDoNotUse = 0xffu  // Force use of a default clause
 };
 
@@ -73,6 +74,10 @@ inline absl::StatusCode ErrorCodeToAbslStatusCode(
       return absl::StatusCode::kInternal;
   }
   GPR_UNREACHABLE_CODE(return absl::StatusCode::kUnknown);
+}
+
+inline uint8_t GetMaxHttp2ErrorCode() {
+  return static_cast<uint8_t>(Http2ErrorCode::kHTTP11Required);
 }
 
 inline Http2ErrorCode AbslStatusCodeToErrorCode(const absl::StatusCode status) {
@@ -323,7 +328,7 @@ class GRPC_MUST_USE_RESULT Http2Status {
 };
 
 // We can add more methods and helpers as needed.
-// This class is similar to ValueOrFailure but a more minamilasit version.
+// This class is similar to ValueOrFailure but a more minimalist version.
 // Reference :
 // https://github.com/grpc/grpc/blob/master/src/core/lib/promise/status_flag.h
 
@@ -401,6 +406,12 @@ template <typename T>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline T TakeValue(
     ValueOrHttp2Status<T>&& value) {
   return std::move(value.value());
+}
+
+inline Http2Status ToHttpOkOrConnError(const absl::Status& status) {
+  return status.ok() ? Http2Status::Ok()
+                     : Http2Status::AbslConnectionError(
+                           status.code(), std::string(status.message()));
 }
 
 }  // namespace http2

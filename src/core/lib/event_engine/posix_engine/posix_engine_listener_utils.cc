@@ -23,17 +23,17 @@
 #include <cstring>
 #include <string>
 
-#include "absl/cleanup/cleanup.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"  // IWYU pragma: keep
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/status_helper.h"
+#include "absl/cleanup/cleanup.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 #include <errno.h>       // IWYU pragma: keep
@@ -68,7 +68,7 @@ absl::Status PrepareSocket(EventEnginePosixInterface* posix_interface,
                            const PosixTcpOptions& options,
                            ListenerSocket& socket) {
   FileDescriptor fd = socket.sock;
-  CHECK(fd.ready());
+  GRPC_CHECK(fd.ready());
   bool close_fd = true;
   socket.port = 0;
   auto sock_cleanup =
@@ -110,7 +110,7 @@ absl::StatusOr<ListenerSocket> CreateAndPrepareListenerSocket(
     socket.addr = addr;
   }
   GRPC_RETURN_IF_ERROR(PrepareSocket(posix_interface, options, socket));
-  CHECK_GT(socket.port, 0);
+  GRPC_CHECK_GT(socket.port, 0);
   return socket;
 }
 
@@ -269,8 +269,8 @@ absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
     }
     return assigned_port;
   } else {
-    CHECK(!v6_sock.ok());
-    CHECK(!v4_sock.ok());
+    GRPC_CHECK(!v6_sock.ok());
+    GRPC_CHECK(!v4_sock.ok());
     return absl::FailedPreconditionError(absl::StrCat(
         "Failed to add any wildcard listeners: ", v6_sock.status().message(),
         v4_sock.status().message()));

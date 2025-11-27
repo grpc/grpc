@@ -32,13 +32,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/container/inlined_vector.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/ascii.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
 #include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
 #include "src/core/call/call_finalization.h"
@@ -61,6 +54,13 @@
 #include "src/core/util/latent_see.h"
 #include "src/core/util/uri.h"
 #include "src/cpp/server/load_reporter/constants.h"
+#include "absl/container/inlined_vector.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/ascii.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
 // IWYU pragma: no_include "opencensus/stats/recording.h"
 
@@ -174,7 +174,7 @@ const char* GetStatusTagForStatus(grpc_status_code status) {
 
 void ServerLoadReportingFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, ServerLoadReportingFilter* filter) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
+  GRPC_LATENT_SEE_SCOPE(
       "ServerLoadReportingFilter::Call::OnClientInitialMetadata");
   // Gather up basic facts about the request
   Slice service_method;
@@ -200,7 +200,7 @@ void ServerLoadReportingFilter::Call::OnClientInitialMetadata(
 
 void ServerLoadReportingFilter::Call::OnServerTrailingMetadata(
     ServerMetadata& md, ServerLoadReportingFilter* filter) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
+  GRPC_LATENT_SEE_SCOPE(
       "ServerLoadReportingFilter::Call::OnServerTrailingMetadata");
   const auto& costs = md.Take(LbCostBinMetadata());
   for (const auto& cost : costs) {
@@ -219,7 +219,7 @@ void ServerLoadReportingFilter::Call::OnServerTrailingMetadata(
 
 void ServerLoadReportingFilter::Call::OnFinalize(
     const grpc_call_final_info* final_info, ServerLoadReportingFilter* filter) {
-  GRPC_LATENT_SEE_INNER_SCOPE("ServerLoadReportingFilter::Call::OnFinalize");
+  GRPC_LATENT_SEE_SCOPE("ServerLoadReportingFilter::Call::OnFinalize");
   if (final_info == nullptr) return;
   // After the last bytes have been placed on the wire we record
   // final measurements

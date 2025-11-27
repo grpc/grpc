@@ -30,10 +30,18 @@
 
 namespace grpc_generator {
 
+inline std::string ToLower(std::string s) {
+  std::transform(s.begin(), s.end(), s.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
+  return s;
+}
+
 inline bool StripSuffix(std::string* filename, const std::string& suffix) {
   if (filename->length() >= suffix.length()) {
     size_t suffix_pos = filename->length() - suffix.length();
-    if (filename->compare(suffix_pos, std::string::npos, suffix) == 0) {
+    std::string filename_suffix = filename->substr(suffix_pos);
+
+    if (ToLower(filename_suffix) == ToLower(suffix)) {
       filename->resize(filename->size() - suffix.size());
       return true;
     }

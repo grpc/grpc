@@ -212,7 +212,11 @@ def _extract_rules_from_bazel_xml(xml_tree):
 
 def _get_bazel_label(target_name: str) -> str:
     if target_name.startswith("@"):
-        return target_name
+        if ":" in target_name:
+            return target_name
+        else:
+            # @foo//bar/baz -> @foo//bar/baz:baz
+            return target_name + ":" + target_name.split("/")[-1]
     if ":" in target_name:
         return "//%s" % target_name
     else:
@@ -306,7 +310,7 @@ def _extract_sources(bazel_rule: BuildMetadata) -> List[str]:
 def _extract_deps(
     bazel_rule: BuildMetadata, bazel_rules: BuildDict
 ) -> List[str]:
-    """Gets list of deps from from a bazel rule"""
+    """Gets list of deps from a bazel rule"""
     deps = set(bazel_rule["deps"])
     for src in bazel_rule["srcs"]:
         if (
@@ -512,7 +516,7 @@ def _compute_transitive_metadata(
                 )
     # This item is a "visited" flag
     bazel_rule["_PROCESSING_DONE"] = True
-    # Following items are described in the docstinrg.
+    # Following items are described in the docstring.
     bazel_rule["_TRANSITIVE_DEPS"] = list(sorted(transitive_deps))
     bazel_rule["_COLLAPSED_DEPS"] = list(sorted(collapsed_deps))
     bazel_rule["_COLLAPSED_SRCS"] = list(sorted(collapsed_srcs))
@@ -556,7 +560,7 @@ def update_test_metadata_with_transitive_metadata(
 ) -> None:
     """Patches test build metadata with transitive metadata."""
     for lib_name, lib_dict in list(all_extra_metadata.items()):
-        # Skip if it isn't not an test
+        # Skip if it isn't a test
         if (
             lib_dict.get("build") != "test"
             and lib_dict.get("build") != "plugin_test"
@@ -625,7 +629,7 @@ def _expand_upb_proto_library_rules(bazel_rules):
             # deps is not properly fetched from bazel query for upb_c_proto_library target
             # so add the upb dependency manually
             bazel_rule["deps"] = [
-                "@com_google_protobuf//upb:descriptor_upb_proto",
+                "@com_google_protobuf//upb/reflection:descriptor_upb_proto",
                 "@com_google_protobuf//upb:generated_code_support",
             ]
             # populate the upb_c_proto_library rule with pre-generated upb headers
@@ -695,7 +699,7 @@ def _patch_descriptor_upb_proto_library(bazel_rules):
     # The upb's descriptor_upb_proto library doesn't reference the generated descriptor.proto
     # sources explicitly, so we add them manually.
     bazel_rule = bazel_rules.get(
-        "@com_google_protobuf//upb:descriptor_upb_proto", None
+        "@com_google_protobuf//upb/reflection:descriptor_upb_proto", None
     )
     if bazel_rule:
         bazel_rule["srcs"].append(
@@ -725,7 +729,7 @@ def _generate_build_metadata(
     # Rename targets marked with "_RENAME" extra metadata.
     # This is mostly a cosmetic change to ensure that we end up with build.yaml target
     # names we're used to from the past (and also to avoid too long target names).
-    # The rename step needs to be made after we're done with most of processing logic
+    # The rename step needs to be made after we're done with most processing logic
     # otherwise the already-renamed libraries will have different names than expected
     for lib_name in lib_names:
         to_name = build_extra_metadata.get(lib_name, {}).get("_RENAME", None)
@@ -1105,7 +1109,7 @@ _BUILD_EXTRA_METADATA = {
         "build": "all",
         "_RENAME": "address_sorting",
     },
-    "@com_google_protobuf//upb:base": {
+    "@com_google_protobuf//upb/base": {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_base_lib",
@@ -1115,7 +1119,7 @@ _BUILD_EXTRA_METADATA = {
         "build": "all",
         "_RENAME": "upb_hash_lib",
     },
-    "@com_google_protobuf//upb:mem": {
+    "@com_google_protobuf//upb/mem": {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_mem_lib",
@@ -1125,7 +1129,7 @@ _BUILD_EXTRA_METADATA = {
         "build": "all",
         "_RENAME": "upb_lex_lib",
     },
-    "@com_google_protobuf//upb:message": {
+    "@com_google_protobuf//upb/message": {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_message_lib",

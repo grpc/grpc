@@ -26,9 +26,6 @@
 #include <memory>
 #include <sstream>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/random/random.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
@@ -37,10 +34,13 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
+#include "absl/log/log.h"
+#include "absl/random/random.h"
 
 static grpc_slice MakeSlice(const std::vector<uint8_t>& bytes) {
   grpc_slice s = grpc_slice_malloc(bytes.size());
@@ -375,7 +375,7 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
       auto error =
           p.Parse(slices[i], i == slices.size() - 1, absl::BitGenRef(bitgen),
                   /*call_tracer=*/nullptr);
-      CHECK_OK(error);
+      GRPC_CHECK_OK(error);
     }
   };
   parse_vec(init_slices);
@@ -430,8 +430,8 @@ class FromEncoderFixture {
       i++;
     }
     // Remove the HTTP header.
-    CHECK(!out.empty());
-    CHECK_GT(GRPC_SLICE_LENGTH(out[0]), 9);
+    GRPC_CHECK(!out.empty());
+    GRPC_CHECK_GT(GRPC_SLICE_LENGTH(out[0]), 9);
     out[0] = grpc_slice_sub_no_ref(out[0], 9, GRPC_SLICE_LENGTH(out[0]));
     return out;
   }

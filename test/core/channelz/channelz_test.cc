@@ -32,12 +32,13 @@
 #include <atomic>
 #include <chrono>
 #include <memory>
+#include <optional>
+#include <string>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "gtest/gtest.h"
 #include "src/core/channelz/channelz_registry.h"
+#include "src/core/channelz/text_encode.h"
+#include "src/core/channelz/v2tov1/legacy_api.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -47,11 +48,18 @@
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/notification.h"
+#include "src/core/util/upb_utils.h"
 #include "src/core/util/useful.h"
 #include "src/core/util/wait_for_single_owner.h"
+#include "src/proto/grpc/channelz/v2/channelz.upb.h"
+#include "src/proto/grpc/channelz/v2/channelz.upbdefs.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/channel_trace_proto_helper.h"
+#include "upb/mem/arena.hpp"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 using grpc_event_engine::experimental::GetDefaultEventEngine;
 
@@ -98,7 +106,11 @@ std::vector<intptr_t> GetUuidListFromArray(const Json::Array& arr) {
 
 void ValidateJsonArraySize(const Json& array, size_t expected) {
   if (expected == 0) {
-    ASSERT_EQ(array.type(), Json::Type::kNull);
+    if (array.type() == Json::Type::kArray) {
+      ASSERT_EQ(array.array().size(), 0);
+    } else {
+      ASSERT_EQ(array.type(), Json::Type::kNull);
+    }
   } else {
     ASSERT_EQ(array.type(), Json::Type::kArray);
     EXPECT_EQ(array.array().size(), expected);
@@ -112,15 +124,18 @@ void ValidateJsonEnd(const Json& json, bool end) {
     ASSERT_EQ(it->second.type(), Json::Type::kBoolean);
     EXPECT_TRUE(it->second.boolean());
   } else {
-    ASSERT_EQ(it, json.object().end());
+    if (it != json.object().end()) {
+      ASSERT_EQ(it->second.type(), Json::Type::kBoolean);
+      EXPECT_FALSE(it->second.boolean());
+    }
   }
 }
 
 void ValidateGetTopChannels(size_t expected_channels) {
-  std::string json_str = ChannelzRegistry::GetTopChannelsJson(0);
-  grpc::testing::ValidateGetTopChannelsResponseProtoJsonTranslation(
-      json_str.c_str());
+  char* json_str = grpc_channelz_get_top_channels(0);
+  grpc::testing::ValidateGetTopChannelsResponseProtoJsonTranslation(json_str);
   auto parsed_json = JsonParse(json_str);
+  gpr_free(json_str);
   ASSERT_TRUE(parsed_json.ok()) << parsed_json.status();
   ASSERT_EQ(parsed_json->type(), Json::Type::kObject);
   // This check will naturally have to change when we support pagination.
@@ -138,10 +153,10 @@ void ValidateGetTopChannels(size_t expected_channels) {
 }
 
 void ValidateGetServers(size_t expected_servers) {
-  std::string json_str = ChannelzRegistry::GetServersJson(0);
-  grpc::testing::ValidateGetServersResponseProtoJsonTranslation(
-      json_str.c_str());
+  char* json_str = grpc_channelz_get_servers(0);
+  grpc::testing::ValidateGetServersResponseProtoJsonTranslation(json_str);
   auto parsed_json = JsonParse(json_str);
+  gpr_free(json_str);
   ASSERT_TRUE(parsed_json.ok()) << parsed_json.status();
   ASSERT_EQ(parsed_json->type(), Json::Type::kObject);
   // This check will naturally have to change when we support pagination.
@@ -241,7 +256,8 @@ void ValidateCounters(const std::string& json_str,
 void ValidateChannel(ChannelNode* channel,
                      const ValidateChannelDataArgs& args) {
   std::string json_str = channel->RenderJsonString();
-  grpc::testing::ValidateChannelProtoJsonTranslation(json_str.c_str());
+  grpc::testing::ValidateChannelProtoJsonTranslation(
+      v2tov1::StripAdditionalInfoFromJson(json_str).c_str());
   ValidateCounters(json_str, args);
   // also check that the core API formats this the correct way
   char* core_api_json_str = grpc_channelz_get_channel(channel->uuid());
@@ -252,7 +268,8 @@ void ValidateChannel(ChannelNode* channel,
 
 void ValidateServer(ServerNode* server, const ValidateChannelDataArgs& args) {
   std::string json_str = server->RenderJsonString();
-  grpc::testing::ValidateServerProtoJsonTranslation(json_str.c_str());
+  grpc::testing::ValidateServerProtoJsonTranslation(
+      v2tov1::StripAdditionalInfoFromJson(json_str).c_str());
   ValidateCounters(json_str, args);
   // also check that the core API formats this the correct way
   char* core_api_json_str = grpc_channelz_get_server(server->uuid());
@@ -284,28 +301,58 @@ TEST_P(ChannelzChannelTest, BasicChannel) {
   ValidateChannel(channelz_channel, {0, 0, 0});
 }
 
+TEST_P(ChannelzChannelTest, BasicChannelProto) {
+  ExecCtx exec_ctx;
+  ChannelFixture channel(GetParam());
+  ChannelNode* channelz_channel =
+      grpc_channel_get_channelz_node(channel.channel());
+  upb_Arena* arena = upb_Arena_New();
+  grpc_channelz_v2_Entity* entity = grpc_channelz_v2_Entity_new(arena);
+  channelz_channel->SerializeEntity(entity, arena, absl::Milliseconds(100));
+  EXPECT_EQ(grpc_channelz_v2_Entity_id(entity), channelz_channel->uuid());
+  EXPECT_EQ(UpbStringToStdString(grpc_channelz_v2_Entity_kind(entity)),
+            "channel");
+  EXPECT_EQ(grpc_channelz_v2_Entity_orphaned(entity), false);
+  size_t size;
+  const grpc_channelz_v2_TraceEvent* const* trace =
+      grpc_channelz_v2_Entity_trace(entity, &size);
+  if (GetParam() <= 48) {
+    EXPECT_EQ(size, 0);
+  } else if (GetParam() > 1024 || size > 0) {
+    ASSERT_EQ(size, 1);
+    // TODO(ctiller): This should be a test of the trace, not the channel.
+    // Also, emitting "Channel created" every time a channel is created is
+    // probably not the most helpful thing to do.
+    EXPECT_EQ(
+        UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[0])),
+        "Channel created");
+  }
+  upb_Arena_Free(arena);
+}
+
 class TestZTrace final : public ZTrace {
  public:
-  void Run(Timestamp deadline, std::map<std::string, std::string> args,
+  void Run(Args args,
            std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,
-           absl::AnyInvocable<void(Json)> callback) override {
+           Callback callback) override {
     engine->RunAfter(Duration::Milliseconds(100),
                      [callback = std::move(callback)]() mutable {
                        Json::Object object;
                        object["test"] = Json::FromString("yes");
-                       callback(Json::FromObject(std::move(object)));
+                       callback(JsonDump(Json::FromObject(std::move(object))));
                      });
   }
 };
 
 class TestDataSource final : public DataSource {
  public:
-  using DataSource::DataSource;
-  ~TestDataSource() { ResetDataSource(); }
+  explicit TestDataSource(RefCountedPtr<BaseNode> node)
+      : DataSource(std::move(node)) {
+    SourceConstructed();
+  }
+  ~TestDataSource() { SourceDestructing(); }
   void AddData(DataSink sink) override {
-    Json::Object object;
-    object["test"] = Json::FromString("yes");
-    sink.AddAdditionalInfo("testData", std::move(object));
+    sink.AddData("testData", PropertyList().Set("test", "yes"));
   }
   std::unique_ptr<ZTrace> GetZTrace(absl::string_view name) override {
     if (name == "test_ztrace") return std::make_unique<TestZTrace>();
@@ -360,52 +407,16 @@ TEST_P(ChannelzChannelTest, ZTrace) {
   Notification done;
   std::string json_text;
   channelz_channel->RunZTrace(
-      "test_ztrace", Timestamp::Now() + Duration::Milliseconds(300), {},
-      grpc_event_engine::experimental::GetDefaultEventEngine(), [&](Json json) {
-        json_text = JsonDump(json);
+      "test_ztrace", {},
+      grpc_event_engine::experimental::GetDefaultEventEngine(),
+      [&](absl::StatusOr<std::optional<std::string>> result) {
+        ASSERT_TRUE(result.ok());
+        ASSERT_TRUE(result->has_value());
+        json_text = **result;
         done.Notify();
       });
   done.WaitForNotification();
   EXPECT_EQ(json_text, "{\"test\":\"yes\"}");
-}
-
-class TestSubObjectDataSource final : public DataSource {
- public:
-  using DataSource::DataSource;
-  ~TestSubObjectDataSource() { ResetDataSource(); }
-  void AddData(DataSink sink) override { sink.AddChildObjects({child_}); }
-
-  int64_t child_id() const { return child_->uuid(); }
-
- private:
-  RefCountedPtr<SocketNode> child_ =
-      MakeRefCounted<SocketNode>("foo", "bar", "baz", nullptr);
-};
-
-TEST_P(ChannelzChannelTest, SubObjectDataSource) {
-  ExecCtx exec_ctx;
-  ChannelFixture channel(GetParam());
-  ChannelNode* channelz_channel =
-      grpc_channel_get_channelz_node(channel.channel());
-  TestSubObjectDataSource data_source(channelz_channel->Ref());
-  auto json = channelz_channel->RenderJson();
-  ASSERT_EQ(json.type(), Json::Type::kObject);
-  const Json::Object& object = json.object();
-  auto it_additional_info = object.find("additionalInfo");
-  ASSERT_NE(it_additional_info, object.end());
-  ASSERT_EQ(it_additional_info->second.type(), Json::Type::kObject);
-  const Json::Object& additional_info = it_additional_info->second.object();
-  auto it_child_objects = additional_info.find("childObjects");
-  ASSERT_NE(it_child_objects, additional_info.end());
-  ASSERT_EQ(it_child_objects->second.type(), Json::Type::kObject);
-  const Json::Object& child_objects = it_child_objects->second.object();
-  auto it = child_objects.find("subSockets");
-  ASSERT_NE(it, child_objects.end());
-  ASSERT_EQ(it->second.type(), Json::Type::kArray);
-  const Json::Array& sub_sockets = it->second.array();
-  ASSERT_EQ(sub_sockets.size(), 1);
-  ASSERT_EQ(sub_sockets[0].type(), Json::Type::kNumber);
-  EXPECT_EQ(sub_sockets[0].string(), std::to_string(data_source.child_id()));
 }
 
 TEST(ChannelzChannelTest, ChannelzDisabled) {
@@ -473,11 +484,15 @@ class ChannelzRegistryBasedTest : public ::testing::TestWithParam<size_t> {
   // ensure we always have a fresh registry for tests.
   void SetUp() override {
     WaitForSingleOwner(GetDefaultEventEngine());
+    ResourceQuota::TestOnlyResetDefaultResourceQuota();
+    TestOnlyResetInstruments();
     ChannelzRegistry::TestOnlyReset();
   }
 
   void TearDown() override {
     WaitForSingleOwner(GetDefaultEventEngine());
+    ResourceQuota::TestOnlyResetDefaultResourceQuota();
+    TestOnlyResetInstruments();
     ChannelzRegistry::TestOnlyReset();
   }
 };
@@ -505,10 +520,10 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsPagination) {
   // This is over the pagination limit.
   ChannelFixture channels[150];
   (void)channels;  // suppress unused variable error
-  std::string json_str = ChannelzRegistry::GetTopChannelsJson(0);
-  grpc::testing::ValidateGetTopChannelsResponseProtoJsonTranslation(
-      json_str.c_str());
+  char* json_str = grpc_channelz_get_top_channels(0);
+  grpc::testing::ValidateGetTopChannelsResponseProtoJsonTranslation(json_str);
   auto parsed_json = JsonParse(json_str);
+  gpr_free(json_str);
   ASSERT_TRUE(parsed_json.ok()) << parsed_json.status();
   ASSERT_EQ(parsed_json->type(), Json::Type::kObject);
   // 100 is the pagination limit.
@@ -518,10 +533,10 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsPagination) {
   ValidateJsonArraySize(channel_json, 100);
   ValidateJsonEnd(*parsed_json, false);
   // Now we get the rest.
-  json_str = ChannelzRegistry::GetTopChannelsJson(101);
-  grpc::testing::ValidateGetTopChannelsResponseProtoJsonTranslation(
-      json_str.c_str());
-  parsed_json = JsonParse(json_str);
+  char* json_str_2 = grpc_channelz_get_top_channels(101);
+  grpc::testing::ValidateGetTopChannelsResponseProtoJsonTranslation(json_str_2);
+  parsed_json = JsonParse(json_str_2);
+  gpr_free(json_str_2);
   ASSERT_TRUE(parsed_json.ok()) << parsed_json.status();
   ASSERT_EQ(parsed_json->type(), Json::Type::kObject);
   channel_json = Json();
@@ -536,8 +551,9 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidCheck) {
   ExecCtx exec_ctx;
   ChannelFixture channels[kNumChannels];
   (void)channels;  // suppress unused variable error
-  std::string json_str = ChannelzRegistry::GetTopChannelsJson(0);
+  char* json_str = grpc_channelz_get_top_channels(0);
   auto parsed_json = JsonParse(json_str);
+  gpr_free(json_str);
   ASSERT_TRUE(parsed_json.ok()) << parsed_json.status();
   ASSERT_EQ(parsed_json->type(), Json::Type::kObject);
   Json channel_json;
@@ -547,28 +563,6 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidCheck) {
   std::vector<intptr_t> uuids = GetUuidListFromArray(channel_json.array());
   for (int i = 0; i < kNumChannels; ++i) {
     EXPECT_EQ(i + 1, uuids[i]);
-  }
-}
-
-TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMiddleUuidCheck) {
-  const intptr_t kNumChannels = 50;
-  const intptr_t kMidQuery = 40;
-  ExecCtx exec_ctx;
-  ChannelFixture channels[kNumChannels];
-  ChannelzRegistry::GetAllEntities();  // Force uuids to be fresh
-  (void)channels;                      // suppress unused variable error
-  // Only query for the end of the channels.
-  std::string json_str = ChannelzRegistry::GetTopChannelsJson(kMidQuery);
-  auto parsed_json = JsonParse(json_str);
-  ASSERT_TRUE(parsed_json.ok()) << parsed_json.status();
-  ASSERT_EQ(parsed_json->type(), Json::Type::kObject);
-  Json channel_json;
-  auto it = parsed_json->object().find("channel");
-  if (it != parsed_json->object().end()) channel_json = it->second;
-  ValidateJsonArraySize(channel_json, kNumChannels - kMidQuery + 1);
-  std::vector<intptr_t> uuids = GetUuidListFromArray(channel_json.array());
-  for (size_t i = 0; i < uuids.size(); ++i) {
-    EXPECT_EQ(static_cast<intptr_t>(kMidQuery + i), uuids[i]);
   }
 }
 
@@ -630,6 +624,19 @@ TEST_F(ChannelzRegistryBasedTest, ManyServersTest) {
 
 INSTANTIATE_TEST_SUITE_P(ChannelzChannelTestSweep, ChannelzChannelTest,
                          ::testing::Values(0, 8, 64, 1024, 1024 * 1024));
+
+TEST(ChannelzTextEncodeTest, BasicTraceEvent) {
+  upb::Arena arena;
+  grpc_channelz_v2_TraceEvent* event =
+      grpc_channelz_v2_TraceEvent_new(arena.ptr());
+  grpc_channelz_v2_TraceEvent_set_description(
+      event, upb_StringView_FromString("Test Event"));
+  // Just calling TextEncode to see if it crashes.
+  std::string encoded =
+      channelz::TextEncode(reinterpret_cast<upb_Message*>(event),
+                           grpc_channelz_v2_TraceEvent_getmsgdef);
+  EXPECT_NE(encoded.length(), 0) << encoded;
+}
 
 }  // namespace testing
 }  // namespace channelz

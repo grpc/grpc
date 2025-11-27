@@ -24,10 +24,10 @@
 #include <mutex>
 #include <string>
 
+#include "helper.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/log/initialize.h"
-#include "helper.h"
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"

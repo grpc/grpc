@@ -23,14 +23,12 @@
 #include <thread>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "envoy/service/discovery/v3/discovery.pb.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
-#include "src/proto/grpc/testing/xds/v3/ads.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/discovery.pb.h"
-#include "src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace testing {
@@ -105,6 +103,9 @@ AdsServiceImpl::Reactor::Reactor(
       MaybeFinish(*ads_service_impl_->forced_ads_failure_);
       return;
     }
+    if (ads_service_impl_->call_creds_cb_ != nullptr) {
+      ads_service_impl_->call_creds_cb_(context->client_metadata());
+    }
   }
   ads_service_impl_->AddClient(context->peer());
   StartRead(&request_);
@@ -156,8 +157,8 @@ void AdsServiceImpl::Reactor::OnReadDone(bool ok) {
   if (request_.response_nonce().empty()) {
     int client_resource_type_version = 0;
     if (!request_.version_info().empty()) {
-      CHECK(absl::SimpleAtoi(request_.version_info(),
-                             &client_resource_type_version));
+      GRPC_CHECK(absl::SimpleAtoi(request_.version_info(),
+                                  &client_resource_type_version));
     }
     if (ads_service_impl_->check_version_callback_ != nullptr) {
       ads_service_impl_->check_version_callback_(request_.type_url(),
@@ -165,7 +166,7 @@ void AdsServiceImpl::Reactor::OnReadDone(bool ok) {
     }
   } else {
     int client_nonce;
-    CHECK(absl::SimpleAtoi(request_.response_nonce(), &client_nonce));
+    GRPC_CHECK(absl::SimpleAtoi(request_.response_nonce(), &client_nonce));
     // Check for ACK or NACK.
     ResponseState response_state;
     if (!request_.has_error_detail()) {
@@ -232,7 +233,7 @@ void AdsServiceImpl::Reactor::OnReadDone(bool ok) {
               << this << ": Unsubscribe to type=" << request_.type_url()
               << " name=" << resource_name;
     auto it2 = resource_name_map.find(resource_name);
-    CHECK(it2 != resource_name_map.end()) << resource_name;
+    GRPC_CHECK(it2 != resource_name_map.end()) << resource_name;
     auto& resource_state = it2->second;
     resource_state.subscriptions.erase(this);
     if (resource_state.subscriptions.empty() &&
@@ -372,7 +373,7 @@ uint64_t LrsServiceImpl::ClientStats::total_issued_requests() const {
 uint64_t LrsServiceImpl::ClientStats::dropped_requests(
     const std::string& category) const {
   auto iter = dropped_requests_.find(category);
-  CHECK(iter != dropped_requests_.end());
+  GRPC_CHECK(iter != dropped_requests_.end());
   return iter->second;
 }
 

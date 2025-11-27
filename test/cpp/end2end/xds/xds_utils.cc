@@ -26,13 +26,6 @@
 #include <thread>
 #include <vector>
 
-#include "absl/memory/memory.h"
-#include "absl/strings/numbers.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_replace.h"
-#include "absl/strings/string_view.h"
 #include "envoy/extensions/filters/http/router/v3/router.pb.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/server/server.h"
@@ -42,6 +35,13 @@
 #include "src/core/xds/xds_client/xds_channel_args.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_replace.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc {
 namespace testing {
@@ -87,6 +87,7 @@ std::string XdsBootstrapBuilder::MakeXdsServersText(
       "              \"type\": \"<SERVER_CREDS_TYPE>\"<SERVER_CREDS_CONFIG>\n"
       "            }\n"
       "          ],\n"
+      "          \"call_creds\": [<CALL_CREDS>],\n"
       "          \"server_features\": [<SERVER_FEATURES>]\n"
       "        }";
   std::vector<std::string> server_features;
@@ -99,6 +100,11 @@ std::string XdsBootstrapBuilder::MakeXdsServersText(
   if (trusted_xds_server_) {
     server_features.push_back("\"trusted_xds_server\"");
   }
+  std::string call_creds;
+  if (!xds_call_creds_type_.empty()) {
+    call_creds = absl::StrCat("{\"type\": \"", xds_call_creds_type_,
+                              "\", \"config\": ", xds_call_creds_config_, "}");
+  }
   std::vector<std::string> servers;
   for (absl::string_view server_uri : server_uris) {
     servers.emplace_back(absl::StrReplaceAll(
@@ -110,6 +116,7 @@ std::string XdsBootstrapBuilder::MakeXdsServersText(
               ? ""
               : absl::StrCat(",\n              \"config\": ",
                              xds_channel_creds_config_)},
+         {"<CALL_CREDS>", call_creds},
          {"<SERVER_FEATURES>", absl::StrJoin(server_features, ", ")}}));
   }
   return absl::StrCat("      \"xds_servers\": [\n",

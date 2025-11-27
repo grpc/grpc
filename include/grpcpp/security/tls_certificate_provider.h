@@ -109,19 +109,27 @@ class GRPCXX_DLL FileWatcherCertificateProvider final
   FileWatcherCertificateProvider(const std::string& private_key_path,
                                  const std::string& identity_certificate_path,
                                  const std::string& root_cert_path,
+                                 const std::string& spiffe_bundle_map_path,
                                  unsigned int refresh_interval_sec);
   // Constructor to get credential updates from identity file paths only.
   FileWatcherCertificateProvider(const std::string& private_key_path,
                                  const std::string& identity_certificate_path,
                                  unsigned int refresh_interval_sec)
       : FileWatcherCertificateProvider(private_key_path,
-                                       identity_certificate_path, "",
+                                       identity_certificate_path, "", "",
                                        refresh_interval_sec) {}
   // Constructor to get credential updates from root file path only.
   FileWatcherCertificateProvider(const std::string& root_cert_path,
                                  unsigned int refresh_interval_sec)
-      : FileWatcherCertificateProvider("", "", root_cert_path,
+      : FileWatcherCertificateProvider("", "", root_cert_path, "",
                                        refresh_interval_sec) {}
+  FileWatcherCertificateProvider(const std::string& private_key_path,
+                                 const std::string& identity_certificate_path,
+                                 const std::string& root_cert_path,
+                                 unsigned int refresh_interval_sec)
+      : FileWatcherCertificateProvider(
+            private_key_path, identity_certificate_path, root_cert_path, "",
+            refresh_interval_sec) {}
 
   ~FileWatcherCertificateProvider() override;
 

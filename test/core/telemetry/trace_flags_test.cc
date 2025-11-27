@@ -14,10 +14,10 @@
 
 #include <grpc/grpc.h>
 
-#include "absl/strings/match.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/debug/trace.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/strings/match.h"
 
 class TraceFlags : public ::testing::Test {
  public:

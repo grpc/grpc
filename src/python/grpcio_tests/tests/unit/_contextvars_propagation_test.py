@@ -173,7 +173,7 @@ class ContextVarsPropagationTest(unittest.TestCase):
             for _ in range(_THREAD_COUNT):
                 q = queue.Queue()
                 thread = threading.Thread(target=_run_on_thread, args=(q,))
-                thread.setDaemon(True)
+                thread.daemon = True
                 thread.start()
                 threads.append((thread, q))
 

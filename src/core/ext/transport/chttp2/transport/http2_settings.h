@@ -23,30 +23,32 @@
 #include <cstdint>
 #include <optional>
 
-#include "absl/functional/function_ref.h"
-#include "absl/strings/string_view.h"
 #include "src/core/channelz/property_list.h"
-#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/util/useful.h"
+#include "absl/functional/function_ref.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
 class Http2Settings {
  public:
   enum : uint16_t {
+    // These values are as defined in RFC9113
+    // https://www.rfc-editor.org/rfc/rfc9113.html#name-defined-settings
     kHeaderTableSizeWireId = 1,
     kEnablePushWireId = 2,
     kMaxConcurrentStreamsWireId = 3,
     kInitialWindowSizeWireId = 4,
     kMaxFrameSizeWireId = 5,
     kMaxHeaderListSizeWireId = 6,
+    // gRPC specific settings
     kGrpcAllowTrueBinaryMetadataWireId = 65027,
     kGrpcPreferredReceiveCryptoFrameSizeWireId = 65028,
     kGrpcAllowSecurityFrameWireId = 65029,
   };
 
-  void Diff(bool is_first_send, const Http2Settings& old,
+  void Diff(bool is_first_send, const Http2Settings& old_setting,
             absl::FunctionRef<void(uint16_t key, uint32_t value)> cb) const;
   GRPC_MUST_USE_RESULT http2::Http2ErrorCode Apply(uint16_t key,
                                                    uint32_t value);
@@ -148,47 +150,62 @@ class Http2Settings {
   }
 
  private:
-  uint32_t header_table_size_ = 4096;
+  // RFC9113 states the default value for SETTINGS_HEADER_TABLE_SIZE
+  // Currently this is set only once in the lifetime of a transport.
+  // We plan to change that in the future.
+  uint32_t header_table_size_ = 4096u;
+
+  // TODO(tjagtap) [PH2][P4] : Get the history of why this default was decided
+  // and write it here.
+  // CLIENT : Set only once in the lifetime of a client transport. This is set
+  // to 0 for client.
+  // SERVER : This setting can change for the server. This is usually changed to
+  // handle memory pressure.
   uint32_t max_concurrent_streams_ = 4294967295u;
+
+  // RFC9113 states the default for SETTINGS_INITIAL_WINDOW_SIZE
+  // Both client and servers can change this setting. This is usually changed to
+  // handle memory pressure.
   uint32_t initial_window_size_ = 65535u;
+
+  // RFC9113 states the default for SETTINGS_MAX_FRAME_SIZE
+  // Both client and servers can change this setting. This is usually changed to
+  // handle memory pressure.
   uint32_t max_frame_size_ = 16384u;
+
+  // TODO(tjagtap) [PH2][P4] : Get the history of why this default was decided
+  // and write it here.
+  // This is an advisory but we currently enforce it.
+  // Set only once in the lifetime of a transport currently.
+  // When a peer that updates this more than once, that may indicate either an
+  // underlying issue or a malicious peer.
   uint32_t max_header_list_size_ = 16777216u;
+
+  // gRPC defined setting
+  // Both client and servers can change this setting. This is usually changed to
+  // handle memory pressure.
   uint32_t preferred_receive_crypto_message_size_ = 0u;
+
+  // RFC9113 defined default is true. However, for gRPC we always then set it to
+  // false via the SetEnablePush function
+  // Currently this is set only once in the lifetime of a transport.
+  // We have no plans to support this in the future.
   bool enable_push_ = true;
+
+  // gRPC defined setting
+  // Unlike most other SETTINGS, this setting is negotiated between the client
+  // and the server.
+  // Currently this is set only once in the lifetime of a transport.
+  // Disconnect if it is received more than once from the peer.
   bool allow_true_binary_metadata_ = false;
+
+  // gRPC defined setting
+  // Unlike most other SETTINGS, this setting is negotiated between the client
+  // and the server. Both have to set it to true for the system to successfully
+  // apply the custom SECURITY frame.
+  // Currently this is set only once in the lifetime of a transport.
+  // Disconnect if it is received more than once from the peer.
   bool allow_security_frame_ = false;
-};
-
-class Http2SettingsManager {
- public:
-  Http2Settings& mutable_local() { return local_; }
-  const Http2Settings& local() const { return local_; }
-  const Http2Settings& acked() const { return acked_; }
-  Http2Settings& mutable_peer() { return peer_; }
-  const Http2Settings& peer() const { return peer_; }
-
-  channelz::PropertyGrid ChannelzProperties() const {
-    return channelz::PropertyGrid()
-        .SetColumn("local", local_.ChannelzProperties())
-        .SetColumn("sent", sent_.ChannelzProperties())
-        .SetColumn("peer", peer_.ChannelzProperties())
-        .SetColumn("acked", acked_.ChannelzProperties());
-  }
-
-  std::optional<Http2SettingsFrame> MaybeSendUpdate();
-  GRPC_MUST_USE_RESULT bool AckLastSend();
-
- private:
-  enum class UpdateState : uint8_t {
-    kFirst,
-    kSending,
-    kIdle,
-  };
-  UpdateState update_state_ = UpdateState::kFirst;
-  Http2Settings local_;
-  Http2Settings sent_;
-  Http2Settings peer_;
-  Http2Settings acked_;
 };
 
 }  // namespace grpc_core

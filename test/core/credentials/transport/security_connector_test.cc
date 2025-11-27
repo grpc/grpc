@@ -25,9 +25,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
+#include "src/core/credentials/transport/tls/load_system_roots.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/transport/auth_context.h"
@@ -38,6 +37,8 @@
 #include "src/core/util/string.h"
 #include "src/core/util/tmpfile.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 #ifndef TSI_OPENSSL_ALPN_SUPPORT
 #define TSI_OPENSSL_ALPN_SUPPORT 1
@@ -695,6 +696,27 @@ static void test_default_ssl_roots(void) {
   grpc_slice_unref(roots);
   ASSERT_STREQ(roots_contents, roots_for_override_api);
   gpr_free(roots_contents);
+
+  // Now set the config to prefer system roots over the callback. Only check
+  // if we find system roots.
+  auto system_roots = grpc_core::LoadSystemRootCerts();
+
+  if (!GRPC_SLICE_IS_EMPTY(system_roots)) {
+    auto system_roots_contents = grpc_slice_to_c_string(system_roots);
+    grpc_slice_unref(system_roots);
+
+    overrides.use_system_roots_over_language_callback = true;
+    grpc_core::ConfigVars::SetOverrides(overrides);
+    roots = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
+    roots_contents = grpc_slice_to_c_string(roots);
+    grpc_slice_unref(roots);
+
+    ASSERT_STREQ(roots_contents, system_roots_contents);
+    gpr_free(roots_contents);
+    gpr_free(system_roots_contents);
+
+    overrides.use_system_roots_over_language_callback = false;
+  }
 
   // Now setup a permanent failure for the overridden roots and we should get
   // an empty slice.

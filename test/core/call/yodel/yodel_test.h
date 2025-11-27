@@ -18,12 +18,7 @@
 #include <google/protobuf/text_format.h>
 #include <grpc/event_engine/event_engine.h>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/log/log.h"
-#include "absl/random/bit_gen_ref.h"
-#include "absl/strings/string_view.h"
 #include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/call/call_arena_allocator.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/call/metadata.h"
@@ -36,8 +31,14 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/fuzz_config_vars_helpers.h"
+#include "test/core/test_util/postmortem.h"
 #include "test/core/test_util/proto_bit_gen.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
+#include "absl/random/bit_gen_ref.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -348,6 +349,7 @@ class YodelTest {
   // Called after the test has run, but before the event engine is shut down.
   virtual void Shutdown() {}
 
+  PostMortem postmortem_;
   absl::BitGenRef rng_;
   fuzzing_event_engine::Actions actions_;
   std::unique_ptr<State> state_;

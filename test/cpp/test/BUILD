@@ -26,6 +26,7 @@ grpc_cc_test(
     srcs = ["mock_stream_test.cc"],
     external_deps = [
         "gtest",
+        "absl/memory",
     ],
     deps = [
         "//:gpr",

@@ -34,14 +34,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/algorithm/container.h"
-#include "absl/flags/flag.h"
-#include "absl/flags/parse.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
 #include "envoy/config/cluster/v3/cluster.pb.h"
 #include "envoy/config/core/v3/health_check.pb.h"
 #include "google/protobuf/wrappers.pb.h"
@@ -53,6 +45,14 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/xds/xds_server.h"
 #include "test/cpp/end2end/xds/xds_utils.h"
+#include "absl/algorithm/container.h"
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 
 using grpc::testing::XdsResourceUtils;
 

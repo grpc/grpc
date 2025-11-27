@@ -17,14 +17,14 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log_windows.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
+#include "absl/log/log.h"
 
 #if defined(__MSYS__) && defined(GPR_ARCH_64)
 // Nasty workaround for nasty bug when using the 64 bits msys compiler
@@ -45,7 +45,7 @@ WinSocket::WinSocket(SOCKET socket, ThreadPool* thread_pool) noexcept
       write_info_(this) {}
 
 WinSocket::~WinSocket() {
-  CHECK(is_shutdown_.load());
+  GRPC_CHECK(is_shutdown_.load());
   GRPC_TRACE_LOG(event_engine_endpoint, INFO)
       << "WinSocket::" << this << " destroyed";
 }
@@ -103,7 +103,7 @@ void WinSocket::NotifyOnReady(OpState& info, EventEngine::Closure* closure) {
     return;
   };
   // It is an error if any notification is already registered for this socket.
-  CHECK_EQ(std::exchange(info.closure_, closure), nullptr);
+  GRPC_CHECK_EQ(std::exchange(info.closure_, closure), nullptr);
 }
 
 void WinSocket::NotifyOnRead(EventEngine::Closure* on_read) {
@@ -115,11 +115,11 @@ void WinSocket::NotifyOnWrite(EventEngine::Closure* on_write) {
 }
 
 void WinSocket::UnregisterReadCallback() {
-  CHECK_NE(std::exchange(read_info_.closure_, nullptr), nullptr);
+  GRPC_CHECK_NE(std::exchange(read_info_.closure_, nullptr), nullptr);
 }
 
 void WinSocket::UnregisterWriteCallback() {
-  CHECK_NE(std::exchange(write_info_.closure_, nullptr), nullptr);
+  GRPC_CHECK_NE(std::exchange(write_info_.closure_, nullptr), nullptr);
 }
 
 // ---- WinSocket::OpState ----
@@ -133,7 +133,7 @@ void WinSocket::OpState::SetReady() {
   auto* closure = std::exchange(closure_, nullptr);
   // If an IOCP event is returned for a socket, and no callback has been
   // registered for notification, this is invalid usage.
-  CHECK_NE(closure, nullptr);
+  GRPC_CHECK_NE(closure, nullptr);
   win_socket_->thread_pool_->Run(closure);
 }
 

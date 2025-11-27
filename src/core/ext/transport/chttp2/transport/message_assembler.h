@@ -22,13 +22,13 @@
 #include <cstdint>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "src/core/call/message.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
@@ -53,7 +53,7 @@ class GrpcMessageAssembler {
   // This function will move the payload into an internal buffer.
   Http2Status AppendNewDataFrame(SliceBuffer& payload,
                                  const bool is_end_stream) {
-    DCHECK(!is_end_stream_)
+    GRPC_DCHECK(!is_end_stream_)
         << "Calling this function when a previous frame was marked as the last "
            "frame does not make sense.";
     is_end_stream_ = is_end_stream;
@@ -66,7 +66,7 @@ class GrpcMessageAssembler {
       }
     }
     payload.MoveFirstNBytesIntoSliceBuffer(payload.Length(), message_buffer_);
-    DCHECK_EQ(payload.Length(), 0u);
+    GRPC_DCHECK_EQ(payload.Length(), 0u);
     return Http2Status::Ok();
   }
 
@@ -76,6 +76,7 @@ class GrpcMessageAssembler {
   ValueOrHttp2Status<MessageHandle> ExtractMessage() {
     const size_t current_len = message_buffer_.Length();
     if (current_len < kGrpcHeaderSizeInBytes) {
+      // TODO(tjagtap) : [PH2][P3] : Write a test for this.
       return ReturnNullOrError();
     }
     GrpcMessageHeader header = ExtractGrpcHeader(message_buffer_);
@@ -111,6 +112,7 @@ class GrpcMessageAssembler {
       return Http2Status::Http2StreamError(Http2ErrorCode::kInternalError,
                                            "Incomplete gRPC frame received");
     }
+    VLOG(2) << "Incomplete gRPC message received. Return nullptr";
     return ValueOrHttp2Status<MessageHandle>(nullptr);
   }
   bool is_end_stream_ = false;
@@ -121,10 +123,7 @@ constexpr uint32_t kMaxMessageBatchSize = (16 * 1024u);
 
 // This class is meant to convert gRPC Messages into Http2DataFrame ensuring
 // that the payload size of the data frame is configurable.
-// This class is not responsible for queueing or backpressure. That will be done
-// by other classes.
-// TODO(tjagtap) : [PH2][P2] Edit comment once this
-// class is integrated and exercised.
+// This class is not responsible for queueing or backpressure.
 class GrpcMessageDisassembler {
  public:
   // One GrpcMessageDisassembler instance MUST be associated with one stream
@@ -133,14 +132,14 @@ class GrpcMessageDisassembler {
 
   // GrpcMessageDisassembler object will take ownership of the message.
   void PrepareSingleMessageForSending(MessageHandle message) {
-    DCHECK_EQ(GetBufferedLength(), 0u);
+    GRPC_DCHECK_EQ(GetBufferedLength(), 0u);
     PrepareMessageForSending(std::move(message));
   }
 
   // GrpcMessageDisassembler object will take ownership of the message.
   void PrepareBatchedMessageForSending(MessageHandle message) {
     PrepareMessageForSending(std::move(message));
-    DCHECK_LE(GetBufferedLength(), kMaxMessageBatchSize)
+    GRPC_DCHECK_LE(GetBufferedLength(), kMaxMessageBatchSize)
         << "Avoid batches larger than " << kMaxMessageBatchSize << "bytes";
   }
 
@@ -150,8 +149,8 @@ class GrpcMessageDisassembler {
   Http2DataFrame GenerateNextFrame(const uint32_t stream_id,
                                    const uint32_t max_length,
                                    const bool is_end_stream = false) {
-    DCHECK_GT(max_length, 0u);
-    DCHECK_GT(GetBufferedLength(), 0u);
+    GRPC_DCHECK_GT(max_length, 0u);
+    GRPC_DCHECK_GT(GetBufferedLength(), 0u);
     SliceBuffer temp;
     const uint32_t current_length =
         message_.Length() >= max_length ? max_length : message_.Length();

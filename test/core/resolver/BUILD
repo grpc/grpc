@@ -14,7 +14,13 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
-grpc_package(name = "test/core/resolver")
+grpc_package(
+    name = "test/core/resolver",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 licenses(["notice"])
 
@@ -24,13 +30,19 @@ grpc_cc_test(
     external_deps = [
         "absl/log:check",
         "gtest",
+        "absl/status:statusor",
+        "absl/strings:string_view",
     ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:endpoint_addresses",
+        "//:gpr_platform",
         "//:parse_address",
         "//:sockaddr_utils",
+        "//:uri",
+        "//src/core:grpc_check",
+        "//src/core:resolved_address",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -78,10 +90,20 @@ grpc_cc_test(
     external_deps = [
         "absl/log:log",
         "gtest",
+        "absl/status",
+        "absl/status:statusor",
     ],
     deps = [
+        "//:config",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//:grpc_resolver",
+        "//:orphanable",
+        "//:uri",
+        "//:work_serializer",
+        "//src/core:default_event_engine",
+        "//src/core:iomgr_port",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -89,12 +111,30 @@ grpc_cc_test(
 grpc_cc_test(
     name = "fake_resolver_test",
     srcs = ["fake_resolver_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/container:inlined_vector",
+        "absl/status:statusor",
+        "absl/strings:str_format",
+        "absl/synchronization",
+    ],
     deps = [
+        "//:config",
+        "//:debug_location",
+        "//:endpoint_addresses",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//:grpc_resolver",
         "//:grpc_resolver_fake",
+        "//:orphanable",
+        "//:parse_address",
+        "//:ref_counted_ptr",
+        "//:uri",
+        "//:work_serializer",
         "//src/core:channel_args",
+        "//src/core:default_event_engine",
+        "//src/core:resolved_address",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -110,6 +150,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//src/core:env",
         "//test/core/test_util:fake_udp_and_tcp_server",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",

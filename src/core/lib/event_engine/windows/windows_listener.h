@@ -23,8 +23,6 @@
 
 #include <list>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/status/statusor.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/extensions/iomgr_compatible.h"
 #include "src/core/lib/event_engine/query_extensions.h"
@@ -32,6 +30,8 @@
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/status/statusor.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 // clang-format off

@@ -34,13 +34,9 @@ int main(int /* argc */, char** /* argv */) {
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
-#include <gtest/gtest.h>
 #include <signal.h>
 #include <unistd.h>
 
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/substitute.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/fork.h"
@@ -50,6 +46,10 @@ int main(int /* argc */, char** /* argv */) {
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/substitute.h"
 
 namespace grpc::testing {
 namespace {

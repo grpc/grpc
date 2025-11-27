@@ -53,10 +53,13 @@ class Server(_base_server.Server):
                 if not isinstance(interceptor, ServerInterceptor)
             ]
             if invalid_interceptors:
-                raise ValueError(
-                    "Interceptor must be ServerInterceptor, the "
-                    f"following are invalid: {invalid_interceptors}"
+                error_msg = (
+                    "Interceptor must be ServerInterceptor,"
+                    "the following are invalid: {invalid_interceptors}"
                 )
+                # TODO(asheshvidyut): fix the value error below
+                # not caught by ruff.
+                raise ValueError(error_msg)
         self._server = cygrpc.AioServer(
             self._loop,
             thread_pool,
@@ -189,12 +192,11 @@ class Server(_base_server.Server):
         The Cython AioServer doesn't hold a ref-count to this class. It should
         be safe to slightly extend the underlying Cython object's life span.
         """
-        if hasattr(self, "_server"):
-            if self._server.is_running():
-                cygrpc.schedule_coro_threadsafe(
-                    self._server.shutdown(None),
-                    self._loop,
-                )
+        if hasattr(self, "_server") and self._server.is_running():
+            cygrpc.schedule_coro_threadsafe(
+                self._server.shutdown(None),
+                self._loop,
+            )
 
 
 def server(

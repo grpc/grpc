@@ -24,8 +24,6 @@
 #include <set>
 #include <utility>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/strings/string_view.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/client_channel/subchannel_stream_client.h"
@@ -36,6 +34,8 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "src/core/util/unique_type_name.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -46,7 +46,7 @@ class OrcaWatcher;
 // registered watchers.
 class OrcaProducer final : public Subchannel::DataProducerInterface {
  public:
-  void Start(RefCountedPtr<Subchannel> subchannel);
+  void Start(WeakRefCountedPtr<Subchannel> subchannel);
 
   static UniqueTypeName Type() {
     static UniqueTypeName::Factory kFactory("orca");
@@ -79,7 +79,7 @@ class OrcaProducer final : public Subchannel::DataProducerInterface {
   // Called to notify watchers of a new backend metric report.
   void NotifyWatchers(const BackendMetricData& backend_metric_data);
 
-  RefCountedPtr<Subchannel> subchannel_;
+  WeakRefCountedPtr<Subchannel> subchannel_;
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   ConnectivityWatcher* connectivity_watcher_;
   Mutex mu_;

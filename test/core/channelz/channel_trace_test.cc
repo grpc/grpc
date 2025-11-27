@@ -29,16 +29,15 @@
 #include <string>
 #include <thread>
 
-#include "absl/synchronization/notification.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-#include "src/core/channelz/channelz.h"
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/upb_utils.h"
+#include "src/proto/grpc/channelz/v2/channelz.upb.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/channel_trace_proto_helper.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/synchronization/notification.h"
 
 namespace grpc_core {
 
@@ -159,8 +158,8 @@ TEST(ChannelTracerTest, BasicTest) {
   ChannelTrace tracer(kEventListMemoryLimit);
   tracer.NewNode("one").Commit();
   tracer.NewNode("two").Commit();
-  tracer.NewNode("three").Commit();  // Severity Warning is lost
-  tracer.NewNode("four").Commit();   // Severity Error is lost
+  tracer.NewNode("three").Commit();
+  tracer.NewNode("four").Commit();
   Json json = tracer.RenderJson();
   ValidateJsonProtoTranslation(json);
   EXPECT_THAT(json,
@@ -183,6 +182,60 @@ TEST(ChannelTracerTest, BasicTest) {
               IsTraceEvent("three", "CT_INFO"), IsTraceEvent("four", "CT_INFO"),
               IsTraceEvent("five", "CT_INFO"), IsTraceEvent("six", "CT_INFO"))))
       << JsonDump(json);
+}
+
+TEST(ChannelTracerTest, BasicProtoTest) {
+  ChannelTrace tracer(kEventListMemoryLimit);
+  tracer.NewNode("one").Commit();
+  tracer.NewNode("two").Commit();
+  tracer.NewNode("three").Commit();
+  tracer.NewNode("four").Commit();
+  upb_Arena* arena = upb_Arena_New();
+  grpc_channelz_v2_Entity* entity = grpc_channelz_v2_Entity_new(arena);
+  tracer.Render(entity, arena);
+  size_t size;
+  const grpc_channelz_v2_TraceEvent* const* trace =
+      grpc_channelz_v2_Entity_trace(entity, &size);
+  ASSERT_EQ(size, 4);
+  EXPECT_EQ(
+      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[0])),
+      "one");
+  EXPECT_EQ(
+      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[1])),
+      "two");
+  EXPECT_EQ(
+      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[2])),
+      "three");
+  EXPECT_EQ(
+      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[3])),
+      "four");
+  upb_Arena_Free(arena);
+  tracer.NewNode("five").Commit();
+  tracer.NewNode("six").Commit();
+  arena = upb_Arena_New();
+  entity = grpc_channelz_v2_Entity_new(arena);
+  tracer.Render(entity, arena);
+  trace = grpc_channelz_v2_Entity_trace(entity, &size);
+  ASSERT_EQ(size, 6);
+  EXPECT_EQ(
+      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[0])),
+      "one");
+  EXPECT_EQ(
+      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[1])),
+      "two");
+  EXPECT_EQ(
+      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[2])),
+      "three");
+  EXPECT_EQ(
+      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[3])),
+      "four");
+  EXPECT_EQ(
+      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[4])),
+      "five");
+  EXPECT_EQ(
+      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[5])),
+      "six");
+  upb_Arena_Free(arena);
 }
 
 TEST(ChannelTracerTest, StreamingOutputTest) {
@@ -215,6 +268,60 @@ TEST(ChannelTracerTest, StreamingOutputTest) {
       << JsonDump(json);
 }
 
+TEST(ChannelTracerTest, StreamingOutputProtoTest) {
+  ChannelTrace tracer(kEventListMemoryLimit);
+  GRPC_CHANNELZ_LOG(tracer) << "one";
+  GRPC_CHANNELZ_LOG(tracer) << "two";
+  GRPC_CHANNELZ_LOG(tracer) << "three";
+  GRPC_CHANNELZ_LOG(tracer) << "four";
+  upb_Arena* arena = upb_Arena_New();
+  grpc_channelz_v2_Entity* entity = grpc_channelz_v2_Entity_new(arena);
+  tracer.Render(entity, arena);
+  size_t size;
+  const grpc_channelz_v2_TraceEvent* const* trace =
+      grpc_channelz_v2_Entity_trace(entity, &size);
+  ASSERT_EQ(size, 4);
+  EXPECT_EQ(
+      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[0])),
+      "one");
+  EXPECT_EQ(
+      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[1])),
+      "two");
+  EXPECT_EQ(
+      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[2])),
+      "three");
+  EXPECT_EQ(
+      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[3])),
+      "four");
+  upb_Arena_Free(arena);
+  GRPC_CHANNELZ_LOG(tracer) << "five";
+  GRPC_CHANNELZ_LOG(tracer) << "six";
+  arena = upb_Arena_New();
+  entity = grpc_channelz_v2_Entity_new(arena);
+  tracer.Render(entity, arena);
+  trace = grpc_channelz_v2_Entity_trace(entity, &size);
+  ASSERT_EQ(size, 6);
+  EXPECT_EQ(
+      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[0])),
+      "one");
+  EXPECT_EQ(
+      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[1])),
+      "two");
+  EXPECT_EQ(
+      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[2])),
+      "three");
+  EXPECT_EQ(
+      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[3])),
+      "four");
+  EXPECT_EQ(
+      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[4])),
+      "five");
+  EXPECT_EQ(
+      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[5])),
+      "six");
+  upb_Arena_Free(arena);
+}
+
 TEST(ChannelTracerTest, TestSmallMemoryLimit) {
   // Doesn't make sense in practice, but serves a testing purpose for the
   // channel tracing bookkeeping. All tracing events added should get
@@ -228,6 +335,26 @@ TEST(ChannelTracerTest, TestSmallMemoryLimit) {
   Json json = tracer.RenderJson();
   ValidateJsonProtoTranslation(json);
   EXPECT_THAT(json, IsEmptyChannelTrace(4)) << JsonDump(json);
+}
+
+TEST(ChannelTracerTest, TestSmallMemoryLimitProto) {
+  // Set a very small memory limit for the trace.
+  const int kSmallMemoryLimit = 1;
+  ChannelTrace tracer(kSmallMemoryLimit);
+  const size_t kNumEvents = 4;
+  // Add a few trace events. These should be immediately garbage collected
+  // from the event list due to the small memory limit.
+  for (size_t i = 0; i < kNumEvents; ++i) {
+    tracer.NewNode("trace").Commit();
+  }
+  upb_Arena* arena = upb_Arena_New();
+  grpc_channelz_v2_Entity* entity = grpc_channelz_v2_Entity_new(arena);
+  // Render the trace to the proto.
+  tracer.Render(entity, arena);
+  size_t size;
+  grpc_channelz_v2_Entity_trace(entity, &size);
+  ASSERT_EQ(size, 0);
+  upb_Arena_Free(arena);
 }
 
 // Tests that the code is thread-safe.
@@ -249,6 +376,10 @@ TEST(ChannelTracerTest, ThreadSafety) {
   for (size_t i = 0; i < 10; ++i) {
     absl::SleepFor(absl::Milliseconds(1));
     tracer.RenderJson();
+    upb_Arena* arena = upb_Arena_New();
+    grpc_channelz_v2_Entity* entity = grpc_channelz_v2_Entity_new(arena);
+    tracer.Render(entity, arena);
+    upb_Arena_Free(arena);
   }
   done.Notify();
   for (const auto& thd : threads) {

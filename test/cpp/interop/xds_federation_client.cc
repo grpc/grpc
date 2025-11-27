@@ -22,16 +22,16 @@
 #include <memory>
 #include <thread>
 
-#include "absl/flags/flag.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_split.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/string.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/interop/client_helper.h"
 #include "test/cpp/interop/interop_client.h"
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_config.h"
+#include "absl/flags/flag.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_split.h"
 
 ABSL_FLAG(std::string, server_uris, "",
           "Comma-separated list of sever URIs to make RPCs to");
@@ -84,11 +84,11 @@ int main(int argc, char** argv) {
     LOG(ERROR) << "Number of entries in --server_uris " << uris.size()
                << " != number of entries in --credentials_types "
                << creds.size();
-    CHECK(0);
+    GRPC_CHECK(0);
   }
   if (uris.empty()) {
     LOG(ERROR) << "--server_uris has zero entries";
-    CHECK(0);
+    GRPC_CHECK(0);
   }
   // construct and start clients
   std::vector<std::thread> threads;
@@ -120,7 +120,7 @@ int main(int argc, char** argv) {
       } else {
         LOG(ERROR)
             << "Invalid test case, must be either rpc_soak or channel_soak";
-        CHECK(0);
+        GRPC_CHECK(0);
       }
     }));
   }

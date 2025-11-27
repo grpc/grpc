@@ -19,17 +19,29 @@
 
 #include <memory>
 #include <tuple>
+#include <type_traits>
 #include <vector>
 
-#include "absl/container/flat_hash_set.h"
+#include "google/protobuf/any.upb.h"
+#include "google/protobuf/any.upbdefs.h"
+#include "google/protobuf/timestamp.upb.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/channelz/text_encode.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/util/function_signature.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/latent_see.h"
 #include "src/core/util/memory_usage.h"
 #include "src/core/util/single_set_ptr.h"
 #include "src/core/util/string.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
+#include "src/proto/grpc/channelz/v2/channelz.upb.h"
+#include "src/proto/grpc/channelz/v2/service.upb.h"
+#include "upb/mem/arena.hpp"
+#include "absl/container/flat_hash_set.h"
+#include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
 
 #ifdef GRPC_NO_ZTRACE
 namespace grpc_core::channelz {
@@ -38,14 +50,10 @@ class ZTraceImpl final : public ZTrace {
  public:
   explicit ZTraceImpl() {}
 
-  void Run(Timestamp deadline, std::map<std::string, std::string> args,
+  void Run(Args args,
            std::shared_ptr<grpc_event_engine::experimental::EventEngine>
                event_engine,
-           absl::AnyInvocable<void(Json)> callback) override {
-    event_engine->Run([callback = std::move(callback)]() mutable {
-      callback(Json::FromBool(false));
-    });
-  }
+           Callback callback) override {}
 };
 
 class StubImpl {
@@ -56,6 +64,8 @@ class StubImpl {
   std::unique_ptr<ZTrace> MakeZTrace() {
     return std::make_unique<ZTraceImpl>();
   }
+
+  bool IsActive() { return false; }
 };
 }  // namespace ztrace_collector_detail
 
@@ -70,14 +80,33 @@ template <typename T>
 using Collection = std::deque<std::pair<gpr_cycle_counter, T> >;
 
 template <typename T>
-void AppendResults(const Collection<T>& data, Json::Array& results) {
+void AppendResults(const Collection<T>& data,
+                   grpc_channelz_v2_QueryTraceResponse* response,
+                   upb_Arena* arena) {
+  size_t original_size;
+  grpc_channelz_v2_QueryTraceResponse_events(response, &original_size);
+  grpc_channelz_v2_TraceEvent** events =
+      grpc_channelz_v2_QueryTraceResponse_resize_events(
+          response, original_size + data.size(), arena);
+  size_t event_index = original_size;
   for (const auto& value : data) {
-    Json::Object object;
-    object["timestamp"] =
-        Json::FromString(gpr_format_timespec(gpr_convert_clock_type(
-            gpr_cycle_counter_to_time(value.first), GPR_CLOCK_REALTIME)));
-    value.second.RenderJson(object);
-    results.emplace_back(Json::FromObject(std::move(object)));
+    grpc_channelz_v2_TraceEvent* event = grpc_channelz_v2_TraceEvent_new(arena);
+    events[event_index] = event;
+    google_protobuf_Timestamp* timestamp =
+        grpc_channelz_v2_TraceEvent_mutable_timestamp(event, arena);
+    const gpr_timespec gpr_ts = gpr_convert_clock_type(
+        gpr_cycle_counter_to_time(value.first), GPR_CLOCK_REALTIME);
+    google_protobuf_Timestamp_set_seconds(timestamp, gpr_ts.tv_sec);
+    google_protobuf_Timestamp_set_nanos(timestamp, gpr_ts.tv_nsec);
+    grpc_channelz_v2_Data** data =
+        grpc_channelz_v2_TraceEvent_resize_data(event, 1, arena);
+    grpc_channelz_v2_Data* data_value = grpc_channelz_v2_Data_new(arena);
+    data[0] = data_value;
+    grpc_channelz_v2_Data_set_name(data_value,
+                                   StdStringToUpbString(TypeName<T>()));
+    value.second.ChannelzProperties().FillAny(
+        grpc_channelz_v2_Data_mutable_value(data_value, arena), arena);
+    ++event_index;
   }
 }
 
@@ -93,13 +122,15 @@ constexpr bool kIsElement<Needle, H, Haystack...> =
 
 }  // namespace ztrace_collector_detail
 
-inline std::optional<int64_t> IntFromArgs(
-    const std::map<std::string, std::string>& args, const std::string& name) {
+inline std::optional<int64_t> IntFromArgs(const ZTrace::Args& args,
+                                          const std::string& name) {
   auto it = args.find(name);
   if (it == args.end()) return std::nullopt;
-  int64_t out;
-  if (!absl::SimpleAtoi(it->second, &out)) return std::nullopt;
-  return out;
+  if (const int64_t* value = std::get_if<int64_t>(&it->second);
+      value != nullptr) {
+    return *value;
+  }
+  return std::nullopt;
 }
 
 // Generic collector infrastructure for ztrace queries.
@@ -125,16 +156,35 @@ inline std::optional<int64_t> IntFromArgs(
 template <typename Config, typename... Data>
 class ZTraceCollector {
  public:
+  // Append a value to any traces that are currently active.
+  // If no trace is active, this is a no-op.
+  // One can pass in the value to be appended, and that value will be used
+  // directly.
+  // Or one can pass in a producer - a lambda that will return the value to be
+  // appended. This will only be called if the value is needed - so that we can
+  // elide construction costs if the value is not traced.
+  // Prefer the latter if there is an allocation for example, but if you're
+  // tracing one int that's already on the stack then no need to inject more
+  // complexity.
   template <typename X>
   void Append(X producer_or_value) {
+    if constexpr (ztrace_collector_detail::kIsElement<X, Data...>) {
+      GRPC_LATENT_SEE_ALWAYS_ON_MARK_EXTRA_EVENT(X, producer_or_value);
+    } else {
+      using ResultType = absl::result_of_t<decltype(producer_or_value)()>;
+      GRPC_LATENT_SEE_ALWAYS_ON_MARK_EXTRA_EVENT(ResultType,
+                                                 producer_or_value());
+    }
     GRPC_TRACE_LOG(ztrace, INFO) << "ZTRACE[" << this << "]: " << [&]() {
-      Json::Object obj;
+      upb::Arena arena;
+      google_protobuf_Any* any = google_protobuf_Any_new(arena.ptr());
       if constexpr (ztrace_collector_detail::kIsElement<X, Data...>) {
-        producer_or_value.RenderJson(obj);
+        producer_or_value.ChannelzProperties().FillAny(any, arena.ptr());
       } else {
-        producer_or_value().RenderJson(obj);
+        producer_or_value().ChannelzProperties().FillAny(any, arena.ptr());
       }
-      return JsonDump(Json::FromObject(std::move(obj)));
+      return TextEncode(reinterpret_cast<upb_Message*>(any),
+                        google_protobuf_Any_getmsgdef);
     }();
     if (!impl_.is_set()) return;
     if constexpr (ztrace_collector_detail::kIsElement<X, Data...>) {
@@ -142,6 +192,19 @@ class ZTraceCollector {
     } else {
       AppendValue(producer_or_value());
     }
+  }
+
+  // Try to avoid using this method!
+  // Returns true if (instantaneously) there are any tracers active.
+  // It's about as expensive as Append() so there's no point guarding Append()
+  // with this. However, if you'd need to do a large amount of work perhaps
+  // asynchronously before doing an Append, this can be useful to control that
+  // work.
+  bool IsActive() {
+    if (!impl_.is_set()) return false;
+    auto impl = impl_.Get();
+    MutexLock lock(&impl->mu);
+    return !impl->instances.empty();
   }
 
   std::unique_ptr<ZTrace> MakeZTrace() {
@@ -152,42 +215,148 @@ class ZTraceCollector {
   template <typename T>
   using Collection = ztrace_collector_detail::Collection<T>;
 
-  struct Instance : public RefCounted<Instance> {
-    Instance(std::map<std::string, std::string> args,
+  class Instance : public RefCounted<Instance> {
+   public:
+    Instance(ZTrace::Args args,
              std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-                 event_engine,
-             absl::AnyInvocable<void(Json)> done)
+                 event_engine)
         : memory_cap_(IntFromArgs(args, "memory_cap").value_or(1024 * 1024)),
-          config(args),
-          event_engine(std::move(event_engine)),
-          done(std::move(done)) {}
+          config_(std::move(args)),
+          event_engine_(std::move(event_engine)) {}
     using Collections = std::tuple<Collection<Data>...>;
+    template <typename T>
+    void Append(std::pair<gpr_cycle_counter, T> value) {
+      switch (state_) {
+        case State::kIdle:
+        case State::kReady:
+          state_ = State::kReady;
+          break;
+        case State::kReadyDone:
+        case State::kDone:
+          return;
+      }
+      if (state_ == State::kDone) return;
+      ++items_matched_;
+      memory_used_ += MemoryUsageOf(value.second);
+      while (memory_used_ > memory_cap_) {
+        auto memory_used_before = memory_used_;
+        RemoveMostRecent();
+        CHECK_LT(memory_used_, memory_used_before);
+      }
+      std::get<Collection<T> >(data_).push_back(std::move(value));
+      if (callback_ != nullptr) QueueCallback();
+    }
+
+    template <typename T>
+    bool Finishes(const T& value) {
+      return config_.Finishes(value);
+    }
+
+    void Finish(absl::Status status) {
+      switch (state_) {
+        case State::kIdle:
+          state_ = State::kDone;
+          break;
+        case State::kReady:
+          state_ = State::kReadyDone;
+          break;
+        case State::kReadyDone:
+        case State::kDone:
+          return;
+      }
+      GRPC_TRACE_LOG(ztrace, INFO) << "ZTRACE[" << this << "]: Finish";
+      status_ = std::move(status);
+      if (callback_ != nullptr) QueueCallback();
+    }
+
+    void Next(ZTrace::Callback callback) {
+      callback_ = std::move(callback);
+      if (state_ != State::kIdle) QueueCallback();
+    }
+
+    Timestamp start_time() const { return start_time_; }
+
+   private:
+    enum class State {
+      kIdle,
+      kReady,
+      kReadyDone,
+      kDone,
+    };
+
     struct RemoveMostRecentState {
       void (*enact)(Instance*) = nullptr;
       gpr_cycle_counter most_recent =
           std::numeric_limits<gpr_cycle_counter>::max();
     };
-    template <typename T>
-    void Append(std::pair<gpr_cycle_counter, T> value) {
-      memory_used_ += MemoryUsageOf(value.second);
-      while (memory_used_ > memory_cap_) RemoveMostRecent();
-      std::get<Collection<T> >(data).push_back(std::move(value));
+
+    void QueueCallback() {
+      switch (state_) {
+        case State::kIdle:
+          LOG(FATAL) << "BUG: kIdle";
+          break;
+        case State::kReady:
+          QueueCallbackReady();
+          state_ = State::kIdle;
+          break;
+        case State::kReadyDone:
+          QueueCallbackReady();
+          state_ = State::kDone;
+          break;
+        case State::kDone:
+          QueueCallbackDone();
+          break;
+      }
     }
+
+    void QueueCallbackReady() {
+      Collections data = std::move(data_);
+      size_t items_matched = std::exchange(items_matched_, 0);
+      memory_used_ = 0;
+      event_engine_->Run(
+          [data = std::move(data), items_matched,
+           callback = std::exchange(callback_, nullptr)]() mutable {
+            upb::Arena arena;
+            grpc_channelz_v2_QueryTraceResponse* response =
+                grpc_channelz_v2_QueryTraceResponse_new(arena.ptr());
+            grpc_channelz_v2_QueryTraceResponse_set_num_events_matched(
+                response, items_matched);
+            (ztrace_collector_detail::AppendResults(
+                 std::get<Collection<Data> >(data), response, arena.ptr()),
+             ...);
+            size_t len = 0;
+            char* serialized = grpc_channelz_v2_QueryTraceResponse_serialize(
+                response, arena.ptr(), &len);
+            callback(std::string(serialized, len));
+          });
+    }
+
+    void QueueCallbackDone() {
+      event_engine_->Run(
+          [callback = std::exchange(callback_, nullptr),
+           status = std::exchange(status_, absl::Status())]() mutable {
+            if (status.ok()) {
+              callback(std::nullopt);
+            } else {
+              callback(status);
+            }
+          });
+    }
+
     void RemoveMostRecent() {
       RemoveMostRecentState state;
       (UpdateRemoveMostRecentState<Data>(&state), ...);
       CHECK(state.enact != nullptr);
       state.enact(this);
-      ++items_removed_;
     }
     template <typename T>
     void UpdateRemoveMostRecentState(RemoveMostRecentState* state) {
-      auto& collection = std::get<Collection<T> >(data);
+      auto& collection = std::get<Collection<T> >(data_);
       if (collection.empty()) return;
       if (state->enact == nullptr ||
           collection.front().first < state->most_recent) {
         state->enact = +[](Instance* instance) {
-          auto& collection = std::get<Collection<T> >(instance->data);
+          auto& collection = std::get<Collection<T> >(instance->data_);
           const size_t ent_usage = MemoryUsageOf(collection.front().second);
           CHECK_GE(instance->memory_used_, ent_usage);
           instance->memory_used_ -= ent_usage;
@@ -196,33 +365,18 @@ class ZTraceCollector {
         state->most_recent = collection.front().first;
       }
     }
-    void Finish(absl::Status status) {
-      event_engine->Run([data = std::move(data), done = std::move(done),
-                         status = std::move(status), memory_used = memory_used_,
-                         items_removed = items_removed_]() mutable {
-        Json::Array entries;
-        (ztrace_collector_detail::AppendResults(
-             std::get<Collection<Data> >(data), entries),
-         ...);
-        Json::Object result;
-        result["entries"] = Json::FromArray(entries);
-        result["status"] = Json::FromString(status.ToString());
-        result["memory_used"] =
-            Json::FromNumber(static_cast<uint64_t>(memory_used));
-        result["items_removed"] = Json::FromNumber(items_removed);
-        done(Json::FromObject(std::move(result)));
-      });
-    }
+
+    const Timestamp start_time_ = Timestamp::Now();
     size_t memory_used_ = 0;
     size_t memory_cap_ = 0;
-    uint64_t items_removed_ = 0;
-    Config config;
-    const Timestamp start_time = Timestamp::Now();
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
-    grpc_event_engine::experimental::EventEngine::TaskHandle task_handle{
-        grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid};
-    Collections data;
-    absl::AnyInvocable<void(Json)> done;
+    uint64_t items_matched_ = 0;
+    State state_ = State::kIdle;
+    Config config_;
+    Collections data_;
+    absl::Status status_;
+    ZTrace::Callback callback_;
+    const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+        event_engine_;
   };
   struct Impl : public RefCounted<Impl> {
     Mutex mu;
@@ -232,43 +386,62 @@ class ZTraceCollector {
    public:
     explicit ZTraceImpl(RefCountedPtr<Impl> impl) : impl_(std::move(impl)) {}
 
-    void Run(Timestamp deadline, std::map<std::string, std::string> args,
+    ~ZTraceImpl() override {
+      if (instance_ != nullptr) {
+        MutexLock lock(&impl_->mu);
+        instance_->Finish(absl::CancelledError());
+      }
+    }
+
+    void Run(ZTrace::Args args,
              std::shared_ptr<grpc_event_engine::experimental::EventEngine>
                  event_engine,
-             absl::AnyInvocable<void(Json)> callback) override {
-      auto instance = MakeRefCounted<Instance>(std::move(args), event_engine,
-                                               std::move(callback));
-      auto impl = std::move(impl_);
+             ZTrace::Callback callback) override {
+      CHECK(instance_ == nullptr);
+      instance_ = MakeRefCounted<Instance>(std::move(args), event_engine);
       RefCountedPtr<Instance> oldest_instance;
-      MutexLock lock(&impl->mu);
-      if (impl->instances.size() > 20) {
+      MutexLock lock(&impl_->mu);
+      if (impl_->instances.size() > 20) {
         // Eject oldest running trace
         Timestamp oldest_time = Timestamp::InfFuture();
-        for (auto& instance : impl->instances) {
-          if (instance->start_time < oldest_time) {
-            oldest_time = instance->start_time;
+        for (auto& instance : impl_->instances) {
+          if (instance->start_time() < oldest_time) {
+            oldest_time = instance->start_time();
             oldest_instance = instance;
           }
         }
         CHECK(oldest_instance != nullptr);
-        impl->instances.erase(oldest_instance);
+        impl_->instances.erase(oldest_instance);
         oldest_instance->Finish(
             absl::ResourceExhaustedError("Too many concurrent ztrace queries"));
       }
-      instance->task_handle = event_engine->RunAfter(
-          deadline - Timestamp::Now(), [instance, impl]() {
-            bool finish;
-            {
-              MutexLock lock(&impl->mu);
-              finish = impl->instances.erase(instance);
-            }
-            if (finish) instance->Finish(absl::DeadlineExceededError(""));
-          });
-      impl->instances.insert(instance);
+      impl_->instances.insert(instance_);
+      NextCallback(std::make_shared<Callback>(std::move(callback)), impl_,
+                   instance_);
     }
 
    private:
-    RefCountedPtr<Impl> impl_;
+    static void NextCallback(std::shared_ptr<ZTrace::Callback> callback,
+                             RefCountedPtr<Impl> impl,
+                             RefCountedPtr<Instance> instance) {
+      instance->Next([callback = std::move(callback), impl = std::move(impl),
+                      instance = std::move(instance)](
+                         absl::StatusOr<std::optional<std::string> > response) {
+        const bool end =
+            (response.ok() && !response->has_value()) || !response.ok();
+        (*callback)(std::move(response));
+        MutexLock lock(&impl->mu);
+        if (end) {
+          impl->instances.erase(instance);
+        } else {
+          NextCallback(std::move(callback), std::move(impl),
+                       std::move(instance));
+        }
+      });
+    }
+
+    const RefCountedPtr<Impl> impl_;
+    RefCountedPtr<Instance> instance_;
   };
 
   template <typename T>
@@ -283,7 +456,7 @@ class ZTraceCollector {
         case 1: {
           auto& instances = impl->instances;
           auto& instance = *instances.begin();
-          const bool finishes = instance->config.Finishes(value.second);
+          const bool finishes = instance->Finishes(value.second);
           instance->Append(std::move(value));
           if (finishes) {
             instance->Finish(absl::OkStatus());
@@ -293,7 +466,7 @@ class ZTraceCollector {
         default: {
           std::vector<RefCountedPtr<Instance> > finished;
           for (auto& instance : impl->instances) {
-            const bool finishes = instance->config.Finishes(value.second);
+            const bool finishes = instance->Finishes(value.second);
             instance->Append(value);
             if (finishes) {
               finished.push_back(instance);

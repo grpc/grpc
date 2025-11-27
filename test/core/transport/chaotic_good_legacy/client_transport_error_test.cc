@@ -28,12 +28,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chaotic_good_legacy/client_transport.h"
@@ -56,6 +50,13 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
+#include "test/core/transport/util/mock_promise_endpoint.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 
 using testing::AtMost;
 using testing::MockFunction;
@@ -63,48 +64,16 @@ using testing::Return;
 using testing::StrictMock;
 using testing::WithArgs;
 
+using grpc_core::util::testing::MockPromiseEndpoint;
+
 namespace grpc_core {
 namespace chaotic_good_legacy {
 namespace testing {
-
-class MockEndpoint
-    : public grpc_event_engine::experimental::EventEngine::Endpoint {
- public:
-  MOCK_METHOD(
-      bool, Read,
-      (absl::AnyInvocable<void(absl::Status)> on_read,
-       grpc_event_engine::experimental::SliceBuffer* buffer,
-       grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs args),
-      (override));
-
-  MOCK_METHOD(
-      bool, Write,
-      (absl::AnyInvocable<void(absl::Status)> on_writable,
-       grpc_event_engine::experimental::SliceBuffer* data,
-       grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args),
-      (override));
-
-  MOCK_METHOD(
-      const grpc_event_engine::experimental::EventEngine::ResolvedAddress&,
-      GetPeerAddress, (), (const, override));
-  MOCK_METHOD(
-      const grpc_event_engine::experimental::EventEngine::ResolvedAddress&,
-      GetLocalAddress, (), (const, override));
-
-  MOCK_METHOD(std::shared_ptr<TelemetryInfo>, GetTelemetryInfo, (),
-              (const, override));
-};
 
 class MockClientConnectionFactory : public ClientConnectionFactory {
  public:
   MOCK_METHOD(PendingConnection, Connect, (absl::string_view), (override));
   void Orphaned() final {}
-};
-
-struct MockPromiseEndpoint {
-  StrictMock<MockEndpoint>* endpoint = new StrictMock<MockEndpoint>();
-  PromiseEndpoint promise_endpoint{
-      std::unique_ptr<StrictMock<MockEndpoint>>(endpoint), SliceBuffer()};
 };
 
 // Send messages from client to server.
@@ -184,8 +153,8 @@ class ClientTransportTest : public ::testing::Test {
 };
 
 TEST_F(ClientTransportTest, AddOneStreamWithWriteFailed) {
-  MockPromiseEndpoint control_endpoint;
-  MockPromiseEndpoint data_endpoint;
+  MockPromiseEndpoint control_endpoint(1234);
+  MockPromiseEndpoint data_endpoint(5678);
   auto client_connection_factory =
       MakeRefCounted<StrictMock<MockClientConnectionFactory>>();
   // Mock write failed and read is pending.
@@ -238,8 +207,8 @@ TEST_F(ClientTransportTest, AddOneStreamWithWriteFailed) {
 }
 
 TEST_F(ClientTransportTest, AddOneStreamWithReadFailed) {
-  MockPromiseEndpoint control_endpoint;
-  MockPromiseEndpoint data_endpoint;
+  MockPromiseEndpoint control_endpoint(1234);
+  MockPromiseEndpoint data_endpoint(5678);
   auto client_connection_factory =
       MakeRefCounted<StrictMock<MockClientConnectionFactory>>();
   // Mock read failed.
@@ -285,8 +254,8 @@ TEST_F(ClientTransportTest, AddOneStreamWithReadFailed) {
 
 TEST_F(ClientTransportTest, AddMultipleStreamWithWriteFailed) {
   // Mock write failed at first stream and second stream's write will fail too.
-  MockPromiseEndpoint control_endpoint;
-  MockPromiseEndpoint data_endpoint;
+  MockPromiseEndpoint control_endpoint(1234);
+  MockPromiseEndpoint data_endpoint(5678);
   auto client_connection_factory =
       MakeRefCounted<StrictMock<MockClientConnectionFactory>>();
   EXPECT_CALL(*control_endpoint.endpoint, Write)
@@ -360,8 +329,8 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithWriteFailed) {
 }
 
 TEST_F(ClientTransportTest, AddMultipleStreamWithReadFailed) {
-  MockPromiseEndpoint control_endpoint;
-  MockPromiseEndpoint data_endpoint;
+  MockPromiseEndpoint control_endpoint(1234);
+  MockPromiseEndpoint data_endpoint(5678);
   auto client_connection_factory =
       MakeRefCounted<StrictMock<MockClientConnectionFactory>>();
   // Mock read failed at first stream, and second stream's write will fail too.

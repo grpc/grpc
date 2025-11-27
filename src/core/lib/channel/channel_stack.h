@@ -48,6 +48,7 @@
 #include <functional>
 #include <memory>
 
+#include "src/core/filter/filter_args.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/debug/trace.h"
@@ -57,6 +58,7 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/call_final_info.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/metrics.h"
@@ -75,8 +77,8 @@ struct grpc_channel_element_args {
   grpc_core::ChannelArgs channel_args;
   int is_first;
   int is_last;
-  const grpc_core::Blackboard* old_blackboard;
-  grpc_core::Blackboard* new_blackboard;
+  grpc_core::RefCountedPtr<const grpc_core::FilterConfig> config;
+  const grpc_core::Blackboard* blackboard;
 };
 struct grpc_call_element_args {
   grpc_call_stack* call_stack;
@@ -188,10 +190,16 @@ struct grpc_channel_stack {
   // should look like and this can go.
   grpc_core::ManualConstructor<std::function<void()>> on_destroy;
 
+  grpc_channel_stack_type type;
+
   class ChannelStackDataSource final : public grpc_core::channelz::DataSource {
    public:
-    using grpc_core::channelz::DataSource::DataSource;
-    ~ChannelStackDataSource() { ResetDataSource(); }
+    explicit ChannelStackDataSource(
+        grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode> node)
+        : DataSource(std::move(node)) {
+      SourceConstructed();
+    }
+    ~ChannelStackDataSource() { SourceDestructing(); }
     void AddData(grpc_core::channelz::DataSink sink) override;
   };
 
@@ -261,16 +269,15 @@ size_t grpc_channel_stack_filter_instance_number(
 grpc_call_element* grpc_call_stack_element(grpc_call_stack* stack, size_t i);
 
 // Determine memory required for a channel stack containing a set of filters
-size_t grpc_channel_stack_size(const grpc_channel_filter** filters,
-                               size_t filter_count);
+size_t grpc_channel_stack_size(
+    const std::vector<grpc_core::FilterAndConfig>& filters);
 // Initialize a channel stack given some filters
 grpc_error_handle grpc_channel_stack_init(
     int initial_refs, grpc_iomgr_cb_func destroy, void* destroy_arg,
-    const grpc_channel_filter** filters, size_t filter_count,
+    std::vector<grpc_core::FilterAndConfig> filters,
     const grpc_core::ChannelArgs& args, const char* name,
     grpc_channel_stack* stack,
-    const grpc_core::Blackboard* old_blackboard = nullptr,
-    grpc_core::Blackboard* new_blackboard = nullptr);
+    const grpc_core::Blackboard* blackboard = nullptr);
 // Destroy a channel stack
 void grpc_channel_stack_destroy(grpc_channel_stack* stack);
 

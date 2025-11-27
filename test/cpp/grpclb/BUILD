@@ -27,11 +27,17 @@ grpc_cc_test(
     external_deps = [
         "absl/log:check",
         "gtest",
+        "@com_google_protobuf//upb/mem",
     ],
     deps = [
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//:protobuf_duration_upb",
+        "//:sockaddr_utils",
+        "//src/core:grpc_check",
+        "//src/core:grpc_lb_policy_grpclb",
+        "//src/core:grpc_sockaddr",
         "//src/proto/grpc/lb/v1:load_balancer_cc_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",

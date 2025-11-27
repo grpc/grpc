@@ -94,7 +94,7 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
         else:
             self._loops[loop] = _BoundEventLoop(loop, self._read_socket, self._handle_events)
 
-    cdef void _poll(self) nogil:
+    cdef int _poll(self) except -1 nogil:
         cdef grpc_event event
         cdef CallbackContext *context
 
@@ -120,6 +120,7 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
                         # instead of delegate to any thread, the polling thread
                         # should handle the distribution of the event.
                         self._handle_events(None)
+        return 0
 
     def _poll_wrapper(self):
         with nogil:

@@ -29,11 +29,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/functional/bind_front.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_verifier.h"
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
@@ -45,8 +40,13 @@
 #include "src/core/transport/auth_context.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/status_helper.h"
+#include "absl/functional/bind_front.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -62,7 +62,7 @@ char* CopyCoreString(char* src, size_t length) {
 void PendingVerifierRequestInit(
     const char* target_name, tsi_peer peer,
     grpc_tls_custom_verification_check_request* request) {
-  CHECK_NE(request, nullptr);
+  GRPC_CHECK_NE(request, nullptr);
   // The verifier holds a ref to the security connector, so it's fine to
   // directly point this to the name cached in the security connector.
   request->target_name = target_name;
@@ -174,7 +174,7 @@ void PendingVerifierRequestInit(
 
 void PendingVerifierRequestDestroy(
     grpc_tls_custom_verification_check_request* request) {
-  CHECK_NE(request, nullptr);
+  GRPC_CHECK_NE(request, nullptr);
   if (request->peer_info.common_name != nullptr) {
     gpr_free(const_cast<char*>(request->peer_info.common_name));
   }
@@ -218,13 +218,13 @@ tsi_ssl_pem_key_cert_pair* ConvertToTsiPemKeyCertPair(
   tsi_ssl_pem_key_cert_pair* tsi_pairs = nullptr;
   size_t num_key_cert_pairs = cert_pair_list.size();
   if (num_key_cert_pairs > 0) {
-    CHECK_NE(cert_pair_list.data(), nullptr);
+    GRPC_CHECK_NE(cert_pair_list.data(), nullptr);
     tsi_pairs = static_cast<tsi_ssl_pem_key_cert_pair*>(
         gpr_zalloc(num_key_cert_pairs * sizeof(tsi_ssl_pem_key_cert_pair)));
   }
   for (size_t i = 0; i < num_key_cert_pairs; i++) {
-    CHECK(!cert_pair_list[i].private_key().empty());
-    CHECK(!cert_pair_list[i].cert_chain().empty());
+    GRPC_CHECK(!cert_pair_list[i].private_key().empty());
+    GRPC_CHECK(!cert_pair_list[i].cert_chain().empty());
     tsi_pairs[i].cert_chain =
         gpr_strdup(cert_pair_list[i].cert_chain().c_str());
     tsi_pairs[i].private_key =
@@ -312,7 +312,7 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
   // hence no need to register the watcher.
   bool use_default_roots = !options_->watch_root_cert();
   if (use_default_roots && !options_->watch_identity_pair()) {
-    watcher_ptr->OnCertificatesChanged(std::nullopt, std::nullopt);
+    watcher_ptr->OnCertificatesChanged(nullptr, std::nullopt);
   } else {
     distributor->WatchTlsCertificates(std::move(watcher_ptr),
                                       watched_root_cert_name,
@@ -373,7 +373,7 @@ void TlsChannelSecurityConnector::check_peer(
   }
   *auth_context =
       grpc_ssl_peer_to_auth_context(&peer, GRPC_TLS_TRANSPORT_SECURITY_TYPE);
-  CHECK_NE(options_->certificate_verifier(), nullptr);
+  GRPC_CHECK_NE(options_->certificate_verifier(), nullptr);
   auto* pending_request = new ChannelPendingVerifierRequest(
       RefAsSubclass<TlsChannelSecurityConnector>(), on_peer_checked, peer,
       target_name);
@@ -429,18 +429,18 @@ ArenaPromise<absl::Status> TlsChannelSecurityConnector::CheckCallHost(
 }
 
 void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
-    OnCertificatesChanged(std::optional<absl::string_view> root_certs,
+    OnCertificatesChanged(std::shared_ptr<RootCertInfo> root_certs,
                           std::optional<PemKeyCertPairList> key_cert_pairs) {
-  CHECK_NE(security_connector_, nullptr);
+  GRPC_CHECK_NE(security_connector_, nullptr);
   MutexLock lock(&security_connector_->mu_);
-  if (root_certs.has_value()) {
-    security_connector_->pem_root_certs_ = root_certs;
+  if (root_certs != nullptr) {
+    security_connector_->root_cert_info_ = std::move(root_certs);
   }
   if (key_cert_pairs.has_value()) {
     security_connector_->pem_key_cert_pair_list_ = std::move(key_cert_pairs);
   }
   const bool root_ready = !security_connector_->options_->watch_root_cert() ||
-                          security_connector_->pem_root_certs_.has_value();
+                          security_connector_->root_cert_info_ != nullptr;
   const bool identity_ready =
       !security_connector_->options_->watch_identity_pair() ||
       security_connector_->pem_key_cert_pair_list_.has_value();
@@ -525,21 +525,13 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
   if (client_handshaker_factory_ != nullptr) {
     tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
   }
-  std::string pem_root_certs;
-  if (pem_root_certs_.has_value()) {
-    // TODO(ZhenLian): update the underlying TSI layer to use C++ types like
-    // std::string and absl::string_view to avoid making another copy here.
-    pem_root_certs = std::string(*pem_root_certs_);
-  }
   tsi_ssl_pem_key_cert_pair* pem_key_cert_pair = nullptr;
   if (pem_key_cert_pair_list_.has_value()) {
     pem_key_cert_pair = ConvertToTsiPemKeyCertPair(*pem_key_cert_pair_list_);
   }
   bool use_default_roots = !options_->watch_root_cert();
   grpc_security_status status = grpc_ssl_tsi_client_handshaker_factory_init(
-      pem_key_cert_pair,
-      pem_root_certs.empty() || use_default_roots ? nullptr
-                                                  : pem_root_certs.c_str(),
+      pem_key_cert_pair, use_default_roots ? nullptr : root_cert_info_,
       skip_server_certificate_verification,
       grpc_get_tsi_tls_version(options_->min_tls_version()),
       grpc_get_tsi_tls_version(options_->max_tls_version()), ssl_session_cache_,
@@ -689,18 +681,18 @@ int TlsServerSecurityConnector::cmp(
 }
 
 void TlsServerSecurityConnector::TlsServerCertificateWatcher::
-    OnCertificatesChanged(std::optional<absl::string_view> root_certs,
+    OnCertificatesChanged(std::shared_ptr<RootCertInfo> roots,
                           std::optional<PemKeyCertPairList> key_cert_pairs) {
-  CHECK_NE(security_connector_, nullptr);
+  GRPC_CHECK_NE(security_connector_, nullptr);
   MutexLock lock(&security_connector_->mu_);
-  if (root_certs.has_value()) {
-    security_connector_->pem_root_certs_ = root_certs;
+  if (roots != nullptr) {
+    security_connector_->root_cert_info_ = std::move(roots);
   }
   if (key_cert_pairs.has_value()) {
     security_connector_->pem_key_cert_pair_list_ = std::move(key_cert_pairs);
   }
   bool root_being_watched = security_connector_->options_->watch_root_cert();
-  bool root_has_value = security_connector_->pem_root_certs_.has_value();
+  bool root_has_value = security_connector_->root_cert_info_ != nullptr;
   bool identity_being_watched =
       security_connector_->options_->watch_identity_pair();
   bool identity_has_value =
@@ -788,20 +780,13 @@ TlsServerSecurityConnector::UpdateHandshakerFactoryLocked() {
     tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory_);
   }
   // The identity certs on the server side shouldn't be empty.
-  CHECK(pem_key_cert_pair_list_.has_value());
-  CHECK(!(*pem_key_cert_pair_list_).empty());
-  std::string pem_root_certs;
-  if (pem_root_certs_.has_value()) {
-    // TODO(ZhenLian): update the underlying TSI layer to use C++ types like
-    // std::string and absl::string_view to avoid making another copy here.
-    pem_root_certs = std::string(*pem_root_certs_);
-  }
+  GRPC_CHECK(pem_key_cert_pair_list_.has_value());
+  GRPC_CHECK(!(*pem_key_cert_pair_list_).empty());
   tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs = nullptr;
   pem_key_cert_pairs = ConvertToTsiPemKeyCertPair(*pem_key_cert_pair_list_);
   size_t num_key_cert_pairs = (*pem_key_cert_pair_list_).size();
   grpc_security_status status = grpc_ssl_tsi_server_handshaker_factory_init(
-      pem_key_cert_pairs, num_key_cert_pairs,
-      pem_root_certs.empty() ? nullptr : pem_root_certs.c_str(),
+      pem_key_cert_pairs, num_key_cert_pairs, root_cert_info_,
       options_->cert_request_type(),
       grpc_get_tsi_tls_version(options_->min_tls_version()),
       grpc_get_tsi_tls_version(options_->max_tls_version()),

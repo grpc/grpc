@@ -58,12 +58,12 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "2f92f74bf80f7d4a48d09056fb27dd237f82c57d2d505ec401f9c330729e3022",
-            strip_prefix = "protobuf-3d4adad5c4c4e6a6f9f038769b8c90716065b0e4",
+            sha256 = "d0e3a75876a81e1536028bb9cf9181382b198da4cc6fa6aef86879ef629ac807",
+            strip_prefix = "protobuf-74211c0dfc2777318ab53c2cd2c317a2ef9012de",
             urls = [
-                # https://github.com/protocolbuffers/protobuf/commits/v31.0
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/3d4adad5c4c4e6a6f9f038769b8c90716065b0e4.tar.gz",
-                "https://github.com/protocolbuffers/protobuf/archive/3d4adad5c4c4e6a6f9f038769b8c90716065b0e4.tar.gz",
+                # https://github.com/protocolbuffers/protobuf/commits/v31.1
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/74211c0dfc2777318ab53c2cd2c317a2ef9012de.tar.gz",
+                "https://github.com/protocolbuffers/protobuf/archive/74211c0dfc2777318ab53c2cd2c317a2ef9012de.tar.gz",
             ],
             patches = [
                 "@com_github_grpc_grpc//third_party:protobuf.patch",
@@ -78,10 +78,11 @@ def grpc_deps():
     if "com_google_googletest" not in native.existing_rules():
         http_archive(
             name = "com_google_googletest",
-            sha256 = "745c55415660044610f7fcd3af7a6420d5de16a7dbb9ebfe2e131275676232be",
-            strip_prefix = "googletest-52eb8108c5bdec04579160ae17225d66034bd723",
+            sha256 = "65fab701d9829d38cb77c14acdc431d2108bfdbf8979e40eb8ae567edf10b27c",
+            strip_prefix = "googletest-1.17.0",
             urls = [
-                "https://github.com/google/googletest/archive/52eb8108c5bdec04579160ae17225d66034bd723.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/googletest/releases/download/v1.17.0/googletest-1.17.0.tar.gz",
+                "https://github.com/google/googletest/releases/download/v1.17.0/googletest-1.17.0.tar.gz",
             ],
             repo_mapping = {
                 "@abseil-cpp": "@com_google_absl",
@@ -140,22 +141,22 @@ def grpc_deps():
         http_archive(
             name = "com_github_cares_cares",
             build_file = "@com_github_grpc_grpc//third_party:cares/cares.BUILD",
-            sha256 = "bf26e5b25e259911914a85ae847b6d723488adb5af4f8bdeb9d0871a318476e3",
-            strip_prefix = "c-ares-6360e96b5cf8e5980c887ce58ef727e53d77243a",
+            sha256 = "cd1968cd09d384a5c553c82bf53ba458e47e9bfcdc253a3627f1b36ea6f814e2",
+            strip_prefix = "c-ares-d3a507e920e7af18a5efb7f9f1d8044ed4750013",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/c-ares/c-ares/archive/6360e96b5cf8e5980c887ce58ef727e53d77243a.tar.gz",
-                "https://github.com/c-ares/c-ares/archive/6360e96b5cf8e5980c887ce58ef727e53d77243a.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/c-ares/c-ares/archive/d3a507e920e7af18a5efb7f9f1d8044ed4750013.tar.gz",
+                "https://github.com/c-ares/c-ares/archive/d3a507e920e7af18a5efb7f9f1d8044ed4750013.tar.gz",
             ],
         )
 
     if "com_google_absl" not in native.existing_rules():
         http_archive(
             name = "com_google_absl",
-            sha256 = "b396401fd29e2e679cace77867481d388c807671dc2acc602a0259eeb79b7811",
-            strip_prefix = "abseil-cpp-20250127.1",
+            sha256 = "9b7a064305e9fd94d124ffa6cc358592eb42b5da588fb4e07d09254aa40086db",
+            strip_prefix = "abseil-cpp-20250512.1",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/releases/download/20250127.1/abseil-cpp-20250127.1.tar.gz",
-                "https://github.com/abseil/abseil-cpp/releases/download/20250127.1/abseil-cpp-20250127.1.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/archive/refs/tags/20250512.1.tar.gz",
+                "https://github.com/abseil/abseil-cpp/archive/refs/tags/20250512.1.tar.gz",
             ],
             repo_mapping = {
                 "@googletest": "@com_google_googletest",
@@ -204,6 +205,10 @@ def grpc_deps():
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-cpp/archive/5501a1a255805e0be83a41348bb5f2630d5ed6b3.tar.gz",
                 "https://github.com/census-instrumentation/opencensus-cpp/archive/5501a1a255805e0be83a41348bb5f2630d5ed6b3.tar.gz",
             ],
+            patches = [
+                "@com_github_grpc_grpc//third_party:opencensus-cpp.patch",
+            ],
+            patch_args = ["-p1"],
         )
 
     if "envoy_api" not in native.existing_rules():

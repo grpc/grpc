@@ -35,14 +35,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/meta/type_traits.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
-#include "gtest/gtest.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h"
 #include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"
@@ -52,6 +44,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/sync.h"
@@ -68,6 +61,13 @@
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "gtest/gtest.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/meta/type_traits.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
 
 // IWYU pragma: no_include <unistd.h>
 
@@ -106,7 +106,7 @@ void ProcessAuthFailure(void* state, grpc_auth_context* /*ctx*/,
                         const grpc_metadata* /*md*/, size_t /*md_count*/,
                         grpc_process_auth_metadata_done_cb cb,
                         void* user_data) {
-  CHECK_EQ(state, nullptr);
+  GRPC_CHECK_EQ(state, nullptr);
   cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
 }
 
@@ -161,7 +161,7 @@ class SslProxyFixture : public CoreTestFixture {
                                                     server_cert.c_str()};
     grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
         nullptr, &pem_key_cert_pair, 1, 0, nullptr);
-    CHECK(grpc_server_add_http2_port(s, port, ssl_creds));
+    GRPC_CHECK(grpc_server_add_http2_port(s, port, ssl_creds));
     grpc_server_credentials_release(ssl_creds);
     return s;
   }
@@ -203,7 +203,7 @@ class SslProxyFixture : public CoreTestFixture {
 
     auto* server = grpc_server_create(args.ToC().get(), nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
-    CHECK(grpc_server_add_http2_port(
+    GRPC_CHECK(grpc_server_add_http2_port(
         server, grpc_end2end_proxy_get_server_port(proxy_), ssl_creds));
     grpc_server_credentials_release(ssl_creds);
     pre_server_start(server);
@@ -220,7 +220,7 @@ class SslProxyFixture : public CoreTestFixture {
         args.Set(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, "foo.test.google.fr")
             .ToC()
             .get());
-    CHECK_NE(client, nullptr);
+    GRPC_CHECK_NE(client, nullptr);
     grpc_channel_credentials_release(ssl_creds);
     return client;
   }

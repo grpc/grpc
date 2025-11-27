@@ -18,6 +18,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/core/tsi/alts/fake_handshaker",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "public",
 )
 
@@ -48,7 +52,10 @@ grpc_cc_proto_library(
 grpc_cc_grpc_library(
     name = "handshaker_cc_grpc",
     srcs = ["handshaker_proto"],
-    deps = ["handshaker_cc_proto"],
+    deps = [
+        "handshaker_cc_proto",
+        "//:grpc++",
+    ],
 )
 
 grpc_cc_library(
@@ -58,11 +65,17 @@ grpc_cc_library(
     hdrs = ["fake_handshaker_server.h"],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
+        "absl/strings:str_format",
     ],
     deps = [
         "handshaker_cc_grpc",
         "transport_security_common_cc_proto",
+        ":handshaker_cc_proto",
+        "//:gpr",
+        "//:grpc",
         "//:grpc++",
+        "//src/core:grpc_check",
     ],
 )
 
@@ -77,6 +90,10 @@ grpc_cc_binary(
     ],
     deps = [
         "fake_handshaker_lib",
+        "//:gpr",
+        "//:grpc++",
+        "//:grpc++_base",
+        "//src/core:grpc_check",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
     ],

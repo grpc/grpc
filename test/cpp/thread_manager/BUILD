@@ -26,11 +26,13 @@ grpc_cc_test(
     srcs = ["thread_manager_test.cc"],
     external_deps = [
         "gtest",
+        "absl/log",
     ],
     deps = [
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//:grpc++_base",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",

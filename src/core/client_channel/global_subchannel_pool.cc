@@ -26,43 +26,6 @@
 
 namespace grpc_core {
 
-RefCountedPtr<LegacyGlobalSubchannelPool>
-LegacyGlobalSubchannelPool::instance() {
-  static LegacyGlobalSubchannelPool* p = new LegacyGlobalSubchannelPool();
-  return p->RefAsSubclass<LegacyGlobalSubchannelPool>();
-}
-
-RefCountedPtr<Subchannel> LegacyGlobalSubchannelPool::RegisterSubchannel(
-    const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) {
-  MutexLock lock(&mu_);
-  auto it = subchannel_map_.find(key);
-  if (it != subchannel_map_.end()) {
-    RefCountedPtr<Subchannel> existing = it->second->RefIfNonZero();
-    if (existing != nullptr) return existing;
-  }
-  subchannel_map_[key] = constructed.get();
-  return constructed;
-}
-
-void LegacyGlobalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key,
-                                                      Subchannel* subchannel) {
-  MutexLock lock(&mu_);
-  auto it = subchannel_map_.find(key);
-  // delete only if key hasn't been re-registered to a different subchannel
-  // between strong-unreffing and unregistration of subchannel.
-  if (it != subchannel_map_.end() && it->second == subchannel) {
-    subchannel_map_.erase(it);
-  }
-}
-
-RefCountedPtr<Subchannel> LegacyGlobalSubchannelPool::FindSubchannel(
-    const SubchannelKey& key) {
-  MutexLock lock(&mu_);
-  auto it = subchannel_map_.find(key);
-  if (it == subchannel_map_.end()) return nullptr;
-  return it->second->RefIfNonZero();
-}
-
 RefCountedPtr<GlobalSubchannelPool> GlobalSubchannelPool::instance() {
   static GlobalSubchannelPool* p = new GlobalSubchannelPool();
   return p->RefAsSubclass<GlobalSubchannelPool>();

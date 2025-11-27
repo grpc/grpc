@@ -24,13 +24,13 @@
 
 #include <optional>
 
-#include "absl/log/check.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
 #include "src/core/credentials/transport/tls/tls_credentials.h"
 #include "src/core/credentials/transport/tls/tls_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/useful.h"
 #include "src/core/xds/grpc/xds_certificate_provider.h"
 
@@ -79,7 +79,7 @@ XdsCertificateVerifier::XdsCertificateVerifier(
 bool XdsCertificateVerifier::Verify(
     grpc_tls_custom_verification_check_request* request,
     std::function<void(absl::Status)>, absl::Status* sync_status) {
-  CHECK_NE(request, nullptr);
+  GRPC_CHECK_NE(request, nullptr);
   if (!XdsVerifySubjectAlternativeNames(
           request->peer_info.san_names.uri_names,
           request->peer_info.san_names.uri_names_size,
@@ -134,9 +134,6 @@ RefCountedPtr<grpc_channel_security_connector>
 XdsCredentials::create_security_connector(
     RefCountedPtr<grpc_call_credentials> call_creds, const char* target_name,
     ChannelArgs* args) {
-  // TODO(yashykt): This arg will no longer need to be added after b/173119596
-  // is fixed.
-  *args = args->SetIfUnset(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, target_name);
   RefCountedPtr<grpc_channel_security_connector> security_connector;
   auto xds_certificate_provider = args->GetObjectRef<XdsCertificateProvider>();
   if (xds_certificate_provider != nullptr) {
@@ -169,7 +166,7 @@ XdsCredentials::create_security_connector(
                                                         target_name, args);
     }
   }
-  CHECK(fallback_credentials_ != nullptr);
+  GRPC_CHECK(fallback_credentials_ != nullptr);
   return fallback_credentials_->create_security_connector(std::move(call_creds),
                                                           target_name, args);
 }
@@ -220,12 +217,12 @@ UniqueTypeName XdsServerCredentials::Type() {
 
 grpc_channel_credentials* grpc_xds_credentials_create(
     grpc_channel_credentials* fallback_credentials) {
-  CHECK_NE(fallback_credentials, nullptr);
+  GRPC_CHECK_NE(fallback_credentials, nullptr);
   return new grpc_core::XdsCredentials(fallback_credentials->Ref());
 }
 
 grpc_server_credentials* grpc_xds_server_credentials_create(
     grpc_server_credentials* fallback_credentials) {
-  CHECK_NE(fallback_credentials, nullptr);
+  GRPC_CHECK_NE(fallback_credentials, nullptr);
   return new grpc_core::XdsServerCredentials(fallback_credentials->Ref());
 }

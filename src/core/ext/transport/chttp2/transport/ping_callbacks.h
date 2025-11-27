@@ -24,13 +24,13 @@
 #include <optional>
 #include <vector>
 
+#include "src/core/channelz/property_list.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/util/time.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/hash/hash.h"
 #include "absl/random/bit_gen_ref.h"
-#include "src/core/channelz/property_list.h"
-#include "src/core/lib/debug/trace.h"
-#include "src/core/util/time.h"
 
 namespace grpc_core {
 
@@ -99,9 +99,9 @@ class Chttp2PingCallbacks {
              started_new_ping_without_setting_timeout_)
         .Set("inflight",
              [this]() {
-               std::vector<channelz::PropertyList> inflight;
+               channelz::PropertyTable inflight;
                for (const auto& [id, ping] : inflight_) {
-                 inflight.emplace_back().Set("id", id);
+                 inflight.AppendRow(channelz::PropertyList().Set("id", id));
                }
                return inflight;
              }())

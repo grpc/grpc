@@ -27,12 +27,14 @@
 #include <string>
 #include <utility>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/strings/string_view.h"
+#include "src/core/credentials/transport/tls/spiffe_utils.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/string_view.h"
 
 struct grpc_tls_identity_pairs {
   grpc_core::PemKeyCertPairList pem_key_cert_pairs;
@@ -53,11 +55,11 @@ struct grpc_tls_certificate_distributor
     // latest contents for both root and identity certificates, even when only
     // one side of it got updated.
     //
-    // @param root_certs the contents of the reloaded root certs.
+    // @param roots the contents of the reloaded roots.
     // @param key_cert_pairs the contents of the reloaded identity key-cert
     // pairs.
     virtual void OnCertificatesChanged(
-        std::optional<absl::string_view> root_certs,
+        std::shared_ptr<RootCertInfo> roots,
         std::optional<grpc_core::PemKeyCertPairList> key_cert_pairs) = 0;
 
     // Handles an error that occurs while attempting to fetch certificate data.
@@ -81,10 +83,11 @@ struct grpc_tls_certificate_distributor
   // Sets the key materials based on their certificate name.
   //
   // @param cert_name The name of the certificates being updated.
-  // @param pem_root_certs The content of root certificates.
+  // @param roots The content of the roots, either the pem root certificates or
+  // the SpiffeBundleMap.
   // @param pem_key_cert_pairs The content of identity key-cert pairs.
   void SetKeyMaterials(
-      const std::string& cert_name, std::optional<std::string> pem_root_certs,
+      const std::string& cert_name, std::shared_ptr<RootCertInfo> roots,
       std::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs);
 
   bool HasRootCerts(const std::string& root_cert_name);
@@ -171,10 +174,12 @@ struct grpc_tls_certificate_distributor
   // root certs, while pem_root_certs still contains the valid old data.
   struct CertificateInfo {
     // The contents of the root certificates.
-    std::string pem_root_certs;
+    std::shared_ptr<RootCertInfo> roots;
     // The contents of the identity key-certificate pairs.
     grpc_core::PemKeyCertPairList pem_key_cert_pairs;
-    // The root cert reloading error propagated by the caller.
+    // TODO(gtcooke94) Swap to using absl::StatusOr<>
+    // https://github.com/grpc/grpc/pull/39708/files#r2144014200 The root cert
+    // reloading error propagated by the caller.
     grpc_error_handle root_cert_error;
     // The identity cert reloading error propagated by the caller.
     grpc_error_handle identity_cert_error;
@@ -188,10 +193,16 @@ struct grpc_tls_certificate_distributor
     std::set<TlsCertificatesWatcherInterface*> identity_cert_watchers;
 
     ~CertificateInfo() {}
+    // TODO(gtcooke94) These can be set directly, no need for setters
+    // https://github.com/grpc/grpc/pull/39708/files#r2144015746
     void SetRootError(grpc_error_handle error) { root_cert_error = error; }
     void SetIdentityError(grpc_error_handle error) {
       identity_cert_error = error;
     }
+
+    // Returns if the root variant contains either "", an empty SpiffeBundleMap,
+    // or a nullptr to a SpiffeBundleMap
+    bool AreRootsEmpty();
   };
 
   grpc_core::Mutex mu_;
@@ -202,8 +213,8 @@ struct grpc_tls_certificate_distributor
   // Stores information about each watcher.
   std::map<TlsCertificatesWatcherInterface*, WatcherInfo> watchers_
       ABSL_GUARDED_BY(mu_);
-  // The callback to notify the caller, e.g. the Producer, that the watch status
-  // is changed.
+  // The callback to notify the caller, e.g. the Producer, that the watch
+  // status is changed.
   std::function<void(std::string, bool, bool)> watch_status_callback_
       ABSL_GUARDED_BY(callback_mu_);
   // Stores the names of each certificate, and their corresponding credential

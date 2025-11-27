@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@rules_python//python:defs.bzl", "py_library", "py_test")
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_library")
+load("//bazel:internal_python_rules.bzl", "internal_py_grpc_test_with_runtime_type_check")
 
 package(
     default_testonly = 1,
@@ -58,8 +60,9 @@ _FLAKY_TESTS = [
     "channel_argument_test.py",
 ]
 
+# All tests with runtime type checking
 [
-    py_test(
+    internal_py_grpc_test_with_runtime_type_check(
         name = test_file_name[:-3],
         size = "small",
         srcs = [test_file_name],
@@ -68,8 +71,6 @@ _FLAKY_TESTS = [
         ],
         flaky = test_file_name in _FLAKY_TESTS,
         imports = ["../../"],
-        main = test_file_name,
-        python_version = "PY3",
         deps = [
             ":_common",
             ":_constants",
@@ -81,6 +82,7 @@ _FLAKY_TESTS = [
             "//src/python/grpcio/grpc:grpcio",
             "//src/python/grpcio_tests/tests/unit:resources",
             "//src/python/grpcio_tests/tests/unit/framework/common",
+            requirement("typeguard"),
         ],
     )
     for test_file_name in GRPC_ASYNC_TESTS

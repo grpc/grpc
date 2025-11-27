@@ -34,14 +34,6 @@
 #include <variant>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/meta/type_traits.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -62,6 +54,7 @@
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
@@ -71,6 +64,13 @@
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/util/work_serializer.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
+#include "absl/meta/type_traits.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -329,7 +329,7 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
           --multiplier_;
         }
       } else {
-        CHECK(ejection_time_.has_value());
+        GRPC_CHECK(ejection_time_.has_value());
         auto change_time = ejection_time_.value() +
                            Duration::Milliseconds(std::min(
                                base_ejection_time_in_millis * multiplier_,

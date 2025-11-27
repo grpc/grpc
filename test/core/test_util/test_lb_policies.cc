@@ -24,10 +24,6 @@
 #include <string>
 #include <variant>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "src/core/client_channel/lb_metadata.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/parse_address.h"
@@ -42,6 +38,7 @@
 #include "src/core/load_balancing/oob_backend_metric.h"
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/util/down_cast.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_util.h"
 #include "src/core/util/orphanable.h"
@@ -49,6 +46,9 @@
 #include "src/core/util/status_helper.h"
 #include "src/core/util/time.h"
 #include "src/core/util/uri.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -84,7 +84,7 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
         CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
             Json::FromArray({Json::FromObject(
                 {{std::string(delegate_->name()), Json::FromObject({})}})}));
-    CHECK_OK(config);
+    GRPC_CHECK_OK(config);
     args.config = *config;
     return delegate_->UpdateLocked(std::move(args));
   }
@@ -420,7 +420,7 @@ class FixedAddressLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
     EndpointAddressesList addresses;
     if (uri.ok()) {
       grpc_resolved_address address;
-      CHECK(grpc_parse_uri(*uri, &address));
+      GRPC_CHECK(grpc_parse_uri(*uri, &address));
       addresses.emplace_back(address, ChannelArgs());
     } else {
       LOG(ERROR) << kFixedAddressLbPolicyName << ": could not parse URI ("

@@ -16,9 +16,9 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "absl/status/status.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/port.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
 
@@ -30,7 +30,7 @@
 #include <netinet/ip.h>
 
 #include "src/core/lib/event_engine/posix_engine/posix_interface.h"
-#include "src/core/lib/iomgr/socket_mutator.h"
+#include "src/core/net/socket_mutator.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_event_engine {

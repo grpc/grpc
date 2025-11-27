@@ -31,14 +31,15 @@
 #include <utility>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/security_connector.h"
+#include "src/core/credentials/transport/tls/spiffe_utils.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 // --- Util ---
 
@@ -84,7 +85,8 @@ const char** ParseAlpnStringIntoArray(absl::string_view preferred_protocols,
 
 // Initialize TSI SSL server/client handshaker factory.
 grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
-    tsi_ssl_pem_key_cert_pair* key_cert_pair, const char* pem_root_certs,
+    tsi_ssl_pem_key_cert_pair* key_cert_pair,
+    std::shared_ptr<RootCertInfo> root_cert_info,
     bool skip_server_certificate_verification, tsi_tls_version min_tls_version,
     tsi_tls_version max_tls_version, tsi_ssl_session_cache* ssl_session_cache,
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
@@ -94,7 +96,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
 
 grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
     tsi_ssl_pem_key_cert_pair* key_cert_pairs, size_t num_key_cert_pairs,
-    const char* pem_root_certs,
+    std::shared_ptr<RootCertInfo> root_cert_info,
     grpc_ssl_client_certificate_request_type client_certificate_request,
     tsi_tls_version min_tls_version, tsi_tls_version max_tls_version,
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,

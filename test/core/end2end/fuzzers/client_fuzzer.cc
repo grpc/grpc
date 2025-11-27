@@ -19,8 +19,6 @@
 #include <optional>
 #include <string>
 
-#include "absl/log/check.h"
-#include "absl/status/statusor.h"
 #include "fuzztest/fuzztest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
@@ -34,6 +32,7 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
@@ -44,6 +43,7 @@
 #include "test/core/test_util/fuzz_config_vars_helpers.h"
 #include "test/core/test_util/mock_endpoint.h"
 #include "test/core/test_util/test_config.h"
+#include "absl/status/statusor.h"
 
 bool squelch = true;
 bool leak_check = true;
@@ -79,7 +79,7 @@ class ClientFuzzer final : public BasicFuzzer {
                    ->c_ptr();
   }
 
-  ~ClientFuzzer() { CHECK_EQ(channel_, nullptr); }
+  ~ClientFuzzer() { GRPC_CHECK_EQ(channel_, nullptr); }
 
  private:
   Result CreateChannel(const api_fuzzer::CreateChannel&) override {

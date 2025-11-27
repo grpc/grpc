@@ -34,17 +34,6 @@
 #include <variant>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/functional/function_ref.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/span.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
@@ -69,6 +58,7 @@
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/xds/xds_config.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
@@ -80,6 +70,16 @@
 #include "src/core/util/validation_errors.h"
 #include "src/core/util/work_serializer.h"
 #include "src/core/xds/grpc/xds_health_status.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/functional/function_ref.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 
@@ -225,7 +225,7 @@ class XdsOverrideHostLb final : public LoadBalancingPolicy {
     // already has an owned subchannel.
     void SetOwnedSubchannel(RefCountedPtr<SubchannelWrapper> subchannel)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
-      DCHECK(!HasOwnedSubchannel());
+      GRPC_DCHECK(!HasOwnedSubchannel());
       subchannel_ = std::move(subchannel);
     }
 
@@ -427,7 +427,7 @@ XdsOverrideHostLb::Picker::Picker(
 std::optional<LoadBalancingPolicy::PickResult>
 XdsOverrideHostLb::Picker::PickOverriddenHost(
     XdsOverrideHostAttribute* override_host_attr) const {
-  CHECK_NE(override_host_attr, nullptr);
+  GRPC_CHECK_NE(override_host_attr, nullptr);
   auto cookie_address_list = override_host_attr->cookie_address_list();
   if (cookie_address_list.empty()) return std::nullopt;
   // The cookie has an address list, so look through the addresses in order.
@@ -904,7 +904,7 @@ void XdsOverrideHostLb::CreateSubchannelForAddress(absl::string_view address) {
       << "[xds_override_host_lb " << this << "] creating owned subchannel for "
       << address;
   auto addr = StringToSockaddr(address);
-  CHECK(addr.ok());
+  GRPC_CHECK(addr.ok());
   // We need to do 3 things here:
   // 1. Get the per-endpoint args from the entry in subchannel_map_.
   // 2. Create the subchannel using those per-endpoint args.

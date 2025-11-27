@@ -47,6 +47,30 @@ class Json {
     kArray,    // Use array() for payload.
   };
 
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, Type type) {
+    switch (type) {
+      case Type::kNull:
+        sink.Append("null");
+        break;
+      case Type::kBoolean:
+        sink.Append("boolean");
+        break;
+      case Type::kNumber:
+        sink.Append("number");
+        break;
+      case Type::kString:
+        sink.Append("string");
+        break;
+      case Type::kObject:
+        sink.Append("object");
+        break;
+      case Type::kArray:
+        sink.Append("array");
+        break;
+    }
+  }
+
   using Object = std::map<std::string, Json>;
   using Array = std::vector<Json>;
 

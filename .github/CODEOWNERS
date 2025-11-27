@@ -1,7 +1,5 @@
-/bazel/** @veblush
 /bazel/experiments.yaml
 /bazel/rollouts.yaml
-/cmake/** @veblush @apolcyn
 /src/core/client_channel/** @markdroth
 /src/core/ext/transport/chttp2/transport/** @ctiller
 /src/core/load_balancing/** @markdroth
@@ -9,5 +7,5 @@
 /src/core/server/xds* @markdroth
 /src/core/service_config/** @markdroth
 /src/core/xds/** @markdroth
-/tools/dockerfile/** @drfloob @apolcyn
+/tools/dockerfile/** @sergiitk
 /tools/dockerfile/**/*python* @sergiitk

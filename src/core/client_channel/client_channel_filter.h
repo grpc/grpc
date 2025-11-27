@@ -29,13 +29,9 @@
 #include <string>
 #include <utility>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/container/flat_hash_set.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/client_channel/buffered_call.h"
 #include "src/core/client_channel/client_channel_args.h"
 #include "src/core/client_channel/client_channel_factory.h"
 #include "src/core/client_channel/config_selector.h"
@@ -67,6 +63,12 @@
 #include "src/core/util/time.h"
 #include "src/core/util/time_precise.h"
 #include "src/core/util/work_serializer.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 //
 // Client channel filter
@@ -79,16 +81,6 @@
 // Calls on a disconnected client channel are queued until a connection is
 // established.
 
-// Max number of batches that can be pending on a call at any given
-// time.  This includes one batch for each of the following ops:
-//   recv_initial_metadata
-//   send_initial_metadata
-//   recv_message
-//   send_message
-//   recv_trailing_metadata
-//   send_trailing_metadata
-#define MAX_PENDING_BATCHES 6
-
 namespace grpc_core {
 
 class ClientChannelFilter final {
@@ -96,7 +88,6 @@ class ClientChannelFilter final {
   static const grpc_channel_filter kFilter;
 
   class LoadBalancedCall;
-  class FilterBasedLoadBalancedCall;
 
   // Flag that this object gets stored in channel args as a raw pointer.
   struct RawPointerChannelArgTag {};
@@ -143,14 +134,13 @@ class ClientChannelFilter final {
   void RemoveConnectivityWatcher(
       AsyncConnectivityStateWatcherInterface* watcher);
 
-  OrphanablePtr<FilterBasedLoadBalancedCall> CreateLoadBalancedCall(
+  OrphanablePtr<LoadBalancedCall> CreateLoadBalancedCall(
       const grpc_call_element_args& args, grpc_polling_entity* pollent,
       grpc_closure* on_call_destruction_complete,
       absl::AnyInvocable<void()> on_commit, bool is_transparent_retry);
 
  private:
   class CallData;
-  class FilterBasedCallData;
   class ResolverResultHandler;
   class SubchannelWrapper;
   class ClientChannelControlHelper;
@@ -318,15 +308,12 @@ class ClientChannelFilter final {
       ABSL_GUARDED_BY(*work_serializer_);
   RefCountedPtr<SubchannelPoolInterface> subchannel_pool_
       ABSL_GUARDED_BY(*work_serializer_);
-  // The number of SubchannelWrapper instances referencing a given Subchannel.
-  std::map<Subchannel*, int> subchannel_refcount_map_
-      ABSL_GUARDED_BY(*work_serializer_);
-  // The set of SubchannelWrappers that currently exist.
-  // No need to hold a ref, since the map is updated in the control-plane
+  // The set of SubchannelWrapper instances referencing a given Subchannel.
+  // No need to hold refs, since the map is updated in the control-plane
   // work_serializer when the SubchannelWrappers are created and destroyed.
-  absl::flat_hash_set<SubchannelWrapper*> subchannel_wrappers_
-      ABSL_GUARDED_BY(*work_serializer_);
-  int keepalive_time_ ABSL_GUARDED_BY(*work_serializer_) = -1;
+  absl::flat_hash_map<Subchannel*, absl::flat_hash_set<SubchannelWrapper*>>
+      subchannel_map_ ABSL_GUARDED_BY(*work_serializer_);
+  Duration keepalive_time_ ABSL_GUARDED_BY(*work_serializer_);
   grpc_error_handle disconnect_error_ ABSL_GUARDED_BY(*work_serializer_);
 
   //
@@ -352,15 +339,26 @@ class ClientChannelFilter final {
 
 // TODO(roth): As part of simplifying cancellation in the filter stack,
 // this should no longer need to be ref-counted.
-class ClientChannelFilter::LoadBalancedCall
+class ClientChannelFilter::LoadBalancedCall final
     : public InternallyRefCounted<LoadBalancedCall, UnrefCallDtor> {
  public:
-  LoadBalancedCall(ClientChannelFilter* chand, Arena* arena,
+  // If on_call_destruction_complete is non-null, then it will be
+  // invoked once the LoadBalancedCall is completely destroyed.
+  // If it is null, then the caller is responsible for checking whether
+  // the LB call has a subchannel call and ensuring that the
+  // on_call_destruction_complete closure passed down from the surface
+  // is not invoked until after the subchannel call stack is destroyed.
+  LoadBalancedCall(ClientChannelFilter* chand,
+                   const grpc_call_element_args& args,
+                   grpc_polling_entity* pollent,
+                   grpc_closure* on_call_destruction_complete,
                    absl::AnyInvocable<void()> on_commit,
                    bool is_transparent_retry);
   ~LoadBalancedCall() override;
 
-  void Orphan() override { Unref(); }
+  void Orphan() override;
+
+  void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
 
   // Called by channel when removing a call from the list of queued calls.
   void RemoveCallFromLbQueuedCallsLocked()
@@ -368,22 +366,22 @@ class ClientChannelFilter::LoadBalancedCall
 
   // Called by the channel for each queued call when a new picker
   // becomes available.
-  virtual void RetryPickLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannelFilter::lb_mu_) = 0;
+  void RetryPickLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannelFilter::lb_mu_);
 
- protected:
-  ClientChannelFilter* chand() const { return chand_; }
-  ClientCallTracer::CallAttemptTracer* call_attempt_tracer() const {
-    return call_attempt_tracer_;
+  RefCountedPtr<SubchannelCall> subchannel_call() const {
+    return subchannel_call_;
   }
-  ConnectedSubchannel* connected_subchannel() const {
-    return connected_subchannel_.get();
+
+ private:
+  class LbCallState;
+  class Metadata;
+  class BackendMetricAccessor;
+  class LbQueuedCallCanceller;
+
+  grpc_metadata_batch* send_initial_metadata() const {
+    return buffered_call_.send_initial_metadata();
   }
-  LoadBalancingPolicy::SubchannelCallTrackerInterface*
-  lb_subchannel_call_tracker() const {
-    return lb_subchannel_call_tracker_.get();
-  }
-  Arena* arena() const { return arena_; }
 
   void Commit() {
     auto on_commit = std::move(on_commit_);
@@ -409,14 +407,6 @@ class ClientChannelFilter::LoadBalancedCall
 
   void RecordLatency();
 
- private:
-  class LbCallState;
-  class Metadata;
-  class BackendMetricAccessor;
-
-  virtual grpc_polling_entity* pollent() = 0;
-  virtual grpc_metadata_batch* send_initial_metadata() const = 0;
-
   // Helper function for performing an LB pick with a specified picker.
   // Returns true if the pick is complete.
   bool PickSubchannelImpl(LoadBalancingPolicy::SubchannelPicker* picker,
@@ -424,94 +414,6 @@ class ClientChannelFilter::LoadBalancedCall
   // Adds the call to the channel's list of queued picks if not already present.
   void AddCallToLbQueuedCallsLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannelFilter::lb_mu_);
-
-  // Called when adding the call to the LB queue.
-  virtual void OnAddToQueueLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannelFilter::lb_mu_) = 0;
-
-  ClientChannelFilter* chand_;
-  // When we start a new attempt for a call, we might not have cleaned up the
-  // previous attempt yet leading to a situation where we have two active call
-  // attempt tracers, and so we cannot rely on the arena to give us the right
-  // tracer when performing cleanup.
-  ClientCallTracer::CallAttemptTracer* call_attempt_tracer_;
-
-  absl::AnyInvocable<void()> on_commit_;
-
-  RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
-  const BackendMetricData* backend_metric_data_ = nullptr;
-  std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
-      lb_subchannel_call_tracker_;
-  Arena* const arena_;
-};
-
-class ClientChannelFilter::FilterBasedLoadBalancedCall final
-    : public ClientChannelFilter::LoadBalancedCall {
- public:
-  // If on_call_destruction_complete is non-null, then it will be
-  // invoked once the LoadBalancedCall is completely destroyed.
-  // If it is null, then the caller is responsible for checking whether
-  // the LB call has a subchannel call and ensuring that the
-  // on_call_destruction_complete closure passed down from the surface
-  // is not invoked until after the subchannel call stack is destroyed.
-  FilterBasedLoadBalancedCall(ClientChannelFilter* chand,
-                              const grpc_call_element_args& args,
-                              grpc_polling_entity* pollent,
-                              grpc_closure* on_call_destruction_complete,
-                              absl::AnyInvocable<void()> on_commit,
-                              bool is_transparent_retry);
-  ~FilterBasedLoadBalancedCall() override;
-
-  void Orphan() override;
-
-  void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
-
-  RefCountedPtr<SubchannelCall> subchannel_call() const {
-    return subchannel_call_;
-  }
-
- private:
-  class LbQueuedCallCanceller;
-
-  // Work-around for Windows compilers that don't allow nested classes
-  // to access protected members of the enclosing class's parent class.
-  using LoadBalancedCall::chand;
-  using LoadBalancedCall::Commit;
-
-  grpc_polling_entity* pollent() override { return pollent_; }
-  grpc_metadata_batch* send_initial_metadata() const override {
-    return pending_batches_[0]
-        ->payload->send_initial_metadata.send_initial_metadata;
-  }
-
-  // Returns the index into pending_batches_ to be used for batch.
-  static size_t GetBatchIndex(grpc_transport_stream_op_batch* batch);
-  void PendingBatchesAdd(grpc_transport_stream_op_batch* batch);
-  static void FailPendingBatchInCallCombiner(void* arg,
-                                             grpc_error_handle error);
-  // A predicate type and some useful implementations for PendingBatchesFail().
-  typedef bool (*YieldCallCombinerPredicate)(
-      const CallCombinerClosureList& closures);
-  static bool YieldCallCombiner(const CallCombinerClosureList& /*closures*/) {
-    return true;
-  }
-  static bool NoYieldCallCombiner(const CallCombinerClosureList& /*closures*/) {
-    return false;
-  }
-  static bool YieldCallCombinerIfPendingBatchesFound(
-      const CallCombinerClosureList& closures) {
-    return closures.size() > 0;
-  }
-  // Fails all pending batches.
-  // If yield_call_combiner_predicate returns true, assumes responsibility for
-  // yielding the call combiner.
-  void PendingBatchesFail(
-      grpc_error_handle error,
-      YieldCallCombinerPredicate yield_call_combiner_predicate);
-  static void ResumePendingBatchInCallCombiner(void* arg,
-                                               grpc_error_handle ignored);
-  // Resumes all pending batches on subchannel_call_.
-  void PendingBatchesResume();
 
   static void SendInitialMetadataOnComplete(void* arg, grpc_error_handle error);
   static void RecvInitialMetadataReady(void* arg, grpc_error_handle error);
@@ -521,13 +423,14 @@ class ClientChannelFilter::FilterBasedLoadBalancedCall final
   // and when it is queued and the channel gets a new picker.
   void TryPick(bool was_queued);
 
-  void OnAddToQueueLocked() override
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannelFilter::lb_mu_);
-
-  void RetryPickLocked() override
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannelFilter::lb_mu_);
-
   void CreateSubchannelCall();
+
+  ClientChannelFilter* chand_;
+  // When we start a new attempt for a call, we might not have cleaned up the
+  // previous attempt yet leading to a situation where we have two active call
+  // attempt tracers, and so we cannot rely on the arena to give us the right
+  // tracer when performing cleanup.
+  CallAttemptTracer* call_attempt_tracer_;
 
   // TODO(roth): Instead of duplicating these fields in every filter
   // that uses any one of them, we should store them in the call
@@ -536,6 +439,15 @@ class ClientChannelFilter::FilterBasedLoadBalancedCall final
   CallCombiner* call_combiner_;
   grpc_polling_entity* pollent_;
   grpc_closure* on_call_destruction_complete_;
+  Arena* const arena_;
+
+  absl::AnyInvocable<void()> on_commit_;
+
+  RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
+  const BackendMetricData* backend_metric_data_ = nullptr;
+  std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
+      lb_subchannel_call_tracker_;
+
   std::optional<Slice> peer_string_;
 
   // Set when we get a cancel_stream op.
@@ -560,12 +472,7 @@ class ClientChannelFilter::FilterBasedLoadBalancedCall final
   grpc_closure recv_trailing_metadata_ready_;
   grpc_closure* original_recv_trailing_metadata_ready_ = nullptr;
 
-  // Batches are added to this list when received from above.
-  // They are removed when we are done handling the batch (i.e., when
-  // either we have invoked all of the batch's callbacks or we have
-  // passed the batch down to the subchannel call and are not
-  // intercepting any of its callbacks).
-  grpc_transport_stream_op_batch* pending_batches_[MAX_PENDING_BATCHES] = {};
+  BufferedCall buffered_call_;
 };
 
 }  // namespace grpc_core

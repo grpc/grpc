@@ -34,16 +34,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/log.h"
-#include "absl/numeric/int128.h"
-#include "absl/random/random.h"
-#include "absl/random/uniform_int_distribution.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/numbers.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
-#include "absl/strings/strip.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/config/core_configuration.h"
@@ -67,6 +57,16 @@
 #include "src/core/util/latent_see.h"
 #include "src/core/util/time.h"
 #include "src/core/util/uri.h"
+#include "absl/log/log.h"
+#include "absl/numeric/int128.h"
+#include "absl/random/random.h"
+#include "absl/random/uniform_int_distribution.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 
 namespace grpc_core {
 
@@ -218,8 +218,7 @@ CallData::CallData(bool is_client,
   }
 }
 
-void CallData::LogClientHeader(bool is_client,
-                               CallTracerAnnotationInterface* tracer,
+void CallData::LogClientHeader(bool is_client, CallSpan* tracer,
                                const ClientMetadata& metadata) {
   LoggingSink::Entry entry;
   if (!is_client) {
@@ -236,16 +235,14 @@ void CallData::LogClientHeader(bool is_client,
   g_logging_sink->LogEntry(std::move(entry));
 }
 
-void CallData::LogClientHalfClose(bool is_client,
-                                  CallTracerAnnotationInterface* tracer) {
+void CallData::LogClientHalfClose(bool is_client, CallSpan* tracer) {
   LoggingSink::Entry entry;
   SetCommonEntryFields(&entry, is_client, tracer,
                        LoggingSink::Entry::EventType::kClientHalfClose);
   g_logging_sink->LogEntry(std::move(entry));
 }
 
-void CallData::LogServerHeader(bool is_client,
-                               CallTracerAnnotationInterface* tracer,
+void CallData::LogServerHeader(bool is_client, CallSpan* tracer,
                                const ServerMetadata* metadata) {
   LoggingSink::Entry entry;
   if (metadata != nullptr) {
@@ -267,8 +264,7 @@ void CallData::LogServerHeader(bool is_client,
   g_logging_sink->LogEntry(std::move(entry));
 }
 
-void CallData::LogServerTrailer(bool is_client,
-                                CallTracerAnnotationInterface* tracer,
+void CallData::LogServerTrailer(bool is_client, CallSpan* tracer,
                                 const ServerMetadata* metadata) {
   LoggingSink::Entry entry;
   SetCommonEntryFields(&entry, is_client, tracer,
@@ -283,8 +279,7 @@ void CallData::LogServerTrailer(bool is_client,
   g_logging_sink->LogEntry(std::move(entry));
 }
 
-void CallData::LogClientMessage(bool is_client,
-                                CallTracerAnnotationInterface* tracer,
+void CallData::LogClientMessage(bool is_client, CallSpan* tracer,
                                 const SliceBuffer* message) {
   LoggingSink::Entry entry;
   SetCommonEntryFields(&entry, is_client, tracer,
@@ -293,8 +288,7 @@ void CallData::LogClientMessage(bool is_client,
   g_logging_sink->LogEntry(std::move(entry));
 }
 
-void CallData::LogServerMessage(bool is_client,
-                                CallTracerAnnotationInterface* tracer,
+void CallData::LogServerMessage(bool is_client, CallSpan* tracer,
                                 const SliceBuffer* message) {
   LoggingSink::Entry entry;
   SetCommonEntryFields(&entry, is_client, tracer,
@@ -303,8 +297,7 @@ void CallData::LogServerMessage(bool is_client,
   g_logging_sink->LogEntry(std::move(entry));
 }
 
-void CallData::LogCancel(bool is_client,
-                         CallTracerAnnotationInterface* tracer) {
+void CallData::LogCancel(bool is_client, CallSpan* tracer) {
   LoggingSink::Entry entry;
   SetCommonEntryFields(&entry, is_client, tracer,
                        LoggingSink::Entry::EventType::kCancel);
@@ -312,7 +305,7 @@ void CallData::LogCancel(bool is_client,
 }
 
 void CallData::SetCommonEntryFields(LoggingSink::Entry* entry, bool is_client,
-                                    CallTracerAnnotationInterface* tracer,
+                                    CallSpan* tracer,
                                     LoggingSink::Entry::EventType event_type) {
   entry->call_id = call_id_;
   entry->sequence_id = sequence_id_++;
@@ -354,67 +347,57 @@ ClientLoggingFilter::Create(const ChannelArgs& args,
 
 void ClientLoggingFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, ClientLoggingFilter* filter) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
-      "ClientLoggingFilter::Call::OnClientInitialMetadata");
+  GRPC_LATENT_SEE_SCOPE("ClientLoggingFilter::Call::OnClientInitialMetadata");
   call_data_.emplace(true, md, filter->default_authority_);
   if (!call_data_->ShouldLog()) {
     call_data_.reset();
     return;
   }
   call_data_->LogClientHeader(
-      /*is_client=*/true, MaybeGetContext<CallTracerAnnotationInterface>(), md);
+      /*is_client=*/true, MaybeGetContext<CallSpan>(), md);
 }
 
 void ClientLoggingFilter::Call::OnServerInitialMetadata(ServerMetadata& md) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
-      "ClientLoggingFilter::Call::OnServerInitialMetadata");
+  GRPC_LATENT_SEE_SCOPE("ClientLoggingFilter::Call::OnServerInitialMetadata");
   if (!call_data_.has_value()) return;
   call_data_->LogServerHeader(
-      /*is_client=*/true, MaybeGetContext<CallTracerAnnotationInterface>(),
-      &md);
+      /*is_client=*/true, MaybeGetContext<CallSpan>(), &md);
 }
 
 void ClientLoggingFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
-      "ClientLoggingFilter::Call::OnServerTrailingMetadata");
+  GRPC_LATENT_SEE_SCOPE("ClientLoggingFilter::Call::OnServerTrailingMetadata");
   if (!call_data_.has_value()) return;
   if (md.get(GrpcCallWasCancelled()).value_or(false) &&
       md.get(GrpcStatusMetadata()) == GRPC_STATUS_CANCELLED) {
     call_data_->LogCancel(
-        /*is_client=*/true, MaybeGetContext<CallTracerAnnotationInterface>());
+        /*is_client=*/true, MaybeGetContext<CallSpan>());
     return;
   }
   call_data_->LogServerTrailer(
-      /*is_client=*/true, MaybeGetContext<CallTracerAnnotationInterface>(),
-      &md);
+      /*is_client=*/true, MaybeGetContext<CallSpan>(), &md);
 }
 
 void ClientLoggingFilter::Call::OnClientToServerMessage(
     const Message& message) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
-      "ClientLoggingFilter::Call::OnClientToServerMessage");
+  GRPC_LATENT_SEE_SCOPE("ClientLoggingFilter::Call::OnClientToServerMessage");
   if (!call_data_.has_value()) return;
   call_data_->LogClientMessage(
-      /*is_client=*/true, MaybeGetContext<CallTracerAnnotationInterface>(),
-      message.payload());
+      /*is_client=*/true, MaybeGetContext<CallSpan>(), message.payload());
 }
 
 void ClientLoggingFilter::Call::OnClientToServerHalfClose() {
-  GRPC_LATENT_SEE_INNER_SCOPE(
-      "ClientLoggingFilter::Call::OnClientToServerHalfClose");
+  GRPC_LATENT_SEE_SCOPE("ClientLoggingFilter::Call::OnClientToServerHalfClose");
   if (!call_data_.has_value()) return;
   call_data_->LogClientHalfClose(
-      /*is_client=*/true, MaybeGetContext<CallTracerAnnotationInterface>());
+      /*is_client=*/true, MaybeGetContext<CallSpan>());
 }
 
 void ClientLoggingFilter::Call::OnServerToClientMessage(
     const Message& message) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
-      "ClientLoggingFilter::Call::OnServerToClientMessage");
+  GRPC_LATENT_SEE_SCOPE("ClientLoggingFilter::Call::OnServerToClientMessage");
   if (!call_data_.has_value()) return;
   call_data_->LogServerMessage(
-      /*is_client=*/true, MaybeGetContext<CallTracerAnnotationInterface>(),
-      message.payload());
+      /*is_client=*/true, MaybeGetContext<CallSpan>(), message.payload());
 }
 
 const grpc_channel_filter ClientLoggingFilter::kFilter =
@@ -431,68 +414,57 @@ ServerLoggingFilter::Create(const ChannelArgs& /*args*/,
 
 // Construct a promise for one call.
 void ServerLoggingFilter::Call::OnClientInitialMetadata(ClientMetadata& md) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
-      "ServerLoggingFilter::Call::OnClientInitialMetadata");
+  GRPC_LATENT_SEE_SCOPE("ServerLoggingFilter::Call::OnClientInitialMetadata");
   call_data_.emplace(false, md, "");
   if (!call_data_->ShouldLog()) {
     call_data_.reset();
     return;
   }
   call_data_->LogClientHeader(
-      /*is_client=*/false, MaybeGetContext<CallTracerAnnotationInterface>(),
-      md);
+      /*is_client=*/false, MaybeGetContext<CallSpan>(), md);
 }
 
 void ServerLoggingFilter::Call::OnServerInitialMetadata(ServerMetadata& md) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
-      "ServerLoggingFilter::Call::OnServerInitialMetadata");
+  GRPC_LATENT_SEE_SCOPE("ServerLoggingFilter::Call::OnServerInitialMetadata");
   if (!call_data_.has_value()) return;
   call_data_->LogServerHeader(
-      /*is_client=*/false, MaybeGetContext<CallTracerAnnotationInterface>(),
-      &md);
+      /*is_client=*/false, MaybeGetContext<CallSpan>(), &md);
 }
 
 void ServerLoggingFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
-      "ServerLoggingFilter::Call::OnServerTrailingMetadata");
+  GRPC_LATENT_SEE_SCOPE("ServerLoggingFilter::Call::OnServerTrailingMetadata");
   if (!call_data_.has_value()) return;
   if (md.get(GrpcCallWasCancelled()).value_or(false) &&
       md.get(GrpcStatusMetadata()) == GRPC_STATUS_CANCELLED) {
     call_data_->LogCancel(
-        /*is_client=*/false, MaybeGetContext<CallTracerAnnotationInterface>());
+        /*is_client=*/false, MaybeGetContext<CallSpan>());
     return;
   }
   call_data_->LogServerTrailer(
-      /*is_client=*/false, MaybeGetContext<CallTracerAnnotationInterface>(),
-      &md);
+      /*is_client=*/false, MaybeGetContext<CallSpan>(), &md);
 }
 
 void ServerLoggingFilter::Call::OnClientToServerMessage(
     const Message& message) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
-      "ServerLoggingFilter::Call::OnClientToServerMessage");
+  GRPC_LATENT_SEE_SCOPE("ServerLoggingFilter::Call::OnClientToServerMessage");
   if (!call_data_.has_value()) return;
   call_data_->LogClientMessage(
-      /*is_client=*/false, MaybeGetContext<CallTracerAnnotationInterface>(),
-      message.payload());
+      /*is_client=*/false, MaybeGetContext<CallSpan>(), message.payload());
 }
 
 void ServerLoggingFilter::Call::OnClientToServerHalfClose() {
-  GRPC_LATENT_SEE_INNER_SCOPE(
-      "ServerLoggingFilter::Call::OnClientToServerHalfClose");
+  GRPC_LATENT_SEE_SCOPE("ServerLoggingFilter::Call::OnClientToServerHalfClose");
   if (!call_data_.has_value()) return;
   call_data_->LogClientHalfClose(
-      /*is_client=*/false, MaybeGetContext<CallTracerAnnotationInterface>());
+      /*is_client=*/false, MaybeGetContext<CallSpan>());
 }
 
 void ServerLoggingFilter::Call::OnServerToClientMessage(
     const Message& message) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
-      "ServerLoggingFilter::Call::OnServerToClientMessage");
+  GRPC_LATENT_SEE_SCOPE("ServerLoggingFilter::Call::OnServerToClientMessage");
   if (!call_data_.has_value()) return;
   call_data_->LogServerMessage(
-      /*is_client=*/false, MaybeGetContext<CallTracerAnnotationInterface>(),
-      message.payload());
+      /*is_client=*/false, MaybeGetContext<CallSpan>(), message.payload());
 }
 
 const grpc_channel_filter ServerLoggingFilter::kFilter =

@@ -23,13 +23,13 @@
 
 #include <string>
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/server/server.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 using testing::HasSubstr;
 using testing::Not;

@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/credentials/transport")
+grpc_package(
+    name = "test/core/credentials/transport",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "security_connector_test",
@@ -26,8 +32,16 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        "//:config_vars",
         "//:gpr",
         "//:grpc",
+        "//:grpc_core_credentials_header",
+        "//:grpc_credentials_util",
+        "//:grpc_security_base",
+        "//:ref_counted_ptr",
+        "//:transport_auth_context",
+        "//:tsi_base",
+        "//:tsi_ssl_credentials",
         "//src/core:slice",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
@@ -41,8 +55,14 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        "//:config",
         "//:gpr",
         "//:grpc",
+        "//:grpc_security_base",
+        "//src/core:channel_creds_registry",
+        "//src/core:grpc_fake_credentials",
+        "//src/core:grpc_insecure_credentials",
+        "//src/core:grpc_tls_credentials",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],

@@ -16,15 +16,18 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_TCP_FRAME_HEADER_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_TCP_FRAME_HEADER_H
 
-#include "absl/strings/str_cat.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core::chaotic_good {
 
 inline uint32_t DataConnectionPadding(uint32_t payload_length,
                                       uint32_t alignment) {
   if (payload_length % alignment == 0) return 0;
-  return alignment - (payload_length % alignment);
+  uint32_t padding = alignment - (payload_length % alignment);
+  DCHECK_GT(padding, 0u);
+  return padding;
 }
 
 struct TcpFrameHeader {
@@ -52,6 +55,10 @@ struct TcpFrameHeader {
 
   // Required padding to maintain alignment.
   uint32_t Padding(uint32_t alignment) const;
+
+  channelz::PropertyList ChannelzProperties() const {
+    return header.ChannelzProperties().Set("payload_tag", payload_tag);
+  }
 };
 
 struct TcpDataFrameHeader {
@@ -71,6 +78,13 @@ struct TcpDataFrameHeader {
     sink.Append(absl::StrCat("DataFrameHeader{payload_tag:", frame.payload_tag,
                              ",send_timestamp:", frame.send_timestamp,
                              ",payload_length:", frame.payload_length, "}"));
+  }
+
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("payload_tag", payload_tag)
+        .Set("send_timestamp", send_timestamp)
+        .Set("payload_length", payload_length);
   }
 };
 

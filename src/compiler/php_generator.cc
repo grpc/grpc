@@ -16,7 +16,7 @@
  *
  */
 
-#include <google/protobuf/compiler/php/names.h>
+#include <google/protobuf/compiler/php/php_generator.h>
 
 #include <map>
 
@@ -108,7 +108,8 @@ void PrintMethod(const MethodDescriptor* method, Printer* out) {
     if (method->server_streaming()) {
       vars["return_type_id"] = "\\Grpc\\ServerStreamingCall";
     } else {
-      vars["return_type_id"] = "\\Grpc\\UnaryCall";
+      vars["return_type_id"] =
+          "\\Grpc\\UnaryCall<\\" + vars["output_type_id"] + ">";
     }
     out->Print(vars,
                " * @param \\$input_type_id$ $$argument input argument\n"

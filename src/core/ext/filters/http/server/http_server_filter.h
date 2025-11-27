@@ -21,17 +21,17 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/status/statusor.h"
 #include "src/core/channelz/property_list.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 
 // Processes metadata on the server side for HTTP2 transports
-class HttpServerFilter : public ImplementChannelFilter<HttpServerFilter>,
-                         public channelz::DataSource {
+class HttpServerFilter final : public ImplementChannelFilter<HttpServerFilter>,
+                               public channelz::DataSource {
  public:
   static const grpc_channel_filter kFilter;
 
@@ -44,14 +44,16 @@ class HttpServerFilter : public ImplementChannelFilter<HttpServerFilter>,
                    bool allow_put_requests)
       : channelz::DataSource(args.GetObjectRef<channelz::BaseNode>()),
         surface_user_agent_(surface_user_agent),
-        allow_put_requests_(allow_put_requests) {}
-  ~HttpServerFilter() override { ResetDataSource(); }
+        allow_put_requests_(allow_put_requests) {
+    SourceConstructed();
+  }
+  ~HttpServerFilter() override { SourceDestructing(); }
 
   void AddData(channelz::DataSink sink) override {
-    sink.AddAdditionalInfo("httpServerFilter",
-                           channelz::PropertyList()
-                               .Set("surface_user_agent", surface_user_agent_)
-                               .Set("allow_put_requests", allow_put_requests_));
+    sink.AddData("httpServerFilter",
+                 channelz::PropertyList()
+                     .Set("surface_user_agent", surface_user_agent_)
+                     .Set("allow_put_requests", allow_put_requests_));
   }
 
   class Call {

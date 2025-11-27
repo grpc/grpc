@@ -169,10 +169,6 @@ inline T SaturatingMul(T a, T b) {
   return a * b;
 }
 
-inline uint32_t MixHash32(uint32_t a, uint32_t b) {
-  return absl::rotl(a, 2u) ^ b;
-}
-
 inline uint32_t RoundUpToPowerOf2(uint32_t v) {
   v--;
   v |= v >> 1;
@@ -199,6 +195,97 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline uint32_t LowestOneBit(uint32_t x) {
 
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline uint64_t LowestOneBit(uint64_t x) {
   return x & -x;
+}
+
+namespace useful_detail {
+
+// Constexpr implementation of std::log for base e.
+// This is a simple implementation using a Taylor series expansion and may not
+// be as accurate as std::log from <cmath>. It is intended for use in constexpr
+// contexts.
+// It uses the identity log(y) = 2 * atanh((y-1)/(y+1))
+// where atanh(x) = x + x^3/3 + x^5/5 + ...
+constexpr double ConstexprLog(double y) {
+  if (y < 0) {
+    return std::numeric_limits<double>::quiet_NaN();
+  }
+  if (y == 0) {
+    return -std::numeric_limits<double>::infinity();
+  }
+  if (y == 1) {
+    return 0.0;
+  }
+  // Bring y into the range [1, 2) to improve convergence.
+  // log(y) = log(y / 2^k) + k*log(2)
+  int k = 0;
+  while (y > 2.0) {
+    y /= 2.0;
+    k++;
+  }
+  while (y < 1.0) {
+    y *= 2.0;
+    k--;
+  }
+  // Now y is in [1, 2).
+  // x = (y-1)/(y+1) is in [0, 1/3).
+  // The series will converge quickly.
+  double x = (y - 1) / (y + 1);
+  double x2 = x * x;
+  double term = x;
+  double sum = term;
+  for (int i = 1; i < 100; ++i) {
+    term *= x2;
+    double next_sum = sum + term / (2 * i + 1);
+    if (next_sum == sum) break;
+    sum = next_sum;
+  }
+  constexpr double kLog2 = 0.693147180559945309417;
+  return 2 * sum + k * kLog2;
+}
+
+// Constexpr implementation of std::exp.
+// This is a simple implementation using a Taylor series expansion and may not
+// be as accurate as std::exp from <cmath>. It is intended for use in constexpr
+// contexts.
+// It uses exp(x) = 1 + x + x^2/2! + x^3/3! + ...
+// For better convergence, we use range reduction via exp(x) = (exp(x/2))^2.
+constexpr double ConstexprExp(double x) {
+  if (x > 2.0 || x < -2.0) {
+    const double half = ConstexprExp(x / 2.0);
+    return half * half;
+  }
+  double sum = 1.0;
+  double term = 1.0;
+  for (int i = 1; i < 30; ++i) {
+    term *= x / i;
+    double next_sum = sum + term;
+    if (next_sum == sum) break;
+    sum = next_sum;
+  }
+  return sum;
+}
+
+}  // namespace useful_detail
+
+// Constexpr implementation of std::pow.
+// This is a simple implementation and may not be as accurate as std::pow from
+// <cmath>. It is intended for use in constexpr contexts.
+// Fuzztests exist in useful_fuzztest.cc to test that the constexpr and
+// non-constexpr implementations are within an acceptable error bound.
+// Replace with std::pow when we move to C++26.
+constexpr double ConstexprPow(double base, double exponent) {
+  // For simplicity, only handle non-negative bases.
+  // std::pow has more complex rules for negative bases.
+  if (base < 0) return std::numeric_limits<double>::quiet_NaN();
+  if (base == 0) {
+    if (exponent > 0) return 0.0;
+    if (exponent == 0) return 1.0;
+    return std::numeric_limits<double>::infinity();
+  }
+  if (exponent == 0.0) return 1.0;
+  if (exponent == 1.0) return base;
+  return useful_detail::ConstexprExp(exponent *
+                                     useful_detail::ConstexprLog(base));
 }
 
 }  // namespace grpc_core

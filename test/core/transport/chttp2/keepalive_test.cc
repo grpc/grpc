@@ -19,14 +19,14 @@
 
 #include <memory>
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/sleep.h"
 #include "test/core/call/yodel/yodel_test.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 

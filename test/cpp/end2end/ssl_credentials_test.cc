@@ -25,15 +25,15 @@
 
 #include <memory>
 
-#include "absl/log/log.h"
-#include "absl/synchronization/notification.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/postmortem.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/synchronization/notification.h"
 
 namespace grpc {
 namespace testing {

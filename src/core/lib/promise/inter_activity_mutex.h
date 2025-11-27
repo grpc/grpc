@@ -18,11 +18,11 @@
 #include <atomic>
 #include <utility>
 
-#include "absl/log/log.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/util/dump_args.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 
@@ -141,9 +141,9 @@ class InterActivityMutex {
             << "] AcquisitionCancelled: " << GRPC_DUMP_ARGS(prev_state);
         switch (prev_state) {
           case State::kWaiting:
-            if (state_.compare_exchange_weak(
-                    prev_state, State::kAcquisitionCancelled,
-                    std::memory_order_relaxed, std::memory_order_relaxed)) {
+            if (state_.compare_exchange_weak(prev_state,
+                                             State::kAcquisitionCancelled,
+                                             std::memory_order_acq_rel)) {
               return;
             }
             break;
@@ -177,8 +177,7 @@ class InterActivityMutex {
         switch (prev_state) {
           case State::kWaiting:
             if (state_.compare_exchange_weak(prev_state, State::kAcquired,
-                                             std::memory_order_release,
-                                             std::memory_order_relaxed)) {
+                                             std::memory_order_acq_rel)) {
               waker_.Wakeup();
               return;
             }
@@ -349,8 +348,7 @@ class InterActivityMutex {
         if (prev_state_ == kUnlocked) {
           // Fast path - try to acquire the lock.
           if (mutex_->state_.compare_exchange_weak(prev_state_, kLocked,
-                                                   std::memory_order_acquire,
-                                                   std::memory_order_relaxed)) {
+                                                   std::memory_order_acq_rel)) {
             return PollFastLocked();
           }
         } else if (prev_state_ == kLocked) {
@@ -360,7 +358,7 @@ class InterActivityMutex {
           state_ = State::kWaiting;
           if (mutex_->state_.compare_exchange_weak(
                   prev_state_, reinterpret_cast<uintptr_t>(waiter_),
-                  std::memory_order_release, std::memory_order_relaxed)) {
+                  std::memory_order_acq_rel)) {
             return Pending{};
           }
           state_ = State::kStart;
@@ -372,7 +370,7 @@ class InterActivityMutex {
           state_ = State::kWaiting;
           if (mutex_->state_.compare_exchange_weak(
                   prev_state_, reinterpret_cast<uintptr_t>(waiter_),
-                  std::memory_order_release, std::memory_order_relaxed)) {
+                  std::memory_order_acq_rel)) {
             return Pending{};
           }
           state_ = State::kStart;
@@ -401,8 +399,7 @@ class InterActivityMutex {
       }
       state_ = State::kWaiting;
       if (mutex_->state_.compare_exchange_strong(prev_state_, kUnlocked,
-                                                 std::memory_order_release,
-                                                 std::memory_order_release)) {
+                                                 std::memory_order_acq_rel)) {
         return Pending{};
       }
       DCHECK_NE(prev_state_, kUnlocked);
@@ -422,7 +419,8 @@ class InterActivityMutex {
 
     InterActivityMutex* mutex_;
     uintptr_t prev_state_ = kUnlocked;
-    State state_ = mutex_->state_.compare_exchange_weak(prev_state_, kLocked)
+    State state_ = mutex_->state_.compare_exchange_weak(
+                       prev_state_, kLocked, std::memory_order_acq_rel)
                        ? State::kFastLocked
                        : State::kStart;
     GPR_NO_UNIQUE_ADDRESS F f_;
@@ -499,7 +497,7 @@ class InterActivityMutex {
       // Next, consider any waiters that were queued up.
       // These will be in reverse order of addition to the queue, so we need to
       // reverse them before processing.
-      auto prev_state = mutex_->state_.load(std::memory_order_relaxed);
+      auto prev_state = mutex_->state_.load(std::memory_order_acquire);
       while (true) {
         GRPC_TRACE_LOG(promise_primitives, INFO)
             << "[mutex " << mutex_
@@ -507,14 +505,12 @@ class InterActivityMutex {
         DCHECK_NE(prev_state, kUnlocked);
         if (prev_state == kLocked) {
           if (mutex_->state_.compare_exchange_weak(prev_state, kUnlocked,
-                                                   std::memory_order_release,
-                                                   std::memory_order_relaxed)) {
+                                                   std::memory_order_acq_rel)) {
             return false;
           }
         } else {
           if (mutex_->state_.compare_exchange_weak(prev_state, kLocked,
-                                                   std::memory_order_acquire,
-                                                   std::memory_order_release)) {
+                                                   std::memory_order_acq_rel)) {
             Waiter* next = reinterpret_cast<Waiter*>(prev_state);
             if (prev_waiter_ == nullptr) {
               mutex_->waiters_ = next->Reverse();

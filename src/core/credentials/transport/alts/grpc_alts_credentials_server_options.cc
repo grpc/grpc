@@ -27,7 +27,12 @@ static grpc_alts_credentials_options* alts_server_options_copy(
     const grpc_alts_credentials_options* options);
 
 static void alts_server_options_destroy(
-    grpc_alts_credentials_options* /*options*/) {}
+    grpc_alts_credentials_options* options) {
+  if (options == nullptr) {
+    return;
+  }
+  delete reinterpret_cast<grpc_alts_credentials_server_options*>(options);
+}
 
 static const grpc_alts_credentials_options_vtable vtable = {
     alts_server_options_copy, alts_server_options_destroy};
@@ -35,8 +40,7 @@ static const grpc_alts_credentials_options_vtable vtable = {
 grpc_alts_credentials_options* grpc_alts_credentials_server_options_create(
     void) {
   grpc_alts_credentials_server_options* server_options =
-      static_cast<grpc_alts_credentials_server_options*>(
-          gpr_zalloc(sizeof(*server_options)));
+      new grpc_alts_credentials_server_options();
   server_options->base.vtable = &vtable;
   return &server_options->base;
 }
@@ -51,5 +55,6 @@ static grpc_alts_credentials_options* alts_server_options_copy(
   // Copy rpc protocol versions.
   grpc_gcp_rpc_protocol_versions_copy(&options->rpc_versions,
                                       &new_options->rpc_versions);
+  new_options->record_protocols = options->record_protocols;
   return new_options;
 }

@@ -25,17 +25,12 @@
 #include <utility>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.pb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/type/matcher/v3/regex.pb.h"
 #include "envoy/type/matcher/v3/string.pb.h"
-#include "gmock/gmock.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
-#include "gtest/gtest.h"
 #include "re2/re2.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/util/crash.h"
@@ -56,6 +51,11 @@
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
 #include "xds/type/v3/typed_struct.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 
 using CommonTlsContextProto =
     envoy::extensions::transport_sockets::tls::v3::CommonTlsContext;
@@ -560,7 +560,7 @@ TEST_F(CommonTlsConfigTest, MatchSubjectAltNamesInvalid) {
             "field:validation_context.match_subject_alt_names[0].ignore_case "
             "error:not supported for regex matcher; "
             "field:validation_context.match_subject_alt_names[1] "
-            "error:invalid StringMatcher specified]")
+            "error:invalid string matcher]")
       << common_tls_context.status();
 }
 

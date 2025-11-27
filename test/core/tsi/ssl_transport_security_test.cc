@@ -31,9 +31,6 @@
 #include <string>
 #include <thread>
 
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "gtest/gtest.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/memory.h"
@@ -41,6 +38,9 @@
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/core/tsi/transport_security_test_lib.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 
 #define SSL_TSI_TEST_ALPN1 "foo"
 #define SSL_TSI_TEST_ALPN2 "toto"
@@ -348,8 +348,10 @@ class SslTransportSecurityTest
       ssl_alpn_lib* alpn_lib = ssl_fixture->alpn_lib_;
       // Create client handshaker factory.
       tsi_ssl_client_handshaker_options client_options;
-      if (key_cert_lib->use_pem_root_certs) {
-        client_options.pem_root_certs = key_cert_lib->root_cert;
+      if (key_cert_lib->use_pem_root_certs &&
+          key_cert_lib->root_cert != nullptr) {
+        client_options.root_cert_info =
+            std::make_shared<RootCertInfo>(key_cert_lib->root_cert);
       }
       if (ssl_fixture->force_client_auth_) {
         client_options.pem_key_cert_pair =
@@ -410,7 +412,10 @@ class SslTransportSecurityTest
                 ? key_cert_lib->bad_server_num_key_cert_pairs
                 : key_cert_lib->server_num_key_cert_pairs;
       }
-      server_options.pem_client_root_certs = key_cert_lib->root_cert;
+      if (key_cert_lib->root_cert != nullptr) {
+        server_options.root_cert_info =
+            std::make_shared<RootCertInfo>(key_cert_lib->root_cert);
+      }
       if (ssl_fixture->force_client_auth_) {
         server_options.client_certificate_request =
             TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY;
@@ -1202,7 +1207,9 @@ TEST(SslTransportSecurityTest, TestClientHandshakerFactoryRefcounting) {
   char* cert_chain = load_file(SSL_TSI_TEST_CREDENTIALS_DIR "client.pem");
 
   tsi_ssl_client_handshaker_options options;
-  options.pem_root_certs = cert_chain;
+  if (cert_chain != nullptr) {
+    options.root_cert_info = std::make_shared<RootCertInfo>(cert_chain);
+  }
   tsi_ssl_client_handshaker_factory* client_handshaker_factory;
   ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
                 &options, &client_handshaker_factory),
@@ -1256,7 +1263,9 @@ TEST(SslTransportSecurityTest, TestServerHandshakerFactoryRefcounting) {
   tsi_ssl_server_handshaker_options options;
   options.pem_key_cert_pairs = &cert_pair;
   options.num_key_cert_pairs = 1;
-  options.pem_client_root_certs = cert_chain;
+  if (cert_chain != nullptr) {
+    options.root_cert_info = std::make_shared<RootCertInfo>(cert_chain);
+  }
 
   ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
                 &options, &server_handshaker_factory),
@@ -1295,7 +1304,9 @@ TEST(SslTransportSecurityTest, TestClientHandshakerFactoryBadParams) {
 
   tsi_ssl_client_handshaker_factory* client_handshaker_factory;
   tsi_ssl_client_handshaker_options options;
-  options.pem_root_certs = cert_chain;
+  if (cert_chain != nullptr) {
+    options.root_cert_info = std::make_shared<RootCertInfo>(cert_chain);
+  }
   ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
                 &options, &client_handshaker_factory),
             TSI_INVALID_ARGUMENT);

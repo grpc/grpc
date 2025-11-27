@@ -34,13 +34,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/time/time.h"
-#include "gtest/gtest.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -51,6 +44,7 @@
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/resolver/resolver.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
@@ -61,6 +55,12 @@
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/time/time.h"
 
 namespace {
 
@@ -127,7 +127,7 @@ grpc_status_code PerformCall(grpc_channel* channel, grpc_server* server,
   c = grpc_channel_create_call(channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
                                grpc_slice_from_static_string("/foo"), nullptr,
                                deadline, nullptr);
-  CHECK(c);
+  GRPC_CHECK(c);
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
   grpc_metadata_array_init(&request_metadata_recv);
@@ -153,12 +153,12 @@ grpc_status_code PerformCall(grpc_channel* channel, grpc_server* server,
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
                                 grpc_core::CqVerifier::tag(1), nullptr);
-  CHECK_EQ(error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(error, GRPC_CALL_OK);
   // Request a call on the server
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq,
                                    grpc_core::CqVerifier::tag(101));
-  CHECK_EQ(error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(error, GRPC_CALL_OK);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
   grpc_call_cancel_with_status(s, GRPC_STATUS_PERMISSION_DENIED, "test status",
@@ -187,7 +187,7 @@ TEST(TooManyPings, TestLotsOfServerCancelledRpcsDoesntGiveTooManyPings) {
   grpc_server_register_completion_queue(server, cq, nullptr);
   grpc_server_credentials* server_creds =
       grpc_insecure_server_credentials_create();
-  CHECK(
+  GRPC_CHECK(
       grpc_server_add_http2_port(server, server_address.c_str(), server_creds));
   grpc_server_credentials_release(server_creds);
   grpc_server_start(server);
@@ -256,7 +256,7 @@ grpc_status_code PerformWaitingCall(grpc_channel* channel, grpc_server* server,
   c = grpc_channel_create_call(channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
                                grpc_slice_from_static_string("/foo"), nullptr,
                                deadline, nullptr);
-  CHECK(c);
+  GRPC_CHECK(c);
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
   grpc_metadata_array_init(&request_metadata_recv);
@@ -282,12 +282,12 @@ grpc_status_code PerformWaitingCall(grpc_channel* channel, grpc_server* server,
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
                                 grpc_core::CqVerifier::tag(1), nullptr);
-  CHECK_EQ(error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(error, GRPC_CALL_OK);
   // Request a call on the server
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq,
                                    grpc_core::CqVerifier::tag(101));
-  CHECK_EQ(error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(error, GRPC_CALL_OK);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
   // Since the server is configured to allow only a single ping strike, it would
@@ -341,9 +341,9 @@ void VerifyChannelDisconnected(grpc_channel* channel,
   grpc_channel_ping(channel, cq, reinterpret_cast<void*>(2000), nullptr);
   grpc_event ev = grpc_completion_queue_next(
       cq, grpc_timeout_seconds_to_deadline(5), nullptr);
-  CHECK(ev.type == GRPC_OP_COMPLETE);
-  CHECK(ev.tag == reinterpret_cast<void*>(2000));
-  CHECK_EQ(ev.success, 0);
+  GRPC_CHECK(ev.type == GRPC_OP_COMPLETE);
+  GRPC_CHECK(ev.tag == reinterpret_cast<void*>(2000));
+  GRPC_CHECK_EQ(ev.success, 0);
   // We are intentionally not checking the connectivity state since it is
   // propagated in an asynchronous manner which means that we might see an older
   // state. We would eventually get the correct state, but since we have already
@@ -371,7 +371,7 @@ class KeepaliveThrottlingTest : public ::testing::Test {
     grpc_server_register_completion_queue(server, cq, nullptr);
     grpc_server_credentials* server_creds =
         grpc_insecure_server_credentials_create();
-    CHECK(grpc_server_add_http2_port(server, addr, server_creds));
+    GRPC_CHECK(grpc_server_add_http2_port(server, addr, server_creds));
     grpc_server_credentials_release(server_creds);
     grpc_server_start(server);
     return server;
@@ -436,10 +436,10 @@ grpc_core::Resolver::Result BuildResolverResult(
     absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(address_str);
     if (!uri.ok()) {
       LOG(ERROR) << "Failed to parse uri. Error: " << uri.status();
-      CHECK_OK(uri);
+      GRPC_CHECK_OK(uri);
     }
     grpc_resolved_address address;
-    CHECK(grpc_parse_uri(*uri, &address));
+    GRPC_CHECK(grpc_parse_uri(*uri, &address));
     result.addresses->emplace_back(address, grpc_core::ChannelArgs());
   }
   return result;
@@ -601,7 +601,7 @@ void PerformCallWithResponsePayload(grpc_channel* channel, grpc_server* server,
   c = grpc_channel_create_call(channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
                                grpc_slice_from_static_string("/foo"), nullptr,
                                deadline, nullptr);
-  CHECK(c);
+  GRPC_CHECK(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
@@ -638,12 +638,12 @@ void PerformCallWithResponsePayload(grpc_channel* channel, grpc_server* server,
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
                                 grpc_core::CqVerifier::tag(1), nullptr);
-  CHECK_EQ(error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(error, GRPC_CALL_OK);
 
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq,
                                    grpc_core::CqVerifier::tag(101));
-  CHECK_EQ(error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(error, GRPC_CALL_OK);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
@@ -656,7 +656,7 @@ void PerformCallWithResponsePayload(grpc_channel* channel, grpc_server* server,
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
                                 grpc_core::CqVerifier::tag(102), nullptr);
-  CHECK_EQ(error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(error, GRPC_CALL_OK);
 
   cqv.Expect(grpc_core::CqVerifier::tag(102), true);
   cqv.Verify();
@@ -681,7 +681,7 @@ void PerformCallWithResponsePayload(grpc_channel* channel, grpc_server* server,
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
                                 grpc_core::CqVerifier::tag(103), nullptr);
-  CHECK_EQ(error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(error, GRPC_CALL_OK);
 
   cqv.Expect(grpc_core::CqVerifier::tag(103), true);
   cqv.Expect(grpc_core::CqVerifier::tag(1), true);
@@ -725,7 +725,7 @@ TEST(TooManyPings, BdpPingNotSentWithoutReceiveSideActivity) {
   grpc_server_register_completion_queue(server, cq, nullptr);
   grpc_server_credentials* server_creds =
       grpc_insecure_server_credentials_create();
-  CHECK(
+  GRPC_CHECK(
       grpc_server_add_http2_port(server, server_address.c_str(), server_creds));
   grpc_server_credentials_release(server_creds);
   grpc_server_start(server);
@@ -801,7 +801,7 @@ TEST(TooManyPings, TransportsGetCleanedUpOnDisconnect) {
   grpc_server_register_completion_queue(server, cq, nullptr);
   grpc_server_credentials* server_creds =
       grpc_insecure_server_credentials_create();
-  CHECK(
+  GRPC_CHECK(
       grpc_server_add_http2_port(server, server_address.c_str(), server_creds));
   grpc_server_credentials_release(server_creds);
   grpc_server_start(server);

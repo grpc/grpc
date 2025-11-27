@@ -62,6 +62,25 @@ To add gRPC as a Bazel dependency:
 bazel_dep(name = "grpc", version = "1.72.0")
 ```
 
+## Projects using legacy Bazel WORKSPACE file
+
+To add gRPC as a dependency for projects that are built using legacy Bazel WORKSPACE files:
+1. determine commit SHA for the grpc release you want to use
+2. Use the [http_archive](https://docs.bazel.build/versions/master/repo/http.html#http_archive) bazel rule to include gRPC source
+  ```
+  http_archive(
+      name = "com_github_grpc_grpc",
+      urls = [
+          "https://github.com/grpc/grpc/archive/YOUR_GRPC_COMMIT_SHA.tar.gz",
+      ],
+      strip_prefix = "grpc-YOUR_GRPC_COMMIT_SHA",
+  )
+  load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
+  grpc_deps()
+  load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
+  grpc_extra_deps()
+  ```
+
 ## CMake
 
 `cmake` is your best option if you cannot use bazel. It supports building on Linux,

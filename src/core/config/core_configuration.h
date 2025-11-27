@@ -20,8 +20,7 @@
 
 #include <atomic>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
+#include "src/core/credentials/call/call_creds_registry.h"
 #include "src/core/credentials/transport/channel_creds_registry.h"
 #include "src/core/credentials/transport/tls/certificate_provider_registry.h"
 #include "src/core/handshaker/handshaker_registry.h"
@@ -31,8 +30,11 @@
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/service_config/service_config_parser.h"
+#include "src/core/transport/auth_context_comparator_registry.h"
 #include "src/core/transport/endpoint_transport.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/functional/any_invocable.h"
 
 namespace grpc_core {
 
@@ -82,6 +84,10 @@ class GRPC_DLL CoreConfiguration {
       return &channel_creds_registry_;
     }
 
+    CallCredsRegistry<>::Builder* call_creds_registry() {
+      return &call_creds_registry_;
+    }
+
     ServiceConfigParser::Builder* service_config_parser() {
       return &service_config_parser_;
     }
@@ -106,6 +112,10 @@ class GRPC_DLL CoreConfiguration {
       return &endpoint_transport_registry_;
     }
 
+    AuthContextComparatorRegistry::Builder* auth_context_comparator_registry() {
+      return &auth_context_comparator_registry_;
+    }
+
    private:
     friend class CoreConfiguration;
 
@@ -113,12 +123,14 @@ class GRPC_DLL CoreConfiguration {
     ChannelInit::Builder channel_init_;
     HandshakerRegistry::Builder handshaker_registry_;
     ChannelCredsRegistry<>::Builder channel_creds_registry_;
+    CallCredsRegistry<>::Builder call_creds_registry_;
     ServiceConfigParser::Builder service_config_parser_;
     ResolverRegistry::Builder resolver_registry_;
     LoadBalancingPolicyRegistry::Builder lb_policy_registry_;
     ProxyMapperRegistry::Builder proxy_mapper_registry_;
     CertificateProviderRegistry::Builder certificate_provider_registry_;
     EndpointTransportRegistry::Builder endpoint_transport_registry_;
+    AuthContextComparatorRegistry::Builder auth_context_comparator_registry_;
 
     Builder();
     CoreConfiguration* Build();
@@ -160,12 +172,12 @@ class GRPC_DLL CoreConfiguration {
     ~WithSubstituteBuilder() {
       // Reset and restore.
       Reset();
-      CHECK(CoreConfiguration::config_.exchange(
-                config_restore_, std::memory_order_acquire) == nullptr);
-      CHECK(CoreConfiguration::builders_[static_cast<size_t>(
-                                             BuilderScope::kEphemeral)]
-                .exchange(builders_restore_, std::memory_order_acquire) ==
-            nullptr);
+      GRPC_CHECK(CoreConfiguration::config_.exchange(
+                     config_restore_, std::memory_order_acquire) == nullptr);
+      GRPC_CHECK(CoreConfiguration::builders_[static_cast<size_t>(
+                                                  BuilderScope::kEphemeral)]
+                     .exchange(builders_restore_, std::memory_order_acquire) ==
+                 nullptr);
     }
 
    private:
@@ -241,6 +253,10 @@ class GRPC_DLL CoreConfiguration {
     return channel_creds_registry_;
   }
 
+  const CallCredsRegistry<>& call_creds_registry() const {
+    return call_creds_registry_;
+  }
+
   const ServiceConfigParser& service_config_parser() const {
     return service_config_parser_;
   }
@@ -263,6 +279,11 @@ class GRPC_DLL CoreConfiguration {
 
   const EndpointTransportRegistry& endpoint_transport_registry() const {
     return endpoint_transport_registry_;
+  }
+
+  const AuthContextComparatorRegistry& auth_context_comparator_registry()
+      const {
+    return auth_context_comparator_registry_;
   }
 
   static void SetDefaultBuilder(void (*builder)(CoreConfiguration::Builder*)) {
@@ -292,12 +313,14 @@ class GRPC_DLL CoreConfiguration {
   ChannelInit channel_init_;
   HandshakerRegistry handshaker_registry_;
   ChannelCredsRegistry<> channel_creds_registry_;
+  CallCredsRegistry<> call_creds_registry_;
   ServiceConfigParser service_config_parser_;
   ResolverRegistry resolver_registry_;
   LoadBalancingPolicyRegistry lb_policy_registry_;
   ProxyMapperRegistry proxy_mapper_registry_;
   CertificateProviderRegistry certificate_provider_registry_;
   EndpointTransportRegistry endpoint_transport_registry_;
+  AuthContextComparatorRegistry auth_context_comparator_registry_;
 };
 
 template <typename Sink>

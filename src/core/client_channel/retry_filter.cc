@@ -22,8 +22,6 @@
 #include <optional>
 #include <string>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/strip.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/client_channel/retry_filter_legacy_call_data.h"
 #include "src/core/client_channel/retry_service_config.h"
@@ -35,6 +33,8 @@
 #include "src/core/service_config/service_config_call_data.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/uri.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/strip.h"
 
 //
 // Retry filter
@@ -92,26 +92,33 @@ namespace grpc_core {
 // RetryFilter
 //
 
+void RetryFilter::UpdateBlackboard(const ServiceConfig& service_config,
+                                   const Blackboard* old_blackboard,
+                                   Blackboard* new_blackboard) {
+  // Get retry throttling parameters from service config.
+  const auto* config = static_cast<const RetryGlobalConfig*>(
+      service_config.GetGlobalParsedConfig(
+          RetryServiceConfigParser::ParserIndex()));
+  if (config == nullptr) return;
+  // Get throttler.
+  RefCountedPtr<internal::RetryThrottler> throttler;
+  if (old_blackboard != nullptr) {
+    throttler = old_blackboard->Get<internal::RetryThrottler>("");
+  }
+  throttler = internal::RetryThrottler::Create(config->max_milli_tokens(),
+                                               config->milli_token_ratio(),
+                                               std::move(throttler));
+  new_blackboard->Set("", std::move(throttler));
+}
+
 RetryFilter::RetryFilter(const grpc_channel_element_args& args)
     : client_channel_(args.channel_args.GetObject<ClientChannelFilter>()),
       event_engine_(args.channel_args.GetObject<EventEngine>()),
       per_rpc_retry_buffer_size_(
           GetMaxPerRpcRetryBufferSize(args.channel_args)),
+      retry_throttler_(args.blackboard->Get<internal::RetryThrottler>("")),
       service_config_parser_index_(
-          internal::RetryServiceConfigParser::ParserIndex()) {
-  // Get retry throttling parameters from service config.
-  auto* service_config = args.channel_args.GetObject<ServiceConfig>();
-  if (service_config == nullptr) return;
-  const auto* config = static_cast<const RetryGlobalConfig*>(
-      service_config->GetGlobalParsedConfig(
-          RetryServiceConfigParser::ParserIndex()));
-  if (config == nullptr) return;
-  // Get throttler.
-  retry_throttler_ = internal::RetryThrottler::Create(
-      config->max_milli_tokens(), config->milli_token_ratio(),
-      args.old_blackboard->Get<internal::RetryThrottler>(""));
-  args.new_blackboard->Set("", retry_throttler_);
-}
+          internal::RetryServiceConfigParser::ParserIndex()) {}
 
 const RetryMethodConfig* RetryFilter::GetRetryPolicy(Arena* arena) {
   auto* svc_cfg_call_data = arena->GetContext<ServiceConfigCallData>();

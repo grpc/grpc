@@ -18,9 +18,10 @@
 #include <string>
 #include <vector>
 
-#include "absl/strings/str_cat.h"
+#include "src/proto/grpc/channelz/v2/promise.upb.h"
+#include "upb/mem/arena.hpp"
 #include "gtest/gtest.h"
-#include "src/core/util/json/json_writer.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
@@ -228,7 +229,7 @@ TEST(SeqTest, ThreeThens) {
       Poll<std::string>("abcd"));
 }
 
-TEST(SeqTest, ToJson) {
+TEST(SeqTest, ToProto) {
   auto x = Seq([]() { return 42; },
                [polled = false](int i) mutable -> Poll<int> {
                  if (!polled) {
@@ -238,34 +239,39 @@ TEST(SeqTest, ToJson) {
                  return i + 1;
                },
                [](int i) { return i; });
-  EXPECT_TRUE(promise_detail::kHasToJsonMethod<decltype(x)>)
+  EXPECT_TRUE(promise_detail::kHasToProtoMethod<decltype(x)>)
       << TypeName<decltype(x)>();
-  auto validate_json = [](const Json& js, int current_step) {
-    LOG(INFO) << JsonDump(js);
-    ASSERT_EQ(js.type(), Json::Type::kObject);
-    Json::Object obj = js.object();
-    EXPECT_EQ(obj.count("seq_type"), 1);
-    EXPECT_EQ(obj["seq_type"], Json::FromString("Seq"));
-    EXPECT_EQ(obj.count("steps"), 1);
-    ASSERT_EQ(obj["steps"].type(), Json::Type::kArray);
-    auto steps = obj["steps"].array();
-    EXPECT_EQ(steps.size(), 3);
-    for (int i = 0; i < 3; i++) {
-      EXPECT_EQ(steps[i].type(), Json::Type::kObject);
-      Json::Object step = steps[i].object();
-      EXPECT_EQ(step.count("type"), 1);
-      if (i == current_step) {
-        EXPECT_EQ(step.count("polling_state"), 1);
+  auto validate_proto = [](grpc_channelz_v2_Promise* promise_proto,
+                           int current_step) {
+    ASSERT_TRUE(grpc_channelz_v2_Promise_has_seq_promise(promise_proto));
+    const auto* seq_promise =
+        grpc_channelz_v2_Promise_seq_promise(promise_proto);
+    size_t num_steps;
+    const auto* const* steps =
+        grpc_channelz_v2_Promise_Seq_steps(seq_promise, &num_steps);
+    EXPECT_EQ(num_steps, 3);
+    for (size_t i = 0; i < num_steps; i++) {
+      if (i == static_cast<size_t>(current_step)) {
+        EXPECT_TRUE(
+            grpc_channelz_v2_Promise_SeqStep_has_polling_promise(steps[i]));
       } else {
-        EXPECT_EQ(step.count("polling_state"), 0);
+        EXPECT_FALSE(
+            grpc_channelz_v2_Promise_SeqStep_has_polling_promise(steps[i]));
       }
     }
   };
-  validate_json(PromiseAsJson(x), 0);
+  upb::Arena arena;
+  auto* promise_proto = grpc_channelz_v2_Promise_new(arena.ptr());
+  PromiseAsProto(x, promise_proto, arena.ptr());
+  validate_proto(promise_proto, 0);
   x();
-  validate_json(PromiseAsJson(x), 1);
+  promise_proto = grpc_channelz_v2_Promise_new(arena.ptr());
+  PromiseAsProto(x, promise_proto, arena.ptr());
+  validate_proto(promise_proto, 1);
   x();
-  validate_json(PromiseAsJson(x), 2);
+  promise_proto = grpc_channelz_v2_Promise_new(arena.ptr());
+  PromiseAsProto(x, promise_proto, arena.ptr());
+  validate_proto(promise_proto, 2);
 }
 
 struct Big {
