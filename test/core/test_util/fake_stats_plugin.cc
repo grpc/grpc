@@ -157,6 +157,15 @@ GlobalInstrumentsRegistryTestPeer::FindDoubleCounterHandleByName(
 }
 
 std::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
+GlobalInstrumentsRegistryTestPeer::FindInt64UpDownCounterHandleByName(
+    absl::string_view name) {
+  return FindInstrument(
+      GlobalInstrumentsRegistry::GetInstrumentList(), name,
+      GlobalInstrumentsRegistry::ValueType::kInt64,
+      GlobalInstrumentsRegistry::InstrumentType::kUpDownCounter);
+}
+
+std::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
 GlobalInstrumentsRegistryTestPeer::FindUInt64HistogramHandleByName(
     absl::string_view name) {
   return FindInstrument(GlobalInstrumentsRegistry::GetInstrumentList(), name,
