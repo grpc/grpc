@@ -37,6 +37,9 @@ ConfigVars::Overrides OverridesFromFuzzConfigVars(
   if (vars.has_enable_fork_support()) {
     overrides.enable_fork_support = vars.enable_fork_support();
   }
+  if (vars.has_channelz_call_tracer()) {
+    overrides.channelz_call_tracer = vars.channelz_call_tracer();
+  }
   if (vars.has_dns_resolver()) {
     overrides.dns_resolver = vars.dns_resolver();
   }

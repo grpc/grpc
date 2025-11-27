@@ -211,11 +211,20 @@ grpc_cc_test(
     srcs = ["call_filters_test.cc"],
     external_deps = [
         "gtest",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
+        "@com_google_protobuf//upb/text",
     ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:channelz",
+        "//:channelz_property_list_upb",
+        "//:channelz_property_list_upbdefs",
         "//src/core:call_filters",
+        "//src/core:channelz_property_list",
+        "//src/core:upb_utils",
+        "//src/proto/grpc/channelz/v2:property_list_cc_proto",
         "//test/core/promise:poll_matcher",
     ],
 )

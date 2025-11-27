@@ -136,6 +136,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/call/call_spine.h )
   s.files += %w( src/core/call/call_state.cc )
   s.files += %w( src/core/call/call_state.h )
+  s.files += %w( src/core/call/channelz_context.h )
   s.files += %w( src/core/call/client_call.cc )
   s.files += %w( src/core/call/client_call.h )
   s.files += %w( src/core/call/custom_metadata.h )
