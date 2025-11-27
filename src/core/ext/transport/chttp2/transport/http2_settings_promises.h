@@ -69,9 +69,11 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
   // Assumption : This would be set only once in the life of the transport.
   inline void SetSettingsTimeout(const ChannelArgs& channel_args,
                                  const Duration keepalive_timeout) {
+    // keepalive_timeout can be infinite (e.g. if keepalive is disabled), but
+    // the settings timeout must always be bounded.
     settings_ack_timeout_ =
         channel_args.GetDurationFromIntMillis(GRPC_ARG_SETTINGS_TIMEOUT)
-            .value_or(std::max(keepalive_timeout * 2, Duration::Minutes(1)));
+            .value_or(std::min(keepalive_timeout * 2, Duration::Minutes(1)));
   }
 
   // Called when transport receives a SETTINGS ACK frame from peer.

@@ -270,7 +270,7 @@ class Http2ClientTransport final : public ClientTransport,
     periodic_updates_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
   }
   // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
-  void WakeupPeriodicUpdatePromise() { periodic_updates_waker_.Wakeup(); }
+  void MaybeWakeupPeriodicUpdatePromise() { periodic_updates_waker_.Wakeup(); }
 
   // Processes the flow control action and take necessary steps.
   void ActOnFlowControlAction(const chttp2::FlowControlAction& action,

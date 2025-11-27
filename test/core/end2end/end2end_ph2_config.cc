@@ -150,6 +150,10 @@ class Ph2InsecureFixture : public InsecureFixture {
   "Http2SingleHopTests"
 
 std::vector<CoreTestConfiguration> End2endTestConfigs() {
+  // TODO(akshitpatel) : [PH2][P3] : Remove this once the experiment is enabled
+  // by default.
+  // This experiment is enabled only for end2end_ph2_tests.
+  ForceEnableExperiment("sleep_use_non_owning_waker", true);
   std::vector<CoreTestConfiguration> list_of_configs;
   if (IsExperimentEnabled(
           ExperimentIds::kExperimentIdPromiseBasedHttp2ClientTransport)) {
