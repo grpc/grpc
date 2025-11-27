@@ -74,9 +74,18 @@ grpc_cc_test(
     srcs = [
         "call_utils_test.cc",
     ],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/strings",
+        "gtest",
+        "@com_google_protobuf//upb/mem",
+    ],
     deps = [
         "//:grpc_base",
+        "//src/core:grpc_check",
+        "//src/core:poll",
+        "//src/core:upb_utils",
+        "//src/proto/grpc/channelz/v2:promise_upb_proto",
+        "//src/proto/grpc/channelz/v2:property_list_upb_proto",
     ],
 )
 
