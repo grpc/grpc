@@ -731,10 +731,9 @@ inline void EnableLoggingForPH2Tests() {
   }
 }
 
-// TODO(akshitpatel) : [PH3][P3] : Remove once all the PH2 E2E tests are fixed.
+// TODO(akshitpatel) : [PH2][P3] : Remove once all the PH2 E2E tests are fixed.
 inline void DisableLoggingForPH2Tests() {
   if (IsPromiseBasedHttp2ClientTransportEnabled()) {
-    // TODO(akshitpatel) : [PH2][P1] : Remove this once the test is fixed.
     absl::SetGlobalVLogLevel(-1);
     grpc_tracer_set_enabled("http2_ph2_transport", false);
   }

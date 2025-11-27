@@ -37,12 +37,6 @@ const Duration kDeadlineTimeout = Duration::Seconds(2);
 void CancelAfterInvoke6(CoreEnd2endTest& test,
                         std::unique_ptr<CancellationMode> mode,
                         Duration timeout) {
-  if (IsPromiseBasedHttp2ClientTransportEnabled()) {
-    // TODO(akshitpatel) : [PH2][P1] : Remove this once the test is fixed.
-    grpc_tracer_set_enabled("http2_ph2_transport", true);
-    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
-    absl::SetGlobalVLogLevel(2);
-  }
   auto c = test.NewClientCall("/service/method").Timeout(timeout).Create();
   IncomingStatusOnClient server_status;
   IncomingMetadata server_initial_metadata;
@@ -59,22 +53,11 @@ void CancelAfterInvoke6(CoreEnd2endTest& test,
   test.Step();
   EXPECT_THAT(server_status.status(),
               ::testing::AnyOf(mode->ExpectedStatus(), GRPC_STATUS_INTERNAL));
-
-  if (IsPromiseBasedHttp2ClientTransportEnabled()) {
-    // TODO(akshitpatel) : [PH2][P1] : Remove this once the test is fixed.
-    absl::SetGlobalVLogLevel(-1);
-  }
 }
 
 void CancelAfterInvoke5(CoreEnd2endTest& test,
                         std::unique_ptr<CancellationMode> mode,
                         Duration timeout) {
-  if (IsPromiseBasedHttp2ClientTransportEnabled()) {
-    // TODO(akshitpatel) : [PH2][P1] : Remove this once the test is fixed.
-    grpc_tracer_set_enabled("http2_ph2_transport", true);
-    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
-    absl::SetGlobalVLogLevel(2);
-  }
   auto c = test.NewClientCall("/service/method").Timeout(timeout).Create();
   IncomingStatusOnClient server_status;
   IncomingMetadata server_initial_metadata;
@@ -89,21 +72,11 @@ void CancelAfterInvoke5(CoreEnd2endTest& test,
   test.Step();
   EXPECT_THAT(server_status.status(),
               ::testing::AnyOf(mode->ExpectedStatus(), GRPC_STATUS_INTERNAL));
-  if (IsPromiseBasedHttp2ClientTransportEnabled()) {
-    // TODO(akshitpatel) : [PH2][P1] : Remove this once the test is fixed.
-    absl::SetGlobalVLogLevel(-1);
-  }
 }
 
 void CancelAfterInvoke4(CoreEnd2endTest& test,
                         std::unique_ptr<CancellationMode> mode,
                         Duration timeout) {
-  if (IsPromiseBasedHttp2ClientTransportEnabled()) {
-    // TODO(akshitpatel) : [PH2][P1] : Remove this once the test is fixed.
-    grpc_tracer_set_enabled("http2_ph2_transport", true);
-    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
-    absl::SetGlobalVLogLevel(2);
-  }
   auto c = test.NewClientCall("/service/method").Timeout(timeout).Create();
   IncomingStatusOnClient server_status;
   IncomingMetadata server_initial_metadata;
@@ -117,21 +90,11 @@ void CancelAfterInvoke4(CoreEnd2endTest& test,
   test.Step();
   EXPECT_THAT(server_status.status(),
               ::testing::AnyOf(mode->ExpectedStatus(), GRPC_STATUS_INTERNAL));
-  if (IsPromiseBasedHttp2ClientTransportEnabled()) {
-    // TODO(akshitpatel) : [PH2][P1] : Remove this once the test is fixed.
-    absl::SetGlobalVLogLevel(-1);
-  }
 }
 
 void CancelAfterInvoke3(CoreEnd2endTest& test,
                         std::unique_ptr<CancellationMode> mode,
                         Duration timeout) {
-  if (IsPromiseBasedHttp2ClientTransportEnabled()) {
-    // TODO(akshitpatel) : [PH2][P1] : Remove this once the test is fixed.
-    grpc_tracer_set_enabled("http2_ph2_transport", true);
-    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
-    absl::SetGlobalVLogLevel(2);
-  }
   auto c = test.NewClientCall("/service/method").Timeout(timeout).Create();
   IncomingStatusOnClient server_status;
   IncomingMetadata server_initial_metadata;
@@ -144,10 +107,6 @@ void CancelAfterInvoke3(CoreEnd2endTest& test,
   test.Step();
   EXPECT_THAT(server_status.status(),
               ::testing::AnyOf(mode->ExpectedStatus(), GRPC_STATUS_INTERNAL));
-  if (IsPromiseBasedHttp2ClientTransportEnabled()) {
-    // TODO(akshitpatel) : [PH2][P1] : Remove this once the test is fixed.
-    absl::SetGlobalVLogLevel(-1);
-  }
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, CancelAfterInvoke6) {
