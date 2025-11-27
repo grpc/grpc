@@ -55,9 +55,13 @@ namespace grpc_core {
 // This class is designed with the assumption that only 1 SETTINGS frame will be
 // in flight at a time. And we do not send a second SETTINGS frame till we
 // receive and process the SETTINGS ACK.
-class SettingsTimeoutManager : public RefCounted<SettingsTimeoutManager> {
+class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
   // TODO(tjagtap) [PH2][P1][Settings] : Add new DCHECKs
+  // TODO(tjagtap) [PH2][P1][Settings] : Refactor full class
  public:
+  //////////////////////////////////////////////////////////////////////////////
+  // Functions for SETTINGS being sent from our transport to the peer.
+
   // Assumption : This would be set only once in the life of the transport.
   inline void SetSettingsTimeout(const ChannelArgs& channel_args,
                                  const Duration keepalive_timeout) {
@@ -82,13 +86,13 @@ class SettingsTimeoutManager : public RefCounted<SettingsTimeoutManager> {
   auto WaitForSettingsTimeout() {
     TimeoutWaiterSpawned();
     GRPC_SETTINGS_TIMEOUT_DLOG
-        << "SettingsTimeoutManager::WaitForSettingsTimeout Factory timeout_"
+        << "SettingsPromiseManager::WaitForSettingsTimeout Factory timeout_"
         << timeout_;
     StartSettingsTimeoutTimer();
     return AssertResultType<absl::Status>(Race(
         [self = this->Ref()]() -> Poll<absl::Status> {
           GRPC_SETTINGS_TIMEOUT_DLOG
-              << "SettingsTimeoutManager::WaitForSettingsTimeout Race";
+              << "SettingsPromiseManager::WaitForSettingsTimeout Race";
           // This Promise will "win" the race if we receive the SETTINGS
           // ACK from the peer within the timeout time.
           if (self->HasReceivedAck()) {
@@ -108,7 +112,7 @@ class SettingsTimeoutManager : public RefCounted<SettingsTimeoutManager> {
         // not receive the ACK. The transport must close when this happens.
         TrySeq(Sleep(timeout_), [sent_time = sent_time_, timeout = timeout_]() {
           GRPC_SETTINGS_TIMEOUT_DLOG
-              << "SettingsTimeoutManager::WaitForSettingsTimeout Timeout"
+              << "SettingsPromiseManager::WaitForSettingsTimeout Timeout"
                  " triggered. Transport will close. Sent Time : "
               << sent_time << " Timeout Time : " << (sent_time + timeout)
               << " Current Time " << Timestamp::Now();
@@ -116,11 +120,25 @@ class SettingsTimeoutManager : public RefCounted<SettingsTimeoutManager> {
         })));
   }
 
+  //////////////////////////////////////////////////////////////////////////////
+  // Functions for SETTINGS being received from the peer.
+  void AddSettingsToPendingList(
+      std::vector<Http2SettingsFrame::Setting>&& settings) {
+    settings_.reserve(settings_.size() + settings.size());
+    settings_.insert(settings_.end(), settings.begin(), settings.end());
+  };
+
+  std::vector<Http2SettingsFrame::Setting> TakePendingSettings() {
+    return std::exchange(settings_, {});
+  }
+
  private:
+  //////////////////////////////////////////////////////////////////////////////
+  // Functions for SETTINGS being sent from our transport to the peer.
   void TimeoutWaiterSpawned() { should_spawn_settings_timeout_ = false; }
   inline void StartSettingsTimeoutTimer() {
     GRPC_SETTINGS_TIMEOUT_DLOG
-        << "SettingsTimeoutManager::StartSettingsTimeoutTimer "
+        << "SettingsPromiseManager::StartSettingsTimeoutTimer "
            "did_register_waker_ "
         << did_register_waker_
         << " number_of_acks_unprocessed_ : " << number_of_acks_unprocessed_;
@@ -131,14 +149,14 @@ class SettingsTimeoutManager : public RefCounted<SettingsTimeoutManager> {
 
   inline bool HasReceivedAck() {
     GRPC_SETTINGS_TIMEOUT_DLOG
-        << "SettingsTimeoutManager::DidReceiveAck did_register_waker_ "
+        << "SettingsPromiseManager::DidReceiveAck did_register_waker_ "
         << did_register_waker_
         << " number_of_acks_unprocessed_ : " << number_of_acks_unprocessed_;
     return number_of_acks_unprocessed_ > 0;
   }
   inline void AddWaitingForAck() {
     GRPC_SETTINGS_TIMEOUT_DLOG
-        << "SettingsTimeoutManager::AddWaitingForAck did_register_waker_ "
+        << "SettingsPromiseManager::AddWaitingForAck did_register_waker_ "
         << did_register_waker_
         << " number_of_acks_unprocessed_ : " << number_of_acks_unprocessed_;
     if (!did_register_waker_) {
@@ -150,7 +168,7 @@ class SettingsTimeoutManager : public RefCounted<SettingsTimeoutManager> {
   }
   inline void RecordReceivedAck() {
     GRPC_SETTINGS_TIMEOUT_DLOG
-        << "SettingsTimeoutManager::RecordReceivedAck did_register_waker_ "
+        << "SettingsPromiseManager::RecordReceivedAck did_register_waker_ "
         << did_register_waker_
         << " number_of_acks_unprocessed_ : " << number_of_acks_unprocessed_;
     GRPC_DCHECK_EQ(number_of_acks_unprocessed_, 0);
@@ -167,7 +185,7 @@ class SettingsTimeoutManager : public RefCounted<SettingsTimeoutManager> {
   }
   inline void MarkReceivedAckAsProcessed() {
     GRPC_SETTINGS_TIMEOUT_DLOG
-        << "SettingsTimeoutManager::RemoveReceivedAck did_register_waker_ "
+        << "SettingsPromiseManager::RemoveReceivedAck did_register_waker_ "
         << did_register_waker_
         << " number_of_acks_unprocessed_ : " << number_of_acks_unprocessed_;
     --number_of_acks_unprocessed_;
@@ -175,6 +193,8 @@ class SettingsTimeoutManager : public RefCounted<SettingsTimeoutManager> {
     GRPC_DCHECK(!did_register_waker_);
   }
 
+  //////////////////////////////////////////////////////////////////////////////
+  // Data Members for SETTINGS being sent from our transport to the peer.
   Duration timeout_;
   // TODO(tjagtap) [PH2][P3][Settings] Delete sent_time_. We don't actually use
   // sent_time_ for the timeout. We are just keeping this as book keeping for
@@ -184,32 +204,9 @@ class SettingsTimeoutManager : public RefCounted<SettingsTimeoutManager> {
   bool did_register_waker_ = false;
   int number_of_acks_unprocessed_ = 0;
   bool should_spawn_settings_timeout_ = false;
-};
 
-class PendingIncomingSettings {
-  // TODO(tjagtap) [PH2][P1][Settings] : Add new DCHECKs
-  // TODO(tjagtap) [PH2][P1][Settings] : Refactor full class
- public:
-  PendingIncomingSettings() = default;
-  ~PendingIncomingSettings() = default;
-  PendingIncomingSettings(const PendingIncomingSettings&) = delete;
-  PendingIncomingSettings& operator=(const PendingIncomingSettings&) = delete;
-  PendingIncomingSettings(PendingIncomingSettings&&) = delete;
-  PendingIncomingSettings& operator=(PendingIncomingSettings&&) = delete;
-
-  void AddSettingsToPendingList(
-      std::vector<Http2SettingsFrame::Setting>&& settings) {
-    settings_.reserve(settings_.size() + settings.size());
-    settings_.insert(settings_.end(), settings.begin(), settings.end());
-  };
-
-  std::vector<Http2SettingsFrame::Setting> TakePendingSettings() {
-    std::vector<Http2SettingsFrame::Setting> settings = std::move(settings_);
-    settings_.clear();
-    return settings;
-  }
-
- private:
+  //////////////////////////////////////////////////////////////////////////////
+  // Data Members for SETTINGS being received from the peer.
   std::vector<Http2SettingsFrame::Setting> settings_;
 };
 

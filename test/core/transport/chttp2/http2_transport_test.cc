@@ -169,8 +169,8 @@ TEST(Http2CommonTransportTest, MaybeGetSettingsAndSettingsAckFramesIdle) {
       /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   Http2SettingsManager settings_manager;
-  RefCountedPtr<SettingsTimeoutManager> timeout_manager =
-      MakeRefCounted<SettingsTimeoutManager>();
+  RefCountedPtr<SettingsPromiseManager> timeout_manager =
+      MakeRefCounted<SettingsPromiseManager>();
   SliceBuffer output_buf;
   // We add "hello" to output_buf to ensure that
   // MaybeGetSettingsAndSettingsAckFrames appends to it and does not overwrite
@@ -198,8 +198,8 @@ TEST(Http2CommonTransportTest,
       /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   Http2SettingsManager settings_manager;
-  RefCountedPtr<SettingsTimeoutManager> timeout_manager =
-      MakeRefCounted<SettingsTimeoutManager>();
+  RefCountedPtr<SettingsPromiseManager> timeout_manager =
+      MakeRefCounted<SettingsPromiseManager>();
   SliceBuffer output_buf;
   MaybeGetSettingsAndSettingsAckFrames(transport_flow_control, settings_manager,
                                        timeout_manager, output_buf);
@@ -235,8 +235,8 @@ TEST(Http2CommonTransportTest,
       /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   Http2SettingsManager settings_manager;
-  RefCountedPtr<SettingsTimeoutManager> timeout_manager =
-      MakeRefCounted<SettingsTimeoutManager>();
+  RefCountedPtr<SettingsPromiseManager> timeout_manager =
+      MakeRefCounted<SettingsPromiseManager>();
   const uint32_t kSetMaxFrameSize = 16385;
   SliceBuffer output_buf;
   // We add "hello" to output_buf to ensure that
@@ -299,8 +299,8 @@ TEST(Http2CommonTransportTest, MaybeGetSettingsAndSettingsAckFramesWithAck) {
       /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   Http2SettingsManager settings_manager;
-  RefCountedPtr<SettingsTimeoutManager> timeout_manager =
-      MakeRefCounted<SettingsTimeoutManager>();
+  RefCountedPtr<SettingsPromiseManager> timeout_manager =
+      MakeRefCounted<SettingsPromiseManager>();
   SliceBuffer output_buf;
   // We add "hello" to output_buf to ensure that
   // MaybeGetSettingsAndSettingsAckFrames appends to it and does not overwrite

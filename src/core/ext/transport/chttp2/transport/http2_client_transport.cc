@@ -479,8 +479,7 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
     if (!status.IsOk()) {
       return status;
     }
-    pending_incoming_settings_.AddSettingsToPendingList(
-        std::move(frame.settings));
+    transport_settings_->AddSettingsToPendingList(std::move(frame.settings));
     settings_.OnSettingsReceived();
     SpawnGuardedTransportParty("SettingsAck", TriggerWriteCycle());
   } else {
@@ -983,7 +982,7 @@ auto Http2ClientTransport::ProcessAndWriteControlFrames() {
 
   goaway_manager_.MaybeGetSerializedGoawayFrame(output_buf);
   http2::Http2ErrorCode apply_status = settings_.ApplyIncomingSettings(
-      pending_incoming_settings_.TakePendingSettings());
+      transport_settings_->TakePendingSettings());
   if (!goaway_manager_.IsImmediateGoAway() &&
       apply_status == http2::Http2ErrorCode::kNoError) {
     EnforceLatestIncomingSettings();
@@ -1385,7 +1384,7 @@ Http2ClientTransport::Http2ClientTransport(
           endpoint.GetEventEngineEndpoint(), channel_args)),
       event_engine_(std::move(event_engine)),
       endpoint_(std::move(endpoint)),
-      transport_settings_(MakeRefCounted<SettingsTimeoutManager>()),
+      transport_settings_(MakeRefCounted<SettingsPromiseManager>()),
       next_stream_id_(/*Initial Stream ID*/ 1),
       should_reset_ping_clock_(false),
       is_first_write_(true),

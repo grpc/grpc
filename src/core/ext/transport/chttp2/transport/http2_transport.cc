@@ -142,7 +142,7 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
 
 void MaybeGetSettingsAndSettingsAckFrames(
     chttp2::TransportFlowControl& flow_control, Http2SettingsManager& settings,
-    RefCountedPtr<SettingsTimeoutManager> transport_settings,
+    RefCountedPtr<SettingsPromiseManager> transport_settings,
     SliceBuffer& output_buf) {
   GRPC_HTTP2_COMMON_DLOG << "MaybeGetSettingsAndSettingsAckFrames";
   std::optional<Http2Frame> settings_frame = settings.MaybeSendUpdate();

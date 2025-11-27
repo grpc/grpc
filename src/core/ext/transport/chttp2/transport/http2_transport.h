@@ -72,7 +72,7 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
 // acknowledgment.
 void MaybeGetSettingsAndSettingsAckFrames(
     chttp2::TransportFlowControl& flow_control, Http2SettingsManager& settings,
-    RefCountedPtr<SettingsTimeoutManager> transport_settings,
+    RefCountedPtr<SettingsPromiseManager> transport_settings,
     SliceBuffer& output_buf);
 
 ///////////////////////////////////////////////////////////////////////////////
