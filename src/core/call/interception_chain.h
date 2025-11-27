@@ -170,12 +170,10 @@ class InterceptionChainBuilder final {
   using FinalDestination = std::variant<RefCountedPtr<UnstartedCallDestination>,
                                         RefCountedPtr<CallDestination>>;
 
-  explicit InterceptionChainBuilder(ChannelArgs args, const Blackboard* old_blackboard = nullptr,
-                                    Blackboard* new_blackboard = nullptr)
+  explicit InterceptionChainBuilder(ChannelArgs args, const Blackboard* blackboard)
       : args_(std::move(args)),
         memory_quota_(args_.GetObject<ResourceQuota>()->memory_quota()),
-        old_blackboard_(old_blackboard),
-        new_blackboard_(new_blackboard) {}
+        blackboard_(blackboard) {}
 
   // Add a filter with a `Call` class as an inner member.
   // Call class must be one compatible with the filters described in
