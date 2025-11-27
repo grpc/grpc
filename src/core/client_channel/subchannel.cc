@@ -90,6 +90,7 @@
 namespace grpc_core {
 
 using ::grpc_event_engine::experimental::EventEngine;
+constexpr absl::string_view kSecurityLevelUnknown = "unknown";
 constexpr absl::string_view kSecurityLevelNone = "none";
 constexpr absl::string_view kSecurityLevelIntegrityOnly = "integrity_only";
 constexpr absl::string_view kSecurityLevelPrivacyAndIntegrity =
@@ -142,6 +143,7 @@ ConnectedSubchannel::ConnectedSubchannel(const ChannelArgs& args)
                                                        : nullptr),
       args_(args) {
   // Extract security level from auth context
+  absl::string_view security_level = kSecurityLevelUnknown;
   auto auth_context = args.GetObjectRef<grpc_auth_context>();
   if (auth_context != nullptr) {
     grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
@@ -151,14 +153,15 @@ ConnectedSubchannel::ConnectedSubchannel(const ChannelArgs& args)
       absl::string_view tsi_level(prop->value, prop->value_length);
       // Map TSI level to metric label format
       if (tsi_level == "TSI_SECURITY_NONE") {
-        security_level_ = kSecurityLevelNone;
+        security_level = kSecurityLevelNone;
       } else if (tsi_level == "TSI_INTEGRITY_ONLY") {
-        security_level_ = kSecurityLevelIntegrityOnly;
+        security_level = kSecurityLevelIntegrityOnly;
       } else if (tsi_level == "TSI_PRIVACY_AND_INTEGRITY") {
-        security_level_ = kSecurityLevelPrivacyAndIntegrity;
+        security_level = kSecurityLevelPrivacyAndIntegrity;
       }
     }
   }
+  security_level_ = security_level;
 }
 
 //
