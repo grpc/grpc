@@ -37,9 +37,7 @@ template <>
 struct ArenaContextType<InterceptorTestForwardContext> {
   static constexpr ArenaContextPropagation kPropagation =
       ArenaContextPropagation::kForward;
-  static void Destroy(InterceptorTestForwardContext* p) {
-    p->~InterceptorTestForwardContext();
-  }
+  static void Destroy(InterceptorTestForwardContext* p) { p->~InterceptorTestForwardContext(); }
 };
 
 struct InterceptorTestReverseContext {
@@ -51,9 +49,7 @@ template <>
 struct ArenaContextType<InterceptorTestReverseContext> {
   static constexpr ArenaContextPropagation kPropagation =
       ArenaContextPropagation::kForwardAndReverse;
-  static void Destroy(InterceptorTestReverseContext* p) {
-    p->~InterceptorTestReverseContext();
-  }
+  static void Destroy(InterceptorTestReverseContext* p) { p->~InterceptorTestReverseContext(); }
 };
 
 namespace {
@@ -290,7 +286,6 @@ class InterceptionChainTest : public ::testing::Test {
    private:
     ClientMetadataHandle metadata_;
   };
-
  protected:
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
       grpc_event_engine::experimental::GetDefaultEventEngine();
@@ -312,8 +307,7 @@ ChannelArgs DefaultChannelArgs() {
 // Tests begin
 
 TEST_F(InterceptionChainTest, Empty) {
-  auto r = InterceptionChainBuilder(DefaultChannelArgs(), nullptr)
-               .Build(destination());
+  auto r = InterceptionChainBuilder(DefaultChannelArgs(), nullptr).Build(destination());
   ASSERT_TRUE(r.ok()) << r.status();
   auto finished_call = RunCall(r.value().get());
   EXPECT_EQ(finished_call.server_metadata->get(GrpcStatusMetadata()),
@@ -481,35 +475,23 @@ class TestContextPropagationInterceptor final : public Interceptor {
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override {
     unstarted_call_handler.SpawnInfallible(
         "hijack", [this, unstarted_call_handler]() mutable {
-          return Map(
-              Hijack(std::move(unstarted_call_handler)),
-              [](ValueOrFailure<HijackedCall> hijacked_call) {
-                auto& call = hijacked_call.value();
-                // Verify forward propagation
-                EXPECT_EQ(*call.original_call_handler()
-                               .arena()
-                               ->GetContext<InterceptorTestForwardContext>()
-                               ->p,
-                          42);
-                EXPECT_EQ(*call.original_call_handler()
-                               .arena()
-                               ->GetContext<InterceptorTestReverseContext>()
-                               ->p,
-                          100);
-
-                // Modify reverse context
-                call.original_call_handler()
-                    .arena()
-                    ->GetContext<InterceptorTestReverseContext>()
-                    ->p = std::make_unique<int>(200);
-
-                call.original_call_handler().ForwardTo(call.MakeCall());
-              });
+          return Map(Hijack(std::move(unstarted_call_handler)),
+                     [](ValueOrFailure<HijackedCall> hijacked_call) {
+                       auto& call = hijacked_call.value();
+                       // Verify forward propagation
+                       EXPECT_EQ(*call.original_call_handler().arena()->GetContext<InterceptorTestForwardContext>()->p, 42);
+                       EXPECT_EQ(*call.original_call_handler().arena()->GetContext<InterceptorTestReverseContext>()->p, 100);
+                       
+                       // Modify reverse context
+                       call.original_call_handler().arena()->GetContext<InterceptorTestReverseContext>()->p = std::make_unique<int>(200);
+                       
+                       call.original_call_handler().ForwardTo(call.MakeCall());
+                     });
         });
   }
   void Orphaned() override {}
-  static absl::StatusOr<RefCountedPtr<TestContextPropagationInterceptor>>
-  Create(const ChannelArgs& channel_args, ChannelFilter::Args filter_args) {
+  static absl::StatusOr<RefCountedPtr<TestContextPropagationInterceptor>> Create(
+      const ChannelArgs& channel_args, ChannelFilter::Args filter_args) {
     return MakeRefCounted<TestContextPropagationInterceptor>();
   }
 };
@@ -519,14 +501,14 @@ TEST_F(InterceptionChainTest, ContextPropagation) {
                .Add<TestContextPropagationInterceptor>(nullptr)
                .Build(destination());
   ASSERT_TRUE(r.ok()) << r.status();
-
+  
   // Custom RunCall to set up context
   auto arena = call_arena_allocator_->MakeArena();
   arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine_.get());
   arena->SetContext(arena->New<InterceptorTestForwardContext>(42));
   arena->SetContext(arena->New<InterceptorTestReverseContext>(100));
-
+  
   auto call = MakeCallPair(Arena::MakePooledForOverwrite<ClientMetadata>(),
                            std::move(arena));
   Poll<ServerMetadataHandle> trailing_md;
@@ -540,14 +522,10 @@ TEST_F(InterceptionChainTest, ContextPropagation) {
                    });
       });
   EXPECT_THAT(trailing_md, IsReady());
-
+  
   // Verify reverse propagation
-  EXPECT_EQ(
-      *call.initiator.arena()->GetContext<InterceptorTestReverseContext>()->p,
-      200);
-  EXPECT_EQ(
-      *call.initiator.arena()->GetContext<InterceptorTestForwardContext>()->p,
-      42);
+  EXPECT_EQ(*call.initiator.arena()->GetContext<InterceptorTestReverseContext>()->p, 200);
+  EXPECT_EQ(*call.initiator.arena()->GetContext<InterceptorTestForwardContext>()->p, 42);
 }
 
 }  // namespace
