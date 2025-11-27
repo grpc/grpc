@@ -118,6 +118,7 @@
     <file baseinstalldir="/" name="src/core/call/call_spine.h" role="src" />
     <file baseinstalldir="/" name="src/core/call/call_state.cc" role="src" />
     <file baseinstalldir="/" name="src/core/call/call_state.h" role="src" />
+    <file baseinstalldir="/" name="src/core/call/channelz_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/call/client_call.cc" role="src" />
     <file baseinstalldir="/" name="src/core/call/client_call.h" role="src" />
     <file baseinstalldir="/" name="src/core/call/custom_metadata.h" role="src" />
@@ -161,6 +162,22 @@
     <file baseinstalldir="/" name="src/core/channelz/v2tov1/property_list.cc" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/v2tov1/property_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/ztrace_collector.h" role="src" />
+    <file baseinstalldir="/" name="src/core/channelz/zviz/data.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/channelz/zviz/data.h" role="src" />
+    <file baseinstalldir="/" name="src/core/channelz/zviz/entity.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/channelz/zviz/entity.h" role="src" />
+    <file baseinstalldir="/" name="src/core/channelz/zviz/environment.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/channelz/zviz/environment.h" role="src" />
+    <file baseinstalldir="/" name="src/core/channelz/zviz/layout.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/channelz/zviz/layout.h" role="src" />
+    <file baseinstalldir="/" name="src/core/channelz/zviz/layout_text.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/channelz/zviz/layout_text.h" role="src" />
+    <file baseinstalldir="/" name="src/core/channelz/zviz/strings.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/channelz/zviz/strings.h" role="src" />
+    <file baseinstalldir="/" name="src/core/channelz/zviz/style.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/channelz/zviz/style.h" role="src" />
+    <file baseinstalldir="/" name="src/core/channelz/zviz/trace.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/channelz/zviz/trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/backup_poller.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/backup_poller.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/buffered_call.cc" role="src" />
@@ -2221,6 +2238,9 @@
     <file baseinstalldir="/" name="src/php/ext/grpc/timeval.c" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/timeval.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/version.h" role="src" />
+    <file baseinstalldir="/" name="src/proto/grpc/channelz/v2/channelz.proto" role="src" />
+    <file baseinstalldir="/" name="src/proto/grpc/channelz/v2/promise.proto" role="src" />
+    <file baseinstalldir="/" name="src/proto/grpc/channelz/v2/property_list.proto" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/algorithm/algorithm.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/algorithm/container.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/attributes.h" role="src" />

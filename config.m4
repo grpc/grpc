@@ -63,6 +63,14 @@ if test "$PHP_GRPC" != "no"; then
     src/core/channelz/v2tov1/convert.cc \
     src/core/channelz/v2tov1/legacy_api.cc \
     src/core/channelz/v2tov1/property_list.cc \
+    src/core/channelz/zviz/data.cc \
+    src/core/channelz/zviz/entity.cc \
+    src/core/channelz/zviz/environment.cc \
+    src/core/channelz/zviz/layout.cc \
+    src/core/channelz/zviz/layout_text.cc \
+    src/core/channelz/zviz/strings.cc \
+    src/core/channelz/zviz/style.cc \
+    src/core/channelz/zviz/trace.cc \
     src/core/client_channel/backup_poller.cc \
     src/core/client_channel/buffered_call.cc \
     src/core/client_channel/client_channel.cc \
@@ -971,6 +979,9 @@ if test "$PHP_GRPC" != "no"; then
     src/php/ext/grpc/server.c \
     src/php/ext/grpc/server_credentials.c \
     src/php/ext/grpc/timeval.c \
+    src/proto/grpc/channelz/v2/channelz.proto \
+    src/proto/grpc/channelz/v2/promise.proto \
+    src/proto/grpc/channelz/v2/property_list.proto \
     third_party/abseil-cpp/absl/base/internal/cycleclock.cc \
     third_party/abseil-cpp/absl/base/internal/low_level_alloc.cc \
     third_party/abseil-cpp/absl/base/internal/raw_logging.cc \
@@ -1481,6 +1492,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/call)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz/v2tov1)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz/zviz)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/client_channel)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/config)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call)
@@ -1701,6 +1713,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/xds/grpc)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/xds/xds_client)
   PHP_ADD_BUILD_DIR($ext_builddir/src/php/ext/grpc)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/proto/grpc/channelz/v2)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/base)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/base/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/container/internal)

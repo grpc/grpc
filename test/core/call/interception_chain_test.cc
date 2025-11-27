@@ -87,6 +87,9 @@ class TestFilter {
     static inline const NoInterceptor OnServerToClientMessage;
     static inline const NoInterceptor OnServerTrailingMetadata;
     static inline const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList().Set("filter_id", I);
+    }
   };
 
   static absl::StatusOr<std::unique_ptr<TestFilter<I>>> Create(
@@ -114,6 +117,9 @@ class FailsToInstantiateFilter {
     static inline const NoInterceptor OnServerToClientMessage;
     static inline const NoInterceptor OnServerTrailingMetadata;
     static inline const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList().Set("filter_id", I);
+    }
   };
 
   static absl::StatusOr<std::unique_ptr<FailsToInstantiateFilter<I>>> Create(

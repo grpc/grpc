@@ -1,4 +1,4 @@
-// Copyright 2025 The gRPC Authors
+// Copyright 2025 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,15 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifdef GRPC_POSTMORTEM_CHECKS
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/util/postmortem_emit.h"
+#ifndef GRPC_SRC_CORE_CALL_METADATA_CHANNELZ_H
+#define GRPC_SRC_CORE_CALL_METADATA_CHANNELZ_H
 
-bool PostMortemEmitAndReturnTrue() {
-  grpc_core::ExecCtx exec_ctx;
-  grpc_core::PostMortemEmit();
-  return true;
-}
-#else
-bool PostMortemEmitAndReturnTrue() { return true; }
-#endif
+#include "src/core/call/metadata.h"
+#include "src/core/channelz/property_list.h"
+
+namespace grpc_core {
+
+channelz::PropertyList MetadataToChannelzProperties(
+    const Arena::PoolPtr<grpc_metadata_batch>& md);
+channelz::PropertyList MetadataToChannelzProperties(
+    const grpc_metadata_batch& md);
+
+}  // namespace grpc_core
+
+#endif  // GRPC_SRC_CORE_CALL_METADATA_CHANNELZ_H

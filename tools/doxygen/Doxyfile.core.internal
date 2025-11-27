@@ -904,6 +904,7 @@ src/core/call/call_spine.cc \
 src/core/call/call_spine.h \
 src/core/call/call_state.cc \
 src/core/call/call_state.h \
+src/core/call/channelz_context.h \
 src/core/call/client_call.cc \
 src/core/call/client_call.h \
 src/core/call/custom_metadata.h \
@@ -948,6 +949,22 @@ src/core/channelz/v2tov1/legacy_api.h \
 src/core/channelz/v2tov1/property_list.cc \
 src/core/channelz/v2tov1/property_list.h \
 src/core/channelz/ztrace_collector.h \
+src/core/channelz/zviz/data.cc \
+src/core/channelz/zviz/data.h \
+src/core/channelz/zviz/entity.cc \
+src/core/channelz/zviz/entity.h \
+src/core/channelz/zviz/environment.cc \
+src/core/channelz/zviz/environment.h \
+src/core/channelz/zviz/layout.cc \
+src/core/channelz/zviz/layout.h \
+src/core/channelz/zviz/layout_text.cc \
+src/core/channelz/zviz/layout_text.h \
+src/core/channelz/zviz/strings.cc \
+src/core/channelz/zviz/strings.h \
+src/core/channelz/zviz/style.cc \
+src/core/channelz/zviz/style.h \
+src/core/channelz/zviz/trace.cc \
+src/core/channelz/zviz/trace.h \
 src/core/client_channel/GEMINI.md \
 src/core/client_channel/README.md \
 src/core/client_channel/backup_poller.cc \
@@ -3059,6 +3076,9 @@ src/core/xds/xds_client/xds_metrics.h \
 src/core/xds/xds_client/xds_resource_type.h \
 src/core/xds/xds_client/xds_resource_type_impl.h \
 src/core/xds/xds_client/xds_transport.h \
+src/proto/grpc/channelz/v2/channelz.proto \
+src/proto/grpc/channelz/v2/promise.proto \
+src/proto/grpc/channelz/v2/property_list.proto \
 third_party/upb/upb/generated_code_support.h \
 third_party/xxhash/xxhash.h
 
