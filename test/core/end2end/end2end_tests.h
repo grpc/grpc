@@ -63,6 +63,7 @@
 #include "test/core/test_util/test_config.h"
 #include "gtest/gtest.h"
 #include "absl/functional/any_invocable.h"
+#include "absl/log/globals.h"
 #include "absl/memory/memory.h"
 #include "absl/meta/type_traits.h"
 #include "absl/strings/str_cat.h"
@@ -719,6 +720,24 @@ inline auto MaybeAddNullConfig(
     configs.push_back(nullptr);
   }
   return configs;
+}
+
+// TODO(akshitpatel) : [PH2][P3] : Remove once all the PH2 E2E tests are fixed.
+inline void EnableLoggingForPH2Tests() {
+  if (IsPromiseBasedHttp2ClientTransportEnabled()) {
+    grpc_tracer_set_enabled("http2_ph2_transport", true);
+    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
+    absl::SetGlobalVLogLevel(2);
+  }
+}
+
+// TODO(akshitpatel) : [PH3][P3] : Remove once all the PH2 E2E tests are fixed.
+inline void DisableLoggingForPH2Tests() {
+  if (IsPromiseBasedHttp2ClientTransportEnabled()) {
+    // TODO(akshitpatel) : [PH2][P1] : Remove this once the test is fixed.
+    absl::SetGlobalVLogLevel(-1);
+    grpc_tracer_set_enabled("http2_ph2_transport", false);
+  }
 }
 
 }  // namespace grpc_core

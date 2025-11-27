@@ -66,7 +66,9 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|CoreEnd2endTests.CancelWithStatus1"     \
   "|CoreEnd2endTests.CancelWithStatus2"     \
   "|CoreEnd2endTests.CancelWithStatus3"     \
-  "|CoreEnd2endTests.CancelWithStatus4"     \
+  "|CoreEnd2endTests.CancelWithStatus4"
+
+#define DEADLINE_SUITE                      \
   "|CoreDeadlineTests.DeadlineAfterInvoke3" \
   "|CoreDeadlineTests.DeadlineAfterInvoke4" \
   "|CoreDeadlineTests.DeadlineAfterInvoke5" \
