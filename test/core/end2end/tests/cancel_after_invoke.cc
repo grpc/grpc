@@ -63,7 +63,6 @@ void CancelAfterInvoke6(CoreEnd2endTest& test,
   if (IsPromiseBasedHttp2ClientTransportEnabled()) {
     // TODO(akshitpatel) : [PH2][P1] : Remove this once the test is fixed.
     absl::SetGlobalVLogLevel(-1);
-    grpc_tracer_set_enabled("http2_ph2_transport", false);
   }
 }
 
@@ -93,7 +92,6 @@ void CancelAfterInvoke5(CoreEnd2endTest& test,
   if (IsPromiseBasedHttp2ClientTransportEnabled()) {
     // TODO(akshitpatel) : [PH2][P1] : Remove this once the test is fixed.
     absl::SetGlobalVLogLevel(-1);
-    grpc_tracer_set_enabled("http2_ph2_transport", false);
   }
 }
 
@@ -122,7 +120,6 @@ void CancelAfterInvoke4(CoreEnd2endTest& test,
   if (IsPromiseBasedHttp2ClientTransportEnabled()) {
     // TODO(akshitpatel) : [PH2][P1] : Remove this once the test is fixed.
     absl::SetGlobalVLogLevel(-1);
-    grpc_tracer_set_enabled("http2_ph2_transport", false);
   }
 }
 
@@ -150,7 +147,6 @@ void CancelAfterInvoke3(CoreEnd2endTest& test,
   if (IsPromiseBasedHttp2ClientTransportEnabled()) {
     // TODO(akshitpatel) : [PH2][P1] : Remove this once the test is fixed.
     absl::SetGlobalVLogLevel(-1);
-    grpc_tracer_set_enabled("http2_ph2_transport", false);
   }
 }
 

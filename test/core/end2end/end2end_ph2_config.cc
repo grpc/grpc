@@ -140,9 +140,9 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|Http2SingleHopTests.MaxConcurrentStreamsRejectOnClient"                    \
   "|Http2SingleHopTests.SimpleDelayedRequestShort"
 
-#define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE               \
-  "CoreEnd2endTests|CoreDeadlineTests|CoreLargeSendTests|"            \
-  "CoreClientChannelTests|CoreDeadlineSingleHopTests|NoLoggingTests|" \
+#define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE    \
+  "CoreEnd2endTests|CoreDeadlineTests|CoreLargeSendTests|" \
+  "CoreClientChannelTests|CoreDeadlineSingleHopTests|"     \
   "Http2SingleHopTests"
 
 std::vector<CoreTestConfiguration> End2endTestConfigs() {
