@@ -182,4 +182,73 @@ CALL_SPINE_TEST(UnaryRequestThroughForwardCallWithServerTrailingMetadataHook) {
   EXPECT_TRUE(got_md);
 }
 
+struct CallSpineTestForwardContext {
+  explicit CallSpineTestForwardContext(int x) : p(std::make_unique<int>(x)) {}
+  std::unique_ptr<int> p;
+};
+
+template <>
+struct ArenaContextType<CallSpineTestForwardContext> {
+  static constexpr ArenaContextPropagation kPropagation =
+      ArenaContextPropagation::kForward;
+  static void Destroy(CallSpineTestForwardContext* p) {
+    p->~CallSpineTestForwardContext();
+  }
+};
+
+struct CallSpineTestReverseContext {
+  explicit CallSpineTestReverseContext(int x) : p(std::make_unique<int>(x)) {}
+  std::unique_ptr<int> p;
+};
+
+template <>
+struct ArenaContextType<CallSpineTestReverseContext> {
+  static constexpr ArenaContextPropagation kPropagation =
+      ArenaContextPropagation::kForwardAndReverse;
+  static void Destroy(CallSpineTestReverseContext* p) {
+    p->~CallSpineTestReverseContext();
+  }
+};
+
+CALL_SPINE_TEST(ContextPropagation) {
+  auto call1 = MakeCall(MakeClientInitialMetadata());
+  auto handler1 = call1.handler.StartCall();
+
+  // Set contexts on call1's arena
+  call1.initiator.arena()->SetContext(
+      call1.initiator.arena()->New<CallSpineTestForwardContext>(42));
+  call1.initiator.arena()->SetContext(
+      call1.initiator.arena()->New<CallSpineTestReverseContext>(100));
+
+  // Create child call using MakeChildCall, which should propagate context
+  auto call2 = handler1.MakeChildCall(MakeClientInitialMetadata(),
+                                      SimpleArenaAllocator());
+
+  // Verify forward propagation to call2
+  EXPECT_EQ(
+      *call2.initiator.arena()->GetContext<CallSpineTestForwardContext>()->p,
+      42);
+  EXPECT_EQ(
+      *call2.initiator.arena()->GetContext<CallSpineTestReverseContext>()->p,
+      100);
+
+  // Modify reverse context on call2
+  call2.initiator.arena()->GetContext<CallSpineTestReverseContext>()->p =
+      std::make_unique<int>(200);
+
+  // Manually trigger reverse propagation.
+  // In a real scenario, this might be called when the child call completes,
+  // but for this test we call it manually to verify the mechanism.
+  call1.initiator.arena()->ReversePropagateContextFrom(call2.initiator.arena());
+
+  // Verify reverse propagation back to call1
+  EXPECT_EQ(
+      *call1.initiator.arena()->GetContext<CallSpineTestReverseContext>()->p,
+      200);
+  // Forward context should remain unchanged
+  EXPECT_EQ(
+      *call1.initiator.arena()->GetContext<CallSpineTestForwardContext>()->p,
+      42);
+}
+
 }  // namespace grpc_core

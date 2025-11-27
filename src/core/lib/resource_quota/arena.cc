@@ -27,7 +27,6 @@
 
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/util/alloc.h"
-#include "absl/log/log.h"
 namespace grpc_core {
 
 namespace {
@@ -120,6 +119,7 @@ void Arena::ReversePropagateContextFrom(Arena* child) {
   for (size_t i = 0; i < arena_detail::BaseArenaContextTraits::NumContexts();
        ++i) {
     if (!reverse_propagation_contexts.is_set(i)) continue;
+    if (contexts()[i] == child->contexts()[i]) continue;
     if (owned_contexts_.is_set(i)) {
       arena_detail::BaseArenaContextTraits::Destroy(i, contexts()[i]);
       owned_contexts_.clear(i);

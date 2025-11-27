@@ -401,13 +401,15 @@ void SetServerCallTracer(Arena* arena,
 template <>
 struct ArenaContextType<CallTracer> {
   static constexpr ArenaContextPropagation kPropagation =
-      ArenaContextPropagation::kForward;  static void Destroy(CallTracer*) {}
+      ArenaContextPropagation::kForward;
+  static void Destroy(CallTracer*) {}
 };
 
 template <>
 struct ArenaContextType<CallSpan> {
   static constexpr ArenaContextPropagation kPropagation =
-      ArenaContextPropagation::kForward;  static void Destroy(CallSpan*) {}
+      ArenaContextPropagation::kForward;
+  static void Destroy(CallSpan*) {}
 };
 
 template <>

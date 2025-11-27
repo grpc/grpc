@@ -25,8 +25,8 @@
 #include "src/core/call/call_filters.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/call/metadata.h"
-#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/filter/filter_args.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/util/ref_counted.h"
 
 namespace grpc_core {
@@ -170,9 +170,12 @@ class InterceptionChainBuilder final {
   using FinalDestination = std::variant<RefCountedPtr<UnstartedCallDestination>,
                                         RefCountedPtr<CallDestination>>;
 
-  explicit InterceptionChainBuilder(ChannelArgs args, const Blackboard* blackboard)
+  explicit InterceptionChainBuilder(ChannelArgs args,
+                                    const Blackboard* blackboard)
       : args_(std::move(args)),
-        memory_quota_(args_.GetObject<ResourceQuota>()->memory_quota()),
+        memory_quota_(args_.GetObject<ResourceQuota>() != nullptr
+                          ? args_.GetObject<ResourceQuota>()->memory_quota()
+                          : ResourceQuota::Default()->memory_quota()),
         blackboard_(blackboard) {}
 
   // Add a filter with a `Call` class as an inner member.

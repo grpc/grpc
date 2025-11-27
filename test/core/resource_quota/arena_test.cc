@@ -340,6 +340,18 @@ TEST(ArenaTest, FooContext) {
   arena->New<VeryAligned>();
 }
 
+struct Bar {
+  explicit Bar(int x) : p(std::make_unique<int>(x)) {}
+  std::unique_ptr<int> p;
+};
+
+template <>
+struct ArenaContextType<Bar> {
+  static constexpr ArenaContextPropagation kPropagation =
+      ArenaContextPropagation::kForwardAndReverse;
+  static void Destroy(Bar* p) { p->~Bar(); }
+};
+
 class MockArenaFactory : public ArenaFactory {
  public:
   MockArenaFactory()
@@ -349,6 +361,23 @@ class MockArenaFactory : public ArenaFactory {
   MOCK_METHOD(RefCountedPtr<Arena>, MakeArena, (), (override));
   MOCK_METHOD(void, FinalizeArena, (Arena * arena), (override));
 };
+
+TEST(ArenaTest, ContextPropagation) {
+  auto parent = SimpleArenaAllocator()->MakeArena();
+  auto child = SimpleArenaAllocator()->MakeArena();
+  parent->SetContext(parent->New<Foo>(42));
+  parent->SetContext(parent->New<Bar>(100));
+  child->ForwardPropagateContextFrom(parent.get());
+  EXPECT_EQ(*child->GetContext<Foo>()->p, 42);
+  EXPECT_EQ(*child->GetContext<Bar>()->p, 100);
+  child->GetContext<Bar>()->p = std::make_unique<int>(200);
+  parent->ReversePropagateContextFrom(child.get());
+  EXPECT_EQ(*parent->GetContext<Bar>()->p, 200);
+  // Foo is forward-only, so reverse propagation should not affect it, and since
+  // child was forward propagated it should still have the same pointer.
+  EXPECT_EQ(*parent->GetContext<Foo>()->p, 42);
+  EXPECT_EQ(parent->GetContext<Foo>(), child->GetContext<Foo>());
+}
 
 TEST(ArenaTest, FinalizeArenaIsCalled) {
   auto factory = MakeRefCounted<StrictMock<MockArenaFactory>>();
