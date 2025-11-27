@@ -124,7 +124,7 @@ const auto kMetricConnectionAttemptsFailed =
         .Build();
 
 const auto kMetricOpenConnections =
-    GlobalInstrumentsRegistry::RegisterUInt64UpDownCounter(
+    GlobalInstrumentsRegistry::RegisterInt64UpDownCounter(
         "grpc.subchannel.open_connections", "Number of open connections.",
         "{connection}", false)
         .Labels(kMetricLabelTarget)
@@ -488,10 +488,10 @@ class Subchannel::ConnectedSubchannelStateWatcher final
           absl::string_view disconnect_reason =
               c->shutdown_ ? "subchannel shutdown" : "unknown";
           c->stats_plugin_group_->AddCounter(
-              kMetricDisconnections, uint64_t(1), {c->target_},
+              kMetricDisconnections, 1, {c->target_},
               {c->backend_service_, c->locality_, disconnect_reason});
           c->stats_plugin_group_->AddCounter(
-              kMetricOpenConnections, -1.0, {c->target_},
+              kMetricOpenConnections, -1, {c->target_},
               {connected_subchannel->GetSecurityLevel(), c->backend_service_,
                c->locality_});
         }
@@ -583,11 +583,11 @@ class Subchannel::ConnectionStateWatcher final
         }
       }
       subchannel_->stats_plugin_group_->AddCounter(
-          kMetricDisconnections, uint64_t(1), {subchannel_->target_},
+          kMetricDisconnections, 1, {subchannel_->target_},
           {subchannel_->backend_service_, subchannel_->locality_,
            disconnect_reason});
       subchannel_->stats_plugin_group_->AddCounter(
-          kMetricOpenConnections, -1.0, {subchannel_->target_},
+          kMetricOpenConnections, -1, {subchannel_->target_},
           {connected_subchannel->GetSecurityLevel(),
            subchannel_->backend_service_, subchannel_->locality_});
     }
@@ -1111,11 +1111,9 @@ bool Subchannel::PublishTransportLocked() {
   }
   // Record successful connection attempt
   if (stats_plugin_group_ != nullptr) {
-    stats_plugin_group_->AddCounter(kMetricConnectionAttemptsSucceeded,
-                                    uint64_t(1), {target_},
-                                    {backend_service_, locality_});
-    stats_plugin_group_->AddCounter(kMetricOpenConnections, uint64_t(1),
-                                    {target_},
+    stats_plugin_group_->AddCounter(kMetricConnectionAttemptsSucceeded, 1,
+                                    {target_}, {backend_service_, locality_});
+    stats_plugin_group_->AddCounter(kMetricOpenConnections, 1, {target_},
                                     {connected_subchannel_->GetSecurityLevel(),
                                      backend_service_, locality_});
   }

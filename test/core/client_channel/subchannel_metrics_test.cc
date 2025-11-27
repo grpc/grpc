@@ -28,7 +28,6 @@ namespace {
 class SubchannelTest : public ::testing::Test {
  protected:
   void SetUp() override { grpc_init(); }
-
   void TearDown() override { grpc_shutdown_blocking(); }
 };
 
@@ -93,7 +92,7 @@ TEST_F(SubchannelTest, MetricDefinitionOpenConnections) {
           "grpc.subchannel.open_connections");
   ASSERT_NE(descriptor, nullptr);
   EXPECT_EQ(descriptor->value_type,
-            GlobalInstrumentsRegistry::ValueType::kUInt64);
+            GlobalInstrumentsRegistry::ValueType::kInt64);
   EXPECT_EQ(descriptor->instrument_type,
             GlobalInstrumentsRegistry::InstrumentType::kUpDownCounter);
   EXPECT_EQ(descriptor->enable_by_default, false);

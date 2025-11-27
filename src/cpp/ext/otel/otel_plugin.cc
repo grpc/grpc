@@ -794,6 +794,22 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
               }
               break;
             case grpc_core::GlobalInstrumentsRegistry::InstrumentType::
+                kUpDownCounter:
+              switch (descriptor.value_type) {
+                case grpc_core::GlobalInstrumentsRegistry::ValueType::kInt64:
+                  instruments_data_[descriptor.index].instrument =
+                      meter->CreateInt64UpDownCounter(
+                          std::string(descriptor.name),
+                          std::string(descriptor.description),
+                          std::string(descriptor.unit));
+                  break;
+                default:
+                  grpc_core::Crash(
+                      absl::StrFormat("Unknown or unsupported value type: %d",
+                                      descriptor.value_type));
+              }
+              break;
+            case grpc_core::GlobalInstrumentsRegistry::InstrumentType::
                 kHistogram:
               switch (descriptor.value_type) {
                 case grpc_core::GlobalInstrumentsRegistry::ValueType::kUInt64:
@@ -847,22 +863,6 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
                       std::move(observable_state);
                   break;
                 }
-                default:
-                  grpc_core::Crash(
-                      absl::StrFormat("Unknown or unsupported value type: %d",
-                                      descriptor.value_type));
-              }
-              break;
-            case grpc_core::GlobalInstrumentsRegistry::InstrumentType::
-                kUpDownCounter:
-              switch (descriptor.value_type) {
-                case grpc_core::GlobalInstrumentsRegistry::ValueType::kUInt64:
-                  instruments_data_[descriptor.index].instrument =
-                      meter->CreateInt64UpDownCounter(
-                          std::string(descriptor.name),
-                          std::string(descriptor.description),
-                          std::string(descriptor.unit));
-                  break;
                 default:
                   grpc_core::Crash(
                       absl::StrFormat("Unknown or unsupported value type: %d",
@@ -1039,6 +1039,35 @@ void OpenTelemetryPluginImpl::AddCounter(
         ->Add(value);
   } else {
     std::get<std::unique_ptr<opentelemetry::metrics::Counter<double>>>(
+        instrument_data.instrument)
+        ->Add(value, NPCMetricsKeyValueIterable(
+                         descriptor.label_keys, label_values,
+                         descriptor.optional_label_keys, optional_values,
+                         instrument_data.optional_labels_bits));
+  }
+}
+void OpenTelemetryPluginImpl::AddCounter(
+    grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
+    int64_t value, absl::Span<const absl::string_view> label_values,
+    absl::Span<const absl::string_view> optional_values) {
+  if (meter_provider_ == nullptr) return;
+  const auto& instrument_data = instruments_data_.at(handle.index);
+  if (std::holds_alternative<Disabled>(instrument_data.instrument)) {
+    return;
+  }
+  CHECK(std::holds_alternative<
+        std::unique_ptr<opentelemetry::metrics::UpDownCounter<int64_t>>>(
+      instrument_data.instrument));
+  const auto& descriptor =
+      grpc_core::GlobalInstrumentsRegistry::GetInstrumentDescriptor(handle);
+  CHECK(descriptor.label_keys.size() == label_values.size());
+  CHECK(descriptor.optional_label_keys.size() == optional_values.size());
+  if (label_values.empty() && optional_values.empty()) {
+    std::get<std::unique_ptr<opentelemetry::metrics::UpDownCounter<int64_t>>>(
+        instrument_data.instrument)
+        ->Add(value);
+  } else {
+    std::get<std::unique_ptr<opentelemetry::metrics::UpDownCounter<int64_t>>>(
         instrument_data.instrument)
         ->Add(value, NPCMetricsKeyValueIterable(
                          descriptor.label_keys, label_values,
