@@ -167,15 +167,15 @@ struct SharedCallable {
     return (*reinterpret_cast<Callable*>(arg))();
   }
 
-  static void ToProto(ArgType* arg, grpc_channelz_v2_Promise* promise_proto,
+  static void ToProto(const ArgType* arg, grpc_channelz_v2_Promise* promise_proto,
                       upb_Arena* arena) {
-    PromiseAsProto(*reinterpret_cast<Callable*>(arg), promise_proto, arena);
+    PromiseAsProto(*reinterpret_cast<const Callable*>(arg), promise_proto, arena);
   }
 };
 
 template <typename T, typename Callable>
-const Vtable<T> SharedCallable<T, Callable>::vtable = {PollOnce, Null<T>::Move,
-                                                       Null<T>::Destroy};
+const Vtable<T> SharedCallable<T, Callable>::vtable = {
+    PollOnce, Null<T>::Move, Null<T>::Destroy, ToProto};
 
 // Redirector type: given a callable type, expose a Make() function that creates
 // the appropriate underlying implementation.
