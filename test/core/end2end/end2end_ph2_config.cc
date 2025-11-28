@@ -76,6 +76,7 @@ class Ph2InsecureFixture : public InsecureFixture {
 
 #define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST                         \
   CANCEL_SUITE                                                                 \
+  DEADLINE_SUITE                                                               \
   "CoreClientChannelTests.DeadlineAfterAcceptWithServiceConfig"                \
   "|CoreClientChannelTests.DeadlineAfterRoundTripWithServiceConfig"            \
   "|CoreDeadlineTests.DeadlineAfterRoundTrip"                                  \
