@@ -90,6 +90,19 @@ load(
 
 swift_rules_dependencies()
 
+http_archive(
+    name = "rules_pkg",
+    sha256 = "b7215c636f22c1849f1c3142c72f4b954bb12bb8dcf3cbe229ae6e69cc6479db",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_pkg/releases/download/1.1.0/rules_pkg-1.1.0.tar.gz",
+        "https://github.com/bazelbuild/rules_pkg/releases/download/1.1.0/rules_pkg-1.1.0.tar.gz",
+    ],
+)
+
+load("@rules_pkg//:deps.bzl", "rules_pkg_dependencies")
+
+rules_pkg_dependencies()
+
 # This loads the libpfm transitive dependency.
 # See https://github.com/google/benchmark/pull/1520
 load("@com_github_google_benchmark//:bazel/benchmark_deps.bzl", "benchmark_deps")
