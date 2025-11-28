@@ -151,6 +151,7 @@ grpc_cc_library(
     hdrs = [
         "util/postmortem_emit.h",
     ],
+    defines = ["GRPC_POSTMORTEM_CHECKS"],
     deps = [
         "//:channelz",
         "//:stats",
@@ -165,8 +166,11 @@ grpc_cc_library(
         "absl/log:check",
         "absl/log",
     ],
+    select_deps = [{
+        "//:grpc_postmortem_checks_enabled": [":postmortem"],
+        "//conditions:default": [],
+    }],
     deps = [
-        "postmortem",
     ],
 )
 
