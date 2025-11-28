@@ -479,7 +479,7 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
     if (!status.IsOk()) {
       return status;
     }
-    transport_settings_->AddSettingsToPendingList(std::move(frame.settings));
+    transport_settings_->BufferPeerSettings(std::move(frame.settings));
     settings_.OnSettingsReceived();
     SpawnGuardedTransportParty("SettingsAck", TriggerWriteCycle());
   } else {
@@ -982,7 +982,7 @@ auto Http2ClientTransport::ProcessAndWriteControlFrames() {
 
   goaway_manager_.MaybeGetSerializedGoawayFrame(output_buf);
   http2::Http2ErrorCode apply_status = settings_.ApplyIncomingSettings(
-      transport_settings_->TakePendingSettings());
+      transport_settings_->TakeBufferedPeerSettings());
   if (!goaway_manager_.IsImmediateGoAway() &&
       apply_status == http2::Http2ErrorCode::kNoError) {
     EnforceLatestIncomingSettings();
@@ -1327,7 +1327,7 @@ void Http2ClientTransport::MaybeSpawnWaitForSettingsTimeout() {
   // Settings class.
   // TODO(tjagtap) [PH2][P1][Settings] Add more DCHECKs to the new settings
   // class.
-  if (transport_settings_->ShouldSpawnTimeoutWaiter()) {
+  if (transport_settings_->ShouldSpawnWaitForSettingsTimeout()) {
     GRPC_HTTP2_CLIENT_DLOG
         << "Http2ClientTransport::MaybeSpawnWaitForSettingsTimeout Spawning";
     settings_.SetPreviousSettingsPromiseResolved(false);
