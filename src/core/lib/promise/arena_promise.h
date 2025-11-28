@@ -167,9 +167,11 @@ struct SharedCallable {
     return (*reinterpret_cast<Callable*>(arg))();
   }
 
-  static void ToProto(const ArgType* arg, grpc_channelz_v2_Promise* promise_proto,
+  static void ToProto(const ArgType* arg,
+                      grpc_channelz_v2_Promise* promise_proto,
                       upb_Arena* arena) {
-    PromiseAsProto(*reinterpret_cast<const Callable*>(arg), promise_proto, arena);
+    PromiseAsProto(*reinterpret_cast<const Callable*>(arg), promise_proto,
+                   arena);
   }
 };
 
