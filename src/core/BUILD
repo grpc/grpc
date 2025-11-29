@@ -170,8 +170,6 @@ grpc_cc_library(
         "//:grpc_postmortem_checks_enabled": [":postmortem"],
         "//conditions:default": [],
     }],
-    deps = [
-    ],
 )
 
 grpc_cc_library(

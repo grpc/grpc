@@ -2069,8 +2069,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/util/posix/thd.cc )
   s.files += %w( src/core/util/posix/time.cc )
   s.files += %w( src/core/util/posix/tmpfile.cc )
-  s.files += %w( src/core/util/postmortem_emit.cc )
-  s.files += %w( src/core/util/postmortem_emit.h )
   s.files += %w( src/core/util/random_early_detection.cc )
   s.files += %w( src/core/util/random_early_detection.h )
   s.files += %w( src/core/util/ref_counted.h )
