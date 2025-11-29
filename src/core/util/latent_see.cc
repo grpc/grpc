@@ -151,11 +151,11 @@ void Collect(Notification* n, absl::Duration timeout, size_t memory_limit,
   mu->Lock();
   // First we enable the appender and then wait for a short time to clear out
   // any backoff
-  LOG(INFO) << "Latent-see collection enabling";
+  DLOG(INFO) << "Latent-see collection enabling";
   Appender::Enable(sink);
   absl::SleepFor(2 * absl::Milliseconds(kMaxBackoff.millis()));
   // Now we start the collection
-  LOG(INFO) << "Latent-see collection recording";
+  DLOG(INFO) << "Latent-see collection recording";
   sink->Start(memory_limit / sizeof(Bin) + 1);
   // If we got a Notification object, use that to sleep until we're notified;
   // if not just sleep.
@@ -165,14 +165,14 @@ void Collect(Notification* n, absl::Duration timeout, size_t memory_limit,
     n->WaitForNotificationWithTimeout(timeout);
   }
   // Grab all events
-  LOG(INFO) << "Latent-see collection stopping";
+  DLOG(INFO) << "Latent-see collection stopping";
   auto events = sink->Stop();
   // Disable the sink
   Appender::Disable();
   mu->Unlock();
   CHECK(events != nullptr);
-  LOG(INFO) << "Latent-see collection stopped: processing " << events->size()
-            << " bins";
+  DLOG(INFO) << "Latent-see collection stopped: processing " << events->size()
+             << " bins";
 
   // Next: find the earliest timestamp
   // We save a lot of bytes by subtracting that out
@@ -229,7 +229,7 @@ void Collect(Notification* n, absl::Duration timeout, size_t memory_limit,
     }
   }
   output->Finish();
-  LOG(INFO) << "Latent-see collection complete";
+  DLOG(INFO) << "Latent-see collection complete";
 }
 
 }  // namespace latent_see
