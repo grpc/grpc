@@ -1440,6 +1440,7 @@ Http2ClientTransport::Http2ClientTransport(
   SourceConstructed();
 
   InitLocalSettings(settings_.mutable_local(), /*is_client=*/true);
+  ReadChannelArgs(channel_args);
   ReadSettingsFromChannelArgs(channel_args, settings_.mutable_local(),
                               flow_control_, /*is_client=*/true);
 
@@ -1478,6 +1479,22 @@ void Http2ClientTransport::SpawnTransportLoops() {
   SpawnGuardedTransportParty("MultiplexerLoop",
                              UntilTransportClosed(MultiplexerLoop()));
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::SpawnTransportLoops End";
+}
+
+void Http2ClientTransport::ReadChannelArgs(const ChannelArgs& channel_args) {
+  const int initial_sequence_number =
+      channel_args.GetInt(GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER).value_or(-1);
+
+  if (initial_sequence_number >= 0) {
+    if (initial_sequence_number & 1) {
+      next_stream_id_ = initial_sequence_number;
+      GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::ReadChannelArgs for "
+                                "initial sequence number: "
+                             << initial_sequence_number;
+    } else {
+      LOG(ERROR) << "Initial sequence number MUST be odd. Ignoring the value.";
+    }
+  }
 }
 
 // This function MUST be idempotent. This function MUST be called from the
@@ -1541,7 +1558,7 @@ void Http2ClientTransport::CloseStream(RefCountedPtr<Stream> stream,
         // code to use here? IMO it should be kNoError.
         close_transport_error.emplace(Http2Status::Http2ConnectionError(
             Http2ErrorCode::kInternalError,
-            "Received GOAWAY frame and no more streams to close."));
+            "Closing last stream and cannot create any more streams."));
       }
     }
   }
@@ -1613,6 +1630,7 @@ void Http2ClientTransport::BeginCloseStream(
     if (!reset_stream_error_code) {
       // Callers taking this path:
       // 1. Reading a RST stream frame (will not send any frame out).
+      // 2. Closing a stream before initial metadata is sent.
       close_reads = true;
       close_writes = true;
       GRPC_HTTP2_CLIENT_DLOG
