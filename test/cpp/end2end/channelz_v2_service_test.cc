@@ -172,7 +172,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
   static void SetUpTestSuite() {
 #if TARGET_OS_IPHONE
     // Workaround Apple CFStream bug
-    grpc_core::SetEnv("grpc_cfstream", "0");
+    // grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
   }
   void SetUp() override {

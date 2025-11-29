@@ -1524,7 +1524,7 @@ TEST_P(ClientCallbackEnd2endTest,
 std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
-  grpc_core::SetEnv("grpc_cfstream", "0");
+  // grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
 
   std::vector<TestScenario> scenarios;

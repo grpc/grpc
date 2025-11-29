@@ -2259,7 +2259,7 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
   grpc_core::ConfigVars::SetOverrides(overrides);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
-  grpc_core::SetEnv("grpc_cfstream", "0");
+  // grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
 
   if (test_secure) {
