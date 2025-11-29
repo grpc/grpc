@@ -543,6 +543,7 @@ static const tsi_zero_copy_grpc_protector_vtable
         fake_zero_copy_grpc_protector_destroy,
         fake_zero_copy_grpc_protector_max_frame_size,
         fake_zero_copy_grpc_protector_read_frame_size,
+        nullptr /* set_allocator */
 };
 
 // --- tsi_handshaker_result methods implementation. ---
