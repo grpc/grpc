@@ -66,15 +66,6 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
                                  chttp2::TransportFlowControl& flow_control,
                                  const bool is_client);
 
-// Appends SETTINGS and SETTINGS ACK frames to output_buf if needed.
-// A SETTINGS frame is appended if local settings changed.
-// SETTINGS ACK frames are appended for any incoming settings that need
-// acknowledgment.
-void MaybeGetSettingsAndSettingsAckFrames(
-    chttp2::TransportFlowControl& flow_control, Http2SettingsManager& settings,
-    RefCountedPtr<SettingsPromiseManager> transport_settings,
-    SliceBuffer& output_buf);
-
 ///////////////////////////////////////////////////////////////////////////////
 // ChannelZ helpers
 

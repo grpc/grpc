@@ -22,12 +22,15 @@
 #include <grpc/support/port_platform.h>
 
 #include <algorithm>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
@@ -41,6 +44,7 @@
 #include "src/core/util/time.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 
@@ -147,6 +151,34 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
   // written to apply the settings. The return value MUST be used.
   std::vector<Http2SettingsFrame::Setting> TakeBufferedPeerSettings() {
     return std::exchange(pending_peer_settings_, {});
+  }
+
+  // Appends SETTINGS and SETTINGS ACK frames to output_buf if needed.
+  // A SETTINGS frame is appended if local settings changed.
+  // SETTINGS ACK frames are appended for any incoming settings that need
+  // acknowledgment.
+  void MaybeGetSettingsAndSettingsAckFrames(
+      chttp2::TransportFlowControl& flow_control,
+      Http2SettingsManager& settings, SliceBuffer& output_buf) {
+    GRPC_SETTINGS_TIMEOUT_DLOG << "MaybeGetSettingsAndSettingsAckFrames";
+    std::optional<Http2Frame> settings_frame = settings.MaybeSendUpdate();
+    if (settings_frame.has_value()) {
+      GRPC_SETTINGS_TIMEOUT_DLOG
+          << "MaybeGetSettingsAndSettingsAckFrames Frame Settings ";
+      Serialize(absl::Span<Http2Frame>(&settings_frame.value(), 1), output_buf);
+      flow_control.FlushedSettings();
+      WillSendSettings();
+    }
+    const uint32_t num_acks = settings.MaybeSendAck();
+    if (num_acks > 0) {
+      std::vector<Http2Frame> ack_frames(num_acks);
+      for (uint32_t i = 0; i < num_acks; ++i) {
+        ack_frames[i] = Http2SettingsFrame{true, {}};
+      }
+      Serialize(absl::MakeSpan(ack_frames), output_buf);
+      GRPC_SETTINGS_TIMEOUT_DLOG << "Sending " << num_acks
+                                 << " settings ACK frames";
+    }
   }
 
  private:

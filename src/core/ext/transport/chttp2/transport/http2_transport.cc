@@ -140,30 +140,6 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
       << "}";
 }
 
-void MaybeGetSettingsAndSettingsAckFrames(
-    chttp2::TransportFlowControl& flow_control, Http2SettingsManager& settings,
-    RefCountedPtr<SettingsPromiseManager> transport_settings,
-    SliceBuffer& output_buf) {
-  GRPC_HTTP2_COMMON_DLOG << "MaybeGetSettingsAndSettingsAckFrames";
-  std::optional<Http2Frame> settings_frame = settings.MaybeSendUpdate();
-  if (settings_frame.has_value()) {
-    GRPC_HTTP2_COMMON_DLOG
-        << "MaybeGetSettingsAndSettingsAckFrames Frame Settings ";
-    Serialize(absl::Span<Http2Frame>(&settings_frame.value(), 1), output_buf);
-    flow_control.FlushedSettings();
-    transport_settings->WillSendSettings();
-  }
-  const uint32_t num_acks = settings.MaybeSendAck();
-  if (num_acks > 0) {
-    std::vector<Http2Frame> ack_frames(num_acks);
-    for (uint32_t i = 0; i < num_acks; ++i) {
-      ack_frames[i] = Http2SettingsFrame{true, {}};
-    }
-    Serialize(absl::MakeSpan(ack_frames), output_buf);
-    GRPC_HTTP2_COMMON_DLOG << "Sending " << num_acks << " settings ACK frames";
-  }
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 // ChannelZ helpers
 

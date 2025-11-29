@@ -966,8 +966,8 @@ auto Http2ClientTransport::ProcessAndWriteControlFrames() {
                               "GRPC_CHTTP2_CLIENT_CONNECT_STRING";
     output_buf.Append(
         Slice::FromCopiedString(GRPC_CHTTP2_CLIENT_CONNECT_STRING));
-    MaybeGetSettingsAndSettingsAckFrames(flow_control_, settings_,
-                                         transport_settings_, output_buf);
+    transport_settings_->MaybeGetSettingsAndSettingsAckFrames(
+        flow_control_, settings_, output_buf);
     SpawnGuardedTransportParty("ReadLoop", UntilTransportClosed(ReadLoop()));
     is_first_write_ = false;
   }
@@ -986,8 +986,8 @@ auto Http2ClientTransport::ProcessAndWriteControlFrames() {
   if (!goaway_manager_.IsImmediateGoAway() &&
       apply_status == http2::Http2ErrorCode::kNoError) {
     EnforceLatestIncomingSettings();
-    MaybeGetSettingsAndSettingsAckFrames(flow_control_, settings_,
-                                         transport_settings_, output_buf);
+    transport_settings_->MaybeGetSettingsAndSettingsAckFrames(
+        flow_control_, settings_, output_buf);
     ping_manager_.MaybeGetSerializedPingFrames(output_buf,
                                                NextAllowedPingInterval());
     MaybeGetWindowUpdateFrames(output_buf);
