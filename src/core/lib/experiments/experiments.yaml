@@ -47,6 +47,11 @@
   owner: roth@google.com
   test_tags: []
   allow_in_fuzzing_config: false
+- name: call_tracer_send_initial_metadata_is_an_annotation
+  description: Use the new annotation-based CallTracer API.
+  expiry: 2026/02/01
+  owner: ctiller@google.com
+  test_tags: []
 - name: channelz_use_v2_for_v1_api
   description: Use the v2 channelz API for the v1 channelz API.
   expiry: 2026/02/01
