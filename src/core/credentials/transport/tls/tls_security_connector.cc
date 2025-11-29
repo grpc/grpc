@@ -219,8 +219,7 @@ tsi_ssl_pem_key_cert_pair* ConvertToTsiPemKeyCertPair(
   size_t num_key_cert_pairs = cert_pair_list.size();
   if (num_key_cert_pairs > 0) {
     GRPC_CHECK_NE(cert_pair_list.data(), nullptr);
-    tsi_pairs = static_cast<tsi_ssl_pem_key_cert_pair*>(
-        gpr_zalloc(num_key_cert_pairs * sizeof(tsi_ssl_pem_key_cert_pair)));
+    tsi_pairs = new tsi_ssl_pem_key_cert_pair[num_key_cert_pairs];
   }
   for (size_t i = 0; i < num_key_cert_pairs; i++) {
     GRPC_CHECK(!cert_pair_list[i].private_key().empty());

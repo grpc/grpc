@@ -43,6 +43,7 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/load_file.h"
+#include "src/core/util/match.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/useful.h"
 #include "absl/log/log.h"
@@ -156,10 +157,13 @@ void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair* kp,
                                              size_t num_key_cert_pairs) {
   if (kp == nullptr) return;
   for (size_t i = 0; i < num_key_cert_pairs; i++) {
-    gpr_free(const_cast<char*>(kp[i].private_key));
     gpr_free(const_cast<char*>(kp[i].cert_chain));
+    if (const auto* key_view =
+            std::get_if<absl::string_view>(&kp[i].private_key)) {
+      gpr_free(const_cast<char*>(key_view->data()));
+    }
   }
-  gpr_free(kp);
+  delete[] kp;
 }
 
 namespace grpc_core {
@@ -454,9 +458,10 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
   } else {
     options.root_cert_info = std::move(root_cert_info);
   }
-  bool has_key_cert_pair = pem_key_cert_pair != nullptr &&
-                           pem_key_cert_pair->private_key != nullptr &&
-                           pem_key_cert_pair->cert_chain != nullptr;
+  bool has_key_cert_pair =
+      pem_key_cert_pair != nullptr &&
+      !grpc_core::IsPrivateKeyEmpty(&pem_key_cert_pair->private_key) &&
+      pem_key_cert_pair->cert_chain != nullptr;
   options.root_store = root_store;
   options.alpn_protocols =
       grpc_fill_alpn_protocol_strings(&options.num_alpn_protocols);
@@ -568,6 +573,18 @@ grpc_arg grpc_ssl_session_cache_create_channel_arg(
 // --- Default SSL root store implementation. ---
 
 namespace grpc_core {
+
+bool IsPrivateKeyEmpty(const PrivateKey* private_key) {
+  if (private_key == nullptr) return true;
+  return Match(
+      *private_key,
+      [&](const absl::string_view& pem_root_certs) {
+        return pem_root_certs.empty();
+      },
+      [&](const CustomPrivateKeySign& key_sign) {
+        return key_sign == nullptr;
+      });
+}
 
 tsi_ssl_root_certs_store* DefaultSslRootStore::default_root_store_;
 grpc_slice DefaultSslRootStore::default_pem_root_certs_;
