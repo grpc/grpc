@@ -13,7 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+echo -e "System: $(uname -a)\n"
+echo -e "-- OS --\n$(lsb_release -a 2>/dev/null)\n"
+echo -e "-- CPU --\n$(lscpu)\n"
+echo -e "-- Memory --\n$(lsmem --summary)\n$(free -h --si)\n"
+echo -e "-- Block devices --\n$(lsblk --all --fs --paths)\n"
+
 set -ex
+
+# Prepend verbose mode commands (xtrace) with the date.
+PS4='+ $(date "+[%H:%M:%S %Z]")\011 '
+echo "Started grpc_run_tests_harness_test.sh"
 
 if [ "${GRPC_RUNTESTS_USE_LOGIN_SHELL}" != "" ]
 then
@@ -40,7 +50,19 @@ then
   source "../${GRPC_RUNTESTS_PREPARE_SCRIPT}"
 fi
 
-python3 tools/run_tests/run_tests.py -t -j "$(nproc)" -x "${REPORT_XML_FILE}" --report_suite_name "${REPORT_SUITE_NAME}" "$@" || FAILED="true"
+# Passed to build_cxx.sh via GRPC_RUN_TESTS_JOBS
+NPROC="$(nproc)"
+JOBS="${NPROC:-1}"
+# JOBS="$((${NPROC:-1} / 2 + 1))"
+
+python3 tools/run_tests/run_tests.py -t -j "${JOBS}" -x "${REPORT_XML_FILE}" --report_suite_name "${REPORT_SUITE_NAME}" "$@" || FAILED="true"
+
+echo "Finished grpc_run_tests_harness_test.sh"
+
+{ set +x; } 2>/dev/null
+echo -e "-- Memory --\n$(lsmem --summary)\n$(free -h --si)\n"
+echo -e "-- Block devices --\n$(lsblk --all --fs --paths)\n"
+set -x
 
 if [ -x "$(command -v ccache)" ]
 then

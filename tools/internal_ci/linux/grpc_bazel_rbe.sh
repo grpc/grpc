@@ -15,6 +15,10 @@
 
 set -ex
 
+# Prepend verbose mode commands (xtrace) with the date.
+PS4='+ $(date "+[%H:%M:%S %Z]")\011 '
+echo "Started grpc_bazel_rbe.sh"
+
 # avoid slow finalization after the script has exited.
 source $(dirname $0)/../../../tools/internal_ci/helper_scripts/move_src_tree_and_respawn_itself_rc
 
@@ -37,3 +41,5 @@ bazel_rbe/bazel_wrapper \
   --profile=bazel_rbe/profile.json \
   "$@" \
   -- ${BAZEL_TESTS:-//test/...}
+
+echo "Finished grpc_bazel_rbe.sh"
