@@ -62,9 +62,10 @@ void JsonOutput::FlowBegin(absl::string_view name, int64_t tid,
 
 void JsonOutput::FlowEnd(absl::string_view name, int64_t tid, int64_t timestamp,
                          int64_t flow_id) {
-  out_ << absl::StrCat(sep_, "{\"name\":\"", name,
-                       "\",\"ph\":\"f\",\"ts\":", MicrosString(timestamp),
-                       ",\"pid\":0,\"tid\":", tid, ",\"id\":", flow_id, "}");
+  out_ << absl::StrCat(
+      sep_, "{\"name\":\"", name,
+      "\",\"ph\":\"f\",\"bp\":\"e\",\"ts\":", MicrosString(timestamp),
+      ",\"pid\":0,\"tid\":", tid, ",\"id\":", flow_id, "}");
   sep_ = ",\n";
 }
 
@@ -190,6 +191,10 @@ void Collect(Notification* n, absl::Duration timeout, size_t memory_limit,
     }
   }
   std::string json = "[\n";
+  // Add a mark for the actual timestamp when collection started.
+  output->Mark(
+      "LatentseeCollectionStart", /*tid=*/0, /*timestamp=*/0,
+      channelz::PropertyList().Set("actual_start_time", earliest_timestamp));
   // TODO(ctiller): Fuschia Trace Format backend
   absl::flat_hash_map<gpr_thd_id, size_t> thread_id_map;
   for (const auto& bin : *events) {
