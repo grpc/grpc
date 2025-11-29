@@ -76,7 +76,7 @@ TEST(TlsCredentialsOptionsComparatorTest, DifferentCertificateVerifier) {
   auto* options_1 = grpc_tls_credentials_options_create();
   auto* options_2 = grpc_tls_credentials_options_create();
   options_1->set_certificate_verifier(MakeRefCounted<HostNameCertificateVerifier>());
-  options_2->set_certificate_verifier(MakeRefCounted<XdsCertificateVerifier>(nullptr));
+  options_2->set_certificate_verifier(MakeRefCounted<XdsCertificateVerifier>(nullptr, ""));
   EXPECT_FALSE(*options_1 == *options_2);
   EXPECT_FALSE(*options_2 == *options_1);
   delete options_1;
@@ -177,6 +177,16 @@ TEST(TlsCredentialsOptionsComparatorTest, DifferentSendClientCaListValues) {
   auto* options_2 = grpc_tls_credentials_options_create();
   options_1->set_send_client_ca_list(false);
   options_2->set_send_client_ca_list(true);
+  EXPECT_FALSE(*options_1 == *options_2);
+  EXPECT_FALSE(*options_2 == *options_1);
+  delete options_1;
+  delete options_2;
+}
+TEST(TlsCredentialsOptionsComparatorTest, DifferentSniOverride) {
+  auto* options_1 = grpc_tls_credentials_options_create();
+  auto* options_2 = grpc_tls_credentials_options_create();
+  options_1->set_sni_override("sni_override_1");
+  options_2->set_sni_override("sni_override_2");
   EXPECT_FALSE(*options_1 == *options_2);
   EXPECT_FALSE(*options_2 == *options_1);
   delete options_1;

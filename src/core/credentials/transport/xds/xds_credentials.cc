@@ -30,6 +30,7 @@
 #include "src/core/credentials/transport/tls/tls_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
+#include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/useful.h"
 #include "src/core/xds/grpc/xds_certificate_provider.h"
@@ -37,6 +38,15 @@
 namespace grpc_core {
 
 namespace {
+
+// TODO(mlumish): Remove this after 1.80
+bool UseChannelAuthorityIfNoSNIApplicable() {
+  auto value = GetEnv("GRPC_USE_CHANNEL_AUTHORITY_IF_NO_SNI_APPLICABLE");
+  if (!value.has_value()) return false;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
 
 bool XdsVerifySubjectAlternativeNames(
     const char* const* subject_alternative_names,
@@ -73,28 +83,44 @@ bool XdsVerifySubjectAlternativeNames(
 //
 
 XdsCertificateVerifier::XdsCertificateVerifier(
-    RefCountedPtr<XdsCertificateProvider> xds_certificate_provider)
-    : xds_certificate_provider_(std::move(xds_certificate_provider)) {}
+    RefCountedPtr<XdsCertificateProvider> xds_certificate_provider,
+    absl::string_view sni_name)
+    : xds_certificate_provider_(std::move(xds_certificate_provider)),
+      sni_name_(sni_name) {}
 
 bool XdsCertificateVerifier::Verify(
     grpc_tls_custom_verification_check_request* request,
     std::function<void(absl::Status)>, absl::Status* sync_status) {
   GRPC_CHECK_NE(request, nullptr);
-  if (!XdsVerifySubjectAlternativeNames(
-          request->peer_info.san_names.uri_names,
-          request->peer_info.san_names.uri_names_size,
-          xds_certificate_provider_->san_matchers()) &&
-      !XdsVerifySubjectAlternativeNames(
-          request->peer_info.san_names.ip_names,
-          request->peer_info.san_names.ip_names_size,
-          xds_certificate_provider_->san_matchers()) &&
-      !XdsVerifySubjectAlternativeNames(
-          request->peer_info.san_names.dns_names,
-          request->peer_info.san_names.dns_names_size,
-          xds_certificate_provider_->san_matchers())) {
-    *sync_status = absl::Status(
-        absl::StatusCode::kUnauthenticated,
-        "SANs from certificate did not match SANs from xDS control plane");
+  /* sni_name_ is "" if neither option for setting SNI is configured. In that
+   * case, even if SAN validation is configured, we don't try to do SNI SAN
+   * validation, and instead fall back to regular SAN validation. */
+  if (xds_certificate_provider_->auto_sni_san_validation() &&
+      !sni_name_.empty()) {
+    if (!XdsVerifySubjectAlternativeNames(
+            request->peer_info.san_names.dns_names,
+            request->peer_info.san_names.dns_names_size,
+            {StringMatcher::Create(StringMatcher::Type::kExact, sni_name_, true)
+                 .value()})) {
+      *sync_status = absl::UnauthenticatedError(
+          "SANs from certificate did not match SNI from xDS control plane");
+    }
+  } else {
+    if (!XdsVerifySubjectAlternativeNames(
+            request->peer_info.san_names.uri_names,
+            request->peer_info.san_names.uri_names_size,
+            xds_certificate_provider_->san_matchers()) &&
+        !XdsVerifySubjectAlternativeNames(
+            request->peer_info.san_names.ip_names,
+            request->peer_info.san_names.ip_names_size,
+            xds_certificate_provider_->san_matchers()) &&
+        !XdsVerifySubjectAlternativeNames(
+            request->peer_info.san_names.dns_names,
+            request->peer_info.san_names.dns_names_size,
+            xds_certificate_provider_->san_matchers())) {
+      *sync_status = absl::UnauthenticatedError(
+          "SANs from certificate did not match SANs from xDS control plane");
+    }
   }
   return true;  // synchronous check
 }
@@ -105,12 +131,19 @@ void XdsCertificateVerifier::Cancel(
 int XdsCertificateVerifier::CompareImpl(
     const grpc_tls_certificate_verifier* other) const {
   auto* o = static_cast<const XdsCertificateVerifier*>(other);
+  int compare_cert_provider;
   if (xds_certificate_provider_ == nullptr ||
       o->xds_certificate_provider_ == nullptr) {
-    return QsortCompare(xds_certificate_provider_,
-                        o->xds_certificate_provider_);
+    compare_cert_provider =
+        QsortCompare(xds_certificate_provider_, o->xds_certificate_provider_);
+  } else {
+    compare_cert_provider =
+        xds_certificate_provider_->Compare(o->xds_certificate_provider_.get());
   }
-  return xds_certificate_provider_->Compare(o->xds_certificate_provider_.get());
+  if (compare_cert_provider != 0) {
+    return compare_cert_provider;
+  }
+  return sni_name_.compare(o->sni_name_);
 }
 
 UniqueTypeName XdsCertificateVerifier::type() const {
@@ -156,9 +189,21 @@ XdsCredentials::create_security_connector(
         }
       }
       tls_credentials_options->set_verify_server_cert(true);
+      auto hostname = args->GetOwnedString(GRPC_ARG_ADDRESS_NAME);
+      if (xds_certificate_provider->auto_host_sni() && hostname.has_value()) {
+        tls_credentials_options->set_sni_override(hostname);
+      } else if (!xds_certificate_provider->sni().empty()) {
+        tls_credentials_options->set_sni_override(
+            xds_certificate_provider->sni());
+      } else {
+        if (!UseChannelAuthorityIfNoSNIApplicable()) {
+          tls_credentials_options->set_sni_override("");
+        }
+      }
       tls_credentials_options->set_certificate_verifier(
           MakeRefCounted<XdsCertificateVerifier>(
-              std::move(xds_certificate_provider)));
+              std::move(xds_certificate_provider),
+              tls_credentials_options->sni_override().value_or("")));
       tls_credentials_options->set_check_call_host(false);
       auto tls_credentials =
           MakeRefCounted<TlsCredentials>(std::move(tls_credentials_options));
