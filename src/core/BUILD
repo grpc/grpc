@@ -239,6 +239,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "tcp_telemetry",
+    hdrs = [
+        "lib/event_engine/tcp_telemetry.h",
+    ],
+    deps = [
+        "histogram",
+        "instrument",
+    ],
+)
+
+grpc_cc_library(
     name = "transport_framing_endpoint_extension",
     hdrs = [
         "lib/transport/transport_framing_endpoint_extension.h",
