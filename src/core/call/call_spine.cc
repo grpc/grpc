@@ -16,6 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/call/metadata.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/try_seq.h"
@@ -23,13 +24,13 @@
 
 namespace grpc_core {
 
-void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
-                 absl::AnyInvocable<void(ServerMetadata&)>
-                     on_server_trailing_metadata_from_initiator) {
-  call_handler.AddChildCall(call_initiator);
+void CallHandler::ForwardTo(CallInitiator call_initiator,
+                            absl::AnyInvocable<void(ServerMetadata&)>
+                                on_server_trailing_metadata_from_initiator) {
+  spine_->AddChildCall(call_initiator.spine_);
   // Read messages from handler into initiator.
-  call_handler.SpawnInfallible(
-      "read_messages", [call_handler, call_initiator]() mutable {
+  SpawnInfallible(
+      "read_messages", [call_handler = *this, call_initiator]() mutable {
         return Seq(
             ForEach(MessagesFrom(call_handler),
                     [call_initiator](MessageHandle msg) mutable {
@@ -42,7 +43,7 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
       });
   call_initiator.SpawnInfallible(
       "read_the_things",
-      [call_initiator, call_handler,
+      [call_initiator, call_handler = *this,
        on_server_trailing_metadata_from_initiator =
            std::move(on_server_trailing_metadata_from_initiator)]() mutable {
         return Seq(
@@ -78,12 +79,28 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
 }
 
 CallInitiatorAndHandler MakeCallPair(
-    ClientMetadataHandle client_initial_metadata, RefCountedPtr<Arena> arena) {
+    ClientMetadataHandle client_initial_metadata,
+    CallArenaSource arena_source) {
+  auto arena = arena_source.Take();
   DCHECK_NE(arena.get(), nullptr);
   DCHECK_NE(arena->GetContext<grpc_event_engine::experimental::EventEngine>(),
             nullptr);
   auto spine =
       CallSpine::Create(std::move(client_initial_metadata), std::move(arena));
+  return {CallInitiator(spine), UnstartedCallHandler(spine)};
+}
+
+CallInitiatorAndHandler CallHandler::MakeChildCall(
+    ClientMetadataHandle client_initial_metadata,
+    CallArenaSource arena_source) {
+  auto arena = arena_source.Take();
+  DCHECK_NE(arena.get(), nullptr);
+  arena->ForwardPropagateContextFrom(this->arena());
+  DCHECK_NE(arena->GetContext<grpc_event_engine::experimental::EventEngine>(),
+            nullptr);
+  auto spine =
+      CallSpine::Create(std::move(client_initial_metadata), std::move(arena));
+  spine_->AddChildCall(spine);
   return {CallInitiator(spine), UnstartedCallHandler(spine)};
 }
 
