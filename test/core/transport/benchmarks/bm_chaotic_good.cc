@@ -98,7 +98,8 @@ class ChaoticGoodTraits {
   class FakeServerConnectionFactory
       : public chaotic_good::ServerConnectionFactory {
    public:
-    chaotic_good::PendingConnection RequestDataConnection() override {
+    chaotic_good::PendingConnection RequestDataConnection(
+        const ChannelArgs& handshake_result_args) override {
       Crash("RequestDataConnection not implemented");
     }
     void Orphaned() override {}
