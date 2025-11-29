@@ -178,6 +178,17 @@ void CollectionScope::ForEachUniqueStorage(
   }
 }
 
+void CollectionScope::TestOnlyReset() {
+  for (auto& shard : storage_shards_) {
+    MutexLock lock(&shard.mu);
+    shard.storage.clear();
+  }
+  for (auto& shard : child_shards_) {
+    MutexLock lock(&shard.mu);
+    shard.children.clear();
+  }
+}
+
 RefCountedPtr<CollectionScope> CreateCollectionScope(
     std::vector<RefCountedPtr<CollectionScope>> parents,
     absl::Span<const std::string> labels, size_t child_shards_count,
@@ -870,8 +881,6 @@ uint64_t HighContentionBackend::Sum(size_t index) {
   return positive_sum - negative_sum;
 }
 
-namespace {
-
 class GlobalCollectionScopeManager {
  public:
   GlobalCollectionScopeManager(const GlobalCollectionScopeManager&) = delete;
@@ -943,6 +952,10 @@ class GlobalCollectionScopeManager {
     std::variant<Building, Published> state;
     MutexLock lock(&mu_);
     state = std::exchange(state_, Building{});
+    if (auto* published = std::get_if<Published>(&state);
+        published != nullptr) {
+      published->global_scope->TestOnlyReset();
+    }
   }
 
  private:
@@ -959,8 +972,6 @@ class GlobalCollectionScopeManager {
   Mutex mu_;
   std::variant<Building, Published> state_ ABSL_GUARDED_BY(mu_);
 };
-
-}  // namespace
 
 RefCountedPtr<CollectionScope> CreateRootCollectionScope(
     absl::Span<const std::string> labels, size_t child_shards_count,
