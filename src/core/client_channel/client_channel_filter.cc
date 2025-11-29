@@ -2499,9 +2499,6 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
         }
         lb_subchannel_call_tracker_ =
             std::move(complete_pick->subchannel_call_tracker);
-        if (lb_subchannel_call_tracker_ != nullptr) {
-          lb_subchannel_call_tracker_->Start();
-        }
         // Handle metadata mutations.
         MetadataMutationHandler::Apply(complete_pick->metadata_mutations,
                                        send_initial_metadata());
