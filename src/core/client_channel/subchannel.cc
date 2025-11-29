@@ -55,6 +55,7 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
+#include "src/core/transport/auth_context.h"
 #include "src/core/util/alloc.h"
 #include "src/core/util/backoff.h"
 #include "src/core/util/debug_location.h"
@@ -89,6 +90,48 @@
 namespace grpc_core {
 
 using ::grpc_event_engine::experimental::EventEngine;
+constexpr absl::string_view kSecurityLevelUnknown = "unknown";
+constexpr absl::string_view kSecurityLevelNone = "none";
+constexpr absl::string_view kSecurityLevelIntegrityOnly = "integrity_only";
+constexpr absl::string_view kSecurityLevelPrivacyAndIntegrity =
+    "privacy_and_integrity";
+
+// Metrics for tracking subchannel connection behavior (gRFC A94).
+// These metrics help monitor subchannel health and connection patterns.
+const auto kMetricDisconnections =
+    GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        "grpc.subchannel.disconnections",
+        "Number of times the selected subchannel becomes disconnected.",
+        "{disconnection}", false)
+        .Labels(kMetricLabelTarget)
+        .OptionalLabels(kMetricLabelBackendService, kMetricLabelLocality,
+                        "grpc.disconnect_error")
+        .Build();
+
+const auto kMetricConnectionAttemptsSucceeded =
+    GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        "grpc.subchannel.connection_attempts_succeeded",
+        "Number of successful connection attempts.", "{attempt}", false)
+        .Labels(kMetricLabelTarget)
+        .OptionalLabels(kMetricLabelBackendService, kMetricLabelLocality)
+        .Build();
+
+const auto kMetricConnectionAttemptsFailed =
+    GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        "grpc.subchannel.connection_attempts_failed",
+        "Number of failed connection attempts.", "{attempt}", false)
+        .Labels(kMetricLabelTarget)
+        .OptionalLabels(kMetricLabelBackendService, kMetricLabelLocality)
+        .Build();
+
+const auto kMetricOpenConnections =
+    GlobalInstrumentsRegistry::RegisterInt64UpDownCounter(
+        "grpc.subchannel.open_connections", "Number of open connections.",
+        "{connection}", false)
+        .Labels(kMetricLabelTarget)
+        .OptionalLabels("grpc.security_level", kMetricLabelBackendService,
+                        kMetricLabelLocality)
+        .Build();
 
 //
 // ConnectedSubchannel
@@ -98,7 +141,28 @@ ConnectedSubchannel::ConnectedSubchannel(const ChannelArgs& args)
     : RefCounted<ConnectedSubchannel>(
           GRPC_TRACE_FLAG_ENABLED(subchannel_refcount) ? "ConnectedSubchannel"
                                                        : nullptr),
-      args_(args) {}
+      args_(args) {
+  // Extract security level from auth context
+  absl::string_view security_level = kSecurityLevelUnknown;
+  auto auth_context = args.GetObjectRef<grpc_auth_context>();
+  if (auth_context != nullptr) {
+    grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
+        auth_context.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME);
+    const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
+    if (prop != nullptr) {
+      absl::string_view tsi_level(prop->value, prop->value_length);
+      // Map TSI level to metric label format
+      if (tsi_level == "TSI_SECURITY_NONE") {
+        security_level = kSecurityLevelNone;
+      } else if (tsi_level == "TSI_INTEGRITY_ONLY") {
+        security_level = kSecurityLevelIntegrityOnly;
+      } else if (tsi_level == "TSI_PRIVACY_AND_INTEGRITY") {
+        security_level = kSecurityLevelPrivacyAndIntegrity;
+      }
+    }
+  }
+  security_level_ = security_level;
+}
 
 //
 // LegacyConnectedSubchannel
@@ -422,6 +486,18 @@ class Subchannel::ConnectedSubchannelStateWatcher final
             << ": Connected subchannel " << connected_subchannel.get()
             << " reports " << ConnectivityStateName(new_state) << ": "
             << status;
+        // Record disconnection metrics
+        if (c->stats_plugin_group_ != nullptr) {
+          absl::string_view disconnect_reason =
+              c->shutdown_ ? "subchannel shutdown" : "unknown";
+          c->stats_plugin_group_->AddCounter(
+              kMetricDisconnections, 1, {c->target_},
+              {c->backend_service_, c->locality_, disconnect_reason});
+          c->stats_plugin_group_->AddCounter(
+              kMetricOpenConnections, -1, {c->target_},
+              {connected_subchannel->GetSecurityLevel(), c->backend_service_,
+               c->locality_});
+        }
         // If the subchannel was created from an endpoint, then we report
         // TRANSIENT_FAILURE here instead of IDLE. The subchannel will never
         // leave TRANSIENT_FAILURE state, because there is no way for us to
@@ -474,6 +550,50 @@ class Subchannel::ConnectionStateWatcher final
     RefCountedPtr<ConnectedSubchannel> connected_subchannel =
         std::move(subchannel_->connected_subchannel_);
     if (connected_subchannel == nullptr) return;
+    // Record disconnection metrics
+    if (subchannel_->stats_plugin_group_ != nullptr) {
+      // Determine disconnect reason from DisconnectInfo
+      std::string disconnect_reason;
+      if (subchannel_->shutdown_) {
+        disconnect_reason = "subchannel shutdown";
+      } else {
+        switch (disconnect_info.reason) {
+          case DisconnectReason::kGoaway:
+            if (disconnect_info.http2_error_code.has_value()) {
+              disconnect_reason = absl::StrCat(
+                  "goaway_",
+                  static_cast<int>(*disconnect_info.http2_error_code));
+            } else {
+              disconnect_reason = "goaway";
+            }
+            break;
+          case DisconnectReason::kConnectionReset:
+            disconnect_reason = "connection_reset";
+            break;
+          case DisconnectReason::kConnectionTimedOut:
+            disconnect_reason = "connection_timed_out";
+            break;
+          case DisconnectReason::kConnectionAborted:
+            disconnect_reason = "connection_aborted";
+            break;
+          case DisconnectReason::kSocketError:
+            disconnect_reason = "socket_error";
+            break;
+          case DisconnectReason::kUnknown:
+          default:
+            disconnect_reason = "unknown";
+            break;
+        }
+      }
+      subchannel_->stats_plugin_group_->AddCounter(
+          kMetricDisconnections, 1, {subchannel_->target_},
+          {subchannel_->backend_service_, subchannel_->locality_,
+           disconnect_reason});
+      subchannel_->stats_plugin_group_->AddCounter(
+          kMetricOpenConnections, -1, {subchannel_->target_},
+          {connected_subchannel->GetSecurityLevel(),
+           subchannel_->backend_service_, subchannel_->locality_});
+    }
     GRPC_TRACE_LOG(subchannel, INFO)
         << "subchannel " << subchannel_.get() << " "
         << subchannel_->key_.ToString() << ": connected subchannel "
@@ -609,7 +729,12 @@ Subchannel::Subchannel(SubchannelKey key,
       watcher_list_(this),
       work_serializer_(args_.GetObjectRef<EventEngine>()),
       backoff_(ParseArgsForBackoffValues(args_, &min_connect_timeout_)),
-      event_engine_(args_.GetObjectRef<EventEngine>()) {
+      event_engine_(args_.GetObjectRef<EventEngine>()),
+      stats_plugin_group_(
+          args_.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>()),
+      target_(args_.GetString(GRPC_ARG_DEFAULT_AUTHORITY).value_or("")),
+      backend_service_(args_.GetString(GRPC_ARG_BACKEND_SERVICE).value_or("")),
+      locality_(args_.GetString(GRPC_ARG_LB_LOCALITY).value_or("")) {
   // A grpc_init is added here to ensure that grpc_shutdown does not happen
   // until the subchannel is destroyed. Subchannels can persist longer than
   // channels because they maybe reused/shared among multiple channels. As a
@@ -881,6 +1006,12 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
                       std::to_string(time_until_next_attempt.millis()) + " ms");
     SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                grpc_error_to_absl_status(error));
+    // Record failed connection attempt
+    if (stats_plugin_group_ != nullptr) {
+      stats_plugin_group_->AddCounter(kMetricConnectionAttemptsFailed,
+                                      uint64_t(1), {target_},
+                                      {backend_service_, locality_});
+    }
     if (created_from_endpoint_) return;
     retry_timer_handle_ = event_engine_->RunAfter(
         time_until_next_attempt,
@@ -980,6 +1111,14 @@ bool Subchannel::PublishTransportLocked() {
     connected_subchannel_->StartWatch(
         pollset_set_, MakeOrphanable<ConnectedSubchannelStateWatcher>(
                           WeakRef(DEBUG_LOCATION, "state_watcher")));
+  }
+  // Record successful connection attempt
+  if (stats_plugin_group_ != nullptr) {
+    stats_plugin_group_->AddCounter(kMetricConnectionAttemptsSucceeded, 1,
+                                    {target_}, {backend_service_, locality_});
+    stats_plugin_group_->AddCounter(kMetricOpenConnections, 1, {target_},
+                                    {connected_subchannel_->GetSecurityLevel(),
+                                     backend_service_, locality_});
   }
   // Report initial state.
   SetConnectivityStateLocked(GRPC_CHANNEL_READY, absl::Status());
