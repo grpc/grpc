@@ -28,9 +28,12 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/channelz/property_list.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
@@ -158,10 +161,9 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
   // SETTINGS ACK frames are appended for any incoming settings that need
   // acknowledgment.
   void MaybeGetSettingsAndSettingsAckFrames(
-      chttp2::TransportFlowControl& flow_control,
-      Http2SettingsManager& settings, SliceBuffer& output_buf) {
+      chttp2::TransportFlowControl& flow_control, SliceBuffer& output_buf) {
     GRPC_SETTINGS_TIMEOUT_DLOG << "MaybeGetSettingsAndSettingsAckFrames";
-    std::optional<Http2Frame> settings_frame = settings.MaybeSendUpdate();
+    std::optional<Http2Frame> settings_frame = settings_.MaybeSendUpdate();
     if (settings_frame.has_value()) {
       GRPC_SETTINGS_TIMEOUT_DLOG
           << "MaybeGetSettingsAndSettingsAckFrames Frame Settings ";
@@ -169,7 +171,7 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
       flow_control.FlushedSettings();
       WillSendSettings();
     }
-    const uint32_t num_acks = settings.MaybeSendAck();
+    const uint32_t num_acks = settings_.MaybeSendAck();
     if (num_acks > 0) {
       std::vector<Http2Frame> ack_frames(num_acks);
       for (uint32_t i = 0; i < num_acks; ++i) {
@@ -181,7 +183,39 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
     }
   }
 
+  //////////////////////////////////////////////////////////////////////////////
+  // Wrappers around Http2SettingsManager
+
+  void OnSettingsReceived() { settings_.OnSettingsReceived(); }
+
+  Http2Settings& mutable_local() { return settings_.mutable_local(); }
+  Http2Settings& mutable_peer() { return settings_.mutable_peer(); }
+
+  const Http2Settings& local() const { return settings_.local(); }
+  const Http2Settings& acked() const { return settings_.acked(); }
+  const Http2Settings& peer() const { return settings_.peer(); }
+
+  channelz::PropertyGrid ChannelzProperties() const {
+    return settings_.ChannelzProperties();
+  }
+
+  http2::Http2ErrorCode ApplyIncomingSettings(
+      const std::vector<Http2SettingsFrame::Setting>& settings) {
+    return settings_.ApplyIncomingSettings(settings);
+  }
+
+  GRPC_MUST_USE_RESULT bool AckLastSend() { return settings_.AckLastSend(); }
+
+  GRPC_MUST_USE_RESULT bool IsPreviousSettingsPromiseResolved() const {
+    return settings_.IsPreviousSettingsPromiseResolved();
+  }
+  void SetPreviousSettingsPromiseResolved(const bool value) {
+    settings_.SetPreviousSettingsPromiseResolved(value);
+  }
+
  private:
+  Http2SettingsManager settings_;
+
   //////////////////////////////////////////////////////////////////////////////
   // Functions for SETTINGS being sent from our transport to the peer.
   void TimeoutWaiterSpawned() { should_wait_for_settings_ack_ = false; }
