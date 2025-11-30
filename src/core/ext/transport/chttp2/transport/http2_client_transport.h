@@ -101,7 +101,8 @@ namespace http2 {
 // [PH2][P3] MUST be fixed before Milestone 3 is considered complete.
 // [PH2][P4] Can be fixed after roll out begins. Evaluate these during
 //           Milestone 4. Either do the TODOs or delete them.
-// [PH2][P5] This MUST be a separate standalone project.
+// [PH2][P5] Can be fixed after roll out begins. Evaluate these during
+//           Milestone 4. Either do the TODOs or delete them.
 // [PH2][EXT] This is a TODO related to a project unrelated to PH2 but happening
 //            in parallel.
 
@@ -125,9 +126,6 @@ namespace http2 {
 // http2 rollout begins.
 class Http2ClientTransport final : public ClientTransport,
                                    public channelz::DataSource {
-  // TODO(tjagtap) : [PH2][P3] Move the definitions to the header for better
-  // inlining. For now definitions are in the cc file to
-  // reduce cognitive load in the header.
  public:
   Http2ClientTransport(
       PromiseEndpoint endpoint, GRPC_UNUSED const ChannelArgs& channel_args,
@@ -258,7 +256,7 @@ class Http2ClientTransport final : public ClientTransport,
   auto CallOutboundLoop(CallHandler call_handler, RefCountedPtr<Stream> stream,
                         ClientMetadataHandle metadata);
 
-  // TODO(akshitpatel) : [PH2][P3] : Make this a synchronous function.
+  // TODO(akshitpatel) : [PH2][P1] : Make this a synchronous function.
   // Force triggers a transport write cycle
   auto TriggerWriteCycle() {
     return Immediate(writable_stream_list_.ForceReadyForWrite());
