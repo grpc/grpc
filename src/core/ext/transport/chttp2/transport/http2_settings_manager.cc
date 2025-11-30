@@ -32,9 +32,6 @@
 namespace grpc_core {
 
 std::optional<Http2SettingsFrame> Http2SettingsManager::MaybeSendUpdate() {
-  if (!IsPreviousSettingsPromiseResolved()) {
-    return std::nullopt;
-  }
   switch (update_state_) {
     case UpdateState::kSending:
       return std::nullopt;
