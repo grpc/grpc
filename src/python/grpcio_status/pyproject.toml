@@ -26,7 +26,7 @@ description = "Status proto mapping for gRPC"
 readme = {file = "README.rst", content-type = "text/x-rst"}
 authors = [{name = "The gRPC Authors", email = "grpc-io@googlegroups.com"}]
 
-dynamic = ["dependencies", "version", "requires-python", "classifiers"]
+dynamic = ["classifiers", "dependencies", "version", "requires-python"]
 
 [project.urls]
 Homepage = "https://grpc.io"

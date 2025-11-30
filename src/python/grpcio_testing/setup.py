@@ -65,6 +65,9 @@ except ImportError:
 CLASSIFIERS = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
+] + [
+    f"Programming Language :: Python :: {x}"
+    for x in python_version.SUPPORTED_PYTHON_VERSIONS
 ]
 
 if __name__ == "__main__":
