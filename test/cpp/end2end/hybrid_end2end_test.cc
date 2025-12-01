@@ -231,12 +231,7 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
  protected:
   HybridEnd2endTest() {}
 
-  static void SetUpTestSuite() {
-#if TARGET_OS_IPHONE
-    // Workaround Apple CFStream bug
-    // grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
-  }
+  static void SetUpTestSuite() {}
 
   void SetUp() override {
     inproc_ = (::testing::UnitTest::GetInstance()

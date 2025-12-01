@@ -169,12 +169,7 @@ std::string RemoveWhitespaces(std::string input) {
 class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
  public:
   ChannelzServerTest() {}
-  static void SetUpTestSuite() {
-#if TARGET_OS_IPHONE
-    // Workaround Apple CFStream bug
-    // grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
-  }
+  static void SetUpTestSuite() {}
   void SetUp() override {
     grpc_init();
 
