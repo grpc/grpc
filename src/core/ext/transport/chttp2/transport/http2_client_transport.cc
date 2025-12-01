@@ -479,8 +479,7 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
     if (!status.IsOk()) {
       return status;
     }
-    pending_incoming_settings_.AddSettingsToPendingList(
-        std::move(frame.settings));
+    transport_settings_->BufferPeerSettings(std::move(frame.settings));
     settings_.OnSettingsReceived();
     SpawnGuardedTransportParty("SettingsAck", TriggerWriteCycle());
   } else {
@@ -967,8 +966,8 @@ auto Http2ClientTransport::ProcessAndWriteControlFrames() {
                               "GRPC_CHTTP2_CLIENT_CONNECT_STRING";
     output_buf.Append(
         Slice::FromCopiedString(GRPC_CHTTP2_CLIENT_CONNECT_STRING));
-    MaybeGetSettingsAndSettingsAckFrames(flow_control_, settings_,
-                                         transport_settings_, output_buf);
+    transport_settings_->MaybeGetSettingsAndSettingsAckFrames(
+        flow_control_, settings_, output_buf);
     SpawnGuardedTransportParty("ReadLoop", UntilTransportClosed(ReadLoop()));
     is_first_write_ = false;
   }
@@ -983,12 +982,12 @@ auto Http2ClientTransport::ProcessAndWriteControlFrames() {
 
   goaway_manager_.MaybeGetSerializedGoawayFrame(output_buf);
   http2::Http2ErrorCode apply_status = settings_.ApplyIncomingSettings(
-      pending_incoming_settings_.TakePendingSettings());
+      transport_settings_->TakeBufferedPeerSettings());
   if (!goaway_manager_.IsImmediateGoAway() &&
       apply_status == http2::Http2ErrorCode::kNoError) {
     EnforceLatestIncomingSettings();
-    MaybeGetSettingsAndSettingsAckFrames(flow_control_, settings_,
-                                         transport_settings_, output_buf);
+    transport_settings_->MaybeGetSettingsAndSettingsAckFrames(
+        flow_control_, settings_, output_buf);
     ping_manager_.MaybeGetSerializedPingFrames(output_buf,
                                                NextAllowedPingInterval());
     MaybeGetWindowUpdateFrames(output_buf);
@@ -1328,7 +1327,7 @@ void Http2ClientTransport::MaybeSpawnWaitForSettingsTimeout() {
   // Settings class.
   // TODO(tjagtap) [PH2][P1][Settings] Add more DCHECKs to the new settings
   // class.
-  if (transport_settings_->ShouldSpawnTimeoutWaiter()) {
+  if (transport_settings_->ShouldSpawnWaitForSettingsTimeout()) {
     GRPC_HTTP2_CLIENT_DLOG
         << "Http2ClientTransport::MaybeSpawnWaitForSettingsTimeout Spawning";
     settings_.SetPreviousSettingsPromiseResolved(false);
@@ -1385,7 +1384,7 @@ Http2ClientTransport::Http2ClientTransport(
           endpoint.GetEventEngineEndpoint(), channel_args)),
       event_engine_(std::move(event_engine)),
       endpoint_(std::move(endpoint)),
-      transport_settings_(MakeRefCounted<SettingsTimeoutManager>()),
+      transport_settings_(MakeRefCounted<SettingsPromiseManager>()),
       next_stream_id_(/*Initial Stream ID*/ 1),
       should_reset_ping_clock_(false),
       is_first_write_(true),

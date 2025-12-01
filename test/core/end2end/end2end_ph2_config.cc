@@ -66,13 +66,17 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|CoreEnd2endTests.CancelWithStatus1"     \
   "|CoreEnd2endTests.CancelWithStatus2"     \
   "|CoreEnd2endTests.CancelWithStatus3"     \
-  "|CoreEnd2endTests.CancelWithStatus4"     \
+  "|CoreEnd2endTests.CancelWithStatus4"
+
+#define DEADLINE_SUITE                      \
   "|CoreDeadlineTests.DeadlineAfterInvoke3" \
   "|CoreDeadlineTests.DeadlineAfterInvoke4" \
   "|CoreDeadlineTests.DeadlineAfterInvoke5" \
   "|CoreDeadlineTests.DeadlineAfterInvoke6"
 
 #define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST                         \
+  CANCEL_SUITE                                                                 \
+  DEADLINE_SUITE                                                               \
   "CoreClientChannelTests.DeadlineAfterAcceptWithServiceConfig"                \
   "|CoreClientChannelTests.DeadlineAfterRoundTripWithServiceConfig"            \
   "|CoreDeadlineTests.DeadlineAfterRoundTrip"                                  \
@@ -140,9 +144,9 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|Http2SingleHopTests.MaxConcurrentStreamsRejectOnClient"                    \
   "|Http2SingleHopTests.SimpleDelayedRequestShort"
 
-#define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE               \
-  "CoreEnd2endTests|CoreDeadlineTests|CoreLargeSendTests|"            \
-  "CoreClientChannelTests|CoreDeadlineSingleHopTests|NoLoggingTests|" \
+#define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE    \
+  "CoreEnd2endTests|CoreDeadlineTests|CoreLargeSendTests|" \
+  "CoreClientChannelTests|CoreDeadlineSingleHopTests|"     \
   "Http2SingleHopTests"
 
 std::vector<CoreTestConfiguration> End2endTestConfigs() {

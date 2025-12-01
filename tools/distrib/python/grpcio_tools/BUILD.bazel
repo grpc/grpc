@@ -32,6 +32,10 @@ cc_library(
     name = "protoc_lib",
     srcs = ["grpc_tools/main.cc"],
     hdrs = ["grpc_tools/main.h"],
+    # TODO(rishesh007): fix once grpc_plugin_support also has layering_check enabled
+    features = [
+        "-layering_check",
+    ],
     includes = ["."],
     deps = [
         "//src/compiler:grpc_plugin_support",

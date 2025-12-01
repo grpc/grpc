@@ -151,6 +151,7 @@ grpc_cc_library(
     hdrs = [
         "util/postmortem_emit.h",
     ],
+    defines = ["GRPC_POSTMORTEM_CHECKS"],
     deps = [
         "//:channelz",
         "//:stats",
@@ -165,8 +166,11 @@ grpc_cc_library(
         "absl/log:check",
         "absl/log",
     ],
+    select_deps = [{
+        "//:grpc_postmortem_checks_enabled": [":postmortem"],
+        "//conditions:default": [],
+    }],
     deps = [
-        "postmortem",
     ],
 )
 
@@ -1374,6 +1378,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "call_channelz_context",
+    hdrs = [
+        "call/channelz_context.h",
+    ],
+    deps = [
+        "arena",
+        "//:channelz",
+    ],
+)
+
+grpc_cc_library(
     name = "pipe",
     hdrs = [
         "lib/promise/pipe.h",
@@ -1385,6 +1400,7 @@ grpc_cc_library(
     deps = [
         "activity",
         "arena",
+        "channelz_property_list",
         "context",
         "grpc_check",
         "if",
@@ -8253,6 +8269,7 @@ grpc_cc_library(
         "absl/log:check",
         "absl/status",
         "absl/strings",
+        "absl/types:span",
     ],
     deps = [
         "activity",
@@ -8272,6 +8289,7 @@ grpc_cc_library(
         "time",
         "try_seq",
         "useful",
+        ":chttp2_flow_control",
         "//:chttp2_frame",
         "//:gpr_platform",
         "//:promise",
@@ -10157,6 +10175,7 @@ grpc_cc_library(
     deps = [
         "call_final_info",
         "call_state",
+        "channelz_property_list",
         "dump_args",
         "for_each",
         "grpc_check",
@@ -10303,6 +10322,7 @@ grpc_cc_library(
     deps = [
         "1999",
         "call_arena_allocator",
+        "call_channelz_context",
         "call_filters",
         "dual_ref_counted",
         "event_engine_context",
@@ -10317,6 +10337,7 @@ grpc_cc_library(
         "promise_status",
         "status_flag",
         "try_seq",
+        "//:channelz",
         "//:gpr",
         "//:promise",
     ],

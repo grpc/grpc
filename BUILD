@@ -93,6 +93,16 @@ bool_flag(
     build_setting_default = False,
 )
 
+bool_flag(
+    name = "postmortem_checks",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "grpc_postmortem_checks_enabled",
+    flag_values = {":postmortem_checks": "true"},
+)
+
 grpc_clang_cl_settings()
 
 config_setting(
@@ -2036,6 +2046,7 @@ grpc_cc_library(
         "channel_stack_builder",
         "channelz",
         "config",
+        "config_vars",
         "cpp_impl_of",
         "debug_location",
         "exec_ctx",

@@ -195,6 +195,7 @@ libs:
   - src/core/call/call_finalization.h
   - src/core/call/call_spine.h
   - src/core/call/call_state.h
+  - src/core/call/channelz_context.h
   - src/core/call/client_call.h
   - src/core/call/custom_metadata.h
   - src/core/call/filter_fusion.h
@@ -2397,6 +2398,7 @@ libs:
   - src/core/call/call_finalization.h
   - src/core/call/call_spine.h
   - src/core/call/call_state.h
+  - src/core/call/channelz_context.h
   - src/core/call/client_call.h
   - src/core/call/custom_metadata.h
   - src/core/call/filter_fusion.h
@@ -4600,6 +4602,7 @@ libs:
   - src/core/call/call_finalization.h
   - src/core/call/call_spine.h
   - src/core/call/call_state.h
+  - src/core/call/channelz_context.h
   - src/core/call/client_call.h
   - src/core/call/custom_metadata.h
   - src/core/call/interception_chain.h
@@ -6940,6 +6943,7 @@ targets:
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/core/call/call_filters.cc
   - src/core/call/call_state.cc
   - src/core/call/message.cc
@@ -7040,6 +7044,7 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+  - protobuf
   uses_polling: false
 - name: call_finalization_test
   gtest: true
@@ -7270,6 +7275,7 @@ targets:
   - src/core/call/call_finalization.h
   - src/core/call/call_spine.h
   - src/core/call/call_state.h
+  - src/core/call/channelz_context.h
   - src/core/call/client_call.h
   - src/core/call/custom_metadata.h
   - src/core/call/interception_chain.h
@@ -12460,6 +12466,7 @@ targets:
   - src/core/call/call_finalization.h
   - src/core/call/call_spine.h
   - src/core/call/call_state.h
+  - src/core/call/channelz_context.h
   - src/core/call/client_call.h
   - src/core/call/custom_metadata.h
   - src/core/call/filter_fusion.h
@@ -15420,6 +15427,7 @@ targets:
   - src/core/call/call_finalization.h
   - src/core/call/call_spine.h
   - src/core/call/call_state.h
+  - src/core/call/channelz_context.h
   - src/core/call/client_call.h
   - src/core/call/custom_metadata.h
   - src/core/call/interception_chain.h
@@ -16075,6 +16083,7 @@ targets:
   - src/core/call/call_finalization.h
   - src/core/call/call_spine.h
   - src/core/call/call_state.h
+  - src/core/call/channelz_context.h
   - src/core/call/client_call.h
   - src/core/call/custom_metadata.h
   - src/core/call/interception_chain.h
@@ -22539,6 +22548,7 @@ targets:
   - src/core/call/call_filters.h
   - src/core/call/call_spine.h
   - src/core/call/call_state.h
+  - src/core/call/channelz_context.h
   - src/core/call/custom_metadata.h
   - src/core/call/message.h
   - src/core/call/metadata.h
@@ -25735,6 +25745,7 @@ targets:
   - src/core/call/call_finalization.h
   - src/core/call/call_spine.h
   - src/core/call/call_state.h
+  - src/core/call/channelz_context.h
   - src/core/call/client_call.h
   - src/core/call/custom_metadata.h
   - src/core/call/interception_chain.h
