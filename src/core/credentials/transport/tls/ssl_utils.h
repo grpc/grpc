@@ -98,8 +98,8 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     tsi_ssl_client_handshaker_factory** handshaker_factory);
 
 grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
-    tsi_ssl_pem_key_cert_pair* key_cert_pairs, size_t num_key_cert_pairs,
-    std::shared_ptr<RootCertInfo> root_cert_info,
+    std::vector<tsi_ssl_pem_key_cert_pair> key_cert_pairs,
+    size_t num_key_cert_pairs, std::shared_ptr<RootCertInfo> root_cert_info,
     grpc_ssl_client_certificate_request_type client_certificate_request,
     tsi_tls_version min_tls_version, tsi_tls_version max_tls_version,
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
@@ -107,9 +107,6 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
     tsi_ssl_server_handshaker_factory** handshaker_factory);
 
-// Free the memory occupied by key cert pairs.
-void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair* kp,
-                                             size_t num_key_cert_pairs);
 // Exposed for testing only.
 grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
     const tsi_peer* peer, const char* transport_security_type);
@@ -121,9 +118,11 @@ int grpc_ssl_host_matches_name(const tsi_peer* peer,
 
 // --- Default SSL Root Store. ---
 namespace grpc_core {
-using PrivateKey = std::variant<absl::string_view, CustomPrivateKeySign>;
+using PrivateKey =
+    std::variant<std::string,
+                 std::shared_ptr<grpc_core::CustomPrivateKeySigner>>;
 
-bool IsPrivateKeyEmpty(const PrivateKey* private_key);
+bool IsPrivateKeyEmpty(const PrivateKey& private_key);
 
 // The class implements default SSL root store.
 class DefaultSslRootStore {
@@ -159,25 +158,16 @@ class DefaultSslRootStore {
 class PemKeyCertPair {
  public:
   PemKeyCertPair(PrivateKey private_key, absl::string_view cert_chain)
-      : cert_chain_(cert_chain) {
-    if (const auto* key_view = std::get_if<absl::string_view>(&private_key)) {
-      private_key_ = std::string(*key_view);
-    } else if (auto* key_sign_ptr =
-                   std::get_if<CustomPrivateKeySign>(&private_key)) {
-      private_key_sign_ = *key_sign_ptr;
-    }
-  }
+      : private_key_(std::move(private_key)), cert_chain_(cert_chain) {}
 
   // Movable.
   PemKeyCertPair(PemKeyCertPair&& other) noexcept {
     private_key_ = std::move(other.private_key_);
     cert_chain_ = std::move(other.cert_chain_);
-    private_key_sign_ = std::move(other.private_key_sign_);
   }
   PemKeyCertPair& operator=(PemKeyCertPair&& other) noexcept {
     private_key_ = std::move(other.private_key_);
     cert_chain_ = std::move(other.cert_chain_);
-    private_key_sign_ = std::move(other.private_key_sign_);
     return *this;
   }
 
@@ -187,7 +177,6 @@ class PemKeyCertPair {
   PemKeyCertPair& operator=(const PemKeyCertPair& other) {
     private_key_ = other.private_key();
     cert_chain_ = other.cert_chain();
-    private_key_sign_ = other.private_key_sign();
     return *this;
   }
 
@@ -196,16 +185,12 @@ class PemKeyCertPair {
            this->cert_chain() == other.cert_chain();
   }
 
-  const std::string& private_key() const { return private_key_; }
+  const PrivateKey& private_key() const { return private_key_; }
   const std::string& cert_chain() const { return cert_chain_; }
-  CustomPrivateKeySign private_key_sign() const { return private_key_sign_; }
 
  private:
-  std::string private_key_;
+  PrivateKey private_key_;
   std::string cert_chain_;
-  // Asynchronous private key signing function. Mutually exclusive with
-  // private_key.
-  CustomPrivateKeySign private_key_sign_;
 };
 
 using PemKeyCertPairList = std::vector<PemKeyCertPair>;

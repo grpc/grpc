@@ -99,8 +99,8 @@ struct grpc_tls_credentials_options
   void set_crl_directory(std::string crl_directory) { crl_directory_ = std::move(crl_directory); }
   void set_crl_provider(std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider) { crl_provider_ = std::move(crl_provider); }
   void set_send_client_ca_list(bool send_client_ca_list) { send_client_ca_list_ = send_client_ca_list; }
-  void set_identity_certificate_provider(std::shared_ptr<grpc_tls_certificate_provider> identity_certificate_provider) { identity_certificate_provider_ = std::move(identity_certificate_provider); }
-  void set_root_certificate_provider(std::shared_ptr<grpc_tls_certificate_provider> root_certificate_provider) { root_certificate_provider_ = std::move(root_certificate_provider); }
+  void set_identity_certificate_provider(grpc_core::RefCountedPtr<grpc_tls_certificate_provider> identity_certificate_provider) { identity_certificate_provider_ = std::move(identity_certificate_provider); }
+  void set_root_certificate_provider(grpc_core::RefCountedPtr<grpc_tls_certificate_provider> root_certificate_provider) { root_certificate_provider_ = std::move(root_certificate_provider); }
 
   bool operator==(const grpc_tls_credentials_options& other) const {
     return cert_request_type_ == other.cert_request_type_ &&
@@ -157,8 +157,8 @@ struct grpc_tls_credentials_options
   std::string crl_directory_;
   std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider_;
   bool send_client_ca_list_ = false;
-  std::shared_ptr<grpc_tls_certificate_provider> identity_certificate_provider_;
-  std::shared_ptr<grpc_tls_certificate_provider> root_certificate_provider_;
+  grpc_core::RefCountedPtr<grpc_tls_certificate_provider> identity_certificate_provider_;
+  grpc_core::RefCountedPtr<grpc_tls_certificate_provider> root_certificate_provider_;
 };
 
 #endif  // GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_GRPC_TLS_CREDENTIALS_OPTIONS_H

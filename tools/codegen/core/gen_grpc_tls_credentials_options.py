@@ -247,7 +247,7 @@ _DATA_MEMBERS = [
     ),
     DataMember(
         name="identity_certificate_provider",
-        type="std::shared_ptr<grpc_tls_certificate_provider>",
+        type="grpc_core::RefCountedPtr<grpc_tls_certificate_provider>",
         getter_comment=(
             "Returns the distributor from identity_certificate_provider_ if it"
             " is set, nullptr otherwise."
@@ -267,17 +267,17 @@ _DATA_MEMBERS = [
         ),
         test_name="DifferentIdentityCertificateProvider",
         test_value_1=(
-            'InMemoryCertificateProvider::CreateCertificateProvider("root_cert_1",'
+            'MakeRefCounted<InMemoryCertificateProvider>("root_cert_1",'
             " PemKeyCertPairList())"
         ),
         test_value_2=(
-            'InMemoryCertificateProvider::CreateCertificateProvider("root_cert_2",'
+            'MakeRefCounted<InMemoryCertificateProvider>("root_cert_2",'
             " PemKeyCertPairList())"
         ),
     ),
     DataMember(
         name="root_certificate_provider",
-        type="std::shared_ptr<grpc_tls_certificate_provider>",
+        type="grpc_core::RefCountedPtr<grpc_tls_certificate_provider>",
         getter_comment=(
             "Returns the distributor from root_certificate_provider_ if it is"
             " set, nullptr otherwise."
@@ -296,11 +296,11 @@ _DATA_MEMBERS = [
         ),
         test_name="DifferentRootCertificateProvider",
         test_value_1=(
-            'InMemoryCertificateProvider::CreateCertificateProvider("root_cert_1",'
+            'MakeRefCounted<InMemoryCertificateProvider>("root_cert_1",'
             " PemKeyCertPairList())"
         ),
         test_value_2=(
-            'InMemoryCertificateProvider::CreateCertificateProvider("root_cert_2",'
+            'MakeRefCounted<InMemoryCertificateProvider>("root_cert_2",'
             " PemKeyCertPairList())"
         ),
     ),

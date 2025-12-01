@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <memory>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "src/core/credentials/transport/tls/spiffe_utils.h"
@@ -75,8 +76,9 @@ absl::Status ValidateRootCertificates(const RootCertInfo* root_cert_info) {
 }
 
 absl::Status ValidatePemKeyCertPair(absl::string_view cert_chain,
-                                    absl::string_view private_key) {
-  if (cert_chain.empty() && private_key.empty()) return absl::OkStatus();
+                                    PrivateKey private_key) {
+  if (cert_chain.empty() && IsPrivateKeyEmpty(private_key))
+    return absl::OkStatus();
   // Check that the cert chain consists of valid PEM blocks.
   absl::StatusOr<std::vector<X509*>> parsed_certs =
       ParsePemCertificateChain(cert_chain);
@@ -89,9 +91,14 @@ absl::Status ValidatePemKeyCertPair(absl::string_view cert_chain,
   for (X509* x509 : *parsed_certs) {
     X509_free(x509);
   }
+
+  if (!std::holds_alternative<std::string>(private_key)) {
+    return absl::OkStatus();
+  }
+
   // Check that the private key consists of valid PEM blocks.
   absl::StatusOr<EVP_PKEY*> parsed_private_key =
-      ParsePemPrivateKey(private_key);
+      ParsePemPrivateKey(std::get<std::string>(private_key));
   if (!parsed_private_key.ok()) {
     return absl::Status(parsed_private_key.status().code(),
                         absl::StrCat("Failed to parse private key as PEM: ",
@@ -487,13 +494,6 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
 int64_t FileWatcherCertificateProvider::TestOnlyGetRefreshIntervalSecond()
     const {
   return refresh_interval_sec_;
-}
-
-std::shared_ptr<InMemoryCertificateProvider>
-InMemoryCertificateProvider::CreateCertificateProvider(
-    std::string root_certificates, PemKeyCertPairList pem_key_cert_pairs) {
-  return std::make_shared<InMemoryCertificateProvider>(root_certificates,
-                                                       pem_key_cert_pairs);
 }
 
 InMemoryCertificateProvider::InMemoryCertificateProvider(

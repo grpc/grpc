@@ -37,27 +37,27 @@ static int g_ssl_ctx_ex_private_key_function_index = -1;
 
 namespace grpc_core {
 
-absl::StatusOr<SignatureAlgorithm> ToSignatureAlgorithmClass(
-    uint16_t algorithm) {
+absl::StatusOr<CustomPrivateKeySigner::SignatureAlgorithm>
+ToSignatureAlgorithmClass(uint16_t algorithm) {
   switch (algorithm) {
     case SSL_SIGN_RSA_PKCS1_SHA256:
-      return SignatureAlgorithm::kRsaPkcs1Sha256;
+      return CustomPrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha256;
     case SSL_SIGN_RSA_PKCS1_SHA384:
-      return SignatureAlgorithm::kRsaPkcs1Sha384;
+      return CustomPrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha384;
     case SSL_SIGN_RSA_PKCS1_SHA512:
-      return SignatureAlgorithm::kRsaPkcs1Sha512;
+      return CustomPrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha512;
     case SSL_SIGN_ECDSA_SECP256R1_SHA256:
-      return SignatureAlgorithm::kEcdsaSecp256r1Sha256;
+      return CustomPrivateKeySigner::SignatureAlgorithm::kEcdsaSecp256r1Sha256;
     case SSL_SIGN_ECDSA_SECP384R1_SHA384:
-      return SignatureAlgorithm::kEcdsaSecp384r1Sha384;
+      return CustomPrivateKeySigner::SignatureAlgorithm::kEcdsaSecp384r1Sha384;
     case SSL_SIGN_ECDSA_SECP521R1_SHA512:
-      return SignatureAlgorithm::kEcdsaSecp521r1Sha512;
+      return CustomPrivateKeySigner::SignatureAlgorithm::kEcdsaSecp521r1Sha512;
     case SSL_SIGN_RSA_PSS_RSAE_SHA256:
-      return SignatureAlgorithm::kRsaPssRsaeSha256;
+      return CustomPrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha256;
     case SSL_SIGN_RSA_PSS_RSAE_SHA384:
-      return SignatureAlgorithm::kRsaPssRsaeSha384;
+      return CustomPrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha384;
     case SSL_SIGN_RSA_PSS_RSAE_SHA512:
-      return SignatureAlgorithm::kRsaPssRsaeSha512;
+      return CustomPrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha512;
   }
   return absl::InvalidArgumentError("Unknown signature algorithm.");
 }
@@ -121,11 +121,11 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
   if (!algorithm.ok()) {
     return ssl_private_key_failure;
   }
-  CustomPrivateKeySign* signature =
-      static_cast<CustomPrivateKeySign*>(SSL_CTX_get_ex_data(
+  CustomPrivateKeySigner* signer =
+      static_cast<CustomPrivateKeySigner*>(SSL_CTX_get_ex_data(
           SSL_get_SSL_CTX(ssl), g_ssl_ctx_ex_private_key_function_index));
-  (*signature)(absl::string_view(reinterpret_cast<const char*>(in), in_len),
-               *algorithm, std::move(done_callback));
+  signer->Sign(absl::string_view(reinterpret_cast<const char*>(in), in_len),
+               *algorithm, done_callback);
 
   // The operation is not completed. Tell BoringSSL to wait for the signature
   // result.

@@ -153,19 +153,6 @@ grpc_error_handle grpc_ssl_check_peer_name(absl::string_view peer_name,
   return absl::OkStatus();
 }
 
-void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair* kp,
-                                             size_t num_key_cert_pairs) {
-  if (kp == nullptr) return;
-  for (size_t i = 0; i < num_key_cert_pairs; i++) {
-    gpr_free(const_cast<char*>(kp[i].cert_chain));
-    if (const auto* key_view =
-            std::get_if<absl::string_view>(&kp[i].private_key)) {
-      gpr_free(const_cast<char*>(key_view->data()));
-    }
-  }
-  delete[] kp;
-}
-
 namespace grpc_core {
 
 absl::Status SslCheckCallHost(absl::string_view host,
@@ -460,8 +447,8 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
   }
   bool has_key_cert_pair =
       pem_key_cert_pair != nullptr &&
-      !grpc_core::IsPrivateKeyEmpty(&pem_key_cert_pair->private_key) &&
-      pem_key_cert_pair->cert_chain != nullptr;
+      !grpc_core::IsPrivateKeyEmpty(pem_key_cert_pair->private_key) &&
+      !pem_key_cert_pair->cert_chain.empty();
   options.root_store = root_store;
   options.alpn_protocols =
       grpc_fill_alpn_protocol_strings(&options.num_alpn_protocols);
@@ -490,8 +477,8 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
 }
 
 grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
-    tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs, size_t num_key_cert_pairs,
-    std::shared_ptr<RootCertInfo> root_cert_info,
+    std::vector<tsi_ssl_pem_key_cert_pair> pem_key_cert_pairs,
+    size_t num_key_cert_pairs, std::shared_ptr<RootCertInfo> root_cert_info,
     grpc_ssl_client_certificate_request_type client_certificate_request,
     tsi_tls_version min_tls_version, tsi_tls_version max_tls_version,
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
@@ -503,7 +490,6 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
       grpc_fill_alpn_protocol_strings(&num_alpn_protocols);
   tsi_ssl_server_handshaker_options options;
   options.pem_key_cert_pairs = pem_key_cert_pairs;
-  options.num_key_cert_pairs = num_key_cert_pairs;
   options.client_certificate_request =
       grpc_get_tsi_client_certificate_request_type(client_certificate_request);
   options.cipher_suites = grpc_get_ssl_cipher_suites();
@@ -574,14 +560,11 @@ grpc_arg grpc_ssl_session_cache_create_channel_arg(
 
 namespace grpc_core {
 
-bool IsPrivateKeyEmpty(const PrivateKey* private_key) {
-  if (private_key == nullptr) return true;
+bool IsPrivateKeyEmpty(const PrivateKey& private_key) {
   return Match(
-      *private_key,
-      [&](const absl::string_view& pem_root_certs) {
-        return pem_root_certs.empty();
-      },
-      [&](const CustomPrivateKeySign& key_sign) {
+      private_key,
+      [&](const std::string& pem_root_certs) { return pem_root_certs.empty(); },
+      [&](const std::shared_ptr<grpc_core::CustomPrivateKeySigner> key_sign) {
         return key_sign == nullptr;
       });
 }

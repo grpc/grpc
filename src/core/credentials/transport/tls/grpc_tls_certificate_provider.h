@@ -214,8 +214,6 @@ class FileWatcherCertificateProvider final
 // thread-safe manner.
 class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
  public:
-  static std::shared_ptr<InMemoryCertificateProvider> CreateCertificateProvider(
-      std::string root_certificates, PemKeyCertPairList pem_key_cert_pairs);
   InMemoryCertificateProvider(std::string root_certificates,
                               PemKeyCertPairList pem_key_cert_pairs);
   InMemoryCertificateProvider(const InMemoryCertificateProvider&) = delete;

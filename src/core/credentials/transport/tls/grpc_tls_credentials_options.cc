@@ -164,8 +164,10 @@ void grpc_tls_credentials_options_set_identity_certificate_provider(
     grpc_tls_credentials_options* options,
     grpc_tls_certificate_provider* provider) {
   GRPC_CHECK_NE(options, nullptr);
-  std::shared_ptr<grpc_tls_certificate_provider> shared_provider(provider);
-  options->set_identity_certificate_provider(std::move(shared_provider));
+  GRPC_CHECK_NE(provider, nullptr);
+  grpc_core::ExecCtx exec_ctx;
+  options->set_identity_certificate_provider(
+      provider->Ref(DEBUG_LOCATION, "set_identity_certificate_provider"));
 }
 
 void grpc_tls_credentials_options_set_root_certificate_provider(
@@ -173,6 +175,7 @@ void grpc_tls_credentials_options_set_root_certificate_provider(
     grpc_tls_certificate_provider* provider) {
   GRPC_CHECK_NE(options, nullptr);
   GRPC_CHECK_NE(provider, nullptr);
-  std::shared_ptr<grpc_tls_certificate_provider> shared_provider(provider);
-  options->set_root_certificate_provider(std::move(shared_provider));
+  grpc_core::ExecCtx exec_ctx;
+  options->set_root_certificate_provider(
+      provider->Ref(DEBUG_LOCATION, "set_root_certificate_provider"));
 }
