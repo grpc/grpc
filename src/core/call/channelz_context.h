@@ -1,4 +1,4 @@
-// Copyright 2025 The gRPC Authors
+// Copyright 2025 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,13 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifdef GRPC_POSTMORTEM_CHECKS
-#include "src/core/util/postmortem_emit.h"
+#ifndef GRPC_SRC_CORE_CALL_CHANNELZ_CONTEXT_H
+#define GRPC_SRC_CORE_CALL_CHANNELZ_CONTEXT_H
 
-bool PostMortemEmitAndReturnTrue() {
-  grpc_core::PostMortemEmit();
-  return true;
-}
-#else
-bool PostMortemEmitAndReturnTrue() { return true; }
-#endif
+#include "src/core/channelz/channelz.h"
+#include "src/core/lib/resource_quota/arena.h"
+
+namespace grpc_core {
+
+template <>
+struct ArenaContextType<channelz::CallNode> {
+  static void Destroy(channelz::CallNode*) {}
+};
+
+}  // namespace grpc_core
+
+#endif  // GRPC_SRC_CORE_CALL_CHANNELZ_CONTEXT_H

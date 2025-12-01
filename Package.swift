@@ -130,6 +130,7 @@ let package = Package(
         "src/core/call/call_spine.h",
         "src/core/call/call_state.cc",
         "src/core/call/call_state.h",
+        "src/core/call/channelz_context.h",
         "src/core/call/client_call.cc",
         "src/core/call/client_call.h",
         "src/core/call/custom_metadata.h",

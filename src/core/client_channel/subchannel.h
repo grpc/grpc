@@ -350,6 +350,8 @@ class OldSubchannel final : public Subchannel {
         watchers_;
   };
 
+  // A ConnectedSubchannel represents a connection.
+  // There are concrete subclasses for the v1 and v3 stacks.
   class ConnectedSubchannel;
   class LegacyConnectedSubchannel;
   class NewConnectedSubchannel;

@@ -66,8 +66,9 @@ struct Stream : public RefCounted<Stream> {
         stream_state(HttpStreamState::kIdle),
         stream_id(kInvalidStreamId),
         header_assembler(allow_true_binary_metadata_acked),
-        did_push_initial_metadata(false),
-        did_push_trailing_metadata(false),
+        did_receive_initial_metadata(false),
+        did_receive_trailing_metadata(false),
+        did_push_server_trailing_metadata(false),
         data_queue(MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
             /*is_client*/ true,
             /*queue_size*/ kStreamQueueSize, allow_true_binary_metadata_peer)),
@@ -225,6 +226,20 @@ struct Stream : public RefCounted<Stream> {
            stream_state == HttpStreamState::kHalfClosedLocal;
   }
 
+  void MaybePushServerTrailingMetadata(ServerMetadataHandle&& metadata) {
+    GRPC_HTTP2_STREAM_LOG
+        << "Http2ClientTransport::Stream::MaybePushServerTrailingMetadata "
+           "stream_id="
+        << stream_id << " metadata=" << metadata->DebugString()
+        << " did_push_server_trailing_metadata="
+        << did_push_server_trailing_metadata;
+
+    if (!did_push_server_trailing_metadata) {
+      did_push_server_trailing_metadata = true;
+      call.SpawnPushServerTrailingMetadata(std::move(metadata));
+    }
+  }
+
   CallHandler call;
   // This flag is kept separate from the stream_state as the stream_state
   // is inline with the HTTP2 spec, whereas this flag is an implementation
@@ -247,8 +262,9 @@ struct Stream : public RefCounted<Stream> {
   // frame with end_stream or set the end_stream flag in the last data
   // frame being sent out. This is done as the stream state should not
   // transition to HalfClosedLocal till the end_stream frame is sent.
-  bool did_push_initial_metadata;
-  bool did_push_trailing_metadata;
+  bool did_receive_initial_metadata;
+  bool did_receive_trailing_metadata;
+  bool did_push_server_trailing_metadata;
   RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> data_queue;
   chttp2::StreamFlowControl flow_control;
 };
