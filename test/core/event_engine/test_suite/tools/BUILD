@@ -32,6 +32,7 @@ grpc_cc_binary(
     srcs = ["windows_event_engine_factory.cc"],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "absl/functional:any_invocable",
     ],
     tags = [

@@ -62,6 +62,10 @@ class OpenTelemetryIntegrationTestInstrumentDomain final
 
   static inline const auto kTestMetric = RegisterCounter(
       "test.otel_uint64_counter", "A simple uint64 counter.", "unit");
+
+  static inline const auto kTestUpDownCounter =
+      RegisterUpDownCounter("test.otel_int64_up_down_counter",
+                            "A simple int64 up down counter.", "unit");
 };
 
 template <typename T>
@@ -219,6 +223,90 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordExportedUInt64Counter) {
                   OptionalLabelValues<
                       OpenTelemetryIntegrationTestInstrumentDomain>(*storage)),
               CounterResultEq(::testing::Eq(kCounterResult)))))));
+}
+
+TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordExportedInt64UpDownCounter) {
+  if (!grpc_core::IsOtelExportTelemetryDomainsEnabled()) {
+    GTEST_SKIP() << "Test requires otel_export_telemetry_domains to be enabled";
+  }
+  constexpr int64_t kCounterValues1[] = {10, 5};
+  constexpr int64_t kIntermediateCounterResult = 15;
+  constexpr int64_t kCounterValues2[] = {-3, 2};
+  constexpr int64_t kFinalCounterResult = 14;
+  Init(std::move(
+      Options()
+          .set_metric_names(
+              {OpenTelemetryIntegrationTestInstrumentDomain::kTestUpDownCounter
+                   .name()})
+          .set_channel_scope_filter(
+              [](const OpenTelemetryPluginBuilder::ChannelScope&
+                     channel_scope) {
+                return absl::StartsWith(channel_scope.target(), "dns:///");
+              })));
+  auto stats_plugins =
+      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+          grpc_core::experimental::StatsPluginChannelScope(
+              "dns:///localhost:8080", "", endpoint_config_));
+  auto storage = OpenTelemetryIntegrationTestInstrumentDomain::GetStorage(
+      stats_plugins->GetCollectionScope(), "label_value_1", "label_value_2");
+  for (auto v : kCounterValues1) {
+    storage->Increment(
+        OpenTelemetryIntegrationTestInstrumentDomain::kTestUpDownCounter, v);
+  }
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) {
+        return !data.contains(
+            OpenTelemetryIntegrationTestInstrumentDomain::kTestUpDownCounter
+                .name());
+      });
+  EXPECT_THAT(
+      data,
+      ::testing::ElementsAre(::testing::Pair(
+          OpenTelemetryIntegrationTestInstrumentDomain::kTestUpDownCounter
+              .name(),
+          ::testing::ElementsAre(::testing::AllOf(
+              AttributesEq(
+                  RequiredLabelKeys<
+                      OpenTelemetryIntegrationTestInstrumentDomain>(),
+                  RequiredLabelValues<
+                      OpenTelemetryIntegrationTestInstrumentDomain>(*storage),
+                  OptionalLabelKeys<
+                      OpenTelemetryIntegrationTestInstrumentDomain>(),
+                  OptionalLabelValues<
+                      OpenTelemetryIntegrationTestInstrumentDomain>(*storage)),
+              CounterResultEq(::testing::Eq(kIntermediateCounterResult)))))));
+  for (auto v : kCounterValues2) {
+    storage->Increment(
+        OpenTelemetryIntegrationTestInstrumentDomain::kTestUpDownCounter, v);
+  }
+  data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) {
+        return !data.contains(
+            OpenTelemetryIntegrationTestInstrumentDomain::kTestUpDownCounter
+                .name());
+      });
+  EXPECT_THAT(
+      data,
+      ::testing::ElementsAre(::testing::Pair(
+          OpenTelemetryIntegrationTestInstrumentDomain::kTestUpDownCounter
+              .name(),
+          ::testing::ElementsAre(::testing::AllOf(
+              AttributesEq(
+                  RequiredLabelKeys<
+                      OpenTelemetryIntegrationTestInstrumentDomain>(),
+                  RequiredLabelValues<
+                      OpenTelemetryIntegrationTestInstrumentDomain>(*storage),
+                  OptionalLabelKeys<
+                      OpenTelemetryIntegrationTestInstrumentDomain>(),
+                  OptionalLabelValues<
+                      OpenTelemetryIntegrationTestInstrumentDomain>(*storage)),
+              CounterResultEq(::testing::Eq(kFinalCounterResult)))))));
 }
 
 TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Counter) {

@@ -19,6 +19,8 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_CLIENT_TRANSPORT_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_CLIENT_TRANSPORT_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
 #include <cstddef>
@@ -52,12 +54,18 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/if.h"
+#include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/party.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
@@ -68,6 +76,8 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
@@ -91,7 +101,8 @@ namespace http2 {
 // [PH2][P3] MUST be fixed before Milestone 3 is considered complete.
 // [PH2][P4] Can be fixed after roll out begins. Evaluate these during
 //           Milestone 4. Either do the TODOs or delete them.
-// [PH2][P5] This MUST be a separate standalone project.
+// [PH2][P5] Can be fixed after roll out begins. Evaluate these during
+//           Milestone 4. Either do the TODOs or delete them.
 // [PH2][EXT] This is a TODO related to a project unrelated to PH2 but happening
 //            in parallel.
 
@@ -115,9 +126,8 @@ namespace http2 {
 // http2 rollout begins.
 class Http2ClientTransport final : public ClientTransport,
                                    public channelz::DataSource {
-  // TODO(tjagtap) : [PH2][P3] Move the definitions to the header for better
-  // inlining. For now definitions are in the cc file to
-  // reduce cognitive load in the header.
+  // TODO(akshitpatel) [PH2][P1] : Functions that need a mutex to be held should
+  // have "locked" suffix in function name.
  public:
   Http2ClientTransport(
       PromiseEndpoint endpoint, GRPC_UNUSED const ChannelArgs& channel_args,
@@ -198,6 +208,7 @@ class Http2ClientTransport final : public ClientTransport,
   bool AreTransportFlowControlTokensAvailable() {
     return flow_control_.remote_window() > 0;
   }
+  void SpawnTransportLoops();
 
  private:
   // Promise factory for processing each type of frame
@@ -233,7 +244,7 @@ class Http2ClientTransport final : public ClientTransport,
   // module needs to take action after the write (for cases like spawning
   // timeout promises), they MUST plug the call in the
   // NotifyControlFramesWriteDone.
-  auto WriteControlFrames();
+  auto ProcessAndWriteControlFrames();
 
   // Notify the control frames modules that the endpoint write is done.
   void NotifyControlFramesWriteDone();
@@ -247,7 +258,7 @@ class Http2ClientTransport final : public ClientTransport,
   auto CallOutboundLoop(CallHandler call_handler, RefCountedPtr<Stream> stream,
                         ClientMetadataHandle metadata);
 
-  // TODO(akshitpatel) : [PH2][P3] : Make this a synchronous function.
+  // TODO(akshitpatel) : [PH2][P1] : Make this a synchronous function.
   // Force triggers a transport write cycle
   auto TriggerWriteCycle() {
     return Immediate(writable_stream_list_.ForceReadyForWrite());
@@ -274,7 +285,7 @@ class Http2ClientTransport final : public ClientTransport,
 
   PromiseEndpoint endpoint_;
   Http2SettingsManager settings_;
-  SettingsTimeoutManager transport_settings_;
+  RefCountedPtr<SettingsPromiseManager> transport_settings_;
 
   Http2FrameHeader current_frame_header_;
   // Returns the number of active streams. A stream is removed from the `active`
@@ -345,6 +356,13 @@ class Http2ClientTransport final : public ClientTransport,
   // Returns the next stream id without incrementing it. MUST be called from the
   // transport party.
   uint32_t PeekNextStreamId() const { return next_stream_id_; }
+
+  // Returns the last stream id sent by the transport. If no streams were sent,
+  // returns 0. MUST be called from the transport party.
+  uint32_t GetLastStreamId() const {
+    const uint32_t next_stream_id = PeekNextStreamId();
+    return (next_stream_id > 1) ? (next_stream_id - 2) : 0;
+  }
 
   absl::Status AssignStreamId(RefCountedPtr<Stream> stream);
 
@@ -419,29 +437,10 @@ class Http2ClientTransport final : public ClientTransport,
   }
 
   // HTTP2 Settings
-  void MarkPeerSettingsResolved() {
-    settings_.SetPreviousSettingsPromiseResolved(true);
-  }
-  auto WaitForSettingsTimeoutDone() {
-    return [self = RefAsSubclass<Http2ClientTransport>()](absl::Status status) {
-      if (!status.ok()) {
-        GRPC_UNUSED absl::Status result = self->HandleError(
-            std::nullopt, Http2Status::Http2ConnectionError(
-                              Http2ErrorCode::kProtocolError,
-                              std::string(RFC9113::kSettingsTimeout)));
-      } else {
-        self->MarkPeerSettingsResolved();
-      }
-    };
-  }
-  // TODO(tjagtap) : [PH2][P1] : Plumbing. Call this after the SETTINGS frame
-  // has been written to endpoint_.
-  void SpawnWaitForSettingsTimeout() {
-    settings_.SetPreviousSettingsPromiseResolved(false);
-    general_party_->Spawn("WaitForSettingsTimeout",
-                          transport_settings_.WaitForSettingsTimeout(),
-                          WaitForSettingsTimeoutDone());
-  }
+  void MarkPeerSettingsPromiseResolved();
+  auto WaitForSettingsTimeoutOnDone();
+  void MaybeSpawnWaitForSettingsTimeout();
+  void EnforceLatestIncomingSettings();
 
   auto EndpointRead(const size_t num_bytes) {
     return Map(endpoint_.Read(num_bytes),
@@ -494,10 +493,8 @@ class Http2ClientTransport final : public ClientTransport,
   }
 
   bool should_reset_ping_clock_;
-  bool incoming_header_in_progress_;
-  bool incoming_header_end_stream_;
   bool is_first_write_;
-  uint32_t incoming_header_stream_id_;
+  IncomingMetadataTracker incoming_headers_;
   absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings_;
 
   uint32_t max_header_list_size_soft_limit_;
@@ -553,14 +550,6 @@ class Http2ClientTransport final : public ClientTransport,
     return ping_manager_.RequestPing(std::move(on_initiate), important);
   }
   auto WaitForPingAck() { return ping_manager_.WaitForPingAck(); }
-
-  void MaybeGetSettingsFrame(SliceBuffer& output_buf) {
-    std::optional<Http2Frame> settings_frame = settings_.MaybeSendUpdate();
-    if (settings_frame.has_value()) {
-      Serialize(absl::Span<Http2Frame>(&settings_frame.value(), 1), output_buf);
-      flow_control_.FlushedSettings();
-    }
-  }
 
   void MaybeGetWindowUpdateFrames(SliceBuffer& output_buf);
 
@@ -766,9 +755,7 @@ class Http2ClientTransport final : public ClientTransport,
   // indicates extreme memory pressure on the server.
   bool should_stall_read_loop_;
   Waker read_loop_waker_;
-  Http2Status ParseAndDiscardHeaders(SliceBuffer&& buffer,
-                                     bool is_initial_metadata,
-                                     bool is_end_headers, uint32_t stream_id,
+  Http2Status ParseAndDiscardHeaders(SliceBuffer&& buffer, bool is_end_headers,
                                      RefCountedPtr<Stream> stream,
                                      Http2Status&& original_status,
                                      DebugLocation whence = {});
