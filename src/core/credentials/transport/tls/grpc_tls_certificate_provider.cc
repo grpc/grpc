@@ -593,6 +593,21 @@ void InMemoryCertificateProvider::ForceUpdate(
   }
 }
 
+absl::Status InMemoryCertificateProvider::ValidateCredentials() const {
+  absl::Status status = ValidateRootCertificates(root_certificates_->get());
+  if (!status.ok()) {
+    return status;
+  }
+  for (const PemKeyCertPair& pair : pem_key_cert_pairs_) {
+    absl::Status status =
+        ValidatePemKeyCertPair(pair.cert_chain(), pair.private_key());
+    if (!status.ok()) {
+      return status;
+    }
+  }
+  return absl::OkStatus();
+}
+
 void InMemoryCertificateProvider::UpdateRoot(
     absl::StatusOr<std::shared_ptr<RootCertInfo>> root_certificates) {
   ForceUpdate(root_certificates, pem_key_cert_pairs_);
@@ -606,6 +621,15 @@ void InMemoryCertificateProvider::UpdateIdentity(
 UniqueTypeName InMemoryCertificateProvider::type() const {
   static UniqueTypeName::Factory kFactory("InMemory");
   return kFactory.Create();
+}
+
+RefCountedPtr<grpc_tls_certificate_provider>
+InMemoryCertificateProvider::CreateTestingCertificateProvider(
+    std::string root_cert_info, const PemKeyCertPairList& pem_key_cert_pairs) {
+  auto provider = MakeRefCounted<InMemoryCertificateProvider>();
+  provider->UpdateRoot(std::make_shared<RootCertInfo>(root_cert_info));
+  provider->UpdateIdentity(pem_key_cert_pairs);
+  return provider;
 }
 
 }  // namespace grpc_core

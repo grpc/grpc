@@ -267,11 +267,11 @@ _DATA_MEMBERS = [
         ),
         test_name="DifferentIdentityCertificateProvider",
         test_value_1=(
-            'MakeRefCounted<InMemoryCertificateProvider>("root_cert_1",'
+            'InMemoryCertificateProvider::CreateTestingCertificateProvider("root_cert_1",'
             " PemKeyCertPairList())"
         ),
         test_value_2=(
-            'MakeRefCounted<InMemoryCertificateProvider>("root_cert_2",'
+            'InMemoryCertificateProvider::CreateTestingCertificateProvider("root_cert_2",'
             " PemKeyCertPairList())"
         ),
     ),
@@ -296,11 +296,11 @@ _DATA_MEMBERS = [
         ),
         test_name="DifferentRootCertificateProvider",
         test_value_1=(
-            'MakeRefCounted<InMemoryCertificateProvider>("root_cert_1",'
+            'InMemoryCertificateProvider::CreateTestingCertificateProvider("root_cert_1",'
             " PemKeyCertPairList())"
         ),
         test_value_2=(
-            'MakeRefCounted<InMemoryCertificateProvider>("root_cert_2",'
+            'InMemoryCertificateProvider::CreateTestingCertificateProvider("root_cert_2",'
             " PemKeyCertPairList())"
         ),
     ),
