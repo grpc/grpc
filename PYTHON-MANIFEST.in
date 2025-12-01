@@ -26,3 +26,4 @@ include requirements.txt
 include etc/roots.pem
 include Makefile
 include LICENSE
+include _metadata.py
