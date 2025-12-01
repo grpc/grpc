@@ -504,12 +504,10 @@ InMemoryCertificateProvider::InMemoryCertificateProvider(
   distributor_->SetWatchStatusCallback([this](std::string cert_name,
                                               bool root_being_watched,
                                               bool identity_being_watched) {
-    MutexLock lock_pem(&pem_cert_pairs_mu_);
-    MutexLock lock_root(&root_cert_mu_);
-    MutexLock lock_watcher(&watcher_mu_);
+    MutexLock lock(&mu_);
     std::shared_ptr<RootCertInfo> root_cert_info;
     std::optional<PemKeyCertPairList> pem_key_cert_pairs;
-    InMemoryCertificateProvider::WatcherInfo& info = watcher_info_[cert_name];
+    WatcherInfo& info = watcher_info_[cert_name];
     if (!info.root_being_watched && root_being_watched &&
         !IsRootCertInfoEmpty(root_cert_info_.get())) {
       root_cert_info = root_cert_info_;
@@ -547,14 +545,14 @@ InMemoryCertificateProvider::InMemoryCertificateProvider(
 }
 
 void InMemoryCertificateProvider::UpdateRoot(std::string root_certificates) {
-  MutexLock lock_root(&root_cert_mu_);
+  MutexLock lock(&mu_);
   root_certificates_ = root_certificates;
 }
 
 void InMemoryCertificateProvider::UpdateIdentity(
     const PemKeyCertPairList& pem_key_cert_pairs) {
-  MutexLock lock_pem(&pem_cert_pairs_mu_);
-  pem_key_cert_pairs_ = std::move(pem_key_cert_pairs);
+  MutexLock lock(&mu_);
+  pem_key_cert_pairs_ = pem_key_cert_pairs;
 }
 
 UniqueTypeName InMemoryCertificateProvider::type() const {

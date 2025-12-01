@@ -564,7 +564,7 @@ bool IsPrivateKeyEmpty(const PrivateKey& private_key) {
   return Match(
       private_key,
       [&](const std::string& pem_root_certs) { return pem_root_certs.empty(); },
-      [&](const std::shared_ptr<grpc_core::CustomPrivateKeySigner> key_sign) {
+      [&](const std::shared_ptr<CustomPrivateKeySigner> key_sign) {
         return key_sign == nullptr;
       });
 }

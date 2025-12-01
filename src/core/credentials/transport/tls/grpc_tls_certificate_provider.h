@@ -223,6 +223,8 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
   InMemoryCertificateProvider& operator=(InMemoryCertificateProvider&&) =
       delete;
 
+  // TODO: Expose APIs so that callers can pass in the root certs as
+  // std::shared_ptr<RootCertInfo>.
   RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
     return distributor_;
   }
@@ -250,18 +252,15 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
 
   std::shared_ptr<RootCertInfo> root_cert_info_;
 
-  // Guards pem_key_cert_pairs_, root_certificates_ and watcher_info_
-  // respectively.
-  mutable Mutex pem_cert_pairs_mu_;
-  mutable Mutex root_cert_mu_;
-  mutable Mutex watcher_mu_;
+  // Guards pem_key_cert_pairs_, root_certificates_ and watcher_info_.
+  mutable Mutex mu_;
   // The most-recent credential data. It will be empty if the most recent read
   // attempt failed.
-  PemKeyCertPairList pem_key_cert_pairs_ ABSL_GUARDED_BY(pem_cert_pairs_mu_);
-  std::string root_certificates_ ABSL_GUARDED_BY(root_cert_mu_);
+  PemKeyCertPairList pem_key_cert_pairs_ ABSL_GUARDED_BY(mu_);
+  std::string root_certificates_ ABSL_GUARDED_BY(mu_);
   // Stores each cert_name we get from the distributor callback and its watcher
   // information.
-  std::map<std::string, WatcherInfo> watcher_info_ ABSL_GUARDED_BY(watcher_mu_);
+  std::map<std::string, WatcherInfo> watcher_info_ ABSL_GUARDED_BY(mu_);
 };
 
 //  Checks if the private key matches the certificate's public key.

@@ -29,6 +29,7 @@
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/util/crash.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 TEST(SslCredentialsTest, ConvertGrpcToTsiCertPairs) {
@@ -49,12 +50,8 @@ TEST(SslCredentialsTest, ConvertGrpcToTsiCertPairs) {
 
     ASSERT_NE(tsi_pairs.size(), 0);
     for (size_t i = 0; i < num_pairs; i++) {
-      ASSERT_TRUE(
-          std::holds_alternative<std::string>(tsi_pairs[i].private_key));
-      auto key_view = std::get<std::string>(tsi_pairs[i].private_key);
-      ASSERT_EQ(strncmp(grpc_pairs[i].private_key, key_view.data(),
-                        key_view.length()),
-                0);
+      EXPECT_THAT(tsi_pairs[i].private_key, ::testing::VariantWith<std::string>(
+                                                grpc_pairs[i].private_key));
       ASSERT_EQ(
           strncmp(grpc_pairs[i].cert_chain, tsi_pairs[i].cert_chain.c_str(),
                   strlen(grpc_pairs[i].cert_chain)),

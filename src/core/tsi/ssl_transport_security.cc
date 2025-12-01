@@ -363,7 +363,7 @@ static void init_openssl(void) {
   grpc_core::SetPrivateKeyOffloadFunctionIndex(SSL_CTX_get_ex_new_index(
       0, nullptr, nullptr, nullptr, private_key_offloading_free));
 
-  grpc_core::SetPrivateKeyOffloadObjectIndex(SSL_get_ex_new_index(
+  grpc_core::SetPrivateKeyOffloadingContextIndex(SSL_get_ex_new_index(
       0, nullptr, nullptr, nullptr, private_key_offloading_free));
 }
 
@@ -1939,7 +1939,6 @@ static tsi_result ssl_handshaker_process_bytes_from_peer(
     return impl->result;
   }
   *bytes_size = static_cast<size_t>(bytes_written_into_ssl_size);
-
   return ssl_handshaker_do_handshake(impl, error);
 }
 
@@ -2030,9 +2029,9 @@ static tsi_result ssl_handshaker_next(
   // Fetch the offload context.
   grpc_core::TlsPrivateKeyOffloadContext* offload_context =
       static_cast<grpc_core::TlsPrivateKeyOffloadContext*>(SSL_get_ex_data(
-          impl->ssl, grpc_core::GetPrivateKeyOffloadObjectIndex()));
+          impl->ssl, grpc_core::GetPrivateKeyOffloadingContextIndex()));
   if (offload_context != nullptr) {
-    offload_context->notify_cb = std::move(cb);
+    offload_context->notify_cb = cb;
     offload_context->notify_user_data = user_data;
   }
 
@@ -2254,15 +2253,15 @@ static tsi_result create_tsi_ssl_handshaker(
   impl->factory_ref = tsi_ssl_handshaker_factory_ref(factory);
   *handshaker = &impl->base;
 
-  grpc_core::CustomPrivateKeySigner* signature =
+  grpc_core::CustomPrivateKeySigner* sign_function =
       static_cast<grpc_core::CustomPrivateKeySigner*>(
           SSL_CTX_get_ex_data(SSL_get_SSL_CTX(impl->ssl),
                               grpc_core::GetPrivateKeyOffloadFunctionIndex()));
-  if (signature != nullptr) {
+  if (sign_function != nullptr) {
     grpc_core::TlsPrivateKeyOffloadContext* private_key_offload_context = {};
     private_key_offload_context->handshaker = *handshaker;
 
-    SSL_set_ex_data(ssl, grpc_core::GetPrivateKeyOffloadObjectIndex(),
+    SSL_set_ex_data(ssl, grpc_core::GetPrivateKeyOffloadingContextIndex(),
                     &private_key_offload_context);
   }
 

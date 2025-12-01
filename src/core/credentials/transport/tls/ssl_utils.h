@@ -119,8 +119,7 @@ int grpc_ssl_host_matches_name(const tsi_peer* peer,
 // --- Default SSL Root Store. ---
 namespace grpc_core {
 using PrivateKey =
-    std::variant<std::string,
-                 std::shared_ptr<grpc_core::CustomPrivateKeySigner>>;
+    std::variant<std::string, std::shared_ptr<CustomPrivateKeySigner>>;
 
 bool IsPrivateKeyEmpty(const PrivateKey& private_key);
 

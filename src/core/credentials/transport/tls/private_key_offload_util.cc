@@ -32,7 +32,7 @@
 
 // Indexes to store the private key offload information in the SSL and SSL_CTX
 // data.
-static int g_ssl_ex_private_key_object_index = -1;
+static int g_ssl_ex_private_key_offloading_context_index = -1;
 static int g_ssl_ctx_ex_private_key_function_index = -1;
 
 namespace grpc_core {
@@ -62,18 +62,18 @@ ToSignatureAlgorithmClass(uint16_t algorithm) {
   return absl::InvalidArgumentError("Unknown signature algorithm.");
 }
 
-void SetPrivateKeyOffloadObjectIndex(int index) {
-  g_ssl_ex_private_key_object_index = index;
-  GRPC_CHECK_NE(g_ssl_ex_private_key_object_index, -1);
+void SetPrivateKeyOffloadingContextIndex(int index) {
+  g_ssl_ex_private_key_offloading_context_index = index;
+  GRPC_CHECK_NE(g_ssl_ex_private_key_offloading_context_index, -1);
 }
 
-int GetPrivateKeyOffloadObjectIndex() {
-  return g_ssl_ex_private_key_object_index;
+int GetPrivateKeyOffloadingContextIndex() {
+  return g_ssl_ex_private_key_offloading_context_index;
 }
 
 void SetPrivateKeyOffloadFunctionIndex(int index) {
+  GRPC_CHECK_NE(index, -1);
   g_ssl_ctx_ex_private_key_function_index = index;
-  GRPC_CHECK_NE(g_ssl_ctx_ex_private_key_function_index, -1);
 }
 
 int GetPrivateKeyOffloadFunctionIndex() {
@@ -109,7 +109,7 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
     SSL* ssl, uint8_t* /*out*/, size_t* /*out_len*/, size_t /*max_out*/,
     uint16_t signature_algorithm, const uint8_t* in, size_t in_len) {
   TlsPrivateKeyOffloadContext* ctx = static_cast<TlsPrivateKeyOffloadContext*>(
-      SSL_get_ex_data(ssl, g_ssl_ex_private_key_object_index));
+      SSL_get_ex_data(ssl, g_ssl_ex_private_key_offloading_context_index));
   // Create the completion callback by binding the current context.
   auto done_callback = absl::bind_front(TlsOffloadSignDoneCallback, ctx);
 
@@ -137,7 +137,7 @@ enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,
                                                            size_t* out_len,
                                                            size_t max_out) {
   TlsPrivateKeyOffloadContext* ctx = static_cast<TlsPrivateKeyOffloadContext*>(
-      SSL_get_ex_data(ssl, g_ssl_ex_private_key_object_index));
+      SSL_get_ex_data(ssl, g_ssl_ex_private_key_offloading_context_index));
 
   if (!ctx->signed_bytes.ok()) {
     return ssl_private_key_failure;

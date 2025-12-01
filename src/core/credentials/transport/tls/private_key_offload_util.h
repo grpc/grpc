@@ -58,8 +58,8 @@ class CustomPrivateKeySigner {
                     OnSignComplete on_sign_complete) = 0;
 };
 
-void SetPrivateKeyOffloadObjectIndex(int index);
-int GetPrivateKeyOffloadObjectIndex();
+void SetPrivateKeyOffloadingContextIndex(int index);
+int GetPrivateKeyOffloadingContextIndex();
 
 void SetPrivateKeyOffloadFunctionIndex(int index);
 int GetPrivateKeyOffloadFunctionIndex();
