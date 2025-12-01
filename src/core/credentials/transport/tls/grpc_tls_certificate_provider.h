@@ -93,46 +93,6 @@ struct grpc_tls_certificate_provider
 
 namespace grpc_core {
 
-// A basic provider class that will get credentials from string during
-// initialization.
-class StaticDataCertificateProvider final
-    : public grpc_tls_certificate_provider {
- public:
-  StaticDataCertificateProvider(std::string root_certificate,
-                                PemKeyCertPairList pem_key_cert_pairs);
-
-  ~StaticDataCertificateProvider() override;
-
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
-    return distributor_;
-  }
-
-  UniqueTypeName type() const override;
-
-  absl::Status ValidateCredentials() const;
-
- private:
-  struct WatcherInfo {
-    bool root_being_watched = false;
-    bool identity_being_watched = false;
-  };
-
-  int CompareImpl(const grpc_tls_certificate_provider* other) const override {
-    // TODO(yashykt): Maybe do something better here.
-    return QsortCompare(static_cast<const grpc_tls_certificate_provider*>(this),
-                        other);
-  }
-
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
-  std::shared_ptr<RootCertInfo> root_cert_info_;
-  PemKeyCertPairList pem_key_cert_pairs_;
-  // Guards members below.
-  Mutex mu_;
-  // Stores each cert_name we get from the distributor callback and its watcher
-  // information.
-  std::map<std::string, WatcherInfo> watcher_info_;
-};
-
 // A provider class that will watch the credential changes on the file system.
 class FileWatcherCertificateProvider final
     : public grpc_tls_certificate_provider {

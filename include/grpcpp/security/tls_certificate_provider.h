@@ -147,6 +147,37 @@ class GRPCXX_DLL FileWatcherCertificateProvider final
   grpc_tls_certificate_provider* c_provider_ = nullptr;
 };
 
+// A CertificateProviderInterface implementation that will load credential
+// data from in memory location. This provider allows to update the identity and
+// the root certificates independently.
+class GRPCXX_DLL InMemoryCertificateProvider
+    : public CertificateProviderInterface {
+ public:
+  InMemoryCertificateProvider(
+      const std::string& root_certificate,
+      const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs);
+
+  explicit InMemoryCertificateProvider(const std::string& root_certificate)
+      : InMemoryCertificateProvider(root_certificate, {}) {}
+
+  explicit InMemoryCertificateProvider(
+      const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs)
+      : InMemoryCertificateProvider("", identity_key_cert_pairs) {}
+
+  ~InMemoryCertificateProvider() override;
+
+  grpc_tls_certificate_provider* c_provider() override { return c_provider_; }
+
+  // Returns an OK status if the following conditions hold:
+  // - the root certificates consist of one or more valid PEM blocks, and
+  // - every identity key-cert pair has a certificate chain that consists of
+  //   valid PEM blocks and has a private key is a valid PEM block.
+  absl::Status ValidateCredentials() const;
+
+ private:
+  grpc_tls_certificate_provider* c_provider_ = nullptr;
+};
+
 }  // namespace experimental
 }  // namespace grpc
 

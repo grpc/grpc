@@ -139,11 +139,11 @@ _DATA_MEMBERS = [
         ),
         test_name="DifferentCertificateProvider",
         test_value_1=(
-            'MakeRefCounted<StaticDataCertificateProvider>("root_cert_1",'
+            'InMemoryCertificateProvider::CreateTestingCertificateProvider("root_cert_1",'
             " PemKeyCertPairList())"
         ),
         test_value_2=(
-            'MakeRefCounted<StaticDataCertificateProvider>("root_cert_2",'
+            'InMemoryCertificateProvider::CreateTestingCertificateProvider("root_cert_2",'
             " PemKeyCertPairList())"
         ),
     ),
