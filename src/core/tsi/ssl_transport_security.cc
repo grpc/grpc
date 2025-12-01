@@ -945,25 +945,28 @@ static tsi_result populate_ssl_context(
         key_cert_pair->private_key,
         [&](const std::string& pem_root_certs) {
           tsi_result result = TSI_OK;
-          result = ssl_ctx_use_private_key(context, pem_root_certs.data(),
-                                           pem_root_certs.length());
-          if (!SSL_CTX_check_private_key(context)) {
-            LOG(ERROR) << "Invalid private key.";
-            return TSI_INVALID_ARGUMENT;
+          if (!pem_root_certs.empty()) {
+            result = ssl_ctx_use_private_key(context, pem_root_certs.data(),
+                                            pem_root_certs.length());
+            if (result != TSI_OK || !SSL_CTX_check_private_key(context)) {
+              LOG(ERROR) << "Invalid private key.";
+            }
           }
           return result;
         },
         [&](std::shared_ptr<grpc_core::CustomPrivateKeySigner> key_sign) {
-          if (key_sign == nullptr) {
-            return TSI_INVALID_ARGUMENT;
+          if (key_sign != nullptr) {
+            SSL_CTX_set_private_key_method(
+                context, &grpc_core::TlsOffloadPrivateKeyMethod);
+            SSL_CTX_set_ex_data(context,
+                                grpc_core::GetPrivateKeyOffloadFunctionIndex(),
+                                &key_sign);
           }
-          SSL_CTX_set_private_key_method(
-              context, &grpc_core::TlsOffloadPrivateKeyMethod);
-          SSL_CTX_set_ex_data(context,
-                              grpc_core::GetPrivateKeyOffloadFunctionIndex(),
-                              &key_sign);
           return TSI_OK;
         });
+    if (result != TSI_OK) {
+      return result;
+    }
   }
   if ((cipher_list != nullptr) &&
       !SSL_CTX_set_cipher_list(context, cipher_list)) {
@@ -2257,10 +2260,16 @@ static tsi_result create_tsi_ssl_handshaker(
   impl->factory_ref = tsi_ssl_handshaker_factory_ref(factory);
   *handshaker = &impl->base;
 
+  SSL_CTX* ssl_ctx = SSL_get_SSL_CTX(impl->ssl);
+  if (ssl_ctx == nullptr) {
+    LOG(ERROR) << "Unexpected error obtaining SSL_CTX object from SSL: ";
+    SSL_CTX_free(ssl_ctx);
+    return TSI_INTERNAL_ERROR;
+  }
+
   grpc_core::CustomPrivateKeySigner* sign_function =
-      static_cast<grpc_core::CustomPrivateKeySigner*>(
-          SSL_CTX_get_ex_data(SSL_get_SSL_CTX(impl->ssl),
-                              grpc_core::GetPrivateKeyOffloadFunctionIndex()));
+      static_cast<grpc_core::CustomPrivateKeySigner*>(SSL_CTX_get_ex_data(
+          ssl_ctx, grpc_core::GetPrivateKeyOffloadFunctionIndex()));
   if (sign_function != nullptr) {
     grpc_core::TlsPrivateKeyOffloadContext* private_key_offload_context = {};
     private_key_offload_context->handshaker = *handshaker;

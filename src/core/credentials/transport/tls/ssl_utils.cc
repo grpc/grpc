@@ -478,7 +478,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
 
 grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
     std::vector<tsi_ssl_pem_key_cert_pair> pem_key_cert_pairs,
-    size_t num_key_cert_pairs, std::shared_ptr<RootCertInfo> root_cert_info,
+    size_t /*num_key_cert_pairs*/, std::shared_ptr<RootCertInfo> root_cert_info,
     grpc_ssl_client_certificate_request_type client_certificate_request,
     tsi_tls_version min_tls_version, tsi_tls_version max_tls_version,
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,

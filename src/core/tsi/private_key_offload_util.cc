@@ -121,9 +121,17 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
   if (!algorithm.ok()) {
     return ssl_private_key_failure;
   }
+
+  SSL_CTX* ssl_ctx = SSL_get_SSL_CTX(ssl);
+  if (ssl_ctx == nullptr) {
+    LOG(ERROR) << "Unexpected error obtaining SSL_CTX object from SSL: ";
+    SSL_CTX_free(ssl_ctx);
+    return ssl_private_key_failure;
+  }
+
   CustomPrivateKeySigner* signer =
       static_cast<CustomPrivateKeySigner*>(SSL_CTX_get_ex_data(
-          SSL_get_SSL_CTX(ssl), g_ssl_ctx_ex_private_key_function_index));
+          ssl_ctx, g_ssl_ctx_ex_private_key_function_index));
   signer->Sign(absl::string_view(reinterpret_cast<const char*>(in), in_len),
                *algorithm, done_callback);
 
