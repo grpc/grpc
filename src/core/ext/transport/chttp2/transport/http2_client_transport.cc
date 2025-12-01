@@ -1197,7 +1197,7 @@ auto Http2ClientTransport::MultiplexerLoop() {
 
             if (stream->GetStreamId() == kInvalidStreamId) {
               GRPC_DCHECK(stream->GetStreamState() == HttpStreamState::kIdle);
-              // TODO(akshitpatel) : [PH2][P4] : We will waste a stream id in
+              // TODO(akshitpatel) : [PH2][P5] : We will waste a stream id in
               // the rare scenario where the stream is aborted before it can be
               // written to. This is a possible area to optimize in future.
               absl::Status status = self->AssignStreamId(stream);
@@ -1302,7 +1302,6 @@ void Http2ClientTransport::MarkPeerSettingsPromiseResolved() {
   settings_.SetPreviousSettingsPromiseResolved(true);
 }
 
-// TODO(tjagtap) : [PH2][P1][Settings] : Plumb this
 void Http2ClientTransport::EnforceLatestIncomingSettings() {
   encoder_.SetMaxTableSize(settings_.peer().header_table_size());
 }
