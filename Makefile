@@ -764,7 +764,6 @@ LIBGRPC_SRC = \
     src/core/credentials/transport/tls/load_system_roots_fallback.cc \
     src/core/credentials/transport/tls/load_system_roots_supported.cc \
     src/core/credentials/transport/tls/load_system_roots_windows.cc \
-    src/core/credentials/transport/tls/private_key_offload_util.cc \
     src/core/credentials/transport/tls/spiffe_utils.cc \
     src/core/credentials/transport/tls/ssl_utils.cc \
     src/core/credentials/transport/tls/tls_credentials.cc \
@@ -1466,6 +1465,7 @@ LIBGRPC_SRC = \
     src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc \
     src/core/tsi/fake_transport_security.cc \
     src/core/tsi/local_transport_security.cc \
+    src/core/tsi/private_key_offload_util.cc \
     src/core/tsi/ssl/key_logging/ssl_key_logging.cc \
     src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc \
     src/core/tsi/ssl/session_cache/ssl_session_cache.cc \

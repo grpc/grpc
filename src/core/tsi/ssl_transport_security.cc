@@ -941,25 +941,29 @@ static tsi_result populate_ssl_context(
         return result;
       }
     }
-    if (!grpc_core::IsPrivateKeyEmpty(key_cert_pair->private_key)) {
-      if (const auto* key_view =
-              std::get_if<std::string>(&key_cert_pair->private_key)) {
-        result = ssl_ctx_use_private_key(context, key_view->data(),
-                                         key_view->length());
-        if (result != TSI_OK || !SSL_CTX_check_private_key(context)) {
-          LOG(ERROR) << "Invalid private key.";
-          return result != TSI_OK ? result : TSI_INVALID_ARGUMENT;
-        }
-      } else if (auto* key_sign_ptr = std::get_if<
-                     std::shared_ptr<grpc_core::CustomPrivateKeySigner>>(
-                     &key_cert_pair->private_key)) {
-        SSL_CTX_set_private_key_method(context,
-                                       &grpc_core::TlsOffloadPrivateKeyMethod);
-        SSL_CTX_set_ex_data(context,
-                            grpc_core::GetPrivateKeyOffloadFunctionIndex(),
-                            &key_sign_ptr);
-      }
-    }
+    result = grpc_core::Match(
+        key_cert_pair->private_key,
+        [&](const std::string& pem_root_certs) {
+          tsi_result result = TSI_OK;
+          result = ssl_ctx_use_private_key(context, pem_root_certs.data(),
+                                           pem_root_certs.length());
+          if (!SSL_CTX_check_private_key(context)) {
+            LOG(ERROR) << "Invalid private key.";
+            return TSI_INVALID_ARGUMENT;
+          }
+          return result;
+        },
+        [&](std::shared_ptr<grpc_core::CustomPrivateKeySigner> key_sign) {
+          if (key_sign == nullptr) {
+            return TSI_INVALID_ARGUMENT;
+          }
+          SSL_CTX_set_private_key_method(
+              context, &grpc_core::TlsOffloadPrivateKeyMethod);
+          SSL_CTX_set_ex_data(context,
+                              grpc_core::GetPrivateKeyOffloadFunctionIndex(),
+                              &key_sign);
+          return TSI_OK;
+        });
   }
   if ((cipher_list != nullptr) &&
       !SSL_CTX_set_cipher_list(context, cipher_list)) {
