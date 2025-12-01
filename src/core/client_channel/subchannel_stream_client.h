@@ -117,7 +117,7 @@ class SubchannelStreamClient final
     void Orphan() override;
 
     // Returns false if there was no connection to start a call on.
-    bool StartCallLocked()
+    GRPC_MUST_USE_RESULT bool StartCallLocked()
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&SubchannelStreamClient::mu_);
 
    private:
