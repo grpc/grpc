@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/credentials/transport/tls/private_key_offload_util.h"
+#include "src/core/tsi/private_key_offload_util.h"
 
 #include <openssl/ssl.h>
 

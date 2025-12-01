@@ -10616,10 +10616,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "private_key_offload_util",
     srcs = [
-        "//src/core:credentials/transport/tls/private_key_offload_util.cc",
+        "//src/core:tsi/private_key_offload_util.cc",
     ],
     hdrs = [
-        "//src/core:credentials/transport/tls/private_key_offload_util.h",
+        "//src/core:tsi/private_key_offload_util.h",
     ],
     external_deps = [
         "absl/functional:bind_front",
