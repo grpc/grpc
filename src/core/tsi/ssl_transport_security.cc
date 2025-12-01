@@ -947,7 +947,7 @@ static tsi_result populate_ssl_context(
           tsi_result result = TSI_OK;
           if (!pem_root_certs.empty()) {
             result = ssl_ctx_use_private_key(context, pem_root_certs.data(),
-                                            pem_root_certs.length());
+                                             pem_root_certs.length());
             if (result != TSI_OK || !SSL_CTX_check_private_key(context)) {
               LOG(ERROR) << "Invalid private key.";
             }

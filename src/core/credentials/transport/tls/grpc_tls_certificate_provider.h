@@ -214,8 +214,7 @@ class FileWatcherCertificateProvider final
 // thread-safe manner.
 class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
  public:
-  InMemoryCertificateProvider(std::string root_certificates,
-                              PemKeyCertPairList pem_key_cert_pairs);
+  InMemoryCertificateProvider();
   InMemoryCertificateProvider(const InMemoryCertificateProvider&) = delete;
   InMemoryCertificateProvider(InMemoryCertificateProvider&&) = delete;
   InMemoryCertificateProvider& operator=(const InMemoryCertificateProvider&) =
@@ -235,7 +234,8 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
 
   int64_t TestOnlyGetRefreshIntervalSecond() const;
 
-  void UpdateRoot(std::string root_certificates);
+  void UpdateRoot(
+      absl::StatusOr<std::shared_ptr<RootCertInfo>> root_certificates);
   void UpdateIdentity(const PemKeyCertPairList& pem_key_cert_pairs);
 
  private:
@@ -248,16 +248,18 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
     return QsortCompare(static_cast<const grpc_tls_certificate_provider*>(this),
                         other);
   }
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
+  void ForceUpdate(absl::StatusOr<std::shared_ptr<RootCertInfo>> root_cert_info,
+                   const PemKeyCertPairList& pem_key_cert_pairs);
 
-  std::shared_ptr<RootCertInfo> root_cert_info_;
+  RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
 
   // Guards pem_key_cert_pairs_, root_certificates_ and watcher_info_.
   mutable Mutex mu_;
   // The most-recent credential data. It will be empty if the most recent read
   // attempt failed.
   PemKeyCertPairList pem_key_cert_pairs_ ABSL_GUARDED_BY(mu_);
-  std::string root_certificates_ ABSL_GUARDED_BY(mu_);
+  absl::StatusOr<std::shared_ptr<RootCertInfo>> root_certificates_
+      ABSL_GUARDED_BY(mu_);
   // Stores each cert_name we get from the distributor callback and its watcher
   // information.
   std::map<std::string, WatcherInfo> watcher_info_ ABSL_GUARDED_BY(mu_);

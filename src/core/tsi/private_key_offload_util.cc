@@ -129,9 +129,8 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
     return ssl_private_key_failure;
   }
 
-  CustomPrivateKeySigner* signer =
-      static_cast<CustomPrivateKeySigner*>(SSL_CTX_get_ex_data(
-          ssl_ctx, g_ssl_ctx_ex_private_key_function_index));
+  CustomPrivateKeySigner* signer = static_cast<CustomPrivateKeySigner*>(
+      SSL_CTX_get_ex_data(ssl_ctx, g_ssl_ctx_ex_private_key_function_index));
   signer->Sign(absl::string_view(reinterpret_cast<const char*>(in), in_len),
                *algorithm, done_callback);
 

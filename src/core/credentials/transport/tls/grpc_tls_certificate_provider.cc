@@ -496,21 +496,18 @@ int64_t FileWatcherCertificateProvider::TestOnlyGetRefreshIntervalSecond()
   return refresh_interval_sec_;
 }
 
-InMemoryCertificateProvider::InMemoryCertificateProvider(
-    std::string root_certificates, PemKeyCertPairList pem_key_cert_pairs)
-    : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
-      pem_key_cert_pairs_(std::move(pem_key_cert_pairs)),
-      root_certificates_(root_certificates) {
+InMemoryCertificateProvider::InMemoryCertificateProvider()
+    : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {
   distributor_->SetWatchStatusCallback([this](std::string cert_name,
                                               bool root_being_watched,
                                               bool identity_being_watched) {
     MutexLock lock(&mu_);
-    std::shared_ptr<RootCertInfo> root_cert_info;
+    absl::StatusOr<std::shared_ptr<RootCertInfo>> roots = nullptr;
     std::optional<PemKeyCertPairList> pem_key_cert_pairs;
     WatcherInfo& info = watcher_info_[cert_name];
     if (!info.root_being_watched && root_being_watched &&
-        !IsRootCertInfoEmpty(root_cert_info_.get())) {
-      root_cert_info = root_cert_info_;
+        root_certificates_.ok() && *root_certificates_ != nullptr) {
+      roots = *root_certificates_;
     }
     info.root_being_watched = root_being_watched;
     if (!info.identity_being_watched && identity_being_watched &&
@@ -521,19 +518,18 @@ InMemoryCertificateProvider::InMemoryCertificateProvider(
     if (!info.root_being_watched && !info.identity_being_watched) {
       watcher_info_.erase(cert_name);
     }
-    const bool root_has_update = root_cert_info != nullptr;
-    const bool identity_has_update = pem_key_cert_pairs.has_value();
-    if (root_has_update || identity_has_update) {
-      distributor_->SetKeyMaterials(cert_name, std::move(root_cert_info),
-                                    std::move(pem_key_cert_pairs));
+    ExecCtx exec_ctx;
+    if ((roots.ok() && *roots != nullptr) || pem_key_cert_pairs.has_value()) {
+      distributor_->SetKeyMaterials(cert_name, roots.ok() ? *roots : nullptr,
+                                    pem_key_cert_pairs);
     }
     grpc_error_handle root_cert_error;
     grpc_error_handle identity_cert_error;
-    if (root_being_watched && !root_has_update) {
+    if (root_being_watched && (!roots.ok() || *roots == nullptr)) {
       root_cert_error =
           GRPC_ERROR_CREATE("Unable to get latest root certificates.");
     }
-    if (identity_being_watched && !identity_has_update) {
+    if (identity_being_watched && !pem_key_cert_pairs.has_value()) {
       identity_cert_error =
           GRPC_ERROR_CREATE("Unable to get latest identity certificates.");
     }
@@ -544,15 +540,67 @@ InMemoryCertificateProvider::InMemoryCertificateProvider(
   });
 }
 
-void InMemoryCertificateProvider::UpdateRoot(std::string root_certificates) {
+void InMemoryCertificateProvider::ForceUpdate(
+    absl::StatusOr<std::shared_ptr<RootCertInfo>> root_cert_info,
+    const PemKeyCertPairList& pem_key_cert_pairs) {
   MutexLock lock(&mu_);
-  root_certificates_ = root_certificates;
+  const bool root_changed =
+      HasRootCertInfoChanged(root_certificates_, root_cert_info);
+  if (root_changed) {
+    root_certificates_ = std::move(root_cert_info);
+  }
+  const bool identity_cert_changed =
+      !pem_key_cert_pairs_.empty() || pem_key_cert_pairs_ != pem_key_cert_pairs;
+  if (identity_cert_changed) {
+    pem_key_cert_pairs_ = pem_key_cert_pairs;
+  }
+  if (root_changed || identity_cert_changed) {
+    ExecCtx exec_ctx;
+    grpc_error_handle root_cert_error =
+        GRPC_ERROR_CREATE("Unable to get latest root certificates.");
+    grpc_error_handle identity_cert_error =
+        GRPC_ERROR_CREATE("Unable to get latest identity certificates.");
+    for (const auto& p : watcher_info_) {
+      const std::string& cert_name = p.first;
+      const WatcherInfo& info = p.second;
+      std::shared_ptr<RootCertInfo> root_to_report;
+      std::optional<PemKeyCertPairList> identity_to_report;
+      // Set key materials to the distributor if their contents changed.
+      if (info.root_being_watched && root_changed) {
+        root_to_report =
+            root_certificates_.ok() ? *root_certificates_ : nullptr;
+      }
+      if (info.identity_being_watched && !pem_key_cert_pairs_.empty() &&
+          identity_cert_changed) {
+        identity_to_report = pem_key_cert_pairs_;
+      }
+      if (root_to_report != nullptr || identity_to_report.has_value()) {
+        distributor_->SetKeyMaterials(cert_name, std::move(root_to_report),
+                                      std::move(identity_to_report));
+      }
+      // Report errors to the distributor if the contents are empty.
+      const bool report_root_error =
+          info.root_being_watched &&
+          (!root_certificates_.ok() || *root_certificates_ == nullptr);
+      const bool report_identity_error =
+          info.identity_being_watched && pem_key_cert_pairs_.empty();
+      if (report_root_error || report_identity_error) {
+        distributor_->SetErrorForCert(
+            cert_name, report_root_error ? root_cert_error : absl::OkStatus(),
+            report_identity_error ? identity_cert_error : absl::OkStatus());
+      }
+    }
+  }
+}
+
+void InMemoryCertificateProvider::UpdateRoot(
+    absl::StatusOr<std::shared_ptr<RootCertInfo>> root_certificates) {
+  ForceUpdate(root_certificates, pem_key_cert_pairs_);
 }
 
 void InMemoryCertificateProvider::UpdateIdentity(
     const PemKeyCertPairList& pem_key_cert_pairs) {
-  MutexLock lock(&mu_);
-  pem_key_cert_pairs_ = pem_key_cert_pairs;
+  ForceUpdate(root_certificates_, pem_key_cert_pairs);
 }
 
 UniqueTypeName InMemoryCertificateProvider::type() const {
