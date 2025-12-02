@@ -139,7 +139,6 @@ EXPERIMENTS = {
             ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
-                "sleep_use_non_owning_waker",
             ],
             "resource_quota_test": [
                 "free_large_allocator",
@@ -175,6 +174,9 @@ EXPERIMENTS = {
             ],
             "posix_endpoint_test": [
                 "event_engine_secure_endpoint",
+            ],
+            "promise_test": [
+                "sleep_use_non_owning_waker",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
@@ -242,7 +244,6 @@ EXPERIMENTS = {
             ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
-                "sleep_use_non_owning_waker",
             ],
             "resource_quota_test": [
                 "free_large_allocator",
@@ -278,6 +279,9 @@ EXPERIMENTS = {
             ],
             "posix_endpoint_test": [
                 "event_engine_secure_endpoint",
+            ],
+            "promise_test": [
+                "sleep_use_non_owning_waker",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
@@ -345,7 +349,6 @@ EXPERIMENTS = {
             ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
-                "sleep_use_non_owning_waker",
             ],
             "resource_quota_test": [
                 "free_large_allocator",
@@ -381,6 +384,9 @@ EXPERIMENTS = {
             ],
             "posix_endpoint_test": [
                 "event_engine_secure_endpoint",
+            ],
+            "promise_test": [
+                "sleep_use_non_owning_waker",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",

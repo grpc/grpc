@@ -736,6 +736,90 @@ TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
             RFC9113::kHttp2InitialWindowSize);
 }
 
+// TODO(akshitpatel) [PH2][P1] Enable this after fixing bug in Close Path
+TEST_F(Http2ClientTransportTest, DISABLED_TestCanStreamReceiveDataFrames) {
+  ExecCtx ctx;
+  MockPromiseEndpoint mock_endpoint(/*port=*/1000);
+  StrictMock<MockFunction<void()>> on_done;
+  EXPECT_CALL(on_done, Call());
+
+  mock_endpoint.ExpectWrite(
+      {
+          EventEngineSlice(
+              grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
+          helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
+      },
+      event_engine().get());
+  auto read_cb = mock_endpoint.ExpectDelayedRead(
+      {
+          helper_.EventEngineSliceFromEmptyHttp2DataFrame(1, false),
+          helper_.EventEngineSliceFromHttp2GoawayFrame(
+              /*debug_data=*/"kthxbye", /*last_stream_id=*/1,
+              /*error_code=*/
+              static_cast<uint32_t>(Http2ErrorCode::kNoError)),
+      },
+      event_engine().get());
+  mock_endpoint.ExpectWriteWithCallback(
+      {
+          helper_.EventEngineSliceFromHttp2HeaderFrame(
+              std::string(kPathDemoServiceStep.begin(),
+                          kPathDemoServiceStep.end()),
+              /*stream_id=*/1,
+              /*end_headers=*/true, /*end_stream=*/false),
+      },
+      event_engine().get(), [&](SliceBuffer& out, SliceBuffer& expect) {
+        EXPECT_EQ(out.JoinIntoString(), expect.JoinIntoString());
+        read_cb();
+      });
+  mock_endpoint.ExpectWrite(
+      {
+          helper_.EventEngineSliceFromHttp2GoawayFrame(
+              /*debug_data=*/"kthxbye",
+              /*last_stream_id=*/0,
+              /*error_code=*/
+              static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
+      },
+      event_engine().get());
+  mock_endpoint.ExpectWrite(
+      {// This looks wrong. It should have been RST_STREAM with error message
+       // helper_.EventEngineSliceFromEmptyHttp2DataFrame(1, true),
+       helper_.EventEngineSliceFromHttp2RstStreamFrame(
+           /*stream_id=*/1, /*error_code=*/
+           static_cast<uint32_t>(Http2ErrorCode::kInternalError))},
+      event_engine().get());
+  auto client_transport = MakeOrphanable<Http2ClientTransport>(
+      std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
+      event_engine(), /*on_receive_settings=*/nullptr);
+  client_transport->SpawnTransportLoops();
+
+  auto read_close_transport = mock_endpoint.ExpectDelayedReadClose(
+      absl::UnavailableError(kConnectionClosed), event_engine().get());
+  auto call = MakeCall(TestInitialMetadata());
+  client_transport->StartCall(call.handler.StartCall());
+  call.initiator.SpawnInfallible(
+      "test-wait",
+      [initator = call.initiator, &on_done,
+       read_close_transport = std::move(read_close_transport)]() mutable {
+        return Seq(
+            initator.PullServerTrailingMetadata(),
+            [&on_done, read_close_transport = std::move(read_close_transport)](
+                ServerMetadataHandle metadata) mutable {
+              on_done.Call();
+              EXPECT_EQ(metadata->get(GrpcStatusMetadata()).value(),
+                        GRPC_STATUS_INTERNAL);
+              EXPECT_EQ(metadata->get_pointer(GrpcMessageMetadata())
+                            ->as_string_view(),
+                        "gRPC Error : DATA frames must follow initial "
+                        "metadata and precede trailing metadata.");
+              read_close_transport();
+              return Empty{};
+            });
+      });
+
+  event_engine()->TickUntilIdle();
+  event_engine()->UnsetGlobalHooks();
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Close Stream Tests
 
