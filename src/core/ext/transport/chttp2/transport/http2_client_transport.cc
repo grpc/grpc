@@ -1296,12 +1296,6 @@ void Http2ClientTransport::AddToStreamList(RefCountedPtr<Stream> stream) {
 ///////////////////////////////////////////////////////////////////////////////
 // Settings and Window Update Management
 
-void Http2ClientTransport::MarkPeerSettingsPromiseResolved() {
-  // TODO(tjagtap) [PH2][P1][Settings] Move this out of the transport into a
-  // Settings class.
-  settings_->SetPreviousSettingsPromiseResolved(true);
-}
-
 void Http2ClientTransport::EnforceLatestIncomingSettings() {
   encoder_.SetMaxTableSize(settings_->peer().header_table_size());
 }
@@ -1311,7 +1305,6 @@ auto Http2ClientTransport::WaitForSettingsTimeoutOnDone() {
   // TODO(tjagtap) : [PH2][P1][Settings] Move this out of the transport into a
   // Settings class.
   return [self = RefAsSubclass<Http2ClientTransport>()](absl::Status status) {
-    self->MarkPeerSettingsPromiseResolved();
     if (!status.ok()) {
       GRPC_UNUSED absl::Status result = self->HandleError(
           std::nullopt, Http2Status::Http2ConnectionError(
@@ -1329,7 +1322,6 @@ void Http2ClientTransport::MaybeSpawnWaitForSettingsTimeout() {
   if (settings_->ShouldSpawnWaitForSettingsTimeout()) {
     GRPC_HTTP2_CLIENT_DLOG
         << "Http2ClientTransport::MaybeSpawnWaitForSettingsTimeout Spawning";
-    settings_->SetPreviousSettingsPromiseResolved(false);
     general_party_->Spawn("WaitForSettingsTimeout",
                           settings_->WaitForSettingsTimeout(),
                           WaitForSettingsTimeoutOnDone());

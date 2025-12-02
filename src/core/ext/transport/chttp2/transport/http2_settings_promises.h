@@ -98,6 +98,7 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
   // frame on the endpoint. If we don't get an ACK before timeout, the
   // caller MUST close the transport.
   auto WaitForSettingsTimeout() {
+    did_previous_settings_promise_resolve_ = false;
     TimeoutWaiterSpawned();
     GRPC_SETTINGS_TIMEOUT_DLOG
         << "SettingsPromiseManager::WaitForSettingsTimeout Factory timeout_"
@@ -117,6 +118,7 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
                 Timestamp::Now())
                 << "Should have timed out";
             self->MarkReceivedAckAsProcessed();
+            self->did_previous_settings_promise_resolve_ = true;
             return absl::OkStatus();
           }
           self->AddWaitingForAck();
@@ -131,6 +133,10 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
                         " triggered. Transport will close. Sent Time : "
                      << sent_time << " Timeout Time : " << (sent_time + timeout)
                      << " Current Time " << Timestamp::Now();
+                 // Ideally we must set did_previous_settings_promise_resolve_
+                 // to false, but in this case the transport will be closed so
+                 // it does not matter. I am trying to avoid taking another ref
+                 // on self in this TrySeq.
                  return absl::CancelledError(
                      std::string(RFC9113::kSettingsTimeout));
                })));
@@ -163,13 +169,16 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
   void MaybeGetSettingsAndSettingsAckFrames(
       chttp2::TransportFlowControl& flow_control, SliceBuffer& output_buf) {
     GRPC_SETTINGS_TIMEOUT_DLOG << "MaybeGetSettingsAndSettingsAckFrames";
-    std::optional<Http2Frame> settings_frame = settings_.MaybeSendUpdate();
-    if (settings_frame.has_value()) {
-      GRPC_SETTINGS_TIMEOUT_DLOG
-          << "MaybeGetSettingsAndSettingsAckFrames Frame Settings ";
-      Serialize(absl::Span<Http2Frame>(&settings_frame.value(), 1), output_buf);
-      flow_control.FlushedSettings();
-      WillSendSettings();
+    if (did_previous_settings_promise_resolve_) {
+      std::optional<Http2Frame> settings_frame = settings_.MaybeSendUpdate();
+      if (settings_frame.has_value()) {
+        GRPC_SETTINGS_TIMEOUT_DLOG
+            << "MaybeGetSettingsAndSettingsAckFrames Frame Settings ";
+        Serialize(absl::Span<Http2Frame>(&settings_frame.value(), 1),
+                  output_buf);
+        flow_control.FlushedSettings();
+        WillSendSettings();
+      }
     }
     const uint32_t num_acks = settings_.MaybeSendAck();
     if (num_acks > 0) {
@@ -205,13 +214,6 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
   }
 
   GRPC_MUST_USE_RESULT bool AckLastSend() { return settings_.AckLastSend(); }
-
-  GRPC_MUST_USE_RESULT bool IsPreviousSettingsPromiseResolved() const {
-    return settings_.IsPreviousSettingsPromiseResolved();
-  }
-  void SetPreviousSettingsPromiseResolved(const bool value) {
-    settings_.SetPreviousSettingsPromiseResolved(value);
-  }
 
  private:
   Http2SettingsManager settings_;
@@ -287,6 +289,13 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
   bool did_register_ack_timeout_waker_ = false;
   int number_of_acks_unprocessed_ = 0;
   bool should_wait_for_settings_ack_ = false;
+
+  // For CHTTP2, MaybeSendUpdate() checks `update_state_` to ensure only one
+  // SETTINGS frame is in flight at a time. PH2 requires an additional
+  // constraint: a new SETTINGS frame cannot be sent until the SETTINGS-ACK
+  // timeout promise for the previous frame has resolved. This flag tracks this
+  // condition for PH2.
+  bool did_previous_settings_promise_resolve_ = true;
 
   //////////////////////////////////////////////////////////////////////////////
   // Data Members for SETTINGS being received from the peer.
