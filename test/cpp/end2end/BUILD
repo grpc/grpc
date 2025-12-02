@@ -228,6 +228,7 @@ grpc_cc_test(
     ],
     external_deps = [
         "absl/log:check",
+        "absl/memory",
         "gtest",
     ],
     tags = [
@@ -240,6 +241,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//src/core:grpc_check",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_cc_grpc",
@@ -446,7 +448,7 @@ grpc_cc_test(
         "//src/core:grpc_tls_credentials",
         "//src/core:slice",
         "//src/core:wait_for_single_owner",
-        "//src/proto/grpc/channelz:channelz_proto",
+        "//src/proto/grpc/channelz:channelz_cc_proto",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//test/core/event_engine:event_engine_test_utils",
@@ -976,6 +978,8 @@ grpc_cc_test(
     ],
     external_deps = [
         "absl/log:check",
+        "absl/log",
+        "absl/memory",
         "gtest",
     ],
     tags = [
@@ -988,6 +992,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//src/core:grpc_check",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_cc_grpc",
@@ -1202,6 +1207,7 @@ grpc_cc_test(
     srcs = ["message_allocator_end2end_test.cc"],
     external_deps = [
         "absl/log:check",
+        "absl/log",
         "gtest",
     ],
     tags = [
@@ -1214,6 +1220,8 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//:iomgr",
+        "//src/core:grpc_check",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//src/proto/grpc/testing:simple_messages_cc_proto",
