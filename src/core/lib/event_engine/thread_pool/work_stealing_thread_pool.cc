@@ -469,14 +469,15 @@ bool WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
 
   if (pool_->current_thread_count() < pool_->max_thread_count()) {
       pool_->StartThread();
+      // Tell the lifeguard to monitor the pool more closely.
+      backoff_.Reset();
   } else {
     GRPC_TRACE_LOG(event_engine, INFO)
         << "Max thread count reached, not starting new thread (current: "
         << pool_->current_thread_count()
         << ", max: " << pool_->max_thread_count() << ")";
   }
-  // Tell the lifeguard to monitor the pool more closely.
-  backoff_.Reset();
+
   return true;
 }
 
