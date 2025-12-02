@@ -683,8 +683,8 @@ XdsClusterImplLb::MaybeCreateCertificateProviderLocked(
   RefCountedPtr<grpc_tls_certificate_provider> root_cert_provider;
   bool use_system_root_certs = false;
   absl::Status status = Match(
-      cluster_resource.common_tls_context.certificate_validation_context
-          .ca_certs,
+      cluster_resource.upstream_tls_context.common_tls_context
+          .certificate_validation_context.ca_certs,
       [](const std::monostate&) {
         // No root cert configured.
         return absl::OkStatus();
@@ -710,11 +710,11 @@ XdsClusterImplLb::MaybeCreateCertificateProviderLocked(
   if (!status.ok()) return status;
   // Configure identity cert.
   absl::string_view identity_provider_instance_name =
-      cluster_resource.common_tls_context.tls_certificate_provider_instance
-          .instance_name;
+      cluster_resource.upstream_tls_context.common_tls_context
+          .tls_certificate_provider_instance.instance_name;
   absl::string_view identity_cert_name =
-      cluster_resource.common_tls_context.tls_certificate_provider_instance
-          .certificate_name;
+      cluster_resource.upstream_tls_context.common_tls_context
+          .tls_certificate_provider_instance.certificate_name;
   RefCountedPtr<grpc_tls_certificate_provider> identity_cert_provider;
   if (!identity_provider_instance_name.empty()) {
     identity_cert_provider =
@@ -728,12 +728,15 @@ XdsClusterImplLb::MaybeCreateCertificateProviderLocked(
   }
   // Configure SAN matchers.
   const std::vector<StringMatcher>& san_matchers =
-      cluster_resource.common_tls_context.certificate_validation_context
-          .match_subject_alt_names;
+      cluster_resource.upstream_tls_context.common_tls_context
+          .certificate_validation_context.match_subject_alt_names;
   // Create xds cert provider.
   return MakeRefCounted<XdsCertificateProvider>(
       std::move(root_cert_provider), root_cert_name, use_system_root_certs,
-      std::move(identity_cert_provider), identity_cert_name, san_matchers);
+      std::move(identity_cert_provider), identity_cert_name, san_matchers,
+      cluster_resource.upstream_tls_context.sni,
+      cluster_resource.upstream_tls_context.auto_host_sni,
+      cluster_resource.upstream_tls_context.auto_sni_san_validation);
 }
 
 void XdsClusterImplLb::MaybeUpdatePickerLocked() {
