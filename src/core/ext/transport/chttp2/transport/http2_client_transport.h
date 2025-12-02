@@ -39,7 +39,6 @@
 #include "src/core/ext/transport/chttp2/transport/goaway.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
-#include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
@@ -284,8 +283,7 @@ class Http2ClientTransport final : public ClientTransport,
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 
   PromiseEndpoint endpoint_;
-  Http2SettingsManager settings_;
-  RefCountedPtr<SettingsPromiseManager> transport_settings_;
+  RefCountedPtr<SettingsPromiseManager> settings_;
 
   Http2FrameHeader current_frame_header_;
   // Returns the number of active streams. A stream is removed from the `active`
@@ -335,7 +333,8 @@ class Http2ClientTransport final : public ClientTransport,
     // implemented.
     {
       MutexLock lock(&transport_mutex_);
-      if (GetActiveStreamCount() >= settings_.peer().max_concurrent_streams()) {
+      if (GetActiveStreamCount() >=
+          settings_->peer().max_concurrent_streams()) {
         return absl::ResourceExhaustedError("Reached max concurrent streams");
       }
     }
@@ -437,7 +436,6 @@ class Http2ClientTransport final : public ClientTransport,
   }
 
   // HTTP2 Settings
-  void MarkPeerSettingsPromiseResolved();
   auto WaitForSettingsTimeoutOnDone();
   void MaybeSpawnWaitForSettingsTimeout();
   void EnforceLatestIncomingSettings();
@@ -480,6 +478,8 @@ class Http2ClientTransport final : public ClientTransport,
       BeginCloseStream(
           LookupStream(stream_id.value()),
           Http2ErrorCodeToFrameErrorCode(status.GetStreamErrorCode()),
+          // TODO(akshitpatel) [PH2][P1] : Bug.
+          // Refer : DISABLED_TestCanStreamReceiveDataFrames
           ServerMetadataFromStatus(status.GetAbslStreamError()), whence);
       return absl::OkStatus();
     } else if (error_type == Http2Status::Http2ErrorType::kConnectionError) {

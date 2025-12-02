@@ -86,11 +86,6 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|CoreEnd2endTests.BinaryMetadataServerHttp2FallbackClientTrueBinary"        \
   "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientTrueBinary"           \
   "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientHttp2Fallback"        \
-  "|CoreEnd2endTests.MaxMessageLengthOnClientOnResponseViaChannelArg"          \
-  "|CoreEnd2endTests."                                                         \
-  "MaxMessageLengthOnClientOnResponseViaServiceConfigWithIntegerJsonValue"     \
-  "|CoreEnd2endTests."                                                         \
-  "MaxMessageLengthOnClientOnResponseViaServiceConfigWithStringJsonValue"      \
   "|CoreLargeSendTests.RequestResponseWithPayload"                             \
   "|CoreLargeSendTests.RequestResponseWithPayload10Times"                      \
   "|Http2SingleHopTests.DisabledAlgorithmDecompressInCore"                     \
@@ -142,12 +137,19 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|Http2SingleHopTests.MaxConcurrentStreamsTimeoutOnFirst"                    \
   "|Http2SingleHopTests.MaxConcurrentStreamsTimeoutOnSecond"                   \
   "|Http2SingleHopTests.MaxConcurrentStreamsRejectOnClient"                    \
-  "|Http2SingleHopTests.SimpleDelayedRequestShort"
+  "|Http2SingleHopTests.SimpleDelayedRequestShort"                             \
+  "|Http2Tests.HighInitialSeqno"                                               \
+  "|Http2Tests.ServerStreaming"                                                \
+  "|Http2Tests.ServerStreamingEmptyStream"                                     \
+  "|Http2Tests.ServerStreaming10Messages"                                      \
+  "|Http2Tests.GracefulServerShutdown"                                         \
+  "|Http2Tests.MaxAgeForciblyClose"                                            \
+  "|Http2Tests.MaxAgeGracefullyClose"
 
 #define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE    \
   "CoreEnd2endTests|CoreDeadlineTests|CoreLargeSendTests|" \
   "CoreClientChannelTests|CoreDeadlineSingleHopTests|"     \
-  "Http2SingleHopTests"
+  "Http2SingleHopTests|Http2Tests"
 
 std::vector<CoreTestConfiguration> End2endTestConfigs() {
   std::vector<CoreTestConfiguration> list_of_configs;

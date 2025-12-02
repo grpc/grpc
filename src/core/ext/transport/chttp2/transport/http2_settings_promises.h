@@ -28,9 +28,12 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/channelz/property_list.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
@@ -39,6 +42,7 @@
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/time.h"
@@ -61,8 +65,14 @@ namespace grpc_core {
 // receive and process the SETTINGS ACK.
 class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
   // TODO(tjagtap) [PH2][P1][Settings] : Add new DCHECKs
-  // TODO(tjagtap) [PH2][P1][Settings] : Refactor full class
  public:
+  SettingsPromiseManager() = default;
+  // Not copyable, movable or assignable.
+  SettingsPromiseManager(const SettingsPromiseManager&) = delete;
+  SettingsPromiseManager& operator=(const SettingsPromiseManager&) = delete;
+  SettingsPromiseManager(SettingsPromiseManager&&) = delete;
+  SettingsPromiseManager& operator=(SettingsPromiseManager&&) = delete;
+
   //////////////////////////////////////////////////////////////////////////////
   // Functions for SETTINGS being sent from our transport to the peer.
 
@@ -76,8 +86,14 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
 
   // Called when transport receives a SETTINGS ACK frame from peer.
   // This SETTINGS ACK was sent by peer to confirm receipt of SETTINGS frame
-  // sent by us.
-  inline void OnSettingsAckReceived() { RecordReceivedAck(); }
+  // sent by us. Stop the settings timeout promise.
+  GRPC_MUST_USE_RESULT bool OnSettingsAckReceived() {
+    bool is_valid = settings_.AckLastSend();
+    if (is_valid) {
+      RecordReceivedAck();
+    }
+    return is_valid;
+  }
 
   // Called when our transport enqueues a SETTINGS frame to send to the peer.
   // However, the enqueued frames have not yet been written to the endpoint.
@@ -95,6 +111,7 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
   // frame on the endpoint. If we don't get an ACK before timeout, the
   // caller MUST close the transport.
   auto WaitForSettingsTimeout() {
+    did_previous_settings_promise_resolve_ = false;
     TimeoutWaiterSpawned();
     GRPC_SETTINGS_TIMEOUT_DLOG
         << "SettingsPromiseManager::WaitForSettingsTimeout Factory timeout_"
@@ -114,6 +131,7 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
                 Timestamp::Now())
                 << "Should have timed out";
             self->MarkReceivedAckAsProcessed();
+            self->did_previous_settings_promise_resolve_ = true;
             return absl::OkStatus();
           }
           self->AddWaitingForAck();
@@ -128,10 +146,16 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
                         " triggered. Transport will close. Sent Time : "
                      << sent_time << " Timeout Time : " << (sent_time + timeout)
                      << " Current Time " << Timestamp::Now();
+                 // Ideally we must set did_previous_settings_promise_resolve_
+                 // to false, but in this case the transport will be closed so
+                 // it does not matter. I am trying to avoid taking another ref
+                 // on self in this TrySeq.
                  return absl::CancelledError(
                      std::string(RFC9113::kSettingsTimeout));
                })));
   }
+
+  void TestOnlyRecordReceivedAck() { RecordReceivedAck(); }
 
   //////////////////////////////////////////////////////////////////////////////
   // Functions for SETTINGS being received from the peer.
@@ -140,48 +164,68 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
   // Buffered to apply settings at start of next write cycle, only after
   // SETTINGS ACK is written to the endpoint.
   void BufferPeerSettings(std::vector<Http2SettingsFrame::Setting>&& settings) {
+    ++num_acks_to_send_;
     pending_peer_settings_.reserve(pending_peer_settings_.size() +
                                    settings.size());
     pending_peer_settings_.insert(pending_peer_settings_.end(),
                                   settings.begin(), settings.end());
   };
 
-  // Returns settings buffered by BufferPeerSettings().
+  // Applies settings buffered by BufferPeerSettings().
   // Should be called at start of write cycle, after the SETTINGS ACK has been
-  // written to apply the settings. The return value MUST be used.
-  std::vector<Http2SettingsFrame::Setting> TakeBufferedPeerSettings() {
-    return std::exchange(pending_peer_settings_, {});
+  // written to apply the settings.
+  http2::Http2ErrorCode ApplyBufferedPeerSettings() {
+    return settings_.ApplyIncomingSettings(
+        std::exchange(pending_peer_settings_, {}));
   }
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Wrappers around Http2SettingsManager
 
   // Appends SETTINGS and SETTINGS ACK frames to output_buf if needed.
   // A SETTINGS frame is appended if local settings changed.
   // SETTINGS ACK frames are appended for any incoming settings that need
   // acknowledgment.
   void MaybeGetSettingsAndSettingsAckFrames(
-      chttp2::TransportFlowControl& flow_control,
-      Http2SettingsManager& settings, SliceBuffer& output_buf) {
+      chttp2::TransportFlowControl& flow_control, SliceBuffer& output_buf) {
     GRPC_SETTINGS_TIMEOUT_DLOG << "MaybeGetSettingsAndSettingsAckFrames";
-    std::optional<Http2Frame> settings_frame = settings.MaybeSendUpdate();
-    if (settings_frame.has_value()) {
-      GRPC_SETTINGS_TIMEOUT_DLOG
-          << "MaybeGetSettingsAndSettingsAckFrames Frame Settings ";
-      Serialize(absl::Span<Http2Frame>(&settings_frame.value(), 1), output_buf);
-      flow_control.FlushedSettings();
-      WillSendSettings();
+    if (did_previous_settings_promise_resolve_) {
+      std::optional<Http2Frame> settings_frame = settings_.MaybeSendUpdate();
+      if (settings_frame.has_value()) {
+        GRPC_SETTINGS_TIMEOUT_DLOG
+            << "MaybeGetSettingsAndSettingsAckFrames Frame Settings ";
+        Serialize(absl::Span<Http2Frame>(&settings_frame.value(), 1),
+                  output_buf);
+        flow_control.FlushedSettings();
+        WillSendSettings();
+      }
     }
-    const uint32_t num_acks = settings.MaybeSendAck();
-    if (num_acks > 0) {
-      std::vector<Http2Frame> ack_frames(num_acks);
-      for (uint32_t i = 0; i < num_acks; ++i) {
+    if (num_acks_to_send_ > 0) {
+      GRPC_SETTINGS_TIMEOUT_DLOG << "Sending " << num_acks_to_send_
+                                 << " settings ACK frames";
+      std::vector<Http2Frame> ack_frames(num_acks_to_send_);
+      for (uint32_t i = 0; i < num_acks_to_send_; ++i) {
         ack_frames[i] = Http2SettingsFrame{true, {}};
       }
       Serialize(absl::MakeSpan(ack_frames), output_buf);
-      GRPC_SETTINGS_TIMEOUT_DLOG << "Sending " << num_acks
-                                 << " settings ACK frames";
+      num_acks_to_send_ = 0;
     }
   }
 
+  Http2Settings& mutable_local() { return settings_.mutable_local(); }
+  Http2Settings& mutable_peer() { return settings_.mutable_peer(); }
+
+  const Http2Settings& local() const { return settings_.local(); }
+  const Http2Settings& acked() const { return settings_.acked(); }
+  const Http2Settings& peer() const { return settings_.peer(); }
+
+  channelz::PropertyGrid ChannelzProperties() const {
+    return settings_.ChannelzProperties();
+  }
+
  private:
+  Http2SettingsManager settings_;
+
   //////////////////////////////////////////////////////////////////////////////
   // Functions for SETTINGS being sent from our transport to the peer.
   void TimeoutWaiterSpawned() { should_wait_for_settings_ack_ = false; }
@@ -254,9 +298,18 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
   int number_of_acks_unprocessed_ = 0;
   bool should_wait_for_settings_ack_ = false;
 
+  // For CHTTP2, MaybeSendUpdate() checks `update_state_` to ensure only one
+  // SETTINGS frame is in flight at a time. PH2 requires an additional
+  // constraint: a new SETTINGS frame cannot be sent until the SETTINGS-ACK
+  // timeout promise for the previous frame has resolved. This flag tracks this
+  // condition for PH2.
+  bool did_previous_settings_promise_resolve_ = true;
+
   //////////////////////////////////////////////////////////////////////////////
   // Data Members for SETTINGS being received from the peer.
   std::vector<Http2SettingsFrame::Setting> pending_peer_settings_;
+  // Number of incoming SETTINGS frames that we have received but not ACKed yet.
+  uint32_t num_acks_to_send_ = 0;
 };
 
 }  // namespace grpc_core

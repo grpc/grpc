@@ -239,6 +239,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "tcp_telemetry",
+    hdrs = [
+        "lib/event_engine/tcp_telemetry.h",
+    ],
+    deps = [
+        "histogram",
+        "instrument",
+    ],
+)
+
+grpc_cc_library(
     name = "transport_framing_endpoint_extension",
     hdrs = [
         "lib/transport/transport_framing_endpoint_extension.h",
@@ -8290,6 +8301,7 @@ grpc_cc_library(
         "try_seq",
         "useful",
         ":chttp2_flow_control",
+        ":slice_buffer",
         "//:chttp2_frame",
         "//:gpr_platform",
         "//:promise",
@@ -8423,12 +8435,14 @@ grpc_cc_library(
         "call_spine",
         "grpc_check",
         "header_assembler",
+        "http2_status",
         "message",
         "message_assembler",
         "metadata",
         "ref_counted",
         "stream_data_queue",
         ":chttp2_flow_control",
+        "//:chttp2_frame",
         "//:gpr_platform",
         "//:hpack_encoder",
         "//:ref_counted_ptr",
