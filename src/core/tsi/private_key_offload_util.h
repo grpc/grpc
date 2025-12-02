@@ -21,7 +21,6 @@
 
 #include <openssl/ssl.h>
 
-#include <memory>
 #include <string>
 
 #include "src/core/tsi/transport_security_interface.h"

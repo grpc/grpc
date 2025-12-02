@@ -182,8 +182,8 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
   InMemoryCertificateProvider& operator=(InMemoryCertificateProvider&&) =
       delete;
 
-  // TODO: Expose APIs so that callers can pass in the root certs as
-  // std::shared_ptr<RootCertInfo>.
+  // TODO(anasalazar): Expose APIs so that callers can update in the root
+  // certificate.
   RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
     return distributor_;
   }
@@ -192,8 +192,7 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
 
   absl::Status ValidateCredentials() const;
 
-  void UpdateRoot(
-      absl::StatusOr<std::shared_ptr<RootCertInfo>> root_certificates);
+  void UpdateRoot(std::shared_ptr<RootCertInfo> root_certificates);
   void UpdateIdentity(const PemKeyCertPairList& pem_key_cert_pairs);
 
   static RefCountedPtr<grpc_tls_certificate_provider>
@@ -210,8 +209,8 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
     return QsortCompare(static_cast<const grpc_tls_certificate_provider*>(this),
                         other);
   }
-  void ForceUpdate(absl::StatusOr<std::shared_ptr<RootCertInfo>> root_cert_info,
-                   const PemKeyCertPairList& pem_key_cert_pairs);
+  void ForceUpdate(std::optional<std::shared_ptr<RootCertInfo>> root_cert_info,
+                   std::optional<const PemKeyCertPairList> pem_key_cert_pairs);
 
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
 

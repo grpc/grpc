@@ -25,6 +25,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <optional>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -463,18 +464,19 @@ InMemoryCertificateProvider::InMemoryCertificateProvider()
 }
 
 void InMemoryCertificateProvider::ForceUpdate(
-    absl::StatusOr<std::shared_ptr<RootCertInfo>> root_cert_info,
-    const PemKeyCertPairList& pem_key_cert_pairs) {
+    std::optional<std::shared_ptr<RootCertInfo>> root_cert_info,
+    std::optional<const PemKeyCertPairList> pem_key_cert_pairs) {
   MutexLock lock(&mu_);
   const bool root_changed =
-      HasRootCertInfoChanged(root_certificates_, root_cert_info);
+      root_cert_info.has_value() &&
+      HasRootCertInfoChanged(root_certificates_, *root_cert_info);
   if (root_changed) {
-    root_certificates_ = std::move(root_cert_info);
+    root_certificates_ = std::move(*root_cert_info);
   }
-  const bool identity_cert_changed =
-      !pem_key_cert_pairs_.empty() || pem_key_cert_pairs_ != pem_key_cert_pairs;
+  const bool identity_cert_changed = pem_key_cert_pairs.has_value() &&
+                                     pem_key_cert_pairs_ != pem_key_cert_pairs;
   if (identity_cert_changed) {
-    pem_key_cert_pairs_ = pem_key_cert_pairs;
+    pem_key_cert_pairs_ = *pem_key_cert_pairs;
   }
   if (root_changed || identity_cert_changed) {
     ExecCtx exec_ctx;
@@ -516,6 +518,7 @@ void InMemoryCertificateProvider::ForceUpdate(
 }
 
 absl::Status InMemoryCertificateProvider::ValidateCredentials() const {
+  MutexLock lock(&mu_);
   absl::Status status = ValidateRootCertificates(root_certificates_->get());
   if (!status.ok()) {
     return status;
@@ -531,13 +534,13 @@ absl::Status InMemoryCertificateProvider::ValidateCredentials() const {
 }
 
 void InMemoryCertificateProvider::UpdateRoot(
-    absl::StatusOr<std::shared_ptr<RootCertInfo>> root_certificates) {
-  ForceUpdate(root_certificates, pem_key_cert_pairs_);
+    std::shared_ptr<RootCertInfo> root_certificates) {
+  ForceUpdate(root_certificates, std::nullopt);
 }
 
 void InMemoryCertificateProvider::UpdateIdentity(
     const PemKeyCertPairList& pem_key_cert_pairs) {
-  ForceUpdate(root_certificates_, pem_key_cert_pairs);
+  ForceUpdate(std::nullopt, pem_key_cert_pairs);
 }
 
 UniqueTypeName InMemoryCertificateProvider::type() const {

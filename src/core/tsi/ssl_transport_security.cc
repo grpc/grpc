@@ -2103,7 +2103,7 @@ static tsi_result ssl_handshaker_next(
                                           handshaker_result, error);
     if (status == TSI_OK) {
       if (offload_context != nullptr) {
-        offload_context->handshaker_result = std::move(handshaker_result);
+        offload_context->handshaker_result = handshaker_result;
       }
       // Indicates that the handshake has completed and that a
       // handshaker_result has been created.
