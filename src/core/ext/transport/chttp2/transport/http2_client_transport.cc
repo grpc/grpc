@@ -273,10 +273,10 @@ Http2Status Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
 
   // TODO(akshitpatel) : [PH2][P3] : We should add a check to reset stream if
   // the stream state is kIdle as well.
-  if (stream->GetStreamState() == HttpStreamState::kHalfClosedRemote) {
-    return Http2Status::Http2StreamError(
-        Http2ErrorCode::kStreamClosed,
-        std::string(RFC9113::kHalfClosedRemoteState));
+
+  Http2Status stream_status = stream->CanStreamReceiveDataFrames();
+  if (!stream_status.IsOk()) {
+    return stream_status;
   }
 
   // Add frame to assembler
@@ -355,7 +355,7 @@ Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
                                   /*stream=*/nullptr, Http2Status::Ok());
   }
 
-  if (stream->GetStreamState() == HttpStreamState::kHalfClosedRemote) {
+  if (stream->IsStreamHalfClosedRemote()) {
     return ParseAndDiscardHeaders(
         std::move(frame.payload), frame.end_headers, stream,
         Http2Status::Http2StreamError(
@@ -659,7 +659,7 @@ Http2Status Http2ClientTransport::ProcessHttp2ContinuationFrame(
                                   nullptr, Http2Status::Ok());
   }
 
-  if (stream->GetStreamState() == HttpStreamState::kHalfClosedRemote) {
+  if (stream->IsStreamHalfClosedRemote()) {
     return ParseAndDiscardHeaders(
         std::move(frame.payload), frame.end_headers, stream,
         Http2Status::Http2StreamError(
@@ -1196,7 +1196,7 @@ auto Http2ClientTransport::MultiplexerLoop() {
                 << " is_closed_for_writes = " << stream->IsClosedForWrites();
 
             if (stream->GetStreamId() == kInvalidStreamId) {
-              GRPC_DCHECK(stream->GetStreamState() == HttpStreamState::kIdle);
+              GRPC_DCHECK(stream->IsStreamIdle());
               // TODO(akshitpatel) : [PH2][P5] : We will waste a stream id in
               // the rare scenario where the stream is aborted before it can be
               // written to. This is a possible area to optimize in future.

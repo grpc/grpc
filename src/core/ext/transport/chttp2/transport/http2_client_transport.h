@@ -480,6 +480,8 @@ class Http2ClientTransport final : public ClientTransport,
       BeginCloseStream(
           LookupStream(stream_id.value()),
           Http2ErrorCodeToFrameErrorCode(status.GetStreamErrorCode()),
+          // TODO(akshitpatel) [PH2][P1] : Bug.
+          // Refer : DISABLED_TestCanStreamReceiveDataFrames
           ServerMetadataFromStatus(status.GetAbslStreamError()), whence);
       return absl::OkStatus();
     } else if (error_type == Http2Status::Http2ErrorType::kConnectionError) {
