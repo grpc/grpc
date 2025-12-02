@@ -87,6 +87,11 @@ package_group(
 )
 
 package_group(
+    name = "client_channel_internal_header",
+    packages = [],
+)
+
+package_group(
     name = "core_credentials",
     packages = [],
 )

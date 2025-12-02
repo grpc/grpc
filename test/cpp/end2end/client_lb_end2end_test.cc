@@ -42,6 +42,7 @@
 #include "src/core/channelz/channelz_registry.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/client_channel/config_selector.h"
+#include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/global_subchannel_pool.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
@@ -3871,6 +3872,80 @@ TEST_F(ConnectionScalingTest,
       << servers_[1]->service_.RpcsWaitingForClientCancel();
 }
 
+// TODO(roth): Ideally, we should also have a variant of this test with
+// retries enabled, to show that the RPCs are failed in a way that is
+// eligible for transparent retries.  I tried writing that in a way that
+// started a couple of RPCs and then sent a resolver update to switch to
+// a new server, but that results in a tight infinite loop of
+// transparent retries, and the test never manages to get to the point
+// of the resolver update.  I suspect this has something to do with
+// ExecCtx constantly handling the transparent retries before it can
+// return control back to the application, but I haven't dug into it
+// deeply enough to verify.  When we finish migrating to v3, try writing
+// that test again.
+TEST_F(ConnectionScalingTest, QueuedRpcsFailAtMaxConnectionsIfConfigured) {
+  if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
+    GTEST_SKIP()
+        << "this test requires the subchannel_connection_scaling experiment";
+  }
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
+  constexpr char kServiceConfig[] =
+      "{\n"
+      "  \"connectionScaling\": {\n"
+      "    \"maxConnectionsPerSubchannel\": 2\n"
+      "  }\n"
+      "}";
+  const int kMaxConcurrentStreams = 3;
+  // Start a server with MAX_CONCURRENT_STREAMS set.
+  StartServers(1, {}, nullptr,
+               /*max_concurrent_streams=*/kMaxConcurrentStreams);
+  FakeResolverResponseGeneratorWrapper response_generator;
+  // Set channel arg to fail instead of queueing.
+  // Also disable retries so that we see the failures instead of them
+  // being transparently retried.
+  ChannelArguments channel_args;
+  channel_args.SetInt(GRPC_ARG_ENABLE_RETRIES, 0);
+  channel_args.SetInt(GRPC_ARG_MAX_CONCURRENT_STREAMS_REJECT_ON_CLIENT, 1);
+  auto channel = BuildChannel("pick_first", response_generator, channel_args);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts(), kServiceConfig);
+  // Start kMaxConcurrentStreams * 2 long-running RPCs.  This will
+  // create two connections, both of which will be at their limit.
+  std::vector<std::unique_ptr<LongRunningRpc>> rpcs;
+  for (size_t i = 0; i < kMaxConcurrentStreams * 2; ++i) {
+    rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  }
+  // Wait for the server to see the RPCs.
+  LOG(INFO) << "Waiting for server to see the initial RPCs...";
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+           kMaxConcurrentStreams * 2;
+  })) << "timeout waiting for initial RPCs to start -- RPCs started: "
+      << servers_[0]->service_.RpcsWaitingForClientCancel();
+  // There should be two connections.
+  EXPECT_EQ(servers_[0]->service_.clients().size(), 2);
+  // Start two more RPCs.  Both should fail.
+  rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  rpcs.emplace_back(StartLongRunningRpc(stub.get()));
+  // The two queued RPCs should have failed.
+  LOG(INFO) << "Waiting for RPCs to fail...";
+  for (size_t i = kMaxConcurrentStreams * 2;
+       i < (kMaxConcurrentStreams * 2) + 2; ++i) {
+    auto& rpc = rpcs[i];
+    LOG(INFO) << "HERE 0";
+    Status status = rpc->GetStatus();
+    LOG(INFO) << "HERE 1";
+    EXPECT_EQ(status.error_code(), GRPC_STATUS_UNAVAILABLE);
+    EXPECT_THAT(
+        status.error_message(),
+        ::testing::MatchesRegex("(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                                "subchannel at max number of connections, "
+                                "but no quota to send RPC"));
+    rpc.reset();
+  }
+}
+
 TEST_F(ConnectionScalingTest,
        MaxConnectionsPerSubchannelChangeTriggersConnectionAttempt) {
   if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
@@ -4044,10 +4119,6 @@ int main(int argc, char** argv) {
   grpc_core::ConfigVars::Overrides overrides;
   overrides.client_channel_backup_poll_interval_ms = 1;
   grpc_core::ConfigVars::SetOverrides(overrides);
-#if TARGET_OS_IPHONE
-  // Workaround Apple CFStream bug
-  grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
   grpc_init();
   grpc::testing::ConnectionAttemptInjector::Init();
   const auto result = RUN_ALL_TESTS();

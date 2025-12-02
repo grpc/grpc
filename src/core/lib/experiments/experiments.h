@@ -110,12 +110,14 @@ inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsSkipClearPeerOnCancellationEnabled() { return false; }
 inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
-inline bool IsSleepUseNonOwningWakerEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SLEEP_USE_NON_OWNING_WAKER
+inline bool IsSleepUseNonOwningWakerEnabled() { return true; }
 inline bool IsSubchannelConnectionScalingEnabled() { return false; }
 inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTrackWritesInResourceQuotaEnabled() { return false; }
+inline bool IsTrackZeroCopyAllocationsInResourceQuotaEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 
@@ -173,12 +175,14 @@ inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsSkipClearPeerOnCancellationEnabled() { return false; }
 inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
-inline bool IsSleepUseNonOwningWakerEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SLEEP_USE_NON_OWNING_WAKER
+inline bool IsSleepUseNonOwningWakerEnabled() { return true; }
 inline bool IsSubchannelConnectionScalingEnabled() { return false; }
 inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTrackWritesInResourceQuotaEnabled() { return false; }
+inline bool IsTrackZeroCopyAllocationsInResourceQuotaEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 
@@ -236,12 +240,14 @@ inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsSkipClearPeerOnCancellationEnabled() { return false; }
 inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
-inline bool IsSleepUseNonOwningWakerEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SLEEP_USE_NON_OWNING_WAKER
+inline bool IsSleepUseNonOwningWakerEnabled() { return true; }
 inline bool IsSubchannelConnectionScalingEnabled() { return false; }
 inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTrackWritesInResourceQuotaEnabled() { return false; }
+inline bool IsTrackZeroCopyAllocationsInResourceQuotaEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #endif
@@ -294,6 +300,7 @@ enum ExperimentIds {
   kExperimentIdTcpFrameSizeTuning,
   kExperimentIdTcpRcvLowat,
   kExperimentIdTrackWritesInResourceQuota,
+  kExperimentIdTrackZeroCopyAllocationsInResourceQuota,
   kExperimentIdTsiFrameProtectorWithoutLocks,
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
   kNumExperiments
@@ -481,6 +488,11 @@ inline bool IsTcpRcvLowatEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_TRACK_WRITES_IN_RESOURCE_QUOTA
 inline bool IsTrackWritesInResourceQuotaEnabled() {
   return IsExperimentEnabled<kExperimentIdTrackWritesInResourceQuota>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_TRACK_ZERO_COPY_ALLOCATIONS_IN_RESOURCE_QUOTA
+inline bool IsTrackZeroCopyAllocationsInResourceQuotaEnabled() {
+  return IsExperimentEnabled<
+      kExperimentIdTrackZeroCopyAllocationsInResourceQuota>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TSI_FRAME_PROTECTOR_WITHOUT_LOCKS
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() {

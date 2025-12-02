@@ -32,9 +32,6 @@
 namespace grpc_core {
 
 std::optional<Http2SettingsFrame> Http2SettingsManager::MaybeSendUpdate() {
-  if (!IsPreviousSettingsPromiseResolved()) {
-    return std::nullopt;
-  }
   switch (update_state_) {
     case UpdateState::kSending:
       return std::nullopt;
@@ -53,10 +50,6 @@ std::optional<Http2SettingsFrame> Http2SettingsManager::MaybeSendUpdate() {
   sent_ = local_;
   update_state_ = UpdateState::kSending;
   return frame;
-}
-
-uint32_t Http2SettingsManager::MaybeSendAck() {
-  return std::exchange(num_acks_to_send_, 0);
 }
 
 bool Http2SettingsManager::AckLastSend() {

@@ -213,6 +213,7 @@
 namespace grpc_core {
 
 class InstrumentTest;
+class GlobalCollectionScopeManager;
 
 static constexpr absl::string_view kOmittedLabel = "<omitted>";
 
@@ -290,7 +291,10 @@ class CollectionScope : public RefCounted<CollectionScope> {
     return labels_of_interest_.contains(label);
   }
 
+  bool IsRoot() const { return parents_.empty(); }
+
  private:
+  friend class GlobalCollectionScopeManager;
   friend class MetricsQuery;
   friend class instrument_detail::QueryableDomain;
 
@@ -319,6 +323,8 @@ class CollectionScope : public RefCounted<CollectionScope> {
   void ForEachUniqueStorage(
       absl::FunctionRef<void(instrument_detail::DomainStorage*)> cb,
       absl::flat_hash_set<instrument_detail::DomainStorage*>& visited);
+
+  void TestOnlyReset();
 };
 
 namespace instrument_detail {

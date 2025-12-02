@@ -63,6 +63,7 @@ EXPERIMENT_ENABLES = {
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
     "track_writes_in_resource_quota": "track_writes_in_resource_quota",
+    "track_zero_copy_allocations_in_resource_quota": "track_zero_copy_allocations_in_resource_quota",
     "tsi_frame_protector_without_locks": "tsi_frame_protector_without_locks",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
 }
@@ -138,11 +139,11 @@ EXPERIMENTS = {
             ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
-                "sleep_use_non_owning_waker",
             ],
             "resource_quota_test": [
                 "free_large_allocator",
                 "track_writes_in_resource_quota",
+                "track_zero_copy_allocations_in_resource_quota",
                 "unconstrained_max_quota_buffer_size",
             ],
             "secure_endpoint_test": [
@@ -176,6 +177,9 @@ EXPERIMENTS = {
             ],
             "posix_endpoint_test": [
                 "event_engine_secure_endpoint",
+            ],
+            "promise_test": [
+                "sleep_use_non_owning_waker",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
@@ -243,11 +247,11 @@ EXPERIMENTS = {
             ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
-                "sleep_use_non_owning_waker",
             ],
             "resource_quota_test": [
                 "free_large_allocator",
                 "track_writes_in_resource_quota",
+                "track_zero_copy_allocations_in_resource_quota",
                 "unconstrained_max_quota_buffer_size",
             ],
             "secure_endpoint_test": [
@@ -281,6 +285,9 @@ EXPERIMENTS = {
             ],
             "posix_endpoint_test": [
                 "event_engine_secure_endpoint",
+            ],
+            "promise_test": [
+                "sleep_use_non_owning_waker",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
@@ -348,11 +355,11 @@ EXPERIMENTS = {
             ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
-                "sleep_use_non_owning_waker",
             ],
             "resource_quota_test": [
                 "free_large_allocator",
                 "track_writes_in_resource_quota",
+                "track_zero_copy_allocations_in_resource_quota",
                 "unconstrained_max_quota_buffer_size",
             ],
             "secure_endpoint_test": [
@@ -386,6 +393,9 @@ EXPERIMENTS = {
             ],
             "posix_endpoint_test": [
                 "event_engine_secure_endpoint",
+            ],
+            "promise_test": [
+                "sleep_use_non_owning_waker",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",

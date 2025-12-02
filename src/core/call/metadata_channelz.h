@@ -12,17 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_TEST_CPP_SLEUTH_VERSION_H
-#define GRPC_TEST_CPP_SLEUTH_VERSION_H
+#ifndef GRPC_SRC_CORE_CALL_METADATA_CHANNELZ_H
+#define GRPC_SRC_CORE_CALL_METADATA_CHANNELZ_H
 
-#include <cstdint>
+#include "src/core/call/metadata.h"
+#include "src/core/channelz/property_list.h"
 
-namespace grpc_sleuth {
+namespace grpc_core {
 
-// Version number for the sleuth tool. Update with the current epoch with each
-// change and keep it monotonically increasing.
-constexpr int64_t kSleuthVersion = 1763407621LL;
+channelz::PropertyList MetadataToChannelzProperties(
+    const Arena::PoolPtr<grpc_metadata_batch>& md);
+channelz::PropertyList MetadataToChannelzProperties(
+    const grpc_metadata_batch& md);
 
-}  // namespace grpc_sleuth
+}  // namespace grpc_core
 
-#endif  // GRPC_TEST_CPP_SLEUTH_VERSION_H
+#endif  // GRPC_SRC_CORE_CALL_METADATA_CHANNELZ_H

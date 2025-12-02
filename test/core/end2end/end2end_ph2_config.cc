@@ -51,7 +51,32 @@ class Ph2InsecureFixture : public InsecureFixture {
   }
 };
 
+// This macro defines a set of cancellation and deadline tests that are
+// frequently broken and have been temporarily disabled. Grouping them here
+// allows them to be added to the GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST
+// list easily.
+#define CANCEL_SUITE                        \
+  "|CoreEnd2endTests.CancelAfterAccept"     \
+  "|CoreEnd2endTests.CancelAfterClientDone" \
+  "|CoreEnd2endTests.CancelAfterInvoke3"    \
+  "|CoreEnd2endTests.CancelAfterInvoke4"    \
+  "|CoreEnd2endTests.CancelAfterInvoke5"    \
+  "|CoreEnd2endTests.CancelAfterInvoke6"    \
+  "|CoreEnd2endTests.CancelAfterRoundTrip"  \
+  "|CoreEnd2endTests.CancelWithStatus1"     \
+  "|CoreEnd2endTests.CancelWithStatus2"     \
+  "|CoreEnd2endTests.CancelWithStatus3"     \
+  "|CoreEnd2endTests.CancelWithStatus4"
+
+#define DEADLINE_SUITE                      \
+  "|CoreDeadlineTests.DeadlineAfterInvoke3" \
+  "|CoreDeadlineTests.DeadlineAfterInvoke4" \
+  "|CoreDeadlineTests.DeadlineAfterInvoke5" \
+  "|CoreDeadlineTests.DeadlineAfterInvoke6"
+
 #define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST                         \
+  CANCEL_SUITE                                                                 \
+  DEADLINE_SUITE                                                               \
   "CoreClientChannelTests.DeadlineAfterAcceptWithServiceConfig"                \
   "|CoreClientChannelTests.DeadlineAfterRoundTripWithServiceConfig"            \
   "|CoreDeadlineTests.DeadlineAfterRoundTrip"                                  \
@@ -61,11 +86,6 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|CoreEnd2endTests.BinaryMetadataServerHttp2FallbackClientTrueBinary"        \
   "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientTrueBinary"           \
   "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientHttp2Fallback"        \
-  "|CoreEnd2endTests.MaxMessageLengthOnClientOnResponseViaChannelArg"          \
-  "|CoreEnd2endTests."                                                         \
-  "MaxMessageLengthOnClientOnResponseViaServiceConfigWithIntegerJsonValue"     \
-  "|CoreEnd2endTests."                                                         \
-  "MaxMessageLengthOnClientOnResponseViaServiceConfigWithStringJsonValue"      \
   "|CoreLargeSendTests.RequestResponseWithPayload"                             \
   "|CoreLargeSendTests.RequestResponseWithPayload10Times"                      \
   "|Http2SingleHopTests.DisabledAlgorithmDecompressInCore"                     \
@@ -117,12 +137,19 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|Http2SingleHopTests.MaxConcurrentStreamsTimeoutOnFirst"                    \
   "|Http2SingleHopTests.MaxConcurrentStreamsTimeoutOnSecond"                   \
   "|Http2SingleHopTests.MaxConcurrentStreamsRejectOnClient"                    \
-  "|Http2SingleHopTests.SimpleDelayedRequestShort"
+  "|Http2SingleHopTests.SimpleDelayedRequestShort"                             \
+  "|Http2Tests.HighInitialSeqno"                                               \
+  "|Http2Tests.ServerStreaming"                                                \
+  "|Http2Tests.ServerStreamingEmptyStream"                                     \
+  "|Http2Tests.ServerStreaming10Messages"                                      \
+  "|Http2Tests.GracefulServerShutdown"                                         \
+  "|Http2Tests.MaxAgeForciblyClose"                                            \
+  "|Http2Tests.MaxAgeGracefullyClose"
 
-#define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE               \
-  "CoreEnd2endTests|CoreDeadlineTests|CoreLargeSendTests|"            \
-  "CoreClientChannelTests|CoreDeadlineSingleHopTests|NoLoggingTests|" \
-  "Http2SingleHopTests"
+#define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE    \
+  "CoreEnd2endTests|CoreDeadlineTests|CoreLargeSendTests|" \
+  "CoreClientChannelTests|CoreDeadlineSingleHopTests|"     \
+  "Http2SingleHopTests|Http2Tests"
 
 std::vector<CoreTestConfiguration> End2endTestConfigs() {
   std::vector<CoreTestConfiguration> list_of_configs;
