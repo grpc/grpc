@@ -42,6 +42,7 @@
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/time.h"
@@ -64,7 +65,6 @@ namespace grpc_core {
 // receive and process the SETTINGS ACK.
 class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
   // TODO(tjagtap) [PH2][P1][Settings] : Add new DCHECKs
-  // TODO(tjagtap) [PH2][P1][Settings] : Refactor full class
  public:
   SettingsPromiseManager() = default;
   // Not copyable, movable or assignable.
@@ -164,7 +164,7 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
   // Buffered to apply settings at start of next write cycle, only after
   // SETTINGS ACK is written to the endpoint.
   void BufferPeerSettings(std::vector<Http2SettingsFrame::Setting>&& settings) {
-    settings_.OnSettingsReceived();
+    ++num_acks_to_send_;
     pending_peer_settings_.reserve(pending_peer_settings_.size() +
                                    settings.size());
     pending_peer_settings_.insert(pending_peer_settings_.end(),
@@ -200,15 +200,15 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
         WillSendSettings();
       }
     }
-    const uint32_t num_acks = settings_.MaybeSendAck();
-    if (num_acks > 0) {
-      std::vector<Http2Frame> ack_frames(num_acks);
-      for (uint32_t i = 0; i < num_acks; ++i) {
+    if (num_acks_to_send_ > 0) {
+      GRPC_SETTINGS_TIMEOUT_DLOG << "Sending " << num_acks_to_send_
+                                 << " settings ACK frames";
+      std::vector<Http2Frame> ack_frames(num_acks_to_send_);
+      for (uint32_t i = 0; i < num_acks_to_send_; ++i) {
         ack_frames[i] = Http2SettingsFrame{true, {}};
       }
       Serialize(absl::MakeSpan(ack_frames), output_buf);
-      GRPC_SETTINGS_TIMEOUT_DLOG << "Sending " << num_acks
-                                 << " settings ACK frames";
+      num_acks_to_send_ = 0;
     }
   }
 
@@ -308,6 +308,8 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
   //////////////////////////////////////////////////////////////////////////////
   // Data Members for SETTINGS being received from the peer.
   std::vector<Http2SettingsFrame::Setting> pending_peer_settings_;
+  // Number of incoming SETTINGS frames that we have received but not ACKed yet.
+  uint32_t num_acks_to_send_ = 0;
 };
 
 }  // namespace grpc_core

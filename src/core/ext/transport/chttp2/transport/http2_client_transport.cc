@@ -44,7 +44,6 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/header_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
-#include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
@@ -1296,9 +1295,6 @@ void Http2ClientTransport::EnforceLatestIncomingSettings() {
 }
 
 auto Http2ClientTransport::WaitForSettingsTimeoutOnDone() {
-  // TODO(tjagtap) : [PH2][P1][Settings] : Handle Transport Close case.
-  // TODO(tjagtap) : [PH2][P1][Settings] Move this out of the transport into a
-  // Settings class.
   return [self = RefAsSubclass<Http2ClientTransport>()](absl::Status status) {
     if (!status.ok()) {
       GRPC_UNUSED absl::Status result = self->HandleError(

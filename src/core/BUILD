@@ -8301,6 +8301,7 @@ grpc_cc_library(
         "try_seq",
         "useful",
         ":chttp2_flow_control",
+        ":slice_buffer",
         "//:chttp2_frame",
         "//:gpr_platform",
         "//:promise",
