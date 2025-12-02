@@ -78,8 +78,9 @@ absl::Status ValidateRootCertificates(const RootCertInfo* root_cert_info) {
 
 absl::Status ValidatePemKeyCertPair(absl::string_view cert_chain,
                                     PrivateKey private_key) {
-  if (cert_chain.empty() && IsPrivateKeyEmpty(private_key))
+  if (cert_chain.empty() && IsPrivateKeyEmpty(private_key)) {
     return absl::OkStatus();
+  }
   // Check that the cert chain consists of valid PEM blocks.
   absl::StatusOr<std::vector<X509*>> parsed_certs =
       ParsePemCertificateChain(cert_chain);

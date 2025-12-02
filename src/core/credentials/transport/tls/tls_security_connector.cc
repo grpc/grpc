@@ -25,6 +25,7 @@
 #include <grpc/support/string_util.h>
 #include <string.h>
 
+#include <cstddef>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -527,7 +528,8 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
   }
   bool use_default_roots = !options_->watch_root_cert();
   grpc_security_status status = grpc_ssl_tsi_client_handshaker_factory_init(
-      &pem_key_cert_pair[0], use_default_roots ? nullptr : root_cert_info_,
+      pem_key_cert_pair.empty() ? nullptr : &pem_key_cert_pair[0],
+      use_default_roots ? nullptr : root_cert_info_,
       skip_server_certificate_verification,
       grpc_get_tsi_tls_version(options_->min_tls_version()),
       grpc_get_tsi_tls_version(options_->max_tls_version()), ssl_session_cache_,
