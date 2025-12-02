@@ -284,8 +284,7 @@ class Http2ClientTransport final : public ClientTransport,
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 
   PromiseEndpoint endpoint_;
-  Http2SettingsManager settings_;
-  RefCountedPtr<SettingsPromiseManager> transport_settings_;
+  RefCountedPtr<SettingsPromiseManager> settings_;
 
   Http2FrameHeader current_frame_header_;
   // Returns the number of active streams. A stream is removed from the `active`
@@ -335,7 +334,8 @@ class Http2ClientTransport final : public ClientTransport,
     // implemented.
     {
       MutexLock lock(&transport_mutex_);
-      if (GetActiveStreamCount() >= settings_.peer().max_concurrent_streams()) {
+      if (GetActiveStreamCount() >=
+          settings_->peer().max_concurrent_streams()) {
         return absl::ResourceExhaustedError("Reached max concurrent streams");
       }
     }
