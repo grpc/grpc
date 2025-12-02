@@ -66,6 +66,13 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
   // TODO(tjagtap) [PH2][P1][Settings] : Add new DCHECKs
   // TODO(tjagtap) [PH2][P1][Settings] : Refactor full class
  public:
+  SettingsPromiseManager() = default;
+  // Not copyable, movable or assignable.
+  SettingsPromiseManager(const SettingsPromiseManager&) = delete;
+  SettingsPromiseManager& operator=(const SettingsPromiseManager&) = delete;
+  SettingsPromiseManager(SettingsPromiseManager&&) = delete;
+  SettingsPromiseManager& operator=(SettingsPromiseManager&&) = delete;
+
   //////////////////////////////////////////////////////////////////////////////
   // Functions for SETTINGS being sent from our transport to the peer.
 
@@ -79,8 +86,14 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
 
   // Called when transport receives a SETTINGS ACK frame from peer.
   // This SETTINGS ACK was sent by peer to confirm receipt of SETTINGS frame
-  // sent by us.
-  inline void OnSettingsAckReceived() { RecordReceivedAck(); }
+  // sent by us. Stop the settings timeout promise.
+  GRPC_MUST_USE_RESULT bool OnSettingsAckReceived() {
+    bool is_valid = settings_.AckLastSend();
+    if (is_valid) {
+      RecordReceivedAck();
+    }
+    return is_valid;
+  }
 
   // Called when our transport enqueues a SETTINGS frame to send to the peer.
   // However, the enqueued frames have not yet been written to the endpoint.
@@ -142,6 +155,8 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
                })));
   }
 
+  void TestOnlyRecordReceivedAck() { RecordReceivedAck(); }
+
   //////////////////////////////////////////////////////////////////////////////
   // Functions for SETTINGS being received from the peer.
 
@@ -149,18 +164,23 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
   // Buffered to apply settings at start of next write cycle, only after
   // SETTINGS ACK is written to the endpoint.
   void BufferPeerSettings(std::vector<Http2SettingsFrame::Setting>&& settings) {
+    settings_.OnSettingsReceived();
     pending_peer_settings_.reserve(pending_peer_settings_.size() +
                                    settings.size());
     pending_peer_settings_.insert(pending_peer_settings_.end(),
                                   settings.begin(), settings.end());
   };
 
-  // Returns settings buffered by BufferPeerSettings().
+  // Applies settings buffered by BufferPeerSettings().
   // Should be called at start of write cycle, after the SETTINGS ACK has been
-  // written to apply the settings. The return value MUST be used.
-  std::vector<Http2SettingsFrame::Setting> TakeBufferedPeerSettings() {
-    return std::exchange(pending_peer_settings_, {});
+  // written to apply the settings.
+  http2::Http2ErrorCode ApplyBufferedPeerSettings() {
+    return settings_.ApplyIncomingSettings(
+        std::exchange(pending_peer_settings_, {}));
   }
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Wrappers around Http2SettingsManager
 
   // Appends SETTINGS and SETTINGS ACK frames to output_buf if needed.
   // A SETTINGS frame is appended if local settings changed.
@@ -192,11 +212,6 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
     }
   }
 
-  //////////////////////////////////////////////////////////////////////////////
-  // Wrappers around Http2SettingsManager
-
-  void OnSettingsReceived() { settings_.OnSettingsReceived(); }
-
   Http2Settings& mutable_local() { return settings_.mutable_local(); }
   Http2Settings& mutable_peer() { return settings_.mutable_peer(); }
 
@@ -207,13 +222,6 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
   channelz::PropertyGrid ChannelzProperties() const {
     return settings_.ChannelzProperties();
   }
-
-  http2::Http2ErrorCode ApplyIncomingSettings(
-      const std::vector<Http2SettingsFrame::Setting>& settings) {
-    return settings_.ApplyIncomingSettings(settings);
-  }
-
-  GRPC_MUST_USE_RESULT bool AckLastSend() { return settings_.AckLastSend(); }
 
  private:
   Http2SettingsManager settings_;

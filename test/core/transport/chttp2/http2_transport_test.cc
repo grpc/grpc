@@ -161,7 +161,7 @@ TEST(Http2CommonTransportTest, TestReadChannelArgs) {
   EXPECT_EQ(settings2.allow_security_frame(), false);
 }
 
-TEST(Http2CommonTransportTest, MaybeGetSettingsAndSettingsAckFramesIdle) {
+TEST(SettingsPromiseManagerTest1, MaybeGetSettingsAndSettingsAckFramesIdle) {
   // Tests that in idle state, first call to
   // MaybeGetSettingsAndSettingsAckFrames sends initial settings, and second
   // call does nothing.
@@ -190,7 +190,7 @@ TEST(Http2CommonTransportTest, MaybeGetSettingsAndSettingsAckFramesIdle) {
   EXPECT_EQ(output_buf.JoinIntoString(), "hello");
 }
 
-TEST(Http2CommonTransportTest,
+TEST(SettingsPromiseManagerTest1,
      MaybeGetSettingsAndSettingsAckFramesMultipleAcks) {
   // If multiple settings frames are received then multiple ACKs should be sent.
   chttp2::TransportFlowControl transport_flow_control(
@@ -206,7 +206,8 @@ TEST(Http2CommonTransportTest,
   output_buf.Clear();
   output_buf.Append(Slice::FromCopiedString("hello"));
   for (int i = 0; i < 5; ++i) {
-    timeout_manager->OnSettingsReceived();
+    timeout_manager->BufferPeerSettings(
+        {{Http2Settings::kMaxConcurrentStreamsWireId, 100}});
   }
 
   timeout_manager->MaybeGetSettingsAndSettingsAckFrames(transport_flow_control,
@@ -225,7 +226,7 @@ TEST(Http2CommonTransportTest,
   EXPECT_EQ(output_buf.JoinIntoString(), expected_buf.JoinIntoString());
 }
 
-TEST(Http2CommonTransportTest,
+TEST(SettingsPromiseManagerTest1,
      MaybeGetSettingsAndSettingsAckFramesAfterAckAndChange) {
   // Tests that after initial settings are sent and ACKed, no frame is sent. If
   // settings are changed, a new SETTINGS frame with diff is sent.
@@ -248,7 +249,7 @@ TEST(Http2CommonTransportTest,
   ASSERT_THAT(output_buf.JoinIntoString(), ::testing::StartsWith("hello"));
   EXPECT_GT(output_buf.Length(), 5);
   // Ack settings
-  EXPECT_TRUE(timeout_manager->AckLastSend());
+  EXPECT_TRUE(timeout_manager->OnSettingsAckReceived());
   output_buf.Clear();
   output_buf.Append(Slice::FromCopiedString("hello"));
   // No changes - no frames
@@ -289,7 +290,7 @@ TEST(Http2CommonTransportTest,
   EXPECT_EQ(output_buf.JoinIntoString(), "hello");
 }
 
-TEST(Http2CommonTransportTest, MaybeGetSettingsAndSettingsAckFramesWithAck) {
+TEST(SettingsPromiseManagerTest1, MaybeGetSettingsAndSettingsAckFramesWithAck) {
   // Tests that if we need to send initial settings and also ACK received
   // settings, both frames are sent.
   chttp2::TransportFlowControl transport_flow_control(
@@ -302,7 +303,8 @@ TEST(Http2CommonTransportTest, MaybeGetSettingsAndSettingsAckFramesWithAck) {
   // MaybeGetSettingsAndSettingsAckFrames appends to it and does not overwrite
   // it, i.e. the original contents of output_buf are not erased.
   output_buf.Append(Slice::FromCopiedString("hello"));
-  timeout_manager->OnSettingsReceived();
+  timeout_manager->BufferPeerSettings(
+      {{Http2Settings::kMaxConcurrentStreamsWireId, 100}});
   timeout_manager->MaybeGetSettingsAndSettingsAckFrames(transport_flow_control,
                                                         output_buf);
   EXPECT_TRUE(timeout_manager->ShouldSpawnWaitForSettingsTimeout());

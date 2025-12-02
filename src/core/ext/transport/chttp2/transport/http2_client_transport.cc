@@ -480,13 +480,9 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
       return status;
     }
     settings_->BufferPeerSettings(std::move(frame.settings));
-    settings_->OnSettingsReceived();
     SpawnGuardedTransportParty("SettingsAck", TriggerWriteCycle());
   } else {
-    // Process the SETTINGS ACK Frame
-    if (settings_->AckLastSend()) {
-      // Stop the settings timeout promise.
-      settings_->OnSettingsAckReceived();
+    if (settings_->OnSettingsAckReceived()) {
       parser_.hpack_table()->SetMaxBytes(
           settings_->acked().header_table_size());
       ActOnFlowControlAction(flow_control_.SetAckedInitialWindow(
@@ -982,8 +978,7 @@ auto Http2ClientTransport::ProcessAndWriteControlFrames() {
   // 5. Custom gRPC security frame
 
   goaway_manager_.MaybeGetSerializedGoawayFrame(output_buf);
-  http2::Http2ErrorCode apply_status =
-      settings_->ApplyIncomingSettings(settings_->TakeBufferedPeerSettings());
+  http2::Http2ErrorCode apply_status = settings_->ApplyBufferedPeerSettings();
   if (!goaway_manager_.IsImmediateGoAway() &&
       apply_status == http2::Http2ErrorCode::kNoError) {
     EnforceLatestIncomingSettings();
@@ -1315,10 +1310,6 @@ auto Http2ClientTransport::WaitForSettingsTimeoutOnDone() {
 }
 
 void Http2ClientTransport::MaybeSpawnWaitForSettingsTimeout() {
-  // TODO(tjagtap) [PH2][P1][Settings] Move this out of the transport into a
-  // Settings class.
-  // TODO(tjagtap) [PH2][P1][Settings] Add more DCHECKs to the new settings
-  // class.
   if (settings_->ShouldSpawnWaitForSettingsTimeout()) {
     GRPC_HTTP2_CLIENT_DLOG
         << "Http2ClientTransport::MaybeSpawnWaitForSettingsTimeout Spawning";
