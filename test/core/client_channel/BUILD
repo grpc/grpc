@@ -61,7 +61,6 @@ grpc_fuzz_test(
 grpc_fuzz_test(
     name = "subchannel_test",
     srcs = ["subchannel_test.cc"],
-    tags = ["subchannel_test"],
     external_deps = [
         "fuzztest",
         "fuzztest_main",
@@ -69,6 +68,7 @@ grpc_fuzz_test(
         "absl/status",
         "absl/strings",
     ],
+    tags = ["subchannel_test"],
     deps = [
         "//:config",
         "//:grpc",
