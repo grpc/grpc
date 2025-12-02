@@ -579,7 +579,9 @@ class NewSubchannel final : public Subchannel {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   void RetryQueuedRpcs() ABSL_LOCKS_EXCLUDED(mu_);
   void RetryQueuedRpcsLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  void FailAllQueuedRpcsLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void MaybeFailAllQueuedRpcsLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void FailAllQueuedRpcsLocked(absl::Status status)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   // Updates the subchannel's connectivity state.
   void SetLastFailureLocked(const absl::Status& status)

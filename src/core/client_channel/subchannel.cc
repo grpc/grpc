@@ -1447,7 +1447,7 @@ class NewSubchannel::QueuedCall final : public Subchannel::Call {
   void ResumeOnConnectionLocked(ConnectedSubchannel* connected_subchannel)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&NewSubchannel::mu_);
 
-  void Fail(absl::Status status)
+  void FailLocked(absl::Status status)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&NewSubchannel::mu_);
 
  private:
@@ -1470,7 +1470,7 @@ class NewSubchannel::QueuedCall final : public Subchannel::Call {
   WeakRefCountedPtr<NewSubchannel> subchannel_;
   CreateCallArgs args_;
   grpc_closure* after_call_stack_destroy_ = nullptr;
-  grpc_error_handle cancel_error_;
+  grpc_error_handle cancel_error_ ABSL_GUARDED_BY(&mu_);
   Mutex mu_ ABSL_ACQUIRED_AFTER(NewSubchannel::mu_);
   BufferedCall buffered_call_ ABSL_GUARDED_BY(&mu_);
   RefCountedPtr<Call> subchannel_call_ ABSL_GUARDED_BY(&mu_);
@@ -1636,7 +1636,7 @@ void NewSubchannel::QueuedCall::ResumeOnConnectionLocked(
   }
 }
 
-void NewSubchannel::QueuedCall::Fail(absl::Status status) {
+void NewSubchannel::QueuedCall::FailLocked(absl::Status status) {
   GRPC_TRACE_LOG(subchannel_call, INFO)
       << "subchannel " << subchannel_.get() << " queued call " << this
       << ": failing: " << status;
@@ -1644,6 +1644,7 @@ void NewSubchannel::QueuedCall::Fail(absl::Status status) {
   queue_entry_ = nullptr;
   is_retriable_.store(true);
   MutexLock lock(&mu_);
+  cancel_error_ = status;
   buffered_call_.Fail(status,
                       BufferedCall::YieldCallCombinerIfPendingBatchesFound);
 }
@@ -1745,7 +1746,8 @@ class NewSubchannel::ConnectionStateWatcher final
     // If this was the last connection, then fail all queued RPCs and
     // update the connectivity state.
     if (subchannel->connections_.empty()) {
-      subchannel->FailAllQueuedRpcsLocked();
+      subchannel->FailAllQueuedRpcsLocked(
+          absl::UnavailableError("subchannel lost all connections"));
       subchannel->MaybeUpdateConnectivityStateLocked();
     } else {
       // Otherwise, retry queued RPCs, which may trigger a new
@@ -2065,13 +2067,7 @@ grpc_connectivity_state NewSubchannel::ComputeConnectivityStateLocked() const {
 
 absl::Status NewSubchannel::ConnectivityStatusToReportLocked() const {
   // Report status in TRANSIENT_FAILURE state.
-  // If using the old watcher API, also report status in IDLE state, since
-  // that's used to propagate keepalive times.
-  if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE ||
-      (!IsSubchannelConnectionScalingEnabled() &&
-       state_ == GRPC_CHANNEL_IDLE)) {
-    return last_failure_status_;
-  }
+  if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) return last_failure_status_;
   return absl::OkStatus();
 }
 
@@ -2145,7 +2141,8 @@ void NewSubchannel::StartConnectingLocked() {
   args.address = &address_for_connect_;
   args.interested_parties = pollset_set_;
   args.deadline = std::max(next_attempt_time_, min_deadline);
-  args.channel_args = args_;
+  args.channel_args =
+      args_.Set(GRPC_ARG_MAX_CONCURRENT_STREAMS_REJECT_ON_CLIENT, true);
   WeakRef(DEBUG_LOCATION, "Connect").release();  // Ref held by callback.
   connector_->Connect(args, &connecting_result_, &on_connecting_finished_);
 }
@@ -2306,8 +2303,10 @@ RefCountedPtr<Subchannel::Call> NewSubchannel::CreateCall(
     // If we don't have a connection to send the RPC on, queue it.
     if (connected_subchannel == nullptr) {
       // The QueuedCall object adds itself to queued_calls_.
-      return RefCountedPtr<QueuedCall>(args.arena->New<QueuedCall>(
+      auto queued_call = RefCountedPtr<QueuedCall>(args.arena->New<QueuedCall>(
           WeakRef().TakeAsSubclass<NewSubchannel>(), args));
+      MaybeFailAllQueuedRpcsLocked();
+      return queued_call;
     }
   }
   // Found a connection, so create a call on it.
@@ -2330,7 +2329,6 @@ RefCountedPtr<UnstartedCallDestination> NewSubchannel::call_destination() {
 
 RefCountedPtr<NewSubchannel::ConnectedSubchannel>
 NewSubchannel::ChooseConnectionLocked() {
-  if (!IsSubchannelConnectionScalingEnabled()) return connections_[0];
   // Try to find a connection with quota available for the RPC.
   for (auto& connection : connections_) {
     if (connection->GetQuotaForRpc()) return connection;
@@ -2370,6 +2368,7 @@ void NewSubchannel::RetryQueuedRpcsLocked() {
       if (connected_subchannel == nullptr) {
         GRPC_TRACE_LOG(subchannel_call, INFO)
             << "  no usable connection found; will stop retrying from queue";
+        MaybeFailAllQueuedRpcsLocked();
         return;
       }
       GRPC_TRACE_LOG(subchannel_call, INFO)
@@ -2380,11 +2379,24 @@ void NewSubchannel::RetryQueuedRpcsLocked() {
   }
 }
 
-void NewSubchannel::FailAllQueuedRpcsLocked() {
-  absl::Status status = PrependAddressToStatusMessage(
-      key_, absl::UnavailableError("subchannel lost all connections"));
+void NewSubchannel::MaybeFailAllQueuedRpcsLocked() {
+  bool fail_instead_of_queuing =
+      args_.GetInt(GRPC_ARG_MAX_CONCURRENT_STREAMS_REJECT_ON_CLIENT)
+          .value_or(false);
+  if (fail_instead_of_queuing &&
+      connections_.size() == watcher_list_.GetMaxConnectionsPerSubchannel()) {
+    FailAllQueuedRpcsLocked(
+        absl::UnavailableError("subchannel at max number of connections, "
+                               "but no quota to send RPC"));
+  }
+}
+
+void NewSubchannel::FailAllQueuedRpcsLocked(absl::Status status) {
+  GRPC_TRACE_LOG(subchannel_call, INFO)
+      << "subchannel " << this << ": failing all queued RPCs: " << status;
+  status = PrependAddressToStatusMessage(key_, status);
   for (QueuedCall* queued_call : queued_calls_) {
-    if (queued_call != nullptr) queued_call->Fail(status);
+    if (queued_call != nullptr) queued_call->FailLocked(status);
   }
   queued_calls_.clear();
 }
