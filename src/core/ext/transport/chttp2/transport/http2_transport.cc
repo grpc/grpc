@@ -34,6 +34,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -137,31 +138,6 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
       << local_settings.allow_true_binary_metadata()
       << ", allow_security_frame: " << local_settings.allow_security_frame()
       << "}";
-}
-
-bool MaybeGetSettingsAndSettingsAckFrames(
-    chttp2::TransportFlowControl& flow_control, Http2SettingsManager& settings,
-    SliceBuffer& output_buf) {
-  GRPC_HTTP2_COMMON_DLOG << "MaybeGetSettingsAndSettingsAckFrames";
-  std::optional<Http2Frame> settings_frame = settings.MaybeSendUpdate();
-  bool should_spawn_settings_timeout = false;
-  if (settings_frame.has_value()) {
-    GRPC_HTTP2_COMMON_DLOG
-        << "MaybeGetSettingsAndSettingsAckFrames Frame Settings ";
-    Serialize(absl::Span<Http2Frame>(&settings_frame.value(), 1), output_buf);
-    flow_control.FlushedSettings();
-    should_spawn_settings_timeout = true;
-  }
-  const uint32_t num_acks = settings.MaybeSendAck();
-  if (num_acks > 0) {
-    std::vector<Http2Frame> ack_frames(num_acks);
-    for (uint32_t i = 0; i < num_acks; ++i) {
-      ack_frames[i] = Http2SettingsFrame{true, {}};
-    }
-    Serialize(absl::MakeSpan(ack_frames), output_buf);
-    GRPC_HTTP2_COMMON_DLOG << "Sending " << num_acks << " settings ACK frames";
-  }
-  return should_spawn_settings_timeout;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

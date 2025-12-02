@@ -20,158 +20,243 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_SETTINGS_PROMISES_H
 
 #include <grpc/support/port_platform.h>
-#include <stdint.h>
 
+#include <algorithm>
 #include <cstdint>
 #include <optional>
-#include <queue>
+#include <string>
+#include <utility>
+#include <vector>
 
-#include "src/core/channelz/property_list.h"
+#include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
-#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
-#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/ref_counted.h"
 #include "src/core/util/time.h"
-#include "src/core/util/useful.h"
-#include "absl/functional/function_ref.h"
-#include "absl/strings/string_view.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/types/span.h"
+
 namespace grpc_core {
 
 // Timeout for getting an ack back on settings changes
 #define GRPC_ARG_SETTINGS_TIMEOUT "grpc.http2.settings_timeout"
 
-#define GRPC_SETTINGS_TIMEOUT_DLOG DLOG(INFO)
+#define GRPC_SETTINGS_TIMEOUT_DLOG \
+  DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
 
 // This class can only be used only from a promise based HTTP2 transports
 // general_party_ .
 // This class is designed with the assumption that only 1 SETTINGS frame will be
 // in flight at a time. And we do not send a second SETTINGS frame till we
 // receive and process the SETTINGS ACK.
-class SettingsTimeoutManager {
+class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
+  // TODO(tjagtap) [PH2][P1][Settings] : Add new DCHECKs
+  // TODO(tjagtap) [PH2][P1][Settings] : Refactor full class
  public:
+  //////////////////////////////////////////////////////////////////////////////
+  // Functions for SETTINGS being sent from our transport to the peer.
+
   // Assumption : This would be set only once in the life of the transport.
   inline void SetSettingsTimeout(const ChannelArgs& channel_args,
                                  const Duration keepalive_timeout) {
-    timeout_ =
+    settings_ack_timeout_ =
         channel_args.GetDurationFromIntMillis(GRPC_ARG_SETTINGS_TIMEOUT)
             .value_or(std::max(keepalive_timeout * 2, Duration::Minutes(1)));
   }
 
-  // To be called when a promise based Transport receives an a SETTINGS ACK
-  // frame.
+  // Called when transport receives a SETTINGS ACK frame from peer.
+  // This SETTINGS ACK was sent by peer to confirm receipt of SETTINGS frame
+  // sent by us.
   inline void OnSettingsAckReceived() { RecordReceivedAck(); }
 
-  // This returns a promise which must be spawned on transports general party.
-  // This must be spawned soon after the transport sends a SETTINGS frame on the
-  // endpoint.
-  // If we don't get an ACK before timeout, the caller MUST close the transport.
+  // Called when our transport enqueues a SETTINGS frame to send to the peer.
+  // However, the enqueued frames have not yet been written to the endpoint.
+  void WillSendSettings() { should_wait_for_settings_ack_ = true; }
+
+  // Returns true if we should spawn WaitForSettingsTimeout promise.
+  bool ShouldSpawnWaitForSettingsTimeout() const {
+    return should_wait_for_settings_ack_;
+  }
+
+  void TestOnlyTimeoutWaiterSpawned() { TimeoutWaiterSpawned(); }
+
+  // This returns a promise which must be spawned on transports general
+  // party. This must be spawned soon after the transport sends a SETTINGS
+  // frame on the endpoint. If we don't get an ACK before timeout, the
+  // caller MUST close the transport.
   auto WaitForSettingsTimeout() {
+    TimeoutWaiterSpawned();
     GRPC_SETTINGS_TIMEOUT_DLOG
-        << "SettingsTimeoutManager::WaitForSettingsTimeout Factory";
+        << "SettingsPromiseManager::WaitForSettingsTimeout Factory timeout_"
+        << settings_ack_timeout_;
     StartSettingsTimeoutTimer();
-    // TODO(tjagtap) : [PH2][P1] : Make this a ref counted class and manage the
-    // lifetime
-    return AssertResultType<absl::Status>(
-        Race(
-            [this]() -> Poll<absl::Status> {
-              GRPC_SETTINGS_TIMEOUT_DLOG
-                  << "SettingsTimeoutManager::WaitForSettingsTimeout Race";
-              // This Promise will "win" the race if we receive the SETTINGS
-              // ACK from the peer within the timeout time.
-              if (DidReceiveAck()) {
-                GRPC_DCHECK(
-                sent_time_ +
-                    (timeout_ *
-                     1.1 /* 10% grace time for this promise to be scheduled*/) >
+    return AssertResultType<absl::Status>(Race(
+        [self = this->Ref()]() -> Poll<absl::Status> {
+          GRPC_SETTINGS_TIMEOUT_DLOG
+              << "SettingsPromiseManager::WaitForSettingsTimeout Race";
+          // This Promise will "win" the race if we receive the SETTINGS
+          // ACK from the peer within the timeout time.
+          if (self->HasReceivedAck()) {
+            GRPC_DCHECK(
+                self->sent_time_ +
+                    (self->settings_ack_timeout_ *
+                     1.2 /* Grace time for this promise to be scheduled*/) >
                 Timestamp::Now())
                 << "Should have timed out";
-                RemoveReceivedAck();
-                return absl::OkStatus();
-              }
-              AddWaitingForAck();
-              return Pending{};
-            },
-            // This promise will "Win" the Race if timeout is crossed and we did
-            // not receive the ACK. The transport must close when this happens.
-            TrySeq(Sleep(timeout_), [sent_time = sent_time_,
-                                     timeout = timeout_]() {
-              GRPC_SETTINGS_TIMEOUT_DLOG
-                  << "SettingsTimeoutManager::WaitForSettingsTimeout Timeout"
-                     " triggered. Transport will close. Sent Time : "
-                  << sent_time << " Timeout Time : " << (sent_time + timeout)
-                  << " Current Time " << Timestamp::Now();
-              return absl::CancelledError(
-                  std::string(RFC9113::kSettingsTimeout));
-            })));
+            self->MarkReceivedAckAsProcessed();
+            return absl::OkStatus();
+          }
+          self->AddWaitingForAck();
+          return Pending{};
+        },
+        // This promise will "Win" the Race if timeout is crossed and we did
+        // not receive the ACK. The transport must close when this happens.
+        TrySeq(Sleep(settings_ack_timeout_),
+               [sent_time = sent_time_, timeout = settings_ack_timeout_]() {
+                 GRPC_SETTINGS_TIMEOUT_DLOG
+                     << "SettingsPromiseManager::WaitForSettingsTimeout Timeout"
+                        " triggered. Transport will close. Sent Time : "
+                     << sent_time << " Timeout Time : " << (sent_time + timeout)
+                     << " Current Time " << Timestamp::Now();
+                 return absl::CancelledError(
+                     std::string(RFC9113::kSettingsTimeout));
+               })));
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Functions for SETTINGS being received from the peer.
+
+  // Buffers SETTINGS frames received from peer.
+  // Buffered to apply settings at start of next write cycle, only after
+  // SETTINGS ACK is written to the endpoint.
+  void BufferPeerSettings(std::vector<Http2SettingsFrame::Setting>&& settings) {
+    pending_peer_settings_.reserve(pending_peer_settings_.size() +
+                                   settings.size());
+    pending_peer_settings_.insert(pending_peer_settings_.end(),
+                                  settings.begin(), settings.end());
+  };
+
+  // Returns settings buffered by BufferPeerSettings().
+  // Should be called at start of write cycle, after the SETTINGS ACK has been
+  // written to apply the settings. The return value MUST be used.
+  std::vector<Http2SettingsFrame::Setting> TakeBufferedPeerSettings() {
+    return std::exchange(pending_peer_settings_, {});
+  }
+
+  // Appends SETTINGS and SETTINGS ACK frames to output_buf if needed.
+  // A SETTINGS frame is appended if local settings changed.
+  // SETTINGS ACK frames are appended for any incoming settings that need
+  // acknowledgment.
+  void MaybeGetSettingsAndSettingsAckFrames(
+      chttp2::TransportFlowControl& flow_control,
+      Http2SettingsManager& settings, SliceBuffer& output_buf) {
+    GRPC_SETTINGS_TIMEOUT_DLOG << "MaybeGetSettingsAndSettingsAckFrames";
+    std::optional<Http2Frame> settings_frame = settings.MaybeSendUpdate();
+    if (settings_frame.has_value()) {
+      GRPC_SETTINGS_TIMEOUT_DLOG
+          << "MaybeGetSettingsAndSettingsAckFrames Frame Settings ";
+      Serialize(absl::Span<Http2Frame>(&settings_frame.value(), 1), output_buf);
+      flow_control.FlushedSettings();
+      WillSendSettings();
+    }
+    const uint32_t num_acks = settings.MaybeSendAck();
+    if (num_acks > 0) {
+      std::vector<Http2Frame> ack_frames(num_acks);
+      for (uint32_t i = 0; i < num_acks; ++i) {
+        ack_frames[i] = Http2SettingsFrame{true, {}};
+      }
+      Serialize(absl::MakeSpan(ack_frames), output_buf);
+      GRPC_SETTINGS_TIMEOUT_DLOG << "Sending " << num_acks
+                                 << " settings ACK frames";
+    }
   }
 
  private:
+  //////////////////////////////////////////////////////////////////////////////
+  // Functions for SETTINGS being sent from our transport to the peer.
+  void TimeoutWaiterSpawned() { should_wait_for_settings_ack_ = false; }
   inline void StartSettingsTimeoutTimer() {
     GRPC_SETTINGS_TIMEOUT_DLOG
-        << "SettingsTimeoutManager::StartSettingsTimeoutTimer "
+        << "SettingsPromiseManager::StartSettingsTimeoutTimer "
            "did_register_waker_ "
-        << did_register_waker_
+        << did_register_ack_timeout_waker_
         << " number_of_acks_unprocessed_ : " << number_of_acks_unprocessed_;
     GRPC_DCHECK_EQ(number_of_acks_unprocessed_, 0);
-    GRPC_DCHECK(!did_register_waker_);
+    GRPC_DCHECK(!did_register_ack_timeout_waker_);
     sent_time_ = Timestamp::Now();
   }
-  inline bool DidReceiveAck() {
+
+  inline bool HasReceivedAck() {
     GRPC_SETTINGS_TIMEOUT_DLOG
-        << "SettingsTimeoutManager::DidReceiveAck did_register_waker_ "
-        << did_register_waker_
+        << "SettingsPromiseManager::DidReceiveAck did_register_waker_ "
+        << did_register_ack_timeout_waker_
         << " number_of_acks_unprocessed_ : " << number_of_acks_unprocessed_;
     return number_of_acks_unprocessed_ > 0;
   }
   inline void AddWaitingForAck() {
     GRPC_SETTINGS_TIMEOUT_DLOG
-        << "SettingsTimeoutManager::AddWaitingForAck did_register_waker_ "
-        << did_register_waker_
+        << "SettingsPromiseManager::AddWaitingForAck did_register_waker_ "
+        << did_register_ack_timeout_waker_
         << " number_of_acks_unprocessed_ : " << number_of_acks_unprocessed_;
-    if (!did_register_waker_) {
+    if (!did_register_ack_timeout_waker_) {
       GRPC_DCHECK_EQ(number_of_acks_unprocessed_, 0);
-      waker_ = GetContext<Activity>()->MakeNonOwningWaker();
-      did_register_waker_ = true;
+      ack_timeout_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+      did_register_ack_timeout_waker_ = true;
     }
-    GRPC_DCHECK(did_register_waker_);
+    GRPC_DCHECK(did_register_ack_timeout_waker_);
   }
   inline void RecordReceivedAck() {
     GRPC_SETTINGS_TIMEOUT_DLOG
-        << "SettingsTimeoutManager::RecordReceivedAck did_register_waker_ "
-        << did_register_waker_
+        << "SettingsPromiseManager::RecordReceivedAck did_register_waker_ "
+        << did_register_ack_timeout_waker_
         << " number_of_acks_unprocessed_ : " << number_of_acks_unprocessed_;
     GRPC_DCHECK_EQ(number_of_acks_unprocessed_, 0);
     ++number_of_acks_unprocessed_;
-    if (did_register_waker_) {
-      // It is possible that we receive the ACK before WaitForSettingsTimeout is
-      // scheduled. That is why we do this inside an if.
-      waker_.Wakeup();
-      did_register_waker_ = false;
+    if (did_register_ack_timeout_waker_) {
+      ack_timeout_waker_.Wakeup();
+      did_register_ack_timeout_waker_ = false;
+    } else {
+      GRPC_SETTINGS_TIMEOUT_DLOG
+          << "We receive the ACK before WaitForSettingsTimeout promise was "
+             "scheduled.";
     }
-    GRPC_DCHECK(!did_register_waker_);
+    GRPC_DCHECK(!did_register_ack_timeout_waker_);
   }
-  inline void RemoveReceivedAck() {
+  inline void MarkReceivedAckAsProcessed() {
     GRPC_SETTINGS_TIMEOUT_DLOG
-        << "SettingsTimeoutManager::RemoveReceivedAck did_register_waker_ "
-        << did_register_waker_
+        << "SettingsPromiseManager::RemoveReceivedAck did_register_waker_ "
+        << did_register_ack_timeout_waker_
         << " number_of_acks_unprocessed_ : " << number_of_acks_unprocessed_;
     --number_of_acks_unprocessed_;
     GRPC_DCHECK_EQ(number_of_acks_unprocessed_, 0);
-    GRPC_DCHECK(!did_register_waker_);
+    GRPC_DCHECK(!did_register_ack_timeout_waker_);
   }
 
-  Duration timeout_;
-  // We don't actually use this for the timeout. We are just keeping this as
-  // book keeping for better debuggability.
+  //////////////////////////////////////////////////////////////////////////////
+  // Data Members for SETTINGS being sent from our transport to the peer.
+  Duration settings_ack_timeout_;
+  // TODO(tjagtap) [PH2][P3][Settings] Delete sent_time_. We don't actually use
+  // sent_time_ for the timeout. We are just keeping this as book keeping for
+  // better debuggability.
   Timestamp sent_time_ = Timestamp::InfFuture();
-  Waker waker_;
-  bool did_register_waker_ = false;
+  Waker ack_timeout_waker_;
+  bool did_register_ack_timeout_waker_ = false;
   int number_of_acks_unprocessed_ = 0;
+  bool should_wait_for_settings_ack_ = false;
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Data Members for SETTINGS being received from the peer.
+  std::vector<Http2SettingsFrame::Setting> pending_peer_settings_;
 };
 
 }  // namespace grpc_core

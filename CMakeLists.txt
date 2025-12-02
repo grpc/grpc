@@ -9620,6 +9620,10 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(call_filters_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   src/core/call/call_filters.cc
   src/core/call/call_state.cc
   src/core/call/message.cc
@@ -9750,6 +9754,7 @@ target_link_libraries(call_filters_test
   absl::span
   absl::utility
   gpr
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 

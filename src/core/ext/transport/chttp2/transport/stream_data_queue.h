@@ -840,6 +840,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   }
 
   uint32_t stream_id_;
+
+  // This is only used for DCHECKs. Not actually used for any business logic.
   const bool is_client_;
 
   enum class RstStreamState : uint8_t {
