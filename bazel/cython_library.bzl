@@ -74,7 +74,10 @@ def pyx_library(name, deps = [], py_deps = [], srcs = [], **kwargs):
         native.cc_binary(
             name = shared_object_name,
             srcs = [stem + ".cpp"],
-            deps = deps + ["@local_config_python//:python_headers"],
+            deps = deps + [
+                "@rules_python//python/cc:current_py_cc_headers",
+                "@rules_python//python/cc:current_py_cc_libs",
+            ],
             defines = defines,
             linkshared = 1,
         )
