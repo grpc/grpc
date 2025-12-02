@@ -168,8 +168,8 @@ thread_local WorkQueue* g_local_queue = nullptr;
 
 // -------- WorkStealingThreadPool --------
 
-WorkStealingThreadPool::WorkStealingThreadPool(size_t reserve_threads)
-    : pool_{std::make_shared<WorkStealingThreadPoolImpl>(reserve_threads)} {
+WorkStealingThreadPool::WorkStealingThreadPool(size_t reserve_threads, size_t max_thread_count)
+    : pool_{std::make_shared<WorkStealingThreadPoolImpl>(reserve_threads, max_thread_count)} {
   if (g_log_verbose_failures) {
     GRPC_TRACE_LOG(event_engine, INFO)
         << "WorkStealingThreadPool verbose failures are enabled";
@@ -224,8 +224,10 @@ void WorkStealingThreadPool::PostFork() { pool_->Postfork(); }
 // -------- WorkStealingThreadPool::WorkStealingThreadPoolImpl --------
 
 WorkStealingThreadPool::WorkStealingThreadPoolImpl::WorkStealingThreadPoolImpl(
-    size_t reserve_threads)
-    : reserve_threads_(reserve_threads), queue_(this) {}
+    size_t reserve_threads, size_t max_thread_count)
+    : reserve_threads_(reserve_threads),
+      max_thread_count_(std::max(max_thread_count, reserve_threads)),
+      current_thread_count_(0), queue_(this) {}
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Start() {
   for (size_t i = 0; i < reserve_threads_; i++) {
@@ -262,6 +264,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::StartThread() {
       new ThreadState(shared_from_this()), nullptr,
       grpc_core::Thread::Options().set_tracked(false).set_joinable(false))
       .Start();
+  ++current_thread_count_;
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Quiesce() {
@@ -463,7 +466,15 @@ bool WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
   GRPC_TRACE_LOG(event_engine, INFO)
       << "Starting new ThreadPool thread due to backlog (total threads: "
       << living_thread_count + 1;
-  pool_->StartThread();
+
+  if (pool_->current_thread_count() < pool_->max_thread_count()) {
+      pool_->StartThread();
+  } else {
+    GRPC_TRACE_LOG(event_engine, INFO)
+        << "Max thread count reached, not starting new thread (current: "
+        << pool_->current_thread_count()
+        << ", max: " << pool_->max_thread_count() << ")";
+  }
   // Tell the lifeguard to monitor the pool more closely.
   backoff_.Reset();
   return true;

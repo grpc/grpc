@@ -43,7 +43,8 @@ namespace grpc_event_engine::experimental {
 
 class WorkStealingThreadPool final : public ThreadPool {
  public:
-  explicit WorkStealingThreadPool(size_t reserve_threads);
+  explicit WorkStealingThreadPool(size_t reserve_threads,
+                                  size_t max_thread_count = std::numeric_limits<size_t>::max());
   // Asserts Quiesce was called.
   ~WorkStealingThreadPool() override;
   // Shut down the pool, and wait for all threads to exit.
@@ -102,7 +103,7 @@ class WorkStealingThreadPool final : public ThreadPool {
   class WorkStealingThreadPoolImpl
       : public std::enable_shared_from_this<WorkStealingThreadPoolImpl> {
    public:
-    explicit WorkStealingThreadPoolImpl(size_t reserve_threads);
+    explicit WorkStealingThreadPoolImpl(size_t reserve_threads, size_t max_thread_count);
     // Start all threads.
     void Start();
     // Add a closure to a work queue, preferably a thread-local queue if
@@ -138,6 +139,8 @@ class WorkStealingThreadPool final : public ThreadPool {
     bool IsForking();
     bool IsQuiesced();
     size_t reserve_threads() { return reserve_threads_; }
+    size_t max_thread_count() { return max_thread_count_; }
+    size_t current_thread_count() { return current_thread_count_; }
     BusyThreadCount* busy_thread_count() { return &busy_thread_count_; }
     LivingThreadCount* living_thread_count() { return &living_thread_count_; }
     TheftRegistry* theft_registry() { return &theft_registry_; }
@@ -173,6 +176,8 @@ class WorkStealingThreadPool final : public ThreadPool {
     void DumpStacksAndCrash();
 
     const size_t reserve_threads_;
+    size_t max_thread_count_;
+    size_t current_thread_count_;
     BusyThreadCount busy_thread_count_;
     LivingThreadCount living_thread_count_;
     TheftRegistry theft_registry_;

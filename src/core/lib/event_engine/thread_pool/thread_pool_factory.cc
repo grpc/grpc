@@ -26,4 +26,9 @@ std::shared_ptr<ThreadPool> MakeThreadPool(size_t reserve_threads) {
   return thread_pool;
 }
 
+std::shared_ptr<ThreadPool> MakeThreadPool(size_t reserve_threads, size_t max_thread_count) {
+  auto thread_pool = std::make_shared<WorkStealingThreadPool>(reserve_threads, max_thread_count);
+  return thread_pool;
+}
+
 }  // namespace grpc_event_engine::experimental
