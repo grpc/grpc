@@ -46,7 +46,6 @@ class SyncCertificateVerifier
   bool success_ = false;
 };
 
-// Exists to be an incorrect implementation that doesn't set a status
 class SyncCertificateVerifierNoStatusSet
     : public grpc::experimental::ExternalCertificateVerifier {
  public:
@@ -60,9 +59,6 @@ class SyncCertificateVerifierNoStatusSet
 
   void Cancel(grpc::experimental::TlsCustomVerificationCheckRequest*) override {
   }
-
- private:
-  bool success_ = false;
 };
 
 class AsyncCertificateVerifier
