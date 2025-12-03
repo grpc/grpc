@@ -74,8 +74,6 @@
   default: false
 - name: local_connector_secure
   default: false
-- name: max_age_filter_float_to_top
-  default: true
 - name: max_inflight_pings_strict_limit
   default: true
 - name: monitoring_experiment
