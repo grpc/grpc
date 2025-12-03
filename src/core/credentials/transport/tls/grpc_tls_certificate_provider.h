@@ -182,8 +182,6 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
   InMemoryCertificateProvider& operator=(InMemoryCertificateProvider&&) =
       delete;
 
-  // TODO(anasalazar): Expose APIs so that callers can update in the root
-  // certificate.
   RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
     return distributor_;
   }
@@ -209,8 +207,8 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
     return QsortCompare(static_cast<const grpc_tls_certificate_provider*>(this),
                         other);
   }
-  void ForceUpdate(std::optional<std::shared_ptr<RootCertInfo>> root_cert_info,
-                   std::optional<const PemKeyCertPairList> pem_key_cert_pairs);
+  void Update(std::optional<std::shared_ptr<RootCertInfo>> root_cert_info,
+              std::optional<const PemKeyCertPairList> pem_key_cert_pairs);
 
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
 

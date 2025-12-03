@@ -464,7 +464,7 @@ InMemoryCertificateProvider::InMemoryCertificateProvider()
   });
 }
 
-void InMemoryCertificateProvider::ForceUpdate(
+void InMemoryCertificateProvider::Update(
     std::optional<std::shared_ptr<RootCertInfo>> root_cert_info,
     std::optional<const PemKeyCertPairList> pem_key_cert_pairs) {
   MutexLock lock(&mu_);
@@ -536,12 +536,12 @@ absl::Status InMemoryCertificateProvider::ValidateCredentials() const {
 
 void InMemoryCertificateProvider::UpdateRoot(
     std::shared_ptr<RootCertInfo> root_certificates) {
-  ForceUpdate(root_certificates, std::nullopt);
+  Update(root_certificates, std::nullopt);
 }
 
 void InMemoryCertificateProvider::UpdateIdentity(
     const PemKeyCertPairList& pem_key_cert_pairs) {
-  ForceUpdate(std::nullopt, pem_key_cert_pairs);
+  Update(std::nullopt, pem_key_cert_pairs);
 }
 
 UniqueTypeName InMemoryCertificateProvider::type() const {
