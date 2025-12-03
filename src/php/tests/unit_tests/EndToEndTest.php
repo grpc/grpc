@@ -16,17 +16,47 @@
  * limitations under the License.
  *
  */
-class EndToEndTest extends \PHPUnit\Framework\TestCase
+
+use Grpc\Call;
+use Grpc\Channel;
+use Grpc\Server;
+use Grpc\Timeval;
+use PHPUnit\Framework\TestCase;
+use const Grpc\CHANNEL_IDLE;
+use const Grpc\OP_RECV_CLOSE_ON_SERVER;
+use const Grpc\OP_RECV_INITIAL_METADATA;
+use const Grpc\OP_RECV_MESSAGE;
+use const Grpc\OP_RECV_STATUS_ON_CLIENT;
+use const Grpc\OP_SEND_CLOSE_FROM_CLIENT;
+use const Grpc\OP_SEND_INITIAL_METADATA;
+use const Grpc\OP_SEND_MESSAGE;
+use const Grpc\OP_SEND_STATUS_FROM_SERVER;
+use const Grpc\STATUS_INVALID_ARGUMENT;
+use const Grpc\STATUS_OK;
+use const Grpc\WRITE_NO_COMPRESS;
+
+class EndToEndTest extends TestCase
 {
+    /**
+     * @var Server
+     */
     private $server;
+
+    /**
+     * @var bool
+     */
     private $port;
+
+    /**
+     * @var Channel
+     */
     private $channel;
 
     public function setUp(): void
     {
-        $this->server = new Grpc\Server([]);
+        $this->server = new Server([]);
         $this->port = $this->server->addHttp2Port('0.0.0.0:0');
-        $this->channel = new Grpc\Channel('localhost:'.$this->port, [
+        $this->channel = new Channel('localhost:'.$this->port, [
             "force_new" => true,
         ]);
         $this->server->start();
@@ -40,15 +70,15 @@ class EndToEndTest extends \PHPUnit\Framework\TestCase
 
     public function testSimpleRequestBody()
     {
-        $deadline = Grpc\Timeval::infFuture();
+        $deadline = Timeval::infFuture();
         $status_text = 'xyz';
-        $call = new Grpc\Call($this->channel,
+        $call = new Call($this->channel,
                               'phony_method',
                               $deadline);
 
         $event = $call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_CLOSE_FROM_CLIENT => true,
         ]);
 
         $this->assertTrue($event->send_metadata);
@@ -59,13 +89,13 @@ class EndToEndTest extends \PHPUnit\Framework\TestCase
         $server_call = $event->call;
 
         $event = $server_call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_STATUS_FROM_SERVER => [
                 'metadata' => [],
-                'code' => Grpc\STATUS_INVALID_ARGUMENT,
+                'code' => STATUS_INVALID_ARGUMENT,
                 'details' => $status_text,
             ],
-            Grpc\OP_RECV_CLOSE_ON_SERVER => true,
+            OP_RECV_CLOSE_ON_SERVER => true,
         ]);
 
         $this->assertTrue($event->send_metadata);
@@ -73,13 +103,13 @@ class EndToEndTest extends \PHPUnit\Framework\TestCase
         $this->assertFalse($event->cancelled);
 
         $event = $call->startBatch([
-            Grpc\OP_RECV_INITIAL_METADATA => true,
-            Grpc\OP_RECV_STATUS_ON_CLIENT => true,
+            OP_RECV_INITIAL_METADATA => true,
+            OP_RECV_STATUS_ON_CLIENT => true,
         ]);
 
         $status = $event->status;
         $this->assertSame([], $status->metadata);
-        $this->assertSame(Grpc\STATUS_INVALID_ARGUMENT, $status->code);
+        $this->assertSame(STATUS_INVALID_ARGUMENT, $status->code);
         $this->assertSame($status_text, $status->details);
 
         unset($call);
@@ -88,17 +118,17 @@ class EndToEndTest extends \PHPUnit\Framework\TestCase
 
     public function testMessageWriteFlags()
     {
-        $deadline = Grpc\Timeval::infFuture();
+        $deadline = Timeval::infFuture();
         $req_text = 'message_write_flags_test';
-        $call = new Grpc\Call($this->channel,
+        $call = new Call($this->channel,
                               'phony_method',
                               $deadline);
 
         $event = $call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_MESSAGE => ['message' => $req_text,
-                                     'flags' => Grpc\WRITE_NO_COMPRESS, ],
-            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_MESSAGE => ['message' => $req_text,
+                                     'flags' => WRITE_NO_COMPRESS, ],
+            OP_SEND_CLOSE_FROM_CLIENT => true,
         ]);
 
         $this->assertTrue($event->send_metadata);
@@ -109,22 +139,22 @@ class EndToEndTest extends \PHPUnit\Framework\TestCase
         $server_call = $event->call;
 
         $event = $server_call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_STATUS_FROM_SERVER => [
                 'metadata' => [],
-                'code' => Grpc\STATUS_OK,
+                'code' => STATUS_OK,
                 'details' => '',
             ],
         ]);
 
         $event = $call->startBatch([
-            Grpc\OP_RECV_INITIAL_METADATA => true,
-            Grpc\OP_RECV_STATUS_ON_CLIENT => true,
+            OP_RECV_INITIAL_METADATA => true,
+            OP_RECV_STATUS_ON_CLIENT => true,
         ]);
 
         $status = $event->status;
         $this->assertSame([], $status->metadata);
-        $this->assertSame(Grpc\STATUS_OK, $status->code);
+        $this->assertSame(STATUS_OK, $status->code);
 
         unset($call);
         unset($server_call);
@@ -132,18 +162,18 @@ class EndToEndTest extends \PHPUnit\Framework\TestCase
 
     public function testClientServerFullRequestResponse()
     {
-        $deadline = Grpc\Timeval::infFuture();
+        $deadline = Timeval::infFuture();
         $req_text = 'client_server_full_request_response';
         $reply_text = 'reply:client_server_full_request_response';
 
-        $call = new Grpc\Call($this->channel,
+        $call = new Call($this->channel,
                               'phony_method',
                               $deadline);
 
         $event = $call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
-            Grpc\OP_SEND_MESSAGE => ['message' => $req_text],
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_CLOSE_FROM_CLIENT => true,
+            OP_SEND_MESSAGE => ['message' => $req_text],
         ]);
 
         $this->assertTrue($event->send_metadata);
@@ -155,19 +185,19 @@ class EndToEndTest extends \PHPUnit\Framework\TestCase
         $server_call = $event->call;
 
         $event = $server_call->startBatch([
-            Grpc\OP_RECV_MESSAGE => true,
+            OP_RECV_MESSAGE => true,
         ]);
         $this->assertSame($req_text, $event->message);
 
         $event = $server_call->startBatch([
-            Grpc\OP_SEND_MESSAGE => ['message' => $reply_text],
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+            OP_SEND_MESSAGE => ['message' => $reply_text],
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_STATUS_FROM_SERVER => [
                 'metadata' => [],
-                'code' => Grpc\STATUS_OK,
+                'code' => STATUS_OK,
                 'details' => '',
             ],
-            Grpc\OP_RECV_CLOSE_ON_SERVER => true,
+            OP_RECV_CLOSE_ON_SERVER => true,
         ]);
 
         $this->assertTrue($event->send_metadata);
@@ -176,16 +206,16 @@ class EndToEndTest extends \PHPUnit\Framework\TestCase
         $this->assertFalse($event->cancelled);
 
         $event = $call->startBatch([
-            Grpc\OP_RECV_INITIAL_METADATA => true,
-            Grpc\OP_RECV_MESSAGE => true,
-            Grpc\OP_RECV_STATUS_ON_CLIENT => true,
+            OP_RECV_INITIAL_METADATA => true,
+            OP_RECV_MESSAGE => true,
+            OP_RECV_STATUS_ON_CLIENT => true,
         ]);
 
         $this->assertSame([], $event->metadata);
         $this->assertSame($reply_text, $event->message);
         $status = $event->status;
         $this->assertSame([], $status->metadata);
-        $this->assertSame(Grpc\STATUS_OK, $status->code);
+        $this->assertSame(STATUS_OK, $status->code);
         $this->assertSame("", $status->details);
 
         unset($call);
@@ -195,57 +225,57 @@ class EndToEndTest extends \PHPUnit\Framework\TestCase
     public function testInvalidClientMessageArray()
     {
         $this->expectException(\InvalidArgumentException::class);
-        $deadline = Grpc\Timeval::infFuture();
+        $deadline = Timeval::infFuture();
         $req_text = 'client_server_full_request_response';
         $reply_text = 'reply:client_server_full_request_response';
         $status_text = 'status:client_server_full_response_text';
 
-        $call = new Grpc\Call($this->channel,
+        $call = new Call($this->channel,
                               'phony_method',
                               $deadline);
 
         $event = $call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
-            Grpc\OP_SEND_MESSAGE => 'invalid',
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_CLOSE_FROM_CLIENT => true,
+            OP_SEND_MESSAGE => 'invalid',
         ]);
     }
 
     public function testInvalidClientMessageString()
     {
         $this->expectException(\InvalidArgumentException::class);
-        $deadline = Grpc\Timeval::infFuture();
+        $deadline = Timeval::infFuture();
         $req_text = 'client_server_full_request_response';
         $reply_text = 'reply:client_server_full_request_response';
         $status_text = 'status:client_server_full_response_text';
 
-        $call = new Grpc\Call($this->channel,
+        $call = new Call($this->channel,
                               'phony_method',
                               $deadline);
 
         $event = $call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
-            Grpc\OP_SEND_MESSAGE => ['message' => 0],
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_CLOSE_FROM_CLIENT => true,
+            OP_SEND_MESSAGE => ['message' => 0],
         ]);
     }
 
     public function testInvalidClientMessageFlags()
     {
         $this->expectException(\InvalidArgumentException::class);
-        $deadline = Grpc\Timeval::infFuture();
+        $deadline = Timeval::infFuture();
         $req_text = 'client_server_full_request_response';
         $reply_text = 'reply:client_server_full_request_response';
         $status_text = 'status:client_server_full_response_text';
 
-        $call = new Grpc\Call($this->channel,
+        $call = new Call($this->channel,
                               'phony_method',
                               $deadline);
 
         $event = $call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
-            Grpc\OP_SEND_MESSAGE => ['message' => 'abc',
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_CLOSE_FROM_CLIENT => true,
+            OP_SEND_MESSAGE => ['message' => 'abc',
                                      'flags' => 'invalid',
                                      ],
         ]);
@@ -254,19 +284,19 @@ class EndToEndTest extends \PHPUnit\Framework\TestCase
     public function testInvalidServerStatusMetadata()
     {
         $this->expectException(\InvalidArgumentException::class);
-        $deadline = Grpc\Timeval::infFuture();
+        $deadline = Timeval::infFuture();
         $req_text = 'client_server_full_request_response';
         $reply_text = 'reply:client_server_full_request_response';
         $status_text = 'status:client_server_full_response_text';
 
-        $call = new Grpc\Call($this->channel,
+        $call = new Call($this->channel,
                               'phony_method',
                               $deadline);
 
         $event = $call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
-            Grpc\OP_SEND_MESSAGE => ['message' => $req_text],
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_CLOSE_FROM_CLIENT => true,
+            OP_SEND_MESSAGE => ['message' => $req_text],
         ]);
 
         $this->assertTrue($event->send_metadata);
@@ -278,34 +308,34 @@ class EndToEndTest extends \PHPUnit\Framework\TestCase
         $server_call = $event->call;
 
         $event = $server_call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_MESSAGE => ['message' => $reply_text],
-            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_MESSAGE => ['message' => $reply_text],
+            OP_SEND_STATUS_FROM_SERVER => [
                 'metadata' => 'invalid',
-                'code' => Grpc\STATUS_OK,
+                'code' => STATUS_OK,
                 'details' => $status_text,
             ],
-            Grpc\OP_RECV_MESSAGE => true,
-            Grpc\OP_RECV_CLOSE_ON_SERVER => true,
+            OP_RECV_MESSAGE => true,
+            OP_RECV_CLOSE_ON_SERVER => true,
         ]);
     }
 
     public function testInvalidServerStatusCode()
     {
         $this->expectException(\InvalidArgumentException::class);
-        $deadline = Grpc\Timeval::infFuture();
+        $deadline = Timeval::infFuture();
         $req_text = 'client_server_full_request_response';
         $reply_text = 'reply:client_server_full_request_response';
         $status_text = 'status:client_server_full_response_text';
 
-        $call = new Grpc\Call($this->channel,
+        $call = new Call($this->channel,
                               'phony_method',
                               $deadline);
 
         $event = $call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
-            Grpc\OP_SEND_MESSAGE => ['message' => $req_text],
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_CLOSE_FROM_CLIENT => true,
+            OP_SEND_MESSAGE => ['message' => $req_text],
         ]);
 
         $this->assertTrue($event->send_metadata);
@@ -317,34 +347,34 @@ class EndToEndTest extends \PHPUnit\Framework\TestCase
         $server_call = $event->call;
 
         $event = $server_call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_MESSAGE => ['message' => $reply_text],
-            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_MESSAGE => ['message' => $reply_text],
+            OP_SEND_STATUS_FROM_SERVER => [
                 'metadata' => [],
                 'code' => 'invalid',
                 'details' => $status_text,
             ],
-            Grpc\OP_RECV_MESSAGE => true,
-            Grpc\OP_RECV_CLOSE_ON_SERVER => true,
+            OP_RECV_MESSAGE => true,
+            OP_RECV_CLOSE_ON_SERVER => true,
         ]);
     }
 
     public function testMissingServerStatusCode()
     {
         $this->expectException(\InvalidArgumentException::class);
-        $deadline = Grpc\Timeval::infFuture();
+        $deadline = Timeval::infFuture();
         $req_text = 'client_server_full_request_response';
         $reply_text = 'reply:client_server_full_request_response';
         $status_text = 'status:client_server_full_response_text';
 
-        $call = new Grpc\Call($this->channel,
+        $call = new Call($this->channel,
                               'phony_method',
                               $deadline);
 
         $event = $call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
-            Grpc\OP_SEND_MESSAGE => ['message' => $req_text],
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_CLOSE_FROM_CLIENT => true,
+            OP_SEND_MESSAGE => ['message' => $req_text],
         ]);
 
         $this->assertTrue($event->send_metadata);
@@ -356,33 +386,33 @@ class EndToEndTest extends \PHPUnit\Framework\TestCase
         $server_call = $event->call;
 
         $event = $server_call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_MESSAGE => ['message' => $reply_text],
-            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_MESSAGE => ['message' => $reply_text],
+            OP_SEND_STATUS_FROM_SERVER => [
                 'metadata' => [],
                 'details' => $status_text,
             ],
-            Grpc\OP_RECV_MESSAGE => true,
-            Grpc\OP_RECV_CLOSE_ON_SERVER => true,
+            OP_RECV_MESSAGE => true,
+            OP_RECV_CLOSE_ON_SERVER => true,
         ]);
     }
 
     public function testInvalidServerStatusDetails()
     {
         $this->expectException(\InvalidArgumentException::class);
-        $deadline = Grpc\Timeval::infFuture();
+        $deadline = Timeval::infFuture();
         $req_text = 'client_server_full_request_response';
         $reply_text = 'reply:client_server_full_request_response';
         $status_text = 'status:client_server_full_response_text';
 
-        $call = new Grpc\Call($this->channel,
+        $call = new Call($this->channel,
                               'phony_method',
                               $deadline);
 
         $event = $call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
-            Grpc\OP_SEND_MESSAGE => ['message' => $req_text],
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_CLOSE_FROM_CLIENT => true,
+            OP_SEND_MESSAGE => ['message' => $req_text],
         ]);
 
         $this->assertTrue($event->send_metadata);
@@ -394,34 +424,34 @@ class EndToEndTest extends \PHPUnit\Framework\TestCase
         $server_call = $event->call;
 
         $event = $server_call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_MESSAGE => ['message' => $reply_text],
-            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_MESSAGE => ['message' => $reply_text],
+            OP_SEND_STATUS_FROM_SERVER => [
                 'metadata' => [],
-                'code' => Grpc\STATUS_OK,
+                'code' => STATUS_OK,
                 'details' => 0,
             ],
-            Grpc\OP_RECV_MESSAGE => true,
-            Grpc\OP_RECV_CLOSE_ON_SERVER => true,
+            OP_RECV_MESSAGE => true,
+            OP_RECV_CLOSE_ON_SERVER => true,
         ]);
     }
 
     public function testMissingServerStatusDetails()
     {
         $this->expectException(\InvalidArgumentException::class);
-        $deadline = Grpc\Timeval::infFuture();
+        $deadline = Timeval::infFuture();
         $req_text = 'client_server_full_request_response';
         $reply_text = 'reply:client_server_full_request_response';
         $status_text = 'status:client_server_full_response_text';
 
-        $call = new Grpc\Call($this->channel,
+        $call = new Call($this->channel,
                               'phony_method',
                               $deadline);
 
         $event = $call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
-            Grpc\OP_SEND_MESSAGE => ['message' => $req_text],
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_CLOSE_FROM_CLIENT => true,
+            OP_SEND_MESSAGE => ['message' => $req_text],
         ]);
 
         $this->assertTrue($event->send_metadata);
@@ -433,26 +463,26 @@ class EndToEndTest extends \PHPUnit\Framework\TestCase
         $server_call = $event->call;
 
         $event = $server_call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_MESSAGE => ['message' => $reply_text],
-            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_MESSAGE => ['message' => $reply_text],
+            OP_SEND_STATUS_FROM_SERVER => [
                 'metadata' => [],
-                'code' => Grpc\STATUS_OK,
+                'code' => STATUS_OK,
             ],
-            Grpc\OP_RECV_MESSAGE => true,
-            Grpc\OP_RECV_CLOSE_ON_SERVER => true,
+            OP_RECV_MESSAGE => true,
+            OP_RECV_CLOSE_ON_SERVER => true,
         ]);
     }
 
     public function testInvalidStartBatchKey()
     {
         $this->expectException(\InvalidArgumentException::class);
-        $deadline = Grpc\Timeval::infFuture();
+        $deadline = Timeval::infFuture();
         $req_text = 'client_server_full_request_response';
         $reply_text = 'reply:client_server_full_request_response';
         $status_text = 'status:client_server_full_response_text';
 
-        $call = new Grpc\Call($this->channel,
+        $call = new Call($this->channel,
                               'phony_method',
                               $deadline);
 
@@ -464,22 +494,22 @@ class EndToEndTest extends \PHPUnit\Framework\TestCase
     public function testInvalidStartBatch()
     {
         $this->expectException(\LogicException::class);
-        $deadline = Grpc\Timeval::infFuture();
+        $deadline = Timeval::infFuture();
         $req_text = 'client_server_full_request_response';
         $reply_text = 'reply:client_server_full_request_response';
         $status_text = 'status:client_server_full_response_text';
 
-        $call = new Grpc\Call($this->channel,
+        $call = new Call($this->channel,
                               'phony_method',
                               $deadline);
 
         $event = $call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
-            Grpc\OP_SEND_MESSAGE => ['message' => $req_text],
-            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_CLOSE_FROM_CLIENT => true,
+            OP_SEND_MESSAGE => ['message' => $req_text],
+            OP_SEND_STATUS_FROM_SERVER => [
                 'metadata' => [],
-                'code' => Grpc\STATUS_OK,
+                'code' => STATUS_OK,
                 'details' => 'abc',
             ],
         ]);
@@ -493,16 +523,16 @@ class EndToEndTest extends \PHPUnit\Framework\TestCase
     public function testGetConnectivityState()
     {
         $this->assertTrue($this->channel->getConnectivityState() ==
-                          Grpc\CHANNEL_IDLE);
+                          CHANNEL_IDLE);
     }
 
     public function testWatchConnectivityStateFailed()
     {
         $idle_state = $this->channel->getConnectivityState();
-        $this->assertTrue($idle_state == Grpc\CHANNEL_IDLE);
+        $this->assertTrue($idle_state == CHANNEL_IDLE);
 
-        $now = Grpc\Timeval::now();
-        $delta = new Grpc\Timeval(50000); // should timeout
+        $now = Timeval::now();
+        $delta = new Timeval(50000); // should timeout
         $deadline = $now->add($delta);
 
         $this->assertFalse($this->channel->watchConnectivityState(
@@ -512,10 +542,10 @@ class EndToEndTest extends \PHPUnit\Framework\TestCase
     public function testWatchConnectivityStateSuccess()
     {
         $idle_state = $this->channel->getConnectivityState(true);
-        $this->assertTrue($idle_state == Grpc\CHANNEL_IDLE);
+        $this->assertTrue($idle_state == CHANNEL_IDLE);
 
-        $now = Grpc\Timeval::now();
-        $delta = new Grpc\Timeval(3000000); // should finish well before
+        $now = Timeval::now();
+        $delta = new Timeval(3000000); // should finish well before
         $deadline = $now->add($delta);
 
         $this->assertTrue($this->channel->watchConnectivityState(
@@ -528,24 +558,24 @@ class EndToEndTest extends \PHPUnit\Framework\TestCase
     public function testWatchConnectivityStateDoNothing()
     {
         $idle_state = $this->channel->getConnectivityState();
-        $this->assertTrue($idle_state == Grpc\CHANNEL_IDLE);
+        $this->assertTrue($idle_state == CHANNEL_IDLE);
 
-        $now = Grpc\Timeval::now();
-        $delta = new Grpc\Timeval(50000);
+        $now = Timeval::now();
+        $delta = new Timeval(50000);
         $deadline = $now->add($delta);
 
         $this->assertFalse($this->channel->watchConnectivityState(
         $idle_state, $deadline));
 
         $new_state = $this->channel->getConnectivityState();
-        $this->assertTrue($new_state == Grpc\CHANNEL_IDLE);
+        $this->assertTrue($new_state == CHANNEL_IDLE);
     }
 
     public function testGetConnectivityStateInvalidParam()
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->assertTrue($this->channel->getConnectivityState(
-            new Grpc\Timeval()));
+            new Timeval()));
     }
 
     public function testWatchConnectivityStateInvalidParam()
@@ -558,7 +588,7 @@ class EndToEndTest extends \PHPUnit\Framework\TestCase
     public function testChannelConstructorInvalidParam()
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->channel = new Grpc\Channel('localhost:'.$this->port, null);
+        $this->channel = new Channel('localhost:'.$this->port, null);
     }
 
     public function testClose()
