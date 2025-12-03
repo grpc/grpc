@@ -1283,7 +1283,7 @@ void Http2ClientTransport::AddToStreamList(RefCountedPtr<Stream> stream) {
   // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
   if (should_wake_periodic_updates) {
     // Release the lock before you wake up another promise on the party.
-    WakeupPeriodicUpdatePromise();
+    MaybeWakeupPeriodicUpdatePromise();
   }
 }
 
@@ -1668,6 +1668,10 @@ void Http2ClientTransport::CloseTransport() {
               absl::UnavailableError("transport closed"));
         });
   }
+  // If the transport is closed while the periodic update promise is pending
+  // on new streams, we need to wakeup the promise to allow the promise to
+  // be polled and eventually drop the ref to the transport.
+  MaybeWakeupPeriodicUpdatePromise();
 
   MutexLock lock(&transport_mutex_);
   // This is the only place where the general_party_ is
