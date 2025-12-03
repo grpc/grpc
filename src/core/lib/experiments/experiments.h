@@ -57,6 +57,7 @@ namespace grpc_core {
 #ifdef GRPC_EXPERIMENTS_ARE_FINAL
 
 #if defined(GRPC_CFSTREAM)
+inline bool IsBufferListDeletionPrepEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsChannelzUseV2ForV1ApiEnabled() { return false; }
@@ -120,6 +121,7 @@ inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
+inline bool IsBufferListDeletionPrepEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsChannelzUseV2ForV1ApiEnabled() { return false; }
@@ -183,6 +185,7 @@ inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 
 #else
+inline bool IsBufferListDeletionPrepEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsChannelzUseV2ForV1ApiEnabled() { return false; }
@@ -248,6 +251,7 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 
 #else
 enum ExperimentIds {
+  kExperimentIdBufferListDeletionPrep,
   kExperimentIdCallTracerInTransport,
   kExperimentIdChannelzUseV2ForV1Api,
   kExperimentIdChannelzUseV2ForV1Service,
@@ -298,6 +302,10 @@ enum ExperimentIds {
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
   kNumExperiments
 };
+#define GRPC_EXPERIMENT_IS_INCLUDED_BUFFER_LIST_DELETION_PREP
+inline bool IsBufferListDeletionPrepEnabled() {
+  return IsExperimentEnabled<kExperimentIdBufferListDeletionPrep>();
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() {
   return IsExperimentEnabled<kExperimentIdCallTracerInTransport>();
