@@ -57,14 +57,46 @@ constexpr uint32_t kMaxWriteSize = /*10 MB*/ 10u * 1024u * 1024u;
 constexpr uint32_t kGoawaySendTimeoutSeconds = 5u;
 
 ///////////////////////////////////////////////////////////////////////////////
-// Settings and ChannelArgs helpers
+// Settings helpers
 
-void InitLocalSettings(Http2Settings& settings, const bool is_client);
+void InitLocalSettings(Http2Settings& settings, bool is_client);
+
+////////////////////////////////////////////////////////////////////////////////
+// Channel Args helpers
+
+struct TransportChannelArgs {
+  Duration keepalive_time;
+  Duration keepalive_timeout;
+  Duration ping_timeout;
+  Duration settings_timeout;
+  bool keepalive_permit_without_calls;
+  bool enable_preferred_rx_crypto_frame_advertisement;
+  uint32_t max_header_list_size_soft_limit;
+  int max_usable_hpack_table_size;
+
+  std::string DebugString() const {
+    return absl::StrCat(
+        "keepalive_time: ", keepalive_time,
+        " keepalive_timeout: ", keepalive_timeout,
+        " ping_timeout: ", ping_timeout,
+        " settings_timeout: ", settings_timeout,
+        " keepalive_permit_without_calls: ", keepalive_permit_without_calls,
+        " enable_preferred_rx_crypto_frame_advertisement: ",
+        enable_preferred_rx_crypto_frame_advertisement,
+        " max_header_list_size_soft_limit: ", max_header_list_size_soft_limit,
+        " max_usable_hpack_table_size: ", max_usable_hpack_table_size);
+  }
+};
+
+void ReadChannelArgs(const ChannelArgs& channel_args,
+                     TransportChannelArgs& args, Http2Settings& local_settings,
+                     chttp2::TransportFlowControl& flow_control,
+                     bool is_client);
 
 void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
                                  Http2Settings& local_settings,
                                  chttp2::TransportFlowControl& flow_control,
-                                 const bool is_client);
+                                 bool is_client);
 
 ///////////////////////////////////////////////////////////////////////////////
 // ChannelZ helpers

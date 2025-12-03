@@ -184,7 +184,7 @@ class Http2ClientTransport final : public ClientTransport,
 
   auto TestOnlySendPing(absl::AnyInvocable<void()> on_initiate,
                         bool important = false) {
-    return ping_manager_.RequestPing(std::move(on_initiate), important);
+    return ping_manager_->RequestPing(std::move(on_initiate), important);
   }
 
   template <typename Factory>
@@ -427,7 +427,7 @@ class Http2ClientTransport final : public ClientTransport,
                [self = RefAsSubclass<Http2ClientTransport>(),
                 num_bytes](absl::StatusOr<Slice> status) {
                  if (status.ok()) {
-                   self->keepalive_manager_.GotData();
+                   self->keepalive_manager_->GotData();
                    self->ztrace_collector_->Append(
                        PromiseEndpointReadTrace{num_bytes});
                  }
@@ -445,7 +445,7 @@ class Http2ClientTransport final : public ClientTransport,
                [self = RefAsSubclass<Http2ClientTransport>(),
                 num_bytes](absl::StatusOr<SliceBuffer> status) {
                  if (status.ok()) {
-                   self->keepalive_manager_.GotData();
+                   self->keepalive_manager_->GotData();
                    self->ztrace_collector_->Append(
                        PromiseEndpointReadTrace{num_bytes});
                  }
@@ -531,25 +531,19 @@ class Http2ClientTransport final : public ClientTransport,
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(transport_mutex_);
 
   // Ping related members
-  // TODO(akshitpatel) : [PH2][P2] : Consider removing the timeout related
-  // members.
-  // Duration between two consecutive keepalive pings
-  const Duration keepalive_time_;
-  // Duration to wait for a keepalive ping ack before triggering timeout. This
-  // only takes effect if the assigned value is less than the ping timeout.
-  const Duration keepalive_timeout_;
-  // Duration to wait for ping ack before triggering timeout
-  const Duration ping_timeout_;
-  PingManager ping_manager_;
-  KeepaliveManager keepalive_manager_;
+
+  // Duration between two consecutive keepalive pings.
+  Duration keepalive_time_;
+  std::optional<PingManager> ping_manager_;
+  std::optional<KeepaliveManager> keepalive_manager_;
 
   // Flags
   bool keepalive_permit_without_calls_;
 
   auto SendPing(absl::AnyInvocable<void()> on_initiate, bool important) {
-    return ping_manager_.RequestPing(std::move(on_initiate), important);
+    return ping_manager_->RequestPing(std::move(on_initiate), important);
   }
-  auto WaitForPingAck() { return ping_manager_.WaitForPingAck(); }
+  auto WaitForPingAck() { return ping_manager_->WaitForPingAck(); }
 
   void MaybeGetWindowUpdateFrames(SliceBuffer& output_buf);
 
@@ -573,7 +567,7 @@ class Http2ClientTransport final : public ClientTransport,
   auto AckPing(uint64_t opaque_data) {
     bool valid_ping_ack_received = true;
 
-    if (!ping_manager_.AckPing(opaque_data)) {
+    if (!ping_manager_->AckPing(opaque_data)) {
       GRPC_HTTP2_CLIENT_DLOG << "Unknown ping response received for ping id="
                              << opaque_data;
       valid_ping_ack_received = false;
@@ -585,7 +579,7 @@ class Http2ClientTransport final : public ClientTransport,
         // When this happens, it becomes important to ensure that if a ping ack
         // is received and there is an "important" outstanding ping request, we
         // should retry to send it out now.
-        valid_ping_ack_received && ping_manager_.ImportantPingRequested(),
+        valid_ping_ack_received && ping_manager_->ImportantPingRequested(),
         [self = RefAsSubclass<Http2ClientTransport>()] {
           return Map(self->TriggerWriteCycle(), [](const absl::Status status) {
             return (status.ok())
@@ -688,8 +682,8 @@ class Http2ClientTransport final : public ClientTransport,
     }
 
     Promise<absl::Status> SendPingAndWaitForAck() override {
-      return transport_->ping_manager_.RequestPing(/*on_initiate=*/[] {},
-                                                   /*important=*/true);
+      return transport_->ping_manager_->RequestPing(/*on_initiate=*/[] {},
+                                                    /*important=*/true);
     }
 
     void TriggerWriteCycle() override { transport_->TriggerWriteCycle(); }
@@ -759,6 +753,8 @@ class Http2ClientTransport final : public ClientTransport,
                                      RefCountedPtr<Stream> stream,
                                      Http2Status&& original_status,
                                      DebugLocation whence = {});
+  void ReadChannelArgs(const ChannelArgs& channel_args,
+                       TransportChannelArgs& args);
 };
 
 // Since the corresponding class in CHTTP2 is about 3.9KB, our goal is to

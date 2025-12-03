@@ -35,6 +35,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -159,6 +160,88 @@ TEST(Http2CommonTransportTest, TestReadChannelArgs) {
   EXPECT_EQ(settings2.enable_push(), true);
   EXPECT_EQ(settings2.allow_true_binary_metadata(), false);
   EXPECT_EQ(settings2.allow_security_frame(), false);
+}
+
+TEST(Http2CommonTransportTest, TestReadTransportChannelArgs) {
+  // Test to validate that ReadChannelArgs reads all the channel args
+  // correctly into TransportChannelArgs.
+  Http2Settings settings;
+  chttp2::TransportFlowControl transport_flow_control(
+      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*memory_owner=*/nullptr);
+
+  {
+    TransportChannelArgs args;
+    // 1. Test Client Defaults
+    ReadChannelArgs(ChannelArgs(), args, settings, transport_flow_control,
+                    /*is_client=*/true);
+
+    EXPECT_EQ(args.keepalive_time, Duration::Infinity());
+    EXPECT_EQ(args.keepalive_timeout, Duration::Infinity());
+    EXPECT_EQ(args.ping_timeout, Duration::Infinity());
+    EXPECT_EQ(args.settings_timeout, Duration::Infinity());
+    EXPECT_EQ(args.keepalive_permit_without_calls, false);
+    EXPECT_EQ(args.enable_preferred_rx_crypto_frame_advertisement, false);
+    EXPECT_EQ(args.max_usable_hpack_table_size, -1);
+    EXPECT_GE(args.max_header_list_size_soft_limit, 8192u);
+  }
+
+  {
+    // 2. Test Server Defaults
+    TransportChannelArgs args;
+    ReadChannelArgs(ChannelArgs(), args, settings, transport_flow_control,
+                    /*is_client=*/false);
+
+    EXPECT_EQ(args.keepalive_time, Duration::Hours(2));
+    EXPECT_EQ(args.keepalive_timeout, Duration::Seconds(20));
+    EXPECT_EQ(args.ping_timeout, Duration::Minutes(1));
+    EXPECT_EQ(args.settings_timeout, Duration::Minutes(1));
+    EXPECT_EQ(args.keepalive_permit_without_calls, false);
+    EXPECT_EQ(args.enable_preferred_rx_crypto_frame_advertisement, false);
+    EXPECT_EQ(args.max_usable_hpack_table_size, -1);
+    EXPECT_GE(args.max_header_list_size_soft_limit, 8192u);
+  }
+
+  {
+    // 3. Test Overrides
+    TransportChannelArgs args;
+    ChannelArgs channel_args =
+        ChannelArgs()
+            .Set(GRPC_ARG_KEEPALIVE_TIME_MS, 10000)    // 10s
+            .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 5000)  // 5s
+            .Set(GRPC_ARG_PING_TIMEOUT_MS, 3000)       // 3s
+            .Set(GRPC_ARG_SETTINGS_TIMEOUT, 15000)     // 15s
+            .Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, true)
+            .Set(GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE, true)
+            .Set(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER, 1024)
+            .Set(GRPC_ARG_MAX_METADATA_SIZE, 12345);
+
+    ReadChannelArgs(channel_args, args, settings, transport_flow_control,
+                    /*is_client=*/true);
+
+    EXPECT_EQ(args.keepalive_time, Duration::Seconds(10));
+    EXPECT_EQ(args.keepalive_timeout, Duration::Seconds(5));
+    EXPECT_EQ(args.ping_timeout, Duration::Seconds(3));
+    EXPECT_EQ(args.settings_timeout, Duration::Seconds(15));
+    EXPECT_EQ(args.keepalive_permit_without_calls, true);
+    EXPECT_EQ(args.enable_preferred_rx_crypto_frame_advertisement, true);
+    EXPECT_EQ(args.max_usable_hpack_table_size, 1024);
+    EXPECT_EQ(args.max_header_list_size_soft_limit, 12345u);
+  }
+
+  {
+    // 4. Test Settings Timeout logic derived from keepalive_timeout
+    TransportChannelArgs args;
+    ChannelArgs channel_args_2 =
+        ChannelArgs()
+            .Set(GRPC_ARG_KEEPALIVE_TIME_MS, 100000)  // 100s, just to be finite
+            .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 40000);  // 40s
+
+    ReadChannelArgs(channel_args_2, args, settings, transport_flow_control,
+                    /*is_client=*/true);
+
+    EXPECT_EQ(args.settings_timeout, Duration::Seconds(80));
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

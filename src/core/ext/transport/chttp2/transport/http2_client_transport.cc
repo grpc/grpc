@@ -48,7 +48,6 @@
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/incoming_metadata_tracker.h"
-#include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
@@ -243,7 +242,7 @@ Http2Status Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
 
   // TODO(akshitpatel) : [PH2][P3] : Investigate if we should do this even if
   // the function returns a non-ok status?
-  ping_manager_.ReceivedDataFrame();
+  ping_manager_->ReceivedDataFrame();
 
   // Lookup stream
   GRPC_HTTP2_CLIENT_DLOG
@@ -336,7 +335,7 @@ Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
   // State update MUST happen before processing the frame.
   incoming_headers_.OnHeaderReceived(frame);
 
-  ping_manager_.ReceivedDataFrame();
+  ping_manager_->ReceivedDataFrame();
 
   RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
   if (stream == nullptr) {
@@ -515,7 +514,7 @@ auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
         // writes.
         // RFC9113: PING responses SHOULD be given higher priority than any
         // other frame.
-        self->ping_manager_.AddPendingPingAck(opaque);
+        self->ping_manager_->AddPendingPingAck(opaque);
         // TODO(akshitpatel) : [PH2][P2] : This is done assuming that the other
         // ProcessFrame promises may return stream or connection failures. If
         // this does not turn out to be true, consider returning absl::Status
@@ -982,8 +981,8 @@ auto Http2ClientTransport::ProcessAndWriteControlFrames() {
       apply_status == http2::Http2ErrorCode::kNoError) {
     EnforceLatestIncomingSettings();
     settings_->MaybeGetSettingsAndSettingsAckFrames(flow_control_, output_buf);
-    ping_manager_.MaybeGetSerializedPingFrames(output_buf,
-                                               NextAllowedPingInterval());
+    ping_manager_->MaybeGetSerializedPingFrames(output_buf,
+                                                NextAllowedPingInterval());
     MaybeGetWindowUpdateFrames(output_buf);
   }
   const uint64_t buffer_length = output_buf.Length();
@@ -1016,7 +1015,7 @@ void Http2ClientTransport::NotifyControlFramesWriteDone() {
     should_stall_read_loop_ = false;
     read_loop_waker_.Wakeup();
   }
-  ping_manager_.NotifyPingSent(ping_timeout_);
+  ping_manager_->NotifyPingSent();
   goaway_manager_.NotifyGoawaySent();
   MaybeSpawnWaitForSettingsTimeout();
 }
@@ -1240,7 +1239,7 @@ auto Http2ClientTransport::MultiplexerLoop() {
           if (self->should_reset_ping_clock_) {
             GRPC_HTTP2_CLIENT_DLOG
                 << "Http2ClientTransport MultiplexerLoop ResetPingClock";
-            self->ping_manager_.ResetPingClock(/*is_client=*/true);
+            self->ping_manager_->ResetPingClock(/*is_client=*/true);
             self->should_reset_ping_clock_ = false;
           }
           return Continue();
@@ -1367,44 +1366,10 @@ Http2ClientTransport::Http2ClientTransport(
       should_reset_ping_clock_(false),
       is_first_write_(true),
       on_receive_settings_(std::move(on_receive_settings)),
-      max_header_list_size_soft_limit_(
-          GetSoftLimitFromChannelArgs(channel_args)),
       max_write_size_(kMaxWriteSize),
-      keepalive_time_(std::max(
-          Duration::Seconds(10),
-          channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIME_MS)
-              .value_or(Duration::Infinity()))),
-      // Keepalive timeout is only passed to the keepalive manager if it is less
-      // than the ping timeout. As keepalives use pings for health checks, if
-      // keepalive timeout is greater than ping timeout, we would always hit the
-      // ping timeout first.
-      keepalive_timeout_(std::max(
-          Duration::Zero(),
-          channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIMEOUT_MS)
-              .value_or(keepalive_time_ == Duration::Infinity()
-                            ? Duration::Infinity()
-                            : (Duration::Seconds(20))))),
-      ping_timeout_(std::max(
-          Duration::Zero(),
-          channel_args.GetDurationFromIntMillis(GRPC_ARG_PING_TIMEOUT_MS)
-              .value_or(keepalive_time_ == Duration::Infinity()
-                            ? Duration::Infinity()
-                            : Duration::Minutes(1)))),
-      ping_manager_(channel_args, PingSystemInterfaceImpl::Make(this),
-                    event_engine_),
-      keepalive_manager_(
-          KeepAliveInterfaceImpl::Make(this),
-          ((keepalive_timeout_ < ping_timeout_) ? keepalive_timeout_
-                                                : Duration::Infinity()),
-          keepalive_time_),
-      keepalive_permit_without_calls_(
-          channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
-              .value_or(false)),
+      ping_manager_(std::nullopt),
+      keepalive_manager_(std::nullopt),
       goaway_manager_(GoawayInterfaceImpl::Make(this)),
-      enable_preferred_rx_crypto_frame_advertisement_(
-          channel_args
-              .GetBool(GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE)
-              .value_or(false)),
       memory_owner_(channel_args.GetObject<ResourceQuota>()
                         ->memory_quota()
                         ->CreateMemoryOwner()),
@@ -1417,25 +1382,24 @@ Http2ClientTransport::Http2ClientTransport(
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor Begin";
   SourceConstructed();
 
-  InitLocalSettings(settings_->mutable_local(), /*is_client=*/true);
-  ReadSettingsFromChannelArgs(channel_args, settings_->mutable_local(),
-                              flow_control_, /*is_client=*/true);
-
   // Initialize the general party and write party.
   auto general_party_arena = SimpleArenaAllocator(0)->MakeArena();
   general_party_arena->SetContext<EventEngine>(event_engine_.get());
   general_party_ = Party::Make(std::move(general_party_arena));
 
+  InitLocalSettings(settings_->mutable_local(), /*is_client=*/true);
+  TransportChannelArgs args;
+  ReadChannelArgs(channel_args, args);
+
+  ping_manager_.emplace(channel_args, args.ping_timeout,
+                        PingSystemInterfaceImpl::Make(this), event_engine_);
+
   // The keepalive loop is only spawned if the keepalive time is not infinity.
-  keepalive_manager_.Spawn(general_party_.get());
-
-  const int max_hpack_table_size =
-      channel_args.GetInt(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER).value_or(-1);
-  if (max_hpack_table_size >= 0) {
-    encoder_.SetMaxUsableSize(max_hpack_table_size);
-  }
-
-  settings_->SetSettingsTimeout(channel_args, keepalive_timeout_);
+  keepalive_manager_.emplace(
+      KeepAliveInterfaceImpl::Make(this),
+      ((args.keepalive_timeout < args.ping_timeout) ? args.keepalive_timeout
+                                                    : Duration::Infinity()),
+      args.keepalive_time, general_party_.get());
 
   if (settings_->local().allow_security_frame()) {
     // TODO(tjagtap) : [PH2][P3] : Setup the plumbing to pass the security frame
@@ -1444,6 +1408,8 @@ Http2ClientTransport::Http2ClientTransport(
     // allow_security_frame too.
   }
 
+  GRPC_DCHECK(ping_manager_.has_value());
+  GRPC_DCHECK(keepalive_manager_.has_value());
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor End";
 }
 
@@ -1452,10 +1418,32 @@ void Http2ClientTransport::SpawnTransportLoops() {
   SpawnGuardedTransportParty(
       "FlowControlPeriodicUpdateLoop",
       UntilTransportClosed(FlowControlPeriodicUpdateLoop()));
+
   SpawnGuardedTransportParty("FlushInitialFrames", TriggerWriteCycle());
   SpawnGuardedTransportParty("MultiplexerLoop",
                              UntilTransportClosed(MultiplexerLoop()));
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::SpawnTransportLoops End";
+}
+
+void Http2ClientTransport::ReadChannelArgs(const ChannelArgs& channel_args,
+                                           TransportChannelArgs& args) {
+  http2::ReadChannelArgs(channel_args, args, settings_->mutable_local(),
+                         flow_control_,
+                         /*is_client=*/true);
+
+  // TODO(akshitpatel) : [PH2][P3] : Add a persistent struct for channel args
+  // to avoid copying these channel args to member variables.
+  // Assign the channel args to the member variables.
+  keepalive_time_ = args.keepalive_time;
+  max_header_list_size_soft_limit_ = args.max_header_list_size_soft_limit;
+  keepalive_permit_without_calls_ = args.keepalive_permit_without_calls;
+  enable_preferred_rx_crypto_frame_advertisement_ =
+      args.enable_preferred_rx_crypto_frame_advertisement;
+
+  settings_->SetSettingsTimeout(args.settings_timeout);
+  if (args.max_usable_hpack_table_size >= 0) {
+    encoder_.SetMaxUsableSize(args.max_usable_hpack_table_size);
+  }
 }
 
 // This function MUST be idempotent. This function MUST be called from the
@@ -1780,8 +1768,6 @@ void Http2ClientTransport::SpawnAddChannelzData(channelz::DataSink sink) {
             "Http2ClientTransport",
             channelz::PropertyList()
                 .Set("keepalive_time", self->keepalive_time_)
-                .Set("keepalive_timeout", self->keepalive_timeout_)
-                .Set("ping_timeout", self->ping_timeout_)
                 .Set("keepalive_permit_without_calls",
                      self->keepalive_permit_without_calls_)
                 .Set("settings", self->settings_->ChannelzProperties())
