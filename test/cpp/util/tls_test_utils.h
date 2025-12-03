@@ -46,6 +46,25 @@ class SyncCertificateVerifier
   bool success_ = false;
 };
 
+// Exists to be an incorrect implementation that doesn't set a status
+class SyncCertificateVerifierNoStatusSet
+    : public grpc::experimental::ExternalCertificateVerifier {
+ public:
+  explicit SyncCertificateVerifierNoStatusSet() {}
+
+  ~SyncCertificateVerifierNoStatusSet() override {}
+
+  bool Verify(grpc::experimental::TlsCustomVerificationCheckRequest* request,
+              std::function<void(grpc::Status)> callback,
+              grpc::Status* sync_status) override;
+
+  void Cancel(grpc::experimental::TlsCustomVerificationCheckRequest*) override {
+  }
+
+ private:
+  bool success_ = false;
+};
+
 class AsyncCertificateVerifier
     : public grpc::experimental::ExternalCertificateVerifier {
  public:
