@@ -955,6 +955,7 @@ static tsi_result populate_ssl_context(
           return result;
         },
         [&](std::shared_ptr<grpc_core::CustomPrivateKeySigner> key_sign) {
+#if defined(OPENSSL_IS_BORINGSSL)
           if (key_sign != nullptr) {
             SSL_CTX_set_private_key_method(
                 context, &grpc_core::TlsOffloadPrivateKeyMethod);
@@ -962,6 +963,7 @@ static tsi_result populate_ssl_context(
                                 grpc_core::GetPrivateKeyOffloadFunctionIndex(),
                                 &key_sign);
           }
+#endif  // OPENSSL_IS_BORINGSSL
           return TSI_OK;
         });
     if (result != TSI_OK) {

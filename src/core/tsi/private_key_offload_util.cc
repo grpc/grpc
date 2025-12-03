@@ -18,7 +18,11 @@
 
 #include "src/core/tsi/private_key_offload_util.h"
 
+#include <openssl/base.h>
+
+#if defined(OPENSSL_IS_BORINGSSL)
 #include <openssl/ssl.h>
+#endif  // OPENSSL_IS_BORINGSSL
 
 #include <cstdint>
 #include <string>
@@ -80,6 +84,7 @@ int GetPrivateKeyOffloadFunctionIndex() {
   return g_ssl_ctx_ex_private_key_function_index;
 }
 
+#if defined(OPENSSL_IS_BORINGSSL)
 void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
                                 absl::StatusOr<std::string> signed_data) {
   if (signed_data.ok()) {
@@ -160,5 +165,6 @@ enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,
   // Tell BoringSSL we're done
   return ssl_private_key_success;
 }
+#endif  // OPENSSL_IS_BORINGSSL
 
 }  // namespace grpc_core

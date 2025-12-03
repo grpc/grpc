@@ -19,7 +19,11 @@
 #ifndef GRPC_SRC_CORE_TSI_PRIVATE_KEY_OFFLOAD_UTIL_H
 #define GRPC_SRC_CORE_TSI_PRIVATE_KEY_OFFLOAD_UTIL_H
 
+#include <openssl/base.h>
+
+#if defined(OPENSSL_IS_BORINGSSL)
 #include <openssl/ssl.h>
+#endif  // OPENSSL_IS_BORINGSSL
 
 #include <string>
 
@@ -75,6 +79,7 @@ struct TlsPrivateKeyOffloadContext {
   void* notify_user_data;
 };
 
+#if defined(OPENSSL_IS_BORINGSSL)
 // Callback function to be invoked when the user's async sign operation is
 // complete.
 void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
@@ -93,6 +98,7 @@ const SSL_PRIVATE_KEY_METHOD TlsOffloadPrivateKeyMethod = {
     TlsPrivateKeySignWrapper,
     nullptr,  // decrypt not implemented for this use case
     TlsPrivateKeyOffloadComplete};
+#endif  // OPENSSL_IS_BORINGSSL
 
 }  // namespace grpc_core
 
