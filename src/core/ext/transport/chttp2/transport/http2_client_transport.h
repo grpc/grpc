@@ -308,7 +308,7 @@ class Http2ClientTransport final : public ClientTransport,
   // 4. Application abort: In this case, multiplexer loop will write RST stream
   //    frame to the endpoint and close the stream from reads and writes. This
   //    then follows the same reasoning as case 1.
-  inline uint32_t GetActiveStreamCount() const
+  inline uint32_t GetActiveStreamCountLocked() const
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(transport_mutex_) {
     return stream_list_.size();
   }
@@ -333,7 +333,7 @@ class Http2ClientTransport final : public ClientTransport,
     // implemented.
     {
       MutexLock lock(&transport_mutex_);
-      if (GetActiveStreamCount() >=
+      if (GetActiveStreamCountLocked() >=
           settings_->peer().max_concurrent_streams()) {
         return absl::ResourceExhaustedError("Reached max concurrent streams");
       }
@@ -559,7 +559,8 @@ class Http2ClientTransport final : public ClientTransport,
   // Ping Helper functions
   Duration NextAllowedPingInterval() {
     MutexLock lock(&transport_mutex_);
-    return (!keepalive_permit_without_calls_ && GetActiveStreamCount() == 0)
+    return (!keepalive_permit_without_calls_ &&
+            GetActiveStreamCountLocked() == 0)
                ? Duration::Hours(2)
                : Duration::Seconds(1);
   }
@@ -661,7 +662,7 @@ class Http2ClientTransport final : public ClientTransport,
       {
         MutexLock lock(&transport_->transport_mutex_);
         need_to_send_ping = (transport_->keepalive_permit_without_calls_ ||
-                             transport_->GetActiveStreamCount() > 0);
+                             transport_->GetActiveStreamCountLocked() > 0);
       }
       return need_to_send_ping;
     }

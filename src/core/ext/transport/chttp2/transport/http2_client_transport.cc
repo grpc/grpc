@@ -736,7 +736,7 @@ auto Http2ClientTransport::ProcessOneFrame(Http2Frame frame) {
         return self->ProcessHttp2SecurityFrame(std::move(frame));
       },
       [](GRPC_UNUSED Http2UnknownFrame frame) {
-        // As per HTTP2 RFC, implementations MUST ignore and discard frames of
+        // RFC9113: Implementations MUST ignore and discard frames of
         // unknown types.
         return Http2Status::Ok();
       },
@@ -903,7 +903,7 @@ auto Http2ClientTransport::FlowControlPeriodicUpdateLoop() {
                 // done. We must continue to do PeriodicUpdate once BDP is in
                 // place.
                 MutexLock lock(&self->transport_mutex_);
-                if (self->GetActiveStreamCount() == 0) {
+                if (self->GetActiveStreamCountLocked() == 0) {
                   self->AddPeriodicUpdatePromiseWaker();
                   return Pending{};
                 }
@@ -1275,7 +1275,7 @@ void Http2ClientTransport::AddToStreamList(RefCountedPtr<Stream> stream) {
         << stream->GetStreamId();
     stream_list_.emplace(stream->GetStreamId(), stream);
     // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
-    if (GetActiveStreamCount() == 1) {
+    if (GetActiveStreamCountLocked() == 1) {
       should_wake_periodic_updates = true;
     }
   }
@@ -1380,8 +1380,6 @@ Http2ClientTransport::Http2ClientTransport(
       ztrace_collector_(std::make_shared<PromiseHttp2ZTraceCollector>()),
       should_stall_read_loop_(false) {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor Begin";
-  SourceConstructed();
-
   // Initialize the general party and write party.
   auto general_party_arena = SimpleArenaAllocator(0)->MakeArena();
   general_party_arena->SetContext<EventEngine>(event_engine_.get());
@@ -1410,6 +1408,7 @@ Http2ClientTransport::Http2ClientTransport(
 
   GRPC_DCHECK(ping_manager_.has_value());
   GRPC_DCHECK(keepalive_manager_.has_value());
+  SourceConstructed();
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor End";
 }
 
@@ -1685,9 +1684,9 @@ void Http2ClientTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list =
       std::move(stream_list_);
   stream_list_.clear();
-  // TODO(tjagtap) : [PH2][P2] : Provide better disconnect info here.
-  ReportDisconnectionLocked(http2_status.GetAbslConnectionError(), {},
-                            "transport closed");
+  ReportDisconnectionLocked(
+      http2_status.GetAbslConnectionError(), {},
+      absl::StrCat("Transport closed: ", http2_status.DebugString()).c_str());
   lock.Release();
 
   SpawnInfallibleTransportParty(
@@ -1741,12 +1740,12 @@ bool Http2ClientTransport::CanCloseTransportLocked() const {
   // max allowed stream id, then no more streams can be created and it is
   // safe to close the transport.
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::CanCloseTransportLocked "
-                            "GetActiveStreamCount="
-                         << GetActiveStreamCount()
+                            "GetActiveStreamCountLocked="
+                         << GetActiveStreamCountLocked()
                          << " PeekNextStreamId=" << PeekNextStreamId()
                          << " GetMaxAllowedStreamId="
                          << GetMaxAllowedStreamId();
-  return GetActiveStreamCount() == 0 &&
+  return GetActiveStreamCountLocked() == 0 &&
          PeekNextStreamId() > GetMaxAllowedStreamId();
 }
 
