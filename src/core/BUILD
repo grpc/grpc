@@ -9079,6 +9079,7 @@ grpc_cc_library(
     ],
     external_deps = ["absl/status:statusor"],
     deps = [
+        "channel_args",
         "dual_ref_counted",
         "grpc_promise_endpoint",
         "//:promise",
@@ -9443,6 +9444,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server",
+        "//:transport_auth_context",
     ],
 )
 
