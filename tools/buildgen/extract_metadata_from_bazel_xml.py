@@ -98,6 +98,13 @@ EXTERNAL_PROTO_LIBRARIES = {
     ),
 }
 
+# Targets that should be excluded from the generated build metadata.
+# This is used to exclude targets that are only needed for specific conditions
+# that we don't want to support in the generated build files (e.g. CMake).
+EXCLUDED_TARGETS = {
+    "//src/core:postmortem",
+}
+
 # We want to get a list of source files for some external libraries
 # to be able to include them in a non-bazel (e.g. make/cmake) build.
 # For that we need mapping from external repo name to a corresponding
@@ -153,7 +160,11 @@ def _rule_dict_from_xml_node(rule_xml_node):
                 "tags",
                 "args",
             ]:
-                result[list_name] += [item.attrib["value"] for item in child]
+                result[list_name] += [
+                    item.attrib["value"]
+                    for item in child
+                    if item.attrib["value"] not in EXCLUDED_TARGETS
+                ]
         if child.tag == "string":
             string_name = child.attrib["name"]
             if string_name in ["generator_function", "size"]:
