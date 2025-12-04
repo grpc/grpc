@@ -93,14 +93,11 @@ absl::Status ValidatePemKeyCertPair(absl::string_view cert_chain,
   for (X509* x509 : *parsed_certs) {
     X509_free(x509);
   }
-
-  if (!std::holds_alternative<std::string>(private_key)) {
-    return absl::OkStatus();
-  }
-
+  std::string* private_key_string = std::get_if<std::string>(&private_key);
+  if (private_key_string == nullptr) return absl::OkStatus();
   // Check that the private key consists of valid PEM blocks.
   absl::StatusOr<EVP_PKEY*> parsed_private_key =
-      ParsePemPrivateKey(std::get<std::string>(private_key));
+      ParsePemPrivateKey(*private_key_string);
   if (!parsed_private_key.ok()) {
     return absl::Status(parsed_private_key.status().code(),
                         absl::StrCat("Failed to parse private key as PEM: ",
@@ -520,6 +517,9 @@ void InMemoryCertificateProvider::Update(
 
 absl::Status InMemoryCertificateProvider::ValidateCredentials() const {
   MutexLock lock(&mu_);
+  if (!root_certificates_.ok()) {
+    return root_certificates_.status();
+  }
   absl::Status status = ValidateRootCertificates(root_certificates_->get());
   if (!status.ok()) {
     return status;

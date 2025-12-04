@@ -950,6 +950,7 @@ static tsi_result populate_ssl_context(
                                              pem_root_certs.length());
             if (result != TSI_OK || !SSL_CTX_check_private_key(context)) {
               LOG(ERROR) << "Invalid private key.";
+              return TSI_INVALID_ARGUMENT;
             }
           }
           return result;

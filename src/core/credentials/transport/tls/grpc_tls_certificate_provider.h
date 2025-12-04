@@ -187,7 +187,6 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
   }
 
   UniqueTypeName type() const override;
-
   absl::Status ValidateCredentials() const;
 
   void UpdateRoot(std::shared_ptr<RootCertInfo> root_certificates);
