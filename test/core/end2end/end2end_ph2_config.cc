@@ -84,8 +84,6 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|CoreEnd2endTests.BinaryMetadataServerHttp2FallbackClientTrueBinary"        \
   "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientTrueBinary"           \
   "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientHttp2Fallback"        \
-  "|CoreLargeSendTests.RequestResponseWithPayload"                             \
-  "|CoreLargeSendTests.RequestResponseWithPayload10Times"                      \
   "|Http2SingleHopTests.DisabledAlgorithmDecompressInCore"                     \
   "|Http2SingleHopTests.DisabledAlgorithmDecompressInApp"                      \
   "|Http2SingleHopTests."                                                      \
