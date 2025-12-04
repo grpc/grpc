@@ -61,9 +61,16 @@ def _wait_forever(server):
         server.stop(None)
 
 
-def _run_server(bind_address):
+def _run_server(bind_address, barrier):
     """Start a server in a subprocess."""
-    _LOGGER.info("Starting new server.")
+    _LOGGER.info("Forked new server process.")
+    
+    # Wait until all processes are forked before starting the gRPC server.
+    # This prevents race conditions where some servers might start before
+    # all subprocesses are forked. See https://github.com/grpc/grpc/issues/16001
+    barrier.wait()
+    
+    _LOGGER.info("Starting gRPC server.")
     options = (("grpc.so_reuseport", 1),)
 
     server = grpc.server(
@@ -107,13 +114,17 @@ def main():
         bind_address = "localhost:{}".format(port)
         _LOGGER.info("Binding to '%s'", bind_address)
         sys.stdout.flush()
+        
+        # Create a barrier to ensure all processes are forked before any start their gRPC servers.
+        # This prevents race conditions where some servers might start before all subprocesses
+        barrier = multiprocessing.Barrier(_PROCESS_COUNT)
+        
         workers = []
         for _ in range(_PROCESS_COUNT):
             # NOTE: It is imperative that the worker subprocesses be forked before
-            # any gRPC servers start up. See
-            # https://github.com/grpc/grpc/issues/16001 for more details.
+            # any gRPC servers start up. The barrier ensures this happens.
             worker = multiprocessing.Process(
-                target=_run_server, args=(bind_address,)
+                target=_run_server, args=(bind_address, barrier)
             )
             worker.start()
             workers.append(worker)
