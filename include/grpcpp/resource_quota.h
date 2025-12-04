@@ -54,6 +54,9 @@ class ResourceQuota final : private grpc::internal::GrpcLibrary {
   /// normal course.
   ResourceQuota& SetMaxThreads(int new_max_threads);
 
+  // Set the max number of concurrent streams to the server.
+  ResourceQuota& SetMaxOutstandingStreams(int new_max_outstanding_streams);
+
   grpc_resource_quota* c_resource_quota() const { return impl_; }
 
  private:
