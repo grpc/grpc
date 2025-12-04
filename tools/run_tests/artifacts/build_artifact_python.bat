@@ -23,7 +23,7 @@ python -m pip install --upgrade pip==25.2 six
 @rem Ping to a single version to make sure we're building the same artifacts
 python -m pip install setuptools==77.0.1 wheel==0.43.0
 python -m pip install --upgrade "cython==3.1.1"
-python -m pip install -r requirements.txt --user
+python -m pip install -rrequirements.txt --user
 
 @rem set GRPC_PYTHON_OVERRIDE_CYGWIN_DETECTION_FOR_27=1
 set GRPC_PYTHON_BUILD_WITH_CYTHON=1
@@ -38,20 +38,26 @@ if "%GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS%"=="" (
 mkdir -p %ARTIFACTS_OUT%
 set ARTIFACT_DIR=%cd%\%ARTIFACTS_OUT%
 
-
 @rem use short temp directory to avoid linker command file errors caused by
 @rem exceeding 131071 characters.
+@rem TODO(ssreenithi): Remove once we have a better solution: b/454497076
 set "GRPC_PYTHON_BUILD_USE_SHORT_TEMP_DIR_NAME=1"
 
-@rem Build gRPC Python distribution
-python -m build || goto :error
+@rem Build gRPC Python extensions
+python setup.py build_ext -c %EXT_COMPILER% || goto :error
 
-@rem Set up gRPC Python tools
+@rem Set up and build gRPC Python tools
 python tools\distrib\python\make_grpcio_tools.py
 
-@rem Build grpcio-tools Python distribution
 pushd tools\distrib\python\grpcio_tools
-python -m build || goto :error
+python setup.py build_ext -c %EXT_COMPILER% || goto :error
+popd
+
+@rem Build gRPC Python distributions
+python setup.py bdist_wheel || goto :error
+
+pushd tools\distrib\python\grpcio_tools
+python setup.py bdist_wheel || goto :error
 popd
 
 @rem Ensure the generate artifacts are valid.
