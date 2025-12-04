@@ -121,6 +121,49 @@ TEST(FlowControlManagerTest, ActOnFlowControlActionSettingsNoAction) {
             preferred_receive_crypto_message_size);
 }
 
+TEST(FlowControlManagerTest, GetStreamFlowControlTokens) {
+  chttp2::TransportFlowControl transport_flow_control(
+      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*memory_owner=*/nullptr);
+  chttp2::StreamFlowControl stream_flow_control(&transport_flow_control);
+  Http2Settings peer_settings;
+
+  // Initial state: stream delta 0, initial window 65535.
+  EXPECT_EQ(chttp2::kDefaultWindow,
+            GetStreamFlowControlTokens(stream_flow_control, peer_settings));
+
+  // Send 1000 bytes, stream delta becomes -1000.
+  // 65535 - 1000 = 64535
+  {
+    chttp2::StreamFlowControl::OutgoingUpdateContext sfc_upd(
+        &stream_flow_control);
+    sfc_upd.SentData(1000);
+  }
+  EXPECT_EQ(chttp2::kDefaultWindow - 1000,
+            GetStreamFlowControlTokens(stream_flow_control, peer_settings));
+
+  // Receive stream window update of 500, stream delta becomes -500.
+  // 65535 - 1000 + 500 = 65035
+  {
+    chttp2::StreamFlowControl::OutgoingUpdateContext sfc_upd(
+        &stream_flow_control);
+    sfc_upd.RecvUpdate(500);
+  }
+  EXPECT_EQ(chttp2::kDefaultWindow - 500,
+            GetStreamFlowControlTokens(stream_flow_control, peer_settings));
+
+  // If peer settings initial window size changes.
+  // 1000 - 500 = 500
+  peer_settings.SetInitialWindowSize(1000);
+  EXPECT_EQ(500,
+            GetStreamFlowControlTokens(stream_flow_control, peer_settings));
+
+  // If stream flow control tokens becomes negative, it's clamped to 0.
+  // 100 - 500 = -400
+  peer_settings.SetInitialWindowSize(100);
+  EXPECT_EQ(0, GetStreamFlowControlTokens(stream_flow_control, peer_settings));
+}
+
 TEST(FlowControlManagerTest, GetMaxPermittedDequeue) {
   chttp2::TransportFlowControl transport_flow_control(
       /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
