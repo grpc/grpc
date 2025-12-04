@@ -1562,6 +1562,8 @@ INSTANTIATE_TEST_SUITE_P(ClientCallbackEnd2endTest, ClientCallbackEnd2endTest,
 }  // namespace testing
 }  // namespace grpc
 
+#if !defined(GRPC_CFSTREAM)
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
@@ -1570,3 +1572,5 @@ int main(int argc, char** argv) {
   grpc_shutdown();
   return ret;
 }
+
+#endif  // !defined(GRPC_CFSTREAM)
