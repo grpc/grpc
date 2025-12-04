@@ -27,7 +27,6 @@ namespace testing {
 
 using grpc_core::channelz::BaseNode;
 using grpc_core::channelz::ChannelzRegistry;
-using grpc_core::channelz::SocketNode;
 using grpc_core::channelz::SubchannelNode;
 
 namespace {

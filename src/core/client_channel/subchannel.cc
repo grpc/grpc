@@ -1490,7 +1490,7 @@ class NewSubchannel::QueuedCall final
   RefCount ref_count_;
   WeakRefCountedPtr<NewSubchannel> subchannel_;
   CreateCallArgs args_;
-  grpc_closure* after_call_stack_destroy_ = nullptr;
+  grpc_closure* after_call_stack_destroy_ ABSL_GUARDED_BY(&mu_) = nullptr;
   grpc_error_handle cancel_error_ ABSL_GUARDED_BY(&mu_);
   Mutex mu_ ABSL_ACQUIRED_AFTER(NewSubchannel::mu_);
   BufferedCall buffered_call_ ABSL_GUARDED_BY(&mu_);
@@ -1562,9 +1562,14 @@ NewSubchannel::QueuedCall::~QueuedCall() {
 
 void NewSubchannel::QueuedCall::SetAfterCallStackDestroy(
     grpc_closure* closure) {
-  GRPC_CHECK_EQ(after_call_stack_destroy_, nullptr);
   GRPC_CHECK_NE(closure, nullptr);
-  after_call_stack_destroy_ = closure;
+  MutexLock lock(&mu_);
+  if (subchannel_call_ != nullptr) {
+    subchannel_call_->SetAfterCallStackDestroy(closure);
+  } else {
+    GRPC_CHECK_EQ(after_call_stack_destroy_, nullptr);
+    after_call_stack_destroy_ = closure;
+  }
 }
 
 void NewSubchannel::QueuedCall::StartTransportStreamOpBatch(
