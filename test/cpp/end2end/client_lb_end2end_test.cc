@@ -3933,9 +3933,7 @@ TEST_F(ConnectionScalingTest, QueuedRpcsFailAtMaxConnectionsIfConfigured) {
   for (size_t i = kMaxConcurrentStreams * 2;
        i < (kMaxConcurrentStreams * 2) + 2; ++i) {
     auto& rpc = rpcs[i];
-    LOG(INFO) << "HERE 0";
     Status status = rpc->GetStatus();
-    LOG(INFO) << "HERE 1";
     EXPECT_EQ(status.error_code(), GRPC_STATUS_UNAVAILABLE);
     EXPECT_THAT(
         status.error_message(),
