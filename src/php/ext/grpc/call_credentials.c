@@ -23,6 +23,7 @@
 
 #include "call_credentials.h"
 
+#include <ext/standard/php_var.h>
 #include <ext/spl/spl_exceptions.h>
 #include <zend_exceptions.h>
 
