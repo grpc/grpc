@@ -134,19 +134,17 @@ struct Stream : public RefCounted<Stream> {
   }
 
   // Called from the transport party
-  auto DequeueFrames(const uint32_t transport_tokens,
+  auto DequeueFrames(const uint32_t max_dequeue_size,
+                     const uint32_t stream_flow_control_tokens,
                      const uint32_t max_frame_length,
                      HPackCompressor& encoder) {
     HttpStreamState state = stream_state;
     // Reset stream MUST not be sent if the stream is idle or closed.
-    // TODO(tjagtap) : [PH2][P1][FlowControl] : Populate the correct stream flow
-    // control tokens.
-    return data_queue->DequeueFrames(
-        transport_tokens, max_frame_length,
-        /*stream_fc_tokens=*/std::numeric_limits<uint32_t>::max(), encoder,
-        /*can_send_reset_stream=*/
-        !(state == HttpStreamState::kIdle ||
-          state == HttpStreamState::kClosed));
+    return data_queue->DequeueFrames(max_dequeue_size, max_frame_length,
+                                     stream_flow_control_tokens, encoder,
+                                     /*can_send_reset_stream=*/
+                                     !(state == HttpStreamState::kIdle ||
+                                       state == HttpStreamState::kClosed));
   }
 
   ////////////////////////////////////////////////////////////////////////////
