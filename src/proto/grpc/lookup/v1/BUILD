@@ -18,6 +18,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "src/proto/grpc/lookup/v1",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "public",
 )
 
