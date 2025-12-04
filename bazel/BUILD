@@ -18,7 +18,13 @@ Contains build targets used by Starlark files in the bazel/ directory.
 
 licenses(["notice"])
 
-package(default_visibility = ["//:__subpackages__"])
+package(
+    default_visibility = ["//:__subpackages__"],
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 filegroup(
     name = "_single_module_tester",
