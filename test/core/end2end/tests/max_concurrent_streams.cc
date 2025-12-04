@@ -21,6 +21,7 @@
 
 #include <memory>
 
+#include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
