@@ -26,11 +26,12 @@ description = "Status proto mapping for gRPC"
 readme = {file = "README.rst", content-type = "text/x-rst"}
 authors = [{name = "The gRPC Authors", email = "grpc-io@googlegroups.com"}]
 
-dynamic = ["dependencies", "version", "requires-python", "classifiers"]
+dynamic = ["classifiers", "dependencies", "version", "requires-python"]
 
 [project.urls]
 Homepage = "https://grpc.io"
 Documentation = "https://grpc.github.io/grpc/python/grpc_status.html"
+"Source Code" = "https://github.com/grpc/grpc/tree/master/src/python/grpcio_status"
 
 [tool.setuptools.dynamic]
 version = {attr = "grpc_version.VERSION"}

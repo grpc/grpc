@@ -95,8 +95,6 @@ _parallel_compile_patch.monkeypatch_compile_maybe()
 _spawn_patch.monkeypatch_spawn()
 
 
-LICENSE = "Apache License 2.0"
-
 CLASSIFIERS = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
