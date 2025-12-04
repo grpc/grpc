@@ -20,14 +20,21 @@
 
 #include <grpc/grpc.h>
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <utility>
+#include <variant>
 
+#include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/grpc_check.h"
@@ -116,27 +123,6 @@ TEST_P(HeaderAssemblerDisassemblerTest, TestTheTestData) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// Helpers
-
-Http2HeaderFrame GenerateHeaderFrame(absl::string_view str,
-                                     const uint32_t stream_id,
-                                     const bool end_headers,
-                                     const bool end_stream) {
-  SliceBuffer buffer;
-  buffer.Append(Slice::FromCopiedString(str));
-  return Http2HeaderFrame{stream_id, end_headers, end_stream,
-                          std::move(buffer)};
-}
-
-Http2ContinuationFrame GenerateContinuationFrame(absl::string_view str,
-                                                 const uint32_t stream_id,
-                                                 const bool end_headers) {
-  SliceBuffer buffer;
-  buffer.Append(Slice::FromCopiedString(str));
-  return Http2ContinuationFrame{stream_id, end_headers, std::move(buffer)};
-}
-
-///////////////////////////////////////////////////////////////////////////////
 // HeaderAssembler - Test One Header Frame
 
 void ValidateOneHeader(const uint32_t stream_id, HPackParser& parser,
@@ -147,7 +133,7 @@ void ValidateOneHeader(const uint32_t stream_id, HPackParser& parser,
   Http2HeaderFrame header = GenerateHeaderFrame(
       kSimpleRequestEncoded, stream_id, /*end_headers=*/end_headers,
       /*end_stream=*/false);
-  Http2Status status = assembler.AppendHeaderFrame(std::move(header));
+  Http2Status status = assembler.AppendHeaderFrame(header);
   EXPECT_TRUE(status.IsOk());
   EXPECT_EQ(assembler.GetBufferedHeadersLength(), kSimpleRequestEncodedLen);
 
@@ -192,7 +178,7 @@ TEST_P(HeaderAssemblerDisassemblerTest, InvalidAssemblerNotReady1) {
   EXPECT_EQ(assembler.GetBufferedHeadersLength(), 0u);
   EXPECT_EQ(assembler.IsReady(), false);
 
-  Http2Status status = assembler.AppendHeaderFrame(std::move(header));
+  Http2Status status = assembler.AppendHeaderFrame(header);
   EXPECT_TRUE(status.IsOk());
 
   EXPECT_EQ(assembler.GetBufferedHeadersLength(), kSimpleRequestEncodedLen);
@@ -234,21 +220,19 @@ void ValidateOneHeaderTwoContinuation(const uint32_t stream_id,
   EXPECT_EQ(assembler.IsReady(), false);
 
   size_t expected_size = kSimpleRequestEncodedPart1Len;
-  Http2Status status = assembler.AppendHeaderFrame(std::move(header));
+  Http2Status status = assembler.AppendHeaderFrame(header);
   EXPECT_TRUE(status.IsOk());
   EXPECT_EQ(assembler.GetBufferedHeadersLength(), expected_size);
   EXPECT_EQ(assembler.IsReady(), false);
 
   expected_size += kSimpleRequestEncodedPart2Len;
-  Http2Status status1 =
-      assembler.AppendContinuationFrame(std::move(continuation1));
+  Http2Status status1 = assembler.AppendContinuationFrame(continuation1);
   EXPECT_TRUE(status1.IsOk());
   EXPECT_EQ(assembler.GetBufferedHeadersLength(), expected_size);
   EXPECT_EQ(assembler.IsReady(), false);
 
   expected_size += kSimpleRequestEncodedPart3Len;
-  Http2Status status2 =
-      assembler.AppendContinuationFrame(std::move(continuation2));
+  Http2Status status2 = assembler.AppendContinuationFrame(continuation2);
   EXPECT_TRUE(status2.IsOk());
   EXPECT_EQ(assembler.GetBufferedHeadersLength(), expected_size);
   EXPECT_EQ(assembler.IsReady(), true);
@@ -296,14 +280,13 @@ TEST_P(HeaderAssemblerDisassemblerTest, InvalidAssemblerNotReady2) {
   EXPECT_EQ(assembler.GetBufferedHeadersLength(), 0u);
   EXPECT_EQ(assembler.IsReady(), false);
 
-  Http2Status status = assembler.AppendHeaderFrame(std::move(header));
+  Http2Status status = assembler.AppendHeaderFrame(header);
   EXPECT_TRUE(status.IsOk());
   EXPECT_EQ(assembler.GetBufferedHeadersLength(),
             kSimpleRequestEncodedPart1Len);
   EXPECT_EQ(assembler.IsReady(), false);
 
-  Http2Status status1 =
-      assembler.AppendContinuationFrame(std::move(continuation1));
+  Http2Status status1 = assembler.AppendContinuationFrame(continuation1);
   EXPECT_TRUE(status1.IsOk());
   EXPECT_EQ(assembler.GetBufferedHeadersLength(),
             kSimpleRequestEncodedPart1Len + kSimpleRequestEncodedPart2Len);
@@ -375,7 +358,7 @@ Arena::PoolPtr<grpc_metadata_batch> GenerateMetadata(
       /*end_stream=*/is_trailing_metadata);
   EXPECT_EQ(header.payload.Length(), kSimpleRequestEncodedLen);
 
-  Http2Status status = assembler.AppendHeaderFrame(std::move(header));
+  Http2Status status = assembler.AppendHeaderFrame(header);
   Http2Settings default_settings;
   ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> result =
       assembler.ReadMetadata(parser, /*is_initial_metadata=*/true,
@@ -605,7 +588,7 @@ TEST_P(HeaderAssemblerDisassemblerTest, Reversibility) {
     HeaderAssembler assembler(allow_true_binary_metadata());
     assembler.SetStreamId(stream_id);
     Http2HeaderFrame& header = std::get<Http2HeaderFrame>(frame);
-    Http2Status status = assembler.AppendHeaderFrame(std::move(header));
+    Http2Status status = assembler.AppendHeaderFrame(header);
     Http2Settings default_settings;
     ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> result =
         assembler.ReadMetadata(parser, /*is_initial_metadata=*/true,

@@ -17,7 +17,13 @@ load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/resource_quota")
+grpc_package(
+    name = "test/core/resource_quota",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "arena_test",
@@ -100,6 +106,18 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = ["//src/core:thread_quota"],
+)
+
+grpc_cc_test(
+    name = "stream_quota_test",
+    srcs = ["stream_quota_test.cc"],
+    external_deps = ["gtest"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:ref_counted_ptr",
+        "//src/core:stream_quota",
+    ],
 )
 
 grpc_cc_test(

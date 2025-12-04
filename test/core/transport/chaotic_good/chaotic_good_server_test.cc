@@ -23,6 +23,9 @@
 #include <string>
 #include <utility>
 
+#include "src/core/credentials/call/call_credentials.h"
+#include "src/core/credentials/transport/fake/fake_credentials.h"
+#include "src/core/credentials/transport/security_connector.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good.h"
 #include "src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h"
 #include "src/core/lib/address_utils/parse_address.h"
@@ -48,7 +51,13 @@
 namespace grpc_core {
 namespace chaotic_good {
 namespace testing {
-class ChaoticGoodServerTest : public ::testing::Test {
+
+enum class CredentialsType {
+  kInsecure,
+  kFake,
+};
+
+class ChaoticGoodServerTest : public ::testing::TestWithParam<CredentialsType> {
  public:
   ChaoticGoodServerTest() {
     StartServer();
@@ -89,7 +98,15 @@ class ChaoticGoodServerTest : public ::testing::Test {
                                .ToC()
                                .get(),
                            nullptr);
-    auto* creds = grpc_insecure_server_credentials_create();
+    grpc_server_credentials* creds;
+    switch (GetParam()) {
+      case CredentialsType::kInsecure:
+        creds = grpc_insecure_server_credentials_create();
+        break;
+      case CredentialsType::kFake:
+        creds = grpc_fake_transport_security_server_credentials_create();
+        break;
+    }
     grpc_server_add_http2_port(server_, addr_.c_str(), creds);
     grpc_server_credentials_release(creds);
     grpc_server_start(server_);
@@ -102,6 +119,21 @@ class ChaoticGoodServerTest : public ::testing::Test {
     args_.address = &resolved_addr_;
     args_.deadline = Timestamp::Now() + Duration::Seconds(5);
     args_.channel_args = channel_args();
+    grpc_channel_credentials* channel_creds = nullptr;
+    switch (GetParam()) {
+      case CredentialsType::kInsecure:
+        channel_creds = grpc_insecure_credentials_create();
+        break;
+      case CredentialsType::kFake:
+        channel_creds = grpc_fake_transport_security_credentials_create();
+        break;
+    }
+    LOG(ERROR) << "addr: " << uri->ToString();
+    args_.channel_args =
+        args_.channel_args.SetObject<grpc_channel_security_connector>(
+            channel_creds->create_security_connector(
+                nullptr, uri->ToString().c_str(), &args_.channel_args));
+    grpc_channel_credentials_release(channel_creds);
     connector_ = MakeRefCounted<ChaoticGoodConnector>();
   }
 
@@ -132,7 +164,7 @@ class ChaoticGoodServerTest : public ::testing::Test {
   RefCountedPtr<ChaoticGoodConnector> connector_;
 };
 
-TEST_F(ChaoticGoodServerTest, Connect) {
+TEST_P(ChaoticGoodServerTest, Connect) {
   if (!IsChaoticGoodFramingLayerEnabled()) {
     GTEST_SKIP() << "Chaotic Good framing layer is not enabled";
   }
@@ -140,9 +172,11 @@ TEST_F(ChaoticGoodServerTest, Connect) {
                     grpc_schedule_on_exec_ctx);
   connector_->Connect(args_, &connecting_result_, &on_connecting_finished_);
   connect_finished_.WaitForNotification();
+  absl::SleepFor(absl::Seconds(1));
+  EXPECT_TRUE(connecting_successful_);
 }
 
-TEST_F(ChaoticGoodServerTest, ConnectAndShutdown) {
+TEST_P(ChaoticGoodServerTest, ConnectAndShutdown) {
   if (!IsChaoticGoodFramingLayerEnabled()) {
     GTEST_SKIP() << "Chaotic Good framing layer is not enabled";
   }
@@ -157,12 +191,31 @@ TEST_F(ChaoticGoodServerTest, ConnectAndShutdown) {
   connect_finished_.WaitForNotification();
 }
 
+INSTANTIATE_TEST_SUITE_P(ChaoticGoodServerTest, ChaoticGoodServerTest,
+                         ::testing::Values(CredentialsType::kInsecure,
+                                           CredentialsType::kFake));
+
 }  // namespace testing
 }  // namespace chaotic_good
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+
+  // Register a comparator for the Fake credentials.
+  grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
+      [&](grpc_core::CoreConfiguration::Builder* builder) {
+        builder->auth_context_comparator_registry()->RegisterComparator(
+            std::string("Fake"),
+            std::make_unique<absl::AnyInvocable<bool(
+                const grpc_auth_context*, const grpc_auth_context*)>>(
+                [&](const grpc_auth_context* one,
+                    const grpc_auth_context* two) -> bool {
+                  LOG(ERROR) << "compare";
+                  return true;
+                }));
+      });
+
   // Must call to create default EventEngine.
   grpc_init();
   int ret = RUN_ALL_TESTS();

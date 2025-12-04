@@ -209,7 +209,11 @@ CORE_END2END_TEST(Http2SingleHopTests, Encode4096Decode4194304) {
   HpackSize(*this, 4096, 4194304);
 }
 CORE_END2END_TEST(Http2SingleHopTests, Encode32768Decode0) {
+  // TODO(tjagtap) : [PH2][P1] : Remove once E2E is fixed.
+  EnableLoggingForPH2Tests();
   HpackSize(*this, 32768, 0);
+  // TODO(tjagtap) : [PH2][P1] : Remove once E2E is fixed.
+  DisableLoggingForPH2Tests();
 }
 CORE_END2END_TEST(Http2SingleHopTests, Encode32768Decode100) {
   HpackSize(*this, 32768, 100);
@@ -224,7 +228,11 @@ CORE_END2END_TEST(Http2SingleHopTests, Encode32768Decode32768) {
   HpackSize(*this, 32768, 32768);
 }
 CORE_END2END_TEST(Http2SingleHopTests, Encode32768Decode4194304) {
+  // TODO(tjagtap) : [PH2][P1] : Remove once E2E is fixed.
+  EnableLoggingForPH2Tests();
   HpackSize(*this, 32768, 4194304);
+  // TODO(tjagtap) : [PH2][P1] : Remove once E2E is fixed.
+  DisableLoggingForPH2Tests();
 }
 CORE_END2END_TEST(Http2SingleHopTests, Encode4194304Decode0) {
   HpackSize(*this, 4194304, 0);

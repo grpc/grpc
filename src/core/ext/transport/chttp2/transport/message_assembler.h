@@ -119,8 +119,6 @@ class GrpcMessageAssembler {
   SliceBuffer message_buffer_;
 };
 
-constexpr uint32_t kMaxMessageBatchSize = (16 * 1024u);
-
 // This class is meant to convert gRPC Messages into Http2DataFrame ensuring
 // that the payload size of the data frame is configurable.
 // This class is not responsible for queueing or backpressure.
@@ -138,9 +136,11 @@ class GrpcMessageDisassembler {
 
   // GrpcMessageDisassembler object will take ownership of the message.
   void PrepareBatchedMessageForSending(MessageHandle message) {
+    // The size of the message is controlled by the application (and by using
+    // GRPC_ARG_MAX_SEND_MESSAGE_LENGTH). PH2 ensures that if the the message
+    // size is larger than the default stream queue size kStreamQueueSize, at
+    // max one message will be buffered in the disassembler.
     PrepareMessageForSending(std::move(message));
-    GRPC_DCHECK_LE(GetBufferedLength(), kMaxMessageBatchSize)
-        << "Avoid batches larger than " << kMaxMessageBatchSize << "bytes";
   }
 
   size_t GetBufferedLength() const { return message_.Length(); }

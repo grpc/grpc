@@ -48,9 +48,11 @@ TEST_P(FlowControlManagerTest, ActOnFlowControlActionSettings) {
   const uint32_t initial_preferred_receive_crypto_message_size =
       settings.preferred_receive_crypto_message_size();
 
-  action.set_send_initial_window_update(urgency, initial_window_size + 10);
-  action.set_send_max_frame_size_update(urgency, max_frame_size + 10);
-  action.set_preferred_rx_crypto_frame_size_update(urgency, kTestMaxFrameSize);
+  action.test_only_set_send_initial_window_update(urgency,
+                                                  initial_window_size + 10);
+  action.test_only_set_send_max_frame_size_update(urgency, max_frame_size + 10);
+  action.test_only_set_preferred_rx_crypto_frame_size_update(urgency,
+                                                             kTestMaxFrameSize);
 
   ActOnFlowControlActionSettings(
       action, settings, enable_preferred_rx_crypto_frame_advertisement);
@@ -83,10 +85,11 @@ TEST(FlowControlManagerTest, ActOnFlowControlActionSettingsNoActionNeeded) {
   const uint32_t preferred_receive_crypto_message_size =
       settings.preferred_receive_crypto_message_size();
 
-  action.set_send_initial_window_update(kNoActionNeeded,
-                                        initial_window_size + 10);
-  action.set_send_max_frame_size_update(kNoActionNeeded, max_frame_size + 10);
-  action.set_preferred_rx_crypto_frame_size_update(
+  action.test_only_set_send_initial_window_update(kNoActionNeeded,
+                                                  initial_window_size + 10);
+  action.test_only_set_send_max_frame_size_update(kNoActionNeeded,
+                                                  max_frame_size + 10);
+  action.test_only_set_preferred_rx_crypto_frame_size_update(
       kNoActionNeeded, preferred_receive_crypto_message_size + 10);
 
   ActOnFlowControlActionSettings(

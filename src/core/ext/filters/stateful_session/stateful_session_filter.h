@@ -89,6 +89,17 @@ class StatefulSessionFilter
     static inline const NoInterceptor OnClientToServerHalfClose;
     static inline const NoInterceptor OnServerToClientMessage;
     static inline const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList()
+          .Set("cluster_name", cluster_name_)
+          .Set("override_host_attribute_cookie_address_list",
+               override_host_attribute_->cookie_address_list())
+          .Set("override_host_attribute_actual_address_list",
+               override_host_attribute_->actual_address_list())
+          .Set("cookie_address_list", cookie_address_list_)
+          .Set("cluster_changed", cluster_changed_)
+          .Set("perform_filtering", perform_filtering_);
+    }
 
    private:
     const StatefulSessionMethodParsedConfig::CookieConfig* cookie_config_;

@@ -25,8 +25,10 @@
 #include "envoy/config/listener/v3/listener.pb.h"
 #include "envoy/config/route/v3/route.pb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
+#include "envoy/service/status/v3/csds.grpc.pb.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
+#include "src/cpp/server/csds/csds.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
@@ -37,11 +39,6 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
-
-#ifndef DISABLED_XDS_PROTO_IN_CC
-
-#include "src/cpp/server/csds/csds.h"
-#include "src/proto/grpc/testing/xds/v3/csds.grpc.pb.h"
 
 namespace grpc {
 namespace testing {
@@ -787,8 +784,6 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpEndpointDoesNotExist) {
 }  // namespace testing
 }  // namespace grpc
 
-#endif  // DISABLED_XDS_PROTO_IN_CC
-
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
@@ -797,10 +792,6 @@ int main(int argc, char** argv) {
   grpc_core::ConfigVars::Overrides overrides;
   overrides.client_channel_backup_poll_interval_ms = 1;
   grpc_core::ConfigVars::SetOverrides(overrides);
-#if TARGET_OS_IPHONE
-  // Workaround Apple CFStream bug
-  grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
   grpc_init();
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();

@@ -142,7 +142,8 @@ class ClientChannel::SubchannelWrapper
     : public SubchannelInterfaceWithCallDestination {
  public:
   SubchannelWrapper(WeakRefCountedPtr<ClientChannel> client_channel,
-                    RefCountedPtr<Subchannel> subchannel);
+                    RefCountedPtr<Subchannel> subchannel,
+                    uint32_t max_connections_per_subchannel);
   ~SubchannelWrapper() override;
 
   void Orphaned() override;
@@ -165,7 +166,6 @@ class ClientChannel::SubchannelWrapper
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_);
   void CancelDataWatcher(DataWatcherInterface* watcher) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_);
-  void ThrottleKeepaliveTime(int new_keepalive_time);
   std::string address() const override { return subchannel_->address(); }
 
  private:
@@ -191,6 +191,7 @@ class ClientChannel::SubchannelWrapper
 
   WeakRefCountedPtr<ClientChannel> client_channel_;
   RefCountedPtr<Subchannel> subchannel_;
+  const uint32_t max_connections_per_subchannel_;
   // Maps from the address of the watcher passed to us by the LB policy
   // to the address of the WrapperWatcher that we passed to the underlying
   // subchannel.  This is needed so that when the LB policy calls
@@ -242,6 +243,23 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
         });
   }
 
+  void OnKeepaliveUpdate(Duration new_keepalive_time) override {
+    GRPC_TRACE_LOG(client_channel, INFO)
+        << "client_channel=" << subchannel_wrapper_->client_channel_.get()
+        << ": keepalive update for subchannel wrapper "
+        << subchannel_wrapper_.get() << "; hopping into work_serializer";
+    auto self = RefAsSubclass<WatcherWrapper>();
+    subchannel_wrapper_->client_channel_->work_serializer_->Run(
+        [self, new_keepalive_time]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+            *self->subchannel_wrapper_->client_channel_->work_serializer_) {
+          self->ApplyKeepaliveThrottlingInWorkSerializer(new_keepalive_time);
+        });
+  }
+
+  uint32_t max_connections_per_subchannel() const override {
+    return subchannel_wrapper_->max_connections_per_subchannel_;
+  }
+
   grpc_pollset_set* interested_parties() override { return nullptr; }
 
  private:
@@ -257,32 +275,37 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
         << subchannel_wrapper_->subchannel_.get()
         << " watcher=" << watcher_.get()
         << " state=" << ConnectivityStateName(state) << " status=" << status;
-    auto keepalive_throttling = status.GetPayload(kKeepaliveThrottlingKey);
-    if (keepalive_throttling.has_value()) {
-      int new_keepalive_time = -1;
-      if (absl::SimpleAtoi(std::string(keepalive_throttling.value()),
-                           &new_keepalive_time)) {
-        if (new_keepalive_time >
-            subchannel_wrapper_->client_channel_->keepalive_time_) {
-          subchannel_wrapper_->client_channel_->keepalive_time_ =
-              new_keepalive_time;
-          GRPC_TRACE_LOG(client_channel, INFO)
-              << "client_channel=" << subchannel_wrapper_->client_channel_.get()
-              << ": throttling keepalive time to "
-              << subchannel_wrapper_->client_channel_->keepalive_time_;
-          // Propagate the new keepalive time to all subchannels. This is so
-          // that new transports created by any subchannel (and not just the
-          // subchannel that received the GOAWAY), use the new keepalive time.
-          for (auto* subchannel_wrapper :
-               subchannel_wrapper_->client_channel_->subchannel_wrappers_) {
-            subchannel_wrapper->ThrottleKeepaliveTime(new_keepalive_time);
+    if (!IsTransportStateWatcherEnabled()) {
+      auto keepalive_throttling = status.GetPayload(kKeepaliveThrottlingKey);
+      if (keepalive_throttling.has_value()) {
+        int new_keepalive_time_ms = -1;
+        if (absl::SimpleAtoi(std::string(keepalive_throttling.value()),
+                             &new_keepalive_time_ms)) {
+          Duration new_keepalive_time =
+              Duration::Milliseconds(new_keepalive_time_ms);
+          if (new_keepalive_time >
+              subchannel_wrapper_->client_channel_->keepalive_time_) {
+            subchannel_wrapper_->client_channel_->keepalive_time_ =
+                new_keepalive_time;
+            GRPC_TRACE_LOG(client_channel, INFO)
+                << "client_channel="
+                << subchannel_wrapper_->client_channel_.get()
+                << ": throttling keepalive time to "
+                << subchannel_wrapper_->client_channel_->keepalive_time_;
+            // Propagate the new keepalive time to all subchannels. This is so
+            // that new transports created by any subchannel (and not just the
+            // subchannel that received the GOAWAY), use the new keepalive time.
+            for (auto& [subchannel, _] :
+                 subchannel_wrapper_->client_channel_->subchannel_map_) {
+              subchannel->ThrottleKeepaliveTime(new_keepalive_time);
+            }
           }
+        } else {
+          LOG(ERROR) << "client_channel="
+                     << subchannel_wrapper_->client_channel_.get()
+                     << ": Illegal keepalive throttling value "
+                     << std::string(keepalive_throttling.value());
         }
-      } else {
-        LOG(ERROR) << "client_channel="
-                   << subchannel_wrapper_->client_channel_.get()
-                   << ": Illegal keepalive throttling value "
-                   << std::string(keepalive_throttling.value());
       }
     }
     // Propagate status only in state TF.
@@ -294,6 +317,28 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
         state == GRPC_CHANNEL_TRANSIENT_FAILURE ? status : absl::OkStatus());
   }
 
+  void ApplyKeepaliveThrottlingInWorkSerializer(Duration new_keepalive_time)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+          *subchannel_wrapper_->client_channel_->work_serializer_) {
+    if (new_keepalive_time >
+        subchannel_wrapper_->client_channel_->keepalive_time_) {
+      subchannel_wrapper_->client_channel_->keepalive_time_ =
+          new_keepalive_time;
+      GRPC_TRACE_LOG(client_channel, INFO)
+          << "client_channel=" << subchannel_wrapper_->client_channel_.get()
+          << ": throttling keepalive time to "
+          << subchannel_wrapper_->client_channel_->keepalive_time_;
+      // Propagate the new keepalive time to all subchannels. This is so
+      // that new transports created by any subchannel (and not just the
+      // subchannel that received the GOAWAY), use the new keepalive time.
+      for (auto& [subchannel, _] :
+           subchannel_wrapper_->client_channel_->subchannel_map_) {
+        if (subchannel_wrapper_->subchannel_ == subchannel) continue;
+        subchannel->ThrottleKeepaliveTime(new_keepalive_time);
+      }
+    }
+  }
+
   std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
       watcher_;
   WeakRefCountedPtr<SubchannelWrapper> subchannel_wrapper_;
@@ -301,34 +346,32 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
 
 ClientChannel::SubchannelWrapper::SubchannelWrapper(
     WeakRefCountedPtr<ClientChannel> client_channel,
-    RefCountedPtr<Subchannel> subchannel)
+    RefCountedPtr<Subchannel> subchannel,
+    uint32_t max_connections_per_subchannel)
     : SubchannelInterfaceWithCallDestination(
           GRPC_TRACE_FLAG_ENABLED(client_channel) ? "SubchannelWrapper"
                                                   : nullptr),
       client_channel_(std::move(client_channel)),
-      subchannel_(std::move(subchannel)) {
+      subchannel_(std::move(subchannel)),
+      max_connections_per_subchannel_(max_connections_per_subchannel) {
   GRPC_TRACE_LOG(client_channel, INFO)
       << "client_channel=" << client_channel_.get()
       << ": creating subchannel wrapper " << this << " for subchannel "
-      << subchannel_.get();
+      << subchannel_.get()
+      << ", max_connections_per_subchannel=" << max_connections_per_subchannel;
 #ifndef NDEBUG
   DCHECK(client_channel_->work_serializer_->RunningInWorkSerializer());
 #endif
-  if (client_channel_->channelz_node_ != nullptr) {
+  auto& subchannel_wrappers =
+      client_channel_->subchannel_map_[subchannel_.get()];
+  if (subchannel_wrappers.empty() &&
+      client_channel_->channelz_node_ != nullptr) {
     auto* subchannel_node = subchannel_->channelz_node();
     if (subchannel_node != nullptr) {
-      auto it =
-          client_channel_->subchannel_refcount_map_.find(subchannel_.get());
-      if (it == client_channel_->subchannel_refcount_map_.end()) {
-        subchannel_node->AddParent(client_channel_->channelz_node_);
-        it = client_channel_->subchannel_refcount_map_
-                 .emplace(subchannel_.get(), 0)
-                 .first;
-      }
-      ++it->second;
+      subchannel_node->AddParent(client_channel_->channelz_node_);
     }
   }
-  client_channel_->subchannel_wrappers_.insert(this);
+  subchannel_wrappers.insert(this);
 }
 
 ClientChannel::SubchannelWrapper::~SubchannelWrapper() {
@@ -346,20 +389,20 @@ void ClientChannel::SubchannelWrapper::Orphaned() {
   client_channel_->work_serializer_->Run(
       [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
           *self->client_channel_->work_serializer_) {
-        self->client_channel_->subchannel_wrappers_.erase(self.get());
-        if (self->client_channel_->channelz_node_ != nullptr) {
-          auto* subchannel_node = self->subchannel_->channelz_node();
-          if (subchannel_node != nullptr) {
-            auto it = self->client_channel_->subchannel_refcount_map_.find(
-                self->subchannel_.get());
-            CHECK(it != self->client_channel_->subchannel_refcount_map_.end());
-            --it->second;
-            if (it->second == 0) {
+        auto it = self->client_channel_->subchannel_map_.find(
+            self->subchannel_.get());
+        GRPC_CHECK(it != self->client_channel_->subchannel_map_.end());
+        auto& subchannel_wrappers = it->second;
+        subchannel_wrappers.erase(self.get());
+        if (subchannel_wrappers.empty()) {
+          if (self->client_channel_->channelz_node_ != nullptr) {
+            auto* subchannel_node = self->subchannel_->channelz_node();
+            if (subchannel_node != nullptr) {
               subchannel_node->RemoveParent(
                   self->client_channel_->channelz_node_);
-              self->client_channel_->subchannel_refcount_map_.erase(it);
             }
           }
+          self->client_channel_->subchannel_map_.erase(it);
         }
         if (IsSubchannelWrapperCleanupOnOrphanEnabled()) {
           // We need to make sure that the internal subchannel gets unreffed
@@ -411,11 +454,6 @@ void ClientChannel::SubchannelWrapper::CancelDataWatcher(
   if (it != data_watchers_.end()) data_watchers_.erase(it);
 }
 
-void ClientChannel::SubchannelWrapper::ThrottleKeepaliveTime(
-    int new_keepalive_time) {
-  subchannel_->ThrottleKeepaliveTime(new_keepalive_time);
-}
-
 //
 // ClientChannel::ClientChannelControlHelper
 //
@@ -437,6 +475,17 @@ class ClientChannel::ClientChannelControlHelper
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_) {
     // If shutting down, do nothing.
     if (client_channel_->resolver_ == nullptr) return nullptr;
+    // Determine max_connections_per_subchannel.
+    const uint32_t cap =
+        args.GetInt(GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL_CAP).value_or(10);
+    uint32_t max_connections_per_subchannel =
+        args.GetInt(GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL)
+            .value_or(
+                per_address_args.GetInt(GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL)
+                    .value_or(1));
+    max_connections_per_subchannel =
+        std::min(max_connections_per_subchannel, cap);
+    // Modify args for subchannel.
     ChannelArgs subchannel_args = Subchannel::MakeSubchannelArgs(
         args, per_address_args, client_channel_->subchannel_pool_,
         client_channel_->default_authority_);
@@ -448,8 +497,8 @@ class ClientChannel::ClientChannelControlHelper
     // Make sure the subchannel has updated keepalive time.
     subchannel->ThrottleKeepaliveTime(client_channel_->keepalive_time_);
     // Create and return wrapper for the subchannel.
-    return MakeRefCounted<SubchannelWrapper>(client_channel_,
-                                             std::move(subchannel));
+    return MakeRefCounted<SubchannelWrapper>(
+        client_channel_, std::move(subchannel), max_connections_per_subchannel);
   }
 
   void UpdateState(
@@ -643,9 +692,7 @@ ClientChannel::ClientChannel(
   // Set initial keepalive time.
   auto keepalive_arg = channel_args_.GetInt(GRPC_ARG_KEEPALIVE_TIME_MS);
   if (keepalive_arg.has_value()) {
-    keepalive_time_ = Clamp(*keepalive_arg, 1, INT_MAX);
-  } else {
-    keepalive_time_ = -1;  // unset
+    keepalive_time_ = Duration::Milliseconds(Clamp(*keepalive_arg, 1, INT_MAX));
   }
 }
 
@@ -1181,6 +1228,12 @@ void ClientChannel::OnResolverResultChangedLocked(Resolver::Result result) {
         static_cast<const internal::ClientChannelGlobalParsedConfig*>(
             service_config->GetGlobalParsedConfig(
                 service_config_parser_index_));
+    // Set max_connections_per_subchannel from service config.
+    if (parsed_service_config->max_connections_per_subchannel() != 0) {
+      result.args = result.args.Set(
+          GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL,
+          parsed_service_config->max_connections_per_subchannel());
+    }
     // Choose LB policy config.
     RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config =
         ChooseLbPolicy(result, parsed_service_config);

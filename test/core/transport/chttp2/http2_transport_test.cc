@@ -33,14 +33,19 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
+#include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/promise/try_join.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "test/core/promise/poll_matcher.h"
 #include "test/core/test_util/postmortem.h"
@@ -52,6 +57,7 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -156,6 +162,88 @@ TEST(Http2CommonTransportTest, TestReadChannelArgs) {
   EXPECT_EQ(settings2.allow_security_frame(), false);
 }
 
+TEST(Http2CommonTransportTest, TestReadTransportChannelArgs) {
+  // Test to validate that ReadChannelArgs reads all the channel args
+  // correctly into TransportChannelArgs.
+  Http2Settings settings;
+  chttp2::TransportFlowControl transport_flow_control(
+      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*memory_owner=*/nullptr);
+
+  {
+    TransportChannelArgs args;
+    // 1. Test Client Defaults
+    ReadChannelArgs(ChannelArgs(), args, settings, transport_flow_control,
+                    /*is_client=*/true);
+
+    EXPECT_EQ(args.keepalive_time, Duration::Infinity());
+    EXPECT_EQ(args.keepalive_timeout, Duration::Infinity());
+    EXPECT_EQ(args.ping_timeout, Duration::Infinity());
+    EXPECT_EQ(args.settings_timeout, Duration::Infinity());
+    EXPECT_EQ(args.keepalive_permit_without_calls, false);
+    EXPECT_EQ(args.enable_preferred_rx_crypto_frame_advertisement, false);
+    EXPECT_EQ(args.max_usable_hpack_table_size, -1);
+    EXPECT_GE(args.max_header_list_size_soft_limit, 8192u);
+  }
+
+  {
+    // 2. Test Server Defaults
+    TransportChannelArgs args;
+    ReadChannelArgs(ChannelArgs(), args, settings, transport_flow_control,
+                    /*is_client=*/false);
+
+    EXPECT_EQ(args.keepalive_time, Duration::Hours(2));
+    EXPECT_EQ(args.keepalive_timeout, Duration::Seconds(20));
+    EXPECT_EQ(args.ping_timeout, Duration::Minutes(1));
+    EXPECT_EQ(args.settings_timeout, Duration::Minutes(1));
+    EXPECT_EQ(args.keepalive_permit_without_calls, false);
+    EXPECT_EQ(args.enable_preferred_rx_crypto_frame_advertisement, false);
+    EXPECT_EQ(args.max_usable_hpack_table_size, -1);
+    EXPECT_GE(args.max_header_list_size_soft_limit, 8192u);
+  }
+
+  {
+    // 3. Test Overrides
+    TransportChannelArgs args;
+    ChannelArgs channel_args =
+        ChannelArgs()
+            .Set(GRPC_ARG_KEEPALIVE_TIME_MS, 10000)    // 10s
+            .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 5000)  // 5s
+            .Set(GRPC_ARG_PING_TIMEOUT_MS, 3000)       // 3s
+            .Set(GRPC_ARG_SETTINGS_TIMEOUT, 15000)     // 15s
+            .Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, true)
+            .Set(GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE, true)
+            .Set(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER, 1024)
+            .Set(GRPC_ARG_MAX_METADATA_SIZE, 12345);
+
+    ReadChannelArgs(channel_args, args, settings, transport_flow_control,
+                    /*is_client=*/true);
+
+    EXPECT_EQ(args.keepalive_time, Duration::Seconds(10));
+    EXPECT_EQ(args.keepalive_timeout, Duration::Seconds(5));
+    EXPECT_EQ(args.ping_timeout, Duration::Seconds(3));
+    EXPECT_EQ(args.settings_timeout, Duration::Seconds(15));
+    EXPECT_EQ(args.keepalive_permit_without_calls, true);
+    EXPECT_EQ(args.enable_preferred_rx_crypto_frame_advertisement, true);
+    EXPECT_EQ(args.max_usable_hpack_table_size, 1024);
+    EXPECT_EQ(args.max_header_list_size_soft_limit, 12345u);
+  }
+
+  {
+    // 4. Test Settings Timeout logic derived from keepalive_timeout
+    TransportChannelArgs args;
+    ChannelArgs channel_args_2 =
+        ChannelArgs()
+            .Set(GRPC_ARG_KEEPALIVE_TIME_MS, 100000)  // 100s, just to be finite
+            .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 40000);  // 40s
+
+    ReadChannelArgs(channel_args_2, args, settings, transport_flow_control,
+                    /*is_client=*/true);
+
+    EXPECT_EQ(args.settings_timeout, Duration::Seconds(80));
+  }
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Flow control helpers tests
 
@@ -192,14 +280,14 @@ TEST(Http2CommonTransportTest, ProcessIncomingDataFrameFlowControlNullStream) {
   frame_header.flags = 0;
   frame_header.stream_id = 1;
 
-  EXPECT_EQ(flow_control.announced_window(), chttp2::kDefaultWindow);
+  EXPECT_EQ(flow_control.test_only_announced_window(), chttp2::kDefaultWindow);
 
   // First DATA frame of size frame_payload_size
   ValueOrHttp2Status<chttp2::FlowControlAction> action1 =
       ProcessIncomingDataFrameFlowControl(frame_header, flow_control,
                                           /*stream=*/nullptr);
   EXPECT_TRUE(action1.IsOk());
-  EXPECT_EQ(flow_control.announced_window(),
+  EXPECT_EQ(flow_control.test_only_announced_window(),
             chttp2::kDefaultWindow - frame_payload_size);
 
   // 2nd DATA frame of size frame_payload_size
@@ -207,7 +295,7 @@ TEST(Http2CommonTransportTest, ProcessIncomingDataFrameFlowControlNullStream) {
       ProcessIncomingDataFrameFlowControl(frame_header, flow_control,
                                           /*stream=*/nullptr);
   EXPECT_TRUE(action2.IsOk());
-  EXPECT_EQ(flow_control.announced_window(),
+  EXPECT_EQ(flow_control.test_only_announced_window(),
             chttp2::kDefaultWindow - 2 * frame_payload_size);
 
   // 3rd DATA frame of size frame_payload_size
@@ -215,7 +303,7 @@ TEST(Http2CommonTransportTest, ProcessIncomingDataFrameFlowControlNullStream) {
       ProcessIncomingDataFrameFlowControl(frame_header, flow_control,
                                           /*stream=*/nullptr);
   EXPECT_TRUE(action3.IsOk());
-  EXPECT_EQ(flow_control.announced_window(),
+  EXPECT_EQ(flow_control.test_only_announced_window(),
             chttp2::kDefaultWindow - 3 * frame_payload_size);
 
   // 4th DATA frame of size frame_payload_size.
@@ -245,14 +333,14 @@ TEST(Http2CommonTransportTest, ProcessIncomingDataFrameFlowControlNullStream1) {
   frame_header.flags = 0;
   frame_header.stream_id = 1;
 
-  EXPECT_EQ(flow_control.announced_window(), chttp2::kDefaultWindow);
+  EXPECT_EQ(flow_control.test_only_announced_window(), chttp2::kDefaultWindow);
 
   // Receive first large DATA frame.
   ValueOrHttp2Status<chttp2::FlowControlAction> action1 =
       ProcessIncomingDataFrameFlowControl(frame_header, flow_control,
                                           /*stream=*/nullptr);
   EXPECT_TRUE(action1.IsOk());
-  EXPECT_EQ(flow_control.announced_window(),
+  EXPECT_EQ(flow_control.test_only_announced_window(),
             chttp2::kDefaultWindow - frame_payload_size);
 
   // Send the flow control update to peer
@@ -264,7 +352,7 @@ TEST(Http2CommonTransportTest, ProcessIncomingDataFrameFlowControlNullStream1) {
       ProcessIncomingDataFrameFlowControl(frame_header, flow_control,
                                           /*stream=*/nullptr);
   EXPECT_TRUE(action2.IsOk());
-  EXPECT_EQ(flow_control.announced_window(),
+  EXPECT_EQ(flow_control.test_only_announced_window(),
             (chttp2::kDefaultWindow + increment) - 2 * frame_payload_size);
 
   // For an empty DATA frame the flow control window must not change.
@@ -275,7 +363,7 @@ TEST(Http2CommonTransportTest, ProcessIncomingDataFrameFlowControlNullStream1) {
         ProcessIncomingDataFrameFlowControl(frame_header, flow_control,
                                             /*stream=*/nullptr);
     EXPECT_TRUE(action3.IsOk());
-    EXPECT_EQ(flow_control.announced_window(),
+    EXPECT_EQ(flow_control.test_only_announced_window(),
               (chttp2::kDefaultWindow + increment) - 2 * frame_payload_size);
   }
 }
@@ -290,17 +378,18 @@ TEST_F(TestsNeedingStreamObjects,
   frame_header.flags = 0;
   frame_header.stream_id = 1;
 
-  EXPECT_EQ(transport_flow_control_.announced_window(), chttp2::kDefaultWindow);
-  EXPECT_EQ(stream->flow_control.announced_window_delta(), 0);
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
+            chttp2::kDefaultWindow);
+  EXPECT_EQ(stream->flow_control.test_only_announced_window_delta(), 0);
 
   // First DATA frame of size frame_payload_size
   ValueOrHttp2Status<chttp2::FlowControlAction> action1 =
       ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
                                           stream);
   EXPECT_TRUE(action1.IsOk());
-  EXPECT_EQ(transport_flow_control_.announced_window(),
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             chttp2::kDefaultWindow - frame_payload_size);
-  EXPECT_EQ(stream->flow_control.announced_window_delta(),
+  EXPECT_EQ(stream->flow_control.test_only_announced_window_delta(),
             -static_cast<int64_t>(frame_payload_size));
 
   // 2nd DATA frame of size frame_payload_size
@@ -308,9 +397,9 @@ TEST_F(TestsNeedingStreamObjects,
       ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
                                           stream);
   EXPECT_TRUE(action2.IsOk());
-  EXPECT_EQ(transport_flow_control_.announced_window(),
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             chttp2::kDefaultWindow - 2 * frame_payload_size);
-  EXPECT_EQ(stream->flow_control.announced_window_delta(),
+  EXPECT_EQ(stream->flow_control.test_only_announced_window_delta(),
             -2 * static_cast<int64_t>(frame_payload_size));
 
   // 3rd DATA frame of size frame_payload_size
@@ -318,9 +407,9 @@ TEST_F(TestsNeedingStreamObjects,
       ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
                                           stream);
   EXPECT_TRUE(action3.IsOk());
-  EXPECT_EQ(transport_flow_control_.announced_window(),
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             chttp2::kDefaultWindow - 3 * frame_payload_size);
-  EXPECT_EQ(stream->flow_control.announced_window_delta(),
+  EXPECT_EQ(stream->flow_control.test_only_announced_window_delta(),
             -3 * static_cast<int64_t>(frame_payload_size));
 
   // 4th DATA frame of size frame_payload_size.
@@ -349,24 +438,25 @@ TEST_F(TestsNeedingStreamObjects,
   frame_header.flags = 0;
   frame_header.stream_id = 1;
 
-  EXPECT_EQ(transport_flow_control_.announced_window(), chttp2::kDefaultWindow);
-  EXPECT_EQ(stream->flow_control.announced_window_delta(), 0);
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
+            chttp2::kDefaultWindow);
+  EXPECT_EQ(stream->flow_control.test_only_announced_window_delta(), 0);
 
   // Receive first large DATA frame.
   ValueOrHttp2Status<chttp2::FlowControlAction> action1 =
       ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
                                           stream);
   EXPECT_TRUE(action1.IsOk());
-  EXPECT_EQ(transport_flow_control_.announced_window(),
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             chttp2::kDefaultWindow - frame_payload_size);
-  EXPECT_EQ(stream->flow_control.announced_window_delta(),
+  EXPECT_EQ(stream->flow_control.test_only_announced_window_delta(),
             -static_cast<int64_t>(frame_payload_size));
 
   // Send the flow control update to peer for transport
   uint32_t increment =
       transport_flow_control_.MaybeSendUpdate(/*writing_anyway=*/true);
   EXPECT_GT(increment, 0);
-  EXPECT_EQ(transport_flow_control_.announced_window(),
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             chttp2::kDefaultWindow - frame_payload_size + increment);
 
   // Receive 2nd large DATA frame.
@@ -397,9 +487,9 @@ TEST_F(TestsNeedingStreamObjects,
   int64_t expected_announced_window = chttp2::kDefaultWindow;
   int64_t expected_announced_window_delta = 0;
 
-  EXPECT_EQ(transport_flow_control_.announced_window(),
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             expected_announced_window);
-  EXPECT_EQ(stream->flow_control.announced_window_delta(),
+  EXPECT_EQ(stream->flow_control.test_only_announced_window_delta(),
             expected_announced_window_delta);
 
   // Receive first large DATA frame.
@@ -409,9 +499,9 @@ TEST_F(TestsNeedingStreamObjects,
   expected_announced_window -= frame_payload_size;
   expected_announced_window_delta -= frame_payload_size;
   EXPECT_TRUE(action1.IsOk());
-  EXPECT_EQ(transport_flow_control_.announced_window(),
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             expected_announced_window);
-  EXPECT_EQ(stream->flow_control.announced_window_delta(),
+  EXPECT_EQ(stream->flow_control.test_only_announced_window_delta(),
             expected_announced_window_delta);
 
   chttp2::StreamFlowControl::IncomingUpdateContext stream_flow_control_context(
@@ -429,9 +519,9 @@ TEST_F(TestsNeedingStreamObjects,
   EXPECT_GT(stream_increment, 0);
   expected_announced_window += transport_increment;
   expected_announced_window_delta += stream_increment;
-  EXPECT_EQ(transport_flow_control_.announced_window(),
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             expected_announced_window);
-  EXPECT_EQ(stream->flow_control.announced_window_delta(),
+  EXPECT_EQ(stream->flow_control.test_only_announced_window_delta(),
             expected_announced_window_delta);
 
   // Receive 2nd large DATA frame.
@@ -441,9 +531,9 @@ TEST_F(TestsNeedingStreamObjects,
   EXPECT_TRUE(action2.IsOk());
   expected_announced_window -= frame_payload_size;
   expected_announced_window_delta -= frame_payload_size;
-  EXPECT_EQ(transport_flow_control_.announced_window(),
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             expected_announced_window);
-  EXPECT_EQ(stream->flow_control.announced_window_delta(),
+  EXPECT_EQ(stream->flow_control.test_only_announced_window_delta(),
             expected_announced_window_delta);
 }
 

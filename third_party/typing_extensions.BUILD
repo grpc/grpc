@@ -1,3 +1,5 @@
+load("@rules_python//python:defs.bzl", "py_library")
+
 genrule(
     name = "copy_typing_extensions",
     srcs = ["src/typing_extensions.py"],

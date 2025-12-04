@@ -42,7 +42,7 @@ class Chttp2Connector : public SubchannelConnector {
 
  private:
   void OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result);
-  static void OnReceiveSettings(void* arg, grpc_error_handle error);
+  void OnReceiveSettings(absl::StatusOr<uint32_t> max_concurrent_streams);
   void OnTimeout() ABSL_LOCKS_EXCLUDED(mu_);
 
   // We cannot invoke notify_ until both OnTimeout() and OnReceiveSettings()
@@ -61,7 +61,6 @@ class Chttp2Connector : public SubchannelConnector {
   Result* result_ = nullptr;
   grpc_closure* notify_ = nullptr;
   bool shutdown_ = false;
-  grpc_closure on_receive_settings_;
   std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       timer_handle_ ABSL_GUARDED_BY(mu_);
   // A raw pointer will suffice since args_ holds a copy of the ChannelArgs
