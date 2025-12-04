@@ -19,6 +19,7 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_SETTINGS_PROMISES_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_SETTINGS_PROMISES_H
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
 #include <algorithm>
@@ -35,6 +36,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/poll.h"
@@ -46,8 +48,10 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/time.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/types/span.h"
 
 namespace grpc_core {
@@ -63,15 +67,37 @@ namespace grpc_core {
 // This class is designed with the assumption that only 1 SETTINGS frame will be
 // in flight at a time. And we do not send a second SETTINGS frame till we
 // receive and process the SETTINGS ACK.
-class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
+class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   // TODO(tjagtap) [PH2][P1][Settings] : Add new DCHECKs
  public:
+  explicit SettingsPromiseManager(
+      absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings)
+      : on_receive_first_settings_(std::move(on_receive_settings)) {}
+  ~SettingsPromiseManager() override {
+    GRPC_DCHECK(on_receive_first_settings_ == nullptr);
+  }
+
   SettingsPromiseManager() = default;
   // Not copyable, movable or assignable.
   SettingsPromiseManager(const SettingsPromiseManager&) = delete;
   SettingsPromiseManager& operator=(const SettingsPromiseManager&) = delete;
   SettingsPromiseManager(SettingsPromiseManager&&) = delete;
   SettingsPromiseManager& operator=(SettingsPromiseManager&&) = delete;
+
+  void HandleTransportShutdown(
+      grpc_event_engine::experimental::EventEngine* event_engine) {
+    // If some scenario causes the transport to close without ever receiving
+    // settings, we need to still invoke the closure passed to the transport.
+    // Additionally, as this function will always run on the transport party, it
+    // cannot race with reading a settings frame.
+    // TODO(akshitpatel): [PH2][P4] Pass the actual error that caused the
+    // transport to be closed here.
+    MaybeReportInitialSettingsAbort(event_engine);
+  }
+
+  bool IsFirstPeerSettingsApplied() const {
+    return on_receive_first_settings_ == nullptr;
+  }
 
   //////////////////////////////////////////////////////////////////////////////
   // Functions for SETTINGS being sent from our transport to the peer.
@@ -100,8 +126,6 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
   bool ShouldSpawnWaitForSettingsTimeout() const {
     return should_wait_for_settings_ack_;
   }
-
-  void TestOnlyTimeoutWaiterSpawned() { TimeoutWaiterSpawned(); }
 
   // This returns a promise which must be spawned on transports general
   // party. This must be spawned soon after the transport sends a SETTINGS
@@ -153,6 +177,7 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
   }
 
   void TestOnlyRecordReceivedAck() { RecordReceivedAck(); }
+  void TestOnlyTimeoutWaiterSpawned() { TimeoutWaiterSpawned(); }
 
   //////////////////////////////////////////////////////////////////////////////
   // Functions for SETTINGS being received from the peer.
@@ -166,14 +191,20 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
                                    settings.size());
     pending_peer_settings_.insert(pending_peer_settings_.end(),
                                   settings.begin(), settings.end());
-  };
+  }
 
   // Applies settings buffered by BufferPeerSettings().
   // Should be called at start of write cycle, after the SETTINGS ACK has been
-  // written to apply the settings.
-  http2::Http2ErrorCode ApplyBufferedPeerSettings() {
-    return settings_.ApplyIncomingSettings(
+  // written to apply the settings. If the first settings frame is received from
+  // the peer that that needs some special handling too.
+  http2::Http2ErrorCode MaybeReportAndApplyBufferedPeerSettings(
+      grpc_event_engine::experimental::EventEngine* event_engine) {
+    http2::Http2ErrorCode status = settings_.ApplyIncomingSettings(
         std::exchange(pending_peer_settings_, {}));
+    if (num_acks_to_send_ > 0) {
+      MaybeReportInitialSettings(event_engine);
+    }
+    return status;
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -182,7 +213,8 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
   // Appends SETTINGS and SETTINGS ACK frames to output_buf if needed.
   // A SETTINGS frame is appended if local settings changed.
   // SETTINGS ACK frames are appended for any incoming settings that need
-  // acknowledgment.
+  // acknowledgment. This MUST be called only after the
+  // MaybeReportAndApplyBufferedPeerSettings function.
   void MaybeGetSettingsAndSettingsAckFrames(
       chttp2::TransportFlowControl& flow_control, SliceBuffer& output_buf) {
     GRPC_SETTINGS_TIMEOUT_DLOG << "MaybeGetSettingsAndSettingsAckFrames";
@@ -220,12 +252,60 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
     return settings_.ChannelzProperties();
   }
 
+  bool IsSecurityFrameExpected() const {
+    GRPC_DCHECK(IsFirstPeerSettingsApplied())
+        << "Security frame must not be received before SETTINGS frame";
+    // TODO(tjagtap) : [PH2][P3] : Evaluate when to accept the frame and when to
+    // reject it. Compare it with the requirement and with CHTTP2.
+    return (settings_.acked().allow_security_frame() ||
+            settings_.local().allow_security_frame()) &&
+           settings_.peer().allow_security_frame();
+  };
+
  private:
   Http2SettingsManager settings_;
 
   //////////////////////////////////////////////////////////////////////////////
+  // Plumbing Settings with Chttp2Connector class
+
+  void MaybeReportInitialSettings(
+      grpc_event_engine::experimental::EventEngine* event_engine) {
+    // TODO(tjagtap) [PH2][P2] Relook at this while writing server. I think this
+    // will be different for client and server.
+    if (on_receive_first_settings_ != nullptr) {
+      GRPC_DCHECK(event_engine != nullptr);
+      event_engine->Run(
+          [on_receive_settings = std::move(on_receive_first_settings_),
+           peer_max_concurrent_streams =
+               settings_.peer().max_concurrent_streams()]() mutable {
+            ExecCtx exec_ctx;
+            std::move(on_receive_settings)(peer_max_concurrent_streams);
+          });
+      GRPC_DCHECK(on_receive_first_settings_ == nullptr);
+    }
+  }
+
+  void MaybeReportInitialSettingsAbort(
+      grpc_event_engine::experimental::EventEngine* event_engine) {
+    // TODO(tjagtap) [PH2][P2] Relook at this while writing server. I think this
+    // will be different for client and server.
+    if (on_receive_first_settings_ != nullptr) {
+      GRPC_DCHECK(event_engine != nullptr);
+      event_engine->Run([on_receive_settings =
+                             std::move(on_receive_first_settings_)]() mutable {
+        ExecCtx exec_ctx;
+        std::move(on_receive_settings)(
+            absl::UnavailableError("transport closed"));
+      });
+      GRPC_DCHECK(on_receive_first_settings_ == nullptr);
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
   // Functions for SETTINGS being sent from our transport to the peer.
+
   void TimeoutWaiterSpawned() { should_wait_for_settings_ack_ = false; }
+
   inline void StartSettingsTimeoutTimer() {
     GRPC_SETTINGS_TIMEOUT_DLOG
         << "SettingsPromiseManager::StartSettingsTimeoutTimer "
@@ -285,6 +365,7 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
 
   //////////////////////////////////////////////////////////////////////////////
   // Data Members for SETTINGS being sent from our transport to the peer.
+
   Duration settings_ack_timeout_;
   // TODO(tjagtap) [PH2][P3][Settings] Delete sent_time_. We don't actually use
   // sent_time_ for the timeout. We are just keeping this as book keeping for
@@ -304,6 +385,8 @@ class SettingsPromiseManager : public RefCounted<SettingsPromiseManager> {
 
   //////////////////////////////////////////////////////////////////////////////
   // Data Members for SETTINGS being received from the peer.
+
+  absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_first_settings_;
   std::vector<Http2SettingsFrame::Setting> pending_peer_settings_;
   // Number of incoming SETTINGS frames that we have received but not ACKed yet.
   uint32_t num_acks_to_send_ = 0;

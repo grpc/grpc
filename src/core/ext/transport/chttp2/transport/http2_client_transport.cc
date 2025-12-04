@@ -44,6 +44,7 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/header_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
@@ -459,19 +460,6 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
       << "Http2ClientTransport ProcessHttp2SettingsFrame { ack=" << frame.ack
       << ", settings length=" << frame.settings.size() << "}";
 
-  // The connector code needs us to run this
-  // TODO(akshitpatel) : [PH2][P2] Move this to where settings are applied.
-  if (on_receive_settings_ != nullptr) {
-    event_engine_->Run(
-        [on_receive_settings = std::move(on_receive_settings_)]() mutable {
-          ExecCtx exec_ctx;
-          std::move(on_receive_settings)(
-              // TODO(tjagtap) : [PH2][P2] Send actual MAX_CONCURRENT_STREAMS
-              // value here.
-              std::numeric_limits<uint32_t>::max());
-        });
-  }
-
   if (!frame.ack) {
     Http2Status status = ValidateSettingsValues(frame.settings);
     if (!status.IsOk()) {
@@ -479,6 +467,10 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
     }
     settings_->BufferPeerSettings(std::move(frame.settings));
     SpawnGuardedTransportParty("SettingsAck", TriggerWriteCycle());
+    if (GPR_UNLIKELY(!settings_->IsFirstPeerSettingsApplied())) {
+      // Apply the first settings before we read any other frames.
+      should_stall_read_loop_ = true;
+    }
   } else {
     if (settings_->OnSettingsAckReceived()) {
       parser_.hpack_table()->SetMaxBytes(
@@ -686,13 +678,9 @@ Http2Status Http2ClientTransport::ProcessHttp2ContinuationFrame(
 Http2Status Http2ClientTransport::ProcessHttp2SecurityFrame(
     Http2SecurityFrame frame) {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessHttp2SecurityFrame "
-                            "{ payload="
-                         << frame.payload.JoinIntoString() << " }";
-  if ((settings_->acked().allow_security_frame() ||
-       settings_->local().allow_security_frame()) &&
-      settings_->peer().allow_security_frame()) {
-    // TODO(tjagtap) : [PH2][P4] : Evaluate when to accept the frame and when to
-    // reject it. Compare it with the requirement and with CHTTP2.
+                            "{ payload.Length="
+                         << frame.payload.Length() << " }";
+  if (settings_->IsSecurityFrameExpected()) {
     // TODO(tjagtap) : [PH2][P3] : Add handling of Security frame
     // Just the frame.payload needs to be passed to the endpoint_ object.
     // Refer usage of TransportFramingEndpointExtension.
@@ -976,7 +964,8 @@ auto Http2ClientTransport::ProcessAndWriteControlFrames() {
   // 5. Custom gRPC security frame
 
   goaway_manager_.MaybeGetSerializedGoawayFrame(output_buf);
-  http2::Http2ErrorCode apply_status = settings_->ApplyBufferedPeerSettings();
+  http2::Http2ErrorCode apply_status =
+      settings_->MaybeReportAndApplyBufferedPeerSettings(event_engine_.get());
   if (!goaway_manager_.IsImmediateGoAway() &&
       apply_status == http2::Http2ErrorCode::kNoError) {
     EnforceLatestIncomingSettings();
@@ -1361,11 +1350,11 @@ Http2ClientTransport::Http2ClientTransport(
           endpoint.GetEventEngineEndpoint(), channel_args)),
       event_engine_(std::move(event_engine)),
       endpoint_(std::move(endpoint)),
-      settings_(MakeRefCounted<SettingsPromiseManager>()),
+      settings_(MakeRefCounted<SettingsPromiseManager>(
+          std::move(on_receive_settings))),
       next_stream_id_(/*Initial Stream ID*/ 1),
       should_reset_ping_clock_(false),
       is_first_write_(true),
-      on_receive_settings_(std::move(on_receive_settings)),
       max_write_size_(kMaxWriteSize),
       ping_manager_(std::nullopt),
       keepalive_manager_(std::nullopt),
@@ -1641,24 +1630,10 @@ void Http2ClientTransport::CloseTransport() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseTransport";
 
   transport_closed_latch_.Set();
-  // If some scenario causes the transport to close without ever receiving
-  // settings, we need to still invoke the closure passed to the transport.
-  // Additionally, as this function will always run on the transport party, it
-  // cannot race with reading a settings frame.
-  // TODO(akshitpatel): [PH2][P2] Pass the actual error that caused the
-  // transport to be closed here.
-  if (on_receive_settings_ != nullptr) {
-    event_engine_->Run(
-        [on_receive_settings = std::move(on_receive_settings_)]() mutable {
-          ExecCtx exec_ctx;
-          std::move(on_receive_settings)(
-              absl::UnavailableError("transport closed"));
-        });
-  }
+  settings_->HandleTransportShutdown(event_engine_.get());
 
   MutexLock lock(&transport_mutex_);
-  // This is the only place where the general_party_ is
-  // reset.
+  // This is the only place where the general_party_ is reset.
   general_party_.reset();
 }
 
@@ -1753,7 +1728,6 @@ Http2ClientTransport::~Http2ClientTransport() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Destructor Begin";
   GRPC_DCHECK(stream_list_.empty());
   GRPC_DCHECK(general_party_ == nullptr);
-  GRPC_DCHECK(on_receive_settings_ == nullptr);
   memory_owner_.Reset();
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Destructor End";
 }

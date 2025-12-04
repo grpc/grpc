@@ -496,7 +496,6 @@ class Http2ClientTransport final : public ClientTransport,
   bool should_reset_ping_clock_;
   bool is_first_write_;
   IncomingMetadataTracker incoming_headers_;
-  absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings_;
 
   uint32_t max_header_list_size_soft_limit_;
 

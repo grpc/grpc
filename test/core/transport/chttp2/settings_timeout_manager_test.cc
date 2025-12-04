@@ -439,3 +439,6 @@ int main(int argc, char** argv) {
   grpc_shutdown();
   return ret;
 }
+
+// TODO(tjagtap) [PH2][P2] : New test :  SettingsPromiseManagerTest is getting
+// constructed and destructed, on_receive_settings must be called.
