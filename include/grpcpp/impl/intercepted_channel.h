@@ -56,9 +56,6 @@ class InterceptedChannel : public ChannelInterface {
     return channel_->CreateCallInternal(method, context, cq, interceptor_pos_);
   }
 
-  void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) override {
-    return channel_->PerformOpsOnCall(ops, call);
-  }
   void* RegisterMethod(const char* method) override {
     return channel_->RegisterMethod(method);
   }

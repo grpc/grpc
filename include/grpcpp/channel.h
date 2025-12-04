@@ -57,7 +57,6 @@ int64_t ChannelGetChannelzUuid(Channel* channel);
 
 /// Channels represent a connection to an endpoint. Created by \a CreateChannel.
 class Channel final : public grpc::ChannelInterface,
-                      public grpc::internal::CallHook,
                       public std::enable_shared_from_this<Channel>,
                       private grpc::internal::GrpcLibrary {
  public:
@@ -97,8 +96,6 @@ class Channel final : public grpc::ChannelInterface,
   grpc::internal::Call CreateCall(const grpc::internal::RpcMethod& method,
                                   grpc::ClientContext* context,
                                   grpc::CompletionQueue* cq) override;
-  void PerformOpsOnCall(grpc::internal::CallOpSetInterface* ops,
-                        grpc::internal::Call* call) override;
   void* RegisterMethod(const char* method) override;
 
   void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
