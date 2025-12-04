@@ -23,6 +23,7 @@ RUN apt-get update && apt-get install -y \
   autoconf \
   libtool \
   pkg-config \
+  zlib1g-dev \
   && apt-get clean
 
 # GCC

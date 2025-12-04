@@ -31,6 +31,9 @@ rm -r third_party/googletest/* || true
 # Use externally provided env to determine build parallelism, otherwise use default.
 GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS=${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS:-4}
 
+# Generate UPB API
+tools/codegen/core/gen_upb_api.sh
+
 # Build helloworld example using cmake superbuild
 cd examples/cpp/helloworld/cmake_externalproject
 mkdir -p cmake/build

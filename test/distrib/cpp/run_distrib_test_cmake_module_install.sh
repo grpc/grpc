@@ -24,6 +24,7 @@ apt-get update && apt-get install -y libssl-dev
 GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS=${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS:-4}
 
 # Install gRPC and its dependencies
+tools/codegen/core/gen_upb_api.sh
 mkdir -p "cmake/build"
 pushd "cmake/build"
 cmake \

@@ -60,6 +60,9 @@ pushd "third_party/zlib/cmake/build"
 cmake -DCMAKE_BUILD_TYPE=Release ../..
 make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}" install
 popd
+ 
+# Generate UPB API
+tools/codegen/core/gen_upb_api.sh
 
 # Just before installing gRPC, wipe out contents of all the submodules to simulate
 # a standalone build from an archive.
