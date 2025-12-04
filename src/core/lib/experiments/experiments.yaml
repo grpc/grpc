@@ -204,7 +204,7 @@
   owner: ctiller@google.com
 - name: pipelined_read_secure_endpoint
   description: Enable pipelined reads for EventEngine secure endpoints
-  expiry: 2025/10/30
+  expiry: 2026/03/15
   owner: alishananda@google.com
   test_tags: ["core_end2end_test", "secure_endpoint_test", "posix_endpoint_test"]
   requires: ["event_engine_client", "event_engine_listener", "event_engine_secure_endpoint"]
