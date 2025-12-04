@@ -41,7 +41,7 @@ bool SyncCertificateVerifier::Verify(TlsCustomVerificationCheckRequest*,
 
 bool SyncCertificateVerifierNoStatusSet::Verify(
     TlsCustomVerificationCheckRequest*, std::function<void(grpc::Status)>,
-    grpc::Status* sync_status) {
+    grpc::Status*) {
   // Don't set the status
   return true;
 }
