@@ -562,17 +562,24 @@ static tsi_result add_subject_alt_names_properties_to_peer(
       char ntop_buf[INET6_ADDRSTRLEN];
       int af;
 
-      if (subject_alt_name->d.iPAddress->length == 4) {
+      if (ASN1_STRING_length(subject_alt_name->d.iPAddress) == 4) {
         af = AF_INET;
-      } else if (subject_alt_name->d.iPAddress->length == 16) {
+      } else if (ASN1_STRING_length(subject_alt_name->d.iPAddress) == 16) {
         af = AF_INET6;
       } else {
         LOG(ERROR) << "SAN IP Address contained invalid IP";
         result = TSI_INTERNAL_ERROR;
         break;
       }
-      const char* name = inet_ntop(af, subject_alt_name->d.iPAddress->data,
-                                   ntop_buf, INET6_ADDRSTRLEN);
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+// ASN1_STRING_data() was added in SSLeay 0.9.0, deprecated in 1.1.0 in favor
+// of its const-correct replacemeent ASN1_STRING_get0_data() and removed after
+// the OpensSL 3.6 release in https://github.com/openssl/openssl/pull/29149
+#define ASN1_STRING_get0_data ASN1_STRING_data
+#endif
+      const char* name =
+          inet_ntop(af, ASN1_STRING_get0_data(subject_alt_name->d.iPAddress),
+                    ntop_buf, INET6_ADDRSTRLEN);
       if (name == nullptr) {
         LOG(ERROR) << "Could not get IP string from asn1 octet.";
         result = TSI_INTERNAL_ERROR;
