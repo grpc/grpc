@@ -61,7 +61,8 @@ namespace grpc_core {
 inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsChannelzUseV2ForV1ApiEnabled() { return false; }
 inline bool IsChannelzUseV2ForV1ServiceEnabled() { return false; }
-inline bool IsChaoticGoodConnectDeadlineEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_CONNECT_DEADLINE
+inline bool IsChaoticGoodConnectDeadlineEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChttp2BoundWriteSizeEnabled() { return false; }
@@ -125,7 +126,8 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsChannelzUseV2ForV1ApiEnabled() { return false; }
 inline bool IsChannelzUseV2ForV1ServiceEnabled() { return false; }
-inline bool IsChaoticGoodConnectDeadlineEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_CONNECT_DEADLINE
+inline bool IsChaoticGoodConnectDeadlineEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChttp2BoundWriteSizeEnabled() { return false; }
@@ -189,7 +191,8 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsChannelzUseV2ForV1ApiEnabled() { return false; }
 inline bool IsChannelzUseV2ForV1ServiceEnabled() { return false; }
-inline bool IsChaoticGoodConnectDeadlineEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_CONNECT_DEADLINE
+inline bool IsChaoticGoodConnectDeadlineEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChttp2BoundWriteSizeEnabled() { return false; }

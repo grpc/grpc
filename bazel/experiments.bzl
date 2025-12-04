@@ -93,7 +93,6 @@ EXPERIMENTS = {
                 "transport_state_watcher",
             ],
             "core_end2end_test": [
-                "chaotic_good_connect_deadline",
                 "chttp2_bound_write_size",
                 "error_flatten",
                 "event_engine_fork",
@@ -160,6 +159,7 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "core_end2end_test": [
+                "chaotic_good_connect_deadline",
                 "chaotic_good_framing_layer",
                 "event_engine_client",
                 "event_engine_dns_non_client_channel",
@@ -199,7 +199,6 @@ EXPERIMENTS = {
                 "transport_state_watcher",
             ],
             "core_end2end_test": [
-                "chaotic_good_connect_deadline",
                 "chttp2_bound_write_size",
                 "error_flatten",
                 "event_engine_fork",
@@ -266,6 +265,7 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "core_end2end_test": [
+                "chaotic_good_connect_deadline",
                 "chaotic_good_framing_layer",
                 "event_engine_client",
                 "event_engine_dns_non_client_channel",
@@ -305,7 +305,6 @@ EXPERIMENTS = {
                 "transport_state_watcher",
             ],
             "core_end2end_test": [
-                "chaotic_good_connect_deadline",
                 "chttp2_bound_write_size",
                 "error_flatten",
                 "event_engine_fork",
@@ -372,6 +371,7 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "core_end2end_test": [
+                "chaotic_good_connect_deadline",
                 "chaotic_good_framing_layer",
                 "event_engine_client",
                 "event_engine_dns_non_client_channel",
