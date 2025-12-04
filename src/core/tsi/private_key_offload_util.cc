@@ -18,11 +18,7 @@
 
 #include "src/core/tsi/private_key_offload_util.h"
 
-#include <openssl/base.h>
-
-#if defined(OPENSSL_IS_BORINGSSL)
 #include <openssl/ssl.h>
-#endif  // OPENSSL_IS_BORINGSSL
 
 #include <cstdint>
 #include <string>

@@ -19,11 +19,7 @@
 #ifndef GRPC_SRC_CORE_TSI_PRIVATE_KEY_OFFLOAD_UTIL_H
 #define GRPC_SRC_CORE_TSI_PRIVATE_KEY_OFFLOAD_UTIL_H
 
-#include <openssl/base.h>
-
-#if defined(OPENSSL_IS_BORINGSSL)
 #include <openssl/ssl.h>
-#endif  // OPENSSL_IS_BORINGSSL
 
 #include <string>
 
