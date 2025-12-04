@@ -737,7 +737,7 @@ TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
 }
 
 // TODO(akshitpatel) [PH2][P1] Enable this after fixing bug in Close Path
-TEST_F(Http2ClientTransportTest, DISABLED_TestCanStreamReceiveDataFrames) {
+TEST_F(Http2ClientTransportTest, TestCanStreamReceiveDataFrames) {
   ExecCtx ctx;
   MockPromiseEndpoint mock_endpoint(/*port=*/1000);
   StrictMock<MockFunction<void()>> on_done;
@@ -769,7 +769,7 @@ TEST_F(Http2ClientTransportTest, DISABLED_TestCanStreamReceiveDataFrames) {
       },
       event_engine().get(), [&](SliceBuffer& out, SliceBuffer& expect) {
         EXPECT_EQ(out.JoinIntoString(), expect.JoinIntoString());
-        read_cb();
+        std::move(read_cb)();
       });
   mock_endpoint.ExpectWrite(
       {
@@ -781,12 +781,11 @@ TEST_F(Http2ClientTransportTest, DISABLED_TestCanStreamReceiveDataFrames) {
       },
       event_engine().get());
   mock_endpoint.ExpectWrite(
-      {// This looks wrong. It should have been RST_STREAM with error message
-       // helper_.EventEngineSliceFromEmptyHttp2DataFrame(1, true),
-       helper_.EventEngineSliceFromHttp2RstStreamFrame(
-           /*stream_id=*/1, /*error_code=*/
-           static_cast<uint32_t>(Http2ErrorCode::kInternalError))},
+      {helper_.EventEngineSliceFromHttp2RstStreamFrame(
+          /*stream_id=*/1, /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kStreamClosed))},
       event_engine().get());
+
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine(), /*on_receive_settings=*/nullptr);
@@ -811,7 +810,7 @@ TEST_F(Http2ClientTransportTest, DISABLED_TestCanStreamReceiveDataFrames) {
                             ->as_string_view(),
                         "gRPC Error : DATA frames must follow initial "
                         "metadata and precede trailing metadata.");
-              read_close_transport();
+              std::move(read_close_transport)();
               return Empty{};
             });
       });
@@ -830,11 +829,6 @@ TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadata) {
   EXPECT_CALL(on_done, Call()).Times(2);
   auto read_cb = mock_endpoint.ExpectDelayedRead(
       {
-          helper_.EventEngineSliceFromHttp2HeaderFrame(
-              std::string(kPathDemoServiceStep.begin(),
-                          kPathDemoServiceStep.end()),
-              /*stream_id=*/1,
-              /*end_headers=*/true, /*end_stream=*/true),
           helper_.EventEngineSliceFromHttp2HeaderFrame(
               std::string(kPathDemoServiceStep.begin(),
                           kPathDemoServiceStep.end()),

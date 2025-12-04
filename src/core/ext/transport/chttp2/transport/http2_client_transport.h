@@ -475,12 +475,13 @@ class Http2ClientTransport final : public ClientTransport,
     if (error_type == Http2Status::Http2ErrorType::kStreamError) {
       GRPC_HTTP2_CLIENT_ERROR_DLOG << "Stream Error: " << status.DebugString();
       GRPC_DCHECK(stream_id.has_value());
+      // Passing a cancelled server metadata handle to propagate the error
+      // to the upper layers.
       BeginCloseStream(
           LookupStream(stream_id.value()),
           Http2ErrorCodeToFrameErrorCode(status.GetStreamErrorCode()),
-          // TODO(akshitpatel) [PH2][P1] : Bug.
-          // Refer : DISABLED_TestCanStreamReceiveDataFrames
-          ServerMetadataFromStatus(status.GetAbslStreamError()), whence);
+          CancelledServerMetadataFromStatus(status.GetAbslStreamError()),
+          whence);
       return absl::OkStatus();
     } else if (error_type == Http2Status::Http2ErrorType::kConnectionError) {
       GRPC_HTTP2_CLIENT_ERROR_DLOG << "Connection Error: "
