@@ -98,10 +98,9 @@ class SubchannelStreamClient final
   // string being the first part of the log message.
   // Does not take ownership of interested_parties; the caller is responsible
   // for ensuring that it will outlive the SubchannelStreamClient.
-  SubchannelStreamClient(
-      RefCountedPtr<ConnectedSubchannel> connected_subchannel,
-      grpc_pollset_set* interested_parties,
-      std::unique_ptr<CallEventHandler> event_handler, const char* tracer);
+  SubchannelStreamClient(WeakRefCountedPtr<Subchannel> subchannel,
+                         std::unique_ptr<CallEventHandler> event_handler,
+                         const char* tracer);
 
   ~SubchannelStreamClient() override;
 
@@ -117,7 +116,8 @@ class SubchannelStreamClient final
 
     void Orphan() override;
 
-    void StartCallLocked()
+    // Returns false if there was no connection to start a call on.
+    GRPC_MUST_USE_RESULT bool StartCallLocked()
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&SubchannelStreamClient::mu_);
 
    private:
@@ -149,7 +149,7 @@ class SubchannelStreamClient final
     // The streaming call to the backend. Always non-null.
     // Refs are tracked manually; when the last ref is released, the
     // CallState object will be automatically destroyed.
-    SubchannelCall* call_;
+    Subchannel::Call* call_;
 
     grpc_transport_stream_op_batch_payload payload_;
     grpc_transport_stream_op_batch batch_;
@@ -194,8 +194,7 @@ class SubchannelStreamClient final
   void StartRetryTimerLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
   void OnRetryTimer() ABSL_LOCKS_EXCLUDED(mu_);
 
-  RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
-  grpc_pollset_set* interested_parties_;  // Do not own.
+  WeakRefCountedPtr<Subchannel> subchannel_;
   const char* tracer_;
   RefCountedPtr<CallArenaAllocator> call_allocator_;
 
@@ -210,7 +209,7 @@ class SubchannelStreamClient final
   BackOff retry_backoff_ ABSL_GUARDED_BY(mu_);
   std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       retry_timer_handle_ ABSL_GUARDED_BY(mu_);
-  // A raw pointer will suffice since connected_subchannel_ holds a copy of the
+  // A raw pointer will suffice since subchannel_ holds a copy of the
   // ChannelArgs which holds an std::shared_ptr of the EventEngine.
   grpc_event_engine::experimental::EventEngine* event_engine_
       ABSL_GUARDED_BY(mu_);
