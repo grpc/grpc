@@ -888,6 +888,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         ":http2_frame_test_helper",
+        "//:channel_arg_names",
         "//:chttp2_frame",
         "//:config",
         "//:event_engine_base_hdrs",

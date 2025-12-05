@@ -1428,6 +1428,10 @@ void Http2ClientTransport::ReadChannelArgs(const ChannelArgs& channel_args,
   enable_preferred_rx_crypto_frame_advertisement_ =
       args.enable_preferred_rx_crypto_frame_advertisement;
 
+  if (args.initial_sequence_number > 0) {
+    next_stream_id_ = args.initial_sequence_number;
+  }
+
   settings_->SetSettingsTimeout(args.settings_timeout);
   if (args.max_usable_hpack_table_size >= 0) {
     encoder_.SetMaxUsableSize(args.max_usable_hpack_table_size);
@@ -1495,7 +1499,7 @@ void Http2ClientTransport::CloseStream(RefCountedPtr<Stream> stream,
         // code to use here? IMO it should be kNoError.
         close_transport_error.emplace(Http2Status::Http2ConnectionError(
             Http2ErrorCode::kInternalError,
-            "Received GOAWAY frame and no more streams to close."));
+            std::string(RFC9113::kLastStreamClosed)));
       }
     }
   }
@@ -1567,6 +1571,7 @@ void Http2ClientTransport::BeginCloseStream(
     if (!reset_stream_error_code) {
       // Callers taking this path:
       // 1. Reading a RST stream frame (will not send any frame out).
+      // 2. Closing a stream before initial metadata is sent.
       close_reads = true;
       close_writes = true;
       GRPC_HTTP2_CLIENT_DLOG
