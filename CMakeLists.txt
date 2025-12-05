@@ -2434,7 +2434,10 @@ add_library(grpc
   src/core/ext/upb-gen/envoy/config/trace/v3/zipkin.upb_minitable.c
   src/core/ext/upb-gen/envoy/data/accesslog/v3/accesslog.upb_minitable.c
   src/core/ext/upb-gen/envoy/extensions/clusters/aggregate/v3/cluster.upb_minitable.c
+  src/core/ext/upb-gen/envoy/extensions/common/matching/v3/extension_matcher.upb_minitable.c
   src/core/ext/upb-gen/envoy/extensions/filters/common/fault/v3/fault.upb_minitable.c
+  src/core/ext/upb-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upb_minitable.c
+  src/core/ext/upb-gen/envoy/extensions/filters/http/composite/v3/composite.upb_minitable.c
   src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.c
   src/core/ext/upb-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb_minitable.c
   src/core/ext/upb-gen/envoy/extensions/filters/http/rbac/v3/rbac.upb_minitable.c
@@ -2606,7 +2609,10 @@ add_library(grpc
   src/core/ext/upbdefs-gen/envoy/config/trace/v3/zipkin.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/data/accesslog/v3/accesslog.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/extensions/common/matching/v3/extension_matcher.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/extensions/filters/common/matcher/action/v3/skip_action.upbdefs.c
+  src/core/ext/upbdefs-gen/envoy/extensions/filters/http/composite/v3/composite.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.c
@@ -2702,6 +2708,7 @@ add_library(grpc
   src/core/filter/auth/client_auth_filter.cc
   src/core/filter/auth/server_auth_filter.cc
   src/core/filter/blackboard.cc
+  src/core/filter/composite/composite_filter.cc
   src/core/filter/fused_filters.cc
   src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   src/core/handshaker/handshaker.cc
@@ -3060,6 +3067,7 @@ add_library(grpc
   src/core/xds/grpc/xds_endpoint.cc
   src/core/xds/grpc/xds_endpoint_parser.cc
   src/core/xds/grpc/xds_health_status.cc
+  src/core/xds/grpc/xds_http_composite_filter.cc
   src/core/xds/grpc/xds_http_fault_filter.cc
   src/core/xds/grpc/xds_http_filter.cc
   src/core/xds/grpc/xds_http_filter_registry.cc
@@ -6077,6 +6085,7 @@ add_library(grpc_authorization_provider
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
+  src/core/lib/promise/wait_set.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
@@ -10153,6 +10162,7 @@ add_executable(call_utils_test
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
+  src/core/lib/promise/wait_set.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
@@ -17087,6 +17097,7 @@ add_executable(filter_fusion_test
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
+  src/core/lib/promise/wait_set.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
@@ -21738,6 +21749,7 @@ add_executable(info_tool_test
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
+  src/core/lib/promise/wait_set.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
@@ -35837,6 +35849,7 @@ add_executable(tool_test_test
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
+  src/core/lib/promise/wait_set.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc

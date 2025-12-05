@@ -88,6 +88,12 @@ class HijackedCall final {
 // *Interceptor* in the call chain (without having been processed by any
 // intervening filters) -- note that this is commonly not useful (not enough
 // guarantees), and so it's usually better to Hijack and examine the metadata.
+//
+// TODO(roth, ctiller): Change this API such that it always deals with
+// the client initial metadata after it has been processed by any
+// preceding filters.  We don't actually have any use-case for seeing
+// the unprocessed initial metadata and deciding to do a PassThrough(),
+// and its presence in this API is confusing.
 
 class Interceptor : public UnstartedCallDestination {
  public:
@@ -136,6 +142,9 @@ class Interceptor : public UnstartedCallDestination {
 
  private:
   friend class InterceptionChainBuilder;
+
+  template <typename Derived>
+  friend class V3InterceptorToV2Bridge;
 
   RefCountedPtr<UnstartedCallDestination> wrapped_destination_;
   RefCountedPtr<CallFilters::Stack> filter_stack_;

@@ -2099,6 +2099,7 @@ grpc_cc_library(
         "//src/core:grpc_check",
         "//src/core:http2_status",
         "//src/core:if",
+        "//src/core:inter_activity_latch",
         "//src/core:iomgr_fwd",
         "//src/core:latch",
         "//src/core:latent_see",
@@ -5256,6 +5257,16 @@ grpc_upb_proto_reflection_library(
 )
 
 grpc_upb_proto_library(
+    name = "envoy_extensions_common_matching_upb",
+    deps = ["@envoy_api//envoy/extensions/common/matching/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_common_matching_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/common/matching/v3:pkg"],
+)
+
+grpc_upb_proto_library(
     name = "envoy_extensions_clusters_aggregate_upb",
     deps = ["@envoy_api//envoy/extensions/clusters/aggregate/v3:pkg"],
 )
@@ -5268,6 +5279,26 @@ grpc_upb_proto_reflection_library(
 grpc_upb_proto_library(
     name = "envoy_extensions_filters_common_fault_upb",
     deps = ["@envoy_api//envoy/extensions/filters/common/fault/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_filters_common_matcher_action_upb",
+    deps = ["@envoy_api//envoy/extensions/filters/common/matcher/action/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_filters_common_matcher_action_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/filters/common/matcher/action/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_filters_http_composite_upb",
+    deps = ["@envoy_api//envoy/extensions/filters/http/composite/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_filters_http_composite_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/filters/http/composite/v3:pkg"],
 )
 
 grpc_upb_proto_library(
