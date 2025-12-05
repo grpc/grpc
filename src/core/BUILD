@@ -8643,10 +8643,12 @@ grpc_cc_library(
     ],
     deps = [
         "1999",
+        "activity",
         "arena",
         "call_spine",
         "channel_args",
         "chttp2_flow_control",
+        "context",
         "grpc_check",
         "grpc_promise_endpoint",
         "header_assembler",

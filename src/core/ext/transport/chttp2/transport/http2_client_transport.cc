@@ -469,7 +469,7 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
     SpawnGuardedTransportParty("SettingsAck", TriggerWriteCycle());
     if (GPR_UNLIKELY(!settings_->IsFirstPeerSettingsApplied())) {
       // Apply the first settings before we read any other frames.
-      should_stall_read_loop_ = true;
+      reader_state_.SetPauseReadLoop();
     }
   } else {
     if (settings_->OnSettingsAckReceived()) {
@@ -844,11 +844,7 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
             }));
       },
       [self = RefAsSubclass<Http2ClientTransport>()]() -> Poll<absl::Status> {
-        if (self->should_stall_read_loop_) {
-          self->read_loop_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
-          return Pending{};
-        }
-        return absl::OkStatus();
+        return self->reader_state_.MaybePauseReadLoop();
       }));
 }
 
@@ -932,7 +928,7 @@ void Http2ClientTransport::ActOnFlowControlAction(
     // exhaust the flow control window. This prevents us from sending window
     // updates to the peer, causing the peer to block unnecessarily while
     // waiting for flow control tokens.
-    should_stall_read_loop_ = true;
+    reader_state_.SetPauseReadLoop();
     SpawnGuardedTransportParty("SendControlFrames", TriggerWriteCycle());
   }
 }
@@ -1000,10 +996,7 @@ void Http2ClientTransport::NotifyControlFramesWriteDone() {
   // Notify Control modules that we have sent the frames.
   // All notifications are expected to be synchronous.
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport NotifyControlFramesWriteDone";
-  if (should_stall_read_loop_) {
-    should_stall_read_loop_ = false;
-    read_loop_waker_.Wakeup();
-  }
+  reader_state_.ResumeReadLoopIfPaused();
   ping_manager_->NotifyPingSent();
   goaway_manager_.NotifyGoawaySent();
   MaybeSpawnWaitForSettingsTimeout();
@@ -1366,8 +1359,7 @@ Http2ClientTransport::Http2ClientTransport(
           "PH2_Client",
           channel_args.GetBool(GRPC_ARG_HTTP2_BDP_PROBE).value_or(true),
           &memory_owner_),
-      ztrace_collector_(std::make_shared<PromiseHttp2ZTraceCollector>()),
-      should_stall_read_loop_(false) {
+      ztrace_collector_(std::make_shared<PromiseHttp2ZTraceCollector>()) {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor Begin";
   // Initialize the general party and write party.
   auto general_party_arena = SimpleArenaAllocator(0)->MakeArena();

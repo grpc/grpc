@@ -406,11 +406,6 @@ class Http2ClientTransport final : public ClientTransport,
   // Runs on the call party.
   std::optional<RefCountedPtr<Stream>> MakeStream(CallHandler call_handler);
 
-  struct CloseStreamArgs {
-    bool close_reads;
-    bool close_writes;
-  };
-
   // This function MUST be idempotent.
   void CloseStream(RefCountedPtr<Stream> stream, CloseStreamArgs args,
                    DebugLocation whence = {});
@@ -583,10 +578,7 @@ class Http2ClientTransport final : public ClientTransport,
         valid_ping_ack_received && ping_manager_->ImportantPingRequested(),
         [self = RefAsSubclass<Http2ClientTransport>()] {
           return Map(self->TriggerWriteCycle(), [](const absl::Status status) {
-            return (status.ok())
-                       ? Http2Status::Ok()
-                       : Http2Status::AbslConnectionError(
-                             status.code(), std::string(status.message()));
+            return ToHttpOkOrConnError(status);
           });
         },
         [] { return Immediate(Http2Status::Ok()); });
@@ -745,11 +737,7 @@ class Http2ClientTransport final : public ClientTransport,
   // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
   Waker periodic_updates_waker_;
 
-  // TODO(tjagtap) [PH2][P2][Settings] Set this to true when we receive settings
-  // that appear "Urgent". Example - initial window size 0 is urgent because it
-  // indicates extreme memory pressure on the server.
-  bool should_stall_read_loop_;
-  Waker read_loop_waker_;
+  Http2ReadContext reader_state_;
   Http2Status ParseAndDiscardHeaders(SliceBuffer&& buffer, bool is_end_headers,
                                      RefCountedPtr<Stream> stream,
                                      Http2Status&& original_status,

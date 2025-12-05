@@ -20,6 +20,7 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_TRANSPORT_H
 
 #include <cstdint>
+#include <string>
 
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
@@ -30,8 +31,12 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "absl/log/log.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -55,6 +60,48 @@ namespace http2 {
 constexpr uint32_t kMaxWriteSize = /*10 MB*/ 10u * 1024u * 1024u;
 
 constexpr uint32_t kGoawaySendTimeoutSeconds = 5u;
+
+struct CloseStreamArgs {
+  bool close_reads;
+  bool close_writes;
+};
+
+class Http2ReadContext {
+ public:
+  // Signals that the read loop should pause. If it's already paused, this is a
+  // no-op.
+  void SetPauseReadLoop() {
+    // TODO(tjagtap) [PH2][P2][Settings] Plumb with when we receive urgent
+    // settings. Example - initial window size 0 is urgent because it indicates
+    // extreme memory pressure on the server.
+    should_pause_read_loop_ = true;
+  }
+
+  // If SetPauseReadLoop() was called, this returns Pending and
+  // registers a waker that will be woken by WakeReadLoop().
+  // If SetPauseReadLoop() was not called, this returns OkStatus.
+  // This should be polled by the read loop to yield control when requested.
+  Poll<absl::Status> MaybePauseReadLoop() {
+    if (should_pause_read_loop_) {
+      read_loop_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+      return Pending{};
+    }
+    return absl::OkStatus();
+  }
+
+  // If SetPauseReadLoop() was called, resumes it by
+  // waking up the ReadLoop. If not paused, this is a no-op.
+  void ResumeReadLoopIfPaused() {
+    if (should_pause_read_loop_) {
+      should_pause_read_loop_ = false;
+      read_loop_waker_.Wakeup();
+    }
+  }
+
+ private:
+  bool should_pause_read_loop_ = false;
+  Waker read_loop_waker_;
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 // Settings helpers
