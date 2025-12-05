@@ -1425,28 +1425,29 @@ class LegacyFilterChainBuilder final : public FilterChainBuilder {
 
   absl::StatusOr<RefCountedPtr<FilterChain>> Build() override {
     if (enable_retries_) {
-      builder_.AddFilter(&RetryFilter::kFilterVtable, nullptr);
+      filters_.push_back({&RetryFilter::kFilterVtable, nullptr});
     } else {
-      builder_.AddFilter(&DynamicTerminationFilter::kFilterVtable, nullptr);
+      filters_.push_back({&DynamicTerminationFilter::kFilterVtable, nullptr});
     }
-    RefCountedPtr<DynamicFilters> dynamic_filters = DynamicFilters::Create(
-        channel_args_, builder_.TakeFilters(), blackboard_);
+    RefCountedPtr<DynamicFilters> dynamic_filters =
+        DynamicFilters::Create(channel_args_, std::move(filters_), blackboard_);
     if (dynamic_filters == nullptr) {
       return absl::InternalError("error constructing dynamic filter stack");
     }
+    filters_.clear();
     return dynamic_filters;
   }
 
  private:
   void AddFilter(const FilterHandle& filter_handle,
                  RefCountedPtr<const FilterConfig> config) override {
-    filter_handle.AddToBuilder(&builder_, std::move(config));
+    filter_handle.AddToBuilder(&filters_, std::move(config));
   }
 
   const bool enable_retries_;
   const ChannelArgs channel_args_;
   const Blackboard* blackboard_;
-  filter_chain_detail::FilterChainBuilderV1 builder_;
+  std::vector<FilterAndConfig> filters_;
 };
 
 }  // namespace

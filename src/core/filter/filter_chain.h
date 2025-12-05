@@ -35,24 +35,6 @@
 
 namespace grpc_core {
 
-namespace filter_chain_detail {
-
-// A helper class to accumulate a list of v1 filters.
-class FilterChainBuilderV1 {
- public:
-  void AddFilter(const grpc_channel_filter* vtable,
-                 RefCountedPtr<const FilterConfig> config) {
-    filters_.push_back({vtable, std::move(config)});
-  }
-
-  std::vector<FilterAndConfig> TakeFilters() { return std::move(filters_); }
-
- private:
-  std::vector<FilterAndConfig> filters_;
-};
-
-}  // namespace filter_chain_detail
-
 // Base class for filter chains.
 // TODO(roth): Once the v3 migration is done, this can probably go away in
 // favor of just directly using UnstartedCallDestination.
@@ -81,7 +63,7 @@ class FilterChainBuilder {
    public:
     virtual ~FilterHandle() = default;
     virtual void AddToBuilder(
-        filter_chain_detail::FilterChainBuilderV1* builder,
+        std::vector<FilterAndConfig>* filters,
         RefCountedPtr<const FilterConfig> config) const = 0;
     virtual void AddToBuilder(
         InterceptionChainBuilder* builder,
@@ -93,9 +75,9 @@ class FilterChainBuilder {
   template <typename FilterType>
   class FilterHandleImpl : public FilterHandle {
    public:
-    void AddToBuilder(filter_chain_detail::FilterChainBuilderV1* builder,
+    void AddToBuilder(std::vector<FilterAndConfig>* filters,
                       RefCountedPtr<const FilterConfig> config) const override {
-      builder->AddFilter(&FilterType::kFilterVtable, std::move(config));
+      filters->push_back({&FilterType::kFilterVtable, std::move(config)});
     }
     void AddToBuilder(InterceptionChainBuilder* builder,
                       RefCountedPtr<const FilterConfig> config) const override {
