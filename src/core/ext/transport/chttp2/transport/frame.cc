@@ -22,6 +22,7 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/call/message.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/debug/trace_impl.h"
 #include "src/core/lib/slice/slice.h"
