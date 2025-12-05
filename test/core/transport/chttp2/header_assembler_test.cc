@@ -465,9 +465,8 @@ void OneMetadataInThreeFrames(const uint32_t stream_id,
 
 TEST_P(HeaderAssemblerDisassemblerTest, OneInitialMetadataInOneFrame) {
   const uint32_t stream_id = 1;
-  HeaderDisassembler disassembler(/*is_trailing_metadata=*/false,
-                                  allow_true_binary_metadata());
-  disassembler.SetStreamId(stream_id);
+  HeaderDisassembler disassembler(/*is_trailing_metadata=*/false);
+  disassembler.Initialize(stream_id, allow_true_binary_metadata());
   HPackParser parser;
   HPackCompressor encoder;
   OneMetadataInOneFrame(stream_id, disassembler,
@@ -477,9 +476,8 @@ TEST_P(HeaderAssemblerDisassemblerTest, OneInitialMetadataInOneFrame) {
 
 TEST_P(HeaderAssemblerDisassemblerTest, OneInitialMetadataInThreeFrames) {
   const uint32_t stream_id = 3;
-  HeaderDisassembler disassembler(/*is_trailing_metadata=*/false,
-                                  allow_true_binary_metadata());
-  disassembler.SetStreamId(stream_id);
+  HeaderDisassembler disassembler(/*is_trailing_metadata=*/false);
+  disassembler.Initialize(stream_id, allow_true_binary_metadata());
   HPackParser parser;
   HPackCompressor encoder;
   OneMetadataInThreeFrames(stream_id, disassembler,
@@ -492,9 +490,8 @@ TEST_P(HeaderAssemblerDisassemblerTest, OneInitialMetadataInThreeFrames) {
 
 TEST_P(HeaderAssemblerDisassemblerTest, OneTrailingMetadataInOneFrame) {
   const uint32_t stream_id = 0x7fffffff;
-  HeaderDisassembler disassembler(/*is_trailing_metadata=*/true,
-                                  allow_true_binary_metadata());
-  disassembler.SetStreamId(stream_id);
+  HeaderDisassembler disassembler(/*is_trailing_metadata=*/true);
+  disassembler.Initialize(stream_id, allow_true_binary_metadata());
   HPackParser parser;
   HPackCompressor encoder;
   OneMetadataInOneFrame(stream_id, disassembler, /*is_trailing_metadata=*/true,
@@ -504,9 +501,8 @@ TEST_P(HeaderAssemblerDisassemblerTest, OneTrailingMetadataInOneFrame) {
 
 TEST_P(HeaderAssemblerDisassemblerTest, OneTrailingMetadataInThreeFrames) {
   const uint32_t stream_id = 0x0fffffff;
-  HeaderDisassembler disassembler(/*is_trailing_metadata=*/true,
-                                  allow_true_binary_metadata());
-  disassembler.SetStreamId(stream_id);
+  HeaderDisassembler disassembler(/*is_trailing_metadata=*/true);
+  disassembler.Initialize(stream_id, allow_true_binary_metadata());
   HPackParser parser;
   HPackCompressor encoder;
   OneMetadataInThreeFrames(stream_id, disassembler,
@@ -519,12 +515,10 @@ TEST_P(HeaderAssemblerDisassemblerTest, OneTrailingMetadataInThreeFrames) {
 
 TEST_P(HeaderAssemblerDisassemblerTest, OneInitialAndOneTrailingMetadata) {
   const uint32_t stream_id = 0x1111;
-  HeaderDisassembler disassembler_initial(/*is_trailing_metadata=*/false,
-                                          allow_true_binary_metadata());
-  disassembler_initial.SetStreamId(stream_id);
-  HeaderDisassembler disassembler_trailing(/*is_trailing_metadata=*/true,
-                                           allow_true_binary_metadata());
-  disassembler_trailing.SetStreamId(stream_id);
+  HeaderDisassembler disassembler_initial(/*is_trailing_metadata=*/false);
+  disassembler_initial.Initialize(stream_id, allow_true_binary_metadata());
+  HeaderDisassembler disassembler_trailing(/*is_trailing_metadata=*/true);
+  disassembler_trailing.Initialize(stream_id, allow_true_binary_metadata());
   HPackParser parser;
   HPackCompressor encoder;
   OneMetadataInOneFrame(stream_id, disassembler_initial,
@@ -540,12 +534,10 @@ TEST_P(HeaderAssemblerDisassemblerTest, OneInitialAndOneTrailingMetadata) {
 TEST_P(HeaderAssemblerDisassemblerTest,
        OneInitialAndOneTrailingMetadataInFourFrames) {
   const uint32_t stream_id = 0x1111;
-  HeaderDisassembler disassembler_initial(/*is_trailing_metadata=*/false,
-                                          allow_true_binary_metadata());
-  disassembler_initial.SetStreamId(stream_id);
-  HeaderDisassembler disassembler_trailing(/*is_trailing_metadata=*/true,
-                                           allow_true_binary_metadata());
-  disassembler_trailing.SetStreamId(stream_id);
+  HeaderDisassembler disassembler_initial(/*is_trailing_metadata=*/false);
+  disassembler_initial.Initialize(stream_id, allow_true_binary_metadata());
+  HeaderDisassembler disassembler_trailing(/*is_trailing_metadata=*/true);
+  disassembler_trailing.Initialize(stream_id, allow_true_binary_metadata());
   HPackParser parser;
   HPackCompressor encoder;
   OneMetadataInThreeFrames(stream_id, disassembler_initial,
@@ -571,9 +563,8 @@ TEST_P(HeaderAssemblerDisassemblerTest, Reversibility) {
 
   // Pass metadata to disassembler for frame generation
   HPackCompressor encoder;
-  HeaderDisassembler disassembler(/*is_trailing_metadata=*/false,
-                                  allow_true_binary_metadata());
-  disassembler.SetStreamId(stream_id);
+  HeaderDisassembler disassembler(/*is_trailing_metadata=*/false);
+  disassembler.Initialize(stream_id, allow_true_binary_metadata());
   disassembler.PrepareForSending(std::move(metadata), encoder);
   EXPECT_EQ(disassembler.TestOnlyGetMainBufferLength(), kEncodedMetadataLen);
   EXPECT_TRUE(disassembler.HasMoreData());

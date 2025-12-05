@@ -367,13 +367,12 @@ class HeaderDisassembler {
 
   // A separate HeaderDisassembler object MUST be made for Initial Metadata and
   // Trailing Metadata
-  explicit HeaderDisassembler(const bool is_trailing_metadata,
-                              const bool allow_true_binary_metadata_peer)
+  explicit HeaderDisassembler(const bool is_trailing_metadata)
       : stream_id_(0),
         end_stream_(is_trailing_metadata),
         did_send_header_frame_(false),
         is_done_(false),
-        allow_true_binary_metadata_peer_(allow_true_binary_metadata_peer) {}
+        allow_true_binary_metadata_peer_(false) {}
 
   ~HeaderDisassembler() = default;
 
@@ -383,10 +382,12 @@ class HeaderDisassembler {
   HeaderDisassembler& operator=(const HeaderDisassembler&) = delete;
 
   size_t TestOnlyGetMainBufferLength() const { return buffer_.Length(); }
-  void SetStreamId(const uint32_t stream_id) {
+  void Initialize(const uint32_t stream_id,
+                  const bool allow_true_binary_metadata_peer) {
     GRPC_DCHECK_EQ(stream_id_, 0u);
     GRPC_DCHECK_NE(stream_id, 0u);
     stream_id_ = stream_id;
+    allow_true_binary_metadata_peer_ = allow_true_binary_metadata_peer;
   }
 
  private:
@@ -394,7 +395,7 @@ class HeaderDisassembler {
   const bool end_stream_;
   bool did_send_header_frame_;
   bool is_done_;  // Protect against the same disassembler from being used twice
-  const bool allow_true_binary_metadata_peer_;
+  bool allow_true_binary_metadata_peer_;
   SliceBuffer buffer_;
 };
 

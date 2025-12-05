@@ -80,10 +80,6 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|CoreDeadlineTests.DeadlineAfterRoundTrip"                                  \
   "|CoreDeadlineSingleHopTests."                                               \
   "TimeoutBeforeRequestCallWithRegisteredMethodWithPayload"                    \
-  "|CoreEnd2endTests.BinaryMetadataServerHttp2FallbackClientHttp2Fallback"     \
-  "|CoreEnd2endTests.BinaryMetadataServerHttp2FallbackClientTrueBinary"        \
-  "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientTrueBinary"           \
-  "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientHttp2Fallback"        \
   "|Http2SingleHopTests.DisabledAlgorithmDecompressInCore"                     \
   "|Http2SingleHopTests.DisabledAlgorithmDecompressInApp"                      \
   "|Http2SingleHopTests."                                                      \
