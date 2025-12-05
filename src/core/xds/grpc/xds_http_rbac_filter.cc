@@ -569,10 +569,6 @@ XdsHttpRbacFilter::GenerateFilterConfigOverride(
   return XdsFilterConfig{OverrideConfigProtoName(), std::move(rbac_json)};
 }
 
-void XdsHttpRbacFilter::AddFilter(InterceptionChainBuilder& builder) const {
-  builder.Add<RbacFilter>(nullptr);
-}
-
 void XdsHttpRbacFilter::AddFilter(
     FilterChainBuilder& builder,
     RefCountedPtr<const FilterConfig> config) const {

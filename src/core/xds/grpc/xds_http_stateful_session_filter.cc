@@ -196,11 +196,6 @@ XdsHttpStatefulSessionFilter::GenerateFilterConfigOverride(
                          Json::FromObject(std::move(config))};
 }
 
-void XdsHttpStatefulSessionFilter::AddFilter(
-    InterceptionChainBuilder& builder) const {
-  builder.Add<StatefulSessionFilter>(nullptr);
-}
-
 const grpc_channel_filter* XdsHttpStatefulSessionFilter::channel_filter()
     const {
   return &StatefulSessionFilter::kFilterVtable;

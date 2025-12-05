@@ -20,7 +20,6 @@
 #include <optional>
 #include <string>
 
-#include "src/core/call/interception_chain.h"
 #include "src/core/filter/blackboard.h"
 #include "src/core/filter/filter_chain.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -144,8 +143,6 @@ class XdsHttpFilterImpl {
       const XdsResourceType::DecodeContext& context,
       const XdsExtension& extension, ValidationErrors* errors) const = 0;
 
-  // C-core channel filter implementation.
-  virtual void AddFilter(InterceptionChainBuilder& builder) const = 0;
   // TODO(roth): Remove this once the legacy filter stack goes away.
   virtual const grpc_channel_filter* channel_filter() const = 0;
 

@@ -274,7 +274,7 @@ class XdsResolver final : public Resolver {
     RefCountedPtr<XdsResolver> resolver_;
     RefCountedPtr<const XdsConfig> xds_config_;
     RefCountedPtr<RouteConfigData> route_config_data_;
-    std::vector<const XdsHttpFilterImpl*> filters_;
+    absl::StatusOr<RefCountedPtr<const FilterChain>> filter_chain_;
   };
 
   class XdsRouteStateAttributeImpl final : public XdsRouteStateAttribute {
@@ -776,22 +776,6 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
       route_config_data_(std::move(route_config_data)) {
   GRPC_TRACE_LOG(xds_resolver, INFO) << "[xds_resolver " << resolver_.get()
                                      << "] creating XdsConfigSelector " << this;
-  // Populate filter list.
-  const auto& http_filter_registry =
-      DownCast<const GrpcXdsBootstrap&>(resolver_->xds_client_->bootstrap())
-          .http_filter_registry();
-  const auto& hcm = std::get<XdsListenerResource::HttpConnectionManager>(
-      xds_config_->listener->listener);
-  for (const auto& http_filter : hcm.http_filters) {
-    // Find filter.  This is guaranteed to succeed, because it's checked
-    // at config validation time.
-    const XdsHttpFilterImpl* filter_impl =
-        http_filter_registry.GetFilterForTopLevelType(
-            http_filter.config_proto_type);
-    GRPC_CHECK_NE(filter_impl, nullptr);
-    // Add filter to list.
-    filters_.push_back(filter_impl);
-  }
 }
 
 XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
@@ -945,8 +929,47 @@ XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
 void XdsResolver::XdsConfigSelector::BuildFilterChains(
     FilterChainBuilder& builder, const Blackboard* old_blackboard,
     Blackboard* new_blackboard) {
-  route_config_data_->BuildFilterChains(*xds_config_, filters_, builder,
+  // Construct list of filter impls.
+  const auto& http_filter_registry =
+      DownCast<const GrpcXdsBootstrap&>(resolver_->xds_client_->bootstrap())
+          .http_filter_registry();
+  const auto& hcm = std::get<XdsListenerResource::HttpConnectionManager>(
+      xds_config_->listener->listener);
+  std::vector<const XdsHttpFilterImpl*> filters;
+  for (const auto& http_filter : hcm.http_filters) {
+    // Find filter.  This is guaranteed to succeed, because it's checked
+    // at config validation time.
+    const XdsHttpFilterImpl* filter_impl =
+        http_filter_registry.GetFilterForTopLevelType(
+            http_filter.config_proto_type);
+    GRPC_CHECK_NE(filter_impl, nullptr);
+    // Add filter to list.
+    filters.push_back(filter_impl);
+  }
+  // Build filter chains.
+  route_config_data_->BuildFilterChains(*xds_config_, filters, builder,
                                         old_blackboard, new_blackboard);
+  // FIXME: add experiment, and do this if disabled!
+#if 0
+  const auto& http_filter_registry =
+      DownCast<const GrpcXdsBootstrap&>(resolver_->xds_client_->bootstrap())
+          .http_filter_registry();
+  const auto& hcm = std::get<XdsListenerResource::HttpConnectionManager>(
+      xds_config_->listener->listener);
+  for (const auto& http_filter : hcm.http_filters) {
+    // Find filter.  This is guaranteed to succeed, because it's checked
+    // at config validation time.
+    const XdsHttpFilterImpl* filter_impl =
+        http_filter_registry.GetFilterForType(
+            http_filter.config.config_proto_type_name);
+    GRPC_CHECK_NE(filter_impl, nullptr);
+    filter_impl->AddFilter(builder);
+    filter_impl->UpdateBlackboard(http_filter.config, old_blackboard,
+                                  new_blackboard);
+  }
+  builder.AddFilter<ClusterSelectionFilter>(nullptr);
+  filter_chain_ = builder.Build();
+#endif
 }
 
 //

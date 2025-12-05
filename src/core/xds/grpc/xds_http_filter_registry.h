@@ -24,7 +24,6 @@
 #include <utility>
 #include <vector>
 
-#include "src/core/call/interception_chain.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/util/validation_errors.h"
@@ -51,7 +50,6 @@ class XdsHttpRouterFilter final : public XdsHttpFilterImpl {
       absl::string_view /*instance_name*/,
       const XdsResourceType::DecodeContext& context,
       const XdsExtension& extension, ValidationErrors* errors) const override;
-  void AddFilter(InterceptionChainBuilder& /*builder*/) const override {}
   const grpc_channel_filter* channel_filter() const override { return nullptr; }
   absl::StatusOr<ServiceConfigJsonEntry> GenerateMethodConfig(
       const XdsFilterConfig& /*hcm_filter_config*/,
