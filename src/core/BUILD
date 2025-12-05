@@ -8668,6 +8668,7 @@ grpc_cc_library(
         ":slice",
         ":slice_buffer",
         ":try_seq",
+        "//:channel_arg_names",
         "//:channelz",
         "//:chttp2_frame",
         "//:gpr_platform",

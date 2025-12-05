@@ -372,6 +372,8 @@ inline constexpr absl::string_view kIncorrectFrameSizeSetting =
 inline constexpr absl::string_view kSettingsTimeout =
     "Settings timeout. The HTTP2 settings frame was not ACKed within the "
     "timeout. Connection will be closed";
+inline constexpr absl::string_view kLastStreamClosed =
+    "Closing last stream and cannot create any more streams.";
 
 inline constexpr uint32_t kMaxStreamId31Bit = 0x7fffffffu;
 inline constexpr uint32_t kMaxSize31Bit = 0x7fffffffu;

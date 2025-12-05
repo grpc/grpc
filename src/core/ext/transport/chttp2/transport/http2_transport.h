@@ -73,6 +73,7 @@ struct TransportChannelArgs {
   bool enable_preferred_rx_crypto_frame_advertisement;
   uint32_t max_header_list_size_soft_limit;
   int max_usable_hpack_table_size;
+  int initial_sequence_number;
 
   std::string DebugString() const {
     return absl::StrCat(
@@ -84,7 +85,8 @@ struct TransportChannelArgs {
         " enable_preferred_rx_crypto_frame_advertisement: ",
         enable_preferred_rx_crypto_frame_advertisement,
         " max_header_list_size_soft_limit: ", max_header_list_size_soft_limit,
-        " max_usable_hpack_table_size: ", max_usable_hpack_table_size);
+        " max_usable_hpack_table_size: ", max_usable_hpack_table_size,
+        " initial_sequence_number: ", initial_sequence_number);
   }
 };
 
