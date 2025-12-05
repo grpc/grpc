@@ -50,7 +50,6 @@ class XdsHttpCompositeFilter final : public XdsHttpFilterImpl {
       ValidationErrors* /*errors*/) const override {
     return std::nullopt;
   }
-  void AddFilter(InterceptionChainBuilder& builder) const override;
   const grpc_channel_filter* channel_filter() const override;
   absl::StatusOr<ServiceConfigJsonEntry> GenerateMethodConfig(
       const XdsFilterConfig& /*hcm_filter_config*/,

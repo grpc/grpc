@@ -58,11 +58,6 @@ void XdsHttpCompositeFilter::PopulateSymtab(upb_DefPool* symtab) const {
 }
 
 void XdsHttpCompositeFilter::AddFilter(
-    InterceptionChainBuilder& builder) const {
-  builder.Add<CompositeFilter>(nullptr);
-}
-
-void XdsHttpCompositeFilter::AddFilter(
     FilterChainBuilder& builder,
     RefCountedPtr<const FilterConfig> config) const {
   builder.AddFilter<CompositeFilter>(std::move(config));
