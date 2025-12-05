@@ -330,55 +330,35 @@ class XdsClusterImplLb::Picker::SubchannelCallTracker final
         call_counter_(std::move(call_counter)) {}
 
   ~SubchannelCallTracker() override {
-    locality_stats_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
-    call_counter_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
-#ifndef NDEBUG
-    GRPC_DCHECK(!started_);
-#endif
-  }
-
-  void Start() override {
-    // Increment number of calls in flight.
-    call_counter_->Increment();
-    // Record a call started.
-    if (locality_stats_ != nullptr) {
-      locality_stats_->AddCallStarted();
-    }
-    // Delegate if needed.
-    if (original_subchannel_call_tracker_ != nullptr) {
-      original_subchannel_call_tracker_->Start();
-    }
-#ifndef NDEBUG
-    started_ = true;
-#endif
+    MaybeFinish(/*succeeded=*/false, /*backend_metrics=*/nullptr);
   }
 
   void Finish(FinishArgs args) override {
-    // Delegate if needed.
     if (original_subchannel_call_tracker_ != nullptr) {
       original_subchannel_call_tracker_->Finish(args);
     }
-    // Record call completion for load reporting.
-    if (locality_stats_ != nullptr) {
-      locality_stats_->AddCallFinished(
-          args.backend_metric_accessor->GetBackendMetricData(),
-          !args.status.ok());
-    }
-    // Decrement number of calls in flight.
-    call_counter_->Decrement();
-#ifndef NDEBUG
-    started_ = false;
-#endif
+    MaybeFinish(/*succeeded=*/args.status.ok(),
+                args.backend_metric_accessor->GetBackendMetricData());
   }
 
  private:
+  void MaybeFinish(bool succeeded, const BackendMetricData* backend_metrics) {
+    // Record call completion for load reporting.
+    if (locality_stats_ != nullptr) {
+      locality_stats_->AddCallFinished(backend_metrics, /*fail=*/!succeeded);
+      locality_stats_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
+    }
+    // Decrement number of calls in flight.
+    if (call_counter_ != nullptr) {
+      call_counter_->Decrement();
+      call_counter_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
+    }
+  }
+
   std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
       original_subchannel_call_tracker_;
   RefCountedPtr<LrsClient::ClusterLocalityStats> locality_stats_;
   RefCountedPtr<CircuitBreakerCallCounterMap::CallCounter> call_counter_;
-#ifndef NDEBUG
-  bool started_ = false;
-#endif
 };
 
 //
@@ -449,11 +429,14 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
               kLocality,
           subchannel_wrapper->locality());
     }
+    // Increment number of calls in flight.
+    call_counter_->Increment();
     // Handle load reporting.
     RefCountedPtr<LrsClient::ClusterLocalityStats> locality_stats;
     if (subchannel_wrapper->locality_stats() != nullptr) {
       locality_stats = subchannel_wrapper->locality_stats()->Ref(
           DEBUG_LOCATION, "SubchannelCallTracker");
+      locality_stats->AddCallStarted();
     }
     // Handle authority rewriting if needed.
     if (!subchannel_wrapper->hostname().empty()) {

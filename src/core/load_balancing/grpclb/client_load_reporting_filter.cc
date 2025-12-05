@@ -52,12 +52,14 @@ void ClientLoadReportingFilter::Call::OnClientInitialMetadata(
     ClientMetadata& client_initial_metadata) {
   GRPC_LATENT_SEE_SCOPE(
       "ClientLoadReportingFilter::Call::OnClientInitialMetadata");
-  // Handle client initial metadata.
-  // Grab client stats object from metadata.
-  auto client_stats_md =
+  // Grab client stats object from metadata.  The metadata encodes only
+  // a raw pointer, but the LB policy will have returned a subchannel call
+  // tracker that is holding a ref to it, to ensure that it's alive here
+  // for us to take our own ref.
+  std::optional<GrpcLbClientStats*> client_stats_md =
       client_initial_metadata.Take(GrpcLbClientStatsMetadata());
-  if (client_stats_md.has_value()) {
-    client_stats_.reset(*client_stats_md);
+  if (client_stats_md.has_value() && *client_stats_md != nullptr) {
+    client_stats_ = (*client_stats_md)->Ref();
   }
 }
 

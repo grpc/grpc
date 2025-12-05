@@ -263,8 +263,6 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
     explicit SubchannelCallTracker(InterceptRecvTrailingMetadataCallback cb)
         : cb_(std::move(cb)) {}
 
-    void Start() override {}
-
     void Finish(FinishArgs args) override {
       TrailingMetadataArgsSeen args_seen;
       args_seen.status = args.status;

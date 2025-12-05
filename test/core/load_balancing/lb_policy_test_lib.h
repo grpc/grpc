@@ -1030,7 +1030,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
           subchannel_call_tracker,
       absl::string_view address, absl::Status status = absl::OkStatus()) {
-    subchannel_call_tracker->Start();
     FakeMetadata metadata({});
     FakeBackendMetricAccessor backend_metric_accessor({});
     LoadBalancingPolicy::SubchannelCallTrackerInterface::FinishArgs args = {
