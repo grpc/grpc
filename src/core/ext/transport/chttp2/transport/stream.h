@@ -61,8 +61,7 @@ enum class HttpStreamState : uint8_t {
 
 // Managing the streams
 struct Stream : public RefCounted<Stream> {
-  explicit Stream(CallHandler call, bool allow_true_binary_metadata_peer,
-                  bool allow_true_binary_metadata_acked,
+  explicit Stream(CallHandler call, bool allow_true_binary_metadata_acked,
                   chttp2::TransportFlowControl& transport_flow_control)
       : call(std::move(call)),
         is_write_closed(false),
@@ -74,7 +73,7 @@ struct Stream : public RefCounted<Stream> {
         did_push_server_trailing_metadata(false),
         data_queue(MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
             /*is_client*/ true,
-            /*queue_size*/ kStreamQueueSize, allow_true_binary_metadata_peer)),
+            /*queue_size*/ kStreamQueueSize)),
         flow_control(&transport_flow_control) {}
 
   // TODO(akshitpatel) : [PH2][P4] : SetStreamId can be avoided if we pass the
@@ -82,7 +81,8 @@ struct Stream : public RefCounted<Stream> {
   // is that we will be creating two new disassemblers for every dequeue call.
   // The upside is that we save 8 bytes per call. Decide based on benchmark
   // results.
-  void SetStreamId(const uint32_t stream_id) {
+  void SetStreamId(const uint32_t stream_id,
+                   const bool allow_true_binary_metadata_peer) {
     GRPC_DCHECK_NE(stream_id, 0u);
     GRPC_DCHECK_EQ(this->stream_id, 0u);
     GRPC_HTTP2_STREAM_LOG
@@ -90,7 +90,7 @@ struct Stream : public RefCounted<Stream> {
     if (GPR_LIKELY(this->stream_id == 0)) {
       this->stream_id = stream_id;
       header_assembler.SetStreamId(stream_id);
-      data_queue->SetStreamId(stream_id);
+      data_queue->SetStreamId(stream_id, allow_true_binary_metadata_peer);
     }
   }
 

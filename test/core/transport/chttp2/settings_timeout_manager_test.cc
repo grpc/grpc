@@ -98,11 +98,27 @@ auto MockSettingsAckReceivedDelayed(SettingsPromiseManager& manager) {
                 });
 }
 
+void AppendSettingsAckFrame(SliceBuffer& buf) {
+  Http2SettingsFrame settings;
+  settings.ack = true;
+  Http2Frame frame(settings);
+  Serialize(absl::Span<Http2Frame>(&frame, 1), buf);
+}
+
+void AppendSettingsFrame(SliceBuffer& buf,
+                         std::vector<Http2SettingsFrame::Setting> settings) {
+  Http2SettingsFrame frame_struct;
+  frame_struct.ack = false;
+  frame_struct.settings = std::move(settings);
+  Http2Frame frame(std::move(frame_struct));
+  Serialize(absl::Span<Http2Frame>(&frame, 1), buf);
+}
+
 TEST_F(SettingsPromiseManagerTest, NoTimeoutOneSetting) {
   // First start the timer and then immediately send the ACK
   // Check that the status must always be OK.
   auto party = MakeParty();
-  SettingsPromiseManager manager;
+  SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
   ExecCtx exec_ctx;
   manager.SetSettingsTimeout(Duration::Milliseconds(kSettingsShortTimeout));
   Notification notification;
@@ -121,7 +137,7 @@ TEST_F(SettingsPromiseManagerTest, NoTimeoutThreeSettings) {
   // Starting the timer and sending the ACK immediately three times in a row.
   // Check that the status must always be OK.
   auto party = MakeParty();
-  SettingsPromiseManager manager;
+  SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
   ExecCtx exec_ctx;
   manager.SetSettingsTimeout(Duration::Milliseconds(kSettingsShortTimeout));
   Notification notification;
@@ -144,7 +160,7 @@ TEST_F(SettingsPromiseManagerTest, NoTimeoutThreeSettingsDelayed) {
   // Starting the timer and sending the ACK immediately three times in a row.
   // Check that the status must always be OK.
   auto party = MakeParty();
-  SettingsPromiseManager manager;
+  SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
   ExecCtx exec_ctx;
   manager.SetSettingsTimeout(Duration::Milliseconds(kSettingsShortTimeout));
   Notification notification;
@@ -170,7 +186,7 @@ TEST_F(SettingsPromiseManagerTest, NoTimeoutOneSettingRareOrder) {
   //
   // Check that the status must always be OK.
   auto party = MakeParty();
-  SettingsPromiseManager manager;
+  SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
   ExecCtx exec_ctx;
   manager.SetSettingsTimeout(Duration::Milliseconds(kSettingsShortTimeout));
   Notification notification;
@@ -192,7 +208,7 @@ TEST_F(SettingsPromiseManagerTest, NoTimeoutThreeSettingsRareOrder) {
   //
   // Check that the status must always be OK.
   auto party = MakeParty();
-  SettingsPromiseManager manager;
+  SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
   ExecCtx exec_ctx;
   manager.SetSettingsTimeout(Duration::Milliseconds(kSettingsShortTimeout));
   Notification notification;
@@ -213,7 +229,7 @@ TEST_F(SettingsPromiseManagerTest, NoTimeoutThreeSettingsRareOrder) {
 
 TEST_F(SettingsPromiseManagerTest, NoTimeoutThreeSettingsMixedOrder) {
   auto party = MakeParty();
-  SettingsPromiseManager manager;
+  SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
   ExecCtx exec_ctx;
   manager.SetSettingsTimeout(Duration::Milliseconds(kSettingsShortTimeout));
   Notification notification;
@@ -239,7 +255,7 @@ TEST_F(SettingsPromiseManagerTest, TimeoutOneSetting) {
   // Also ensuring that receiving the ACK after the timeout does not crash or
   // leak memory.
   auto party = MakeParty();
-  SettingsPromiseManager manager;
+  SettingsPromiseManager manager(/*on_receive_settings=*/nullptr);
   ExecCtx exec_ctx;
   manager.SetSettingsTimeout(Duration::Milliseconds(kSettingsShortTimeout));
   Notification notification1;
@@ -268,7 +284,7 @@ TEST(SettingsPromiseManagerTest1, MaybeGetSettingsAndSettingsAckFramesIdle) {
       /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   RefCountedPtr<SettingsPromiseManager> timeout_manager =
-      MakeRefCounted<SettingsPromiseManager>();
+      MakeRefCounted<SettingsPromiseManager>(/*on_receive_settings=*/nullptr);
   SliceBuffer output_buf;
   // We add "hello" to output_buf to ensure that
   // MaybeGetSettingsAndSettingsAckFrames appends to it and does not overwrite
@@ -296,7 +312,7 @@ TEST(SettingsPromiseManagerTest1,
       /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   RefCountedPtr<SettingsPromiseManager> timeout_manager =
-      MakeRefCounted<SettingsPromiseManager>();
+      MakeRefCounted<SettingsPromiseManager>(/*on_receive_settings=*/nullptr);
   SliceBuffer output_buf;
   timeout_manager->MaybeGetSettingsAndSettingsAckFrames(transport_flow_control,
                                                         output_buf);
@@ -316,10 +332,7 @@ TEST(SettingsPromiseManagerTest1,
   SliceBuffer expected_buf;
   expected_buf.Append(Slice::FromCopiedString("hello"));
   for (int i = 0; i < 5; ++i) {
-    Http2SettingsFrame settings;
-    settings.ack = true;
-    Http2Frame frame(settings);
-    Serialize(absl::Span<Http2Frame>(&frame, 1), expected_buf);
+    AppendSettingsAckFrame(expected_buf);
   }
   EXPECT_EQ(output_buf.Length(), expected_buf.Length());
   EXPECT_EQ(output_buf.JoinIntoString(), expected_buf.JoinIntoString());
@@ -333,9 +346,11 @@ TEST(SettingsPromiseManagerTest1,
       /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   RefCountedPtr<SettingsPromiseManager> timeout_manager =
-      MakeRefCounted<SettingsPromiseManager>();
+      MakeRefCounted<SettingsPromiseManager>(/*on_receive_settings=*/nullptr);
   const uint32_t kSetMaxFrameSize = 16385;
   SliceBuffer output_buf;
+
+  // Section 1: Initial settings frame
   // We add "hello" to output_buf to ensure that
   // MaybeGetSettingsAndSettingsAckFrames appends to it and does not overwrite
   // it, i.e. the original contents of output_buf are not erased.
@@ -347,17 +362,32 @@ TEST(SettingsPromiseManagerTest1,
   timeout_manager->TestOnlyTimeoutWaiterSpawned();
   ASSERT_THAT(output_buf.JoinIntoString(), ::testing::StartsWith("hello"));
   EXPECT_GT(output_buf.Length(), 5);
-  // Ack settings
+  // Buffer peer settings that need to be ACKed. Because the first frame sent by
+  // the peer will be a SETTINGS frame.
+  timeout_manager->BufferPeerSettings(
+      {{Http2Settings::kMaxConcurrentStreamsWireId, 100}});
+  timeout_manager->MaybeReportAndApplyBufferedPeerSettings(nullptr);
+
+  // Section 2: Settings ACK received from peer
   EXPECT_TRUE(timeout_manager->OnSettingsAckReceived());
   output_buf.Clear();
   output_buf.Append(Slice::FromCopiedString("hello"));
-  // No changes - no frames
+
+  // No changes to local settings, but expecting a peer settings ACK frame.
   timeout_manager->MaybeGetSettingsAndSettingsAckFrames(transport_flow_control,
                                                         output_buf);
   EXPECT_FALSE(timeout_manager->ShouldSpawnWaitForSettingsTimeout());
-  EXPECT_EQ(output_buf.Length(), 5);
-  EXPECT_EQ(output_buf.JoinIntoString(), "hello");
+  EXPECT_EQ(output_buf.Length(), 14);
+  SliceBuffer expected_buf;
+  expected_buf.Append(Slice::FromCopiedString("hello"));
+  AppendSettingsAckFrame(expected_buf);
+  EXPECT_EQ(output_buf.JoinIntoString(), expected_buf.JoinIntoString());
+
+  // Section 3: Local settings changed
+  // If local settings are changed, MaybeGetSettingsAndSettingsAckFrames should
+  // send a new SETTINGS frame with the diff.
   output_buf.Clear();
+  expected_buf.Clear();
   // Change settings
   timeout_manager->mutable_local().SetMaxFrameSize(kSetMaxFrameSize);
   output_buf.Append(Slice::FromCopiedString("hello"));
@@ -365,18 +395,14 @@ TEST(SettingsPromiseManagerTest1,
                                                         output_buf);
   EXPECT_TRUE(timeout_manager->ShouldSpawnWaitForSettingsTimeout());
   timeout_manager->TestOnlyTimeoutWaiterSpawned();
-  // Check frame
-  Http2SettingsFrame expected_settings;
-  expected_settings.ack = false;
-  expected_settings.settings.push_back(
-      {Http2Settings::kMaxFrameSizeWireId, kSetMaxFrameSize});
-  Http2Frame expected_frame(expected_settings);
-  SliceBuffer expected_buf;
+  // Check settings frame
   expected_buf.Append(Slice::FromCopiedString("hello"));
-  Serialize(absl::Span<Http2Frame>(&expected_frame, 1), expected_buf);
+  AppendSettingsFrame(expected_buf,
+                      {{Http2Settings::kMaxFrameSizeWireId, kSetMaxFrameSize}});
   EXPECT_EQ(output_buf.Length(), expected_buf.Length());
   EXPECT_EQ(output_buf.JoinIntoString(), expected_buf.JoinIntoString());
 
+  // Section 4: Local settings set to same value
   // We set SetMaxFrameSize to the same value as previous value.
   // The Diff will be zero, in this case a new SETTINGS frame must not be sent.
   timeout_manager->mutable_local().SetMaxFrameSize(kSetMaxFrameSize);
@@ -396,7 +422,7 @@ TEST(SettingsPromiseManagerTest1, MaybeGetSettingsAndSettingsAckFramesWithAck) {
       /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
   RefCountedPtr<SettingsPromiseManager> timeout_manager =
-      MakeRefCounted<SettingsPromiseManager>();
+      MakeRefCounted<SettingsPromiseManager>(/*on_receive_settings=*/nullptr);
   SliceBuffer output_buf;
   // We add "hello" to output_buf to ensure that
   // MaybeGetSettingsAndSettingsAckFrames appends to it and does not overwrite
@@ -409,19 +435,14 @@ TEST(SettingsPromiseManagerTest1, MaybeGetSettingsAndSettingsAckFramesWithAck) {
   EXPECT_TRUE(timeout_manager->ShouldSpawnWaitForSettingsTimeout());
   timeout_manager->TestOnlyTimeoutWaiterSpawned();
   Http2SettingsFrame expected_settings;
-  expected_settings.ack = false;
   timeout_manager->mutable_local().Diff(
       true, Http2Settings(), [&](uint16_t key, uint32_t value) {
         expected_settings.settings.push_back({key, value});
       });
-  Http2SettingsFrame expected_settings_ack;
-  expected_settings_ack.ack = true;
   SliceBuffer expected_buf;
   expected_buf.Append(Slice::FromCopiedString("hello"));
-  std::vector<Http2Frame> frames;
-  frames.emplace_back(expected_settings);
-  frames.emplace_back(expected_settings_ack);
-  Serialize(absl::MakeSpan(frames), expected_buf);
+  AppendSettingsFrame(expected_buf, std::move(expected_settings.settings));
+  AppendSettingsAckFrame(expected_buf);
   EXPECT_EQ(output_buf.Length(), expected_buf.Length());
   EXPECT_EQ(output_buf.JoinIntoString(), expected_buf.JoinIntoString());
 }

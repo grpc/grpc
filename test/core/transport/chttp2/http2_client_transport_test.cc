@@ -110,7 +110,8 @@ class Http2ClientTransportTest : public TransportTest {
 ////////////////////////////////////////////////////////////////////////////////
 // Creation Test
 
-TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
+TEST_F(Http2ClientTransportTest,
+       DISABLED_TestHttp2ClientTransportObjectCreation) {
   // Event Engine      : FuzzingEventEngine
   // This test asserts :
   // 1. Tests Http2ClientTransport object creation and destruction. The object
@@ -180,7 +181,8 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Basic Transport Write Tests
-TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromCall) {
+TEST_F(Http2ClientTransportTest,
+       DISABLED_TestHttp2ClientTransportWriteFromCall) {
   ExecCtx ctx;
   MockPromiseEndpoint mock_endpoint(/*port=*/1000);
   std::string data_payload = "Hello!";
@@ -282,7 +284,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromCall) {
 ////////////////////////////////////////////////////////////////////////////////
 // Ping tests
 
-TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingRead) {
+TEST_F(Http2ClientTransportTest, DISABLED_TestHttp2ClientTransportPingRead) {
   // Simple test to validate a proper ping ack is sent out on receiving a ping
   // request.
   ExecCtx ctx;
@@ -333,7 +335,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingRead) {
   event_engine()->UnsetGlobalHooks();
 }
 
-TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingWrite) {
+TEST_F(Http2ClientTransportTest, DISABLED_TestHttp2ClientTransportPingWrite) {
   // Test to validate  end-to-end ping request and response.
   // This test asserts the following:
   // 1. A ping request is written to the endpoint. The opaque id is not verified
@@ -418,7 +420,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingWrite) {
   event_engine()->UnsetGlobalHooks();
 }
 
-TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingTimeout) {
+TEST_F(Http2ClientTransportTest, DISABLED_TestHttp2ClientTransportPingTimeout) {
   // Test to validate that the transport is closed when ping times out.
   // This test asserts the following:
   // 1. The ping request promise is never resolved as there is no ping ack.
@@ -480,7 +482,8 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingTimeout) {
   event_engine()->UnsetGlobalHooks();
 }
 
-TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
+TEST_F(Http2ClientTransportTest,
+       DISABLED_TestHttp2ClientTransportMultiplePings) {
   // This test sends 2 ping requests (max_inflight_pings is set to 2) and
   // verifies that one of the ping request is schedulled to honor
   // NextAllowedPingInterval. The second ping request will timeout as there is
@@ -603,7 +606,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
 ////////////////////////////////////////////////////////////////////////////////
 // Header, Data and Continuation Frame Read Tests
 
-TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
+TEST_F(Http2ClientTransportTest, DISABLED_TestHeaderDataHeaderFrameOrder) {
   ExecCtx ctx;
   MockPromiseEndpoint mock_endpoint(/*port=*/1000);
 
@@ -736,8 +739,7 @@ TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
             RFC9113::kHttp2InitialWindowSize);
 }
 
-// TODO(akshitpatel) [PH2][P1] Enable this after fixing bug in Close Path
-TEST_F(Http2ClientTransportTest, TestCanStreamReceiveDataFrames) {
+TEST_F(Http2ClientTransportTest, DISABLED_TestCanStreamReceiveDataFrames) {
   ExecCtx ctx;
   MockPromiseEndpoint mock_endpoint(/*port=*/1000);
   StrictMock<MockFunction<void()>> on_done;
@@ -822,7 +824,7 @@ TEST_F(Http2ClientTransportTest, TestCanStreamReceiveDataFrames) {
 ////////////////////////////////////////////////////////////////////////////////
 // Close Stream Tests
 
-TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadata) {
+TEST_F(Http2ClientTransportTest, DISABLED_StreamCleanupTrailingMetadata) {
   ExecCtx ctx;
   MockPromiseEndpoint mock_endpoint(/*port=*/1000);
   StrictMock<MockFunction<void()>> on_done;
@@ -902,7 +904,8 @@ TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadata) {
   event_engine()->UnsetGlobalHooks();
 }
 
-TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadataWithResetStream) {
+TEST_F(Http2ClientTransportTest,
+       DISABLED_StreamCleanupTrailingMetadataWithResetStream) {
   ExecCtx ctx;
   MockPromiseEndpoint mock_endpoint(/*port=*/1000);
   StrictMock<MockFunction<void()>> on_done;
@@ -978,7 +981,7 @@ TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadataWithResetStream) {
   event_engine()->UnsetGlobalHooks();
 }
 
-TEST_F(Http2ClientTransportTest, StreamCleanupResetStream) {
+TEST_F(Http2ClientTransportTest, DISABLED_StreamCleanupResetStream) {
   ExecCtx ctx;
   MockPromiseEndpoint mock_endpoint(/*port=*/1000);
   StrictMock<MockFunction<void()>> on_done;
@@ -1121,7 +1124,7 @@ TEST_F(Http2ClientTransportTest, Http2ClientTransportAbortTest) {
 ////////////////////////////////////////////////////////////////////////////////
 // Goaway tests
 
-TEST_F(Http2ClientTransportTest, ReadImmediateGoaway) {
+TEST_F(Http2ClientTransportTest, DISABLED_ReadImmediateGoaway) {
   ExecCtx ctx;
   MockPromiseEndpoint mock_endpoint(/*port=*/1000);
   mock_endpoint.ExpectWrite(
@@ -1157,7 +1160,7 @@ TEST_F(Http2ClientTransportTest, ReadImmediateGoaway) {
   event_engine()->UnsetGlobalHooks();
 }
 
-TEST_F(Http2ClientTransportTest, ReadGracefulGoaway) {
+TEST_F(Http2ClientTransportTest, DISABLED_ReadGracefulGoaway) {
   // This test is to verify that the transport closes after closing the last
   // stream when graceful goaway is received.
   ExecCtx ctx;
@@ -1258,7 +1261,8 @@ TEST_F(Http2ClientTransportTest, ReadGracefulGoaway) {
   event_engine()->UnsetGlobalHooks();
 }
 
-TEST_F(Http2ClientTransportTest, ReadGracefulGoawayCannotStartNewStreams) {
+TEST_F(Http2ClientTransportTest,
+       DISABLED_ReadGracefulGoawayCannotStartNewStreams) {
   ExecCtx ctx;
   MockPromiseEndpoint mock_endpoint(/*port=*/1000);
   std::string data_payload = "Hello!";

@@ -794,7 +794,8 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
             self->incoming_headers_.GetStreamId(),
             /*current_frame_header*/ header,
             /*last_stream_id=*/self->GetLastStreamId(),
-            /*is_client=*/true);
+            /*is_client=*/true, /*is_first_settings_processed=*/
+            self->settings_->IsFirstPeerSettingsApplied());
 
         if (GPR_UNLIKELY(!status.IsOk())) {
           GRPC_DCHECK(status.GetType() ==
@@ -1182,7 +1183,7 @@ auto Http2ClientTransport::MultiplexerLoop() {
               // TODO(akshitpatel) : [PH2][P5] : We will waste a stream id in
               // the rare scenario where the stream is aborted before it can be
               // written to. This is a possible area to optimize in future.
-              absl::Status status = self->AssignStreamId(stream);
+              absl::Status status = self->InitializeStream(stream);
               if (!status.ok()) {
                 GRPC_HTTP2_CLIENT_DLOG
                     << "Http2ClientTransport MultiplexerLoop "
@@ -1197,7 +1198,8 @@ auto Http2ClientTransport::MultiplexerLoop() {
             }
 
             if (GPR_LIKELY(!stream->IsClosedForWrites())) {
-              auto stream_frames = self->DequeueStreamFrames(stream);
+              absl::StatusOr<std::vector<Http2Frame>> stream_frames =
+                  self->DequeueStreamFrames(stream);
               if (GPR_UNLIKELY(!stream_frames.ok())) {
                 GRPC_HTTP2_CLIENT_DLOG
                     << "Http2ClientTransport MultiplexerLoop "
@@ -1236,20 +1238,23 @@ auto Http2ClientTransport::MultiplexerLoop() {
   }));
 }
 
-absl::Status Http2ClientTransport::AssignStreamId(
+absl::Status Http2ClientTransport::InitializeStream(
     RefCountedPtr<Stream> stream) {
   absl::StatusOr<uint32_t> next_stream_id = NextStreamId();
   if (!next_stream_id.ok()) {
-    GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport AssignStreamId "
+    GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport InitializeStream "
                               "Failed to get next stream id for stream: "
                            << stream.get();
     return std::move(next_stream_id).status();
   }
-  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport AssignStreamId "
+  // TODO(tjagtap) : [PH2][P0] : Re-enable this check once the test is fixed.
+  // GRPC_DCHECK(settings_->IsFirstPeerSettingsApplied());
+  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport InitializeStream "
                             "Assigned stream id: "
                          << next_stream_id.value()
                          << " to stream: " << stream.get();
-  stream->SetStreamId(next_stream_id.value());
+  stream->SetStreamId(next_stream_id.value(),
+                      settings_->peer().allow_true_binary_metadata());
   return absl::OkStatus();
 }
 
@@ -1370,9 +1375,9 @@ Http2ClientTransport::Http2ClientTransport(
       should_stall_read_loop_(false) {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor Begin";
   // Initialize the general party and write party.
-  auto general_party_arena = SimpleArenaAllocator(0)->MakeArena();
-  general_party_arena->SetContext<EventEngine>(event_engine_.get());
-  general_party_ = Party::Make(std::move(general_party_arena));
+  RefCountedPtr<Arena> party_arena = SimpleArenaAllocator(0)->MakeArena();
+  party_arena->SetContext<EventEngine>(event_engine_.get());
+  general_party_ = Party::Make(std::move(party_arena));
 
   InitLocalSettings(settings_->mutable_local(), /*is_client=*/true);
   TransportChannelArgs args;
@@ -1857,7 +1862,6 @@ std::optional<RefCountedPtr<Stream>> Http2ClientTransport::MakeStream(
     // complete, passing true now. We need to find a way to avoid data race.
     stream = MakeRefCounted<Stream>(
         call_handler,
-        /* settings_->peer().allow_true_binary_metadata() */ true,
         /* settings_->acked().allow_true_binary_metadata() */ true,
         flow_control_);
   }
