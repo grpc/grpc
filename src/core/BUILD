@@ -3810,6 +3810,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "filter_chain",
+    hdrs = [
+        "filter/filter_chain.h",
+    ],
+    deps = [
+        "filter_args",
+        "interception_chain",
+        "ref_counted",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "fused_filters",
     srcs = [
         "filter/fused_filters.cc",
@@ -3899,6 +3912,7 @@ grpc_cc_library(
         "blackboard",
         "channel_fwd",
         "client_channel_internal_header",
+        "filter_chain",
         "grpc_check",
         "grpc_service_config",
         "interception_chain",
@@ -5526,6 +5540,8 @@ grpc_cc_library(
         "channel_args",
         "channel_fwd",
         "context",
+        "experiments",
+        "filter_args",
         "grpc_service_config",
         "json",
         "json_args",
@@ -5669,6 +5685,40 @@ grpc_cc_library(
         "//:grpc_security_base",
         "//:ref_counted_ptr",
         "//:transport_auth_context",
+    ],
+)
+
+grpc_cc_library(
+    name = "composite_filter",
+    srcs = [
+        "filter/composite/composite_filter.cc",
+    ],
+    hdrs = [
+        "filter/composite/composite_filter.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/random",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "arena",
+        "call_destination",
+        "channel_args",
+        "context",
+        "down_cast",
+        "filter_args",
+        "filter_chain",
+        "interception_chain",
+        "metadata_batch",
+        "shared_bit_gen",
+        "unique_type_name",
+        "xds_http_filter",
+        "xds_matcher",
+        "xds_matcher_context",
+        "//:grpc_base",
+        "//:ref_counted_ptr",
     ],
 )
 
@@ -6062,6 +6112,9 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "xds_http_filter",
+    srcs = [
+        "xds/grpc/xds_http_filter.cc",
+    ],
     hdrs = [
         "xds/grpc/xds_http_filter.h",
     ],
@@ -6075,7 +6128,7 @@ grpc_cc_library(
         "blackboard",
         "channel_args",
         "channel_fwd",
-        "interception_chain",
+        "filter_chain",
         "json",
         "json_writer",
         "validation_errors",
@@ -6122,6 +6175,7 @@ grpc_cc_library(
     ],
     tags = ["nofixdeps"],
     deps = [
+        "filter_args",
         "match",
         "resolved_address",
         "time",
@@ -6292,6 +6346,46 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "xds_matcher",
+    srcs = [
+        "xds/grpc/xds_matcher.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_matcher.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/container:inlined_vector",
+        "absl/strings",
+    ],
+    tags = ["nofixdeps"],
+    visibility = ["//bazel:xds_client_grpc"],
+    deps = [
+        "down_cast",
+        "grpc_matchers",
+        "match",
+        "trie_lookup",
+        "unique_type_name",
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_matcher_context",
+    srcs = [
+        "xds/grpc/xds_matcher_context.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_matcher_context.h",
+    ],
+    tags = ["nofixdeps"],
+    visibility = ["//bazel:xds_client_grpc"],
+    deps = [
+        "metadata_batch",
+        "xds_matcher",
+    ],
+)
+
 # TODO(roth): Split this up into individual targets.
 grpc_cc_library(
     name = "grpc_xds_client",
@@ -6303,6 +6397,7 @@ grpc_cc_library(
         "xds/grpc/xds_cluster_specifier_plugin.cc",
         "xds/grpc/xds_common_types_parser.cc",
         "xds/grpc/xds_endpoint_parser.cc",
+        "xds/grpc/xds_http_composite_filter.cc",
         "xds/grpc/xds_http_fault_filter.cc",
         "xds/grpc/xds_http_filter_registry.cc",
         "xds/grpc/xds_http_gcp_authn_filter.cc",
@@ -6310,9 +6405,7 @@ grpc_cc_library(
         "xds/grpc/xds_http_stateful_session_filter.cc",
         "xds/grpc/xds_lb_policy_registry.cc",
         "xds/grpc/xds_listener_parser.cc",
-        "xds/grpc/xds_matcher.cc",
         "xds/grpc/xds_matcher_action.cc",
-        "xds/grpc/xds_matcher_context.cc",
         "xds/grpc/xds_matcher_input.cc",
         "xds/grpc/xds_matcher_parse.cc",
         "xds/grpc/xds_metadata_parser.cc",
@@ -6327,6 +6420,7 @@ grpc_cc_library(
         "xds/grpc/xds_cluster_specifier_plugin.h",
         "xds/grpc/xds_common_types_parser.h",
         "xds/grpc/xds_endpoint_parser.h",
+        "xds/grpc/xds_http_composite_filter.h",
         "xds/grpc/xds_http_fault_filter.h",
         "xds/grpc/xds_http_filter_registry.h",
         "xds/grpc/xds_http_gcp_authn_filter.h",
@@ -6334,9 +6428,7 @@ grpc_cc_library(
         "xds/grpc/xds_http_stateful_session_filter.h",
         "xds/grpc/xds_lb_policy_registry.h",
         "xds/grpc/xds_listener_parser.h",
-        "xds/grpc/xds_matcher.h",
         "xds/grpc/xds_matcher_action.h",
-        "xds/grpc/xds_matcher_context.h",
         "xds/grpc/xds_matcher_input.h",
         "xds/grpc/xds_matcher_parse.h",
         "xds/grpc/xds_metadata_parser.h",
@@ -6376,6 +6468,7 @@ grpc_cc_library(
         "channel_creds_registry",
         "channel_fwd",
         "closure",
+        "composite_filter",
         "connectivity_state",
         "default_event_engine",
         "down_cast",
@@ -6394,7 +6487,13 @@ grpc_cc_library(
         "envoy_config_route_upbdefs",
         "envoy_extensions_clusters_aggregate_upb",
         "envoy_extensions_clusters_aggregate_upbdefs",
+        "envoy_extensions_common_matching_upb",
+        "envoy_extensions_common_matching_upbdefs",
         "envoy_extensions_filters_common_fault_upb",
+        "envoy_extensions_filters_common_matcher_action_upb",
+        "envoy_extensions_filters_common_matcher_action_upbdefs",
+        "envoy_extensions_filters_http_composite_upb",
+        "envoy_extensions_filters_http_composite_upbdefs",
         "envoy_extensions_filters_http_fault_upb",
         "envoy_extensions_filters_http_fault_upbdefs",
         "envoy_extensions_filters_http_gcp_authn_upb",
@@ -6447,7 +6546,6 @@ grpc_cc_library(
         "grpc_tls_credentials",
         "grpc_transport_chttp2_client_connector",
         "init_internally",
-        "interception_chain",
         "iomgr_fwd",
         "json",
         "json_args",
@@ -6478,7 +6576,6 @@ grpc_cc_library(
         "status_helper",
         "sync",
         "time",
-        "trie_lookup",
         "unique_type_name",
         "upb_utils",
         "useful",
@@ -6495,6 +6592,8 @@ grpc_cc_library(
         "xds_health_status",
         "xds_http_filter",
         "xds_listener",
+        "xds_matcher",
+        "xds_matcher_context",
         "xds_matcher_upb",
         "xds_metadata",
         "xds_route_config",
@@ -11295,6 +11394,16 @@ grpc_upb_proto_reflection_library(
 )
 
 grpc_upb_proto_library(
+    name = "envoy_extensions_common_matching_upb",
+    deps = ["@envoy_api//envoy/extensions/common/matching/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_common_matching_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/common/matching/v3:pkg"],
+)
+
+grpc_upb_proto_library(
     name = "envoy_extensions_clusters_aggregate_upb",
     deps = ["@envoy_api//envoy/extensions/clusters/aggregate/v3:pkg"],
 )
@@ -11307,6 +11416,26 @@ grpc_upb_proto_reflection_library(
 grpc_upb_proto_library(
     name = "envoy_extensions_filters_common_fault_upb",
     deps = ["@envoy_api//envoy/extensions/filters/common/fault/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_filters_common_matcher_action_upb",
+    deps = ["@envoy_api//envoy/extensions/filters/common/matcher/action/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_filters_common_matcher_action_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/filters/common/matcher/action/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_filters_http_composite_upb",
+    deps = ["@envoy_api//envoy/extensions/filters/http/composite/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_filters_http_composite_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/filters/http/composite/v3:pkg"],
 )
 
 grpc_upb_proto_library(
