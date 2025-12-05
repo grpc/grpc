@@ -43,6 +43,7 @@ EXPERIMENT_ENABLES = {
     "multiping": "multiping",
     "otel_export_telemetry_domains": "otel_export_telemetry_domains",
     "pick_first_ignore_empty_updates": "pick_first_ignore_empty_updates",
+    "pick_first_ready_to_connecting": "pick_first_ready_to_connecting",
     "pipelined_read_secure_endpoint": "event_engine_client,event_engine_listener,event_engine_secure_endpoint,pipelined_read_secure_endpoint",
     "pollset_alternative": "event_engine_client,event_engine_listener,pollset_alternative",
     "prioritize_finished_requests": "prioritize_finished_requests",
@@ -109,6 +110,7 @@ EXPERIMENTS = {
                 "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
+                "pick_first_ready_to_connecting",
                 "rr_wrr_connect_from_random_index",
                 "transport_state_watcher",
             ],
@@ -128,6 +130,7 @@ EXPERIMENTS = {
                 "tcp_rcv_lowat",
             ],
             "lb_unit_test": [
+                "pick_first_ready_to_connecting",
                 "rr_wrr_connect_from_random_index",
             ],
             "minimal_stack_test": [
@@ -214,6 +217,7 @@ EXPERIMENTS = {
                 "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
+                "pick_first_ready_to_connecting",
                 "rr_wrr_connect_from_random_index",
                 "transport_state_watcher",
             ],
@@ -233,6 +237,7 @@ EXPERIMENTS = {
                 "tcp_rcv_lowat",
             ],
             "lb_unit_test": [
+                "pick_first_ready_to_connecting",
                 "rr_wrr_connect_from_random_index",
             ],
             "minimal_stack_test": [
@@ -319,6 +324,7 @@ EXPERIMENTS = {
                 "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
+                "pick_first_ready_to_connecting",
                 "rr_wrr_connect_from_random_index",
                 "transport_state_watcher",
             ],
@@ -338,6 +344,7 @@ EXPERIMENTS = {
                 "tcp_rcv_lowat",
             ],
             "lb_unit_test": [
+                "pick_first_ready_to_connecting",
                 "rr_wrr_connect_from_random_index",
             ],
             "minimal_stack_test": [
