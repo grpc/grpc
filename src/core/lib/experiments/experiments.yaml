@@ -352,3 +352,8 @@
   expiry: 2026/02/01
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
+- name: xds_channel_filter_chain_per_route
+  description: xDS channels use a separate filter chain for each route.
+  expiry: 2026/06/01
+  owner: roth@google.com
+  test_tags: ["xds_end2end_test", "xds_test"]
