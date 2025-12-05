@@ -19,6 +19,7 @@
 #include <initializer_list>
 #include <utility>
 
+#include "src/core/call/message.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/slice/slice_buffer.h"

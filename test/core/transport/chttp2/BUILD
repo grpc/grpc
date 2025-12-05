@@ -257,6 +257,7 @@ grpc_cc_test(
         "//:chttp2_frame",
         "//src/core:http2_settings",
         "//src/core:http2_status",
+        "//src/core:message",
         "//src/core:slice_buffer",
     ],
 )
