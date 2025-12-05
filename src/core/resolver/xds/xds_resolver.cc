@@ -192,12 +192,6 @@ class XdsResolver final : public Resolver {
         uint32_t range_end;
         absl::string_view cluster;
         RefCountedPtr<ServiceConfig> method_config;
-
-        bool operator==(const ClusterWeightState& other) const {
-          return range_end == other.range_end && cluster == other.cluster &&
-                 MethodConfigsEqual(method_config.get(),
-                                    other.method_config.get());
-        }
       };
 
       XdsRouteConfigResource::Route route;
@@ -205,21 +199,10 @@ class XdsResolver final : public Resolver {
       std::vector<ClusterWeightState> weighted_cluster_state;
 
       explicit RouteEntry(const XdsRouteConfigResource::Route& r) : route(r) {}
-
-      bool operator==(const RouteEntry& other) const {
-        return route == other.route &&
-               weighted_cluster_state == other.weighted_cluster_state &&
-               MethodConfigsEqual(method_config.get(),
-                                  other.method_config.get());
-      }
     };
 
     static absl::StatusOr<RefCountedPtr<RouteConfigData>> Create(
         XdsResolver* resolver, const Duration& default_max_stream_duration);
-
-    bool operator==(const RouteConfigData& other) const {
-      return clusters_ == other.clusters_ && routes_ == other.routes_;
-    }
 
     RefCountedPtr<ClusterRef> FindClusterRef(absl::string_view name) const {
       auto it = clusters_.find(name);
@@ -239,13 +222,6 @@ class XdsResolver final : public Resolver {
         XdsResolver* resolver, const XdsRouteConfigResource::Route& route,
         const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
             cluster_weight);
-
-    static bool MethodConfigsEqual(const ServiceConfig* sc1,
-                                   const ServiceConfig* sc2) {
-      if (sc1 == nullptr) return sc2 == nullptr;
-      if (sc2 == nullptr) return false;
-      return sc1->json_string() == sc2->json_string();
-    }
 
     absl::Status AddRouteEntry(XdsResolver* resolver,
                                const XdsRouteConfigResource::Route& route,
