@@ -176,7 +176,8 @@ class Http2ClientTransport final : public ClientTransport,
   }
 
   void AddData(channelz::DataSink sink) override;
-  void SpawnAddChannelzData(channelz::DataSink sink);
+  void SpawnAddChannelzData(RefCountedPtr<Party> party,
+                            channelz::DataSink sink);
 
   auto TestOnlyTriggerWriteCycle() {
     return Immediate(writable_stream_list_.ForceReadyForWrite());
@@ -387,6 +388,11 @@ class Http2ClientTransport final : public ClientTransport,
                     }),
                 std::move(promise));
   }
+
+  // Spawns an infallible promise on the given party.
+  template <typename Factory>
+  void SpawnInfallible(RefCountedPtr<Party> party, absl::string_view name,
+                       Factory&& factory);
 
   // Spawns an infallible promise on the transport party.
   template <typename Factory>

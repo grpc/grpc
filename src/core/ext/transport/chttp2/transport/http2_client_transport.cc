@@ -112,9 +112,16 @@ using EnqueueResult = StreamDataQueue<ClientMetadataHandle>::EnqueueResult;
 // rollout begins
 
 template <typename Factory>
+void Http2ClientTransport::SpawnInfallible(RefCountedPtr<Party> party,
+                                           absl::string_view name,
+                                           Factory&& factory) {
+  party->Spawn(name, std::forward<Factory>(factory), [](Empty) {});
+}
+
+template <typename Factory>
 void Http2ClientTransport::SpawnInfallibleTransportParty(absl::string_view name,
                                                          Factory&& factory) {
-  general_party_->Spawn(name, std::forward<Factory>(factory), [](Empty) {});
+  SpawnInfallible(general_party_, name, std::forward<Factory>(factory));
 }
 
 template <typename Factory>
@@ -1732,10 +1739,12 @@ Http2ClientTransport::~Http2ClientTransport() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Destructor End";
 }
 
-void Http2ClientTransport::SpawnAddChannelzData(channelz::DataSink sink) {
-  SpawnInfallibleTransportParty(
-      "AddData", [self = RefAsSubclass<Http2ClientTransport>(),
-                  sink = std::move(sink)]() mutable {
+void Http2ClientTransport::SpawnAddChannelzData(RefCountedPtr<Party> party,
+                                                channelz::DataSink sink) {
+  SpawnInfallible(
+      std::move(party), "AddData",
+      [self = RefAsSubclass<Http2ClientTransport>(),
+       sink = std::move(sink)]() mutable {
         GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::AddData Promise";
         sink.AddData(
             "Http2ClientTransport",
@@ -1758,6 +1767,7 @@ void Http2ClientTransport::AddData(channelz::DataSink sink) {
 
   event_engine_->Run([self = RefAsSubclass<Http2ClientTransport>(),
                       sink = std::move(sink)]() mutable {
+    RefCountedPtr<Party> party;
     {
       // Apart from CloseTransport, this is the only place where a lock is taken
       // to access general_party_. All other access to general_party_ happens
@@ -1773,16 +1783,20 @@ void Http2ClientTransport::AddData(channelz::DataSink sink) {
       // demand and #3 happens once for the lifetime of the transport while
       // closing the transport, the contention should be minimal.
       MutexLock lock(&self->transport_mutex_);
-      if (self->general_party_ == nullptr) {
+      if (GPR_UNLIKELY(self->general_party_ == nullptr)) {
         GRPC_HTTP2_CLIENT_DLOG
             << "Http2ClientTransport::AddData general_party_ is "
                "null. Transport is closed.";
-        return;
+      } else {
+        party = self->general_party_;
       }
     }
 
     ExecCtx exec_ctx;
-    self->SpawnAddChannelzData(std::move(sink));
+    if (party != nullptr) {
+      self->SpawnAddChannelzData(std::move(party), std::move(sink));
+    }
+    self.reset();  // Cleanup with exec_ctx in scope
   });
 }
 
