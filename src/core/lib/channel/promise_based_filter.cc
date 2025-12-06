@@ -1308,6 +1308,7 @@ ClientCallData::ClientCallData(grpc_call_element* elem,
 }
 
 ClientCallData::~ClientCallData() {
+  SourceDestructing();
   ScopedActivity scoped_activity(this);
   GRPC_CHECK_EQ(poll_ctx_, nullptr);
   if (recv_initial_metadata_ != nullptr) {
@@ -1997,6 +1998,7 @@ ServerCallData::ServerCallData(grpc_call_element* elem,
 }
 
 ServerCallData::~ServerCallData() {
+  SourceDestructing();
   GRPC_TRACE_LOG(channel, INFO)
       << LogTag() << " ~ServerCallData " << DebugString();
   if (send_initial_metadata_ != nullptr) {
