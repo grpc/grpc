@@ -26,6 +26,7 @@ GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS=${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_J
 # Build and install gRPC for the host architecture.
 # We do this because we need to be able to run protoc and grpc_cpp_plugin
 # while cross-compiling.
+tools/codegen/core/gen_upb_api.sh
 mkdir -p "cmake/build"
 pushd "cmake/build"
 cmake \
