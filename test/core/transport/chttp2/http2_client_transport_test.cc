@@ -458,7 +458,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingTimeout) {
   mock_endpoint.ExpectWrite(
       {
           helper_.EventEngineSliceFromHttp2GoawayFrame(
-              /*debug_data=*/"Ping timeout", /*last_stream_id=*/0,
+              /*debug_data=*/GRPC_CHTTP2_PING_TIMEOUT_STR, /*last_stream_id=*/0,
               /*error_code=*/
               static_cast<uint32_t>(Http2ErrorCode::kRefusedStream)),
       },
