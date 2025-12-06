@@ -457,14 +457,14 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   //    the partial first message (sum of payload of all returned frames <=
   //    max_fc_tokens).
   // This function is thread safe.
-  DequeueResult DequeueFrames(const uint32_t max_fc_tokens,
+  DequeueResult DequeueFrames(const uint32_t max_dequeue_size,
                               const uint32_t max_frame_length,
                               const uint32_t stream_fc_tokens,
                               HPackCompressor& encoder,
                               const bool can_send_reset_stream) {
     MutexLock lock(&mu_);
     GRPC_STREAM_DATA_QUEUE_DEBUG
-        << "Dequeueing frames. Max fc tokens: " << max_fc_tokens
+        << "Dequeueing frames. Max dequeue size: " << max_dequeue_size
         << " Max frame length: " << max_frame_length
         << " Message disassembler buffered length: "
         << message_disassembler_.GetBufferedLength()
@@ -481,11 +481,11 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
       return std::move(*result);
     }
 
-    HandleDequeue handle_dequeue(max_fc_tokens, max_frame_length, encoder,
+    HandleDequeue handle_dequeue(max_dequeue_size, max_frame_length, encoder,
                                  *this);
-    while (message_disassembler_.GetBufferedLength() <= max_fc_tokens) {
+    while (message_disassembler_.GetBufferedLength() <= max_dequeue_size) {
       const uint32_t tokens_to_dequeue =
-          max_fc_tokens - message_disassembler_.GetBufferedLength();
+          max_dequeue_size - message_disassembler_.GetBufferedLength();
       std::optional<QueueEntry> queue_entry =
           queue_.Dequeue(tokens_to_dequeue, /*allow_oversized_dequeue*/ (
                              message_disassembler_.GetBufferedLength() == 0 &&
