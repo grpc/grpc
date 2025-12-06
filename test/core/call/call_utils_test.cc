@@ -18,7 +18,12 @@
 
 #include <initializer_list>
 
+#include "src/core/lib/promise/poll.h"
+#include "src/core/util/upb_utils.h"
+#include "src/proto/grpc/channelz/v2/promise.upb.h"
+#include "src/proto/grpc/channelz/v2/property_list.upb.h"
 #include "gtest/gtest.h"
+#include "upb/mem/arena.hpp"
 
 namespace grpc_core {
 
@@ -60,6 +65,102 @@ TEST(BatchOpIndex, Basic) {
   EXPECT_EQ(idx.op(GRPC_OP_SEND_MESSAGE), &ops[1]);
   EXPECT_EQ(idx.op(GRPC_OP_SEND_CLOSE_FROM_CLIENT), &ops[2]);
   EXPECT_EQ(idx.op(GRPC_OP_SEND_STATUS_FROM_SERVER), nullptr);
+}
+
+TEST(CallUtils, PollBatchLoggerToProto) {
+  upb::Arena arena;
+  auto* proto = grpc_channelz_v2_Promise_new(arena.ptr());
+  struct MockPromise {
+    Poll<int> operator()() { return 1; }
+    void ToProto(grpc_channelz_v2_Promise* promise_proto,
+                 upb_Arena* arena) const {
+      grpc_channelz_v2_Promise_set_unknown_promise(
+          promise_proto, StdStringToUpbString("MockPromise"));
+    }
+  };
+  MockPromise mock_promise_obj;
+  auto logger = LogPollBatch(nullptr, mock_promise_obj);
+  logger.ToProto(proto, arena.ptr());
+  auto upb_to_sv = [](upb_StringView sv) -> absl::string_view {
+    return absl::string_view(sv.data, sv.size);
+  };
+  EXPECT_EQ(upb_to_sv(grpc_channelz_v2_Promise_unknown_promise(proto)),
+            "MockPromise");
+}
+
+TEST(CallUtils, OpHandlerImplToProto) {
+  auto upb_to_sv = [](upb_StringView sv) -> absl::string_view {
+    return absl::string_view(sv.data, sv.size);
+  };
+  upb::Arena arena;
+  auto* proto = grpc_channelz_v2_Promise_new(arena.ptr());
+  {
+    auto factory = []() { return []() { return Poll<int>(1); }; };
+    OpHandlerImpl<decltype(factory), GRPC_OP_SEND_MESSAGE> op_handler;
+    op_handler.ToProto(proto, arena.ptr());
+    auto* custom = grpc_channelz_v2_Promise_custom_promise(proto);
+    EXPECT_EQ(upb_to_sv(grpc_channelz_v2_Promise_Custom_type(custom)),
+              "OpHandlerImpl<SendMessage>");
+    auto* properties = grpc_channelz_v2_Promise_Custom_properties(custom);
+    size_t size;
+    auto* entries = grpc_channelz_v2_PropertyList_properties(properties, &size);
+    ASSERT_EQ(size, 1);
+    ASSERT_NE(entries, nullptr);
+    ASSERT_NE(entries[0], nullptr);
+    EXPECT_EQ(upb_to_sv(grpc_channelz_v2_PropertyList_Element_key(entries[0])),
+              "state");
+    auto* value = grpc_channelz_v2_PropertyList_Element_value(entries[0]);
+    ASSERT_NE(value, nullptr);
+    EXPECT_EQ(upb_to_sv(grpc_channelz_v2_PropertyValue_string_value(value)),
+              "dismissed");
+  }
+  {
+    auto factory = []() { return []() { return Poll<int>(1); }; };
+    OpHandlerImpl<decltype(factory), GRPC_OP_SEND_MESSAGE> op_handler(factory);
+    op_handler.ToProto(proto, arena.ptr());
+    auto* custom = grpc_channelz_v2_Promise_custom_promise(proto);
+    EXPECT_EQ(upb_to_sv(grpc_channelz_v2_Promise_Custom_type(custom)),
+              "OpHandlerImpl<SendMessage>");
+    auto* properties = grpc_channelz_v2_Promise_Custom_properties(custom);
+    size_t size;
+    auto* entries = grpc_channelz_v2_PropertyList_properties(properties, &size);
+    ASSERT_EQ(size, 1);
+    ASSERT_NE(entries, nullptr);
+    ASSERT_NE(entries[0], nullptr);
+    EXPECT_EQ(upb_to_sv(grpc_channelz_v2_PropertyList_Element_key(entries[0])),
+              "state");
+    auto* value = grpc_channelz_v2_PropertyList_Element_value(entries[0]);
+    ASSERT_NE(value, nullptr);
+    EXPECT_EQ(upb_to_sv(grpc_channelz_v2_PropertyValue_string_value(value)),
+              "promise_factory");
+  }
+}
+
+TEST(CallUtils, WaitForCqEndOpToProto) {
+  auto upb_to_sv = [](upb_StringView sv) -> absl::string_view {
+    return absl::string_view(sv.data, sv.size);
+  };
+  upb::Arena arena;
+  auto* proto = grpc_channelz_v2_Promise_new(arena.ptr());
+  {
+    WaitForCqEndOp op(false, nullptr, absl::OkStatus(), nullptr);
+    op.ToProto(proto, arena.ptr());
+    auto* custom = grpc_channelz_v2_Promise_custom_promise(proto);
+    EXPECT_EQ(upb_to_sv(grpc_channelz_v2_Promise_Custom_type(custom)),
+              "WaitForCqEndOp");
+    auto* properties = grpc_channelz_v2_Promise_Custom_properties(custom);
+    size_t size;
+    auto* entries = grpc_channelz_v2_PropertyList_properties(properties, &size);
+    ASSERT_EQ(size, 1);
+    ASSERT_NE(entries, nullptr);
+    ASSERT_NE(entries[0], nullptr);
+    EXPECT_EQ(upb_to_sv(grpc_channelz_v2_PropertyList_Element_key(entries[0])),
+              "state");
+    auto* value = grpc_channelz_v2_PropertyList_Element_value(entries[0]);
+    ASSERT_NE(value, nullptr);
+    EXPECT_EQ(upb_to_sv(grpc_channelz_v2_PropertyValue_string_value(value)),
+              "not_started");
+  }
 }
 
 }  // namespace grpc_core
