@@ -77,7 +77,7 @@ TEST(ValidationErrors, MultipleErrorsForSameField) {
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(status.message(),
             "errors validating config: [field:foo.bar errors:["
-            "value smells funny; value is ugly]]")
+            "value is ugly; value smells funny]]")
       << status;
 }
 
