@@ -103,14 +103,8 @@ class CrlSslTransportSecurityTest
       expect_client_success_1_2_ = expect_client_success_1_2;
       expect_client_success_1_3_ = expect_client_success_1_3;
 
-      server_pem_key_cert_pairs_ = static_cast<tsi_ssl_pem_key_cert_pair*>(
-          gpr_malloc(sizeof(tsi_ssl_pem_key_cert_pair)));
-      server_pem_key_cert_pairs_[0].private_key = server_key_.c_str();
-      server_pem_key_cert_pairs_[0].cert_chain = server_cert_.c_str();
-      client_pem_key_cert_pairs_ = static_cast<tsi_ssl_pem_key_cert_pair*>(
-          gpr_malloc(sizeof(tsi_ssl_pem_key_cert_pair)));
-      client_pem_key_cert_pairs_[0].private_key = client_key_.c_str();
-      client_pem_key_cert_pairs_[0].cert_chain = client_cert_.c_str();
+      server_pem_key_cert_pairs_.emplace_back(server_key_, server_cert_);
+      client_pem_key_cert_pairs_.emplace_back(client_key_, client_cert_);
       GRPC_CHECK_NE(root_store_, nullptr);
     }
 
@@ -120,9 +114,6 @@ class CrlSslTransportSecurityTest
     }
 
     ~SslTsiTestFixture() {
-      gpr_free(server_pem_key_cert_pairs_);
-      gpr_free(client_pem_key_cert_pairs_);
-
       tsi_ssl_root_certs_store_destroy(root_store_);
       tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory_);
       tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
@@ -140,7 +131,7 @@ class CrlSslTransportSecurityTest
       tsi_ssl_client_handshaker_options client_options;
       client_options.root_cert_info =
           std::make_shared<RootCertInfo>(root_cert_.c_str());
-      client_options.pem_key_cert_pair = client_pem_key_cert_pairs_;
+      client_options.pem_key_cert_pair = &client_pem_key_cert_pairs_[0];
       client_options.crl_directory = crl_directory_;
       client_options.crl_provider = crl_provider_;
       client_options.root_store = root_store_;
@@ -152,7 +143,6 @@ class CrlSslTransportSecurityTest
       // Create server handshaker factory.
       tsi_ssl_server_handshaker_options server_options;
       server_options.pem_key_cert_pairs = server_pem_key_cert_pairs_;
-      server_options.num_key_cert_pairs = 1;
       server_options.root_cert_info =
           std::make_shared<RootCertInfo>(root_cert_.c_str());
       server_options.crl_directory = crl_directory_;
@@ -258,8 +248,8 @@ class CrlSslTransportSecurityTest
     bool expect_server_success_;
     bool expect_client_success_1_2_;
     bool expect_client_success_1_3_;
-    tsi_ssl_pem_key_cert_pair* client_pem_key_cert_pairs_;
-    tsi_ssl_pem_key_cert_pair* server_pem_key_cert_pairs_;
+    std::vector<tsi_ssl_pem_key_cert_pair> client_pem_key_cert_pairs_;
+    std::vector<tsi_ssl_pem_key_cert_pair> server_pem_key_cert_pairs_;
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider_;
   };
 };
