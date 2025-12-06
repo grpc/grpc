@@ -696,14 +696,14 @@ TEST_P(HttpConnectionManagerTest, TerminalFilterNotLast) {
                    ".value["
                    "envoy.extensions.filters.network.http_connection_manager.v3"
                    ".HttpConnectionManager].http_filters errors:["
-                   "terminal filter for config type "
-                   "envoy.extensions.filters.http.router.v3.Router must be the "
-                   "last filter in the chain; "
                    "non-terminal filter for config type ",
                    (GetParam().in_api_listener
                         ? "envoy.extensions.filters.http.fault.v3.HTTPFault"
                         : "envoy.extensions.filters.http.rbac.v3.RBAC"),
-                   " is the last filter in the chain]]"))
+                   " is the last filter in the chain; "
+                   "terminal filter for config type "
+                   "envoy.extensions.filters.http.router.v3.Router must be the "
+                   "last filter in the chain]]"))
       << decode_result.resource.status();
 }
 
