@@ -500,20 +500,29 @@ auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
         return self->AckPing(opaque);
       },
       [self = RefAsSubclass<Http2ClientTransport>(), opaque = frame.opaque]() {
-        // TODO(akshitpatel) : [PH2][P2] : Have a counter to track number of
-        // pending induced frames (Ping/Settings Ack). This is to ensure that
-        // if write is taking a long time, we can stop reads and prioritize
-        // writes.
-        // RFC9113: PING responses SHOULD be given higher priority than any
-        // other frame.
-        self->ping_manager_->AddPendingPingAck(opaque);
-        // TODO(akshitpatel) : [PH2][P2] : This is done assuming that the other
-        // ProcessFrame promises may return stream or connection failures. If
-        // this does not turn out to be true, consider returning absl::Status
-        // here.
-        return Map(self->TriggerWriteCycle(), [](absl::Status status) {
-          return ToHttpOkOrConnError(status);
-        });
+        return If(
+            self->ack_pings_,
+            [self, opaque]() {
+              // TODO(akshitpatel) : [PH2][P2] : Have a counter to track number
+              // of pending induced frames (Ping/Settings Ack). This is to
+              // ensure that if write is taking a long time, we can stop reads
+              // and prioritize writes. RFC9113: PING responses SHOULD be given
+              // higher priority than any other frame.
+              self->ping_manager_->AddPendingPingAck(opaque);
+              // TODO(akshitpatel) : [PH2][P2] : This is done assuming that the
+              // other ProcessFrame promises may return stream or connection
+              // failures. If this does not turn out to be true, consider
+              // returning absl::Status here.
+              return Map(self->TriggerWriteCycle(), [](absl::Status status) {
+                return ToHttpOkOrConnError(status);
+              });
+            },
+            []() {
+              GRPC_HTTP2_CLIENT_DLOG
+                  << "Http2ClientTransport ProcessHttp2PingFrame "
+                     "ack_pings_ is false. Ignoring the ping request.";
+              return Immediate(Http2Status::Ok());
+            });
       }));
 }
 
@@ -1419,6 +1428,7 @@ void Http2ClientTransport::ReadChannelArgs(const ChannelArgs& channel_args,
   keepalive_permit_without_calls_ = args.keepalive_permit_without_calls;
   enable_preferred_rx_crypto_frame_advertisement_ =
       args.enable_preferred_rx_crypto_frame_advertisement;
+  ack_pings_ = args.ack_pings;
 
   if (args.initial_sequence_number > 0) {
     next_stream_id_ = args.initial_sequence_number;
