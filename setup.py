@@ -486,8 +486,13 @@ def cython_extensions_and_necessity():
     config = os.environ.get("CONFIG", "opt")
     prefix = "libs/" + config + "/"
     if USE_PREBUILT_GRPC_CORE:
+        libgrpc_path = os.path.abspath(prefix + "libgrpc.a")
+        if not os.path.exists(libgrpc_path):
+            alt_path = os.path.join("/var/local/git/grpc", prefix, "libgrpc.a")
+            if os.path.exists(alt_path):
+                libgrpc_path = alt_path
         extra_objects = [
-            os.path.abspath(prefix + "libgrpc.a"),
+            libgrpc_path,
         ]
         core_c_files = []
     else:
