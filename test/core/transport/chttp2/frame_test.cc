@@ -19,6 +19,7 @@
 #include <initializer_list>
 #include <utility>
 
+#include "src/core/call/message.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -1183,19 +1184,23 @@ TEST(Frame, ValidateSettingsValuesValidSettings) {
 }
 
 TEST(Frame, ValidateFrameHeaderTest) {
+  constexpr uint32_t kLastStreamId = 1;
+
   // Valid frame header
   Http2FrameHeader header{/*length=*/10, /*type=kData */ 0, /*flags=*/0,
                           /*stream_id=*/1};
   EXPECT_TRUE(ValidateFrameHeader(/*max_frame_size_setting=*/100,
                                   /*incoming_header_in_progress=*/false,
-                                  /*incoming_header_stream_id=*/0, header)
+                                  /*incoming_header_stream_id=*/0, header,
+                                  kLastStreamId, /*is_client=*/true)
                   .IsOk());
 
   // Frame size larger than max frame size setting
   header = {/*length=*/101, /*type=kData */ 0, /*flags=*/0, /*stream_id=*/1};
   EXPECT_THAT(ValidateFrameHeader(/*max_frame_size_setting=*/100,
                                   /*incoming_header_in_progress=*/false,
-                                  /*incoming_header_stream_id=*/0, header),
+                                  /*incoming_header_stream_id=*/0, header,
+                                  kLastStreamId, /*is_client=*/true),
               Http2StatusIs(
                   Http2Status::Http2ErrorType::kConnectionError,
                   Http2ErrorCode::kFrameSizeError,
@@ -1206,7 +1211,8 @@ TEST(Frame, ValidateFrameHeaderTest) {
   header = {/*length=*/10, /*type=kData */ 0, /*flags=*/0, /*stream_id=*/1};
   EXPECT_THAT(ValidateFrameHeader(/*max_frame_size_setting=*/100,
                                   /*incoming_header_in_progress=*/true,
-                                  /*incoming_header_stream_id=*/1, header),
+                                  /*incoming_header_stream_id=*/1, header,
+                                  kLastStreamId, /*is_client=*/true),
               Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
                             Http2ErrorCode::kProtocolError,
                             RFC9113::kAssemblerContiguousSequenceError));
@@ -1216,7 +1222,8 @@ TEST(Frame, ValidateFrameHeaderTest) {
             /*stream_id=*/3};
   EXPECT_THAT(ValidateFrameHeader(/*max_frame_size_setting=*/100,
                                   /*incoming_header_in_progress=*/true,
-                                  /*incoming_header_stream_id=*/1, header),
+                                  /*incoming_header_stream_id=*/1, header,
+                                  kLastStreamId, /*is_client=*/true),
               Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
                             Http2ErrorCode::kProtocolError,
                             RFC9113::kAssemblerContiguousSequenceError));
@@ -1226,8 +1233,19 @@ TEST(Frame, ValidateFrameHeaderTest) {
             /*stream_id=*/1};
   EXPECT_TRUE(ValidateFrameHeader(/*max_frame_size_setting=*/100,
                                   /*incoming_header_in_progress=*/true,
-                                  /*incoming_header_stream_id=*/1, header)
+                                  /*incoming_header_stream_id=*/1, header,
+                                  kLastStreamId, /*is_client=*/true)
                   .IsOk());
+
+  // Received a data frame with a stream id larger than the last stream id sent
+  header = {/*length=*/10, /*type=kData*/ 0, /*flags=*/0, /*stream_id=*/5};
+  EXPECT_THAT(
+      ValidateFrameHeader(/*max_frame_size_setting=*/100,
+                          /*incoming_header_in_progress=*/false,
+                          /*incoming_header_stream_id=*/0, header,
+                          kLastStreamId, /*is_client=*/true),
+      Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                    Http2ErrorCode::kProtocolError, RFC9113::kUnknownStreamId));
 }
 
 TEST(FrameSize, Http2FrameSizeTest) {

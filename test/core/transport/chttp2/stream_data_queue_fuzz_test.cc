@@ -391,7 +391,6 @@ YODEL_TEST(StreamDataQueueFuzzTest, EnqueueDequeueMultiParty) {
                       max_tokens, max_frame_length, /*stream_fc_tokens=*/
                       std::numeric_limits<uint32_t>::max(), GetEncoder(),
                       /*can_send_reset_stream=*/true);
-              // TODO(tjagtap) [PH2][P1][FlowControl] Plumb stream_fc_tokens
               for (auto& frame : frames.frames) {
                 std::visit(assembler, std::move(frame));
               }

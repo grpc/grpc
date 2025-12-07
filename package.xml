@@ -118,6 +118,7 @@
     <file baseinstalldir="/" name="src/core/call/call_spine.h" role="src" />
     <file baseinstalldir="/" name="src/core/call/call_state.cc" role="src" />
     <file baseinstalldir="/" name="src/core/call/call_state.h" role="src" />
+    <file baseinstalldir="/" name="src/core/call/channelz_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/call/client_call.cc" role="src" />
     <file baseinstalldir="/" name="src/core/call/client_call.h" role="src" />
     <file baseinstalldir="/" name="src/core/call/custom_metadata.h" role="src" />
@@ -1663,6 +1664,8 @@
     <file baseinstalldir="/" name="src/core/lib/resource_quota/periodic_update.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/resource_quota.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/resource_quota.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_quota/stream_quota.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_quota/stream_quota.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/telemetry.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/thread_quota.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/thread_quota.h" role="src" />

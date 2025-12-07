@@ -24,6 +24,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -33,15 +34,27 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
+#include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/promise/loop.h"
+#include "src/core/lib/promise/party.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_join.h"
+#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "test/core/promise/poll_matcher.h"
 #include "test/core/test_util/postmortem.h"
@@ -52,6 +65,7 @@
 #include "gtest/gtest.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 
@@ -158,152 +172,86 @@ TEST(Http2CommonTransportTest, TestReadChannelArgs) {
   EXPECT_EQ(settings2.allow_security_frame(), false);
 }
 
-TEST(Http2CommonTransportTest, MaybeGetSettingsAndSettingsAckFramesIdle) {
-  // Tests that in idle state, first call to
-  // MaybeGetSettingsAndSettingsAckFrames sends initial settings, and second
-  // call does nothing.
+TEST(Http2CommonTransportTest, TestReadTransportChannelArgs) {
+  // Test to validate that ReadChannelArgs reads all the channel args
+  // correctly into TransportChannelArgs.
+  Http2Settings settings;
   chttp2::TransportFlowControl transport_flow_control(
       /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
       /*memory_owner=*/nullptr);
-  Http2SettingsManager settings_manager;
-  SliceBuffer output_buf;
-  // We add "hello" to output_buf to ensure that
-  // MaybeGetSettingsAndSettingsAckFrames appends to it and does not overwrite
-  // it, i.e. the original contents of output_buf are not erased.
-  output_buf.Append(Slice::FromCopiedString("hello"));
-  EXPECT_TRUE(MaybeGetSettingsAndSettingsAckFrames(
-      transport_flow_control, settings_manager, output_buf));
-  ASSERT_THAT(output_buf.JoinIntoString(), ::testing::StartsWith("hello"));
-  EXPECT_GT(output_buf.Length(), 5);
-  output_buf.Clear();
-  output_buf.Append(Slice::FromCopiedString("hello"));
-  EXPECT_FALSE(MaybeGetSettingsAndSettingsAckFrames(
-      transport_flow_control, settings_manager, output_buf));
-  EXPECT_EQ(output_buf.Length(), 5);
-  EXPECT_EQ(output_buf.JoinIntoString(), "hello");
-}
 
-TEST(Http2CommonTransportTest,
-     MaybeGetSettingsAndSettingsAckFramesMultipleAcks) {
-  // If multiple settings frames are applied then multiple ACKs should be sent.
-  chttp2::TransportFlowControl transport_flow_control(
-      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
-      /*memory_owner=*/nullptr);
-  Http2SettingsManager settings_manager;
-  SliceBuffer output_buf;
-  EXPECT_TRUE(MaybeGetSettingsAndSettingsAckFrames(
-      transport_flow_control, settings_manager, output_buf));
-  output_buf.Clear();
-  output_buf.Append(Slice::FromCopiedString("hello"));
-  for (int i = 0; i < 5; ++i) {
-    EXPECT_EQ(settings_manager.ApplyIncomingSettings({}),
-              http2::Http2ErrorCode::kNoError);
+  {
+    TransportChannelArgs args;
+    // 1. Test Client Defaults
+    ReadChannelArgs(ChannelArgs(), args, settings, transport_flow_control,
+                    /*is_client=*/true);
+
+    EXPECT_EQ(args.keepalive_time, Duration::Infinity());
+    EXPECT_EQ(args.keepalive_timeout, Duration::Infinity());
+    EXPECT_EQ(args.ping_timeout, Duration::Infinity());
+    EXPECT_EQ(args.settings_timeout, Duration::Infinity());
+    EXPECT_EQ(args.keepalive_permit_without_calls, false);
+    EXPECT_EQ(args.enable_preferred_rx_crypto_frame_advertisement, false);
+    EXPECT_EQ(args.max_usable_hpack_table_size, -1);
+    EXPECT_GE(args.max_header_list_size_soft_limit, 8192u);
   }
 
-  EXPECT_FALSE(MaybeGetSettingsAndSettingsAckFrames(
-      transport_flow_control, settings_manager, output_buf));
+  {
+    // 2. Test Server Defaults
+    TransportChannelArgs args;
+    ReadChannelArgs(ChannelArgs(), args, settings, transport_flow_control,
+                    /*is_client=*/false);
 
-  SliceBuffer expected_buf;
-  expected_buf.Append(Slice::FromCopiedString("hello"));
-  for (int i = 0; i < 5; ++i) {
-    Http2SettingsFrame settings;
-    settings.ack = true;
-    Http2Frame frame(settings);
-    Serialize(absl::Span<Http2Frame>(&frame, 1), expected_buf);
+    EXPECT_EQ(args.keepalive_time, Duration::Hours(2));
+    EXPECT_EQ(args.keepalive_timeout, Duration::Seconds(20));
+    EXPECT_EQ(args.ping_timeout, Duration::Minutes(1));
+    EXPECT_EQ(args.settings_timeout, Duration::Minutes(1));
+    EXPECT_EQ(args.keepalive_permit_without_calls, false);
+    EXPECT_EQ(args.enable_preferred_rx_crypto_frame_advertisement, false);
+    EXPECT_EQ(args.max_usable_hpack_table_size, -1);
+    EXPECT_GE(args.max_header_list_size_soft_limit, 8192u);
   }
-  EXPECT_EQ(output_buf.Length(), expected_buf.Length());
-  EXPECT_EQ(output_buf.JoinIntoString(), expected_buf.JoinIntoString());
-}
 
-TEST(Http2CommonTransportTest,
-     MaybeGetSettingsAndSettingsAckFramesAfterAckAndChange) {
-  // Tests that after initial settings are sent and ACKed, no frame is sent. If
-  // settings are changed, a new SETTINGS frame with diff is sent.
-  chttp2::TransportFlowControl transport_flow_control(
-      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
-      /*memory_owner=*/nullptr);
-  Http2SettingsManager settings_manager;
-  const uint32_t kSetMaxFrameSize = 16385;
-  SliceBuffer output_buf;
-  // We add "hello" to output_buf to ensure that
-  // MaybeGetSettingsAndSettingsAckFrames appends to it and does not overwrite
-  // it, i.e. the original contents of output_buf are not erased.
-  output_buf.Append(Slice::FromCopiedString("hello"));
-  // Initial settings
-  EXPECT_TRUE(MaybeGetSettingsAndSettingsAckFrames(
-      transport_flow_control, settings_manager, output_buf));
-  ASSERT_THAT(output_buf.JoinIntoString(), ::testing::StartsWith("hello"));
-  EXPECT_GT(output_buf.Length(), 5);
-  // Ack settings
-  EXPECT_TRUE(settings_manager.AckLastSend());
-  output_buf.Clear();
-  output_buf.Append(Slice::FromCopiedString("hello"));
-  // No changes - no frames
-  EXPECT_FALSE(MaybeGetSettingsAndSettingsAckFrames(
-      transport_flow_control, settings_manager, output_buf));
-  EXPECT_EQ(output_buf.Length(), 5);
-  EXPECT_EQ(output_buf.JoinIntoString(), "hello");
-  output_buf.Clear();
-  // Change settings
-  settings_manager.mutable_local().SetMaxFrameSize(kSetMaxFrameSize);
-  output_buf.Append(Slice::FromCopiedString("hello"));
-  EXPECT_TRUE(MaybeGetSettingsAndSettingsAckFrames(
-      transport_flow_control, settings_manager, output_buf));
-  // Check frame
-  Http2SettingsFrame expected_settings;
-  expected_settings.ack = false;
-  expected_settings.settings.push_back(
-      {Http2Settings::kMaxFrameSizeWireId, kSetMaxFrameSize});
-  Http2Frame expected_frame(expected_settings);
-  SliceBuffer expected_buf;
-  expected_buf.Append(Slice::FromCopiedString("hello"));
-  Serialize(absl::Span<Http2Frame>(&expected_frame, 1), expected_buf);
-  EXPECT_EQ(output_buf.Length(), expected_buf.Length());
-  EXPECT_EQ(output_buf.JoinIntoString(), expected_buf.JoinIntoString());
+  {
+    // 3. Test Overrides
+    TransportChannelArgs args;
+    ChannelArgs channel_args =
+        ChannelArgs()
+            .Set(GRPC_ARG_KEEPALIVE_TIME_MS, 10000)    // 10s
+            .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 5000)  // 5s
+            .Set(GRPC_ARG_PING_TIMEOUT_MS, 3000)       // 3s
+            .Set(GRPC_ARG_SETTINGS_TIMEOUT, 15000)     // 15s
+            .Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, true)
+            .Set(GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE, true)
+            .Set(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER, 1024)
+            .Set(GRPC_ARG_MAX_METADATA_SIZE, 12345);
 
-  // We set SetMaxFrameSize to the same value as previous value.
-  // The Diff will be zero, in this case a new SETTINGS frame must not be sent.
-  settings_manager.mutable_local().SetMaxFrameSize(kSetMaxFrameSize);
-  output_buf.Clear();
-  output_buf.Append(Slice::FromCopiedString("hello"));
-  EXPECT_FALSE(MaybeGetSettingsAndSettingsAckFrames(
-      transport_flow_control, settings_manager, output_buf));
-  EXPECT_EQ(output_buf.Length(), 5);
-  EXPECT_EQ(output_buf.JoinIntoString(), "hello");
-}
+    ReadChannelArgs(channel_args, args, settings, transport_flow_control,
+                    /*is_client=*/true);
 
-TEST(Http2CommonTransportTest, MaybeGetSettingsAndSettingsAckFramesWithAck) {
-  // Tests that if we need to send initial settings and also ACK received
-  // settings, both frames are sent.
-  chttp2::TransportFlowControl transport_flow_control(
-      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
-      /*memory_owner=*/nullptr);
-  Http2SettingsManager settings_manager;
-  SliceBuffer output_buf;
-  // We add "hello" to output_buf to ensure that
-  // MaybeGetSettingsAndSettingsAckFrames appends to it and does not overwrite
-  // it, i.e. the original contents of output_buf are not erased.
-  output_buf.Append(Slice::FromCopiedString("hello"));
-  EXPECT_EQ(settings_manager.ApplyIncomingSettings({}),
-            http2::Http2ErrorCode::kNoError);
-  EXPECT_TRUE(MaybeGetSettingsAndSettingsAckFrames(
-      transport_flow_control, settings_manager, output_buf));
-  Http2SettingsFrame expected_settings;
-  expected_settings.ack = false;
-  settings_manager.local().Diff(
-      true, Http2Settings(), [&](uint16_t key, uint32_t value) {
-        expected_settings.settings.push_back({key, value});
-      });
-  Http2SettingsFrame expected_settings_ack;
-  expected_settings_ack.ack = true;
-  SliceBuffer expected_buf;
-  expected_buf.Append(Slice::FromCopiedString("hello"));
-  std::vector<Http2Frame> frames;
-  frames.emplace_back(expected_settings);
-  frames.emplace_back(expected_settings_ack);
-  Serialize(absl::MakeSpan(frames), expected_buf);
-  EXPECT_EQ(output_buf.Length(), expected_buf.Length());
-  EXPECT_EQ(output_buf.JoinIntoString(), expected_buf.JoinIntoString());
+    EXPECT_EQ(args.keepalive_time, Duration::Seconds(10));
+    EXPECT_EQ(args.keepalive_timeout, Duration::Seconds(5));
+    EXPECT_EQ(args.ping_timeout, Duration::Seconds(3));
+    EXPECT_EQ(args.settings_timeout, Duration::Seconds(15));
+    EXPECT_EQ(args.keepalive_permit_without_calls, true);
+    EXPECT_EQ(args.enable_preferred_rx_crypto_frame_advertisement, true);
+    EXPECT_EQ(args.max_usable_hpack_table_size, 1024);
+    EXPECT_EQ(args.max_header_list_size_soft_limit, 12345u);
+  }
+
+  {
+    // 4. Test Settings Timeout logic derived from keepalive_timeout
+    TransportChannelArgs args;
+    ChannelArgs channel_args_2 =
+        ChannelArgs()
+            .Set(GRPC_ARG_KEEPALIVE_TIME_MS, 100000)  // 100s, just to be finite
+            .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 40000);  // 40s
+
+    ReadChannelArgs(channel_args_2, args, settings, transport_flow_control,
+                    /*is_client=*/true);
+
+    EXPECT_EQ(args.settings_timeout, Duration::Seconds(80));
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -652,8 +600,8 @@ TEST_F(TestsNeedingStreamObjects,
   Http2WindowUpdateFrame frame;
   frame.increment = 1000;
 
-  // If stream_id != 0 and stream is not null, stream flow control window should
-  // increase.
+  // If stream_id != 0 and stream is not null, stream flow control window
+  // should increase.
   frame.stream_id = 1;
   ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
                                               stream);
@@ -693,6 +641,114 @@ TEST_F(TestsNeedingStreamObjects,
   EXPECT_EQ(transport_flow_control_.remote_window(),
             chttp2::kDefaultWindow + 1000);
   EXPECT_EQ(stream->flow_control.remote_window_delta(), 1000 + 10000);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Http2ReadContext tests
+
+class Http2ReadContextTest : public ::testing::Test {
+ protected:
+  RefCountedPtr<Party> MakeParty() {
+    auto arena = SimpleArenaAllocator()->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine_.get());
+    return Party::Make(std::move(arena));
+  }
+
+ private:
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
+      grpc_event_engine::experimental::GetDefaultEventEngine();
+};
+
+TEST_F(Http2ReadContextTest, WakeWithoutPause) {
+  // Test that calling ResumeReadLoopIfPaused before MaybePauseReadLoop has
+  // no effect and does not crash.
+  Http2ReadContext read_context;
+  read_context.ResumeReadLoopIfPaused();
+  read_context.ResumeReadLoopIfPaused();
+  read_context.ResumeReadLoopIfPaused();
+  read_context.MaybePauseReadLoop();
+  read_context.SetPauseReadLoop();
+}
+
+class SimulatedTransport : public RefCounted<SimulatedTransport> {
+ public:
+  auto SimulatedReadAndProcessOneFrame() {
+    return [self = this->Ref()]() -> Poll<absl::Status> {
+      ++(self->i);
+      if (self->i % 2 == 0) {
+        // Doing this alternate times to make sure that SetPauseReadLoop is
+        // idempotent
+        absl::StrAppend(&self->execution_order, "Pause ");
+        return self->context.MaybePauseReadLoop();
+      }
+      absl::StrAppend(&self->execution_order, ". ");
+      return absl::OkStatus();
+    };
+  }
+  auto SimulatedReadLoop() {
+    return AssertResultType<absl::Status>(Loop([self = this->Ref()]() {
+      return TrySeq(self->SimulatedReadAndProcessOneFrame(),
+                    [self]() -> LoopCtl<absl::Status> {
+                      if (self->i < 10) {
+                        absl::StrAppend(&self->execution_order, "SetPause ");
+                        self->context.SetPauseReadLoop();
+                        return Continue();
+                      }
+                      absl::StrAppend(&self->execution_order, "EndRead ");
+                      self->did_end_read = true;
+                      return absl::OkStatus();
+                    });
+    }));
+  }
+  auto SimulatedOneWrite() {
+    return [self = this->Ref()]() -> Poll<absl::Status> {
+      absl::StrAppend(&self->execution_order, "Wake ");
+      self->context.ResumeReadLoopIfPaused();
+      return absl::OkStatus();
+    };
+  }
+
+  auto SimulatedWriteLoop() {
+    return AssertResultType<absl::Status>(Loop([self = this->Ref()]() {
+      return TrySeq(Sleep(Duration::Milliseconds(100)),
+                    self->SimulatedOneWrite(),
+                    [self]() -> LoopCtl<absl::Status> {
+                      if (self->did_end_read) {
+                        absl::StrAppend(&self->execution_order, "EndWrite ");
+                        return absl::OkStatus();
+                      }
+                      absl::StrAppend(&self->execution_order, "_ ");
+                      return Continue();
+                    });
+    }));
+  }
+
+  std::string execution_order;
+
+ private:
+  Http2ReadContext context;
+  int i = 0;
+  bool did_end_read = false;
+};
+
+TEST_F(Http2ReadContextTest, PauseAndWake) {
+  RefCountedPtr<SimulatedTransport> transport =
+      MakeRefCounted<SimulatedTransport>();
+  ExecCtx ctx;
+  RefCountedPtr<Party> party = MakeParty();
+  Notification n1;
+  Notification n2;
+  party->Spawn("Read", transport->SimulatedReadLoop(),
+               [&n1](absl::Status status) { n1.Notify(); });
+  party->Spawn("Write", transport->SimulatedWriteLoop(),
+               [&n2](absl::Status status) { n2.Notify(); });
+  n1.WaitForNotification();
+  n2.WaitForNotification();
+  EXPECT_STREQ(transport->execution_order.c_str(),
+               ". SetPause Pause Wake _ . SetPause Pause Wake _ . "
+               "SetPause Pause Wake _ . SetPause Pause Wake _ . "
+               "SetPause Pause Wake _ . EndRead Wake EndWrite ");
 }
 
 }  // namespace testing

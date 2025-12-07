@@ -93,6 +93,16 @@ bool_flag(
     build_setting_default = False,
 )
 
+bool_flag(
+    name = "postmortem_checks",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "grpc_postmortem_checks_enabled",
+    flag_values = {":postmortem_checks": "true"},
+)
+
 grpc_clang_cl_settings()
 
 config_setting(
@@ -1929,6 +1939,7 @@ grpc_cc_library(
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:status_helper",
+        "//src/core:stream_quota",
         "//src/core:sync",
         "//src/core:time",
         "//src/core:try_join",
@@ -2035,6 +2046,7 @@ grpc_cc_library(
         "channel_stack_builder",
         "channelz",
         "config",
+        "config_vars",
         "cpp_impl_of",
         "debug_location",
         "exec_ctx",
@@ -4805,6 +4817,7 @@ grpc_cc_library(
         "//src/core:http2_settings",
         "//src/core:http2_status",
         "//src/core:memory_usage",
+        "//src/core:message",
         "//src/core:slice",
         "//src/core:slice_buffer",
     ],
@@ -5105,6 +5118,7 @@ grpc_cc_library(
         "//src/core:stats_data",
         "//src/core:status_conversion",
         "//src/core:status_helper",
+        "//src/core:stream_quota",
         "//src/core:tcp_tracer",
         "//src/core:time",
         "//src/core:transport_common",

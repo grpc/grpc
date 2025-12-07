@@ -904,6 +904,7 @@ src/core/call/call_spine.cc \
 src/core/call/call_spine.h \
 src/core/call/call_state.cc \
 src/core/call/call_state.h \
+src/core/call/channelz_context.h \
 src/core/call/client_call.cc \
 src/core/call/client_call.h \
 src/core/call/custom_metadata.h \
@@ -2496,6 +2497,8 @@ src/core/lib/resource_quota/periodic_update.cc \
 src/core/lib/resource_quota/periodic_update.h \
 src/core/lib/resource_quota/resource_quota.cc \
 src/core/lib/resource_quota/resource_quota.h \
+src/core/lib/resource_quota/stream_quota.cc \
+src/core/lib/resource_quota/stream_quota.h \
 src/core/lib/resource_quota/telemetry.h \
 src/core/lib/resource_quota/thread_quota.cc \
 src/core/lib/resource_quota/thread_quota.h \
