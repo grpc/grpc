@@ -488,9 +488,15 @@ def cython_extensions_and_necessity():
     if USE_PREBUILT_GRPC_CORE:
         libgrpc_path = os.path.abspath(prefix + "libgrpc.a")
         if not os.path.exists(libgrpc_path):
-            alt_path = os.path.join("/var/local/git/grpc", prefix, "libgrpc.a")
-            if os.path.exists(alt_path):
+            # Try to use the path specified by the environment variable
+            alt_path = os.environ.get("GRPC_PYTHON_PREBUILT_CORE_PATH")
+            if alt_path and os.path.exists(alt_path):
                 libgrpc_path = alt_path
+            # Fallback to the hardcoded path (for backward compatibility)
+            if not os.path.exists(libgrpc_path):
+                alt_path = os.path.join("/var/local/git/grpc", prefix, "libgrpc.a")
+                if os.path.exists(alt_path):
+                    libgrpc_path = alt_path
         extra_objects = [
             libgrpc_path,
         ]
