@@ -491,7 +491,6 @@ def cython_extensions_and_necessity():
             prefix + "libboringssl.a",
             prefix + "libgpr.a",
             prefix + "libgrpc.a",
-            libgrpc_path,
         ]
         core_c_files = []
     elif os.environ.get("GRPC_PYTHON_PREBUILT_CORE_PATH"):
