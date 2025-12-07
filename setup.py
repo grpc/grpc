@@ -487,7 +487,7 @@ def cython_extensions_and_necessity():
     prefix = "libs/" + config + "/"
     if USE_PREBUILT_GRPC_CORE:
         extra_objects = [
-            prefix + "libgrpc.a",
+            os.path.abspath(prefix + "libgrpc.a"),
         ]
         core_c_files = []
     else:
@@ -500,7 +500,7 @@ def cython_extensions_and_necessity():
                 [module_file]
                 + list(CYTHON_HELPER_C_FILES)
                 + core_c_files
-                + asm_files
+                + (asm_files if not USE_PREBUILT_GRPC_CORE else [])
             ),
             include_dirs=list(EXTENSION_INCLUDE_DIRECTORIES),
             libraries=list(EXTENSION_LIBRARIES),
