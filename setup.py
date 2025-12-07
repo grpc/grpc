@@ -489,12 +489,6 @@ def cython_extensions_and_necessity():
         extra_objects = [
             prefix + "libgrpc.a",
         ]
-        if not BUILD_WITH_SYSTEM_CARES:
-            extra_objects.insert(0, prefix + "libcares.a")
-        if not BUILD_WITH_SYSTEM_OPENSSL:
-            extra_objects.insert(0, prefix + "libboringssl.a")
-        if not BUILD_WITH_SYSTEM_ZLIB:
-            extra_objects.insert(0, prefix + "libz.a")
         core_c_files = []
     else:
         core_c_files = list(CORE_C_FILES)
