@@ -493,10 +493,7 @@ def cython_extensions_and_necessity():
             prefix + "libgrpc.a",
         ]
         core_c_files = []
-    elif (
-        os.environ.get("GRPC_PYTHON_PREBUILT_CORE_PATH")
-        and "win32" not in sys.platform
-    ):
+    elif os.environ.get("GRPC_PYTHON_PREBUILT_CORE_PATH"):
         extra_objects = [
             os.environ.get("GRPC_PYTHON_PREBUILT_CORE_PATH"),
         ]
