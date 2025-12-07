@@ -23,7 +23,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "grpcio"
-license = {text = "Apache-2.0"}
+license = "Apache-2.0"
 description = "HTTP/2-based RPC framework"
 readme = {file = "src/python/grpcio/README.rst", content-type = "text/x-rst"}
 authors = [{name = "The gRPC Authors", email = "grpc-io@googlegroups.com"}]

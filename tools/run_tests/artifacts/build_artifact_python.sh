@@ -53,7 +53,6 @@ if [ ! -f "libs/opt/libgrpc.a" ]; then
 fi
 
 # Tell setup.py to use the pre-built libraries
-export GRPC_PYTHON_USE_PREBUILT_GRPC_CORE=1
 export GRPC_PYTHON_PREBUILT_CORE_PATH="$PWD/libs/opt/libgrpc.a"
 
 mkdir -p "${ARTIFACTS_OUT}"
