@@ -28,6 +28,7 @@ import os
 import os.path
 import pathlib
 import platform
+import glob
 import re
 import shlex
 import shutil
@@ -494,9 +495,15 @@ def cython_extensions_and_necessity():
         ]
         core_c_files = []
     elif os.environ.get("GRPC_PYTHON_PREBUILT_CORE_PATH"):
-        extra_objects = [
-            os.environ.get("GRPC_PYTHON_PREBUILT_CORE_PATH"),
-        ]
+        prebuilt_core_path = os.environ.get("GRPC_PYTHON_PREBUILT_CORE_PATH")
+        if "win32" in sys.platform:
+            extra_objects = []
+            for ext in ["*.lib", "*.a"]:
+                extra_objects.extend(
+                    glob.glob(os.path.join(prebuilt_core_path, ext))
+                )
+        else:
+            extra_objects = [prebuilt_core_path]
         core_c_files = []
     else:
         core_c_files = list(CORE_C_FILES)
