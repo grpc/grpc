@@ -43,14 +43,6 @@ set ARTIFACT_DIR=%cd%\%ARTIFACTS_OUT%
 @rem exceeding 131071 characters.
 set "GRPC_PYTHON_BUILD_USE_SHORT_TEMP_DIR_NAME=1"
 
-@rem Build the static libraries for gRPC Core
-if not exist "libs\opt\libgrpc.a" (
-  make static_c EMBED_ZLIB=true CONFIG=opt -j%NUMBER_OF_PROCESSORS%
-)
-
-@rem Tell setup.py to use the pre-built libraries
-set GRPC_PYTHON_PREBUILT_CORE_PATH=%cd%\libs\opt\libgrpc.a
-
 @rem Build gRPC Python distribution
 python -m build || goto :error
 
