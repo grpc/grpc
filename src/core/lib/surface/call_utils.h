@@ -58,10 +58,10 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/upb_utils.h"
 #include "src/proto/grpc/channelz/v2/promise.upb.h"
+#include "upb/mem/arena.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "upb/mem/arena.h"
 
 namespace grpc_core {
 
@@ -337,7 +337,6 @@ class WaitForCqEndOp {
   struct Invalid {};
   using State = std::variant<NotStarted, Started, Invalid>;
 
- public:
   WaitForCqEndOp(bool is_closure, void* tag, grpc_error_handle error,
                  grpc_completion_queue* cq)
       : state_{NotStarted{is_closure, tag, std::move(error), cq}} {}
