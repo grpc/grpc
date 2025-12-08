@@ -36,7 +36,6 @@ namespace {
 // - first attempt gets INVALID_ARGUMENT, so no retry is done
 CORE_END2END_TEST(RetryTests,
                   RetryNonRetriableStatusBeforeRecvTrailingMetadataStarted) {
-  if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
