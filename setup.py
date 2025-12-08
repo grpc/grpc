@@ -24,7 +24,6 @@ from distutils.unixccompiler import UnixCCompiler
 UnixCCompiler.src_extensions.append(".S")
 del UnixCCompiler
 
-import glob
 import os
 import os.path
 import pathlib
