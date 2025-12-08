@@ -783,21 +783,48 @@ size_t GetFrameMemoryUsage(const Http2Frame& frame) {
 
 ///////////////////////////////////////////////////////////////////////////////
 // GRPC Header
+namespace {
+ValueOrHttp2Status<uint32_t> ParseGrpcMessageFlags(const uint8_t flags) {
+  switch (flags) {
+    case kGrpcMessageHeaderNoFlags:
+      return 0u;
+    case kGrpcMessageHeaderWriteInternalCompress:
+      return GRPC_WRITE_INTERNAL_COMPRESS;
+    default:
+      LOG(ERROR) << "Invalid gRPC header flags: "
+                 << static_cast<uint32_t>(flags);
+      return Http2Status::Http2StreamError(
+          Http2ErrorCode::kInternalError,
+          absl::StrCat("Invalid gRPC header flags: ", flags));
+  }
+}
 
-GrpcMessageHeader ExtractGrpcHeader(SliceBuffer& payload) {
+uint8_t SerializeGrpcMessageFlags(const uint32_t flags) {
+  return (flags & GRPC_WRITE_INTERNAL_COMPRESS)
+             ? kGrpcMessageHeaderWriteInternalCompress
+             : kGrpcMessageHeaderNoFlags;
+}
+}  // namespace
+
+ValueOrHttp2Status<GrpcMessageHeader> ExtractGrpcHeader(SliceBuffer& payload) {
   GRPC_CHECK_GE(payload.Length(), kGrpcHeaderSizeInBytes);
   uint8_t buffer[kGrpcHeaderSizeInBytes];
   payload.CopyFirstNBytesIntoBuffer(kGrpcHeaderSizeInBytes, buffer);
   GrpcMessageHeader header;
-  header.flags = buffer[0];
+  ValueOrHttp2Status<uint32_t> message_flags = ParseGrpcMessageFlags(buffer[0]);
+  if (!message_flags.IsOk()) {
+    return message_flags.TakeStatus(std::move(message_flags));
+  }
+
+  header.flags = message_flags.value();
   header.length = Read4b(buffer + 1);
   return header;
 }
 
-void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, const uint8_t flags,
+void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, const uint32_t flags,
                                    const uint32_t length) {
   uint8_t* frame_hdr = payload.AddTiny(kGrpcHeaderSizeInBytes);
-  frame_hdr[0] = flags;
+  frame_hdr[0] = SerializeGrpcMessageFlags(flags);
   Write4b(length, frame_hdr + 1);
 }
 

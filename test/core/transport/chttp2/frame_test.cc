@@ -1114,19 +1114,26 @@ TEST(Frame, ParseRejectsWindowUpdateFrameZeroIncrement) {
 }
 
 TEST(Frame, GrpcHeaderTest) {
-  constexpr uint8_t kFlags = 15;
   constexpr uint32_t kLength = 1111111;
 
-  SliceBuffer payload;
-  EXPECT_EQ(payload.Length(), 0);
+  auto verify_header = [](const uint32_t flags, const uint32_t expected_flags,
+                          const uint32_t length) {
+    SliceBuffer payload;
+    EXPECT_EQ(payload.Length(), 0);
+    AppendGrpcHeaderToSliceBuffer(payload, flags, length);
+    EXPECT_EQ(payload.Length(), kGrpcHeaderSizeInBytes);
 
-  AppendGrpcHeaderToSliceBuffer(payload, kFlags, kLength);
-  EXPECT_EQ(payload.Length(), kGrpcHeaderSizeInBytes);
+    ValueOrHttp2Status<GrpcMessageHeader> header = ExtractGrpcHeader(payload);
+    EXPECT_TRUE(header.IsOk());
+    EXPECT_EQ(payload.Length(), kGrpcHeaderSizeInBytes);
+    EXPECT_EQ(header.value().flags, expected_flags);
+    EXPECT_EQ(header.value().length, length);
+  };
 
-  GrpcMessageHeader header = ExtractGrpcHeader(payload);
-  EXPECT_EQ(payload.Length(), kGrpcHeaderSizeInBytes);
-  EXPECT_EQ(header.flags, kFlags);
-  EXPECT_EQ(header.length, kLength);
+  verify_header(/*flags=*/0, /*expected_flags=*/0, kLength);
+  verify_header(/*flags=*/GRPC_WRITE_INTERNAL_COMPRESS,
+                /*expected_flags=*/GRPC_WRITE_INTERNAL_COMPRESS, kLength);
+  verify_header(/*flags=*/10, /*expected_flags=*/0, kLength);
 }
 
 TEST(Frame, ValidateSettingsValuesInvalidInitialWindowSize) {

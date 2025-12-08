@@ -8391,6 +8391,7 @@ grpc_cc_library(
         ":slice",
         ":slice_buffer",
         "//:chttp2_frame",
+        "//:gpr_platform",
         "//:ref_counted_ptr",
     ],
 )

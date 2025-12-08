@@ -252,19 +252,22 @@ size_t GetFrameMemoryUsage(const Http2Frame& frame);
 // GRPC Header
 
 constexpr uint8_t kGrpcHeaderSizeInBytes = 5;
+constexpr uint8_t kGrpcMessageHeaderNoFlags = 0;
+constexpr uint8_t kGrpcMessageHeaderWriteInternalCompress = 1;
 
 struct GrpcMessageHeader {
-  uint8_t flags = 0;
+  uint32_t flags = 0;
   uint32_t length = 0;
 };
 
 // If the payload SliceBuffer is too small to hold a gRPC header, this function
 // will crash. The calling function MUST ensure that the payload SliceBuffer
 // has length greater than or equal to the gRPC header.
-GrpcMessageHeader ExtractGrpcHeader(SliceBuffer& payload);
+http2::ValueOrHttp2Status<GrpcMessageHeader> ExtractGrpcHeader(
+    SliceBuffer& payload);
 
-void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, const uint8_t flags,
-                                   const uint32_t length);
+void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, uint32_t flags,
+                                   uint32_t length);
 
 ///////////////////////////////////////////////////////////////////////////////
 // Validations
