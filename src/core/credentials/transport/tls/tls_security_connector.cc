@@ -778,10 +778,8 @@ TlsServerSecurityConnector::UpdateHandshakerFactoryLocked() {
   GRPC_CHECK(!(*pem_key_cert_pair_list_).empty());
   std::vector<tsi_ssl_pem_key_cert_pair> pem_key_cert_pairs;
   pem_key_cert_pairs = ConvertToTsiPemKeyCertPair(*pem_key_cert_pair_list_);
-  size_t num_key_cert_pairs = (*pem_key_cert_pair_list_).size();
   grpc_security_status status = grpc_ssl_tsi_server_handshaker_factory_init(
-      pem_key_cert_pairs, num_key_cert_pairs, root_cert_info_,
-      options_->cert_request_type(),
+      pem_key_cert_pairs, root_cert_info_, options_->cert_request_type(),
       grpc_get_tsi_tls_version(options_->min_tls_version()),
       grpc_get_tsi_tls_version(options_->max_tls_version()),
       tls_session_key_logger_.get(), options_->crl_directory().c_str(),

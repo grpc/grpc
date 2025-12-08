@@ -272,7 +272,6 @@ typedef struct tsi_ssl_server_handshaker_factory
 // Creates a server handshaker factory.
 // - pem_key_cert_pairs is an array private key / certificate chains of the
 //   server.
-// - num_key_cert_pairs is the number of items in the pem_key_cert_pairs array.
 // - pem_root_certs is the NULL-terminated string containing the PEM encoding
 //   of the client root certificates. This parameter may be NULL if the server
 //   does not want the client to be authenticated with SSL.
@@ -292,10 +291,9 @@ typedef struct tsi_ssl_server_handshaker_factory
 //   where a parameter is invalid.
 tsi_result tsi_create_ssl_server_handshaker_factory(
     std::vector<tsi_ssl_pem_key_cert_pair> pem_key_cert_pairs,
-    size_t num_key_cert_pairs, const char* pem_client_root_certs,
-    int force_client_auth, const char* cipher_suites,
-    const char** alpn_protocols, uint16_t num_alpn_protocols,
-    tsi_ssl_server_handshaker_factory** factory);
+    const char* pem_client_root_certs, int force_client_auth,
+    const char* cipher_suites, const char** alpn_protocols,
+    uint16_t num_alpn_protocols, tsi_ssl_server_handshaker_factory** factory);
 
 // TO BE DEPRECATED.
 // Same as tsi_create_ssl_server_handshaker_factory method except uses
