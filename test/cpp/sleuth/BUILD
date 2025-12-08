@@ -165,6 +165,10 @@ grpc_cc_binary(
     deps = [
         ":sleuth_lib",
     ],
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
 )
 
 grpc_cc_binary(
