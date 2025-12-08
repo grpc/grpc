@@ -44,9 +44,6 @@ set ARTIFACT_DIR=%cd%\%ARTIFACTS_OUT%
 @rem exceeding 131071 characters.
 set "GRPC_PYTHON_BUILD_USE_SHORT_TEMP_DIR_NAME=1"
 
-@rem Build the static libraries for gRPC Core
-if exist "libs\opt\lib\grpc.lib" goto :after_build_core
-
 @rem Build gRPC with CMake
 if not exist "cmake_build" mkdir cmake_build
 cd cmake_build
@@ -56,27 +53,6 @@ if "%2" == "32" (
 ) else (
   set ARCH=x64
 )
-
-cmake -G "Visual Studio 16 2019" -A %ARCH% ^
-    -DgRPC_BUILD_TESTS=OFF ^
-    -DCMAKE_BUILD_TYPE=Release ^
-    -DgRPC_INSTALL=ON ^
-    -DCMAKE_INSTALL_PREFIX=..\libs\opt ^
-    -DABSL_ENABLE_INSTALL=ON ^
-    -DCARES_INSTALL=ON ^
-    -Dprotobuf_INSTALL=ON ^
-    -DRE2_INSTALL=ON ^
-    -DZLIB_INSTALL=ON ^
-    -DgRPC_MSVC_STATIC_RUNTIME=ON ^
-    -Dprotobuf_MSVC_STATIC_RUNTIME=ON ^
-    -DABSL_MSVC_STATIC_RUNTIME=ON ^
-    ..
-
-cmake --build . --config Release --target install
-cd ..
-
-:after_build_core
-set GRPC_PYTHON_PREBUILT_CORE_PATH=%cd%\libs\opt\lib
 
 @rem Build gRPC Python distribution
 python -m build || goto :error
