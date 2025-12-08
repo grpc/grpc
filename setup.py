@@ -509,12 +509,7 @@ def cython_extensions_and_necessity():
                 [module_file]
                 + list(CYTHON_HELPER_C_FILES)
                 + core_c_files
-                + (
-                    asm_files
-                    if not os.getenv("GRPC_PYTHON_PREBUILT_CORE_PATH")
-                    and "win32" in sys.platform
-                    else []
-                )
+                + asm_files
             ),
             include_dirs=list(EXTENSION_INCLUDE_DIRECTORIES),
             libraries=list(EXTENSION_LIBRARIES),
