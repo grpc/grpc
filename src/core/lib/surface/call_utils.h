@@ -337,7 +337,6 @@ class WaitForCqEndOp {
   struct Invalid {};
   using State = std::variant<NotStarted, Started, Invalid>;
 
- public:
   WaitForCqEndOp(bool is_closure, void* tag, grpc_error_handle error,
                  grpc_completion_queue* cq)
       : state_{NotStarted{is_closure, tag, std::move(error), cq}} {}
