@@ -495,7 +495,7 @@ class Subchannel::ConnectedSubchannelStateWatcher final
               {c->backend_service_, c->locality_, disconnect_reason});
           c->stats_plugin_group_->AddCounter(
               kMetricOpenConnections, -1, {c->target_},
-              {connected_subchannel->GetSecurityLevel(), c->backend_service_,
+              {connected_subchannel->security_level(), c->backend_service_,
                c->locality_});
         }
         // If the subchannel was created from an endpoint, then we report
@@ -561,26 +561,25 @@ class Subchannel::ConnectionStateWatcher final
           case DisconnectReason::kGoaway:
             if (disconnect_info.http2_error_code.has_value()) {
               disconnect_reason = absl::StrCat(
-                  "goaway_",
+                  "GOAWAY ",
                   static_cast<int>(*disconnect_info.http2_error_code));
             } else {
               disconnect_reason = "goaway";
             }
             break;
           case DisconnectReason::kConnectionReset:
-            disconnect_reason = "connection_reset";
+            disconnect_reason = "connection reset";
             break;
           case DisconnectReason::kConnectionTimedOut:
-            disconnect_reason = "connection_timed_out";
+            disconnect_reason = "connection timed out";
             break;
           case DisconnectReason::kConnectionAborted:
-            disconnect_reason = "connection_aborted";
+            disconnect_reason = "connection aborted";
             break;
           case DisconnectReason::kSocketError:
-            disconnect_reason = "socket_error";
+            disconnect_reason = "socket error";
             break;
           case DisconnectReason::kUnknown:
-          default:
             disconnect_reason = "unknown";
             break;
         }
@@ -591,7 +590,7 @@ class Subchannel::ConnectionStateWatcher final
            disconnect_reason});
       subchannel_->stats_plugin_group_->AddCounter(
           kMetricOpenConnections, -1, {subchannel_->target_},
-          {connected_subchannel->GetSecurityLevel(),
+          {connected_subchannel->security_level(),
            subchannel_->backend_service_, subchannel_->locality_});
     }
     GRPC_TRACE_LOG(subchannel, INFO)
@@ -1033,6 +1032,11 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
 
 bool Subchannel::PublishTransportLocked() {
   auto socket_node = connecting_result_.transport->GetSocketNode();
+  auto auth_context =
+      connecting_result_.channel_args.GetObjectRef<grpc_auth_context>();
+  if (auth_context != nullptr) {
+    args_ = args_.SetObject(auth_context);
+  }
   if (IsTransportStateWatcherEnabled()) {
     connecting_result_.transport->StartWatch(
         MakeRefCounted<ConnectionStateWatcher>(
@@ -1116,9 +1120,9 @@ bool Subchannel::PublishTransportLocked() {
   if (stats_plugin_group_ != nullptr) {
     stats_plugin_group_->AddCounter(kMetricConnectionAttemptsSucceeded, 1,
                                     {target_}, {backend_service_, locality_});
-    stats_plugin_group_->AddCounter(kMetricOpenConnections, 1, {target_},
-                                    {connected_subchannel_->GetSecurityLevel(),
-                                     backend_service_, locality_});
+    stats_plugin_group_->AddCounter(
+        kMetricOpenConnections, 1, {target_},
+        {connected_subchannel_->security_level(), backend_service_, locality_});
   }
   // Report initial state.
   SetConnectivityStateLocked(GRPC_CHANNEL_READY, absl::Status());

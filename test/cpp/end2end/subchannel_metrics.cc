@@ -20,6 +20,7 @@
 
 #include <string>
 
+#include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/telemetry/metrics.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/fake_stats_plugin.h"
@@ -32,6 +33,14 @@
 namespace grpc {
 namespace testing {
 namespace {
+
+constexpr char kServerCertPath[] = "src/core/tsi/test_creds/server1.pem";
+constexpr char kServerKeyPath[] = "src/core/tsi/test_creds/server1.key";
+constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
+constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
+constexpr char kCaCertPath[] = "src/core/tsi/test_creds/ca.pem";
+constexpr char kOverridedTarget[] = "foo.test.google.fr";
+constexpr char kTargetAddrPart[] = "127.0.0.1:";
 
 bool WaitForChannelState(
     Channel* channel,
@@ -99,8 +108,7 @@ class SubchannelMetricsTest : public ::testing::Test {
   std::shared_ptr<grpc_core::FakeStatsPlugin> stats_plugin_;
   grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle
       kConnectionAttemptsSucceeded_;
-  grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle
-      kDisconnections_;
+  grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle kDisconnections_;
   grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle
       kConnectionAttemptsFailed_;
   grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle
@@ -110,10 +118,9 @@ class SubchannelMetricsTest : public ::testing::Test {
 TEST_F(SubchannelMetricsTest, SubchannelMetricsBasic) {
   ConnectionAttemptInjector injector;
   const int port = grpc_pick_unused_port_or_die();
-  std::string target = "127.0.0.1:" + std::to_string(port);
+  std::string target = kTargetAddrPart + std::to_string(port);
   ServerBuilder builder;
-  builder.AddListeningPort("127.0.0.1:" + std::to_string(port),
-                           grpc::InsecureServerCredentials());
+  builder.AddListeningPort(target, grpc::InsecureServerCredentials());
   auto service = std::make_unique<MinimalEchoService>();
   builder.RegisterService(service.get());
   auto server = builder.BuildAndStart();
@@ -140,22 +147,24 @@ TEST_F(SubchannelMetricsTest, SubchannelMetricsBasic) {
   EXPECT_THAT(stats_plugin_->GetUInt64CounterValue(
                   kConnectionAttemptsSucceeded_, {target}, {"", ""}),
               ::testing::Optional(1));
+  // server and client both created with insecure credentials so creating
+  // separate test for none security is not necessary
   EXPECT_THAT(stats_plugin_->GetInt64UpDownCounterValue(
-                  kOpenConnections_, {target}, {"unknown", "", ""}),
+                  kOpenConnections_, {target}, {"none", "", ""}),
               ::testing::Optional(1));
   server->Shutdown();
   EXPECT_THAT(stats_plugin_->GetUInt64CounterValue(kDisconnections_, {target},
                                                    {"", "", "unknown"}),
               ::testing::Optional(1));
   EXPECT_THAT(stats_plugin_->GetInt64UpDownCounterValue(
-                  kOpenConnections_, {target}, {"unknown", "", ""}),
+                  kOpenConnections_, {target}, {"none", "", ""}),
               ::testing::Optional(0));
 }
 
 TEST_F(SubchannelMetricsTest, ConnectionAttemptsFailed) {
   ConnectionAttemptInjector injector;
   const int port = grpc_pick_unused_port_or_die();
-  std::string target = "127.0.0.1:" + std::to_string(port);
+  std::string target = kTargetAddrPart + std::to_string(port);
   auto channel = CreateChannelWithBackoff(target, 1000);
   auto hold = injector.AddHold(port);
   EXPECT_EQ(channel->GetState(true), GRPC_CHANNEL_IDLE);
@@ -173,7 +182,7 @@ TEST_F(SubchannelMetricsTest, ConnectionAttemptsFailed) {
 TEST_F(SubchannelMetricsTest, MultipleConnectionAttemptsFailed) {
   ConnectionAttemptInjector injector;
   const int port = grpc_pick_unused_port_or_die();
-  std::string target = "127.0.0.1:" + std::to_string(port);
+  std::string target = kTargetAddrPart + std::to_string(port);
   auto channel = CreateChannelWithBackoff(target, 1000);
   std::vector<std::unique_ptr<ConnectionAttemptInjector::Hold>> holds;
   constexpr int kConnecionAttempts = 3;
@@ -189,6 +198,56 @@ TEST_F(SubchannelMetricsTest, MultipleConnectionAttemptsFailed) {
   EXPECT_THAT(stats_plugin_->GetUInt64CounterValue(kConnectionAttemptsFailed_,
                                                    {target}, {"", ""}),
               ::testing::Optional(kConnecionAttempts));
+}
+
+TEST_F(SubchannelMetricsTest, SecurityLevelsPrivacyAndIntegrity) {
+  using grpc_core::testing::GetFileContents;
+  ConnectionAttemptInjector injector;
+  const int port = grpc_pick_unused_port_or_die();
+  std::string target = kTargetAddrPart + std::to_string(port);
+  grpc::SslServerCredentialsOptions ssl_opts_server;
+  std::string ca_cert = GetFileContents(kCaCertPath);
+  grpc::SslServerCredentialsOptions::PemKeyCertPair key_cert_pair = {
+      GetFileContents(kServerKeyPath), GetFileContents(kServerCertPath)};
+  ssl_opts_server.pem_key_cert_pairs.push_back(key_cert_pair);
+  ssl_opts_server.pem_root_certs = ca_cert;
+  ssl_opts_server.client_certificate_request =
+      GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY;
+  auto server_creds = grpc::SslServerCredentials(ssl_opts_server);
+  grpc::ServerBuilder builder;
+  builder.AddListeningPort(kTargetAddrPart + std::to_string(port),
+                           server_creds);
+  auto service = std::make_unique<MinimalEchoService>();
+  builder.RegisterService(service.get());
+  auto server = builder.BuildAndStart();
+  ASSERT_NE(server, nullptr);
+  grpc::SslCredentialsOptions ssl_opts_client;
+  ssl_opts_client.pem_root_certs = ca_cert;
+  ssl_opts_client.pem_private_key = GetFileContents(kClientKeyPath);
+  ssl_opts_client.pem_cert_chain = GetFileContents(kClientCertPath);
+  auto channel_creds = grpc::SslCredentials(ssl_opts_client);
+  ChannelArguments channel_args;
+  channel_args.SetSslTargetNameOverride(kOverridedTarget);
+  auto channel = grpc::CreateCustomChannel(target, channel_creds, channel_args);
+  ASSERT_NE(channel, nullptr);
+  auto stub = grpc::testing::EchoTestService::NewStub(channel);
+  ASSERT_NE(stub, nullptr);
+  grpc::ClientContext context;
+  grpc::testing::EchoRequest request;
+  grpc::testing::EchoResponse response;
+  request.set_message("test");
+  grpc::Status status = stub->Echo(&context, request, &response);
+  EXPECT_TRUE(status.ok()) << "RPC failed with code: " << status.error_code()
+                           << " message: " << status.error_message();
+  EXPECT_THAT(stats_plugin_->GetInt64UpDownCounterValue(
+                  kOpenConnections_, {kOverridedTarget},
+                  {"privacy_and_integrity", "", ""}),
+              ::testing::Optional(1));
+  server->Shutdown();
+  EXPECT_THAT(stats_plugin_->GetInt64UpDownCounterValue(
+                  kOpenConnections_, {kOverridedTarget},
+                  {"privacy_and_integrity", "", ""}),
+              ::testing::Optional(0));
 }
 
 }  // namespace

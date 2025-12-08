@@ -1549,6 +1549,13 @@ grpc_cc_test(
 grpc_cc_test(
     name = "subchannel_metrics_test",
     srcs = ["subchannel_metrics.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:client.key",
+        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
     external_deps = [
         "gtest",
     ],

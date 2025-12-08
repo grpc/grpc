@@ -89,7 +89,7 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
 
   virtual channelz::SubchannelNode* channelz_node() const = 0;
 
-  absl::string_view GetSecurityLevel() { return security_level_; }
+  absl::string_view security_level() { return security_level_; }
 
  protected:
   explicit ConnectedSubchannel(const ChannelArgs& args);
