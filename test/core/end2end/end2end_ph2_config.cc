@@ -84,40 +84,6 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|CoreEnd2endTests.BinaryMetadataServerHttp2FallbackClientTrueBinary"        \
   "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientTrueBinary"           \
   "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientHttp2Fallback"        \
-  "|Http2SingleHopTests.DisabledAlgorithmDecompressInCore"                     \
-  "|Http2SingleHopTests.DisabledAlgorithmDecompressInApp"                      \
-  "|Http2SingleHopTests."                                                      \
-  "RequestWithExceptionallyUncompressedPayloadDecompressInCore"                \
-  "|Http2SingleHopTests."                                                      \
-  "RequestWithExceptionallyUncompressedPayloadDecompressInApp"                 \
-  "|Http2SingleHopTests.RequestWithUncompressedPayloadDecompressInCore"        \
-  "|Http2SingleHopTests.RequestWithUncompressedPayloadDecompressInApp"         \
-  "|Http2SingleHopTests.RequestWithCompressedPayloadDecompressInCore"          \
-  "|Http2SingleHopTests.RequestWithCompressedPayloadDecompressInApp"           \
-  "|Http2SingleHopTests."                                                      \
-  "RequestWithSendMessageBeforeInitialMetadataDecompressInCore"                \
-  "|Http2SingleHopTests."                                                      \
-  "RequestWithSendMessageBeforeInitialMetadataDecompressInApp"                 \
-  "|Http2SingleHopTests.RequestWithServerLevelDecompressInCore"                \
-  "|Http2SingleHopTests.RequestWithServerLevelDecompressInApp"                 \
-  "|Http2SingleHopTests."                                                      \
-  "RequestWithCompressedPayloadMetadataOverrideNoneToGzipDecompressInCore"     \
-  "|Http2SingleHopTests."                                                      \
-  "RequestWithCompressedPayloadMetadataOverrideNoneToGzipDecompressInApp"      \
-  "|Http2SingleHopTests."                                                      \
-  "RequestWithCompressedPayloadMetadataOverrideDeflateToGzipDecompressInCore"  \
-  "|Http2SingleHopTests."                                                      \
-  "RequestWithCompressedPayloadMetadataOverrideDeflateToGzipDecompressInApp"   \
-  "|Http2SingleHopTests."                                                      \
-  "RequestWithCompressedPayloadMetadataOverrideDeflateToIdentityDecompressInC" \
-  "ore"                                                                        \
-  "|Http2SingleHopTests."                                                      \
-  "RequestWithCompressedPayloadMetadataOverrideDeflateToIdentityDecompressInA" \
-  "pp"                                                                         \
-  "|Http2SingleHopTests.RequestWithDefaultHighLevelDecompressInCore"           \
-  "|Http2SingleHopTests.RequestWithDefaultMediumLevelDecompressInCore"         \
-  "|Http2SingleHopTests.RequestWithDefaultLowLevelDecompressInCore"            \
-  "|Http2SingleHopTests.RequestWithDefaultNoneLevelDecompressInCore"           \
   "|Http2SingleHopTests.InvokeLargeRequest"                                    \
   "|Http2SingleHopTests.RequestWithLargeMetadataUnderSoftLimit"                \
   "|Http2SingleHopTests.RequestWithLargeMetadataBetweenSoftAndHardLimits"      \
