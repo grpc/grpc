@@ -99,12 +99,16 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|Http2Tests.ServerStreaming10Messages"                                      \
   "|Http2Tests.GracefulServerShutdown"                                         \
   "|Http2Tests.MaxAgeForciblyClose"                                            \
-  "|Http2Tests.MaxAgeGracefullyClose"
+  "|Http2Tests.MaxAgeGracefullyClose"                                          \
+  "|RetryHttp2Tests.Ping"                                                      \
+  "|RetryHttp2Tests.BadPing"                                                   \
+  "|RetryHttp2Tests.RetryTransparentMaxConcurrentStreams"                      \
+  "|RetryHttp2Tests.HighInitialSeqno"
 
 #define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE    \
   "CoreEnd2endTests|CoreDeadlineTests|CoreLargeSendTests|" \
   "CoreClientChannelTests|CoreDeadlineSingleHopTests|"     \
-  "Http2SingleHopTests|Http2Tests|CoreDeadlineSingleHopTests"
+  "Http2SingleHopTests|Http2Tests|CoreDeadlineSingleHopTests|RetryHttp2Tests"
 
 std::vector<CoreTestConfiguration> End2endTestConfigs() {
   std::vector<CoreTestConfiguration> list_of_configs;
