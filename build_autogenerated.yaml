@@ -8792,6 +8792,10 @@ targets:
   - grpcpp_channelz
   - protoc
   - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: channelz_v2_service_test
   gtest: true
   build: test
@@ -9296,6 +9300,10 @@ targets:
   - gtest
   - grpcpp_channelz
   - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: cmdline_test
   gtest: true
   build: test
@@ -16832,6 +16840,10 @@ targets:
   - cares
   - gpr
   - address_sorting
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: init_test
   gtest: true
   build: test
@@ -18263,6 +18275,10 @@ targets:
   - grpc++
   - protoc
   - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: layout_test
   gtest: true
   build: test
@@ -26528,6 +26544,10 @@ targets:
   - cares
   - gpr
   - address_sorting
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: trace_flags_test
   gtest: true
   build: test
