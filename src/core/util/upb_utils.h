@@ -46,6 +46,11 @@ inline upb_StringView CopyStdStringToUpbString(const T& str, upb_Arena* arena) {
   return upb_StringView_FromDataAndSize(copy, str.size());
 }
 
+inline upb_StringView CopyStdStringToUpbString(const char* str,
+                                               upb_Arena* arena) {
+  return CopyStdStringToUpbString(absl::string_view(str), arena);
+}
+
 inline absl::string_view UpbStringToAbsl(const upb_StringView& str) {
   return absl::string_view(str.data, str.size);
 }
