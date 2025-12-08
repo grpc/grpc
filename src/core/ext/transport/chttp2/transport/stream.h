@@ -115,7 +115,8 @@ struct Stream : public RefCounted<Stream> {
   auto EnqueueMessage(MessageHandle&& message) {
     GRPC_HTTP2_STREAM_LOG
         << "Http2ClientTransport::Stream::EnqueueMessage stream_id="
-        << stream_id << " with payload size = " << message->payload()->Length();
+        << stream_id << " with payload size = " << message->payload()->Length()
+        << " and flags = " << message->flags();
     return data_queue->EnqueueMessage(std::move(message));
   }
 

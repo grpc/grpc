@@ -8490,6 +8490,7 @@ grpc_cc_library(
         ":slice",
         ":slice_buffer",
         "//:chttp2_frame",
+        "//:gpr_platform",
         "//:ref_counted_ptr",
     ],
 )
@@ -8742,10 +8743,12 @@ grpc_cc_library(
     ],
     deps = [
         "1999",
+        "activity",
         "arena",
         "call_spine",
         "channel_args",
         "chttp2_flow_control",
+        "context",
         "grpc_check",
         "grpc_promise_endpoint",
         "header_assembler",
@@ -8767,6 +8770,7 @@ grpc_cc_library(
         ":slice",
         ":slice_buffer",
         ":try_seq",
+        "//:channel_arg_names",
         "//:channelz",
         "//:chttp2_frame",
         "//:gpr_platform",

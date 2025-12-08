@@ -158,9 +158,9 @@ TEST_F(GcpAuthenticationFilterTest, CreateFailsXdsConfigNotFoundInChannelArgs) {
       ChannelArgs().SetObject(MakeServiceConfig(kServiceConfigJson));
   auto filter = GcpAuthenticationFilter::Create(
       channel_args, ChannelFilter::Args(/*instance_id=*/0));
-  EXPECT_EQ(filter.status(),
-            absl::InvalidArgumentError(
-                "gcp_auth: xds config not found in channel args"));
+  EXPECT_EQ(
+      filter.status(),
+      absl::InternalError("gcp_auth: xds config not found in channel args"));
 }
 
 TEST_F(GcpAuthenticationFilterTest, FailsCallIfNoXdsClusterAttribute) {

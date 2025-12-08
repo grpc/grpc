@@ -19,6 +19,8 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_MESSAGE_ASSEMBLER_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_MESSAGE_ASSEMBLER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <cstdint>
 #include <utility>
 
@@ -30,9 +32,12 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 namespace http2 {
+
+#define GRPC_MESSAGE_ASSEMBLER_DEBUG VLOG(2)
 
 // TODO(tjagtap) TODO(akshitpatel): [PH2][P3] : Write micro benchmarks for
 // assembler and disassembler code
@@ -79,15 +84,21 @@ class GrpcMessageAssembler {
       // TODO(tjagtap) : [PH2][P3] : Write a test for this.
       return ReturnNullOrError();
     }
-    GrpcMessageHeader header = ExtractGrpcHeader(message_buffer_);
+    ValueOrHttp2Status<GrpcMessageHeader> header =
+        ExtractGrpcHeader(message_buffer_);
+    if (!header.IsOk()) {
+      return header.TakeStatus(std::move(header));
+    }
+    const uint32_t header_length = header.value().length;
+
     if constexpr (sizeof(size_t) == 4) {
-      if (GPR_UNLIKELY(header.length > kOneGb)) {
+      if (GPR_UNLIKELY(header_length > kOneGb)) {
         return Http2Status::Http2StreamError(
             Http2ErrorCode::kInternalError,
             "Stream Error: SliceBuffer overflow for 32 bit platforms.");
       }
     }
-    if (GPR_LIKELY(current_len - kGrpcHeaderSizeInBytes >= header.length)) {
+    if (GPR_LIKELY(current_len - kGrpcHeaderSizeInBytes >= header_length)) {
       SliceBuffer discard;
       message_buffer_.MoveFirstNBytesIntoSliceBuffer(kGrpcHeaderSizeInBytes,
                                                      discard);
@@ -98,9 +109,8 @@ class GrpcMessageAssembler {
       // bounds.
       MessageHandle grpc_message = Arena::MakePooled<Message>();
       message_buffer_.MoveFirstNBytesIntoSliceBuffer(
-          header.length, *(grpc_message->payload()));
-      uint32_t& flag = grpc_message->mutable_flags();
-      flag = header.flags;
+          header_length, *(grpc_message->payload()));
+      grpc_message->mutable_flags() = header.value().flags;
       return std::move(grpc_message);
     }
     return ReturnNullOrError();
@@ -112,9 +122,11 @@ class GrpcMessageAssembler {
       return Http2Status::Http2StreamError(Http2ErrorCode::kInternalError,
                                            "Incomplete gRPC frame received");
     }
-    VLOG(2) << "Incomplete gRPC message received. Return nullptr";
+    GRPC_MESSAGE_ASSEMBLER_DEBUG
+        << "Incomplete gRPC message received. Return nullptr";
     return ValueOrHttp2Status<MessageHandle>(nullptr);
   }
+
   bool is_end_stream_ = false;
   SliceBuffer message_buffer_;
 };

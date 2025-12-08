@@ -154,6 +154,7 @@ class PingManager {
         std::shared_ptr<grpc_event_engine::experimental::EventEngine>
             event_engine)
         : event_engine_(event_engine) {}
+    ~PingPromiseCallbacks() { CancelCallbacks(); }
     Promise<absl::Status> RequestPing(absl::AnyInvocable<void()> on_initiate,
                                       bool important);
     Promise<absl::Status> WaitForPingAck();
