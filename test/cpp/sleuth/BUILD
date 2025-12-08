@@ -162,13 +162,13 @@ grpc_cc_library(
 grpc_cc_binary(
     name = "sleuth.so",
     linkshared = True,
-    deps = [
-        ":sleuth_lib",
-    ],
     target_compatible_with = select({
         "@platforms//os:windows": ["@platforms//:incompatible"],
         "//conditions:default": [],
     }),
+    deps = [
+        ":sleuth_lib",
+    ],
 )
 
 grpc_cc_binary(
