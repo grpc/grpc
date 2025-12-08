@@ -428,7 +428,14 @@ if BUILD_WITH_BORING_SSL_ASM and not BUILD_WITH_SYSTEM_OPENSSL:
             boringssl_asm_platform,
         )
 if asm_key:
-    asm_files = grpc_core_dependencies.ASM_SOURCE_FILES[asm_key]
+    if (
+        os.getenv("GRPC_PYTHON_PREBUILT_CORE_PATH")
+        and "linux" in sys.platform
+        and "aarch64" in boringssl_asm_platform
+    ):
+        asm_files = []
+    else:
+        asm_files = grpc_core_dependencies.ASM_SOURCE_FILES[asm_key]
 else:
     DEFINE_MACROS += (("OPENSSL_NO_ASM", 1),)
 

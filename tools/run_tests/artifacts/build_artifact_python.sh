@@ -50,7 +50,7 @@ export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=${GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS
 
 # Build the static libraries for gRPC Core
 if [ ! -f "libs/opt/libgrpc.a" ]; then
-  make static_c EMBED_ZLIB=true CONFIG=opt -j$(nproc)
+  make static_c EMBED_ZLIB=true CONFIG=opt -j"$(nproc)"
 fi
 
 # Tell setup.py to use the pre-built libraries
