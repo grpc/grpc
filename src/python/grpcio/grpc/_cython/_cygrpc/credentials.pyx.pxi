@@ -213,7 +213,7 @@ cdef class SSLChannelCredentials(ChannelCredentials):
       grpc_tls_identity_pairs_add_pair(c_tls_identity_pairs, c_private_key, c_cert_chain)
 
     if c_pem_root_certificates != NULL or c_tls_identity_pairs != NULL:
-      c_tls_certificate_provider = grpc_tls_certificate_provider_static_data_create(
+      c_tls_certificate_provider = grpc_tls_certificate_provider_in_memory_create(
         c_pem_root_certificates, c_tls_identity_pairs)
       grpc_tls_credentials_options_set_certificate_provider(c_tls_credentials_options, c_tls_certificate_provider)
       grpc_tls_certificate_provider_release(c_tls_certificate_provider)
