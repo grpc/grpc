@@ -432,7 +432,7 @@ if asm_key:
         os.getenv("GRPC_PYTHON_PREBUILT_CORE_PATH")
         and "linux" in sys.platform
         and "aarch64" in boringssl_asm_platform
-    ):
+    ) or "darwin" in sys.platform:
         asm_files = []
     else:
         asm_files = grpc_core_dependencies.ASM_SOURCE_FILES[asm_key]
