@@ -549,15 +549,6 @@ UniqueTypeName InMemoryCertificateProvider::type() const {
   return kFactory.Create();
 }
 
-RefCountedPtr<grpc_tls_certificate_provider>
-InMemoryCertificateProvider::CreateTestingCertificateProvider(
-    std::string root_cert_info, const PemKeyCertPairList& pem_key_cert_pairs) {
-  auto provider = MakeRefCounted<InMemoryCertificateProvider>();
-  provider->UpdateRoot(std::make_shared<RootCertInfo>(root_cert_info));
-  provider->UpdateIdentity(pem_key_cert_pairs);
-  return provider;
-}
-
 }  // namespace grpc_core
 
 /// -- Wrapper APIs declared in grpc_security.h -- *

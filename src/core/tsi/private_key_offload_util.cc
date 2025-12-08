@@ -39,6 +39,7 @@ namespace grpc_core {
 
 absl::StatusOr<CustomPrivateKeySigner::SignatureAlgorithm>
 ToSignatureAlgorithmClass(uint16_t algorithm) {
+#if defined(OPENSSL_IS_BORINGSSL)
   switch (algorithm) {
     case SSL_SIGN_RSA_PKCS1_SHA256:
       return CustomPrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha256;
@@ -59,6 +60,7 @@ ToSignatureAlgorithmClass(uint16_t algorithm) {
     case SSL_SIGN_RSA_PSS_RSAE_SHA512:
       return CustomPrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha512;
   }
+#endif  // OPENSSL_IS_BORINGSSL
   return absl::InvalidArgumentError("Unknown signature algorithm.");
 }
 

@@ -42,7 +42,16 @@
 #define INVALID_PATH "invalid/path"
 
 namespace grpc_core {
-
+namespace {
+RefCountedPtr<grpc_tls_certificate_provider> CreateTestingCertificateProvider(
+    const std::string& root_cert_info,
+    const PemKeyCertPairList& pem_key_cert_pairs) {
+  auto provider = MakeRefCounted<InMemoryCertificateProvider>();
+  provider->UpdateRoot(std::make_shared<RootCertInfo>(root_cert_info));
+  provider->UpdateIdentity(pem_key_cert_pairs);
+  return provider;
+}
+}  // namespace
 namespace testing {
 
 class GrpcTlsCredentialsOptionsTest : public ::testing::Test {
@@ -105,7 +114,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest, ClientOptionsOnDefaultRootCerts) {
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ClientOptionsWithStaticDataProviderOnBothCerts) {
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
-  auto provider = InMemoryCertificateProvider::CreateTestingCertificateProvider(
+  auto provider = CreateTestingCertificateProvider(
       root_cert_, MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
   options->set_certificate_provider(std::move(provider));
   options->set_watch_root_cert(true);
@@ -126,8 +135,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ClientOptionsWithStaticDataProviderOnRootCerts) {
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
-  auto provider = InMemoryCertificateProvider::CreateTestingCertificateProvider(
-      root_cert_, PemKeyCertPairList());
+  auto provider =
+      CreateTestingCertificateProvider(root_cert_, PemKeyCertPairList());
   options->set_certificate_provider(std::move(provider));
   options->set_watch_root_cert(true);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
@@ -146,7 +155,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ClientOptionsWithStaticDataProviderOnNotProvidedCerts) {
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
-  auto provider = InMemoryCertificateProvider::CreateTestingCertificateProvider(
+  auto provider = CreateTestingCertificateProvider(
       "", MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
   options->set_certificate_provider(std::move(provider));
   options->set_watch_root_cert(true);
@@ -164,7 +173,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ClientOptionsWithDefaultRootAndStaticDataProviderOnIdentityCerts) {
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
-  auto provider = InMemoryCertificateProvider::CreateTestingCertificateProvider(
+  auto provider = CreateTestingCertificateProvider(
       "", MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
   options->set_certificate_provider(std::move(provider));
   options->set_watch_identity_pair(true);
@@ -182,7 +191,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ServerOptionsWithStaticDataProviderOnBothCerts) {
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
-  auto provider = InMemoryCertificateProvider::CreateTestingCertificateProvider(
+  auto provider = CreateTestingCertificateProvider(
       root_cert_, MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
   options->set_certificate_provider(std::move(provider));
   options->set_watch_root_cert(true);
@@ -203,7 +212,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ServerOptionsWithStaticDataProviderOnIdentityCerts) {
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
-  auto provider = InMemoryCertificateProvider::CreateTestingCertificateProvider(
+  auto provider = CreateTestingCertificateProvider(
       "", MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
   options->set_certificate_provider(std::move(provider));
   options->set_watch_identity_pair(true);
@@ -222,8 +231,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ServerOptionsWithStaticDataProviderOnNotProvidedCerts) {
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
-  auto provider = InMemoryCertificateProvider::CreateTestingCertificateProvider(
-      root_cert_, PemKeyCertPairList());
+  auto provider =
+      CreateTestingCertificateProvider(root_cert_, PemKeyCertPairList());
   options->set_certificate_provider(std::move(provider));
   options->set_watch_identity_pair(true);
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
@@ -531,8 +540,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest, ServerOptionsWithExternalVerifier) {
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
   options->set_certificate_verifier(core_external_verifier.Ref());
   // On server side we have to set the provider providing identity certs.
-  auto provider = InMemoryCertificateProvider::CreateTestingCertificateProvider(
-      root_cert_, PemKeyCertPairList());
+  auto provider =
+      CreateTestingCertificateProvider(root_cert_, PemKeyCertPairList());
   options->set_certificate_provider(std::move(provider));
   options->set_watch_identity_pair(true);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
@@ -570,8 +579,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
   options->set_certificate_verifier(hostname_certificate_verifier_.Ref());
   // On server side we have to set the provider providing identity certs.
-  auto provider = InMemoryCertificateProvider::CreateTestingCertificateProvider(
-      root_cert_, PemKeyCertPairList());
+  auto provider =
+      CreateTestingCertificateProvider(root_cert_, PemKeyCertPairList());
   options->set_certificate_provider(std::move(provider));
   options->set_watch_identity_pair(true);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
@@ -601,7 +610,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest, CrlProvider) {
 
 TEST_F(GrpcTlsCredentialsOptionsTest, CrlProviderWithServerCredentials) {
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
-  auto provider = InMemoryCertificateProvider::CreateTestingCertificateProvider(
+  auto provider = CreateTestingCertificateProvider(
       root_cert_, MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
   options->set_certificate_provider(std::move(provider));
   options->set_watch_root_cert(true);

@@ -192,10 +192,6 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
   void UpdateRoot(std::shared_ptr<RootCertInfo> root_certificates);
   void UpdateIdentity(const PemKeyCertPairList& pem_key_cert_pairs);
 
-  static RefCountedPtr<grpc_tls_certificate_provider>
-  CreateTestingCertificateProvider(
-      std::string root_cert_info, const PemKeyCertPairList& pem_key_cert_pairs);
-
  private:
   struct WatcherInfo {
     bool root_being_watched = false;
