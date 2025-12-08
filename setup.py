@@ -429,9 +429,7 @@ if BUILD_WITH_BORING_SSL_ASM and not BUILD_WITH_SYSTEM_OPENSSL:
         )
 if asm_key:
     if (
-        os.getenv("GRPC_PYTHON_PREBUILT_CORE_PATH")
-        and "linux" in sys.platform
-        and "aarch64" in boringssl_asm_platform
+        os.getenv("GRPC_PYTHON_PREBUILT_CORE_PATH") and "linux" in sys.platform
     ) or "darwin" in sys.platform:
         asm_files = []
     else:
