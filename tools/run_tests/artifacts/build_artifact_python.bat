@@ -67,6 +67,9 @@ cmake -G "Visual Studio 16 2019" -A %ARCH% ^
     -Dprotobuf_INSTALL=ON ^
     -DRE2_INSTALL=ON ^
     -DZLIB_INSTALL=ON ^
+    -DgRPC_MSVC_STATIC_RUNTIME=ON ^
+    -Dprotobuf_MSVC_STATIC_RUNTIME=ON ^
+    -DABSL_MSVC_STATIC_RUNTIME=ON ^
     ..
 
 cmake --build . --config Release --target install
