@@ -139,6 +139,8 @@ class PropertyList final : public OtherPropertyValue {
 
   PropertyList& Merge(PropertyList other);
 
+  bool empty() const { return property_list_.empty(); }
+
   // TODO(ctiller): remove soon, switch to just FillUpbProto.
   Json::Object TakeJsonObject() override;
   void FillUpbProto(grpc_channelz_v2_PropertyList* proto, upb_Arena* arena);

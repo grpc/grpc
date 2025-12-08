@@ -50,6 +50,8 @@ class MemoryAllocator {
   MemoryAllocator(MemoryAllocator&&) = default;
   MemoryAllocator& operator=(MemoryAllocator&&) = default;
 
+  bool IsValid() const { return allocator_ != nullptr; }
+
   /// Drop the underlying allocator and make this an empty object.
   /// The object will not be usable after this call unless it's a valid
   /// allocator is moved into it.

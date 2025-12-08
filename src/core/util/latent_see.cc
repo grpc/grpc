@@ -16,11 +16,15 @@
 
 #include <atomic>
 #include <cstdint>
+#include <cstdlib>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "src/core/channelz/property_list.h"
 #include "src/core/util/backoff.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_writer.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/sync.h"
 #include "absl/log/log.h"
@@ -38,10 +42,13 @@ std::string JsonOutput::MicrosString(int64_t nanos) {
   return absl::StrFormat("%d.%03d", micros, remainder);
 }
 
-void JsonOutput::Mark(absl::string_view name, int64_t tid, int64_t timestamp) {
+void JsonOutput::Mark(absl::string_view name, int64_t tid, int64_t timestamp,
+                      channelz::PropertyList property_list) {
+  auto properties_json = Json::FromObject(property_list.TakeJsonObject());
   out_ << absl::StrCat(sep_, "{\"name\":\"", name,
                        "\",\"ph\":\"i\",\"ts\":", MicrosString(timestamp),
-                       ",\"pid\":0,\"tid\":", tid, "}");
+                       ",\"pid\":0,\"tid\":", tid,
+                       ",\"args\":", JsonDump(properties_json), "}");
   sep_ = ",\n";
 }
 
@@ -55,9 +62,10 @@ void JsonOutput::FlowBegin(absl::string_view name, int64_t tid,
 
 void JsonOutput::FlowEnd(absl::string_view name, int64_t tid, int64_t timestamp,
                          int64_t flow_id) {
-  out_ << absl::StrCat(sep_, "{\"name\":\"", name,
-                       "\",\"ph\":\"f\",\"ts\":", MicrosString(timestamp),
-                       ",\"pid\":0,\"tid\":", tid, ",\"id\":", flow_id, "}");
+  out_ << absl::StrCat(
+      sep_, "{\"name\":\"", name,
+      "\",\"ph\":\"f\",\"bp\":\"e\",\"ts\":", MicrosString(timestamp),
+      ",\"pid\":0,\"tid\":", tid, ",\"id\":", flow_id, "}");
   sep_ = ",\n";
 }
 
@@ -130,7 +138,7 @@ std::unique_ptr<Sink::EventDump> Sink::Stop() {
 void Sink::Record(std::unique_ptr<Bin> bin) {
   MutexLock lock(&mu_);
   if (events_ == nullptr) return;
-  CHECK_LE(bin->num_events, Bin::kEventsPerBin);
+  CHECK_LE(bin->used_space, Bin::kMaxBinSize);
   events_->emplace_back(std::move(bin));
   if (events_->size() > max_bins_) events_->pop_front();
 }
@@ -177,11 +185,16 @@ void Collect(Notification* n, absl::Duration timeout, size_t memory_limit,
         earliest_timestamp = std::min(
             {earliest_timestamp, event.timestamp_begin, event.timestamp_end});
       } else {
-        earliest_timestamp = std::min(earliest_timestamp, -event.timestamp_end);
+        earliest_timestamp =
+            std::min(earliest_timestamp, abs(event.timestamp_end));
       }
     }
   }
   std::string json = "[\n";
+  // Add a mark for the actual timestamp when collection started.
+  output->Mark(
+      "LatentseeCollectionStart", /*tid=*/0, /*timestamp=*/0,
+      channelz::PropertyList().Set("actual_start_time", earliest_timestamp));
   // TODO(ctiller): Fuschia Trace Format backend
   absl::flat_hash_map<gpr_thd_id, size_t> thread_id_map;
   for (const auto& bin : *events) {
@@ -193,22 +206,30 @@ void Collect(Notification* n, absl::Duration timeout, size_t memory_limit,
     } else {
       displayed_thread_id = it->second;
     }
-    for (const auto& event : *bin) {
-      if (event.timestamp_begin == event.timestamp_end) {
-        output->Mark(event.metadata->name, displayed_thread_id,
-                     event.timestamp_begin - earliest_timestamp);
-      } else if (event.timestamp_begin < 0 && event.timestamp_end > 0) {
-        output->FlowBegin(event.metadata->name, displayed_thread_id,
-                          event.timestamp_end - earliest_timestamp,
-                          -event.timestamp_begin);
-      } else if (event.timestamp_begin < 0) {
-        output->FlowEnd(event.metadata->name, displayed_thread_id,
-                        -event.timestamp_end - earliest_timestamp,
-                        -event.timestamp_begin);
+    for (auto it = bin->begin(); it != bin->end(); ++it) {
+      if (it->timestamp_begin == it->timestamp_end) {
+        if (it->metadata->extra_event_size > 0) {
+          output->Mark(
+              it->metadata->name, displayed_thread_id,
+              it->timestamp_begin - earliest_timestamp,
+              it->metadata->to_property_list(it.ptr() + sizeof(Bin::Event)));
+        } else {
+          output->Mark(it->metadata->name, displayed_thread_id,
+                       it->timestamp_begin - earliest_timestamp,
+                       channelz::PropertyList());
+        }
+      } else if (it->timestamp_begin < 0 && it->timestamp_end > 0) {
+        output->FlowBegin(it->metadata->name, displayed_thread_id,
+                          it->timestamp_end - earliest_timestamp,
+                          -it->timestamp_begin);
+      } else if (it->timestamp_begin < 0) {
+        output->FlowEnd(it->metadata->name, displayed_thread_id,
+                        -it->timestamp_end - earliest_timestamp,
+                        -it->timestamp_begin);
       } else {
-        output->Span(event.metadata->name, displayed_thread_id,
-                     event.timestamp_begin - earliest_timestamp,
-                     event.timestamp_end - event.timestamp_begin);
+        output->Span(it->metadata->name, displayed_thread_id,
+                     it->timestamp_begin - earliest_timestamp,
+                     it->timestamp_end - it->timestamp_begin);
       }
     }
   }

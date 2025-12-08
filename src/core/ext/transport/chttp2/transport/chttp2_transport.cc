@@ -134,8 +134,6 @@ using grpc_core::Json;
 #define MAX_WINDOW 0x7fffffffu
 #define MAX_WRITE_BUFFER_SIZE (64 * 1024 * 1024)
 
-#define KEEPALIVE_TIME_BACKOFF_MULTIPLIER 2
-
 #define DEFAULT_MAX_PENDING_INDUCED_FRAMES 10000
 
 #define GRPC_ARG_HTTP2_PING_ON_RST_STREAM_PERCENT \
@@ -859,6 +857,8 @@ static void close_transport_locked(grpc_chttp2_transport* t,
     t->closed_with_error = error;
     connectivity_state_set(t, GRPC_CHANNEL_SHUTDOWN, absl::Status(),
                            "close_transport");
+    // TODO(roth, ctiller): Provide better disconnect info here.
+    t->NotifyStateWatcherOnDisconnectLocked(t->closed_with_error, {});
     if (t->keepalive_ping_timeout_handle != TaskHandle::kInvalid) {
       t->event_engine->Cancel(std::exchange(t->keepalive_ping_timeout_handle,
                                             TaskHandle::kInvalid));
@@ -908,16 +908,7 @@ static void close_transport_locked(grpc_chttp2_transport* t,
     grpc_core::MutexLock lock(&t->ep_destroy_mu);
     t->ep.reset();
   }
-  if (t->notify_on_receive_settings != nullptr) {
-    if (t->interested_parties_until_recv_settings != nullptr) {
-      grpc_endpoint_delete_from_pollset_set(
-          t->ep.get(), t->interested_parties_until_recv_settings);
-      t->interested_parties_until_recv_settings = nullptr;
-    }
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, t->notify_on_receive_settings,
-                            error);
-    t->notify_on_receive_settings = nullptr;
-  }
+  t->MaybeNotifyOnReceiveSettingsLocked(error);
   if (t->notify_on_close != nullptr) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, t->notify_on_close, error);
     t->notify_on_close = nullptr;
@@ -1377,6 +1368,9 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
     }
   }
   absl::Status status = grpc_error_to_absl_status(t->goaway_error);
+  grpc_core::Transport::StateWatcher::DisconnectInfo disconnect_info;
+  disconnect_info.reason = grpc_core::Transport::StateWatcher::kGoaway;
+  disconnect_info.http2_error_code = static_cast<Http2ErrorCode>(goaway_error);
   // When a client receives a GOAWAY with error code ENHANCE_YOUR_CALM and debug
   // data equal to "too_many_pings", it should log the occurrence at a log level
   // that is enabled by default and double the configured KEEPALIVE_TIME used
@@ -1396,8 +1390,12 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
         t->keepalive_time.millis() > max_keepalive_time_millis
             ? INT_MAX
             : t->keepalive_time.millis() * KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
-    status.SetPayload(grpc_core::kKeepaliveThrottlingKey,
-                      absl::Cord(std::to_string(throttled_keepalive_time)));
+    if (!grpc_core::IsTransportStateWatcherEnabled()) {
+      status.SetPayload(grpc_core::kKeepaliveThrottlingKey,
+                        absl::Cord(std::to_string(throttled_keepalive_time)));
+    }
+    disconnect_info.keepalive_time =
+        grpc_core::Duration::Milliseconds(throttled_keepalive_time);
   }
   // lie: use transient failure from the transport to indicate goaway has been
   // received.
@@ -1405,6 +1403,7 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
     connectivity_state_set(t, GRPC_CHANNEL_TRANSIENT_FAILURE, status,
                            "got_goaway");
   }
+  t->NotifyStateWatcherOnDisconnectLocked(std::move(status), disconnect_info);
 }
 
 static void maybe_start_some_streams(grpc_chttp2_transport* t) {
@@ -1431,10 +1430,12 @@ static void maybe_start_some_streams(grpc_chttp2_transport* t) {
     t->next_stream_id += 2;
 
     if (t->next_stream_id >= MAX_CLIENT_STREAM_ID) {
-      connectivity_state_set(t, GRPC_CHANNEL_TRANSIENT_FAILURE,
-                             absl::Status(absl::StatusCode::kUnavailable,
-                                          "Transport Stream IDs exhausted"),
+      absl::Status status =
+          absl::UnavailableError("Transport Stream IDs exhausted");
+      connectivity_state_set(t, GRPC_CHANNEL_TRANSIENT_FAILURE, status,
                              "no_more_stream_ids");
+      // TODO(roth, ctiller): Provide better disconnect info here.
+      t->NotifyStateWatcherOnDisconnectLocked(std::move(status), {});
     }
 
     t->stream_map.emplace(s->id, s);
@@ -3503,7 +3504,8 @@ grpc_core::Transport* grpc_create_chttp2_transport(
 
 void grpc_chttp2_transport_start_reading(
     grpc_core::Transport* transport, grpc_slice_buffer* read_buffer,
-    grpc_closure* notify_on_receive_settings,
+    absl::AnyInvocable<void(absl::StatusOr<uint32_t>)>
+        notify_on_receive_settings,
     grpc_pollset_set* interested_parties_until_recv_settings,
     grpc_closure* notify_on_close) {
   auto t = reinterpret_cast<grpc_chttp2_transport*>(transport)->Ref();
@@ -3512,30 +3514,157 @@ void grpc_chttp2_transport_start_reading(
   }
   auto* tp = t.get();
   tp->combiner->Run(
-      grpc_core::NewClosure([t = std::move(t), notify_on_receive_settings,
+      grpc_core::NewClosure([t = std::move(t),
+                             notify_on_receive_settings =
+                                 std::move(notify_on_receive_settings),
                              interested_parties_until_recv_settings,
                              notify_on_close](grpc_error_handle) mutable {
+        t->interested_parties_until_recv_settings =
+            interested_parties_until_recv_settings;
+        t->notify_on_receive_settings = std::move(notify_on_receive_settings);
         if (!t->closed_with_error.ok()) {
-          if (notify_on_receive_settings != nullptr) {
-            if (t->ep != nullptr &&
-                interested_parties_until_recv_settings != nullptr) {
-              grpc_endpoint_delete_from_pollset_set(
-                  t->ep.get(), interested_parties_until_recv_settings);
-            }
-            grpc_core::ExecCtx::Run(DEBUG_LOCATION, notify_on_receive_settings,
-                                    t->closed_with_error);
-          }
+          t->MaybeNotifyOnReceiveSettingsLocked(t->closed_with_error);
           if (notify_on_close != nullptr) {
             grpc_core::ExecCtx::Run(DEBUG_LOCATION, notify_on_close,
                                     t->closed_with_error);
           }
           return;
         }
-        t->interested_parties_until_recv_settings =
-            interested_parties_until_recv_settings;
-        t->notify_on_receive_settings = notify_on_receive_settings;
         t->notify_on_close = notify_on_close;
         read_action_locked(std::move(t), absl::OkStatus());
       }),
       absl::OkStatus());
+}
+
+void grpc_chttp2_transport::StartWatch(
+    grpc_core::RefCountedPtr<StateWatcher> watcher) {
+  combiner->Run(
+      grpc_core::NewClosure([t = RefAsSubclass<grpc_chttp2_transport>(),
+                             watcher = std::move(watcher)](
+                                grpc_error_handle) mutable {
+        GRPC_CHECK(t->watcher == nullptr);
+        if (t->ep != nullptr) {
+          auto* interested_parties = watcher->interested_parties();
+          if (interested_parties != nullptr) {
+            grpc_endpoint_add_to_pollset_set(t->ep.get(), interested_parties);
+          }
+        }
+        t->watcher = std::move(watcher);
+        if (!t->closed_with_error.ok()) {
+          // TODO(roth, ctiller): Provide better disconnect info here.
+          t->NotifyStateWatcherOnDisconnectLocked(t->closed_with_error, {});
+        } else {
+          t->NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked();
+        }
+      }),
+      absl::OkStatus());
+}
+
+void grpc_chttp2_transport::StopWatch(
+    grpc_core::RefCountedPtr<StateWatcher> watcher) {
+  combiner->Run(
+      grpc_core::NewClosure([t = RefAsSubclass<grpc_chttp2_transport>(),
+                             watcher = std::move(watcher)](grpc_error_handle) {
+        if (t->watcher != watcher) return;
+        if (t->ep != nullptr) {
+          auto* interested_parties = watcher->interested_parties();
+          if (interested_parties != nullptr) {
+            grpc_endpoint_delete_from_pollset_set(t->ep.get(),
+                                                  interested_parties);
+          }
+        }
+        t->watcher.reset();
+      }),
+      absl::OkStatus());
+}
+
+void grpc_chttp2_transport::NotifyStateWatcherOnDisconnectLocked(
+    absl::Status status, StateWatcher::DisconnectInfo disconnect_info) {
+  if (watcher == nullptr) return;
+  if (ep != nullptr) {
+    auto* interested_parties = watcher->interested_parties();
+    if (interested_parties != nullptr) {
+      grpc_endpoint_delete_from_pollset_set(ep.get(), interested_parties);
+    }
+  }
+  event_engine->Run([watcher = std::move(watcher), status = std::move(status),
+                     disconnect_info]() mutable {
+    grpc_core::ExecCtx exec_ctx;
+    watcher->OnDisconnect(std::move(status), disconnect_info);
+    watcher.reset();  // Before ExecCtx goes out of scope.
+  });
+}
+
+void grpc_chttp2_transport::OnPeerMaxConcurrentStreamsUpdateComplete() {
+  combiner->Run(
+      grpc_core::NewClosure(
+          [t = RefAsSubclass<grpc_chttp2_transport>()](grpc_error_handle) {
+            t->max_concurrent_streams_notification_in_flight = false;
+            t->MaybeNotifyStateWatcherOfPeerMaxConcurrentStreamsLocked();
+          }),
+      absl::OkStatus());
+}
+
+void grpc_chttp2_transport::
+    MaybeNotifyStateWatcherOfPeerMaxConcurrentStreamsLocked() {
+  if (watcher == nullptr) return;
+  if (last_reported_max_concurrent_streams ==
+      settings.peer().max_concurrent_streams()) {
+    return;
+  }
+  if (max_concurrent_streams_notification_in_flight) return;
+  NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked();
+}
+
+namespace {
+
+class MaxConcurrentStreamsUpdateOnDone final
+    : public grpc_core::Transport::StateWatcher::
+          MaxConcurrentStreamsUpdateDoneHandle {
+ public:
+  explicit MaxConcurrentStreamsUpdateOnDone(
+      grpc_core::RefCountedPtr<grpc_chttp2_transport> transport)
+      : transport_(std::move(transport)) {}
+
+  ~MaxConcurrentStreamsUpdateOnDone() override {
+    transport_->OnPeerMaxConcurrentStreamsUpdateComplete();
+  }
+
+ private:
+  grpc_core::RefCountedPtr<grpc_chttp2_transport> transport_;
+};
+
+}  // namespace
+
+void grpc_chttp2_transport::
+    NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked() {
+  last_reported_max_concurrent_streams =
+      settings.peer().max_concurrent_streams();
+  max_concurrent_streams_notification_in_flight = true;
+  event_engine->Run([t = RefAsSubclass<grpc_chttp2_transport>(),
+                     watcher = watcher,
+                     max_concurrent_streams =
+                         settings.peer().max_concurrent_streams()]() mutable {
+    grpc_core::ExecCtx exec_ctx;
+    watcher->OnPeerMaxConcurrentStreamsUpdate(
+        max_concurrent_streams,
+        std::make_unique<MaxConcurrentStreamsUpdateOnDone>(std::move(t)));
+    watcher.reset();  // Before ExecCtx goes out of scope.
+  });
+}
+
+void grpc_chttp2_transport::MaybeNotifyOnReceiveSettingsLocked(
+    absl::StatusOr<uint32_t> max_concurrent_streams) {
+  if (notify_on_receive_settings == nullptr) return;
+  if (ep != nullptr && interested_parties_until_recv_settings != nullptr) {
+    grpc_endpoint_delete_from_pollset_set(
+        ep.get(), interested_parties_until_recv_settings);
+    interested_parties_until_recv_settings = nullptr;
+  }
+  event_engine->Run(
+      [notify_on_receive_settings = std::move(notify_on_receive_settings),
+       max_concurrent_streams]() mutable {
+        grpc_core::ExecCtx exec_ctx;
+        std::move(notify_on_receive_settings)(max_concurrent_streams);
+      });
 }

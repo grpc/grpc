@@ -18,6 +18,8 @@
 #include <grpc/slice.h>
 
 #include <cstdint>
+#include <utility>
+#include <vector>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
@@ -73,9 +75,14 @@ class Http2FrameTestHelper {
         Http2RstStreamFrame{stream_id, error_code});
   }
 
-  EventEngineSlice EventEngineSliceFromHttp2SettingsFrameAck(
-      std::vector<Http2SettingsFrame::Setting> settings) const {
+  EventEngineSlice EventEngineSliceFromHttp2SettingsFrameAck() const {
     return EventEngineSliceFromHttp2Frame(Http2SettingsFrame{true, {}});
+  }
+
+  EventEngineSlice EventEngineSliceFromHttp2SettingsFrame(
+      std::vector<Http2SettingsFrame::Setting> settings) const {
+    return EventEngineSliceFromHttp2Frame(
+        Http2SettingsFrame{false, std::move(settings)});
   }
 
   EventEngineSlice EventEngineSliceFromHttp2SettingsFrameDefault() const {

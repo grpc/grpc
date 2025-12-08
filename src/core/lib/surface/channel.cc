@@ -67,7 +67,8 @@ Channel::Channel(std::string target, const ChannelArgs& channel_args)
           channel_args.GetObject<ResourceQuota>()
               ->memory_quota()
               ->CreateMemoryOwner(),
-          1024)) {}
+          1024)),
+      memory_allocator_(&call_arena_allocator_->allocator()) {}
 
 Channel::RegisteredCall* Channel::RegisterCall(const char* method,
                                                const char* host) {

@@ -70,7 +70,7 @@
   test_tags: [core_end2end_test]
 - name: error_flatten
   description: Flatten errors to ordinary absl::Status form.
-  expiry: 2025/10/31
+  expiry: 2026/02/01
   owner: roth@google.com
   test_tags:
     ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "error_tests"]
@@ -118,7 +118,7 @@
     ]
 - name: event_engine_fork
   description: Enables event engine fork handling, including onfork events and file descriptor generations
-  expiry: 2025/10/01
+  expiry: 2026/01/23
   owner: mlumish@google.com
   test_tags: ["core_end2end_test", "event_engine_fork_test"]
   uses_polling: true
@@ -178,11 +178,6 @@
   expiry: 2026/02/01
   owner: mattstev@google.com
   test_tags: ["core_end2end_test"]
-- name: max_age_filter_float_to_top
-  description: If set, the max age filter is placed at the top of the stack.
-  expiry: 2025/10/30
-  owner: vigneshbabu@google.com
-  test_tags: []
 - name: max_inflight_pings_strict_limit
   description: If set, the max inflight pings limit is strictly enforced.
   expiry: 2026/02/01
@@ -198,13 +193,25 @@
   expiry: 2026/02/01
   owner: ctiller@google.com
   test_tags: [flow_control_test]
+- name: otel_export_telemetry_domains
+  description: Export telemetry domains in OpenTelemetry metrics.
+  expiry: 2026/02/01
+  owner: ctiller@google.com
+  test_tags: [core_end2end_test]
 - name: pick_first_ignore_empty_updates
   description: Ignore empty resolutions in pick_first
   expiry: 2026/02/02
   owner: ctiller@google.com
+- name: pick_first_ready_to_connecting
+  description:
+    When the subchannel goes from READY to CONNECTING or TRANSIENT_FAILURE,
+    pick_first goes to CONNECTING and starts a new Happy Eyeballs pass.
+  expiry: 2026/02/01
+  owner: roth@google.com
+  test_tags: ["lb_unit_test", "cpp_lb_end2end_test"]
 - name: pipelined_read_secure_endpoint
   description: Enable pipelined reads for EventEngine secure endpoints
-  expiry: 2025/10/30
+  expiry: 2026/03/15
   owner: alishananda@google.com
   test_tags: ["core_end2end_test", "secure_endpoint_test", "posix_endpoint_test"]
   requires: ["event_engine_client", "event_engine_listener", "event_engine_secure_endpoint"]
@@ -215,7 +222,7 @@
     Code outside iomgr that relies directly on pollsets will use non-pollset alternatives when
     enabled.
   expiry: 2026/01/23
-  owner: roth@google.com
+  owner: mlumish@google.com
   test_tags: ["core_end2end_test"]
   requires: ["event_engine_client", "event_engine_listener"]
   allow_in_fuzzing_config: false
@@ -258,7 +265,7 @@
   description:
     RR and WRR LB policies start connecting from a random index in the
     address list.
-  expiry: 2025/10/31
+  expiry: 2026/02/01
   owner: roth@google.com
   test_tags: ["lb_unit_test", "cpp_lb_end2end_test"]
 - name: schedule_cancellation_over_write
@@ -288,6 +295,11 @@
       "event_engine_listener",
       "event_engine_secure_endpoint",
     ]
+- name: skip_clear_peer_on_cancellation
+  description: If set, skips clearing of peer string on call cancellation.
+  expiry: 2026/03/01
+  owner: vigneshbabu@google.com
+  test_tags: []
 - name: sleep_promise_exec_ctx_removal
   description: If set, polling the sleep promise does not rely on the ExecCtx.
   expiry: 2026/02/01
@@ -324,6 +336,19 @@
   expiry: 2026/02/01
   owner: snohria@google.com
   test_tags: [resource_quota_test]
+- name: track_zero_copy_allocations_in_resource_quota
+  description:
+    Track the memory allocattions under the zero copy path in
+    Resource Quota. This includes the encryption / decryption
+    for privacy-and-integrity payloads.
+  expiry: 2026/05/01
+  owner: snohria@google.com
+  test_tags: [resource_quota_test]
+- name: transport_state_watcher
+  description: New state watcher API between transport and subchannel.
+  expiry: 2026/02/01
+  owner: roth@google.com
+  test_tags: ["cpp_lb_end2end_test", "chttp2_keepalive_tests"]
 - name: tsi_frame_protector_without_locks
   description: Do not hold locks while using the tsi_frame_protector.
   expiry: 2026/02/01

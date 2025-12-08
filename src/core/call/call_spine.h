@@ -19,8 +19,10 @@
 
 #include "src/core/call/call_arena_allocator.h"
 #include "src/core/call/call_filters.h"
+#include "src/core/call/channelz_context.h"
 #include "src/core/call/message.h"
 #include "src/core/call/metadata.h"
+#include "src/core/channelz/channelz.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
@@ -39,7 +41,7 @@ namespace grpc_core {
 // CallInitiator and CallHandler - which provide interfaces that are appropriate
 // for each side of a call.
 // Hosts context, call filters, and the arena.
-class CallSpine final : public Party {
+class CallSpine final : public Party, public channelz::DataSource {
  public:
   static RefCountedPtr<CallSpine> Create(
       ClientMetadataHandle client_initial_metadata,
@@ -49,7 +51,10 @@ class CallSpine final : public Party {
         std::move(client_initial_metadata), std::move(arena)));
   }
 
-  ~CallSpine() override { CallOnDone(true); }
+  ~CallSpine() override {
+    CallOnDone(true);
+    SourceDestructing();
+  }
 
   CallFilters& call_filters() { return call_filters_; }
 
@@ -285,12 +290,29 @@ class CallSpine final : public Party {
     }
   }
 
+  void AddData(channelz::DataSink sink) override {
+    this->ExportToChannelz(
+        "call_spine", sink, [self = RefAsSubclass<CallSpine>()]() {
+          return channelz::PropertyList()
+              .Set("filters", self->call_filters_.ChannelzProperties())
+              .Set("child_calls", self->child_calls_.size())
+              .Set("has_on_done", self->on_done_ != nullptr);
+        });
+  }
+
  private:
   friend class Arena;
   CallSpine(ClientMetadataHandle client_initial_metadata,
-            RefCountedPtr<Arena> arena)
-      : Party(std::move(arena)),
-        call_filters_(std::move(client_initial_metadata)) {}
+            RefCountedPtr<Arena> a)
+      : Party(std::move(a)),
+        channelz::DataSource([this]() -> RefCountedPtr<channelz::BaseNode> {
+          auto* p = arena()->GetContext<channelz::CallNode>();
+          if (p == nullptr) return nullptr;
+          return p->Ref();
+        }()),
+        call_filters_(std::move(client_initial_metadata)) {
+    SourceConstructed();
+  }
 
   SpawnSerializer* client_to_server_serializer() {
     if (client_to_server_serializer_ == nullptr) {
