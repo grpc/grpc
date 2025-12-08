@@ -1190,7 +1190,10 @@ TEST(Frame, ValidateSettingsValuesValidSettings) {
   EXPECT_TRUE(ValidateSettingsValues(settings).IsOk());
 }
 
-TEST(Frame, ValidateFrameHeaderTest) {
+class ValidateFrameHeaderTest : public ::testing::TestWithParam<bool> {};
+
+TEST_P(ValidateFrameHeaderTest, ValidateFrameHeader) {
+  const bool is_client = GetParam();
   constexpr uint32_t kLastStreamId = 1;
 
   // Valid frame header
@@ -1199,7 +1202,8 @@ TEST(Frame, ValidateFrameHeaderTest) {
   EXPECT_TRUE(ValidateFrameHeader(/*max_frame_size_setting=*/100,
                                   /*incoming_header_in_progress=*/false,
                                   /*incoming_header_stream_id=*/0, header,
-                                  kLastStreamId, /*is_client=*/true)
+                                  kLastStreamId, is_client,
+                                  /*is_first_settings_processed=*/true)
                   .IsOk());
 
   // Frame size larger than max frame size setting
@@ -1207,7 +1211,8 @@ TEST(Frame, ValidateFrameHeaderTest) {
   EXPECT_THAT(ValidateFrameHeader(/*max_frame_size_setting=*/100,
                                   /*incoming_header_in_progress=*/false,
                                   /*incoming_header_stream_id=*/0, header,
-                                  kLastStreamId, /*is_client=*/true),
+                                  kLastStreamId, is_client,
+                                  /*is_first_settings_processed=*/true),
               Http2StatusIs(
                   Http2Status::Http2ErrorType::kConnectionError,
                   Http2ErrorCode::kFrameSizeError,
@@ -1219,7 +1224,8 @@ TEST(Frame, ValidateFrameHeaderTest) {
   EXPECT_THAT(ValidateFrameHeader(/*max_frame_size_setting=*/100,
                                   /*incoming_header_in_progress=*/true,
                                   /*incoming_header_stream_id=*/1, header,
-                                  kLastStreamId, /*is_client=*/true),
+                                  kLastStreamId, is_client,
+                                  /*is_first_settings_processed=*/true),
               Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
                             Http2ErrorCode::kProtocolError,
                             RFC9113::kAssemblerContiguousSequenceError));
@@ -1230,7 +1236,8 @@ TEST(Frame, ValidateFrameHeaderTest) {
   EXPECT_THAT(ValidateFrameHeader(/*max_frame_size_setting=*/100,
                                   /*incoming_header_in_progress=*/true,
                                   /*incoming_header_stream_id=*/1, header,
-                                  kLastStreamId, /*is_client=*/true),
+                                  kLastStreamId, is_client,
+                                  /*is_first_settings_processed=*/true),
               Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
                             Http2ErrorCode::kProtocolError,
                             RFC9113::kAssemblerContiguousSequenceError));
@@ -1241,19 +1248,65 @@ TEST(Frame, ValidateFrameHeaderTest) {
   EXPECT_TRUE(ValidateFrameHeader(/*max_frame_size_setting=*/100,
                                   /*incoming_header_in_progress=*/true,
                                   /*incoming_header_stream_id=*/1, header,
-                                  kLastStreamId, /*is_client=*/true)
+                                  kLastStreamId, is_client,
+                                  /*is_first_settings_processed=*/true)
                   .IsOk());
 
-  // Received a data frame with a stream id larger than the last stream id sent
-  header = {/*length=*/10, /*type=kData*/ 0, /*flags=*/0, /*stream_id=*/5};
-  EXPECT_THAT(
-      ValidateFrameHeader(/*max_frame_size_setting=*/100,
-                          /*incoming_header_in_progress=*/false,
-                          /*incoming_header_stream_id=*/0, header,
-                          kLastStreamId, /*is_client=*/true),
-      Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
-                    Http2ErrorCode::kProtocolError, RFC9113::kUnknownStreamId));
+  if (is_client) {
+    // Received a data frame with a stream id larger than the last stream id
+    // sent
+    header = {/*length=*/10, /*type=kData*/ 0, /*flags=*/0, /*stream_id=*/5};
+    EXPECT_THAT(ValidateFrameHeader(/*max_frame_size_setting=*/100,
+                                    /*incoming_header_in_progress=*/false,
+                                    /*incoming_header_stream_id=*/0, header,
+                                    kLastStreamId, is_client,
+                                    /*is_first_settings_processed=*/true),
+                Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                              Http2ErrorCode::kProtocolError,
+                              RFC9113::kUnknownStreamId));
+  }
+
+  // If first settings frame is not received, and we receive a data frame,
+  // it is a protocol error.
+  header = {/*length=*/10, /*type=kData*/ 0, /*flags=*/0, /*stream_id=*/1};
+  EXPECT_THAT(ValidateFrameHeader(/*max_frame_size_setting=*/100,
+                                  /*incoming_header_in_progress=*/false,
+                                  /*incoming_header_stream_id=*/0, header,
+                                  kLastStreamId, is_client,
+                                  /*is_first_settings_processed=*/false),
+              Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                            Http2ErrorCode::kProtocolError,
+                            is_client ? RFC9113::kFirstSettingsFrameClient
+                                      : RFC9113::kFirstSettingsFrameServer));
+
+  // If first settings frame is not processed, and we receive a SETTINGS frame,
+  // it is valid.
+  header = {/*length=*/0, /*type=kSettings*/ 4, /*flags=*/0, /*stream_id=*/0};
+  EXPECT_TRUE(ValidateFrameHeader(/*max_frame_size_setting=*/100,
+                                  /*incoming_header_in_progress=*/false,
+                                  /*incoming_header_stream_id=*/0, header,
+                                  kLastStreamId, is_client,
+                                  /*is_first_settings_processed=*/false)
+                  .IsOk());
+  // If first settings frame is not processed, and we receive a SETTINGS ACK
+  // frame, it is NOT valid.
+  header = {/*length=*/0, /*type=kSettings*/ 4, /*flags=*/1, /*stream_id=*/0};
+  EXPECT_THAT(ValidateFrameHeader(/*max_frame_size_setting=*/100,
+                                  /*incoming_header_in_progress=*/false,
+                                  /*incoming_header_stream_id=*/0, header,
+                                  kLastStreamId, is_client,
+                                  /*is_first_settings_processed=*/false),
+              Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                            Http2ErrorCode::kProtocolError,
+                            is_client ? RFC9113::kFirstSettingsFrameClient
+                                      : RFC9113::kFirstSettingsFrameServer));
 }
+
+INSTANTIATE_TEST_SUITE_P(ValidateFrameHeader, ValidateFrameHeaderTest,
+                         ::testing::Bool(),
+                         [](const ::testing::TestParamInfo<bool>& info) {
+                           return info.param ? "Client" : "Server";
+                         });
 
 TEST(FrameSize, Http2FrameSizeTest) {
   constexpr absl::string_view kPayload = "hello";

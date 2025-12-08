@@ -279,7 +279,8 @@ http2::Http2Status ValidateFrameHeader(uint32_t max_frame_size_setting,
                                        bool incoming_header_in_progress,
                                        uint32_t incoming_header_stream_id,
                                        Http2FrameHeader& current_frame_header,
-                                       uint32_t last_stream_id, bool is_client);
+                                       uint32_t last_stream_id, bool is_client,
+                                       bool is_first_settings_processed);
 
 ///////////////////////////////////////////////////////////////////////////////
 // RFC9113 Related Strings and Consts
@@ -377,6 +378,16 @@ inline constexpr absl::string_view kSettingsTimeout =
     "timeout. Connection will be closed";
 inline constexpr absl::string_view kLastStreamClosed =
     "Closing last stream and cannot create any more streams.";
+inline constexpr absl::string_view kFirstSettingsFrameClient =
+    "RFC9113: The server connection preface consists of a potentially empty "
+    "SETTINGS frame that MUST be the first frame the server sends in the "
+    "HTTP/2 connection. Clients and servers MUST treat an invalid connection "
+    "preface as a connection error of type PROTOCOL_ERROR.";
+inline constexpr absl::string_view kFirstSettingsFrameServer =
+    "RFC9113: The client connection preface starts with a sequence of 24 "
+    "octets. This sequence is followed by a SETTINGS frame, which MAY be "
+    "empty. Clients and servers MUST treat an invalid connection preface as a "
+    "connection error of type PROTOCOL_ERROR.";
 
 inline constexpr uint32_t kMaxStreamId31Bit = 0x7fffffffu;
 inline constexpr uint32_t kMaxSize31Bit = 0x7fffffffu;

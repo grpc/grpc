@@ -833,7 +833,23 @@ Http2Status ValidateFrameHeader(const uint32_t max_frame_size_setting,
                                 const uint32_t incoming_header_stream_id,
                                 Http2FrameHeader& current_frame_header,
                                 const uint32_t last_stream_id,
-                                const bool is_client) {
+                                const bool is_client,
+                                const bool is_first_settings_processed) {
+  if (GPR_UNLIKELY(!is_first_settings_processed)) {
+    // This check works only because we pause the read loop after reading the
+    // first SETTINGS frame.
+    const bool is_settings_frame =
+        (current_frame_header.type ==
+             static_cast<uint8_t>(FrameType::kSettings) &&
+         !ExtractFlag(current_frame_header.flags, kFlagAck));
+    if (GPR_UNLIKELY(!is_settings_frame)) {
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kProtocolError,
+          std::string(is_client ? RFC9113::kFirstSettingsFrameClient
+                                : RFC9113::kFirstSettingsFrameServer));
+    }
+  }
+
   if (GPR_UNLIKELY(current_frame_header.length > max_frame_size_setting)) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kFrameSizeError,
@@ -850,7 +866,6 @@ Http2Status ValidateFrameHeader(const uint32_t max_frame_size_setting,
         Http2ErrorCode::kProtocolError,
         std::string(RFC9113::kAssemblerContiguousSequenceError));
   }
-
   // If a frame is received with a stream id larger than the last stream id sent
   // by the transport, it is a protocol error. This condition holds for clients
   // as in gRPC only clients can initiate a stream. last_stream_id is the stream
@@ -862,6 +877,7 @@ Http2Status ValidateFrameHeader(const uint32_t max_frame_size_setting,
         Http2ErrorCode::kProtocolError, std::string(RFC9113::kUnknownStreamId));
   }
   // TODO(tjagtap) : [PH2][P2]:Consider validating MAX_CONCURRENT_STREAMS here
+  // for server.
   return Http2Status::Ok();
 }
 
