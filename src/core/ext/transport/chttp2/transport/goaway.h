@@ -258,6 +258,8 @@ class GoawayManager {
         previous_state == GoawayState::kIdle,
         [ctx = std::move(ctx), error_code, debug_data = debug_data.Ref(),
          last_good_stream_id]() mutable {
+          // TODO(akshitpatel) : [PH2][P4] : Investigate if we need to modify
+          // transport ping timeout for the graceful GOAWAY process.
           // Only begin the graceful GOAWAY process (at most once)
           // if there is no pending GOAWAY.
           GRPC_HTTP2_GOAWAY_LOG << "[Graceful GOAWAY] state change "

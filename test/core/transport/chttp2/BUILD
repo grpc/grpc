@@ -18,7 +18,13 @@ load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/transport/chttp2")
+grpc_package(
+    name = "test/core/transport/chttp2",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_internal_proto_library(
     name = "hpack_parser_fuzzer_proto",
@@ -251,6 +257,7 @@ grpc_cc_test(
         "//:chttp2_frame",
         "//src/core:http2_settings",
         "//src/core:http2_status",
+        "//src/core:message",
         "//src/core:slice_buffer",
     ],
 )
@@ -622,6 +629,7 @@ grpc_cc_test(
         "grpc:no-internal-poller",
         "requires-net:ipv4",
         "requires-net:loopback",
+        "chttp2_keepalive_tests",
     ],
     deps = [
         "//:channel",
@@ -766,6 +774,25 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "incoming_metadata_tracker_test",
+    srcs = [
+        "incoming_metadata_tracker_test.cc",
+    ],
+    external_deps = [
+        "gtest",
+        "absl/log:log",
+    ],
+    deps = [
+        ":http2_common_test_inputs",
+        "//:chttp2_frame",
+        "//:grpc_base",
+        "//src/core:grpc_check",
+        "//src/core:http2_status",
+        "//src/core:incoming_metadata_tracker",
+    ],
+)
+
+grpc_cc_test(
     name = "header_assembler_test",
     srcs = [
         "header_assembler_test.cc",
@@ -786,10 +813,13 @@ grpc_cc_test(
         "//:hpack_encoder",
         "//:hpack_parser",
         "//:ref_counted_ptr",
+        "//src/core:arena",
         "//src/core:grpc_check",
         "//src/core:header_assembler",
+        "//src/core:http2_settings",
         "//src/core:http2_status",
         "//src/core:message",
+        "//src/core:metadata_batch",
         "//src/core:slice",
         "//src/core:slice_buffer",
     ],
@@ -859,6 +889,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         ":http2_frame_test_helper",
+        "//:channel_arg_names",
         "//:chttp2_frame",
         "//:config",
         "//:event_engine_base_hdrs",
@@ -908,6 +939,7 @@ grpc_cc_test(
         "absl/log:log",
         "absl/status",
         "absl/strings",
+        "absl/types:span",
         "gtest",
     ],
     uses_polling = False,
@@ -920,10 +952,12 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:orphanable",
+        "//:ref_counted_ptr",
         "//src/core:1999",
         "//src/core:arena",
         "//src/core:call_spine",
         "//src/core:channel_args",
+        "//src/core:chttp2_flow_control",
         "//src/core:default_event_engine",
         "//src/core:http2_client_transport",
         "//src/core:http2_settings",
@@ -937,6 +971,8 @@ grpc_cc_test(
         "//src/core:notification",
         "//src/core:poll",
         "//src/core:sleep",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
         "//src/core:time",
         "//src/core:transport_common",
         "//src/core:try_join",
@@ -958,6 +994,7 @@ grpc_cc_test(
         "absl/log:log",
         "absl/status",
         "absl/strings",
+        "absl/types:span",
         "gtest",
     ],
     uses_polling = False,
@@ -966,9 +1003,14 @@ grpc_cc_test(
         "//:chttp2_frame",
         "//:config",
         "//:event_engine_base_hdrs",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//:grpc_base",
         "//:orphanable",
+        "//:promise",
+        "//:ref_counted_ptr",
+        "//src/core:1999",
         "//src/core:call_spine",
         "//src/core:channel_args",
         "//src/core:chttp2_flow_control",
@@ -977,14 +1019,23 @@ grpc_cc_test(
         "//src/core:http2_client_transport",
         "//src/core:http2_settings",
         "//src/core:http2_settings_manager",
+        "//src/core:http2_settings_promises",
         "//src/core:http2_status",
         "//src/core:http2_transport",
+        "//src/core:internal_channel_arg_names",
+        "//src/core:loop",
         "//src/core:message",
         "//src/core:metadata",
         "//src/core:notification",
+        "//src/core:ph2_stream",
+        "//src/core:poll",
+        "//src/core:ref_counted",
+        "//src/core:sleep",
+        "//src/core:slice_buffer",
         "//src/core:time",
         "//src/core:transport_common",
         "//src/core:try_join",
+        "//src/core:try_seq",
         "//test/core/promise:poll_matcher",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
@@ -1167,6 +1218,7 @@ grpc_fuzz_test(
         "//src/core:loop",
         "//src/core:map",
         "//src/core:sleep",
+        "//src/core:time",
         "//src/core:try_seq",
         "//test/core/call/yodel:yodel_test",
     ],

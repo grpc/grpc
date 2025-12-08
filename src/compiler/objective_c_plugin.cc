@@ -93,7 +93,7 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     return grpc::protobuf::Edition::EDITION_PROTO2;
   }
   grpc::protobuf::Edition GetMaximumEdition() const override {
-    return grpc::protobuf::Edition::EDITION_2023;
+    return grpc::protobuf::Edition::EDITION_2024;
   }
 #endif
 

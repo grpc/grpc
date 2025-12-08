@@ -153,4 +153,4 @@ build --@io_opentelemetry_cpp//api:with_abseil
 test --nozip_undeclared_test_outputs
 
 # Custom checks
-test --copt=-DGRPC_POSTMORTEM_CHECKS
+test:postmortem --//:postmortem_checks=true

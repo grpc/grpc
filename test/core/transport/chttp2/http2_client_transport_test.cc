@@ -21,6 +21,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/slice.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 
 #include <cstdint>
 #include <memory>
@@ -45,6 +46,7 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/time.h"
@@ -130,27 +132,30 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
       },
       event_engine().get());
   mock_endpoint.ExpectRead(
-      {helper_.EventEngineSliceFromHttp2DataFrame(
+      {helper_.EventEngineSliceFromHttp2SettingsFrame({}),
+       helper_.EventEngineSliceFromHttp2DataFrame(
            /*payload=*/"Hello!", /*stream_id=*/9, /*end_stream=*/false),
        helper_.EventEngineSliceFromHttp2DataFrame(
            /*payload=*/"Bye!", /*stream_id=*/11, /*end_stream=*/true)},
       event_engine().get());
   mock_endpoint.ExpectWrite(
       {
-          helper_.EventEngineSliceFromHttp2GoawayFrame(
-              /*debug_data=*/kConnectionClosed, /*last_stream_id=*/0,
-              /*error_code=*/
-              static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
+          helper_.EventEngineSliceFromHttp2SettingsFrameAck(),
       },
       event_engine().get());
-
-  // Break the ReadLoop
-  mock_endpoint.ExpectReadClose(absl::UnavailableError(kConnectionClosed),
-                                event_engine().get());
+  mock_endpoint.ExpectWrite(
+      {
+          helper_.EventEngineSliceFromHttp2GoawayFrame(
+              /*debug_data=*/RFC9113::kUnknownStreamId, /*last_stream_id=*/0,
+              /*error_code=*/
+              static_cast<uint32_t>(Http2ErrorCode::kProtocolError)),
+      },
+      event_engine().get());
 
   client_transport_ = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine(), /*on_receive_settings=*/nullptr);
+  client_transport_->SpawnTransportLoops();
 
   EXPECT_EQ(client_transport_->filter_stack_transport(), nullptr);
   EXPECT_NE(client_transport_->client_transport(), nullptr);
@@ -191,6 +196,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromCall) {
   // up and the trailing metadata to be received.
   auto read_close_trailing_metadata = mock_endpoint.ExpectDelayedRead(
       {
+          helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
           helper_.EventEngineSliceFromHttp2HeaderFrame(
               std::string(kPathDemoServiceStep.begin(),
                           kPathDemoServiceStep.end()),
@@ -231,6 +237,11 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromCall) {
       });
   mock_endpoint.ExpectWrite(
       {
+          helper_.EventEngineSliceFromHttp2SettingsFrameAck(),
+      },
+      event_engine().get());
+  mock_endpoint.ExpectWrite(
+      {
           helper_.EventEngineSliceFromHttp2GoawayFrame(
               /*debug_data=*/kConnectionClosed, /*last_stream_id=*/0,
               /*error_code=*/
@@ -241,6 +252,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromCall) {
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine(), /*on_receive_settings=*/nullptr);
+  client_transport->SpawnTransportLoops();
   auto call = MakeCall(TestInitialMetadata());
   client_transport->StartCall(call.handler.StartCall());
 
@@ -298,6 +310,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingRead) {
 
   mock_endpoint.ExpectRead(
       {
+          helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
           helper_.EventEngineSliceFromHttp2PingFrame(/*ack=*/false,
                                                      /*opaque=*/1234),
       },
@@ -306,6 +319,11 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingRead) {
   // Break the read loop
   auto read_close = mock_endpoint.ExpectDelayedReadClose(
       absl::UnavailableError(kConnectionClosed), event_engine().get());
+  mock_endpoint.ExpectWrite(
+      {
+          helper_.EventEngineSliceFromHttp2SettingsFrameAck(),
+      },
+      event_engine().get());
 
   mock_endpoint.ExpectWriteWithCallback(
       {
@@ -328,6 +346,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingRead) {
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine(), /*on_receive_settings=*/nullptr);
+  client_transport->SpawnTransportLoops();
 
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
@@ -348,6 +367,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingWrite) {
   // Redundant ping ack
   auto read_cb = mock_endpoint.ExpectDelayedRead(
       {
+          helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
           helper_.EventEngineSliceFromHttp2PingFrame(/*ack=*/true,
                                                      /*opaque=*/1234),
       },
@@ -392,6 +412,11 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingWrite) {
       });
   mock_endpoint.ExpectWrite(
       {
+          helper_.EventEngineSliceFromHttp2SettingsFrameAck(),
+      },
+      event_engine().get());
+  mock_endpoint.ExpectWrite(
+      {
           helper_.EventEngineSliceFromHttp2GoawayFrame(
               /*debug_data=*/kConnectionClosed, /*last_stream_id=*/0,
               /*error_code=*/
@@ -402,6 +427,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingWrite) {
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine(), /*on_receive_settings=*/nullptr);
+  client_transport->SpawnTransportLoops();
   client_transport->TestOnlySpawnPromise(
       "PingRequest", [&client_transport, &ping_ack_received] {
         return Map(TrySeq(client_transport->TestOnlyTriggerWriteCycle(),
@@ -455,21 +481,18 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingTimeout) {
       });
   mock_endpoint.ExpectWrite(
       {
-          helper_.EventEngineSliceFromHttp2WindowUpdateFrame(0, 4128769),
-      },
-      event_engine().get());
-  mock_endpoint.ExpectWrite(
-      {
           helper_.EventEngineSliceFromHttp2GoawayFrame(
-              /*debug_data=*/"Ping timeout", /*last_stream_id=*/0,
+              /*debug_data=*/GRPC_CHTTP2_PING_TIMEOUT_STR, /*last_stream_id=*/0,
               /*error_code=*/
               static_cast<uint32_t>(Http2ErrorCode::kRefusedStream)),
       },
       event_engine().get());
 
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
-      std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
-      event_engine(), /*on_receive_settings=*/nullptr);
+      std::move(mock_endpoint.promise_endpoint),
+      GetChannelArgs().Set("grpc.http2.ping_timeout_ms", 1000), event_engine(),
+      /*on_receive_settings=*/nullptr);
+  client_transport->SpawnTransportLoops();
   client_transport->TestOnlySpawnPromise("PingRequest", [&client_transport] {
     return Map(TrySeq(client_transport->TestOnlyTriggerWriteCycle(),
                       [&client_transport] {
@@ -500,6 +523,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
   // Redundant ping ack
   auto read_cb = mock_endpoint.ExpectDelayedRead(
       {
+          helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
           helper_.EventEngineSliceFromHttp2PingFrame(/*ack=*/true,
                                                      /*opaque=*/1234),
       },
@@ -574,6 +598,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
           .Set(GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS, 2)
           .Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, true),
       event_engine(), /*on_receive_settings=*/nullptr);
+  client_transport->SpawnTransportLoops();
 
   client_transport->TestOnlySpawnPromise(
       "PingRequest", [&client_transport, &ping_ack_received, ping_complete] {
@@ -613,7 +638,8 @@ TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
   // 2. A DATA frame with END_STREAM flag false.
   // 3. A HEADER frame that contains our trailing metadata.
   auto read_initial_metadata_cb = mock_endpoint.ExpectDelayedRead(
-      {helper_.EventEngineSliceFromHttp2HeaderFrame(
+      {helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
+       helper_.EventEngineSliceFromHttp2HeaderFrame(
            std::string(kPathDemoServiceStep.begin(),
                        kPathDemoServiceStep.end()),
            /*stream_id=*/1,
@@ -657,6 +683,11 @@ TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
       });
   mock_endpoint.ExpectWrite(
       {
+          helper_.EventEngineSliceFromHttp2SettingsFrameAck(),
+      },
+      event_engine().get());
+  mock_endpoint.ExpectWrite(
+      {
           helper_.EventEngineSliceFromHttp2GoawayFrame(
               /*debug_data=*/kConnectionClosed, /*last_stream_id=*/0,
               /*error_code=*/
@@ -668,6 +699,7 @@ TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine(), /*on_receive_settings=*/nullptr);
+  client_transport->SpawnTransportLoops();
   LOG(INFO) << "Initiating CallSpine";
   auto call = MakeCall(TestInitialMetadata());
 
@@ -736,21 +768,116 @@ TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
             RFC9113::kHttp2InitialWindowSize);
 }
 
+TEST_F(Http2ClientTransportTest, TestCanStreamReceiveDataFrames) {
+  ExecCtx ctx;
+  MockPromiseEndpoint mock_endpoint(/*port=*/1000);
+  StrictMock<MockFunction<void()>> on_done;
+  EXPECT_CALL(on_done, Call());
+
+  mock_endpoint.ExpectWrite(
+      {
+          EventEngineSlice(
+              grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
+          helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
+      },
+      event_engine().get());
+  auto read_cb = mock_endpoint.ExpectDelayedRead(
+      {
+          helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
+          helper_.EventEngineSliceFromEmptyHttp2DataFrame(1, false),
+          helper_.EventEngineSliceFromHttp2GoawayFrame(
+              /*debug_data=*/"kthxbye", /*last_stream_id=*/1,
+              /*error_code=*/
+              static_cast<uint32_t>(Http2ErrorCode::kNoError)),
+      },
+      event_engine().get());
+  mock_endpoint.ExpectWriteWithCallback(
+      {
+          helper_.EventEngineSliceFromHttp2HeaderFrame(
+              std::string(kPathDemoServiceStep.begin(),
+                          kPathDemoServiceStep.end()),
+              /*stream_id=*/1,
+              /*end_headers=*/true, /*end_stream=*/false),
+      },
+      event_engine().get(), [&](SliceBuffer& out, SliceBuffer& expect) {
+        EXPECT_EQ(out.JoinIntoString(), expect.JoinIntoString());
+        std::move(read_cb)();
+      });
+  mock_endpoint.ExpectWrite(
+      {
+          helper_.EventEngineSliceFromHttp2SettingsFrameAck(),
+      },
+      event_engine().get());
+  mock_endpoint.ExpectWrite(
+      {helper_.EventEngineSliceFromHttp2RstStreamFrame(
+          /*stream_id=*/1, /*error_code=*/
+          static_cast<uint32_t>(Http2ErrorCode::kStreamClosed))},
+      event_engine().get());
+
+  mock_endpoint.ExpectWrite(
+      {
+          helper_.EventEngineSliceFromHttp2GoawayFrame(
+              /*debug_data=*/"kthxbye",
+              /*last_stream_id=*/0,
+              /*error_code=*/
+              static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
+      },
+      event_engine().get());
+
+  auto client_transport = MakeOrphanable<Http2ClientTransport>(
+      std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
+      event_engine(), /*on_receive_settings=*/nullptr);
+  client_transport->SpawnTransportLoops();
+
+  auto read_close_transport = mock_endpoint.ExpectDelayedReadClose(
+      absl::UnavailableError(kConnectionClosed), event_engine().get());
+  auto call = MakeCall(TestInitialMetadata());
+  client_transport->StartCall(call.handler.StartCall());
+  call.initiator.SpawnInfallible(
+      "test-wait",
+      [initator = call.initiator, &on_done,
+       read_close_transport = std::move(read_close_transport)]() mutable {
+        return Seq(
+            initator.PullServerTrailingMetadata(),
+            [&on_done, read_close_transport = std::move(read_close_transport)](
+                ServerMetadataHandle metadata) mutable {
+              on_done.Call();
+              EXPECT_EQ(metadata->get(GrpcStatusMetadata()).value(),
+                        GRPC_STATUS_INTERNAL);
+              EXPECT_EQ(metadata->get_pointer(GrpcMessageMetadata())
+                            ->as_string_view(),
+                        "gRPC Error : DATA frames must follow initial "
+                        "metadata and precede trailing metadata.");
+              std::move(read_close_transport)();
+              return Empty{};
+            });
+      });
+
+  event_engine()->TickUntilIdle();
+  event_engine()->UnsetGlobalHooks();
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Close Stream Tests
 
 TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadata) {
   ExecCtx ctx;
   MockPromiseEndpoint mock_endpoint(/*port=*/1000);
-  absl::AnyInvocable<void()> read_cb_transport_close;
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call()).Times(2);
   auto read_cb = mock_endpoint.ExpectDelayedRead(
       {
-          helper_.EventEngineSliceFromHttp2DataFrame(
-              /*payload=*/"", /*stream_id=*/5, /*end_stream=*/true),
+          helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
+          helper_.EventEngineSliceFromHttp2HeaderFrame(
+              std::string(kPathDemoServiceStep.begin(),
+                          kPathDemoServiceStep.end()),
+              /*stream_id=*/1,
+              /*end_headers=*/true, /*end_stream=*/true),
       },
       event_engine().get());
+  auto read_cb_transport_close = mock_endpoint.ExpectDelayedReadClose(
+      absl::UnavailableError(kConnectionClosed), event_engine().get());
+
   mock_endpoint.ExpectWrite(
       {
           EventEngineSlice(
@@ -769,24 +896,9 @@ TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadata) {
       event_engine().get(), [&](SliceBuffer& out, SliceBuffer& expect) {
         EXPECT_EQ(out.JoinIntoString(), expect.JoinIntoString());
         read_cb();
-        mock_endpoint.ExpectRead(
-            {
-                helper_.EventEngineSliceFromHttp2HeaderFrame(
-                    std::string(kPathDemoServiceStep.begin(),
-                                kPathDemoServiceStep.end()),
-                    /*stream_id=*/1,
-                    /*end_headers=*/true, /*end_stream=*/true),
-            },
-            event_engine().get());
-        read_cb_transport_close = mock_endpoint.ExpectDelayedReadClose(
-            absl::UnavailableError(kConnectionClosed), event_engine().get());
       });
   mock_endpoint.ExpectWrite(
-      {// We need this because we received a DATA frame generated by
-       // EventEngineSliceFromHttp2DataFrame. The DATA frame had a gRPC header
-       // with an empty gRPC message.
-       helper_.EventEngineSliceFromHttp2WindowUpdateFrame(
-           /*stream_id=*/0u, /*increment=*/5u)},
+      {helper_.EventEngineSliceFromHttp2SettingsFrameAck()},
       event_engine().get());
   mock_endpoint.ExpectWriteWithCallback(
       {
@@ -799,13 +911,8 @@ TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadata) {
       });
   mock_endpoint.ExpectWrite(
       {
-          helper_.EventEngineSliceFromHttp2WindowUpdateFrame(0, 4128769),
-      },
-      event_engine().get());
-  mock_endpoint.ExpectWrite(
-      {
           helper_.EventEngineSliceFromHttp2GoawayFrame(
-              /*debug_data=*/"Orphaned", /*last_stream_id=*/0,
+              /*debug_data=*/kConnectionClosed, /*last_stream_id=*/0,
               /*error_code=*/
               static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
       },
@@ -814,6 +921,7 @@ TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadata) {
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine(), /*on_receive_settings=*/nullptr);
+  client_transport->SpawnTransportLoops();
 
   auto call = MakeCall(TestInitialMetadata());
   client_transport->StartCall(call.handler.StartCall());
@@ -826,6 +934,7 @@ TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadata) {
                      (*metadata)->DebugString(),
                      ":path: /demo.Service/Step, GrpcStatusFromWire: true");
                  on_done.Call();
+                 read_cb_transport_close();
                  return absl::OkStatus();
                });
   });
@@ -837,15 +946,28 @@ TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadata) {
 TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadataWithResetStream) {
   ExecCtx ctx;
   MockPromiseEndpoint mock_endpoint(/*port=*/1000);
-  absl::AnyInvocable<void()> read_cb_transport_close;
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call()).Times(1);
   auto read_cb = mock_endpoint.ExpectDelayedRead(
       {
-          helper_.EventEngineSliceFromHttp2DataFrame(
-              /*payload=*/"", /*stream_id=*/5, /*end_stream=*/true),
+          helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
+          helper_.EventEngineSliceFromHttp2HeaderFrame(
+              std::string(kPathDemoServiceStep.begin(),
+                          kPathDemoServiceStep.end()),
+              /*stream_id=*/1,
+              /*end_headers=*/true, /*end_stream=*/true),
+          helper_.EventEngineSliceFromHttp2RstStreamFrame(),
+          helper_.EventEngineSliceFromHttp2HeaderFrame(
+              std::string(kPathDemoServiceStep.begin(),
+                          kPathDemoServiceStep.end()),
+              /*stream_id=*/1,
+              /*end_headers=*/true, /*end_stream=*/true),
+          helper_.EventEngineSliceFromHttp2RstStreamFrame(),
       },
       event_engine().get());
+  auto read_cb_transport_close = mock_endpoint.ExpectDelayedReadClose(
+      absl::UnavailableError(kConnectionClosed), event_engine().get());
+
   mock_endpoint.ExpectWrite(
       {
           EventEngineSlice(
@@ -864,35 +986,16 @@ TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadataWithResetStream) {
       event_engine().get(), [&](SliceBuffer& out, SliceBuffer& expect) {
         EXPECT_EQ(out.JoinIntoString(), expect.JoinIntoString());
         read_cb();
-        mock_endpoint.ExpectRead(
-            {
-                helper_.EventEngineSliceFromHttp2HeaderFrame(
-                    std::string(kPathDemoServiceStep.begin(),
-                                kPathDemoServiceStep.end()),
-                    /*stream_id=*/1,
-                    /*end_headers=*/true, /*end_stream=*/true),
-                helper_.EventEngineSliceFromHttp2RstStreamFrame(),
-            },
-            event_engine().get());
-        read_cb_transport_close = mock_endpoint.ExpectDelayedReadClose(
-            absl::UnavailableError(kConnectionClosed), event_engine().get());
       });
   mock_endpoint.ExpectWrite(
-      {// We need this because we received a DATA frame generated by
-       // EventEngineSliceFromHttp2DataFrame. The DATA frame had a gRPC header
-       // with an empty gRPC message.
-       helper_.EventEngineSliceFromHttp2WindowUpdateFrame(
-           /*stream_id=*/0u, /*increment=*/5u)},
-      event_engine().get());
-  mock_endpoint.ExpectWrite(
       {
-          helper_.EventEngineSliceFromHttp2WindowUpdateFrame(0, 4128769),
+          helper_.EventEngineSliceFromHttp2SettingsFrameAck(),
       },
       event_engine().get());
   mock_endpoint.ExpectWrite(
       {
           helper_.EventEngineSliceFromHttp2GoawayFrame(
-              /*debug_data=*/"Orphaned", /*last_stream_id=*/0,
+              /*debug_data=*/kConnectionClosed, /*last_stream_id=*/0,
               /*error_code=*/
               static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
       },
@@ -900,6 +1003,7 @@ TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadataWithResetStream) {
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine(), /*on_receive_settings=*/nullptr);
+  client_transport->SpawnTransportLoops();
 
   auto call = MakeCall(TestInitialMetadata());
   client_transport->StartCall(call.handler.StartCall());
@@ -912,6 +1016,7 @@ TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadataWithResetStream) {
                      (*metadata)->DebugString(),
                      ":path: /demo.Service/Step, GrpcStatusFromWire: true");
                  on_done.Call();
+                 read_cb_transport_close();
                  return absl::OkStatus();
                });
   });
@@ -923,15 +1028,17 @@ TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadataWithResetStream) {
 TEST_F(Http2ClientTransportTest, StreamCleanupResetStream) {
   ExecCtx ctx;
   MockPromiseEndpoint mock_endpoint(/*port=*/1000);
-  absl::AnyInvocable<void()> read_cb_transport_close;
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
   auto read_cb = mock_endpoint.ExpectDelayedRead(
       {
-          helper_.EventEngineSliceFromHttp2DataFrame(
-              /*payload=*/"", /*stream_id=*/5, /*end_stream=*/true),
+          helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
+          helper_.EventEngineSliceFromHttp2RstStreamFrame(),
+          helper_.EventEngineSliceFromHttp2RstStreamFrame(),
       },
       event_engine().get());
+  auto read_cb_transport_close = mock_endpoint.ExpectDelayedReadClose(
+      absl::UnavailableError(kConnectionClosed), event_engine().get());
   mock_endpoint.ExpectWrite(
       {
           EventEngineSlice(
@@ -950,30 +1057,16 @@ TEST_F(Http2ClientTransportTest, StreamCleanupResetStream) {
       event_engine().get(), [&](SliceBuffer& out, SliceBuffer& expect) {
         EXPECT_EQ(out.JoinIntoString(), expect.JoinIntoString());
         read_cb();
-        mock_endpoint.ExpectRead(
-            {
-                helper_.EventEngineSliceFromHttp2RstStreamFrame(),
-            },
-            event_engine().get());
-        read_cb_transport_close = mock_endpoint.ExpectDelayedReadClose(
-            absl::UnavailableError(kConnectionClosed), event_engine().get());
       });
   mock_endpoint.ExpectWrite(
-      {// We need this because we received a DATA frame generated by
-       // EventEngineSliceFromHttp2DataFrame. The DATA frame had a gRPC header
-       // with an empty gRPC message.
-       helper_.EventEngineSliceFromHttp2WindowUpdateFrame(
-           /*stream_id=*/0u, /*increment=*/5u)},
-      event_engine().get());
-  mock_endpoint.ExpectWrite(
       {
-          helper_.EventEngineSliceFromHttp2WindowUpdateFrame(0, 4128769),
+          helper_.EventEngineSliceFromHttp2SettingsFrameAck(),
       },
       event_engine().get());
   mock_endpoint.ExpectWrite(
       {
           helper_.EventEngineSliceFromHttp2GoawayFrame(
-              /*debug_data=*/"Orphaned", /*last_stream_id=*/0,
+              /*debug_data=*/kConnectionClosed, /*last_stream_id=*/0,
               /*error_code=*/
               static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
       },
@@ -982,6 +1075,7 @@ TEST_F(Http2ClientTransportTest, StreamCleanupResetStream) {
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine(), /*on_receive_settings=*/nullptr);
+  client_transport->SpawnTransportLoops();
 
   auto call = MakeCall(TestInitialMetadata());
   client_transport->StartCall(call.handler.StartCall());
@@ -994,6 +1088,7 @@ TEST_F(Http2ClientTransportTest, StreamCleanupResetStream) {
                            "grpc-message: Reset stream frame received., "
                            "grpc-status: INTERNAL, GrpcCallWasCancelled: true");
                  on_done.Call();
+                 read_cb_transport_close();
                  return absl::OkStatus();
                });
   });
@@ -1027,15 +1122,11 @@ TEST_F(Http2ClientTransportTest, Http2ClientTransportAbortTest) {
           helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
       },
       event_engine().get());
-  mock_endpoint.ExpectWrite(
-      {
-          helper_.EventEngineSliceFromHttp2WindowUpdateFrame(0, 4128769),
-      },
-      event_engine().get());
+
   mock_endpoint.ExpectWrite(
       {
           helper_.EventEngineSliceFromHttp2GoawayFrame(
-              /*debug_data=*/"Orphaned", /*last_stream_id=*/0,
+              /*debug_data=*/kConnectionClosed, /*last_stream_id=*/0,
               /*error_code=*/
               static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
       },
@@ -1044,6 +1135,7 @@ TEST_F(Http2ClientTransportTest, Http2ClientTransportAbortTest) {
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine(), /*on_receive_settings=*/nullptr);
+  client_transport->SpawnTransportLoops();
   auto call = MakeCall(TestInitialMetadata());
   client_transport->StartCall(call.handler.StartCall());
 
@@ -1068,6 +1160,7 @@ TEST_F(Http2ClientTransportTest, Http2ClientTransportAbortTest) {
                                   "grpc-message: CANCELLED, grpc-status: "
                                   "CANCELLED, GrpcCallWasCancelled: true");
                      on_done.Call();
+                     std::move(read_close)();
                      return Empty{};
                    });
       });
@@ -1092,6 +1185,11 @@ TEST_F(Http2ClientTransportTest, ReadImmediateGoaway) {
       event_engine().get());
   mock_endpoint.ExpectWrite(
       {
+          helper_.EventEngineSliceFromHttp2SettingsFrameAck(),
+      },
+      event_engine().get());
+  mock_endpoint.ExpectWrite(
+      {
           helper_.EventEngineSliceFromHttp2GoawayFrame(
               /*debug_data=*/kConnectionClosed, /*last_stream_id=*/0,
               /*error_code=*/
@@ -1100,6 +1198,7 @@ TEST_F(Http2ClientTransportTest, ReadImmediateGoaway) {
       event_engine().get());
   mock_endpoint.ExpectRead(
       {
+          helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
           helper_.EventEngineSliceFromHttp2GoawayFrame(
               kConnectionClosed, /*last_stream_id=*/0, /*error_code=*/
               static_cast<uint32_t>(Http2ErrorCode::kProtocolError)),
@@ -1110,6 +1209,7 @@ TEST_F(Http2ClientTransportTest, ReadImmediateGoaway) {
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine(), /*on_receive_settings=*/nullptr);
+  client_transport->SpawnTransportLoops();
 
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
@@ -1126,6 +1226,7 @@ TEST_F(Http2ClientTransportTest, ReadGracefulGoaway) {
   // up and the trailing metadata to be received.
   auto read_close_trailing_metadata = mock_endpoint.ExpectDelayedRead(
       {
+          helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
           helper_.EventEngineSliceFromHttp2GoawayFrame(
               "Graceful GOAWAY", /*last_stream_id=*/1, /*error_code=*/
               Http2ErrorCodeToFrameErrorCode(Http2ErrorCode::kNoError)),
@@ -1169,9 +1270,13 @@ TEST_F(Http2ClientTransportTest, ReadGracefulGoaway) {
       });
   mock_endpoint.ExpectWrite(
       {
+          helper_.EventEngineSliceFromHttp2SettingsFrameAck(),
+      },
+      event_engine().get());
+  mock_endpoint.ExpectWrite(
+      {
           helper_.EventEngineSliceFromHttp2GoawayFrame(
-              /*debug_data=*/"Received GOAWAY frame and no more streams to "
-                             "close.",
+              /*debug_data=*/RFC9113::kLastStreamClosed,
               /*last_stream_id=*/0,
               /*error_code=*/
               static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
@@ -1181,6 +1286,7 @@ TEST_F(Http2ClientTransportTest, ReadGracefulGoaway) {
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine(), /*on_receive_settings=*/nullptr);
+  client_transport->SpawnTransportLoops();
 
   auto call = MakeCall(TestInitialMetadata());
   client_transport->StartCall(call.handler.StartCall());
@@ -1224,6 +1330,7 @@ TEST_F(Http2ClientTransportTest, ReadGracefulGoawayCannotStartNewStreams) {
   // After stream 1 is started, server sends a GOAWAY and trailing metadata.
   auto read_frames = mock_endpoint.ExpectDelayedRead(
       {
+          helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
           helper_.EventEngineSliceFromHttp2GoawayFrame(
               "Graceful GOAWAY", /*last_stream_id=*/1, /*error_code=*/
               Http2ErrorCodeToFrameErrorCode(Http2ErrorCode::kNoError)),
@@ -1267,9 +1374,13 @@ TEST_F(Http2ClientTransportTest, ReadGracefulGoawayCannotStartNewStreams) {
       });
   mock_endpoint.ExpectWrite(
       {
+          helper_.EventEngineSliceFromHttp2SettingsFrameAck(),
+      },
+      event_engine().get());
+  mock_endpoint.ExpectWrite(
+      {
           helper_.EventEngineSliceFromHttp2GoawayFrame(
-              /*debug_data=*/"Received GOAWAY frame and no more streams to "
-                             "close.",
+              /*debug_data=*/RFC9113::kLastStreamClosed,
               /*last_stream_id=*/0,
               /*error_code=*/
               static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
@@ -1279,6 +1390,7 @@ TEST_F(Http2ClientTransportTest, ReadGracefulGoawayCannotStartNewStreams) {
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine(), /*on_receive_settings=*/nullptr);
+  client_transport->SpawnTransportLoops();
 
   auto call = MakeCall(TestInitialMetadata());
   start_new_stream_cb = [&]() {
@@ -1292,7 +1404,7 @@ TEST_F(Http2ClientTransportTest, ReadGracefulGoawayCannotStartNewStreams) {
                                  GRPC_STATUS_RESOURCE_EXHAUSTED);
                        EXPECT_EQ(metadata->get_pointer(GrpcMessageMetadata())
                                      ->as_string_view(),
-                                 "No more stream ids available");
+                                 "Reached max concurrent streams");
                        return absl::OkStatus();
                      });
         });
@@ -1352,25 +1464,27 @@ TEST_F(Http2ClientTransportTest, TestFlowControlWindow) {
   auto read_close = mock_endpoint.ExpectDelayedReadClose(
       absl::UnavailableError(kConnectionClosed), event_engine().get());
 
-  mock_endpoint.ExpectWriteWithCallback(
+  mock_endpoint.ExpectWrite(
       {
           EventEngineSlice(
               grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
           helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
       },
+      event_engine().get());
+
+  mock_endpoint.ExpectWriteWithCallback(
+      {
+          helper_.EventEngineSliceFromHttp2SettingsFrameAck(),
+      },
       event_engine().get(), [&](SliceBuffer& out, SliceBuffer& expect) {
         EXPECT_EQ(out.JoinIntoString(), expect.JoinIntoString());
+        std::move(read_close)();
       });
-  mock_endpoint.ExpectWrite(
-      {
-          helper_.EventEngineSliceFromHttp2WindowUpdateFrame(0, 4128769),
-      },
-      event_engine().get());
 
   mock_endpoint.ExpectWrite(
       {
           helper_.EventEngineSliceFromHttp2GoawayFrame(
-              /*debug_data=*/"Orphaned", /*last_stream_id=*/0,
+              /*debug_data=*/kConnectionClosed, /*last_stream_id=*/0,
               /*error_code=*/
               static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
       },
@@ -1379,6 +1493,7 @@ TEST_F(Http2ClientTransportTest, TestFlowControlWindow) {
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine(), nullptr);
+  client_transport->SpawnTransportLoops();
 
   // Wait for Http2ClientTransport's internal activities to finish.
   event_engine()->TickUntilIdle();
@@ -1387,6 +1502,222 @@ TEST_F(Http2ClientTransportTest, TestFlowControlWindow) {
   EXPECT_EQ(client_transport->TestOnlyTransportFlowControlWindow(),
             RFC9113::kHttp2InitialWindowSize + 1000 + 500);
 
+  event_engine()->UnsetGlobalHooks();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// ChannelArg Tests
+
+TEST_F(Http2ClientTransportTest, TestInitialSequenceNumber) {
+  // This test verifies the following:
+  // 1. The initial sequence number is set to the value passed in the channel
+  // args.
+
+  ExecCtx ctx;
+  MockPromiseEndpoint mock_endpoint(/*port=*/1000);
+  std::string data_payload = "Hello!";
+  StrictMock<MockFunction<void()>> on_done;
+  EXPECT_CALL(on_done, Call());
+  constexpr uint32_t kInitialSequenceNumber = 5;
+
+  auto read_close_trailing_metadata = mock_endpoint.ExpectDelayedRead(
+      {
+          helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
+          helper_.EventEngineSliceFromHttp2HeaderFrame(
+              std::string(kPathDemoServiceStep.begin(),
+                          kPathDemoServiceStep.end()),
+              /*stream_id=*/kInitialSequenceNumber,
+              /*end_headers=*/true, /*end_stream=*/true),
+      },
+      event_engine().get());
+
+  auto read_close_transport = mock_endpoint.ExpectDelayedReadClose(
+      absl::UnavailableError(kConnectionClosed), event_engine().get());
+
+  // Expect Client Initial Metadata to be sent.
+  mock_endpoint.ExpectWrite(
+      {
+          EventEngineSlice(
+              grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
+          helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
+      },
+      event_engine().get());
+
+  mock_endpoint.ExpectWriteWithCallback(
+      {helper_.EventEngineSliceFromHttp2HeaderFrame(
+           std::string(kPathDemoServiceStep.begin(),
+                       kPathDemoServiceStep.end()),
+           /*stream_id=*/kInitialSequenceNumber, /*end_headers=*/true,
+           /*end_stream=*/false),
+       helper_.EventEngineSliceFromHttp2DataFrame(
+           data_payload,
+           /*stream_id=*/kInitialSequenceNumber,
+           /*end_stream=*/false),
+       helper_.EventEngineSliceFromEmptyHttp2DataFrame(
+           /*stream_id=*/kInitialSequenceNumber,
+           /*end_stream=*/true)},
+      event_engine().get(),
+      [read_close_trailing_metadata = std::move(read_close_trailing_metadata)](
+          SliceBuffer& out, SliceBuffer& expect) mutable {
+        EXPECT_EQ(out.JoinIntoString(), expect.JoinIntoString());
+        read_close_trailing_metadata();
+      });
+  mock_endpoint.ExpectWrite(
+      {
+          helper_.EventEngineSliceFromHttp2SettingsFrameAck(),
+      },
+      event_engine().get());
+  mock_endpoint.ExpectWrite(
+      {
+          helper_.EventEngineSliceFromHttp2GoawayFrame(
+              /*debug_data=*/kConnectionClosed, /*last_stream_id=*/0,
+              /*error_code=*/
+              static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
+      },
+      event_engine().get());
+
+  auto client_transport = MakeOrphanable<Http2ClientTransport>(
+      std::move(mock_endpoint.promise_endpoint),
+      GetChannelArgs().Set(GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER,
+                           kInitialSequenceNumber),
+      event_engine(), /*on_receive_settings=*/nullptr);
+  client_transport->SpawnTransportLoops();
+
+  auto call = MakeCall(TestInitialMetadata());
+  client_transport->StartCall(call.handler.StartCall());
+
+  call.initiator.SpawnGuarded("test-send", [initiator =
+                                                call.initiator]() mutable {
+    return Seq(
+        initiator.PushMessage(Arena::MakePooled<Message>(
+            SliceBuffer(Slice::FromExternalString("Hello!")), 0)),
+        [initiator = initiator]() mutable { return initiator.FinishSends(); },
+        []() { return absl::OkStatus(); });
+  });
+  call.initiator.SpawnInfallible(
+      "test-wait",
+      [initator = call.initiator, &on_done,
+       read_close_transport = std::move(read_close_transport)]() mutable {
+        return Seq(
+            initator.PullServerTrailingMetadata(),
+            [&on_done, read_close_transport = std::move(read_close_transport)](
+                ServerMetadataHandle metadata) mutable {
+              on_done.Call();
+              read_close_transport();
+              return Empty{};
+            });
+      });
+  // Wait for Http2ClientTransport's internal activities to finish.
+  event_engine()->TickUntilIdle();
+  event_engine()->UnsetGlobalHooks();
+}
+
+TEST_F(Http2ClientTransportTest, TestMaxAllowedStreamId) {
+  // This test verifies the following:
+  // 1. Any new streams attempted after stream IDs are exhausted will fail with
+  // RESOURCE_EXHAUSTED.
+  // 2. The transport sends a GOAWAY frame when the last stream closes and no
+  // more stream IDs are available.
+  // Reads
+  ExecCtx ctx;
+  MockPromiseEndpoint mock_endpoint(/*port=*/1000);
+  constexpr uint32_t kMaxAllowedStreamId = RFC9113::kMaxStreamId31Bit;
+  StrictMock<MockFunction<void()>> on_done;
+  EXPECT_CALL(on_done, Call()).Times(2);
+  auto read_trailers_only = mock_endpoint.ExpectDelayedRead(
+      {helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
+       helper_.EventEngineSliceFromHttp2HeaderFrame(
+           std::string(kPathDemoServiceStep.begin(),
+                       kPathDemoServiceStep.end()),
+           /*stream_id=*/kMaxAllowedStreamId,
+           /*end_headers=*/true, /*end_stream=*/true),
+       helper_.EventEngineSliceFromHttp2RstStreamFrame(
+           /*stream_id=*/kMaxAllowedStreamId)},
+      event_engine().get());
+
+  auto read_close_transport = mock_endpoint.ExpectDelayedReadClose(
+      absl::UnavailableError(kConnectionClosed), event_engine().get());
+
+  // Writes
+  mock_endpoint.ExpectWrite(
+      {
+          EventEngineSlice(
+              grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
+          helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
+      },
+      event_engine().get());
+
+  mock_endpoint.ExpectWriteWithCallback(
+      {helper_.EventEngineSliceFromHttp2HeaderFrame(
+          std::string(kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()),
+          /*stream_id=*/kMaxAllowedStreamId, /*end_headers=*/true,
+          /*end_stream=*/false)},
+      event_engine().get(),
+      [read_trailers_only = std::move(read_trailers_only)](
+          SliceBuffer& out, SliceBuffer& expect) mutable {
+        EXPECT_EQ(out.JoinIntoString(), expect.JoinIntoString());
+        read_trailers_only();
+      });
+  mock_endpoint.ExpectWrite(
+      {
+          helper_.EventEngineSliceFromHttp2SettingsFrameAck(),
+      },
+      event_engine().get());
+
+  mock_endpoint.ExpectWrite(
+      {
+          helper_.EventEngineSliceFromHttp2GoawayFrame(
+              /*debug_data=*/RFC9113::kLastStreamClosed,
+              /*last_stream_id=*/0,
+              /*error_code=*/
+              static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
+      },
+      event_engine().get());
+
+  auto client_transport = MakeOrphanable<Http2ClientTransport>(
+      std::move(mock_endpoint.promise_endpoint),
+      GetChannelArgs().Set(GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER,
+                           kMaxAllowedStreamId),
+      event_engine(), /*on_receive_settings=*/nullptr);
+  client_transport->SpawnTransportLoops();
+
+  auto call = MakeCall(TestInitialMetadata());
+  client_transport->StartCall(call.handler.StartCall());
+
+  call.initiator.SpawnInfallible(
+      "test-wait", [&, initator = call.initiator]() mutable {
+        return Seq(initator.PullServerTrailingMetadata(),
+                   [&](ServerMetadataHandle metadata) mutable {
+                     EXPECT_EQ(
+                         metadata->DebugString(),
+                         ":path: /demo.Service/Step, GrpcStatusFromWire: true");
+                     on_done.Call();
+                     return Empty{};
+                   });
+      });
+
+  auto call2 = MakeCall(TestInitialMetadata());
+  client_transport->StartCall(call2.handler.StartCall());
+  call2.initiator.SpawnInfallible(
+      "test-wait-call2",
+      [&, initator = call2.initiator,
+       read_close_transport = std::move(read_close_transport)]() mutable {
+        return Seq(
+            initator.PullServerTrailingMetadata(),
+            [&, read_close_transport = std::move(read_close_transport)](
+                ServerMetadataHandle metadata) mutable {
+              EXPECT_EQ(
+                  metadata->DebugString(),
+                  "grpc-message: No more stream ids available, grpc-status: "
+                  "RESOURCE_EXHAUSTED, GrpcCallWasCancelled: true");
+              std::move(read_close_transport)();
+              on_done.Call();
+              return Empty{};
+            });
+      });
+
+  // Wait for Http2ClientTransport's internal activities to finish.
+  event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
 }
 
@@ -1406,6 +1737,9 @@ TEST_F(Http2ClientTransportTest, TestFlowControlWindow) {
 
 }  // namespace http2
 }  // namespace grpc_core
+
+// TODO(tjagtap) : [PH2][P1] BURNING : Write a test for Settings, and Settings
+// Acks, Incoming and Outgoing
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);

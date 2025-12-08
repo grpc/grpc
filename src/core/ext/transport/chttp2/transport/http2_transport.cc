@@ -18,31 +18,50 @@
 
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
+
+#include <algorithm>
+#include <climits>
 #include <cstdint>
+#include <memory>
+#include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 
-#include "src/core/call/call_spine.h"
 #include "src/core/call/metadata_info.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/header_assembler.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/promise/mpsc.h"
-#include "src/core/lib/promise/party.h"
-#include "src/core/lib/transport/promise_endpoint.h"
-#include "src/core/lib/transport/transport.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 #include "absl/log/log.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 namespace http2 {
+
+constexpr Duration kDefaultPingTimeout = Duration::Minutes(1);
+constexpr Duration kDefaultKeepaliveTimeout = Duration::Seconds(20);
+constexpr bool kDefaultKeepalivePermitWithoutCalls = false;
+constexpr bool kDefaultEnablePreferredRxCryptoFrameAdvertisement = false;
+
+constexpr Duration kClientKeepaliveTime = Duration::Infinity();
+
+constexpr Duration kServerKeepaliveTime = Duration::Hours(2);
 
 // Experimental : This is just the initial skeleton of class
 // and it is functions. The code will be written iteratively.
@@ -50,7 +69,7 @@ namespace http2 {
 // familiar with the PH2 project (Moving chttp2 to promises.)
 
 ///////////////////////////////////////////////////////////////////////////////
-// Settings and ChannelArgs helpers
+// Settings helpers
 
 void InitLocalSettings(Http2Settings& settings, const bool is_client) {
   if (is_client) {
@@ -62,6 +81,60 @@ void InitLocalSettings(Http2Settings& settings, const bool is_client) {
   }
   settings.SetMaxHeaderListSize(DEFAULT_MAX_HEADER_LIST_SIZE);
   settings.SetAllowTrueBinaryMetadata(true);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Channel Args helpers
+void ReadChannelArgs(const ChannelArgs& channel_args,
+                     TransportChannelArgs& args, Http2Settings& local_settings,
+                     chttp2::TransportFlowControl& flow_control,
+                     bool is_client) {
+  ReadSettingsFromChannelArgs(channel_args, local_settings, flow_control,
+                              is_client);
+
+  args.max_header_list_size_soft_limit =
+      GetSoftLimitFromChannelArgs(channel_args);
+  args.keepalive_time = std::max(
+      Duration::Milliseconds(1),
+      channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIME_MS)
+          .value_or(is_client ? kClientKeepaliveTime : kServerKeepaliveTime));
+  args.keepalive_timeout = std::max(
+      Duration::Zero(),
+      channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIMEOUT_MS)
+          .value_or(args.keepalive_time == Duration::Infinity()
+                        ? Duration::Infinity()
+                        : kDefaultKeepaliveTimeout));
+  args.ping_timeout =
+      std::max(Duration::Zero(),
+               channel_args.GetDurationFromIntMillis(GRPC_ARG_PING_TIMEOUT_MS)
+                   .value_or(args.keepalive_time == Duration::Infinity()
+                                 ? Duration::Infinity()
+                                 : kDefaultPingTimeout));
+  args.settings_timeout =
+      channel_args.GetDurationFromIntMillis(GRPC_ARG_SETTINGS_TIMEOUT)
+          .value_or(std::max(args.keepalive_timeout * 2, Duration::Minutes(1)));
+
+  args.keepalive_permit_without_calls =
+      channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
+          .value_or(kDefaultKeepalivePermitWithoutCalls);
+
+  args.enable_preferred_rx_crypto_frame_advertisement =
+      channel_args
+          .GetBool(GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE)
+          .value_or(kDefaultEnablePreferredRxCryptoFrameAdvertisement);
+
+  args.max_usable_hpack_table_size =
+      channel_args.GetInt(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER).value_or(-1);
+
+  args.initial_sequence_number =
+      channel_args.GetInt(GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER).value_or(-1);
+  if (args.initial_sequence_number >= 0 &&
+      (args.initial_sequence_number & 1) == 0) {
+    LOG(ERROR) << "Initial sequence number MUST be odd. Ignoring the value.";
+    args.initial_sequence_number = -1;
+  }
+
+  GRPC_HTTP2_COMMON_DLOG << "ChannelArgs: " << args.DebugString();
 }
 
 void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
@@ -242,6 +315,44 @@ bool ProcessIncomingWindowUpdateFrameFlowControl(
     }
   }
   return false;
+}
+
+// /////////////////////////////////////////////////////////////////////////////
+// Header and Continuation frame processing helpers
+Http2Status ParseAndDiscardHeaders(HPackParser& parser, SliceBuffer&& buffer,
+                                   HeaderAssembler::ParseHeaderArgs args,
+                                   const RefCountedPtr<Stream> stream,
+                                   Http2Status&& original_status) {
+  GRPC_HTTP2_COMMON_DLOG << "ParseAndDiscardHeaders buffer "
+                            "size: "
+                         << buffer.Length() << " args: " << args.DebugString()
+                         << " stream_id: "
+                         << (stream == nullptr ? 0 : stream->GetStreamId())
+                         << " original_status: "
+                         << original_status.DebugString();
+
+  if (stream != nullptr) {
+    // Parse all the data in the header assembler
+    Http2Status result = stream->header_assembler.ParseAndDiscardHeaders(
+        parser, args.is_initial_metadata, args.is_client,
+        args.max_header_list_size_soft_limit,
+        args.max_header_list_size_hard_limit);
+    if (!result.IsOk()) {
+      GRPC_DCHECK(result.GetType() ==
+                  Http2Status::Http2ErrorType::kConnectionError);
+      LOG(ERROR) << "Connection Error: " << result;
+      return result;
+    }
+  }
+
+  if (buffer.Length() == 0) {
+    return std::move(original_status);
+  }
+
+  Http2Status status = HeaderAssembler::ParseHeader(
+      parser, std::move(buffer), /*grpc_metadata_batch=*/nullptr, args);
+
+  return (status.IsOk()) ? std::move(original_status) : std::move(status);
 }
 
 }  // namespace http2

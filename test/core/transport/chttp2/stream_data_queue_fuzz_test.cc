@@ -224,11 +224,11 @@ class StreamDataQueueFuzzTest : public YodelTest {
       header_assembler_.SetStreamId(stream_id);
     }
     void operator()(Http2HeaderFrame frame) {
-      auto status = header_assembler_.AppendHeaderFrame(std::move(frame));
+      auto status = header_assembler_.AppendHeaderFrame(frame);
       EXPECT_TRUE(status.IsOk());
     }
     void operator()(Http2ContinuationFrame frame) {
-      auto status = header_assembler_.AppendContinuationFrame(std::move(frame));
+      auto status = header_assembler_.AppendContinuationFrame(frame);
       EXPECT_TRUE(status.IsOk());
     }
     void operator()(Http2DataFrame frame) {
@@ -391,7 +391,6 @@ YODEL_TEST(StreamDataQueueFuzzTest, EnqueueDequeueMultiParty) {
                       max_tokens, max_frame_length, /*stream_fc_tokens=*/
                       std::numeric_limits<uint32_t>::max(), GetEncoder(),
                       /*can_send_reset_stream=*/true);
-              // TODO(tjagtap) [PH2][P1][FlowControl] Plumb stream_fc_tokens
               for (auto& frame : frames.frames) {
                 std::visit(assembler, std::move(frame));
               }

@@ -33,8 +33,8 @@ licenses(["reciprocal"])
 package(
     default_visibility = ["//visibility:public"],
     features = [
-        "-parse_headers",
         "layering_check",
+        "parse_headers",
     ],
 )
 
@@ -91,6 +91,16 @@ config_setting(
 bool_flag(
     name = "disable_grpc_rls",
     build_setting_default = False,
+)
+
+bool_flag(
+    name = "postmortem_checks",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "grpc_postmortem_checks_enabled",
+    flag_values = {":postmortem_checks": "true"},
 )
 
 grpc_clang_cl_settings()
@@ -1929,6 +1939,7 @@ grpc_cc_library(
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:status_helper",
+        "//src/core:stream_quota",
         "//src/core:sync",
         "//src/core:time",
         "//src/core:try_join",
@@ -2019,6 +2030,7 @@ grpc_cc_library(
         "absl/types:span",
         "absl/utility",
         "madler_zlib",
+        "@com_google_protobuf//upb/mem",
     ],
     linkopts = select({
         "systemd": ["-lsystemd"],
@@ -2035,6 +2047,7 @@ grpc_cc_library(
         "channel_stack_builder",
         "channelz",
         "config",
+        "config_vars",
         "cpp_impl_of",
         "debug_location",
         "exec_ctx",
@@ -2085,6 +2098,7 @@ grpc_cc_library(
         "//src/core:gpr_manual_constructor",
         "//src/core:gpr_spinlock",
         "//src/core:grpc_check",
+        "//src/core:http2_status",
         "//src/core:if",
         "//src/core:iomgr_fwd",
         "//src/core:latch",
@@ -2120,7 +2134,9 @@ grpc_cc_library(
         "//src/core:try_seq",
         "//src/core:type_list",
         "//src/core:unique_type_name",
+        "//src/core:upb_utils",
         "//src/core:useful",
+        "//src/proto/grpc/channelz/v2:promise_upb_proto",
     ],
 )
 
@@ -3224,6 +3240,7 @@ grpc_cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "generic_stub_internal",
+        "grpc++",
     ],
 )
 
@@ -3234,6 +3251,7 @@ grpc_cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "gpr_platform",
         "grpc++_public_hdrs",
     ],
 )
@@ -3960,6 +3978,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_client_channel",
     srcs = [
+        "//src/core:client_channel/buffered_call.cc",
         "//src/core:client_channel/client_channel.cc",
         "//src/core:client_channel/client_channel_factory.cc",
         "//src/core:client_channel/client_channel_filter.cc",
@@ -3974,6 +3993,7 @@ grpc_cc_library(
         "//src/core:client_channel/subchannel_stream_client.cc",
     ],
     hdrs = [
+        "//src/core:client_channel/buffered_call.h",
         "//src/core:client_channel/client_channel.h",
         "//src/core:client_channel/client_channel_factory.h",
         "//src/core:client_channel/client_channel_filter.h",
@@ -3990,6 +4010,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/cleanup",
+        "absl/container:flat_hash_map",
         "absl/container:flat_hash_set",
         "absl/container:inlined_vector",
         "absl/functional:any_invocable",
@@ -4799,6 +4820,7 @@ grpc_cc_library(
         "//src/core:http2_settings",
         "//src/core:http2_status",
         "//src/core:memory_usage",
+        "//src/core:message",
         "//src/core:slice",
         "//src/core:slice_buffer",
     ],
@@ -5027,6 +5049,7 @@ grpc_cc_library(
         "absl/strings:cord",
         "absl/strings:str_format",
         "absl/time",
+        "@com_google_protobuf//upb/mem",
     ],
     visibility = ["//bazel:grpclb"],
     deps = [
@@ -5099,12 +5122,14 @@ grpc_cc_library(
         "//src/core:stats_data",
         "//src/core:status_conversion",
         "//src/core:status_helper",
+        "//src/core:stream_quota",
         "//src/core:tcp_tracer",
         "//src/core:time",
         "//src/core:transport_common",
         "//src/core:transport_framing_endpoint_extension",
         "//src/core:useful",
         "//src/core:write_size_policy",
+        "//src/proto/grpc/channelz/v2:promise_upb_proto",
     ],
 )
 
