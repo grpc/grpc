@@ -463,5 +463,3 @@ int main(int argc, char** argv) {
   grpc_shutdown();
   return ret;
 }
-
-
