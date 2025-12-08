@@ -22,8 +22,8 @@
 #include "src/core/util/upb_utils.h"
 #include "src/proto/grpc/channelz/v2/promise.upb.h"
 #include "src/proto/grpc/channelz/v2/property_list.upb.h"
-#include "gtest/gtest.h"
 #include "upb/mem/arena.hpp"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 
