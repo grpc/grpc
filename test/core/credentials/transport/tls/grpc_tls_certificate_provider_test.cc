@@ -877,6 +877,66 @@ TEST_F(GrpcTlsCertificateProviderTest, InMemoryCertificateProviderWatchers) {
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
+       InMemoryCertificateProviderWatchersVerification) {
+  InMemoryCertificateProvider provider;
+  provider.UpdateRoot(std::make_shared<RootCertInfo>(root_cert_));
+  provider.UpdateIdentity(
+      MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
+  // Watcher watching both root and identity certs.
+  WatcherState* both_watcher =
+      MakeWatcher(provider.distributor(), kCertName, kCertName);
+  // Watcher watching only root certs.
+  WatcherState* root_watcher =
+      MakeWatcher(provider.distributor(), kCertName, std::nullopt);
+  // Watcher watching only identity certs.
+  WatcherState* identity_watcher =
+      MakeWatcher(provider.distributor(), std::nullopt, kCertName);
+
+  // Initial State.
+  EXPECT_THAT(
+      both_watcher->GetCredentialQueue(),
+      ::testing::ElementsAre(MatchesCredentialInfo(
+          EqRootCert(root_cert_),
+          MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
+  EXPECT_THAT(root_watcher->GetCredentialQueue(),
+              ::testing::ElementsAre(MatchesCredentialInfo(
+                  EqRootCert(root_cert_), PemKeyCertPairList())));
+  EXPECT_THAT(identity_watcher->GetCredentialQueue(),
+              ::testing::ElementsAre(MatchesCredentialInfo(
+                  EqRootCert(""), MakeCertKeyPairs(private_key_.c_str(),
+                                                   cert_chain_.c_str()))));
+  // Update the Root Certificate.
+  provider.UpdateRoot(std::make_shared<RootCertInfo>(root_cert_2_));
+  EXPECT_THAT(
+      both_watcher->GetCredentialQueue(),
+      ::testing::ElementsAre(MatchesCredentialInfo(
+          EqRootCert(root_cert_2_),
+          MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
+  EXPECT_THAT(root_watcher->GetCredentialQueue(),
+              ::testing::ElementsAre(MatchesCredentialInfo(
+                  EqRootCert(root_cert_2_), PemKeyCertPairList())));
+  // No updates on the identity watcher.
+  EXPECT_THAT(identity_watcher->GetCredentialQueue(), ::testing::ElementsAre());
+  // Update the Identity Certificate
+  provider.UpdateIdentity(
+      MakeCertKeyPairs(private_key_2_.c_str(), cert_chain_2_.c_str()));
+  EXPECT_THAT(
+      both_watcher->GetCredentialQueue(),
+      ::testing::ElementsAre(MatchesCredentialInfo(
+          EqRootCert(root_cert_2_),
+          MakeCertKeyPairs(private_key_2_.c_str(), cert_chain_2_.c_str()))));
+  // No updates on the root watcher.
+  EXPECT_THAT(root_watcher->GetCredentialQueue(), ::testing::ElementsAre());
+  EXPECT_THAT(identity_watcher->GetCredentialQueue(),
+              ::testing::ElementsAre(MatchesCredentialInfo(
+                  EqRootCert(""), MakeCertKeyPairs(private_key_2_.c_str(),
+                                                   cert_chain_2_.c_str()))));
+  CancelWatch(both_watcher);
+  CancelWatch(root_watcher);
+  CancelWatch(identity_watcher);
+}
+
+TEST_F(GrpcTlsCertificateProviderTest,
        InMemoryCertificateProviderWithGoodPathsAndCredentialValidation) {
   InMemoryCertificateProvider provider;
   provider.UpdateRoot(std::make_shared<RootCertInfo>(root_cert_));
