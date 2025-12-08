@@ -119,8 +119,6 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|Http2SingleHopTests.RequestWithDefaultLowLevelDecompressInCore"            \
   "|Http2SingleHopTests.RequestWithDefaultNoneLevelDecompressInCore"           \
   "|Http2SingleHopTests.InvokeLargeRequest"                                    \
-  "|Http2SingleHopTests.KeepaliveTimeout"                                      \
-  "|Http2SingleHopTests.ReadDelaysKeepalive"                                   \
   "|Http2SingleHopTests.RequestWithLargeMetadataUnderSoftLimit"                \
   "|Http2SingleHopTests.RequestWithLargeMetadataBetweenSoftAndHardLimits"      \
   "|Http2SingleHopTests.RequestWithLargeMetadataAboveHardLimit"                \

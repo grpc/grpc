@@ -739,6 +739,10 @@ inline void DisableLoggingForPH2Tests() {
   }
 }
 
+inline bool IsPromiseBasedTransportEnabled() {
+  return IsPromiseBasedHttp2ClientTransportEnabled();
+}
+
 }  // namespace grpc_core
 
 // If this test fixture is being run under minstack, skip the test.

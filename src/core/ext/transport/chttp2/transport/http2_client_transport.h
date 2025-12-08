@@ -605,8 +605,9 @@ class Http2ClientTransport final : public ClientTransport,
       // kRefusedStream doesn't seem to fit this case. We should revisit this
       // and update the error code.
       return Immediate(transport_->HandleError(
-          std::nullopt, Http2Status::Http2ConnectionError(
-                            Http2ErrorCode::kRefusedStream, "Ping timeout")));
+          std::nullopt,
+          Http2Status::Http2ConnectionError(Http2ErrorCode::kRefusedStream,
+                                            GRPC_CHTTP2_PING_TIMEOUT_STR)));
     }
 
    private:
@@ -644,9 +645,9 @@ class Http2ClientTransport final : public ClientTransport,
       // kRefusedStream doesn't seem to fit this case. We should revisit this
       // and update the error code.
       return Immediate(transport_->HandleError(
-          std::nullopt,
-          Http2Status::Http2ConnectionError(Http2ErrorCode::kRefusedStream,
-                                            "Keepalive timeout")));
+          std::nullopt, Http2Status::Http2ConnectionError(
+                            Http2ErrorCode::kRefusedStream,
+                            GRPC_CHTTP2_KEEPALIVE_TIMEOUT_STR)));
     }
 
     bool NeedToSendKeepAlivePing() override {
