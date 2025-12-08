@@ -55,7 +55,6 @@ def generate_run_tests_portability_tests(name):
         compiler_configs = [
             # Some gRPC tests have an issue with gcc-7 so gcc-7 portability test won't build any gRPC tests
             ["gcc_7", "--cmake_configure_extra_args=-DCMAKE_CXX_STANDARD=17 --cmake_configure_extra_args=-DgRPC_BUILD_TESTS=OFF", "tools/dockerfile/test/cxx_gcc_7_x64.current_version"],
-
             # With gcc-8, building gRPC buildtests_cxx target either times out,
             # or fails with collect2: fatal error: ld terminated with signal 9.
             # We investigated this as an OOM issue, but increasing memory limits
@@ -72,7 +71,6 @@ def generate_run_tests_portability_tests(name):
             #
             # See build_cxx.sh for details on make targets built when
             # -DgRPC_BUILD_TESTS=OFF is set.
-
             ["gcc_8", "--cmake_configure_extra_args=-DCMAKE_CXX_STANDARD=17 --cmake_configure_extra_args=-DgRPC_BUILD_TESTS=OFF", "tools/dockerfile/test/cxx_gcc_8_x64.current_version"],
             ["gcc_14_cxx20", "--cmake_configure_extra_args=-DCMAKE_CXX_STANDARD=20", "tools/dockerfile/test/cxx_gcc_14_x64.current_version"],
             ["gcc10.2_openssl102", "--cmake_configure_extra_args=-DCMAKE_CXX_STANDARD=17 --cmake_configure_extra_args=-DgRPC_SSL_PROVIDER=package", "tools/dockerfile/test/cxx_debian11_openssl102_x64.current_version"],
