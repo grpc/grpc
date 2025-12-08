@@ -4818,6 +4818,7 @@ grpc_cc_library(
         "//src/core:http2_settings",
         "//src/core:http2_status",
         "//src/core:memory_usage",
+        "//src/core:message",
         "//src/core:slice",
         "//src/core:slice_buffer",
     ],

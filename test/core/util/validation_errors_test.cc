@@ -81,6 +81,26 @@ TEST(ValidationErrors, MultipleErrorsForSameField) {
       << status;
 }
 
+TEST(ValidationErrors, DedupsErrors) {
+  ValidationErrors errors;
+  {
+    ValidationErrors::ScopedField field(&errors, "foo");
+    {
+      ValidationErrors::ScopedField field(&errors, ".bar");
+      errors.AddError("value is ugly");
+      errors.AddError("value is ugly");
+    }
+  }
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(errors.size(), 1);
+  absl::Status status = errors.status(absl::StatusCode::kInvalidArgument,
+                                      "errors validating config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "errors validating config: [field:foo.bar error:value is ugly]")
+      << status;
+}
+
 TEST(ValidationErrors, ErrorsForMultipleFields) {
   ValidationErrors errors;
   {

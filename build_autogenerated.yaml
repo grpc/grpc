@@ -13155,6 +13155,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/call/message.h
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
@@ -13225,9 +13226,13 @@ targets:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
+  - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
+  - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
+  - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -13248,6 +13253,7 @@ targets:
   - src/core/util/avl.h
   - src/core/util/backoff.h
   - src/core/util/bitset.h
+  - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
   - src/core/util/dual_ref_counted.h
   - src/core/util/dump_args.h
@@ -13280,6 +13286,7 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/call/message.cc
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
@@ -13321,8 +13328,12 @@ targets:
   - src/core/lib/iomgr/sockaddr_utils_posix.cc
   - src/core/lib/iomgr/socket_utils_windows.cc
   - src/core/lib/promise/activity.cc
+  - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
+  - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/stream_quota.cc
+  - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
@@ -13374,6 +13385,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/call/message.h
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
@@ -13443,6 +13455,7 @@ targets:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
+  - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
@@ -13502,6 +13515,7 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/call/message.cc
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
@@ -13543,6 +13557,7 @@ targets:
   - src/core/lib/iomgr/sockaddr_utils_posix.cc
   - src/core/lib/iomgr/socket_utils_windows.cc
   - src/core/lib/promise/activity.cc
+  - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
@@ -13870,6 +13885,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/call/message.h
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
@@ -13890,6 +13906,8 @@ targets:
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h
@@ -13899,6 +13917,7 @@ targets:
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h
   - src/core/lib/address_utils/parse_address.h
@@ -13920,6 +13939,28 @@ targets:
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_windows.h
   - src/core/lib/iomgr/socket_utils.h
+  - src/core/lib/promise/activity.h
+  - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/seq_state.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/lib/promise/loop.h
+  - src/core/lib/promise/map.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
+  - src/core/lib/promise/race.h
+  - src/core/lib/promise/seq.h
+  - src/core/lib/resource_quota/arena.h
+  - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
+  - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/stream_quota.h
+  - src/core/lib/resource_quota/telemetry.h
+  - src/core/lib/resource_quota/thread_quota.h
+  - src/core/lib/resource_tracker/resource_tracker.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_buffer.h
@@ -13929,15 +13970,19 @@ targets:
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/status_conversion.h
+  - src/core/telemetry/histogram.h
   - src/core/telemetry/histogram_view.h
+  - src/core/telemetry/instrument.h
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
   - src/core/util/atomic_utils.h
   - src/core/util/avl.h
   - src/core/util/backoff.h
   - src/core/util/bitset.h
+  - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
   - src/core/util/dual_ref_counted.h
+  - src/core/util/dump_args.h
   - src/core/util/function_signature.h
   - src/core/util/glob.h
   - src/core/util/grpc_check.h
@@ -13967,6 +14012,7 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/call/message.cc
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
@@ -13980,6 +14026,7 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
   - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
@@ -13987,6 +14034,7 @@ targets:
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
   - src/core/lib/address_utils/parse_address.cc
@@ -14003,6 +14051,14 @@ targets:
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/iomgr/sockaddr_utils_posix.cc
   - src/core/lib/iomgr/socket_utils_windows.cc
+  - src/core/lib/promise/activity.cc
+  - src/core/lib/resource_quota/arena.cc
+  - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
+  - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/stream_quota.cc
+  - src/core/lib/resource_quota/thread_quota.cc
+  - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
@@ -14011,9 +14067,11 @@ targets:
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/telemetry/histogram_view.cc
+  - src/core/telemetry/instrument.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
   - src/core/util/backoff.cc
+  - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/grpc_check.cc
   - src/core/util/grpc_if_nametoindex_posix.cc
@@ -14036,6 +14094,7 @@ targets:
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
+  - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -14940,6 +14999,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/call/message.h
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
@@ -14960,6 +15020,8 @@ targets:
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h
@@ -14969,6 +15031,7 @@ targets:
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h
   - src/core/lib/address_utils/parse_address.h
@@ -14990,6 +15053,28 @@ targets:
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_windows.h
   - src/core/lib/iomgr/socket_utils.h
+  - src/core/lib/promise/activity.h
+  - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/seq_state.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/lib/promise/loop.h
+  - src/core/lib/promise/map.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
+  - src/core/lib/promise/race.h
+  - src/core/lib/promise/seq.h
+  - src/core/lib/resource_quota/arena.h
+  - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
+  - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/stream_quota.h
+  - src/core/lib/resource_quota/telemetry.h
+  - src/core/lib/resource_quota/thread_quota.h
+  - src/core/lib/resource_tracker/resource_tracker.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_buffer.h
@@ -14999,15 +15084,19 @@ targets:
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/status_conversion.h
+  - src/core/telemetry/histogram.h
   - src/core/telemetry/histogram_view.h
+  - src/core/telemetry/instrument.h
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
   - src/core/util/atomic_utils.h
   - src/core/util/avl.h
   - src/core/util/backoff.h
   - src/core/util/bitset.h
+  - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
   - src/core/util/dual_ref_counted.h
+  - src/core/util/dump_args.h
   - src/core/util/function_signature.h
   - src/core/util/glob.h
   - src/core/util/grpc_check.h
@@ -15038,6 +15127,7 @@ targets:
   - test/core/transport/chttp2/http2_common_test_inputs.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/call/message.cc
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
@@ -15051,6 +15141,7 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
   - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
@@ -15058,6 +15149,7 @@ targets:
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
   - src/core/lib/address_utils/parse_address.cc
@@ -15074,6 +15166,14 @@ targets:
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/iomgr/sockaddr_utils_posix.cc
   - src/core/lib/iomgr/socket_utils_windows.cc
+  - src/core/lib/promise/activity.cc
+  - src/core/lib/resource_quota/arena.cc
+  - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
+  - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/stream_quota.cc
+  - src/core/lib/resource_quota/thread_quota.cc
+  - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
@@ -15082,9 +15182,11 @@ targets:
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/telemetry/histogram_view.cc
+  - src/core/telemetry/instrument.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
   - src/core/util/backoff.cc
+  - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/grpc_check.cc
   - src/core/util/grpc_if_nametoindex_posix.cc
@@ -15107,6 +15209,7 @@ targets:
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
+  - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -17816,6 +17919,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/call/message.h
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
@@ -17871,9 +17975,28 @@ targets:
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_windows.h
   - src/core/lib/iomgr/socket_utils.h
+  - src/core/lib/promise/activity.h
+  - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/seq_state.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/lib/promise/loop.h
+  - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
+  - src/core/lib/promise/race.h
+  - src/core/lib/promise/seq.h
+  - src/core/lib/resource_quota/arena.h
+  - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
+  - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/stream_quota.h
+  - src/core/lib/resource_quota/telemetry.h
+  - src/core/lib/resource_quota/thread_quota.h
+  - src/core/lib/resource_tracker/resource_tracker.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_buffer.h
@@ -17883,15 +18006,19 @@ targets:
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/status_conversion.h
+  - src/core/telemetry/histogram.h
   - src/core/telemetry/histogram_view.h
+  - src/core/telemetry/instrument.h
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
   - src/core/util/atomic_utils.h
   - src/core/util/avl.h
   - src/core/util/backoff.h
   - src/core/util/bitset.h
+  - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
   - src/core/util/dual_ref_counted.h
+  - src/core/util/dump_args.h
   - src/core/util/function_signature.h
   - src/core/util/glob.h
   - src/core/util/grpc_check.h
@@ -17921,6 +18048,7 @@ targets:
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/call/message.cc
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
@@ -17959,6 +18087,14 @@ targets:
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/iomgr/sockaddr_utils_posix.cc
   - src/core/lib/iomgr/socket_utils_windows.cc
+  - src/core/lib/promise/activity.cc
+  - src/core/lib/resource_quota/arena.cc
+  - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
+  - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/stream_quota.cc
+  - src/core/lib/resource_quota/thread_quota.cc
+  - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
@@ -17967,9 +18103,11 @@ targets:
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/telemetry/histogram_view.cc
+  - src/core/telemetry/instrument.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
   - src/core/util/backoff.cc
+  - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/grpc_check.cc
   - src/core/util/grpc_if_nametoindex_posix.cc
@@ -17993,6 +18131,7 @@ targets:
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
+  - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -27094,6 +27233,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: varint_test
   gtest: true
   build: test

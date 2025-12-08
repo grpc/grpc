@@ -130,8 +130,6 @@ class ValidationErrors {
   void PopField() GPR_ATTRIBUTE_NOINLINE;
 
   // Errors that we have encountered so far, keyed by field name.
-  // TODO(roth): If we don't actually have any fields for which we
-  // report more than one error, simplify this data structure.
   std::map<std::string /*field_name*/, std::set<std::string>> field_errors_;
   // Stack of field names indicating the field that we are currently
   // validating.

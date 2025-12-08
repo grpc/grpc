@@ -19,6 +19,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 
 #include <algorithm>
 #include <climits>
@@ -124,6 +125,14 @@ void ReadChannelArgs(const ChannelArgs& channel_args,
 
   args.max_usable_hpack_table_size =
       channel_args.GetInt(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER).value_or(-1);
+
+  args.initial_sequence_number =
+      channel_args.GetInt(GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER).value_or(-1);
+  if (args.initial_sequence_number >= 0 &&
+      (args.initial_sequence_number & 1) == 0) {
+    LOG(ERROR) << "Initial sequence number MUST be odd. Ignoring the value.";
+    args.initial_sequence_number = -1;
+  }
 
   GRPC_HTTP2_COMMON_DLOG << "ChannelArgs: " << args.DebugString();
 }
