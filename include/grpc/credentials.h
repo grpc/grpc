@@ -648,21 +648,6 @@ GRPCAPI void grpc_tls_identity_pairs_destroy(grpc_tls_identity_pairs* pairs);
 /**
  * EXPERIMENTAL API - Subject to change
  *
- * Creates a grpc_tls_certificate_provider that will load credential data from
- * static string during initialization. This provider will always return the
- * same cert data for all cert names.
- * root_certificate and pem_key_cert_pairs can be nullptr, indicating the
- * corresponding credential data is not needed.
- * This function will make a copy of |root_certificate|.
- * The ownership of |pem_key_cert_pairs| is transferred.
- */
-GRPCAPI grpc_tls_certificate_provider*
-grpc_tls_certificate_provider_static_data_create(
-    const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs);
-
-/**
- * EXPERIMENTAL API - Subject to change
- *
  * Creates a grpc_tls_certificate_provider that will watch the credential
  * changes on the file system. This provider will always return the up-to-date
  * cert data for all the cert names callers set through

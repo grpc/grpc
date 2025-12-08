@@ -52,6 +52,8 @@ class TlsCredentialsOptions {
 
   // ---- Setters for member fields ----
   // Sets the certificate provider used to store root certs and identity certs.
+  void set_certificate_provider(
+      std::shared_ptr<CertificateProviderInterface> certificate_provider);
   void set_root_certificate_provider(
       std::shared_ptr<CertificateProviderInterface> certificate_provider);
   void set_identity_certificate_provider(

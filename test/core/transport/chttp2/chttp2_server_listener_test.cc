@@ -308,8 +308,8 @@ RefCountedPtr<grpc_server_credentials> CreateSecureServerCredentials() {
   grpc_tls_identity_pairs_add_pair(server_pairs, server_key.c_str(),
                                    server_cert.c_str());
   grpc_tls_certificate_provider* server_provider =
-      grpc_tls_certificate_provider_static_data_create(ca_cert.c_str(),
-                                                       server_pairs);
+      grpc_tls_certificate_provider_in_memory_create(ca_cert.c_str(),
+                                                     server_pairs);
   grpc_tls_credentials_options_set_certificate_provider(options,
                                                         server_provider);
   grpc_tls_certificate_provider_release(server_provider);

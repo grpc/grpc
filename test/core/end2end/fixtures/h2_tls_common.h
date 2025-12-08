@@ -92,13 +92,13 @@ class TlsFixture : public SecureFixture {
             grpc_tls_identity_pairs_create();
         grpc_tls_identity_pairs_add_pair(client_pairs, private_key.c_str(),
                                          identity_cert.c_str());
-        client_provider_ = grpc_tls_certificate_provider_static_data_create(
+        client_provider_ = grpc_tls_certificate_provider_in_memory_create(
             root_cert.c_str(), client_pairs);
         grpc_tls_identity_pairs* server_pairs =
             grpc_tls_identity_pairs_create();
         grpc_tls_identity_pairs_add_pair(server_pairs, private_key.c_str(),
                                          identity_cert.c_str());
-        server_provider_ = grpc_tls_certificate_provider_static_data_create(
+        server_provider_ = grpc_tls_certificate_provider_in_memory_create(
             root_cert.c_str(), server_pairs);
         break;
       }

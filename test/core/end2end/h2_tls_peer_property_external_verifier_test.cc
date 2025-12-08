@@ -73,7 +73,7 @@ grpc_server* server_create(grpc_completion_queue* cq, const char* server_addr,
   grpc_tls_identity_pairs* server_pairs = grpc_tls_identity_pairs_create();
   grpc_tls_identity_pairs_add_pair(server_pairs, server_key.c_str(),
                                    server_cert.c_str());
-  *server_provider = grpc_tls_certificate_provider_static_data_create(
+  *server_provider = grpc_tls_certificate_provider_in_memory_create(
       ca_cert.c_str(), server_pairs);
   grpc_tls_credentials_options_set_certificate_provider(options,
                                                         *server_provider);
@@ -113,7 +113,7 @@ grpc_channel* client_create(const char* server_addr,
   grpc_tls_identity_pairs* client_pairs = grpc_tls_identity_pairs_create();
   grpc_tls_identity_pairs_add_pair(client_pairs, client_key.c_str(),
                                    client_cert.c_str());
-  *client_provider = grpc_tls_certificate_provider_static_data_create(
+  *client_provider = grpc_tls_certificate_provider_in_memory_create(
       ca_cert.c_str(), client_pairs);
 
   grpc_tls_credentials_options_set_certificate_provider(options,

@@ -47,6 +47,15 @@ TlsCredentialsOptions::TlsCredentialsOptions(
       grpc_tls_credentials_options_copy(other.c_credentials_options_);
 }
 
+void TlsCredentialsOptions::set_certificate_provider(
+    std::shared_ptr<CertificateProviderInterface> certificate_provider) {
+  certificate_provider_ = certificate_provider;
+  if (certificate_provider_ != nullptr) {
+    grpc_tls_credentials_options_set_certificate_provider(
+        c_credentials_options_, certificate_provider_->c_provider());
+  }
+}
+
 void TlsCredentialsOptions::set_identity_certificate_provider(
     std::shared_ptr<CertificateProviderInterface> certificate_provider) {
   certificate_provider_ = certificate_provider;

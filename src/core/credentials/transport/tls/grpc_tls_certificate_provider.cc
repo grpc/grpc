@@ -553,12 +553,6 @@ UniqueTypeName InMemoryCertificateProvider::type() const {
 
 /// -- Wrapper APIs declared in grpc_security.h -- *
 
-grpc_tls_certificate_provider* grpc_tls_certificate_provider_static_data_create(
-    const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs) {
-  return grpc_tls_certificate_provider_in_memory_create(root_certificate,
-                                                        pem_key_cert_pairs);
-}
-
 grpc_tls_certificate_provider*
 grpc_tls_certificate_provider_file_watcher_create(
     const char* private_key_path, const char* identity_certificate_path,
