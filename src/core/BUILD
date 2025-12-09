@@ -10635,6 +10635,7 @@ grpc_cc_library(
         "match",
         "ssl_transport_security_utils",
         "//:tsi_base",
+        "//:grpc_base",
     ],
 )
 
