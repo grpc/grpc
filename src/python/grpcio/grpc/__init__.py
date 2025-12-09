@@ -1457,7 +1457,11 @@ class ServerInterceptor(abc.ABC):
     """Affords intercepting incoming RPCs on the service-side."""
 
     @abc.abstractmethod
-    def intercept_service(self, continuation, handler_call_details):
+    def intercept_service(
+        self,
+        continuation: Callable[[HandlerCallDetails], Optional[RpcMethodHandler]],
+        handler_call_details: HandlerCallDetails,
+    ) -> Optional[RpcMethodHandler]:
         """Intercepts incoming RPCs before handing them over to a handler.
 
         State can be passed from an interceptor to downstream interceptors
