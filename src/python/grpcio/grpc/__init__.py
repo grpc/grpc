@@ -21,17 +21,33 @@ import logging
 import sys
 import types
 
-from typing import Optional, Any, Callable, Mapping, Iterable, TYPE_CHECKING
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    TYPE_CHECKING,
+    Union,
+)
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
 from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
 from grpc._typing import (
+    ChannelArgumentType,
+    DeserializingFunction,
     MetadataType,
     NullaryCallbackType,
+    RequestType,
+    ResponseType,
     SerializingFunction,
-    DeserializingFunction,
 )
 
 if TYPE_CHECKING:
@@ -1627,8 +1643,10 @@ class Server(abc.ABC):
 
 
 def unary_unary_rpc_method_handler(
-    behavior, request_deserializer=None, response_serializer=None
-):
+    behavior: Callable[[RequestType, ServicerContext], ResponseType],
+    request_deserializer: Optional[DeserializingFunction] = None,
+    response_serializer: Optional[SerializingFunction] = None,
+) -> RpcMethodHandler:
     """Creates an RpcMethodHandler for a unary-unary RPC method.
 
     Args:
@@ -1655,8 +1673,10 @@ def unary_unary_rpc_method_handler(
 
 
 def unary_stream_rpc_method_handler(
-    behavior, request_deserializer=None, response_serializer=None
-):
+    behavior: Callable[[RequestType, ServicerContext], Iterator[ResponseType]],
+    request_deserializer: Optional[DeserializingFunction] = None,
+    response_serializer: Optional[SerializingFunction] = None,
+) -> RpcMethodHandler:
     """Creates an RpcMethodHandler for a unary-stream RPC method.
 
     Args:
@@ -1683,8 +1703,10 @@ def unary_stream_rpc_method_handler(
 
 
 def stream_unary_rpc_method_handler(
-    behavior, request_deserializer=None, response_serializer=None
-):
+    behavior: Callable[[Iterator[RequestType], ServicerContext], ResponseType],
+    request_deserializer: Optional[DeserializingFunction] = None,
+    response_serializer: Optional[SerializingFunction] = None,
+) -> RpcMethodHandler:
     """Creates an RpcMethodHandler for a stream-unary RPC method.
 
     Args:
@@ -1711,8 +1733,12 @@ def stream_unary_rpc_method_handler(
 
 
 def stream_stream_rpc_method_handler(
-    behavior, request_deserializer=None, response_serializer=None
-):
+    behavior: Callable[
+        [Iterator[RequestType], ServicerContext], Iterator[ResponseType]
+    ],
+    request_deserializer: Optional[DeserializingFunction] = None,
+    response_serializer: Optional[SerializingFunction] = None,
+) -> RpcMethodHandler:
     """Creates an RpcMethodHandler for a stream-stream RPC method.
 
     Args:
@@ -1738,7 +1764,9 @@ def stream_stream_rpc_method_handler(
     )
 
 
-def method_handlers_generic_handler(service, method_handlers):
+def method_handlers_generic_handler(
+    service: str, method_handlers: Dict[str, RpcMethodHandler]
+) -> GenericRpcHandler:
     """Creates a GenericRpcHandler from RpcMethodHandlers.
 
     Args:
@@ -1757,8 +1785,10 @@ def method_handlers_generic_handler(service, method_handlers):
 
 
 def ssl_channel_credentials(
-    root_certificates=None, private_key=None, certificate_chain=None
-):
+    root_certificates: Optional[bytes] = None,
+    private_key: Optional[bytes] = None,
+    certificate_chain: Optional[bytes] = None,
+) -> ChannelCredentials:
     """Creates a ChannelCredentials for use with an SSL-enabled Channel.
 
     Args:
@@ -1780,7 +1810,9 @@ def ssl_channel_credentials(
     )
 
 
-def xds_channel_credentials(fallback_credentials=None):
+def xds_channel_credentials(
+    fallback_credentials: Optional[ChannelCredentials] = None,
+) -> ChannelCredentials:
     """Creates a ChannelCredentials for use with xDS. This is an EXPERIMENTAL
       API.
 
@@ -1799,7 +1831,9 @@ def xds_channel_credentials(fallback_credentials=None):
     )
 
 
-def metadata_call_credentials(metadata_plugin, name=None):
+def metadata_call_credentials(
+    metadata_plugin: AuthMetadataPlugin, name: Optional[str] = None
+) -> CallCredentials:
     """Construct CallCredentials from an AuthMetadataPlugin.
 
     Args:
@@ -1816,7 +1850,7 @@ def metadata_call_credentials(metadata_plugin, name=None):
     )
 
 
-def access_token_call_credentials(access_token):
+def access_token_call_credentials(access_token: str) -> CallCredentials:
     """Construct CallCredentials from an access token.
 
     Args:
@@ -1835,7 +1869,9 @@ def access_token_call_credentials(access_token):
     )
 
 
-def composite_call_credentials(*call_credentials):
+def composite_call_credentials(
+    *call_credentials: CallCredentials,
+) -> CallCredentials:
     """Compose multiple CallCredentials to make a new CallCredentials.
 
     Args:
@@ -1854,7 +1890,9 @@ def composite_call_credentials(*call_credentials):
     )
 
 
-def composite_channel_credentials(channel_credentials, *call_credentials):
+def composite_channel_credentials(
+    channel_credentials: ChannelCredentials, *call_credentials: CallCredentials
+) -> ChannelCredentials:
     """Compose a ChannelCredentials and one or more CallCredentials objects.
 
     Args:
@@ -1877,10 +1915,10 @@ def composite_channel_credentials(channel_credentials, *call_credentials):
 
 
 def ssl_server_credentials(
-    private_key_certificate_chain_pairs,
-    root_certificates=None,
-    require_client_auth=False,
-):
+    private_key_certificate_chain_pairs: List[Tuple[bytes, bytes]],
+    root_certificates: Optional[bytes] = None,
+    require_client_auth: bool = False,
+) -> ServerCredentials:
     """Creates a ServerCredentials for use with an SSL-enabled Server.
 
     Args:
@@ -1917,7 +1955,9 @@ def ssl_server_credentials(
     )
 
 
-def xds_server_credentials(fallback_credentials):
+def xds_server_credentials(
+    fallback_credentials: ChannelCredentials,
+) -> ServerCredentials:
     """Creates a ServerCredentials for use with xDS. This is an EXPERIMENTAL
       API.
 
@@ -1930,7 +1970,7 @@ def xds_server_credentials(fallback_credentials):
     )
 
 
-def insecure_server_credentials():
+def insecure_server_credentials() -> ServerCredentials:
     """Creates a credentials object directing the server to use no credentials.
       This is an EXPERIMENTAL API.
 
@@ -1942,8 +1982,9 @@ def insecure_server_credentials():
 
 
 def ssl_server_certificate_configuration(
-    private_key_certificate_chain_pairs, root_certificates=None
-):
+    private_key_certificate_chain_pairs: List[Tuple[bytes, bytes]],
+    root_certificates: Optional[bytes] = None,
+) -> ServerCertificateConfiguration:
     """Creates a ServerCertificateConfiguration for use with a Server.
 
     Args:
@@ -1972,10 +2013,12 @@ def ssl_server_certificate_configuration(
 
 
 def dynamic_ssl_server_credentials(
-    initial_certificate_configuration,
-    certificate_configuration_fetcher,
-    require_client_authentication=False,
-):
+    initial_certificate_configuration: ServerCertificateConfiguration,
+    certificate_configuration_fetcher: Callable[
+        [], Optional[ServerCertificateConfiguration]
+    ],
+    require_client_authentication: bool = False,
+) -> ServerCredentials:
     """Creates a ServerCredentials for use with an SSL-enabled Server.
 
     Args:
@@ -2018,7 +2061,9 @@ class LocalConnectionType(enum.Enum):
     LOCAL_TCP = _cygrpc.LocalConnectionType.local_tcp
 
 
-def local_channel_credentials(local_connect_type=LocalConnectionType.LOCAL_TCP):
+def local_channel_credentials(
+    local_connect_type: LocalConnectionType = LocalConnectionType.LOCAL_TCP,
+) -> ChannelCredentials:
     """Creates a local ChannelCredentials used for local connections.
 
     This is an EXPERIMENTAL API.
@@ -2049,7 +2094,9 @@ def local_channel_credentials(local_connect_type=LocalConnectionType.LOCAL_TCP):
     )
 
 
-def local_server_credentials(local_connect_type=LocalConnectionType.LOCAL_TCP):
+def local_server_credentials(
+    local_connect_type: LocalConnectionType = LocalConnectionType.LOCAL_TCP,
+) -> ServerCredentials:
     """Creates a local ServerCredentials used for local connections.
 
     This is an EXPERIMENTAL API.
@@ -2080,7 +2127,9 @@ def local_server_credentials(local_connect_type=LocalConnectionType.LOCAL_TCP):
     )
 
 
-def alts_channel_credentials(service_accounts=None):
+def alts_channel_credentials(
+    service_accounts: Optional[List[str]] = None,
+) -> ChannelCredentials:
     """Creates a ChannelCredentials for use with an ALTS-enabled Channel.
 
     This is an EXPERIMENTAL API.
@@ -2103,7 +2152,7 @@ def alts_channel_credentials(service_accounts=None):
     )
 
 
-def alts_server_credentials():
+def alts_server_credentials() -> ServerCredentials:
     """Creates a ServerCredentials for use with an ALTS-enabled connection.
 
     This is an EXPERIMENTAL API.
@@ -2117,7 +2166,9 @@ def alts_server_credentials():
     return ServerCredentials(_cygrpc.server_credentials_alts())
 
 
-def compute_engine_channel_credentials(call_credentials):
+def compute_engine_channel_credentials(
+    call_credentials: Optional[CallCredentials] = None,
+) -> ChannelCredentials:
     """Creates a compute engine channel credential.
 
     This credential can only be used in a GCP environment as it relies on
@@ -2136,7 +2187,7 @@ def compute_engine_channel_credentials(call_credentials):
     )
 
 
-def channel_ready_future(channel):
+def channel_ready_future(channel: Channel) -> Future:
     """Creates a Future that tracks when a Channel is ready.
 
     Cancelling the Future does not affect the channel's state machine.
@@ -2154,7 +2205,11 @@ def channel_ready_future(channel):
     return _utilities.channel_ready_future(channel)
 
 
-def insecure_channel(target, options=None, compression=None):
+def insecure_channel(
+    target: str,
+    options: Optional[Sequence[ChannelArgumentType]] = None,
+    compression: Optional[Compression] = None,
+) -> Channel:
     """Creates an insecure Channel to a server.
 
     The returned Channel is thread-safe.
@@ -2176,7 +2231,12 @@ def insecure_channel(target, options=None, compression=None):
     )
 
 
-def secure_channel(target, credentials, options=None, compression=None):
+def secure_channel(
+    target: str,
+    credentials: ChannelCredentials,
+    options: Optional[Sequence[ChannelArgumentType]] = None,
+    compression: Optional[Compression] = None,
+) -> Channel:
     """Creates a secure Channel to a server.
 
     The returned Channel is thread-safe.
@@ -2208,7 +2268,7 @@ def secure_channel(target, credentials, options=None, compression=None):
     )
 
 
-def intercept_channel(channel, *interceptors):
+def intercept_channel(channel: Channel, *interceptors: Interceptor) -> Channel:
     """Intercepts a channel through a set of interceptors.
 
     Args:
@@ -2236,14 +2296,14 @@ def intercept_channel(channel, *interceptors):
 
 
 def server(
-    thread_pool,
-    handlers=None,
-    interceptors=None,
-    options=None,
-    maximum_concurrent_rpcs=None,
-    compression=None,
-    xds=False,
-):
+    thread_pool: ThreadPoolExecutor,
+    handlers: Optional[List[GenericRpcHandler]] = None,
+    interceptors: Optional[List[Interceptor]] = None,
+    options: Optional[List[ChannelArgumentType]] = None,
+    maximum_concurrent_rpcs: Optional[int] = None,
+    compression: Optional[Compression] = None,
+    xds: bool = False,
+) -> Server:
     """Creates a Server with which RPCs can be serviced.
 
     Args:
@@ -2284,7 +2344,11 @@ def server(
 
 
 @contextlib.contextmanager
-def _create_servicer_context(rpc_event, state, request_deserializer):
+def _create_servicer_context(
+    rpc_event: cygrpc.BaseEvent,
+    state: "_RPCState",
+    request_deserializer: Optional[DeserializingFunction],
+) -> "ServicerContext":
     from grpc import _server  # pylint: disable=cyclic-import
 
     context = _server._Context(rpc_event, state, request_deserializer)
