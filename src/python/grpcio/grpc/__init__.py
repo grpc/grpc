@@ -27,7 +27,12 @@ from grpc._cython import cygrpc as _cygrpc
 from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
-from grpc._typing import MetadataType, NullaryCallbackType
+from grpc._typing import (
+    MetadataType,
+    NullaryCallbackType,
+    SerializingFunction,
+    DeserializingFunction,
+)
 
 if TYPE_CHECKING:
     import types
@@ -1003,7 +1008,11 @@ class Channel(abc.ABC):
     """
 
     @abc.abstractmethod
-    def subscribe(self, callback, try_to_connect=False):
+    def subscribe(
+        self,
+        callback: Callable[[ChannelConnectivity], None],
+        try_to_connect: bool = False,
+    ) -> None:
         """Subscribe to this Channel's connectivity state machine.
 
         A Channel may be in any of the states described by ChannelConnectivity.
@@ -1024,7 +1033,9 @@ class Channel(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def unsubscribe(self, callback):
+    def unsubscribe(
+        self, callback: Callable[[ChannelConnectivity], None]
+    ) -> None:
         """Unsubscribes a subscribed callback from this Channel's connectivity.
 
         Args:
@@ -1036,11 +1047,11 @@ class Channel(abc.ABC):
     @abc.abstractmethod
     def unary_unary(
         self,
-        method,
-        request_serializer=None,
-        response_deserializer=None,
-        _registered_method=False,
-    ):
+        method: str,
+        request_serializer: Optional[SerializingFunction] = None,
+        response_deserializer: Optional[DeserializingFunction] = None,
+        _registered_method: bool = False,
+    ) -> UnaryUnaryMultiCallable:
         """Creates a UnaryUnaryMultiCallable for a unary-unary method.
 
         Args:
@@ -1061,11 +1072,11 @@ class Channel(abc.ABC):
     @abc.abstractmethod
     def unary_stream(
         self,
-        method,
-        request_serializer=None,
-        response_deserializer=None,
-        _registered_method=False,
-    ):
+        method: str,
+        request_serializer: Optional[SerializingFunction] = None,
+        response_deserializer: Optional[DeserializingFunction] = None,
+        _registered_method: bool = False,
+    ) -> UnaryStreamMultiCallable:
         """Creates a UnaryStreamMultiCallable for a unary-stream method.
 
         Args:
@@ -1086,11 +1097,11 @@ class Channel(abc.ABC):
     @abc.abstractmethod
     def stream_unary(
         self,
-        method,
-        request_serializer=None,
-        response_deserializer=None,
-        _registered_method=False,
-    ):
+        method: str,
+        request_serializer: Optional[SerializingFunction] = None,
+        response_deserializer: Optional[DeserializingFunction] = None,
+        _registered_method: bool = False,
+    ) -> StreamUnaryMultiCallable:
         """Creates a StreamUnaryMultiCallable for a stream-unary method.
 
         Args:
@@ -1111,11 +1122,11 @@ class Channel(abc.ABC):
     @abc.abstractmethod
     def stream_stream(
         self,
-        method,
-        request_serializer=None,
-        response_deserializer=None,
-        _registered_method=False,
-    ):
+        method: str,
+        request_serializer: Optional[SerializingFunction] = None,
+        response_deserializer: Optional[DeserializingFunction] = None,
+        _registered_method: bool = False,
+    ) -> StreamStreamMultiCallable:
         """Creates a StreamStreamMultiCallable for a stream-stream method.
 
         Args:
@@ -1134,7 +1145,7 @@ class Channel(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def close(self):
+    def close(self) -> None:
         """Closes this Channel and releases all resources held by it.
 
         Closing the Channel will immediately terminate all RPCs active with the
