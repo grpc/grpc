@@ -25,7 +25,6 @@
 #include <utility>
 
 #include "src/core/tsi/transport_security_interface.h"
-#include "src/core/util/grpc_check.h"
 #include "absl/functional/bind_front.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
