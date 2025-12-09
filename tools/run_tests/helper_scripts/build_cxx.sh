@@ -25,6 +25,13 @@ set -ex
 
 # Prepend verbose mode commands (xtrace) with the date.
 PS4='+ $(date "+[%H:%M:%S %Z]")\011 '
+echo "sergiitk@ >> update cmake"
+curl -sSL -o cmake-linux.sh https://github.com/Kitware/CMake/releases/download/v3.25.1/cmake-3.25.1-Linux-x86_64.sh &&
+  sh cmake-linux.sh -- --skip-license --prefix=/usr &&
+  rm cmake-linux.sh
+
+echo -e "Cmake updated: $(cmake --version)\n"
+
 echo "sergiitk@ >> Started build_cxx.sh"
 
 # Set install path to avoid installing to system paths
