@@ -25,8 +25,10 @@
 
 #include "envoy/extensions/filters/http/router/v3/router.upb.h"
 #include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
+#include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
+#include "src/core/xds/grpc/xds_http_composite_filter.h"
 #include "src/core/xds/grpc/xds_http_fault_filter.h"
 #include "src/core/xds/grpc/xds_http_gcp_authn_filter.h"
 #include "src/core/xds/grpc/xds_http_rbac_filter.h"
@@ -111,6 +113,20 @@ RefCountedPtr<const FilterConfig> XdsHttpRouterFilter::ParseOverrideConfig(
 // XdsHttpFilterRegistry
 //
 
+namespace {
+
+bool XdsCompositeFilterEnabled() {
+  // This experiment is a prereq.
+  if (!IsXdsChannelFilterChainPerRouteEnabled()) return false;
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_COMPOSITE_FILTER");
+  if (!value.has_value()) return false;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
+
+}  // namespace
+
 XdsHttpFilterRegistry::XdsHttpFilterRegistry(bool register_builtins) {
   if (register_builtins) {
     RegisterFilter(std::make_unique<XdsHttpRouterFilter>());
@@ -118,6 +134,9 @@ XdsHttpFilterRegistry::XdsHttpFilterRegistry(bool register_builtins) {
     RegisterFilter(std::make_unique<XdsHttpRbacFilter>());
     RegisterFilter(std::make_unique<XdsHttpStatefulSessionFilter>());
     RegisterFilter(std::make_unique<XdsHttpGcpAuthnFilter>());
+    if (XdsCompositeFilterEnabled()) {
+      RegisterFilter(std::make_unique<XdsHttpCompositeFilter>());
+    }
   }
 }
 
