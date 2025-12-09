@@ -21,7 +21,7 @@ import logging
 import sys
 import types
 
-from typing import Optional, Any, Callable, TYPE_CHECKING
+from typing import Optional, Any, Callable, Mapping, Iterable, TYPE_CHECKING
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
 from grpc._runtime_protos import protos
@@ -1171,7 +1171,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
     """A context object passed to method implementations."""
 
     @abc.abstractmethod
-    def invocation_metadata(self):
+    def invocation_metadata(self) -> Optional[MetadataType]:
         """Accesses the metadata sent by the client.
 
         Returns:
@@ -1180,7 +1180,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def peer(self):
+    def peer(self) -> str:
         """Identifies the peer that invoked the RPC being serviced.
 
         Returns:
@@ -1190,7 +1190,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def peer_identities(self):
+    def peer_identities(self) -> Optional[Iterable[bytes]]:
         """Gets one or more peer identity(s).
 
         Equivalent to
@@ -1203,7 +1203,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def peer_identity_key(self):
+    def peer_identity_key(self) -> Optional[str]:
         """The auth property used to identify the peer.
 
         For example, "x509_common_name" or "x509_subject_alternative_name" are
@@ -1216,7 +1216,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def auth_context(self):
+    def auth_context(self) -> Optional[Mapping[str, Iterable[bytes]]]:
         """Gets the auth context for the call.
 
         Returns:
@@ -1224,7 +1224,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError()
 
-    def set_compression(self, compression):
+    def set_compression(self, compression: Compression) -> None:
         """Set the compression algorithm to be used for the entire call.
 
         Args:
@@ -1234,7 +1234,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def send_initial_metadata(self, initial_metadata):
+    def send_initial_metadata(self, initial_metadata: MetadataType) -> None:
         """Sends the initial metadata value to the client.
 
         This method need not be called by implementations if they have no
@@ -1246,7 +1246,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def set_trailing_metadata(self, trailing_metadata):
+    def set_trailing_metadata(self, trailing_metadata: MetadataType) -> None:
         """Sets the trailing metadata for the RPC.
 
         Sets the trailing metadata to be sent upon completion of the RPC.
@@ -1263,7 +1263,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError()
 
-    def trailing_metadata(self):
+    def trailing_metadata(self) -> Optional[MetadataType]:
         """Access value to be used as trailing metadata upon RPC completion.
 
         This is an EXPERIMENTAL API.
@@ -1274,7 +1274,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def abort(self, code, details):
+    def abort(self, code: StatusCode, details: str) -> None:
         """Raises an exception to terminate the RPC with a non-OK status.
 
         The code and details passed as arguments will supersede any existing
@@ -1293,7 +1293,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def abort_with_status(self, status):
+    def abort_with_status(self, status: Status) -> None:
         """Raises an exception to terminate the RPC with a non-OK status.
 
         The status passed as argument will supersede any existing status code,
@@ -1312,7 +1312,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def set_code(self, code):
+    def set_code(self, code: StatusCode) -> None:
         """Sets the value to be used as status code upon RPC completion.
 
         This method need not be called by method implementations if they wish
@@ -1324,7 +1324,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def set_details(self, details):
+    def set_details(self, details: str) -> None:
         """Sets the value to be used as detail string upon RPC completion.
 
         This method need not be called by method implementations if they have
@@ -1336,7 +1336,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError()
 
-    def code(self):
+    def code(self) -> StatusCode:
         """Accesses the value to be used as status code upon RPC completion.
 
         This is an EXPERIMENTAL API.
@@ -1346,7 +1346,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError()
 
-    def details(self):
+    def details(self) -> str:
         """Accesses the value to be used as detail string upon RPC completion.
 
         This is an EXPERIMENTAL API.
@@ -1356,7 +1356,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError()
 
-    def disable_next_message_compression(self):
+    def disable_next_message_compression(self) -> None:
         """Disables compression for the next response message.
 
         This method will override any compression configuration set during
