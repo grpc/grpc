@@ -50,6 +50,7 @@ from grpc._typing import SerializingFunction
 
 if TYPE_CHECKING:
     from concurrent import futures
+    from threading import Event
     from grpc.server import _RPCState
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
@@ -1372,7 +1373,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError()
 
-    def details(self) -> str:
+    def details(self) -> bytes:
         """Accesses the value to be used as detail string upon RPC completion.
 
         This is an EXPERIMENTAL API.
@@ -1595,7 +1596,7 @@ class Server(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def stop(self, grace: Optional[float]) -> None:
+    def stop(self, grace: Optional[float]) -> Event:
         """Stops this Server.
 
         This method immediately stop service of new RPCs in all cases.
@@ -1625,7 +1626,7 @@ class Server(abc.ABC):
         """
         raise NotImplementedError()
 
-    def wait_for_termination(self, timeout: Optional[float] = None) -> None:
+    def wait_for_termination(self, timeout: Optional[float] = None) -> bool:
         """Block current thread until the server stops.
 
         This is an EXPERIMENTAL API.
@@ -2278,7 +2279,9 @@ def secure_channel(
     )
 
 
-def intercept_channel(channel: Channel, *interceptors: ClientInterceptor) -> Channel:
+def intercept_channel(
+    channel: Channel, *interceptors: ClientInterceptor
+) -> Channel:
     """Intercepts a channel through a set of interceptors.
 
     Args:
