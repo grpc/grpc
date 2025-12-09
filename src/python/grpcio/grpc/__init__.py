@@ -1417,7 +1417,9 @@ class GenericRpcHandler(abc.ABC):
     """An implementation of arbitrarily many RPC methods."""
 
     @abc.abstractmethod
-    def service(self, handler_call_details: HandlerCallDetails) -> Optional[RpcMethodHandler]:
+    def service(
+        self, handler_call_details: HandlerCallDetails
+    ) -> Optional[RpcMethodHandler]:
         """Returns the handler for servicing the RPC.
 
         Args:
@@ -1459,7 +1461,9 @@ class ServerInterceptor(abc.ABC):
     @abc.abstractmethod
     def intercept_service(
         self,
-        continuation: Callable[[HandlerCallDetails], Optional[RpcMethodHandler]],
+        continuation: Callable[
+            [HandlerCallDetails], Optional[RpcMethodHandler]
+        ],
         handler_call_details: HandlerCallDetails,
     ) -> Optional[RpcMethodHandler]:
         """Intercepts incoming RPCs before handing them over to a handler.
@@ -1493,7 +1497,9 @@ class Server(abc.ABC):
     """Services RPCs."""
 
     @abc.abstractmethod
-    def add_generic_rpc_handlers(self, generic_rpc_handlers: Iterable[GenericRpcHandler]) -> None:
+    def add_generic_rpc_handlers(
+        self, generic_rpc_handlers: Iterable[GenericRpcHandler]
+    ) -> None:
         """Registers GenericRpcHandlers with this Server.
 
         This method is only safe to call before the server is started.
@@ -1536,7 +1542,9 @@ class Server(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def add_secure_port(self, address: str, server_credentials: ServerCredentials) -> int:
+    def add_secure_port(
+        self, address: str, server_credentials: ServerCredentials
+    ) -> int:
         """Opens a secure port for accepting RPCs.
 
         This method may only be called before starting the server.
