@@ -1417,7 +1417,7 @@ class GenericRpcHandler(abc.ABC):
     """An implementation of arbitrarily many RPC methods."""
 
     @abc.abstractmethod
-    def service(self, handler_call_details):
+    def service(self, handler_call_details: HandlerCallDetails) -> Optional[RpcMethodHandler]:
         """Returns the handler for servicing the RPC.
 
         Args:
@@ -1441,7 +1441,7 @@ class ServiceRpcHandler(GenericRpcHandler, metaclass=abc.ABCMeta):
     """
 
     @abc.abstractmethod
-    def service_name(self):
+    def service_name(self) -> str:
         """Returns this service's name.
 
         Returns:
