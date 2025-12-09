@@ -30,6 +30,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Type,
     Tuple,
     Union,
 )
