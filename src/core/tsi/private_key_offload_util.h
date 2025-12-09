@@ -57,12 +57,6 @@ class CustomPrivateKeySigner {
                     OnSignComplete on_sign_complete) = 0;
 };
 
-void SetPrivateKeyOffloadingContextIndex(int index);
-int GetPrivateKeyOffloadingContextIndex();
-
-void SetPrivateKeyOffloadFunctionIndex(int index);
-int GetPrivateKeyOffloadFunctionIndex();
-
 // State associated with an SSL object for async private key operations.
 struct TlsPrivateKeyOffloadContext {
   absl::StatusOr<std::string> signed_bytes;
@@ -74,6 +68,12 @@ struct TlsPrivateKeyOffloadContext {
 
   void* notify_user_data;
 };
+
+// Returns the TlsPrivateKeyOffloadContext associated with the SSL object.
+TlsPrivateKeyOffloadContext* GetTlsPrivateKeyOffloadContext(SSL* ssl);
+
+// Returns the CustomPrivateKeySigner associated with the SSL_CTX object.
+CustomPrivateKeySigner* GetCustomPrivateKeySigner(SSL_CTX* ssl_ctx);
 
 #if defined(OPENSSL_IS_BORINGSSL)
 // Callback function to be invoked when the user's async sign operation is

@@ -58,6 +58,7 @@
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/handshaker/security/security_handshaker.h"
 #include "src/core/lib/surface/init.h"
+#include "src/core/tsi/private_key_offload_util.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
 #include "src/core/tsi/ssl_transport_security_utils.h"
@@ -258,6 +259,8 @@ static int g_ssl_ctx_ex_crl_provider_index = -1;
 static int g_ssl_ctx_ex_spiffe_bundle_map_index = -1;
 static const unsigned char kSslSessionIdContext[] = {'g', 'r', 'p', 'c'};
 static int g_ssl_ex_verified_root_cert_index = -1;
+static int g_ssl_ex_private_key_offloading_context_index = -1;
+static int g_ssl_ctx_ex_private_key_function_index = -1;
 #if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE)
 static const char kSslEnginePrefix[] = "engine:";
 #endif
@@ -360,11 +363,13 @@ static void init_openssl(void) {
       0, nullptr, nullptr, nullptr, verified_root_cert_free);
   GRPC_CHECK_NE(g_ssl_ex_verified_root_cert_index, -1);
 
-  grpc_core::SetPrivateKeyOffloadFunctionIndex(SSL_CTX_get_ex_new_index(
-      0, nullptr, nullptr, nullptr, private_key_offloading_free));
+  g_ssl_ctx_ex_private_key_function_index = SSL_CTX_get_ex_new_index(
+      0, nullptr, nullptr, nullptr, private_key_offloading_free);
+  GRPC_CHECK_NE(g_ssl_ctx_ex_private_key_function_index, -1);
 
-  grpc_core::SetPrivateKeyOffloadingContextIndex(SSL_get_ex_new_index(
-      0, nullptr, nullptr, nullptr, private_key_offloading_free));
+  g_ssl_ex_private_key_offloading_context_index = SSL_get_ex_new_index(
+      0, nullptr, nullptr, nullptr, private_key_offloading_free);
+  GRPC_CHECK_NE(g_ssl_ex_private_key_offloading_context_index, -1);
 }
 
 // --- Ssl utils. ---
@@ -960,9 +965,8 @@ static tsi_result populate_ssl_context(
           if (key_sign != nullptr) {
             SSL_CTX_set_private_key_method(
                 context, &grpc_core::TlsOffloadPrivateKeyMethod);
-            SSL_CTX_set_ex_data(context,
-                                grpc_core::GetPrivateKeyOffloadFunctionIndex(),
-                                &key_sign);
+            SSL_CTX_set_ex_data(
+                context, g_ssl_ctx_ex_private_key_function_index, &key_sign);
           }
 #endif  // OPENSSL_IS_BORINGSSL
           return TSI_OK;
@@ -1273,6 +1277,18 @@ static int CheckChainRevocation(
     }
   }
   return 1;
+}
+
+grpc_core::TlsPrivateKeyOffloadContext*
+grpc_core::GetTlsPrivateKeyOffloadContext(SSL* ssl) {
+  return static_cast<grpc_core::TlsPrivateKeyOffloadContext*>(
+      SSL_get_ex_data(ssl, g_ssl_ex_private_key_offloading_context_index));
+}
+
+grpc_core::CustomPrivateKeySigner* grpc_core::GetCustomPrivateKeySigner(
+    SSL_CTX* ssl_ctx) {
+  return static_cast<grpc_core::CustomPrivateKeySigner*>(
+      SSL_CTX_get_ex_data(ssl_ctx, g_ssl_ctx_ex_private_key_function_index));
 }
 
 static grpc_core::SpiffeBundleMap* GetSpiffeBundleMap(X509_STORE_CTX* ctx) {
@@ -2039,7 +2055,7 @@ static tsi_result ssl_handshaker_next(
   // Fetch the offload context.
   grpc_core::TlsPrivateKeyOffloadContext* offload_context =
       static_cast<grpc_core::TlsPrivateKeyOffloadContext*>(SSL_get_ex_data(
-          impl->ssl, grpc_core::GetPrivateKeyOffloadingContextIndex()));
+          impl->ssl, g_ssl_ex_private_key_offloading_context_index));
   if (offload_context != nullptr) {
     offload_context->notify_cb = cb;
     offload_context->notify_user_data = user_data;
@@ -2272,12 +2288,12 @@ static tsi_result create_tsi_ssl_handshaker(
 
   grpc_core::CustomPrivateKeySigner* sign_function =
       static_cast<grpc_core::CustomPrivateKeySigner*>(SSL_CTX_get_ex_data(
-          ssl_ctx, grpc_core::GetPrivateKeyOffloadFunctionIndex()));
+          ssl_ctx, g_ssl_ctx_ex_private_key_function_index));
   if (sign_function != nullptr) {
     grpc_core::TlsPrivateKeyOffloadContext* private_key_offload_context = {};
     private_key_offload_context->handshaker = *handshaker;
 
-    SSL_set_ex_data(ssl, grpc_core::GetPrivateKeyOffloadingContextIndex(),
+    SSL_set_ex_data(ssl, g_ssl_ex_private_key_offloading_context_index,
                     &private_key_offload_context);
   }
 

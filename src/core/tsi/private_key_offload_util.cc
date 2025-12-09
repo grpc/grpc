@@ -30,11 +30,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-// Indexes to store the private key offload information in the SSL and SSL_CTX
-// data.
-static int g_ssl_ex_private_key_offloading_context_index = -1;
-static int g_ssl_ctx_ex_private_key_function_index = -1;
-
 namespace grpc_core {
 
 absl::StatusOr<CustomPrivateKeySigner::SignatureAlgorithm>
@@ -62,24 +57,6 @@ ToSignatureAlgorithmClass(uint16_t algorithm) {
   }
 #endif  // OPENSSL_IS_BORINGSSL
   return absl::InvalidArgumentError("Unknown signature algorithm.");
-}
-
-void SetPrivateKeyOffloadingContextIndex(int index) {
-  g_ssl_ex_private_key_offloading_context_index = index;
-  GRPC_CHECK_NE(g_ssl_ex_private_key_offloading_context_index, -1);
-}
-
-int GetPrivateKeyOffloadingContextIndex() {
-  return g_ssl_ex_private_key_offloading_context_index;
-}
-
-void SetPrivateKeyOffloadFunctionIndex(int index) {
-  GRPC_CHECK_NE(index, -1);
-  g_ssl_ctx_ex_private_key_function_index = index;
-}
-
-int GetPrivateKeyOffloadFunctionIndex() {
-  return g_ssl_ctx_ex_private_key_function_index;
 }
 
 #if defined(OPENSSL_IS_BORINGSSL)
@@ -111,8 +88,7 @@ void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
 enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
     SSL* ssl, uint8_t* /*out*/, size_t* /*out_len*/, size_t /*max_out*/,
     uint16_t signature_algorithm, const uint8_t* in, size_t in_len) {
-  TlsPrivateKeyOffloadContext* ctx = static_cast<TlsPrivateKeyOffloadContext*>(
-      SSL_get_ex_data(ssl, g_ssl_ex_private_key_offloading_context_index));
+  TlsPrivateKeyOffloadContext* ctx = GetTlsPrivateKeyOffloadContext(ssl);
   // Create the completion callback by binding the current context.
   auto done_callback = absl::bind_front(TlsOffloadSignDoneCallback, ctx);
 
@@ -132,8 +108,7 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
     return ssl_private_key_failure;
   }
 
-  CustomPrivateKeySigner* signer = static_cast<CustomPrivateKeySigner*>(
-      SSL_CTX_get_ex_data(ssl_ctx, g_ssl_ctx_ex_private_key_function_index));
+  CustomPrivateKeySigner* signer = GetCustomPrivateKeySigner(ssl_ctx);
   signer->Sign(absl::string_view(reinterpret_cast<const char*>(in), in_len),
                *algorithm, done_callback);
 
@@ -146,8 +121,7 @@ enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,
                                                            uint8_t* out,
                                                            size_t* out_len,
                                                            size_t max_out) {
-  TlsPrivateKeyOffloadContext* ctx = static_cast<TlsPrivateKeyOffloadContext*>(
-      SSL_get_ex_data(ssl, g_ssl_ex_private_key_offloading_context_index));
+  TlsPrivateKeyOffloadContext* ctx = GetTlsPrivateKeyOffloadContext(ssl);
 
   if (!ctx->signed_bytes.ok()) {
     return ssl_private_key_failure;
