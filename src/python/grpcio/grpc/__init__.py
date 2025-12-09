@@ -588,7 +588,7 @@ class ChannelCredentials(object):
     secure_channel requires an instance of this class.
     """
 
-    def __init__(self, credentials):
+    def __init__(self, credentials: _cygrpc.ChannelCredentials):
         self._credentials = credentials
 
 
@@ -605,7 +605,7 @@ class CallCredentials(object):
     instances and its instances exist to be passed to other functions.
     """
 
-    def __init__(self, credentials):
+    def __init__(self, credentials: ChannelCredentials):
         self._credentials = credentials
 
 
