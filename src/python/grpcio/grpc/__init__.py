@@ -21,13 +21,16 @@ import logging
 import sys
 import types
 
-from typing import Optional, Any, Callable
+from typing import Optional, Any, Callable, TYPE_CHECKING
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
 from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
 from grpc._typing import MetadataType, NullaryCallbackType
+
+if TYPE_CHECKING:
+    import types
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -145,7 +148,9 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def exception(self, timeout: Optional[float] = None) -> Optional[BaseException]:
+    def exception(
+        self, timeout: Optional[float] = None
+    ) -> Optional[BaseException]:
         """Return the exception raised by the computation.
 
         This method may return immediately or may block.
@@ -167,7 +172,9 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def traceback(self, timeout: Optional[float] = None) -> Optional[types.TracebackType]:
+    def traceback(
+        self, timeout: Optional[float] = None
+    ) -> Optional[types.TracebackType]:
         """Access the traceback of the exception raised by the computation.
 
         This method may return immediately or may block.
@@ -441,7 +448,12 @@ class UnaryUnaryClientInterceptor(abc.ABC):
     """Affords intercepting unary-unary invocations."""
 
     @abc.abstractmethod
-    def intercept_unary_unary(self, continuation: Callable[[CallDetails, RequestType], Union[Call, Future]], client_call_details: CallDetails, request: RequestType):
+    def intercept_unary_unary(
+        self,
+        continuation: Callable[[CallDetails, RequestType], Union[Call, Future]],
+        client_call_details: CallDetails,
+        request: RequestType,
+    ):
         """Intercepts a unary-unary invocation asynchronously.
 
         Args:
@@ -476,7 +488,10 @@ class UnaryStreamClientInterceptor(abc.ABC):
 
     @abc.abstractmethod
     def intercept_unary_stream(
-        self, continuation: Callable[[CallDetails, RequestType], Union[Call, Future]], client_call_details: CallDetails, request: RequestType
+        self,
+        continuation: Callable[[CallDetails, RequestType], Union[Call, Future]],
+        client_call_details: CallDetails,
+        request: RequestType,
     ):
         """Intercepts a unary-stream invocation.
 
@@ -511,7 +526,12 @@ class StreamUnaryClientInterceptor(abc.ABC):
 
     @abc.abstractmethod
     def intercept_stream_unary(
-        self, continuation: Callable[[CallDetails, Iterator[RequestType]], Union[Call, Future]], client_call_details: CallDetails, request_iterator: Iterator[RequestType]
+        self,
+        continuation: Callable[
+            [CallDetails, Iterator[RequestType]], Union[Call, Future]
+        ],
+        client_call_details: CallDetails,
+        request_iterator: Iterator[RequestType],
     ):
         """Intercepts a stream-unary invocation asynchronously.
 
@@ -546,7 +566,12 @@ class StreamStreamClientInterceptor(abc.ABC):
 
     @abc.abstractmethod
     def intercept_stream_stream(
-        self, continuation: Callable[[CallDetails, Iterator[RequestType]], Union[Call, Future]], client_call_details: CallDetails, request_iterator: Iterator[RequestType]
+        self,
+        continuation: Callable[
+            [CallDetails, Iterator[RequestType]], Union[Call, Future]
+        ],
+        client_call_details: CallDetails,
+        request_iterator: Iterator[RequestType],
     ):
         """Intercepts a stream-stream invocation.
 
@@ -621,7 +646,9 @@ class AuthMetadataContext(abc.ABC):
 class AuthMetadataPluginCallback(abc.ABC):
     """Callback object received by a metadata plugin."""
 
-    def __call__(self, metadata: Optional[MetadataType], error: Optional[Exception]):
+    def __call__(
+        self, metadata: Optional[MetadataType], error: Optional[Exception]
+    ):
         """Passes to the gRPC runtime authentication metadata for an RPC.
 
         Args:
@@ -634,7 +661,9 @@ class AuthMetadataPluginCallback(abc.ABC):
 class AuthMetadataPlugin(abc.ABC):
     """A specification for custom authentication."""
 
-    def __call__(self, context: AuthMetadataContext, callback: AuthMetadataPluginCallback):
+    def __call__(
+        self, context: AuthMetadataContext, callback: AuthMetadataPluginCallback
+    ):
         """Implements authentication by passing metadata to a callback.
 
         This method will be invoked asynchronously in a separate thread.
@@ -670,7 +699,9 @@ class ServerCertificateConfiguration(object):
     other functions.
     """
 
-    def __init__(self, certificate_configuration: _cygrpc.ServerCertificateConfiguration):
+    def __init__(
+        self, certificate_configuration: _cygrpc.ServerCertificateConfiguration
+    ):
         self._certificate_configuration = certificate_configuration
 
 
