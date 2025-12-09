@@ -14,7 +14,7 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, Union
 
 import grpc
 from grpc._cython import cygrpc
@@ -39,7 +39,7 @@ def _compression_algorithm_to_metadata_value(
 
 def compression_algorithm_to_metadata(compression: grpc.Compression):
     return (
-        cygrpc.GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY,
+        grpc._common.decode(cygrpc.GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY),
         _compression_algorithm_to_metadata_value(compression),
     )
 
@@ -53,7 +53,8 @@ def create_channel_option(compression: Optional[grpc.Compression]):
 
 
 def augment_metadata(
-    metadata: Optional[MetadataType], compression: Optional[grpc.Compression]
+    metadata: Optional[Union[MetadataType, grpc.aio.Metadata]],
+    compression: Optional[grpc.Compression],
 ):
     if not metadata and not compression:
         return None
