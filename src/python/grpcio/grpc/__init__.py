@@ -788,13 +788,13 @@ class UnaryStreamMultiCallable(abc.ABC):
     @abc.abstractmethod
     def __call__(
         self,
-        request,
-        timeout=None,
-        metadata=None,
-        credentials=None,
-        wait_for_ready=None,
-        compression=None,
-    ):
+        request: RequestType,
+        timeout: Optional[float] = None,
+        metadata: Optional[MetadataType] = None,
+        credentials: Optional[CallCredentials] = None,
+        wait_for_ready: Optional[bool] = None,
+        compression: Optional[Compression] = None,
+    ) -> Union[Iterator[ResponseType], Call, Future]:
         """Invokes the underlying RPC.
 
         Args:
@@ -824,13 +824,13 @@ class StreamUnaryMultiCallable(abc.ABC):
     @abc.abstractmethod
     def __call__(
         self,
-        request_iterator,
-        timeout=None,
-        metadata=None,
-        credentials=None,
-        wait_for_ready=None,
-        compression=None,
-    ):
+        request_iterator: Iterator[RequestType],
+        timeout: Optional[float] = None,
+        metadata: Optional[MetadataType] = None,
+        credentials: Optional[CallCredentials] = None,
+        wait_for_ready: Optional[bool] = None,
+        compression: Optional[Compression] = None,
+    ) -> ResponseType:
         """Synchronously invokes the underlying RPC.
 
         Args:
@@ -859,13 +859,13 @@ class StreamUnaryMultiCallable(abc.ABC):
     @abc.abstractmethod
     def with_call(
         self,
-        request_iterator,
-        timeout=None,
-        metadata=None,
-        credentials=None,
-        wait_for_ready=None,
-        compression=None,
-    ):
+        request_iterator: Iterator[RequestType],
+        timeout: Optional[float] = None,
+        metadata: Optional[MetadataType] = None,
+        credentials: Optional[CallCredentials] = None,
+        wait_for_ready: Optional[bool] = None,
+        compression: Optional[Compression] = None,
+    ) -> Tuple[ResponseType, Call]:
         """Synchronously invokes the underlying RPC on the client.
 
         Args:
@@ -894,13 +894,13 @@ class StreamUnaryMultiCallable(abc.ABC):
     @abc.abstractmethod
     def future(
         self,
-        request_iterator,
-        timeout=None,
-        metadata=None,
-        credentials=None,
-        wait_for_ready=None,
-        compression=None,
-    ):
+        request_iterator: Iterator[RequestType],
+        timeout: Optional[float] = None,
+        metadata: Optional[MetadataType] = None,
+        credentials: Optional[CallCredentials] = None,
+        wait_for_ready: Optional[bool] = None,
+        compression: Optional[Compression] = None,
+    ) -> Union[Future, Call]:
         """Asynchronously invokes the underlying RPC on the client.
 
         Args:
@@ -931,13 +931,13 @@ class StreamStreamMultiCallable(abc.ABC):
     @abc.abstractmethod
     def __call__(
         self,
-        request_iterator,
-        timeout=None,
-        metadata=None,
-        credentials=None,
-        wait_for_ready=None,
-        compression=None,
-    ):
+        request_iterator: Iterator[RequestType],
+        timeout: Optional[float] = None,
+        metadata: Optional[MetadataType] = None,
+        credentials: Optional[CallCredentials] = None,
+        wait_for_ready: Optional[bool] = None,
+        compression: Optional[Compression] = None,
+    ) -> Union[Iterator[ResponseType], Call, Future]:
         """Invokes the underlying RPC on the client.
 
         Args:
