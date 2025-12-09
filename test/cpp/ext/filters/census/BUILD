@@ -19,6 +19,10 @@ licenses(["notice"])
 grpc_package(
     name = "test/cpp/ext/filters/census",
     visibility = "tests",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
 )
 
 grpc_cc_library(

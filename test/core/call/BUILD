@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_p
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "MONITORING", "grpc_cc_benchmark")
 
-grpc_package(name = "test/core/call")
+grpc_package(
+    name = "test/core/call", 
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 GRPC_CALL_SPINE_BENCHMARK_LABELS = {
     "BM_ClientToServerStreaming_CallSpineFixture_:CPU(ns)": {

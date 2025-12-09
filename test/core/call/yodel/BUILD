@@ -20,7 +20,13 @@ load(
     "grpc_package",
 )
 
-grpc_package(name = "test/core/call/yodel")
+grpc_package(
+    name = "test/core/call/yodel", 
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_library(
     name = "yodel_test",

@@ -19,6 +19,10 @@ licenses(["notice"])
 grpc_package(
     name = "test/cpp/interop",
     visibility = "public",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
 )
 
 grpc_cc_library(
@@ -364,18 +368,25 @@ grpc_cc_binary(
         "xds_interop_client.cc",
     ],
     external_deps = [
+        "absl/algorithm:container",
         "absl/flags:flag",
         "absl/log:check",
+        "absl/log:log",
+        "absl/strings",
         "otel/exporters/prometheus:prometheus_exporter",
         "otel/sdk/src/metrics",
+        "otel/sdk:headers",
     ],
     deps = [
         ":rpc_behavior_lb_policy",
         ":xds_stats_watcher",
         "//:grpc++",
         "//:grpc++_reflection",
+        "//:grpc_base",
         "//:grpcpp_admin",
         "//:grpcpp_csm_observability",
+        "//src/core:env",
+        "//src/core:grpc_check",
         "//src/proto/grpc/testing:empty_cc_proto",
         "//src/proto/grpc/testing:messages_cc_proto",
         "//src/proto/grpc/testing:test_cc_grpc",
@@ -424,13 +435,17 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:log",
         "otel/exporters/prometheus:prometheus_exporter",
         "otel/sdk/src/metrics",
+        "otel/sdk:headers",
     ],
     deps = [
         ":xds_interop_server_lib",
+        "//:grpc",
         "//:grpc++",
         "//:grpcpp_csm_observability",
+        "//:iomgr",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/end2end:test_health_check_service_impl",
         "//test/cpp/util:test_config",
@@ -616,12 +631,16 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:log",
     ],
     tags = ["nobuilder"],
     deps = [
         ":interop_server_lib",
+        ":server_helper_lib",
         "//:grpc++",
         "//:grpcpp_gcp_observability",
+        "//test/core/test_util:grpc_test_util",
+        "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
 )
@@ -633,8 +652,10 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:log",
         "otel/exporters/prometheus:prometheus_exporter",
         "otel/sdk/src/metrics",
+        "otel/sdk:headers",
     ],
     tags = [
         "nobuilder",
@@ -643,8 +664,13 @@ grpc_cc_library(
     ],
     deps = [
         ":client_helper_lib",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
         "//:grpcpp_gcp_observability",
         "//src/cpp/ext/otel:otel_plugin",
+        "//test/core/test_util:grpc_test_util",
+        "//test/cpp/util:test_config",
     ],
 )
 
@@ -667,6 +693,8 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:log",
+        "absl/strings",
     ],
     tags = [
         "no_windows",
@@ -676,6 +704,7 @@ grpc_cc_binary(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//:iomgr",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",

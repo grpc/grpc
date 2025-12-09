@@ -20,6 +20,10 @@ licenses(["notice"])
 grpc_package(
     name = "test/core/address_utils",
     visibility = "private",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
 )
 
 grpc_cc_test(
