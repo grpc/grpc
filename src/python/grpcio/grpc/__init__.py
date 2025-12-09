@@ -52,6 +52,7 @@ from grpc._typing import (
 
 if TYPE_CHECKING:
     import types
+    from concurrent import futures
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -1915,7 +1916,7 @@ def composite_channel_credentials(
 
 
 def ssl_server_credentials(
-    private_key_certificate_chain_pairs: List[Tuple[bytes, bytes]],
+    private_key_certificate_chain_pairs: Sequence[Tuple[bytes, bytes]],
     root_certificates: Optional[bytes] = None,
     require_client_auth: bool = False,
 ) -> ServerCredentials:
@@ -1982,7 +1983,7 @@ def insecure_server_credentials() -> ServerCredentials:
 
 
 def ssl_server_certificate_configuration(
-    private_key_certificate_chain_pairs: List[Tuple[bytes, bytes]],
+    private_key_certificate_chain_pairs: List[Sequence[bytes, bytes]],
     root_certificates: Optional[bytes] = None,
 ) -> ServerCertificateConfiguration:
     """Creates a ServerCertificateConfiguration for use with a Server.
@@ -2296,9 +2297,9 @@ def intercept_channel(channel: Channel, *interceptors: Interceptor) -> Channel:
 
 
 def server(
-    thread_pool: ThreadPoolExecutor,
-    handlers: Optional[List[GenericRpcHandler]] = None,
-    interceptors: Optional[List[Interceptor]] = None,
+    thread_pool: futures.ThreadPoolExecutor,
+    handlers: Optional[Sequence[GenericRpcHandler]] = None,
+    interceptors: Optional[Sequence[ServerInterceptor]] = None,
     options: Optional[List[ChannelArgumentType]] = None,
     maximum_concurrent_rpcs: Optional[int] = None,
     compression: Optional[Compression] = None,
@@ -2345,7 +2346,7 @@ def server(
 
 @contextlib.contextmanager
 def _create_servicer_context(
-    rpc_event: cygrpc.BaseEvent,
+    rpc_event: _cygrpc.BaseEvent,
     state: "_RPCState",
     request_deserializer: Optional[DeserializingFunction],
 ) -> "ServicerContext":
