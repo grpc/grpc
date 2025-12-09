@@ -757,7 +757,7 @@ class UnaryUnaryMultiCallable(abc.ABC):
         credentials: Optional[CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[Compression] = None,
-    ) -> Future:
+    ) -> Optional[Call, Future]:
         """Asynchronously invokes the underlying RPC.
 
         Args:
