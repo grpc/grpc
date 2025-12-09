@@ -621,7 +621,7 @@ class AuthMetadataContext(abc.ABC):
 class AuthMetadataPluginCallback(abc.ABC):
     """Callback object received by a metadata plugin."""
 
-    def __call__(self, metadata, error):
+    def __call__(self, metadata: Optional[MetadataType], error: Optional[Exception]):
         """Passes to the gRPC runtime authentication metadata for an RPC.
 
         Args:
@@ -634,7 +634,7 @@ class AuthMetadataPluginCallback(abc.ABC):
 class AuthMetadataPlugin(abc.ABC):
     """A specification for custom authentication."""
 
-    def __call__(self, context, callback):
+    def __call__(self, context: AuthMetadataContext, callback: AuthMetadataPluginCallback):
         """Implements authentication by passing metadata to a callback.
 
         This method will be invoked asynchronously in a separate thread.
@@ -655,7 +655,7 @@ class ServerCredentials(object):
     instances and its instances exist to be passed to other functions.
     """
 
-    def __init__(self, credentials):
+    def __init__(self, credentials: _cygrpc.ServerCredentials):
         self._credentials = credentials
 
 
@@ -670,7 +670,7 @@ class ServerCertificateConfiguration(object):
     other functions.
     """
 
-    def __init__(self, certificate_configuration):
+    def __init__(self, certificate_configuration, _cygrpc.ServerCertificateConfiguration):
         self._certificate_configuration = certificate_configuration
 
 
