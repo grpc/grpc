@@ -20,13 +20,8 @@ import sys
 from typing import Optional, Sequence
 import unittest
 
-from typeguard import install_import_hook
 
-# Fix the type hierarchy issue for HandlerCallDetails
-import grpc
-from grpc._cython import cygrpc
-# Register the cython class as a virtual subclass of the abstract base class
-grpc.HandlerCallDetails.register(cygrpc._HandlerCallDetails)
+from typeguard import install_import_hook
 
 # AIO
 install_import_hook('grpc.aio')
@@ -42,6 +37,7 @@ install_import_hook('grpc.aio._metadata')
 
 # SYNC
 install_import_hook('grpc')
+install_import_hook('grpc.__init__')
 install_import_hook('grpc._auth')
 install_import_hook('grpc._channel')
 install_import_hook('grpc._common')
@@ -54,6 +50,12 @@ install_import_hook('grpc._server')
 install_import_hook('grpc._simple_stubs')
 install_import_hook('grpc._typing')
 install_import_hook('grpc._utilities')
+
+# Fix the type hierarchy issue for HandlerCallDetails
+import grpc
+from grpc._cython import cygrpc
+# Register the cython class as a virtual subclass of the abstract base class
+grpc.HandlerCallDetails.register(cygrpc._HandlerCallDetails)
 
 class SingleLoader:
     def __init__(

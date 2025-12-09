@@ -605,7 +605,7 @@ class CallCredentials(object):
     instances and its instances exist to be passed to other functions.
     """
 
-    def __init__(self, credentials: ChannelCredentials):
+    def __init__(self, credentials: _cygrpc.CallCredentials):
         self._credentials = credentials
 
 
