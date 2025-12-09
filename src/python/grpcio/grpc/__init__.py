@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """gRPC's Python API."""
+from __future__ import annotations
 
 import abc
 import contextlib
@@ -20,7 +21,7 @@ import logging
 import sys
 import types
 
-from typing import Optional, Any
+from typing import Optional, Any, Callable
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
 from grpc._runtime_protos import protos
@@ -121,7 +122,7 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def result(self, timeout=None) -> Any:
+    def result(self, timeout: Optional[float] = None) -> Any:
         """Returns the result of the computation or raises its exception.
 
         This method may return immediately or may block.
@@ -144,7 +145,7 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def exception(self, timeout=None) -> Optional[BaseException]:
+    def exception(self, timeout: Optional[float] = None) -> Optional[BaseException]:
         """Return the exception raised by the computation.
 
         This method may return immediately or may block.
@@ -166,7 +167,7 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def traceback(self, timeout=None) -> Optional[types.TracebackType]:
+    def traceback(self, timeout: Optional[float] = None) -> Optional[types.TracebackType]:
         """Access the traceback of the exception raised by the computation.
 
         This method may return immediately or may block.
@@ -188,7 +189,7 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def add_done_callback(self, fn) -> None:
+    def add_done_callback(self, fn: Callable[[Future], None]) -> None:
         """Adds a function to be called at completion of the computation.
 
         The callback will be passed this Future object describing the outcome
