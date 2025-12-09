@@ -20,11 +20,9 @@
 #define GRPC_GRPC_PRIVATE_KEY_OFFLOAD_UTIL_H
 
 #include <grpc/credentials.h>
-#include <openssl/ssl.h>
 
 #include <string>
 
-#include "src/core/tsi/transport_security_interface.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 

@@ -153,20 +153,15 @@ class GRPCXX_DLL FileWatcherCertificateProvider final
 class GRPCXX_DLL InMemoryCertificateProvider
     : public CertificateProviderInterface {
  public:
-  InMemoryCertificateProvider(
-      const std::string& root_certificate,
-      const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs);
-
-  explicit InMemoryCertificateProvider(const std::string& root_certificate)
-      : InMemoryCertificateProvider(root_certificate, {}) {}
-
-  explicit InMemoryCertificateProvider(
-      const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs)
-      : InMemoryCertificateProvider("", identity_key_cert_pairs) {}
+  InMemoryCertificateProvider();
 
   ~InMemoryCertificateProvider() override;
 
   grpc_tls_certificate_provider* c_provider() override { return c_provider_; }
+
+  void UpdateRoot(const std::string& root_certificate);
+  void UpdateIdentity(
+      const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs);
 
   // Returns an OK status if the following conditions hold:
   // - the root certificates consist of one or more valid PEM blocks, and
