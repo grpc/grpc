@@ -441,7 +441,7 @@ class UnaryUnaryClientInterceptor(abc.ABC):
     """Affords intercepting unary-unary invocations."""
 
     @abc.abstractmethod
-    def intercept_unary_unary(self, continuation, client_call_details, request):
+    def intercept_unary_unary(self, continuation: Callable[[CallDetails, RequestType], Union[Call, Future]], client_call_details: CallDetails, request: RequestType):
         """Intercepts a unary-unary invocation asynchronously.
 
         Args:
@@ -476,7 +476,7 @@ class UnaryStreamClientInterceptor(abc.ABC):
 
     @abc.abstractmethod
     def intercept_unary_stream(
-        self, continuation, client_call_details, request
+        self, continuation: Callable[[CallDetails, RequestType], Union[Call, Future]], client_call_details: CallDetails, request: RequestType
     ):
         """Intercepts a unary-stream invocation.
 
@@ -511,7 +511,7 @@ class StreamUnaryClientInterceptor(abc.ABC):
 
     @abc.abstractmethod
     def intercept_stream_unary(
-        self, continuation, client_call_details, request_iterator
+        self, continuation: Callable[[CallDetails, Iterator[RequestType]], Union[Call, Future]], client_call_details: CallDetails, request_iterator: Iterator[RequestType]
     ):
         """Intercepts a stream-unary invocation asynchronously.
 
@@ -546,7 +546,7 @@ class StreamStreamClientInterceptor(abc.ABC):
 
     @abc.abstractmethod
     def intercept_stream_stream(
-        self, continuation, client_call_details, request_iterator
+        self, continuation: Callable[[CallDetails, Iterator[RequestType]], Union[Call, Future]], client_call_details: CallDetails, request_iterator: Iterator[RequestType]
     ):
         """Intercepts a stream-stream invocation.
 
@@ -683,13 +683,13 @@ class UnaryUnaryMultiCallable(abc.ABC):
     @abc.abstractmethod
     def __call__(
         self,
-        request,
-        timeout=None,
-        metadata=None,
-        credentials=None,
-        wait_for_ready=None,
-        compression=None,
-    ):
+        request: RequestType,
+        timeout: Optional[float] = None,
+        metadata: Optional[MetadataType] = None,
+        credentials: Optional[CallCredentials] = None,
+        wait_for_ready: Optional[bool] = None,
+        compression: Optional[Compression] = None,
+    ) -> ResponseType:
         """Synchronously invokes the underlying RPC.
 
         Args:
@@ -717,13 +717,13 @@ class UnaryUnaryMultiCallable(abc.ABC):
     @abc.abstractmethod
     def with_call(
         self,
-        request,
-        timeout=None,
-        metadata=None,
-        credentials=None,
-        wait_for_ready=None,
-        compression=None,
-    ):
+        request: RequestType,
+        timeout: Optional[float] = None,
+        metadata: Optional[MetadataType] = None,
+        credentials: Optional[CallCredentials] = None,
+        wait_for_ready: Optional[bool] = None,
+        compression: Optional[Compression] = None,
+    ) -> Tuple[ResponseType, Call]:
         """Synchronously invokes the underlying RPC.
 
         Args:
@@ -751,13 +751,13 @@ class UnaryUnaryMultiCallable(abc.ABC):
     @abc.abstractmethod
     def future(
         self,
-        request,
-        timeout=None,
-        metadata=None,
-        credentials=None,
-        wait_for_ready=None,
-        compression=None,
-    ):
+        request: RequestType,
+        timeout: Optional[float] = None,
+        metadata: Optional[MetadataType] = None,
+        credentials: Optional[CallCredentials] = None,
+        wait_for_ready: Optional[bool] = None,
+        compression: Optional[Compression] = None,
+    ) -> Future:
         """Asynchronously invokes the underlying RPC.
 
         Args:
