@@ -19,43 +19,15 @@
 #ifndef GRPC_SRC_CORE_TSI_PRIVATE_KEY_OFFLOAD_UTIL_H
 #define GRPC_SRC_CORE_TSI_PRIVATE_KEY_OFFLOAD_UTIL_H
 
+#include <grpc/grpc_private_key_offload.h>
 #include <openssl/ssl.h>
 
 #include <string>
 
 #include "src/core/tsi/transport_security_interface.h"
 #include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 
 namespace grpc_core {
-
-// A user's implementation MUST invoke `done_callback` with the signed bytes.
-// This will let gRPC take control when the async operation is complete. MUST
-// not block MUST support concurrent calls
-class CustomPrivateKeySigner {
- public:
-  // Enum class representing TLS signature algorithm identifiers from BoringSSL.
-  // The values correspond to the SSL_SIGN_* macros in <openssl/ssl.h>.
-  enum class SignatureAlgorithm {
-    kRsaPkcs1Sha256,
-    kRsaPkcs1Sha384,
-    kRsaPkcs1Sha512,
-    kEcdsaSecp256r1Sha256,
-    kEcdsaSecp384r1Sha384,
-    kEcdsaSecp521r1Sha512,
-    kRsaPssRsaeSha256,
-    kRsaPssRsaeSha384,
-    kRsaPssRsaeSha512,
-  };
-
-  using OnSignComplete = absl::AnyInvocable<void(absl::StatusOr<std::string>)>;
-
-  virtual ~CustomPrivateKeySigner() = default;
-
-  virtual void Sign(absl::string_view data_to_sign,
-                    SignatureAlgorithm signature_algorithm,
-                    OnSignComplete on_sign_complete) = 0;
-};
 
 // State associated with an SSL object for async private key operations.
 struct TlsPrivateKeyOffloadContext {
