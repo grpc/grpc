@@ -59,8 +59,6 @@ EXPORTS
     grpc_tls_credentials_options_create
     grpc_tls_credentials_options_set_min_tls_version
     grpc_tls_credentials_options_set_max_tls_version
-    grpc_tls_credentials_options_set_identity_certificate_provider
-    grpc_tls_credentials_options_set_root_certificate_provider
     grpc_tls_credentials_options_copy
     grpc_tls_credentials_options_destroy
     grpc_tls_credentials_options_set_certificate_provider
@@ -166,6 +164,8 @@ EXPORTS
     grpc_authorization_policy_provider_arg_vtable
     grpc_channel_create_from_fd
     grpc_server_add_channel_from_fd
+    grpc_tls_credentials_options_set_identity_certificate_provider
+    grpc_tls_credentials_options_set_root_certificate_provider
     grpc_auth_property_iterator_next
     grpc_auth_context_property_iterator
     grpc_auth_context_peer_identity
