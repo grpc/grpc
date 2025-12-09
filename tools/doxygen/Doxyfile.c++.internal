@@ -66,7 +66,7 @@ OUTPUT_DIRECTORY       = doc/ref/c++.internal
 # directories (in 2 levels) under the output directory of each output format and
 # will distribute the generated files over these directories. Enabling this
 # option can be useful when feeding doxygen a huge amount of source files, where
-# putting all generated files in the same directory would otherwise causes
+# putting all generated files in the same directory would otherwise cause
 # performance problems for the file system.
 # The default value is: NO.
 
@@ -450,7 +450,7 @@ EXTRACT_LOCAL_METHODS  = NO
 # If this flag is set to YES, the members of anonymous namespaces will be
 # extracted and appear in the documentation as a namespace called
 # 'anonymous_namespace{file}', where file will be replaced with the base name of
-# the file that contains the anonymous namespace. By default anonymous namespace
+# the file that contains the anonymous namespace. By default anonymous namespaces
 # are hidden.
 # The default value is: NO.
 
@@ -1103,6 +1103,7 @@ src/core/call/call_spine.cc \
 src/core/call/call_spine.h \
 src/core/call/call_state.cc \
 src/core/call/call_state.h \
+src/core/call/channelz_context.h \
 src/core/call/client_call.cc \
 src/core/call/client_call.h \
 src/core/call/custom_metadata.h \
@@ -1148,6 +1149,8 @@ src/core/channelz/v2tov1/property_list.h \
 src/core/channelz/ztrace_collector.h \
 src/core/client_channel/backup_poller.cc \
 src/core/client_channel/backup_poller.h \
+src/core/client_channel/buffered_call.cc \
+src/core/client_channel/buffered_call.h \
 src/core/client_channel/client_channel.cc \
 src/core/client_channel/client_channel.h \
 src/core/client_channel/client_channel_args.h \
@@ -1407,6 +1410,7 @@ src/core/ext/transport/chttp2/transport/http2_transport.h \
 src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h \
 src/core/ext/transport/chttp2/transport/huffsyms.cc \
 src/core/ext/transport/chttp2/transport/huffsyms.h \
+src/core/ext/transport/chttp2/transport/incoming_metadata_tracker.h \
 src/core/ext/transport/chttp2/transport/internal.h \
 src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h \
 src/core/ext/transport/chttp2/transport/keepalive.cc \
@@ -2645,6 +2649,8 @@ src/core/lib/resource_quota/periodic_update.cc \
 src/core/lib/resource_quota/periodic_update.h \
 src/core/lib/resource_quota/resource_quota.cc \
 src/core/lib/resource_quota/resource_quota.h \
+src/core/lib/resource_quota/stream_quota.cc \
+src/core/lib/resource_quota/stream_quota.h \
 src/core/lib/resource_quota/telemetry.h \
 src/core/lib/resource_quota/thread_quota.cc \
 src/core/lib/resource_quota/thread_quota.h \

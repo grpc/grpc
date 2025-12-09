@@ -26,6 +26,7 @@
 #include "test/core/end2end/tests/cancel_test_helpers.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/log/globals.h"
 
 namespace grpc_core {
 namespace {

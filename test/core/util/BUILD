@@ -22,7 +22,13 @@ load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/util")
+grpc_package(
+    name = "test/core/util",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "directory_reader_test",
@@ -550,6 +556,8 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    uses_event_engine = False,
+    uses_polling = False,
     deps = [
         "//src/core:validation_errors",
         "//test/core/test_util:grpc_test_util",

@@ -23,7 +23,13 @@ load(
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
-grpc_package(name = "test/core/xds")
+grpc_package(
+    name = "test/core/xds",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 licenses(["notice"])
 

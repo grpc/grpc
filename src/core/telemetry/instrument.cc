@@ -178,6 +178,17 @@ void CollectionScope::ForEachUniqueStorage(
   }
 }
 
+void CollectionScope::TestOnlyReset() {
+  for (auto& shard : storage_shards_) {
+    MutexLock lock(&shard.mu);
+    shard.storage.clear();
+  }
+  for (auto& shard : child_shards_) {
+    MutexLock lock(&shard.mu);
+    shard.children.clear();
+  }
+}
+
 RefCountedPtr<CollectionScope> CreateCollectionScope(
     std::vector<RefCountedPtr<CollectionScope>> parents,
     absl::Span<const std::string> labels, size_t child_shards_count,
@@ -223,8 +234,8 @@ MetricsQuery& MetricsQuery::CollapseLabels(
   return *this;
 }
 
-MetricsQuery& MetricsQuery::OnlyMetrics(absl::Span<const std::string> metrics) {
-  only_metrics_.emplace(metrics.begin(), metrics.end());
+MetricsQuery& MetricsQuery::OnlyMetrics(std::vector<std::string> metrics) {
+  only_metrics_.emplace(std::move(metrics));
   return *this;
 }
 
@@ -233,7 +244,7 @@ void MetricsQuery::Run(RefCountedPtr<CollectionScope> scope,
   GRPC_CHECK_NE(scope.get(), nullptr);
   struct DomainInfo {
     std::vector<const InstrumentMetadata::Description*> metrics;
-    std::vector<instrument_detail::DomainStorage*> storage;
+    std::vector<RefCountedPtr<instrument_detail::DomainStorage>> storage;
   };
   absl::flat_hash_map<instrument_detail::QueryableDomain*, DomainInfo>
       domain_info_map;
@@ -256,7 +267,7 @@ void MetricsQuery::Run(RefCountedPtr<CollectionScope> scope,
   scope->ForEachUniqueStorage([&](instrument_detail::DomainStorage* storage) {
     auto it = domain_info_map.find(storage->domain());
     if (it == domain_info_map.end()) return;
-    it->second.storage.push_back(storage);
+    it->second.storage.push_back(storage->Ref());
   });
   for (const auto& pair : domain_info_map) {
     instrument_detail::QueryableDomain* domain = pair.first;
@@ -267,45 +278,55 @@ void MetricsQuery::Run(RefCountedPtr<CollectionScope> scope,
     this->Apply(
         domain->label_names(),
         [&](MetricsSink& sink) {
-          for (auto* storage : storages) {
-            const auto label = storage->label();
+          for (auto& storage : storages) {
+            const auto label_values = storage->label();
+            const auto label_keys = domain->label_names();
             instrument_detail::GaugeStorage gauge_storage(storage->domain());
             storage->FillGaugeStorage(gauge_storage);
             for (const auto* metric : metrics) {
               Match(
                   metric->shape,
-                  [metric, &sink, storage,
-                   &label](InstrumentMetadata::CounterShape) {
-                    sink.Counter(label, metric->name,
+                  [metric, &sink, storage, &label_values,
+                   &label_keys](InstrumentMetadata::CounterShape) {
+                    sink.Counter(label_keys, label_values, metric->name,
                                  storage->SumCounter(metric->offset));
                   },
-                  [metric, &sink, storage,
-                   &label](InstrumentMetadata::HistogramShape bounds) {
+                  [metric, &sink, storage, &label_values,
+                   &label_keys](InstrumentMetadata::UpDownCounterShape) {
+                    sink.UpDownCounter(label_keys, label_values, metric->name,
+                                       storage->SumCounter(metric->offset));
+                  },
+                  [metric, &sink, storage, &label_values,
+                   &label_keys](InstrumentMetadata::HistogramShape bounds) {
                     std::vector<uint64_t> counts(bounds.size());
                     for (size_t i = 0; i < bounds.size(); ++i) {
                       counts[i] = storage->SumCounter(metric->offset + i);
                     }
-                    sink.Histogram(label, metric->name, bounds, counts);
+                    sink.Histogram(label_keys, label_values, metric->name,
+                                   bounds, counts);
                   },
-                  [metric, &sink, &gauge_storage,
-                   &label](InstrumentMetadata::DoubleGaugeShape) {
+                  [metric, &sink, &gauge_storage, &label_values,
+                   &label_keys](InstrumentMetadata::DoubleGaugeShape) {
                     if (auto value = gauge_storage.GetDouble(metric->offset);
                         value.has_value()) {
-                      sink.DoubleGauge(label, metric->name, *value);
+                      sink.DoubleGauge(label_keys, label_values, metric->name,
+                                       *value);
                     }
                   },
-                  [metric, &sink, &gauge_storage,
-                   &label](InstrumentMetadata::IntGaugeShape) {
+                  [metric, &sink, &gauge_storage, &label_values,
+                   &label_keys](InstrumentMetadata::IntGaugeShape) {
                     if (auto value = gauge_storage.GetInt(metric->offset);
                         value.has_value()) {
-                      sink.IntGauge(label, metric->name, *value);
+                      sink.IntGauge(label_keys, label_values, metric->name,
+                                    *value);
                     }
                   },
-                  [metric, &sink, &gauge_storage,
-                   &label](InstrumentMetadata::UintGaugeShape) {
+                  [metric, &sink, &gauge_storage, &label_values,
+                   &label_keys](InstrumentMetadata::UintGaugeShape) {
                     if (auto value = gauge_storage.GetUint(metric->offset);
                         value.has_value()) {
-                      sink.UintGauge(label, metric->name, *value);
+                      sink.UintGauge(label_keys, label_values, metric->name,
+                                     *value);
                     }
                   });
             }
@@ -323,9 +344,11 @@ void MetricsQuery::Apply(absl::Span<const std::string> label_names,
     return;
   }
   std::vector<size_t> include_labels;
+  std::vector<std::string> label_keys;
   for (size_t i = 0; i < label_names.size(); ++i) {
     if (!collapsed_labels_.contains(label_names[i])) {
       include_labels.push_back(i);
+      label_keys.push_back(label_names[i]);
     }
   }
   if (include_labels.size() == label_names.size()) {
@@ -334,22 +357,31 @@ void MetricsQuery::Apply(absl::Span<const std::string> label_names,
   }
   class Filter final : public MetricsSink {
    public:
-    explicit Filter(absl::Span<const size_t> include_labels)
-        : include_labels_(include_labels) {}
+    explicit Filter(absl::Span<const size_t> include_labels,
+                    absl::Span<const std::string> label_keys)
+        : include_labels_(include_labels), label_keys_(label_keys) {}
 
-    void Counter(absl::Span<const std::string> label, absl::string_view name,
-                 uint64_t value) override {
-      uint64_counters_[ConstructKey(label, name)] += value;
+    void Counter(absl::Span<const std::string> /* label_keys */,
+                 absl::Span<const std::string> label_values,
+                 absl::string_view name, uint64_t value) override {
+      uint64_counters_[ConstructKey(label_values, name)] += value;
     }
 
-    void Histogram(absl::Span<const std::string> label, absl::string_view name,
-                   HistogramBuckets bounds,
+    void UpDownCounter(absl::Span<const std::string> /* label_keys */,
+                       absl::Span<const std::string> label_values,
+                       absl::string_view name, uint64_t value) override {
+      uint64_up_down_counters_[ConstructKey(label_values, name)] += value;
+    }
+
+    void Histogram(absl::Span<const std::string> /* label_keys */,
+                   absl::Span<const std::string> label_values,
+                   absl::string_view name, HistogramBuckets bounds,
                    absl::Span<const uint64_t> counts) override {
       GRPC_CHECK_EQ(counts.size(), bounds.size());
-      auto it = histograms_.find(ConstructKey(label, name));
+      auto it = histograms_.find(ConstructKey(label_values, name));
       if (it == histograms_.end()) {
         histograms_.emplace(std::piecewise_construct,
-                            std::tuple(ConstructKey(label, name)),
+                            std::tuple(ConstructKey(label_values, name)),
                             std::tuple(bounds, counts));
       } else {
         if (it->second.bounds != bounds) {
@@ -363,44 +395,56 @@ void MetricsQuery::Apply(absl::Span<const std::string> label_names,
       }
     }
 
-    void DoubleGauge(absl::Span<const std::string>, absl::string_view,
+    void DoubleGauge(absl::Span<const std::string> /* label_keys */,
+                     absl::Span<const std::string>, absl::string_view,
                      double) override {
       // Not aggregatable
     }
-    void IntGauge(absl::Span<const std::string>, absl::string_view,
+    void IntGauge(absl::Span<const std::string> /* label_keys */,
+                  absl::Span<const std::string>, absl::string_view,
                   int64_t) override {
       // Not aggregatable
     }
-    void UintGauge(absl::Span<const std::string>, absl::string_view,
+    void UintGauge(absl::Span<const std::string> /* label_keys */,
+                   absl::Span<const std::string>, absl::string_view,
                    uint64_t) override {
       // Not aggregatable
     }
 
     void Publish(MetricsSink& sink) const {
       for (const auto& [key, value] : uint64_counters_) {
-        sink.Counter(std::get<0>(key), std::get<1>(key), value);
+        sink.Counter(label_keys_, std::get<0>(key), std::get<1>(key), value);
+      }
+      for (const auto& [key, value] : uint64_up_down_counters_) {
+        sink.UpDownCounter(label_keys_, std::get<0>(key), std::get<1>(key),
+                           value);
       }
       for (const auto& [key, value] : histograms_) {
-        sink.Histogram(std::get<0>(key), std::get<1>(key), value.bounds,
-                       value.counts);
+        sink.Histogram(label_keys_, std::get<0>(key), std::get<1>(key),
+                       value.bounds, value.counts);
       }
     }
 
    private:
     std::tuple<std::vector<std::string>, absl::string_view> ConstructKey(
-        absl::Span<const std::string> label, absl::string_view name) const {
+        absl::Span<const std::string> label_values,
+        absl::string_view name) const {
       std::vector<std::string> key;
       key.reserve(include_labels_.size());
       for (auto i : include_labels_) {
-        key.push_back(label[i]);
+        key.push_back(label_values[i]);
       }
       return std::tuple(std::move(key), name);
     }
 
     absl::Span<const size_t> include_labels_;
+    absl::Span<const std::string> label_keys_;
     absl::flat_hash_map<std::tuple<std::vector<std::string>, absl::string_view>,
                         uint64_t>
         uint64_counters_;
+    absl::flat_hash_map<std::tuple<std::vector<std::string>, absl::string_view>,
+                        uint64_t>
+        uint64_up_down_counters_;
     struct HistogramValue {
       HistogramValue(HistogramBuckets bounds, absl::Span<const uint64_t> counts)
           : bounds(bounds), counts(counts.begin(), counts.end()) {}
@@ -411,7 +455,7 @@ void MetricsQuery::Apply(absl::Span<const std::string> label_names,
                         HistogramValue>
         histograms_;
   };
-  Filter filter(include_labels);
+  Filter filter(include_labels, label_keys);
   ApplyLabelChecks(label_names, fn, filter);
   filter.Publish(sink);
 }
@@ -442,39 +486,51 @@ void MetricsQuery::ApplyLabelChecks(absl::Span<const std::string> label_names,
                     absl::Span<const LabelEq> inclusion_checks)
         : inclusion_checks_(inclusion_checks), sink_(sink) {}
 
-    void Counter(absl::Span<const std::string> label, absl::string_view name,
-                 uint64_t value) override {
-      if (!Matches(label)) return;
-      sink_.Counter(label, name, value);
+    void Counter(absl::Span<const std::string> label_keys,
+                 absl::Span<const std::string> label_values,
+                 absl::string_view name, uint64_t value) override {
+      if (!Matches(label_values)) return;
+      sink_.Counter(label_keys, label_values, name, value);
     }
 
-    void Histogram(absl::Span<const std::string> label, absl::string_view name,
-                   HistogramBuckets bounds,
+    void UpDownCounter(absl::Span<const std::string> label_keys,
+                       absl::Span<const std::string> label_values,
+                       absl::string_view name, uint64_t value) override {
+      if (!Matches(label_values)) return;
+      sink_.UpDownCounter(label_keys, label_values, name, value);
+    }
+
+    void Histogram(absl::Span<const std::string> label_keys,
+                   absl::Span<const std::string> label_values,
+                   absl::string_view name, HistogramBuckets bounds,
                    absl::Span<const uint64_t> counts) override {
-      if (!Matches(label)) return;
-      sink_.Histogram(label, name, bounds, counts);
+      if (!Matches(label_values)) return;
+      sink_.Histogram(label_keys, label_values, name, bounds, counts);
     }
 
-    void DoubleGauge(absl::Span<const std::string> label,
+    void DoubleGauge(absl::Span<const std::string> label_keys,
+                     absl::Span<const std::string> label_values,
                      absl::string_view name, double value) override {
-      if (!Matches(label)) return;
-      sink_.DoubleGauge(label, name, value);
+      if (!Matches(label_values)) return;
+      sink_.DoubleGauge(label_keys, label_values, name, value);
     }
-    void IntGauge(absl::Span<const std::string> label, absl::string_view name,
-                  int64_t value) override {
-      if (!Matches(label)) return;
-      sink_.IntGauge(label, name, value);
+    void IntGauge(absl::Span<const std::string> label_keys,
+                  absl::Span<const std::string> label_values,
+                  absl::string_view name, int64_t value) override {
+      if (!Matches(label_values)) return;
+      sink_.IntGauge(label_keys, label_values, name, value);
     }
-    void UintGauge(absl::Span<const std::string> label, absl::string_view name,
-                   uint64_t value) override {
-      if (!Matches(label)) return;
-      sink_.UintGauge(label, name, value);
+    void UintGauge(absl::Span<const std::string> label_keys,
+                   absl::Span<const std::string> label_values,
+                   absl::string_view name, uint64_t value) override {
+      if (!Matches(label_values)) return;
+      sink_.UintGauge(label_keys, label_values, name, value);
     }
 
    private:
-    bool Matches(absl::Span<const std::string> label) const {
+    bool Matches(absl::Span<const std::string> label_values) const {
       for (const auto& check : inclusion_checks_) {
-        if (label[check.offset] != check.value) return false;
+        if (label_values[check.offset] != check.value) return false;
       }
       return true;
     }
@@ -560,6 +616,11 @@ void DomainStorage::AddData(channelz::DataSink sink) {
                                 channelz::PropertyList().Set(
                                     "value", SumCounter(metric->offset)));
                   },
+                  [&, this](InstrumentMetadata::UpDownCounterShape) {
+                    grid.SetRow(metric->name,
+                                channelz::PropertyList().Set(
+                                    "value", SumCounter(metric->offset)));
+                  },
                   [&](InstrumentMetadata::DoubleGaugeShape) {
                     grid.SetRow(
                         metric->name,
@@ -619,6 +680,10 @@ void QueryableDomain::AddData(channelz::DataSink sink) {
                                     metric->shape,
                                     [](InstrumentMetadata::CounterShape)
                                         -> std::string { return "counter"; },
+                                    [](InstrumentMetadata::UpDownCounterShape)
+                                        -> std::string {
+                                      return "up_down_counter";
+                                    },
                                     [](InstrumentMetadata::DoubleGaugeShape)
                                         -> std::string {
                                       return "double_gauge";
@@ -690,6 +755,17 @@ const InstrumentMetadata::Description* QueryableDomain::AllocateCounter(
   auto* desc =
       InstrumentIndex::Get().Register(this, offset, name, description, unit,
                                       InstrumentMetadata::CounterShape{});
+  metrics_.push_back(desc);
+  return desc;
+}
+
+const InstrumentMetadata::Description* QueryableDomain::AllocateUpDownCounter(
+    absl::string_view name, absl::string_view description,
+    absl::string_view unit) {
+  const size_t offset = allocated_counter_slots_++;
+  auto* desc =
+      InstrumentIndex::Get().Register(this, offset, name, description, unit,
+                                      InstrumentMetadata::UpDownCounterShape{});
   metrics_.push_back(desc);
   return desc;
 }
@@ -782,7 +858,7 @@ uint64_t LowContentionBackend::Sum(size_t index) {
 
 HighContentionBackend::HighContentionBackend(size_t size) {
   for (auto& shard : counters_) {
-    shard = std::make_unique<std::atomic<uint64_t>[]>(size);
+    shard = std::make_unique<std::atomic<int64_t>[]>(size);
     for (size_t i = 0; i < size; ++i) {
       shard[i].store(0, std::memory_order_relaxed);
     }
@@ -790,14 +866,20 @@ HighContentionBackend::HighContentionBackend(size_t size) {
 }
 
 uint64_t HighContentionBackend::Sum(size_t index) {
-  uint64_t sum = 0;
+  uint64_t positive_sum = 0;
+  uint64_t negative_sum = 0;
   for (auto& shard : counters_) {
-    sum += shard[index].load(std::memory_order_relaxed);
+    int64_t value = shard[index].load(std::memory_order_relaxed);
+    if (value > 0) {
+      positive_sum += value;
+    } else if (value < 0) {
+      negative_sum += -value;
+    }
   }
-  return sum;
+  // Every decrement should have a corresponding increment.
+  GRPC_CHECK(positive_sum >= negative_sum);
+  return positive_sum - negative_sum;
 }
-
-namespace {
 
 class GlobalCollectionScopeManager {
  public:
@@ -870,6 +952,10 @@ class GlobalCollectionScopeManager {
     std::variant<Building, Published> state;
     MutexLock lock(&mu_);
     state = std::exchange(state_, Building{});
+    if (auto* published = std::get_if<Published>(&state);
+        published != nullptr) {
+      published->global_scope->TestOnlyReset();
+    }
   }
 
  private:
@@ -886,8 +972,6 @@ class GlobalCollectionScopeManager {
   Mutex mu_;
   std::variant<Building, Published> state_ ABSL_GUARDED_BY(mu_);
 };
-
-}  // namespace
 
 RefCountedPtr<CollectionScope> CreateRootCollectionScope(
     absl::Span<const std::string> labels, size_t child_shards_count,

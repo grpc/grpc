@@ -46,6 +46,7 @@ grpc_cc_library(
         "@envoy_api//envoy/config/listener/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/route/v3:pkg_cc_proto",
         "@envoy_api//envoy/service/discovery/v3:pkg_cc_grpc",
+        "@envoy_api//envoy/service/discovery/v3:pkg_cc_proto",
         "@envoy_api//envoy/service/load_stats/v3:pkg_cc_grpc",
     ],
 )
@@ -442,6 +443,8 @@ grpc_cc_test(
         "@envoy_api//envoy/config/listener/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/route/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg_cc_proto",
+        "@envoy_api//envoy/service/status/v3:pkg_cc_grpc",
+        "@envoy_api//envoy/service/status/v3:pkg_cc_proto",
     ],
 )
 
