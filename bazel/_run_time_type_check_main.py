@@ -42,6 +42,7 @@ install_import_hook('grpc.aio._metadata')
 
 # SYNC
 install_import_hook('grpc')
+install_import_hook('grpc._init')
 install_import_hook('grpc._auth')
 install_import_hook('grpc._channel')
 install_import_hook('grpc._common')

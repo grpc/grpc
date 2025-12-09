@@ -18,12 +18,15 @@ import contextlib
 import enum
 import logging
 import sys
+import types
 
+from typing import Optional, Any
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
 from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
+from grpc._typing import MetadataType
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -52,7 +55,7 @@ class Future(abc.ABC):
     """
 
     @abc.abstractmethod
-    def cancel(self):
+    def cancel(self) -> bool:
         """Attempts to cancel the computation.
 
         This method does not block.
@@ -71,7 +74,7 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def cancelled(self):
+    def cancelled(self) -> bool:
         """Describes whether the computation was cancelled.
 
         This method does not block.
@@ -89,7 +92,7 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def running(self):
+    def running(self) -> bool:
         """Describes whether the computation is taking place.
 
         This method does not block.
@@ -103,7 +106,7 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def done(self):
+    def done(self) -> bool:
         """Describes whether the computation has taken place.
 
         This method does not block.
@@ -118,7 +121,7 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def result(self, timeout=None):
+    def result(self, timeout=None) -> Any:
         """Returns the result of the computation or raises its exception.
 
         This method may return immediately or may block.
@@ -141,7 +144,7 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def exception(self, timeout=None):
+    def exception(self, timeout=None) -> Optional[BaseException]:
         """Return the exception raised by the computation.
 
         This method may return immediately or may block.
@@ -163,7 +166,7 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def traceback(self, timeout=None):
+    def traceback(self, timeout=None) -> Optional[types.TracebackType]:
         """Access the traceback of the exception raised by the computation.
 
         This method may return immediately or may block.
@@ -185,7 +188,7 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def add_done_callback(self, fn):
+    def add_done_callback(self, fn) -> None:
         """Adds a function to be called at completion of the computation.
 
         The callback will be passed this Future object describing the outcome
@@ -321,7 +324,7 @@ class RpcContext(abc.ABC):
     """Provides RPC-related information and action."""
 
     @abc.abstractmethod
-    def is_active(self):
+    def is_active(self) -> bool:
         """Describes whether the RPC is active or has terminated.
 
         Returns:
@@ -331,7 +334,7 @@ class RpcContext(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def time_remaining(self):
+    def time_remaining(self) -> Optional[float]:
         """Describes the length of allowed time remaining for the RPC.
 
         Returns:
@@ -342,7 +345,7 @@ class RpcContext(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def cancel(self):
+    def cancel(self) -> bool:
         """Cancels the RPC.
 
         Idempotent and has no effect if the RPC has already terminated.
@@ -350,7 +353,7 @@ class RpcContext(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def add_callback(self, callback):
+    def add_callback(self, callback) -> bool:
         """Registers a callback to be called on RPC termination.
 
         Args:
@@ -371,7 +374,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
     """Invocation-side utility object for an RPC."""
 
     @abc.abstractmethod
-    def initial_metadata(self):
+    def initial_metadata(self) -> Optional[MetadataType]:
         """Accesses the initial metadata sent by the server.
 
         This method blocks until the value is available.
@@ -382,7 +385,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def trailing_metadata(self):
+    def trailing_metadata(self) -> Optional[MetadataType]:
         """Accesses the trailing metadata sent by the server.
 
         This method blocks until the value is available.
@@ -393,7 +396,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def code(self):
+    def code(self) -> Optional[StatusCode]:
         """Accesses the status code sent by the server.
 
         This method blocks until the value is available.
@@ -404,7 +407,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def details(self):
+    def details(self) -> Optional[str]:
         """Accesses the details sent by the server.
 
         This method blocks until the value is available.
