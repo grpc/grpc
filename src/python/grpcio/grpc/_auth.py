@@ -14,9 +14,12 @@
 """GRPCAuthMetadataPlugins for standard authentication."""
 
 import inspect
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import grpc
+
+if TYPE_CHECKING:
+    from oauth2client import client as oauth2client_client
 
 
 def _sign_request(
@@ -32,10 +35,9 @@ class GoogleCallCredentials(grpc.AuthMetadataPlugin):
     """Metadata wrapper for GoogleCredentials from the oauth2client library."""
 
     _is_jwt: bool
-    _credentials: Any
+    _credentials: "oauth2client_client.GoogleCredentials"
 
-    # TODO(xuanwn): Give credentials an actual type.
-    def __init__(self, credentials: Any):
+    def __init__(self, credentials: "oauth2client_client.GoogleCredentials"):
         self._credentials = credentials
         # Hack to determine if these are JWT creds and we need to pass # noqa: FIX004
         # additional_claims when getting a token
