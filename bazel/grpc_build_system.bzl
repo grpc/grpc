@@ -79,8 +79,6 @@ def _get_external_deps(external_deps):
             ret.append(dep.replace("otel/", "@io_opentelemetry_cpp//"))
         elif dep.startswith("google_cloud_cpp"):
             ret.append(dep.replace("google_cloud_cpp", "@google_cloud_cpp//"))
-        elif dep == "libprotobuf_mutator":
-            ret.append("@com_google_libprotobuf_mutator//:libprotobuf_mutator")
         else:
             ret.append("//third_party:" + dep)
     return ret
@@ -608,7 +606,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             **test_args
         )
 
-def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], testonly = False, linkshared = False, linkopts = [], tags = [], features = [], visibility = None):
+def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], testonly = False, linkshared = False, linkopts = [], tags = [], target_compatible_with = [], features = [], visibility = None):
     """Generates a cc_binary for use in the gRPC repo.
 
     Args:
@@ -622,6 +620,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
       linkshared: Enables linkshared on the binary.
       linkopts: linkopts to supply to the cc_binary.
       tags: Tags to apply to the target.
+      target_compatible_with: Constraint values that must be present in the target platform
       features: features to be supplied to the cc_binary.
       visibility: The visibility of the target.
     """
@@ -638,6 +637,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
         copts = GRPC_DEFAULT_COPTS + copts,
         linkopts = if_not_windows(["-pthread"]) + linkopts,
         tags = tags,
+        target_compatible_with = target_compatible_with,
         features = features,
         visibility = visibility,
     )

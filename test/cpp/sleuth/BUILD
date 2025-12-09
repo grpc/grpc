@@ -46,9 +46,11 @@ grpc_cc_test(
         "gtest_main",
         "absl/strings",
     ],
+    tags = ["no_windows"],
     deps = [
         ":client",
         "//:grpc++",
+        "//:grpc++_base",
         "//:grpcpp_channelz",
         "//src/proto/grpc/channelz/v2:channelz_cc_proto",
         "//test/core/test_util:grpc_test_util",
@@ -78,6 +80,7 @@ grpc_cc_test(
         "gtest_main",
         "absl/status",
     ],
+    tags = ["no_windows"],
     deps = [
         ":tool",
         ":tool_test",
@@ -93,6 +96,7 @@ grpc_cc_test(
         "gtest",
         "gtest_main",
     ],
+    tags = ["no_windows"],
     deps = [
         ":channelz_tool",
         ":tool",
@@ -111,6 +115,7 @@ grpc_cc_test(
         "gtest",
         "gtest_main",
     ],
+    tags = ["no_windows"],
     deps = [
         ":info_tool",
         ":tool_test",
@@ -123,9 +128,11 @@ grpc_cc_test(
     srcs = ["latent_see_tool_test.cc"],
     external_deps = [
         "absl/flags:flag",
+        "absl/strings",
         "gtest",
         "gtest_main",
     ],
+    tags = ["no_windows"],
     deps = [
         ":latent_see_tool",
         ":tool_test",
@@ -136,11 +143,14 @@ grpc_cc_test(
 )
 
 grpc_cc_library(
-    name = "sleuth",
+    name = "sleuth_lib",
     srcs = ["sleuth.cc"],
     hdrs = ["sleuth.h"],
     external_deps = [
+        "absl/log:check",
+        "absl/flags:flag",
         "absl/status",
+        "absl/functional:any_invocable",
     ],
     deps = [
         ":channelz_tool",
@@ -150,10 +160,24 @@ grpc_cc_library(
         ":version",
         "//test/cpp/util:test_config",
     ],
+    alwayslink = True,
+)
+
+# Shared library for gRPC Sleuth Python extension.
+grpc_cc_binary(
+    name = "sleuth.so",
+    linkshared = True,
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+    deps = [
+        ":sleuth_lib",
+    ],
 )
 
 grpc_cc_binary(
-    name = "sleuth_main",
+    name = "sleuth",
     srcs = ["sleuth_main.cc"],
     external_deps = [
         "absl/flags:parse",
@@ -162,7 +186,7 @@ grpc_cc_binary(
         "//bazel:sleuth",
     ],
     deps = [
-        ":sleuth",
+        ":sleuth_lib",
     ],
 )
 
@@ -178,6 +202,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:string_view",
+        "absl/types:span",
     ],
     deps = [
         "//:gpr_platform",
@@ -197,6 +222,7 @@ grpc_cc_library(
         "absl/status:status",
         "absl/flags:flag",
         "absl/strings",
+        "absl/status:statusor",
     ],
     deps = [
         ":client",
@@ -204,7 +230,9 @@ grpc_cc_library(
         ":tool_options",
         "//:grpc_base",
         "//src/core:zviz_entity",
+        "//src/core:zviz_environment",
         "//src/core:zviz_format_entity_list",
+        "//src/core:zviz_layout",
         "//src/core:zviz_layout_text",
         "//src/core:zviz_trace",
         "//test/cpp/util:grpc_cli_utils",
@@ -229,7 +257,9 @@ grpc_cc_library(
     name = "latent_see_tool",
     srcs = ["latent_see_tool.cc"],
     external_deps = [
+        "absl/flags:flag",
         "absl/status:status",
+        "absl/strings",
     ],
     deps = [
         ":client",
@@ -260,6 +290,7 @@ grpc_cc_library(
     hdrs = ["tool_options.h"],
     external_deps = [
         "absl/flags:flag",
+        "absl/strings",
     ],
     deps = [
         ":client",

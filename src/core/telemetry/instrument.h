@@ -213,6 +213,7 @@
 namespace grpc_core {
 
 class InstrumentTest;
+class GlobalCollectionScopeManager;
 
 static constexpr absl::string_view kOmittedLabel = "<omitted>";
 
@@ -226,13 +227,14 @@ class CollectionScope;
 class InstrumentMetadata {
  public:
   struct CounterShape {};
+  struct UpDownCounterShape {};
   struct DoubleGaugeShape {};
   struct IntGaugeShape {};
   struct UintGaugeShape {};
   using HistogramShape = HistogramBuckets;
 
-  using Shape = std::variant<CounterShape, HistogramShape, DoubleGaugeShape,
-                             IntGaugeShape, UintGaugeShape>;
+  using Shape = std::variant<CounterShape, UpDownCounterShape, HistogramShape,
+                             DoubleGaugeShape, IntGaugeShape, UintGaugeShape>;
 
   // A description of a metric.
   struct Description {
@@ -289,7 +291,10 @@ class CollectionScope : public RefCounted<CollectionScope> {
     return labels_of_interest_.contains(label);
   }
 
+  bool IsRoot() const { return parents_.empty(); }
+
  private:
+  friend class GlobalCollectionScopeManager;
   friend class MetricsQuery;
   friend class instrument_detail::QueryableDomain;
 
@@ -318,6 +323,8 @@ class CollectionScope : public RefCounted<CollectionScope> {
   void ForEachUniqueStorage(
       absl::FunctionRef<void(instrument_detail::DomainStorage*)> cb,
       absl::flat_hash_set<instrument_detail::DomainStorage*>& visited);
+
+  void TestOnlyReset();
 };
 
 namespace instrument_detail {
@@ -481,6 +488,9 @@ class QueryableDomain {
   const InstrumentMetadata::Description* AllocateCounter(
       absl::string_view name, absl::string_view description,
       absl::string_view unit);
+  const InstrumentMetadata::Description* AllocateUpDownCounter(
+      absl::string_view name, absl::string_view description,
+      absl::string_view unit);
   const InstrumentMetadata::Description* AllocateHistogram(
       absl::string_view name, absl::string_view description,
       absl::string_view unit, HistogramBuckets bounds);
@@ -570,11 +580,14 @@ struct Counter {
 };
 
 // An InstrumentHandle is a handle to a single metric in an
-// InstrumentDomainImpl. kType is used in using statements to disambiguate
-// between different InstrumentHandle specializations. Backed, Label... are
-// per InstrumentDomainImpl.
+// instrument domain. It has a Shape (how the metric behaves).
 template <typename Shape, typename Domain>
 class InstrumentHandle {
+ public:
+  absl::string_view name() const { return description_->name; }
+  absl::string_view description() const { return description_->description; }
+  absl::string_view unit() const { return description_->unit; }
+
  private:
   friend Domain;
 
@@ -596,7 +609,7 @@ template <typename T>
 using StdString = std::string;
 
 template <typename T>
-using ConstCharPtr = const char*;
+using AbslStringView = absl::string_view;
 
 }  // namespace instrument_detail
 
@@ -610,7 +623,14 @@ class LowContentionBackend final {
   void Add(size_t index, uint64_t amount) {
     counters_[index].fetch_add(amount, std::memory_order_relaxed);
   }
+  void Subtract(size_t index, uint64_t amount) {
+    uint64_t old_value =
+        counters_[index].fetch_sub(amount, std::memory_order_relaxed);
+    // Every decrement should have a corresponding increment.
+    GRPC_DCHECK(old_value >= amount);
+  }
   void Increment(size_t index) { Add(index, 1); }
+  void Decrement(size_t index) { Subtract(index, 1); }
 
   uint64_t Sum(size_t index);
 
@@ -629,12 +649,18 @@ class HighContentionBackend final {
   void Add(size_t index, uint64_t amount) {
     counters_.this_cpu()[index].fetch_add(amount, std::memory_order_relaxed);
   }
+  void Subtract(size_t index, uint64_t amount) {
+    counters_.this_cpu()[index].fetch_sub(amount, std::memory_order_relaxed);
+  }
   void Increment(size_t index) { Add(index, 1); }
+  void Decrement(size_t index) { Subtract(index, 1); }
 
   uint64_t Sum(size_t index);
 
  private:
-  PerCpu<std::unique_ptr<std::atomic<uint64_t>[]>> counters_{
+  // Since Increments and Decrements can happen on different CPUs, we need to
+  // use a int64_t counter. The sum should still be a uint64_t.
+  PerCpu<std::unique_ptr<std::atomic<int64_t>[]>> counters_{
       PerCpuOptions().SetMaxShards(16)};
 };
 
@@ -644,16 +670,24 @@ class MetricsSink {
  public:
   // Called once per label per metric, with the value of that metric for that
   // label.
-  virtual void Counter(absl::Span<const std::string> label,
+  virtual void Counter(absl::Span<const std::string> label_keys,
+                       absl::Span<const std::string> label_values,
                        absl::string_view name, uint64_t value) = 0;
-  virtual void Histogram(absl::Span<const std::string> label,
+  virtual void UpDownCounter(absl::Span<const std::string> label_keys,
+                             absl::Span<const std::string> label_values,
+                             absl::string_view name, uint64_t value) = 0;
+  virtual void Histogram(absl::Span<const std::string> label_keys,
+                         absl::Span<const std::string> label_values,
                          absl::string_view name, HistogramBuckets bounds,
                          absl::Span<const uint64_t> counts) = 0;
-  virtual void DoubleGauge(absl::Span<const std::string> labels,
+  virtual void DoubleGauge(absl::Span<const std::string> label_keys,
+                           absl::Span<const std::string> label_values,
                            absl::string_view name, double value) = 0;
-  virtual void IntGauge(absl::Span<const std::string> labels,
+  virtual void IntGauge(absl::Span<const std::string> label_keys,
+                        absl::Span<const std::string> label_values,
                         absl::string_view name, int64_t value) = 0;
-  virtual void UintGauge(absl::Span<const std::string> labels,
+  virtual void UintGauge(absl::Span<const std::string> label_keys,
+                         absl::Span<const std::string> label_values,
                          absl::string_view name, uint64_t value) = 0;
 
  protected:
@@ -675,22 +709,22 @@ class MetricsQuery {
   // remaining dimensions, etc.
   MetricsQuery& CollapseLabels(absl::Span<const std::string> labels);
   // Only include metrics that are in `metrics`.
-  MetricsQuery& OnlyMetrics(absl::Span<const std::string> metrics);
+  MetricsQuery& OnlyMetrics(std::vector<std::string> metrics);
 
   // Returns the metrics that are selected by this query.
   std::optional<absl::Span<const std::string>> selected_metrics() const {
     return only_metrics_;
   }
 
+  // Runs the query, outputting the results to `sink`.
+  void Run(RefCountedPtr<CollectionScope> scope, MetricsSink& sink) const;
+
+ private:
   // Adapts `sink` by including the filtering requested, and then calls `fn`
   // with the filtering sink. This is mainly an implementation detail.
   void Apply(absl::Span<const std::string> label_names,
              absl::FunctionRef<void(MetricsSink&)> fn, MetricsSink& sink) const;
 
-  // Runs the query, outputting the results to `sink`.
-  void Run(RefCountedPtr<CollectionScope> scope, MetricsSink& sink) const;
-
- private:
   void ApplyLabelChecks(absl::Span<const std::string> label_names,
                         absl::FunctionRef<void(MetricsSink&)> fn,
                         MetricsSink& sink) const;
@@ -728,6 +762,8 @@ class InstrumentDomainImpl final : public QueryableDomain {
  public:
   using Self = InstrumentDomainImpl<Backend, N, Tag>;
   using CounterHandle = InstrumentHandle<Counter, Self>;
+  using UpDownCounterHandle =
+      InstrumentHandle<InstrumentMetadata::UpDownCounterShape, Self>;
   using DoubleGaugeHandle =
       InstrumentHandle<InstrumentMetadata::DoubleGaugeShape, Self>;
   using IntGaugeHandle =
@@ -794,10 +830,21 @@ class InstrumentDomainImpl final : public QueryableDomain {
 
     // Increments the counter specified by `handle` by 1 for this storages
     // labels.
-    void Increment(CounterHandle handle) {
+    void Increment(CounterHandle handle, uint64_t amount = 1) {
       GRPC_DCHECK_EQ(handle.instrument_domain_, domain());
-      backend_.Add(handle.offset_, 1);
+      backend_.Add(handle.offset_, amount);
     }
+
+    void Increment(UpDownCounterHandle handle, uint64_t amount = 1) {
+      GRPC_DCHECK_EQ(handle.instrument_domain_, domain());
+      backend_.Add(handle.offset_, amount);
+    }
+
+    void Decrement(UpDownCounterHandle handle, uint64_t amount = 1) {
+      GRPC_DCHECK_EQ(handle.instrument_domain_, domain());
+      backend_.Subtract(handle.offset_, amount);
+    }
+
     void Add(DomainStorage* other) override {
       GRPC_DCHECK_EQ(domain(), other->domain());
       for (size_t i = 0; i < domain()->allocated_counter_slots(); ++i) {
@@ -869,6 +916,14 @@ class InstrumentDomainImpl final : public QueryableDomain {
                                 absl::string_view unit) {
     return CounterHandle{this, AllocateCounter(name, description, unit),
                          Counter{}};
+  }
+
+  UpDownCounterHandle RegisterUpDownCounter(absl::string_view name,
+                                            absl::string_view description,
+                                            absl::string_view unit) {
+    return UpDownCounterHandle{this,
+                               AllocateUpDownCounter(name, description, unit),
+                               InstrumentMetadata::UpDownCounterShape{}};
   }
 
   template <typename Shape, typename... Args>
@@ -963,13 +1018,19 @@ class InstrumentDomain {
  protected:
   template <typename... Label>
   static constexpr auto Labels(Label... labels) {
-    return std::tuple<instrument_detail::ConstCharPtr<Label>...>{labels...};
+    return std::tuple<instrument_detail::AbslStringView<Label>...>{labels...};
   }
 
   static auto RegisterCounter(absl::string_view name,
                               absl::string_view description,
                               absl::string_view unit) {
     return Domain()->RegisterCounter(name, description, unit);
+  }
+
+  static auto RegisterUpDownCounter(absl::string_view name,
+                                    absl::string_view description,
+                                    absl::string_view unit) {
+    return Domain()->RegisterUpDownCounter(name, description, unit);
   }
 
   template <typename Shape, typename... Args>

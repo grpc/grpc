@@ -283,6 +283,10 @@ class HealthProducer::ConnectivityWatcher final
     producer_->OnConnectivityStateChange(state, status);
   }
 
+  void OnKeepaliveUpdate(Duration) override {}
+
+  uint32_t max_connections_per_subchannel() const override { return 1; }
+
   grpc_pollset_set* interested_parties() override {
     return producer_->interested_parties_;
   }

@@ -17,6 +17,8 @@
 //
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
 
+#include <utility>
+
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/party.h"
@@ -37,6 +39,9 @@ using ::grpc_core::http2::PingInterface;
 using ::grpc_core::http2::PingManager;
 using ::testing::MockFunction;
 using ::testing::StrictMock;
+constexpr Duration kInterval = Duration::Seconds(10);
+constexpr Duration kLongInterval = Duration::Hours(1);
+constexpr Duration kShortInterval = Duration::Seconds(1);
 
 class MockPingInterface : public PingInterface {
  public:
@@ -94,21 +99,20 @@ class PingManagerTest : public YodelTest {
 };
 
 void MaybeSendPing(PingManager& ping_system,
-                   Duration next_allowed_ping_interval, Duration ping_timeout) {
+                   Duration next_allowed_ping_interval) {
   SliceBuffer output_buf;
   ping_system.MaybeGetSerializedPingFrames(output_buf,
                                            next_allowed_ping_interval);
-  ping_system.NotifyPingSent(ping_timeout);
+  ping_system.NotifyPingSent();
 }
 
 std::optional<uint64_t> MaybeSendPingAndReturnID(
-    PingManager& ping_system, Duration next_allowed_ping_interval,
-    Duration ping_timeout) {
+    PingManager& ping_system, Duration next_allowed_ping_interval) {
   SliceBuffer output_buf;
   std::optional<uint64_t> opaque_data =
       ping_system.TestOnlyMaybeGetSerializedPingFrames(
           output_buf, next_allowed_ping_interval);
-  ping_system.NotifyPingSent(ping_timeout);
+  ping_system.NotifyPingSent();
   return opaque_data;
 }
 }  // namespace
@@ -128,8 +132,8 @@ PING_MANAGER_TEST(TestPingRequest) {
   std::unique_ptr<StrictMock<MockPingInterface>> ping_interface =
       std::make_unique<StrictMock<MockPingInterface>>();
 
-  PingManager ping_system(GetChannelArgs(), std::move(ping_interface),
-                          event_engine());
+  PingManager ping_system(GetChannelArgs(), kInterval,
+                          std::move(ping_interface), event_engine());
   std::string execution_order;
   StrictMock<MockFunction<void(absl::Status)>> on_done;
 
@@ -183,8 +187,8 @@ PING_MANAGER_TEST(TestPingUnrelatedAck) {
   std::unique_ptr<StrictMock<MockPingInterface>> ping_interface =
       std::make_unique<StrictMock<MockPingInterface>>();
 
-  PingManager ping_system(GetChannelArgs(), std::move(ping_interface),
-                          event_engine());
+  PingManager ping_system(GetChannelArgs(), kInterval,
+                          std::move(ping_interface), event_engine());
   std::string execution_order;
   StrictMock<MockFunction<void(absl::Status)>> on_done;
 
@@ -244,8 +248,8 @@ PING_MANAGER_TEST(TestPingWaitForAck) {
   std::unique_ptr<StrictMock<MockPingInterface>> ping_interface =
       std::make_unique<StrictMock<MockPingInterface>>();
 
-  PingManager ping_system(GetChannelArgs(), std::move(ping_interface),
-                          event_engine());
+  PingManager ping_system(GetChannelArgs(), kInterval,
+                          std::move(ping_interface), event_engine());
   std::string execution_order;
   StrictMock<MockFunction<void(absl::Status)>> on_done;
 
@@ -291,8 +295,8 @@ PING_MANAGER_TEST(TestPingCancel) {
   std::unique_ptr<StrictMock<MockPingInterface>> ping_interface =
       std::make_unique<StrictMock<MockPingInterface>>();
 
-  PingManager ping_system(GetChannelArgs(), std::move(ping_interface),
-                          event_engine());
+  PingManager ping_system(GetChannelArgs(), kInterval,
+                          std::move(ping_interface), event_engine());
 
   auto party = GetParty();
   EXPECT_EQ(ping_system.CountPingInflight(), 0);
@@ -326,8 +330,8 @@ PING_MANAGER_TEST(TestPingManagerNoAck) {
 
   ping_interface->ExpectPingTimeout();
 
-  PingManager ping_system(GetChannelArgs(), std::move(ping_interface),
-                          event_engine());
+  PingManager ping_system(GetChannelArgs(), kInterval,
+                          std::move(ping_interface), event_engine());
   auto party = GetParty();
   party->Spawn(
       "PingRequest",
@@ -343,9 +347,8 @@ PING_MANAGER_TEST(TestPingManagerNoAck) {
   party->Spawn(
       "PingManager",
       [&ping_system] {
-        return MaybeSendPing(ping_system, /*next_allowed_ping_interval=*/
-                             Duration::Seconds(100),
-                             /*ping_timeout=*/Duration::Seconds(10));
+        MaybeSendPing(ping_system, /*next_allowed_ping_interval=*/
+                      Duration::Seconds(100));
       },
       [](auto) { LOG(INFO) << "Reached PingManager end"; });
 
@@ -376,8 +379,8 @@ PING_MANAGER_TEST(DISABLED_TestPingManagerDelayedPing) {
 
   auto channel_args =
       GetChannelArgs().Set(GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS, 2);
-  PingManager ping_system(channel_args, std::move(ping_interface),
-                          event_engine());
+  PingManager ping_system(channel_args, /*ping_timeout=*/Duration::Seconds(100),
+                          std::move(ping_interface), event_engine());
   auto party = GetParty();
 
   // Ping 1
@@ -394,9 +397,8 @@ PING_MANAGER_TEST(DISABLED_TestPingManagerDelayedPing) {
   party->Spawn(
       "PingManager",
       [&ping_system] {
-        return MaybeSendPing(ping_system, /*next_allowed_ping_interval=*/
-                             Duration::Hours(1),
-                             /*ping_timeout=*/Duration::Seconds(100));
+        MaybeSendPing(ping_system, /*next_allowed_ping_interval=*/
+                      kLongInterval);
       },
       [](auto) { LOG(INFO) << "Reached PingManager end"; });
 
@@ -414,17 +416,15 @@ PING_MANAGER_TEST(DISABLED_TestPingManagerDelayedPing) {
   party->Spawn(
       "PingManager2",
       [&ping_system] {
-        return MaybeSendPing(ping_system, /*next_allowed_ping_interval=*/
-                             Duration::Hours(1),
-                             /*ping_timeout=*/Duration::Seconds(100));
+        MaybeSendPing(ping_system, /*next_allowed_ping_interval=*/
+                      kLongInterval);
       },
       [](auto) { LOG(INFO) << "Reached PingManager end"; });
   party->Spawn(
       "PingManager3",
       [&ping_system] {
-        return MaybeSendPing(ping_system, /*next_allowed_ping_interval=*/
-                             Duration::Hours(1),
-                             /*ping_timeout=*/Duration::Seconds(100));
+        MaybeSendPing(ping_system, /*next_allowed_ping_interval=*/
+                      kLongInterval);
       },
       [](auto) { LOG(INFO) << "Reached PingManager end"; });
 
@@ -446,8 +446,8 @@ PING_MANAGER_TEST(TestPingManagerAck) {
   StrictMock<MockFunction<void()>> on_ping_ack_received;
   EXPECT_CALL(on_ping_ack_received, Call());
 
-  PingManager ping_system(GetChannelArgs(), std::move(ping_interface),
-                          event_engine());
+  PingManager ping_system(GetChannelArgs(), /*ping_timeout=*/kLongInterval,
+                          std::move(ping_interface), event_engine());
   auto party = GetParty();
   uint64_t opaque_data;
 
@@ -467,9 +467,7 @@ PING_MANAGER_TEST(TestPingManagerAck) {
       [&ping_system, &opaque_data] {
         std::optional<uint64_t> recv_opaque_data = MaybeSendPingAndReturnID(
             ping_system, /*next_allowed_ping_interval=*/
-            Duration::Seconds(100),
-            /*ping_timeout=*/
-            Duration::Hours(1));
+            Duration::Seconds(100));
         EXPECT_TRUE(recv_opaque_data.has_value());
         opaque_data = recv_opaque_data.value();
       },
@@ -477,7 +475,7 @@ PING_MANAGER_TEST(TestPingManagerAck) {
 
   party->Spawn(
       "PingAckReceived",
-      TrySeq(Sleep(Duration::Seconds(1)),
+      TrySeq(Sleep(kShortInterval),
              Map([&ping_system,
                   &opaque_data] { return ping_system.AckPing(opaque_data); },
                  [](bool result) {
@@ -504,8 +502,9 @@ PING_MANAGER_TEST(TestPingManagerDelayedAck) {
       std::make_unique<StrictMock<MockPingInterface>>();
   ping_interface->ExpectPingTimeout();
 
-  PingManager ping_system(GetChannelArgs(), std::move(ping_interface),
-                          event_engine());
+  PingManager ping_system(GetChannelArgs(),
+                          /*ping_timeout=*/kShortInterval,
+                          std::move(ping_interface), event_engine());
   auto party = GetParty();
   uint64_t opaque_data;
 
@@ -522,8 +521,7 @@ PING_MANAGER_TEST(TestPingManagerDelayedAck) {
       [&ping_system, &opaque_data] {
         std::optional<uint64_t> recv_opaque_data = MaybeSendPingAndReturnID(
             ping_system, /*next_allowed_ping_interval=*/
-            Duration::Seconds(100),
-            /*ping_timeout=*/Duration::Seconds(2));
+            Duration::Seconds(100));
         EXPECT_TRUE(recv_opaque_data.has_value());
         opaque_data = recv_opaque_data.value();
       },
@@ -531,7 +529,7 @@ PING_MANAGER_TEST(TestPingManagerDelayedAck) {
 
   party->Spawn(
       "DelayedPingAckReceived",
-      TrySeq(Sleep(Duration::Hours(1)),
+      TrySeq(Sleep(kLongInterval),
              Map([&ping_system,
                   &opaque_data] { return ping_system.AckPing(opaque_data); },
                  [](bool) { return absl::OkStatus(); })),
@@ -550,17 +548,17 @@ PING_MANAGER_TEST(TestPingManagerNoPingRequest) {
   std::unique_ptr<StrictMock<MockPingInterface>> ping_interface =
       std::make_unique<StrictMock<MockPingInterface>>();
 
-  PingManager ping_system(GetChannelArgs(), std::move(ping_interface),
-                          event_engine());
+  PingManager ping_system(GetChannelArgs(),
+                          /*ping_timeout=*/kShortInterval,
+                          std::move(ping_interface), event_engine());
   auto party = GetParty();
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
 
   party->Spawn(
       "PingManager",
       [&ping_system] {
-        return MaybeSendPing(ping_system, /*next_allowed_ping_interval=*/
-                             Duration::Seconds(100),
-                             /*ping_timeout=*/Duration::Seconds(2));
+        MaybeSendPing(ping_system, /*next_allowed_ping_interval=*/
+                      Duration::Seconds(100));
       },
       [&on_done](auto) {
         on_done.Call(absl::OkStatus());
@@ -586,7 +584,8 @@ PING_MANAGER_TEST(TestPingManagerImportantPing) {
 
   PingManager ping_system(
       GetChannelArgs().Set(GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS, 1),
-      std::move(ping_interface), event_engine());
+      /*ping_timeout=*/Duration::Seconds(100), std::move(ping_interface),
+      event_engine());
 
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   EXPECT_FALSE(ping_system.PingRequested());
@@ -628,9 +627,8 @@ PING_MANAGER_TEST(TestPingManagerImportantPing) {
   GetParty()->Spawn(
       "PingManager",
       [&ping_system] {
-        return MaybeSendPing(ping_system, /*next_allowed_ping_interval=*/
-                             Duration::Seconds(1),
-                             /*ping_timeout=*/Duration::Seconds(100));
+        MaybeSendPing(ping_system, /*next_allowed_ping_interval=*/
+                      kShortInterval);
       },
       [&on_done, &ping_system](auto) {
         on_done.Call(absl::OkStatus());
@@ -657,7 +655,8 @@ PING_MANAGER_TEST(TestPingManagerPingTimeoutAfterAck) {
 
   PingManager ping_system(
       GetChannelArgs().Set(GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS, 1),
-      std::move(ping_interface), event_engine());
+      /*ping_timeout=*/Duration::Seconds(100), std::move(ping_interface),
+      event_engine());
   SliceBuffer output_buf;
 
   SpawnPingRequest(
@@ -674,11 +673,12 @@ PING_MANAGER_TEST(TestPingManagerPingTimeoutAfterAck) {
         return TrySeq([&ping_system, &output_buf]() {
           auto recv_opaque_data =
               ping_system.TestOnlyMaybeGetSerializedPingFrames(
-                  output_buf, Duration::Seconds(1));
+                  output_buf,
+                  /*next_allowed_ping_interval=*/kShortInterval);
           EXPECT_TRUE(recv_opaque_data.has_value());
           uint64_t opaque_data = recv_opaque_data.value();
           EXPECT_TRUE(ping_system.AckPing(opaque_data));
-          ping_system.NotifyPingSent(Duration::Seconds(100));
+          ping_system.NotifyPingSent();
           return absl::OkStatus();
         });
       },
