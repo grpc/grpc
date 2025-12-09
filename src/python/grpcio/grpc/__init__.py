@@ -678,7 +678,7 @@ class AuthMetadataPluginCallback(abc.ABC):
     """Callback object received by a metadata plugin."""
 
     def __call__(
-        self, metadata: MetadataType, error: Optional[Exception]
+        self, metadata: MetadataType, error: Optional[Type[BaseException]]
     ):
         """Passes to the gRPC runtime authentication metadata for an RPC.
 
