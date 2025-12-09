@@ -19,7 +19,6 @@ import contextlib
 import enum
 import logging
 import sys
-import types
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -49,6 +48,7 @@ from grpc._typing import ResponseType
 from grpc._typing import SerializingFunction
 
 if TYPE_CHECKING:
+    import types
     from concurrent import futures
     from threading import Event
     from grpc.server import _RPCState
@@ -1654,7 +1654,7 @@ class Server(abc.ABC):
 
 
 def unary_unary_rpc_method_handler(
-    behavior: Callable[[RequestType, ServicerContext], ResponseType],
+    behavior: Callable[[RequestType, Any], ResponseType],
     request_deserializer: Optional[DeserializingFunction] = None,
     response_serializer: Optional[SerializingFunction] = None,
 ) -> RpcMethodHandler:
@@ -1684,7 +1684,7 @@ def unary_unary_rpc_method_handler(
 
 
 def unary_stream_rpc_method_handler(
-    behavior: Callable[[RequestType, ServicerContext], Iterator[ResponseType]],
+    behavior: Callable[[RequestType, Any], Any],
     request_deserializer: Optional[DeserializingFunction] = None,
     response_serializer: Optional[SerializingFunction] = None,
 ) -> RpcMethodHandler:
@@ -1714,7 +1714,7 @@ def unary_stream_rpc_method_handler(
 
 
 def stream_unary_rpc_method_handler(
-    behavior: Callable[[Iterator[RequestType], ServicerContext], ResponseType],
+    behavior: Callable[[Any, Any], ResponseType],
     request_deserializer: Optional[DeserializingFunction] = None,
     response_serializer: Optional[SerializingFunction] = None,
 ) -> RpcMethodHandler:
@@ -1744,9 +1744,7 @@ def stream_unary_rpc_method_handler(
 
 
 def stream_stream_rpc_method_handler(
-    behavior: Callable[
-        [Iterator[RequestType], ServicerContext], Iterator[ResponseType]
-    ],
+    behavior: Callable[[Any, Any], Any],
     request_deserializer: Optional[DeserializingFunction] = None,
     response_serializer: Optional[SerializingFunction] = None,
 ) -> RpcMethodHandler:
