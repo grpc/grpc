@@ -552,10 +552,10 @@ class StreamUnaryClientInterceptor(abc.ABC):
     def intercept_stream_unary(
         self,
         continuation: Callable[
-            [ClientCallDetails, Iterator[RequestType]], Union[Call, Future]
+            [ClientCallDetails, Iterable[RequestType]], Union[Call, Future]
         ],
         client_call_details: ClientCallDetails,
-        request_iterator: Iterator[RequestType],
+        request_iterator: Iterable[RequestType],
     ):
         """Intercepts a stream-unary invocation asynchronously.
 
@@ -592,10 +592,10 @@ class StreamStreamClientInterceptor(abc.ABC):
     def intercept_stream_stream(
         self,
         continuation: Callable[
-            [ClientCallDetails, Iterator[RequestType]], Union[Call, Future]
+            [ClientCallDetails, Iterable[RequestType]], Union[Call, Future]
         ],
         client_call_details: ClientCallDetails,
-        request_iterator: Iterator[RequestType],
+        request_iterator: Iterable[RequestType],
     ):
         """Intercepts a stream-stream invocation.
 
