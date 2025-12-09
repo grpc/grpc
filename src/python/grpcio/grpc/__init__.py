@@ -54,13 +54,6 @@ if TYPE_CHECKING:
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
-ClientInterceptor = Union[
-    UnaryUnaryClientInterceptor,
-    UnaryStreamClientInterceptor,
-    StreamUnaryClientInterceptor,
-    StreamStreamClientInterceptor,
-]
-
 try:
     # pylint: disable=ungrouped-imports
     from grpc._grpcio_metadata import __version__
@@ -632,6 +625,13 @@ class StreamStreamClientInterceptor(abc.ABC):
         raise NotImplementedError()
 
 
+ClientInterceptor = Union[
+    UnaryUnaryClientInterceptor,
+    UnaryStreamClientInterceptor,
+    StreamUnaryClientInterceptor,
+    StreamStreamClientInterceptor,
+]
+
 ############  Authentication & Authorization Interfaces & Classes  #############
 
 
@@ -678,7 +678,7 @@ class AuthMetadataPluginCallback(abc.ABC):
     """Callback object received by a metadata plugin."""
 
     def __call__(
-        self, metadata: Optional[MetadataType], error: Optional[Exception]
+        self, metadata: MetadataType, error: Optional[Exception]
     ):
         """Passes to the gRPC runtime authentication metadata for an RPC.
 
