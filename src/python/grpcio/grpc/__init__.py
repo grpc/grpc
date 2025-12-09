@@ -30,8 +30,8 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
-    Type,
     Tuple,
+    Type,
     Union,
 )
 
@@ -49,9 +49,10 @@ from grpc._typing import ResponseType
 from grpc._typing import SerializingFunction
 
 if TYPE_CHECKING:
-    import types
     from concurrent import futures
     from threading import Event
+    import types
+
     from grpc.server import _RPCState
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
