@@ -20,8 +20,8 @@ import enum
 import logging
 import sys
 import types
-
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -32,27 +32,25 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
-    TYPE_CHECKING,
     Union,
 )
+
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
 from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
-from grpc._typing import (
-    ChannelArgumentType,
-    DeserializingFunction,
-    MetadataType,
-    NullaryCallbackType,
-    RequestType,
-    ResponseType,
-    SerializingFunction,
-)
+from grpc._typing import ChannelArgumentType
+from grpc._typing import DeserializingFunction
+from grpc._typing import MetadataType
+from grpc._typing import NullaryCallbackType
+from grpc._typing import RequestType
+from grpc._typing import ResponseType
+from grpc._typing import SerializingFunction
 
 if TYPE_CHECKING:
-    import types
     from concurrent import futures
+    from grpc.server import _RPCState
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -472,8 +470,10 @@ class UnaryUnaryClientInterceptor(abc.ABC):
     @abc.abstractmethod
     def intercept_unary_unary(
         self,
-        continuation: Callable[[CallDetails, RequestType], Union[Call, Future]],
-        client_call_details: CallDetails,
+        continuation: Callable[
+            [ClientCallDetails, RequestType], Union[Call, Future]
+        ],
+        client_call_details: ClientCallDetails,
         request: RequestType,
     ):
         """Intercepts a unary-unary invocation asynchronously.
@@ -511,8 +511,10 @@ class UnaryStreamClientInterceptor(abc.ABC):
     @abc.abstractmethod
     def intercept_unary_stream(
         self,
-        continuation: Callable[[CallDetails, RequestType], Union[Call, Future]],
-        client_call_details: CallDetails,
+        continuation: Callable[
+            [ClientCallDetails, RequestType], Union[Call, Future]
+        ],
+        client_call_details: ClientCallDetails,
         request: RequestType,
     ):
         """Intercepts a unary-stream invocation.
@@ -550,9 +552,9 @@ class StreamUnaryClientInterceptor(abc.ABC):
     def intercept_stream_unary(
         self,
         continuation: Callable[
-            [CallDetails, Iterator[RequestType]], Union[Call, Future]
+            [ClientCallDetails, Iterator[RequestType]], Union[Call, Future]
         ],
-        client_call_details: CallDetails,
+        client_call_details: ClientCallDetails,
         request_iterator: Iterator[RequestType],
     ):
         """Intercepts a stream-unary invocation asynchronously.
@@ -590,9 +592,9 @@ class StreamStreamClientInterceptor(abc.ABC):
     def intercept_stream_stream(
         self,
         continuation: Callable[
-            [CallDetails, Iterator[RequestType]], Union[Call, Future]
+            [ClientCallDetails, Iterator[RequestType]], Union[Call, Future]
         ],
-        client_call_details: CallDetails,
+        client_call_details: ClientCallDetails,
         request_iterator: Iterator[RequestType],
     ):
         """Intercepts a stream-stream invocation.
@@ -621,6 +623,14 @@ class StreamStreamClientInterceptor(abc.ABC):
           Future interface, though it may not.
         """
         raise NotImplementedError()
+
+
+ClientInterceptor = Union[
+    UnaryUnaryClientInterceptor,
+    UnaryStreamClientInterceptor,
+    StreamUnaryClientInterceptor,
+    StreamStreamClientInterceptor,
+]
 
 
 ############  Authentication & Authorization Interfaces & Classes  #############
@@ -2269,7 +2279,7 @@ def secure_channel(
     )
 
 
-def intercept_channel(channel: Channel, *interceptors: Interceptor) -> Channel:
+def intercept_channel(channel: Channel, *interceptors: ClientInterceptor) -> Channel:
     """Intercepts a channel through a set of interceptors.
 
     Args:
@@ -2349,7 +2359,7 @@ def _create_servicer_context(
     rpc_event: _cygrpc.BaseEvent,
     state: "_RPCState",
     request_deserializer: Optional[DeserializingFunction],
-) -> "ServicerContext":
+) -> Optional[ServicerContext]:
     from grpc import _server  # pylint: disable=cyclic-import
 
     context = _server._Context(rpc_event, state, request_deserializer)

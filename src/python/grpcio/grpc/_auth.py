@@ -14,7 +14,7 @@
 """GRPCAuthMetadataPlugins for standard authentication."""
 
 import inspect
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Optional
 
 import grpc
 
