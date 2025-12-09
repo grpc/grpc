@@ -18,6 +18,7 @@
 
 #include <grpc/credentials.h>
 #include <grpc/grpc_crl_provider.h>
+#include <grpc/grpc_private_key_offload.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpcpp/security/tls_certificate_provider.h>

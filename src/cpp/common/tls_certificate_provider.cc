@@ -36,9 +36,12 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
     grpc_tls_identity_pairs_add_pair(pairs_core, pair.private_key.c_str(),
                                      pair.certificate_chain.c_str());
   }
-  c_provider_ = grpc_tls_certificate_provider_in_memory_create(
-      root_certificate.c_str(), pairs_core);
+  c_provider_ = grpc_tls_certificate_provider_in_memory_create();
   GRPC_CHECK_NE(c_provider_, nullptr);
+  grpc_tls_certificate_provider_in_memory_set_root_certificate(
+      c_provider_, root_certificate.c_str());
+  grpc_tls_certificate_provider_in_memory_set_identity_certificate(c_provider_,
+                                                                   pairs_core);
 };
 
 StaticDataCertificateProvider::~StaticDataCertificateProvider() {
@@ -84,9 +87,12 @@ InMemoryCertificateProvider::InMemoryCertificateProvider(
     grpc_tls_identity_pairs_add_pair(pairs_core, pair.private_key.c_str(),
                                      pair.certificate_chain.c_str());
   }
-  c_provider_ = grpc_tls_certificate_provider_in_memory_create(
-      root_certificate.c_str(), pairs_core);
+  c_provider_ = grpc_tls_certificate_provider_in_memory_create();
   GRPC_CHECK_NE(c_provider_, nullptr);
+  grpc_tls_certificate_provider_in_memory_set_root_certificate(
+      c_provider_, root_certificate.c_str());
+  grpc_tls_certificate_provider_in_memory_set_identity_certificate(c_provider_,
+                                                                   pairs_core);
 };
 
 InMemoryCertificateProvider::~InMemoryCertificateProvider() {

@@ -683,15 +683,35 @@ grpc_tls_certificate_provider_file_watcher_create(
  * Creates a grpc_tls_certificate_provider that will load credential data from
  * memory during initialization. This provider allows updating the identity and
  * root certificates independently.
- *
- * root_certificate and pem_key_cert_pairs can be nullptr, indicating the
- * corresponding credential data is not needed.
- * This function will make a copy of |root_certificate|.
- * The ownership of |pem_key_cert_pairs| is transferred.
  */
 GRPCAPI grpc_tls_certificate_provider*
-grpc_tls_certificate_provider_in_memory_create(
-    const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs);
+grpc_tls_certificate_provider_in_memory_create();
+
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
+ * Update the root certificate of a grpc_tls_certificate_provider created with
+ * `grpc_tls_certificate_provider_in_memory_create`.
+ *
+ * root_certificate can be nullptr, indicating the corresponding credential data
+ * is not needed. This function will make a copy of |root_cert|.
+ */
+GRPCAPI void grpc_tls_certificate_provider_in_memory_set_root_certificate(
+    grpc_tls_certificate_provider* provider, const char* root_cert);
+
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
+ * Update the identity certificate of a grpc_tls_certificate_provider created
+ * with `grpc_tls_certificate_provider_in_memory_create`.
+ *
+ * pem_key_cert_pairs can be nullptr, indicating the
+ * corresponding credential data is not needed.
+ * The ownership of |pem_key_cert_pairs| is transferred.
+ */
+GRPCAPI void grpc_tls_certificate_provider_in_memory_set_identity_certificate(
+    grpc_tls_certificate_provider* provider,
+    grpc_tls_identity_pairs* pem_key_cert_pairs);
 
 /**
  * EXPERIMENTAL API - Subject to change

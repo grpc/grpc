@@ -567,18 +567,30 @@ grpc_tls_certificate_provider_file_watcher_create(
       refresh_interval_sec);
 }
 
-grpc_tls_certificate_provider* grpc_tls_certificate_provider_in_memory_create(
-    const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs) {
+grpc_tls_certificate_provider*
+grpc_tls_certificate_provider_in_memory_create() {
   grpc_core::ExecCtx exec_ctx;
+  return new grpc_core::InMemoryCertificateProvider();
+}
+
+void grpc_tls_certificate_provider_in_memory_set_root_certificate(
+    grpc_tls_certificate_provider* provider, const char* root_cert) {
+  auto in_memory_provider =
+      static_cast<grpc_core::InMemoryCertificateProvider*>(provider);
+  in_memory_provider->UpdateRoot(std::make_shared<RootCertInfo>(root_cert));
+}
+
+void grpc_tls_certificate_provider_in_memory_set_identity_certificate(
+    grpc_tls_certificate_provider* provider,
+    grpc_tls_identity_pairs* pem_key_cert_pairs) {
   grpc_core::PemKeyCertPairList identity_pairs_core;
   if (pem_key_cert_pairs != nullptr) {
     identity_pairs_core = std::move(pem_key_cert_pairs->pem_key_cert_pairs);
     delete pem_key_cert_pairs;
   }
-  auto provider = new grpc_core::InMemoryCertificateProvider();
-  provider->UpdateRoot(std::make_shared<RootCertInfo>(root_certificate));
-  provider->UpdateIdentity(identity_pairs_core);
-  return provider;
+  auto in_memory_provider =
+      static_cast<grpc_core::InMemoryCertificateProvider*>(provider);
+  in_memory_provider->UpdateIdentity(identity_pairs_core);
 }
 
 void grpc_tls_certificate_provider_release(
