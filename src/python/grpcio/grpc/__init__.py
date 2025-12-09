@@ -1493,7 +1493,7 @@ class Server(abc.ABC):
     """Services RPCs."""
 
     @abc.abstractmethod
-    def add_generic_rpc_handlers(self, generic_rpc_handlers):
+    def add_generic_rpc_handlers(self, generic_rpc_handlers: Iterable[GenericRpcHandler]) -> None:
         """Registers GenericRpcHandlers with this Server.
 
         This method is only safe to call before the server is started.
@@ -1505,8 +1505,8 @@ class Server(abc.ABC):
         raise NotImplementedError()
 
     def add_registered_method_handlers(  # noqa: B027
-        self, service_name, method_handlers
-    ):
+        self, service_name: str, method_handlers: Dict[str, RpcMethodHandler]
+    ) -> None:
         """Registers GenericRpcHandlers with this Server.
 
         This method is only safe to call before the server is started.
@@ -1521,7 +1521,7 @@ class Server(abc.ABC):
         """
 
     @abc.abstractmethod
-    def add_insecure_port(self, address):
+    def add_insecure_port(self, address: str) -> int:
         """Opens an insecure port for accepting RPCs.
 
         This method may only be called before starting the server.
@@ -1536,7 +1536,7 @@ class Server(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def add_secure_port(self, address, server_credentials):
+    def add_secure_port(self, address: str, server_credentials: ServerCredentials) -> int:
         """Opens a secure port for accepting RPCs.
 
         This method may only be called before starting the server.
@@ -1553,7 +1553,7 @@ class Server(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def start(self):
+    def start(self) -> None:
         """Starts this Server.
 
         This method may only be called once. (i.e. it is not idempotent).
@@ -1561,7 +1561,7 @@ class Server(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def stop(self, grace):
+    def stop(self, grace: Optional[float]) -> None:
         """Stops this Server.
 
         This method immediately stop service of new RPCs in all cases.
@@ -1591,7 +1591,7 @@ class Server(abc.ABC):
         """
         raise NotImplementedError()
 
-    def wait_for_termination(self, timeout=None):
+    def wait_for_termination(self, timeout: Optional[float] = None) -> None:
         """Block current thread until the server stops.
 
         This is an EXPERIMENTAL API.
