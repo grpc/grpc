@@ -14,12 +14,9 @@
 # limitations under the License.
 """Run tests in parallel."""
 
-from __future__ import print_function
-
 import argparse
 import ast
 import collections
-import glob
 import itertools
 import json
 import logging
@@ -30,21 +27,14 @@ import platform
 import random
 import re
 import shlex
-import socket
 import subprocess
 import sys
-import tempfile
 import time
-import traceback
-import uuid
-
-import six
-from six.moves import urllib
+import urllib
 
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
 import python_utils.start_port_server as start_port_server
-import python_utils.watch_dirs as watch_dirs
 
 try:
     from python_utils.upload_test_results import upload_results_to_bq
@@ -112,7 +102,7 @@ def _print_debug_info_epilogue(dockerfile_dir=None):
 
 
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
-class Config(object):
+class Config:
     def __init__(
         self,
         config,
@@ -164,6 +154,14 @@ class Config(object):
             ),
             flake_retries=4 if flaky or args.allow_flakes else 0,
             timeout_retries=1 if flaky or args.allow_flakes else 0,
+        )
+
+    def __repr__(self):
+        return (
+            f"<Config build_config={self.build_config}"
+            f" environ={self.environ} tool_prefix={self.tool_prefix}"
+            f" timeout_multiplier={self.timeout_multiplier}"
+            f" iomgr_platform={self.iomgr_platform}>"
         )
 
 
@@ -1090,7 +1088,7 @@ class CSharpLanguage(object):
             else:
                 raise Exception('Illegal runtime "%s" was specified.')
 
-            for assembly in six.iterkeys(tests_by_assembly):
+            for assembly in tests_by_assembly.keys():
                 assembly_file = "src/csharp/%s/%s/%s%s" % (
                     assembly,
                     assembly_subdir,
@@ -1765,6 +1763,8 @@ argp.add_argument(
     default="native",
     help="Selects iomgr platform to build on",
 )
+
+# build args
 argp.add_argument(
     "--build_only",
     default=False,
@@ -1772,6 +1772,20 @@ argp.add_argument(
     const=True,
     help="Perform all the build steps but don't run any tests.",
 )
+argp.add_argument(
+    "--build_verbose_success",
+    default=False,
+    action="store_const",
+    const=True,
+    help="Print the build output on success",
+)
+argp.add_argument(
+    "--build_max_time",
+    default=-1,
+    type=int,
+    help="Maximum build runtime in seconds",
+)
+
 argp.add_argument(
     "--measure_cpu_costs",
     default=False,
@@ -1939,7 +1953,10 @@ build_steps.extend(
             environ=_build_step_environ(
                 build_config, extra_env=l.build_steps_environ()
             ),
-            timeout_seconds=None,
+            timeout_seconds=(
+                args.build_max_time if args.build_max_time > 0 else None
+            ),
+            verbose_success=args.build_verbose_success or False,
         )
         for l in languages
         for cmdline in l.build_steps()
