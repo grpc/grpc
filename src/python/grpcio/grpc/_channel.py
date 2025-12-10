@@ -40,15 +40,15 @@ from grpc import _compression  # pytype: disable=pyi-error
 from grpc import _grpcio_metadata  # pytype: disable=pyi-error
 from grpc import _observability  # pytype: disable=pyi-error
 from grpc._cython import cygrpc
+import grpc.experimental  # pytype: disable=pyi-error
 from grpc.typing import ChannelArgumentType
 from grpc.typing import DeserializingFunction
-from grpc.typing import _IntegratedCallFactory
 from grpc.typing import MetadataType
 from grpc.typing import NullaryCallbackType
 from grpc.typing import ResponseType
 from grpc.typing import SerializingFunction
+from grpc.typing import _IntegratedCallFactory
 from grpc.typing import _UserTag
-import grpc.experimental  # pytype: disable=pyi-error
 
 _LOGGER = logging.getLogger(__name__)
 
