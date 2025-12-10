@@ -1455,22 +1455,22 @@ class RpcMethodHandler(abc.ABC):
     @property
     @abc.abstractmethod
     def unary_unary(self) -> Optional[ArityAgnosticMethodHandler]:
-        """This object's application-specific business logic as a callable value that takes a request value and a ServicerContext object and returns a response value. Only non-None if both request_streaming and response_streaming are False."""
+        """The application-specific business logic as a callable value that takes a request value and a ServicerContext object and returns a response value. Only non-None if both request_streaming and response_streaming are False."""
 
     @property
     @abc.abstractmethod
     def unary_stream(self) -> Optional[ArityAgnosticMethodHandler]:
-        """This object's application-specific business logic as a callable value that takes a request value and a ServicerContext object and returns an iterator of response values. Only non-None if request_streaming is False and response_streaming is True."""
+        """The application-specific business logic as a callable value that takes a request value and a ServicerContext object and returns an iterator of response values. Only non-None if request_streaming is False and response_streaming is True."""
 
     @property
     @abc.abstractmethod
     def stream_unary(self) -> Optional[ArityAgnosticMethodHandler]:
-        """This object's application-specific business logic as a callable value that takes an iterator of request values and a ServicerContext object and returns a response value. Only non-None if request_streaming is True and response_streaming is False."""
+        """The application-specific business logic as a callable value that takes an iterator of request values and a ServicerContext object and returns a response value. Only non-None if request_streaming is True and response_streaming is False."""
 
     @property
     @abc.abstractmethod
     def stream_stream(self) -> Optional[ArityAgnosticMethodHandler]:
-        """This object's application-specific business logic as a callable value that takes an iterator of request values and a ServicerContext object and returns an iterator of response values. Only non-None if request_streaming and response_streaming are both True."""
+        """The application-specific business logic as a callable value that takes an iterator of request values and a ServicerContext object and returns an iterator of response values. Only non-None if request_streaming and response_streaming are both True."""
 
 
 class HandlerCallDetails(abc.ABC):
