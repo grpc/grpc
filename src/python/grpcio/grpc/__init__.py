@@ -37,6 +37,12 @@ from typing import (
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
+from grpc.typing import BaseEvent as CygrpcBaseEvent
+from grpc.typing import CallCredentials as CygrpcCallCredentials
+from grpc.typing import ChannelCredentials as CygrpcChannelCredentials
+from grpc.typing import ServerCertificateConfig as CygrpcServerCertificateConfig
+from grpc.typing import ServerCredentials as CygrpcServerCredentials
+
 from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
@@ -675,7 +681,7 @@ class ChannelCredentials(object):
     secure_channel requires an instance of this class.
     """
 
-    def __init__(self, credentials: _cygrpc.ChannelCredentials):
+    def __init__(self, credentials: CygrpcChannelCredentials):
         self._credentials = credentials
 
 
@@ -692,7 +698,7 @@ class CallCredentials(object):
     instances and its instances exist to be passed to other functions.
     """
 
-    def __init__(self, credentials: _cygrpc.CallCredentials):
+    def __init__(self, credentials: CygrpcCallCredentials):
         self._credentials = credentials
 
 
@@ -751,7 +757,7 @@ class ServerCredentials(object):
     instances and its instances exist to be passed to other functions.
     """
 
-    def __init__(self, credentials: _cygrpc.ServerCredentials):
+    def __init__(self, credentials: CygrpcServerCredentials):
         self._credentials = credentials
 
 
@@ -767,7 +773,7 @@ class ServerCertificateConfiguration(object):
     """
 
     def __init__(
-        self, certificate_configuration: _cygrpc.ServerCertificateConfig
+        self, certificate_configuration: CygrpcServerCertificateConfig
     ):
         self._certificate_configuration = certificate_configuration
 
@@ -2401,7 +2407,7 @@ def server(
 
 @contextlib.contextmanager
 def _create_servicer_context(
-    rpc_event: _cygrpc.BaseEvent,
+    rpc_event: CygrpcBaseEvent,
     state: "_RPCState",
     request_deserializer: Optional[DeserializingFunction],
 ) -> Optional[ServicerContext]:

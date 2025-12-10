@@ -29,6 +29,12 @@ from typing import (
 
 from grpc._cython import cygrpc
 
+ChannelCredentials = cygrpc.ChannelCredentials
+CallCredentials = cygrpc.CallCredentials
+ServerCredentials = cygrpc.ServerCredentials
+ServerCertificateConfig = cygrpc.ServerCertificateConfig
+BaseEvent = cygrpc.BaseEvent
+
 if TYPE_CHECKING:
     from grpc import ChannelConnectivity
     from grpc import ServicerContext
