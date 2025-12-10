@@ -41,11 +41,17 @@ from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
 from grpc._typing import ArityAgnosticMethodHandler
+from grpc._typing import UnaryUnaryBehavior
+from grpc._typing import UnaryStreamBehavior
+from grpc._typing import StreamUnaryBehavior
+from grpc._typing import StreamStreamBehavior
 from grpc._typing import ChannelArgumentType
 from grpc._typing import ClientInterceptor
 from grpc._typing import DeserializingFunction
 from grpc._typing import MetadataType
+from grpc._typing import MetadataType
 from grpc._typing import NullaryCallbackType
+from grpc._typing import ConnectivityCallbackType
 from grpc._typing import RequestType
 from grpc._typing import ResponseType
 from grpc._typing import SerializingFunction
@@ -1067,7 +1073,7 @@ class Channel(abc.ABC):
     @abc.abstractmethod
     def subscribe(
         self,
-        callback: Callable[[ChannelConnectivity], None],
+        callback: ConnectivityCallbackType,
         try_to_connect: bool = False,
     ) -> None:
         """Subscribe to this Channel's connectivity state machine.
@@ -1091,7 +1097,7 @@ class Channel(abc.ABC):
 
     @abc.abstractmethod
     def unsubscribe(
-        self, callback: Callable[[ChannelConnectivity], None]
+        self, callback: ConnectivityCallbackType
     ) -> None:
         """Unsubscribes a subscribed callback from this Channel's connectivity.
 
@@ -1697,7 +1703,7 @@ class Server(abc.ABC):
 
 
 def unary_unary_rpc_method_handler(
-    behavior: Callable[[RequestType, Any], ResponseType],
+    behavior: UnaryUnaryBehavior,
     request_deserializer: Optional[DeserializingFunction] = None,
     response_serializer: Optional[SerializingFunction] = None,
 ) -> RpcMethodHandler:
@@ -1727,7 +1733,7 @@ def unary_unary_rpc_method_handler(
 
 
 def unary_stream_rpc_method_handler(
-    behavior: Callable[[RequestType, Any], Any],
+    behavior: UnaryStreamBehavior,
     request_deserializer: Optional[DeserializingFunction] = None,
     response_serializer: Optional[SerializingFunction] = None,
 ) -> RpcMethodHandler:
@@ -1757,7 +1763,7 @@ def unary_stream_rpc_method_handler(
 
 
 def stream_unary_rpc_method_handler(
-    behavior: Callable[[Any, Any], ResponseType],
+    behavior: StreamUnaryBehavior,
     request_deserializer: Optional[DeserializingFunction] = None,
     response_serializer: Optional[SerializingFunction] = None,
 ) -> RpcMethodHandler:
@@ -1787,7 +1793,7 @@ def stream_unary_rpc_method_handler(
 
 
 def stream_stream_rpc_method_handler(
-    behavior: Callable[[Any, Any], Any],
+    behavior: StreamStreamBehavior,
     request_deserializer: Optional[DeserializingFunction] = None,
     response_serializer: Optional[SerializingFunction] = None,
 ) -> RpcMethodHandler:

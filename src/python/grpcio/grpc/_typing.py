@@ -34,6 +34,7 @@ if TYPE_CHECKING:
     from grpc import StreamUnaryClientInterceptor
     from grpc import UnaryStreamClientInterceptor
     from grpc import UnaryUnaryClientInterceptor
+    from grpc import ChannelConnectivity
     from grpc._server import _RPCState
 
 RequestType = TypeVar("RequestType")
@@ -103,4 +104,13 @@ ClientInterceptor = Union[
     "UnaryStreamClientInterceptor",
     "StreamUnaryClientInterceptor",
     "StreamStreamClientInterceptor",
+]
+ConnectivityCallbackType = Callable[["ChannelConnectivity"], None]
+UnaryUnaryBehavior = Callable[[RequestType, "ServicerContext"], ResponseType]
+UnaryStreamBehavior = Callable[[RequestType, "ServicerContext"], Iterator[ResponseType]]
+StreamUnaryBehavior = Callable[
+    [Iterator[RequestType], "ServicerContext"], ResponseType
+]
+StreamStreamBehavior = Callable[
+    [Iterator[RequestType], "ServicerContext"], Iterator[ResponseType]
 ]
