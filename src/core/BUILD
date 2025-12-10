@@ -11222,13 +11222,16 @@ grpc_cc_library(
     hdrs = ["ext/transport/chttp2/transport/writable_streams.h"],
     external_deps = [
         "absl/log",
+        "absl/strings",
         "absl/log:check",
+        "absl/status",
     ],
     deps = [
         "grpc_check",
         "if",
         "mpsc",
         "race",
+        "status_flag",
         "transport_common",
         "try_seq",
     ],
