@@ -49,7 +49,6 @@ from grpc._typing import ChannelArgumentType
 from grpc._typing import ClientInterceptor
 from grpc._typing import DeserializingFunction
 from grpc._typing import MetadataType
-from grpc._typing import MetadataType
 from grpc._typing import NullaryCallbackType
 from grpc._typing import ConnectivityCallbackType
 from grpc._typing import RequestType
@@ -1445,32 +1444,44 @@ class RpcMethodHandler(abc.ABC):
     @property
     @abc.abstractmethod
     def request_deserializer(self) -> Optional[DeserializingFunction]:
-        """A callable :term:`deserializer` that accepts a byte string and returns an object suitable to be passed to this object's business logic, or None to indicate that this object's business logic should be passed the raw request bytes."""
+        """A callable :term:`deserializer` that accepts a byte string and returns an object suitable to be
+        passed to this object's business logic, or None to indicate that this object's business logic
+        should be passed the raw request bytes."""
 
     @property
     @abc.abstractmethod
     def response_serializer(self) -> Optional[SerializingFunction]:
-        """A callable :term:`serializer` that accepts an object produced by this object's business logic and returns a byte string, or None to indicate that the byte strings produced by this object's business logic should be transmitted on the wire as they are."""
+        """A callable :term:`serializer` that accepts an object produced by this object's business logic and
+        returns a byte string, or None to indicate that the byte strings produced by this object's business
+        logic should be transmitted on the wire as they are."""
 
     @property
     @abc.abstractmethod
     def unary_unary(self) -> Optional[ArityAgnosticMethodHandler]:
-        """The application-specific business logic as a callable value that takes a request value and a ServicerContext object and returns a response value. Only non-None if both request_streaming and response_streaming are False."""
+        """The application-specific business logic as a callable value that takes a request value and a
+        ServicerContext object and returns a response value. Only non-None if both request_streaming and
+        response_streaming are False."""
 
     @property
     @abc.abstractmethod
     def unary_stream(self) -> Optional[ArityAgnosticMethodHandler]:
-        """The application-specific business logic as a callable value that takes a request value and a ServicerContext object and returns an iterator of response values. Only non-None if request_streaming is False and response_streaming is True."""
+        """The application-specific business logic as a callable value that takes a request value and a
+        ServicerContext object and returns an iterator of response values. Only non-None if request_streaming
+        is False and response_streaming is True."""
 
     @property
     @abc.abstractmethod
     def stream_unary(self) -> Optional[ArityAgnosticMethodHandler]:
-        """The application-specific business logic as a callable value that takes an iterator of request values and a ServicerContext object and returns a response value. Only non-None if request_streaming is True and response_streaming is False."""
+        """The application-specific business logic as a callable value that takes an iterator of request
+        values and a ServicerContext object and returns a response value. Only non-None if request_streaming
+        is True and response_streaming is False."""
 
     @property
     @abc.abstractmethod
     def stream_stream(self) -> Optional[ArityAgnosticMethodHandler]:
-        """The application-specific business logic as a callable value that takes an iterator of request values and a ServicerContext object and returns an iterator of response values. Only non-None if request_streaming and response_streaming are both True."""
+        """The application-specific business logic as a callable value that takes an iterator of request
+        values and a ServicerContext object and returns an iterator of response values. Only non-None if
+        request_streaming and response_streaming are both True."""
 
 
 class HandlerCallDetails(abc.ABC):
