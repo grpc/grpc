@@ -200,12 +200,9 @@ class SpiffeSslTransportSecurityTest
 
     void CheckHandshakerPeers() {
       bool expect_server_success = expect_server_success_;
-      bool expect_client_success = false;
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
-      expect_client_success = GetParam() == tsi_tls_version::TSI_TLS1_2
-                                  ? expect_client_success_1_2_
-                                  : expect_client_success_1_3_;
-#endif
+      bool expect_client_success = GetParam() == tsi_tls_version::TSI_TLS1_2
+                                       ? expect_client_success_1_2_
+                                       : expect_client_success_1_3_;
       tsi_peer peer;
       if (expect_client_success) {
         ASSERT_EQ(
