@@ -231,7 +231,9 @@ def _possibly_finish_call(
     return None, ()
 
 
-def _send_status_from_server(state: _RPCState, token: str) -> _ServerCallbackTag:
+def _send_status_from_server(
+    state: _RPCState, token: str
+) -> _ServerCallbackTag:
     def send_status_from_server(unused_send_status_from_server_event):
         with state.condition:
             return _possibly_finish_call(state, token)
