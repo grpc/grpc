@@ -14,6 +14,11 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_internal_proto_library")
 
+package(features = [
+    "layering_check",
+    "parse_headers",
+])
+
 licenses(["notice"])
 
 grpc_internal_proto_library(
