@@ -512,6 +512,9 @@ class TestCase(enum.Enum):
 
     def run_test(self, args):
         _LOGGER.info("Running %s", self)
+        grpc_experiments_env = os.environ.get("GRPC_EXPERIMENTS", "")
+        assert "event_engine_fork" in grpc_experiments_env
+
         channel = _channel(args)
         if self is TestCase.ASYNC_UNARY_SAME_CHANNEL:
             _async_unary_same_channel(channel)
