@@ -1432,20 +1432,23 @@ class RpcMethodHandler(abc.ABC):
     """An implementation of a single RPC method."""
 
     request_streaming: bool
-    """Whether the RPC supports exactly one request message or any arbitrary number of request messages."""
+    """Whether the RPC supports exactly one request message or any arbitrary number of
+    request messages."""
 
     response_streaming: bool
-    """Whether the RPC supports exactly one response message or any arbitrary number of response messages."""
+    """Whether the RPC supports exactly one response message or any arbitrary number of
+    response messages."""
 
     request_deserializer: Optional[DeserializingFunction]
-    """A callable :term:`deserializer` that accepts a byte string and returns an object suitable to be
-    passed to this object's business logic, or None to indicate that this object's business logic
-    should be passed the raw request bytes."""
+    """A callable :term:`deserializer` that accepts a byte string and returns an
+    object suitable to be passed to this object's business logic, or None to indicate
+    that this object's business logic should be passed the raw request bytes."""
 
     response_serializer: Optional[SerializingFunction]
-    """A callable :term:`serializer` that accepts an object produced by this object's business logic and
-    returns a byte string, or None to indicate that the byte strings produced by this object's business
-    logic should be transmitted on the wire as they are."""
+    """A callable :term:`serializer` that accepts an object produced by this
+    object's business logic and returns a byte string, or None to indicate that the
+    byte strings produced by this object's business logic should be transmitted on the
+    wire as they are."""
 
     unary_unary: Optional[UnaryUnaryBehavior]
     """The application-specific business logic as a callable value that takes a request value and a
@@ -1454,13 +1457,13 @@ class RpcMethodHandler(abc.ABC):
 
     unary_stream: Optional[UnaryStreamBehavior]
     """The application-specific business logic as a callable value that takes a request value and a
-    ServicerContext object and returns an iterator of response values. Only non-None if request_streaming
-    is False and response_streaming is True."""
+    ServicerContext object and returns an iterator of response values. Only non-None if
+    request_streaming is False and response_streaming is True."""
 
     stream_unary: Optional[StreamUnaryBehavior]
     """The application-specific business logic as a callable value that takes an iterator of request
-    values and a ServicerContext object and returns a response value. Only non-None if request_streaming
-    is True and response_streaming is False."""
+    values and a ServicerContext object and returns a response value. Only non-None if
+    request_streaming is True and response_streaming is False."""
 
     stream_stream: Optional[StreamStreamBehavior]
     """The application-specific business logic as a callable value that takes an iterator of request
@@ -2520,3 +2523,4 @@ if sys.version_info >= (3, 6) and __name__ == "grpc":
     from grpc import aio  # pylint: disable=ungrouped-imports
 
     sys.modules.update({"grpc.aio": aio})
+
