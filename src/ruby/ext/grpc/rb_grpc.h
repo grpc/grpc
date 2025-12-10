@@ -85,4 +85,9 @@ void grpc_ruby_init();
     abort();                                                      \
   }
 
+#ifndef RB_NOGVL_OFFLOAD_SAFE
+// Default to no-op if it's not defined:
+#define RB_NOGVL_OFFLOAD_SAFE 0
+#endif
+
 #endif /* GRPC_RB_H_ */
