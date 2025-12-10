@@ -47,6 +47,7 @@ from grpc._typing import NullaryCallbackType
 from grpc._typing import RequestType
 from grpc._typing import ResponseType
 from grpc._typing import SerializingFunction
+from grpc._typing import ClientInterceptor
 
 if TYPE_CHECKING:
     from concurrent import futures
@@ -332,13 +333,25 @@ class Status(abc.ABC):
     """Describes the status of an RPC.
 
     This is an EXPERIMENTAL API.
-
-    Attributes:
-      code: A StatusCode object to be sent to the client.
-      details: A UTF-8-encodable string to be sent to the client upon
-        termination of the RPC.
-      trailing_metadata: The trailing :term:`metadata` in the RPC.
     """
+
+    @property
+    @abc.abstractmethod
+    def code(self) -> StatusCode:
+        """A StatusCode object to be sent to the client."""
+        pass
+
+    @property
+    @abc.abstractmethod
+    def details(self) -> str:
+        """A UTF-8-encodable string to be sent to the client upon termination of the RPC."""
+        pass
+
+    @property
+    @abc.abstractmethod
+    def trailing_metadata(self) -> MetadataType:
+        """The trailing :term:`metadata` in the RPC."""
+        pass
 
 
 #############################  gRPC Exceptions  ################################
@@ -453,18 +466,43 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
 
 
 class ClientCallDetails(abc.ABC):
-    """Describes an RPC to be invoked.
+    """Describes an RPC to be invoked."""
 
-    Attributes:
-      method: The method name of the RPC.
-      timeout: An optional duration of time in seconds to allow for the RPC.
-      metadata: Optional :term:`metadata` to be transmitted to
-        the service-side of the RPC.
-      credentials: An optional CallCredentials for the RPC.
-      wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-      compression: An element of grpc.compression, e.g.
-        grpc.compression.Gzip.
-    """
+    @property
+    @abc.abstractmethod
+    def method(self) -> str:
+        """The method name of the RPC."""
+        pass
+
+    @property
+    @abc.abstractmethod
+    def timeout(self) -> Optional[float]:
+        """An optional duration of time in seconds to allow for the RPC."""
+        pass
+
+    @property
+    @abc.abstractmethod
+    def metadata(self) -> Optional[MetadataType]:
+        """Optional :term:`metadata` to be transmitted to the service-side of the RPC."""
+        pass
+
+    @property
+    @abc.abstractmethod
+    def credentials(self) -> Optional[CallCredentials]:
+        """An optional CallCredentials for the RPC."""
+        pass
+
+    @property
+    @abc.abstractmethod
+    def wait_for_ready(self) -> Optional[bool]:
+        """An optional flag to enable :term:`wait_for_ready` mechanism."""
+        pass
+
+    @property
+    @abc.abstractmethod
+    def compression(self) -> Optional[Any]:
+        """An element of grpc.compression, e.g. grpc.compression.Gzip."""
+        pass
 
 
 class UnaryUnaryClientInterceptor(abc.ABC):
@@ -628,13 +666,6 @@ class StreamStreamClientInterceptor(abc.ABC):
         raise NotImplementedError()
 
 
-ClientInterceptor = Union[
-    UnaryUnaryClientInterceptor,
-    UnaryStreamClientInterceptor,
-    StreamUnaryClientInterceptor,
-    StreamStreamClientInterceptor,
-]
-
 ############  Authentication & Authorization Interfaces & Classes  #############
 
 
@@ -669,12 +700,19 @@ class CallCredentials(object):
 
 
 class AuthMetadataContext(abc.ABC):
-    """Provides information to call credentials metadata plugins.
+    """Provides information to call credentials metadata plugins."""
 
-    Attributes:
-      service_url: A string URL of the service being called into.
-      method_name: A string of the fully qualified method name being called.
-    """
+    @property
+    @abc.abstractmethod
+    def service_url(self) -> str:
+        """A string URL of the service being called into."""
+        pass
+
+    @property
+    @abc.abstractmethod
+    def method_name(self) -> str:
+        """A string of the fully qualified method name being called."""
+        pass
 
 
 class AuthMetadataPluginCallback(abc.ABC):
@@ -1434,12 +1472,19 @@ class RpcMethodHandler(abc.ABC):
 
 
 class HandlerCallDetails(abc.ABC):
-    """Describes an RPC that has just arrived for service.
+    """Describes an RPC that has just arrived for service."""
 
-    Attributes:
-      method: The method name of the RPC.
-      invocation_metadata: The :term:`metadata` sent by the client.
-    """
+    @property
+    @abc.abstractmethod
+    def method(self) -> str:
+        """The method name of the RPC."""
+        pass
+
+    @property
+    @abc.abstractmethod
+    def invocation_metadata(self) -> Optional[MetadataType]:
+        """The :term:`metadata` sent by the client."""
+        pass
 
 
 class GenericRpcHandler(abc.ABC):

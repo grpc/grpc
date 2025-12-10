@@ -31,6 +31,12 @@ from grpc._cython import cygrpc
 if TYPE_CHECKING:
     from grpc import ServicerContext
     from grpc._server import _RPCState
+    from grpc import (
+        UnaryUnaryClientInterceptor,
+        UnaryStreamClientInterceptor,
+        StreamUnaryClientInterceptor,
+        StreamStreamClientInterceptor,
+    )
 
 RequestType = TypeVar("RequestType")
 ResponseType = TypeVar("ResponseType")
@@ -93,4 +99,10 @@ ArityAgnosticMethodHandler = Union[
     Callable[
         [Iterator[RequestType], "ServicerContext"], Iterator[ResponseType]
     ],
+]
+ClientInterceptor = Union[
+    "UnaryUnaryClientInterceptor",
+    "UnaryStreamClientInterceptor",
+    "StreamUnaryClientInterceptor",
+    "StreamStreamClientInterceptor",
 ]
