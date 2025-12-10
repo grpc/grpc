@@ -734,7 +734,7 @@ class ServerCertificateConfiguration(object):
     """
 
     def __init__(
-        self, certificate_configuration: _cygrpc.ServerCertificateConfiguration
+        self, certificate_configuration: _cygrpc.ServerCertificateConfig
     ):
         self._certificate_configuration = certificate_configuration
 
