@@ -20,7 +20,7 @@ from typing import AnyStr, Callable, Optional, Type
 import grpc
 from grpc import _common
 from grpc._cython import cygrpc
-from grpc._typing import MetadataType
+from grpc.typing import MetadataType
 
 _LOGGER = logging.getLogger(__name__)
 

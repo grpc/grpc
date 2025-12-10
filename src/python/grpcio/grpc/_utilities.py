@@ -21,7 +21,7 @@ from typing import Callable, Dict, Optional, Sequence
 
 import grpc  # pytype: disable=pyi-error
 from grpc import _common  # pytype: disable=pyi-error
-from grpc._typing import DoneCallbackType
+from grpc.typing import _DoneCallbackType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -165,7 +165,7 @@ class _ChannelReadyFuture(grpc.Future):
     def traceback(self, timeout: Optional[float] = None) -> None:
         self._block(timeout)
 
-    def add_done_callback(self, fn: DoneCallbackType):
+    def add_done_callback(self, fn: _DoneCallbackType):
         with self._condition:
             if not self._cancelled and not self._matured:
                 self._done_callbacks.append(fn)

@@ -40,14 +40,14 @@ from grpc import _compression  # pytype: disable=pyi-error
 from grpc import _grpcio_metadata  # pytype: disable=pyi-error
 from grpc import _observability  # pytype: disable=pyi-error
 from grpc._cython import cygrpc
-from grpc._typing import ChannelArgumentType
-from grpc._typing import DeserializingFunction
-from grpc._typing import IntegratedCallFactory
-from grpc._typing import MetadataType
-from grpc._typing import NullaryCallbackType
-from grpc._typing import ResponseType
-from grpc._typing import SerializingFunction
-from grpc._typing import UserTag
+from grpc.typing import ChannelArgumentType
+from grpc.typing import DeserializingFunction
+from grpc.typing import _IntegratedCallFactory
+from grpc.typing import MetadataType
+from grpc.typing import NullaryCallbackType
+from grpc.typing import ResponseType
+from grpc.typing import SerializingFunction
+from grpc.typing import _UserTag
 import grpc.experimental  # pytype: disable=pyi-error
 
 _LOGGER = logging.getLogger(__name__)
@@ -234,7 +234,7 @@ def _handle_event(
 
 def _event_handler(
     state: _RPCState, response_deserializer: Optional[DeserializingFunction]
-) -> UserTag:
+) -> _UserTag:
     def handle_event(event):
         with state.condition:
             callbacks = _handle_event(event, state, response_deserializer)
@@ -261,7 +261,7 @@ def _consume_request_iterator(
     state: _RPCState,
     call: Union[cygrpc.IntegratedCall, cygrpc.SegregatedCall],
     request_serializer: SerializingFunction,
-    event_handler: Optional[UserTag],
+    event_handler: Optional[_UserTag],
 ) -> None:
     """Consume a request supplied by the user."""
 
@@ -1007,7 +1007,7 @@ def _stream_unary_invocation_operations(
 
 def _stream_unary_invocation_operations_and_tags(
     metadata: Optional[MetadataType], initial_metadata_flags: int
-) -> Sequence[Tuple[Sequence[cygrpc.Operation], Optional[UserTag]]]:
+) -> Sequence[Tuple[Sequence[cygrpc.Operation], Optional[_UserTag]]]:
     return tuple(
         (
             operations,
@@ -1032,7 +1032,7 @@ def _determine_deadline(user_deadline: Optional[float]) -> Optional[float]:
 
 class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
     _channel: cygrpc.Channel
-    _managed_call: IntegratedCallFactory
+    _managed_call: _IntegratedCallFactory
     _method: bytes
     _target: bytes
     _request_serializer: Optional[SerializingFunction]
@@ -1054,7 +1054,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
     def __init__(
         self,
         channel: cygrpc.Channel,
-        managed_call: IntegratedCallFactory,
+        managed_call: _IntegratedCallFactory,
         method: bytes,
         target: bytes,
         request_serializer: Optional[SerializingFunction],
@@ -1309,7 +1309,7 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
 
 class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
     _channel: cygrpc.Channel
-    _managed_call: IntegratedCallFactory
+    _managed_call: _IntegratedCallFactory
     _method: bytes
     _target: bytes
     _request_serializer: Optional[SerializingFunction]
@@ -1331,7 +1331,7 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
     def __init__(
         self,
         channel: cygrpc.Channel,
-        managed_call: IntegratedCallFactory,
+        managed_call: _IntegratedCallFactory,
         method: bytes,
         target: bytes,
         request_serializer: SerializingFunction,
@@ -1401,7 +1401,7 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
 
 class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
     _channel: cygrpc.Channel
-    _managed_call: IntegratedCallFactory
+    _managed_call: _IntegratedCallFactory
     _method: bytes
     _target: bytes
     _request_serializer: Optional[SerializingFunction]
@@ -1423,7 +1423,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
     def __init__(
         self,
         channel: cygrpc.Channel,
-        managed_call: IntegratedCallFactory,
+        managed_call: _IntegratedCallFactory,
         method: bytes,
         target: bytes,
         request_serializer: Optional[SerializingFunction],
@@ -1571,7 +1571,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
 
 class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
     _channel: cygrpc.Channel
-    _managed_call: IntegratedCallFactory
+    _managed_call: _IntegratedCallFactory
     _method: bytes
     _target: bytes
     _request_serializer: Optional[SerializingFunction]
@@ -1593,7 +1593,7 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
     def __init__(
         self,
         channel: cygrpc.Channel,
-        managed_call: IntegratedCallFactory,
+        managed_call: _IntegratedCallFactory,
         method: bytes,
         target: bytes,
         request_serializer: Optional[SerializingFunction],
@@ -1738,7 +1738,7 @@ def _channel_managed_call_management(state: _ChannelCallState):
         metadata: Optional[MetadataType],
         credentials: Optional[cygrpc.CallCredentials],
         operations: Sequence[Sequence[cygrpc.Operation]],
-        event_handler: UserTag,
+        event_handler: _UserTag,
         context: Any,
         _registered_call_handle: Optional[int],
     ) -> cygrpc.IntegratedCall:

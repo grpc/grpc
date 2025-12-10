@@ -30,7 +30,7 @@ from typing import (
 )
 
 from grpc._cython import cygrpc as _cygrpc
-from grpc._typing import ChannelArgumentType
+from grpc.typing import ChannelArgumentType
 
 _LOGGER = logging.getLogger(__name__)
 

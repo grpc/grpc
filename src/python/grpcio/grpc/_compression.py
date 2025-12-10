@@ -18,7 +18,7 @@ from typing import Optional, Union
 
 import grpc
 from grpc._cython import cygrpc
-from grpc._typing import MetadataType
+from grpc.typing import MetadataType
 
 NoCompression = cygrpc.CompressionAlgorithm.none
 Deflate = cygrpc.CompressionAlgorithm.deflate

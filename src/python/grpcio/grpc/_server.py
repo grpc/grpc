@@ -45,15 +45,15 @@ from grpc import _compression  # pytype: disable=pyi-error
 from grpc import _interceptor  # pytype: disable=pyi-error
 from grpc import _observability  # pytype: disable=pyi-error
 from grpc._cython import cygrpc
-from grpc._typing import ArityAgnosticMethodHandler
-from grpc._typing import ChannelArgumentType
-from grpc._typing import DeserializingFunction
-from grpc._typing import MetadataType
-from grpc._typing import NullaryCallbackType
-from grpc._typing import ResponseType
-from grpc._typing import SerializingFunction
-from grpc._typing import ServerCallbackTag
-from grpc._typing import ServerTagCallbackType
+from grpc.typing import ArityAgnosticMethodHandler
+from grpc.typing import ChannelArgumentType
+from grpc.typing import DeserializingFunction
+from grpc.typing import MetadataType
+from grpc.typing import NullaryCallbackType
+from grpc.typing import ResponseType
+from grpc.typing import SerializingFunction
+from grpc.typing import _ServerCallbackTag
+from grpc.typing import _ServerTagCallbackType
 from typing_extensions import override
 
 _LOGGER = logging.getLogger(__name__)
@@ -222,7 +222,7 @@ def _raise_rpc_error(state: _RPCState) -> None:
 
 def _possibly_finish_call(
     state: _RPCState, token: str
-) -> ServerTagCallbackType:
+) -> _ServerTagCallbackType:
     state.due.remove(token)
     if not _is_rpc_state_active(state) and not state.due:
         callbacks = state.callbacks
@@ -231,7 +231,7 @@ def _possibly_finish_call(
     return None, ()
 
 
-def _send_status_from_server(state: _RPCState, token: str) -> ServerCallbackTag:
+def _send_status_from_server(state: _RPCState, token: str) -> _ServerCallbackTag:
     def send_status_from_server(unused_send_status_from_server_event):
         with state.condition:
             return _possibly_finish_call(state, token)
@@ -298,7 +298,7 @@ def _abort(
         state.due.add(token)
 
 
-def _receive_close_on_server(state: _RPCState) -> ServerCallbackTag:
+def _receive_close_on_server(state: _RPCState) -> _ServerCallbackTag:
     def receive_close_on_server(receive_close_on_server_event):
         with state.condition:
             if receive_close_on_server_event.batch_operations[0].cancelled():
@@ -315,7 +315,7 @@ def _receive_message(
     state: _RPCState,
     call: cygrpc.Call,
     request_deserializer: Optional[DeserializingFunction],
-) -> ServerCallbackTag:
+) -> _ServerCallbackTag:
     def receive_message(receive_message_event):
         serialized_request = _serialized_request(receive_message_event)
         if serialized_request is None:
@@ -344,7 +344,7 @@ def _receive_message(
     return receive_message
 
 
-def _send_initial_metadata(state: _RPCState) -> ServerCallbackTag:
+def _send_initial_metadata(state: _RPCState) -> _ServerCallbackTag:
     def send_initial_metadata(unused_send_initial_metadata_event):
         with state.condition:
             return _possibly_finish_call(state, _SEND_INITIAL_METADATA_TOKEN)
@@ -352,7 +352,7 @@ def _send_initial_metadata(state: _RPCState) -> ServerCallbackTag:
     return send_initial_metadata
 
 
-def _send_message(state: _RPCState, token: str) -> ServerCallbackTag:
+def _send_message(state: _RPCState, token: str) -> _ServerCallbackTag:
     def send_message(unused_send_message_event):
         with state.condition:
             state.condition.notify_all()

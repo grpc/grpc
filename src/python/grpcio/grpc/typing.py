@@ -44,12 +44,12 @@ SerializingFunction = Callable[[Any], bytes]
 DeserializingFunction = Callable[[bytes], Any]
 MetadataType = Sequence[Tuple[str, Union[str, bytes]]]
 ChannelArgumentType = Tuple[str, Any]
-DoneCallbackType = Callable[[Any], None]
+_DoneCallbackType = Callable[[Any], None]
 NullaryCallbackType = Callable[[], None]
-RequestIterableType = Iterable[Any]
-ResponseIterableType = Iterable[Any]
-UserTag = Callable[[cygrpc.BaseEvent], bool]
-IntegratedCallFactory = Callable[
+_RequestIterableType = Iterable[Any]
+_ResponseIterableType = Iterable[Any]
+_UserTag = Callable[[cygrpc.BaseEvent], bool]
+_IntegratedCallFactory = Callable[
     [
         int,
         bytes,
@@ -58,16 +58,16 @@ IntegratedCallFactory = Callable[
         Optional[MetadataType],
         Optional[cygrpc.CallCredentials],
         Sequence[Sequence[cygrpc.Operation]],
-        UserTag,
+        _UserTag,
         Any,
         Optional[int],
     ],
     cygrpc.IntegratedCall,
 ]
-ServerTagCallbackType = Tuple[
+_ServerTagCallbackType = Tuple[
     Optional["_RPCState"], Sequence[NullaryCallbackType]
 ]
-ServerCallbackTag = Callable[[cygrpc.BaseEvent], ServerTagCallbackType]
+_ServerCallbackTag = Callable[[cygrpc.BaseEvent], _ServerTagCallbackType]
 ArityAgnosticMethodHandler = Union[
     Callable[
         [RequestType, "ServicerContext", Callable[[ResponseType], None]],
