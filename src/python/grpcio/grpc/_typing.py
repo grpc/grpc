@@ -30,13 +30,11 @@ from grpc._cython import cygrpc
 
 if TYPE_CHECKING:
     from grpc import ServicerContext
+    from grpc import StreamStreamClientInterceptor
+    from grpc import StreamUnaryClientInterceptor
+    from grpc import UnaryStreamClientInterceptor
+    from grpc import UnaryUnaryClientInterceptor
     from grpc._server import _RPCState
-    from grpc import (
-        UnaryUnaryClientInterceptor,
-        UnaryStreamClientInterceptor,
-        StreamUnaryClientInterceptor,
-        StreamStreamClientInterceptor,
-    )
 
 RequestType = TypeVar("RequestType")
 ResponseType = TypeVar("ResponseType")

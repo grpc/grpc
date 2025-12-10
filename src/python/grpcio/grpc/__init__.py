@@ -41,13 +41,13 @@ from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
 from grpc._typing import ChannelArgumentType
+from grpc._typing import ClientInterceptor
 from grpc._typing import DeserializingFunction
 from grpc._typing import MetadataType
 from grpc._typing import NullaryCallbackType
 from grpc._typing import RequestType
 from grpc._typing import ResponseType
 from grpc._typing import SerializingFunction
-from grpc._typing import ClientInterceptor
 
 if TYPE_CHECKING:
     from concurrent import futures
