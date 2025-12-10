@@ -113,10 +113,16 @@ UnaryStreamBehavior = Callable[
     Union[Iterator[ResponseType], AsyncIterable[ResponseType]],
 ]
 StreamUnaryBehavior = Callable[
-    [Union[Iterator[RequestType], AsyncIterable[RequestType]], "ServicerContext"],
+    [
+        Union[Iterator[RequestType], AsyncIterable[RequestType]],
+        "ServicerContext",
+    ],
     ResponseType,
 ]
 StreamStreamBehavior = Callable[
-    [Union[Iterator[RequestType], AsyncIterable[RequestType]], "ServicerContext"],
+    [
+        Union[Iterator[RequestType], AsyncIterable[RequestType]],
+        "ServicerContext",
+    ],
     Union[Iterator[ResponseType], AsyncIterable[ResponseType]],
 ]

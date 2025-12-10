@@ -1096,9 +1096,7 @@ class Channel(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def unsubscribe(
-        self, callback: ConnectivityCallbackType
-    ) -> None:
+    def unsubscribe(self, callback: ConnectivityCallbackType) -> None:
         """Unsubscribes a subscribed callback from this Channel's connectivity.
 
         Args:
