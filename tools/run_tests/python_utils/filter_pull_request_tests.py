@@ -13,12 +13,8 @@
 # limitations under the License.
 """Filter out tests based on file differences compared to merge target branch"""
 
-from __future__ import print_function
-
 import re
 import subprocess
-
-import six
 
 
 class TestSuite:
@@ -124,7 +120,7 @@ _ALLOWLIST_DICT = {
 _ALL_TRIGGERS = "(" + ")|(".join(list(_ALLOWLIST_DICT.keys())) + ")"
 
 # Add all triggers to their respective test suites
-for trigger, test_suites in six.iteritems(_ALLOWLIST_DICT):
+for trigger, test_suites in _ALLOWLIST_DICT.items():
     for test_suite in test_suites:
         test_suite.add_trigger(trigger)
 
