@@ -205,12 +205,6 @@ class SpiffeSslTransportSecurityTest
       expect_client_success = GetParam() == tsi_tls_version::TSI_TLS1_2
                                   ? expect_client_success_1_2_
                                   : expect_client_success_1_3_;
-#else
-      //  If using OpenSSL version < 1.1, the CRL revocation won't
-      //  be enabled anyways, so we always expect the connection to
-      //  be successful.
-      expect_server_success = true;
-      expect_client_success = expect_server_success;
 #endif
       tsi_peer peer;
       if (expect_client_success) {
@@ -410,15 +404,8 @@ TEST_P(SpiffeSslTransportSecurityTest, InvalidUTF8Fails) {
   auto* fixture_pass = new SslTsiTestFixture(
       kServerKeyPath, kServerCertPath, kInvalidUtf8SanKeyPath,
       kInvalidUtf8SanCertPath, "", "", kCaPemPath,
-  // OpenSSL3 and above will fail the handshake because of the invalid
-  // UTF-8 URI SAN.
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
-      /*expect_server_success=*/false,
-      /*expect_client_success_1_2=*/false,
-#else
       /*expect_server_success=*/true,
       /*expect_client_success_1_2=*/true,
-#endif
       /*expect_client_success_1_3=*/true);
   fixture_pass->Run();
   // Should fail SPIFFE verification because of multiple URI SANs.
