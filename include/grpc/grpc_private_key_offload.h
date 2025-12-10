@@ -77,4 +77,4 @@ GRPCAPI void grpc_tls_credentials_options_set_root_certificate_provider(
     grpc_tls_credentials_options* options,
     grpc_tls_certificate_provider* provider);
 
-#endif  // GRPC_GRPC_PRIVATE_KEY_OFFLOAD_H
+#endif /* GRPC_GRPC_PRIVATE_KEY_OFFLOAD_H */
