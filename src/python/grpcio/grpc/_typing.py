@@ -16,6 +16,7 @@
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncIterable,
     Callable,
     Iterable,
     Iterator,
@@ -107,10 +108,15 @@ ClientInterceptor = Union[
 ]
 ConnectivityCallbackType = Callable[["ChannelConnectivity"], None]
 UnaryUnaryBehavior = Callable[[RequestType, "ServicerContext"], ResponseType]
-UnaryStreamBehavior = Callable[[RequestType, "ServicerContext"], Iterator[ResponseType]]
+UnaryStreamBehavior = Callable[
+    [RequestType, "ServicerContext"],
+    Union[Iterator[ResponseType], AsyncIterable[ResponseType]],
+]
 StreamUnaryBehavior = Callable[
-    [Iterator[RequestType], "ServicerContext"], ResponseType
+    [Union[Iterator[RequestType], AsyncIterable[RequestType]], "ServicerContext"],
+    ResponseType,
 ]
 StreamStreamBehavior = Callable[
-    [Iterator[RequestType], "ServicerContext"], Iterator[ResponseType]
+    [Union[Iterator[RequestType], AsyncIterable[RequestType]], "ServicerContext"],
+    Union[Iterator[ResponseType], AsyncIterable[ResponseType]],
 ]
