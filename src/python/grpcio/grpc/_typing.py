@@ -30,12 +30,12 @@ from typing import (
 from grpc._cython import cygrpc
 
 if TYPE_CHECKING:
+    from grpc import ChannelConnectivity
     from grpc import ServicerContext
     from grpc import StreamStreamClientInterceptor
     from grpc import StreamUnaryClientInterceptor
     from grpc import UnaryStreamClientInterceptor
     from grpc import UnaryUnaryClientInterceptor
-    from grpc import ChannelConnectivity
     from grpc._server import _RPCState
 
 RequestType = TypeVar("RequestType")
