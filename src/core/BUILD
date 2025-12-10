@@ -195,6 +195,7 @@ grpc_cc_library(
         "//bazel:event_engine_base_hdrs",
     ],
     deps = [
+        "instrument",
         "memory_quota",
         "tcp_tracer",
         "//:channelz",
