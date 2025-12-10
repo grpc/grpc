@@ -87,7 +87,8 @@ InMemoryCertificateProvider::~InMemoryCertificateProvider() {
   grpc_tls_certificate_provider_release(c_provider_);
 };
 
-void InMemoryCertificateProvider::UpdateRoot(const std::string& root_certificate) {
+void InMemoryCertificateProvider::UpdateRoot(
+    const std::string& root_certificate) {
   GRPC_CHECK(!root_certificate.empty());
   grpc_tls_certificate_provider_in_memory_set_root_certificate(
       c_provider_, root_certificate.c_str());

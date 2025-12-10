@@ -28,7 +28,7 @@
 
 namespace grpc_core {
 
-// A user's implementation MUST invoke `done_callback` with the signed bytes.
+// A user's implementation MUST invoke `OnSignComplete` with the signed bytes.
 // This will let gRPC take control when the async operation is complete. MUST
 // not block MUST support concurrent calls
 class CustomPrivateKeySigner {
