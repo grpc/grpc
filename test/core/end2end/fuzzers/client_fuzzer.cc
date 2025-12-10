@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <google/protobuf/text_format.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
-#include <google/protobuf/text_format.h>
 
 #include <optional>
 #include <string>
@@ -44,8 +44,8 @@
 #include "test/core/test_util/fuzz_config_vars_helpers.h"
 #include "test/core/test_util/mock_endpoint.h"
 #include "test/core/test_util/test_config.h"
-#include "absl/status/statusor.h"
 #include "gtest/gtest.h"
+#include "absl/status/statusor.h"
 
 bool squelch = true;
 bool leak_check = true;
@@ -125,10 +125,8 @@ auto ParseTestProto(const std::string& proto) {
 
 TEST(ClientFuzzerTest, RunChannelzCallTracerRegression) {
   Fuzz(ParseTestProto(R"pb(network_input { single_read_bytes: "" }
-                          api_actions { create_call { method { value: "Z" } } }
-                          config_vars {
-                            channelz_call_tracer: true
-                          })pb"));
+                           api_actions { create_call { method { value: "Z" } } }
+                           config_vars { channelz_call_tracer: true })pb"));
 }
 
 }  // namespace testing
