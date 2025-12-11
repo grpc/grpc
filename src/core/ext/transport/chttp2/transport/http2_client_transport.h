@@ -176,7 +176,8 @@ class Http2ClientTransport final : public ClientTransport,
   }
 
   void AddData(channelz::DataSink sink) override;
-  void SpawnAddChannelzData(channelz::DataSink sink);
+  void SpawnAddChannelzData(RefCountedPtr<Party> party,
+                            channelz::DataSink sink);
 
   auto TestOnlyTriggerWriteCycle() {
     return Immediate(writable_stream_list_.ForceReadyForWrite());
@@ -363,7 +364,7 @@ class Http2ClientTransport final : public ClientTransport,
     return (next_stream_id > 1) ? (next_stream_id - 2) : 0;
   }
 
-  absl::Status AssignStreamId(RefCountedPtr<Stream> stream);
+  absl::Status InitializeStream(RefCountedPtr<Stream> stream);
 
   void AddToStreamList(RefCountedPtr<Stream> stream);
 
@@ -388,6 +389,11 @@ class Http2ClientTransport final : public ClientTransport,
                 std::move(promise));
   }
 
+  // Spawns an infallible promise on the given party.
+  template <typename Factory>
+  void SpawnInfallible(RefCountedPtr<Party> party, absl::string_view name,
+                       Factory&& factory);
+
   // Spawns an infallible promise on the transport party.
   template <typename Factory>
   void SpawnInfallibleTransportParty(absl::string_view name, Factory&& factory);
@@ -405,11 +411,6 @@ class Http2ClientTransport final : public ClientTransport,
 
   // Runs on the call party.
   std::optional<RefCountedPtr<Stream>> MakeStream(CallHandler call_handler);
-
-  struct CloseStreamArgs {
-    bool close_reads;
-    bool close_writes;
-  };
 
   // This function MUST be idempotent.
   void CloseStream(RefCountedPtr<Stream> stream, CloseStreamArgs args,
@@ -496,7 +497,6 @@ class Http2ClientTransport final : public ClientTransport,
   bool should_reset_ping_clock_;
   bool is_first_write_;
   IncomingMetadataTracker incoming_headers_;
-  absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings_;
 
   uint32_t max_header_list_size_soft_limit_;
 
@@ -584,10 +584,7 @@ class Http2ClientTransport final : public ClientTransport,
         valid_ping_ack_received && ping_manager_->ImportantPingRequested(),
         [self = RefAsSubclass<Http2ClientTransport>()] {
           return Map(self->TriggerWriteCycle(), [](const absl::Status status) {
-            return (status.ok())
-                       ? Http2Status::Ok()
-                       : Http2Status::AbslConnectionError(
-                             status.code(), std::string(status.message()));
+            return ToHttpOkOrConnError(status);
           });
         },
         [] { return Immediate(Http2Status::Ok()); });
@@ -614,8 +611,9 @@ class Http2ClientTransport final : public ClientTransport,
       // kRefusedStream doesn't seem to fit this case. We should revisit this
       // and update the error code.
       return Immediate(transport_->HandleError(
-          std::nullopt, Http2Status::Http2ConnectionError(
-                            Http2ErrorCode::kRefusedStream, "Ping timeout")));
+          std::nullopt,
+          Http2Status::Http2ConnectionError(Http2ErrorCode::kRefusedStream,
+                                            GRPC_CHTTP2_PING_TIMEOUT_STR)));
     }
 
    private:
@@ -653,9 +651,9 @@ class Http2ClientTransport final : public ClientTransport,
       // kRefusedStream doesn't seem to fit this case. We should revisit this
       // and update the error code.
       return Immediate(transport_->HandleError(
-          std::nullopt,
-          Http2Status::Http2ConnectionError(Http2ErrorCode::kRefusedStream,
-                                            "Keepalive timeout")));
+          std::nullopt, Http2Status::Http2ConnectionError(
+                            Http2ErrorCode::kRefusedStream,
+                            GRPC_CHTTP2_KEEPALIVE_TIMEOUT_STR)));
     }
 
     bool NeedToSendKeepAlivePing() override {
@@ -746,11 +744,7 @@ class Http2ClientTransport final : public ClientTransport,
   // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
   Waker periodic_updates_waker_;
 
-  // TODO(tjagtap) [PH2][P2][Settings] Set this to true when we receive settings
-  // that appear "Urgent". Example - initial window size 0 is urgent because it
-  // indicates extreme memory pressure on the server.
-  bool should_stall_read_loop_;
-  Waker read_loop_waker_;
+  Http2ReadContext reader_state_;
   Http2Status ParseAndDiscardHeaders(SliceBuffer&& buffer, bool is_end_headers,
                                      RefCountedPtr<Stream> stream,
                                      Http2Status&& original_status,

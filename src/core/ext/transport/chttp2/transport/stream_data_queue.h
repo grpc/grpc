@@ -202,15 +202,12 @@ class SimpleQueue {
 template <typename MetadataHandle>
 class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
  public:
-  explicit StreamDataQueue(const bool is_client, const uint32_t queue_size,
-                           bool allow_true_binary_metadata)
+  explicit StreamDataQueue(const bool is_client, const uint32_t queue_size)
       : stream_id_(0),
         is_client_(is_client),
         queue_(queue_size),
-        initial_metadata_disassembler_(/*is_trailing_metadata=*/false,
-                                       allow_true_binary_metadata),
-        trailing_metadata_disassembler_(/*is_trailing_metadata=*/true,
-                                        allow_true_binary_metadata) {};
+        initial_metadata_disassembler_(/*is_trailing_metadata=*/false),
+        trailing_metadata_disassembler_(/*is_trailing_metadata=*/true) {};
   ~StreamDataQueue() = default;
 
   StreamDataQueue(StreamDataQueue&& rhs) = delete;
@@ -218,12 +215,15 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   StreamDataQueue(const StreamDataQueue&) = delete;
   StreamDataQueue& operator=(const StreamDataQueue&) = delete;
 
-  void SetStreamId(const uint32_t stream_id) {
+  void SetStreamId(const uint32_t stream_id,
+                   const bool allow_true_binary_metadata_peer) {
     GRPC_DCHECK_EQ(stream_id_, 0u);
     GRPC_DCHECK_NE(stream_id, 0u);
     stream_id_ = stream_id;
-    initial_metadata_disassembler_.SetStreamId(stream_id);
-    trailing_metadata_disassembler_.SetStreamId(stream_id);
+    initial_metadata_disassembler_.Initialize(stream_id,
+                                              allow_true_binary_metadata_peer);
+    trailing_metadata_disassembler_.Initialize(stream_id,
+                                               allow_true_binary_metadata_peer);
   }
 
   //////////////////////////////////////////////////////////////////////////////

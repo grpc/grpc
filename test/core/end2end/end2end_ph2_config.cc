@@ -72,55 +72,11 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|CoreDeadlineTests.DeadlineAfterInvoke3" \
   "|CoreDeadlineTests.DeadlineAfterInvoke4" \
   "|CoreDeadlineTests.DeadlineAfterInvoke5" \
-  "|CoreDeadlineTests.DeadlineAfterInvoke6"
+  "|CoreDeadlineTests.DeadlineAfterInvoke6" \
+  "|CoreDeadlineTests.DeadlineAfterRoundTrip"
 
 #define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST                         \
-  "|CoreClientChannelTests.DeadlineAfterAcceptWithServiceConfig"               \
-  "|CoreClientChannelTests.DeadlineAfterRoundTripWithServiceConfig"            \
-  "|CoreDeadlineTests.DeadlineAfterRoundTrip"                                  \
-  "|CoreDeadlineSingleHopTests."                                               \
-  "TimeoutBeforeRequestCallWithRegisteredMethodWithPayload"                    \
-  "|CoreEnd2endTests.BinaryMetadataServerHttp2FallbackClientHttp2Fallback"     \
-  "|CoreEnd2endTests.BinaryMetadataServerHttp2FallbackClientTrueBinary"        \
-  "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientTrueBinary"           \
-  "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientHttp2Fallback"        \
-  "|Http2SingleHopTests.DisabledAlgorithmDecompressInCore"                     \
-  "|Http2SingleHopTests.DisabledAlgorithmDecompressInApp"                      \
-  "|Http2SingleHopTests."                                                      \
-  "RequestWithExceptionallyUncompressedPayloadDecompressInCore"                \
-  "|Http2SingleHopTests."                                                      \
-  "RequestWithExceptionallyUncompressedPayloadDecompressInApp"                 \
-  "|Http2SingleHopTests.RequestWithUncompressedPayloadDecompressInCore"        \
-  "|Http2SingleHopTests.RequestWithUncompressedPayloadDecompressInApp"         \
-  "|Http2SingleHopTests.RequestWithCompressedPayloadDecompressInCore"          \
-  "|Http2SingleHopTests.RequestWithCompressedPayloadDecompressInApp"           \
-  "|Http2SingleHopTests."                                                      \
-  "RequestWithSendMessageBeforeInitialMetadataDecompressInCore"                \
-  "|Http2SingleHopTests."                                                      \
-  "RequestWithSendMessageBeforeInitialMetadataDecompressInApp"                 \
-  "|Http2SingleHopTests.RequestWithServerLevelDecompressInCore"                \
-  "|Http2SingleHopTests.RequestWithServerLevelDecompressInApp"                 \
-  "|Http2SingleHopTests."                                                      \
-  "RequestWithCompressedPayloadMetadataOverrideNoneToGzipDecompressInCore"     \
-  "|Http2SingleHopTests."                                                      \
-  "RequestWithCompressedPayloadMetadataOverrideNoneToGzipDecompressInApp"      \
-  "|Http2SingleHopTests."                                                      \
-  "RequestWithCompressedPayloadMetadataOverrideDeflateToGzipDecompressInCore"  \
-  "|Http2SingleHopTests."                                                      \
-  "RequestWithCompressedPayloadMetadataOverrideDeflateToGzipDecompressInApp"   \
-  "|Http2SingleHopTests."                                                      \
-  "RequestWithCompressedPayloadMetadataOverrideDeflateToIdentityDecompressInC" \
-  "ore"                                                                        \
-  "|Http2SingleHopTests."                                                      \
-  "RequestWithCompressedPayloadMetadataOverrideDeflateToIdentityDecompressInA" \
-  "pp"                                                                         \
-  "|Http2SingleHopTests.RequestWithDefaultHighLevelDecompressInCore"           \
-  "|Http2SingleHopTests.RequestWithDefaultMediumLevelDecompressInCore"         \
-  "|Http2SingleHopTests.RequestWithDefaultLowLevelDecompressInCore"            \
-  "|Http2SingleHopTests.RequestWithDefaultNoneLevelDecompressInCore"           \
   "|Http2SingleHopTests.InvokeLargeRequest"                                    \
-  "|Http2SingleHopTests.KeepaliveTimeout"                                      \
-  "|Http2SingleHopTests.ReadDelaysKeepalive"                                   \
   "|Http2SingleHopTests.RequestWithLargeMetadataUnderSoftLimit"                \
   "|Http2SingleHopTests.RequestWithLargeMetadataBetweenSoftAndHardLimits"      \
   "|Http2SingleHopTests.RequestWithLargeMetadataAboveHardLimit"                \
@@ -134,7 +90,6 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|Http2SingleHopTests.MaxConcurrentStreamsTimeoutOnSecond"                   \
   "|Http2SingleHopTests.MaxConcurrentStreamsRejectOnClient"                    \
   "|Http2SingleHopTests.SimpleDelayedRequestShort"                             \
-  "|Http2Tests.HighInitialSeqno"                                               \
   "|Http2Tests.ServerStreaming"                                                \
   "|Http2Tests.ServerStreamingEmptyStream"                                     \
   "|Http2Tests.ServerStreaming10Messages"                                      \
@@ -145,7 +100,7 @@ class Ph2InsecureFixture : public InsecureFixture {
 #define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE    \
   "CoreEnd2endTests|CoreDeadlineTests|CoreLargeSendTests|" \
   "CoreClientChannelTests|CoreDeadlineSingleHopTests|"     \
-  "Http2SingleHopTests|Http2Tests"
+  "Http2SingleHopTests|Http2Tests|CoreDeadlineSingleHopTests"
 
 std::vector<CoreTestConfiguration> End2endTestConfigs() {
   std::vector<CoreTestConfiguration> list_of_configs;
