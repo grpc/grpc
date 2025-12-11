@@ -219,9 +219,8 @@ class StreamDataQueueFuzzTest : public YodelTest {
   class AssembleFrames {
    public:
     explicit AssembleFrames(const uint32_t stream_id,
-                            const bool allow_true_binary_metadata)
-        : header_assembler_(allow_true_binary_metadata) {
-      header_assembler_.SetStreamId(stream_id);
+                            const bool allow_true_binary_metadata) {
+      header_assembler_.InitializeStream(stream_id, allow_true_binary_metadata);
     }
     void operator()(Http2HeaderFrame frame) {
       auto status = header_assembler_.AppendHeaderFrame(frame);

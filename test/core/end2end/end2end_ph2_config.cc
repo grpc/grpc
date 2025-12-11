@@ -76,10 +76,6 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|CoreDeadlineTests.DeadlineAfterRoundTrip"
 
 #define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST                         \
-  "|CoreEnd2endTests.BinaryMetadataServerHttp2FallbackClientHttp2Fallback"     \
-  "|CoreEnd2endTests.BinaryMetadataServerHttp2FallbackClientTrueBinary"        \
-  "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientTrueBinary"           \
-  "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientHttp2Fallback"        \
   "|Http2SingleHopTests.InvokeLargeRequest"                                    \
   "|Http2SingleHopTests.RequestWithLargeMetadataUnderSoftLimit"                \
   "|Http2SingleHopTests.RequestWithLargeMetadataBetweenSoftAndHardLimits"      \

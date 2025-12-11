@@ -61,13 +61,12 @@ enum class HttpStreamState : uint8_t {
 
 // Managing the streams
 struct Stream : public RefCounted<Stream> {
-  explicit Stream(CallHandler call, bool allow_true_binary_metadata_acked,
+  explicit Stream(CallHandler call,
                   chttp2::TransportFlowControl& transport_flow_control)
       : call(std::move(call)),
         is_write_closed(false),
         stream_state(HttpStreamState::kIdle),
         stream_id(kInvalidStreamId),
-        header_assembler(allow_true_binary_metadata_acked),
         did_receive_initial_metadata(false),
         did_receive_trailing_metadata(false),
         did_push_server_trailing_metadata(false),
@@ -82,13 +81,15 @@ struct Stream : public RefCounted<Stream> {
   // The upside is that we save 8 bytes per call. Decide based on benchmark
   // results.
   void InitializeStream(const uint32_t stream_id,
-                        const bool allow_true_binary_metadata_peer) {
+                        const bool allow_true_binary_metadata_peer,
+                        const bool allow_true_binary_metadata_acked) {
     GRPC_DCHECK_NE(stream_id, 0u);
     GRPC_DCHECK_EQ(this->stream_id, 0u);
     GRPC_HTTP2_STREAM_LOG << "Stream::InitializeStream stream_id=" << stream_id;
     if (GPR_LIKELY(this->stream_id == 0)) {
       this->stream_id = stream_id;
-      header_assembler.SetStreamId(stream_id);
+      header_assembler.InitializeStream(stream_id,
+                                        allow_true_binary_metadata_acked);
       data_queue->SetStreamId(stream_id, allow_true_binary_metadata_peer);
     }
   }

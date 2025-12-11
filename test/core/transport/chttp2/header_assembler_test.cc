@@ -160,8 +160,8 @@ TEST_P(HeaderAssemblerDisassemblerTest, ValidOneHeaderFrame) {
   // 3. Validate the contents of the Metadata.
   const uint32_t stream_id = 0x7fffffff;
   HPackParser parser;
-  HeaderAssembler assembler(allow_true_binary_metadata());
-  assembler.SetStreamId(stream_id);
+  HeaderAssembler assembler;
+  assembler.InitializeStream(stream_id, allow_true_binary_metadata());
   ValidateOneHeader(stream_id, parser, assembler, /*end_headers=*/true);
 }
 
@@ -170,8 +170,8 @@ TEST_P(HeaderAssemblerDisassemblerTest, InvalidAssemblerNotReady1) {
   // If we try to read the Header before END_HEADERS is received.
   const uint32_t stream_id = 0x12345678;
   HPackParser parser;
-  HeaderAssembler assembler(allow_true_binary_metadata());
-  assembler.SetStreamId(stream_id);
+  HeaderAssembler assembler;
+  assembler.InitializeStream(stream_id, allow_true_binary_metadata());
   Http2HeaderFrame header = GenerateHeaderFrame(
       kSimpleRequestEncoded, stream_id, /*end_headers=*/false,
       /*end_stream=*/false);
@@ -258,8 +258,8 @@ TEST_P(HeaderAssemblerDisassemblerTest, ValidOneHeaderTwoContinuationFrame) {
   // 3. Validate the contents of the Metadata.
   const uint32_t stream_id = 0x78654321;
   HPackParser parser;
-  HeaderAssembler assembler(allow_true_binary_metadata());
-  assembler.SetStreamId(stream_id);
+  HeaderAssembler assembler;
+  assembler.InitializeStream(stream_id, allow_true_binary_metadata());
   ValidateOneHeaderTwoContinuation(stream_id, parser, assembler,
                                    /*end_stream=*/false);
 }
@@ -269,8 +269,8 @@ TEST_P(HeaderAssemblerDisassemblerTest, InvalidAssemblerNotReady2) {
   // If we try to read the Metadata before END_HEADERS is received.
   const uint32_t stream_id = 1111;
   HPackParser parser;
-  HeaderAssembler assembler(allow_true_binary_metadata());
-  assembler.SetStreamId(stream_id);
+  HeaderAssembler assembler;
+  assembler.InitializeStream(stream_id, allow_true_binary_metadata());
   Http2HeaderFrame header =
       GenerateHeaderFrame(kSimpleRequestEncodedPart1, stream_id,
                           /*end_headers=*/false, /*end_stream=*/false);
@@ -320,8 +320,8 @@ TEST_P(HeaderAssemblerDisassemblerTest, ValidTwoHeaderFrames) {
   // 4. Do all the above for the second HEADERS frame.
   const uint32_t stream_id = 1111;
   HPackParser parser;
-  HeaderAssembler assembler(allow_true_binary_metadata());
-  assembler.SetStreamId(stream_id);
+  HeaderAssembler assembler;
+  assembler.InitializeStream(stream_id, allow_true_binary_metadata());
   ValidateOneHeader(stream_id, parser, assembler, /*end_headers=*/true);
   ValidateOneHeader(stream_id, parser, assembler, /*end_headers=*/true);
 }
@@ -335,8 +335,8 @@ TEST_P(HeaderAssemblerDisassemblerTest, ValidMultipleHeadersAndContinuations) {
   // 4. Do all the above for the second set of Header and Continuation frames.
   const uint32_t stream_id = 1111;
   HPackParser parser;
-  HeaderAssembler assembler(allow_true_binary_metadata());
-  assembler.SetStreamId(stream_id);
+  HeaderAssembler assembler;
+  assembler.InitializeStream(stream_id, allow_true_binary_metadata());
   ValidateOneHeaderTwoContinuation(stream_id, parser, assembler,
                                    /*end_stream=*/false);
   ValidateOneHeaderTwoContinuation(stream_id, parser, assembler,
@@ -351,8 +351,8 @@ constexpr uint32_t kEncodedMetadataLen = 166;
 Arena::PoolPtr<grpc_metadata_batch> GenerateMetadata(
     const uint32_t stream_id, bool is_trailing_metadata, HPackParser& parser,
     const bool allow_true_binary_metadata) {
-  HeaderAssembler assembler(allow_true_binary_metadata);
-  assembler.SetStreamId(stream_id);
+  HeaderAssembler assembler;
+  assembler.InitializeStream(stream_id, allow_true_binary_metadata);
   Http2HeaderFrame header = GenerateHeaderFrame(
       kSimpleRequestEncoded, stream_id, /*end_headers=*/true,
       /*end_stream=*/is_trailing_metadata);
@@ -576,8 +576,8 @@ TEST_P(HeaderAssemblerDisassemblerTest, Reversibility) {
     EXPECT_EQ(is_end_headers, true);
 
     // Give the frame back to the assembler
-    HeaderAssembler assembler(allow_true_binary_metadata());
-    assembler.SetStreamId(stream_id);
+    HeaderAssembler assembler;
+    assembler.InitializeStream(stream_id, allow_true_binary_metadata());
     Http2HeaderFrame& header = std::get<Http2HeaderFrame>(frame);
     Http2Status status = assembler.AppendHeaderFrame(header);
     Http2Settings default_settings;
