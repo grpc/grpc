@@ -1566,6 +1566,7 @@ LIBGRPC_SRC = \
     src/core/xds/grpc/xds_http_filter_registry.cc \
     src/core/xds/grpc/xds_http_gcp_authn_filter.cc \
     src/core/xds/grpc/xds_http_rbac_filter.cc \
+    src/core/xds/grpc/xds_http_router_filter.cc \
     src/core/xds/grpc/xds_http_stateful_session_filter.cc \
     src/core/xds/grpc/xds_lb_policy_registry.cc \
     src/core/xds/grpc/xds_listener.cc \

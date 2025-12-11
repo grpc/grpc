@@ -2169,6 +2169,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/xds/grpc/xds_http_gcp_authn_filter.h )
   s.files += %w( src/core/xds/grpc/xds_http_rbac_filter.cc )
   s.files += %w( src/core/xds/grpc/xds_http_rbac_filter.h )
+  s.files += %w( src/core/xds/grpc/xds_http_router_filter.cc )
+  s.files += %w( src/core/xds/grpc/xds_http_router_filter.h )
   s.files += %w( src/core/xds/grpc/xds_http_stateful_session_filter.cc )
   s.files += %w( src/core/xds/grpc/xds_http_stateful_session_filter.h )
   s.files += %w( src/core/xds/grpc/xds_lb_policy_registry.cc )
