@@ -119,16 +119,13 @@ absl::StatusOr<std::unique_ptr<GrpcXdsBootstrap>> GrpcXdsBootstrap::Create(
   auto bootstrap = LoadFromJson<GrpcXdsBootstrap>(*json, XdsJsonArgs());
   if (!bootstrap.ok()) return bootstrap.status();
 // FIXME: move to CoreConfiguration
-  bootstrap->http_filter_registry_.RegisterFilter(
-      std::make_unique<XdsHttpRouterFilter>());
-  bootstrap->http_filter_registry_.RegisterFilter(
-      std::make_unique<XdsHttpFaultFilter>());
-  bootstrap->http_filter_registry_.RegisterFilter(
-      std::make_unique<XdsHttpRbacFilter>());
-  bootstrap->http_filter_registry_.RegisterFilter(
-      std::make_unique<XdsHttpStatefulSessionFilter>());
-  bootstrap->http_filter_registry_.RegisterFilter(
-      std::make_unique<XdsHttpGcpAuthnFilter>());
+  XdsHttpFilterRegistry::Builder builder;
+  builder.RegisterFilter(std::make_unique<XdsHttpRouterFilter>());
+  builder.RegisterFilter(std::make_unique<XdsHttpFaultFilter>());
+  builder.RegisterFilter(std::make_unique<XdsHttpRbacFilter>());
+  builder.RegisterFilter(std::make_unique<XdsHttpStatefulSessionFilter>());
+  builder.RegisterFilter(std::make_unique<XdsHttpGcpAuthnFilter>());
+  bootstrap->http_filter_registry_ = builder.Build();
   return std::make_unique<GrpcXdsBootstrap>(std::move(*bootstrap));
 }
 

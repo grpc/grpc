@@ -20,7 +20,7 @@
 
 namespace grpc_core {
 
-void XdsHttpFilterRegistry::RegisterFilter(
+void XdsHttpFilterRegistry::Builder::RegisterFilter(
     std::unique_ptr<XdsHttpFilterImpl> filter) {
   GRPC_CHECK(
       registry_map_.emplace(filter->ConfigProtoName(), filter.get()).second);
@@ -29,6 +29,13 @@ void XdsHttpFilterRegistry::RegisterFilter(
     GRPC_CHECK(registry_map_.emplace(override_proto_name, filter.get()).second);
   }
   owning_list_.push_back(std::move(filter));
+}
+
+XdsHttpFilterRegistry XdsHttpFilterRegistry::Builder::Build() {
+  XdsHttpFilterRegistry registry;
+  registry.owning_list_ = std::move(owning_list_);
+  registry.registry_map_ = std::move(registry_map_);
+  return registry;
 }
 
 const XdsHttpFilterImpl* XdsHttpFilterRegistry::GetFilterForType(

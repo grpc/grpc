@@ -30,6 +30,17 @@ namespace grpc_core {
 
 class XdsHttpFilterRegistry final {
  public:
+  class Builder final {
+   public:
+    void RegisterFilter(std::unique_ptr<XdsHttpFilterImpl> filter);
+
+    XdsHttpFilterRegistry Build();
+
+   private:
+    std::vector<std::unique_ptr<XdsHttpFilterImpl>> owning_list_;
+    std::map<absl::string_view, XdsHttpFilterImpl*> registry_map_;
+  };
+
   XdsHttpFilterRegistry() = default;
 
   // Not copyable.
@@ -45,8 +56,6 @@ class XdsHttpFilterRegistry final {
     registry_map_ = std::move(other.registry_map_);
     return *this;
   }
-
-  void RegisterFilter(std::unique_ptr<XdsHttpFilterImpl> filter);
 
   const XdsHttpFilterImpl* GetFilterForType(
       absl::string_view proto_type_name) const;
