@@ -95,9 +95,9 @@ class TestsNeedingStreamObjects : public ::testing::Test {
             MakeCallPair(std::move(client_initial_metadata), std::move(arena)));
     RefCountedPtr<Stream> stream = MakeRefCounted<Stream>(
         call_pair->handler.StartCall(),
-        /*allow_true_binary_metadata_peer=*/true,
         /*allow_true_binary_metadata_acked=*/true, transport_flow_control_);
-    stream->SetStreamId(stream_id);
+    stream->InitializeStream(stream_id,
+                             /*allow_true_binary_metadata_peer=*/true);
     GRPC_CHECK_EQ(stream->stream_id, stream_id);
     stream_set_.push_back(std::move(stream));
     return stream_set_.back();

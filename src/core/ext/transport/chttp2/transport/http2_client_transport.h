@@ -364,7 +364,7 @@ class Http2ClientTransport final : public ClientTransport,
     return (next_stream_id > 1) ? (next_stream_id - 2) : 0;
   }
 
-  absl::Status AssignStreamId(RefCountedPtr<Stream> stream);
+  absl::Status InitializeStream(RefCountedPtr<Stream> stream);
 
   void AddToStreamList(RefCountedPtr<Stream> stream);
 
