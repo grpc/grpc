@@ -39,3 +39,4 @@ wrapt==1.16.0
 zipp==3.17.0
 zope.event==4.5.0
 zope.interface==6.1
+sphinx-rtd-theme==3.0.2
