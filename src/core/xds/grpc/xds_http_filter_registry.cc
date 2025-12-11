@@ -17,23 +17,8 @@
 #include "src/core/xds/grpc/xds_http_filter_registry.h"
 
 #include "src/core/util/grpc_check.h"
-#include "src/core/xds/grpc/xds_http_fault_filter.h"
-#include "src/core/xds/grpc/xds_http_gcp_authn_filter.h"
-#include "src/core/xds/grpc/xds_http_rbac_filter.h"
-#include "src/core/xds/grpc/xds_http_router_filter.h"
-#include "src/core/xds/grpc/xds_http_stateful_session_filter.h"
 
 namespace grpc_core {
-
-XdsHttpFilterRegistry::XdsHttpFilterRegistry(bool register_builtins) {
-  if (register_builtins) {
-    RegisterFilter(std::make_unique<XdsHttpRouterFilter>());
-    RegisterFilter(std::make_unique<XdsHttpFaultFilter>());
-    RegisterFilter(std::make_unique<XdsHttpRbacFilter>());
-    RegisterFilter(std::make_unique<XdsHttpStatefulSessionFilter>());
-    RegisterFilter(std::make_unique<XdsHttpGcpAuthnFilter>());
-  }
-}
 
 void XdsHttpFilterRegistry::RegisterFilter(
     std::unique_ptr<XdsHttpFilterImpl> filter) {

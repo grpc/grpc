@@ -6086,6 +6086,26 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_http_filter_registry",
+    srcs = [
+        "xds/grpc/xds_http_filter_registry.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_http_filter_registry.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "@com_google_protobuf//upb/reflection",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "grpc_check",
+        "xds_http_filter",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_route_config",
     srcs = [
         "xds/grpc/xds_route_config.cc",
@@ -6305,7 +6325,6 @@ grpc_cc_library(
         "xds/grpc/xds_common_types_parser.cc",
         "xds/grpc/xds_endpoint_parser.cc",
         "xds/grpc/xds_http_fault_filter.cc",
-        "xds/grpc/xds_http_filter_registry.cc",
         "xds/grpc/xds_http_gcp_authn_filter.cc",
         "xds/grpc/xds_http_rbac_filter.cc",
         "xds/grpc/xds_http_router_filter.cc",
@@ -6330,7 +6349,6 @@ grpc_cc_library(
         "xds/grpc/xds_common_types_parser.h",
         "xds/grpc/xds_endpoint_parser.h",
         "xds/grpc/xds_http_fault_filter.h",
-        "xds/grpc/xds_http_filter_registry.h",
         "xds/grpc/xds_http_gcp_authn_filter.h",
         "xds/grpc/xds_http_rbac_filter.h",
         "xds/grpc/xds_http_router_filter.h",
@@ -6497,6 +6515,7 @@ grpc_cc_library(
         "xds_file_watcher_certificate_provider_factory",
         "xds_health_status",
         "xds_http_filter",
+        "xds_http_filter_registry",
         "xds_listener",
         "xds_matcher_upb",
         "xds_metadata",
@@ -6654,6 +6673,7 @@ grpc_cc_library(
         "xds_common_types",
         "xds_credentials",
         "xds_http_filter",
+        "xds_http_filter_registry",
         "xds_listener",
         "xds_route_config",
         "//:config",

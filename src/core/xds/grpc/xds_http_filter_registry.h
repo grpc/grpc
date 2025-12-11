@@ -30,7 +30,7 @@ namespace grpc_core {
 
 class XdsHttpFilterRegistry final {
  public:
-  explicit XdsHttpFilterRegistry(bool register_builtins = true);
+  XdsHttpFilterRegistry() = default;
 
   // Not copyable.
   XdsHttpFilterRegistry(const XdsHttpFilterRegistry&) = delete;
