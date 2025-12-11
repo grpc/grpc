@@ -31,7 +31,7 @@
 #elif defined(__GNUC__)
 #define GRPC_FUNCTION_SIGNATURE __PRETTY_FUNCTION__
 #else
-#define GRPC_FUNCTION_SIGNATURE "???()"
+#define GRPC_FUNCTION_SIGNATURE "??""?()"
 #endif
 
 namespace grpc_core {
