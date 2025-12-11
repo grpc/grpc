@@ -159,6 +159,12 @@ module GRPC
 
     def_delegators :@server, :add_http2_port
 
+    def add_http2_port(addr, creds)
+      result = @server.add_http2_port(addr, creds)
+      @server_host = addr if result != 0
+      result
+    end
+
     # Default thread pool size is 30
     DEFAULT_POOL_SIZE = 30
 
@@ -232,6 +238,7 @@ module GRPC
       # :stopped. State transitions can only proceed in that order.
       @running_state = :not_started
       @server = Core::Server.new(server_args)
+      @server_host = nil
       @interceptors = InterceptorRegistry.new(interceptors)
     end
 
@@ -251,6 +258,17 @@ module GRPC
         fail 'Cannot stop before starting' if @running_state == :not_started
         return if @running_state != :running
         transition_running_state(:stopping)
+        arm = RUBY_PLATFORM =~ /(aarch64|arm64)/
+        if arm && @server_host
+          begin
+            ch = Core::Channel.new(@server_host, nil, :this_channel_is_insecure)
+            call = ch.create_call(nil, nil, ch, '/grpc.shutdown', nil, from_relative_time(0.5))
+            call.run_batch(SEND_INITIAL_METADATA => {})
+            call.close
+            ch.close
+          rescue
+          end
+        end
         deadline = from_relative_time(@poll_period)
         @server.shutdown_and_notify(deadline)
       end
