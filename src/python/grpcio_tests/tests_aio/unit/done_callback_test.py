@@ -280,6 +280,31 @@ class TestServerSideDoneCallback(AioTestBase):
         rpc_error = exception_context.exception
         self.assertEqual(grpc.StatusCode.UNIMPLEMENTED, rpc_error.code())
 
+    async def test_sync_streaming_callback(self):
+
+        validation_future = self.loop.create_future()
+
+        def sync_stream_handler(request_iterator, context):
+            def cb():
+                validation_future.set_result(True)
+
+            context.add_callback(cb)
+            for _ in range(_NUM_STREAM_RESPONSES):
+                yield _RESPONSE
+
+        await self._register_method_handler(
+            grpc.stream_stream_rpc_method_handler(sync_stream_handler)
+        )
+
+        call = self._channel.stream_stream(_TEST_METHOD)()
+        for _ in range(_NUM_STREAM_RESPONSES):
+            await call.write(_REQUEST)
+        await call.done_writing()
+        async for response in call:
+            self.assertEqual(_RESPONSE, response)
+
+        await asyncio.wait_for(validation_future, timeout=5)
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
