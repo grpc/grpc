@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPCPP_SECURITY_TLS_PRIVATE_KEY_OFFLOAD_
-#define GRPCPP_SECURITY_TLS_PRIVATE_KEY_OFFLOAD_
+#ifndef GRPCPP_SECURITY_TLS_PRIVATE_KEY_OFFLOAD_H
+#define GRPCPP_SECURITY_TLS_PRIVATE_KEY_OFFLOAD_H
 
 #include <grpc/grpc_private_key_offload.h>
 #include <grpcpp/impl/sync.h>
@@ -29,4 +29,4 @@ using grpc_core::CustomPrivateKeySigner;  // NOLINT(misc-unused-using-decls)
 
 }  // namespace grpc
 
-#endif  // GRPCPP_SECURITY_TLS_PRIVATE_KEY_OFFLOAD_
+#endif  // GRPCPP_SECURITY_TLS_PRIVATE_KEY_OFFLOAD_H
