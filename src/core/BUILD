@@ -11115,6 +11115,33 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "private_key_offload_py",
+    srcs = [
+        "tsi/private_key_offload_py_wrapper.cc",
+    ],
+    hdrs = [
+        "tsi/private_key_offload_py_wrapper.h",
+    ],
+    external_deps = [
+        "absl/functional:bind_front",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+        "libcrypto",
+        "libssl",
+    ],
+    deps = [
+        "grpc_check",
+        "match",
+        "ssl_transport_security_utils",
+        "//:grpc_base",
+        "//:tsi_base",
+        ":private_key_offload_util"
+    ],
+)
+
 ### UPB Targets
 
 grpc_upb_proto_library(
