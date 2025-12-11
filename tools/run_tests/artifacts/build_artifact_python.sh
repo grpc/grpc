@@ -83,6 +83,20 @@ then
   export GRPC_BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM="linux-arm"
 fi
 
+# If building for macOS, override WHEEL_PLAT_NAME_FLAG for universal2 wheels.
+# This needs to be after any Linux-specific settings for WHEEL_PLAT_NAME_FLAG
+# and before it's used by bdist_wheel.
+if [ "$GRPC_BUILD_MAC" != "" ]; then
+  # Use MACOSX_DEPLOYMENT_TARGET, default to 11.0 if not set.
+  # This should align with the logic in setup.py for universal builds.
+  TARGET_MACOS_VERSION=${MACOSX_DEPLOYMENT_TARGET:-"11.0"}
+  # Convert version format from "11.0" to "11_0"
+  PLATFORM_MACOS_VERSION=$(echo "$TARGET_MACOS_VERSION" | tr '.' '_')
+  echo "macOS build detected: MACOSX_DEPLOYMENT_TARGET is $TARGET_MACOS_VERSION."
+  echo "Overriding WHEEL_PLAT_NAME_FLAG to use macosx_${PLATFORM_MACOS_VERSION}_universal2."
+  WHEEL_PLAT_NAME_FLAG="--plat-name macosx_${PLATFORM_MACOS_VERSION}_universal2"
+fi
+
 ancillary_package_dir=(
   "src/python/grpcio_admin/"
   "src/python/grpcio_channelz/"
