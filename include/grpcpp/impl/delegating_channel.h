@@ -54,11 +54,6 @@ class DelegatingChannel : public grpc::ChannelInterface {
     return delegate_channel()->CreateCall(method, context, cq);
   }
 
-  void PerformOpsOnCall(internal::CallOpSetInterface* ops,
-                        internal::Call* call) final {
-    delegate_channel()->PerformOpsOnCall(ops, call);
-  }
-
   void* RegisterMethod(const char* method) final {
     return delegate_channel()->RegisterMethod(method);
   }

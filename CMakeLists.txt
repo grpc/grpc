@@ -4923,7 +4923,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/async_unary_call.h
   include/grpc++/impl/codegen/byte_buffer.h
   include/grpc++/impl/codegen/call.h
-  include/grpc++/impl/codegen/call_hook.h
   include/grpc++/impl/codegen/channel_interface.h
   include/grpc++/impl/codegen/client_context.h
   include/grpc++/impl/codegen/client_unary_call.h
@@ -4995,7 +4994,6 @@ foreach(_hdr
   include/grpcpp/grpcpp.h
   include/grpcpp/health_check_service_interface.h
   include/grpcpp/impl/call.h
-  include/grpcpp/impl/call_hook.h
   include/grpcpp/impl/call_op_set.h
   include/grpcpp/impl/call_op_set_interface.h
   include/grpcpp/impl/channel_argument_option.h
@@ -5006,7 +5004,6 @@ foreach(_hdr
   include/grpcpp/impl/codegen/async_unary_call.h
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
-  include/grpcpp/impl/codegen/call_hook.h
   include/grpcpp/impl/codegen/call_op_set.h
   include/grpcpp/impl/codegen/call_op_set_interface.h
   include/grpcpp/impl/codegen/callback_common.h
@@ -5667,7 +5664,6 @@ foreach(_hdr
   include/grpc++/impl/codegen/async_unary_call.h
   include/grpc++/impl/codegen/byte_buffer.h
   include/grpc++/impl/codegen/call.h
-  include/grpc++/impl/codegen/call_hook.h
   include/grpc++/impl/codegen/channel_interface.h
   include/grpc++/impl/codegen/client_context.h
   include/grpc++/impl/codegen/client_unary_call.h
@@ -5739,7 +5735,6 @@ foreach(_hdr
   include/grpcpp/grpcpp.h
   include/grpcpp/health_check_service_interface.h
   include/grpcpp/impl/call.h
-  include/grpcpp/impl/call_hook.h
   include/grpcpp/impl/call_op_set.h
   include/grpcpp/impl/call_op_set_interface.h
   include/grpcpp/impl/channel_argument_option.h
@@ -5750,7 +5745,6 @@ foreach(_hdr
   include/grpcpp/impl/codegen/async_unary_call.h
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
-  include/grpcpp/impl/codegen/call_hook.h
   include/grpcpp/impl/codegen/call_op_set.h
   include/grpcpp/impl/codegen/call_op_set_interface.h
   include/grpcpp/impl/codegen/callback_common.h

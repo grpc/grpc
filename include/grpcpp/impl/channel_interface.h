@@ -139,8 +139,6 @@ class ChannelInterface {
   virtual internal::Call CreateCall(const internal::RpcMethod& method,
                                     grpc::ClientContext* context,
                                     grpc::CompletionQueue* cq) = 0;
-  virtual void PerformOpsOnCall(internal::CallOpSetInterface* ops,
-                                internal::Call* call) = 0;
   virtual void* RegisterMethod(const char* method) = 0;
   virtual void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
                                        gpr_timespec deadline,
