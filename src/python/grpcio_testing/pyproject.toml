@@ -26,11 +26,12 @@ description = "Testing utilities for gRPC Python"
 readme = {file = "README.rst", content-type = "text/x-rst"}
 authors = [{name = "The gRPC Authors", email = "grpc-io@googlegroups.com"}]
 
-dynamic = ["dependencies", "requires-python", "version", "classifiers"]
+dynamic = ["classifiers", "dependencies", "requires-python", "version"]
 
 [project.urls]
 Homepage = "https://grpc.io"
 Documentation = "https://grpc.github.io/grpc/python/grpc_testing.html"
+"Source Code" = "https://github.com/grpc/grpc/tree/master/src/python/grpcio_testing"
 
 [tool.setuptools.dynamic]
 version = {attr = "grpc_version.VERSION"}
