@@ -195,6 +195,9 @@ const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
 const char* const description_sleep_use_non_owning_waker =
     "If set, the sleep promise uses a non-owning waker.";
 const char* const additional_constraints_sleep_use_non_owning_waker = "{}";
+const char* const description_subchannel_connection_scaling =
+    "Subchannel connection scaling support.";
+const char* const additional_constraints_subchannel_connection_scaling = "{}";
 const char* const description_subchannel_wrapper_cleanup_on_orphan =
     "Fixes the subchannel wrapper to drop any non-cancelled watchers when it "
     "gets orphaned.";
@@ -218,9 +221,6 @@ const char* const description_track_zero_copy_allocations_in_resource_quota =
     "payloads.";
 const char* const
     additional_constraints_track_zero_copy_allocations_in_resource_quota = "{}";
-const char* const description_transport_state_watcher =
-    "New state watcher API between transport and subchannel.";
-const char* const additional_constraints_transport_state_watcher = "{}";
 const char* const description_tsi_frame_protector_without_locks =
     "Do not hold locks while using the tsi_frame_protector.";
 const char* const additional_constraints_tsi_frame_protector_without_locks =
@@ -365,6 +365,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"sleep_use_non_owning_waker", description_sleep_use_non_owning_waker,
      additional_constraints_sleep_use_non_owning_waker, nullptr, 0, true, true},
+    {"subchannel_connection_scaling", description_subchannel_connection_scaling,
+     additional_constraints_subchannel_connection_scaling, nullptr, 0, false,
+     false},
     {"subchannel_wrapper_cleanup_on_orphan",
      description_subchannel_wrapper_cleanup_on_orphan,
      additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
@@ -381,8 +384,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_track_zero_copy_allocations_in_resource_quota,
      additional_constraints_track_zero_copy_allocations_in_resource_quota,
      nullptr, 0, false, true},
-    {"transport_state_watcher", description_transport_state_watcher,
-     additional_constraints_transport_state_watcher, nullptr, 0, false, true},
     {"tsi_frame_protector_without_locks",
      description_tsi_frame_protector_without_locks,
      additional_constraints_tsi_frame_protector_without_locks, nullptr, 0,
@@ -569,6 +570,9 @@ const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
 const char* const description_sleep_use_non_owning_waker =
     "If set, the sleep promise uses a non-owning waker.";
 const char* const additional_constraints_sleep_use_non_owning_waker = "{}";
+const char* const description_subchannel_connection_scaling =
+    "Subchannel connection scaling support.";
+const char* const additional_constraints_subchannel_connection_scaling = "{}";
 const char* const description_subchannel_wrapper_cleanup_on_orphan =
     "Fixes the subchannel wrapper to drop any non-cancelled watchers when it "
     "gets orphaned.";
@@ -592,9 +596,6 @@ const char* const description_track_zero_copy_allocations_in_resource_quota =
     "payloads.";
 const char* const
     additional_constraints_track_zero_copy_allocations_in_resource_quota = "{}";
-const char* const description_transport_state_watcher =
-    "New state watcher API between transport and subchannel.";
-const char* const additional_constraints_transport_state_watcher = "{}";
 const char* const description_tsi_frame_protector_without_locks =
     "Do not hold locks while using the tsi_frame_protector.";
 const char* const additional_constraints_tsi_frame_protector_without_locks =
@@ -739,6 +740,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"sleep_use_non_owning_waker", description_sleep_use_non_owning_waker,
      additional_constraints_sleep_use_non_owning_waker, nullptr, 0, true, true},
+    {"subchannel_connection_scaling", description_subchannel_connection_scaling,
+     additional_constraints_subchannel_connection_scaling, nullptr, 0, false,
+     false},
     {"subchannel_wrapper_cleanup_on_orphan",
      description_subchannel_wrapper_cleanup_on_orphan,
      additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
@@ -755,8 +759,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_track_zero_copy_allocations_in_resource_quota,
      additional_constraints_track_zero_copy_allocations_in_resource_quota,
      nullptr, 0, false, true},
-    {"transport_state_watcher", description_transport_state_watcher,
-     additional_constraints_transport_state_watcher, nullptr, 0, false, true},
     {"tsi_frame_protector_without_locks",
      description_tsi_frame_protector_without_locks,
      additional_constraints_tsi_frame_protector_without_locks, nullptr, 0,
@@ -943,6 +945,9 @@ const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
 const char* const description_sleep_use_non_owning_waker =
     "If set, the sleep promise uses a non-owning waker.";
 const char* const additional_constraints_sleep_use_non_owning_waker = "{}";
+const char* const description_subchannel_connection_scaling =
+    "Subchannel connection scaling support.";
+const char* const additional_constraints_subchannel_connection_scaling = "{}";
 const char* const description_subchannel_wrapper_cleanup_on_orphan =
     "Fixes the subchannel wrapper to drop any non-cancelled watchers when it "
     "gets orphaned.";
@@ -966,9 +971,6 @@ const char* const description_track_zero_copy_allocations_in_resource_quota =
     "payloads.";
 const char* const
     additional_constraints_track_zero_copy_allocations_in_resource_quota = "{}";
-const char* const description_transport_state_watcher =
-    "New state watcher API between transport and subchannel.";
-const char* const additional_constraints_transport_state_watcher = "{}";
 const char* const description_tsi_frame_protector_without_locks =
     "Do not hold locks while using the tsi_frame_protector.";
 const char* const additional_constraints_tsi_frame_protector_without_locks =
@@ -1113,6 +1115,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"sleep_use_non_owning_waker", description_sleep_use_non_owning_waker,
      additional_constraints_sleep_use_non_owning_waker, nullptr, 0, true, true},
+    {"subchannel_connection_scaling", description_subchannel_connection_scaling,
+     additional_constraints_subchannel_connection_scaling, nullptr, 0, false,
+     false},
     {"subchannel_wrapper_cleanup_on_orphan",
      description_subchannel_wrapper_cleanup_on_orphan,
      additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
@@ -1129,8 +1134,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_track_zero_copy_allocations_in_resource_quota,
      additional_constraints_track_zero_copy_allocations_in_resource_quota,
      nullptr, 0, false, true},
-    {"transport_state_watcher", description_transport_state_watcher,
-     additional_constraints_transport_state_watcher, nullptr, 0, false, true},
     {"tsi_frame_protector_without_locks",
      description_tsi_frame_protector_without_locks,
      additional_constraints_tsi_frame_protector_without_locks, nullptr, 0,

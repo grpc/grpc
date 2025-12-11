@@ -80,7 +80,6 @@ class OrcaProducer final : public Subchannel::DataProducerInterface {
   void NotifyWatchers(const BackendMetricData& backend_metric_data);
 
   WeakRefCountedPtr<Subchannel> subchannel_;
-  RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   ConnectivityWatcher* connectivity_watcher_;
   Mutex mu_;
   std::set<OrcaWatcher*> watchers_ ABSL_GUARDED_BY(mu_);
