@@ -907,8 +907,6 @@ auto Http2ClientTransport::FlowControlPeriodicUpdateLoop() {
 }
 
 // Equivalent to grpc_chttp2_act_on_flowctl_action in chttp2_transport.cc
-// TODO(tjagtap) : [PH2][P4] : grpc_chttp2_act_on_flowctl_action has a "reason"
-// parameter which looks like it would be really helpful for debugging. Add that
 void Http2ClientTransport::ActOnFlowControlAction(
     const chttp2::FlowControlAction& action, RefCountedPtr<Stream> stream) {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::ActOnFlowControlAction";
@@ -938,6 +936,8 @@ void Http2ClientTransport::ActOnFlowControlAction(
     // waiting for flow control tokens.
     reader_state_.SetPauseReadLoop();
     SpawnGuardedTransportParty("SendControlFrames", TriggerWriteCycle());
+    GRPC_HTTP2_CLIENT_DLOG << "Update Immediately : "
+                           << action.ImmediateUpdateReasons();
   }
 }
 
