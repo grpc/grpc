@@ -17,15 +17,27 @@
 import os
 
 import setuptools
-import sys
-
-# Manually insert the source directory into the Python path for local module
-# imports to succeed
-sys.path.insert(0, os.path.abspath("."))
 
 import grpc_version
 import python_version
 
+WORK_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Ensure we're in the proper directory whether or not we're being used by pip.
+os.chdir(WORK_DIR)
+
+EXCLUDE_PYTHON_FILES = ["generated_file_import_test.py", "build.py"]
+
+# Use setuptools to build Python package
+with open(os.path.join(WORK_DIR, "README.rst"), "r") as f:
+    LONG_DESCRIPTION = f.read()
+PACKAGES = setuptools.find_packages(where=".", exclude=EXCLUDE_PYTHON_FILES)
+CLASSIFIERS = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+]
 
 # Keep this in sync with XDS_PROTOS_GENCODE_GRPC_VERSION
 # in tools/buildgen/generate_projects.sh.
@@ -39,9 +51,19 @@ SETUP_REQUIRES = INSTALL_REQUIRES + [
     f"grpcio-tools>={XDS_PROTOS_GENCODE_GRPC_VERSION}"
 ]
 
-if __name__ == "__main__":
-    setuptools.setup(
-        python_requires=f">={python_version.MIN_PYTHON_VERSION}",
-        install_requires=INSTALL_REQUIRES,
-        setup_requires=SETUP_REQUIRES,
-    )
+setuptools.setup(
+    name="xds-protos",
+    version=grpc_version.VERSION,
+    packages=PACKAGES,
+    description="Generated Python code from envoyproxy/data-plane-api",
+    long_description_content_type="text/x-rst",
+    long_description=LONG_DESCRIPTION,
+    author="The gRPC Authors",
+    author_email="grpc-io@googlegroups.com",
+    url="https://grpc.io",
+    license="Apache License 2.0",
+    python_requires=f">={python_version.MIN_PYTHON_VERSION}",
+    install_requires=INSTALL_REQUIRES,
+    setup_requires=SETUP_REQUIRES,
+    classifiers=CLASSIFIERS,
+)

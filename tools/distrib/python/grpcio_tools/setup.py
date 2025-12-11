@@ -31,20 +31,36 @@ from setuptools.command import build_ext
 
 # TODO(atash) add flag to disable Cython use
 
+_PACKAGE_PATH = os.path.realpath(os.path.dirname(__file__))
+_README_PATH = os.path.join(_PACKAGE_PATH, "README.rst")
 
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.abspath("."))
 
 import _parallel_compile_patch
 import _spawn_patch
 import protoc_lib_deps
-
-import grpc_version
 import python_version
 
-_EXT_INIT_SYMBOL = "PyInit__protoc_compiler"
+import grpc_version
+
+_EXT_INIT_SYMBOL = None
+if sys.version_info[0] == 2:
+    _EXT_INIT_SYMBOL = "init_protoc_compiler"
+else:
+    _EXT_INIT_SYMBOL = "PyInit__protoc_compiler"
 
 _parallel_compile_patch.monkeypatch_compile_maybe()
 _spawn_patch.monkeypatch_spawn()
+
+CLASSIFIERS = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+]
+
+PY3 = sys.version_info.major == 3
 
 
 def _env_bool_value(env_name, default):
@@ -327,17 +343,36 @@ def extension_modules():
         return extensions
 
 
-if __name__ == "__main__":
-    setuptools.setup(
-        ext_modules=extension_modules(),
-        python_requires=f">={python_version.MIN_PYTHON_VERSION}",
-        install_requires=[
-            "protobuf>=6.31.1,<7.0.0",
-            "grpcio>={version}".format(version=grpc_version.VERSION),
-            "setuptools>=77.0.1",
+setuptools.setup(
+    name="grpcio-tools",
+    version=grpc_version.VERSION,
+    description="Protobuf code generator for gRPC",
+    long_description_content_type="text/x-rst",
+    long_description=open(_README_PATH, "r").read(),
+    author="The gRPC Authors",
+    author_email="grpc-io@googlegroups.com",
+    url="https://grpc.io",
+    project_urls={
+        "Source Code": "https://github.com/grpc/grpc/tree/master/tools/distrib/python/grpcio_tools",
+        "Bug Tracker": "https://github.com/grpc/grpc/issues",
+    },
+    license="Apache License 2.0",
+    classifiers=CLASSIFIERS,
+    ext_modules=extension_modules(),
+    packages=setuptools.find_packages("."),
+    python_requires=f">={python_version.MIN_PYTHON_VERSION}",
+    install_requires=[
+        "protobuf>=6.31.1,<7.0.0",
+        "grpcio>={version}".format(version=grpc_version.VERSION),
+        "setuptools>=77.0.1",
+    ],
+    package_data=package_data(),
+    cmdclass={
+        "build_ext": BuildExt,
+    },
+    entry_points={
+        "console_scripts": [
+            "python-grpc-tools-protoc = grpc_tools.protoc:entrypoint",
         ],
-        package_data=package_data(),
-        cmdclass={
-            "build_ext": BuildExt,
-        },
-    )
+    },
+)
