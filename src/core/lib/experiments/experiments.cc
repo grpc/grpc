@@ -32,6 +32,9 @@ const char* const additional_constraints_channelz_use_v2_for_v1_api = "{}";
 const char* const description_channelz_use_v2_for_v1_service =
     "Use the v2 channelz service for the v1 channelz service.";
 const char* const additional_constraints_channelz_use_v2_for_v1_service = "{}";
+const char* const description_chaotic_good_connect_deadline =
+    "Use the deadline from the connect args in chaotic good connector";
+const char* const additional_constraints_chaotic_good_connect_deadline = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -239,6 +242,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"channelz_use_v2_for_v1_service",
      description_channelz_use_v2_for_v1_service,
      additional_constraints_channelz_use_v2_for_v1_service, nullptr, 0, false,
+     true},
+    {"chaotic_good_connect_deadline", description_chaotic_good_connect_deadline,
+     additional_constraints_chaotic_good_connect_deadline, nullptr, 0, true,
      true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
@@ -400,6 +406,9 @@ const char* const additional_constraints_channelz_use_v2_for_v1_api = "{}";
 const char* const description_channelz_use_v2_for_v1_service =
     "Use the v2 channelz service for the v1 channelz service.";
 const char* const additional_constraints_channelz_use_v2_for_v1_service = "{}";
+const char* const description_chaotic_good_connect_deadline =
+    "Use the deadline from the connect args in chaotic good connector";
+const char* const additional_constraints_chaotic_good_connect_deadline = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -607,6 +616,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"channelz_use_v2_for_v1_service",
      description_channelz_use_v2_for_v1_service,
      additional_constraints_channelz_use_v2_for_v1_service, nullptr, 0, false,
+     true},
+    {"chaotic_good_connect_deadline", description_chaotic_good_connect_deadline,
+     additional_constraints_chaotic_good_connect_deadline, nullptr, 0, true,
      true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
@@ -768,6 +780,9 @@ const char* const additional_constraints_channelz_use_v2_for_v1_api = "{}";
 const char* const description_channelz_use_v2_for_v1_service =
     "Use the v2 channelz service for the v1 channelz service.";
 const char* const additional_constraints_channelz_use_v2_for_v1_service = "{}";
+const char* const description_chaotic_good_connect_deadline =
+    "Use the deadline from the connect args in chaotic good connector";
+const char* const additional_constraints_chaotic_good_connect_deadline = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -975,6 +990,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"channelz_use_v2_for_v1_service",
      description_channelz_use_v2_for_v1_service,
      additional_constraints_channelz_use_v2_for_v1_service, nullptr, 0, false,
+     true},
+    {"chaotic_good_connect_deadline", description_chaotic_good_connect_deadline,
+     additional_constraints_chaotic_good_connect_deadline, nullptr, 0, true,
      true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,

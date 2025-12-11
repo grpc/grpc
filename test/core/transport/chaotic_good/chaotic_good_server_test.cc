@@ -32,6 +32,8 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/experiments/config.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/server/server.h"
 #include "src/core/transport/endpoint_transport.h"
 #include "src/core/util/grpc_check.h"
@@ -117,7 +119,7 @@ class ChaoticGoodServerTest : public ::testing::TestWithParam<CredentialsType> {
     GRPC_CHECK_OK(uri);
     GRPC_CHECK(grpc_parse_uri(*uri, &resolved_addr_));
     args_.address = &resolved_addr_;
-    args_.deadline = Timestamp::Now() + Duration::Seconds(5);
+    args_.deadline = Timestamp::Now() + Duration::Seconds(15);
     args_.channel_args = channel_args();
     grpc_channel_credentials* channel_creds = nullptr;
     switch (GetParam()) {
@@ -152,7 +154,6 @@ class ChaoticGoodServerTest : public ::testing::TestWithParam<CredentialsType> {
   }
 
   grpc_server* server_;
-  Server* core_server_;
   ChaoticGoodConnector::Args args_;
   ChaoticGoodConnector::Result connecting_result_;
   bool connecting_successful_ = false;

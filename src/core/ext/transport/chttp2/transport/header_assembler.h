@@ -221,10 +221,10 @@ class HeaderAssembler {
   // This value MUST be checked before calling ReadMetadata()
   bool IsReady() const { return is_ready_; }
 
-  explicit HeaderAssembler(const bool allow_true_binary_metadata_acked)
+  explicit HeaderAssembler()
       : header_in_progress_(false),
         is_ready_(false),
-        allow_true_binary_metadata_acked_(allow_true_binary_metadata_acked),
+        allow_true_binary_metadata_acked_(true),
         stream_id_(0) {}
 
   ~HeaderAssembler() = default;
@@ -234,10 +234,12 @@ class HeaderAssembler {
   HeaderAssembler(const HeaderAssembler&) = delete;
   HeaderAssembler& operator=(const HeaderAssembler&) = delete;
 
-  void SetStreamId(const uint32_t stream_id) {
+  void InitializeStream(const uint32_t stream_id,
+                        const bool allow_true_binary_metadata_acked) {
     GRPC_DCHECK_EQ(stream_id_, 0u);
     GRPC_DCHECK_NE(stream_id, 0u);
     stream_id_ = stream_id;
+    allow_true_binary_metadata_acked_ = allow_true_binary_metadata_acked;
   }
 
   // HPACK parser helpers
@@ -273,7 +275,8 @@ class HeaderAssembler {
                                  ? HPackParser::LogInfo::Type::kHeaders
                                  : HPackParser::LogInfo::Type::kTrailers,
                              args.is_client});
-
+    // TODO(tjagtap) [PH2][P5] Bug fix : Check if the received metadata honours
+    // allow_true_binary_metadata or not. Will need changes to HPack code.
     for (size_t i = 0; i < buffer.Count(); i++) {
       absl::Status result = parser.Parse(
           buffer.c_slice_at(i), i == buffer.Count() - 1, SharedBitGen(),
@@ -312,7 +315,7 @@ class HeaderAssembler {
 
   bool header_in_progress_;
   bool is_ready_;
-  GRPC_UNUSED const bool allow_true_binary_metadata_acked_;
+  bool allow_true_binary_metadata_acked_;
   uint32_t stream_id_;
   SliceBuffer buffer_;
 };
@@ -367,13 +370,12 @@ class HeaderDisassembler {
 
   // A separate HeaderDisassembler object MUST be made for Initial Metadata and
   // Trailing Metadata
-  explicit HeaderDisassembler(const bool is_trailing_metadata,
-                              const bool allow_true_binary_metadata_peer)
+  explicit HeaderDisassembler(const bool is_trailing_metadata)
       : stream_id_(0),
         end_stream_(is_trailing_metadata),
         did_send_header_frame_(false),
         is_done_(false),
-        allow_true_binary_metadata_peer_(allow_true_binary_metadata_peer) {}
+        allow_true_binary_metadata_peer_(false) {}
 
   ~HeaderDisassembler() = default;
 
@@ -383,10 +385,12 @@ class HeaderDisassembler {
   HeaderDisassembler& operator=(const HeaderDisassembler&) = delete;
 
   size_t TestOnlyGetMainBufferLength() const { return buffer_.Length(); }
-  void SetStreamId(const uint32_t stream_id) {
+  void Initialize(const uint32_t stream_id,
+                  const bool allow_true_binary_metadata_peer) {
     GRPC_DCHECK_EQ(stream_id_, 0u);
     GRPC_DCHECK_NE(stream_id, 0u);
     stream_id_ = stream_id;
+    allow_true_binary_metadata_peer_ = allow_true_binary_metadata_peer;
   }
 
  private:
@@ -394,7 +398,7 @@ class HeaderDisassembler {
   const bool end_stream_;
   bool did_send_header_frame_;
   bool is_done_;  // Protect against the same disassembler from being used twice
-  const bool allow_true_binary_metadata_peer_;
+  bool allow_true_binary_metadata_peer_;
   SliceBuffer buffer_;
 };
 
