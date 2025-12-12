@@ -29,8 +29,10 @@ namespace grpc_core {
     typedef void (*OnSignCompletePyWrapper)(const absl::StatusOr<std::string> result, void* completion_data);
     typedef void (*SignPyWrapper)(absl::string_view data_to_sign, grpc_core::CustomPrivateKeySigner::SignatureAlgorithm signature_algorithm, OnSignCompletePyWrapper on_sign_complete_py_wrapper, void* completion_data, void* user_data);
 
-    class CustomPrivateKeySignerPyWrapper : CustomPrivateKeySigner {
+    class CustomPrivateKeySignerPyWrapper : public CustomPrivateKeySigner {
      public:
+        CustomPrivateKeySignerPyWrapper(SignPyWrapper sign_py_wrapper, void* user_data)
+            : sign_py_wrapper_(sign_py_wrapper), sign_user_data_(user_data) {}
         void Sign(absl::string_view data_to_sign, SignatureAlgorithm signature_algorithm, OnSignComplete on_sign_complete) override;
 
      private:
@@ -41,7 +43,7 @@ namespace grpc_core {
 
 
 
-    // CustomPrivateKeySigner* BuildCustomPrivateKeySigner(SignPyWrapper sign);
+    CustomPrivateKeySigner* BuildCustomPrivateKeySigner(SignPyWrapper sign, void* user_data);
 }
 
     

@@ -2401,17 +2401,23 @@ grpc_cc_library(
 grpc_cc_library(
     name = "tsi_base",
     srcs = [
+        "//src/core:tsi/private_key_offload_py_wrapper.cc",
         "//src/core:tsi/transport_security.cc",
         "//src/core:tsi/transport_security_grpc.cc",
     ],
     hdrs = [
+        "//src/core:tsi/private_key_offload_py_wrapper.h",
         "//src/core:tsi/transport_security.h",
         "//src/core:tsi/transport_security_grpc.h",
         "//src/core:tsi/transport_security_interface.h",
     ],
     tags = ["nofixdeps"],
     visibility = ["//bazel:tsi_interface"],
+    external_deps = [
+        "absl/status:statusor",
+    ],
     deps = [
+        "exec_ctx",
         "gpr",
         "grpc_public_hdrs",
         "grpc_trace",

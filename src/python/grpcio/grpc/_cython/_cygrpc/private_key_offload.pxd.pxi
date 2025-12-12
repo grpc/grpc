@@ -1,0 +1,56 @@
+# Copyright 2025 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# distutils: language=c++
+
+from libcpp.string cimport string
+
+cdef extern from "absl/status/status.h" namespace "absl":
+    cdef enum AbslStatusCode "absl::StatusCode":
+        kOk "absl::StatusCode::kOk"
+        kUnknown "absl::StatusCode::kUnknown"
+        kInvalidArgument "absl::StatusCode::kInvalidArgument"
+
+    cdef cppclass Status:
+        Status(AbslStatusCode, string_view)
+
+cdef extern from "absl/status/statusor.h" namespace "absl":
+    cdef cppclass StatusOr[T]:
+        StatusOr(const T&)
+        StatusOr(Status)
+        bint ok()
+        T value()
+
+cdef extern from "absl/strings/string_view.h" namespace "absl":
+    cdef cppclass string_view:
+        string_view(const char* s)
+        string_view(const char* s, size_t len)
+        const char* data()
+        size_t length()
+
+cdef extern from "grpc/grpc_private_key_offload.h" namespace "grpc_core":
+    cdef cppclass CustomPrivateKeySigner:
+        pass
+    cdef enum SignatureAlgorithm "grpc_core::CustomPrivateKeySigner::SignatureAlgorithm":
+        kRsaPss "grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kRsaPss"
+        kEcdsa "grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kEcdsa"
+
+cdef extern from "src/core/tsi/private_key_offload_py_wrapper.h" namespace "grpc_core":
+    ctypedef void (*OnSignCompletePyWrapper)(const StatusOr[string], void*) noexcept
+    ctypedef void (*SignPyWrapper)(string_view, SignatureAlgorithm, OnSignCompletePyWrapper, void*, void*) noexcept
+    CustomPrivateKeySigner* BuildCustomPrivateKeySigner(SignPyWrapper, void*)
+
+cdef class PyCustomPrivateKeySigner:
+    cdef CustomPrivateKeySigner* c_signer
+    cdef object _py_callable
+    cdef CustomPrivateKeySigner* c_ptr(self)

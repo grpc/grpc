@@ -54,6 +54,7 @@ include "_cygrpc/server.pyx.pxi"
 include "_cygrpc/tag.pyx.pxi"
 include "_cygrpc/time.pyx.pxi"
 include "_cygrpc/vtable.pyx.pxi"
+include "_cygrpc/private_key_offload.pyx.pxi"
 include "_cygrpc/_hooks.pyx.pxi"
 include "_cygrpc/observability.pyx.pxi"
 

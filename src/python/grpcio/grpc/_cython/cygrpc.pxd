@@ -32,6 +32,7 @@ include "_cygrpc/server.pxd.pxi"
 include "_cygrpc/tag.pxd.pxi"
 include "_cygrpc/time.pxd.pxi"
 include "_cygrpc/vtable.pxd.pxi"
+include "_cygrpc/private_key_offload.pxd.pxi"
 include "_cygrpc/_hooks.pxd.pxi"
 
 

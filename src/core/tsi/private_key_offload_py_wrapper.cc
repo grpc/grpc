@@ -18,60 +18,35 @@
 
 #include "src/core/tsi/private_key_offload_py_wrapper.h"
 
-#include <openssl/ssl.h>
+#include <grpc/support/log.h>
 
-#include <cstdint>
-#include <string>
-#include <utility>
-
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {
 
-namespace {
-    struct OnSignCompleteData {
-        absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_sign_complete;
-    };
-}  // namespace
+void CustomPrivateKeySignerPyWrapper::Sign(
+    absl::string_view data_to_sign, SignatureAlgorithm signature_algorithm,
+    OnSignComplete on_sign_complete) {
+  auto on_sign_complete_cpp_callback =
+      [](const absl::StatusOr<std::string> result, void* completion_data) {
+        grpc_core::ExecCtx exec_ctx;
+        auto* on_sign_complete_ptr =
+            static_cast<OnSignComplete*>(completion_data);
+        (*on_sign_complete_ptr)(result);
+        delete on_sign_complete_ptr;
+      };
 
-    void OnSignCompletePyWrapperImpl(const absl::StatusOr<std::string> signed_data, void* completion_data) {
-        auto* data = static_cast<OnSignCompleteData*>(completion_data);
-        data->on_sign_complete(signed_data);
-        delete data;
-    }
+  auto* on_sign_complete_heap =
+      new OnSignComplete(std::move(on_sign_complete));
 
-    void CustomPrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign, SignatureAlgorithm signature_algorithm, OnSignComplete on_sign_complete) {
-        // Use an input SignPyWrapper
-        OnSignCompleteData* data = new OnSignCompleteData{std::move(on_sign_complete)};
-        sign_py_wrapper_(data_to_sign, signature_algorithm, OnSignCompletePyWrapperImpl, data, sign_user_data_);
-    }
-}  // namespace grpc_core 
+  sign_py_wrapper_(data_to_sign, signature_algorithm,
+                   on_sign_complete_cpp_callback, on_sign_complete_heap,
+                   sign_user_data_);
+}
 
+CustomPrivateKeySigner* BuildCustomPrivateKeySigner(
+    SignPyWrapper sign_py_wrapper, void* user_data) {
+  return new CustomPrivateKeySignerPyWrapper(sign_py_wrapper, user_data);
+}
 
-// namespace {
-// struct OnSignCompleteData {
-//   absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_sign_complete;
-// };
-// }  // namespace
-
-// // This function is called by Python wrapper when signing is complete.
-// void PyOnSignComplete(const absl::StatusOr<std::string>& signature,
-//                       void* completion_data) {
-//   auto* data = static_cast<OnSignCompleteData*>(completion_data);
-//   data->on_sign_complete(signature);
-//   delete data;
-// }
-
-// PyCustomPrivateKeySigner::PyCustomPrivateKeySigner(
-//     grpc_private_key_offload_py_sign_cb sign_cb, void* user_data)
-//     : sign_cb_(sign_cb), user_data_(user_data) {}
-
-// void PyCustomPrivateKeySigner::Sign(absl::string_view data_to_sign,
-//                                     SignatureAlgorithm signature_algorithm,
-//                                     OnSignComplete on_sign_complete) {
-//   OnSignCompleteData* data =
-//       new OnSignCompleteData{std::move(on_sign_complete)};
-//   sign_cb_(std::string(data_to_sign), static_cast<int>(signature_algorithm),
-//            PyOnSignComplete, data, user_data_);
-// }
+}  // namespace grpc_core
