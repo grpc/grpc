@@ -18,6 +18,7 @@
 
 EXPERIMENT_ENABLES = {
     "call_tracer_in_transport": "call_tracer_in_transport",
+    "call_tracer_send_initial_metadata_is_an_annotation": "call_tracer_send_initial_metadata_is_an_annotation",
     "channelz_use_v2_for_v1_api": "channelz_use_v2_for_v1_api",
     "channelz_use_v2_for_v1_service": "channelz_use_v2_for_v1_service",
     "chaotic_good_connect_deadline": "chaotic_good_connect_deadline",
