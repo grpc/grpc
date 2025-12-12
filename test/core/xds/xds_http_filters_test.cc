@@ -59,8 +59,13 @@
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_http_fault_filter.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
 #include "src/core/xds/grpc/xds_http_filter_registry.h"
+#include "src/core/xds/grpc/xds_http_gcp_authn_filter.h"
+#include "src/core/xds/grpc/xds_http_rbac_filter.h"
+#include "src/core/xds/grpc/xds_http_router_filter.h"
+#include "src/core/xds/grpc/xds_http_stateful_session_filter.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
@@ -163,14 +168,15 @@ using XdsHttpFilterRegistryTest = XdsHttpFilterTest;
 
 TEST_F(XdsHttpFilterRegistryTest, Basic) {
   // Start with an empty registry.
-  registry_ = XdsHttpFilterRegistry(/*register_builtins=*/false);
   // Returns null when a filter has not yet been registered.
   XdsExtension extension = MakeXdsExtension(Router());
   EXPECT_EQ(GetFilter(extension.type), nullptr);
   // Now register the filter.
   auto filter = std::make_unique<XdsHttpRouterFilter>();
   auto* filter_ptr = filter.get();
-  registry_.RegisterFilter(std::move(filter));
+  XdsHttpFilterRegistry::Builder builder;
+  builder.RegisterFilter(std::move(filter));
+  registry_ = builder.Build();
   // And check that it is now present.
   EXPECT_EQ(GetFilter(extension.type), filter_ptr);
 }
@@ -179,9 +185,10 @@ using XdsHttpFilterRegistryDeathTest = XdsHttpFilterTest;
 
 TEST_F(XdsHttpFilterRegistryDeathTest, DuplicateRegistryFails) {
   GTEST_FLAG_SET(death_test_style, "threadsafe");
-  ASSERT_DEATH(
-      // The router filter is already in the registry.
-      registry_.RegisterFilter(std::make_unique<XdsHttpRouterFilter>()), "");
+  XdsHttpFilterRegistry::Builder builder;
+  builder.RegisterFilter(std::make_unique<XdsHttpRouterFilter>());
+  ASSERT_DEATH(builder.RegisterFilter(std::make_unique<XdsHttpRouterFilter>()),
+               "");
 }
 
 //
@@ -191,6 +198,9 @@ TEST_F(XdsHttpFilterRegistryDeathTest, DuplicateRegistryFails) {
 class XdsRouterFilterTest : public XdsHttpFilterTest {
  protected:
   XdsRouterFilterTest() {
+    XdsHttpFilterRegistry::Builder builder;
+    builder.RegisterFilter(std::make_unique<XdsHttpRouterFilter>());
+    registry_ = builder.Build();
     XdsExtension extension = MakeXdsExtension(Router());
     filter_ = GetFilter(extension.type);
     GRPC_CHECK_NE(filter_, nullptr);
@@ -275,6 +285,9 @@ TEST_F(XdsRouterFilterTest, GenerateFilterConfigOverride) {
 class XdsFaultInjectionFilterTest : public XdsHttpFilterTest {
  protected:
   XdsFaultInjectionFilterTest() {
+    XdsHttpFilterRegistry::Builder builder;
+    builder.RegisterFilter(std::make_unique<XdsHttpFaultFilter>());
+    registry_ = builder.Build();
     XdsExtension extension = MakeXdsExtension(HTTPFault());
     filter_ = GetFilter(extension.type);
     GRPC_CHECK_NE(filter_, nullptr);
@@ -489,6 +502,9 @@ TEST_P(XdsFaultInjectionFilterConfigTest, Unparsable) {
 class XdsRbacFilterTest : public XdsHttpFilterTest {
  protected:
   XdsRbacFilterTest() {
+    XdsHttpFilterRegistry::Builder builder;
+    builder.RegisterFilter(std::make_unique<XdsHttpRbacFilter>());
+    registry_ = builder.Build();
     XdsExtension extension = MakeXdsExtension(RBAC());
     filter_ = GetFilter(extension.type);
     GRPC_CHECK_NE(filter_, nullptr);
@@ -1124,7 +1140,9 @@ TEST_P(XdsRbacFilterConfigTest, InvalidPermissionAndPrincipal) {
 class XdsStatefulSessionFilterTest : public XdsHttpFilterTest {
  protected:
   void SetUp() override {
-    registry_ = XdsHttpFilterRegistry();
+    XdsHttpFilterRegistry::Builder builder;
+    builder.RegisterFilter(std::make_unique<XdsHttpStatefulSessionFilter>());
+    registry_ = builder.Build();
     XdsExtension extension = MakeXdsExtension(StatefulSession());
     filter_ = GetFilter(extension.type);
     GRPC_CHECK_NE(filter_, nullptr);
@@ -1482,6 +1500,9 @@ TEST_P(XdsStatefulSessionFilterConfigTest, UnparsableSessionState) {
 class XdsGcpAuthnFilterTest : public XdsHttpFilterTest {
  protected:
   XdsGcpAuthnFilterTest() {
+    XdsHttpFilterRegistry::Builder builder;
+    builder.RegisterFilter(std::make_unique<XdsHttpGcpAuthnFilter>());
+    registry_ = builder.Build();
     XdsExtension extension = MakeXdsExtension(GcpAuthnFilterConfig());
     filter_ = GetFilter(extension.type);
     GRPC_CHECK_NE(filter_, nullptr) << extension.type;
