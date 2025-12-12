@@ -146,6 +146,10 @@ struct Stream : public RefCounted<Stream> {
           state == HttpStreamState::kClosed));
   }
 
+  auto ReceivedFlowControlWindowUpdate(const uint32_t stream_fc_tokens) {
+    return data_queue->ReceivedFlowControlWindowUpdate(stream_fc_tokens);
+  }
+
   ////////////////////////////////////////////////////////////////////////////
   // Stream State Management
   // All state management helpers MUST be called from the transport party.
@@ -273,17 +277,11 @@ struct Stream : public RefCounted<Stream> {
   uint32_t stream_id;
   GrpcMessageAssembler assembler;
   HeaderAssembler header_assembler;
-  // TODO(akshitpatel) : [PH2][P2] : StreamQ should maintain a flag that
-  // tracks if the half close has been sent for this stream. This flag is used
-  // to notify the mixer that this stream is closed for
-  // writes(HalfClosedLocal). When the mixer dequeues the last message for
-  // the streamQ, it will mark the stream as closed for writes and send a
-  // frame with end_stream or set the end_stream flag in the last data
-  // frame being sent out. This is done as the stream state should not
-  // transition to HalfClosedLocal till the end_stream frame is sent.
   bool did_receive_initial_metadata;
   bool did_receive_trailing_metadata;
   bool did_push_server_trailing_metadata;
+  // TODO(akshitpatel) : [PH2][P3][Server] : This would need to change to
+  // accomodate ServerMetadataHandle for the server side.
   RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> data_queue;
   chttp2::StreamFlowControl flow_control;
 };

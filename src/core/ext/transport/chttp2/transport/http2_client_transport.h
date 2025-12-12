@@ -709,7 +709,8 @@ class Http2ClientTransport final : public ClientTransport,
 
   absl::Status MaybeAddStreamToWritableStreamList(
       const RefCountedPtr<Stream> stream,
-      const StreamDataQueue<ClientMetadataHandle>::EnqueueResult result) {
+      const StreamDataQueue<ClientMetadataHandle>::StreamWritabilityUpdate
+          result) {
     if (result.became_writable) {
       GRPC_HTTP2_CLIENT_DLOG
           << "Http2ClientTransport MaybeAddStreamToWritableStreamList "
