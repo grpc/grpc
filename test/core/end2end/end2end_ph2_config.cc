@@ -75,8 +75,7 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|CoreDeadlineTests.DeadlineAfterInvoke6" \
   "|CoreDeadlineTests.DeadlineAfterRoundTrip"
 
-#define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST                         \
-  "|Http2SingleHopTests.InvokeLargeRequest"                                    \
+#define LARGE_METADATA_SUITE                                                   \
   "|Http2SingleHopTests.RequestWithLargeMetadataUnderSoftLimit"                \
   "|Http2SingleHopTests.RequestWithLargeMetadataBetweenSoftAndHardLimits"      \
   "|Http2SingleHopTests.RequestWithLargeMetadataAboveHardLimit"                \
@@ -84,17 +83,21 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|Http2SingleHopTests.RequestWithLargeMetadataSoftLimitOverridesDefaultHard" \
   "|Http2SingleHopTests.RequestWithLargeMetadataHardLimitOverridesDefaultSoft" \
   "|Http2SingleHopTests.RequestWithLargeMetadataHardLimitBelowDefaultHard"     \
-  "|Http2SingleHopTests.RequestWithLargeMetadataSoftLimitBelowDefaultSoft"     \
-  "|Http2SingleHopTests.MaxConcurrentStreams"                                  \
-  "|Http2SingleHopTests.MaxConcurrentStreamsTimeoutOnFirst"                    \
-  "|Http2SingleHopTests.MaxConcurrentStreamsTimeoutOnSecond"                   \
-  "|Http2SingleHopTests.MaxConcurrentStreamsRejectOnClient"                    \
-  "|Http2SingleHopTests.SimpleDelayedRequestShort"                             \
-  "|Http2Tests.ServerStreaming"                                                \
-  "|Http2Tests.ServerStreamingEmptyStream"                                     \
-  "|Http2Tests.ServerStreaming10Messages"                                      \
-  "|Http2Tests.GracefulServerShutdown"                                         \
-  "|Http2Tests.MaxAgeForciblyClose"                                            \
+  "|Http2SingleHopTests.RequestWithLargeMetadataSoftLimitBelowDefaultSoft"
+
+#define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST       \
+  LARGE_METADATA_SUITE                                       \
+  "|Http2SingleHopTests.InvokeLargeRequest"                  \
+  "|Http2SingleHopTests.MaxConcurrentStreams"                \
+  "|Http2SingleHopTests.MaxConcurrentStreamsTimeoutOnFirst"  \
+  "|Http2SingleHopTests.MaxConcurrentStreamsTimeoutOnSecond" \
+  "|Http2SingleHopTests.MaxConcurrentStreamsRejectOnClient"  \
+  "|Http2SingleHopTests.SimpleDelayedRequestShort"           \
+  "|Http2Tests.ServerStreaming"                              \
+  "|Http2Tests.ServerStreamingEmptyStream"                   \
+  "|Http2Tests.ServerStreaming10Messages"                    \
+  "|Http2Tests.GracefulServerShutdown"                       \
+  "|Http2Tests.MaxAgeForciblyClose"                          \
   "|Http2Tests.MaxAgeGracefullyClose"
 
 #define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE    \
