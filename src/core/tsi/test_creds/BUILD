@@ -39,5 +39,5 @@ exports_files([
     "sni2.key",
     "sni2.pem",
     "sni3.key",
-    "sni3.pem"
+    "sni3.pem",
 ])
