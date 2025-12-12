@@ -8347,10 +8347,12 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "error",
         "grpc_check",
         "http2_status",
         "metadata_batch",
         "shared_bit_gen",
+        "status_helper",
         ":slice",
         ":slice_buffer",
         "//:chttp2_frame",
