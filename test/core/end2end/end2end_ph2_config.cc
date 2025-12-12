@@ -75,18 +75,7 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|CoreDeadlineTests.DeadlineAfterInvoke6" \
   "|CoreDeadlineTests.DeadlineAfterRoundTrip"
 
-#define LARGE_METADATA_SUITE                                                   \
-  "|Http2SingleHopTests.RequestWithLargeMetadataUnderSoftLimit"                \
-  "|Http2SingleHopTests.RequestWithLargeMetadataBetweenSoftAndHardLimits"      \
-  "|Http2SingleHopTests.RequestWithLargeMetadataAboveHardLimit"                \
-  "|Http2SingleHopTests.RequestWithLargeMetadataSoftLimitAboveHardLimit"       \
-  "|Http2SingleHopTests.RequestWithLargeMetadataSoftLimitOverridesDefaultHard" \
-  "|Http2SingleHopTests.RequestWithLargeMetadataHardLimitOverridesDefaultSoft" \
-  "|Http2SingleHopTests.RequestWithLargeMetadataHardLimitBelowDefaultHard"     \
-  "|Http2SingleHopTests.RequestWithLargeMetadataSoftLimitBelowDefaultSoft"
-
 #define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST       \
-  LARGE_METADATA_SUITE                                       \
   "|Http2SingleHopTests.InvokeLargeRequest"                  \
   "|Http2SingleHopTests.MaxConcurrentStreams"                \
   "|Http2SingleHopTests.MaxConcurrentStreamsTimeoutOnFirst"  \

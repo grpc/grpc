@@ -23,6 +23,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <utility>
 
 #include "src/core/call/metadata_batch.h"
@@ -30,10 +31,12 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/shared_bit_gen.h"
+#include "src/core/util/status_helper.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 
@@ -114,11 +117,12 @@ class HeaderAssembler {
 
     // Manage payload
     frame.payload.MoveFirstNBytesIntoSliceBuffer(current_len, buffer_);
-    ASSEMBLER_LOG << "AppendHeaderFrame " << current_len << " Bytes.";
+    ASSEMBLER_LOG << "HeaderAssembler::AppendHeaderFrame " << current_len
+                  << " Bytes.";
 
     // Manage if last frame
     if (frame.end_headers) {
-      ASSEMBLER_LOG << "AppendHeaderFrame end_headers";
+      ASSEMBLER_LOG << "HeaderAssembler::AppendHeaderFrame end_headers";
       is_ready_ = true;
     }
 
@@ -135,11 +139,12 @@ class HeaderAssembler {
     // Manage payload
     const size_t current_len = frame.payload.Length();
     frame.payload.MoveFirstNBytesIntoSliceBuffer(current_len, buffer_);
-    ASSEMBLER_LOG << "AppendContinuationFrame " << current_len << " Bytes.";
+    ASSEMBLER_LOG << "HeaderAssembler::AppendContinuationFrame " << current_len
+                  << " Bytes.";
 
     // Manage if last frame
     if (frame.end_headers) {
-      ASSEMBLER_LOG << "AppendHeaderFrame end_headers";
+      ASSEMBLER_LOG << "HeaderAssembler::AppendContinuationFrame end_headers";
       is_ready_ = true;
     }
 
@@ -151,7 +156,8 @@ class HeaderAssembler {
       HPackParser& parser, bool is_initial_metadata, bool is_client,
       const uint32_t max_header_list_size_soft_limit,
       const uint32_t max_header_list_size_hard_limit) {
-    ASSEMBLER_LOG << "ReadMetadata " << buffer_.Length() << " Bytes.";
+    ASSEMBLER_LOG << "HeaderAssembler::ReadMetadata " << buffer_.Length()
+                  << " Bytes.";
 
     // Validate
     GRPC_DCHECK_EQ(is_ready_, true);
@@ -195,7 +201,8 @@ class HeaderAssembler {
       HPackParser& parser, const bool is_initial_metadata, const bool is_client,
       const uint32_t max_header_list_size_soft_limit,
       const uint32_t max_header_list_size_hard_limit) {
-    ASSEMBLER_LOG << "ParseAndDiscardHeaders " << buffer_.Length() << " Bytes"
+    ASSEMBLER_LOG << "HeaderAssembler::ParseAndDiscardHeaders "
+                  << buffer_.Length() << " Bytes"
                   << " is_initial_metadata: " << is_initial_metadata
                   << " is_client: " << is_client
                   << " max_header_list_size_soft_limit: "
@@ -282,6 +289,11 @@ class HeaderAssembler {
           buffer.c_slice_at(i), i == buffer.Count() - 1, SharedBitGen(),
           /*call_tracer=*/nullptr);
       if (GPR_UNLIKELY(!result.ok())) {
+        intptr_t unused;
+        if (grpc_error_get_int(result, StatusIntProperty::kStreamId, &unused)) {
+          return Http2Status::AbslStreamError(result.code(),
+                                              std::string(result.message()));
+        }
         LOG(ERROR) << "Connection Error: " << kAssemblerHpackError;
         return Http2Status::Http2ConnectionError(
             Http2ErrorCode::kCompressionError,

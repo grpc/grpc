@@ -498,8 +498,6 @@ class Http2ClientTransport final : public ClientTransport,
   bool is_first_write_;
   IncomingMetadataTracker incoming_headers_;
 
-  uint32_t max_header_list_size_soft_limit_;
-
   // The target number of bytes to write in a single write cycle. We may not
   // always honour this max_write_size. We MAY overshoot it at most once per
   // write cycle.
