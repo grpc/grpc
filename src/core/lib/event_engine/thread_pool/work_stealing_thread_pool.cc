@@ -225,7 +225,7 @@ void WorkStealingThreadPool::PostFork() { pool_->Postfork(); }
 
 WorkStealingThreadPool::WorkStealingThreadPoolImpl::WorkStealingThreadPoolImpl(
     size_t reserve_threads, size_t max_thread_count)
-    : reserve_threads_(reserve_threads),
+    : reserve_threads_(std::min(reserve_threads, max_thread_count)),
       max_thread_count_(std::max(max_thread_count, reserve_threads)),
       current_thread_count_(0), queue_(this) {}
 
