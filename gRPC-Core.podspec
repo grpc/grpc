@@ -2282,6 +2282,7 @@ Pod::Spec.new do |s|
                       'src/core/xds/grpc/xds_http_filter.h',
                       'src/core/xds/grpc/xds_http_filter_registry.cc',
                       'src/core/xds/grpc/xds_http_filter_registry.h',
+                      'src/core/xds/grpc/xds_http_filter_registry_init.cc',
                       'src/core/xds/grpc/xds_http_gcp_authn_filter.cc',
                       'src/core/xds/grpc/xds_http_gcp_authn_filter.h',
                       'src/core/xds/grpc/xds_http_rbac_filter.cc',

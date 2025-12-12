@@ -2147,6 +2147,7 @@
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_filter_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_filter_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_filter_registry_init.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_gcp_authn_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_gcp_authn_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_rbac_filter.cc" role="src" />

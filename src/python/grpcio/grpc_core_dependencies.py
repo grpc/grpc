@@ -913,6 +913,7 @@ CORE_SOURCE_FILES = [
     'src/core/xds/grpc/xds_health_status.cc',
     'src/core/xds/grpc/xds_http_fault_filter.cc',
     'src/core/xds/grpc/xds_http_filter_registry.cc',
+    'src/core/xds/grpc/xds_http_filter_registry_init.cc',
     'src/core/xds/grpc/xds_http_gcp_authn_filter.cc',
     'src/core/xds/grpc/xds_http_rbac_filter.cc',
     'src/core/xds/grpc/xds_http_router_filter.cc',
