@@ -263,7 +263,7 @@ def grpc_cc_grpc_library(
     cc_grpc_library(
         name = name,
         srcs = srcs,
-        deps = deps,
+        deps = deps + ["//:grpc++"],
         visibility = visibility,
         generate_mocks = generate_mocks,
         allow_deprecated = allow_deprecated,

@@ -102,7 +102,8 @@ namespace http2 {
 constexpr uint32_t kLastIncomingStreamIdClient = 0;
 
 using grpc_event_engine::experimental::EventEngine;
-using EnqueueResult = StreamDataQueue<ClientMetadataHandle>::EnqueueResult;
+using StreamWritabilityUpdate =
+    StreamDataQueue<ClientMetadataHandle>::StreamWritabilityUpdate;
 
 // Experimental : This is just the initial skeleton of class
 // and it is functions. The code will be written iteratively.
@@ -1586,7 +1587,7 @@ void Http2ClientTransport::BeginCloseStream(
     } else {
       // Callers taking this path:
       // 1. Processing Error in transport (will send reset stream from here).
-      absl::StatusOr<EnqueueResult> enqueue_result =
+      absl::StatusOr<StreamWritabilityUpdate> enqueue_result =
           stream->EnqueueResetStream(reset_stream_error_code.value());
       GRPC_HTTP2_CLIENT_DLOG << "Enqueued ResetStream with error code="
                              << reset_stream_error_code.value()
@@ -1832,7 +1833,7 @@ bool Http2ClientTransport::SetOnDone(CallHandler call_handler,
         GRPC_HTTP2_CLIENT_DLOG << "PH2: Client call " << self.get()
                                << " id=" << stream_id
                                << " done: cancelled=" << cancelled;
-        absl::StatusOr<EnqueueResult> enqueue_result;
+        absl::StatusOr<StreamWritabilityUpdate> enqueue_result;
         GRPC_HTTP2_CLIENT_DLOG
             << "PH2: Client call " << self.get() << " id=" << stream_id
             << " done: stream=" << stream.get() << " cancelled=" << cancelled;
@@ -1924,7 +1925,7 @@ auto Http2ClientTransport::CallOutboundLoop(CallHandler call_handler,
   auto send_message = [self = RefAsSubclass<Http2ClientTransport>(),
                        stream](MessageHandle&& message) mutable {
     return TrySeq(stream->EnqueueMessage(std::move(message)),
-                  [self, stream](const EnqueueResult result) mutable {
+                  [self, stream](const StreamWritabilityUpdate result) mutable {
                     GRPC_HTTP2_CLIENT_DLOG
                         << "Http2ClientTransport CallOutboundLoop "
                            "Enqueued Message";
@@ -1940,7 +1941,7 @@ auto Http2ClientTransport::CallOutboundLoop(CallHandler call_handler,
         [stream, metadata = std::move(metadata)]() mutable {
           return stream->EnqueueInitialMetadata(std::move(metadata));
         },
-        [self, stream](const EnqueueResult result) mutable {
+        [self, stream](const StreamWritabilityUpdate result) mutable {
           GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop "
                                     "Enqueued Initial Metadata";
           return self->MaybeAddStreamToWritableStreamList(std::move(stream),
@@ -1951,7 +1952,7 @@ auto Http2ClientTransport::CallOutboundLoop(CallHandler call_handler,
   auto send_half_closed = [self = RefAsSubclass<Http2ClientTransport>(),
                            stream]() mutable {
     return TrySeq([stream]() { return stream->EnqueueHalfClosed(); },
-                  [self, stream](const EnqueueResult result) mutable {
+                  [self, stream](const StreamWritabilityUpdate result) mutable {
                     GRPC_HTTP2_CLIENT_DLOG
                         << "Http2ClientTransport CallOutboundLoop "
                            "Enqueued Half Closed";
