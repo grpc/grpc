@@ -3380,6 +3380,14 @@ grpc_cc_library(
     public_hdrs = [
         "//src/core:config/core_configuration.h",
     ],
+    select_deps = [
+        {
+            ":grpc_no_xds": [],
+            "//conditions:default": [
+                "//src/core:xds_http_filter_registry",
+            ],
+        },
+    ],
     visibility = ["//bazel:client_channel"],
     deps = [
         "debug_location",
@@ -3397,7 +3405,6 @@ grpc_cc_library(
         "//src/core:lb_policy_registry",
         "//src/core:proxy_mapper_registry",
         "//src/core:service_config_parser",
-        "//src/core:xds_http_filter_registry",
     ],
 )
 
