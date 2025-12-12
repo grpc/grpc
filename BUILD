@@ -93,6 +93,16 @@ bool_flag(
     build_setting_default = False,
 )
 
+bool_flag(
+    name = "postmortem_checks",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "grpc_postmortem_checks_enabled",
+    flag_values = {":postmortem_checks": "true"},
+)
+
 grpc_clang_cl_settings()
 
 config_setting(
@@ -2020,6 +2030,7 @@ grpc_cc_library(
         "absl/types:span",
         "absl/utility",
         "madler_zlib",
+        "@com_google_protobuf//upb/mem",
     ],
     linkopts = select({
         "systemd": ["-lsystemd"],
@@ -2036,6 +2047,7 @@ grpc_cc_library(
         "channel_stack_builder",
         "channelz",
         "config",
+        "config_vars",
         "cpp_impl_of",
         "debug_location",
         "exec_ctx",
@@ -2122,7 +2134,9 @@ grpc_cc_library(
         "//src/core:try_seq",
         "//src/core:type_list",
         "//src/core:unique_type_name",
+        "//src/core:upb_utils",
         "//src/core:useful",
+        "//src/proto/grpc/channelz/v2:promise_upb_proto",
     ],
 )
 
@@ -4806,6 +4820,7 @@ grpc_cc_library(
         "//src/core:http2_settings",
         "//src/core:http2_status",
         "//src/core:memory_usage",
+        "//src/core:message",
         "//src/core:slice",
         "//src/core:slice_buffer",
     ],
@@ -5034,6 +5049,7 @@ grpc_cc_library(
         "absl/strings:cord",
         "absl/strings:str_format",
         "absl/time",
+        "@com_google_protobuf//upb/mem",
     ],
     visibility = ["//bazel:grpclb"],
     deps = [
@@ -5113,6 +5129,7 @@ grpc_cc_library(
         "//src/core:transport_framing_endpoint_extension",
         "//src/core:useful",
         "//src/core:write_size_policy",
+        "//src/proto/grpc/channelz/v2:promise_upb_proto",
     ],
 )
 

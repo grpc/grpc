@@ -193,10 +193,12 @@ class Http2Settings {
   bool enable_push_ = true;
 
   // gRPC defined setting
-  // Unlike most other SETTINGS, this setting is negotiated between the client
-  // and the server.
   // Currently this is set only once in the lifetime of a transport.
   // Disconnect if it is received more than once from the peer.
+  // Non-Binary Metadata (usually UTF-8) is ALWAYS valid irrespective of this
+  // flag. Both peers can send each other the default non-binary METADATA
+  // irrespective of this flag. This flag says if we are willing to accept
+  // Binary-Metadata from the peer or not.
   bool allow_true_binary_metadata_ = false;
 
   // gRPC defined setting

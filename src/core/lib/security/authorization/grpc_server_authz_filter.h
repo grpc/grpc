@@ -55,6 +55,9 @@ class GrpcServerAuthzFilter final
     static inline const NoInterceptor OnClientToServerHalfClose;
     static inline const NoInterceptor OnServerToClientMessage;
     static inline const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList();
+    }
   };
 
  private:

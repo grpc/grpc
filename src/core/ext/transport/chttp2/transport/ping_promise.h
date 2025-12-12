@@ -72,7 +72,7 @@ class PingInterface {
 // returned by this class on the same transport party.
 class PingManager {
  public:
-  PingManager(const ChannelArgs& channel_args,
+  PingManager(const ChannelArgs& channel_args, Duration ping_timeout,
               std::unique_ptr<PingInterface> ping_interface,
               std::shared_ptr<grpc_event_engine::experimental::EventEngine>
                   event_engine);
@@ -84,7 +84,7 @@ class PingManager {
 
   // Notify the ping system that a ping has been sent. This will spawn a ping
   // timeout promise.
-  void NotifyPingSent(Duration ping_timeout);
+  void NotifyPingSent();
 
   // Ping Rate policy wrapper
   void ReceivedDataFrame() { ping_rate_policy_.ReceivedDataFrame(); }
@@ -154,6 +154,7 @@ class PingManager {
         std::shared_ptr<grpc_event_engine::experimental::EventEngine>
             event_engine)
         : event_engine_(event_engine) {}
+    ~PingPromiseCallbacks() { CancelCallbacks(); }
     Promise<absl::Status> RequestPing(absl::AnyInvocable<void()> on_initiate,
                                       bool important);
     Promise<absl::Status> WaitForPingAck();
@@ -221,6 +222,8 @@ class PingManager {
   std::optional<uint64_t> opaque_data_;
   std::unique_ptr<PingInterface> ping_interface_;
   std::vector<uint64_t> pending_ping_acks_;
+  // Duration to wait before triggering a ping timeout.
+  Duration ping_timeout_;
 
   void TriggerDelayedPing(Duration wait);
   bool NeedToPing(Duration next_allowed_ping_interval);
