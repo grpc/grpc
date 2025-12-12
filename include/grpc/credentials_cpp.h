@@ -36,4 +36,4 @@ GRPCAPI void grpc_tls_credentials_options_set_sni_override(
     grpc_tls_credentials_options* options,
     std::optional<std::string> sni_override);
 
-#endif // GRPC_CREDENTIALS_CPP_H
+#endif /* GRPC_CREDENTIALS_CPP_H */
