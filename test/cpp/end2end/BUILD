@@ -349,13 +349,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "dummy_test",
-    srcs = ["dummy_test.cc"],
-    external_deps = ["gtest"],
-    deps = ["@com_github_cncf_xds//xds/data/orca/v3:pkg_cc_proto"],
-)
-
-grpc_cc_test(
     name = "client_interceptors_end2end_test",
     srcs = ["client_interceptors_end2end_test.cc"],
     external_deps = [
