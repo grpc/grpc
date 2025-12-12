@@ -18,6 +18,11 @@ licenses(["notice"])
 
 grpc_package(
     name = "xds_v3",
+    features = [
+        "layering_check",
+        # TODO(rishesh): Enable parse_headers when internal build system limitations are resolved.
+        # "parse_headers",
+    ],
     visibility = "tests",
 )
 

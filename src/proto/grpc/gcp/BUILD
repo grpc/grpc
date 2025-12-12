@@ -14,6 +14,12 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_internal_proto_library")
 
+package(features = [
+    "layering_check",
+    # TODO(rishesh): Enable parse_headers when internal build system limitations are resolved.
+    # "parse_headers",
+])
+
 licenses(["notice"])
 
 grpc_internal_proto_library(
