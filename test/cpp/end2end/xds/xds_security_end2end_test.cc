@@ -1039,7 +1039,7 @@ TEST_P(XdsSniSecurityTest, TestLogicalDNSAutoHostSni) {
                       ->mutable_endpoint()
                       ->mutable_address()
                       ->mutable_socket_address();
-  address->set_address(kServerName);
+  address->set_address("bar");
   address->set_port_value(443);
   StringMatcher san_matcher;
   // Expect the SAN to match the endpoint hostname, not the configured SNI,
@@ -1121,7 +1121,7 @@ TEST_P(XdsSniSecurityTest, TestSanValidationFailure) {
   san_matcher.set_exact("bar");
   MaybeSetUpstreamTlsContextWithSniOnCluster("fake_plugin1", "", "foo", false, false, {san_matcher}, &cluster);
   balancer_->ads_service()->SetCdsResource(cluster);
-  CheckRpcSendFailure(DEBUG_LOCATION, grpc::StatusCode::UNAUTHENTICATED, "validation failed");
+  CheckRpcSendFailure(DEBUG_LOCATION, grpc::StatusCode::UNAVAILABLE, ".*SANs from certificate did not match SANs from xDS control plane.*");
 }
 
 //

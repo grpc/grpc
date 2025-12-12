@@ -34,4 +34,10 @@ exports_files([
     "leaf_and_intermediate_chain.pem",
     "malformed-cert.pem",
     "malformed-key.pem",
+    "sni1.key",
+    "sni1.pem",
+    "sni2.key",
+    "sni2.pem",
+    "sni3.key",
+    "sni3.pem"
 ])
