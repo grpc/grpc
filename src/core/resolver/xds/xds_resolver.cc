@@ -1021,8 +1021,8 @@ XdsResolver::CreateServiceConfig() {
       current_config_->listener->listener);
   auto filter_configs =
       XdsRouting::GeneratePerHTTPFilterConfigsForServiceConfig(
-          CoreConfiguration::Get().xds_http_filter_registry(),
-          hcm.http_filters, args_);
+          CoreConfiguration::Get().xds_http_filter_registry(), hcm.http_filters,
+          args_);
   if (!filter_configs.ok()) return filter_configs.status();
   for (const auto& [name, config] : filter_configs->per_filter_configs) {
     config_parts.emplace_back(absl::StrCat(

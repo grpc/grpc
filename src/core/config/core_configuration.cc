@@ -45,8 +45,7 @@ CoreConfiguration::CoreConfiguration(Builder* builder)
       channel_creds_registry_(builder->channel_creds_registry_.Build()),
       call_creds_registry_(builder->call_creds_registry_.Build()),
 #ifndef GRPC_NO_XDS
-      xds_http_filter_registry_(
-          builder->xds_http_filter_registry_.Build()),
+      xds_http_filter_registry_(builder->xds_http_filter_registry_.Build()),
 #endif  // !GRPC_NO_XDS
       service_config_parser_(builder->service_config_parser_.Build()),
       resolver_registry_(builder->resolver_registry_.Build()),
@@ -57,7 +56,8 @@ CoreConfiguration::CoreConfiguration(Builder* builder)
       endpoint_transport_registry_(
           builder->endpoint_transport_registry_.Build()),
       auth_context_comparator_registry_(
-          builder->auth_context_comparator_registry_.Build()) {}
+          builder->auth_context_comparator_registry_.Build()) {
+}
 
 void CoreConfiguration::RegisterBuilder(
     BuilderScope scope, absl::AnyInvocable<void(Builder*)> builder,

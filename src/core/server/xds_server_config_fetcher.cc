@@ -1273,8 +1273,8 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     return resource.status();
   }
   return XdsServerConfigSelector::Create(
-      CoreConfiguration::Get().xds_http_filter_registry(),
-      resource.value(), http_filters_);
+      CoreConfiguration::Get().xds_http_filter_registry(), resource.value(),
+      http_filters_);
 }
 
 void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
