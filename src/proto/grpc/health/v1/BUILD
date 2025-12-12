@@ -16,11 +16,11 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_grpc_library", "grpc_cc_proto_lib
 
 licenses(["notice"])
 
+# TODO(rishesh): Enable parse_headers when internal build system limitations are resolved.
 grpc_package(
     name = "health",
     features = [
         "layering_check",
-        # TODO(rishesh): Enable parse_headers when internal build system limitations are resolved.
         # "parse_headers",
     ],
     visibility = "public",
