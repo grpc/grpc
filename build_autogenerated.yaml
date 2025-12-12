@@ -9852,23 +9852,6 @@ targets:
   - linux
   - posix
   - mac
-- name: dummy_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - third_party/protoc-gen-validate/validate/validate.h
-  src:
-  - third_party/googleapis/google/api/annotations.proto
-  - third_party/googleapis/google/api/http.proto
-  - third_party/googleapis/google/api/httpbody.proto
-  - third_party/googleapis/google/rpc/status.proto
-  - third_party/protoc-gen-validate/validate/validate.proto
-  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
-  - test/cpp/end2end/dummy_test.cc
-  deps:
-  - gtest
-  - protobuf
 - name: dump_args_test
   gtest: true
   build: test
