@@ -516,6 +516,8 @@ class StreamFlowControl final {
     // TODO(tjagtap) [PH2][P2] Plumb with PH2 flow control.
     void SetPendingSize(int64_t pending_size);
 
+    void HackIncrementPendingSize(int64_t pending_size);
+
    private:
     TransportFlowControl::IncomingUpdateContext tfc_upd_;
     StreamFlowControl* const sfc_;

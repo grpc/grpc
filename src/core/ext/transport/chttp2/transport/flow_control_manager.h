@@ -26,6 +26,7 @@
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/util/grpc_check.h"
 #include "absl/container/flat_hash_map.h"
 
 namespace grpc_core {
@@ -35,6 +36,7 @@ constexpr chttp2::FlowControlAction::Urgency kNoActionNeeded =
     chttp2::FlowControlAction::Urgency::NO_ACTION_NEEDED;
 constexpr chttp2::FlowControlAction::Urgency kUpdateImmediately =
     chttp2::FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
+constexpr int64_t kZero = 0;
 
 #define GRPC_HTTP2_FLOW_CONTROL_HELPERS \
   DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
@@ -58,14 +60,29 @@ inline void ActOnFlowControlActionSettings(
   }
 }
 
+// RFC9113 : A sender MUST NOT allow a flow-control window to exceed ((2^31)-1)
+// octets. If a sender receives a WINDOW_UPDATE that causes a flow-control
+// window to exceed this maximum, it MUST terminate either the stream or the
+// connection, as appropriate.
+// While the return value is int64_t for compatibility with CHTTP2 flow control,
+// we dont expect this value to exceed ((2^31)-1) i.e kMaxSize31Bit
+inline int64_t GetStreamFlowControlTokens(
+    chttp2::StreamFlowControl& stream_flow_control,
+    const Http2Settings& peer_settings) {
+  GRPC_DCHECK(stream_flow_control.remote_window_delta() +
+                  peer_settings.initial_window_size() <=
+              RFC9113::kMaxSize31Bit);
+  return std::max(kZero, stream_flow_control.remote_window_delta() +
+                             peer_settings.initial_window_size());
+}
+
 inline uint32_t GetMaxPermittedDequeue(
     chttp2::TransportFlowControl& transport_flow_control,
     chttp2::StreamFlowControl& stream_flow_control, const size_t upper_limit,
     const Http2Settings& peer_settings) {
   const int64_t flow_control_tokens =
       std::min(transport_flow_control.remote_window(),
-               stream_flow_control.remote_window_delta() +
-                   peer_settings.initial_window_size());
+               GetStreamFlowControlTokens(stream_flow_control, peer_settings));
   uint32_t max_dequeue = 0;
   if (flow_control_tokens > 0) {
     max_dequeue = static_cast<uint32_t>(
@@ -77,6 +94,10 @@ inline uint32_t GetMaxPermittedDequeue(
       << " upper_limit = " << upper_limit << " max_dequeue = " << max_dequeue;
   return max_dequeue;
 }
+
+// TODO(tjagtap) [PH2][P4] : Ensure that the total transport flow control window
+// or stream flow control window does not exceed the max permitted limit of
+// 2^31-1
 
 }  // namespace http2
 }  // namespace grpc_core
