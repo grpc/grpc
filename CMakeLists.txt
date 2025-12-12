@@ -1437,6 +1437,7 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx dualstack_socket_test)
   endif()
+  add_dependencies(buildtests_cxx dummy_test)
   add_dependencies(buildtests_cxx dump_args_test)
   add_dependencies(buildtests_cxx duplicate_header_bad_client_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -11439,6 +11440,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(channelz_tool_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    absl::fixed_array
+    absl::overload
+    absl::charset
     grpcpp_channelz
     ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
     grpc_test_util
@@ -11857,6 +11861,9 @@ target_include_directories(cli_call_test
 target_link_libraries(cli_call_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::fixed_array
+  absl::overload
+  absl::charset
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc++_test_util
 )
@@ -13880,6 +13887,63 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 
 endif()
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(dummy_test
+  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/httpbody.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/httpbody.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/httpbody.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/httpbody.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
+  test/cpp/end2end/dummy_test.cc
+)
+target_compile_features(dummy_test PUBLIC cxx_std_17)
+target_include_directories(dummy_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(dummy_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
+)
+
+
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -18865,6 +18929,9 @@ target_include_directories(grpc_cli
 
 target_link_libraries(grpc_cli
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::fixed_array
+  absl::overload
+  absl::charset
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc++_test_config
@@ -19611,6 +19678,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(grpc_tool_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    absl::fixed_array
+    absl::overload
+    absl::charset
     grpc++_reflection
     ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
     grpc++_test_config
@@ -23527,6 +23597,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(latent_see_tool_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    absl::fixed_array
+    absl::overload
+    absl::charset
     grpc++
     ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
     grpc_test_util
@@ -38016,6 +38089,9 @@ target_include_directories(xds_audit_logger_registry_test
 target_link_libraries(xds_audit_logger_registry_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::fixed_array
+  absl::overload
+  absl::charset
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util
@@ -40695,6 +40771,9 @@ target_include_directories(xds_common_types_test
 target_link_libraries(xds_common_types_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::fixed_array
+  absl::overload
+  absl::charset
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util
@@ -45427,6 +45506,9 @@ target_include_directories(xds_http_filters_test
 target_link_libraries(xds_http_filters_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::fixed_array
+  absl::overload
+  absl::charset
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util
@@ -45813,6 +45895,9 @@ target_include_directories(xds_lb_policy_registry_test
 target_link_libraries(xds_lb_policy_registry_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::fixed_array
+  absl::overload
+  absl::charset
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util
@@ -46315,6 +46400,9 @@ target_include_directories(xds_listener_resource_type_test
 target_link_libraries(xds_listener_resource_type_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::fixed_array
+  absl::overload
+  absl::charset
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util
@@ -50254,6 +50342,9 @@ target_include_directories(xds_route_config_resource_type_test
 target_link_libraries(xds_route_config_resource_type_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::fixed_array
+  absl::overload
+  absl::charset
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util

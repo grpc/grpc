@@ -18,11 +18,11 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/cpp/grpclb",
-    visibility = "public",
     features = [
         "layering_check",
         "parse_headers",
     ],
+    visibility = "public",
 )  # Allows external users to implement grpclb tests.
 
 grpc_cc_test(

@@ -467,11 +467,11 @@ grpc_cc_test(
     ],
     deps = [
         "//:gpr",
-        "//src/core:env",
-        "//src/core:grpc_check",
         "//:grpc",
         "//:grpc++",
         "//:grpcpp_channelz",
+        "//src/core:env",
+        "//src/core:grpc_check",
         "//src/proto/grpc/channelz:channelz_proto",
         "//src/proto/grpc/testing:test_cc_grpc",
         "//test/core/test_util:grpc_test_util",

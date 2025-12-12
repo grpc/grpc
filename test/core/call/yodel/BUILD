@@ -21,7 +21,7 @@ load(
 )
 
 grpc_package(
-    name = "test/core/call/yodel", 
+    name = "test/core/call/yodel",
     features = [
         "layering_check",
         "parse_headers",

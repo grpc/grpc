@@ -1239,12 +1239,12 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//:iomgr",
+        "//src/core:grpc_check",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//src/proto/grpc/testing:simple_messages_cc_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
-        "//src/core:grpc_check",
         "@com_google_protobuf//:protobuf_headers",
     ],
 )

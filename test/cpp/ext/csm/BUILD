@@ -18,11 +18,11 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/cpp/ext/csm",
-    visibility = "tests",
     features = [
         "layering_check",
         "parse_headers",
     ],
+    visibility = "tests",
 )
 
 grpc_cc_test(
