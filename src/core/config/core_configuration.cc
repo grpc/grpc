@@ -44,6 +44,10 @@ CoreConfiguration::CoreConfiguration(Builder* builder)
       handshaker_registry_(builder->handshaker_registry_.Build()),
       channel_creds_registry_(builder->channel_creds_registry_.Build()),
       call_creds_registry_(builder->call_creds_registry_.Build()),
+#ifndef GRPC_NO_XDS
+      xds_http_filter_registry_(
+          builder->xds_http_filter_registry_.Build()),
+#endif  // !GRPC_NO_XDS
       service_config_parser_(builder->service_config_parser_.Build()),
       resolver_registry_(builder->resolver_registry_.Build()),
       lb_policy_registry_(builder->lb_policy_registry_.Build()),

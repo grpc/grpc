@@ -41,6 +41,7 @@ extern void RegisterXdsWrrLocalityLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterFileWatcherCertificateProvider(
     CoreConfiguration::Builder* builder);
 extern void RegisterXdsHttpProxyMapper(CoreConfiguration::Builder* builder);
+extern void RegisterXdsHttpFilters(CoreConfiguration::Builder* builder);
 #endif
 void RegisterExtraFilters(CoreConfiguration::Builder* builder) {
   // Use builder to avoid unused-parameter warning.
@@ -63,6 +64,7 @@ void RegisterExtraFilters(CoreConfiguration::Builder* builder) {
   RegisterXdsWrrLocalityLbPolicy(builder);
   RegisterFileWatcherCertificateProvider(builder);
   RegisterXdsHttpProxyMapper(builder);
+  RegisterXdsHttpFilters(builder);
 #endif
 }
 }  // namespace grpc_core

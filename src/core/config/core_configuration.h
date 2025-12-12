@@ -36,6 +36,10 @@
 #include "src/core/util/grpc_check.h"
 #include "absl/functional/any_invocable.h"
 
+#ifndef GRPC_NO_XDS
+#include "src/core/xds/grpc/xds_http_filter_registry.h"
+#endif  // !GRPC_NO_XDS
+
 namespace grpc_core {
 
 // Global singleton that stores library configuration - factories, etc...
@@ -88,6 +92,12 @@ class GRPC_DLL CoreConfiguration {
       return &call_creds_registry_;
     }
 
+#ifndef GRPC_NO_XDS
+    XdsHttpFilterRegistry::Builder* xds_http_filter_registry() {
+      return &xds_http_filter_registry_;
+    }
+#endif  // !GRPC_NO_XDS
+
     ServiceConfigParser::Builder* service_config_parser() {
       return &service_config_parser_;
     }
@@ -119,11 +129,17 @@ class GRPC_DLL CoreConfiguration {
    private:
     friend class CoreConfiguration;
 
+    Builder();
+    CoreConfiguration* Build();
+
     ChannelArgsPreconditioning::Builder channel_args_preconditioning_;
     ChannelInit::Builder channel_init_;
     HandshakerRegistry::Builder handshaker_registry_;
     ChannelCredsRegistry<>::Builder channel_creds_registry_;
     CallCredsRegistry<>::Builder call_creds_registry_;
+#ifndef GRPC_NO_XDS
+    XdsHttpFilterRegistry::Builder xds_http_filter_registry_;
+#endif  // !GRPC_NO_XDS
     ServiceConfigParser::Builder service_config_parser_;
     ResolverRegistry::Builder resolver_registry_;
     LoadBalancingPolicyRegistry::Builder lb_policy_registry_;
@@ -131,9 +147,6 @@ class GRPC_DLL CoreConfiguration {
     CertificateProviderRegistry::Builder certificate_provider_registry_;
     EndpointTransportRegistry::Builder endpoint_transport_registry_;
     AuthContextComparatorRegistry::Builder auth_context_comparator_registry_;
-
-    Builder();
-    CoreConfiguration* Build();
   };
 
   // Stores a builder for RegisterBuilder
@@ -257,6 +270,12 @@ class GRPC_DLL CoreConfiguration {
     return call_creds_registry_;
   }
 
+#ifndef GRPC_NO_XDS
+  const XdsHttpFilterRegistry& xds_http_filter_registry() const {
+    return xds_http_filter_registry_;
+  }
+#endif  // !GRPC_NO_XDS
+
   const ServiceConfigParser& service_config_parser() const {
     return service_config_parser_;
   }
@@ -314,6 +333,9 @@ class GRPC_DLL CoreConfiguration {
   HandshakerRegistry handshaker_registry_;
   ChannelCredsRegistry<> channel_creds_registry_;
   CallCredsRegistry<> call_creds_registry_;
+#ifndef GRPC_NO_XDS
+  XdsHttpFilterRegistry xds_http_filter_registry_;
+#endif  // !GRPC_NO_XDS
   ServiceConfigParser service_config_parser_;
   ResolverRegistry resolver_registry_;
   LoadBalancingPolicyRegistry lb_policy_registry_;

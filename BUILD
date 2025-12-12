@@ -682,6 +682,7 @@ GRPC_XDS_TARGETS = [
     "//src/core:grpc_xds_server_config_fetcher",
     "//src/core:grpc_stateful_session_filter",
     "//src/core:xds_http_proxy_mapper",
+    "//src/core:xds_http_filter_registry_init",
 
     # Not xDS-specific but currently only used by xDS.
     "//src/core:channel_creds_registry_init",
@@ -3396,6 +3397,7 @@ grpc_cc_library(
         "//src/core:lb_policy_registry",
         "//src/core:proxy_mapper_registry",
         "//src/core:service_config_parser",
+        "//src/core:xds_http_filter_registry",
     ],
 )
 

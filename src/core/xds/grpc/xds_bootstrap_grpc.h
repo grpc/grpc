@@ -32,7 +32,6 @@
 #include "src/core/xds/grpc/certificate_provider_store.h"
 #include "src/core/xds/grpc/xds_audit_logger_registry.h"
 #include "src/core/xds/grpc/xds_cluster_specifier_plugin.h"
-#include "src/core/xds/grpc/xds_http_filter_registry.h"
 #include "src/core/xds/grpc/xds_lb_policy_registry.h"
 #include "src/core/xds/grpc/xds_matcher_input.h"
 #include "src/core/xds/grpc/xds_server_grpc.h"
@@ -135,9 +134,6 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
       const {
     return certificate_providers_;
   }
-  const XdsHttpFilterRegistry& http_filter_registry() const {
-    return http_filter_registry_;
-  }
   const XdsClusterSpecifierPluginRegistry& cluster_specifier_plugin_registry()
       const {
     return cluster_specifier_plugin_registry_;
@@ -165,7 +161,6 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
   std::string server_listener_resource_name_template_;
   std::map<std::string, GrpcAuthority> authorities_;
   CertificateProviderStore::PluginDefinitionMap certificate_providers_;
-  XdsHttpFilterRegistry http_filter_registry_;
   XdsClusterSpecifierPluginRegistry cluster_specifier_plugin_registry_;
   XdsLbPolicyRegistry lb_policy_registry_;
   XdsAuditLoggerRegistry audit_logger_registry_;

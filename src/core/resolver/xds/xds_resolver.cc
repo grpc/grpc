@@ -495,10 +495,9 @@ XdsResolver::RouteConfigData::CreateMethodConfig(
   const auto& hcm = std::get<XdsListenerResource::HttpConnectionManager>(
       resolver->current_config_->listener->listener);
   auto result = XdsRouting::GeneratePerHTTPFilterConfigsForMethodConfig(
-      DownCast<const GrpcXdsBootstrap&>(resolver->xds_client_->bootstrap())
-          .http_filter_registry(),
-      hcm.http_filters, *resolver->current_config_->virtual_host, route,
-      cluster_weight, resolver->args_);
+      CoreConfiguration::Get().xds_http_filter_registry(), hcm.http_filters,
+      *resolver->current_config_->virtual_host, route, cluster_weight,
+      resolver->args_);
   if (!result.ok()) return result.status();
   for (const auto& [name, config] : result->per_filter_configs) {
     fields.emplace_back(absl::StrCat("    \"", name, "\": [\n",
@@ -620,8 +619,7 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
                                      << "] creating XdsConfigSelector " << this;
   // Populate filter list.
   const auto& http_filter_registry =
-      DownCast<const GrpcXdsBootstrap&>(resolver_->xds_client_->bootstrap())
-          .http_filter_registry();
+      CoreConfiguration::Get().xds_http_filter_registry();
   const auto& hcm =
       std::get<XdsListenerResource::HttpConnectionManager>(listener_->listener);
   for (const auto& http_filter : hcm.http_filters) {
@@ -1023,8 +1021,7 @@ XdsResolver::CreateServiceConfig() {
       current_config_->listener->listener);
   auto filter_configs =
       XdsRouting::GeneratePerHTTPFilterConfigsForServiceConfig(
-          static_cast<const GrpcXdsBootstrap&>(xds_client_->bootstrap())
-              .http_filter_registry(),
+          CoreConfiguration::Get().xds_http_filter_registry(),
           hcm.http_filters, args_);
   if (!filter_configs.ok()) return filter_configs.status();
   for (const auto& [name, config] : filter_configs->per_filter_configs) {

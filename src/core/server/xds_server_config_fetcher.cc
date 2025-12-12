@@ -410,8 +410,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       return static_resource_.status();
     }
     return XdsServerConfigSelector::Create(
-        DownCast<const GrpcXdsBootstrap&>(xds_client_->bootstrap())
-            .http_filter_registry(),
+        CoreConfiguration::Get().xds_http_filter_registry(),
         static_resource_.value(), http_filters_);
   }
 
@@ -1044,8 +1043,7 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
   // flows *up* the stack.
   std::vector<const grpc_channel_filter*> filters;
   const auto& http_filter_registry =
-      DownCast<const GrpcXdsBootstrap&>(xds_client_->bootstrap())
-          .http_filter_registry();
+      CoreConfiguration::Get().xds_http_filter_registry();
   for (const auto& http_filter :
        filter_chain->http_connection_manager.http_filters) {
     // Find filter.  This is guaranteed to succeed, because it's checked
@@ -1112,8 +1110,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     UpdateBlackboard(const Blackboard* old_blackboard,
                      Blackboard* new_blackboard) {
   const auto& http_filter_registry =
-      DownCast<const GrpcXdsBootstrap&>(xds_client_->bootstrap())
-          .http_filter_registry();
+      CoreConfiguration::Get().xds_http_filter_registry();
   ForEachFilterChain(
       [&](XdsListenerResource::FilterChainData& filter_chain_data) {
         auto& hcm = filter_chain_data.http_connection_manager;
@@ -1276,8 +1273,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     return resource.status();
   }
   return XdsServerConfigSelector::Create(
-      DownCast<const GrpcXdsBootstrap&>(xds_client_->bootstrap())
-          .http_filter_registry(),
+      CoreConfiguration::Get().xds_http_filter_registry(),
       resource.value(), http_filters_);
 }
 
@@ -1308,9 +1304,8 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     watcher_->OnServerConfigSelectorUpdate(resource_.status());
   } else {
     watcher_->OnServerConfigSelectorUpdate(XdsServerConfigSelector::Create(
-        DownCast<const GrpcXdsBootstrap&>(xds_client_->bootstrap())
-            .http_filter_registry(),
-        *resource_, http_filters_));
+        CoreConfiguration::Get().xds_http_filter_registry(), *resource_,
+        http_filters_));
   }
 }
 

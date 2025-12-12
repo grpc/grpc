@@ -36,6 +36,7 @@
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/debug/trace.h"
@@ -211,8 +212,7 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
   {
     ValidationErrors::ScopedField field(errors, ".http_filters");
     const auto& http_filter_registry =
-        DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
-            .http_filter_registry();
+        CoreConfiguration::Get().xds_http_filter_registry();
     size_t num_filters = 0;
     const auto* http_filters =
         envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_http_filters(
@@ -995,6 +995,16 @@ XdsResourceType::DecodeResult XdsListenerResourceType::Decode(
     result.resource = std::move(*listener);
   }
   return result;
+}
+
+void XdsListenerResourceType::InitUpbSymtab(XdsClient* xds_client,
+                                            upb_DefPool* symtab) const {
+  envoy_config_listener_v3_Listener_getmsgdef(symtab);
+  envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_getmsgdef(
+      symtab);
+  const auto& http_filter_registry =
+      CoreConfiguration::Get().xds_http_filter_registry();
+  http_filter_registry.PopulateSymtab(symtab);
 }
 
 }  // namespace grpc_core

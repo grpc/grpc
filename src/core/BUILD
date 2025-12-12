@@ -6106,6 +6106,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_http_filter_registry_init",
+    srcs = [
+        "xds/grpc/xds_http_filter_registry_init.cc",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "grpc_xds_client",
+        "xds_http_filter_registry",
+        "//:config",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_route_config",
     srcs = [
         "xds/grpc/xds_route_config.cc",

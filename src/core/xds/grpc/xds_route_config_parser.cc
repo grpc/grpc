@@ -395,8 +395,7 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
       extension_to_use = &*nested_extension;
     }
     const auto& http_filter_registry =
-        DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
-            .http_filter_registry();
+        CoreConfiguration::Get().xds_http_filter_registry();
     const XdsHttpFilterImpl* filter_impl =
         http_filter_registry.GetFilterForType(extension_to_use->type);
     if (filter_impl == nullptr) {

@@ -39,13 +39,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 
-// FIXME: move to CoreConfiguration
-#include "src/core/xds/grpc/xds_http_fault_filter.h"
-#include "src/core/xds/grpc/xds_http_gcp_authn_filter.h"
-#include "src/core/xds/grpc/xds_http_rbac_filter.h"
-#include "src/core/xds/grpc/xds_http_router_filter.h"
-#include "src/core/xds/grpc/xds_http_stateful_session_filter.h"
-
 namespace grpc_core {
 
 //
@@ -118,14 +111,6 @@ absl::StatusOr<std::unique_ptr<GrpcXdsBootstrap>> GrpcXdsBootstrap::Create(
   };
   auto bootstrap = LoadFromJson<GrpcXdsBootstrap>(*json, XdsJsonArgs());
   if (!bootstrap.ok()) return bootstrap.status();
-// FIXME: move to CoreConfiguration
-  XdsHttpFilterRegistry::Builder builder;
-  builder.RegisterFilter(std::make_unique<XdsHttpRouterFilter>());
-  builder.RegisterFilter(std::make_unique<XdsHttpFaultFilter>());
-  builder.RegisterFilter(std::make_unique<XdsHttpRbacFilter>());
-  builder.RegisterFilter(std::make_unique<XdsHttpStatefulSessionFilter>());
-  builder.RegisterFilter(std::make_unique<XdsHttpGcpAuthnFilter>());
-  bootstrap->http_filter_registry_ = builder.Build();
   return std::make_unique<GrpcXdsBootstrap>(std::move(*bootstrap));
 }
 
