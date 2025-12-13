@@ -17,6 +17,7 @@
 """Dictionary of tags to experiments so we know when to test different experiments."""
 
 EXPERIMENT_ENABLES = {
+    "buffer_list_deletion_prep": "buffer_list_deletion_prep",
     "call_tracer_in_transport": "call_tracer_in_transport",
     "channelz_use_v2_for_v1_api": "channelz_use_v2_for_v1_api",
     "channelz_use_v2_for_v1_service": "channelz_use_v2_for_v1_service",
@@ -94,6 +95,7 @@ EXPERIMENTS = {
                 "transport_state_watcher",
             ],
             "core_end2end_test": [
+                "buffer_list_deletion_prep",
                 "chttp2_bound_write_size",
                 "error_flatten",
                 "event_engine_fork",
@@ -202,6 +204,7 @@ EXPERIMENTS = {
                 "transport_state_watcher",
             ],
             "core_end2end_test": [
+                "buffer_list_deletion_prep",
                 "chttp2_bound_write_size",
                 "error_flatten",
                 "event_engine_fork",
@@ -310,6 +313,7 @@ EXPERIMENTS = {
                 "transport_state_watcher",
             ],
             "core_end2end_test": [
+                "buffer_list_deletion_prep",
                 "chttp2_bound_write_size",
                 "error_flatten",
                 "event_engine_fork",
