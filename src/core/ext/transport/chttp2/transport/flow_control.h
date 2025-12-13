@@ -40,6 +40,7 @@
 #include "absl/functional/function_ref.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -103,6 +104,8 @@ class GRPC_MUST_USE_RESULT FlowControlAction {
            preferred_rx_crypto_frame_size_update_ ==
                Urgency::UPDATE_IMMEDIATELY;
   }
+
+  std::string ImmediateUpdateReasons() const;
 
   // Returns the value of SETTINGS_INITIAL_WINDOW_SIZE that we will send to the
   // peer.

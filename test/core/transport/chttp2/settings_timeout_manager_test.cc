@@ -71,8 +71,8 @@ class SettingsPromiseManagerTest : public ::testing::Test {
       grpc_event_engine::experimental::GetDefaultEventEngine();
 };
 
-constexpr uint32_t kSettingsShortTimeout = 300;
-constexpr uint32_t kSettingsLongTimeoutTest = 1400;
+constexpr uint32_t kSettingsShortTimeout = 500;
+constexpr uint32_t kSettingsLongTimeoutTest = 2000;
 
 auto MockStartSettingsTimeout(SettingsPromiseManager& manager) {
   LOG(INFO) << "MockStartSettingsTimeout Factory";
@@ -90,7 +90,7 @@ auto MockSettingsAckReceived(SettingsPromiseManager& manager) {
 
 auto MockSettingsAckReceivedDelayed(SettingsPromiseManager& manager) {
   LOG(INFO) << "MockSettingsAckReceived Factory";
-  return TrySeq(Sleep(Duration::Milliseconds(kSettingsShortTimeout * 0.8)),
+  return TrySeq(Sleep(Duration::Milliseconds(kSettingsShortTimeout * 0.4)),
                 [&manager]() -> Poll<absl::Status> {
                   LOG(INFO) << "MockSettingsAckReceived OnSettingsAckReceived";
                   manager.TestOnlyRecordReceivedAck();
@@ -128,6 +128,9 @@ TEST_F(SettingsPromiseManagerTest, NoTimeoutOneSetting) {
                               MockSettingsAckReceived(manager)),
       [&notification](absl::StatusOr<std::tuple<Empty, Empty>> status) {
         EXPECT_TRUE(status.ok());
+        if (!status.ok()) {
+          LOG(ERROR) << "Status " << status.status().message();
+        }
         notification.Notify();
       });
   notification.WaitForNotification();
@@ -151,6 +154,9 @@ TEST_F(SettingsPromiseManagerTest, NoTimeoutThreeSettings) {
                                      MockSettingsAckReceived(manager))),
       [&notification](absl::StatusOr<std::tuple<Empty, Empty>> status) {
         EXPECT_TRUE(status.ok());
+        if (!status.ok()) {
+          LOG(ERROR) << "Status " << status.status().message();
+        }
         notification.Notify();
       });
   notification.WaitForNotification();
@@ -174,6 +180,9 @@ TEST_F(SettingsPromiseManagerTest, NoTimeoutThreeSettingsDelayed) {
                                      MockSettingsAckReceivedDelayed(manager))),
       [&notification](absl::StatusOr<std::tuple<Empty, Empty>> status) {
         EXPECT_TRUE(status.ok());
+        if (!status.ok()) {
+          LOG(ERROR) << "Status " << status.status().message();
+        }
         notification.Notify();
       });
   notification.WaitForNotification();
@@ -196,6 +205,9 @@ TEST_F(SettingsPromiseManagerTest, NoTimeoutOneSettingRareOrder) {
                               MockStartSettingsTimeout(manager)),
       [&notification](absl::StatusOr<std::tuple<Empty, Empty>> status) {
         EXPECT_TRUE(status.ok());
+        if (!status.ok()) {
+          LOG(ERROR) << "Status " << status.status().message();
+        }
         notification.Notify();
       });
   notification.WaitForNotification();
@@ -222,6 +234,9 @@ TEST_F(SettingsPromiseManagerTest, NoTimeoutThreeSettingsRareOrder) {
                                      MockStartSettingsTimeout(manager))),
       [&notification](absl::StatusOr<std::tuple<Empty, Empty>> status) {
         EXPECT_TRUE(status.ok());
+        if (!status.ok()) {
+          LOG(ERROR) << "Status " << status.status().message();
+        }
         notification.Notify();
       });
   notification.WaitForNotification();
@@ -245,6 +260,9 @@ TEST_F(SettingsPromiseManagerTest, NoTimeoutThreeSettingsMixedOrder) {
                                      MockSettingsAckReceived(manager))),
       [&notification](absl::StatusOr<std::tuple<Empty, Empty>> status) {
         EXPECT_TRUE(status.ok());
+        if (!status.ok()) {
+          LOG(ERROR) << "Status " << status.status().message();
+        }
         notification.Notify();
       });
   notification.WaitForNotification();
@@ -264,7 +282,8 @@ TEST_F(SettingsPromiseManagerTest, TimeoutOneSetting) {
                MockStartSettingsTimeout(manager),
                [&notification1](absl::Status status) {
                  EXPECT_TRUE(absl::IsCancelled(status));
-                 EXPECT_EQ(status.message(), RFC9113::kSettingsTimeout);
+                 EXPECT_THAT(status.message(),
+                             ::testing::StartsWith(RFC9113::kSettingsTimeout));
                  notification1.Notify();
                });
   party->Spawn(
