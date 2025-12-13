@@ -105,6 +105,7 @@
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
 #define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG "Ph2Client"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_RETRY "Ph2ClientRetry"
 
 namespace grpc_core {
 
@@ -758,15 +759,32 @@ inline bool IsPromiseBasedTransportEnabled() {
     GTEST_SKIP() << "Disabled for initial v3 testing";         \
   }
 
+inline bool IsTokenInList(absl::string_view list, absl::string_view token) {
+  if (list.empty()) return false;
+  size_t start = 0;
+  while (start < list.size()) {
+    size_t end = list.find('|', start);
+    if (end == std::string::npos) {
+      end = list.size();
+    }
+
+    if (list.substr(start, end - start) == token) {
+      return true;
+    }
+    start = end + 1;
+  }
+  return false;
+}
+
 inline bool IsTestEnabledInConfig(absl::string_view include_suite,
                                   absl::string_view include_test,
                                   absl::string_view exclude_test,
                                   absl::string_view suite,
                                   absl::string_view test) {
   return (absl::StrContains((include_suite), "*") ||
-          absl::StrContains((include_suite), suite) ||
-          absl::StrContains(include_test, absl::StrCat(suite, ".", test))) &&
-         !absl::StrContains(exclude_test, absl::StrCat(suite, ".", test));
+          IsTokenInList((include_suite), suite) ||
+          IsTokenInList(include_test, absl::StrCat(suite, ".", test))) &&
+         !IsTokenInList(exclude_test, absl::StrCat(suite, ".", test));
 }
 
 #define SKIP_IF_DISABLED_IN_CONFIG(include_suite, include_test, exclude_test,  \

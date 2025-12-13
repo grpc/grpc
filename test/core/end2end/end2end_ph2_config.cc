@@ -36,19 +36,23 @@ namespace grpc_core {
 
 class Ph2InsecureFixture : public InsecureFixture {
  public:
-  Ph2InsecureFixture() {
+  explicit Ph2InsecureFixture(bool enable_retry) : enable_retry_(enable_retry) {
     // At Least one of the 2 peers MUST be a PH2
     GRPC_DCHECK(IsPromiseBasedHttp2ClientTransportEnabled() ||
                 IsPromiseBasedHttp2ServerTransportEnabled());
   }
 
   ChannelArgs MutateClientArgs(ChannelArgs args) override {
-    return args.Set(GRPC_ARG_ENABLE_CHANNELZ, true);
+    return args.Set(GRPC_ARG_ENABLE_CHANNELZ, true)
+        .SetIfUnset(GRPC_ARG_ENABLE_RETRIES, enable_retry_);
   }
 
   ChannelArgs MutateServerArgs(ChannelArgs args) override {
     return args.Set(GRPC_ARG_ENABLE_CHANNELZ, true);
   }
+
+ private:
+  const bool enable_retry_;
 };
 
 // This macro defines a set of cancellation and deadline tests that are
@@ -74,6 +78,14 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|CoreDeadlineTests.DeadlineAfterInvoke5" \
   "|CoreDeadlineTests.DeadlineAfterInvoke6" \
   "|CoreDeadlineTests.DeadlineAfterRoundTrip"
+
+#define RETRY_SUITE "|RetryTests|RetryHttp2Tests"
+
+#define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_RETRY_AVOID_LIST \
+  "|RetryHttp2Tests.Ping"                                    \
+  "|RetryHttp2Tests.BadPing"                                 \
+  "|RetryHttp2Tests.RetryTransparentMaxConcurrentStreams"    \
+  "|RetryHttp2Tests.HighInitialSeqno"
 
 #define LARGE_METADATA_SUITE                                                   \
   "|Http2SingleHopTests.RequestWithLargeMetadataUnderSoftLimit"                \
@@ -116,13 +128,15 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
         /*name=*/GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG,
         /*feature_mask=*/FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
             FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_IS_CALL_V3 |
-            FEATURE_MASK_IS_PH2_CLIENT | FEATURE_MASK_DO_NOT_FUZZ,
+            FEATURE_MASK_IS_PH2_CLIENT | FEATURE_MASK_DO_NOT_FUZZ |
+            FEATURE_MASK_DOES_NOT_SUPPORT_RETRY,
         // TODO(tjagtap) : [PH2][P3] Explore if fuzzing can be enabled.
         /*overridden_call_host=*/nullptr,
         /*create_fixture=*/
         [](const ChannelArgs& /*client_args*/,
            const ChannelArgs& /*server_args*/) {
-          return std::make_unique<Ph2InsecureFixture>();
+          return std::make_unique<Ph2InsecureFixture>(
+              /*enable_retry=*/false);
         },
         /* include_test_suites */
         GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE,
@@ -130,6 +144,27 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
         "",
         /* exclude_specific_tests */
         GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST});
+
+    list_of_configs.push_back(CoreTestConfiguration{
+        /*name=*/GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_RETRY,
+        /*feature_mask=*/FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+            FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_IS_CALL_V3 |
+            FEATURE_MASK_IS_PH2_CLIENT | FEATURE_MASK_DO_NOT_FUZZ,
+        // TODO(tjagtap) : [PH2][P3] Explore if fuzzing can be enabled.
+        /*overridden_call_host=*/nullptr,
+        /*create_fixture=*/
+        [](const ChannelArgs& /*client_args*/,
+           const ChannelArgs& /*server_args*/) {
+          return std::make_unique<Ph2InsecureFixture>(
+              /*enable_retry=*/true);
+        },
+        /* include_test_suites */
+        GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE RETRY_SUITE,
+        /* include_specific_tests */
+        "",
+        /* exclude_specific_tests */
+        GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST
+            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_RETRY_AVOID_LIST});
   }
   return list_of_configs;
 }
