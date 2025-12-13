@@ -46,6 +46,7 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/useful.h"
+#include "src/core/util/env.h"
 #include "absl/base/no_destructor.h"
 #include "absl/cleanup/cleanup.h"
 #include "absl/container/inlined_vector.h"
@@ -421,15 +422,25 @@ PosixEventEngine::MakeTestOnlyPosixEventEngine(
   return engine;
 }
 
+static size_t GetMaxPosixEventEngineThreads() {
+  auto env = grpc_core::GetEnv("GRPC_MAX_POSIX_EVENT_ENGINE_THREADS");
+  if (!env.has_value())
+    return std::numeric_limits<size_t>::max();
+  size_t max_posix_event_engine_threads = 0;
+  if (absl::SimpleAtoi(*env, &max_posix_event_engine_threads))
+    return max_posix_event_engine_threads;
+  return std::numeric_limits<size_t>::max();
+}
+
 PosixEventEngine::PosixEventEngine(std::shared_ptr<PosixEventPoller> poller)
     : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
       poller_(std::move(poller)),
-      executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
+      executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u), GetMaxPosixEventEngineThreads())),
       timer_manager_(std::make_shared<TimerManager>(executor_)) {}
 
 PosixEventEngine::PosixEventEngine()
     : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
-      executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
+      executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u), GetMaxPosixEventEngineThreads())),
       timer_manager_(std::make_shared<TimerManager>(executor_)) {
   if (ShouldUsePosixPoller()) {
     poller_ = grpc_event_engine::experimental::MakeDefaultPoller(executor_);
