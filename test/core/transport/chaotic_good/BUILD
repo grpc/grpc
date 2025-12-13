@@ -257,6 +257,7 @@ grpc_cc_test(
         "//src/core:default_event_engine",
         "//src/core:endpoint_transport",
         "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:experiments",
         "//src/core:grpc_check",
         "//src/core:grpc_fake_credentials",
         "//src/core:notification",

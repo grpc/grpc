@@ -99,6 +99,26 @@ std::ostream& operator<<(std::ostream& out, const FlowControlAction& action) {
   return out << action.DebugString();
 }
 
+std::string FlowControlAction::ImmediateUpdateReasons() const {
+  std::string result;
+  if (send_stream_update_ == Urgency::UPDATE_IMMEDIATELY) {
+    absl::StrAppend(&result, "send_stream_update,");
+  }
+  if (send_transport_update_ == Urgency::UPDATE_IMMEDIATELY) {
+    absl::StrAppend(&result, "send_transport_update,");
+  }
+  if (send_initial_window_update_ == Urgency::UPDATE_IMMEDIATELY) {
+    absl::StrAppend(&result, "send_initial_window_update,");
+  }
+  if (send_max_frame_size_update_ == Urgency::UPDATE_IMMEDIATELY) {
+    absl::StrAppend(&result, "send_max_frame_size_update,");
+  }
+  if (preferred_rx_crypto_frame_size_update_ == Urgency::UPDATE_IMMEDIATELY) {
+    absl::StrAppend(&result, "preferred_rx_crypto_frame_size_update,");
+  }
+  return result;
+}
+
 TransportFlowControl::TransportFlowControl(absl::string_view name,
                                            bool enable_bdp_probe,
                                            MemoryOwner* memory_owner)

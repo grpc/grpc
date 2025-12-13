@@ -176,7 +176,8 @@ class Http2ClientTransport final : public ClientTransport,
   }
 
   void AddData(channelz::DataSink sink) override;
-  void SpawnAddChannelzData(channelz::DataSink sink);
+  void SpawnAddChannelzData(RefCountedPtr<Party> party,
+                            channelz::DataSink sink);
 
   auto TestOnlyTriggerWriteCycle() {
     return Immediate(writable_stream_list_.ForceReadyForWrite());
@@ -363,7 +364,7 @@ class Http2ClientTransport final : public ClientTransport,
     return (next_stream_id > 1) ? (next_stream_id - 2) : 0;
   }
 
-  absl::Status AssignStreamId(RefCountedPtr<Stream> stream);
+  absl::Status InitializeStream(RefCountedPtr<Stream> stream);
 
   void AddToStreamList(RefCountedPtr<Stream> stream);
 
@@ -387,6 +388,11 @@ class Http2ClientTransport final : public ClientTransport,
                     }),
                 std::move(promise));
   }
+
+  // Spawns an infallible promise on the given party.
+  template <typename Factory>
+  void SpawnInfallible(RefCountedPtr<Party> party, absl::string_view name,
+                       Factory&& factory);
 
   // Spawns an infallible promise on the transport party.
   template <typename Factory>
@@ -491,8 +497,6 @@ class Http2ClientTransport final : public ClientTransport,
   bool should_reset_ping_clock_;
   bool is_first_write_;
   IncomingMetadataTracker incoming_headers_;
-
-  uint32_t max_header_list_size_soft_limit_;
 
   // The target number of bytes to write in a single write cycle. We may not
   // always honour this max_write_size. We MAY overshoot it at most once per
@@ -703,7 +707,8 @@ class Http2ClientTransport final : public ClientTransport,
 
   absl::Status MaybeAddStreamToWritableStreamList(
       const RefCountedPtr<Stream> stream,
-      const StreamDataQueue<ClientMetadataHandle>::EnqueueResult result) {
+      const StreamDataQueue<ClientMetadataHandle>::StreamWritabilityUpdate
+          result) {
     if (result.became_writable) {
       GRPC_HTTP2_CLIENT_DLOG
           << "Http2ClientTransport MaybeAddStreamToWritableStreamList "

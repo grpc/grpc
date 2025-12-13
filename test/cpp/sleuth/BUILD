@@ -46,6 +46,7 @@ grpc_cc_test(
         "gtest_main",
         "absl/strings",
     ],
+    tags = ["no_windows"],
     deps = [
         ":client",
         "//:grpc++",
@@ -79,6 +80,7 @@ grpc_cc_test(
         "gtest_main",
         "absl/status",
     ],
+    tags = ["no_windows"],
     deps = [
         ":tool",
         ":tool_test",
@@ -94,6 +96,7 @@ grpc_cc_test(
         "gtest",
         "gtest_main",
     ],
+    tags = ["no_windows"],
     deps = [
         ":channelz_tool",
         ":tool",
@@ -112,6 +115,7 @@ grpc_cc_test(
         "gtest",
         "gtest_main",
     ],
+    tags = ["no_windows"],
     deps = [
         ":info_tool",
         ":tool_test",
@@ -128,6 +132,7 @@ grpc_cc_test(
         "gtest",
         "gtest_main",
     ],
+    tags = ["no_windows"],
     deps = [
         ":latent_see_tool",
         ":tool_test",
@@ -162,6 +167,10 @@ grpc_cc_library(
 grpc_cc_binary(
     name = "sleuth.so",
     linkshared = True,
+    target_compatible_with = select({
+        "@platforms//os:windows": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
     deps = [
         ":sleuth_lib",
     ],
