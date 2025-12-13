@@ -58,6 +58,7 @@ constexpr Duration kDefaultPingTimeout = Duration::Minutes(1);
 constexpr Duration kDefaultKeepaliveTimeout = Duration::Seconds(20);
 constexpr bool kDefaultKeepalivePermitWithoutCalls = false;
 constexpr bool kDefaultEnablePreferredRxCryptoFrameAdvertisement = false;
+constexpr bool kDefaultAckPings = true;
 
 constexpr Duration kClientKeepaliveTime = Duration::Infinity();
 
@@ -133,6 +134,9 @@ void ReadChannelArgs(const ChannelArgs& channel_args,
     LOG(ERROR) << "Initial sequence number MUST be odd. Ignoring the value.";
     args.initial_sequence_number = -1;
   }
+
+  args.test_only_ack_pings =
+      channel_args.GetBool("grpc.http2.ack_pings").value_or(kDefaultAckPings);
 
   GRPC_HTTP2_COMMON_DLOG << "ChannelArgs: " << args.DebugString();
 }
