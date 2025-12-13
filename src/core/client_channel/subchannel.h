@@ -43,6 +43,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/util/backoff.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/dual_ref_counted.h"
@@ -88,11 +89,14 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
 
   virtual channelz::SubchannelNode* channelz_node() const = 0;
 
+  absl::string_view security_level() { return security_level_; }
+
  protected:
   explicit ConnectedSubchannel(const ChannelArgs& args);
 
  private:
   ChannelArgs args_;
+  absl::string_view security_level_;
 };
 
 class LegacyConnectedSubchannel;
@@ -406,6 +410,13 @@ class Subchannel final : public DualRefCounted<Subchannel> {
   std::map<UniqueTypeName, DataProducerInterface*> data_producer_map_
       ABSL_GUARDED_BY(mu_);
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+
+  // Metrics and observability.
+  std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+      stats_plugin_group_;
+  absl::string_view target_;
+  absl::string_view backend_service_;
+  absl::string_view locality_;
 };
 
 }  // namespace grpc_core
