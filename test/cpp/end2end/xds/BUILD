@@ -151,6 +151,12 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:client.pem",
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
+        "//src/core/tsi/test_creds:sni1.key",
+        "//src/core/tsi/test_creds:sni1.pem",
+        "//src/core/tsi/test_creds:sni2.key",
+        "//src/core/tsi/test_creds:sni2.pem",
+        "//src/core/tsi/test_creds:sni3.key",
+        "//src/core/tsi/test_creds:sni3.pem",
     ],
     external_deps = [
         "absl/log:check",
