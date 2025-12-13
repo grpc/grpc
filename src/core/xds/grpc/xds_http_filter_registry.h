@@ -31,6 +31,7 @@
 #include "src/core/xds/grpc/xds_http_filter.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "upb/reflection/def.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
@@ -112,6 +113,9 @@ class XdsHttpFilterRegistry final {
   std::map<absl::string_view, XdsHttpFilterImpl*> top_level_config_map_;
   std::map<absl::string_view, XdsHttpFilterImpl*> override_config_map_;
 };
+
+void SetXdsHttpFilterFactoryForTest(
+    absl::AnyInvocable<std::unique_ptr<XdsHttpFilterImpl>()> factory);
 
 }  // namespace grpc_core
 

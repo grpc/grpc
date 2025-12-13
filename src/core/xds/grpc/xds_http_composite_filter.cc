@@ -142,6 +142,7 @@ class ExecuteFilterActionFactory final : public XdsMatcherActionFactory {
           envoy_config_core_v3_TypedExtensionConfig_name(typed_config));
       const auto* any =
           envoy_config_core_v3_TypedExtensionConfig_typed_config(typed_config);
+      ValidationErrors::ScopedField field(errors, ".typed_config.typed_config");
       auto extension = ExtractXdsExtension(context, any, errors);
       if (extension.has_value()) {
         const XdsHttpFilterImpl* filter_impl =
