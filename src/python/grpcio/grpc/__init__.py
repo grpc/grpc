@@ -12,18 +12,60 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """gRPC's Python API."""
+from __future__ import annotations
 
 import abc
 import contextlib
 import enum
 import logging
 import sys
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+)
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
 from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
+from grpc.typing import ArityAgnosticMethodHandler
+from grpc.typing import BaseEvent as CygrpcBaseEvent
+from grpc.typing import CallCredentials as CygrpcCallCredentials
+from grpc.typing import ChannelArgumentType
+from grpc.typing import ChannelCredentials as CygrpcChannelCredentials
+from grpc.typing import ClientInterceptor
+from grpc.typing import ConnectivityCallbackType
+from grpc.typing import DeserializingFunction
+from grpc.typing import MetadataType
+from grpc.typing import NullaryCallbackType
+from grpc.typing import RequestType
+from grpc.typing import ResponseType
+from grpc.typing import SerializingFunction
+from grpc.typing import ServerCertificateConfig as CygrpcServerCertificateConfig
+from grpc.typing import ServerCredentials as CygrpcServerCredentials
+from grpc.typing import StreamStreamBehavior
+from grpc.typing import StreamUnaryBehavior
+from grpc.typing import UnaryStreamBehavior
+from grpc.typing import UnaryUnaryBehavior
+
+if TYPE_CHECKING:
+    from concurrent import futures
+    from threading import Event
+    import types
+
+    from grpc.server import _RPCState
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -52,7 +94,7 @@ class Future(abc.ABC):
     """
 
     @abc.abstractmethod
-    def cancel(self):
+    def cancel(self) -> bool:
         """Attempts to cancel the computation.
 
         This method does not block.
@@ -71,7 +113,7 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def cancelled(self):
+    def cancelled(self) -> bool:
         """Describes whether the computation was cancelled.
 
         This method does not block.
@@ -89,7 +131,7 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def running(self):
+    def running(self) -> bool:
         """Describes whether the computation is taking place.
 
         This method does not block.
@@ -103,7 +145,7 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def done(self):
+    def done(self) -> bool:
         """Describes whether the computation has taken place.
 
         This method does not block.
@@ -118,7 +160,7 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def result(self, timeout=None):
+    def result(self, timeout: Optional[float] = None) -> Any:
         """Returns the result of the computation or raises its exception.
 
         This method may return immediately or may block.
@@ -141,7 +183,9 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def exception(self, timeout=None):
+    def exception(
+        self, timeout: Optional[float] = None
+    ) -> Optional[BaseException]:
         """Return the exception raised by the computation.
 
         This method may return immediately or may block.
@@ -163,7 +207,9 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def traceback(self, timeout=None):
+    def traceback(
+        self, timeout: Optional[float] = None
+    ) -> Optional[types.TracebackType]:
         """Access the traceback of the exception raised by the computation.
 
         This method may return immediately or may block.
@@ -185,7 +231,7 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def add_done_callback(self, fn):
+    def add_done_callback(self, fn: Callable[[Future], None]) -> None:
         """Adds a function to be called at completion of the computation.
 
         The callback will be passed this Future object describing the outcome
@@ -298,13 +344,22 @@ class Status(abc.ABC):
     """Describes the status of an RPC.
 
     This is an EXPERIMENTAL API.
-
-    Attributes:
-      code: A StatusCode object to be sent to the client.
-      details: A UTF-8-encodable string to be sent to the client upon
-        termination of the RPC.
-      trailing_metadata: The trailing :term:`metadata` in the RPC.
     """
+
+    @property
+    @abc.abstractmethod
+    def code(self) -> StatusCode:
+        """A StatusCode object to be sent to the client."""
+
+    @property
+    @abc.abstractmethod
+    def details(self) -> str:
+        """A UTF-8-encodable string to be sent to the client upon termination of the RPC."""
+
+    @property
+    @abc.abstractmethod
+    def trailing_metadata(self) -> MetadataType:
+        """The trailing :term:`metadata` in the RPC."""
 
 
 #############################  gRPC Exceptions  ################################
@@ -321,7 +376,7 @@ class RpcContext(abc.ABC):
     """Provides RPC-related information and action."""
 
     @abc.abstractmethod
-    def is_active(self):
+    def is_active(self) -> bool:
         """Describes whether the RPC is active or has terminated.
 
         Returns:
@@ -331,7 +386,7 @@ class RpcContext(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def time_remaining(self):
+    def time_remaining(self) -> Optional[float]:
         """Describes the length of allowed time remaining for the RPC.
 
         Returns:
@@ -342,7 +397,7 @@ class RpcContext(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def cancel(self):
+    def cancel(self) -> bool:
         """Cancels the RPC.
 
         Idempotent and has no effect if the RPC has already terminated.
@@ -350,7 +405,7 @@ class RpcContext(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def add_callback(self, callback):
+    def add_callback(self, callback: NullaryCallbackType) -> bool:
         """Registers a callback to be called on RPC termination.
 
         Args:
@@ -371,7 +426,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
     """Invocation-side utility object for an RPC."""
 
     @abc.abstractmethod
-    def initial_metadata(self):
+    def initial_metadata(self) -> Optional[MetadataType]:
         """Accesses the initial metadata sent by the server.
 
         This method blocks until the value is available.
@@ -382,7 +437,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def trailing_metadata(self):
+    def trailing_metadata(self) -> Optional[MetadataType]:
         """Accesses the trailing metadata sent by the server.
 
         This method blocks until the value is available.
@@ -393,7 +448,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def code(self):
+    def code(self) -> Optional[StatusCode]:
         """Accesses the status code sent by the server.
 
         This method blocks until the value is available.
@@ -404,7 +459,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def details(self):
+    def details(self) -> Optional[str]:
         """Accesses the details sent by the server.
 
         This method blocks until the value is available.
@@ -419,25 +474,51 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
 
 
 class ClientCallDetails(abc.ABC):
-    """Describes an RPC to be invoked.
+    """Describes an RPC to be invoked."""
 
-    Attributes:
-      method: The method name of the RPC.
-      timeout: An optional duration of time in seconds to allow for the RPC.
-      metadata: Optional :term:`metadata` to be transmitted to
-        the service-side of the RPC.
-      credentials: An optional CallCredentials for the RPC.
-      wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-      compression: An element of grpc.compression, e.g.
-        grpc.compression.Gzip.
-    """
+    @property
+    @abc.abstractmethod
+    def method(self) -> str:
+        """The method name of the RPC."""
+
+    @property
+    @abc.abstractmethod
+    def timeout(self) -> Optional[float]:
+        """An optional duration of time in seconds to allow for the RPC."""
+
+    @property
+    @abc.abstractmethod
+    def metadata(self) -> Optional[MetadataType]:
+        """Optional :term:`metadata` to be transmitted to the service-side of the RPC."""
+
+    @property
+    @abc.abstractmethod
+    def credentials(self) -> Optional[CallCredentials]:
+        """An optional CallCredentials for the RPC."""
+
+    @property
+    @abc.abstractmethod
+    def wait_for_ready(self) -> Optional[bool]:
+        """An optional flag to enable :term:`wait_for_ready` mechanism."""
+
+    @property
+    @abc.abstractmethod
+    def compression(self) -> Optional[Any]:
+        """An element of grpc.compression, e.g. grpc.compression.Gzip."""
 
 
 class UnaryUnaryClientInterceptor(abc.ABC):
     """Affords intercepting unary-unary invocations."""
 
     @abc.abstractmethod
-    def intercept_unary_unary(self, continuation, client_call_details, request):
+    def intercept_unary_unary(
+        self,
+        continuation: Callable[
+            [ClientCallDetails, RequestType], Union[Call, Future]
+        ],
+        client_call_details: ClientCallDetails,
+        request: RequestType,
+    ):
         """Intercepts a unary-unary invocation asynchronously.
 
         Args:
@@ -472,7 +553,12 @@ class UnaryStreamClientInterceptor(abc.ABC):
 
     @abc.abstractmethod
     def intercept_unary_stream(
-        self, continuation, client_call_details, request
+        self,
+        continuation: Callable[
+            [ClientCallDetails, RequestType], Union[Call, Future]
+        ],
+        client_call_details: ClientCallDetails,
+        request: RequestType,
     ):
         """Intercepts a unary-stream invocation.
 
@@ -507,7 +593,12 @@ class StreamUnaryClientInterceptor(abc.ABC):
 
     @abc.abstractmethod
     def intercept_stream_unary(
-        self, continuation, client_call_details, request_iterator
+        self,
+        continuation: Callable[
+            [ClientCallDetails, Iterable[RequestType]], Union[Call, Future]
+        ],
+        client_call_details: ClientCallDetails,
+        request_iterator: Iterable[RequestType],
     ):
         """Intercepts a stream-unary invocation asynchronously.
 
@@ -542,7 +633,12 @@ class StreamStreamClientInterceptor(abc.ABC):
 
     @abc.abstractmethod
     def intercept_stream_stream(
-        self, continuation, client_call_details, request_iterator
+        self,
+        continuation: Callable[
+            [ClientCallDetails, Iterable[RequestType]], Union[Call, Future]
+        ],
+        client_call_details: ClientCallDetails,
+        request_iterator: Iterable[RequestType],
     ):
         """Intercepts a stream-stream invocation.
 
@@ -584,7 +680,7 @@ class ChannelCredentials(object):
     secure_channel requires an instance of this class.
     """
 
-    def __init__(self, credentials):
+    def __init__(self, credentials: CygrpcChannelCredentials):
         self._credentials = credentials
 
 
@@ -601,23 +697,30 @@ class CallCredentials(object):
     instances and its instances exist to be passed to other functions.
     """
 
-    def __init__(self, credentials):
+    def __init__(self, credentials: CygrpcCallCredentials):
         self._credentials = credentials
 
 
 class AuthMetadataContext(abc.ABC):
-    """Provides information to call credentials metadata plugins.
+    """Provides information to call credentials metadata plugins."""
 
-    Attributes:
-      service_url: A string URL of the service being called into.
-      method_name: A string of the fully qualified method name being called.
-    """
+    @property
+    @abc.abstractmethod
+    def service_url(self) -> str:
+        """A string URL of the service being called into."""
+
+    @property
+    @abc.abstractmethod
+    def method_name(self) -> str:
+        """A string of the fully qualified method name being called."""
 
 
 class AuthMetadataPluginCallback(abc.ABC):
     """Callback object received by a metadata plugin."""
 
-    def __call__(self, metadata, error):
+    def __call__(
+        self, metadata: MetadataType, error: Optional[Type[BaseException]]
+    ):
         """Passes to the gRPC runtime authentication metadata for an RPC.
 
         Args:
@@ -630,7 +733,9 @@ class AuthMetadataPluginCallback(abc.ABC):
 class AuthMetadataPlugin(abc.ABC):
     """A specification for custom authentication."""
 
-    def __call__(self, context, callback):
+    def __call__(
+        self, context: AuthMetadataContext, callback: AuthMetadataPluginCallback
+    ):
         """Implements authentication by passing metadata to a callback.
 
         This method will be invoked asynchronously in a separate thread.
@@ -651,7 +756,7 @@ class ServerCredentials(object):
     instances and its instances exist to be passed to other functions.
     """
 
-    def __init__(self, credentials):
+    def __init__(self, credentials: CygrpcServerCredentials):
         self._credentials = credentials
 
 
@@ -666,7 +771,9 @@ class ServerCertificateConfiguration(object):
     other functions.
     """
 
-    def __init__(self, certificate_configuration):
+    def __init__(
+        self, certificate_configuration: CygrpcServerCertificateConfig
+    ):
         self._certificate_configuration = certificate_configuration
 
 
@@ -679,13 +786,13 @@ class UnaryUnaryMultiCallable(abc.ABC):
     @abc.abstractmethod
     def __call__(
         self,
-        request,
-        timeout=None,
-        metadata=None,
-        credentials=None,
-        wait_for_ready=None,
-        compression=None,
-    ):
+        request: RequestType,
+        timeout: Optional[float] = None,
+        metadata: Optional[MetadataType] = None,
+        credentials: Optional[CallCredentials] = None,
+        wait_for_ready: Optional[bool] = None,
+        compression: Optional[Compression] = None,
+    ) -> ResponseType:
         """Synchronously invokes the underlying RPC.
 
         Args:
@@ -713,13 +820,13 @@ class UnaryUnaryMultiCallable(abc.ABC):
     @abc.abstractmethod
     def with_call(
         self,
-        request,
-        timeout=None,
-        metadata=None,
-        credentials=None,
-        wait_for_ready=None,
-        compression=None,
-    ):
+        request: RequestType,
+        timeout: Optional[float] = None,
+        metadata: Optional[MetadataType] = None,
+        credentials: Optional[CallCredentials] = None,
+        wait_for_ready: Optional[bool] = None,
+        compression: Optional[Compression] = None,
+    ) -> Tuple[ResponseType, Call]:
         """Synchronously invokes the underlying RPC.
 
         Args:
@@ -747,13 +854,13 @@ class UnaryUnaryMultiCallable(abc.ABC):
     @abc.abstractmethod
     def future(
         self,
-        request,
-        timeout=None,
-        metadata=None,
-        credentials=None,
-        wait_for_ready=None,
-        compression=None,
-    ):
+        request: RequestType,
+        timeout: Optional[float] = None,
+        metadata: Optional[MetadataType] = None,
+        credentials: Optional[CallCredentials] = None,
+        wait_for_ready: Optional[bool] = None,
+        compression: Optional[Compression] = None,
+    ) -> Union[Call, Future]:
         """Asynchronously invokes the underlying RPC.
 
         Args:
@@ -784,13 +891,13 @@ class UnaryStreamMultiCallable(abc.ABC):
     @abc.abstractmethod
     def __call__(
         self,
-        request,
-        timeout=None,
-        metadata=None,
-        credentials=None,
-        wait_for_ready=None,
-        compression=None,
-    ):
+        request: RequestType,
+        timeout: Optional[float] = None,
+        metadata: Optional[MetadataType] = None,
+        credentials: Optional[CallCredentials] = None,
+        wait_for_ready: Optional[bool] = None,
+        compression: Optional[Compression] = None,
+    ) -> Union[Iterator[ResponseType], Call, Future]:
         """Invokes the underlying RPC.
 
         Args:
@@ -820,13 +927,13 @@ class StreamUnaryMultiCallable(abc.ABC):
     @abc.abstractmethod
     def __call__(
         self,
-        request_iterator,
-        timeout=None,
-        metadata=None,
-        credentials=None,
-        wait_for_ready=None,
-        compression=None,
-    ):
+        request_iterator: Iterator[RequestType],
+        timeout: Optional[float] = None,
+        metadata: Optional[MetadataType] = None,
+        credentials: Optional[CallCredentials] = None,
+        wait_for_ready: Optional[bool] = None,
+        compression: Optional[Compression] = None,
+    ) -> ResponseType:
         """Synchronously invokes the underlying RPC.
 
         Args:
@@ -855,13 +962,13 @@ class StreamUnaryMultiCallable(abc.ABC):
     @abc.abstractmethod
     def with_call(
         self,
-        request_iterator,
-        timeout=None,
-        metadata=None,
-        credentials=None,
-        wait_for_ready=None,
-        compression=None,
-    ):
+        request_iterator: Iterator[RequestType],
+        timeout: Optional[float] = None,
+        metadata: Optional[MetadataType] = None,
+        credentials: Optional[CallCredentials] = None,
+        wait_for_ready: Optional[bool] = None,
+        compression: Optional[Compression] = None,
+    ) -> Tuple[ResponseType, Call]:
         """Synchronously invokes the underlying RPC on the client.
 
         Args:
@@ -890,13 +997,13 @@ class StreamUnaryMultiCallable(abc.ABC):
     @abc.abstractmethod
     def future(
         self,
-        request_iterator,
-        timeout=None,
-        metadata=None,
-        credentials=None,
-        wait_for_ready=None,
-        compression=None,
-    ):
+        request_iterator: Iterator[RequestType],
+        timeout: Optional[float] = None,
+        metadata: Optional[MetadataType] = None,
+        credentials: Optional[CallCredentials] = None,
+        wait_for_ready: Optional[bool] = None,
+        compression: Optional[Compression] = None,
+    ) -> Union[Future, Call]:
         """Asynchronously invokes the underlying RPC on the client.
 
         Args:
@@ -927,13 +1034,13 @@ class StreamStreamMultiCallable(abc.ABC):
     @abc.abstractmethod
     def __call__(
         self,
-        request_iterator,
-        timeout=None,
-        metadata=None,
-        credentials=None,
-        wait_for_ready=None,
-        compression=None,
-    ):
+        request_iterator: Iterator[RequestType],
+        timeout: Optional[float] = None,
+        metadata: Optional[MetadataType] = None,
+        credentials: Optional[CallCredentials] = None,
+        wait_for_ready: Optional[bool] = None,
+        compression: Optional[Compression] = None,
+    ) -> Union[Iterator[ResponseType], Call, Future]:
         """Invokes the underlying RPC on the client.
 
         Args:
@@ -968,7 +1075,11 @@ class Channel(abc.ABC):
     """
 
     @abc.abstractmethod
-    def subscribe(self, callback, try_to_connect=False):
+    def subscribe(
+        self,
+        callback: ConnectivityCallbackType,
+        try_to_connect: bool = False,
+    ) -> None:
         """Subscribe to this Channel's connectivity state machine.
 
         A Channel may be in any of the states described by ChannelConnectivity.
@@ -989,7 +1100,7 @@ class Channel(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def unsubscribe(self, callback):
+    def unsubscribe(self, callback: ConnectivityCallbackType) -> None:
         """Unsubscribes a subscribed callback from this Channel's connectivity.
 
         Args:
@@ -1001,11 +1112,11 @@ class Channel(abc.ABC):
     @abc.abstractmethod
     def unary_unary(
         self,
-        method,
-        request_serializer=None,
-        response_deserializer=None,
-        _registered_method=False,
-    ):
+        method: str,
+        request_serializer: Optional[SerializingFunction] = None,
+        response_deserializer: Optional[DeserializingFunction] = None,
+        _registered_method: bool = False,
+    ) -> UnaryUnaryMultiCallable:
         """Creates a UnaryUnaryMultiCallable for a unary-unary method.
 
         Args:
@@ -1026,11 +1137,11 @@ class Channel(abc.ABC):
     @abc.abstractmethod
     def unary_stream(
         self,
-        method,
-        request_serializer=None,
-        response_deserializer=None,
-        _registered_method=False,
-    ):
+        method: str,
+        request_serializer: Optional[SerializingFunction] = None,
+        response_deserializer: Optional[DeserializingFunction] = None,
+        _registered_method: bool = False,
+    ) -> UnaryStreamMultiCallable:
         """Creates a UnaryStreamMultiCallable for a unary-stream method.
 
         Args:
@@ -1051,11 +1162,11 @@ class Channel(abc.ABC):
     @abc.abstractmethod
     def stream_unary(
         self,
-        method,
-        request_serializer=None,
-        response_deserializer=None,
-        _registered_method=False,
-    ):
+        method: str,
+        request_serializer: Optional[SerializingFunction] = None,
+        response_deserializer: Optional[DeserializingFunction] = None,
+        _registered_method: bool = False,
+    ) -> StreamUnaryMultiCallable:
         """Creates a StreamUnaryMultiCallable for a stream-unary method.
 
         Args:
@@ -1076,11 +1187,11 @@ class Channel(abc.ABC):
     @abc.abstractmethod
     def stream_stream(
         self,
-        method,
-        request_serializer=None,
-        response_deserializer=None,
-        _registered_method=False,
-    ):
+        method: str,
+        request_serializer: Optional[SerializingFunction] = None,
+        response_deserializer: Optional[DeserializingFunction] = None,
+        _registered_method: bool = False,
+    ) -> StreamStreamMultiCallable:
         """Creates a StreamStreamMultiCallable for a stream-stream method.
 
         Args:
@@ -1099,7 +1210,7 @@ class Channel(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def close(self):
+    def close(self) -> None:
         """Closes this Channel and releases all resources held by it.
 
         Closing the Channel will immediately terminate all RPCs active with the
@@ -1125,7 +1236,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
     """A context object passed to method implementations."""
 
     @abc.abstractmethod
-    def invocation_metadata(self):
+    def invocation_metadata(self) -> Optional[MetadataType]:
         """Accesses the metadata sent by the client.
 
         Returns:
@@ -1134,7 +1245,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def peer(self):
+    def peer(self) -> str:
         """Identifies the peer that invoked the RPC being serviced.
 
         Returns:
@@ -1144,7 +1255,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def peer_identities(self):
+    def peer_identities(self) -> Optional[Iterable[bytes]]:
         """Gets one or more peer identity(s).
 
         Equivalent to
@@ -1157,7 +1268,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def peer_identity_key(self):
+    def peer_identity_key(self) -> Optional[str]:
         """The auth property used to identify the peer.
 
         For example, "x509_common_name" or "x509_subject_alternative_name" are
@@ -1170,7 +1281,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def auth_context(self):
+    def auth_context(self) -> Optional[Mapping[str, Iterable[bytes]]]:
         """Gets the auth context for the call.
 
         Returns:
@@ -1178,7 +1289,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError()
 
-    def set_compression(self, compression):
+    def set_compression(self, compression: Compression) -> None:
         """Set the compression algorithm to be used for the entire call.
 
         Args:
@@ -1188,7 +1299,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def send_initial_metadata(self, initial_metadata):
+    def send_initial_metadata(self, initial_metadata: MetadataType) -> None:
         """Sends the initial metadata value to the client.
 
         This method need not be called by implementations if they have no
@@ -1200,7 +1311,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def set_trailing_metadata(self, trailing_metadata):
+    def set_trailing_metadata(self, trailing_metadata: MetadataType) -> None:
         """Sets the trailing metadata for the RPC.
 
         Sets the trailing metadata to be sent upon completion of the RPC.
@@ -1217,7 +1328,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError()
 
-    def trailing_metadata(self):
+    def trailing_metadata(self) -> Optional[MetadataType]:
         """Access value to be used as trailing metadata upon RPC completion.
 
         This is an EXPERIMENTAL API.
@@ -1228,7 +1339,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def abort(self, code, details):
+    def abort(self, code: StatusCode, details: str) -> None:
         """Raises an exception to terminate the RPC with a non-OK status.
 
         The code and details passed as arguments will supersede any existing
@@ -1247,7 +1358,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def abort_with_status(self, status):
+    def abort_with_status(self, status: Status) -> None:
         """Raises an exception to terminate the RPC with a non-OK status.
 
         The status passed as argument will supersede any existing status code,
@@ -1266,7 +1377,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def set_code(self, code):
+    def set_code(self, code: StatusCode) -> None:
         """Sets the value to be used as status code upon RPC completion.
 
         This method need not be called by method implementations if they wish
@@ -1278,7 +1389,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def set_details(self, details):
+    def set_details(self, details: str) -> None:
         """Sets the value to be used as detail string upon RPC completion.
 
         This method need not be called by method implementations if they have
@@ -1290,7 +1401,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError()
 
-    def code(self):
+    def code(self) -> StatusCode:
         """Accesses the value to be used as status code upon RPC completion.
 
         This is an EXPERIMENTAL API.
@@ -1300,7 +1411,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError()
 
-    def details(self):
+    def details(self) -> bytes:
         """Accesses the value to be used as detail string upon RPC completion.
 
         This is an EXPERIMENTAL API.
@@ -1310,7 +1421,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError()
 
-    def disable_next_message_compression(self):
+    def disable_next_message_compression(self) -> None:
         """Disables compression for the next response message.
 
         This method will override any compression configuration set during
@@ -1323,55 +1434,69 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
 
 
 class RpcMethodHandler(abc.ABC):
-    """An implementation of a single RPC method.
+    """An implementation of a single RPC method."""
 
-    Attributes:
-      request_streaming: Whether the RPC supports exactly one request message
-        or any arbitrary number of request messages.
-      response_streaming: Whether the RPC supports exactly one response message
-        or any arbitrary number of response messages.
-      request_deserializer: A callable :term:`deserializer` that accepts a byte string and
-        returns an object suitable to be passed to this object's business
-        logic, or None to indicate that this object's business logic should be
-        passed the raw request bytes.
-      response_serializer: A callable :term:`serializer` that accepts an object produced
-        by this object's business logic and returns a byte string, or None to
-        indicate that the byte strings produced by this object's business logic
-        should be transmitted on the wire as they are.
-      unary_unary: This object's application-specific business logic as a
-        callable value that takes a request value and a ServicerContext object
-        and returns a response value. Only non-None if both request_streaming
-        and response_streaming are False.
-      unary_stream: This object's application-specific business logic as a
-        callable value that takes a request value and a ServicerContext object
-        and returns an iterator of response values. Only non-None if
-        request_streaming is False and response_streaming is True.
-      stream_unary: This object's application-specific business logic as a
-        callable value that takes an iterator of request values and a
-        ServicerContext object and returns a response value. Only non-None if
-        request_streaming is True and response_streaming is False.
-      stream_stream: This object's application-specific business logic as a
-        callable value that takes an iterator of request values and a
-        ServicerContext object and returns an iterator of response values.
-        Only non-None if request_streaming and response_streaming are both
-        True.
-    """
+    request_streaming: bool
+    """Whether the RPC supports exactly one request message or any arbitrary number of
+    request messages."""
+
+    response_streaming: bool
+    """Whether the RPC supports exactly one response message or any arbitrary number of
+    response messages."""
+
+    request_deserializer: Optional[DeserializingFunction]
+    """A callable :term:`deserializer` that accepts a byte string and returns an
+    object suitable to be passed to this object's business logic, or None to indicate
+    that this object's business logic should be passed the raw request bytes."""
+
+    response_serializer: Optional[SerializingFunction]
+    """A callable :term:`serializer` that accepts an object produced by this
+    object's business logic and returns a byte string, or None to indicate that the
+    byte strings produced by this object's business logic should be transmitted on the
+    wire as they are."""
+
+    unary_unary: Optional[UnaryUnaryBehavior]
+    """The application-specific business logic as a callable value that takes a request value and a
+    ServicerContext object and returns a response value. Only non-None if both request_streaming and
+    response_streaming are False."""
+
+    unary_stream: Optional[UnaryStreamBehavior]
+    """The application-specific business logic as a callable value that takes a request value and a
+    ServicerContext object and returns an iterator of response values. Only non-None if
+    request_streaming is False and response_streaming is True."""
+
+    stream_unary: Optional[StreamUnaryBehavior]
+    """The application-specific business logic as a callable value that takes an iterator of request
+    values and a ServicerContext object and returns a response value. Only non-None if
+    request_streaming is True and response_streaming is False."""
+
+    stream_stream: Optional[StreamStreamBehavior]
+    """The application-specific business logic as a callable value that takes an iterator of request
+    values and a ServicerContext object and returns an iterator of response values. Only non-None if
+    request_streaming and response_streaming are both True."""
 
 
 class HandlerCallDetails(abc.ABC):
-    """Describes an RPC that has just arrived for service.
+    """Describes an RPC that has just arrived for service."""
 
-    Attributes:
-      method: The method name of the RPC.
-      invocation_metadata: The :term:`metadata` sent by the client.
-    """
+    @property
+    @abc.abstractmethod
+    def method(self) -> str:
+        """The method name of the RPC."""
+
+    @property
+    @abc.abstractmethod
+    def invocation_metadata(self) -> Optional[MetadataType]:
+        """The :term:`metadata` sent by the client."""
 
 
 class GenericRpcHandler(abc.ABC):
     """An implementation of arbitrarily many RPC methods."""
 
     @abc.abstractmethod
-    def service(self, handler_call_details):
+    def service(
+        self, handler_call_details: HandlerCallDetails
+    ) -> Optional[RpcMethodHandler]:
         """Returns the handler for servicing the RPC.
 
         Args:
@@ -1395,7 +1520,7 @@ class ServiceRpcHandler(GenericRpcHandler, metaclass=abc.ABCMeta):
     """
 
     @abc.abstractmethod
-    def service_name(self):
+    def service_name(self) -> str:
         """Returns this service's name.
 
         Returns:
@@ -1411,7 +1536,13 @@ class ServerInterceptor(abc.ABC):
     """Affords intercepting incoming RPCs on the service-side."""
 
     @abc.abstractmethod
-    def intercept_service(self, continuation, handler_call_details):
+    def intercept_service(
+        self,
+        continuation: Callable[
+            [HandlerCallDetails], Optional[RpcMethodHandler]
+        ],
+        handler_call_details: HandlerCallDetails,
+    ) -> Optional[RpcMethodHandler]:
         """Intercepts incoming RPCs before handing them over to a handler.
 
         State can be passed from an interceptor to downstream interceptors
@@ -1443,7 +1574,9 @@ class Server(abc.ABC):
     """Services RPCs."""
 
     @abc.abstractmethod
-    def add_generic_rpc_handlers(self, generic_rpc_handlers):
+    def add_generic_rpc_handlers(
+        self, generic_rpc_handlers: Iterable[GenericRpcHandler]
+    ) -> None:
         """Registers GenericRpcHandlers with this Server.
 
         This method is only safe to call before the server is started.
@@ -1455,8 +1588,8 @@ class Server(abc.ABC):
         raise NotImplementedError()
 
     def add_registered_method_handlers(  # noqa: B027
-        self, service_name, method_handlers
-    ):
+        self, service_name: str, method_handlers: Dict[str, RpcMethodHandler]
+    ) -> None:
         """Registers GenericRpcHandlers with this Server.
 
         This method is only safe to call before the server is started.
@@ -1471,7 +1604,7 @@ class Server(abc.ABC):
         """
 
     @abc.abstractmethod
-    def add_insecure_port(self, address):
+    def add_insecure_port(self, address: str) -> int:
         """Opens an insecure port for accepting RPCs.
 
         This method may only be called before starting the server.
@@ -1486,7 +1619,9 @@ class Server(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def add_secure_port(self, address, server_credentials):
+    def add_secure_port(
+        self, address: str, server_credentials: ServerCredentials
+    ) -> int:
         """Opens a secure port for accepting RPCs.
 
         This method may only be called before starting the server.
@@ -1503,7 +1638,7 @@ class Server(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def start(self):
+    def start(self) -> None:
         """Starts this Server.
 
         This method may only be called once. (i.e. it is not idempotent).
@@ -1511,7 +1646,7 @@ class Server(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def stop(self, grace):
+    def stop(self, grace: Optional[float]) -> Event:
         """Stops this Server.
 
         This method immediately stop service of new RPCs in all cases.
@@ -1541,7 +1676,7 @@ class Server(abc.ABC):
         """
         raise NotImplementedError()
 
-    def wait_for_termination(self, timeout=None):
+    def wait_for_termination(self, timeout: Optional[float] = None) -> bool:
         """Block current thread until the server stops.
 
         This is an EXPERIMENTAL API.
@@ -1569,8 +1704,10 @@ class Server(abc.ABC):
 
 
 def unary_unary_rpc_method_handler(
-    behavior, request_deserializer=None, response_serializer=None
-):
+    behavior: UnaryUnaryBehavior,
+    request_deserializer: Optional[DeserializingFunction] = None,
+    response_serializer: Optional[SerializingFunction] = None,
+) -> RpcMethodHandler:
     """Creates an RpcMethodHandler for a unary-unary RPC method.
 
     Args:
@@ -1597,8 +1734,10 @@ def unary_unary_rpc_method_handler(
 
 
 def unary_stream_rpc_method_handler(
-    behavior, request_deserializer=None, response_serializer=None
-):
+    behavior: UnaryStreamBehavior,
+    request_deserializer: Optional[DeserializingFunction] = None,
+    response_serializer: Optional[SerializingFunction] = None,
+) -> RpcMethodHandler:
     """Creates an RpcMethodHandler for a unary-stream RPC method.
 
     Args:
@@ -1625,8 +1764,10 @@ def unary_stream_rpc_method_handler(
 
 
 def stream_unary_rpc_method_handler(
-    behavior, request_deserializer=None, response_serializer=None
-):
+    behavior: StreamUnaryBehavior,
+    request_deserializer: Optional[DeserializingFunction] = None,
+    response_serializer: Optional[SerializingFunction] = None,
+) -> RpcMethodHandler:
     """Creates an RpcMethodHandler for a stream-unary RPC method.
 
     Args:
@@ -1653,8 +1794,10 @@ def stream_unary_rpc_method_handler(
 
 
 def stream_stream_rpc_method_handler(
-    behavior, request_deserializer=None, response_serializer=None
-):
+    behavior: StreamStreamBehavior,
+    request_deserializer: Optional[DeserializingFunction] = None,
+    response_serializer: Optional[SerializingFunction] = None,
+) -> RpcMethodHandler:
     """Creates an RpcMethodHandler for a stream-stream RPC method.
 
     Args:
@@ -1680,7 +1823,9 @@ def stream_stream_rpc_method_handler(
     )
 
 
-def method_handlers_generic_handler(service, method_handlers):
+def method_handlers_generic_handler(
+    service: str, method_handlers: Dict[str, RpcMethodHandler]
+) -> GenericRpcHandler:
     """Creates a GenericRpcHandler from RpcMethodHandlers.
 
     Args:
@@ -1699,8 +1844,10 @@ def method_handlers_generic_handler(service, method_handlers):
 
 
 def ssl_channel_credentials(
-    root_certificates=None, private_key=None, certificate_chain=None
-):
+    root_certificates: Optional[bytes] = None,
+    private_key: Optional[bytes] = None,
+    certificate_chain: Optional[bytes] = None,
+) -> ChannelCredentials:
     """Creates a ChannelCredentials for use with an SSL-enabled Channel.
 
     Args:
@@ -1722,7 +1869,9 @@ def ssl_channel_credentials(
     )
 
 
-def xds_channel_credentials(fallback_credentials=None):
+def xds_channel_credentials(
+    fallback_credentials: Optional[ChannelCredentials] = None,
+) -> ChannelCredentials:
     """Creates a ChannelCredentials for use with xDS. This is an EXPERIMENTAL
       API.
 
@@ -1741,7 +1890,9 @@ def xds_channel_credentials(fallback_credentials=None):
     )
 
 
-def metadata_call_credentials(metadata_plugin, name=None):
+def metadata_call_credentials(
+    metadata_plugin: AuthMetadataPlugin, name: Optional[str] = None
+) -> CallCredentials:
     """Construct CallCredentials from an AuthMetadataPlugin.
 
     Args:
@@ -1758,7 +1909,7 @@ def metadata_call_credentials(metadata_plugin, name=None):
     )
 
 
-def access_token_call_credentials(access_token):
+def access_token_call_credentials(access_token: str) -> CallCredentials:
     """Construct CallCredentials from an access token.
 
     Args:
@@ -1777,7 +1928,9 @@ def access_token_call_credentials(access_token):
     )
 
 
-def composite_call_credentials(*call_credentials):
+def composite_call_credentials(
+    *call_credentials: CallCredentials,
+) -> CallCredentials:
     """Compose multiple CallCredentials to make a new CallCredentials.
 
     Args:
@@ -1796,7 +1949,9 @@ def composite_call_credentials(*call_credentials):
     )
 
 
-def composite_channel_credentials(channel_credentials, *call_credentials):
+def composite_channel_credentials(
+    channel_credentials: ChannelCredentials, *call_credentials: CallCredentials
+) -> ChannelCredentials:
     """Compose a ChannelCredentials and one or more CallCredentials objects.
 
     Args:
@@ -1819,10 +1974,10 @@ def composite_channel_credentials(channel_credentials, *call_credentials):
 
 
 def ssl_server_credentials(
-    private_key_certificate_chain_pairs,
-    root_certificates=None,
-    require_client_auth=False,
-):
+    private_key_certificate_chain_pairs: Sequence[Tuple[bytes, bytes]],
+    root_certificates: Optional[bytes] = None,
+    require_client_auth: bool = False,
+) -> ServerCredentials:
     """Creates a ServerCredentials for use with an SSL-enabled Server.
 
     Args:
@@ -1859,7 +2014,9 @@ def ssl_server_credentials(
     )
 
 
-def xds_server_credentials(fallback_credentials):
+def xds_server_credentials(
+    fallback_credentials: ChannelCredentials,
+) -> ServerCredentials:
     """Creates a ServerCredentials for use with xDS. This is an EXPERIMENTAL
       API.
 
@@ -1872,7 +2029,7 @@ def xds_server_credentials(fallback_credentials):
     )
 
 
-def insecure_server_credentials():
+def insecure_server_credentials() -> ServerCredentials:
     """Creates a credentials object directing the server to use no credentials.
       This is an EXPERIMENTAL API.
 
@@ -1884,8 +2041,9 @@ def insecure_server_credentials():
 
 
 def ssl_server_certificate_configuration(
-    private_key_certificate_chain_pairs, root_certificates=None
-):
+    private_key_certificate_chain_pairs: List[Sequence[bytes, bytes]],
+    root_certificates: Optional[bytes] = None,
+) -> ServerCertificateConfiguration:
     """Creates a ServerCertificateConfiguration for use with a Server.
 
     Args:
@@ -1914,10 +2072,12 @@ def ssl_server_certificate_configuration(
 
 
 def dynamic_ssl_server_credentials(
-    initial_certificate_configuration,
-    certificate_configuration_fetcher,
-    require_client_authentication=False,
-):
+    initial_certificate_configuration: ServerCertificateConfiguration,
+    certificate_configuration_fetcher: Callable[
+        [], Optional[ServerCertificateConfiguration]
+    ],
+    require_client_authentication: bool = False,
+) -> ServerCredentials:
     """Creates a ServerCredentials for use with an SSL-enabled Server.
 
     Args:
@@ -1960,7 +2120,9 @@ class LocalConnectionType(enum.Enum):
     LOCAL_TCP = _cygrpc.LocalConnectionType.local_tcp
 
 
-def local_channel_credentials(local_connect_type=LocalConnectionType.LOCAL_TCP):
+def local_channel_credentials(
+    local_connect_type: LocalConnectionType = LocalConnectionType.LOCAL_TCP,
+) -> ChannelCredentials:
     """Creates a local ChannelCredentials used for local connections.
 
     This is an EXPERIMENTAL API.
@@ -1991,7 +2153,9 @@ def local_channel_credentials(local_connect_type=LocalConnectionType.LOCAL_TCP):
     )
 
 
-def local_server_credentials(local_connect_type=LocalConnectionType.LOCAL_TCP):
+def local_server_credentials(
+    local_connect_type: LocalConnectionType = LocalConnectionType.LOCAL_TCP,
+) -> ServerCredentials:
     """Creates a local ServerCredentials used for local connections.
 
     This is an EXPERIMENTAL API.
@@ -2022,7 +2186,9 @@ def local_server_credentials(local_connect_type=LocalConnectionType.LOCAL_TCP):
     )
 
 
-def alts_channel_credentials(service_accounts=None):
+def alts_channel_credentials(
+    service_accounts: Optional[List[str]] = None,
+) -> ChannelCredentials:
     """Creates a ChannelCredentials for use with an ALTS-enabled Channel.
 
     This is an EXPERIMENTAL API.
@@ -2045,7 +2211,7 @@ def alts_channel_credentials(service_accounts=None):
     )
 
 
-def alts_server_credentials():
+def alts_server_credentials() -> ServerCredentials:
     """Creates a ServerCredentials for use with an ALTS-enabled connection.
 
     This is an EXPERIMENTAL API.
@@ -2059,7 +2225,9 @@ def alts_server_credentials():
     return ServerCredentials(_cygrpc.server_credentials_alts())
 
 
-def compute_engine_channel_credentials(call_credentials):
+def compute_engine_channel_credentials(
+    call_credentials: Optional[CallCredentials] = None,
+) -> ChannelCredentials:
     """Creates a compute engine channel credential.
 
     This credential can only be used in a GCP environment as it relies on
@@ -2078,7 +2246,7 @@ def compute_engine_channel_credentials(call_credentials):
     )
 
 
-def channel_ready_future(channel):
+def channel_ready_future(channel: Channel) -> Future:
     """Creates a Future that tracks when a Channel is ready.
 
     Cancelling the Future does not affect the channel's state machine.
@@ -2096,7 +2264,11 @@ def channel_ready_future(channel):
     return _utilities.channel_ready_future(channel)
 
 
-def insecure_channel(target, options=None, compression=None):
+def insecure_channel(
+    target: str,
+    options: Optional[Sequence[ChannelArgumentType]] = None,
+    compression: Optional[Compression] = None,
+) -> Channel:
     """Creates an insecure Channel to a server.
 
     The returned Channel is thread-safe.
@@ -2118,7 +2290,12 @@ def insecure_channel(target, options=None, compression=None):
     )
 
 
-def secure_channel(target, credentials, options=None, compression=None):
+def secure_channel(
+    target: str,
+    credentials: ChannelCredentials,
+    options: Optional[Sequence[ChannelArgumentType]] = None,
+    compression: Optional[Compression] = None,
+) -> Channel:
     """Creates a secure Channel to a server.
 
     The returned Channel is thread-safe.
@@ -2150,7 +2327,9 @@ def secure_channel(target, credentials, options=None, compression=None):
     )
 
 
-def intercept_channel(channel, *interceptors):
+def intercept_channel(
+    channel: Channel, *interceptors: ClientInterceptor
+) -> Channel:
     """Intercepts a channel through a set of interceptors.
 
     Args:
@@ -2178,14 +2357,14 @@ def intercept_channel(channel, *interceptors):
 
 
 def server(
-    thread_pool,
-    handlers=None,
-    interceptors=None,
-    options=None,
-    maximum_concurrent_rpcs=None,
-    compression=None,
-    xds=False,
-):
+    thread_pool: futures.ThreadPoolExecutor,
+    handlers: Optional[Sequence[GenericRpcHandler]] = None,
+    interceptors: Optional[Sequence[ServerInterceptor]] = None,
+    options: Optional[List[ChannelArgumentType]] = None,
+    maximum_concurrent_rpcs: Optional[int] = None,
+    compression: Optional[Compression] = None,
+    xds: bool = False,
+) -> Server:
     """Creates a Server with which RPCs can be serviced.
 
     Args:
@@ -2226,7 +2405,11 @@ def server(
 
 
 @contextlib.contextmanager
-def _create_servicer_context(rpc_event, state, request_deserializer):
+def _create_servicer_context(
+    rpc_event: CygrpcBaseEvent,
+    state: "_RPCState",
+    request_deserializer: Optional[DeserializingFunction],
+) -> Optional[ServicerContext]:
     from grpc import _server  # pylint: disable=cyclic-import
 
     context = _server._Context(rpc_event, state, request_deserializer)

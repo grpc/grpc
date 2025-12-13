@@ -16,6 +16,7 @@
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncIterable,
     Callable,
     Iterable,
     Iterator,
@@ -28,8 +29,19 @@ from typing import (
 
 from grpc._cython import cygrpc
 
+ChannelCredentials = cygrpc.ChannelCredentials
+CallCredentials = cygrpc.CallCredentials
+ServerCredentials = cygrpc.ServerCredentials
+ServerCertificateConfig = cygrpc.ServerCertificateConfig
+BaseEvent = cygrpc.BaseEvent
+
 if TYPE_CHECKING:
+    from grpc import ChannelConnectivity
     from grpc import ServicerContext
+    from grpc import StreamStreamClientInterceptor
+    from grpc import StreamUnaryClientInterceptor
+    from grpc import UnaryStreamClientInterceptor
+    from grpc import UnaryUnaryClientInterceptor
     from grpc._server import _RPCState
 
 RequestType = TypeVar("RequestType")
@@ -38,12 +50,12 @@ SerializingFunction = Callable[[Any], bytes]
 DeserializingFunction = Callable[[bytes], Any]
 MetadataType = Sequence[Tuple[str, Union[str, bytes]]]
 ChannelArgumentType = Tuple[str, Any]
-DoneCallbackType = Callable[[Any], None]
+_DoneCallbackType = Callable[[Any], None]
 NullaryCallbackType = Callable[[], None]
-RequestIterableType = Iterable[Any]
-ResponseIterableType = Iterable[Any]
-UserTag = Callable[[cygrpc.BaseEvent], bool]
-IntegratedCallFactory = Callable[
+_RequestIterableType = Iterable[Any]
+_ResponseIterableType = Iterable[Any]
+_UserTag = Callable[[cygrpc.BaseEvent], bool]
+_IntegratedCallFactory = Callable[
     [
         int,
         bytes,
@@ -52,16 +64,16 @@ IntegratedCallFactory = Callable[
         Optional[MetadataType],
         Optional[cygrpc.CallCredentials],
         Sequence[Sequence[cygrpc.Operation]],
-        UserTag,
+        _UserTag,
         Any,
         Optional[int],
     ],
     cygrpc.IntegratedCall,
 ]
-ServerTagCallbackType = Tuple[
+_ServerTagCallbackType = Tuple[
     Optional["_RPCState"], Sequence[NullaryCallbackType]
 ]
-ServerCallbackTag = Callable[[cygrpc.BaseEvent], ServerTagCallbackType]
+_ServerCallbackTag = Callable[[cygrpc.BaseEvent], _ServerTagCallbackType]
 ArityAgnosticMethodHandler = Union[
     Callable[
         [RequestType, "ServicerContext", Callable[[ResponseType], None]],
@@ -93,4 +105,30 @@ ArityAgnosticMethodHandler = Union[
     Callable[
         [Iterator[RequestType], "ServicerContext"], Iterator[ResponseType]
     ],
+]
+ClientInterceptor = Union[
+    "UnaryUnaryClientInterceptor",
+    "UnaryStreamClientInterceptor",
+    "StreamUnaryClientInterceptor",
+    "StreamStreamClientInterceptor",
+]
+ConnectivityCallbackType = Callable[["ChannelConnectivity"], None]
+UnaryUnaryBehavior = Callable[[RequestType, "ServicerContext"], ResponseType]
+UnaryStreamBehavior = Callable[
+    [RequestType, "ServicerContext"],
+    Union[Iterator[ResponseType], AsyncIterable[ResponseType]],
+]
+StreamUnaryBehavior = Callable[
+    [
+        Union[Iterator[RequestType], AsyncIterable[RequestType]],
+        "ServicerContext",
+    ],
+    ResponseType,
+]
+StreamStreamBehavior = Callable[
+    [
+        Union[Iterator[RequestType], AsyncIterable[RequestType]],
+        "ServicerContext",
+    ],
+    Union[Iterator[ResponseType], AsyncIterable[ResponseType]],
 ]

@@ -15,12 +15,12 @@
 import collections
 import logging
 import threading
-from typing import Callable, Optional, Type
+from typing import AnyStr, Callable, Optional, Type
 
 import grpc
 from grpc import _common
 from grpc._cython import cygrpc
-from grpc._typing import MetadataType
+from grpc.typing import MetadataType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -96,7 +96,9 @@ class _Plugin(object):
             # Support versions predating contextvars.
             pass
 
-    def __call__(self, service_url: str, method_name: str, callback: Callable):
+    def __call__(
+        self, service_url: AnyStr, method_name: AnyStr, callback: Callable
+    ):
         context = _AuthMetadataContext(
             _common.decode(service_url), _common.decode(method_name)
         )
