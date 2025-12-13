@@ -229,6 +229,10 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
+const char* const description_xds_channel_filter_chain_per_route =
+    "xDS channels use a separate filter chain for each route.";
+const char* const additional_constraints_xds_channel_filter_chain_per_route =
+    "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -390,6 +394,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
+     false, true},
+    {"xds_channel_filter_chain_per_route",
+     description_xds_channel_filter_chain_per_route,
+     additional_constraints_xds_channel_filter_chain_per_route, nullptr, 0,
      false, true},
 };
 
@@ -603,6 +611,10 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
+const char* const description_xds_channel_filter_chain_per_route =
+    "xDS channels use a separate filter chain for each route.";
+const char* const additional_constraints_xds_channel_filter_chain_per_route =
+    "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -764,6 +776,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
+     false, true},
+    {"xds_channel_filter_chain_per_route",
+     description_xds_channel_filter_chain_per_route,
+     additional_constraints_xds_channel_filter_chain_per_route, nullptr, 0,
      false, true},
 };
 
@@ -977,6 +993,10 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
+const char* const description_xds_channel_filter_chain_per_route =
+    "xDS channels use a separate filter chain for each route.";
+const char* const additional_constraints_xds_channel_filter_chain_per_route =
+    "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -1138,6 +1158,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
+     false, true},
+    {"xds_channel_filter_chain_per_route",
+     description_xds_channel_filter_chain_per_route,
+     additional_constraints_xds_channel_filter_chain_per_route, nullptr, 0,
      false, true},
 };
 

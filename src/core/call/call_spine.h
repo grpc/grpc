@@ -653,8 +653,7 @@ auto MessagesFrom(CallHalf* h) {
   return Wrapper{h};
 }
 
-// Forward a call from `call_handler` to `call_initiator` (with initial metadata
-// `client_initial_metadata`)
+// Forward a call from `call_handler` to `call_initiator`.
 // `on_server_trailing_metadata_from_initiator` is a callback that will be
 // called with the server trailing metadata received by the initiator, and can
 // be used to mutate that metadata if desired.
