@@ -2197,6 +2197,8 @@ TEST_F(XdsGcpAuthnFilterTest, GenerateServiceConfig) {
   EXPECT_EQ(service_config->element, "{\"foo\":\"bar\"}");
 }
 
+// FIXME: add tests for composite filter config
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core
