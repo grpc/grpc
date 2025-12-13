@@ -18,6 +18,7 @@
 
 #include <grpc/credentials.h>
 #include <grpc/grpc_crl_provider.h>
+#include <grpc/grpc_private_key_offload.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpcpp/security/tls_certificate_provider.h>
@@ -52,6 +53,24 @@ void TlsCredentialsOptions::set_certificate_provider(
   certificate_provider_ = certificate_provider;
   if (certificate_provider_ != nullptr) {
     grpc_tls_credentials_options_set_certificate_provider(
+        c_credentials_options_, certificate_provider_->c_provider());
+  }
+}
+
+void TlsCredentialsOptions::set_identity_certificate_provider(
+    std::shared_ptr<CertificateProviderInterface> certificate_provider) {
+  certificate_provider_ = certificate_provider;
+  if (certificate_provider_ != nullptr) {
+    grpc_tls_credentials_options_set_root_certificate_provider(
+        c_credentials_options_, certificate_provider_->c_provider());
+  }
+}
+
+void TlsCredentialsOptions::set_root_certificate_provider(
+    std::shared_ptr<CertificateProviderInterface> certificate_provider) {
+  certificate_provider_ = certificate_provider;
+  if (certificate_provider_ != nullptr) {
+    grpc_tls_credentials_options_set_identity_certificate_provider(
         c_credentials_options_, certificate_provider_->c_provider());
   }
 }

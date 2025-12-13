@@ -1467,6 +1467,7 @@ LIBGRPC_SRC = \
     src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc \
     src/core/tsi/fake_transport_security.cc \
     src/core/tsi/local_transport_security.cc \
+    src/core/tsi/private_key_offload_util.cc \
     src/core/tsi/ssl/key_logging/ssl_key_logging.cc \
     src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc \
     src/core/tsi/ssl/session_cache/ssl_session_cache.cc \
@@ -1829,6 +1830,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/grpc_audit_logging.h \
     include/grpc/grpc_crl_provider.h \
     include/grpc/grpc_posix.h \
+    include/grpc/grpc_private_key_offload.h \
     include/grpc/grpc_security.h \
     include/grpc/grpc_security_constants.h \
     include/grpc/impl/call.h \
