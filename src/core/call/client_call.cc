@@ -293,7 +293,7 @@ bool ClientCall::StartCallMaybeUpdateState(uintptr_t& cur_state,
                                               std::memory_order_acquire)) {
         call_destination_->StartCall(std::move(handler));
         auto unordered_start = reinterpret_cast<UnorderedStart*>(cur_state);
-        while (unordered_start->next != nullptr) {
+        while (unordered_start != nullptr) {
           unordered_start->start_pending_batch();
           auto next = unordered_start->next;
           delete unordered_start;

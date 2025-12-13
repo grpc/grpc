@@ -57,6 +57,11 @@
   expiry: 2026/02/01
   owner: ctiller@google.com
   test_tags: [channelz_test]
+- name: chaotic_good_connect_deadline
+  description: Use the deadline from the connect args in chaotic good connector
+  expiry: 2026/02/01
+  owner: ctiller@google.com
+  test_tags: [core_end2end_test]
 - name: chaotic_good_framing_layer
   description: Enable the chaotic good framing layer.
   expiry: 2026/02/01
@@ -202,6 +207,13 @@
   description: Ignore empty resolutions in pick_first
   expiry: 2026/02/02
   owner: ctiller@google.com
+- name: pick_first_ready_to_connecting
+  description:
+    When the subchannel goes from READY to CONNECTING or TRANSIENT_FAILURE,
+    pick_first goes to CONNECTING and starts a new Happy Eyeballs pass.
+  expiry: 2026/02/01
+  owner: roth@google.com
+  test_tags: ["lb_unit_test", "cpp_lb_end2end_test"]
 - name: pipelined_read_secure_endpoint
   description: Enable pipelined reads for EventEngine secure endpoints
   expiry: 2026/03/15

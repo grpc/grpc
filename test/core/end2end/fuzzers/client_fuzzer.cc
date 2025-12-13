@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <google/protobuf/text_format.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
@@ -43,6 +44,7 @@
 #include "test/core/test_util/fuzz_config_vars_helpers.h"
 #include "test/core/test_util/mock_endpoint.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 #include "absl/status/statusor.h"
 
 bool squelch = true;
@@ -102,7 +104,7 @@ class ClientFuzzer final : public BasicFuzzer {
   grpc_channel* channel_ = nullptr;
 };
 
-void Run(fuzzer_input::Msg msg) {
+void Fuzz(fuzzer_input::Msg msg) {
   if (squelch && !GetEnv("GRPC_TRACE_FUZZER").has_value()) {
     grpc_disable_all_absl_logs();
   }
@@ -111,9 +113,21 @@ void Run(fuzzer_input::Msg msg) {
   TestOnlyReloadExperimentsFromConfigVariables();
   testing::ClientFuzzer(msg).Run(msg.api_actions());
 }
-FUZZ_TEST(ClientFuzzerTest, Run)
+FUZZ_TEST(ClientFuzzerTest, Fuzz)
     .WithDomains(::fuzztest::Arbitrary<fuzzer_input::Msg>().WithProtobufField(
         "config_vars", AnyConfigVars()));
+
+auto ParseTestProto(const std::string& proto) {
+  fuzzer_input::Msg msg;
+  GRPC_CHECK(google::protobuf::TextFormat::ParseFromString(proto, &msg));
+  return msg;
+}
+
+TEST(ClientFuzzerTest, RunChannelzCallTracerRegression) {
+  Fuzz(ParseTestProto(R"pb(network_input { single_read_bytes: "" }
+                           api_actions { create_call { method { value: "Z" } } }
+                           config_vars { channelz_call_tracer: true })pb"));
+}
 
 }  // namespace testing
 }  // namespace grpc_core

@@ -52,6 +52,7 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 #include "absl/types/span.h"
 
 namespace grpc_core {
@@ -66,18 +67,18 @@ namespace grpc_core {
 // general_party_ .
 // This class is designed with the assumption that only 1 SETTINGS frame will be
 // in flight at a time. And we do not send a second SETTINGS frame till we
-// receive and process the SETTINGS ACK.
+// receive and process the SETTINGS ACK and resolve the ACK promise.
 class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
-  // TODO(tjagtap) [PH2][P1][Settings] : Add new DCHECKs
  public:
   explicit SettingsPromiseManager(
       absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings)
-      : on_receive_first_settings_(std::move(on_receive_settings)) {}
+      : on_receive_first_settings_(std::move(on_receive_settings)),
+        state_(SettingsState::kWaitingForFirstPeerSettings) {}
+
   ~SettingsPromiseManager() override {
     GRPC_DCHECK(on_receive_first_settings_ == nullptr);
   }
 
-  SettingsPromiseManager() = default;
   // Not copyable, movable or assignable.
   SettingsPromiseManager(const SettingsPromiseManager&) = delete;
   SettingsPromiseManager& operator=(const SettingsPromiseManager&) = delete;
@@ -96,7 +97,7 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   }
 
   bool IsFirstPeerSettingsApplied() const {
-    return on_receive_first_settings_ == nullptr;
+    return state_ == SettingsState::kReady;
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -104,6 +105,7 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
 
   // Assumption : This would be set only once in the life of the transport.
   inline void SetSettingsTimeout(const Duration timeout) {
+    GRPC_DCHECK(state_ == SettingsState::kWaitingForFirstPeerSettings);
     settings_ack_timeout_ = timeout;
   }
 
@@ -120,7 +122,10 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
 
   // Called when our transport enqueues a SETTINGS frame to send to the peer.
   // However, the enqueued frames have not yet been written to the endpoint.
-  void WillSendSettings() { should_wait_for_settings_ack_ = true; }
+  void WillSendSettings() {
+    GRPC_DCHECK(!should_wait_for_settings_ack_);
+    should_wait_for_settings_ack_ = true;
+  }
 
   // Returns true if we should spawn WaitForSettingsTimeout promise.
   bool ShouldSpawnWaitForSettingsTimeout() const {
@@ -162,17 +167,19 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
         // not receive the ACK. The transport must close when this happens.
         TrySeq(Sleep(settings_ack_timeout_),
                [sent_time = sent_time_, timeout = settings_ack_timeout_]() {
+                 const std::string message = absl::StrCat(
+                     RFC9113::kSettingsTimeout,
+                     " Sent Time : ", sent_time.ToString(),
+                     " Timeout Time : ", (sent_time + timeout).ToString(),
+                     " Current Time : ", Timestamp::Now().ToString());
                  GRPC_SETTINGS_TIMEOUT_DLOG
-                     << "SettingsPromiseManager::WaitForSettingsTimeout Timeout"
-                        " triggered. Transport will close. Sent Time : "
-                     << sent_time << " Timeout Time : " << (sent_time + timeout)
-                     << " Current Time " << Timestamp::Now();
+                     << "SettingsPromiseManager::WaitForSettingsTimeout"
+                     << message;
                  // Ideally we must set did_previous_settings_promise_resolve_
                  // to false, but in this case the transport will be closed so
                  // it does not matter. I am trying to avoid taking another ref
                  // on self in this TrySeq.
-                 return absl::CancelledError(
-                     std::string(RFC9113::kSettingsTimeout));
+                 return absl::CancelledError(message);
                })));
   }
 
@@ -186,6 +193,9 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   // Buffered to apply settings at start of next write cycle, only after
   // SETTINGS ACK is written to the endpoint.
   void BufferPeerSettings(std::vector<Http2SettingsFrame::Setting>&& settings) {
+    if (state_ == SettingsState::kWaitingForFirstPeerSettings) {
+      state_ = SettingsState::kFirstPeerSettingsReceived;
+    }
     ++num_acks_to_send_;
     pending_peer_settings_.reserve(pending_peer_settings_.size() +
                                    settings.size());
@@ -201,8 +211,9 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
       grpc_event_engine::experimental::EventEngine* event_engine) {
     http2::Http2ErrorCode status = settings_.ApplyIncomingSettings(
         std::exchange(pending_peer_settings_, {}));
-    if (num_acks_to_send_ > 0) {
+    if (state_ == SettingsState::kFirstPeerSettingsReceived) {
       MaybeReportInitialSettings(event_engine);
+      state_ = SettingsState::kReady;
     }
     return status;
   }
@@ -273,6 +284,7 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
     // TODO(tjagtap) [PH2][P2] Relook at this while writing server. I think this
     // will be different for client and server.
     if (on_receive_first_settings_ != nullptr) {
+      GRPC_DCHECK(state_ == SettingsState::kFirstPeerSettingsReceived);
       GRPC_DCHECK(event_engine != nullptr);
       event_engine->Run(
           [on_receive_settings = std::move(on_receive_first_settings_),
@@ -291,6 +303,7 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
     // will be different for client and server.
     if (on_receive_first_settings_ != nullptr) {
       GRPC_DCHECK(event_engine != nullptr);
+      GRPC_DCHECK(state_ != SettingsState::kReady);
       event_engine->Run([on_receive_settings =
                              std::move(on_receive_first_settings_)]() mutable {
         ExecCtx exec_ctx;
@@ -367,7 +380,7 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   // Data Members for SETTINGS being sent from our transport to the peer.
 
   Duration settings_ack_timeout_;
-  // TODO(tjagtap) [PH2][P3][Settings] Delete sent_time_. We don't actually use
+  // TODO(tjagtap) [PH2][P5][Settings] Delete sent_time_. We don't actually use
   // sent_time_ for the timeout. We are just keeping this as book keeping for
   // better debuggability.
   Timestamp sent_time_ = Timestamp::InfFuture();
@@ -390,6 +403,13 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   std::vector<Http2SettingsFrame::Setting> pending_peer_settings_;
   // Number of incoming SETTINGS frames that we have received but not ACKed yet.
   uint32_t num_acks_to_send_ = 0;
+
+  enum class SettingsState : uint8_t {
+    kWaitingForFirstPeerSettings,
+    kFirstPeerSettingsReceived,
+    kReady,
+  };
+  SettingsState state_;
 };
 
 }  // namespace grpc_core

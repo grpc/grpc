@@ -19,6 +19,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 
 #include <algorithm>
 #include <climits>
@@ -125,6 +126,14 @@ void ReadChannelArgs(const ChannelArgs& channel_args,
   args.max_usable_hpack_table_size =
       channel_args.GetInt(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER).value_or(-1);
 
+  args.initial_sequence_number =
+      channel_args.GetInt(GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER).value_or(-1);
+  if (args.initial_sequence_number >= 0 &&
+      (args.initial_sequence_number & 1) == 0) {
+    LOG(ERROR) << "Initial sequence number MUST be odd. Ignoring the value.";
+    args.initial_sequence_number = -1;
+  }
+
   GRPC_HTTP2_COMMON_DLOG << "ChannelArgs: " << args.DebugString();
 }
 
@@ -182,6 +191,11 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
 
   local_settings.SetAllowSecurityFrame(
       channel_args.GetBool(GRPC_ARG_SECURITY_FRAME_ALLOWED).value_or(false));
+
+  // TODO(tjagtap) : [PH2][P4] : If max_header_list_size is set only once
+  // in the life of a transport, consider making this a data member of
+  // class IncomingMetadataTracker instead of accessing via acked settings again
+  // and again. Else delete this comment.
 
   GRPC_HTTP2_COMMON_DLOG
       << "Http2Settings: {"
