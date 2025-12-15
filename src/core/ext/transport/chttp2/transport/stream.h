@@ -99,19 +99,17 @@ struct Stream : public RefCounted<Stream> {
   // All enqueue methods are called from the call party.
 
   auto EnqueueInitialMetadata(ClientMetadataHandle&& metadata) {
-    GRPC_HTTP2_STREAM_LOG << "Stream::EnqueueInitialMetadata stream_id="
-                          << stream_id;
+    GRPC_HTTP2_STREAM_LOG << "Stream::EnqueueInitialMetadata";
     return data_queue->EnqueueInitialMetadata(std::move(metadata));
   }
 
   auto EnqueueTrailingMetadata(ClientMetadataHandle&& metadata) {
-    GRPC_HTTP2_STREAM_LOG << "Stream::EnqueueTrailingMetadata stream_id="
-                          << stream_id;
+    GRPC_HTTP2_STREAM_LOG << "Stream::EnqueueTrailingMetadata";
     return data_queue->EnqueueTrailingMetadata(std::move(metadata));
   }
 
   auto EnqueueMessage(MessageHandle&& message) {
-    GRPC_HTTP2_STREAM_LOG << "Stream::EnqueueMessage stream_id=" << stream_id
+    GRPC_HTTP2_STREAM_LOG << "Stream::EnqueueMessage"
                           << " with payload size = "
                           << message->payload()->Length()
                           << " and flags = " << message->flags();
@@ -119,31 +117,32 @@ struct Stream : public RefCounted<Stream> {
   }
 
   auto EnqueueHalfClosed() {
-    GRPC_HTTP2_STREAM_LOG << "Stream::EnqueueHalfClosed stream_id="
-                          << stream_id;
+    GRPC_HTTP2_STREAM_LOG << "Stream::EnqueueHalfClosed";
     return data_queue->EnqueueHalfClosed();
   }
 
   auto EnqueueResetStream(const uint32_t error_code) {
-    GRPC_HTTP2_STREAM_LOG << "Stream::EnqueueResetStream stream_id="
-                          << stream_id << " with error_code = " << error_code;
+    GRPC_HTTP2_STREAM_LOG << "Stream::EnqueueResetStream"
+                          << " with error_code = " << error_code;
     return data_queue->EnqueueResetStream(error_code);
   }
 
   // Called from the transport party
-  auto DequeueFrames(const uint32_t transport_tokens,
+  auto DequeueFrames(const uint32_t tokens,
+                     const uint32_t stream_flow_control_tokens,
                      const uint32_t max_frame_length,
                      HPackCompressor& encoder) {
     HttpStreamState state = stream_state;
     // Reset stream MUST not be sent if the stream is idle or closed.
-    // TODO(tjagtap) : [PH2][P1][FlowControl] : Populate the correct stream flow
-    // control tokens.
-    return data_queue->DequeueFrames(
-        transport_tokens, max_frame_length,
-        /*stream_fc_tokens=*/std::numeric_limits<uint32_t>::max(), encoder,
-        /*can_send_reset_stream=*/
-        !(state == HttpStreamState::kIdle ||
-          state == HttpStreamState::kClosed));
+    return data_queue->DequeueFrames(tokens, max_frame_length,
+                                     stream_flow_control_tokens, encoder,
+                                     /*can_send_reset_stream=*/
+                                     !(state == HttpStreamState::kIdle ||
+                                       state == HttpStreamState::kClosed));
+  }
+
+  auto ReceivedFlowControlWindowUpdate(const uint32_t stream_fc_tokens) {
+    return data_queue->ReceivedFlowControlWindowUpdate(stream_fc_tokens);
   }
 
   ////////////////////////////////////////////////////////////////////////////
@@ -273,17 +272,11 @@ struct Stream : public RefCounted<Stream> {
   uint32_t stream_id;
   GrpcMessageAssembler assembler;
   HeaderAssembler header_assembler;
-  // TODO(akshitpatel) : [PH2][P2] : StreamQ should maintain a flag that
-  // tracks if the half close has been sent for this stream. This flag is used
-  // to notify the mixer that this stream is closed for
-  // writes(HalfClosedLocal). When the mixer dequeues the last message for
-  // the streamQ, it will mark the stream as closed for writes and send a
-  // frame with end_stream or set the end_stream flag in the last data
-  // frame being sent out. This is done as the stream state should not
-  // transition to HalfClosedLocal till the end_stream frame is sent.
   bool did_receive_initial_metadata;
   bool did_receive_trailing_metadata;
   bool did_push_server_trailing_metadata;
+  // TODO(akshitpatel) : [PH2][P3][Server] : This would need to change to
+  // accomodate ServerMetadataHandle for the server side.
   RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> data_queue;
   chttp2::StreamFlowControl flow_control;
 };

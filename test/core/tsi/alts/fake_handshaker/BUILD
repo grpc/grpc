@@ -52,10 +52,7 @@ grpc_cc_proto_library(
 grpc_cc_grpc_library(
     name = "handshaker_cc_grpc",
     srcs = ["handshaker_proto"],
-    deps = [
-        "handshaker_cc_proto",
-        "//:grpc++",
-    ],
+    deps = ["handshaker_cc_proto"],
 )
 
 grpc_cc_library(

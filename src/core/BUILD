@@ -8118,6 +8118,7 @@ grpc_cc_library(
     ],
     deps = [
         ":chttp2_flow_control",
+        ":grpc_check",
         ":http2_settings",
         "//:chttp2_frame",
     ],
@@ -8344,13 +8345,16 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log",
+        "absl/status",
         "absl/strings",
     ],
     deps = [
+        "error",
         "grpc_check",
         "http2_status",
         "metadata_batch",
         "shared_bit_gen",
+        "status_helper",
         ":slice",
         ":slice_buffer",
         "//:chttp2_frame",
@@ -8435,6 +8439,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log",
+        "absl/status",
     ],
     deps = [
         "call_spine",

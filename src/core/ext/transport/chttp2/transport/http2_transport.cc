@@ -192,6 +192,11 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
   local_settings.SetAllowSecurityFrame(
       channel_args.GetBool(GRPC_ARG_SECURITY_FRAME_ALLOWED).value_or(false));
 
+  // TODO(tjagtap) : [PH2][P4] : If max_header_list_size is set only once
+  // in the life of a transport, consider making this a data member of
+  // class IncomingMetadataTracker instead of accessing via acked settings again
+  // and again. Else delete this comment.
+
   GRPC_HTTP2_COMMON_DLOG
       << "Http2Settings: {"
       << "header_table_size: " << local_settings.header_table_size()
@@ -261,6 +266,9 @@ ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame_header,
           &flow_control);
       absl::Status fc_status = transport_fc.RecvData(frame_header.length);
       chttp2::FlowControlAction action = transport_fc.MakeAction();
+      GRPC_HTTP2_COMMON_DLOG
+          << "ProcessIncomingDataFrameFlowControl Transport RecvData status: "
+          << fc_status << " action: " << action.DebugString();
       if (!fc_status.ok()) {
         LOG(ERROR) << "Flow control error: " << fc_status.message();
         // RFC9113 : A receiver MAY respond with a stream error or connection
@@ -275,6 +283,9 @@ ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame_header,
           &stream->flow_control);
       absl::Status fc_status = stream_fc.RecvData(frame_header.length);
       chttp2::FlowControlAction action = stream_fc.MakeAction();
+      GRPC_HTTP2_COMMON_DLOG
+          << "ProcessIncomingDataFrameFlowControl Stream RecvData status: "
+          << fc_status << " action: " << action.DebugString();
       if (!fc_status.ok()) {
         LOG(ERROR) << "Flow control error: " << fc_status.message();
         // RFC9113 : A receiver MAY respond with a stream error or connection
@@ -283,6 +294,8 @@ ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame_header,
             Http2ErrorCode::kFlowControlError,
             std::string(fc_status.message()));
       }
+      // TODO(tjagtap) [PH2][P1][FlowControl] This is a HACK. Fix this.
+      stream_fc.HackIncrementPendingSize(frame_header.length);
       return action;
     }
   }
@@ -294,14 +307,23 @@ bool ProcessIncomingWindowUpdateFrameFlowControl(
     chttp2::TransportFlowControl& flow_control, RefCountedPtr<Stream> stream) {
   if (frame.stream_id != 0) {
     if (stream != nullptr) {
+      GRPC_HTTP2_COMMON_DLOG
+          << "ProcessIncomingWindowUpdateFrameFlowControl stream "
+          << frame.stream_id << " increment " << frame.increment;
       chttp2::StreamFlowControl::OutgoingUpdateContext fc_update(
           &stream->flow_control);
       fc_update.RecvUpdate(frame.increment);
     } else {
       // If stream id is non zero, and stream is nullptr, maybe the stream was
       // closed. Ignore this WINDOW_UPDATE frame.
+      GRPC_HTTP2_COMMON_DLOG
+          << "ProcessIncomingWindowUpdateFrameFlowControl stream "
+          << frame.stream_id << " not found. Ignoring.";
     }
   } else {
+    GRPC_HTTP2_COMMON_DLOG
+        << "ProcessIncomingWindowUpdateFrameFlowControl transport increment "
+        << frame.increment;
     chttp2::TransportFlowControl::OutgoingUpdateContext fc_update(
         &flow_control);
     fc_update.RecvUpdate(frame.increment);
@@ -311,10 +333,35 @@ bool ProcessIncomingWindowUpdateFrameFlowControl(
       // write cycle and attempt to send data from these streams.
       // Although it's possible no streams were blocked, triggering an
       // unnecessary write cycle in that super-rare case is acceptable.
+      GRPC_HTTP2_COMMON_DLOG << "ProcessIncomingWindowUpdateFrameFlowControl "
+                                "Transport Unstalled";
       return true;
     }
   }
   return false;
+}
+
+void MaybeAddStreamWindowUpdateFrame(RefCountedPtr<Stream> stream,
+                                     std::vector<Http2Frame>& frames) {
+  GRPC_HTTP2_COMMON_DLOG << "MaybeAddStreamWindowUpdateFrame stream="
+                         << ((stream == nullptr)
+                                 ? "null"
+                                 : absl::StrCat(
+                                       stream->GetStreamId(),
+                                       " CanSendWindowUpdateFrames=",
+                                       stream->CanSendWindowUpdateFrames()));
+  if (stream != nullptr && stream->CanSendWindowUpdateFrames()) {
+    const uint32_t increment = stream->flow_control.MaybeSendUpdate();
+    GRPC_HTTP2_COMMON_DLOG
+        << "MaybeAddStreamWindowUpdateFrame MaybeSendUpdate { "
+        << stream->GetStreamId() << ", " << increment << " }"
+        << (increment == 0 ? ". The frame will NOT be sent for increment 0"
+                           : "");
+    if (increment > 0) {
+      frames.emplace_back(
+          Http2WindowUpdateFrame{stream->GetStreamId(), increment});
+    }
+  }
 }
 
 // /////////////////////////////////////////////////////////////////////////////
