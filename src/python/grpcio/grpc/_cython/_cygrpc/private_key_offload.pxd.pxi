@@ -42,7 +42,7 @@ cdef extern from "grpc/grpc_private_key_offload.h" namespace "grpc_core":
     cdef cppclass CustomPrivateKeySigner:
         pass
     cdef enum SignatureAlgorithm "grpc_core::CustomPrivateKeySigner::SignatureAlgorithm":
-        kRsaPkcs1Sha256 "grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha256"
+        kRsaPkcs1Sha256 "grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha256",
         kRsaPkcs1Sha384 "grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha384"
         kRsaPkcs1Sha512 "grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha512"
         kEcdsaSecp256r1Sha256 "grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kEcdsaSecp256r1Sha256"

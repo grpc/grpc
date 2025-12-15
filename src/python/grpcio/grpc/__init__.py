@@ -18,6 +18,7 @@ import contextlib
 import enum
 import logging
 import sys
+from typing import Callable, Optional
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
@@ -1720,6 +1721,27 @@ def ssl_channel_credentials(
             root_certificates, private_key, certificate_chain
         )
     )
+
+PrivateKeySignDoneCallback = Callable[[Optional[bytes], bool], None]
+# Note: SignatureAlgorithm corresponds to C-core's enum class SignatureAlgorithm.
+CustomPrivateKeySign = Callable[
+    [
+        bytes,
+        _cygrpc.CustomPrivateKeySigner.SignatureAlgorithm,
+        PrivateKeySignDoneCallback,
+    ],
+    None,
+]
+
+
+def ssl_channel_credentials_with_custom_signer(
+    *,
+    private_key_sign_fn: CustomPrivateKeySign,
+    root_certificates: Optional[bytes] = None,
+    certificate_chain: Optional[bytes] = None,
+) -> ChannelCredentials:
+    # to implement - will be a _cygrpc.SSLChannelCredentials
+    pass
 
 
 def xds_channel_credentials(fallback_credentials=None):
