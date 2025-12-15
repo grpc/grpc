@@ -36,6 +36,7 @@ void CustomPrivateKeySignerPyWrapper::Sign(
         delete on_sign_complete_ptr;
       };
 
+  // We have to manage the lifetime
   auto* on_sign_complete_heap =
       new OnSignComplete(std::move(on_sign_complete));
 

@@ -44,8 +44,6 @@ namespace grpc_core {
 
 
     CustomPrivateKeySigner* BuildCustomPrivateKeySigner(SignPyWrapper sign, void* user_data);
-}
-
-    
+    }  // namespace grpc_core
 
 #endif  // GRPC_GRPC_PRIVATE_KEY_OFFLOAD_PY_WRAPPER_H
