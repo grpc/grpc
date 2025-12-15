@@ -188,12 +188,13 @@ cdef class SSLSessionCacheLRU:
 
 cdef class SSLChannelCredentials(ChannelCredentials):
 
-  def __cinit__(self, pem_root_certificates, private_key, certificate_chain):
+  def __cinit__(self, pem_root_certificates, private_key, certificate_chain, private_key_signer=None):
     if pem_root_certificates is not None and not isinstance(pem_root_certificates, bytes):
       raise TypeError('expected certificate to be bytes, got %s' % (type(pem_root_certificates)))
     self._pem_root_certificates = pem_root_certificates
     self._private_key = private_key
     self._certificate_chain = certificate_chain
+    self._private_key_signer = private_key_signer
 
   cdef grpc_channel_credentials *c(self) except *:
     cdef const char *c_pem_root_certificates
@@ -208,7 +209,7 @@ cdef class SSLChannelCredentials(ChannelCredentials):
 
     if self._private_key or self._certificate_chain:
       c_tls_identity_pairs = grpc_tls_identity_pairs_create()
-      c_private_key = self._private_key or <const char*>NULL
+      c_private_key = self._private_key or self._private_key_signer or <const char*>NULL
       c_cert_chain = self._certificate_chain or <const char*>NULL
       grpc_tls_identity_pairs_add_pair(c_tls_identity_pairs, c_private_key, c_cert_chain)
 
