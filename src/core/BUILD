@@ -8345,6 +8345,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log",
+        "absl/status",
         "absl/strings",
     ],
     deps = [
@@ -8438,6 +8439,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log",
+        "absl/status",
     ],
     deps = [
         "call_spine",

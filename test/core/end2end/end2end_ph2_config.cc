@@ -97,12 +97,10 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|Http2SingleHopTests.RequestWithLargeMetadataSoftLimitBelowDefaultSoft"
 
 #define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST       \
-  LARGE_METADATA_SUITE                                       \
   "|Http2SingleHopTests.MaxConcurrentStreams"                \
   "|Http2SingleHopTests.MaxConcurrentStreamsTimeoutOnFirst"  \
   "|Http2SingleHopTests.MaxConcurrentStreamsTimeoutOnSecond" \
   "|Http2SingleHopTests.MaxConcurrentStreamsRejectOnClient"  \
-  "|Http2SingleHopTests.SimpleDelayedRequestShort"           \
   "|Http2Tests.ServerStreaming"                              \
   "|Http2Tests.ServerStreamingEmptyStream"                   \
   "|Http2Tests.ServerStreaming10Messages"                    \
