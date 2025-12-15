@@ -23,11 +23,11 @@
 
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/util/bitset.h"
 #include "absl/status/status.h"
-#include "absl/strings/match.h" 
+#include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
-#include "src/core/lib/surface/validate_metadata.h"
 
 namespace grpc_core {
 
@@ -94,11 +94,10 @@ ValidateMetadataResult ValidateHeaderDataIsLegal(absl::string_view data) {
     return ValidateMetadataResult::kOk;
   }
   return ConformsTo(data, g_legal_header_key_bits,
-    ValidateMetadataResult::kIllegalHeaderValue);
+                    ValidateMetadataResult::kIllegalHeaderValue);
 }
 
-absl::Status ValidateMetadata(absl::string_view key,
-                                        absl::string_view value) {
+absl::Status ValidateMetadata(absl::string_view key, absl::string_view value) {
   auto status = ValidateHeaderKeyIsLegal(key);
   if (status != ValidateMetadataResult::kOk) return UpgradeToStatus(status);
   return UpgradeToStatus(ValidateHeaderDataIsLegal(value));

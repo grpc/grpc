@@ -327,7 +327,7 @@ void ServerContextBase::AddInitialMetadata(const std::string& key,
                                            const std::string& value) {
   auto status = grpc_core::ValidateMetadata(key, value);
   if (!status.ok()) {
-    LOG(ERROR)<<"Invalid Metadata: "<<status;
+    LOG(ERROR) << "Invalid Metadata: " << status;
     return;
   }
   initial_metadata_.insert(std::pair(key, value));
@@ -337,7 +337,7 @@ void ServerContextBase::AddTrailingMetadata(const std::string& key,
                                             const std::string& value) {
   auto status = grpc_core::ValidateMetadata(key, value);
   if (!status.ok()) {
-    LOG(ERROR)<<"Invalid Metadata: "<<status;
+    LOG(ERROR) << "Invalid Metadata: " << status;
     return;
   }
   trailing_metadata_.insert(std::pair(key, value));
