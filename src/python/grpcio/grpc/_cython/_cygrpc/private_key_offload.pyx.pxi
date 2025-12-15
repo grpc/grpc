@@ -14,7 +14,7 @@
 from cython.operator cimport dereference
 from cpython.pystate cimport PyGILState_STATE, PyGILState_Ensure, PyGILState_Release
 
-cdef void sign_trampoline(string_view data_to_sign, SignatureAlgorithm signature_algorithm, OnSignCompletePyWrapper on_sign_complete_py_wrapper, void* completion_data, void* user_data) noexcept:
+cdef void sign_trampoline(string_view data_to_sign, CSignatureAlgorithm signature_algorithm, OnSignCompletePyWrapper on_sign_complete_py_wrapper, void* completion_data, void* user_data) noexcept:
     cdef PyGILState_STATE gstate
     cdef PyCustomPrivateKeySigner py_signer
     cdef string cpp_signature

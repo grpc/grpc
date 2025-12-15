@@ -1727,7 +1727,7 @@ PrivateKeySignDoneCallback = Callable[[Optional[bytes], bool], None]
 CustomPrivateKeySign = Callable[
     [
         bytes,
-        _cygrpc.CustomPrivateKeySigner.SignatureAlgorithm,
+        _cygrpc.SignatureAlgorithm,
         PrivateKeySignDoneCallback,
     ],
     None,
