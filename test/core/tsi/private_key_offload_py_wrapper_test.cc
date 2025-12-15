@@ -239,7 +239,7 @@ TEST_P(PyWrapperPrivateKeySignerTest, SignAndVerify) {
                });
   notification.WaitForNotification();
   ASSERT_TRUE(result.ok());
-  EXPECT_TRUE(Verify(pub_key.get(), param.alg, "Hello World", *result).ok());
+  EXPECT_TRUE(Verify(pub_key.get(), param.alg, "Hello World!", *result).ok());
 }
 
 INSTANTIATE_TEST_SUITE_P(
