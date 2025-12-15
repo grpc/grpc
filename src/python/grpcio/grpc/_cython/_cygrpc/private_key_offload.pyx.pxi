@@ -27,15 +27,15 @@ cdef void sign_trampoline(string_view data_to_sign, SignatureAlgorithm signature
         try:
             py_data_to_sign = data_to_sign.data()[:data_to_sign.length()]
             
-            py_sig_alg = None
-            if signature_algorithm == <SignatureAlgorithm>kRsaPss:
-                py_sig_alg = 'rsa-pss'
-            elif signature_algorithm == <SignatureAlgorithm>kEcdsa:
-                py_sig_alg = 'ecdsa'
-            else:
-                raise ValueError("Unknown signature algorithm")
+            # py_sig_alg = None
+            # if signature_algorithm == <SignatureAlgorithm>kRsaPss:
+            #     py_sig_alg = 'rsa-pss'
+            # elif signature_algorithm == <SignatureAlgorithm>kEcdsa:
+            #     py_sig_alg = 'ecdsa'
+            # else:
+            #     raise ValueError("Unknown signature algorithm")
             
-            signature = py_signer._py_callable(py_data_to_sign, py_sig_alg)
+            signature = py_signer._py_callable(py_data_to_sign, signature_algorithm)
             if not isinstance(signature, bytes):
                 raise TypeError("Signature must be bytes")
 

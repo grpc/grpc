@@ -42,8 +42,15 @@ cdef extern from "grpc/grpc_private_key_offload.h" namespace "grpc_core":
     cdef cppclass CustomPrivateKeySigner:
         pass
     cdef enum SignatureAlgorithm "grpc_core::CustomPrivateKeySigner::SignatureAlgorithm":
-        kRsaPss "grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kRsaPss"
-        kEcdsa "grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kEcdsa"
+        kRsaPkcs1Sha256 "grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha256"
+        kRsaPkcs1Sha384 "grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha384"
+        kRsaPkcs1Sha512 "grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha512"
+        kEcdsaSecp256r1Sha256 "grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kEcdsaSecp256r1Sha256"
+        kEcdsaSecp384r1Sha384 "grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kEcdsaSecp384r1Sha384"
+        kEcdsaSecp521r1Sha512 "grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kEcdsaSecp521r1Sha512"
+        kRsaPssRsaeSha256 "grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha256"
+        kRsaPssRsaeSha384 "grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha384"
+        kRsaPssRsaeSha512 "grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha512"
 
 cdef extern from "src/core/tsi/private_key_offload_py_wrapper.h" namespace "grpc_core":
     ctypedef void (*OnSignCompletePyWrapper)(const StatusOr[string], void*) noexcept
