@@ -25,7 +25,9 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/bitset.h"
 #include "absl/status/status.h"
+#include "absl/strings/match.h" 
 #include "absl/strings/string_view.h"
+#include "src/core/lib/surface/validate_metadata.h"
 
 namespace grpc_core {
 
@@ -85,6 +87,21 @@ const char* ValidateMetadataResultToString(ValidateMetadataResult result) {
       return "Illegal header value";
   }
   GPR_UNREACHABLE_CODE(return "Unknown");
+}
+
+ValidateMetadataResult ValidateHeaderDataIsLegal(absl::string_view data) {
+  if (absl::EndsWith(data, "-bin")) {
+    return ValidateMetadataResult::kOk;
+  }
+  return ConformsTo(data, g_legal_header_key_bits,
+    ValidateMetadataResult::kIllegalHeaderValue);
+}
+
+absl::Status ValidateMetadata(absl::string_view key,
+                                        absl::string_view value) {
+  auto status = ValidateHeaderKeyIsLegal(key);
+  if (status != ValidateMetadataResult::kOk) return UpgradeToStatus(status);
+  return UpgradeToStatus(ValidateHeaderDataIsLegal(value));
 }
 
 }  // namespace grpc_core

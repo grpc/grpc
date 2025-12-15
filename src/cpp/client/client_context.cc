@@ -40,6 +40,11 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
 #include "absl/strings/str_format.h"
+//#include "src/cpp/util/validate_metadata.h"
+//#include "absl/strings/match.h"
+#include "absl/log/log.h"
+#include "src/core/lib/surface/validate_metadata.h"
+
 
 namespace grpc {
 
@@ -117,6 +122,11 @@ std::unique_ptr<ClientContext> ClientContext::FromCallbackServerContext(
 
 void ClientContext::AddMetadata(const std::string& meta_key,
                                 const std::string& meta_value) {
+  auto status = grpc_core::ValidateMetadata(meta_key, meta_value);
+  if (!status.ok()) {
+    LOG(ERROR)<<"Invalid Metadata: "<<status;
+    return;
+  }
   send_initial_metadata_.insert(std::pair(meta_key, meta_value));
 }
 

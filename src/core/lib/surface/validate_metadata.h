@@ -27,6 +27,7 @@
 
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/grpc_check.h"
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -43,6 +44,10 @@ const char* ValidateMetadataResultToString(ValidateMetadataResult result);
 
 // Returns nullopt if the key is legal, otherwise returns an error message.
 ValidateMetadataResult ValidateHeaderKeyIsLegal(absl::string_view key);
+
+ValidateMetadataResult ValidateHeaderDataIsLegal(absl::string_view data);
+
+absl::Status ValidateMetadata(absl::string_view key, absl::string_view data);
 
 }  // namespace grpc_core
 
