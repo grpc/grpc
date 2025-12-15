@@ -18,16 +18,22 @@
 
 #include "src/core/credentials/transport/ssl/ssl_credentials.h"
 
+#include <grpc/credentials.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <string.h>
 
+#include <memory>
 #include <optional>
 #include <string>
 #include <utility>
 
+#include "src/core/credentials/transport/security_connector.h"
+#include "src/core/credentials/transport/ssl/ssl_security_connector.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -35,6 +41,8 @@
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/unique_type_name.h"
 #include "absl/log/log.h"
 
 //
@@ -422,7 +430,7 @@ grpc_server_credentials* grpc_ssl_server_credentials_create_ex(
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_ssl_server_credentials_create_ex(pem_root_certs="
       << pem_root_certs << ", pem_key_cert_pairs=" << pem_key_cert_pairs
-      << ", num_key_cert_pairs=" << (unsigned long)num_key_cert_pairs
+      << ", num_key_cert_pairs=" << num_key_cert_pairs
       << ", client_certificate_request=" << client_certificate_request
       << ", reserved=" << reserved << ")";
   GRPC_CHECK_EQ(reserved, nullptr);
@@ -470,4 +478,27 @@ void grpc_ssl_server_credentials_options_destroy(
   gpr_free(o->certificate_config_fetcher);
   grpc_ssl_server_certificate_config_destroy(o->certificate_config);
   gpr_free(o);
+}
+
+namespace {
+
+std::string GetLeafCert(const grpc_auth_context* ctx) {
+  if (ctx == nullptr) return "";
+  grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
+      ctx, GRPC_X509_PEM_CERT_PROPERTY_NAME);
+  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
+  if (prop == nullptr) return "";
+  return std::string(prop->value, prop->value_length);
+}
+
+}  // namespace
+
+bool SslLeafHashComparator(const grpc_auth_context* ctx1,
+                           const grpc_auth_context* ctx2) {
+  std::string cert1 = GetLeafCert(ctx1);
+  std::string cert2 = GetLeafCert(ctx2);
+  // If either cert is empty, we consider them not matching (or not
+  // authenticated). This is a safe default for now.
+  if (cert1.empty() || cert2.empty()) return false;
+  return cert1 == cert2;
 }
