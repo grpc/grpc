@@ -52,6 +52,7 @@
 
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/surface/call.h"
+#include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
