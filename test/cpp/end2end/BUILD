@@ -1544,3 +1544,38 @@ grpc_cc_test(
         "//test/cpp/util:test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "tls_private_key_offload_end2end_test",
+    srcs = ["tls_private_key_offload_end2end_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+        "//src/core/tsi/test_creds:client.key",
+        "//src/core/tsi/test_creds:client.pem",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/log:check",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/synchronization",
+        "gtest",
+    ],
+    tags = ["tls_private_key_offload_test"],
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc++_base",
+        "//:grpc_base",
+        "//src/core:default_event_engine",
+        "//src/core:grpc_tls_credentials",
+        "//src/proto/grpc/testing:echo_cc_grpc",
+        "//src/proto/grpc/testing:echo_messages_cc_proto",
+        "//test/core/test_util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)

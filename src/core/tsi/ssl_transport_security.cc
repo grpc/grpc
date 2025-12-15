@@ -967,7 +967,7 @@ static tsi_result populate_ssl_context(
             SSL_CTX_set_private_key_method(
                 context, &grpc_core::TlsOffloadPrivateKeyMethod);
             SSL_CTX_set_ex_data(
-                context, g_ssl_ctx_ex_private_key_function_index, &key_sign);
+                context, g_ssl_ctx_ex_private_key_function_index, key_sign.get());
           }
 #endif  // OPENSSL_IS_BORINGSSL
           return TSI_OK;
@@ -2060,6 +2060,7 @@ static tsi_result ssl_handshaker_next(
   if (offload_context != nullptr) {
     offload_context->notify_cb = cb;
     offload_context->notify_user_data = user_data;
+    offload_context->handshaker_result = handshaker_result;
   }
 
   tsi_result status = TSI_OK;
@@ -2122,9 +2123,6 @@ static tsi_result ssl_handshaker_next(
     status = ssl_handshaker_result_create(impl, unused_bytes, unused_bytes_size,
                                           handshaker_result, error);
     if (status == TSI_OK) {
-      if (offload_context != nullptr) {
-        offload_context->handshaker_result = handshaker_result;
-      }
       // Indicates that the handshake has completed and that a
       // handshaker_result has been created.
       self->handshaker_result_created = true;
@@ -2291,11 +2289,12 @@ static tsi_result create_tsi_ssl_handshaker(
       static_cast<grpc_core::CustomPrivateKeySigner*>(SSL_CTX_get_ex_data(
           ssl_ctx, g_ssl_ctx_ex_private_key_function_index));
   if (sign_function != nullptr) {
-    grpc_core::TlsPrivateKeyOffloadContext* private_key_offload_context = {};
+    grpc_core::TlsPrivateKeyOffloadContext* private_key_offload_context =
+        new grpc_core::TlsPrivateKeyOffloadContext();
     private_key_offload_context->handshaker = *handshaker;
 
     SSL_set_ex_data(ssl, g_ssl_ex_private_key_offloading_context_index,
-                    &private_key_offload_context);
+                    private_key_offload_context);
   }
 
   return TSI_OK;

@@ -1,0 +1,352 @@
+//
+//
+// Copyright 2025 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+//
+
+#include <grpc/grpc_security.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/security/tls_certificate_provider.h>
+#include <grpcpp/security/tls_credentials_options.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/support/status.h>
+#include <openssl/evp.h>
+#include <openssl/rsa.h>
+#include <openssl/ssl.h>
+
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
+#include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/tsi/ssl_transport_security_utils.h"
+#include "src/proto/grpc/testing/echo_messages.pb.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
+#include "test/cpp/end2end/test_service_impl.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/synchronization/notification.h"
+
+namespace grpc {
+namespace testing {
+namespace {
+
+constexpr absl::string_view kMessage = "Hello";
+constexpr absl::string_view kCaPemPath = "src/core/tsi/test_creds/ca.pem";
+constexpr absl::string_view kServerKeyPath =
+    "src/core/tsi/test_creds/server1.key";
+constexpr absl::string_view kServerCertPath =
+    "src/core/tsi/test_creds/server1.pem";
+constexpr absl::string_view kClientKeyPath =
+    "src/core/tsi/test_creds/client.key";
+constexpr absl::string_view kClientCertPath =
+    "src/core/tsi/test_creds/client.pem";
+
+bssl::UniquePtr<EVP_PKEY> LoadPrivateKeyFromString(
+    absl::string_view private_pem) {
+  bssl::UniquePtr<BIO> bio(
+      BIO_new_mem_buf(private_pem.data(), private_pem.size()));
+  return bssl::UniquePtr<EVP_PKEY>(
+      PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, nullptr));
+}
+
+class TlsPrivateKeyOffloadTest : public ::testing::Test {
+ protected:
+  void RunServer(absl::Notification* notification,
+                 std::shared_ptr<experimental::CertificateProviderInterface>
+                     server_certificate_provider) {
+    grpc::experimental::TlsServerCredentialsOptions options(
+        server_certificate_provider);
+    options.watch_root_certs();
+    options.set_root_cert_name("root");
+    options.watch_identity_key_cert_pairs();
+    options.set_identity_cert_name("identity");
+    options.set_cert_request_type(
+        GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
+    auto server_credentials = grpc::experimental::TlsServerCredentials(options);
+    CHECK_NE(server_credentials.get(), nullptr);
+
+    grpc::ServerBuilder builder;
+
+    builder.AddListeningPort(server_addr_, server_credentials);
+    builder.RegisterService("foo.test.google.fr", &service_);
+    server_ = builder.BuildAndStart();
+    notification->Notify();
+    server_->Wait();
+  }
+
+  void TearDown() override {
+    if (server_ != nullptr) {
+      server_->Shutdown();
+      server_thread_->join();
+      delete server_thread_;
+    }
+  }
+
+  TestServiceImpl service_;
+  std::unique_ptr<Server> server_ = nullptr;
+  std::thread* server_thread_ = nullptr;
+  std::string server_addr_;
+  std::shared_ptr<grpc_core::CustomPrivateKeySigner> signer_;
+};
+
+void DoRpc(const std::string& server_addr,
+           const experimental::TlsChannelCredentialsOptions& tls_options) {
+  ChannelArguments channel_args;
+  channel_args.SetSslTargetNameOverride("foo.test.google.fr");
+  std::shared_ptr<Channel> channel = grpc::CreateCustomChannel(
+      server_addr, grpc::experimental::TlsCredentials(tls_options),
+      channel_args);
+
+  auto stub = grpc::testing::EchoTestService::NewStub(channel);
+  grpc::testing::EchoRequest request;
+  grpc::testing::EchoResponse response;
+  request.set_message(kMessage);
+  ClientContext context;
+  context.set_deadline(grpc_timeout_seconds_to_deadline(/*time_s=*/15));
+  grpc::Status result = stub->Echo(&context, request, &response);
+  EXPECT_TRUE(result.ok()) << result.error_message().c_str() << ", "
+                           << result.error_details().c_str();
+  EXPECT_EQ(response.message(), kMessage);
+}
+
+bool GetBoringSslAlgorithm(
+    grpc_core::CustomPrivateKeySigner::SignatureAlgorithm signature_algorithm,
+    const EVP_MD** md, int* padding) {
+  switch (signature_algorithm) {
+    case grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha256:
+      *md = EVP_sha256();
+      *padding = RSA_PKCS1_PADDING;
+      return true;
+    case grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha384:
+      *md = EVP_sha384();
+      *padding = RSA_PKCS1_PADDING;
+      return true;
+    case grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha512:
+      *md = EVP_sha512();
+      *padding = RSA_PKCS1_PADDING;
+      return true;
+    case grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kEcdsaSecp256r1Sha256:
+      *md = EVP_sha256();
+      *padding = 0;
+      return true;
+    case grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kEcdsaSecp384r1Sha384:
+      *md = EVP_sha384();
+      *padding = 0;
+      return true;
+    case grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kEcdsaSecp521r1Sha512:
+      *md = EVP_sha512();
+      *padding = 0;
+      return true;
+    case grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha256:
+      *md = EVP_sha256();
+      *padding = RSA_PKCS1_PSS_PADDING;
+      return true;
+    case grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha384:
+      *md = EVP_sha384();
+      *padding = RSA_PKCS1_PSS_PADDING;
+      return true;
+    case grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha512:
+      *md = EVP_sha512();
+      *padding = RSA_PKCS1_PSS_PADDING;
+      return true;
+    default:
+      return false;
+  }
+}
+
+class TestCustomPrivateKeySigner final
+    : public grpc_core::CustomPrivateKeySigner {
+ public:
+  explicit TestCustomPrivateKeySigner(absl::string_view private_key)
+      : pkey_(LoadPrivateKeyFromString(private_key)) {}
+
+  void Sign(absl::string_view data_to_sign,
+            SignatureAlgorithm signature_algorithm,
+            OnSignComplete on_sign_complete) override {
+              LOG(ERROR) << "anasalazar";
+    const EVP_MD* md = nullptr;
+    int padding = 0;
+    if (!GetBoringSslAlgorithm(signature_algorithm, &md, &padding)) {
+      on_sign_complete(absl::InternalError("Unsupported signature algorithm"));
+      return;
+    }
+    bssl::ScopedEVP_MD_CTX ctx;
+    EVP_PKEY_CTX* pctx = nullptr;
+    if (!EVP_DigestSignInit(ctx.get(), &pctx, md, nullptr, pkey_.get())) {
+      on_sign_complete(absl::InternalError("EVP_DigestSignInit failed"));
+      return;
+    }
+    if (padding == RSA_PKCS1_PADDING) {
+      if (!EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PADDING)) {
+        on_sign_complete(
+            absl::InternalError("EVP_PKEY_CTX_set_rsa_padding failed"));
+        return;
+      }
+    } else if (padding == RSA_PKCS1_PSS_PADDING) {
+      if (!EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PSS_PADDING) ||
+          !EVP_PKEY_CTX_set_rsa_pss_saltlen(pctx, -1)) {
+        on_sign_complete(
+            absl::InternalError("EVP_PKEY_CTX_set_rsa_padding failed"));
+        return;
+      }
+    }
+    size_t sig_len = 0;
+    if (!EVP_DigestSignUpdate(ctx.get(), data_to_sign.data(),
+                              data_to_sign.size()) ||
+        !EVP_DigestSignFinal(ctx.get(), nullptr, &sig_len)) {
+      on_sign_complete(absl::InternalError("EVP_DigestSignFinal failed"));
+      return;
+    }
+    std::string sig;
+    sig.resize(sig_len);
+    if (!EVP_DigestSignFinal(ctx.get(), reinterpret_cast<uint8_t*>(sig.data()),
+                             &sig_len)) {
+      on_sign_complete(absl::InternalError("EVP_DigestSignFinal failed"));
+      return;
+    }
+    sig.resize(sig_len);
+    LOG(ERROR) << "anasalazar";
+    on_sign_complete(std::move(sig));
+    LOG(ERROR) << "anasalazar";
+  }
+
+  ~TestCustomPrivateKeySigner() {}
+
+ private:
+  bssl::UniquePtr<EVP_PKEY> pkey_;
+};
+
+TEST_F(TlsPrivateKeyOffloadTest, DefaultOffload) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  std::string server_key =
+      grpc_core::testing::GetFileContents(std::string(kServerKeyPath));
+  std::string server_cert =
+      grpc_core::testing::GetFileContents(std::string(kServerCertPath));
+  std::string ca_cert =
+      grpc_core::testing::GetFileContents(std::string(kCaPemPath));
+
+  experimental::IdentityKeyCertPair server_key_cert_pair;
+  server_key_cert_pair.private_key = server_key;
+  server_key_cert_pair.certificate_chain = server_cert;
+  std::vector<experimental::IdentityKeyCertPair> server_identity_key_cert_pairs;
+  server_identity_key_cert_pairs.emplace_back(server_key_cert_pair);
+  auto server_certificate_provider =
+      std::make_shared<experimental::StaticDataCertificateProvider>(
+          ca_cert, server_identity_key_cert_pairs);
+
+  absl::Notification notification;
+  server_thread_ = new std::thread(
+      [&]() { RunServer(&notification, server_certificate_provider); });
+  notification.WaitForNotification();
+
+  std::string client_key =
+      grpc_core::testing::GetFileContents(std::string(kClientKeyPath));
+  std::string client_cert =
+      grpc_core::testing::GetFileContents(std::string(kClientCertPath));
+  experimental::IdentityKeyCertPair client_key_cert_pair;
+  client_key_cert_pair.private_key = client_key;
+  client_key_cert_pair.certificate_chain = client_cert;
+  std::vector<experimental::IdentityKeyCertPair> client_identity_key_cert_pairs;
+  client_identity_key_cert_pairs.emplace_back(client_key_cert_pair);
+  auto client_certificate_provider =
+      std::make_shared<experimental::StaticDataCertificateProvider>(
+          ca_cert, client_identity_key_cert_pairs);
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  options.set_certificate_provider(client_certificate_provider);
+  options.watch_root_certs();
+  options.set_root_cert_name("root");
+  options.watch_identity_key_cert_pairs();
+  options.set_identity_cert_name("identity");
+  options.set_check_call_host(false);
+
+  DoRpc(server_addr_, options);
+}
+
+TEST_F(TlsPrivateKeyOffloadTest, OffloadWithCustomKeySigner) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  std::string server_key =
+      grpc_core::testing::GetFileContents(std::string(kServerKeyPath));
+  std::string server_cert =
+      grpc_core::testing::GetFileContents(std::string(kServerCertPath));
+  std::string ca_cert =
+      grpc_core::testing::GetFileContents(std::string(kCaPemPath));
+
+  auto server_certificate_provider =
+      std::make_shared<experimental::InMemoryCertificateProvider>();
+  signer_ = std::make_shared<TestCustomPrivateKeySigner>(server_key);
+  grpc_core::PemKeyCertPairList identity_pairs;
+  identity_pairs.emplace_back(signer_, server_cert);
+  static_cast<grpc_core::InMemoryCertificateProvider*>(
+      server_certificate_provider->c_provider())
+      ->UpdateIdentity(identity_pairs);
+  static_cast<grpc_core::InMemoryCertificateProvider*>(
+      server_certificate_provider->c_provider())
+      ->UpdateRoot(std::make_shared<RootCertInfo>(ca_cert));
+
+  absl::Notification notification;
+  server_thread_ = new std::thread(
+      [&]() { RunServer(&notification, server_certificate_provider); });
+  notification.WaitForNotification();
+
+  std::string client_key =
+      grpc_core::testing::GetFileContents(std::string(kClientKeyPath));
+  std::string client_cert =
+      grpc_core::testing::GetFileContents(std::string(kClientCertPath));
+  experimental::IdentityKeyCertPair key_cert_pair;
+  key_cert_pair.private_key = client_key;
+  key_cert_pair.certificate_chain = client_cert;
+  std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs;
+  identity_key_cert_pairs.emplace_back(key_cert_pair);
+  auto client_certificate_provider =
+      std::make_shared<experimental::StaticDataCertificateProvider>(
+          ca_cert, identity_key_cert_pairs);
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  options.set_certificate_provider(client_certificate_provider);
+  options.watch_root_certs();
+  options.set_root_cert_name("root");
+  options.watch_identity_key_cert_pairs();
+  options.set_identity_cert_name("identity");
+  options.set_check_call_host(false);
+
+  DoRpc(server_addr_, options);
+}
+
+}  // namespace
+}  // namespace testing
+}  // namespace grpc
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  int ret = RUN_ALL_TESTS();
+  return ret;
+}

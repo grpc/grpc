@@ -61,25 +61,30 @@ ToSignatureAlgorithmClass(uint16_t algorithm) {
 #if defined(OPENSSL_IS_BORINGSSL)
 void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
                                 absl::StatusOr<std::string> signed_data) {
+  LOG(ERROR) << "anasazalar";
   if (signed_data.ok()) {
     ctx->signed_bytes = std::move(signed_data);
 
     // Notify the TSI layer to re-enter the handshake.
     // This call is thread-safe as per TSI requirements for the callback.
     if (ctx->notify_cb) {
+      LOG(ERROR) << "anasazalar";
       std::string bytes_to_send = *ctx->signed_bytes;
       const unsigned char* bytes_to_send_ptr =
           reinterpret_cast<const unsigned char*>(bytes_to_send.c_str());
+      LOG(ERROR) << "anasazalar";
       ctx->notify_cb(TSI_OK, ctx->notify_user_data, bytes_to_send_ptr,
                      bytes_to_send.length(), *ctx->handshaker_result);
+      LOG(ERROR) << "anasazalar";
     }
   } else {
     ctx->signed_bytes = signed_data.status();
     // Notify the TSI layer to re-enter the handshake.
     // This call is thread-safe as per TSI requirements for the callback.
     if (ctx->notify_cb) {
+      LOG(ERROR) << "anasazalar";
       ctx->notify_cb(TSI_INTERNAL_ERROR, ctx->notify_user_data, nullptr, 0,
-                     *ctx->handshaker_result);
+                      *ctx->handshaker_result);
     }
   }
 }
@@ -108,8 +113,13 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
   }
 
   CustomPrivateKeySigner* signer = GetCustomPrivateKeySigner(ssl_ctx);
-  signer->Sign(absl::string_view(reinterpret_cast<const char*>(in), in_len),
-               *algorithm, done_callback);
+  if (signer != nullptr) {
+    LOG(ERROR) << "anasazalar";
+    signer->Sign(absl::string_view(reinterpret_cast<const char*>(in), in_len),
+                 *algorithm, done_callback);
+    LOG(ERROR) << "anasazalar";
+  }
+  LOG(ERROR) << "anasazalar";
 
   // The operation is not completed. Tell BoringSSL to wait for the signature
   // result.
@@ -120,6 +130,7 @@ enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,
                                                            uint8_t* out,
                                                            size_t* out_len,
                                                            size_t max_out) {
+  LOG(ERROR) << "anasazalar";
   TlsPrivateKeyOffloadContext* ctx = GetTlsPrivateKeyOffloadContext(ssl);
 
   if (!ctx->signed_bytes.ok()) {
