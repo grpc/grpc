@@ -1354,6 +1354,28 @@ TEST(FrameSize, Http2FrameSizeTest) {
   EXPECT_EQ(GetFrameMemoryUsage(Http2EmptyFrame{}), sizeof(Http2EmptyFrame));
 }
 
+TEST(MaybeTruncatePayloadTest, Truncation) {
+  // Test with an empty buffer.
+  SliceBuffer sb_empty;
+  EXPECT_EQ(MaybeTruncatePayload(sb_empty, 10), "");
+
+  // Test with a non-empty buffer.
+  SliceBuffer sb;
+  sb.Append(Slice::FromCopiedString("hello world"));
+  // Case: Length > payload length.
+  EXPECT_EQ(MaybeTruncatePayload(sb, 20), "hello world");
+  // Case: Length == payload length + 1.
+  EXPECT_EQ(MaybeTruncatePayload(sb, 12), "hello world");
+  // Case: Length == payload length.
+  EXPECT_EQ(MaybeTruncatePayload(sb, 11), "hello world");
+  // Case: Length == payload length - 1.
+  EXPECT_EQ(MaybeTruncatePayload(sb, 10), "hello worl<clipped>");
+  // Case: Length < payload length.
+  EXPECT_EQ(MaybeTruncatePayload(sb, 5), "hello<clipped>");
+  // Case: Length == 0.
+  EXPECT_EQ(MaybeTruncatePayload(sb, 0), "<clipped>");
+}
+
 }  // namespace
 }  // namespace grpc_core
 

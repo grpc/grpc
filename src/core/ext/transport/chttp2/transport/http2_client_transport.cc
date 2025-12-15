@@ -246,7 +246,7 @@ Http2Status Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
   GRPC_HTTP2_CLIENT_DLOG
       << "Http2ClientTransport ProcessHttp2DataFrame { stream_id="
       << frame.stream_id << ", end_stream=" << frame.end_stream
-      << ", payload=" << frame.payload.JoinIntoString()
+      << ", payload=" << MaybeTruncatePayload(frame.payload)
       << ", payload length=" << frame.payload.Length() << "}";
 
   // TODO(akshitpatel) : [PH2][P3] : Investigate if we should do this even if
@@ -340,7 +340,7 @@ Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
       << "Http2ClientTransport ProcessHttp2HeaderFrame Promise { stream_id="
       << frame.stream_id << ", end_headers=" << frame.end_headers
       << ", end_stream=" << frame.end_stream
-      << ", payload=" << frame.payload.JoinIntoString() << " }";
+      << ", payload=" << MaybeTruncatePayload(frame.payload) << " }";
   // State update MUST happen before processing the frame.
   incoming_headers_.OnHeaderReceived(frame);
 
@@ -621,6 +621,18 @@ Http2Status Http2ClientTransport::ProcessHttp2WindowUpdateFrame(
   if (frame.stream_id != 0) {
     stream = LookupStream(frame.stream_id);
   }
+  if (stream != nullptr) {
+    StreamWritabilityUpdate update =
+        stream->ReceivedFlowControlWindowUpdate(frame.increment);
+    if (update.became_writable) {
+      absl::Status status = writable_stream_list_.EnqueueWrapper(
+          stream, update.priority, AreTransportFlowControlTokensAvailable());
+      if (!status.ok()) {
+        return ToHttpOkOrConnError(status);
+      }
+    }
+  }
+
   bool should_trigger_write =
       ProcessIncomingWindowUpdateFrameFlowControl(frame, flow_control_, stream);
   if (should_trigger_write) {
@@ -636,7 +648,7 @@ Http2Status Http2ClientTransport::ProcessHttp2ContinuationFrame(
       << "Http2ClientTransport ProcessHttp2ContinuationFrame Promise { "
          "stream_id="
       << frame.stream_id << ", end_headers=" << frame.end_headers
-      << ", payload=" << frame.payload.JoinIntoString() << " }";
+      << ", payload=" << MaybeTruncatePayload(frame.payload) << " }";
 
   // State update MUST happen before processing the frame.
   incoming_headers_.OnContinuationReceived(frame);
@@ -828,7 +840,7 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
           SliceBuffer payload) -> absl::StatusOr<Http2Frame> {
         GRPC_HTTP2_CLIENT_DLOG
             << "Http2ClientTransport ReadAndProcessOneFrame ParseFramePayload "
-            << payload.JoinIntoString();
+            << MaybeTruncatePayload(payload);
         ValueOrHttp2Status<Http2Frame> frame =
             ParseFramePayload(self->current_frame_header_, std::move(payload));
         if (!frame.IsOk()) {
@@ -910,16 +922,21 @@ auto Http2ClientTransport::FlowControlPeriodicUpdateLoop() {
 // Equivalent to grpc_chttp2_act_on_flowctl_action in chttp2_transport.cc
 void Http2ClientTransport::ActOnFlowControlAction(
     const chttp2::FlowControlAction& action, RefCountedPtr<Stream> stream) {
-  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::ActOnFlowControlAction";
+  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::ActOnFlowControlAction"
+                         << action.DebugString();
   if (action.send_stream_update() != kNoActionNeeded) {
     if (GPR_LIKELY(stream != nullptr)) {
       GRPC_DCHECK_GT(stream->GetStreamId(), 0u);
       if (stream->CanSendWindowUpdateFrames()) {
         window_update_list_.insert(stream->GetStreamId());
+        GRPC_HTTP2_CLIENT_DLOG
+            << "Http2ClientTransport::ActOnFlowControlAction "
+               "added stream "
+            << stream->GetStreamId() << " to window_update_list_";
       }
     } else {
       GRPC_HTTP2_CLIENT_DLOG
-          << "Http2ClientTransport ActOnFlowControlAction stream is null";
+          << "Http2ClientTransport::ActOnFlowControlAction stream is null";
     }
   }
 
@@ -1037,25 +1054,23 @@ Http2ClientTransport::DequeueStreamFrames(RefCountedPtr<Stream> stream) {
   // data frames when write_bytes_remaining_ is very low. As the
   // available transport tokens can only range from 0 to 2^31 - 1,
   // we are clamping the write_bytes_remaining_ to that range.
-  const uint32_t max_dequeue_size =
+  const uint32_t tokens =
       GetMaxPermittedDequeue(flow_control_, stream->flow_control,
                              write_bytes_remaining_, settings_->peer());
+  const uint32_t stream_flow_control_tokens = static_cast<uint32_t>(
+      GetStreamFlowControlTokens(stream->flow_control, settings_->peer()));
   stream->flow_control.ReportIfStalled(
       /*is_client=*/true, stream->GetStreamId(), settings_->peer());
   StreamDataQueue<ClientMetadataHandle>::DequeueResult result =
-      stream->DequeueFrames(max_dequeue_size,
+      stream->DequeueFrames(tokens, stream_flow_control_tokens,
                             settings_->peer().max_frame_size(), encoder_);
   ProcessOutgoingDataFrameFlowControl(stream->flow_control,
                                       result.flow_control_tokens_consumed);
   if (result.is_writable) {
     // Stream is still writable. Enqueue it back to the writable
     // stream list.
-    absl::Status status;
-    if (AreTransportFlowControlTokensAvailable()) {
-      status = writable_stream_list_.Enqueue(stream, result.priority);
-    } else {
-      status = writable_stream_list_.BlockedOnTransportFlowControl(stream);
-    }
+    absl::Status status = writable_stream_list_.EnqueueWrapper(
+        stream, result.priority, AreTransportFlowControlTokensAvailable());
 
     if (GPR_UNLIKELY(!status.ok())) {
       GRPC_HTTP2_CLIENT_DLOG
@@ -1325,16 +1340,7 @@ void Http2ClientTransport::MaybeGetWindowUpdateFrames(SliceBuffer& output_buf) {
   }
   for (const uint32_t stream_id : window_update_list_) {
     RefCountedPtr<Stream> stream = LookupStream(stream_id);
-    if (stream != nullptr && stream->CanSendWindowUpdateFrames()) {
-      const uint32_t increment = stream->flow_control.MaybeSendUpdate();
-      if (increment > 0) {
-        GRPC_HTTP2_CLIENT_DLOG
-            << "Http2ClientTransport::MaybeGetWindowUpdateFrames Stream Window "
-               "Update { "
-            << stream_id << ", " << window_size << " }";
-        frames.emplace_back(Http2WindowUpdateFrame{stream_id, increment});
-      }
-    }
+    MaybeAddStreamWindowUpdateFrame(stream, frames);
   }
   window_update_list_.clear();
   if (!frames.empty()) {
@@ -1425,8 +1431,6 @@ void Http2ClientTransport::ReadChannelArgs(const ChannelArgs& channel_args,
                          flow_control_,
                          /*is_client=*/true);
 
-  // TODO(akshitpatel) : [PH2][P3] : Add a persistent struct for channel args
-  // to avoid copying these channel args to member variables.
   // Assign the channel args to the member variables.
   keepalive_time_ = args.keepalive_time;
   incoming_headers_.set_soft_limit(args.max_header_list_size_soft_limit);
