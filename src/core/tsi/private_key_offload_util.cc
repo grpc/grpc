@@ -79,7 +79,7 @@ void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
     if (ctx->notify_cb) {
       LOG(ERROR) << "anasazalar";
       ctx->notify_cb(TSI_INTERNAL_ERROR, ctx->notify_user_data, nullptr, 0,
-                      nullptr);
+                     nullptr);
     }
   }
 }

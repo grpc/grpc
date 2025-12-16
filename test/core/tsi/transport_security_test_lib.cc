@@ -343,7 +343,7 @@ grpc_error_handle on_handshake_next_done(
 static void on_handshake_next_done_wrapper(
     tsi_result result, void* user_data, const unsigned char* bytes_to_send,
     size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result) {
-      LOG(ERROR) << "anasalazar";
+  LOG(ERROR) << "anasalazar";
   handshaker_args* args = static_cast<handshaker_args*>(user_data);
   args->error = on_handshake_next_done(result, user_data, bytes_to_send,
                                        bytes_to_send_size, handshaker_result);

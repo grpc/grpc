@@ -77,4 +77,15 @@ GRPCAPI void grpc_tls_credentials_options_set_root_certificate_provider(
     grpc_tls_credentials_options* options,
     grpc_tls_certificate_provider* provider);
 
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
+ * Adds a identity private key and a identity certificate chain to
+ * grpc_tls_identity_pairs. This function will make an internal copy of
+ * |cert_chain| and take ownership of |private_key|.
+ */
+GRPCAPI void grpc_tls_identity_pairs_add_pair_with_custom_signer(
+    grpc_tls_identity_pairs* pairs,
+    grpc_core::CustomPrivateKeySigner* private_key, const char* cert_chain);
+
 #endif /* GRPC_GRPC_PRIVATE_KEY_OFFLOAD_H */

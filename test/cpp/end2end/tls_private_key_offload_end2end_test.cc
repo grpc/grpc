@@ -194,7 +194,7 @@ class TestCustomPrivateKeySigner final
   explicit TestCustomPrivateKeySigner(absl::string_view private_key)
       : pkey_(LoadPrivateKeyFromString(private_key)) {}
 
-    void Sign(absl::string_view data_to_sign,
+  void Sign(absl::string_view data_to_sign,
             SignatureAlgorithm signature_algorithm,
             OnSignComplete on_sign_complete) override {
     auto on_sign_complete_ptr =
@@ -211,7 +211,8 @@ class TestCustomPrivateKeySigner final
       bssl::ScopedEVP_MD_CTX ctx;
       EVP_PKEY_CTX* pctx = nullptr;
       if (!EVP_DigestSignInit(ctx.get(), &pctx, md, nullptr, pkey_.get())) {
-        (*on_sign_complete_ptr)(absl::InternalError("EVP_DigestSignInit failed"));
+        (*on_sign_complete_ptr)(
+            absl::InternalError("EVP_DigestSignInit failed"));
         return;
       }
       if (padding == RSA_PKCS1_PADDING) {
@@ -232,14 +233,16 @@ class TestCustomPrivateKeySigner final
       if (!EVP_DigestSignUpdate(ctx.get(), data_to_sign.data(),
                                 data_to_sign.size()) ||
           !EVP_DigestSignFinal(ctx.get(), nullptr, &sig_len)) {
-        (*on_sign_complete_ptr)(absl::InternalError("EVP_DigestSignFinal failed"));
+        (*on_sign_complete_ptr)(
+            absl::InternalError("EVP_DigestSignFinal failed"));
         return;
       }
       std::string sig;
       sig.resize(sig_len);
       if (!EVP_DigestSignFinal(
               ctx.get(), reinterpret_cast<uint8_t*>(sig.data()), &sig_len)) {
-        (*on_sign_complete_ptr)(absl::InternalError("EVP_DigestSignFinal failed"));
+        (*on_sign_complete_ptr)(
+            absl::InternalError("EVP_DigestSignFinal failed"));
         return;
       }
       sig.resize(sig_len);
@@ -321,6 +324,60 @@ TEST_F(TlsPrivateKeyOffloadTest, OffloadWithCustomKeySigner) {
   static_cast<grpc_core::InMemoryCertificateProvider*>(
       server_certificate_provider->c_provider())
       ->UpdateRoot(std::make_shared<RootCertInfo>(ca_cert));
+
+  absl::Notification notification;
+  server_thread_ = new std::thread(
+      [&]() { RunServer(&notification, server_certificate_provider); });
+  notification.WaitForNotification();
+
+  std::string client_key =
+      grpc_core::testing::GetFileContents(std::string(kClientKeyPath));
+  std::string client_cert =
+      grpc_core::testing::GetFileContents(std::string(kClientCertPath));
+  experimental::IdentityKeyCertPair key_cert_pair;
+  key_cert_pair.private_key = client_key;
+  key_cert_pair.certificate_chain = client_cert;
+  std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs;
+  identity_key_cert_pairs.emplace_back(key_cert_pair);
+  auto client_certificate_provider =
+      std::make_shared<experimental::StaticDataCertificateProvider>(
+          ca_cert, identity_key_cert_pairs);
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  options.set_certificate_provider(client_certificate_provider);
+  options.watch_root_certs();
+  options.set_root_cert_name("root");
+  options.watch_identity_key_cert_pairs();
+  options.set_identity_cert_name("identity");
+  options.set_check_call_host(false);
+
+  DoRpc(server_addr_, options);
+}
+
+TEST_F(TlsPrivateKeyOffloadTest, OffloadWithCustomKeySignerCStyleApi) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  std::string server_key =
+      grpc_core::testing::GetFileContents(std::string(kServerKeyPath));
+  std::string server_cert =
+      grpc_core::testing::GetFileContents(std::string(kServerCertPath));
+  std::string ca_cert =
+      grpc_core::testing::GetFileContents(std::string(kCaPemPath));
+
+  auto server_certificate_provider =
+      std::make_shared<experimental::InMemoryCertificateProvider>();
+
+  grpc_tls_identity_pairs* pairs = grpc_tls_identity_pairs_create();
+  grpc_tls_identity_pairs_add_pair_with_custom_signer(
+      pairs, new TestCustomPrivateKeySigner(server_key), server_cert.c_str());
+
+  static_cast<grpc_core::InMemoryCertificateProvider*>(
+      server_certificate_provider->c_provider())
+      ->UpdateIdentity(pairs->pem_key_cert_pairs);
+  static_cast<grpc_core::InMemoryCertificateProvider*>(
+      server_certificate_provider->c_provider())
+      ->UpdateRoot(std::make_shared<RootCertInfo>(ca_cert));
+
+  grpc_tls_identity_pairs_destroy(pairs);
 
   absl::Notification notification;
   server_thread_ = new std::thread(

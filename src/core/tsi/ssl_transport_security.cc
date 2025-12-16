@@ -294,9 +294,10 @@ static void verified_root_cert_free(void* /*parent*/, void* ptr,
   X509_free(static_cast<X509*>(ptr));
 }
 
-static void private_key_offloading_context_free(
-    void* /*parent*/, void* ptr, CRYPTO_EX_DATA* /*ad*/, int /*index*/,
-    long /*argl*/, void* /*argp*/) {
+static void private_key_offloading_context_free(void* /*parent*/, void* ptr,
+                                                CRYPTO_EX_DATA* /*ad*/,
+                                                int /*index*/, long /*argl*/,
+                                                void* /*argp*/) {
   grpc_core::TlsPrivateKeyOffloadContext* ctx =
       static_cast<grpc_core::TlsPrivateKeyOffloadContext*>(ptr);
   delete ctx;
@@ -967,8 +968,9 @@ static tsi_result populate_ssl_context(
           if (key_sign != nullptr) {
             SSL_CTX_set_private_key_method(
                 context, &grpc_core::TlsOffloadPrivateKeyMethod);
-            SSL_CTX_set_ex_data(
-                context, g_ssl_ctx_ex_private_key_function_index, key_sign.get());
+            SSL_CTX_set_ex_data(context,
+                                g_ssl_ctx_ex_private_key_function_index,
+                                key_sign.get());
           }
 #endif  // OPENSSL_IS_BORINGSSL
           return TSI_OK;
