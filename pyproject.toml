@@ -68,3 +68,6 @@ where = ["src/python/grpcio"]
     "*.pxd",
     "*.pxi",
 ]
+
+[tool.pyright]
+include = ["src/python/grpcio"]
