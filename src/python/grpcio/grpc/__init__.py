@@ -2041,7 +2041,7 @@ def insecure_server_credentials() -> ServerCredentials:
 
 
 def ssl_server_certificate_configuration(
-    private_key_certificate_chain_pairs: List[Sequence[bytes, bytes]],
+    private_key_certificate_chain_pairs: List[Sequence[bytes]],
     root_certificates: Optional[bytes] = None,
 ) -> ServerCertificateConfiguration:
     """Creates a ServerCertificateConfiguration for use with a Server.
