@@ -116,3 +116,8 @@ zope-interface==7.2
 
 # The following packages are considered to be unsafe in a requirements file:
 setuptools==77.0.1
+    # via
+    #   -r requirements.bazel.txt
+    #   incremental
+    #   zope-event
+    #   zope-interface
