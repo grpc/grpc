@@ -37,6 +37,11 @@ class AddHeaderFilter final : public ImplementChannelFilter<AddHeaderFilter> {
     std::string header_name;
     std::string header_value;
 
+    Config() = default;
+
+    Config(absl::string_view name, absl::string_view value)
+        : header_name(name), header_value(value) {}
+
     static UniqueTypeName Type() {
       return GRPC_UNIQUE_TYPE_NAME_HERE("AddHeaderFilterConfig");
     }

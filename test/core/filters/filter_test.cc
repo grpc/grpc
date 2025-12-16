@@ -115,7 +115,7 @@ FilterTestBase::Call::Impl::~Impl() {
 
 void FilterTestBase::Call::Impl::Start(ClientMetadataHandle md) {
   EXPECT_EQ(promise_, std::nullopt);
-  promise_ = channel_->filter->MakeCallPromise(
+  promise_ = channel_->filter_ptr()->MakeCallPromise(
       CallArgs{std::move(md), ClientInitialMetadataOutstandingToken::Empty(),
                nullptr, &pipe_server_initial_metadata_.sender,
                &pipe_client_to_server_messages_.receiver,

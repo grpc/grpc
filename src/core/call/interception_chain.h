@@ -100,7 +100,9 @@ class Interceptor : public UnstartedCallDestination {
   using UnstartedCallDestination::UnstartedCallDestination;
 
   void StartCall(UnstartedCallHandler unstarted_call_handler) final {
-    unstarted_call_handler.AddCallStack(filter_stack_);
+    if (filter_stack_ != nullptr) {
+      unstarted_call_handler.AddCallStack(filter_stack_);
+    }
     InterceptCall(std::move(unstarted_call_handler));
   }
 

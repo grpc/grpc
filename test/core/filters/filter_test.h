@@ -26,6 +26,7 @@
 #include <ostream>
 #include <string>
 #include <utility>
+#include <variant>
 
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -35,6 +36,7 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/match.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/filters/filter_test.h"
@@ -96,10 +98,12 @@ class FilterTestBase : public ::testing::Test {
   class Channel {
    private:
     struct Impl {
-      Impl(std::unique_ptr<ChannelFilter> filter, FilterTestBase* test)
+      using FilterPtr = std::variant<std::unique_ptr<ChannelFilter>,
+                                     RefCountedPtr<ChannelFilter>>;
+      Impl(FilterPtr filter, FilterTestBase* test)
           : filter(std::move(filter)), test(test) {}
       RefCountedPtr<ArenaFactory> arena_factory = SimpleArenaAllocator();
-      std::unique_ptr<ChannelFilter> filter;
+      FilterPtr filter;
       FilterTestBase* const test;
     };
 
@@ -111,7 +115,20 @@ class FilterTestBase : public ::testing::Test {
                      FilterTestBase* test)
         : impl_(std::make_shared<Impl>(std::move(filter), test)) {}
 
-    ChannelFilter* filter_ptr() { return impl_->filter.get(); }
+    explicit Channel(RefCountedPtr<ChannelFilter> filter,
+                     FilterTestBase* test)
+        : impl_(std::make_shared<Impl>(std::move(filter), test)) {}
+
+    ChannelFilter* filter_ptr() {
+      return Match(
+          impl_->filter,
+          [](const std::unique_ptr<ChannelFilter>& filter) {
+            return filter.get();
+          },
+          [](const RefCountedPtr<ChannelFilter>& filter) {
+            return filter.get();
+          });
+    }
 
    private:
     friend class FilterTestBase;

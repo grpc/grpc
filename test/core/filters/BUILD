@@ -184,6 +184,9 @@ grpc_cc_test(
         "//src/core:channel_args",
         "//src/core:composite_filter",
         "//src/core:unique_type_name",
+        "//src/core:xds_matcher",
+        "//src/core:grpc_xds_client",
+        "//test/core/test_util:xds_http_add_header_filter",
     ],
 )
 
