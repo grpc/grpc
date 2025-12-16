@@ -40,7 +40,7 @@
 absl-py
 certifi
 chardet
-gevent
+gevent~=25.8
 google-auth
 googleapis-common-protos
 idna
