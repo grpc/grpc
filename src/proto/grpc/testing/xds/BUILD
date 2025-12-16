@@ -17,7 +17,7 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_proto_library", "grpc_package")
 licenses(["notice"])
 
 grpc_package(
-    name = "src/proto/grpc/testing/xds",
+    name = "xds_proto",
     features = [
         "layering_check",
         "parse_headers",
