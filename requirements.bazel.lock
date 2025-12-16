@@ -115,10 +115,4 @@ zope-interface==7.2
     #   twisted
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==77.0.1 ; python_version > "3.8" # Manually added for python > 3.8, until Bazel RBE jobs support Python >= 3.9 (Tech debt: b/427881645)
-setuptools==75.3.2 ; python_version <= "3.8"
-    # via
-    #   -r requirements.bazel.txt
-    #   incremental
-    #   zope-event
-    #   zope-interface
+setuptools==77.0.1
