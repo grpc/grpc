@@ -27,6 +27,6 @@ python3 -m venv $VIRTUALENV
 source $VIRTUALENV/bin/activate
 python3 --version
 
-pip install pyright
+pip install pyright sphinx
 
 exec pyright "${DIRS[@]}"
