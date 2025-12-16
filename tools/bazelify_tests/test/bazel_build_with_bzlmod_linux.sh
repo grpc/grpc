@@ -19,6 +19,7 @@ set -ex
 tools/bazel \
     --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
     build \
+    --check_direct_dependencies=error \
     -- \
     :all \
     -:grpcpp_csm_observability  # Needs google_cloud_cpp to be added to BCR
@@ -27,6 +28,7 @@ tools/bazel \
 tools/bazel \
     --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
     build \
+    --check_direct_dependencies=error \
     -- \
     //examples/cpp/... \
     -//examples/cpp/csm/...  # Needs grpcpp_csm_observability
@@ -37,6 +39,7 @@ tools/bazel \
 tools/bazel \
     --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
     test \
+    --check_direct_dependencies=error \
     -- \
     //test/core/config:all \
     //test/cpp/common:all
@@ -46,6 +49,7 @@ tools/bazel \
 tools/bazel \
     --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
     build \
+    --check_direct_dependencies=error \
     --define=//third_party:grpc_use_openssl=true \
     -- \
     :all \
