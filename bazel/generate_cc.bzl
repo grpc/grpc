@@ -17,6 +17,7 @@ This is an internal rule used by cc_grpc_library, and shouldn't be used
 directly.
 """
 
+load("//bazel/private:proto_toolchain_helpers.bzl", "toolchains")
 load("@rules_proto//proto:defs.bzl", "ProtoInfo")
 load(
     "//bazel:protobuf.bzl",
@@ -160,7 +161,7 @@ def generate_cc_impl(ctx):
         inputs = protos + includes + well_known_proto_files,
         tools = tools,
         outputs = out_files,
-        executable = ctx.executable._protoc,
+        executable = toolchains.find_protoc(ctx, "_protoc"),
         arguments = arguments,
         use_default_shell_env = True,
     )
@@ -207,15 +208,17 @@ _generate_cc = rule(
             default = False,
             mandatory = False,
         ),
+    } | toolchains.if_legacy_toolchain({
         "_protoc": attr.label(
             default = Label("@com_google_protobuf//:protoc"),
             executable = True,
             cfg = "exec",
         ),
-    },
+    }),
     # We generate .h files, so we need to output to genfiles.
     output_to_genfiles = True,
     implementation = generate_cc_impl,
+    toolchains = toolchains.use_toolchain(toolchains.PROTO_TOOLCHAIN),
 )
 
 def generate_cc(well_known_protos, **kwargs):
