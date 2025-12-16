@@ -28936,6 +28936,7 @@ targets:
   language: c++
   headers:
   - test/core/test_util/scoped_env_var.h
+  - test/core/test_util/xds_http_add_header_filter.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
@@ -29068,6 +29069,7 @@ targets:
   - third_party/xds/xds/type/v3/cel.proto
   - third_party/xds/xds/type/v3/range.proto
   - third_party/xds/xds/type/v3/typed_struct.proto
+  - test/core/test_util/xds_http_add_header_filter.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_composite_filter_end2end_test.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc

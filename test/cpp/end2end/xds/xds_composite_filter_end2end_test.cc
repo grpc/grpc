@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/string_util.h>
-
 #include <map>
 #include <memory>
 #include <optional>
@@ -39,6 +37,7 @@
 #include "src/core/xds/grpc/xds_http_filter_registry.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
+#include "test/core/test_util/xds_http_add_header_filter.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "xds/type/matcher/v3/matcher.pb.h"
 #include "xds/type/v3/typed_struct.pb.h"
@@ -62,164 +61,6 @@ using ::envoy::type::matcher::v3::HttpRequestHeaderMatchInput;
 using ::xds::type::matcher::v3::Matcher;
 using ::xds::type::v3::TypedStruct;
 
-// A C-core filter that adds a header as specified by its config.
-class AddHeaderFilter final
-    : public grpc_core::ImplementChannelFilter<AddHeaderFilter> {
- public:
-  struct Config final : public grpc_core::FilterConfig {
-    std::string header_name;
-    std::string header_value;
-
-    static grpc_core::UniqueTypeName Type() {
-      return GRPC_UNIQUE_TYPE_NAME_HERE("AddHeaderFilterConfig");
-    }
-
-    grpc_core::UniqueTypeName type() const override { return Type(); }
-
-    bool Equals(const grpc_core::FilterConfig& other) const override {
-      auto& o = grpc_core::DownCast<const Config&>(other);
-      return header_name == o.header_name && header_value == o.header_value;
-    }
-
-    std::string ToString() const override {
-      return absl::StrCat("{header_name=\"", header_name, "\", header_value=\"",
-                          header_value, "\"}");
-    }
-
-    static const grpc_core::JsonLoaderInterface* JsonLoader(
-        const grpc_core::JsonArgs&) {
-      static const auto* loader =
-          grpc_core::JsonObjectLoader<Config>()
-              .Field("header_name", &Config::header_name)
-              .Field("header_value", &Config::header_value)
-              .Finish();
-      return loader;
-    }
-  };
-
-  class Call {
-   public:
-    void OnClientInitialMetadata(grpc_core::ClientMetadata& md,
-                                 AddHeaderFilter* filter) {
-      md.Append(
-          filter->config_->header_name,
-          grpc_core::Slice::FromCopiedString(filter->config_->header_value),
-          [](absl::string_view error, const grpc_core::Slice&) {
-            grpc_core::Crash(absl::StrCat("ERROR ADDING HEADER: ", error));
-          });
-    }
-
-    static inline const grpc_core::NoInterceptor OnServerInitialMetadata;
-    static inline const grpc_core::NoInterceptor OnServerTrailingMetadata;
-    static inline const grpc_core::NoInterceptor OnClientToServerMessage;
-    static inline const grpc_core::NoInterceptor OnClientToServerHalfClose;
-    static inline const grpc_core::NoInterceptor OnServerToClientMessage;
-    static inline const grpc_core::NoInterceptor OnFinalize;
-
-    grpc_core::channelz::PropertyList ChannelzProperties() {
-      return grpc_core::channelz::PropertyList();
-    }
-  };
-
-  static const grpc_channel_filter kFilterVtable;
-
-  static absl::string_view TypeName() { return "AddHeaderFilter"; }
-
-  static absl::StatusOr<std::unique_ptr<AddHeaderFilter>> Create(
-      const grpc_core::ChannelArgs&, grpc_core::ChannelFilter::Args args) {
-    if (args.config() == nullptr) {
-      return absl::InternalError("no filter config in AddHeaderFilter");
-    }
-    if (args.config()->type() != AddHeaderFilter::Config::Type()) {
-      return absl::InternalError("wrong filter config type in AddHeaderFilter");
-    }
-    return std::make_unique<AddHeaderFilter>(
-        args.config().TakeAsSubclass<const Config>());
-  }
-
-  explicit AddHeaderFilter(grpc_core::RefCountedPtr<const Config> config)
-      : config_(std::move(config)) {}
-
- private:
-  grpc_core::RefCountedPtr<const Config> config_;
-};
-
-const grpc_channel_filter AddHeaderFilter::kFilterVtable =
-    grpc_core::MakePromiseBasedFilter<AddHeaderFilter,
-                                      grpc_core::FilterEndpoint::kClient>();
-
-constexpr absl::string_view kXdsHttpAddHeaderFilterName =
-    "io.grpc.test.AddHeaderFilter";
-
-// xDS HTTP filter factory for AddHeaderFilter.
-class XdsHttpAddHeaderFilterFactory final
-    : public grpc_core::XdsHttpFilterImpl {
- public:
-  absl::string_view ConfigProtoName() const override {
-    return kXdsHttpAddHeaderFilterName;
-  }
-  absl::string_view OverrideConfigProtoName() const override {
-    return kXdsHttpAddHeaderFilterName;
-  }
-  void PopulateSymtab(upb_DefPool* symtab) const override {}
-  void AddFilter(grpc_core::FilterChainBuilder& builder,
-                 grpc_core::RefCountedPtr<const grpc_core::FilterConfig> config)
-      const override {
-    builder.AddFilter<AddHeaderFilter>(std::move(config));
-  }
-  grpc_core::RefCountedPtr<const grpc_core::FilterConfig> ParseTopLevelConfig(
-      absl::string_view /*instance_name*/,
-      const grpc_core::XdsResourceType::DecodeContext& /*context*/,
-      const grpc_core::XdsExtension& extension,
-      grpc_core::ValidationErrors* errors) const override {
-    auto* json_value = std::get_if<grpc_core::Json>(&extension.value);
-    if (json_value == nullptr) {
-      errors->AddError("filter config is not TypedStruct");
-      return nullptr;
-    }
-    return grpc_core::LoadFromJson<
-        grpc_core::RefCountedPtr<AddHeaderFilter::Config>>(
-        *json_value, grpc_core::JsonArgs(), errors);
-  }
-  grpc_core::RefCountedPtr<const grpc_core::FilterConfig> ParseOverrideConfig(
-      absl::string_view instance_name,
-      const grpc_core::XdsResourceType::DecodeContext& context,
-      const grpc_core::XdsExtension& extension,
-      grpc_core::ValidationErrors* errors) const override {
-    return ParseTopLevelConfig(instance_name, context, extension, errors);
-  }
-  bool IsSupportedOnClients() const override { return true; }
-  bool IsSupportedOnServers() const override { return false; }
-  bool IsTerminalFilter() const override { return false; }
-
-  std::optional<XdsFilterConfig> GenerateFilterConfig(
-      absl::string_view /*instance_name*/,
-      const grpc_core::XdsResourceType::DecodeContext& /*context*/,
-      const grpc_core::XdsExtension& /*extension*/,
-      grpc_core::ValidationErrors* errors) const override {
-    errors->AddError("legacy filter config not supported");
-    return std::nullopt;
-  }
-  std::optional<XdsFilterConfig> GenerateFilterConfigOverride(
-      absl::string_view /*instance_name*/,
-      const grpc_core::XdsResourceType::DecodeContext& /*context*/,
-      const grpc_core::XdsExtension& /*extension*/,
-      grpc_core::ValidationErrors* errors) const override {
-    errors->AddError("legacy filter config not supported");
-    return std::nullopt;
-  }
-  const grpc_channel_filter* channel_filter() const override { return nullptr; }
-  absl::StatusOr<ServiceConfigJsonEntry> GenerateMethodConfig(
-      const XdsFilterConfig& /*hcm_filter_config*/,
-      const XdsFilterConfig* /*filter_config_override*/) const override {
-    return absl::UnimplementedError("legacy filter config not supported");
-  }
-  absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
-      const XdsFilterConfig& /*hcm_filter_config*/) const override {
-    return absl::UnimplementedError("legacy filter config not supported");
-  }
-};
-
 class XdsCompositeFilterEnd2endTest : public XdsEnd2endTest {
  public:
   XdsCompositeFilterEnd2endTest()
@@ -230,8 +71,9 @@ class XdsCompositeFilterEnd2endTest : public XdsEnd2endTest {
       GTEST_SKIP()
           << "test requires xds_channel_filter_chain_per_route experiment";
     }
-    grpc_core::SetXdsHttpFilterFactoryForTest(
-        []() { return std::make_unique<XdsHttpAddHeaderFilterFactory>(); });
+    grpc_core::SetXdsHttpFilterFactoryForTest([]() {
+      return std::make_unique<grpc_core::XdsHttpAddHeaderFilterFactory>();
+    });
     CreateAndStartBackends(1);
     EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
     balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
@@ -247,7 +89,8 @@ class XdsCompositeFilterEnd2endTest : public XdsEnd2endTest {
       const std::string& header_name, const std::string& header_value) {
     TypedStruct typed_struct;
     typed_struct.set_type_url(
-        absl::StrCat("type.googleapis.com/", kXdsHttpAddHeaderFilterName));
+        absl::StrCat("type.googleapis.com/",
+                     grpc_core::XdsHttpAddHeaderFilterFactory::kFilterName));
     auto* value_map = typed_struct.mutable_value()->mutable_fields();
     (*value_map)["header_name"].set_string_value(header_name);
     (*value_map)["header_value"].set_string_value(header_value);
