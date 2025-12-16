@@ -34,6 +34,7 @@
 
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
@@ -152,27 +153,33 @@ bool GetBoringSslAlgorithm(
       *md = EVP_sha512();
       *padding = RSA_PKCS1_PADDING;
       return true;
-    case grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kEcdsaSecp256r1Sha256:
+    case grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::
+        kEcdsaSecp256r1Sha256:
       *md = EVP_sha256();
       *padding = 0;
       return true;
-    case grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kEcdsaSecp384r1Sha384:
+    case grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::
+        kEcdsaSecp384r1Sha384:
       *md = EVP_sha384();
       *padding = 0;
       return true;
-    case grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kEcdsaSecp521r1Sha512:
+    case grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::
+        kEcdsaSecp521r1Sha512:
       *md = EVP_sha512();
       *padding = 0;
       return true;
-    case grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha256:
+    case grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::
+        kRsaPssRsaeSha256:
       *md = EVP_sha256();
       *padding = RSA_PKCS1_PSS_PADDING;
       return true;
-    case grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha384:
+    case grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::
+        kRsaPssRsaeSha384:
       *md = EVP_sha384();
       *padding = RSA_PKCS1_PSS_PADDING;
       return true;
-    case grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha512:
+    case grpc_core::CustomPrivateKeySigner::SignatureAlgorithm::
+        kRsaPssRsaeSha512:
       *md = EVP_sha512();
       *padding = RSA_PKCS1_PSS_PADDING;
       return true;
@@ -187,54 +194,57 @@ class TestCustomPrivateKeySigner final
   explicit TestCustomPrivateKeySigner(absl::string_view private_key)
       : pkey_(LoadPrivateKeyFromString(private_key)) {}
 
-  void Sign(absl::string_view data_to_sign,
+    void Sign(absl::string_view data_to_sign,
             SignatureAlgorithm signature_algorithm,
             OnSignComplete on_sign_complete) override {
-              LOG(ERROR) << "anasalazar";
-    const EVP_MD* md = nullptr;
-    int padding = 0;
-    if (!GetBoringSslAlgorithm(signature_algorithm, &md, &padding)) {
-      on_sign_complete(absl::InternalError("Unsupported signature algorithm"));
-      return;
-    }
-    bssl::ScopedEVP_MD_CTX ctx;
-    EVP_PKEY_CTX* pctx = nullptr;
-    if (!EVP_DigestSignInit(ctx.get(), &pctx, md, nullptr, pkey_.get())) {
-      on_sign_complete(absl::InternalError("EVP_DigestSignInit failed"));
-      return;
-    }
-    if (padding == RSA_PKCS1_PADDING) {
-      if (!EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PADDING)) {
-        on_sign_complete(
-            absl::InternalError("EVP_PKEY_CTX_set_rsa_padding failed"));
+    auto on_sign_complete_ptr =
+        std::make_shared<OnSignComplete>(std::move(on_sign_complete));
+    std::thread([this, data_to_sign = std::string(data_to_sign),
+                 signature_algorithm, on_sign_complete_ptr]() mutable {
+      const EVP_MD* md = nullptr;
+      int padding = 0;
+      if (!GetBoringSslAlgorithm(signature_algorithm, &md, &padding)) {
+        (*on_sign_complete_ptr)(
+            absl::InternalError("Unsupported signature algorithm"));
         return;
       }
-    } else if (padding == RSA_PKCS1_PSS_PADDING) {
-      if (!EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PSS_PADDING) ||
-          !EVP_PKEY_CTX_set_rsa_pss_saltlen(pctx, -1)) {
-        on_sign_complete(
-            absl::InternalError("EVP_PKEY_CTX_set_rsa_padding failed"));
+      bssl::ScopedEVP_MD_CTX ctx;
+      EVP_PKEY_CTX* pctx = nullptr;
+      if (!EVP_DigestSignInit(ctx.get(), &pctx, md, nullptr, pkey_.get())) {
+        (*on_sign_complete_ptr)(absl::InternalError("EVP_DigestSignInit failed"));
         return;
       }
-    }
-    size_t sig_len = 0;
-    if (!EVP_DigestSignUpdate(ctx.get(), data_to_sign.data(),
-                              data_to_sign.size()) ||
-        !EVP_DigestSignFinal(ctx.get(), nullptr, &sig_len)) {
-      on_sign_complete(absl::InternalError("EVP_DigestSignFinal failed"));
-      return;
-    }
-    std::string sig;
-    sig.resize(sig_len);
-    if (!EVP_DigestSignFinal(ctx.get(), reinterpret_cast<uint8_t*>(sig.data()),
-                             &sig_len)) {
-      on_sign_complete(absl::InternalError("EVP_DigestSignFinal failed"));
-      return;
-    }
-    sig.resize(sig_len);
-    LOG(ERROR) << "anasalazar";
-    on_sign_complete(std::move(sig));
-    LOG(ERROR) << "anasalazar";
+      if (padding == RSA_PKCS1_PADDING) {
+        if (!EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PADDING)) {
+          (*on_sign_complete_ptr)(
+              absl::InternalError("EVP_PKEY_CTX_set_rsa_padding failed"));
+          return;
+        }
+      } else if (padding == RSA_PKCS1_PSS_PADDING) {
+        if (!EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PSS_PADDING) ||
+            !EVP_PKEY_CTX_set_rsa_pss_saltlen(pctx, -1)) {
+          (*on_sign_complete_ptr)(
+              absl::InternalError("EVP_PKEY_CTX_set_rsa_padding failed"));
+          return;
+        }
+      }
+      size_t sig_len = 0;
+      if (!EVP_DigestSignUpdate(ctx.get(), data_to_sign.data(),
+                                data_to_sign.size()) ||
+          !EVP_DigestSignFinal(ctx.get(), nullptr, &sig_len)) {
+        (*on_sign_complete_ptr)(absl::InternalError("EVP_DigestSignFinal failed"));
+        return;
+      }
+      std::string sig;
+      sig.resize(sig_len);
+      if (!EVP_DigestSignFinal(
+              ctx.get(), reinterpret_cast<uint8_t*>(sig.data()), &sig_len)) {
+        (*on_sign_complete_ptr)(absl::InternalError("EVP_DigestSignFinal failed"));
+        return;
+      }
+      sig.resize(sig_len);
+      (*on_sign_complete_ptr)(std::move(sig));
+    }).detach();
   }
 
   ~TestCustomPrivateKeySigner() {}

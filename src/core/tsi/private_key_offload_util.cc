@@ -69,12 +69,7 @@ void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
     // This call is thread-safe as per TSI requirements for the callback.
     if (ctx->notify_cb) {
       LOG(ERROR) << "anasazalar";
-      std::string bytes_to_send = *ctx->signed_bytes;
-      const unsigned char* bytes_to_send_ptr =
-          reinterpret_cast<const unsigned char*>(bytes_to_send.c_str());
-      LOG(ERROR) << "anasazalar";
-      ctx->notify_cb(TSI_OK, ctx->notify_user_data, bytes_to_send_ptr,
-                     bytes_to_send.length(), *ctx->handshaker_result);
+      ctx->notify_cb(TSI_OK, ctx->notify_user_data, nullptr, 0, nullptr);
       LOG(ERROR) << "anasazalar";
     }
   } else {
@@ -84,7 +79,7 @@ void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
     if (ctx->notify_cb) {
       LOG(ERROR) << "anasazalar";
       ctx->notify_cb(TSI_INTERNAL_ERROR, ctx->notify_user_data, nullptr, 0,
-                      *ctx->handshaker_result);
+                      nullptr);
     }
   }
 }
@@ -134,11 +129,13 @@ enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,
   TlsPrivateKeyOffloadContext* ctx = GetTlsPrivateKeyOffloadContext(ssl);
 
   if (!ctx->signed_bytes.ok()) {
+    LOG(ERROR) << "anasazalar";
     return ssl_private_key_failure;
   }
   // Important bit is moving the signed data where it needs to go
   const std::string& signed_data = *ctx->signed_bytes;
   if (signed_data.length() > max_out) {
+    LOG(ERROR) << "anasazalar";
     // Result is too large.
     return ssl_private_key_failure;
   }

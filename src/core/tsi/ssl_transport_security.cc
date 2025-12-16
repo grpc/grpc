@@ -294,10 +294,12 @@ static void verified_root_cert_free(void* /*parent*/, void* ptr,
   X509_free(static_cast<X509*>(ptr));
 }
 
-static void private_key_offloading_free(void* /*parent*/, void* ptr,
-                                        CRYPTO_EX_DATA* /*ad*/, int /*index*/,
-                                        long /*argl*/, void* /*argp*/) {
-  X509_free(static_cast<X509*>(ptr));
+static void private_key_offloading_context_free(
+    void* /*parent*/, void* ptr, CRYPTO_EX_DATA* /*ad*/, int /*index*/,
+    long /*argl*/, void* /*argp*/) {
+  grpc_core::TlsPrivateKeyOffloadContext* ctx =
+      static_cast<grpc_core::TlsPrivateKeyOffloadContext*>(ptr);
+  delete ctx;
 }
 
 static void init_openssl(void) {
@@ -364,15 +366,14 @@ static void init_openssl(void) {
       0, nullptr, nullptr, nullptr, verified_root_cert_free);
   GRPC_CHECK_NE(g_ssl_ex_verified_root_cert_index, -1);
 
-  g_ssl_ctx_ex_private_key_function_index = SSL_CTX_get_ex_new_index(
-      0, nullptr, nullptr, nullptr, private_key_offloading_free);
+  g_ssl_ctx_ex_private_key_function_index =
+      SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
   GRPC_CHECK_NE(g_ssl_ctx_ex_private_key_function_index, -1);
 
   g_ssl_ex_private_key_offloading_context_index = SSL_get_ex_new_index(
-      0, nullptr, nullptr, nullptr, private_key_offloading_free);
+      0, nullptr, nullptr, nullptr, private_key_offloading_context_free);
   GRPC_CHECK_NE(g_ssl_ex_private_key_offloading_context_index, -1);
 }
-
 // --- Ssl utils. ---
 
 // TODO(jboeuf): Remove when we are past the debugging phase with this code.
@@ -1913,18 +1914,23 @@ static tsi_result ssl_handshaker_do_handshake(tsi_ssl_handshaker* impl,
     // Get ready to get some bytes from SSL.
     int ssl_result = SSL_do_handshake(impl->ssl);
     ssl_result = SSL_get_error(impl->ssl, ssl_result);
+    LOG(ERROR) << "anasalazar" << ssl_result;
     switch (ssl_result) {
       case SSL_ERROR_WANT_READ:
         if (BIO_pending(impl->network_io) == 0) {
+          LOG(ERROR) << ssl_result;
           // We need more data.
           return TSI_INCOMPLETE_DATA;
         } else {
+          LOG(ERROR) << ssl_result;
           return TSI_OK;
         }
       case SSL_ERROR_NONE:
         return TSI_OK;
       case SSL_ERROR_WANT_WRITE:
         return TSI_DRAIN_BUFFER;
+      case SSL_ERROR_WANT_PRIVATE_KEY_OPERATION:
+        return TSI_ASYNC;
       default: {
         char err_str[256];
         ERR_error_string_n(ERR_get_error(), err_str, sizeof(err_str));
@@ -2060,7 +2066,6 @@ static tsi_result ssl_handshaker_next(
   if (offload_context != nullptr) {
     offload_context->notify_cb = cb;
     offload_context->notify_user_data = user_data;
-    offload_context->handshaker_result = handshaker_result;
   }
 
   tsi_result status = TSI_OK;
@@ -2126,6 +2131,10 @@ static tsi_result ssl_handshaker_next(
       // Indicates that the handshake has completed and that a
       // handshaker_result has been created.
       self->handshaker_result_created = true;
+      LOG(ERROR) << "aaaaa " << handshaker_result;
+      if (offload_context != nullptr) {
+        LOG(ERROR) << "aaaaa";
+      }
       // Output Cipher information
       if (GRPC_TRACE_FLAG_ENABLED(tsi)) {
         tsi_ssl_handshaker_result* result =
