@@ -77,7 +77,7 @@ pyasn1==0.6.1
     #   rsa
 pyasn1-modules==0.4.1
     # via google-auth
-pyyaml==6.0.2
+pyyaml==6.0.3
     # via -r requirements.bazel.txt
 requests==2.32.3
     # via
