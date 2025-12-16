@@ -71,3 +71,7 @@ where = ["src/python/grpcio"]
 
 [tool.pyright]
 include = ["src/python/grpcio"]
+reportInvalidTypeForm = "none"
+reportAttributeAccessIssue = "none"
+reportIncompatibleMethodOverride = "none"
+reportMissingImports = "none"

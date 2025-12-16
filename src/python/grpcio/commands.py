@@ -69,7 +69,7 @@ def _get_grpc_custom_bdist(decorated_basename, target_bdist_basename):
     except IOError as error:
         raise CommandError(
             "{}\n\nCould not find the bdist {}: {}".format(
-                traceback.format_exc(), decorated_path, error.message # type: ignore
+                traceback.format_exc(), decorated_path, error.message
             )
         )
     # Our chosen local bdist path.
@@ -80,7 +80,7 @@ def _get_grpc_custom_bdist(decorated_basename, target_bdist_basename):
     except IOError as error:
         raise CommandError(
             "{}\n\nCould not write grpcio bdist: {}".format(
-                traceback.format_exc(), error.message # type: ignore
+                traceback.format_exc(), error.message
             )
         )
     return bdist_path
