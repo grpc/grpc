@@ -62,25 +62,25 @@ def _get_grpc_custom_bdist(decorated_basename, target_bdist_basename):
     # relevant package.
     from urllib import request
 
-    decorated_path = decorated_basename + GRPC_CUSTOM_BDIST_EXT
+    decorated_path = decorated_basename + GRPC_CUSTOM_BDIST_EXT # type: ignore
     try:
-        url = BINARIES_REPOSITORY + "/{target}".format(target=decorated_path)
+        url = BINARIES_REPOSITORY + "/{target}".format(target=decorated_path) # type: ignore
         bdist_data = request.urlopen(url).read()
     except IOError as error:
         raise CommandError(
             "{}\n\nCould not find the bdist {}: {}".format(
-                traceback.format_exc(), decorated_path, error.message
+                traceback.format_exc(), decorated_path, error.message # type: ignore
             )
         )
     # Our chosen local bdist path.
-    bdist_path = target_bdist_basename + GRPC_CUSTOM_BDIST_EXT
+    bdist_path = target_bdist_basename + GRPC_CUSTOM_BDIST_EXT # type: ignore
     try:
         with open(bdist_path, "w") as bdist_file:
             bdist_file.write(bdist_data)
     except IOError as error:
         raise CommandError(
             "{}\n\nCould not write grpcio bdist: {}".format(
-                traceback.format_exc(), error.message
+                traceback.format_exc(), error.message # type: ignore
             )
         )
     return bdist_path

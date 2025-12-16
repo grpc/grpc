@@ -69,4 +69,4 @@ def _commandfile_spawn(self, command, **kwargs):
 def monkeypatch_spawn():
     """Monkeypatching is dumb, but it's either that or we become maintainers of
     something much, much bigger."""
-    ccompiler.CCompiler.spawn = _commandfile_spawn
+    ccompiler.CCompiler.spawn = _commandfile_spawn # type: ignore
