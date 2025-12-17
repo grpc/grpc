@@ -76,7 +76,7 @@ include "_cygrpc/aio/call.pyx.pxi"
 include "_cygrpc/aio/channel.pyx.pxi"
 include "_cygrpc/aio/server.pyx.pxi"
 
-_disable_absl_init_log = os.environ.get("DISABLE_ABSL_INIT_LOG", None)
+_disable_absl_init_log = os.environ.get("GRPC_PYTHON_DISABLE_ABSL_INIT_LOG", None)
 
 #
 # initialize gRPC
