@@ -594,7 +594,7 @@ def _call_behavior(
     argument: Any,
     request_deserializer: Optional[DeserializingFunction],
     send_response_callback: Optional[Callable[[ResponseType], None]] = None,
-) -> Tuple[Union[ResponseType, Iterator[ResponseType]], bool]:
+) -> Tuple[Optional[ResponseType, Iterator[ResponseType]], bool]:
     from grpc import _create_servicer_context  # pytype: disable=pyi-error
 
     with _create_servicer_context(
@@ -649,7 +649,7 @@ def _take_response_from_response_iterator(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
     response_iterator: Iterator[ResponseType],
-) -> Tuple[ResponseType, bool]:
+) -> Tuple[Optional[ResponseType], bool]:
     try:
         return next(response_iterator), True
     except StopIteration:
@@ -858,7 +858,7 @@ def _is_rpc_state_active(state: _RPCState) -> bool:
 def _send_message_callback_to_blocking_iterator_adapter(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
-    send_response_callback: Callable[[ResponseType], None],
+    send_response_callback: Callable[[Optional[ResponseType]], None],
     response_iterator: Iterator[ResponseType],
 ) -> None:
     while True:
