@@ -92,7 +92,9 @@ def _create_channel(
             options=options,
             compression=compression,
         )
-    raise ValueError("can not create secure channel without channel_credentials")
+    raise ValueError(
+        "can not create secure channel without channel_credentials"
+    )
 
 
 class ChannelCache:
@@ -133,9 +135,16 @@ class ChannelCache:
         while True:
             with ChannelCache._lock:
                 ChannelCache._eviction_ready.set()
-                if ChannelCache._singleton and not ChannelCache._singleton._mapping:
+                if (
+                    ChannelCache._singleton
+                    and not ChannelCache._singleton._mapping
+                ):
                     ChannelCache._condition.wait()
-                elif ChannelCache._singleton and len(ChannelCache._singleton._mapping) > _MAXIMUM_CHANNELS:
+                elif (
+                    ChannelCache._singleton
+                    and len(ChannelCache._singleton._mapping)
+                    > _MAXIMUM_CHANNELS
+                ):
                     key = next(iter(ChannelCache._singleton._mapping.keys()))
                     ChannelCache._singleton._evict_locked(key)
                     # And immediately reevaluate.
@@ -183,7 +192,7 @@ class ChannelCache:
             )
         if insecure:
             channel_credentials = (
-                grpc.experimental.insecure_channel_credentials() # type: ignore
+                grpc.experimental.insecure_channel_credentials()  # type: ignore
             )
         elif channel_credentials is None:
             _LOGGER.debug("Defaulting to SSL channel credentials.")
@@ -308,13 +317,16 @@ def unary_unary(
         method, request_serializer, response_deserializer, bool(method_handle)
     )
     wait_for_ready = wait_for_ready if wait_for_ready is not None else True
-    return cast(ResponseType, multicallable(
-        request,
-        metadata=metadata,
-        wait_for_ready=wait_for_ready,
-        credentials=call_credentials,
-        timeout=timeout,
-    ))
+    return cast(
+        ResponseType,
+        multicallable(
+            request,
+            metadata=metadata,
+            wait_for_ready=wait_for_ready,
+            credentials=call_credentials,
+            timeout=timeout,
+        ),
+    )
 
 
 @experimental_api
@@ -399,13 +411,16 @@ def unary_stream(
         method, request_serializer, response_deserializer, bool(method_handle)
     )
     wait_for_ready = wait_for_ready if wait_for_ready is not None else True
-    return cast(Iterator[ResponseType], multicallable(
-        request,
-        metadata=metadata,
-        wait_for_ready=wait_for_ready,
-        credentials=call_credentials,
-        timeout=timeout,
-    ))
+    return cast(
+        Iterator[ResponseType],
+        multicallable(
+            request,
+            metadata=metadata,
+            wait_for_ready=wait_for_ready,
+            credentials=call_credentials,
+            timeout=timeout,
+        ),
+    )
 
 
 @experimental_api
@@ -581,10 +596,13 @@ def stream_stream(
         method, request_serializer, response_deserializer, bool(method_handle)
     )
     wait_for_ready = wait_for_ready if wait_for_ready is not None else True
-    return cast(Iterator[ResponseType], multicallable(
-        request_iterator,
-        metadata=metadata,
-        wait_for_ready=wait_for_ready,
-        credentials=call_credentials,
-        timeout=timeout,
-    ))
+    return cast(
+        Iterator[ResponseType],
+        multicallable(
+            request_iterator,
+            metadata=metadata,
+            wait_for_ready=wait_for_ready,
+            credentials=call_credentials,
+            timeout=timeout,
+        ),
+    )

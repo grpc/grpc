@@ -91,9 +91,13 @@ def _unwrap_client_call_details(
         timeout = default_details.timeout  # pytype: disable=attribute-error
 
     try:
-        metadata = call_details.metadata  # pytype: disable=attribute-error # type: ignore
+        metadata = (
+            call_details.metadata
+        )  # pytype: disable=attribute-error # type: ignore
     except AttributeError:
-        metadata = default_details.metadata  # pytype: disable=attribute-error # type: ignore
+        metadata = (
+            default_details.metadata
+        )  # pytype: disable=attribute-error # type: ignore
 
     try:
         credentials = (
@@ -122,7 +126,7 @@ def _unwrap_client_call_details(
             default_details.compression
         )  # pytype: disable=attribute-error
 
-    return method, timeout, metadata, credentials, wait_for_ready, compression # type: ignore
+    return method, timeout, metadata, credentials, wait_for_ready, compression  # type: ignore
 
 
 class _FailureOutcome(
@@ -131,7 +135,9 @@ class _FailureOutcome(
     _exception: Exception
     _traceback: types.TracebackType
 
-    def __init__(self, exception: Exception, traceback: Optional[types.TracebackType]):
+    def __init__(
+        self, exception: Exception, traceback: Optional[types.TracebackType]
+    ):
         super(_FailureOutcome, self).__init__()
         self._exception = exception
         if traceback:
@@ -324,7 +330,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             except grpc.RpcError as rpc_error:
                 return rpc_error
             except Exception as exception:  # pylint:disable=broad-except
-                return _FailureOutcome(exception, sys.exc_info()[2]) # type: ignore
+                return _FailureOutcome(exception, sys.exc_info()[2])  # type: ignore
 
         call = self._interceptor.intercept_unary_unary(
             continuation, client_call_details, request
@@ -679,7 +685,9 @@ class _Channel(grpc.Channel):
     def subscribe(
         self, callback: Callable, try_to_connect: Optional[bool] = False
     ):
-        self._channel.subscribe(callback, try_to_connect=True if try_to_connect else False)
+        self._channel.subscribe(
+            callback, try_to_connect=True if try_to_connect else False
+        )
 
     def unsubscribe(self, callback: Callable):
         self._channel.unsubscribe(callback)

@@ -36,7 +36,7 @@ from typing import (
 )
 
 from grpc import _compression
-from grpc._cython import cygrpc as _cygrpc # type: ignore
+from grpc._cython import cygrpc as _cygrpc  # type: ignore
 from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
@@ -494,6 +494,7 @@ class ClientCallDetails(abc.ABC):
     wait_for_ready: Optional[bool]
     compression: Compression
 
+
 class UnaryUnaryClientInterceptor(abc.ABC):
     """Affords intercepting unary-unary invocations."""
 
@@ -582,7 +583,8 @@ class StreamUnaryClientInterceptor(abc.ABC):
     def intercept_stream_unary(
         self,
         continuation: Callable[
-            [ClientCallDetails, Iterable[RequestType]], Union[Call, Future, RpcError]
+            [ClientCallDetails, Iterable[RequestType]],
+            Union[Call, Future, RpcError],
         ],
         client_call_details: ClientCallDetails,
         request_iterator: Iterable[RequestType],
@@ -705,9 +707,7 @@ class AuthMetadataContext(abc.ABC):
 class AuthMetadataPluginCallback(abc.ABC):
     """Callback object received by a metadata plugin."""
 
-    def __call__(
-        self, metadata: MetadataType, error: Optional[BaseException]
-    ):
+    def __call__(self, metadata: MetadataType, error: Optional[BaseException]):
         """Passes to the gRPC runtime authentication metadata for an RPC.
 
         Args:
@@ -2498,7 +2498,7 @@ __all__ = (
 
 # Here to maintain backwards compatibility; avoid using these in new code!
 try:
-    import grpc_tools # type: ignore
+    import grpc_tools  # type: ignore
 
     sys.modules.update({"grpc.tools": grpc_tools})
 except ImportError:

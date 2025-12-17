@@ -445,7 +445,9 @@ class _StreamRequestMixin(Call, Generic[RequestType]):
             if inspect.isasyncgen(request_iterator) or hasattr(
                 request_iterator, "__aiter__"
             ):
-                async_iterator = cast(AsyncIterator[RequestType], request_iterator)
+                async_iterator = cast(
+                    AsyncIterator[RequestType], request_iterator
+                )
                 async for request in async_iterator:
                     try:
                         await self._write(request)
@@ -541,7 +543,12 @@ class _StreamRequestMixin(Call, Generic[RequestType]):
             await self._raise_for_status()
 
 
-class UnaryUnaryCall(_UnaryResponseMixin, Call, _base_call.UnaryUnaryCall, Generic[RequestType, ResponseType]):
+class UnaryUnaryCall(
+    _UnaryResponseMixin,
+    Call,
+    _base_call.UnaryUnaryCall,
+    Generic[RequestType, ResponseType],
+):
     """Object for managing unary-unary RPC calls.
 
     Returned when an instance of `UnaryUnaryMultiCallable` object is called.
@@ -604,7 +611,12 @@ class UnaryUnaryCall(_UnaryResponseMixin, Call, _base_call.UnaryUnaryCall, Gener
             await self._raise_for_status()
 
 
-class UnaryStreamCall(_StreamResponseMixin, Call, _base_call.UnaryStreamCall, Generic[RequestType, ResponseType]):
+class UnaryStreamCall(
+    _StreamResponseMixin,
+    Call,
+    _base_call.UnaryStreamCall,
+    Generic[RequestType, ResponseType],
+):
     """Object for managing unary-stream RPC calls.
 
     Returned when an instance of `UnaryStreamMultiCallable` object is called.
@@ -662,7 +674,11 @@ class UnaryStreamCall(_StreamResponseMixin, Call, _base_call.UnaryStreamCall, Ge
 
 # pylint: disable=too-many-ancestors
 class StreamUnaryCall(
-    _StreamRequestMixin, _UnaryResponseMixin, Call, _base_call.StreamUnaryCall, Generic[RequestType, ResponseType]
+    _StreamRequestMixin,
+    _UnaryResponseMixin,
+    Call,
+    _base_call.StreamUnaryCall,
+    Generic[RequestType, ResponseType],
 ):
     """Object for managing stream-unary RPC calls.
 
@@ -713,7 +729,11 @@ class StreamUnaryCall(
 
 
 class StreamStreamCall(
-    _StreamRequestMixin, _StreamResponseMixin, Call, _base_call.StreamStreamCall, Generic[RequestType, ResponseType]
+    _StreamRequestMixin,
+    _StreamResponseMixin,
+    Call,
+    _base_call.StreamStreamCall,
+    Generic[RequestType, ResponseType],
 ):
     """Object for managing stream-stream RPC calls.
 

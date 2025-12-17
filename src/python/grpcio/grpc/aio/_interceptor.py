@@ -141,7 +141,9 @@ class UnaryUnaryClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
         ],
         client_call_details: ClientCallDetails,
         request: RequestType,
-    ) -> Union[_base_call.UnaryUnaryCall[RequestType, ResponseType], ResponseType]:
+    ) -> Union[
+        _base_call.UnaryUnaryCall[RequestType, ResponseType], ResponseType
+    ]:
         """Intercepts a unary-unary invocation asynchronously.
 
         Args:
@@ -1053,7 +1055,11 @@ class InterceptedStreamStreamCall(
             self._last_returned_call_from_interceptors = StreamStreamCall(
                 request_iterator,
                 _timeout_to_deadline(client_call_details.timeout),
-                client_call_details.metadata if client_call_details.metadata else Metadata(),
+                (
+                    client_call_details.metadata
+                    if client_call_details.metadata
+                    else Metadata()
+                ),
                 client_call_details.credentials,
                 client_call_details.wait_for_ready,
                 self._channel,
@@ -1238,4 +1244,4 @@ class StreamStreamCallResponseIterator(
 
     @property
     def _done_writing_flag(self) -> bool:
-        return self._call._done_writing_flag # type: ignore
+        return self._call._done_writing_flag  # type: ignore

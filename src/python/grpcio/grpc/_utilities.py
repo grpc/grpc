@@ -114,7 +114,9 @@ class _ChannelReadyFuture(grpc.Future):
                 self._matured = True
                 self._channel.unsubscribe(self._update)
                 self._condition.notify_all()
-                done_callbacks = tuple(self._done_callbacks if self._done_callbacks else [])
+                done_callbacks = tuple(
+                    self._done_callbacks if self._done_callbacks else []
+                )
                 self._done_callbacks = None
             else:
                 return
@@ -131,7 +133,9 @@ class _ChannelReadyFuture(grpc.Future):
                 self._cancelled = True
                 self._channel.unsubscribe(self._update)
                 self._condition.notify_all()
-                done_callbacks = tuple(self._done_callbacks if self._done_callbacks else [])
+                done_callbacks = tuple(
+                    self._done_callbacks if self._done_callbacks else []
+                )
                 self._done_callbacks = None
             else:
                 return False
@@ -167,7 +171,11 @@ class _ChannelReadyFuture(grpc.Future):
 
     def add_done_callback(self, fn: _DoneCallbackType):
         with self._condition:
-            if self._done_callbacks and not self._cancelled and not self._matured:
+            if (
+                self._done_callbacks
+                and not self._cancelled
+                and not self._matured
+            ):
                 self._done_callbacks.append(fn)
                 return
 

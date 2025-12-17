@@ -609,7 +609,9 @@ def _call_behavior(
                         argument, context, send_response_callback
                     )
                 else:
-                    response_or_iterator = cast(Callable[..., Any], behavior)(argument, context)
+                    response_or_iterator = cast(Callable[..., Any], behavior)(
+                        argument, context
+                    )
                 return response_or_iterator, True
             return None, False
         except Exception as exception:  # pylint: disable=broad-except
@@ -883,8 +885,12 @@ def _select_thread_pool_for_behavior(
     behavior: Optional[ArityAgnosticMethodHandler],
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.ThreadPoolExecutor:
-    if behavior is not None and hasattr(behavior, "experimental_thread_pool") and isinstance(
-        behavior.experimental_thread_pool, futures.ThreadPoolExecutor
+    if (
+        behavior is not None
+        and hasattr(behavior, "experimental_thread_pool")
+        and isinstance(
+            behavior.experimental_thread_pool, futures.ThreadPoolExecutor
+        )
     ):
         return behavior.experimental_thread_pool
     return default_thread_pool

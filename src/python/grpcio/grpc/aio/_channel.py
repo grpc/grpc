@@ -53,7 +53,9 @@ _USER_AGENT = "grpc-python-asyncio/{}".format(_grpcio_metadata.__version__)
 if sys.version_info[1] < 7:
 
     def _all_tasks() -> Iterable[asyncio.Task]:
-        return asyncio.Task.all_tasks()  # pylint: disable=no-member # type: ignore
+        return (
+            asyncio.Task.all_tasks()
+        )  # pylint: disable=no-member # type: ignore
 
 else:
 

@@ -30,11 +30,17 @@ from typing import (
 from grpc._cython import cygrpc
 
 if TYPE_CHECKING:
+
     class CygrpcChannelCredentials: ...
+
     class CygrpcCallCredentials: ...
+
     class CygrpcServerCredentials: ...
+
     class CygrpcServerCertificateConfig: ...
+
     class CygrpcBaseEvent: ...
+
 else:
     CygrpcChannelCredentials = cygrpc.ChannelCredentials
     CygrpcCallCredentials = cygrpc.CallCredentials

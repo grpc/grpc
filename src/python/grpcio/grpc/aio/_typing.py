@@ -40,6 +40,7 @@ MetadataType = Union[Metadata, Sequence[MetadatumType]]
 ChannelArgumentType = Sequence[Tuple[str, Any]]
 if TYPE_CHECKING:
     from grpc._cython.cygrpc import _EOF
+
     # Pyright doesn't allow "EOFType = type(EOF)" because it's a runtime expression.
     # We use the static class definition from the stub during type checking.
     EOFType = _EOF
