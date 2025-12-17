@@ -32,6 +32,7 @@ from typing import (
     Set,
     Tuple,
     Union,
+    cast,
 )
 
 import grpc  # pytype: disable=pyi-error
@@ -1824,7 +1825,7 @@ class _ChannelConnectivityState(object):
     try_to_connect: bool
     # TODO(xuanwn): Refactor this: https://github.com/grpc/grpc/issues/31704
     callbacks_and_connectivities: List[
-        Sequence[
+        List[
             Union[
                 Callable[[grpc.ChannelConnectivity], None],
                 Optional[grpc.ChannelConnectivity],
@@ -1918,8 +1919,11 @@ def _poll_connectivity(
                 connectivity
             ]
         )
-        callbacks = tuple(
-            callback for callback, _ in state.callbacks_and_connectivities
+        callbacks = cast(
+            Sequence[Callable[[grpc.ChannelConnectivity], None]],
+            tuple(
+                callback for callback, _ in state.callbacks_and_connectivities
+            ),
         )
         for callback_and_connectivity in state.callbacks_and_connectivities:
             callback_and_connectivity[1] = state.connectivity
