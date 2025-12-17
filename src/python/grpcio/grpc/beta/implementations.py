@@ -42,7 +42,9 @@ def metadata_call_credentials(metadata_plugin, name=None):
 
         metadata_plugin(context, wrapped_callback)
 
-    return grpc.metadata_call_credentials(plugin, name=name)
+    return grpc.metadata_call_credentials(
+        cast(grpc.AuthMetadataPlugin, plugin), name=name
+    )
 
 
 def google_call_credentials(credentials):
