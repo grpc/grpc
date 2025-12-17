@@ -115,8 +115,7 @@ class FilterTestBase : public ::testing::Test {
                      FilterTestBase* test)
         : impl_(std::make_shared<Impl>(std::move(filter), test)) {}
 
-    explicit Channel(RefCountedPtr<ChannelFilter> filter,
-                     FilterTestBase* test)
+    explicit Channel(RefCountedPtr<ChannelFilter> filter, FilterTestBase* test)
         : impl_(std::make_shared<Impl>(std::move(filter), test)) {}
 
     ChannelFilter* filter_ptr() {

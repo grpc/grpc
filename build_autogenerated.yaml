@@ -9428,12 +9428,14 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/filters/filter_test.h
+  - test/core/test_util/xds_http_add_header_filter.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/filters/composite_filter_test.cc
   - test/core/filters/filter_test.cc
+  - test/core/test_util/xds_http_add_header_filter.cc
   deps:
   - gtest
   - protobuf
@@ -30282,6 +30284,7 @@ targets:
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
+  - third_party/envoy-api/envoy/config/common/matcher/v3/matcher.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
@@ -30315,7 +30318,10 @@ targets:
   - third_party/envoy-api/envoy/config/trace/v3/xray.proto
   - third_party/envoy-api/envoy/config/trace/v3/zipkin.proto
   - third_party/envoy-api/envoy/data/accesslog/v3/accesslog.proto
+  - third_party/envoy-api/envoy/extensions/common/matching/v3/extension_matcher.proto
   - third_party/envoy-api/envoy/extensions/filters/common/fault/v3/fault.proto
+  - third_party/envoy-api/envoy/extensions/filters/common/matcher/action/v3/skip_action.proto
+  - third_party/envoy-api/envoy/extensions/filters/http/composite/v3/composite.proto
   - third_party/envoy-api/envoy/extensions/filters/http/fault/v3/fault.proto
   - third_party/envoy-api/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.proto
   - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto

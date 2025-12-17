@@ -32,7 +32,10 @@
 #include "envoy/config/core/v3/extension.pb.h"
 #include "envoy/config/rbac/v3/rbac.pb.h"
 #include "envoy/config/route/v3/route.pb.h"
+#include "envoy/extensions/common/matching/v3/extension_matcher.pb.h"
 #include "envoy/extensions/filters/common/fault/v3/fault.pb.h"
+#include "envoy/extensions/filters/common/matcher/action/v3/skip_action.pb.h"
+#include "envoy/extensions/filters/http/composite/v3/composite.pb.h"
 #include "envoy/extensions/filters/http/fault/v3/fault.pb.h"
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.pb.h"
 #include "envoy/extensions/filters/http/rbac/v3/rbac.pb.h"
@@ -40,6 +43,7 @@
 #include "envoy/extensions/filters/http/stateful_session/v3/stateful_session.pb.h"
 #include "envoy/extensions/http/stateful_session/cookie/v3/cookie.pb.h"
 #include "envoy/type/http/v3/cookie.pb.h"
+#include "envoy/type/matcher/v3/http_inputs.pb.h"
 #include "envoy/type/matcher/v3/path.pb.h"
 #include "envoy/type/matcher/v3/regex.pb.h"
 #include "envoy/type/matcher/v3/string.pb.h"
@@ -53,6 +57,7 @@
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
+#include "src/core/filter/composite/composite_filter.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
@@ -78,6 +83,11 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
+using ::envoy::extensions::common::matching::v3::ExtensionWithMatcher;
+using ::envoy::extensions::common::matching::v3::ExtensionWithMatcherPerRoute;
+using ::envoy::extensions::filters::common::matcher::action::v3::SkipFilter;
+using ::envoy::extensions::filters::http::composite::v3::Composite;
+using ::envoy::extensions::filters::http::composite::v3::ExecuteFilterAction;
 using ::envoy::extensions::filters::http::fault::v3::HTTPFault;
 using ::envoy::extensions::filters::http::gcp_authn::v3::GcpAuthnFilterConfig;
 using ::envoy::extensions::filters::http::rbac::v3::RBAC;
@@ -88,6 +98,7 @@ using ::envoy::extensions::filters::http::stateful_session::v3::
     StatefulSessionPerRoute;
 using ::envoy::extensions::http::stateful_session::cookie::v3::
     CookieBasedSessionState;
+using ::envoy::type::matcher::v3::HttpRequestHeaderMatchInput;
 
 //
 // base class for filter tests
@@ -1326,7 +1337,6 @@ TEST_P(XdsRbacFilterConfigTest, InvalidPermissionAndPrincipal) {
 class XdsStatefulSessionFilterTest : public XdsHttpFilterTest {
  protected:
   void SetUp() override {
-    registry_ = XdsHttpFilterRegistry();
     XdsExtension extension = MakeXdsExtension(StatefulSession());
     filter_ = GetFilter(extension.type);
     GRPC_CHECK_NE(filter_, nullptr);
@@ -2197,7 +2207,221 @@ TEST_F(XdsGcpAuthnFilterTest, GenerateServiceConfig) {
   EXPECT_EQ(service_config->element, "{\"foo\":\"bar\"}");
 }
 
-// FIXME: add tests for composite filter config
+//
+// composite filter tests
+//
+
+class XdsCompositeFilterTest : public XdsHttpFilterTest {
+ protected:
+  XdsCompositeFilterTest() : env_("GRPC_EXPERIMENTAL_XDS_COMPOSITE_FILTER") {
+    // Recreate registry now that env var is set.
+    registry_ = XdsHttpFilterRegistry();
+    XdsExtension extension = MakeXdsExtension(ExtensionWithMatcher());
+    filter_ = GetFilter(extension.type);
+    GRPC_CHECK_NE(filter_, nullptr) << extension.type;
+  }
+
+  void SetUp() override {
+    if (!IsXdsChannelFilterChainPerRouteEnabled()) {
+      GTEST_SKIP() << "requires xds_channel_filter_chain_per_route experiment";
+    }
+  }
+
+  const XdsHttpFilterImpl* filter_;
+  ScopedExperimentalEnvVar env_;
+};
+
+TEST_F(XdsCompositeFilterTest, Accessors) {
+  EXPECT_EQ(filter_->ConfigProtoName(),
+            "envoy.extensions.common.matching.v3.ExtensionWithMatcher");
+  EXPECT_EQ(filter_->OverrideConfigProtoName(),
+            "envoy.extensions.common.matching.v3.ExtensionWithMatcherPerRoute");
+  EXPECT_EQ(filter_->channel_filter(), &CompositeFilter::kFilterVtable);
+  EXPECT_TRUE(filter_->IsSupportedOnClients());
+  EXPECT_FALSE(filter_->IsSupportedOnServers());
+  EXPECT_FALSE(filter_->IsTerminalFilter());
+}
+
+TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigBasic) {
+  ExtensionWithMatcher extension_with_matcher;
+  extension_with_matcher.mutable_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(Composite());
+  auto* matcher_tree =
+      extension_with_matcher.mutable_xds_matcher()->mutable_matcher_tree();
+  HttpRequestHeaderMatchInput input;
+  input.set_header_name("header_name");
+  matcher_tree->mutable_input()->mutable_typed_config()->PackFrom(input);
+  auto* map = matcher_tree->mutable_exact_match_map()->mutable_map();
+  (*map)["header_value"].mutable_action()->mutable_typed_config()->PackFrom(
+      SkipFilter());
+  XdsExtension extension = MakeXdsExtension(extension_with_matcher);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  ASSERT_EQ(config->type(), CompositeFilter::Config::Type());
+  EXPECT_EQ(config->ToString(),
+            "XdsMatcherExactMap{input=MetadataInput(key=header_name), map={"
+            "{\"header_value\": {action=SkipFilter, keep_matching=false}}}}");
+}
+
+TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigTypedStruct) {
+  XdsExtension extension = MakeXdsExtension(ExtensionWithMatcher());
+  extension.value = Json();
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value["
+            "envoy.extensions.common.matching.v3.ExtensionWithMatcher] "
+            "error:could not parse composite filter config]")
+      << status;
+}
+
+TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigUnparseable) {
+  XdsExtension extension = MakeXdsExtension(ExtensionWithMatcher());
+  std::string serialized_resource("\0", 1);
+  extension.value = absl::string_view(serialized_resource);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value["
+            "envoy.extensions.common.matching.v3.ExtensionWithMatcher] "
+            "error:could not parse composite filter config]")
+      << status;
+}
+
+// Note: This shows that we include validation errors from the matcher
+// itself.  We don't need to test every possible matcher validation
+// failure case here, because those are covered in xds_matcher_parse_test.cc.
+TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigRequiredFieldsMissing) {
+  XdsExtension extension = MakeXdsExtension(ExtensionWithMatcher());
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value["
+            "envoy.extensions.common.matching.v3.ExtensionWithMatcher]"
+            ".extension_config error:field not set; "
+            "field:http_filter.value["
+            "envoy.extensions.common.matching.v3.ExtensionWithMatcher]"
+            ".xds_matcher error:field not set]")
+      << status;
+}
+
+TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigWrongExtensionConfigType) {
+  ExtensionWithMatcher extension_with_matcher;
+  extension_with_matcher.mutable_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(Router());
+  auto* matcher_tree =
+      extension_with_matcher.mutable_xds_matcher()->mutable_matcher_tree();
+  HttpRequestHeaderMatchInput input;
+  input.set_header_name("header_name");
+  matcher_tree->mutable_input()->mutable_typed_config()->PackFrom(input);
+  auto* map = matcher_tree->mutable_exact_match_map()->mutable_map();
+  (*map)["header_value"].mutable_action()->mutable_typed_config()->PackFrom(
+      SkipFilter());
+  XdsExtension extension = MakeXdsExtension(extension_with_matcher);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value["
+            "envoy.extensions.common.matching.v3.ExtensionWithMatcher]"
+            ".extension_config.typed_config.value["
+            "envoy.extensions.filters.http.router.v3.Router] "
+            "error:unsupported extension config type]")
+      << status;
+}
+
+TEST_F(XdsCompositeFilterTest, ParseOverrideConfigBasic) {
+  ExtensionWithMatcherPerRoute extension_with_matcher;
+  auto* matcher_tree =
+      extension_with_matcher.mutable_xds_matcher()->mutable_matcher_tree();
+  HttpRequestHeaderMatchInput input;
+  input.set_header_name("header_name");
+  matcher_tree->mutable_input()->mutable_typed_config()->PackFrom(input);
+  auto* map = matcher_tree->mutable_exact_match_map()->mutable_map();
+  (*map)["header_value"].mutable_action()->mutable_typed_config()->PackFrom(
+      SkipFilter());
+  XdsExtension extension = MakeXdsExtension(extension_with_matcher);
+  auto config =
+      filter_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  ASSERT_NE(config, nullptr);
+  ASSERT_EQ(config->type(), CompositeFilter::Config::Type());
+  EXPECT_EQ(config->ToString(),
+            "XdsMatcherExactMap{input=MetadataInput(key=header_name), map={"
+            "{\"header_value\": {action=SkipFilter, keep_matching=false}}}}");
+}
+
+TEST_F(XdsCompositeFilterTest, ParseOverrideConfigTypedStruct) {
+  XdsExtension extension = MakeXdsExtension(ExtensionWithMatcherPerRoute());
+  extension.value = Json();
+  auto config =
+      filter_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value["
+            "envoy.extensions.common.matching.v3.ExtensionWithMatcherPerRoute] "
+            "error:could not parse composite filter override config]")
+      << status;
+}
+
+TEST_F(XdsCompositeFilterTest, ParseOverrideConfigUnparseable) {
+  XdsExtension extension = MakeXdsExtension(ExtensionWithMatcherPerRoute());
+  std::string serialized_resource("\0", 1);
+  extension.value = absl::string_view(serialized_resource);
+  auto config =
+      filter_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value["
+            "envoy.extensions.common.matching.v3.ExtensionWithMatcherPerRoute] "
+            "error:could not parse composite filter override config]")
+      << status;
+}
+
+// Note: This shows that we include validation errors from the matcher
+// itself.  We don't need to test every possible matcher validation
+// failure case here, because those are covered in xds_matcher_parse_test.cc.
+TEST_F(XdsCompositeFilterTest, ParseOverrideConfigRequiredFieldMissing) {
+  XdsExtension extension = MakeXdsExtension(ExtensionWithMatcherPerRoute());
+  auto config =
+      filter_->ParseOverrideConfig("", decode_context_, extension, &errors_);
+  absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
+                                       "errors validating filter config");
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(status.message(),
+            "errors validating filter config: ["
+            "field:http_filter.value["
+            "envoy.extensions.common.matching.v3.ExtensionWithMatcherPerRoute]"
+            ".xds_matcher error:field not set]")
+      << status;
+}
 
 }  // namespace
 }  // namespace testing

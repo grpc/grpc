@@ -12817,6 +12817,7 @@ add_executable(composite_filter_test
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/filters/composite_filter_test.cc
   test/core/filters/filter_test.cc
+  test/core/test_util/xds_http_add_header_filter.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -45606,6 +45607,10 @@ add_executable(xds_http_filters_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/accesslog/v3/accesslog.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/accesslog/v3/accesslog.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/accesslog/v3/accesslog.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/common/matcher/v3/matcher.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/common/matcher/v3/matcher.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/common/matcher/v3/matcher.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/common/matcher/v3/matcher.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/address.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/address.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/address.pb.h
@@ -45738,10 +45743,22 @@ add_executable(xds_http_filters_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/data/accesslog/v3/accesslog.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/data/accesslog/v3/accesslog.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/data/accesslog/v3/accesslog.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/common/matching/v3/extension_matcher.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/common/matching/v3/extension_matcher.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/common/matching/v3/extension_matcher.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/common/matching/v3/extension_matcher.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/common/fault/v3/fault.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/common/fault/v3/fault.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/common/fault/v3/fault.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/common/fault/v3/fault.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/common/matcher/action/v3/skip_action.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/common/matcher/action/v3/skip_action.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/common/matcher/action/v3/skip_action.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/common/matcher/action/v3/skip_action.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/http/composite/v3/composite.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/http/composite/v3/composite.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/http/composite/v3/composite.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/http/composite/v3/composite.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/http/fault/v3/fault.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/http/fault/v3/fault.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/http/fault/v3/fault.pb.h

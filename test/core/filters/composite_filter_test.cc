@@ -65,18 +65,18 @@ class CompositeFilterTest : public FilterTest<CompositeFilter> {
 
 TEST_F(CompositeFilterTest, CreateSucceeds) {
   auto filter = CompositeFilter::Create(
-      ChannelArgs(), ChannelFilter::Args(/*instance_id=*/0,
-      MakeConfig("name", {})));
+      ChannelArgs(),
+      ChannelFilter::Args(/*instance_id=*/0, MakeConfig("name", {})));
   EXPECT_TRUE(filter.ok()) << filter.status();
 }
 
 // FIXME: flesh this out, and add other tests
 TEST_F(CompositeFilterTest, BasicCall) {
   Call call(
-      MakeChannel(
-          ChannelArgs(),
-          MakeConfig("name", {{"enterprise", {"status", "legend"}},
-                              {"yorktown", {"sunk", "midway"}}})).value());
+      MakeChannel(ChannelArgs(),
+                  MakeConfig("name", {{"enterprise", {"status", "legend"}},
+                                      {"yorktown", {"sunk", "midway"}}}))
+          .value());
   EXPECT_EVENT(Started(&call, ::testing::_));
   call.Start(call.NewClientMetadata());
   call.FinishNextFilter(call.NewServerMetadata({{"grpc-status", "0"}}));

@@ -221,6 +221,8 @@ RefCountedPtr<const FilterConfig> XdsHttpCompositeFilter::ParseTopLevelConfig(
     ValidationErrors::ScopedField field(errors, ".extension_config");
     errors->AddError("field not set");
   } else {
+    ValidationErrors::ScopedField field(errors,
+                                        ".extension_config.typed_config");
     const auto* typed_config =
         envoy_config_core_v3_TypedExtensionConfig_typed_config(
             extension_config);
@@ -233,6 +235,7 @@ RefCountedPtr<const FilterConfig> XdsHttpCompositeFilter::ParseTopLevelConfig(
     }
   }
   // Parse matcher.
+  ValidationErrors::ScopedField field(errors, ".xds_matcher");
   auto config = MakeRefCounted<CompositeFilter::Config>();
   config->matcher = ParseMatcher(
       context,
@@ -260,6 +263,7 @@ RefCountedPtr<const FilterConfig> XdsHttpCompositeFilter::ParseOverrideConfig(
     errors->AddError("could not parse composite filter override config");
     return nullptr;
   }
+  ValidationErrors::ScopedField field(errors, ".xds_matcher");
   auto config = MakeRefCounted<CompositeFilter::Config>();
   config->matcher = ParseMatcher(
       context,
