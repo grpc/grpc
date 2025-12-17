@@ -1220,6 +1220,10 @@ class Channel(abc.ABC):
         """
         raise NotImplementedError()
 
+    @abc.abstractmethod
+    def _get_registered_call_handle(self, method: str) -> int:
+        raise NotImplementedError()
+
     def __enter__(self):
         """Enters the runtime context related to the channel object."""
         raise NotImplementedError()

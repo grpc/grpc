@@ -590,7 +590,7 @@ def _unary_request(
 def _call_behavior(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
-    behavior: ArityAgnosticMethodHandler,
+    behavior: Optional[ArityAgnosticMethodHandler],
     argument: Any,
     request_deserializer: Optional[DeserializingFunction],
     send_response_callback: Optional[Callable[[ResponseType], None]] = None,
@@ -777,7 +777,7 @@ def _status(
 def _unary_response_in_pool(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
-    behavior: ArityAgnosticMethodHandler,
+    behavior: Optional[ArityAgnosticMethodHandler],
     argument_thunk: Callable[[], Any],
     request_deserializer: Optional[SerializingFunction],
     response_serializer: Optional[SerializingFunction],
@@ -805,7 +805,7 @@ def _unary_response_in_pool(
 def _stream_response_in_pool(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
-    behavior: ArityAgnosticMethodHandler,
+    behavior: Optional[ArityAgnosticMethodHandler],
     argument_thunk: Callable[[], Any],
     request_deserializer: Optional[DeserializingFunction],
     response_serializer: Optional[SerializingFunction],
@@ -874,7 +874,7 @@ def _send_message_callback_to_blocking_iterator_adapter(
 
 
 def _select_thread_pool_for_behavior(
-    behavior: ArityAgnosticMethodHandler,
+    behavior: Optional[ArityAgnosticMethodHandler],
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.ThreadPoolExecutor:
     if hasattr(behavior, "experimental_thread_pool") and isinstance(

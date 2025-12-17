@@ -744,6 +744,9 @@ class _Channel(grpc.Channel):
             return _StreamUnaryMultiCallable(thunk, method, self._interceptor)
         return thunk(method)
 
+    def _get_registered_call_handle(self, method: str) -> int:
+        raise NotImplementedError()
+
     # pylint: disable=arguments-differ
     def stream_stream(
         self,
