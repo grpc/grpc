@@ -52,7 +52,7 @@ protobuf
 pyyaml  # for DNS test
 requests
 setuptools>=77.0.1
-typeguard~=4.2.0
+typeguard~=4.2
 typing-extensions==4.12.2
 twisted  # for DNS test
 urllib3
