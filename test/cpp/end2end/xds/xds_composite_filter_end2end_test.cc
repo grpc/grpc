@@ -163,6 +163,7 @@ TEST_P(XdsCompositeFilterEnd2endTest, Basic) {
                                         {"yorktown", {"sunk", "midway"}}}),
       default_route_config_);
   // Send RPC with name=enterprise.
+  LOG(INFO) << "Sending RPC with name=enterprise...";
   std::multimap<std::string, std::string> server_initial_metadata;
   Status status = SendRpc(RpcOptions()
                               .set_metadata({{"name", "enterprise"}})
@@ -173,6 +174,7 @@ TEST_P(XdsCompositeFilterEnd2endTest, Basic) {
   EXPECT_THAT(server_initial_metadata,
               ::testing::Contains(::testing::Pair("status", "legend")));
   // Send RPC with name=yorktown.
+  LOG(INFO) << "Sending RPC with name=yorktown...";
   server_initial_metadata.clear();
   status = SendRpc(RpcOptions()
                        .set_metadata({{"name", "yorktown"}})
@@ -183,6 +185,7 @@ TEST_P(XdsCompositeFilterEnd2endTest, Basic) {
   EXPECT_THAT(server_initial_metadata,
               ::testing::Contains(::testing::Pair("sunk", "midway")));
   // Now send an RPC with no matching header.  Nothing should be added.
+  LOG(INFO) << "Sending RPC with no name header...";
   server_initial_metadata.clear();
   status = SendRpc(RpcOptions().set_echo_metadata_initially(true),
                    /*response=*/nullptr, &server_initial_metadata);
