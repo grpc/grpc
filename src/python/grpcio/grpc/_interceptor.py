@@ -122,7 +122,7 @@ def _unwrap_client_call_details(
             default_details.compression
         )  # pytype: disable=attribute-error
 
-    return method, timeout, metadata, credentials, wait_for_ready, compression
+    return method, timeout, metadata, credentials, wait_for_ready, compression # type: ignore
 
 
 class _FailureOutcome(
@@ -323,7 +323,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             except grpc.RpcError as rpc_error:
                 return rpc_error
             except Exception as exception:  # pylint:disable=broad-except
-                return _FailureOutcome(exception, sys.exc_info()[2])
+                return _FailureOutcome(exception, sys.exc_info()[2]) # type: ignore
 
         call = self._interceptor.intercept_unary_unary(
             continuation, client_call_details, request
