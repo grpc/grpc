@@ -594,21 +594,23 @@ def _call_behavior(
     argument: Any,
     request_deserializer: Optional[DeserializingFunction],
     send_response_callback: Optional[Callable[[ResponseType], None]] = None,
-) -> Tuple[Optional[ResponseType, Iterator[ResponseType]], bool]:
+) -> Tuple[Optional[Union[ResponseType, Iterator[ResponseType]]], bool]:
     from grpc import _create_servicer_context  # pytype: disable=pyi-error
 
     with _create_servicer_context(
         rpc_event, state, request_deserializer
     ) as context:
         try:
-            response_or_iterator = None
-            if send_response_callback is not None:
-                response_or_iterator = behavior(
-                    argument, context, send_response_callback
-                )
-            else:
-                response_or_iterator = behavior(argument, context)
-            return response_or_iterator, True
+            if behavior is not None:
+                response_or_iterator = None
+                if send_response_callback is not None:
+                    response_or_iterator = behavior(
+                        argument, context, send_response_callback
+                    )
+                else:
+                    response_or_iterator = behavior(argument, context)
+                return response_or_iterator, True
+            return None, False
         except Exception as exception:  # pylint: disable=broad-except
             with state.condition:
                 if state.aborted:
@@ -824,7 +826,7 @@ def _stream_response_in_pool(
 
     try:
         argument = argument_thunk()
-        if argument is not None:
+        if argument is not None and behavior is not None:
             if (
                 hasattr(behavior, "experimental_non_blocking")
                 and behavior.experimental_non_blocking
@@ -877,7 +879,7 @@ def _select_thread_pool_for_behavior(
     behavior: Optional[ArityAgnosticMethodHandler],
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.ThreadPoolExecutor:
-    if hasattr(behavior, "experimental_thread_pool") and isinstance(
+    if behavior is not None and hasattr(behavior, "experimental_thread_pool") and isinstance(
         behavior.experimental_thread_pool, futures.ThreadPoolExecutor
     ):
         return behavior.experimental_thread_pool

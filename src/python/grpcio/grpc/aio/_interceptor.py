@@ -665,14 +665,14 @@ class InterceptedUnaryUnaryCall(
         request: RequestType,
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
-    ) -> Union[UnaryUnaryCall, UnaryUnaryCallResponse]:
+    ) -> Union[_base_call.UnaryUnaryCall, UnaryUnaryCallResponse]:
         """Run the RPC call wrapped in interceptors"""
 
         async def _run_interceptor(
             interceptors: List[UnaryUnaryClientInterceptor],
             client_call_details: ClientCallDetails,
             request: RequestType,
-        ) -> Union[UnaryUnaryCall, UnaryUnaryCallResponse]:
+        ) -> Union[_base_call.UnaryUnaryCall, UnaryUnaryCallResponse]:
             if interceptors:
                 continuation = functools.partial(
                     _run_interceptor, interceptors[1:]
@@ -764,14 +764,14 @@ class InterceptedUnaryStreamCall(
         request: RequestType,
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
-    ) -> Union[UnaryStreamCall, UnaryStreamCallResponseIterator]:
+    ) -> Union[_base_call.UnaryStreamCall, UnaryStreamCallResponseIterator]:
         """Run the RPC call wrapped in interceptors"""
 
         async def _run_interceptor(
             interceptors: List[UnaryStreamClientInterceptor],
             client_call_details: ClientCallDetails,
             request: RequestType,
-        ) -> Union[UnaryStreamCall, UnaryStreamCallResponseIterator]:
+        ) -> Union[_base_call.UnaryStreamCall, UnaryStreamCallResponseIterator]:
             if interceptors:
                 continuation = functools.partial(
                     _run_interceptor, interceptors[1:]
@@ -883,7 +883,7 @@ class InterceptedStreamUnaryCall(
         request_iterator: RequestIterableType,
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
-    ) -> StreamUnaryCall:
+    ) -> _base_call.StreamUnaryCall:
         """Run the RPC call wrapped in interceptors"""
 
         async def _run_interceptor(
@@ -984,14 +984,16 @@ class InterceptedStreamStreamCall(
         request_iterator: RequestIterableType,
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
-    ) -> Union[StreamStreamCall, StreamStreamCallResponseIterator]:
+    ) -> Union[_base_call.StreamStreamCall, StreamStreamCallResponseIterator]:
         """Run the RPC call wrapped in interceptors"""
 
         async def _run_interceptor(
             interceptors: List[StreamStreamClientInterceptor],
             client_call_details: ClientCallDetails,
             request_iterator: RequestIterableType,
-        ) -> Union[StreamStreamCall, StreamStreamCallResponseIterator]:
+        ) -> Union[
+            _base_call.StreamStreamCall, StreamStreamCallResponseIterator
+        ]:
             if interceptors:
                 continuation = functools.partial(
                     _run_interceptor, interceptors[1:]

@@ -91,9 +91,9 @@ def _unwrap_client_call_details(
         timeout = default_details.timeout  # pytype: disable=attribute-error
 
     try:
-        metadata = call_details.metadata  # pytype: disable=attribute-error
+        metadata = call_details.metadata  # pytype: disable=attribute-error # type: ignore
     except AttributeError:
-        metadata = default_details.metadata  # pytype: disable=attribute-error
+        metadata = default_details.metadata  # pytype: disable=attribute-error # type: ignore
 
     try:
         credentials = (
