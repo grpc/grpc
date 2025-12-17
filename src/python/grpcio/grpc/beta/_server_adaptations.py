@@ -453,5 +453,5 @@ def server(
     else:
         effective_thread_pool = thread_pool
     return _Server(
-        grpc.server(effective_thread_pool, handlers=(generic_rpc_handler,))  # type: ignore
+        grpc.server(effective_thread_pool, handlers=(generic_rpc_handler,))  # type: ignore # noqa: PGH003
     )

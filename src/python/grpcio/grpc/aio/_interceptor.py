@@ -20,10 +20,10 @@ import asyncio
 import collections
 import functools
 from typing import (
-    AsyncIterable,
+    Any,
+    AsyncGenerator,
     AsyncIterable,
     AsyncIterator,
-    AsyncGenerator,
     Awaitable,
     Callable,
     Generic,
@@ -31,7 +31,6 @@ from typing import (
     Optional,
     Sequence,
     Union,
-    Any,
     cast,
 )
 
@@ -629,7 +628,7 @@ class _InterceptedStreamRequestMixin(Generic[RequestType]):
 
         await self._write_to_iterator_queue_interruptible(
             cast(
-                RequestType,
+                "RequestType",
                 _InterceptedStreamRequestMixin._FINISH_ITERATOR_SENTINEL,
             ),
             call,
@@ -1194,14 +1193,14 @@ class _StreamCallResponseIterator(Generic[ResponseType]):
     async def debug_error_string(self) -> Optional[str]:
         if self._call is None:
             return None
-        return await self._call.debug_error_string()  # type: ignore
+        return await self._call.debug_error_string()  # type: ignore # noqa: PGH003
 
     def __aiter__(self):
         return self._response_iterator.__aiter__()
 
     async def wait_for_connection(self) -> None:
         if self._call is None:
-            return
+            return None
         return await self._call.wait_for_connection()
 
 
@@ -1244,4 +1243,4 @@ class StreamStreamCallResponseIterator(
 
     @property
     def _done_writing_flag(self) -> bool:
-        return self._call._done_writing_flag  # type: ignore
+        return self._call._done_writing_flag  # type: ignore # noqa: PGH003

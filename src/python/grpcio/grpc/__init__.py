@@ -35,26 +35,26 @@ from typing import (
     Union,
 )
 
-from grpc import _compression
-from grpc._cython import cygrpc as _cygrpc  # type: ignore
+
+from grpc._cython import cygrpc as _cygrpc  # type: ignore # noqa: PGH003
 from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
 from grpc.typing import ArityAgnosticMethodHandler
-from grpc.typing import CygrpcBaseEvent
-from grpc.typing import CygrpcCallCredentials
 from grpc.typing import ChannelArgumentType
-from grpc.typing import CygrpcChannelCredentials
 from grpc.typing import ClientInterceptor
 from grpc.typing import ConnectivityCallbackType
+from grpc.typing import CygrpcBaseEvent
+from grpc.typing import CygrpcCallCredentials
+from grpc.typing import CygrpcChannelCredentials
+from grpc.typing import CygrpcServerCertificateConfig
+from grpc.typing import CygrpcServerCredentials
 from grpc.typing import DeserializingFunction
 from grpc.typing import MetadataType
 from grpc.typing import NullaryCallbackType
 from grpc.typing import RequestType
 from grpc.typing import ResponseType
 from grpc.typing import SerializingFunction
-from grpc.typing import CygrpcServerCertificateConfig
-from grpc.typing import CygrpcServerCredentials
 from grpc.typing import StreamStreamBehavior
 from grpc.typing import StreamUnaryBehavior
 from grpc.typing import UnaryStreamBehavior
@@ -276,6 +276,9 @@ class ChannelConnectivity(enum.Enum):
     SHUTDOWN = (_cygrpc.ConnectivityState.shutdown, "shutdown")
 
 
+
+
+
 @enum.unique
 class StatusCode(enum.Enum):
     """Mirrors grpc_status_code in the gRPC Core.
@@ -335,6 +338,9 @@ class StatusCode(enum.Enum):
     UNAVAILABLE = (_cygrpc.StatusCode.unavailable, "unavailable")
     DATA_LOSS = (_cygrpc.StatusCode.data_loss, "data loss")
     UNAUTHENTICATED = (_cygrpc.StatusCode.unauthenticated, "unauthenticated")
+
+
+from grpc import _compression
 
 
 #############################  gRPC Status  ################################
@@ -490,6 +496,7 @@ class ClientCallDetails(abc.ABC):
 
     method: str
     timeout: Optional[float]
+    metadata: Optional[MetadataType]
     credentials: Optional[CallCredentials]
     wait_for_ready: Optional[bool]
     compression: Compression
@@ -1392,7 +1399,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError()
 
-    def code(self) -> StatusCode:
+    def code(self) -> Optional[StatusCode]:
         """Accesses the value to be used as status code upon RPC completion.
 
         This is an EXPERIMENTAL API.
@@ -1402,7 +1409,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError()
 
-    def details(self) -> bytes:
+    def details(self) -> Optional[bytes]:
         """Accesses the value to be used as detail string upon RPC completion.
 
         This is an EXPERIMENTAL API.
@@ -2231,7 +2238,8 @@ def compute_engine_channel_credentials(
     credential, the connection may suddenly and unexpectedly begin failing RPCs.
     """
     if call_credentials is None:
-        raise ValueError("call_credentials must not be None.")
+        msg = "call_credentials must not be None."
+        raise ValueError(msg)
     return ChannelCredentials(
         _cygrpc.channel_credentials_compute_engine(
             call_credentials._credentials
@@ -2498,7 +2506,7 @@ __all__ = (
 
 # Here to maintain backwards compatibility; avoid using these in new code!
 try:
-    import grpc_tools  # type: ignore
+    import grpc_tools  # type: ignore # noqa: PGH003
 
     sys.modules.update({"grpc.tools": grpc_tools})
 except ImportError:

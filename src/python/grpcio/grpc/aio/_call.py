@@ -446,7 +446,7 @@ class _StreamRequestMixin(Call, Generic[RequestType]):
                 request_iterator, "__aiter__"
             ):
                 async_iterator = cast(
-                    AsyncIterator[RequestType], request_iterator
+                    "AsyncIterator[RequestType]", request_iterator
                 )
                 async for request in async_iterator:
                     try:
@@ -462,7 +462,7 @@ class _StreamRequestMixin(Call, Generic[RequestType]):
                         return
             else:
                 sync_iterator = cast(
-                    Generator[RequestType, None, None], request_iterator
+                    "Generator[RequestType, None, None]", request_iterator
                 )
                 for request in sync_iterator:
                     try:
@@ -603,7 +603,7 @@ class UnaryUnaryCall(
             return _common.deserialize(
                 serialized_response, self._response_deserializer
             )
-        return cast(EOFType, cygrpc.EOF)
+        return cast("EOFType", cygrpc.EOF)
 
     async def wait_for_connection(self) -> None:
         await self._invocation_task
@@ -725,7 +725,7 @@ class StreamUnaryCall(
             return _common.deserialize(
                 serialized_response, self._response_deserializer
             )
-        return cast(EOFType, cygrpc.EOF)
+        return cast("EOFType", cygrpc.EOF)
 
 
 class StreamStreamCall(

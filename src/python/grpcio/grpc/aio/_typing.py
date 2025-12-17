@@ -14,6 +14,7 @@
 """Common types for gRPC Async API"""
 
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncIterable,
     Callable,
@@ -22,7 +23,6 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
-    TYPE_CHECKING,
 )
 
 from grpc._cython.cygrpc import EOF

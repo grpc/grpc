@@ -31,15 +31,25 @@ from grpc._cython import cygrpc
 
 if TYPE_CHECKING:
 
-    class CygrpcChannelCredentials: ...
+    class CygrpcChannelCredentials:
+        """Type alias for cygrpc.ChannelCredentials."""
 
-    class CygrpcCallCredentials: ...
 
-    class CygrpcServerCredentials: ...
+    class CygrpcCallCredentials:
+        """Type alias for cygrpc.CallCredentials."""
 
-    class CygrpcServerCertificateConfig: ...
 
-    class CygrpcBaseEvent: ...
+    class CygrpcServerCredentials:
+        """Type alias for cygrpc.ServerCredentials."""
+
+
+    class CygrpcServerCertificateConfig:
+        """Type alias for cygrpc.ServerCertificateConfig."""
+
+
+    class CygrpcBaseEvent:
+        """Type alias for cygrpc.BaseEvent."""
+
 
 else:
     CygrpcChannelCredentials = cygrpc.ChannelCredentials

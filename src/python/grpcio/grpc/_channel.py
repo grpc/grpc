@@ -402,12 +402,12 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
         return self._state.code
 
     def details(self) -> Optional[str]:
-        if self._state.details:
+        if self._state.details is not None:
             return _common.decode(self._state.details)
         return None
 
     def debug_error_string(self) -> Optional[str]:
-        if self._state.debug_error_string:
+        if self._state.debug_error_string is not None:
             return _common.decode(self._state.debug_error_string)
         return None
 
@@ -847,7 +847,7 @@ class _MultiThreadedRendezvous(
                 return self._state.details is not None
 
             _common.wait(self._state.condition.wait, _done)
-            if self._state.details:
+            if self._state.details is not None:
                 return _common.decode(self._state.details)
             return None
 
@@ -858,7 +858,7 @@ class _MultiThreadedRendezvous(
                 return self._state.debug_error_string is not None
 
             _common.wait(self._state.condition.wait, _done)
-            if self._state.debug_error_string:
+            if self._state.debug_error_string is not None:
                 return _common.decode(self._state.debug_error_string)
             return None
 
@@ -1924,7 +1924,7 @@ def _poll_connectivity(
         # a Union of callbacks and connectivity states. Pyright infers the unpacked `callback`
         # as that Union type, so we must cast it to the expected Sequence[Callable] type.
         callbacks = cast(
-            Sequence[Callable[[grpc.ChannelConnectivity], None]],
+            "Sequence[Callable[[grpc.ChannelConnectivity], None]]",
             tuple(
                 callback for callback, _ in state.callbacks_and_connectivities
             ),

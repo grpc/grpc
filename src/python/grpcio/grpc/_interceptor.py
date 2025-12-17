@@ -93,11 +93,11 @@ def _unwrap_client_call_details(
     try:
         metadata = (
             call_details.metadata
-        )  # pytype: disable=attribute-error # type: ignore
+        )  # pytype: disable=attribute-error # type: ignore # noqa: PGH003
     except AttributeError:
         metadata = (
             default_details.metadata
-        )  # pytype: disable=attribute-error # type: ignore
+        )  # pytype: disable=attribute-error # type: ignore # noqa: PGH003
 
     try:
         credentials = (
@@ -126,7 +126,7 @@ def _unwrap_client_call_details(
             default_details.compression
         )  # pytype: disable=attribute-error
 
-    return method, timeout, metadata, credentials, wait_for_ready, compression  # type: ignore
+    return method, timeout, metadata, credentials, wait_for_ready, compression  # type: ignore # noqa: PGH003
 
 
 class _FailureOutcome(
@@ -330,7 +330,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             except grpc.RpcError as rpc_error:
                 return rpc_error
             except Exception as exception:  # pylint:disable=broad-except
-                return _FailureOutcome(exception, sys.exc_info()[2])  # type: ignore
+                return _FailureOutcome(exception, sys.exc_info()[2])  # type: ignore # noqa: PGH003
 
         call = self._interceptor.intercept_unary_unary(
             continuation, client_call_details, request
@@ -686,7 +686,7 @@ class _Channel(grpc.Channel):
         self, callback: Callable, try_to_connect: Optional[bool] = False
     ):
         self._channel.subscribe(
-            callback, try_to_connect=True if try_to_connect else False
+            callback, try_to_connect=bool(try_to_connect)
         )
 
     def unsubscribe(self, callback: Callable):
@@ -705,7 +705,7 @@ class _Channel(grpc.Channel):
             m,
             request_serializer,
             response_deserializer,
-            True if _registered_method else False,
+            bool(_registered_method),
         )
         # pytype: enable=wrong-arg-count
         if isinstance(self._interceptor, grpc.UnaryUnaryClientInterceptor):
@@ -725,7 +725,7 @@ class _Channel(grpc.Channel):
             m,
             request_serializer,
             response_deserializer,
-            True if _registered_method else False,
+            bool(_registered_method),
         )
         # pytype: enable=wrong-arg-count
         if isinstance(self._interceptor, grpc.UnaryStreamClientInterceptor):
@@ -745,7 +745,7 @@ class _Channel(grpc.Channel):
             m,
             request_serializer,
             response_deserializer,
-            True if _registered_method else False,
+            bool(_registered_method),
         )
         # pytype: enable=wrong-arg-count
         if isinstance(self._interceptor, grpc.StreamUnaryClientInterceptor):
@@ -768,7 +768,7 @@ class _Channel(grpc.Channel):
             m,
             request_serializer,
             response_deserializer,
-            True if _registered_method else False,
+            bool(_registered_method),
         )
         # pytype: enable=wrong-arg-count
         if isinstance(self._interceptor, grpc.StreamStreamClientInterceptor):

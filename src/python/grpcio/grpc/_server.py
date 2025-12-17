@@ -605,11 +605,11 @@ def _call_behavior(
             if behavior is not None:
                 response_or_iterator = None
                 if send_response_callback is not None:
-                    response_or_iterator = cast(Callable[..., Any], behavior)(
+                    response_or_iterator = cast("Callable[..., Any]", behavior)(
                         argument, context, send_response_callback
                     )
                 else:
-                    response_or_iterator = cast(Callable[..., Any], behavior)(
+                    response_or_iterator = cast("Callable[..., Any]", behavior)(
                         argument, context
                     )
                 return response_or_iterator, True
@@ -851,7 +851,7 @@ def _stream_response_in_pool(
                         rpc_event,
                         state,
                         send_response,
-                        cast(Iterator[Any], response_iterator),
+                        cast("Iterator[Any]", response_iterator),
                     )
     except Exception:  # pylint: disable=broad-except
         traceback.print_exc()

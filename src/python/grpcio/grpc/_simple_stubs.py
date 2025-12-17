@@ -90,11 +90,9 @@ def _create_channel(
             target,
             credentials=channel_credentials,
             options=options,
-            compression=compression,
         )
-    raise ValueError(
-        "can not create secure channel without channel_credentials"
-    )
+    msg = "can not create secure channel without channel_credentials"
+    raise ValueError(msg)
 
 
 class ChannelCache:
@@ -192,7 +190,7 @@ class ChannelCache:
             )
         if insecure:
             channel_credentials = (
-                grpc.experimental.insecure_channel_credentials()  # type: ignore
+                grpc.experimental.insecure_channel_credentials()  # type: ignore # noqa: PGH003
             )
         elif channel_credentials is None:
             _LOGGER.debug("Defaulting to SSL channel credentials.")
@@ -318,7 +316,7 @@ def unary_unary(
     )
     wait_for_ready = wait_for_ready if wait_for_ready is not None else True
     return cast(
-        ResponseType,
+        "ResponseType",
         multicallable(
             request,
             metadata=metadata,
@@ -412,7 +410,7 @@ def unary_stream(
     )
     wait_for_ready = wait_for_ready if wait_for_ready is not None else True
     return cast(
-        Iterator[ResponseType],
+        "Iterator[ResponseType]",
         multicallable(
             request,
             metadata=metadata,
@@ -597,7 +595,7 @@ def stream_stream(
     )
     wait_for_ready = wait_for_ready if wait_for_ready is not None else True
     return cast(
-        Iterator[ResponseType],
+        "Iterator[ResponseType]",
         multicallable(
             request_iterator,
             metadata=metadata,

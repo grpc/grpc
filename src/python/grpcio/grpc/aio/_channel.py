@@ -54,8 +54,8 @@ if sys.version_info[1] < 7:
 
     def _all_tasks() -> Iterable[asyncio.Task]:
         return (
-            asyncio.Task.all_tasks()
-        )  # pylint: disable=no-member # type: ignore
+            asyncio.Task.all_tasks()  # pyright: ignore [reportAttributeAccessIssue]
+        )  # pylint: disable=no-member # type: ignore # noqa: PGH003
 
 else:
 
@@ -165,7 +165,7 @@ class UnaryUnaryMultiCallable(
             )
         else:
             call = InterceptedUnaryUnaryCall(
-                self._interceptors,  # type: ignore
+                self._interceptors,  # type: ignore # noqa: PGH003
                 request,
                 timeout,
                 metadata,
@@ -211,7 +211,7 @@ class UnaryStreamMultiCallable(
             )
         else:
             call = InterceptedUnaryStreamCall(
-                self._interceptors,  # type: ignore
+                self._interceptors,  # type: ignore # noqa: PGH003
                 request,
                 timeout,
                 metadata,
@@ -256,7 +256,7 @@ class StreamUnaryMultiCallable(
             )
         else:
             call = InterceptedStreamUnaryCall(
-                self._interceptors,  # type: ignore
+                self._interceptors,  # type: ignore # noqa: PGH003
                 request_iterator,
                 timeout,
                 metadata,
@@ -301,7 +301,7 @@ class StreamStreamMultiCallable(
             )
         else:
             call = InterceptedStreamStreamCall(
-                self._interceptors,  # type: ignore
+                self._interceptors,  # type: ignore # noqa: PGH003
                 request_iterator,
                 timeout,
                 metadata,
@@ -427,11 +427,11 @@ class Channel(_base_channel.Channel):
             # might not always be the case.
             if candidate is not None and isinstance(candidate, _base_call.Call):
                 if hasattr(candidate, "_channel"):
-                    if candidate._channel is not self._channel:  # type: ignore
+                    if candidate._channel is not self._channel:  # type: ignore # noqa: PGH003
                         continue
                 elif hasattr(candidate, "_cython_call"):
                     # For normal Call object
-                    if candidate._cython_call._channel is not self._channel:  # type: ignore
+                    if candidate._cython_call._channel is not self._channel:  # type: ignore # noqa: PGH003
                         continue
                 else:
                     # Unidentified Call object

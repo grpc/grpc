@@ -18,15 +18,11 @@ set -ex
 # change to root directory
 cd "$(dirname "$0")/../.."
 
-DIRS=(
-   src/python/grpcio
-)
-
 VIRTUALENV=.venv-pyright
-python3 -m venv $VIRTUALENV
+python3 -m virtualenv $VIRTUALENV
 source $VIRTUALENV/bin/activate
 python3 --version
 
 pip install pyright sphinx
 
-exec pyright "${DIRS[@]}"
+exec pyright
