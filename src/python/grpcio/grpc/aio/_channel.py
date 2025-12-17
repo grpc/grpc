@@ -431,8 +431,8 @@ class Channel(_base_channel.Channel):
                         continue
                 elif hasattr(candidate, "_cython_call"):
                     # For normal Call object
-                    cython_call = candidate._cython_call
-                    if cython_call._channel is not self._channel:  # type: ignore # noqa: PGH003
+                    cython_call = candidate._cython_call  # type: ignore # noqa: PGH003
+                    if cython_call._channel is not self._channel:
                         continue
                 else:
                     # Unidentified Call object

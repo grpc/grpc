@@ -126,8 +126,14 @@ def _unwrap_client_call_details(
             default_details.compression
         )  # pytype: disable=attribute-error
 
-    # type: ignore # noqa: PGH003
-    return method, timeout, metadata, credentials, wait_for_ready, compression
+    return (
+        method,
+        timeout,
+        metadata,
+        credentials,
+        wait_for_ready,
+        compression,
+    )  # type: ignore # noqa: PGH003
 
 
 class _FailureOutcome(

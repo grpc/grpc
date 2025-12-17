@@ -336,7 +336,9 @@ class StatusCode(enum.Enum):
     UNAUTHENTICATED = (_cygrpc.StatusCode.unauthenticated, "unauthenticated")
 
 
-from grpc import _compression  # pylint: disable=wrong-import-position # noqa: E402
+from grpc import (  # pylint: disable=wrong-import-position # noqa: E402
+    _compression,
+)
 
 #############################  gRPC Status  ################################
 
