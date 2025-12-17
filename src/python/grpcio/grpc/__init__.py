@@ -35,7 +35,6 @@ from typing import (
     Union,
 )
 
-
 from grpc._cython import cygrpc as _cygrpc  # type: ignore # noqa: PGH003
 from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
@@ -276,9 +275,6 @@ class ChannelConnectivity(enum.Enum):
     SHUTDOWN = (_cygrpc.ConnectivityState.shutdown, "shutdown")
 
 
-
-
-
 @enum.unique
 class StatusCode(enum.Enum):
     """Mirrors grpc_status_code in the gRPC Core.
@@ -340,8 +336,7 @@ class StatusCode(enum.Enum):
     UNAUTHENTICATED = (_cygrpc.StatusCode.unauthenticated, "unauthenticated")
 
 
-from grpc import _compression
-
+from grpc import _compression  # pylint: disable=wrong-import-position # noqa: E402
 
 #############################  gRPC Status  ################################
 
@@ -480,10 +475,9 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
 
 
 class ClientCallDetails(abc.ABC):
-    """Describes an RPC to be invoked."""
+    """Describes an RPC to be invoked.
 
-    """
-        Attributes:
+    Attributes:
       method: The method name of the RPC.
       timeout: An optional duration of time in seconds to allow for the RPC.
       metadata: Optional :term:`metadata` to be transmitted to

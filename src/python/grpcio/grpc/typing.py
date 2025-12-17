@@ -34,22 +34,17 @@ if TYPE_CHECKING:
     class CygrpcChannelCredentials:
         """Type alias for cygrpc.ChannelCredentials."""
 
-
     class CygrpcCallCredentials:
         """Type alias for cygrpc.CallCredentials."""
-
 
     class CygrpcServerCredentials:
         """Type alias for cygrpc.ServerCredentials."""
 
-
     class CygrpcServerCertificateConfig:
         """Type alias for cygrpc.ServerCertificateConfig."""
 
-
     class CygrpcBaseEvent:
         """Type alias for cygrpc.BaseEvent."""
-
 
 else:
     CygrpcChannelCredentials = cygrpc.ChannelCredentials

@@ -126,7 +126,8 @@ def _unwrap_client_call_details(
             default_details.compression
         )  # pytype: disable=attribute-error
 
-    return method, timeout, metadata, credentials, wait_for_ready, compression  # type: ignore # noqa: PGH003
+    # type: ignore # noqa: PGH003
+    return method, timeout, metadata, credentials, wait_for_ready, compression
 
 
 class _FailureOutcome(
@@ -685,9 +686,7 @@ class _Channel(grpc.Channel):
     def subscribe(
         self, callback: Callable, try_to_connect: Optional[bool] = False
     ):
-        self._channel.subscribe(
-            callback, try_to_connect=bool(try_to_connect)
-        )
+        self._channel.subscribe(callback, try_to_connect=bool(try_to_connect))
 
     def unsubscribe(self, callback: Callable):
         self._channel.unsubscribe(callback)
