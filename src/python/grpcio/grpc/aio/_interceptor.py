@@ -24,6 +24,7 @@ from typing import (
     AsyncIterator,
     Awaitable,
     Callable,
+    Generic,
     List,
     Optional,
     Sequence,
@@ -1090,7 +1091,7 @@ class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall):
         pass
 
 
-class _StreamCallResponseIterator:
+class _StreamCallResponseIterator(Generic[ResponseType]):
     _call: Union[_base_call.UnaryStreamCall, _base_call.StreamStreamCall]
     _response_iterator: AsyncIterable[ResponseType]
 
