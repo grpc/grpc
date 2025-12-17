@@ -1865,7 +1865,7 @@ def _deliveries(
 
 def _deliver(
     state: _ChannelConnectivityState,
-    initial_connectivity: grpc.ChannelConnectivity,
+    initial_connectivity: Optional[grpc.ChannelConnectivity],
     initial_callbacks: Sequence[Callable[[grpc.ChannelConnectivity], None]],
 ) -> None:
     connectivity = initial_connectivity
@@ -1874,7 +1874,8 @@ def _deliver(
         for callback in callbacks:
             cygrpc.block_if_fork_in_progress(state)
             try:
-                callback(connectivity)
+                if connectivity is not None:
+                    callback(connectivity)
             except Exception:  # pylint: disable=broad-except
                 _LOGGER.exception(
                     _CHANNEL_SUBSCRIPTION_CALLBACK_ERROR_LOG_MESSAGE
@@ -1908,7 +1909,7 @@ def _spawn_delivery(
 # NOTE(https://github.com/grpc/grpc/issues/3064): We'd rather not poll.
 def _poll_connectivity(
     state: _ChannelConnectivityState,
-    channel: grpc.Channel,
+    channel: cygrpc.Channel,
     initial_try_to_connect: bool,
 ) -> None:
     try_to_connect = initial_try_to_connect
@@ -1919,6 +1920,9 @@ def _poll_connectivity(
                 connectivity
             ]
         )
+        # Cast required because `callbacks_and_connectivities` is typed as a list of lists containing
+        # a Union of callbacks and connectivity states. Pyright infers the unpacked `callback`
+        # as that Union type, so we must cast it to the expected Sequence[Callable] type.
         callbacks = cast(
             Sequence[Callable[[grpc.ChannelConnectivity], None]],
             tuple(
@@ -1961,7 +1965,7 @@ def _poll_connectivity(
 def _subscribe(
     state: _ChannelConnectivityState,
     callback: Callable[[grpc.ChannelConnectivity], None],
-    try_to_connect: bool,
+    try_to_connect: Optional[bool],
 ) -> None:
     with state.lock:
         if not state.callbacks_and_connectivities and not state.polling:
