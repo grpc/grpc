@@ -36,8 +36,8 @@
 #endif
 
 #include <grpc/grpc_crl_provider.h>
-#include <grpc/grpc_private_key_offload.h>
 #include <grpc/grpc_security.h>
+#include <grpc/private_key_signer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
@@ -963,14 +963,14 @@ static tsi_result populate_ssl_context(
           }
           return result;
         },
-        [&](std::shared_ptr<grpc_core::CustomPrivateKeySigner> key_sign) {
+        [&](std::shared_ptr<grpc_core::PrivateKeySigner> key_signer) {
 #if defined(OPENSSL_IS_BORINGSSL)
-          if (key_sign != nullptr) {
+          if (key_signer != nullptr) {
             SSL_CTX_set_private_key_method(
                 context, &grpc_core::TlsOffloadPrivateKeyMethod);
             SSL_CTX_set_ex_data(context,
                                 g_ssl_ctx_ex_private_key_function_index,
-                                key_sign.get());
+                                key_signer.get());
           }
 #endif  // OPENSSL_IS_BORINGSSL
           return TSI_OK;
@@ -1289,9 +1289,8 @@ grpc_core::GetTlsPrivateKeyOffloadContext(SSL* ssl) {
       SSL_get_ex_data(ssl, g_ssl_ex_private_key_offloading_context_index));
 }
 
-grpc_core::CustomPrivateKeySigner* grpc_core::GetCustomPrivateKeySigner(
-    SSL_CTX* ssl_ctx) {
-  return static_cast<grpc_core::CustomPrivateKeySigner*>(
+grpc_core::PrivateKeySigner* grpc_core::GetPrivateKeySigner(SSL_CTX* ssl_ctx) {
+  return static_cast<grpc_core::PrivateKeySigner*>(
       SSL_CTX_get_ex_data(ssl_ctx, g_ssl_ctx_ex_private_key_function_index));
 }
 
@@ -1973,6 +1972,8 @@ static tsi_result ssl_handshaker_process_bytes_from_peer(
     impl->result = TSI_INTERNAL_ERROR;
     return impl->result;
   }
+  LOG(ERROR) << "ssl_handshaker_process_bytes_from_peer " << *bytes_size;
+  LOG(ERROR) << "ssl_handshaker_process_bytes_from_peer " << *error;
   *bytes_size = static_cast<size_t>(bytes_written_into_ssl_size);
   return ssl_handshaker_do_handshake(impl, error);
 }
@@ -2058,6 +2059,7 @@ static tsi_result ssl_handshaker_next(
     if (error != nullptr) *error = "invalid argument";
     return TSI_INVALID_ARGUMENT;
   }
+  LOG(ERROR) << "ssl_handshaker_next " << received_bytes_size;
   // If there are received bytes, process them first.
   tsi_ssl_handshaker* impl = reinterpret_cast<tsi_ssl_handshaker*>(self);
 
@@ -2094,6 +2096,7 @@ static tsi_result ssl_handshaker_next(
         status =
             ssl_handshaker_write_output_buffer(self, &bytes_written, error);
         if (status != TSI_OK) return status;
+        LOG(ERROR) << "ssl_handshaker_next " << received_bytes_size;
         status = ssl_handshaker_do_handshake(impl, error);
       }
       // Move the pointer to the first byte not yet successfully written to
@@ -2302,8 +2305,8 @@ static tsi_result create_tsi_ssl_handshaker(
     return TSI_INTERNAL_ERROR;
   }
 
-  grpc_core::CustomPrivateKeySigner* sign_function =
-      static_cast<grpc_core::CustomPrivateKeySigner*>(SSL_CTX_get_ex_data(
+  grpc_core::PrivateKeySigner* sign_function =
+      static_cast<grpc_core::PrivateKeySigner*>(SSL_CTX_get_ex_data(
           ssl_ctx, g_ssl_ctx_ex_private_key_function_index));
   if (sign_function != nullptr) {
     grpc_core::TlsPrivateKeyOffloadContext* private_key_offload_context =

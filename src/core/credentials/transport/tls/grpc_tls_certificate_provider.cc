@@ -38,6 +38,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/ssl_transport_security_utils.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/load_file.h"
 #include "src/core/util/match.h"
@@ -576,7 +577,7 @@ grpc_tls_certificate_provider_in_memory_create() {
 void grpc_tls_certificate_provider_in_memory_set_root_certificate(
     grpc_tls_certificate_provider* provider, const char* root_cert) {
   auto in_memory_provider =
-      static_cast<grpc_core::InMemoryCertificateProvider*>(provider);
+      grpc_core::DownCast<grpc_core::InMemoryCertificateProvider*>(provider);
   in_memory_provider->UpdateRoot(std::make_shared<RootCertInfo>(root_cert));
 }
 
@@ -589,7 +590,7 @@ void grpc_tls_certificate_provider_in_memory_set_identity_certificate(
     delete pem_key_cert_pairs;
   }
   auto in_memory_provider =
-      static_cast<grpc_core::InMemoryCertificateProvider*>(provider);
+      grpc_core::DownCast<grpc_core::InMemoryCertificateProvider*>(provider);
   in_memory_provider->UpdateIdentity(identity_pairs_core);
 }
 

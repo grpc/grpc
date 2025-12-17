@@ -31,28 +31,28 @@
 
 namespace grpc_core {
 
-absl::StatusOr<CustomPrivateKeySigner::SignatureAlgorithm>
-ToSignatureAlgorithmClass(uint16_t algorithm) {
+absl::StatusOr<PrivateKeySigner::SignatureAlgorithm> ToSignatureAlgorithmClass(
+    uint16_t algorithm) {
 #if defined(OPENSSL_IS_BORINGSSL)
   switch (algorithm) {
     case SSL_SIGN_RSA_PKCS1_SHA256:
-      return CustomPrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha256;
+      return PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha256;
     case SSL_SIGN_RSA_PKCS1_SHA384:
-      return CustomPrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha384;
+      return PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha384;
     case SSL_SIGN_RSA_PKCS1_SHA512:
-      return CustomPrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha512;
+      return PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha512;
     case SSL_SIGN_ECDSA_SECP256R1_SHA256:
-      return CustomPrivateKeySigner::SignatureAlgorithm::kEcdsaSecp256r1Sha256;
+      return PrivateKeySigner::SignatureAlgorithm::kEcdsaSecp256r1Sha256;
     case SSL_SIGN_ECDSA_SECP384R1_SHA384:
-      return CustomPrivateKeySigner::SignatureAlgorithm::kEcdsaSecp384r1Sha384;
+      return PrivateKeySigner::SignatureAlgorithm::kEcdsaSecp384r1Sha384;
     case SSL_SIGN_ECDSA_SECP521R1_SHA512:
-      return CustomPrivateKeySigner::SignatureAlgorithm::kEcdsaSecp521r1Sha512;
+      return PrivateKeySigner::SignatureAlgorithm::kEcdsaSecp521r1Sha512;
     case SSL_SIGN_RSA_PSS_RSAE_SHA256:
-      return CustomPrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha256;
+      return PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha256;
     case SSL_SIGN_RSA_PSS_RSAE_SHA384:
-      return CustomPrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha384;
+      return PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha384;
     case SSL_SIGN_RSA_PSS_RSAE_SHA512:
-      return CustomPrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha512;
+      return PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha512;
   }
 #endif  // OPENSSL_IS_BORINGSSL
   return absl::InvalidArgumentError("Unknown signature algorithm.");
@@ -113,7 +113,7 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
     return ssl_private_key_failure;
   }
 
-  CustomPrivateKeySigner* signer = GetCustomPrivateKeySigner(ssl_ctx);
+  PrivateKeySigner* signer = GetPrivateKeySigner(ssl_ctx);
   if (signer != nullptr) {
     LOG(ERROR) << "TlsPrivateKeySignWrapper Call Sign  ";
     signer->Sign(absl::string_view(reinterpret_cast<const char*>(in), in_len),

@@ -30,6 +30,9 @@
 
 #include "absl/status/statusor.h"
 
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
+#include "src/core/util/down_cast.h"
+
 namespace grpc {
 namespace experimental {
 

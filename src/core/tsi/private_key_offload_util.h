@@ -19,7 +19,7 @@
 #ifndef GRPC_SRC_CORE_TSI_PRIVATE_KEY_OFFLOAD_UTIL_H
 #define GRPC_SRC_CORE_TSI_PRIVATE_KEY_OFFLOAD_UTIL_H
 
-#include <grpc/grpc_private_key_offload.h>
+#include <grpc/private_key_signer.h>
 #include <openssl/ssl.h>
 
 #include <string>
@@ -44,8 +44,8 @@ struct TlsPrivateKeyOffloadContext {
 // Returns the TlsPrivateKeyOffloadContext associated with the SSL object.
 TlsPrivateKeyOffloadContext* GetTlsPrivateKeyOffloadContext(SSL* ssl);
 
-// Returns the CustomPrivateKeySigner associated with the SSL_CTX object.
-CustomPrivateKeySigner* GetCustomPrivateKeySigner(SSL_CTX* ssl_ctx);
+// Returns the PrivateKeySigner associated with the SSL_CTX object.
+PrivateKeySigner* GetPrivateKeySigner(SSL_CTX* ssl_ctx);
 
 #if defined(OPENSSL_IS_BORINGSSL)
 // Callback function to be invoked when the user's async sign operation is

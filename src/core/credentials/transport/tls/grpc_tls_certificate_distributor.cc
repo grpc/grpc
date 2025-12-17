@@ -336,15 +336,15 @@ void grpc_tls_identity_pairs_add_pair(grpc_tls_identity_pairs* pairs,
   pairs->pem_key_cert_pairs.emplace_back(private_key, cert_chain);
 }
 
-void grpc_tls_identity_pairs_add_pair_with_custom_signer(
+void grpc_tls_identity_pairs_add_pair_with_signer(
     grpc_tls_identity_pairs* pairs,
-    grpc_core::CustomPrivateKeySigner* private_key, const char* cert_chain) {
+    std::shared_ptr<grpc_core::PrivateKeySigner> private_key_signer,
+    const char* cert_chain) {
   GRPC_CHECK_NE(pairs, nullptr);
-  GRPC_CHECK_NE(private_key, nullptr);
+  GRPC_CHECK_NE(private_key_signer, nullptr);
   GRPC_CHECK_NE(cert_chain, nullptr);
-  pairs->pem_key_cert_pairs.emplace_back(
-      std::shared_ptr<grpc_core::CustomPrivateKeySigner>(private_key),
-      cert_chain);
+  pairs->pem_key_cert_pairs.emplace_back(std::move(private_key_signer),
+                                         cert_chain);
 }
 
 void grpc_tls_identity_pairs_destroy(grpc_tls_identity_pairs* pairs) {

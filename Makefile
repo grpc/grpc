@@ -1828,7 +1828,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/grpc_audit_logging.h \
     include/grpc/grpc_crl_provider.h \
     include/grpc/grpc_posix.h \
-    include/grpc/grpc_private_key_offload.h \
     include/grpc/grpc_security.h \
     include/grpc/grpc_security_constants.h \
     include/grpc/impl/call.h \
@@ -1849,6 +1848,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/slice_type.h \
     include/grpc/load_reporting.h \
     include/grpc/passive_listener.h \
+    include/grpc/private_key_signer.h \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \
     include/grpc/status.h \

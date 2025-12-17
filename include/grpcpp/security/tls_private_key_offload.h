@@ -19,13 +19,13 @@
 #ifndef GRPCPP_SECURITY_TLS_PRIVATE_KEY_OFFLOAD_H
 #define GRPCPP_SECURITY_TLS_PRIVATE_KEY_OFFLOAD_H
 
-#include <grpc/grpc_private_key_offload.h>
+#include <grpc/private_key_signer.h>
 #include <grpcpp/impl/sync.h>
 #include <grpcpp/support/string_ref.h>
 
 namespace grpc {
 
-using grpc_core::CustomPrivateKeySigner;  // NOLINT(misc-unused-using-decls)
+using grpc_core::PrivateKeySigner;  // NOLINT(misc-unused-using-decls)
 
 }  // namespace grpc
 

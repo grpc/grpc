@@ -19,7 +19,7 @@
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
 
 #include <grpc/grpc_crl_provider.h>
-#include <grpc/grpc_private_key_offload.h>
+#include <grpc/private_key_signer.h>
 #include <grpc/support/port_platform.h>
 
 #include <memory>
