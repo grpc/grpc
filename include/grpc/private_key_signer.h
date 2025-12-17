@@ -52,7 +52,7 @@ class PrivateKeySigner {
   // A user's implementation MUST invoke `on_sign_complete` with the signed
   // bytes. This will let gRPC take control when the async operation is
   // complete. MUST not block MUST support concurrent calls
-  virtual void Sign(absl::string_view data_to_sign,
+  virtual bool Sign(absl::string_view data_to_sign,
                     SignatureAlgorithm signature_algorithm,
                     OnSignComplete on_sign_complete) = 0;
 };

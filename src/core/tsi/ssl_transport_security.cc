@@ -1973,7 +1973,7 @@ static tsi_result ssl_handshaker_process_bytes_from_peer(
     return impl->result;
   }
   LOG(ERROR) << "ssl_handshaker_process_bytes_from_peer " << *bytes_size;
-  LOG(ERROR) << "ssl_handshaker_process_bytes_from_peer " << *error;
+  //LOG(ERROR) << "ssl_handshaker_process_bytes_from_peer " << *error;
   *bytes_size = static_cast<size_t>(bytes_written_into_ssl_size);
   return ssl_handshaker_do_handshake(impl, error);
 }
