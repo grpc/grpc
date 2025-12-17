@@ -228,7 +228,7 @@ def _handle_event(
             state.rpc_end_time = time.perf_counter()
             _observability.maybe_record_rpc_latency(state)
             callbacks.extend(state.callbacks)
-            state.callbacks = None
+            state.callbacks = []
     return callbacks
 
 
@@ -260,7 +260,7 @@ def _consume_request_iterator(
     request_iterator: Iterator,
     state: _RPCState,
     call: Union[cygrpc.IntegratedCall, cygrpc.SegregatedCall],
-    request_serializer: SerializingFunction,
+    request_serializer: Optional[SerializingFunction],
     event_handler: Optional[_UserTag],
 ) -> None:
     """Consume a request supplied by the user."""
@@ -401,10 +401,14 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
         return self._state.code
 
     def details(self) -> Optional[str]:
-        return _common.decode(self._state.details)
+        if self._state.details:
+            return _common.decode(self._state.details)
+        return None
 
     def debug_error_string(self) -> Optional[str]:
-        return _common.decode(self._state.debug_error_string)
+        if self._state.debug_error_string:
+            return _common.decode(self._state.debug_error_string)
+        return None
 
     def _repr(self) -> str:
         return _rpc_state_string(self.__class__.__name__, self._state)
@@ -842,7 +846,9 @@ class _MultiThreadedRendezvous(
                 return self._state.details is not None
 
             _common.wait(self._state.condition.wait, _done)
-            return _common.decode(self._state.details)
+            if self._state.details:
+                return _common.decode(self._state.details)
+            return None
 
     def debug_error_string(self) -> Optional[str]:
         with self._state.condition:
@@ -851,7 +857,9 @@ class _MultiThreadedRendezvous(
                 return self._state.debug_error_string is not None
 
             _common.wait(self._state.condition.wait, _done)
-            return _common.decode(self._state.debug_error_string)
+            if self._state.debug_error_string:
+                return _common.decode(self._state.debug_error_string)
+            return None
 
     def cancelled(self) -> bool:
         with self._state.condition:
@@ -1812,7 +1820,7 @@ class _ChannelConnectivityState(object):
     lock: threading.RLock
     channel: cygrpc.Channel
     polling: bool
-    connectivity: grpc.ChannelConnectivity
+    connectivity: Optional[grpc.ChannelConnectivity]
     try_to_connect: bool
     # TODO(xuanwn): Refactor this: https://github.com/grpc/grpc/issues/31704
     callbacks_and_connectivities: List[
