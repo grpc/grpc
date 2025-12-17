@@ -23,6 +23,6 @@ python3 -m virtualenv $VIRTUALENV
 source $VIRTUALENV/bin/activate
 python3 --version
 
-pip install pyright sphinx
+pip install pyright
 
 exec pyright
