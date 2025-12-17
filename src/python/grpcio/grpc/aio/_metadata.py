@@ -93,13 +93,13 @@ class Metadata(abc.Collection):  # noqa: PLW1641
                 yield (key, value)
 
     def keys(self) -> abc.KeysView:
-        return abc.KeysView(self)
+        return abc.KeysView(self) # type: ignore
 
     def values(self) -> abc.ValuesView:
-        return abc.ValuesView(self)
+        return abc.ValuesView(self) # type: ignore
 
     def items(self) -> abc.ItemsView:
-        return abc.ItemsView(self)
+        return abc.ItemsView(self) # type: ignore
 
     def get(
         self, key: MetadataKey, default: Optional[MetadataValue] = None

@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING, Optional
 import grpc
 
 if TYPE_CHECKING:
-    from oauth2client import client as oauth2client_client
+    from oauth2client import client as oauth2client_client # type: ignore
 
 
 def _sign_request(

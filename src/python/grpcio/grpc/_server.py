@@ -37,6 +37,7 @@ from typing import (
     Set,
     Tuple,
     Union,
+    cast,
 )
 
 import grpc  # pytype: disable=pyi-error
@@ -182,7 +183,7 @@ class _GenericMethod(_Method):
 class _RPCState(object):
     context: contextvars.Context
     condition: threading.Condition
-    due = Set[str]
+    due: Set[str]
     request: Any
     client: str
     initial_metadata_allowed: bool
@@ -470,14 +471,14 @@ class _Context(grpc.ServicerContext):
         with self._state.condition:
             self._state.code = code
 
-    def code(self) -> grpc.StatusCode:
+    def code(self) -> Optional[grpc.StatusCode]:
         return self._state.code
 
     def set_details(self, details: str) -> None:
         with self._state.condition:
             self._state.details = _common.encode(details)
 
-    def details(self) -> bytes:
+    def details(self) -> Optional[bytes]:
         return self._state.details
 
     def _finalize_state(self) -> None:
@@ -590,25 +591,27 @@ def _unary_request(
 def _call_behavior(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
-    behavior: ArityAgnosticMethodHandler,
+    behavior: Optional[ArityAgnosticMethodHandler],
     argument: Any,
     request_deserializer: Optional[DeserializingFunction],
     send_response_callback: Optional[Callable[[ResponseType], None]] = None,
-) -> Tuple[Union[ResponseType, Iterator[ResponseType]], bool]:
+) -> Tuple[Optional[Union[ResponseType, Iterator[ResponseType]]], bool]:
     from grpc import _create_servicer_context  # pytype: disable=pyi-error
 
     with _create_servicer_context(
         rpc_event, state, request_deserializer
     ) as context:
         try:
-            response_or_iterator = None
-            if send_response_callback is not None:
-                response_or_iterator = behavior(
-                    argument, context, send_response_callback
-                )
-            else:
-                response_or_iterator = behavior(argument, context)
-            return response_or_iterator, True
+            if behavior is not None:
+                response_or_iterator = None
+                if send_response_callback is not None:
+                    response_or_iterator = cast(Callable[..., Any], behavior)(
+                        argument, context, send_response_callback
+                    )
+                else:
+                    response_or_iterator = cast(Callable[..., Any], behavior)(argument, context)
+                return response_or_iterator, True
+            return None, False
         except Exception as exception:  # pylint: disable=broad-except
             with state.condition:
                 if state.aborted:
@@ -649,7 +652,7 @@ def _take_response_from_response_iterator(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
     response_iterator: Iterator[ResponseType],
-) -> Tuple[ResponseType, bool]:
+) -> Tuple[Optional[ResponseType], bool]:
     try:
         return next(response_iterator), True
     except StopIteration:
@@ -777,7 +780,7 @@ def _status(
 def _unary_response_in_pool(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
-    behavior: ArityAgnosticMethodHandler,
+    behavior: Optional[ArityAgnosticMethodHandler],
     argument_thunk: Callable[[], Any],
     request_deserializer: Optional[SerializingFunction],
     response_serializer: Optional[SerializingFunction],
@@ -805,7 +808,7 @@ def _unary_response_in_pool(
 def _stream_response_in_pool(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
-    behavior: ArityAgnosticMethodHandler,
+    behavior: Optional[ArityAgnosticMethodHandler],
     argument_thunk: Callable[[], Any],
     request_deserializer: Optional[DeserializingFunction],
     response_serializer: Optional[SerializingFunction],
@@ -824,7 +827,7 @@ def _stream_response_in_pool(
 
     try:
         argument = argument_thunk()
-        if argument is not None:
+        if argument is not None and behavior is not None:
             if (
                 hasattr(behavior, "experimental_non_blocking")
                 and behavior.experimental_non_blocking
@@ -843,7 +846,10 @@ def _stream_response_in_pool(
                 )
                 if proceed:
                     _send_message_callback_to_blocking_iterator_adapter(
-                        rpc_event, state, send_response, response_iterator
+                        rpc_event,
+                        state,
+                        send_response,
+                        cast(Iterator[Any], response_iterator),
                     )
     except Exception:  # pylint: disable=broad-except
         traceback.print_exc()
@@ -858,7 +864,7 @@ def _is_rpc_state_active(state: _RPCState) -> bool:
 def _send_message_callback_to_blocking_iterator_adapter(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
-    send_response_callback: Callable[[ResponseType], None],
+    send_response_callback: Callable[[Optional[ResponseType]], None],
     response_iterator: Iterator[ResponseType],
 ) -> None:
     while True:
@@ -874,10 +880,10 @@ def _send_message_callback_to_blocking_iterator_adapter(
 
 
 def _select_thread_pool_for_behavior(
-    behavior: ArityAgnosticMethodHandler,
+    behavior: Optional[ArityAgnosticMethodHandler],
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.ThreadPoolExecutor:
-    if hasattr(behavior, "experimental_thread_pool") and isinstance(
+    if behavior is not None and hasattr(behavior, "experimental_thread_pool") and isinstance(
         behavior.experimental_thread_pool, futures.ThreadPoolExecutor
     ):
         return behavior.experimental_thread_pool

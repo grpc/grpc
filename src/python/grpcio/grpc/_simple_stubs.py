@@ -29,6 +29,7 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
+    cast,
 )
 
 import grpc
@@ -37,7 +38,7 @@ from grpc.experimental import experimental_api
 RequestType = TypeVar("RequestType")
 ResponseType = TypeVar("ResponseType")
 
-OptionsType = Sequence[Tuple[str, str]]
+OptionsType = Sequence[Tuple[AnyStr, AnyStr]]
 CacheKey = Tuple[
     str,
     OptionsType,
@@ -84,12 +85,14 @@ def _create_channel(
         f"options '{options}' and compression '{compression}'"
     )
     _LOGGER.debug(debug_msg)
-    return grpc.secure_channel(
-        target,
-        credentials=channel_credentials,
-        options=options,
-        compression=compression,
-    )
+    if channel_credentials:
+        return grpc.secure_channel(
+            target,
+            credentials=channel_credentials,
+            options=options,
+            compression=compression,
+        )
+    raise ValueError("can not create secure channel without channel_credentials")
 
 
 class ChannelCache:
@@ -130,13 +133,13 @@ class ChannelCache:
         while True:
             with ChannelCache._lock:
                 ChannelCache._eviction_ready.set()
-                if not ChannelCache._singleton._mapping:
+                if ChannelCache._singleton and not ChannelCache._singleton._mapping:
                     ChannelCache._condition.wait()
-                elif len(ChannelCache._singleton._mapping) > _MAXIMUM_CHANNELS:
+                elif ChannelCache._singleton and len(ChannelCache._singleton._mapping) > _MAXIMUM_CHANNELS:
                     key = next(iter(ChannelCache._singleton._mapping.keys()))
                     ChannelCache._singleton._evict_locked(key)
                     # And immediately reevaluate.
-                else:
+                elif ChannelCache._singleton:
                     key, (_, eviction_time) = next(
                         iter(ChannelCache._singleton._mapping.items())
                     )
@@ -155,12 +158,12 @@ class ChannelCache:
     def get_channel(
         self,
         target: str,
-        options: Sequence[Tuple[str, str]],
+        options: OptionsType,
         channel_credentials: Optional[grpc.ChannelCredentials],
         insecure: bool,
         compression: Optional[grpc.Compression],
         method: str,
-        _registered_method: bool,
+        _registered_method: Optional[bool],
     ) -> Tuple[grpc.Channel, Optional[int]]:
         """Get a channel from cache or creates a new channel.
 
@@ -180,7 +183,7 @@ class ChannelCache:
             )
         if insecure:
             channel_credentials = (
-                grpc.experimental.insecure_channel_credentials()
+                grpc.experimental.insecure_channel_credentials() # type: ignore
             )
         elif channel_credentials is None:
             _LOGGER.debug("Defaulting to SSL channel credentials.")
@@ -230,7 +233,7 @@ def unary_unary(
     method: str,
     request_serializer: Optional[Callable[[Any], bytes]] = None,
     response_deserializer: Optional[Callable[[bytes], Any]] = None,
-    options: Sequence[Tuple[AnyStr, AnyStr]] = (),
+    options: Sequence[Tuple[str, str]] = (),
     channel_credentials: Optional[grpc.ChannelCredentials] = None,
     insecure: bool = False,
     call_credentials: Optional[grpc.CallCredentials] = None,
@@ -302,16 +305,16 @@ def unary_unary(
         _registered_method,
     )
     multicallable = channel.unary_unary(
-        method, request_serializer, response_deserializer, method_handle
+        method, request_serializer, response_deserializer, bool(method_handle)
     )
     wait_for_ready = wait_for_ready if wait_for_ready is not None else True
-    return multicallable(
+    return cast(ResponseType, multicallable(
         request,
         metadata=metadata,
         wait_for_ready=wait_for_ready,
         credentials=call_credentials,
         timeout=timeout,
-    )
+    ))
 
 
 @experimental_api
@@ -322,7 +325,7 @@ def unary_stream(
     method: str,
     request_serializer: Optional[Callable[[Any], bytes]] = None,
     response_deserializer: Optional[Callable[[bytes], Any]] = None,
-    options: Sequence[Tuple[AnyStr, AnyStr]] = (),
+    options: Sequence[Tuple[str, str]] = (),
     channel_credentials: Optional[grpc.ChannelCredentials] = None,
     insecure: bool = False,
     call_credentials: Optional[grpc.CallCredentials] = None,
@@ -393,16 +396,16 @@ def unary_stream(
         _registered_method,
     )
     multicallable = channel.unary_stream(
-        method, request_serializer, response_deserializer, method_handle
+        method, request_serializer, response_deserializer, bool(method_handle)
     )
     wait_for_ready = wait_for_ready if wait_for_ready is not None else True
-    return multicallable(
+    return cast(Iterator[ResponseType], multicallable(
         request,
         metadata=metadata,
         wait_for_ready=wait_for_ready,
         credentials=call_credentials,
         timeout=timeout,
-    )
+    ))
 
 
 @experimental_api
@@ -484,7 +487,7 @@ def stream_unary(
         _registered_method,
     )
     multicallable = channel.stream_unary(
-        method, request_serializer, response_deserializer, method_handle
+        method, request_serializer, response_deserializer, bool(method_handle)
     )
     wait_for_ready = wait_for_ready if wait_for_ready is not None else True
     return multicallable(
@@ -575,13 +578,13 @@ def stream_stream(
         _registered_method,
     )
     multicallable = channel.stream_stream(
-        method, request_serializer, response_deserializer, method_handle
+        method, request_serializer, response_deserializer, bool(method_handle)
     )
     wait_for_ready = wait_for_ready if wait_for_ready is not None else True
-    return multicallable(
+    return cast(Iterator[ResponseType], multicallable(
         request_iterator,
         metadata=metadata,
         wait_for_ready=wait_for_ready,
         credentials=call_credentials,
         timeout=timeout,
-    )
+    ))

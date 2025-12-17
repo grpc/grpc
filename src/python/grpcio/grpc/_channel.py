@@ -32,6 +32,7 @@ from typing import (
     Set,
     Tuple,
     Union,
+    cast,
 )
 
 import grpc  # pytype: disable=pyi-error
@@ -228,7 +229,7 @@ def _handle_event(
             state.rpc_end_time = time.perf_counter()
             _observability.maybe_record_rpc_latency(state)
             callbacks.extend(state.callbacks)
-            state.callbacks = None
+            state.callbacks = []
     return callbacks
 
 
@@ -260,7 +261,7 @@ def _consume_request_iterator(
     request_iterator: Iterator,
     state: _RPCState,
     call: Union[cygrpc.IntegratedCall, cygrpc.SegregatedCall],
-    request_serializer: SerializingFunction,
+    request_serializer: Optional[SerializingFunction],
     event_handler: Optional[_UserTag],
 ) -> None:
     """Consume a request supplied by the user."""
@@ -401,10 +402,14 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
         return self._state.code
 
     def details(self) -> Optional[str]:
-        return _common.decode(self._state.details)
+        if self._state.details:
+            return _common.decode(self._state.details)
+        return None
 
     def debug_error_string(self) -> Optional[str]:
-        return _common.decode(self._state.debug_error_string)
+        if self._state.debug_error_string:
+            return _common.decode(self._state.debug_error_string)
+        return None
 
     def _repr(self) -> str:
         return _rpc_state_string(self.__class__.__name__, self._state)
@@ -430,6 +435,18 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
     def done(self) -> bool:
         """See grpc.Future.done."""
         return True
+
+    def is_active(self) -> bool:
+        """See grpc.RpcContext.is_active."""
+        return False
+
+    def time_remaining(self) -> Optional[float]:
+        """See grpc.RpcContext.time_remaining."""
+        return None
+
+    def add_callback(self, callback: NullaryCallbackType) -> bool:
+        """See grpc.RpcContext.add_callback."""
+        return False
 
     def result(
         self, timeout: Optional[float] = None
@@ -830,7 +847,9 @@ class _MultiThreadedRendezvous(
                 return self._state.details is not None
 
             _common.wait(self._state.condition.wait, _done)
-            return _common.decode(self._state.details)
+            if self._state.details:
+                return _common.decode(self._state.details)
+            return None
 
     def debug_error_string(self) -> Optional[str]:
         with self._state.condition:
@@ -839,7 +858,9 @@ class _MultiThreadedRendezvous(
                 return self._state.debug_error_string is not None
 
             _common.wait(self._state.condition.wait, _done)
-            return _common.decode(self._state.debug_error_string)
+            if self._state.debug_error_string:
+                return _common.decode(self._state.debug_error_string)
+            return None
 
     def cancelled(self) -> bool:
         with self._state.condition:
@@ -1120,6 +1141,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             request, timeout, metadata, wait_for_ready, compression
         )
         if state is None:
+            assert rendezvous is not None
             raise rendezvous  # pylint: disable-msg=raising-bad-type
         state.rpc_start_time = time.perf_counter()
         state.method = _common.decode(self._method)
@@ -1185,11 +1207,13 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             request, timeout, metadata, wait_for_ready, compression
         )
         if state is None:
+            assert rendezvous is not None
             raise rendezvous  # pylint: disable-msg=raising-bad-type
         event_handler = _event_handler(state, self._response_deserializer)
         state.rpc_start_time = time.perf_counter()
         state.method = _common.decode(self._method)
         state.target = _common.decode(self._target)
+        assert operations is not None
         call = self._managed_call(
             cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS,
             self._method,
@@ -1231,8 +1255,8 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         channel: cygrpc.Channel,
         method: bytes,
         target: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         _registered_call_handle: Optional[int],
     ):
         self._channel = channel
@@ -1334,8 +1358,8 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         managed_call: _IntegratedCallFactory,
         method: bytes,
         target: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         _registered_call_handle: Optional[int],
     ):
         self._channel = channel
@@ -1363,6 +1387,7 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
             wait_for_ready
         )
         if serialized_request is None:
+            assert rendezvous is not None
             raise rendezvous  # pylint: disable-msg=raising-bad-type
         augmented_metadata = _compression.augment_metadata(
             metadata, compression
@@ -1796,11 +1821,11 @@ class _ChannelConnectivityState(object):
     lock: threading.RLock
     channel: cygrpc.Channel
     polling: bool
-    connectivity: grpc.ChannelConnectivity
+    connectivity: Optional[grpc.ChannelConnectivity]
     try_to_connect: bool
     # TODO(xuanwn): Refactor this: https://github.com/grpc/grpc/issues/31704
     callbacks_and_connectivities: List[
-        Sequence[
+        List[
             Union[
                 Callable[[grpc.ChannelConnectivity], None],
                 Optional[grpc.ChannelConnectivity],
@@ -1840,7 +1865,7 @@ def _deliveries(
 
 def _deliver(
     state: _ChannelConnectivityState,
-    initial_connectivity: grpc.ChannelConnectivity,
+    initial_connectivity: Optional[grpc.ChannelConnectivity],
     initial_callbacks: Sequence[Callable[[grpc.ChannelConnectivity], None]],
 ) -> None:
     connectivity = initial_connectivity
@@ -1849,7 +1874,8 @@ def _deliver(
         for callback in callbacks:
             cygrpc.block_if_fork_in_progress(state)
             try:
-                callback(connectivity)
+                if connectivity is not None:
+                    callback(connectivity)
             except Exception:  # pylint: disable=broad-except
                 _LOGGER.exception(
                     _CHANNEL_SUBSCRIPTION_CALLBACK_ERROR_LOG_MESSAGE
@@ -1883,7 +1909,7 @@ def _spawn_delivery(
 # NOTE(https://github.com/grpc/grpc/issues/3064): We'd rather not poll.
 def _poll_connectivity(
     state: _ChannelConnectivityState,
-    channel: grpc.Channel,
+    channel: cygrpc.Channel,
     initial_try_to_connect: bool,
 ) -> None:
     try_to_connect = initial_try_to_connect
@@ -1894,8 +1920,14 @@ def _poll_connectivity(
                 connectivity
             ]
         )
-        callbacks = tuple(
-            callback for callback, _ in state.callbacks_and_connectivities
+        # Cast required because `callbacks_and_connectivities` is typed as a list of lists containing
+        # a Union of callbacks and connectivity states. Pyright infers the unpacked `callback`
+        # as that Union type, so we must cast it to the expected Sequence[Callable] type.
+        callbacks = cast(
+            Sequence[Callable[[grpc.ChannelConnectivity], None]],
+            tuple(
+                callback for callback, _ in state.callbacks_and_connectivities
+            ),
         )
         for callback_and_connectivity in state.callbacks_and_connectivities:
             callback_and_connectivity[1] = state.connectivity
@@ -1933,7 +1965,7 @@ def _poll_connectivity(
 def _subscribe(
     state: _ChannelConnectivityState,
     callback: Callable[[grpc.ChannelConnectivity], None],
-    try_to_connect: bool,
+    try_to_connect: Optional[bool],
 ) -> None:
     with state.lock:
         if not state.callbacks_and_connectivities and not state.polling:
@@ -2017,7 +2049,7 @@ class Channel(grpc.Channel):
         self,
         target: str,
         options: Sequence[ChannelArgumentType],
-        credentials: Optional[grpc.ChannelCredentials],
+        credentials: Optional[cygrpc.ChannelCredentials],
         compression: Optional[grpc.Compression],
     ):
         """Constructor.

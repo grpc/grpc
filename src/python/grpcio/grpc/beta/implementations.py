@@ -15,6 +15,7 @@
 
 # threading is referenced from specification in this module.
 import threading  # pylint: disable=unused-import
+from typing import cast
 
 # interfaces, cardinality, and face are referenced from specification in this
 # module.
@@ -41,7 +42,9 @@ def metadata_call_credentials(metadata_plugin, name=None):
 
         metadata_plugin(context, wrapped_callback)
 
-    return grpc.metadata_call_credentials(plugin, name=name)
+    return grpc.metadata_call_credentials(
+        cast(grpc.AuthMetadataPlugin, plugin), name=name
+    )
 
 
 def google_call_credentials(credentials):

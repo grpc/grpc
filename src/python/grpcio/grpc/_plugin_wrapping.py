@@ -42,7 +42,7 @@ class _CallbackState(object):
     def __init__(self):
         self.lock = threading.Lock()
         self.called = False
-        self.exception = None
+        self.exception: Optional[Exception] = None
 
 
 class _AuthMetadataPluginCallback(grpc.AuthMetadataPluginCallback):

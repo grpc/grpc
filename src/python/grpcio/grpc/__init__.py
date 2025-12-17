@@ -36,15 +36,15 @@ from typing import (
 )
 
 from grpc import _compression
-from grpc._cython import cygrpc as _cygrpc
+from grpc._cython import cygrpc as _cygrpc # type: ignore
 from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
 from grpc.typing import ArityAgnosticMethodHandler
-from grpc.typing import BaseEvent as CygrpcBaseEvent
-from grpc.typing import CallCredentials as CygrpcCallCredentials
+from grpc.typing import CygrpcBaseEvent
+from grpc.typing import CygrpcCallCredentials
 from grpc.typing import ChannelArgumentType
-from grpc.typing import ChannelCredentials as CygrpcChannelCredentials
+from grpc.typing import CygrpcChannelCredentials
 from grpc.typing import ClientInterceptor
 from grpc.typing import ConnectivityCallbackType
 from grpc.typing import DeserializingFunction
@@ -53,8 +53,8 @@ from grpc.typing import NullaryCallbackType
 from grpc.typing import RequestType
 from grpc.typing import ResponseType
 from grpc.typing import SerializingFunction
-from grpc.typing import ServerCertificateConfig as CygrpcServerCertificateConfig
-from grpc.typing import ServerCredentials as CygrpcServerCredentials
+from grpc.typing import CygrpcServerCertificateConfig
+from grpc.typing import CygrpcServerCredentials
 from grpc.typing import StreamStreamBehavior
 from grpc.typing import StreamUnaryBehavior
 from grpc.typing import UnaryStreamBehavior
@@ -65,7 +65,7 @@ if TYPE_CHECKING:
     from threading import Event
     import types
 
-    from grpc.server import _RPCState
+    from grpc._server import _RPCState
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -476,36 +476,23 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
 class ClientCallDetails(abc.ABC):
     """Describes an RPC to be invoked."""
 
-    @property
-    @abc.abstractmethod
-    def method(self) -> str:
-        """The method name of the RPC."""
+    """
+        Attributes:
+      method: The method name of the RPC.
+      timeout: An optional duration of time in seconds to allow for the RPC.
+      metadata: Optional :term:`metadata` to be transmitted to
+        the service-side of the RPC.
+      credentials: An optional CallCredentials for the RPC.
+      wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
+      compression: An element of grpc.compression, e.g.
+        grpc.compression.Gzip.
+    """
 
-    @property
-    @abc.abstractmethod
-    def timeout(self) -> Optional[float]:
-        """An optional duration of time in seconds to allow for the RPC."""
-
-    @property
-    @abc.abstractmethod
-    def metadata(self) -> Optional[MetadataType]:
-        """Optional :term:`metadata` to be transmitted to the service-side of the RPC."""
-
-    @property
-    @abc.abstractmethod
-    def credentials(self) -> Optional[CallCredentials]:
-        """An optional CallCredentials for the RPC."""
-
-    @property
-    @abc.abstractmethod
-    def wait_for_ready(self) -> Optional[bool]:
-        """An optional flag to enable :term:`wait_for_ready` mechanism."""
-
-    @property
-    @abc.abstractmethod
-    def compression(self) -> Optional[Any]:
-        """An element of grpc.compression, e.g. grpc.compression.Gzip."""
-
+    method: str
+    timeout: Optional[float]
+    credentials: Optional[CallCredentials]
+    wait_for_ready: Optional[bool]
+    compression: Compression
 
 class UnaryUnaryClientInterceptor(abc.ABC):
     """Affords intercepting unary-unary invocations."""
@@ -514,7 +501,7 @@ class UnaryUnaryClientInterceptor(abc.ABC):
     def intercept_unary_unary(
         self,
         continuation: Callable[
-            [ClientCallDetails, RequestType], Union[Call, Future]
+            [ClientCallDetails, RequestType], Union[Call, Future, RpcError]
         ],
         client_call_details: ClientCallDetails,
         request: RequestType,
@@ -595,7 +582,7 @@ class StreamUnaryClientInterceptor(abc.ABC):
     def intercept_stream_unary(
         self,
         continuation: Callable[
-            [ClientCallDetails, Iterable[RequestType]], Union[Call, Future]
+            [ClientCallDetails, Iterable[RequestType]], Union[Call, Future, RpcError]
         ],
         client_call_details: ClientCallDetails,
         request_iterator: Iterable[RequestType],
@@ -719,7 +706,7 @@ class AuthMetadataPluginCallback(abc.ABC):
     """Callback object received by a metadata plugin."""
 
     def __call__(
-        self, metadata: MetadataType, error: Optional[Type[BaseException]]
+        self, metadata: MetadataType, error: Optional[BaseException]
     ):
         """Passes to the gRPC runtime authentication metadata for an RPC.
 
@@ -1218,6 +1205,10 @@ class Channel(abc.ABC):
 
         This method is idempotent.
         """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def _get_registered_call_handle(self, method: str) -> int:
         raise NotImplementedError()
 
     def __enter__(self):
@@ -2239,6 +2230,8 @@ def compute_engine_channel_credentials(
     VM's default service account. If used with any other sort of call
     credential, the connection may suddenly and unexpectedly begin failing RPCs.
     """
+    if call_credentials is None:
+        raise ValueError("call_credentials must not be None.")
     return ChannelCredentials(
         _cygrpc.channel_credentials_compute_engine(
             call_credentials._credentials
@@ -2328,7 +2321,7 @@ def secure_channel(
 
 
 def intercept_channel(
-    channel: Channel, *interceptors: ClientInterceptor
+    channel: Channel, *interceptors: Sequence[ClientInterceptor]
 ) -> Channel:
     """Intercepts a channel through a set of interceptors.
 
@@ -2409,7 +2402,7 @@ def _create_servicer_context(
     rpc_event: CygrpcBaseEvent,
     state: "_RPCState",
     request_deserializer: Optional[DeserializingFunction],
-) -> Optional[ServicerContext]:
+) -> Iterator[ServicerContext]:
     from grpc import _server  # pylint: disable=cyclic-import
 
     context = _server._Context(rpc_event, state, request_deserializer)
@@ -2505,7 +2498,7 @@ __all__ = (
 
 # Here to maintain backwards compatibility; avoid using these in new code!
 try:
-    import grpc_tools
+    import grpc_tools # type: ignore
 
     sys.modules.update({"grpc.tools": grpc_tools})
 except ImportError:

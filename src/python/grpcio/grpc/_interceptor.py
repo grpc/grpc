@@ -28,7 +28,7 @@ from .typing import _RequestIterableType
 
 
 class _ServicePipeline(object):
-    interceptors: Tuple[grpc.ServerInterceptor]
+    interceptors: Tuple[grpc.ServerInterceptor, ...]
 
     def __init__(self, interceptors: Sequence[grpc.ServerInterceptor]):
         self.interceptors = tuple(interceptors)
@@ -91,9 +91,9 @@ def _unwrap_client_call_details(
         timeout = default_details.timeout  # pytype: disable=attribute-error
 
     try:
-        metadata = call_details.metadata  # pytype: disable=attribute-error
+        metadata = call_details.metadata  # pytype: disable=attribute-error # type: ignore
     except AttributeError:
-        metadata = default_details.metadata  # pytype: disable=attribute-error
+        metadata = default_details.metadata  # pytype: disable=attribute-error # type: ignore
 
     try:
         credentials = (
@@ -122,7 +122,7 @@ def _unwrap_client_call_details(
             default_details.compression
         )  # pytype: disable=attribute-error
 
-    return method, timeout, metadata, credentials, wait_for_ready, compression
+    return method, timeout, metadata, credentials, wait_for_ready, compression # type: ignore
 
 
 class _FailureOutcome(
@@ -131,10 +131,11 @@ class _FailureOutcome(
     _exception: Exception
     _traceback: types.TracebackType
 
-    def __init__(self, exception: Exception, traceback: types.TracebackType):
+    def __init__(self, exception: Exception, traceback: Optional[types.TracebackType]):
         super(_FailureOutcome, self).__init__()
         self._exception = exception
-        self._traceback = traceback
+        if traceback:
+            self._traceback = traceback
 
     def initial_metadata(self) -> Optional[MetadataType]:
         return None
@@ -323,7 +324,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             except grpc.RpcError as rpc_error:
                 return rpc_error
             except Exception as exception:  # pylint:disable=broad-except
-                return _FailureOutcome(exception, sys.exc_info()[2])
+                return _FailureOutcome(exception, sys.exc_info()[2]) # type: ignore
 
         call = self._interceptor.intercept_unary_unary(
             continuation, client_call_details, request
@@ -678,7 +679,7 @@ class _Channel(grpc.Channel):
     def subscribe(
         self, callback: Callable, try_to_connect: Optional[bool] = False
     ):
-        self._channel.subscribe(callback, try_to_connect=try_to_connect)
+        self._channel.subscribe(callback, try_to_connect=True if try_to_connect else False)
 
     def unsubscribe(self, callback: Callable):
         self._channel.unsubscribe(callback)
@@ -696,7 +697,7 @@ class _Channel(grpc.Channel):
             m,
             request_serializer,
             response_deserializer,
-            _registered_method,
+            True if _registered_method else False,
         )
         # pytype: enable=wrong-arg-count
         if isinstance(self._interceptor, grpc.UnaryUnaryClientInterceptor):
@@ -716,7 +717,7 @@ class _Channel(grpc.Channel):
             m,
             request_serializer,
             response_deserializer,
-            _registered_method,
+            True if _registered_method else False,
         )
         # pytype: enable=wrong-arg-count
         if isinstance(self._interceptor, grpc.UnaryStreamClientInterceptor):
@@ -736,12 +737,15 @@ class _Channel(grpc.Channel):
             m,
             request_serializer,
             response_deserializer,
-            _registered_method,
+            True if _registered_method else False,
         )
         # pytype: enable=wrong-arg-count
         if isinstance(self._interceptor, grpc.StreamUnaryClientInterceptor):
             return _StreamUnaryMultiCallable(thunk, method, self._interceptor)
         return thunk(method)
+
+    def _get_registered_call_handle(self, method: str) -> int:
+        raise NotImplementedError()
 
     # pylint: disable=arguments-differ
     def stream_stream(
@@ -756,7 +760,7 @@ class _Channel(grpc.Channel):
             m,
             request_serializer,
             response_deserializer,
-            _registered_method,
+            True if _registered_method else False,
         )
         # pytype: enable=wrong-arg-count
         if isinstance(self._interceptor, grpc.StreamStreamClientInterceptor):

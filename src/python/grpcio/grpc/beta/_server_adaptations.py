@@ -147,7 +147,7 @@ class _Callback(stream.Consumer):
                     raise abandonment.Abandoned()
                 if self._terminated:
                     all_values = tuple(self._values)
-                    self._values = None
+                    self._values = []
                     return all_values
                 self._condition.wait()
 
@@ -453,5 +453,5 @@ def server(
     else:
         effective_thread_pool = thread_pool
     return _Server(
-        grpc.server(effective_thread_pool, handlers=(generic_rpc_handler,))
+        grpc.server(effective_thread_pool, handlers=(generic_rpc_handler,)) # type: ignore
     )

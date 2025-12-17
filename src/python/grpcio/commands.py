@@ -62,9 +62,9 @@ def _get_grpc_custom_bdist(decorated_basename, target_bdist_basename):
     # relevant package.
     from urllib import request
 
-    decorated_path = decorated_basename + GRPC_CUSTOM_BDIST_EXT
+    decorated_path = decorated_basename + GRPC_CUSTOM_BDIST_EXT # type: ignore
     try:
-        url = BINARIES_REPOSITORY + "/{target}".format(target=decorated_path)
+        url = BINARIES_REPOSITORY + "/{target}".format(target=decorated_path) # type: ignore
         bdist_data = request.urlopen(url).read()
     except IOError as error:
         raise CommandError(
@@ -73,7 +73,7 @@ def _get_grpc_custom_bdist(decorated_basename, target_bdist_basename):
             )
         )
     # Our chosen local bdist path.
-    bdist_path = target_bdist_basename + GRPC_CUSTOM_BDIST_EXT
+    bdist_path = target_bdist_basename + GRPC_CUSTOM_BDIST_EXT # type: ignore
     try:
         with open(bdist_path, "w") as bdist_file:
             bdist_file.write(bdist_data)

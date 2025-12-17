@@ -18,6 +18,7 @@ from typing import Optional, Union
 
 import grpc
 from grpc._cython import cygrpc
+from grpc import _common
 from grpc.typing import MetadataType
 
 NoCompression = cygrpc.CompressionAlgorithm.none
@@ -39,7 +40,7 @@ def _compression_algorithm_to_metadata_value(
 
 def compression_algorithm_to_metadata(compression: grpc.Compression):
     return (
-        grpc._common.decode(cygrpc.GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY),
+        _common.decode(cygrpc.GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY),
         _compression_algorithm_to_metadata_value(compression),
     )
 
