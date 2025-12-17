@@ -29,11 +29,18 @@ from typing import (
 
 from grpc._cython import cygrpc
 
-ChannelCredentials = cygrpc.ChannelCredentials
-CallCredentials = cygrpc.CallCredentials
-ServerCredentials = cygrpc.ServerCredentials
-ServerCertificateConfig = cygrpc.ServerCertificateConfig
-BaseEvent = cygrpc.BaseEvent
+if TYPE_CHECKING:
+    class CygrpcChannelCredentials: ...
+    class CygrpcCallCredentials: ...
+    class CygrpcServerCredentials: ...
+    class CygrpcServerCertificateConfig: ...
+    class CygrpcBaseEvent: ...
+else:
+    CygrpcChannelCredentials = cygrpc.ChannelCredentials
+    CygrpcCallCredentials = cygrpc.CallCredentials
+    CygrpcServerCredentials = cygrpc.ServerCredentials
+    CygrpcServerCertificateConfig = cygrpc.ServerCertificateConfig
+    CygrpcBaseEvent = cygrpc.BaseEvent
 
 if TYPE_CHECKING:
     from grpc import ChannelConnectivity

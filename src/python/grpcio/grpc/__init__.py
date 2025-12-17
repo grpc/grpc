@@ -41,10 +41,10 @@ from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
 from grpc.typing import ArityAgnosticMethodHandler
-from grpc.typing import BaseEvent as CygrpcBaseEvent
-from grpc.typing import CallCredentials as CygrpcCallCredentials
+from grpc.typing import CygrpcBaseEvent
+from grpc.typing import CygrpcCallCredentials
 from grpc.typing import ChannelArgumentType
-from grpc.typing import ChannelCredentials as CygrpcChannelCredentials
+from grpc.typing import CygrpcChannelCredentials
 from grpc.typing import ClientInterceptor
 from grpc.typing import ConnectivityCallbackType
 from grpc.typing import DeserializingFunction
@@ -53,8 +53,8 @@ from grpc.typing import NullaryCallbackType
 from grpc.typing import RequestType
 from grpc.typing import ResponseType
 from grpc.typing import SerializingFunction
-from grpc.typing import ServerCertificateConfig as CygrpcServerCertificateConfig
-from grpc.typing import ServerCredentials as CygrpcServerCredentials
+from grpc.typing import CygrpcServerCertificateConfig
+from grpc.typing import CygrpcServerCredentials
 from grpc.typing import StreamStreamBehavior
 from grpc.typing import StreamUnaryBehavior
 from grpc.typing import UnaryStreamBehavior

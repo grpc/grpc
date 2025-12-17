@@ -80,6 +80,7 @@ exclude = [
     "**/__pycache__",
     "**/.git",
     "src/python/grpcio/commands.py",
+    "src/python/grpcio/_spawn_patch.py"
 ]
 
 [[tool.pyright.executionEnvironments]]
