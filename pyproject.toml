@@ -79,6 +79,7 @@ exclude = [
     "**/grpc_root",
     "**/__pycache__",
     "**/.git",
+    "src/python/grpcio/commands.py",
 ]
 
 [[tool.pyright.executionEnvironments]]
