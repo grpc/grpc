@@ -1740,8 +1740,12 @@ def ssl_channel_credentials_with_custom_signer(
     root_certificates: Optional[bytes] = None,
     certificate_chain: Optional[bytes] = None,
 ) -> ChannelCredentials:
-    # to implement - will be a _cygrpc.SSLChannelCredentials
-    pass
+    # TODO(gtcooke94) - to implement - will be a _cygrpc.SSLChannelCredentials
+    return ChannelCredentials(
+        _cygrpc.SSLChannelCredentials(
+            root_certificates, None, certificate_chain, private_key_sign_fn
+        )
+    )
 
 
 def xds_channel_credentials(fallback_credentials=None):
