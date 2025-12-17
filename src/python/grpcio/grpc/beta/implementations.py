@@ -15,6 +15,7 @@
 
 # threading is referenced from specification in this module.
 import threading  # pylint: disable=unused-import
+from typing import cast
 
 # interfaces, cardinality, and face are referenced from specification in this
 # module.
