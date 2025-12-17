@@ -131,10 +131,11 @@ class _FailureOutcome(
     _exception: Exception
     _traceback: types.TracebackType
 
-    def __init__(self, exception: Exception, traceback: types.TracebackType):
+    def __init__(self, exception: Exception, traceback: Optional[types.TracebackType]):
         super(_FailureOutcome, self).__init__()
         self._exception = exception
-        self._traceback = traceback
+        if traceback:
+            self._traceback = traceback
 
     def initial_metadata(self) -> Optional[MetadataType]:
         return None
@@ -678,7 +679,7 @@ class _Channel(grpc.Channel):
     def subscribe(
         self, callback: Callable, try_to_connect: Optional[bool] = False
     ):
-        self._channel.subscribe(callback, try_to_connect=try_to_connect)
+        self._channel.subscribe(callback, try_to_connect=True if try_to_connect else False)
 
     def unsubscribe(self, callback: Callable):
         self._channel.unsubscribe(callback)
@@ -696,7 +697,7 @@ class _Channel(grpc.Channel):
             m,
             request_serializer,
             response_deserializer,
-            _registered_method,
+            True if _registered_method else False,
         )
         # pytype: enable=wrong-arg-count
         if isinstance(self._interceptor, grpc.UnaryUnaryClientInterceptor):
@@ -716,7 +717,7 @@ class _Channel(grpc.Channel):
             m,
             request_serializer,
             response_deserializer,
-            _registered_method,
+            True if _registered_method else False,
         )
         # pytype: enable=wrong-arg-count
         if isinstance(self._interceptor, grpc.UnaryStreamClientInterceptor):
@@ -736,7 +737,7 @@ class _Channel(grpc.Channel):
             m,
             request_serializer,
             response_deserializer,
-            _registered_method,
+            True if _registered_method else False,
         )
         # pytype: enable=wrong-arg-count
         if isinstance(self._interceptor, grpc.StreamUnaryClientInterceptor):
@@ -756,7 +757,7 @@ class _Channel(grpc.Channel):
             m,
             request_serializer,
             response_deserializer,
-            _registered_method,
+            True if _registered_method else False,
         )
         # pytype: enable=wrong-arg-count
         if isinstance(self._interceptor, grpc.StreamStreamClientInterceptor):

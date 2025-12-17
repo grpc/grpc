@@ -514,7 +514,7 @@ class UnaryUnaryClientInterceptor(abc.ABC):
     def intercept_unary_unary(
         self,
         continuation: Callable[
-            [ClientCallDetails, RequestType], Union[Call, Future]
+            [ClientCallDetails, RequestType], Union[Call, Future, RpcError]
         ],
         client_call_details: ClientCallDetails,
         request: RequestType,
@@ -595,7 +595,7 @@ class StreamUnaryClientInterceptor(abc.ABC):
     def intercept_stream_unary(
         self,
         continuation: Callable[
-            [ClientCallDetails, Iterable[RequestType]], Union[Call, Future]
+            [ClientCallDetails, Iterable[RequestType]], Union[Call, Future, RpcError]
         ],
         client_call_details: ClientCallDetails,
         request_iterator: Iterable[RequestType],
