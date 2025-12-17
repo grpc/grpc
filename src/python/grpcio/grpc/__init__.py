@@ -2411,7 +2411,7 @@ def _create_servicer_context(
     rpc_event: CygrpcBaseEvent,
     state: "_RPCState",
     request_deserializer: Optional[DeserializingFunction],
-) -> Optional[ServicerContext]:
+) -> Iterator[Optional[ServicerContext]]:
     from grpc import _server  # pylint: disable=cyclic-import
 
     context = _server._Context(rpc_event, state, request_deserializer)
