@@ -470,14 +470,14 @@ class _Context(grpc.ServicerContext):
         with self._state.condition:
             self._state.code = code
 
-    def code(self) -> grpc.StatusCode:
+    def code(self) -> Optional[grpc.StatusCode]:
         return self._state.code
 
     def set_details(self, details: str) -> None:
         with self._state.condition:
             self._state.details = _common.encode(details)
 
-    def details(self) -> bytes:
+    def details(self) -> Optional[bytes]:
         return self._state.details
 
     def _finalize_state(self) -> None:
