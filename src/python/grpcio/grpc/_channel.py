@@ -2017,7 +2017,7 @@ class Channel(grpc.Channel):
         self,
         target: str,
         options: Sequence[ChannelArgumentType],
-        credentials: Optional[grpc.ChannelCredentials],
+        credentials: Optional[cygrpc.ChannelCredentials],
         compression: Optional[grpc.Compression],
     ):
         """Constructor.

@@ -36,7 +36,7 @@ from typing import (
 )
 
 from grpc import _compression
-from grpc._cython import cygrpc as _cygrpc
+from grpc._cython import cygrpc as _cygrpc # type: ignore
 from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
@@ -65,7 +65,7 @@ if TYPE_CHECKING:
     from threading import Event
     import types
 
-    from grpc.server import _RPCState
+    from grpc._server import _RPCState
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -2239,6 +2239,8 @@ def compute_engine_channel_credentials(
     VM's default service account. If used with any other sort of call
     credential, the connection may suddenly and unexpectedly begin failing RPCs.
     """
+    if call_credentials is None:
+        raise ValueError("call_credentials must not be None.")
     return ChannelCredentials(
         _cygrpc.channel_credentials_compute_engine(
             call_credentials._credentials
@@ -2328,7 +2330,7 @@ def secure_channel(
 
 
 def intercept_channel(
-    channel: Channel, *interceptors: ClientInterceptor
+    channel: Channel, *interceptors: Sequence[ClientInterceptor]
 ) -> Channel:
     """Intercepts a channel through a set of interceptors.
 
