@@ -1130,7 +1130,7 @@ class _StreamCallResponseIterator:
         return await self._call.details()
 
     async def debug_error_string(self) -> Optional[str]:
-        return await self._call.debug_error_string()
+        return await self._call.debug_error_string() # type: ignore
 
     def __aiter__(self):
         return self._response_iterator.__aiter__()
@@ -1174,4 +1174,4 @@ class StreamStreamCallResponseIterator(
 
     @property
     def _done_writing_flag(self) -> bool:
-        return self._call._done_writing_flag
+        return self._call._done_writing_flag # type: ignore
