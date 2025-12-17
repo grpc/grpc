@@ -260,8 +260,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "grpc_private_key_offload_test",
-    srcs = ["grpc_private_key_offload_test.cc"],
+    name = "private_key_offload_test",
+    srcs = ["private_key_offload_test.cc"],
     data = [
         "//test/core/tsi/test_creds/crl_data:ca.pem",
         "//test/core/tsi/test_creds/crl_data:valid.key",

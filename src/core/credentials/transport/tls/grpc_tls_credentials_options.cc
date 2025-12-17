@@ -68,7 +68,9 @@ void grpc_tls_credentials_options_set_certificate_provider(
   GRPC_CHECK_NE(options, nullptr);
   GRPC_CHECK_NE(provider, nullptr);
   grpc_core::ExecCtx exec_ctx;
-  options->set_certificate_provider(
+  options->set_root_certificate_provider(
+      provider->Ref(DEBUG_LOCATION, "set_certificate_provider"));
+  options->set_identity_certificate_provider(
       provider->Ref(DEBUG_LOCATION, "set_certificate_provider"));
 }
 

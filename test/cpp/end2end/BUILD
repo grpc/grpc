@@ -1571,6 +1571,8 @@ grpc_cc_test(
         "//:grpc++",
         "//:grpc++_base",
         "//:grpc_base",
+        "//:tsi_ssl_credentials",
+        "//src/core:ssl_transport_security_utils",
         "//src/core:default_event_engine",
         "//src/core:grpc_tls_credentials",
         "//src/proto/grpc/testing:echo_cc_grpc",

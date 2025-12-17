@@ -27,17 +27,14 @@
 #include "openssl/evp.h"
 #include "openssl/pem.h"
 #include "openssl/ssl.h"
-
-#include "test/core/test_util/test_config.h"
-#include "test/core/test_util/tls_utils.h"
-#include "test/core/tsi/transport_security_test_lib.h"
-
-#include "gtest/gtest.h"
-
-#include "absl/strings/str_cat.h"
 #include "src/core/tsi/private_key_offload_util.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/util/load_file.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
+#include "test/core/tsi/transport_security_test_lib.h"
+#include "gtest/gtest.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace testing {
@@ -54,58 +51,27 @@ bssl::UniquePtr<EVP_PKEY> LoadPrivateKeyFromString(
       PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, nullptr));
 }
 
-bool GetBoringSslAlgorithm(
-    grpc_core::PrivateKeySigner::SignatureAlgorithm signature_algorithm,
-    const EVP_MD** md, int* padding) {
+uint16_t GetBoringSslAlgorithm(
+    grpc_core::PrivateKeySigner::SignatureAlgorithm signature_algorithm) {
   switch (signature_algorithm) {
     case grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha256:
-      LOG(ERROR) << "GetBoringSslAlgorithm kRsaPkcs1Sha256";
-      *md = EVP_sha256();
-      *padding = RSA_PKCS1_PADDING;
-      return true;
+      return SSL_SIGN_RSA_PKCS1_SHA256;
     case grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha384:
-      LOG(ERROR) << "GetBoringSslAlgorithm kRsaPkcs1Sha384";
-      *md = EVP_sha384();
-      *padding = RSA_PKCS1_PADDING;
-      return true;
+      return SSL_SIGN_RSA_PKCS1_SHA384;
     case grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha512:
-      LOG(ERROR) << "GetBoringSslAlgorithm kRsaPkcs1Sha512";
-      *md = EVP_sha512();
-      *padding = RSA_PKCS1_PADDING;
-      return true;
+      return SSL_SIGN_RSA_PKCS1_SHA512;
     case grpc_core::PrivateKeySigner::SignatureAlgorithm::kEcdsaSecp256r1Sha256:
-      LOG(ERROR) << "GetBoringSslAlgorithm kEcdsaSecp256r1Sha256";
-      *md = EVP_sha256();
-      *padding = 0;
-      return true;
+      return SSL_SIGN_ECDSA_SECP256R1_SHA256;
     case grpc_core::PrivateKeySigner::SignatureAlgorithm::kEcdsaSecp384r1Sha384:
-      LOG(ERROR) << "GetBoringSslAlgorithm kEcdsaSecp384r1Sha384";
-      *md = EVP_sha384();
-      *padding = 0;
-      return true;
+      return SSL_SIGN_ECDSA_SECP384R1_SHA384;
     case grpc_core::PrivateKeySigner::SignatureAlgorithm::kEcdsaSecp521r1Sha512:
-      LOG(ERROR) << "GetBoringSslAlgorithm kEcdsaSecp521r1Sha512";
-      *md = EVP_sha512();
-      *padding = 0;
-      return true;
+      return SSL_SIGN_ECDSA_SECP521R1_SHA512;
     case grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha256:
-      LOG(ERROR) << "GetBoringSslAlgorithm kRsaPssRsaeSha256";
-      *md = EVP_sha256();
-      *padding = RSA_PKCS1_PSS_PADDING;
-      return true;
+      return SSL_SIGN_RSA_PSS_RSAE_SHA256;
     case grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha384:
-      LOG(ERROR) << "GetBoringSslAlgorithm kRsaPssRsaeSha384";
-      *md = EVP_sha384();
-      *padding = RSA_PKCS1_PSS_PADDING;
-      return true;
+      return SSL_SIGN_RSA_PSS_RSAE_SHA384;
     case grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha512:
-      LOG(ERROR) << "GetBoringSslAlgorithm kRsaPssRsaeSha512";
-      *md = EVP_sha512();
-      *padding = RSA_PKCS1_PSS_PADDING;
-      return true;
-    default:
-      LOG(ERROR) << "GetBoringSslAlgorithm def";
-      return false;
+      return SSL_SIGN_RSA_PSS_RSAE_SHA512;
   }
 }
 
@@ -117,57 +83,73 @@ class BoringSslPrivateKeySigner : public PrivateKeySigner {
   bool Sign(absl::string_view data_to_sign,
             SignatureAlgorithm signature_algorithm,
             OnSignComplete on_sign_complete) override {
-      absl::StatusOr<std::string> signature =
-          SignWithBoringSSL(data_to_sign, signature_algorithm);
-      on_sign_complete(std::move(signature));
-      return true;
+    absl::StatusOr<std::string> signature =
+        SignWithBoringSSL(data_to_sign, signature_algorithm);
+    on_sign_complete(std::move(signature));
+    return true;
   }
 
  private:
   absl::StatusOr<std::string> SignWithBoringSSL(
       absl::string_view data_to_sign, SignatureAlgorithm signature_algorithm) {
-      const EVP_MD* md = nullptr;
-      int padding = 0;
-      if (!GetBoringSslAlgorithm(signature_algorithm, &md, &padding)) {
-        return absl::InternalError("Unsupported signature algorithm");
+    const uint8_t* in = reinterpret_cast<const uint8_t*>(data_to_sign.data());
+    const size_t in_len = data_to_sign.size();
+
+    uint16_t boring_signature_algorithm =
+        GetBoringSslAlgorithm(signature_algorithm);
+    EVP_PKEY* private_key = pkey_.get();
+    if (EVP_PKEY_id(private_key) !=
+        SSL_get_signature_algorithm_key_type(boring_signature_algorithm)) {
+      fprintf(stderr, "Key type does not match signature algorithm.\n");
+      abort();
+    }
+
+    // Determine the hash.
+    const EVP_MD* md =
+        SSL_get_signature_algorithm_digest(boring_signature_algorithm);
+    bssl::ScopedEVP_MD_CTX ctx;
+    EVP_PKEY_CTX* pctx;
+    if (!EVP_DigestSignInit(ctx.get(), &pctx, md, nullptr, private_key)) {
+      // return ssl_private_key_failure;
+      abort();
+    }
+
+    // Configure additional signature parameters.
+    if (SSL_is_signature_algorithm_rsa_pss(boring_signature_algorithm)) {
+      if (!EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PSS_PADDING) ||
+          !EVP_PKEY_CTX_set_rsa_pss_saltlen(pctx, -1)) {
+        // return ssl_private_key_failure;
+        abort();
       }
-      LOG(ERROR) << "TestPrivateKeySigner padding  " << padding;
-      bssl::ScopedEVP_MD_CTX ctx;
-      EVP_PKEY_CTX* pctx = nullptr;
-      if (!EVP_DigestSignInit(ctx.get(), &pctx, md, nullptr, pkey_.get())) {
-        return absl::InternalError("EVP_DigestSignInit failed");
-      }
-      if (padding == RSA_PKCS1_PADDING) {
-        LOG(ERROR) << "TestPrivateKeySigner RSA_PKCS1_PADDING ";
-        if (!EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PADDING)) {
-          return absl::InternalError("EVP_PKEY_CTX_set_rsa_padding failed");
-        }
-      } else if (padding == RSA_PKCS1_PSS_PADDING) {
-        LOG(ERROR) << "TestPrivateKeySigner RSA_PKCS1_PSS_PADDING ";
-        if (!EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PSS_PADDING) ||
-            !EVP_PKEY_CTX_set_rsa_pss_saltlen(pctx, -1)) {
-          return absl::InternalError("EVP_PKEY_CTX_set_rsa_padding failed");
-        }
-      }
-      size_t sig_len = 0;
-      if (!EVP_DigestSignUpdate(ctx.get(), data_to_sign.data(),
-                                data_to_sign.size()) ||
-          !EVP_DigestSignFinal(ctx.get(), nullptr, &sig_len)) {
-        return absl::InternalError("EVP_DigestSignFinal failed");
-      }
-      std::string sig;
-      sig.resize(sig_len);
-      if (!EVP_DigestSignFinal(
-              ctx.get(), reinterpret_cast<uint8_t*>(sig.data()), &sig_len)) {
-        return absl::InternalError("EVP_DigestSignFinal failed");
-      }
-      sig.resize(sig_len);
-      LOG(ERROR) << "TestPrivateKeySigner result length " << sig_len;
-      return std::move(sig);
+    }
+
+    size_t len = 0;
+    if (!EVP_DigestSign(ctx.get(), nullptr, &len, in, in_len)) {
+      abort();
+    }
+    std::vector<uint8_t> private_key_result;
+    private_key_result.resize(len);
+    for (int i = 0; i < len; i++) {
+      private_key_result[i] = 1;
+    }
+    std::cout << "GREG: concat private key result before: ";
+    for (auto i = 0; i < len; i++) {
+      std::cout << private_key_result[i] << ",";
+    }
+    if (!EVP_DigestSign(ctx.get(), private_key_result.data(), &len, in,
+                        in_len)) {
+      return absl::InternalError("EVP_DigestSign failed");
+    }
+    private_key_result.resize(len);
+    std::string private_key_result_str(private_key_result.begin(),
+                                       private_key_result.end());
+    LOG(ERROR) << "GREG: private_key_result: " << private_key_result_str
+               << "\n";
+    return std::string(private_key_result.begin(), private_key_result.end());
   }
 
   bssl::UniquePtr<EVP_PKEY> pkey_;
-  };
+};
 
 class BadSignatureSigner : public PrivateKeySigner {
  public:
@@ -195,8 +177,7 @@ enum class OffloadParty {
   kNone,
 };
 
-class PrivateKeyOffloadTest
-    : public ::testing::TestWithParam<tsi_tls_version> {
+class PrivateKeyOffloadTest : public ::testing::TestWithParam<tsi_tls_version> {
  protected:
   class SslOffloadTsiTestFixture {
    public:
@@ -206,11 +187,16 @@ class PrivateKeyOffloadTest
       tsi_test_fixture_init(&base_);
       base_.test_unused_bytes = true;
       base_.vtable = &kVtable;
-      ca_cert_ = GetFileContents(absl::StrCat(kSpiffeTestCredsRelativeDir, "ca.pem"));
-      server_key_ = GetFileContents(absl::StrCat(kSpiffeTestCredsRelativeDir, "server.key"));
-      server_cert_ = GetFileContents(absl::StrCat(kSpiffeTestCredsRelativeDir, "server_spiffe.pem"));
-      client_key_ = GetFileContents(absl::StrCat(kSpiffeTestCredsRelativeDir, "client.key"));
-      client_cert_ = GetFileContents(absl::StrCat(kSpiffeTestCredsRelativeDir, "client_spiffe.pem"));
+      ca_cert_ =
+          GetFileContents(absl::StrCat(kSpiffeTestCredsRelativeDir, "ca.pem"));
+      server_key_ = GetFileContents(
+          absl::StrCat(kSpiffeTestCredsRelativeDir, "server.key"));
+      server_cert_ = GetFileContents(
+          absl::StrCat(kSpiffeTestCredsRelativeDir, "server_spiffe.pem"));
+      client_key_ = GetFileContents(
+          absl::StrCat(kSpiffeTestCredsRelativeDir, "client.key"));
+      client_cert_ = GetFileContents(
+          absl::StrCat(kSpiffeTestCredsRelativeDir, "client_spiffe.pem"));
       if (offload_party_ == OffloadParty::kClient) {
         auto pkey = LoadPrivateKeyFromString(client_key_);
         default_signer_ =
@@ -226,10 +212,10 @@ class PrivateKeyOffloadTest
                                                                  server_cert_);
       server_pem_key_cert_pairs_with_custom_signer_.emplace_back(signer_,
                                                                  client_cert_);
-      server_pem_key_cert_pairs_with_default_signer_.emplace_back(default_signer_,
-                                                                 server_cert_);
-      server_pem_key_cert_pairs_with_default_signer_.emplace_back(default_signer_,
-                                                                 client_cert_);
+      server_pem_key_cert_pairs_with_default_signer_.emplace_back(
+          default_signer_, server_cert_);
+      server_pem_key_cert_pairs_with_default_signer_.emplace_back(
+          default_signer_, client_cert_);
     }
 
     void Run(bool expect_success) {
@@ -244,8 +230,7 @@ class PrivateKeyOffloadTest
     }
 
    private:
-    static void SetupHandshakers(
-        tsi_test_fixture* fixture) {
+    static void SetupHandshakers(tsi_test_fixture* fixture) {
       auto* self = reinterpret_cast<SslOffloadTsiTestFixture*>(fixture);
       self->SetupHandshakers();
     }
@@ -258,7 +243,8 @@ class PrivateKeyOffloadTest
       client_options.max_tls_version = GetParam();
       if (offload_party_ == OffloadParty::kClient) {
         if (signer_ != nullptr) {
-          client_options.pem_key_cert_pair = &client_pem_key_cert_pairs_with_custom_signer_[0];
+          client_options.pem_key_cert_pair =
+              &client_pem_key_cert_pairs_with_custom_signer_[0];
         } else {
           client_options.pem_key_cert_pair =
               &client_pem_key_cert_pairs_with_default_signer_[0];
@@ -277,9 +263,11 @@ class PrivateKeyOffloadTest
       server_options.max_tls_version = GetParam();
       if (offload_party_ == OffloadParty::kServer) {
         if (signer_ != nullptr) {
-          server_options.pem_key_cert_pairs = server_pem_key_cert_pairs_with_custom_signer_;
+          server_options.pem_key_cert_pairs =
+              server_pem_key_cert_pairs_with_custom_signer_;
         } else {
-          server_options.pem_key_cert_pairs = server_pem_key_cert_pairs_with_default_signer_;
+          server_options.pem_key_cert_pairs =
+              server_pem_key_cert_pairs_with_default_signer_;
         }
       }
       ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
@@ -288,8 +276,8 @@ class PrivateKeyOffloadTest
 
       // Create handshakers.
       ASSERT_EQ(tsi_ssl_client_handshaker_factory_create_handshaker(
-                    client_handshaker_factory_, nullptr, 0, 0,
-                    std::nullopt, &base_.client_handshaker),
+                    client_handshaker_factory_, nullptr, 0, 0, std::nullopt,
+                    &base_.client_handshaker),
                 TSI_OK);
       ASSERT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
                     server_handshaker_factory_, 0, 0, &base_.server_handshaker),
@@ -304,11 +292,13 @@ class PrivateKeyOffloadTest
     void CheckHandshakerPeers() {
       if (expect_success_) {
         tsi_peer peer;
-        EXPECT_EQ(tsi_handshaker_result_extract_peer(base_.client_result, &peer),
-                  TSI_OK);
+        EXPECT_EQ(
+            tsi_handshaker_result_extract_peer(base_.client_result, &peer),
+            TSI_OK);
         tsi_peer_destruct(&peer);
-        EXPECT_EQ(tsi_handshaker_result_extract_peer(base_.server_result, &peer),
-                  TSI_OK);
+        EXPECT_EQ(
+            tsi_handshaker_result_extract_peer(base_.server_result, &peer),
+            TSI_OK);
         tsi_peer_destruct(&peer);
       } else {
         EXPECT_EQ(base_.client_result, nullptr);
@@ -354,14 +344,12 @@ struct tsi_test_fixture_vtable
         &PrivateKeyOffloadTest::SslOffloadTsiTestFixture::Destruct};
 
 TEST_P(PrivateKeyOffloadTest, OffloadOnServerSucceeds) {
-  auto* fixture =
-      new SslOffloadTsiTestFixture(OffloadParty::kServer, nullptr);
+  auto* fixture = new SslOffloadTsiTestFixture(OffloadParty::kServer, nullptr);
   fixture->Run(/*expect_success=*/true);
 }
 
 TEST_P(PrivateKeyOffloadTest, OffloadOnClientSucceeds) {
-  auto* fixture =
-      new SslOffloadTsiTestFixture(OffloadParty::kClient, nullptr);
+  auto* fixture = new SslOffloadTsiTestFixture(OffloadParty::kClient, nullptr);
   fixture->Run(/*expect_success=*/true);
 }
 
@@ -372,8 +360,8 @@ TEST_P(PrivateKeyOffloadTest, OffloadFailsWithBadSignature) {
 }
 
 TEST_P(PrivateKeyOffloadTest, OffloadFailsWithSignerError) {
-  auto* fixture = new SslOffloadTsiTestFixture(
-      OffloadParty::kServer, std::make_shared<ErrorSigner>());
+  auto* fixture = new SslOffloadTsiTestFixture(OffloadParty::kServer,
+                                               std::make_shared<ErrorSigner>());
   fixture->Run(/*expect_success=*/false);
 }
 

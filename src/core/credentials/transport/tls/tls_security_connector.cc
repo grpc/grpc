@@ -27,6 +27,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -288,11 +289,12 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
   SplitHostPort(target_name, &host, &port);
   target_name_ = std::string(host);
   // Create a watcher.
-  auto watcher_ptr = std::make_unique<TlsChannelCertificateWatcher>(this);
-  certificate_watcher_ = watcher_ptr.get();
+  auto identity_watcher_ptr =
+      std::make_unique<TlsChannelCertificateWatcher>(this);
+  auto root_watcher_ptr = std::make_unique<TlsChannelCertificateWatcher>(this);
+  root_certificate_watcher_ = root_watcher_ptr.get();
+  identity_certificate_watcher_ = identity_watcher_ptr.get();
   // Register the watcher with the distributor.
-  grpc_tls_certificate_distributor* distributor =
-      options_->certificate_distributor();
   std::optional<std::string> watched_root_cert_name;
   if (options_->watch_root_cert()) {
     watched_root_cert_name = options_->root_cert_name();
@@ -309,11 +311,22 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
   // hence no need to register the watcher.
   bool use_default_roots = !options_->watch_root_cert();
   if (use_default_roots && !options_->watch_identity_pair()) {
-    watcher_ptr->OnCertificatesChanged(nullptr, std::nullopt);
+    root_watcher_ptr->OnCertificatesChanged(nullptr, std::nullopt);
+    identity_watcher_ptr->OnCertificatesChanged(nullptr, std::nullopt);
   } else {
-    distributor->WatchTlsCertificates(std::move(watcher_ptr),
-                                      watched_root_cert_name,
-                                      watched_identity_cert_name);
+    if (!use_default_roots) {
+      grpc_tls_certificate_distributor* distributor =
+          options_->root_certificate_distributor();
+      distributor->WatchTlsCertificates(std::move(root_watcher_ptr),
+                                        watched_root_cert_name, std::nullopt);
+    }
+    if (options_->watch_identity_pair()) {
+      grpc_tls_certificate_distributor* distributor =
+          options_->identity_certificate_distributor();
+      distributor->WatchTlsCertificates(std::move(identity_watcher_ptr),
+                                        std::nullopt,
+                                        watched_identity_cert_name);
+    }
   }
 }
 
@@ -322,10 +335,16 @@ TlsChannelSecurityConnector::~TlsChannelSecurityConnector() {
     tsi_ssl_session_cache_unref(ssl_session_cache_);
   }
   // Cancel all the watchers.
-  grpc_tls_certificate_distributor* distributor =
-      options_->certificate_distributor();
-  if (distributor != nullptr) {
-    distributor->CancelTlsCertificatesWatch(certificate_watcher_);
+  grpc_tls_certificate_distributor* root_distributor =
+      options_->root_certificate_distributor();
+  if (root_distributor != nullptr) {
+    root_distributor->CancelTlsCertificatesWatch(root_certificate_watcher_);
+  }
+  grpc_tls_certificate_distributor* identity_distributor =
+      options_->identity_certificate_distributor();
+  if (identity_distributor != nullptr) {
+    identity_distributor->CancelTlsCertificatesWatch(
+        identity_certificate_watcher_);
   }
   if (client_handshaker_factory_ != nullptr) {
     tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
@@ -570,11 +589,12 @@ TlsServerSecurityConnector::TlsServerSecurityConnector(
         tsi::TlsSessionKeyLoggerCache::Get(tls_session_key_log_file_path);
   }
   // Create a watcher.
-  auto watcher_ptr = std::make_unique<TlsServerCertificateWatcher>(this);
-  certificate_watcher_ = watcher_ptr.get();
+  auto root_watcher_ptr = std::make_unique<TlsServerCertificateWatcher>(this);
+  auto identity_watcher_ptr =
+      std::make_unique<TlsServerCertificateWatcher>(this);
+  root_certificate_watcher_ = root_watcher_ptr.get();
+  identity_certificate_watcher_ = identity_watcher_ptr.get();
   // Register the watcher with the distributor.
-  grpc_tls_certificate_distributor* distributor =
-      options_->certificate_distributor();
   std::optional<std::string> watched_root_cert_name;
   if (options_->watch_root_cert()) {
     watched_root_cert_name = options_->root_cert_name();
@@ -584,16 +604,19 @@ TlsServerSecurityConnector::TlsServerSecurityConnector(
     watched_identity_cert_name = options_->identity_cert_name();
   }
   // Server side won't use default system roots at any time.
-  distributor->WatchTlsCertificates(std::move(watcher_ptr),
-                                    watched_root_cert_name,
-                                    watched_identity_cert_name);
+  options_->root_certificate_distributor()->WatchTlsCertificates(
+      std::move(root_watcher_ptr), watched_root_cert_name, std::nullopt);
+  options_->identity_certificate_distributor()->WatchTlsCertificates(
+      std::move(identity_watcher_ptr), std::nullopt,
+      watched_identity_cert_name);
 }
 
 TlsServerSecurityConnector::~TlsServerSecurityConnector() {
   // Cancel all the watchers.
-  grpc_tls_certificate_distributor* distributor =
-      options_->certificate_distributor();
-  distributor->CancelTlsCertificatesWatch(certificate_watcher_);
+  options_->root_certificate_distributor()->CancelTlsCertificatesWatch(
+      root_certificate_watcher_);
+  options_->identity_certificate_distributor()->CancelTlsCertificatesWatch(
+      identity_certificate_watcher_);
   if (server_handshaker_factory_ != nullptr) {
     tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory_);
   }

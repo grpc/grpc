@@ -116,8 +116,9 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
   PrivateKeySigner* signer = GetPrivateKeySigner(ssl_ctx);
   if (signer != nullptr) {
     LOG(ERROR) << "TlsPrivateKeySignWrapper Call Sign  ";
-    bool is_done = signer->Sign(absl::string_view(reinterpret_cast<const char*>(in), in_len),
-                 *algorithm, done_callback);
+    bool is_done = signer->Sign(
+        absl::string_view(reinterpret_cast<const char*>(in), in_len),
+        *algorithm, done_callback);
     LOG(ERROR) << "TlsPrivateKeySignWrapper end call sign";
     // The operation is not completed. Tell BoringSSL to wait for the signature
     // result.
@@ -126,7 +127,7 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
 
   // The operation is completed. Tell BoringSSL to wait for the signature
   // result.
-  return ssl_private_key_success;
+  return ssl_private_key_retry;
 }
 
 enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,
