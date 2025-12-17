@@ -25183,6 +25183,28 @@ targets:
   - absl/utility:utility
   - gpr
   uses_polling: false
+- name: test_core_event_engine_posix_timer_list_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/event_engine/posix_engine/timer.h
+  - src/core/lib/event_engine/posix_engine/timer_heap.h
+  - src/core/util/time.h
+  - src/core/util/time_averaged_stats.h
+  src:
+  - src/core/lib/event_engine/posix_engine/timer.cc
+  - src/core/lib/event_engine/posix_engine/timer_heap.cc
+  - src/core/util/time.cc
+  - src/core/util/time_averaged_stats.cc
+  - test/core/event_engine/posix/timer_list_test.cc
+  deps:
+  - gtest
+  - absl/status:statusor
+  - absl/types:span
+  - absl/utility:utility
+  - gpr
+  uses_polling: false
 - name: test_core_event_engine_slice_buffer_test
   gtest: true
   build: test
@@ -25379,6 +25401,16 @@ targets:
   - gtest
   - grpc_test_util
   uses_polling: false
+- name: test_core_iomgr_timer_list_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/timer_list_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: test_core_slice_slice_buffer_test
   gtest: true
   build: test
@@ -25808,28 +25840,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-  uses_polling: false
-- name: timer_list_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/lib/event_engine/posix_engine/timer.h
-  - src/core/lib/event_engine/posix_engine/timer_heap.h
-  - src/core/util/time.h
-  - src/core/util/time_averaged_stats.h
-  src:
-  - src/core/lib/event_engine/posix_engine/timer.cc
-  - src/core/lib/event_engine/posix_engine/timer_heap.cc
-  - src/core/util/time.cc
-  - src/core/util/time_averaged_stats.cc
-  - test/core/event_engine/posix/timer_list_test.cc
-  deps:
-  - gtest
-  - absl/status:statusor
-  - absl/types:span
-  - absl/utility:utility
-  - gpr
   uses_polling: false
 - name: timer_manager_test
   gtest: true
