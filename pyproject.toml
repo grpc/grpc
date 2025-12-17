@@ -71,3 +71,19 @@ where = ["src/python/grpcio"]
 
 [tool.pyright]
 include = ["src/python/grpcio"]
+
+typeCheckingMode = "basic"
+exclude = [
+    "**/third_party",
+    "**/build",
+    "**/grpc_root",
+    "**/__pycache__",
+    "**/.git",
+]
+
+[[tool.pyright.executionEnvironments]]
+root = "src/python/grpcio"
+
+[[tool.pyright.executionEnvironments]]
+root = "src/python/grpcio_tests"
+extraPaths = ["src/python/grpcio"]
