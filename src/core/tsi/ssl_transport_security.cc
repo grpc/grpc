@@ -1916,15 +1916,13 @@ static tsi_result ssl_handshaker_do_handshake(tsi_ssl_handshaker* impl,
     // Get ready to get some bytes from SSL.
     int ssl_result = SSL_do_handshake(impl->ssl);
     ssl_result = SSL_get_error(impl->ssl, ssl_result);
-    LOG(ERROR) << "anasalazar" << ssl_result;
+    LOG(ERROR) << "ssl_handshaker_do_handshake " << ssl_result;
     switch (ssl_result) {
       case SSL_ERROR_WANT_READ:
         if (BIO_pending(impl->network_io) == 0) {
-          LOG(ERROR) << ssl_result;
           // We need more data.
           return TSI_INCOMPLETE_DATA;
         } else {
-          LOG(ERROR) << ssl_result;
           return TSI_OK;
         }
       case SSL_ERROR_NONE:
@@ -1932,8 +1930,10 @@ static tsi_result ssl_handshaker_do_handshake(tsi_ssl_handshaker* impl,
       case SSL_ERROR_WANT_WRITE:
         return TSI_DRAIN_BUFFER;
       case SSL_ERROR_WANT_PRIVATE_KEY_OPERATION:
+        LOG(ERROR) << "ssl_handshaker_do_handshake TSI_ASYNC ";
         return TSI_ASYNC;
       default: {
+        LOG(ERROR) << "ssl_handshaker_do_handshake other error " << ssl_result;
         char err_str[256];
         ERR_error_string_n(ERR_get_error(), err_str, sizeof(err_str));
         long verify_result = SSL_get_verify_result(impl->ssl);
@@ -2112,6 +2112,7 @@ static tsi_result ssl_handshaker_next(
   if (ssl_handshaker_get_result(impl) == TSI_HANDSHAKE_IN_PROGRESS) {
     *handshaker_result = nullptr;
   } else {
+    LOG(ERROR) << "anasalazar";
     // Any bytes that remain in |impl->ssl|'s read BIO after the handshake is
     // complete must be extracted and set to the unused bytes of the
     // handshaker result. This indicates to the gRPC stack that there are
@@ -2130,6 +2131,11 @@ static tsi_result ssl_handshaker_next(
     status = ssl_handshaker_result_create(impl, unused_bytes, unused_bytes_size,
                                           handshaker_result, error);
     if (status == TSI_OK) {
+      if (offload_context != nullptr) {
+        offload_context->notify_cb = cb;
+        offload_context->notify_user_data = user_data;
+        offload_context->handshaker_result = *handshaker_result;
+      }
       // Indicates that the handshake has completed and that a
       // handshaker_result has been created.
       self->handshaker_result_created = true;

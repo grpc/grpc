@@ -61,25 +61,31 @@ ToSignatureAlgorithmClass(uint16_t algorithm) {
 #if defined(OPENSSL_IS_BORINGSSL)
 void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
                                 absl::StatusOr<std::string> signed_data) {
-  LOG(ERROR) << "anasazalar";
+  LOG(ERROR) << "TlsOffloadSignDoneCallback hs_result_addr "
+             << ctx->handshaker_result;
   if (signed_data.ok()) {
+    LOG(ERROR) << "TlsOffloadSignDoneCallback data_length "
+               << signed_data->length();
     ctx->signed_bytes = std::move(signed_data);
 
     // Notify the TSI layer to re-enter the handshake.
     // This call is thread-safe as per TSI requirements for the callback.
     if (ctx->notify_cb) {
-      LOG(ERROR) << "anasazalar";
-      ctx->notify_cb(TSI_OK, ctx->notify_user_data, nullptr, 0, nullptr);
-      LOG(ERROR) << "anasazalar";
+      LOG(ERROR) << "TlsOffloadSignDoneCallback start notify";
+      ctx->notify_cb(
+          TSI_OK, ctx->notify_user_data,
+          reinterpret_cast<const uint8_t*>(ctx->signed_bytes->data()),
+          ctx->signed_bytes->length(), ctx->handshaker_result);
+      LOG(ERROR) << "TlsOffloadSignDoneCallback finish notify";
     }
   } else {
     ctx->signed_bytes = signed_data.status();
     // Notify the TSI layer to re-enter the handshake.
     // This call is thread-safe as per TSI requirements for the callback.
     if (ctx->notify_cb) {
-      LOG(ERROR) << "anasazalar";
+      LOG(ERROR) << "TlsOffloadSignDoneCallback error" << signed_data.status();
       ctx->notify_cb(TSI_INTERNAL_ERROR, ctx->notify_user_data, nullptr, 0,
-                     nullptr);
+                     ctx->handshaker_result);
     }
   }
 }
@@ -109,12 +115,11 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
 
   CustomPrivateKeySigner* signer = GetCustomPrivateKeySigner(ssl_ctx);
   if (signer != nullptr) {
-    LOG(ERROR) << "anasazalar";
+    LOG(ERROR) << "TlsPrivateKeySignWrapper Call Sign  ";
     signer->Sign(absl::string_view(reinterpret_cast<const char*>(in), in_len),
                  *algorithm, done_callback);
-    LOG(ERROR) << "anasazalar";
+    LOG(ERROR) << "TlsPrivateKeySignWrapper end call sign";
   }
-  LOG(ERROR) << "anasazalar";
 
   // The operation is not completed. Tell BoringSSL to wait for the signature
   // result.
@@ -125,20 +130,21 @@ enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,
                                                            uint8_t* out,
                                                            size_t* out_len,
                                                            size_t max_out) {
-  LOG(ERROR) << "anasazalar";
+  LOG(ERROR) << "TlsPrivateKeyOffloadComplete";
   TlsPrivateKeyOffloadContext* ctx = GetTlsPrivateKeyOffloadContext(ssl);
 
   if (!ctx->signed_bytes.ok()) {
-    LOG(ERROR) << "anasazalar";
+    LOG(ERROR) << "TlsPrivateKeyOffloadComplete fail";
     return ssl_private_key_failure;
   }
   // Important bit is moving the signed data where it needs to go
   const std::string& signed_data = *ctx->signed_bytes;
   if (signed_data.length() > max_out) {
-    LOG(ERROR) << "anasazalar";
+    LOG(ERROR) << "TlsPrivateKeyOffloadComplete too large";
     // Result is too large.
     return ssl_private_key_failure;
   }
+  LOG(ERROR) << "TlsPrivateKeyOffloadComplete success";
   memcpy(out, signed_data.data(), signed_data.length());
   *out_len = signed_data.length();
   // Tell BoringSSL we're done

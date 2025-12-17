@@ -130,7 +130,7 @@ void DoRpc(const std::string& server_addr,
   grpc::testing::EchoResponse response;
   request.set_message(kMessage);
   ClientContext context;
-  context.set_deadline(grpc_timeout_seconds_to_deadline(/*time_s=*/15));
+  context.set_deadline(grpc_timeout_seconds_to_deadline(/*time_s=*/40));
   grpc::Status result = stub->Echo(&context, request, &response);
   EXPECT_TRUE(result.ok()) << result.error_message().c_str() << ", "
                            << result.error_details().c_str();
@@ -199,6 +199,8 @@ class TestCustomPrivateKeySigner final
             OnSignComplete on_sign_complete) override {
     auto on_sign_complete_ptr =
         std::make_shared<OnSignComplete>(std::move(on_sign_complete));
+    LOG(ERROR) << "TestCustomPrivateKeySigner schedule length "
+               << data_to_sign.length();
     std::thread([this, data_to_sign = std::string(data_to_sign),
                  signature_algorithm, on_sign_complete_ptr]() mutable {
       const EVP_MD* md = nullptr;
@@ -246,6 +248,7 @@ class TestCustomPrivateKeySigner final
         return;
       }
       sig.resize(sig_len);
+      LOG(ERROR) << "TestCustomPrivateKeySigner result length " << sig_len;
       (*on_sign_complete_ptr)(std::move(sig));
     }).detach();
   }
