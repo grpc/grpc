@@ -27,6 +27,7 @@ from typing import (
     Optional,
     Tuple,
     Union,
+    cast,
 )
 
 import grpc
@@ -124,7 +125,7 @@ class AioRpcError(grpc.RpcError):
         """
         return self._details
 
-    def initial_metadata(self) -> Metadata:
+    def initial_metadata(self) -> Optional[Metadata]:
         """Accesses the initial metadata sent by the server.
 
         Returns:
@@ -132,7 +133,7 @@ class AioRpcError(grpc.RpcError):
         """
         return self._initial_metadata
 
-    def trailing_metadata(self) -> Metadata:
+    def trailing_metadata(self) -> Optional[Metadata]:
         """Accesses the trailing metadata sent by the server.
 
         Returns:
@@ -140,7 +141,7 @@ class AioRpcError(grpc.RpcError):
         """
         return self._trailing_metadata
 
-    def debug_error_string(self) -> str:
+    def debug_error_string(self) -> Optional[str]:
         """Accesses the debug error string sent by the server.
 
         Returns:
@@ -182,8 +183,8 @@ def _create_rpc_error(
 ) -> AioRpcError:
     return AioRpcError(
         _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[status.code()],
-        Metadata.from_tuple(initial_metadata),
-        Metadata.from_tuple(status.trailing_metadata()),
+        Metadata.from_tuple(tuple(initial_metadata)),
+        Metadata.from_tuple(tuple(status.trailing_metadata())),
         details=status.details(),
         debug_error_string=status.debug_error_string(),
     )
@@ -334,8 +335,8 @@ class _UnaryResponseMixin(Call, Generic[ResponseType]):
             return response
 
 
-class _StreamResponseMixin(Call):
-    _message_aiter: AsyncIterator[ResponseType]
+class _StreamResponseMixin(Call, Generic[ResponseType]):
+    _message_aiter: Optional[AsyncIterator[ResponseType]]
     _preparation: asyncio.Task
     _response_style: _APIStyle
 
@@ -356,7 +357,7 @@ class _StreamResponseMixin(Call):
             return True
         return False
 
-    async def _fetch_stream_responses(self) -> ResponseType:
+    async def _fetch_stream_responses(self) -> AsyncIterator[ResponseType]:
         message = await self._read()
         while message is not cygrpc.EOF:
             yield message
@@ -401,7 +402,7 @@ class _StreamResponseMixin(Call):
         return response_message
 
 
-class _StreamRequestMixin(Call):
+class _StreamRequestMixin(Call, Generic[RequestType]):
     _metadata_sent: asyncio.Event
     _done_writing_flag: bool
     _async_request_poller: Optional[asyncio.Task]
@@ -444,7 +445,8 @@ class _StreamRequestMixin(Call):
             if inspect.isasyncgen(request_iterator) or hasattr(
                 request_iterator, "__aiter__"
             ):
-                async for request in request_iterator:
+                async_iterator = cast(AsyncIterator[RequestType], request_iterator)
+                async for request in async_iterator:
                     try:
                         await self._write(request)
                     except AioRpcError as rpc_error:
@@ -457,7 +459,10 @@ class _StreamRequestMixin(Call):
                         )
                         return
             else:
-                for request in request_iterator:
+                sync_iterator = cast(
+                    Generator[RequestType, None, None], request_iterator
+                )
+                for request in sync_iterator:
                     try:
                         await self._write(request)
                     except AioRpcError as rpc_error:
@@ -536,7 +541,7 @@ class _StreamRequestMixin(Call):
             await self._raise_for_status()
 
 
-class UnaryUnaryCall(_UnaryResponseMixin, Call, _base_call.UnaryUnaryCall):
+class UnaryUnaryCall(_UnaryResponseMixin, Call, _base_call.UnaryUnaryCall, Generic[RequestType, ResponseType]):
     """Object for managing unary-unary RPC calls.
 
     Returned when an instance of `UnaryUnaryMultiCallable` object is called.
@@ -571,7 +576,7 @@ class UnaryUnaryCall(_UnaryResponseMixin, Call, _base_call.UnaryUnaryCall):
         self._invocation_task = loop.create_task(self._invoke())
         self._init_unary_response_mixin(self._invocation_task)
 
-    async def _invoke(self) -> ResponseType:
+    async def _invoke(self) -> Union[ResponseType, EOFType]:
         serialized_request = _common.serialize(
             self._request, self._request_serializer
         )
@@ -591,7 +596,7 @@ class UnaryUnaryCall(_UnaryResponseMixin, Call, _base_call.UnaryUnaryCall):
             return _common.deserialize(
                 serialized_response, self._response_deserializer
             )
-        return cygrpc.EOF
+        return cast(EOFType, cygrpc.EOF)
 
     async def wait_for_connection(self) -> None:
         await self._invocation_task
@@ -599,7 +604,7 @@ class UnaryUnaryCall(_UnaryResponseMixin, Call, _base_call.UnaryUnaryCall):
             await self._raise_for_status()
 
 
-class UnaryStreamCall(_StreamResponseMixin, Call, _base_call.UnaryStreamCall):
+class UnaryStreamCall(_StreamResponseMixin, Call, _base_call.UnaryStreamCall, Generic[RequestType, ResponseType]):
     """Object for managing unary-stream RPC calls.
 
     Returned when an instance of `UnaryStreamMultiCallable` object is called.
@@ -636,7 +641,7 @@ class UnaryStreamCall(_StreamResponseMixin, Call, _base_call.UnaryStreamCall):
         )
         self._init_stream_response_mixin(self._send_unary_request_task)
 
-    async def _send_unary_request(self) -> ResponseType:
+    async def _send_unary_request(self) -> None:
         serialized_request = _common.serialize(
             self._request, self._request_serializer
         )
@@ -657,7 +662,7 @@ class UnaryStreamCall(_StreamResponseMixin, Call, _base_call.UnaryStreamCall):
 
 # pylint: disable=too-many-ancestors
 class StreamUnaryCall(
-    _StreamRequestMixin, _UnaryResponseMixin, Call, _base_call.StreamUnaryCall
+    _StreamRequestMixin, _UnaryResponseMixin, Call, _base_call.StreamUnaryCall, Generic[RequestType, ResponseType]
 ):
     """Object for managing stream-unary RPC calls.
 
@@ -690,7 +695,7 @@ class StreamUnaryCall(
         self._init_stream_request_mixin(request_iterator)
         self._init_unary_response_mixin(loop.create_task(self._conduct_rpc()))
 
-    async def _conduct_rpc(self) -> ResponseType:
+    async def _conduct_rpc(self) -> Union[ResponseType, EOFType]:
         try:
             serialized_response = await self._cython_call.stream_unary(
                 self._metadata, self._metadata_sent_observer, self._context
@@ -704,11 +709,11 @@ class StreamUnaryCall(
             return _common.deserialize(
                 serialized_response, self._response_deserializer
             )
-        return cygrpc.EOF
+        return cast(EOFType, cygrpc.EOF)
 
 
 class StreamStreamCall(
-    _StreamRequestMixin, _StreamResponseMixin, Call, _base_call.StreamStreamCall
+    _StreamRequestMixin, _StreamResponseMixin, Call, _base_call.StreamStreamCall, Generic[RequestType, ResponseType]
 ):
     """Object for managing stream-stream RPC calls.
 

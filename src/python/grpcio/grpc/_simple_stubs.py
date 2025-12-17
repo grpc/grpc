@@ -29,6 +29,7 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
+    cast,
 )
 
 import grpc
@@ -37,7 +38,7 @@ from grpc.experimental import experimental_api
 RequestType = TypeVar("RequestType")
 ResponseType = TypeVar("ResponseType")
 
-OptionsType = Sequence[Tuple[str, str]]
+OptionsType = Sequence[Tuple[AnyStr, AnyStr]]
 CacheKey = Tuple[
     str,
     OptionsType,
@@ -157,7 +158,7 @@ class ChannelCache:
     def get_channel(
         self,
         target: str,
-        options: Sequence[Tuple[str, str]],
+        options: OptionsType,
         channel_credentials: Optional[grpc.ChannelCredentials],
         insecure: bool,
         compression: Optional[grpc.Compression],
@@ -304,16 +305,16 @@ def unary_unary(
         _registered_method,
     )
     multicallable = channel.unary_unary(
-        method, request_serializer, response_deserializer, True if _registered_method else False
+        method, request_serializer, response_deserializer, bool(method_handle)
     )
     wait_for_ready = wait_for_ready if wait_for_ready is not None else True
-    return multicallable(
+    return cast(ResponseType, multicallable(
         request,
         metadata=metadata,
         wait_for_ready=wait_for_ready,
         credentials=call_credentials,
         timeout=timeout,
-    )
+    ))
 
 
 @experimental_api
@@ -395,16 +396,16 @@ def unary_stream(
         _registered_method,
     )
     multicallable = channel.unary_stream(
-        method, request_serializer, response_deserializer, True if _registered_method else False
+        method, request_serializer, response_deserializer, bool(method_handle)
     )
     wait_for_ready = wait_for_ready if wait_for_ready is not None else True
-    return multicallable(
+    return cast(Iterator[ResponseType], multicallable(
         request,
         metadata=metadata,
         wait_for_ready=wait_for_ready,
         credentials=call_credentials,
         timeout=timeout,
-    )
+    ))
 
 
 @experimental_api
@@ -486,7 +487,7 @@ def stream_unary(
         _registered_method,
     )
     multicallable = channel.stream_unary(
-        method, request_serializer, response_deserializer, method_handle
+        method, request_serializer, response_deserializer, bool(method_handle)
     )
     wait_for_ready = wait_for_ready if wait_for_ready is not None else True
     return multicallable(
@@ -577,13 +578,13 @@ def stream_stream(
         _registered_method,
     )
     multicallable = channel.stream_stream(
-        method, request_serializer, response_deserializer, _registered_method
+        method, request_serializer, response_deserializer, bool(method_handle)
     )
     wait_for_ready = wait_for_ready if wait_for_ready is not None else True
-    return multicallable(
+    return cast(Iterator[ResponseType], multicallable(
         request_iterator,
         metadata=metadata,
         wait_for_ready=wait_for_ready,
         credentials=call_credentials,
         timeout=timeout,
-    )
+    ))

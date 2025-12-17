@@ -17,7 +17,7 @@ import collections
 import logging
 import threading
 import time
-from typing import Callable, Dict, Optional, Sequence
+from typing import Callable, Dict, List, Optional, Sequence
 
 import grpc  # pytype: disable=pyi-error
 from grpc import _common  # pytype: disable=pyi-error
@@ -79,7 +79,7 @@ class _ChannelReadyFuture(grpc.Future):
     _channel: grpc.Channel
     _matured: bool
     _cancelled: bool
-    _done_callbacks: Sequence[Callable]
+    _done_callbacks: Optional[List[Callable]]
 
     def __init__(self, channel: grpc.Channel):
         self._condition = threading.Condition()
@@ -114,7 +114,7 @@ class _ChannelReadyFuture(grpc.Future):
                 self._matured = True
                 self._channel.unsubscribe(self._update)
                 self._condition.notify_all()
-                done_callbacks = tuple(self._done_callbacks)
+                done_callbacks = tuple(self._done_callbacks if self._done_callbacks else [])
                 self._done_callbacks = None
             else:
                 return
@@ -131,7 +131,7 @@ class _ChannelReadyFuture(grpc.Future):
                 self._cancelled = True
                 self._channel.unsubscribe(self._update)
                 self._condition.notify_all()
-                done_callbacks = tuple(self._done_callbacks)
+                done_callbacks = tuple(self._done_callbacks if self._done_callbacks else [])
                 self._done_callbacks = None
             else:
                 return False
@@ -167,7 +167,7 @@ class _ChannelReadyFuture(grpc.Future):
 
     def add_done_callback(self, fn: _DoneCallbackType):
         with self._condition:
-            if not self._cancelled and not self._matured:
+            if self._done_callbacks and not self._cancelled and not self._matured:
                 self._done_callbacks.append(fn)
                 return
 
