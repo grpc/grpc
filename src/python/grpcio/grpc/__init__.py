@@ -476,36 +476,23 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
 class ClientCallDetails(abc.ABC):
     """Describes an RPC to be invoked."""
 
-    @property
-    @abc.abstractmethod
-    def method(self) -> str:
-        """The method name of the RPC."""
+    """
+        Attributes:
+      method: The method name of the RPC.
+      timeout: An optional duration of time in seconds to allow for the RPC.
+      metadata: Optional :term:`metadata` to be transmitted to
+        the service-side of the RPC.
+      credentials: An optional CallCredentials for the RPC.
+      wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
+      compression: An element of grpc.compression, e.g.
+        grpc.compression.Gzip.
+    """
 
-    @property
-    @abc.abstractmethod
-    def timeout(self) -> Optional[float]:
-        """An optional duration of time in seconds to allow for the RPC."""
-
-    @property
-    @abc.abstractmethod
-    def metadata(self) -> Optional[MetadataType]:
-        """Optional :term:`metadata` to be transmitted to the service-side of the RPC."""
-
-    @property
-    @abc.abstractmethod
-    def credentials(self) -> Optional[CallCredentials]:
-        """An optional CallCredentials for the RPC."""
-
-    @property
-    @abc.abstractmethod
-    def wait_for_ready(self) -> Optional[bool]:
-        """An optional flag to enable :term:`wait_for_ready` mechanism."""
-
-    @property
-    @abc.abstractmethod
-    def compression(self) -> Optional[Any]:
-        """An element of grpc.compression, e.g. grpc.compression.Gzip."""
-
+    method: str
+    timeout: Optional[float]
+    credentials: Optional[CallCredentials]
+    wait_for_ready: Optional[bool]
+    compression: Compression
 
 class UnaryUnaryClientInterceptor(abc.ABC):
     """Affords intercepting unary-unary invocations."""

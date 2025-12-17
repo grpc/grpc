@@ -1020,7 +1020,7 @@ class InterceptedStreamStreamCall(
             self._last_returned_call_from_interceptors = StreamStreamCall(
                 request_iterator,
                 _timeout_to_deadline(client_call_details.timeout),
-                client_call_details.metadata,
+                client_call_details.metadata if client_call_details.metadata else Metadata(),
                 client_call_details.credentials,
                 client_call_details.wait_for_ready,
                 self._channel,
@@ -1042,7 +1042,7 @@ class InterceptedStreamStreamCall(
         raise NotImplementedError()
 
 
-class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall):
+class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall, Generic[ResponseType]):
     """Final UnaryUnaryCall class finished with a response."""
 
     _response: ResponseType
