@@ -431,6 +431,18 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
         """See grpc.Future.done."""
         return True
 
+    def is_active(self) -> bool:
+        """See grpc.RpcContext.is_active."""
+        return False
+
+    def time_remaining(self) -> Optional[float]:
+        """See grpc.RpcContext.time_remaining."""
+        return None
+
+    def add_callback(self, callback: NullaryCallbackType) -> bool:
+        """See grpc.RpcContext.add_callback."""
+        return False
+
     def result(
         self, timeout: Optional[float] = None
     ) -> Any:  # pylint: disable=unused-argument
@@ -1120,6 +1132,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             request, timeout, metadata, wait_for_ready, compression
         )
         if state is None:
+            assert rendezvous is not None
             raise rendezvous  # pylint: disable-msg=raising-bad-type
         state.rpc_start_time = time.perf_counter()
         state.method = _common.decode(self._method)
@@ -1185,11 +1198,13 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             request, timeout, metadata, wait_for_ready, compression
         )
         if state is None:
+            assert rendezvous is not None
             raise rendezvous  # pylint: disable-msg=raising-bad-type
         event_handler = _event_handler(state, self._response_deserializer)
         state.rpc_start_time = time.perf_counter()
         state.method = _common.decode(self._method)
         state.target = _common.decode(self._target)
+        assert operations is not None
         call = self._managed_call(
             cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS,
             self._method,
@@ -1231,8 +1246,8 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         channel: cygrpc.Channel,
         method: bytes,
         target: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         _registered_call_handle: Optional[int],
     ):
         self._channel = channel
@@ -1334,8 +1349,8 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         managed_call: _IntegratedCallFactory,
         method: bytes,
         target: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         _registered_call_handle: Optional[int],
     ):
         self._channel = channel
@@ -1363,6 +1378,7 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
             wait_for_ready
         )
         if serialized_request is None:
+            assert rendezvous is not None
             raise rendezvous  # pylint: disable-msg=raising-bad-type
         augmented_metadata = _compression.augment_metadata(
             metadata, compression

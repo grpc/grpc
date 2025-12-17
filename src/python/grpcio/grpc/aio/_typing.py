@@ -22,6 +22,7 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
+    TYPE_CHECKING,
 )
 
 from grpc._cython.cygrpc import EOF
@@ -37,7 +38,13 @@ DeserializingFunction = Callable[[bytes], Any]
 MetadatumType = Tuple[MetadataKey, MetadataValue]
 MetadataType = Union[Metadata, Sequence[MetadatumType]]
 ChannelArgumentType = Sequence[Tuple[str, Any]]
-EOFType = type(EOF)
+if TYPE_CHECKING:
+    from grpc._cython.cygrpc import _EOF
+    # Pyright doesn't allow "EOFType = type(EOF)" because it's a runtime expression.
+    # We use the static class definition from the stub during type checking.
+    EOFType = _EOF
+else:
+    EOFType = type(EOF)
 DoneCallbackType = Callable[[Any], None]
 RequestIterableType = Union[Iterable[Any], AsyncIterable[Any]]
 ResponseIterableType = AsyncIterable[Any]
