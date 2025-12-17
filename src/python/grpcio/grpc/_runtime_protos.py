@@ -33,7 +33,7 @@ def _has_runtime_proto_symbols(mod: types.ModuleType) -> bool:
 
 def _is_grpc_tools_importable() -> bool:
     try:
-        import grpc_tools  # pylint: disable=unused-import # pytype: disable=import-error
+        import grpc_tools  # pylint: disable=unused-import # pytype: disable=import-error # type: ignore
 
         return True
     except ImportError as e:
@@ -60,7 +60,7 @@ def _call_with_lazy_import(
         raise NotImplementedError(_VERSION_ERROR_TEMPLATE.format(fn_name))
     if not _is_grpc_tools_importable():
         raise NotImplementedError(_UNINSTALLED_TEMPLATE.format(fn_name))
-    import grpc_tools.protoc  # pytype: disable=import-error
+    import grpc_tools.protoc  # pytype: disable=import-error # type: ignore
 
     if _has_runtime_proto_symbols(grpc_tools.protoc):
         fn = getattr(grpc_tools.protoc, "_" + fn_name)
