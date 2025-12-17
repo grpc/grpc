@@ -20,7 +20,7 @@ import asyncio
 import collections
 import functools
 from typing import (
-    Any,
+
     AsyncGenerator,
     AsyncIterable,
     AsyncIterator,

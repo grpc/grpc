@@ -54,8 +54,8 @@ if sys.version_info[1] < 7:
 
     def _all_tasks() -> Iterable[asyncio.Task]:
         return (
-            asyncio.Task.all_tasks()  # pyright: ignore [reportAttributeAccessIssue]
-        )  # pylint: disable=no-member # type: ignore # noqa: PGH003
+            asyncio.Task.all_tasks()  # pylint: disable=no-member # pyright: ignore [reportAttributeAccessIssue]
+        )  # type: ignore # noqa: PGH003
 
 else:
 
@@ -431,7 +431,8 @@ class Channel(_base_channel.Channel):
                         continue
                 elif hasattr(candidate, "_cython_call"):
                     # For normal Call object
-                    if candidate._cython_call._channel is not self._channel:  # type: ignore # noqa: PGH003
+                    cython_call = candidate._cython_call
+                    if cython_call._channel is not self._channel:  # type: ignore # noqa: PGH003
                         continue
                 else:
                     # Unidentified Call object

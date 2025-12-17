@@ -1920,8 +1920,9 @@ def _poll_connectivity(
                 connectivity
             ]
         )
-        # Cast required because `callbacks_and_connectivities` is typed as a list of lists containing
-        # a Union of callbacks and connectivity states. Pyright infers the unpacked `callback`
+        # Cast required because `callbacks_and_connectivities` is typed as a list
+        # of lists containing a Union of callbacks and connectivity states.
+        # Pyright infers the unpacked `callback`
         # as that Union type, so we must cast it to the expected Sequence[Callable] type.
         callbacks = cast(
             "Sequence[Callable[[grpc.ChannelConnectivity], None]]",

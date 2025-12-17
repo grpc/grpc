@@ -97,9 +97,9 @@ class OTelMetricExporter(MetricExporter):
 
 class _ClientUnaryUnaryInterceptor(grpc.UnaryUnaryClientInterceptor):
     def intercept_unary_unary(
-        self, continuation, client_call_details, request_or_iterator
+        self, continuation, client_call_details, request
     ):
-        response = continuation(client_call_details, request_or_iterator)
+        response = continuation(client_call_details, request)
         return response
 
 
