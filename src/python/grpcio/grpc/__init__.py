@@ -1582,7 +1582,7 @@ class Server(abc.ABC):
         raise NotImplementedError()
 
     def add_registered_method_handlers(  # noqa: B027
-        self, service_name: str, method_handlers: Dict[str, RpcMethodHandler]
+        self, service_name: str, method_handlers: Mapping[str, RpcMethodHandler]
     ) -> None:
         """Registers GenericRpcHandlers with this Server.
 
