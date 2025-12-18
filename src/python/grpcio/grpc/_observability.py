@@ -37,7 +37,7 @@ from grpc.typing import ChannelArgumentType
 
 
 # This is a Protocol that matches the interface of grpc._channel._RPCState.
-class RPCState(typing.Protocol):
+class RPCState(Protocol):
     method: Optional[str]
     target: Optional[str]
     rpc_start_time: Optional[float]
