@@ -19,7 +19,7 @@ from typing import AnyStr, Callable, Optional
 
 import grpc
 from grpc import _common
-from grpc._cython import cygrpc
+from grpc._cython import cygrpc  # type: ignore[reportMissingModuleSource]
 from grpc.typing import MetadataType
 
 _LOGGER = logging.getLogger(__name__)

@@ -18,6 +18,7 @@ import abc
 import contextlib
 import logging
 import threading
+from grpc import StatusCode
 from typing import (
     Any,
     Generator,
@@ -27,12 +28,22 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
+    Protocol,
 )
+import typing
 
 from grpc._cython import cygrpc as _cygrpc
 from grpc.typing import ChannelArgumentType
 
-RPCState = TypeVar("RPCState")
+
+# This is a Protocol that matches the interface of grpc._channel._RPCState.
+class RPCState(typing.Protocol):
+    method: Optional[str]
+    target: Optional[str]
+    rpc_start_time: Optional[float]
+    rpc_end_time: Optional[float]
+    code: Optional[StatusCode]
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -283,16 +294,21 @@ def maybe_record_rpc_latency(state: RPCState) -> None:
     RPC.
     """
     # TODO(xuanwn): use channel args to exclude those metrics.
-    for exclude_prefix in _SERVICES_TO_EXCLUDE:
-        if exclude_prefix in state.method.encode("utf8"):
-            return
+    if state.method:
+        for exclude_prefix in _SERVICES_TO_EXCLUDE:
+            if exclude_prefix in state.method.encode("utf8"):
+                return
     with get_plugin() as plugin:
         if plugin and plugin.stats_enabled:
+            # If the RPC is cancelled, the start time or end time might be None.
+            if state.rpc_start_time is None or state.rpc_end_time is None:
+                return
             rpc_latency_s = state.rpc_end_time - state.rpc_start_time
             rpc_latency_ms = rpc_latency_s * 1000
-            plugin.record_rpc_latency(
-                state.method, state.target, rpc_latency_ms, state.code
-            )
+            if state.method and state.target:
+                plugin.record_rpc_latency(
+                    state.method, state.target, rpc_latency_ms, state.code
+                )
 
 
 def create_server_call_tracer_factory_option(
