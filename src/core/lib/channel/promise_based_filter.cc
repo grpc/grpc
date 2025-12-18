@@ -1305,9 +1305,11 @@ ClientCallData::ClientCallData(grpc_call_element* elem,
   if (server_initial_metadata_pipe() != nullptr) {
     recv_initial_metadata_ = arena()->New<RecvInitialMetadata>();
   }
+  SourceConstructed();
 }
 
 ClientCallData::~ClientCallData() {
+  SourceDestructing();
   ScopedActivity scoped_activity(this);
   GRPC_CHECK_EQ(poll_ctx_, nullptr);
   if (recv_initial_metadata_ != nullptr) {
@@ -1994,9 +1996,11 @@ ServerCallData::ServerCallData(grpc_call_element* elem,
   GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_,
                     RecvTrailingMetadataReadyCallback, this,
                     grpc_schedule_on_exec_ctx);
+  SourceConstructed();
 }
 
 ServerCallData::~ServerCallData() {
+  SourceDestructing();
   GRPC_TRACE_LOG(channel, INFO)
       << LogTag() << " ~ServerCallData " << DebugString();
   if (send_initial_metadata_ != nullptr) {

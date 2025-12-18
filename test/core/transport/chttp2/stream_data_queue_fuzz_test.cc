@@ -219,9 +219,8 @@ class StreamDataQueueFuzzTest : public YodelTest {
   class AssembleFrames {
    public:
     explicit AssembleFrames(const uint32_t stream_id,
-                            const bool allow_true_binary_metadata)
-        : header_assembler_(allow_true_binary_metadata) {
-      header_assembler_.SetStreamId(stream_id);
+                            const bool allow_true_binary_metadata) {
+      header_assembler_.InitializeStream(stream_id, allow_true_binary_metadata);
     }
     void operator()(Http2HeaderFrame frame) {
       auto status = header_assembler_.AppendHeaderFrame(frame);
@@ -323,8 +322,9 @@ YODEL_TEST(StreamDataQueueFuzzTest, EnqueueDequeueMultiParty) {
   HPackCompressor encoder;
   StreamDataQueue<ClientMetadataHandle> stream_data_queue(
       /*is_client=*/true,
-      /*queue_size=*/queue_size, /*allow_true_binary_metadata=*/true);
-  stream_data_queue.SetStreamId(stream_id);
+      /*queue_size=*/queue_size);
+  stream_data_queue.SetStreamId(stream_id,
+                                /*allow_true_binary_metadata_peer=*/true);
   std::vector<MessageHandle> messages_to_be_sent = TestMessages(num_messages);
   std::vector<MessageHandle> messages_copy = TestMessages(num_messages);
   std::vector<MessageHandle> dequeued_messages;

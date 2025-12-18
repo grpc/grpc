@@ -228,6 +228,7 @@ grpc_cc_test(
     ],
     external_deps = [
         "absl/log:check",
+        "absl/memory",
         "gtest",
     ],
     tags = [
@@ -240,6 +241,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//src/core:grpc_check",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_cc_grpc",
@@ -447,6 +449,7 @@ grpc_cc_test(
         "//src/core:slice",
         "//src/core:wait_for_single_owner",
         "//src/proto/grpc/channelz:channelz_proto",
+        "//src/proto/grpc/channelz:channelz_proto_cc_proto",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//test/core/event_engine:event_engine_test_utils",
@@ -935,7 +938,9 @@ grpc_cc_test(
         "//:grpc++",
         "//:grpc++_reflection",
         "//src/proto/grpc/reflection/v1:reflection_proto",
+        "//src/proto/grpc/reflection/v1:reflection_proto_cc_proto",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
+        "//src/proto/grpc/reflection/v1alpha:reflection_proto_cc_proto",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_cc_grpc",
@@ -976,6 +981,8 @@ grpc_cc_test(
     ],
     external_deps = [
         "absl/log:check",
+        "absl/log",
+        "absl/memory",
         "gtest",
     ],
     tags = [
@@ -988,6 +995,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//src/core:grpc_check",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_cc_grpc",
@@ -1050,6 +1058,7 @@ grpc_cc_test(
     name = "server_load_reporting_end2end_test",
     srcs = ["server_load_reporting_end2end_test.cc"],
     external_deps = [
+        "absl/log",
         "gtest",
     ],
     tags = [
@@ -1060,8 +1069,15 @@ grpc_cc_test(
         "no_windows",
     ],
     deps = [
+        "//:config_vars",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
         "//:grpcpp_server_load_reporting",
+        "//src/core:client_channel_backup_poller",
+        "//src/proto/grpc/lb/v1:load_reporter_cc_grpc",
         "//src/proto/grpc/testing:echo_cc_grpc",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
 )
@@ -1202,6 +1218,7 @@ grpc_cc_test(
     srcs = ["message_allocator_end2end_test.cc"],
     external_deps = [
         "absl/log:check",
+        "absl/log",
         "gtest",
     ],
     tags = [
@@ -1214,11 +1231,14 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//:iomgr",
+        "//src/core:grpc_check",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//src/proto/grpc/testing:simple_messages_cc_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
+        "@com_google_protobuf//:protobuf_headers",
     ],
 )
 

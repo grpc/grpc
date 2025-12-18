@@ -40,6 +40,7 @@
 #include "absl/functional/function_ref.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -103,6 +104,8 @@ class GRPC_MUST_USE_RESULT FlowControlAction {
            preferred_rx_crypto_frame_size_update_ ==
                Urgency::UPDATE_IMMEDIATELY;
   }
+
+  std::string ImmediateUpdateReasons() const;
 
   // Returns the value of SETTINGS_INITIAL_WINDOW_SIZE that we will send to the
   // peer.
@@ -510,8 +513,16 @@ class StreamFlowControl final {
     // for application to read. Call this when a complete message is assembled
     // but not yet pulled by the application. This helps flow control decide
     // whether to send a WINDOW_UPDATE to the peer.
-    // TODO(tjagtap) [PH2][P2] Plumb with PH2 flow control.
+    // TODO(tjagtap) [PH2][P1] Plumb with PH2 flow control.
     void SetPendingSize(int64_t pending_size);
+
+    // This is a hack in place till SetPendingSize is fully plumbed. This hack
+    // function just pretends that the application needs more bytes. Since we
+    // dont actually know how many bytes the application needs, we just want to
+    // refill the used up tokens. The only way to refill used up tokens is to
+    // call this function for each DATA frame.
+    // TODO(tjagtap) [PH2][P1] Remove hack after SetPendingSize is plumbed.
+    void HackIncrementPendingSize(int64_t pending_size);
 
    private:
     TransportFlowControl::IncomingUpdateContext tfc_upd_;
