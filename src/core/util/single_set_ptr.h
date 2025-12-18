@@ -20,8 +20,8 @@
 #include <atomic>
 #include <memory>
 
-#include "absl/log/check.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/log/check.h"
 
 namespace grpc_core {
 
@@ -60,6 +60,8 @@ class SingleSetPtr {
   T* Set(std::unique_ptr<T, Deleter> ptr) { return Set(ptr.release()); }
 
   // Clear the pointer.
+  // Caller must ensure that no other thread is concurrently trying to set the
+  // pointer, or read the pointer.
   void Reset() { Delete(p_.exchange(nullptr, std::memory_order_acq_rel)); }
 
   bool is_set() const { return p_.load(std::memory_order_relaxed) != nullptr; }

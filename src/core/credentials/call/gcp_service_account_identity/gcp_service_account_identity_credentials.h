@@ -40,20 +40,13 @@ namespace grpc_core {
 
 // A base class for JWT token fetching credentials.
 // Subclasses must implement StartHttpRequest().
-class JwtTokenFetcherCallCredentials : public TokenFetcherCredentials {
+class JwtTokenFetcherCallCredentials : public HttpTokenFetcherCredentials {
  public:
   OrphanablePtr<FetchRequest> FetchToken(
       Timestamp deadline,
       absl::AnyInvocable<
           void(absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
           on_done) final;
-
- private:
-  class HttpFetchRequest;
-
-  virtual OrphanablePtr<HttpRequest> StartHttpRequest(
-      grpc_polling_entity* pollent, Timestamp deadline,
-      grpc_http_response* response, grpc_closure* on_complete) = 0;
 };
 
 // GCP service account identity call credentials.

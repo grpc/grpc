@@ -14,9 +14,9 @@
 
 #include "src/core/lib/promise/switch.h"
 
-#include "absl/strings/str_cat.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/promise/poll.h"
+#include "gtest/gtest.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 

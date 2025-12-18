@@ -27,10 +27,6 @@
 #include <variant>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/strip.h"
 #include "envoy/config/core/v3/address.pb.h"
 #include "envoy/config/core/v3/base.pb.h"
 #include "envoy/config/core/v3/extension.pb.h"
@@ -49,7 +45,6 @@
 #include "envoy/type/matcher/v3/string.pb.h"
 #include "envoy/type/v3/percent.pb.h"
 #include "envoy/type/v3/range.pb.h"
-#include "gtest/gtest.h"
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 #include "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h"
 #include "src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h"
@@ -60,6 +55,7 @@
 #include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
@@ -71,6 +67,10 @@
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
 #include "xds/type/v3/typed_struct.pb.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/strip.h"
 
 // IWYU pragma: no_include <google/protobuf/message.h>
 
@@ -193,7 +193,7 @@ class XdsRouterFilterTest : public XdsHttpFilterTest {
   XdsRouterFilterTest() {
     XdsExtension extension = MakeXdsExtension(Router());
     filter_ = GetFilter(extension.type);
-    CHECK_NE(filter_, nullptr);
+    GRPC_CHECK_NE(filter_, nullptr);
   }
 
   const XdsHttpFilterImpl* filter_;
@@ -277,7 +277,7 @@ class XdsFaultInjectionFilterTest : public XdsHttpFilterTest {
   XdsFaultInjectionFilterTest() {
     XdsExtension extension = MakeXdsExtension(HTTPFault());
     filter_ = GetFilter(extension.type);
-    CHECK_NE(filter_, nullptr);
+    GRPC_CHECK_NE(filter_, nullptr);
   }
 
   const XdsHttpFilterImpl* filter_;
@@ -491,7 +491,7 @@ class XdsRbacFilterTest : public XdsHttpFilterTest {
   XdsRbacFilterTest() {
     XdsExtension extension = MakeXdsExtension(RBAC());
     filter_ = GetFilter(extension.type);
-    CHECK_NE(filter_, nullptr);
+    GRPC_CHECK_NE(filter_, nullptr);
   }
 
   const XdsHttpFilterImpl* filter_;
@@ -1127,7 +1127,7 @@ class XdsStatefulSessionFilterTest : public XdsHttpFilterTest {
     registry_ = XdsHttpFilterRegistry();
     XdsExtension extension = MakeXdsExtension(StatefulSession());
     filter_ = GetFilter(extension.type);
-    CHECK_NE(filter_, nullptr);
+    GRPC_CHECK_NE(filter_, nullptr);
   }
 
   const XdsHttpFilterImpl* filter_;
@@ -1484,7 +1484,7 @@ class XdsGcpAuthnFilterTest : public XdsHttpFilterTest {
   XdsGcpAuthnFilterTest() {
     XdsExtension extension = MakeXdsExtension(GcpAuthnFilterConfig());
     filter_ = GetFilter(extension.type);
-    CHECK_NE(filter_, nullptr) << extension.type;
+    GRPC_CHECK_NE(filter_, nullptr) << extension.type;
   }
 
   const XdsHttpFilterImpl* filter_;

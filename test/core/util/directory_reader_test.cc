@@ -19,10 +19,10 @@
 #include <string>
 #include <vector>
 
-#include "absl/strings/string_view.h"
+#include "test/core/test_util/test_config.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "test/core/test_util/test_config.h"
+#include "absl/strings/string_view.h"
 
 static constexpr absl::string_view kCrlDirectory =
     "test/core/tsi/test_creds/crl_data/crls/";

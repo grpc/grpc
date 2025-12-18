@@ -27,12 +27,12 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "absl/strings/string_view.h"
-#include "absl/strings/strip.h"
 #include "opencensus/trace/span.h"
 #include "opencensus/trace/span_context.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/slice/slice.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 
 namespace grpc {
 

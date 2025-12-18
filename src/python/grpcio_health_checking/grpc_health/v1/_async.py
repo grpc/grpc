@@ -104,8 +104,7 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         """
         if self._gracefully_shutting_down:
             return
-        else:
-            await self._set(service, status)
+        await self._set(service, status)
 
     async def enter_graceful_shutdown(self) -> None:
         """Permanently sets the status of all services to NOT_SERVING.
@@ -116,9 +115,8 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         """
         if self._gracefully_shutting_down:
             return
-        else:
-            self._gracefully_shutting_down = True
-            for service in self._server_status:
-                await self._set(
-                    service, _health_pb2.HealthCheckResponse.NOT_SERVING
-                )
+        self._gracefully_shutting_down = True
+        for service in self._server_status:
+            await self._set(
+                service, _health_pb2.HealthCheckResponse.NOT_SERVING
+            )

@@ -21,10 +21,10 @@
 #include <memory>
 #include <string>
 
-#include "absl/log/check.h"
+#include "src/core/lib/iomgr/port.h"
+#include "src/core/util/grpc_check.h"
 #include "absl/log/log.h"
 #include "absl/status/statusor.h"
-#include "src/core/lib/iomgr/port.h"
 
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_EV
@@ -37,10 +37,6 @@
 
 #include <vector>
 
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
@@ -48,6 +44,10 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 
 // This test exercises IPv4, IPv6, and dualstack sockets in various ways.
 
@@ -122,13 +122,13 @@ void test_connect(const char* server_host, const char* client_host, int port,
   grpc_server_register_completion_queue(server, cq, nullptr);
   grpc_server_credentials* server_creds =
       grpc_insecure_server_credentials_create();
-  CHECK((got_port = grpc_server_add_http2_port(server, server_hostport.c_str(),
-                                               server_creds)) > 0);
+  GRPC_CHECK((got_port = grpc_server_add_http2_port(
+                  server, server_hostport.c_str(), server_creds)) > 0);
   grpc_server_credentials_release(server_creds);
   if (port == 0) {
     port = got_port;
   } else {
-    CHECK_EQ(port, got_port);
+    GRPC_CHECK_EQ(port, got_port);
   }
   grpc_server_start(server);
   grpc_core::CqVerifier cqv(cq);
@@ -172,7 +172,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
   c = grpc_channel_create_call(client, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
                                grpc_slice_from_static_string("/foo"), &host,
                                deadline, nullptr);
-  CHECK(c);
+  GRPC_CHECK(c);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -199,14 +199,14 @@ void test_connect(const char* server_host, const char* client_host, int port,
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
                                 grpc_core::CqVerifier::tag(1), nullptr);
-  CHECK_EQ(error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(error, GRPC_CALL_OK);
 
   if (expect_ok) {
     // Check for a successful request.
     error = grpc_server_request_call(server, &s, &call_details,
                                      &request_metadata_recv, cq, cq,
                                      grpc_core::CqVerifier::tag(101));
-    CHECK_EQ(error, GRPC_CALL_OK);
+    GRPC_CHECK_EQ(error, GRPC_CALL_OK);
     cqv.Expect(grpc_core::CqVerifier::tag(101), true);
     cqv.Verify();
 
@@ -229,7 +229,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
     op++;
     error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
                                   grpc_core::CqVerifier::tag(102), nullptr);
-    CHECK_EQ(error, GRPC_CALL_OK);
+    GRPC_CHECK_EQ(error, GRPC_CALL_OK);
 
     cqv.Expect(grpc_core::CqVerifier::tag(102), true);
     cqv.Expect(grpc_core::CqVerifier::tag(1), true);
@@ -239,11 +239,12 @@ void test_connect(const char* server_host, const char* client_host, int port,
     VLOG(2) << "got peer: '" << peer << "'";
     gpr_free(peer);
 
-    CHECK_EQ(status, GRPC_STATUS_UNIMPLEMENTED);
-    CHECK_EQ(grpc_slice_str_cmp(details, "xyz"), 0);
-    CHECK_EQ(grpc_slice_str_cmp(call_details.method, "/foo"), 0);
-    CHECK_EQ(grpc_slice_str_cmp(call_details.host, "foo.test.google.fr"), 0);
-    CHECK_EQ(was_cancelled, 0);
+    GRPC_CHECK_EQ(status, GRPC_STATUS_UNIMPLEMENTED);
+    GRPC_CHECK_EQ(grpc_slice_str_cmp(details, "xyz"), 0);
+    GRPC_CHECK_EQ(grpc_slice_str_cmp(call_details.method, "/foo"), 0);
+    GRPC_CHECK_EQ(grpc_slice_str_cmp(call_details.host, "foo.test.google.fr"),
+                  0);
+    GRPC_CHECK_EQ(was_cancelled, 0);
 
     grpc_call_unref(s);
   } else {
@@ -253,7 +254,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
 
     LOG(INFO) << "status: " << status
               << " (expected: " << GRPC_STATUS_UNAVAILABLE << ")";
-    CHECK_EQ(status, GRPC_STATUS_UNAVAILABLE);
+    GRPC_CHECK_EQ(status, GRPC_STATUS_UNAVAILABLE);
   }
 
   grpc_call_unref(c);

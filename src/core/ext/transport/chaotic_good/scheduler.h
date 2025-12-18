@@ -19,8 +19,9 @@
 #include <optional>
 #include <string>
 
-#include "absl/strings/string_view.h"
+#include "src/core/ext/transport/chaotic_good/send_rate.h"
 #include "src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core::chaotic_good {
 
@@ -45,8 +46,8 @@ class Scheduler {
   // start_time - if a byte were sent now, how many seconds would it take to
   // be received - includes kernel queue time, rtt, etc.
   // bytes_per_second - the currently observed data rate of the channel.
-  virtual void AddChannel(uint32_t id, bool ready, double start_time,
-                          double bytes_per_second) = 0;
+  virtual void AddChannel(uint32_t id, bool ready,
+                          const SendRate::DeliveryData& delivery_data) = 0;
 
   // Transition: Make a plan for the outstanding work.
   virtual void MakePlan(TcpZTraceCollector& ztrace_collector) = 0;

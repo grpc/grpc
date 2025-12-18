@@ -26,10 +26,6 @@
 #include <optional>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -48,7 +44,11 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/latent_see.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc_core {
 
@@ -131,7 +131,7 @@ MessageHandle ChannelCompression::CompressMessage(
       const size_t after_size = tmp.Length();
       const float savings_ratio = 1.0f - (static_cast<float>(after_size) /
                                           static_cast<float>(before_size));
-      CHECK(grpc_compression_algorithm_name(algorithm, &algo_name));
+      GRPC_CHECK(grpc_compression_algorithm_name(algorithm, &algo_name));
       LOG(INFO) << absl::StrFormat(
           "Compressed[%s] %" PRIuPTR " bytes vs. %" PRIuPTR
           " bytes (%.2f%% savings)",
@@ -145,7 +145,7 @@ MessageHandle ChannelCompression::CompressMessage(
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(compression)) {
       const char* algo_name;
-      CHECK(grpc_compression_algorithm_name(algorithm, &algo_name));
+      GRPC_CHECK(grpc_compression_algorithm_name(algorithm, &algo_name));
       LOG(INFO) << "Algorithm '" << algo_name
                 << "' enabled but decided not to compress. Input size: "
                 << payload->Length();

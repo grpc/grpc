@@ -20,14 +20,14 @@
 #include <tuple>
 #include <variant>
 
-#include "absl/log/check.h"
-#include "absl/meta/type_traits.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "src/core/lib/promise/detail/join_state.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/status_flag.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 
@@ -212,7 +212,7 @@ struct TryJoinTraits {
   template <typename R, typename T>
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static R EarlyReturn(
       const ValueOrFailure<T>& x) {
-    CHECK(!x.ok());
+    GRPC_CHECK(!x.ok());
     return FailureStatusCast<R>(Failure{});
   }
   template <typename... A>

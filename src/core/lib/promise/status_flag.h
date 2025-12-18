@@ -20,12 +20,12 @@
 #include <optional>
 #include <ostream>
 
-#include "absl/log/check.h"
+#include "src/core/lib/promise/detail/status.h"
+#include "src/core/util/grpc_check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-#include "src/core/lib/promise/detail/status.h"
 
 namespace grpc_core {
 
@@ -198,7 +198,7 @@ template <typename T>
 struct FailureStatusCastImpl<absl::StatusOr<T>, StatusFlag> {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::StatusOr<T> Cast(
       StatusFlag flag) {
-    DCHECK(!flag.ok());
+    GRPC_DCHECK(!flag.ok());
     return absl::CancelledError();
   }
 };
@@ -207,7 +207,7 @@ template <typename T>
 struct FailureStatusCastImpl<absl::StatusOr<T>, StatusFlag&> {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::StatusOr<T> Cast(
       StatusFlag flag) {
-    DCHECK(!flag.ok());
+    GRPC_DCHECK(!flag.ok());
     return absl::CancelledError();
   }
 };
@@ -216,7 +216,7 @@ template <typename T>
 struct FailureStatusCastImpl<absl::StatusOr<T>, const StatusFlag&> {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::StatusOr<T> Cast(
       StatusFlag flag) {
-    DCHECK(!flag.ok());
+    GRPC_DCHECK(!flag.ok());
     return absl::CancelledError();
   }
 };
@@ -230,7 +230,7 @@ class ValueOrFailure {
   // NOLINTNEXTLINE(google-explicit-constructor)
   ValueOrFailure(Failure) {}
   // NOLINTNEXTLINE(google-explicit-constructor)
-  ValueOrFailure(StatusFlag status) { CHECK(!status.ok()); }
+  ValueOrFailure(StatusFlag status) { GRPC_CHECK(!status.ok()); }
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static ValueOrFailure FromOptional(
       std::optional<T> value) {
@@ -356,7 +356,7 @@ template <typename T>
 struct StatusCastImpl<ValueOrFailure<T>, StatusFlag&> {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static ValueOrFailure<T> Cast(
       StatusFlag f) {
-    CHECK(!f.ok());
+    GRPC_CHECK(!f.ok());
     return ValueOrFailure<T>(Failure{});
   }
 };
@@ -365,7 +365,7 @@ template <typename T>
 struct StatusCastImpl<ValueOrFailure<T>, StatusFlag> {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static ValueOrFailure<T> Cast(
       StatusFlag f) {
-    CHECK(!f.ok());
+    GRPC_CHECK(!f.ok());
     return ValueOrFailure<T>(Failure{});
   }
 };

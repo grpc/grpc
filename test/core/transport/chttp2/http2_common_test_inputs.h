@@ -24,9 +24,9 @@
 #include <memory>
 #include <utility>
 
-#include "absl/strings/string_view.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -139,6 +139,23 @@ inline void GetExpectedHeaderAndContinuationFrames(
                                                           std::move(payload)});
     }
   }
+}
+
+inline Http2HeaderFrame GenerateHeaderFrame(absl::string_view str,
+                                            const uint32_t stream_id,
+                                            const bool end_headers,
+                                            const bool end_stream) {
+  SliceBuffer buffer;
+  buffer.Append(Slice::FromCopiedString(str));
+  return Http2HeaderFrame{stream_id, end_headers, end_stream,
+                          std::move(buffer)};
+}
+
+inline Http2ContinuationFrame GenerateContinuationFrame(
+    absl::string_view str, const uint32_t stream_id, const bool end_headers) {
+  SliceBuffer buffer;
+  buffer.Append(Slice::FromCopiedString(str));
+  return Http2ContinuationFrame{stream_id, end_headers, std::move(buffer)};
 }
 
 }  // namespace testing

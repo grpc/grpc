@@ -17,8 +17,10 @@
 
 #include <memory>
 
-#include "absl/strings/string_view.h"
+#include "src/core/telemetry/instrument.h"
 #include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_event_engine::experimental {
 
@@ -33,6 +35,11 @@ class TcpTraceExtension {
   }
   virtual void SetTcpTracer(
       std::shared_ptr<grpc_core::TcpConnectionTracer> tracer) = 0;
+
+  // Enable TCP telemetry collection using the Instrumentation API.
+  virtual void EnableTcpTelemetry(
+      grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope,
+      bool is_control_endpoint) = 0;
 };
 
 }  // namespace grpc_event_engine::experimental

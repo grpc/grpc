@@ -20,15 +20,60 @@
 #include <algorithm>
 #include <string>
 
-#include "absl/base/no_destructor.h"
-#include "absl/container/flat_hash_set.h"
+#include "src/core/lib/transport/timeout_encoding.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-#include "src/core/lib/transport/timeout_encoding.h"
 
 namespace grpc_core {
+
+bool IsMetadataKeyAllowedInDebugOutput(absl::string_view key) {
+  // We have intentionally not allowed for any way to add to the allow list at
+  // run time, (using a flag or some other setting) because such workarounds
+  // may lead to security issues.
+  // go/keep-sorted start
+  if (key == ContentTypeMetadata::key()) return true;
+  if (key == EndpointLoadMetricsBinMetadata::key()) return true;
+  if (key == GrpcAcceptEncodingMetadata::key()) return true;
+  if (key == GrpcEncodingMetadata::key()) return true;
+  if (key == GrpcInternalEncodingRequest::key()) return true;
+  if (key == GrpcLbClientStatsMetadata::key()) return true;
+  if (key == GrpcMessageMetadata::key()) return true;
+  if (key == GrpcPreviousRpcAttemptsMetadata::key()) return true;
+  if (key == GrpcRetryPushbackMsMetadata::key()) return true;
+  if (key == GrpcServerStatsBinMetadata::key()) return true;
+  if (key == GrpcStatusMetadata::key()) return true;
+  if (key == GrpcTagsBinMetadata::key()) return true;
+  if (key == GrpcTimeoutMetadata::key()) return true;
+  if (key == GrpcTraceBinMetadata::key()) return true;
+  if (key == HostMetadata::key()) return true;
+  if (key == HttpAuthorityMetadata::key()) return true;
+  if (key == HttpMethodMetadata::key()) return true;
+  if (key == HttpPathMetadata::key()) return true;
+  if (key == HttpSchemeMetadata::key()) return true;
+  if (key == HttpStatusMetadata::key()) return true;
+  if (key == LbCostBinMetadata::key()) return true;
+  if (key == LbTokenMetadata::key()) return true;
+  if (key == TeMetadata::key()) return true;
+  if (key == UserAgentMetadata::key()) return true;
+  if (key == W3CTraceParentMetadata::key()) return true;
+  if (key == XEnvoyPeerMetadata::key()) return true;
+  // go/keep-sorted end
+  // go/keep-sorted start
+  if (key == GrpcCallWasCancelled::DebugKey()) return true;
+  if (key == GrpcRegisteredMethod::DebugKey()) return true;
+  if (key == GrpcStatusContext::DebugKey()) return true;
+  if (key == GrpcStatusFromWire::DebugKey()) return true;
+  if (key == GrpcStreamNetworkState::DebugKey()) return true;
+  if (key == GrpcTarPit::DebugKey()) return true;
+  if (key == GrpcTrailersOnly::DebugKey()) return true;
+  if (key == PeerString::DebugKey()) return true;
+  if (key == WaitForReady::DebugKey()) return true;
+  // go/keep-sorted end
+  return false;
+}
+
 namespace metadata_detail {
 
 void DebugStringBuilder::Add(absl::string_view key, absl::string_view value) {
@@ -38,7 +83,7 @@ void DebugStringBuilder::Add(absl::string_view key, absl::string_view value) {
 
 void DebugStringBuilder::AddAfterRedaction(absl::string_view key,
                                            absl::string_view value) {
-  if (IsAllowListed(key)) {
+  if (IsMetadataKeyAllowedInDebugOutput(key)) {
     Add(key, value);
   } else {
     // If the type of metadata is not in the allow list, we want to prevent it
@@ -49,57 +94,6 @@ void DebugStringBuilder::AddAfterRedaction(absl::string_view key,
     Add(key,
         absl::StrCat(value.size(), " bytes redacted for security reasons."));
   }
-}
-
-bool DebugStringBuilder::IsAllowListed(const absl::string_view key) const {
-  // We have intentionally not allowed for any way to add to the allow list at
-  // run time, (using a flag or some other setting) because such workarounds
-  // may lead to security issues.
-  static const absl::NoDestructor<absl::flat_hash_set<std::string>> allow_list(
-      [] {
-        absl::flat_hash_set<std::string> allow_list;
-        // go/keep-sorted start
-        allow_list.insert(std::string(ContentTypeMetadata::key()));
-        allow_list.insert(std::string(EndpointLoadMetricsBinMetadata::key()));
-        allow_list.insert(std::string(GrpcAcceptEncodingMetadata::key()));
-        allow_list.insert(std::string(GrpcEncodingMetadata::key()));
-        allow_list.insert(std::string(GrpcInternalEncodingRequest::key()));
-        allow_list.insert(std::string(GrpcLbClientStatsMetadata::key()));
-        allow_list.insert(std::string(GrpcMessageMetadata::key()));
-        allow_list.insert(std::string(GrpcPreviousRpcAttemptsMetadata::key()));
-        allow_list.insert(std::string(GrpcRetryPushbackMsMetadata::key()));
-        allow_list.insert(std::string(GrpcServerStatsBinMetadata::key()));
-        allow_list.insert(std::string(GrpcStatusMetadata::key()));
-        allow_list.insert(std::string(GrpcTagsBinMetadata::key()));
-        allow_list.insert(std::string(GrpcTimeoutMetadata::key()));
-        allow_list.insert(std::string(GrpcTraceBinMetadata::key()));
-        allow_list.insert(std::string(HostMetadata::key()));
-        allow_list.insert(std::string(HttpAuthorityMetadata::key()));
-        allow_list.insert(std::string(HttpMethodMetadata::key()));
-        allow_list.insert(std::string(HttpPathMetadata::key()));
-        allow_list.insert(std::string(HttpSchemeMetadata::key()));
-        allow_list.insert(std::string(HttpStatusMetadata::key()));
-        allow_list.insert(std::string(LbCostBinMetadata::key()));
-        allow_list.insert(std::string(LbTokenMetadata::key()));
-        allow_list.insert(std::string(TeMetadata::key()));
-        allow_list.insert(std::string(UserAgentMetadata::key()));
-        allow_list.insert(std::string(W3CTraceParentMetadata::key()));
-        allow_list.insert(std::string(XEnvoyPeerMetadata::key()));
-        // go/keep-sorted end
-        // go/keep-sorted start
-        allow_list.insert(std::string(GrpcCallWasCancelled::DebugKey()));
-        allow_list.insert(std::string(GrpcRegisteredMethod::DebugKey()));
-        allow_list.insert(std::string(GrpcStatusContext::DebugKey()));
-        allow_list.insert(std::string(GrpcStatusFromWire::DebugKey()));
-        allow_list.insert(std::string(GrpcStreamNetworkState::DebugKey()));
-        allow_list.insert(std::string(GrpcTarPit::DebugKey()));
-        allow_list.insert(std::string(GrpcTrailersOnly::DebugKey()));
-        allow_list.insert(std::string(PeerString::DebugKey()));
-        allow_list.insert(std::string(WaitForReady::DebugKey()));
-        // go/keep-sorted end
-        return allow_list;
-      }());
-  return allow_list->contains(key);
 }
 
 void UnknownMap::Append(absl::string_view key, Slice value) {

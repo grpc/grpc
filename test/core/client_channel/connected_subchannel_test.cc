@@ -17,14 +17,14 @@
 #include <atomic>
 #include <memory>
 
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
-#include "gtest/gtest.h"
 #include "src/core/client_channel/client_channel.h"
 #include "src/core/client_channel/local_subchannel_pool.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "test/core/call/yodel/yodel_test.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -106,6 +106,13 @@ class ConnectedSubchannelTest : public YodelTest {
       }
       ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
     }
+    void StartWatch(RefCountedPtr<StateWatcher> watcher) override {
+      GRPC_CHECK(watcher_ == nullptr);
+      watcher_ = std::move(watcher);
+    }
+    void StopWatch(RefCountedPtr<StateWatcher> watcher) override {
+      if (watcher_ == watcher) watcher_.reset();
+    }
 
     void StartCall(CallHandler call_handler) override {
       test_->handlers_.push(std::move(call_handler));
@@ -118,6 +125,7 @@ class ConnectedSubchannelTest : public YodelTest {
    private:
     ConnectedSubchannelTest* const test_;
     ConnectivityStateTracker state_tracker_{"test-transport"};
+    RefCountedPtr<StateWatcher> watcher_;
   };
 
   class TestConnector final : public SubchannelConnector {

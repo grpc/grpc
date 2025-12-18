@@ -15,8 +15,10 @@
 #ifndef GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_MEMORY_QUOTA_H
 #define GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_MEMORY_QUOTA_H
 
+#include <grpc/event_engine/internal/memory_allocator_impl.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/memory_request.h>
+#include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
 #include <stdint.h>
 
@@ -30,23 +32,25 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/container/flat_hash_set.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/string_view.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/periodic_update.h"
 #include "src/core/lib/resource_quota/telemetry.h"
+#include "src/core/telemetry/instrument.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/log/log.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -135,7 +139,7 @@ class ReclaimerQueue {
     explicit Handle(F reclaimer, std::shared_ptr<State> state)
         : sweep_(new SweepFn<F>(std::move(reclaimer), std::move(state))) {}
     ~Handle() override {
-      DCHECK_EQ(sweep_.load(std::memory_order_relaxed), nullptr);
+      GRPC_DCHECK_EQ(sweep_.load(std::memory_order_relaxed), nullptr);
     }
 
     Handle(const Handle&) = delete;
@@ -274,6 +278,11 @@ class PressureTracker {
   std::atomic<double> report_{0.0};
   PeriodicUpdate update_{Duration::Seconds(1)};
   PressureController controller_{100, 3};
+
+  const double target_memory_pressure_ =
+      ConfigVars::Get().ExperimentalTargetMemoryPressure();
+  const double memory_pressure_threshold_ =
+      ConfigVars::Get().ExperimentalMemoryPressureThreshold();
 };
 }  // namespace memory_quota_detail
 
@@ -450,7 +459,7 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   template <typename F>
   void PostReclaimer(ReclamationPass pass, F fn) {
     MutexLock lock(&reclaimer_mu_);
-    CHECK(!shutdown_);
+    GRPC_CHECK(!shutdown_);
     InsertReclaimer(static_cast<size_t>(pass), std::move(fn));
   }
 
@@ -551,12 +560,19 @@ class MemoryOwner final : public MemoryAllocator {
   // Is this object valid (ie has not been moved out of or reset)
   bool is_valid() const { return impl() != nullptr; }
 
-  static double memory_pressure_high_threshold() { return 0.99; }
+  static double memory_pressure_high_threshold_reject_new_streams() {
+    return 0.99;
+  }
 
-  // Return true if the controlled memory pressure is high.
-  bool IsMemoryPressureHigh() const {
+  static double memory_pressure_high_threshold_reject_new_connections() {
+    return 0.99;
+  }
+
+  // Return true if the controlled memory pressure is high enough to reject new
+  // streams.
+  bool RejectNewStreamsUnderHighMemoryPressure() const {
     return GetPressureInfo().pressure_control_value >
-           memory_pressure_high_threshold();
+           memory_pressure_high_threshold_reject_new_streams();
   }
 
   InstrumentStorage<ResourceQuotaDomain>* telemetry_storage() const {
@@ -580,7 +596,8 @@ class MemoryQuota final
   explicit MemoryQuota(RefCountedPtr<channelz::ResourceQuotaNode> channelz_node)
       : memory_quota_(std::make_shared<BasicMemoryQuota>(
             std::move(channelz_node),
-            ResourceQuotaDomain::GetStorage(channelz_node->name()))) {
+            ResourceQuotaDomain::GetStorage(GlobalCollectionScope(),
+                                            channelz_node->name()))) {
     memory_quota_->Start();
   }
   ~MemoryQuota() override {
@@ -598,9 +615,11 @@ class MemoryQuota final
   // Resize the quota to new_size.
   void SetSize(size_t new_size) { memory_quota_->SetSize(new_size); }
 
-  bool IsMemoryPressureHigh() const {
+  // Return true if the controlled memory pressure is high enough to reject new
+  // connections.
+  bool RejectNewConnectionsUnderHighMemoryPressure() const {
     return memory_quota_->GetPressureInfo().pressure_control_value >
-           MemoryOwner::memory_pressure_high_threshold();
+           MemoryOwner::memory_pressure_high_threshold_reject_new_connections();
   }
 
  private:

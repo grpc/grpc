@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/cpp/common")
+grpc_package(
+    name = "test/cpp/common",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "alarm_test",
@@ -51,6 +57,7 @@ grpc_cc_test(
         "//:iomgr_timer",
         "//src/core:closure",
         "//src/core:error",
+        "//src/core:grpc_check",
         "//src/core:time",
         "//test/core/test_util:grpc_test_util",
     ],

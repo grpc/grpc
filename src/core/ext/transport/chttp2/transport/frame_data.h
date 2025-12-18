@@ -25,7 +25,6 @@
 #include <grpc/support/port_platform.h>
 #include <stdint.h>
 
-#include "absl/status/status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/lib/iomgr/error.h"
@@ -33,6 +32,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "absl/status/status.h"
 
 // start processing a new data frame
 absl::Status grpc_chttp2_data_parser_begin_frame(uint8_t flags,

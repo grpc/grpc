@@ -28,8 +28,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
 #include "src/core/call/call_filters.h"
 #include "src/core/call/interception_chain.h"
 #include "src/core/channelz/channelz.h"
@@ -39,7 +37,9 @@
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/unique_type_name.h"
+#include "absl/functional/any_invocable.h"
 
 /// This module provides a way for plugins (and the grpc core library itself)
 /// to register mutators for channel stacks.
@@ -248,19 +248,19 @@ class ChannelInit {
     // stack.
     FilterRegistration& ExcludeFromMinimalStack();
     FilterRegistration& SkipV3() {
-      CHECK_EQ(version_, Version::kAny);
+      GRPC_CHECK_EQ(version_, Version::kAny);
       version_ = Version::kV2;
       return *this;
     }
     FilterRegistration& SkipV2() {
-      CHECK_EQ(version_, Version::kAny);
+      GRPC_CHECK_EQ(version_, Version::kAny);
       version_ = Version::kV3;
       return *this;
     }
     // Request this filter be placed as high as possible in the stack (given
     // before/after constraints).
     FilterRegistration& FloatToTop() {
-      CHECK_EQ(ordering_, Ordering::kDefault);
+      GRPC_CHECK_EQ(ordering_, Ordering::kDefault);
       ordering_ = Ordering::kTop;
       return *this;
     }
@@ -270,14 +270,14 @@ class ChannelInit {
       if (!predicate) {
         return *this;
       }
-      CHECK_EQ(ordering_, Ordering::kDefault);
+      GRPC_CHECK_EQ(ordering_, Ordering::kDefault);
       ordering_ = Ordering::kTop;
       return *this;
     }
     // Request this filter be placed as low as possible in the stack (given
     // before/after constraints).
     FilterRegistration& SinkToBottom() {
-      CHECK_EQ(ordering_, Ordering::kDefault);
+      GRPC_CHECK_EQ(ordering_, Ordering::kDefault);
       ordering_ = Ordering::kBottom;
       return *this;
     }
@@ -315,7 +315,7 @@ class ChannelInit {
     FilterRegistration& RegisterFilter(
         grpc_channel_stack_type type, const grpc_channel_filter* filter,
         SourceLocation registration_source = {}) {
-      CHECK(filter != nullptr);
+      GRPC_CHECK(filter != nullptr);
       return RegisterFilter(type, NameFromChannelFilter(filter), filter,
                             nullptr, registration_source);
     }
@@ -324,7 +324,9 @@ class ChannelInit {
         grpc_channel_stack_type type, SourceLocation registration_source = {}) {
       return RegisterFilter(
           type, UniqueTypeNameFor<Filter>(), &Filter::kFilter,
-          [](InterceptionChainBuilder& builder) { builder.Add<Filter>(); },
+          [](InterceptionChainBuilder& builder) {
+            builder.Add<Filter>(nullptr);
+          },
           registration_source);
     }
 
@@ -350,7 +352,7 @@ class ChannelInit {
     void RegisterFusedFilter(grpc_channel_stack_type type,
                              const grpc_channel_filter* filter,
                              SourceLocation registration_source = {}) {
-      CHECK(filter != nullptr);
+      GRPC_CHECK(filter != nullptr);
       RegisterFusedFilter(type, NameFromChannelFilter(filter), filter, nullptr,
                           registration_source);
     }
@@ -373,7 +375,7 @@ class ChannelInit {
                                PostProcessorSlot slot,
                                PostProcessor post_processor) {
       auto& slot_value = post_processors_[type][static_cast<int>(slot)];
-      CHECK(slot_value == nullptr);
+      GRPC_CHECK(slot_value == nullptr);
       slot_value = std::move(post_processor);
     }
 

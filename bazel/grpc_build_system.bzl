@@ -33,6 +33,7 @@ load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl
 load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
 load("@com_google_protobuf//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
 load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_python//python:defs.bzl", "py_binary")
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("//bazel:copts.bzl", "GRPC_DEFAULT_COPTS")
 load("//bazel:experiments.bzl", "EXPERIMENTS", "EXPERIMENT_ENABLES", "EXPERIMENT_POLLERS")
@@ -63,8 +64,6 @@ def _get_external_deps(external_deps):
     for dep in external_deps:
         if dep.startswith("@"):
             ret.append(dep)
-        elif dep == "address_sorting":
-            ret.append("//third_party/address_sorting")
         elif dep == "xxhash":
             ret.append("//third_party/xxhash")
         elif dep == "cares":
@@ -80,8 +79,6 @@ def _get_external_deps(external_deps):
             ret.append(dep.replace("otel/", "@io_opentelemetry_cpp//"))
         elif dep.startswith("google_cloud_cpp"):
             ret.append(dep.replace("google_cloud_cpp", "@google_cloud_cpp//"))
-        elif dep == "libprotobuf_mutator":
-            ret.append("@com_google_libprotobuf_mutator//:libprotobuf_mutator")
         else:
             ret.append("//third_party:" + dep)
     return ret
@@ -266,7 +263,7 @@ def grpc_cc_grpc_library(
     cc_grpc_library(
         name = name,
         srcs = srcs,
-        deps = deps,
+        deps = deps + ["//:grpc++"],
         visibility = visibility,
         generate_mocks = generate_mocks,
         allow_deprecated = allow_deprecated,
@@ -609,7 +606,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             **test_args
         )
 
-def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], testonly = False, linkshared = False, linkopts = [], tags = [], features = [], visibility = None):
+def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], testonly = False, linkshared = False, linkopts = [], tags = [], target_compatible_with = [], features = [], visibility = None):
     """Generates a cc_binary for use in the gRPC repo.
 
     Args:
@@ -623,6 +620,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
       linkshared: Enables linkshared on the binary.
       linkopts: linkopts to supply to the cc_binary.
       tags: Tags to apply to the target.
+      target_compatible_with: Constraint values that must be present in the target platform
       features: features to be supplied to the cc_binary.
       visibility: The visibility of the target.
     """
@@ -639,6 +637,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
         copts = GRPC_DEFAULT_COPTS + copts,
         linkopts = if_not_windows(["-pthread"]) + linkopts,
         tags = tags,
+        target_compatible_with = target_compatible_with,
         features = features,
         visibility = visibility,
     )
@@ -721,7 +720,7 @@ def grpc_py_binary(
         testonly = False,
         python_version = "PY2",
         **kwargs):
-    native.py_binary(
+    py_binary(
         name = name,
         srcs = srcs,
         testonly = testonly,

@@ -19,6 +19,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/core/transport/chaotic_good",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "tests",
 )
 
@@ -92,6 +96,7 @@ grpc_fuzz_test(
     name = "tcp_frame_transport_test",
     srcs = ["tcp_frame_transport_test.cc"],
     external_deps = [
+        "gtest",
         "fuzztest",
         "fuzztest_main",
     ],
@@ -102,9 +107,10 @@ grpc_fuzz_test(
         "//src/core:chaotic_good_frame_transport",
         "//src/core:chaotic_good_tcp_frame_transport",
         "//src/core:inter_activity_latch",
+        "//src/core:postmortem",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
-        "//test/core/test_util:postmortem_emit",
+        "//test/core/test_util:postmortem",
         "@com_google_protobuf//:protobuf",
     ],
 )
@@ -125,6 +131,7 @@ grpc_fuzz_test(
         ":test_frame",
         "//:channel_create",
         "//src/core:chaotic_good_frame",
+        "//src/core:grpc_check",
         "//src/core:memory_quota",
         "//src/core:resource_quota",
     ],
@@ -239,6 +246,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//:grpc_public_hdrs",
+        "//:grpc_security_base",
         "//:parse_address",
         "//:server",
         "//:uri",
@@ -249,6 +257,9 @@ grpc_cc_test(
         "//src/core:default_event_engine",
         "//src/core:endpoint_transport",
         "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:experiments",
+        "//src/core:grpc_check",
+        "//src/core:grpc_fake_credentials",
         "//src/core:notification",
         "//src/core:resource_quota",
         "//src/core:time",

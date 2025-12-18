@@ -18,9 +18,10 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_KEEPALIVE_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_KEEPALIVE_H
 
-#include "absl/status/status.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -44,11 +45,8 @@ class KeepAliveInterface {
 class KeepaliveManager {
  public:
   KeepaliveManager(std::unique_ptr<KeepAliveInterface> keep_alive_interface,
-                   Duration keepalive_timeout, Duration keepalive_time);
-
-  // Spawns the keepalive loop on the given party. This MUST be called at most
-  // once during the lifetime of the keepalive manager.
-  void Spawn(Party* party);
+                   Duration keepalive_timeout, Duration keepalive_time,
+                   Party* party);
 
   // Needs to be called when any data is read from the endpoint.
   void GotData() {
@@ -69,6 +67,10 @@ class KeepaliveManager {
   }
 
  private:
+  // Spawns the keepalive loop on the given party. This MUST be called at most
+  // once during the lifetime of the keepalive manager.
+  void MaybeSpawnKeepaliveLoop(Party* party);
+
   // Returns a promise that sleeps for the keepalive_timeout_ and triggers the
   // keepalive timeout unless data is read within the keepalive timeout.
   auto WaitForKeepAliveTimeout();
@@ -104,7 +106,7 @@ class KeepaliveManager {
     };
   }
   auto SendPingAndWaitForAck() {
-    DCHECK_EQ(data_received_in_last_cycle_, false);
+    GRPC_DCHECK_EQ(data_received_in_last_cycle_, false);
     return keep_alive_interface_->SendPingAndWaitForAck();
   }
 
@@ -121,10 +123,12 @@ class KeepaliveManager {
   }
 
   std::unique_ptr<KeepAliveInterface> keep_alive_interface_;
-  // If the keepalive_timeout_ is set to infinity, then the timeout is dictated
-  // by the ping timeout. Otherwise, this field can be used to set a specific
-  // timeout for keepalive pings.
+  // Duration to wait before triggering a keepalive timeout. If the
+  // keepalive_timeout_ is set to infinity, then the timeout is dictated by the
+  // ping timeout. Otherwise, this field can be used to set a specific timeout
+  // for keepalive pings.
   Duration keepalive_timeout_;
+  // Duration between two consecutive keepalive pings.
   const Duration keepalive_time_;
   bool data_received_in_last_cycle_ = false;
   bool keep_alive_timeout_triggered_ = false;

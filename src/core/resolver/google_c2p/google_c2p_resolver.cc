@@ -25,12 +25,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/strings/strip.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/alts/check_gcp_environment.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -42,6 +36,7 @@
 #include "src/core/util/debug_location.h"
 #include "src/core/util/env.h"
 #include "src/core/util/gcp_metadata_query.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/orphanable.h"
@@ -51,6 +46,11 @@
 #include "src/core/util/work_serializer.h"
 #include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 
 namespace grpc_core {
 
@@ -124,7 +124,7 @@ GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
         CoreConfiguration::Get().resolver_registry().CreateResolver(
             absl::StrCat("dns:", name_to_resolve), args_, args.pollset_set,
             work_serializer_, std::move(args.result_handler));
-    CHECK(child_resolver_ != nullptr);
+    GRPC_CHECK(child_resolver_ != nullptr);
     return;
   }
   // Maybe override metadata server name for testing
@@ -142,7 +142,7 @@ GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
   child_resolver_ = CoreConfiguration::Get().resolver_registry().CreateResolver(
       xds_uri_, args_, args.pollset_set, work_serializer_,
       std::move(args.result_handler));
-  CHECK(child_resolver_ != nullptr);
+  GRPC_CHECK(child_resolver_ != nullptr);
 }
 
 void GoogleCloud2ProdResolver::StartLocked() {

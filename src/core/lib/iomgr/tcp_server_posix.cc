@@ -50,10 +50,6 @@
 
 #include <string>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/extensions/supports_fd.h"
@@ -75,7 +71,11 @@
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/iomgr/vsock.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/strerror.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 static std::atomic<int64_t> num_dropped_connections{0};
 static constexpr grpc_core::Duration kRetryAcceptWaitTime{
@@ -90,7 +90,13 @@ using ::grpc_event_engine::experimental::SliceBuffer;
 
 static void finish_shutdown(grpc_tcp_server* s) {
   gpr_mu_lock(&s->mu);
-  CHECK(s->shutdown);
+  GRPC_CHECK(s->shutdown);
+  if (grpc_core::ExecCtx::Get() == nullptr) {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &s->shutdown_ending);
+  } else {
+    grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &s->shutdown_ending);
+  }
   gpr_mu_unlock(&s->mu);
   if (s->shutdown_complete != nullptr) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, s->shutdown_complete,
@@ -238,7 +244,7 @@ static grpc_error_handle CreateEventEngineListener(
     listener = engine->CreateListener(
         std::move(accept_cb),
         [s, ee = keeper, shutdown_complete](absl::Status status) {
-          CHECK_EQ(gpr_atm_no_barrier_load(&s->refs.count), 0);
+          GRPC_CHECK_EQ(gpr_atm_no_barrier_load(&s->refs.count), 0);
           grpc_event_engine::experimental::RunEventEngineClosure(
               shutdown_complete, absl_status_to_grpc_error(status));
           finish_shutdown(s);
@@ -279,6 +285,8 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   s->shutdown = false;
   s->shutdown_starting.head = nullptr;
   s->shutdown_starting.tail = nullptr;
+  s->shutdown_ending.head = nullptr;
+  s->shutdown_ending.tail = nullptr;
   if (!grpc_event_engine::experimental::UseEventEngineListener()) {
     s->shutdown_complete = shutdown_complete;
   } else {
@@ -291,8 +299,8 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   s->nports = 0;
   s->options = ::TcpOptionsFromEndpointConfig(config);
   s->fd_handler = nullptr;
-  CHECK(s->options.resource_quota != nullptr);
-  CHECK(s->on_accept_cb);
+  GRPC_CHECK(s->options.resource_quota != nullptr);
+  GRPC_CHECK(s->on_accept_cb);
   s->memory_quota = s->options.resource_quota->memory_quota();
   s->pre_allocated_fd = -1;
   gpr_atm_no_barrier_store(&s->next_pollset_to_assign, 0);
@@ -314,7 +322,7 @@ static void destroyed_port(void* server, grpc_error_handle /*error*/) {
     gpr_mu_unlock(&s->mu);
     finish_shutdown(s);
   } else {
-    CHECK(s->destroyed_ports < s->nports);
+    GRPC_CHECK(s->destroyed_ports < s->nports);
     gpr_mu_unlock(&s->mu);
   }
 }
@@ -326,7 +334,7 @@ static void deactivated_all_ports(grpc_tcp_server* s) {
   // delete ALL the things
   gpr_mu_lock(&s->mu);
 
-  CHECK(s->shutdown);
+  GRPC_CHECK(s->shutdown);
 
   if (s->head) {
     grpc_tcp_listener* sp;
@@ -355,7 +363,7 @@ static void deactivated_all_ports(grpc_tcp_server* s) {
 
 static void tcp_server_destroy(grpc_tcp_server* s) {
   gpr_mu_lock(&s->mu);
-  CHECK(!s->shutdown);
+  GRPC_CHECK(!s->shutdown);
   s->shutdown = true;
   // shutdown all fd's
   if (s->active_ports) {
@@ -421,7 +429,8 @@ static void on_read(void* arg, grpc_error_handle err) {
       goto error;
     }
 
-    if (sp->server->memory_quota->IsMemoryPressureHigh()) {
+    if (sp->server->memory_quota
+            ->RejectNewConnectionsUnderHighMemoryPressure()) {
       int64_t dropped_connections_count =
           num_dropped_connections.fetch_add(1, std::memory_order_relaxed) + 1;
       if (dropped_connections_count % 1000 == 1) {
@@ -558,8 +567,8 @@ static grpc_error_handle add_wildcard_addrs_to_server(grpc_tcp_server* s,
   } else {
     grpc_error_handle root_err =
         GRPC_ERROR_CREATE("Failed to add any wildcard listeners");
-    CHECK(!v6_err.ok());
-    CHECK(!v4_err.ok());
+    GRPC_CHECK(!v6_err.ok());
+    GRPC_CHECK(!v4_err.ok());
     root_err = grpc_error_add_child(root_err, v6_err);
     root_err = grpc_error_add_child(root_err, v4_err);
     return root_err;
@@ -610,7 +619,7 @@ static grpc_error_handle clone_port(grpc_tcp_listener* listener,
     sp->port = port;
     sp->port_index = listener->port_index;
     sp->fd_index = listener->fd_index + count - i;
-    CHECK(sp->emfd);
+    GRPC_CHECK(sp->emfd);
     grpc_tcp_server_listener_initialize_retry_timer(sp);
     while (listener->server->tail->next != nullptr) {
       listener->server->tail = listener->server->tail->next;
@@ -642,7 +651,7 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
             if (!listen_fd.ok()) {
               return;
             }
-            DCHECK_GT(*listen_fd, 0);
+            GRPC_DCHECK_GT(*listen_fd, 0);
             s->listen_fd_to_index_map.insert_or_assign(
                 *listen_fd, std::tuple(s->n_bind_ports, fd_index++));
           });
@@ -657,7 +666,7 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
     gpr_mu_unlock(&s->mu);
     return port.status();
   }
-  CHECK(addr->len <= GRPC_MAX_SOCKADDR_SIZE);
+  GRPC_CHECK(addr->len <= GRPC_MAX_SOCKADDR_SIZE);
   grpc_tcp_listener* sp;
   grpc_resolved_address sockname_temp;
   grpc_resolved_address addr6_v4mapped;
@@ -785,12 +794,12 @@ static void tcp_server_start(grpc_tcp_server* s,
   size_t i;
   grpc_tcp_listener* sp;
   gpr_mu_lock(&s->mu);
-  CHECK(s->on_accept_cb);
-  CHECK_EQ(s->active_ports, 0u);
+  GRPC_CHECK(s->on_accept_cb);
+  GRPC_CHECK_EQ(s->active_ports, 0u);
   s->pollsets = pollsets;
   if (grpc_event_engine::experimental::UseEventEngineListener()) {
-    CHECK(!s->shutdown_listeners);
-    CHECK(GRPC_LOG_IF_ERROR("listener_start", s->ee_listener->Start()));
+    GRPC_CHECK(!s->shutdown_listeners);
+    GRPC_CHECK(GRPC_LOG_IF_ERROR("listener_start", s->ee_listener->Start()));
     gpr_mu_unlock(&s->mu);
     return;
   }
@@ -798,7 +807,7 @@ static void tcp_server_start(grpc_tcp_server* s,
   while (sp != nullptr) {
     if (s->so_reuseport && !grpc_is_unix_socket(&sp->addr) &&
         !grpc_is_vsock(&sp->addr) && pollsets->size() > 1) {
-      CHECK(GRPC_LOG_IF_ERROR(
+      GRPC_CHECK(GRPC_LOG_IF_ERROR(
           "clone_port", clone_port(sp, (unsigned)(pollsets->size() - 1))));
       for (i = 0; i < pollsets->size(); i++) {
         grpc_pollset_add_fd((*pollsets)[i], sp->emfd);
@@ -835,11 +844,24 @@ static void tcp_server_shutdown_starting_add(grpc_tcp_server* s,
   gpr_mu_unlock(&s->mu);
 }
 
+static void tcp_server_shutdown_ending_add(grpc_tcp_server* s,
+                                           grpc_closure* shutdown_ending) {
+  gpr_mu_lock(&s->mu);
+  grpc_closure_list_append(&s->shutdown_ending, shutdown_ending,
+                           absl::OkStatus());
+  gpr_mu_unlock(&s->mu);
+}
+
 static void tcp_server_unref(grpc_tcp_server* s) {
   if (gpr_unref(&s->refs)) {
     grpc_tcp_server_shutdown_listeners(s);
     gpr_mu_lock(&s->mu);
-    grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &s->shutdown_starting);
+    if (grpc_core::ExecCtx::Get() == nullptr) {
+      grpc_core::ExecCtx exec_ctx;
+      grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &s->shutdown_starting);
+    } else {
+      grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &s->shutdown_starting);
+    }
     gpr_mu_unlock(&s->mu);
     tcp_server_destroy(s);
   }
@@ -890,16 +912,16 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
           grpc_event_engine::experimental::QueryExtension<
               grpc_event_engine::experimental::ListenerSupportsFdExtension>(
               s_->ee_listener.get());
-      CHECK_NE(listener_supports_fd, nullptr);
+      GRPC_CHECK_NE(listener_supports_fd, nullptr);
       grpc_event_engine::experimental::SliceBuffer pending_data;
       if (buf != nullptr) {
         pending_data =
             grpc_event_engine::experimental::SliceBuffer::TakeCSliceBuffer(
                 buf->data.raw.slice_buffer);
       }
-      CHECK(GRPC_LOG_IF_ERROR("listener_handle_external_connection",
-                              listener_supports_fd->HandleExternalConnection(
-                                  listener_fd, fd, &pending_data)));
+      GRPC_LOG_IF_ERROR("listener_handle_external_connection",
+                        listener_supports_fd->HandleExternalConnection(
+                            listener_fd, fd, &pending_data));
       return;
     }
     grpc_pollset* read_notifier_pollset;
@@ -968,6 +990,7 @@ grpc_tcp_server_vtable grpc_posix_tcp_server_vtable = {
     tcp_server_port_fd,
     tcp_server_ref,
     tcp_server_shutdown_starting_add,
+    tcp_server_shutdown_ending_add,
     tcp_server_unref,
     tcp_server_shutdown_listeners,
     tcp_server_pre_allocated_fd,

@@ -37,9 +37,9 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/strings/str_format.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc {
 
@@ -123,7 +123,7 @@ void ClientContext::AddMetadata(const std::string& meta_key,
 void ClientContext::set_call(grpc_call* call,
                              const std::shared_ptr<Channel>& channel) {
   internal::MutexLock lock(&mu_);
-  CHECK_EQ(call_, nullptr);
+  GRPC_CHECK_EQ(call_, nullptr);
   call_ = call;
   channel_ = channel;
   if (creds_ && !creds_->ApplyToCall(call_)) {
@@ -146,7 +146,7 @@ void ClientContext::set_compression_algorithm(
     grpc_core::Crash(absl::StrFormat(
         "Name for compression algorithm '%d' unknown.", algorithm));
   }
-  CHECK_NE(algorithm_name, nullptr);
+  GRPC_CHECK_NE(algorithm_name, nullptr);
   AddMetadata(GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY, algorithm_name);
 }
 
@@ -178,9 +178,9 @@ std::string ClientContext::peer() const {
 }
 
 void ClientContext::SetGlobalCallbacks(GlobalCallbacks* client_callbacks) {
-  CHECK(g_client_callbacks == g_default_client_callbacks);
-  CHECK_NE(client_callbacks, nullptr);
-  CHECK(client_callbacks != g_default_client_callbacks);
+  GRPC_CHECK(g_client_callbacks == g_default_client_callbacks);
+  GRPC_CHECK_NE(client_callbacks, nullptr);
+  GRPC_CHECK(client_callbacks != g_default_client_callbacks);
   g_client_callbacks = client_callbacks;
 }
 

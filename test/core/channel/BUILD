@@ -15,7 +15,13 @@
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
-grpc_package(name = "test/core/channel")
+grpc_package(
+    name = "test/core/channel",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 licenses(["notice"])
 
@@ -30,12 +36,14 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:channel_arg_names",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc",
         "//:grpc_core_credentials_header",
         "//:ref_counted_ptr",
         "//src/core:channel_args",
+        "//src/core:grpc_check",
         "//src/core:notification",
         "//src/core:ref_counted",
         "//src/core:useful",
@@ -101,6 +109,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:channel_arg_names",
         "//:config",
         "//:exec_ctx",
         "//:gpr",
@@ -111,6 +120,7 @@ grpc_cc_test(
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
         "//src/core:experiments",
+        "//src/core:grpc_check",
         "//src/core:iomgr_fwd",
         "//test/core/test_util:grpc_test_util",
     ],

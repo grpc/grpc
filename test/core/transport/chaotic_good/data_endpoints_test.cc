@@ -34,18 +34,19 @@
 #include <cmath>
 #include <cstdint>
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/sleep.h"
 #include "test/core/call/yodel/yodel_test.h"
 #include "test/core/transport/util/mock_promise_endpoint.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 
 namespace chaotic_good::data_endpoints_detail {
 
 struct StartSendOp {
+  uint64_t current_time;
   uint64_t bytes;
 };
 
@@ -66,7 +67,10 @@ void SendRateIsRobust(double initial_rate, std::vector<SendRateOp> ops) {
   SendRate send_rate(initial_rate);
   for (const auto& op : ops) {
     Match(
-        op, [&](StartSendOp op) { send_rate.StartSend(op.bytes); },
+        op,
+        [&](StartSendOp op) {
+          send_rate.EnqueueToReader(op.bytes, op.current_time);
+        },
         [&](SetNetworkMetricsOp op) {
           send_rate.SetNetworkMetrics(op.network_send, op.metrics);
         },

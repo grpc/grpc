@@ -34,13 +34,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/functional/function_ref.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/time/time.h"
 #include "envoy/config/cluster/v3/cluster.pb.h"
 #include "envoy/config/endpoint/v3/endpoint.pb.h"
 #include "envoy/config/listener/v3/listener.pb.h"
@@ -50,8 +43,6 @@
 #include "envoy/extensions/filters/http/router/v3/router.pb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.pb.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
@@ -60,6 +51,7 @@
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
 #include "src/core/util/sync.h"
@@ -77,6 +69,14 @@
 #include "test/cpp/util/test_config.h"
 #include "test/cpp/util/tls_test_utils.h"
 #include "xds/type/v3/typed_struct.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/functional/function_ref.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/time/time.h"
 
 namespace grpc {
 namespace testing {
@@ -212,7 +212,7 @@ class FakeCertificateProviderFactory
       absl::string_view name,
       FakeCertificateProvider::CertDataMapWrapper* cert_data_map)
       : name_(name), cert_data_map_(cert_data_map) {
-    CHECK_NE(cert_data_map, nullptr);
+    GRPC_CHECK_NE(cert_data_map, nullptr);
   }
 
   absl::string_view name() const override { return name_; }
@@ -229,7 +229,7 @@ class FakeCertificateProviderFactory
   CreateCertificateProvider(
       grpc_core::RefCountedPtr<grpc_core::CertificateProviderFactory::Config>
       /*config*/) override {
-    CHECK_NE(cert_data_map_, nullptr);
+    GRPC_CHECK_NE(cert_data_map_, nullptr);
     return grpc_core::MakeRefCounted<FakeCertificateProvider>(
         cert_data_map_->Get());
   }
@@ -900,7 +900,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     options.set_verify_server_certs(true);
     options.set_certificate_verifier(std::move(verifier));
     auto channel_creds = grpc::experimental::TlsCredentials(options);
-    CHECK_NE(channel_creds.get(), nullptr);
+    GRPC_CHECK_NE(channel_creds.get(), nullptr);
     return CreateCustomChannel(uri, channel_creds, args);
   }
 
@@ -921,7 +921,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     options.set_verify_server_certs(true);
     options.set_certificate_verifier(std::move(verifier));
     auto channel_creds = grpc::experimental::TlsCredentials(options);
-    CHECK_NE(channel_creds.get(), nullptr);
+    GRPC_CHECK_NE(channel_creds.get(), nullptr);
     return CreateCustomChannel(uri, channel_creds, args);
   }
 
@@ -2332,7 +2332,7 @@ TEST_P(XdsRbacTestWithActionPermutations,
   audit_logger->mutable_typed_config()->set_type_url("/test_logger");
   TypedStruct typed_struct;
   typed_struct.set_type_url("/test_logger");
-  typed_struct.mutable_value()->mutable_fields();
+  typed_struct.mutable_value();
   audit_logger->mutable_typed_config()->PackFrom(typed_struct);
   SetServerRbacPolicy(rbac);
   StartBackend(0);
@@ -2364,7 +2364,7 @@ TEST_P(XdsRbacTestWithActionPermutations,
   audit_logger->mutable_typed_config()->set_type_url("/test_logger");
   TypedStruct typed_struct;
   typed_struct.set_type_url("/test_logger");
-  typed_struct.mutable_value()->mutable_fields();
+  typed_struct.mutable_value();
   audit_logger->mutable_typed_config()->PackFrom(typed_struct);
   RBAC rbac;
   rules = rbac.mutable_rules();
@@ -2410,7 +2410,7 @@ TEST_P(XdsRbacTestWithActionPermutations, MultipleRbacPoliciesWithAuditOnDeny) {
   audit_logger->mutable_typed_config()->set_type_url("/test_logger");
   TypedStruct typed_struct;
   typed_struct.set_type_url("/test_logger");
-  typed_struct.mutable_value()->mutable_fields();
+  typed_struct.mutable_value();
   audit_logger->mutable_typed_config()->PackFrom(typed_struct);
   RBAC rbac;
   rules = rbac.mutable_rules();
@@ -2458,7 +2458,7 @@ TEST_P(XdsRbacTestWithActionPermutations,
   audit_logger->mutable_typed_config()->set_type_url("/test_logger");
   TypedStruct typed_struct;
   typed_struct.set_type_url("/test_logger");
-  typed_struct.mutable_value()->mutable_fields();
+  typed_struct.mutable_value();
   audit_logger->mutable_typed_config()->PackFrom(typed_struct);
   RBAC rbac;
   rules = rbac.mutable_rules();
@@ -2556,7 +2556,7 @@ TEST_P(XdsRbacTestWithActionAndAuditConditionPermutations,
   audit_logger->mutable_typed_config()->set_type_url("/test_logger");
   TypedStruct typed_struct;
   typed_struct.set_type_url("/test_logger");
-  typed_struct.mutable_value()->mutable_fields();
+  typed_struct.mutable_value();
   audit_logger->mutable_typed_config()->PackFrom(typed_struct);
   SetServerRbacPolicy(rbac);
   StartBackend(0);
@@ -2588,7 +2588,7 @@ TEST_P(XdsRbacTestWithActionAndAuditConditionPermutations, MultipleLoggers) {
   test_logger->mutable_typed_config()->set_type_url("/test_logger");
   TypedStruct typed_struct;
   typed_struct.set_type_url("/test_logger");
-  typed_struct.mutable_value()->mutable_fields();
+  typed_struct.mutable_value();
   test_logger->mutable_typed_config()->PackFrom(typed_struct);
   SetServerRbacPolicy(rbac);
   StartBackend(0);
@@ -2634,10 +2634,6 @@ int main(int argc, char** argv) {
       "call,channel,client_channel,client_channel_call,client_channel_lb_call,"
       "handshaker";
   grpc_core::ConfigVars::SetOverrides(overrides);
-#if TARGET_OS_IPHONE
-  // Workaround Apple CFStream bug
-  grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
   grpc::testing::FakeCertificateProvider::CertDataMapWrapper cert_data_map_1;
   grpc::testing::g_fake1_cert_data_map = &cert_data_map_1;
   grpc::testing::FakeCertificateProvider::CertDataMapWrapper cert_data_map_2;

@@ -32,16 +32,6 @@
 #include <string>
 #include <thread>
 
-#include "absl/cleanup/cleanup.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/synchronization/notification.h"
-#include "absl/types/span.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
@@ -56,6 +46,7 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/cpp/server/secure_server_credentials.h"
@@ -69,6 +60,15 @@
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/credentials.h"
 #include "test/cpp/util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/cleanup/cleanup.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/synchronization/notification.h"
+#include "absl/types/span.h"
 
 // TODO(dgq): Other scenarios in need of testing:
 // - Send a serverlist with faulty ip:port addresses (port > 2^16, etc).
@@ -163,13 +163,13 @@ class BackendServiceImpl : public BackendService {
 
 std::string Ip4ToPackedString(const char* ip_str) {
   struct in_addr ip4;
-  CHECK_EQ(inet_pton(AF_INET, ip_str, &ip4), 1);
+  GRPC_CHECK_EQ(inet_pton(AF_INET, ip_str, &ip4), 1);
   return std::string(reinterpret_cast<const char*>(&ip4), sizeof(ip4));
 }
 
 std::string Ip6ToPackedString(const char* ip_str) {
   struct in6_addr ip6;
-  CHECK_EQ(inet_pton(AF_INET6, ip_str, &ip6), 1);
+  GRPC_CHECK_EQ(inet_pton(AF_INET6, ip_str, &ip6), 1);
   return std::string(reinterpret_cast<const char*>(&ip6), sizeof(ip6));
 }
 
@@ -451,7 +451,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
 
     void Start() {
       LOG(INFO) << "starting " << type_ << " server on port " << port_;
-      CHECK(!running_);
+      GRPC_CHECK(!running_);
       running_ = true;
       service_.Start();
       grpc_core::Mutex mu;
@@ -507,10 +507,6 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc_core::ConfigVars::Overrides overrides;
     overrides.client_channel_backup_poll_interval_ms = 1;
     grpc_core::ConfigVars::SetOverrides(overrides);
-#if TARGET_OS_IPHONE
-    // Workaround Apple CFStream bug
-    grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
     grpc_init();
   }
 
@@ -708,9 +704,9 @@ class GrpclbEnd2endTest : public ::testing::Test {
     for (int port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri =
           grpc_core::URI::Parse(grpc_core::LocalIpUri(port));
-      CHECK_OK(lb_uri);
+      GRPC_CHECK_OK(lb_uri);
       grpc_resolved_address address;
-      CHECK(grpc_parse_uri(*lb_uri, &address));
+      GRPC_CHECK(grpc_parse_uri(*lb_uri, &address));
       grpc_core::ChannelArgs args;
       if (!balancer_name.empty()) {
         args = args.Set(GRPC_ARG_DEFAULT_AUTHORITY, balancer_name);
@@ -729,7 +725,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     result.addresses = std::move(backends);
     result.service_config = grpc_core::ServiceConfigImpl::Create(
         grpc_core::ChannelArgs(), service_config_json);
-    CHECK_OK(result.service_config);
+    GRPC_CHECK_OK(result.service_config);
     result.args = grpc_core::SetGrpcLbBalancerAddresses(
         grpc_core::ChannelArgs(), std::move(balancers));
     response_generator_->SetResponseSynchronously(std::move(result));

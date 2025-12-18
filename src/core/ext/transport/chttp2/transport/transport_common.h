@@ -44,9 +44,40 @@
 #define GRPC_ARG_MAX_CONCURRENT_STREAMS_REJECT_ON_CLIENT \
   "grpc.http.max_concurrent_streams_reject_on_client"
 
+#define KEEPALIVE_TIME_BACKOFF_MULTIPLIER 2
+
+#define GRPC_CHTTP2_PING_TIMEOUT_STR "ping timeout"
+#define GRPC_CHTTP2_KEEPALIVE_TIMEOUT_STR "keepalive timeout"
+
 namespace grpc_core {
 
 Duration TarpitDuration(int min_tarpit_duration_ms, int max_tarpit_duration_ms);
+
+namespace http2 {
+enum class WritableStreamPriority : uint8_t {
+  // Highest priority
+  kStreamClosed = 0,
+  kWaitForTransportFlowControl,
+  // Lowest Priority
+  kDefault,
+  kLastPriority
+};
+
+// Debug helper function to convert a WritableStreamPriority to a string.
+inline std::string GetWritableStreamPriorityString(
+    const WritableStreamPriority priority) {
+  switch (priority) {
+    case WritableStreamPriority::kStreamClosed:
+      return "StreamClosed";
+    case WritableStreamPriority::kWaitForTransportFlowControl:
+      return "WaitForTransportFlowControl";
+    case WritableStreamPriority::kDefault:
+      return "Default";
+    default:
+      return "unknown";
+  }
+}
+}  // namespace http2
 
 }  // namespace grpc_core
 

@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/credentials/call/external")
+grpc_package(
+    name = "test/core/credentials/call/external",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "aws_request_signer_test",
@@ -28,6 +34,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:grpc_check",
         "//src/core:grpc_external_account_credentials",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",

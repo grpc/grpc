@@ -18,15 +18,18 @@
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 
 #include <memory>
+#include <utility>
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/sleep.h"
+#include "src/core/lib/promise/try_seq.h"
+#include "src/core/util/time.h"
 #include "test/core/call/yodel/yodel_test.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 
@@ -119,9 +122,8 @@ YODEL_TEST(KeepaliveManagerTest, TestKeepAlive) {
                                                       /*return_value=*/true);
 
   KeepaliveManager keep_alive_system(std::move(keep_alive_interface),
-                                     keepalive_timeout, keepalive_interval);
-  auto party = GetParty();
-  keep_alive_system.Spawn(party);
+                                     keepalive_timeout, keepalive_interval,
+                                     GetParty());
 
   WaitForAllPendingWork();
   event_engine()->TickUntilIdle();
@@ -146,9 +148,8 @@ YODEL_TEST(KeepaliveManagerTest, TestKeepAliveTimeout) {
                                                       /*return_value=*/true);
 
   KeepaliveManager keep_alive_system(std::move(keep_alive_interface),
-                                     keepalive_timeout, keepalive_interval);
-  auto party = GetParty();
-  keep_alive_system.Spawn(party);
+                                     keepalive_timeout, keepalive_interval,
+                                     GetParty());
 
   WaitForAllPendingWork();
   event_engine()->TickUntilIdle();
@@ -174,22 +175,22 @@ YODEL_TEST(KeepaliveManagerTest, TestKeepAliveWithData) {
                                                       /*return_value=*/true);
 
   KeepaliveManager keep_alive_system(std::move(keep_alive_interface),
-                                     keepalive_timeout, keepalive_interval);
-  auto party = GetParty();
-  keep_alive_system.Spawn(party);
+                                     keepalive_timeout, keepalive_interval,
+                                     GetParty());
 
-  party->Spawn("ReadData", Loop([&read_loop_end_after, &keep_alive_system]() {
-                 keep_alive_system.GotData();
-                 return TrySeq(
-                     Sleep(Duration::Minutes(65)),
-                     [&read_loop_end_after]() mutable -> LoopCtl<absl::Status> {
-                       if (--read_loop_end_after == 0) {
-                         return absl::OkStatus();
-                       }
-                       return Continue();
-                     });
-               }),
-               [](auto) { LOG(INFO) << "ReadData end"; });
+  GetParty()->Spawn(
+      "ReadData", Loop([&read_loop_end_after, &keep_alive_system]() {
+        keep_alive_system.GotData();
+        return TrySeq(
+            Sleep(Duration::Minutes(65)),
+            [&read_loop_end_after]() mutable -> LoopCtl<absl::Status> {
+              if (--read_loop_end_after == 0) {
+                return absl::OkStatus();
+              }
+              return Continue();
+            });
+      }),
+      [](auto) { LOG(INFO) << "ReadData end"; });
 
   WaitForAllPendingWork();
   event_engine()->TickUntilIdle();
@@ -218,22 +219,22 @@ YODEL_TEST(KeepaliveManagerTest, TestKeepAliveTimeoutWithData) {
                                                       /*return_value=*/true);
 
   KeepaliveManager keep_alive_system(std::move(keep_alive_interface),
-                                     keepalive_timeout, keepalive_interval);
-  auto party = GetParty();
-  keep_alive_system.Spawn(party);
+                                     keepalive_timeout, keepalive_interval,
+                                     GetParty());
 
-  party->Spawn("ReadData", Loop([&read_loop_end_after, &keep_alive_system]() {
-                 keep_alive_system.GotData();
-                 return TrySeq(
-                     Sleep(Duration::Minutes(65)),
-                     [&read_loop_end_after]() mutable -> LoopCtl<absl::Status> {
-                       if (--read_loop_end_after == 0) {
-                         return absl::OkStatus();
-                       }
-                       return Continue();
-                     });
-               }),
-               [](auto) { LOG(INFO) << "ReadData end"; });
+  GetParty()->Spawn(
+      "ReadData", Loop([&read_loop_end_after, &keep_alive_system]() {
+        keep_alive_system.GotData();
+        return TrySeq(
+            Sleep(Duration::Minutes(65)),
+            [&read_loop_end_after]() mutable -> LoopCtl<absl::Status> {
+              if (--read_loop_end_after == 0) {
+                return absl::OkStatus();
+              }
+              return Continue();
+            });
+      }),
+      [](auto) { LOG(INFO) << "ReadData end"; });
 
   WaitForAllPendingWork();
   event_engine()->TickUntilIdle();

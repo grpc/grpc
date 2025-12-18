@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/cpp/server")
+grpc_package(
+    name = "test/cpp/server",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "server_builder_test",
@@ -95,6 +101,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//:grpc++_base",
+        "//src/core:grpc_check",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:tls_test_utils",
     ],

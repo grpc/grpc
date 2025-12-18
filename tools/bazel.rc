@@ -71,13 +71,13 @@ build:fork_support --cxxopt=-DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1
 build:fork_support --action_env=GRPC_ENABLE_FORK_SUPPORT=1
 
 
-# We have a separate ASAN config for Mac OS to workaround a couple of bugs:
+# We have a separate ASAN config for macOS to workaround a couple of bugs:
 # 1. https://github.com/bazelbuild/bazel/issues/6932
-#    _FORTIFY_SOURCE=1 is enabled by default on Mac OS, which breaks ASAN.
+#    _FORTIFY_SOURCE=1 is enabled by default on macOS, which breaks ASAN.
 #    We workaround it by setting _FORTIFY_SOURCE=0 and ignoring macro redefined
 #    warnings.
 # 2. https://github.com/google/sanitizers/issues/1026
-#    LSAN is not supported by the version of Clang that ships with Mac OS, so
+#    LSAN is not supported by the version of Clang that ships with macOS, so
 #    we disable it.
 build:asan_macos --strip=never
 build:asan_macos --copt=-fsanitize=address
@@ -142,7 +142,7 @@ build:python_poller_engine --test_env="GRPC_ASYNCIO_ENGINE=poller"
 build:python --copt=-DGRPC_PYTHON_BUILD
 
 # Compile database generation config
-build:compdb --build_tag_filters=-nocompdb --features=-layering_check
+build:compdb --build_tag_filters=-nocompdb
 
 try-import %workspace%/tools/fuzztest.bazelrc
 
@@ -151,3 +151,6 @@ build --@io_opentelemetry_cpp//api:with_abseil
 
 # Bazel 7.4.1 needs this (https://github.com/bazelbuild/bazel/issues/24369)
 test --nozip_undeclared_test_outputs
+
+# Custom checks
+test:postmortem --//:postmortem_checks=true

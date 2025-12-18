@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_p
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/event_engine/test_suite/posix")
+grpc_package(
+    name = "test/core/event_engine/test_suite/posix",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_library(
     name = "oracle_event_engine_posix",
@@ -47,6 +53,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc",
         "//:sockaddr_utils",
+        "//src/core:grpc_check",
         "//src/core:notification",
         "//src/core:resolved_address",
         "//src/core:strerror",

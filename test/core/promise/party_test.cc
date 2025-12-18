@@ -22,12 +22,10 @@
 #include <algorithm>
 #include <atomic>
 #include <memory>
+#include <string>
 #include <thread>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -44,6 +42,9 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
+#include "gtest/gtest.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 
@@ -310,11 +311,14 @@ TEST_F(PartyTest, CanWakeupWithOwningWaker) {
   Notification complete;
   std::string execution_order;
   Waker waker;
+  EXPECT_TRUE(waker.is_unwakeable());
   party->Spawn(
       "TestSpawn",
       [num = 0, &waker, &n, &execution_order]() mutable -> Poll<int> {
         absl::StrAppend(&execution_order, "A");
+        EXPECT_TRUE(waker.is_unwakeable());
         waker = GetContext<Activity>()->MakeOwningWaker();
+        EXPECT_FALSE(waker.is_unwakeable());
         n[num].Notify();
         num++;
         if (num == 10) return num;
@@ -356,11 +360,14 @@ TEST_F(PartyTest, CanWakeupWithNonOwningWaker) {
   Notification complete;
   std::string execution_order;
   Waker waker;
+  EXPECT_TRUE(waker.is_unwakeable());
   party->Spawn(
       "TestSpawn",
       [i = 10, &waker, &n, &execution_order]() mutable -> Poll<int> {
         absl::StrAppend(&execution_order, "A");
+        EXPECT_TRUE(waker.is_unwakeable());
         waker = GetContext<Activity>()->MakeNonOwningWaker();
+        EXPECT_FALSE(waker.is_unwakeable());
         --i;
         n[9 - i].Notify();
         if (i == 0) return 42;
@@ -399,7 +406,9 @@ TEST_F(PartyTest, CanWakeupWithNonOwningWakerAfterOrphaning) {
       [&waker, &set_waker, &execution_order]() mutable -> Poll<int> {
         absl::StrAppend(&execution_order, "A");
         EXPECT_FALSE(set_waker.HasBeenNotified());
+        EXPECT_TRUE(waker.is_unwakeable());
         waker = GetContext<Activity>()->MakeNonOwningWaker();
+        EXPECT_FALSE(waker.is_unwakeable());
         set_waker.Notify();
         return Pending{};
       },

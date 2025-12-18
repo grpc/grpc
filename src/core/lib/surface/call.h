@@ -28,10 +28,6 @@
 
 #include <optional>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/functional/function_ref.h"
-#include "absl/log/check.h"
-#include "absl/strings/string_view.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
@@ -45,9 +41,13 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server_interface.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "src/core/util/time_precise.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/functional/function_ref.h"
+#include "absl/strings/string_view.h"
 
 typedef void (*grpc_ioreq_completion_func)(grpc_call* call, int success,
                                            void* user_data);
@@ -81,7 +81,11 @@ struct ArenaContextType<census_context> {
 
 class Call : public CppImplOf<Call, grpc_call>,
              public grpc_event_engine::experimental::EventEngine::
-                 Closure /* for deadlines */ {
+                 Closure /* for deadlines */,
+             public channelz::DataSource
+/* for channelz - derived implementations must call
+   SourceConstructed/SourceDestructing */
+{
  public:
   Arena* arena() const { return arena_.get(); }
   bool is_client() const { return is_client_; }
@@ -102,7 +106,8 @@ class Call : public CppImplOf<Call, grpc_call>,
   virtual void InternalRef(const char* reason) = 0;
   virtual void InternalUnref(const char* reason) = 0;
 
-  void UpdateDeadline(Timestamp deadline) ABSL_LOCKS_EXCLUDED(deadline_mu_);
+  grpc_error_handle UpdateDeadline(Timestamp deadline)
+      ABSL_LOCKS_EXCLUDED(deadline_mu_);
   void ResetDeadline() ABSL_LOCKS_EXCLUDED(deadline_mu_);
   Timestamp deadline() {
     MutexLock lock(&deadline_mu_);
@@ -201,6 +206,8 @@ class Call : public CppImplOf<Call, grpc_call>,
 
   virtual void SetIncomingCompressionAlgorithm(
       grpc_compression_algorithm algorithm) = 0;
+
+  void AddData(channelz::DataSink sink) override;
 
  private:
   const RefCountedPtr<Arena> arena_;

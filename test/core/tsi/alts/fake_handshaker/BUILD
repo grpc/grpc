@@ -18,6 +18,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/core/tsi/alts/fake_handshaker",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "public",
 )
 
@@ -68,6 +72,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//src/core:grpc_check",
     ],
 )
 
@@ -85,6 +90,7 @@ grpc_cc_binary(
         "//:gpr",
         "//:grpc++",
         "//:grpc++_base",
+        "//src/core:grpc_check",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
     ],

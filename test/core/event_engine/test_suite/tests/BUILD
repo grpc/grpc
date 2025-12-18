@@ -18,6 +18,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/core/event_engine/test_suite/tests",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "public",
 )
 
@@ -79,7 +83,6 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
-        "address_sorting",
         "gtest",
     ],
     deps = [
@@ -99,6 +102,7 @@ grpc_cc_library(
         "//test/cpp/util:get_grpc_test_runfile_dir",
         "//test/cpp/util:test_util",
         "//test/cpp/util/windows:manifest_file",
+        "//third_party/address_sorting",
     ],
     alwayslink = 1,
 )
@@ -117,12 +121,14 @@ grpc_cc_library(
         "gtest",
     ],
     deps = [
+        "//:channel_arg_names",
         "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",
         "//src/core:channel_args",
         "//src/core:channel_args_endpoint_config",
         "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:grpc_check",
         "//src/core:memory_quota",
         "//src/core:notification",
         "//src/core:resource_quota",
@@ -146,12 +152,14 @@ grpc_cc_library(
         "gtest",
     ],
     deps = [
+        "//:channel_arg_names",
         "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",
         "//src/core:channel_args",
         "//src/core:channel_args_endpoint_config",
         "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:grpc_check",
         "//src/core:memory_quota",
         "//src/core:notification",
         "//src/core:resource_quota",
@@ -176,12 +184,14 @@ grpc_cc_library(
         "gtest",
     ],
     deps = [
+        "//:channel_arg_names",
         "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",
         "//src/core:channel_args",
         "//src/core:channel_args_endpoint_config",
         "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:grpc_check",
         "//src/core:memory_quota",
         "//src/core:notification",
         "//src/core:resource_quota",

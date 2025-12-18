@@ -16,11 +16,11 @@
 
 #include <chrono>
 
-#include "absl/random/random.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/util/crash.h"
 #include "test/core/event_engine/mock_event_engine.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/random/random.h"
 
 using grpc_event_engine::experimental::EventEngine;
 using grpc_event_engine::experimental::MockEventEngine;

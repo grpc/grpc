@@ -30,10 +30,6 @@
 #include <optional>
 #include <utility>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "src/core/lib/event_engine/extensions/chaotic_good_extension.h"
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -45,7 +41,11 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/dump_args.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 
@@ -78,7 +78,7 @@ class PromiseEndpoint {
     // Start write and assert previous write finishes.
     auto prev = write_state_->state.exchange(WriteState::kWriting,
                                              std::memory_order_relaxed);
-    CHECK(prev == WriteState::kIdle);
+    GRPC_CHECK(prev == WriteState::kIdle);
     bool completed;
     if (data.Length() == 0) {
       completed = true;
@@ -104,7 +104,7 @@ class PromiseEndpoint {
           return [write_state = write_state_]() {
             auto prev = write_state->state.exchange(WriteState::kIdle,
                                                     std::memory_order_relaxed);
-            CHECK(prev == WriteState::kWriting);
+            GRPC_CHECK(prev == WriteState::kWriting);
             return absl::OkStatus();
           };
         },
@@ -123,7 +123,7 @@ class PromiseEndpoint {
                 }
                 // State was not Written; since we're polling it must be
                 // Writing. Assert that and return Pending.
-                CHECK(expected == WriteState::kWriting);
+                GRPC_CHECK(expected == WriteState::kWriting);
                 return Pending();
               };
             })));
@@ -138,9 +138,9 @@ class PromiseEndpoint {
   auto Read(size_t num_bytes) {
     GRPC_LATENT_SEE_SCOPE("GRPC:Read");
     // Assert previous read finishes.
-    CHECK(!read_state_->complete.load(std::memory_order_relaxed));
+    GRPC_CHECK(!read_state_->complete.load(std::memory_order_relaxed));
     // Should not have pending reads.
-    CHECK_EQ(read_state_->pending_buffer.Count(), 0u);
+    GRPC_CHECK_EQ(read_state_->pending_buffer.Count(), 0u);
     bool complete = true;
     while (read_state_->buffer.Length() < num_bytes) {
       GRPC_LATENT_SEE_SCOPE("GRPC:Read:Loop");
@@ -161,7 +161,7 @@ class PromiseEndpoint {
         read_state_->waker = Waker();
         read_state_->pending_buffer.MoveFirstNBytesIntoSliceBuffer(
             read_state_->pending_buffer.Length(), read_state_->buffer);
-        DCHECK_EQ(read_state_->pending_buffer.Count(), 0u);
+        GRPC_DCHECK_EQ(read_state_->pending_buffer.Count(), 0u);
       } else {
         complete = false;
         break;
@@ -293,7 +293,7 @@ class PromiseEndpoint {
       auto prev = state.exchange(kWritten, std::memory_order_release);
       // Previous state should be Writing. If we got anything else we've entered
       // the callback path twice.
-      CHECK(prev == kWriting);
+      GRPC_CHECK(prev == kWriting);
       w.Wakeup();
     }
   };

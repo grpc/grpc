@@ -24,9 +24,9 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 
@@ -86,7 +86,7 @@ class DelegatingClientCallTracer : public ClientCallTracerInterface {
     explicit DelegatingClientCallAttemptTracer(
         std::vector<CallAttemptTracer*> tracers)
         : tracers_(std::move(tracers)) {
-      DCHECK(!tracers_.empty());
+      GRPC_DCHECK(!tracers_.empty());
     }
     ~DelegatingClientCallAttemptTracer() override {}
     void RecordSendInitialMetadata(
@@ -201,7 +201,7 @@ class DelegatingClientCallTracer : public ClientCallTracerInterface {
     attempt_tracers.reserve(tracers_.size());
     for (auto* tracer : tracers_) {
       auto* attempt_tracer = tracer->StartNewAttempt(is_transparent_retry);
-      DCHECK_NE(attempt_tracer, nullptr);
+      GRPC_DCHECK_NE(attempt_tracer, nullptr);
       attempt_tracers.push_back(attempt_tracer);
     }
     return GetContext<Arena>()->ManagedNew<DelegatingClientCallAttemptTracer>(
@@ -341,7 +341,7 @@ class DelegatingServerCallTracer : public ServerCallTracerInterface {
 
 void SetClientCallTracer(Arena* arena,
                          absl::Span<ClientCallTracerInterface* const> tracer) {
-  DCHECK_EQ(arena->GetContext<CallSpan>(), nullptr);
+  GRPC_DCHECK_EQ(arena->GetContext<CallSpan>(), nullptr);
   switch (tracer.size()) {
     case 0:
       return;
@@ -359,7 +359,7 @@ void SetClientCallTracer(Arena* arena,
 
 void SetServerCallTracer(Arena* arena,
                          absl::Span<ServerCallTracerInterface* const> tracer) {
-  DCHECK_EQ(arena->GetContext<CallSpan>(), nullptr);
+  GRPC_DCHECK_EQ(arena->GetContext<CallSpan>(), nullptr);
   switch (tracer.size()) {
     case 0:
       return;

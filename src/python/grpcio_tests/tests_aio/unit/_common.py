@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import asyncio
+import logging
 from typing import AsyncIterable, Union
 
 import grpc
@@ -25,6 +26,18 @@ from grpc.experimental import aio
 from tests.unit.framework.common import test_constants
 
 ADHOC_METHOD = "/test/AdHoc"
+
+
+def setup_absl_like_logging(level=logging.DEBUG):
+    logging.basicConfig(
+        level=level,
+        style="{",
+        format=(
+            "{levelname[0]}{asctime}.{msecs:03.0f} {thread} "
+            "{filename}:{lineno}] {message}"
+        ),
+        datefmt="%m%d %H:%M:%S",
+    )
 
 
 def seen_metadata(expected: Metadata, actual: Metadata):

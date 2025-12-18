@@ -26,13 +26,16 @@
 #include <thread>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "gtest/gtest.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_tracker/resource_tracker.h"
 #include "test/core/resource_quota/call_checker.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 namespace grpc_core {
 namespace testing {
@@ -321,6 +324,65 @@ TEST(PressureTrackerTest, ManyThreads) {
   for (auto& thread : threads) {
     thread.join();
   }
+}
+
+TEST(PressureTrackerTest, PressureThreshold) {
+  const double kSamplePressure = 0.90;
+  const double kHighTargetPressure = 0.95;
+  const double kLowTargetPressure = 0.85;
+
+  {
+    ConfigVars::Reset();
+    ConfigVars::Overrides overrides;
+    overrides.experimental_target_memory_pressure = kHighTargetPressure;
+    overrides.experimental_memory_pressure_threshold = kHighTargetPressure;
+    ConfigVars::SetOverrides(overrides);
+
+    PressureTracker tracker;
+    // The added sample is lesser than the target pressure, so we should not
+    // see any pressure.
+    EXPECT_EQ(tracker.AddSampleAndGetControlValue(kSamplePressure), 0.0);
+  }
+
+  {
+    ConfigVars::Reset();
+    ConfigVars::Overrides overrides;
+    overrides.experimental_target_memory_pressure = kLowTargetPressure;
+    overrides.experimental_memory_pressure_threshold = kLowTargetPressure;
+    ConfigVars::SetOverrides(overrides);
+
+    PressureTracker tracker;
+    // The added sample is lesser than the target pressure, so we should not
+    // see any pressure.
+    EXPECT_EQ(tracker.AddSampleAndGetControlValue(kSamplePressure), 1.0);
+  }
+}
+
+TEST(PressureTrackerTest, TargetPressure) {
+  const double kTargetPressure = 0.8;
+  const double kThresholdPressure = 0.9;
+  // Sample pressure is greater than the target pressure, but less than the
+  // threshold pressure.
+  const double kSamplePressure = 0.85;
+
+  ConfigVars::Reset();
+  ConfigVars::Overrides overrides;
+  overrides.experimental_target_memory_pressure = kTargetPressure;
+  overrides.experimental_memory_pressure_threshold = kThresholdPressure;
+  ConfigVars::SetOverrides(overrides);
+
+  PressureTracker tracker;
+  // First sample doesn't trigger the periodic update, since the sample is
+  // lesser than the threshold pressure.
+  EXPECT_EQ(tracker.AddSampleAndGetControlValue(kSamplePressure), 0.0);
+
+  // Sleep for 1 second to trigger the periodic update in the next sample.
+  absl::SleepFor(absl::Seconds(1));
+
+  // Second sample triggers the periodic update. Retuned control value is
+  // expected to be 100%, since its the first time the tracker is seeing a
+  // sample greater than the target pressure.
+  EXPECT_EQ(tracker.AddSampleAndGetControlValue(kSamplePressure), 1.0);
 }
 
 }  // namespace testing

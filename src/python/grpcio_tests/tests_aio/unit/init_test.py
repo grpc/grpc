@@ -12,28 +12,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-import sys
 import unittest
 
+from typing_extensions import override
 
-@unittest.skipIf(
-    sys.version_info >= (3, 14),
-    "Skip for Python 3.14+ until https://github.com/grpc/grpc/pull/40293 is merged",
-)
+from tests_aio.unit import _common
+
+
 class TestInit(unittest.TestCase):
+    @classmethod
+    @override
+    def setUpClass(cls):
+        # Logging config in setUpClass compatible with bazel-based runner.
+        _common.setup_absl_like_logging()
+
     def test_grpc(self):
         import grpc  # pylint: disable=wrong-import-position
 
         channel = grpc.aio.insecure_channel("phony")
+        logging.info(f"Created grpc Channel<{id(channel._loop)=}>")
         self.assertIsInstance(channel, grpc.aio.Channel)
 
     def test_grpc_dot_aio(self):
         import grpc.aio  # pylint: disable=wrong-import-position
 
         channel = grpc.aio.insecure_channel("phony")
+        logging.info(f"Created grpc.aio Channel<{id(channel._loop)=}>")
         self.assertIsInstance(channel, grpc.aio.Channel)
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)

@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -51,10 +51,11 @@ bool IsLowerCase(absl::string_view str) {
 
 void ResolverRegistry::Builder::RegisterResolverFactory(
     std::unique_ptr<ResolverFactory> factory) {
-  CHECK(IsLowerCase(factory->scheme())) << factory->scheme();
+  GRPC_CHECK(IsLowerCase(factory->scheme())) << factory->scheme();
   auto [_, inserted] =
       state_.factories.try_emplace(factory->scheme(), std::move(factory));
-  CHECK(inserted) << "scheme " << factory->scheme() << " already registered";
+  GRPC_CHECK(inserted) << "scheme " << factory->scheme()
+                       << " already registered";
 }
 
 bool ResolverRegistry::Builder::HasResolverFactory(
@@ -132,7 +133,7 @@ ResolverFactory* ResolverRegistry::LookupResolverFactory(
 // point to the parsed URI.
 ResolverFactory* ResolverRegistry::FindResolverFactory(
     absl::string_view target, URI* uri, std::string* canonical_target) const {
-  CHECK_NE(uri, nullptr);
+  GRPC_CHECK_NE(uri, nullptr);
   absl::StatusOr<URI> tmp_uri = URI::Parse(target);
   ResolverFactory* factory =
       tmp_uri.ok() ? LookupResolverFactory(tmp_uri->scheme()) : nullptr;

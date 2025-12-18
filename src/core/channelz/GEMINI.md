@@ -21,3 +21,25 @@ Channelz provides a way to get detailed information about the state of gRPC chan
 - Channelz is a powerful tool for understanding the behavior of gRPC channels.
 - It can be used to debug a wide variety of problems, from simple connectivity issues to complex performance problems.
 - The Channelz data can be accessed through a variety of tools, including the `grpc_cli` command-line tool and the web-based viewer in the `zviz` directory.
+
+## DataSource Lifetime
+
+`DataSource` objects are not owned by the `BaseNode` they are attached to.
+They are expected to be owned by some other transport-level object.
+`DataSource` implementations call `SourceConstructed()` in their constructor to
+register with a `BaseNode` and `SourceDestructing()` in their destructor to
+unregister.
+
+Because `BaseNode` does not manage `DataSource` lifetime, it is unsafe for
+`BaseNode` to call `DataSource::AddData` without holding `BaseNode::data_sources_mu_`,
+as the `DataSource` could be destroyed by another thread concurrently.
+This means `data_sources_mu_` must be held during any call to `AddData`.
+Consequently, `AddData` implementations must not call back into any code that
+acquires `data_sources_mu_`, such as `SourceConstructed`, `SourceDestructing`,
+or other channelz rendering paths like `SerializeEntity` or `AdditionalInfo`,
+as this will cause a deadlock.
+
+If this cannot be guaranteed (for example, in `Party` we might execute arbitrary
+other promises during a `Spawn()` call, in chttp2 we need to enter the combiner
+lock which has similar properties) a good technique is to use `EventEngine`
+to spawn a background task to collect the data outside of the BaseNode lock.

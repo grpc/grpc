@@ -20,7 +20,6 @@
 #include <functional>
 #include <utility>
 
-#include "absl/status/status.h"
 #include "src/core/call/call_finalization.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -33,6 +32,7 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/latent_see.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 
@@ -82,6 +82,10 @@ class ServerCallTracerFilter
     static inline const NoInterceptor OnClientToServerMessage;
     static inline const NoInterceptor OnClientToServerHalfClose;
     static inline const NoInterceptor OnServerToClientMessage;
+
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList();
+    }
   };
 };
 

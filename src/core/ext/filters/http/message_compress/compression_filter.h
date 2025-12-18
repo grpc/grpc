@@ -27,8 +27,6 @@
 #include <cstddef>
 #include <optional>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/property_list.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -37,6 +35,8 @@
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/transport.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -157,6 +157,15 @@ class ClientCompressionFilter final
     static inline const NoInterceptor OnClientToServerHalfClose;
     static inline const NoInterceptor OnServerTrailingMetadata;
     static inline const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList()
+          .Set("compression_algorithm",
+               CompressionAlgorithmAsString(compression_algorithm_))
+          .Set("max_recv_message_length",
+               decompress_args_.max_recv_message_length.value_or(0))
+          .Set("decompression_algorithm",
+               CompressionAlgorithmAsString(decompress_args_.algorithm));
+    }
 
    private:
     grpc_compression_algorithm compression_algorithm_;
@@ -209,6 +218,16 @@ class ServerCompressionFilter final
     static inline const NoInterceptor OnClientToServerHalfClose;
     static inline const NoInterceptor OnServerTrailingMetadata;
     static inline const NoInterceptor OnFinalize;
+
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList()
+          .Set("compression_algorithm",
+               CompressionAlgorithmAsString(compression_algorithm_))
+          .Set("max_recv_message_length",
+               decompress_args_.max_recv_message_length.value_or(0))
+          .Set("decompression_algorithm",
+               CompressionAlgorithmAsString(decompress_args_.algorithm));
+    }
 
    private:
     ChannelCompression::DecompressArgs decompress_args_;

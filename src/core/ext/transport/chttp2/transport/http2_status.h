@@ -25,10 +25,10 @@
 #include <string>
 #include <variant>
 
+#include "src/core/util/time.h"
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-#include "src/core/util/time.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -406,6 +406,12 @@ template <typename T>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline T TakeValue(
     ValueOrHttp2Status<T>&& value) {
   return std::move(value.value());
+}
+
+inline Http2Status ToHttpOkOrConnError(const absl::Status& status) {
+  return status.ok() ? Http2Status::Ok()
+                     : Http2Status::AbslConnectionError(
+                           status.code(), std::string(status.message()));
 }
 
 }  // namespace http2

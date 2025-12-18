@@ -22,7 +22,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/strings/escaping.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/ext/transport/chaotic_good_legacy/control_endpoint.h"
 #include "src/core/ext/transport/chaotic_good_legacy/data_endpoints.h"
@@ -39,6 +38,7 @@
 #include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "absl/strings/escaping.h"
 
 namespace grpc_core {
 namespace chaotic_good_legacy {
@@ -103,13 +103,13 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport>,
           stats_plugin_group,
       Options options, bool enable_tracing,
       RefCountedPtr<channelz::SocketNode> socket_node)
-      : channelz::DataSource(std::move(socket_node)),
+      : channelz::DataSource(socket_node),
         event_engine_(std::move(event_engine)),
         control_endpoint_(std::move(control_endpoint), event_engine_.get(),
-                          ztrace_collector_),
+                          ztrace_collector_, socket_node),
         data_endpoints_(std::move(pending_data_endpoints), event_engine_.get(),
                         std::move(stats_plugin_group), enable_tracing,
-                        ztrace_collector_),
+                        ztrace_collector_, socket_node),
         options_(options) {
     SourceConstructed();
   }

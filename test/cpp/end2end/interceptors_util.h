@@ -23,12 +23,12 @@
 
 #include <condition_variable>
 
-#include "absl/log/check.h"
-#include "absl/strings/str_format.h"
-#include "gtest/gtest.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/util/string_ref_helper.h"
+#include "gtest/gtest.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc {
 namespace testing {
@@ -292,7 +292,7 @@ class Verifier {
   // This version of Verify allows optionally ignoring the
   // outcome of the expectation
   void Verify(CompletionQueue* cq, bool ignore_ok) {
-    CHECK(!expectations_.empty() || !maybe_expectations_.empty());
+    GRPC_CHECK(!expectations_.empty() || !maybe_expectations_.empty());
     while (!expectations_.empty()) {
       Next(cq, ignore_ok);
     }

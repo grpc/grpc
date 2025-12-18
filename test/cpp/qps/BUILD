@@ -18,7 +18,13 @@ load("//test/cpp/qps:qps_benchmark_script.bzl", "json_run_localhost_batch", "qps
 
 licenses(["notice"])
 
-grpc_package(name = "test/cpp/qps")
+grpc_package(
+    name = "test/cpp/qps",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_library(
     name = "parse_json",
@@ -34,6 +40,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc++",
         "//:grpc++_config_proto",
+        "//src/core:grpc_check",
     ],
 )
 
@@ -74,6 +81,7 @@ grpc_cc_library(
         "//src/core:chaotic_good",
         "//src/core:endpoint_transport",
         "//src/core:env",
+        "//src/core:grpc_check",
         "//src/proto/grpc/testing:benchmark_service_cc_grpc",
         "//src/proto/grpc/testing:control_cc_proto",
         "//src/proto/grpc/testing:messages_cc_proto",
@@ -109,6 +117,7 @@ grpc_cc_library(
         "//:grpc++",
         "//:grpcpp_latent_see_client",
         "//src/core:env",
+        "//src/core:grpc_check",
         "//src/proto/grpc/channelz/v2:latent_see_cc_grpc",
         "//src/proto/grpc/testing:control_cc_proto",
         "//src/proto/grpc/testing:messages_cc_proto",
@@ -137,6 +146,7 @@ grpc_cc_library(
         ":histogram",
         "//:gpr",
         "//:grpc++",
+        "//src/core:grpc_check",
         "//src/proto/grpc/testing:control_cc_proto",
         "//test/cpp/util:test_util",
     ],
@@ -171,6 +181,7 @@ grpc_cc_binary(
         "//:gpr",
         "//:grpc++",
         "//:grpc++_config_proto",
+        "//src/core:grpc_check",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
@@ -278,6 +289,7 @@ grpc_cc_binary(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//:grpc_base",
         "//:stats",
         "//src/core:experiments",
         "//test/core/test_util:grpc_test_util",

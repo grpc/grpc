@@ -17,11 +17,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/check.h"
 #include "src/core/call/call_arena_allocator.h"
 #include "src/core/call/call_filters.h"
+#include "src/core/call/channelz_context.h"
 #include "src/core/call/message.h"
 #include "src/core/call/metadata.h"
+#include "src/core/channelz/channelz.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
@@ -32,6 +33,7 @@
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/util/dual_ref_counted.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 
@@ -39,7 +41,7 @@ namespace grpc_core {
 // CallInitiator and CallHandler - which provide interfaces that are appropriate
 // for each side of a call.
 // Hosts context, call filters, and the arena.
-class CallSpine final : public Party {
+class CallSpine final : public Party, public channelz::DataSource {
  public:
   static RefCountedPtr<CallSpine> Create(
       ClientMetadataHandle client_initial_metadata,
@@ -49,7 +51,10 @@ class CallSpine final : public Party {
         std::move(client_initial_metadata), std::move(arena)));
   }
 
-  ~CallSpine() override { CallOnDone(true); }
+  ~CallSpine() override {
+    CallOnDone(true);
+    SourceDestructing();
+  }
 
   CallFilters& call_filters() { return call_filters_; }
 
@@ -132,7 +137,7 @@ class CallSpine final : public Party {
   // The resulting (returned) promise will resolve to Empty.
   template <typename Promise>
   auto CancelIfFails(Promise promise) {
-    DCHECK(GetContext<Activity>() == this);
+    GRPC_DCHECK(GetContext<Activity>() == this);
     using P = promise_detail::PromiseLike<Promise>;
     using ResultType = typename P::Result;
     return Map(std::move(promise),
@@ -285,12 +290,29 @@ class CallSpine final : public Party {
     }
   }
 
+  void AddData(channelz::DataSink sink) override {
+    this->ExportToChannelz(
+        "call_spine", sink, [self = RefAsSubclass<CallSpine>()]() {
+          return channelz::PropertyList()
+              .Set("filters", self->call_filters_.ChannelzProperties())
+              .Set("child_calls", self->child_calls_.size())
+              .Set("has_on_done", self->on_done_ != nullptr);
+        });
+  }
+
  private:
   friend class Arena;
   CallSpine(ClientMetadataHandle client_initial_metadata,
-            RefCountedPtr<Arena> arena)
-      : Party(std::move(arena)),
-        call_filters_(std::move(client_initial_metadata)) {}
+            RefCountedPtr<Arena> a)
+      : Party(std::move(a)),
+        channelz::DataSource([this]() -> RefCountedPtr<channelz::BaseNode> {
+          auto* p = arena()->GetContext<channelz::CallNode>();
+          if (p == nullptr) return nullptr;
+          return p->Ref();
+        }()),
+        call_filters_(std::move(client_initial_metadata)) {
+    SourceConstructed();
+  }
 
   SpawnSerializer* client_to_server_serializer() {
     if (client_to_server_serializer_ == nullptr) {
@@ -324,7 +346,7 @@ class CallInitiator {
   CallInitiator() = default;
   explicit CallInitiator(RefCountedPtr<CallSpine> spine)
       : spine_(std::move(spine)) {
-    DCHECK_NE(spine_.get(), nullptr);
+    GRPC_DCHECK_NE(spine_.get(), nullptr);
   }
 
   // Wrap a promise so that if it returns failure it automatically cancels
@@ -332,118 +354,118 @@ class CallInitiator {
   // The resulting (returned) promise will resolve to Empty.
   template <typename Promise>
   auto CancelIfFails(Promise promise) {
-    DCHECK_NE(spine_.get(), nullptr);
+    GRPC_DCHECK_NE(spine_.get(), nullptr);
     return spine_->CancelIfFails(std::move(promise));
   }
 
   auto PullServerInitialMetadata() {
-    DCHECK_NE(spine_.get(), nullptr);
+    GRPC_DCHECK_NE(spine_.get(), nullptr);
     return spine_->PullServerInitialMetadata();
   }
 
   auto PushMessage(MessageHandle message) {
-    DCHECK_NE(spine_.get(), nullptr);
+    GRPC_DCHECK_NE(spine_.get(), nullptr);
     return spine_->PushClientToServerMessage(std::move(message));
   }
 
   void SpawnPushMessage(MessageHandle message) {
-    DCHECK_NE(spine_.get(), nullptr);
+    GRPC_DCHECK_NE(spine_.get(), nullptr);
     spine_->SpawnPushClientToServerMessage(std::move(message));
   }
 
   void FinishSends() {
-    DCHECK_NE(spine_.get(), nullptr);
+    GRPC_DCHECK_NE(spine_.get(), nullptr);
     spine_->FinishSends();
   }
 
   void SpawnFinishSends() {
-    DCHECK_NE(spine_.get(), nullptr);
+    GRPC_DCHECK_NE(spine_.get(), nullptr);
     spine_->SpawnFinishSends();
   }
 
   auto PullMessage() {
-    DCHECK_NE(spine_.get(), nullptr);
+    GRPC_DCHECK_NE(spine_.get(), nullptr);
     return spine_->PullServerToClientMessage();
   }
 
   auto PullServerTrailingMetadata() {
-    DCHECK_NE(spine_.get(), nullptr);
+    GRPC_DCHECK_NE(spine_.get(), nullptr);
     return spine_->PullServerTrailingMetadata();
   }
 
   void Cancel(absl::Status error) {
-    DCHECK_NE(spine_.get(), nullptr);
-    CHECK(!error.ok());
+    GRPC_DCHECK_NE(spine_.get(), nullptr);
+    GRPC_CHECK(!error.ok());
     auto status = ServerMetadataFromStatus(error);
     status->Set(GrpcCallWasCancelled(), true);
     spine_->PushServerTrailingMetadata(std::move(status));
   }
 
   void SpawnCancel(absl::Status error) {
-    DCHECK_NE(spine_.get(), nullptr);
-    CHECK(!error.ok());
+    GRPC_DCHECK_NE(spine_.get(), nullptr);
+    GRPC_CHECK(!error.ok());
     auto status = ServerMetadataFromStatus(error);
     status->Set(GrpcCallWasCancelled(), true);
     spine_->SpawnPushServerTrailingMetadata(std::move(status));
   }
 
   void Cancel() {
-    DCHECK_NE(spine_.get(), nullptr);
+    GRPC_DCHECK_NE(spine_.get(), nullptr);
     spine_->Cancel();
   }
 
   void SpawnCancel() {
-    DCHECK_NE(spine_.get(), nullptr);
+    GRPC_DCHECK_NE(spine_.get(), nullptr);
     spine_->SpawnCancel();
   }
 
   GRPC_MUST_USE_RESULT bool OnDone(absl::AnyInvocable<void(bool)> fn) {
-    DCHECK_NE(spine_.get(), nullptr);
+    GRPC_DCHECK_NE(spine_.get(), nullptr);
     return spine_->OnDone(std::move(fn));
   }
 
   template <typename Promise>
   auto UntilCallCompletes(Promise promise) {
-    DCHECK_NE(spine_.get(), nullptr);
+    GRPC_DCHECK_NE(spine_.get(), nullptr);
     return spine_->UntilCallCompletes(std::move(promise));
   }
 
   template <typename PromiseFactory>
   void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory) {
-    DCHECK_NE(spine_.get(), nullptr);
+    GRPC_DCHECK_NE(spine_.get(), nullptr);
     spine_->SpawnGuarded(name, std::move(promise_factory));
   }
 
   template <typename PromiseFactory>
   void SpawnGuardedUntilCallCompletes(absl::string_view name,
                                       PromiseFactory promise_factory) {
-    DCHECK_NE(spine_.get(), nullptr);
+    GRPC_DCHECK_NE(spine_.get(), nullptr);
     spine_->SpawnGuardedUntilCallCompletes(name, std::move(promise_factory));
   }
 
   template <typename PromiseFactory>
   void SpawnInfallible(absl::string_view name, PromiseFactory promise_factory) {
-    DCHECK_NE(spine_.get(), nullptr);
+    GRPC_DCHECK_NE(spine_.get(), nullptr);
     spine_->SpawnInfallible(name, std::move(promise_factory));
   }
 
   template <typename PromiseFactory>
   auto SpawnWaitable(absl::string_view name, PromiseFactory promise_factory) {
-    DCHECK_NE(spine_.get(), nullptr);
+    GRPC_DCHECK_NE(spine_.get(), nullptr);
     return spine_->SpawnWaitable(name, std::move(promise_factory));
   }
 
   bool WasCancelledPushed() const {
-    DCHECK_NE(spine_.get(), nullptr);
+    GRPC_DCHECK_NE(spine_.get(), nullptr);
     return spine_->call_filters().WasCancelledPushed();
   }
 
   Arena* arena() {
-    DCHECK_NE(spine_.get(), nullptr);
+    GRPC_DCHECK_NE(spine_.get(), nullptr);
     return spine_->arena();
   }
   Party* party() {
-    DCHECK_NE(spine_.get(), nullptr);
+    GRPC_DCHECK_NE(spine_.get(), nullptr);
     return spine_.get();
   }
 
@@ -535,7 +557,7 @@ class CallHandler {
   }
 
   void AddChildCall(const CallInitiator& initiator) {
-    CHECK(initiator.spine_ != nullptr);
+    GRPC_CHECK(initiator.spine_ != nullptr);
     spine_->AddChildCall(initiator.spine_);
   }
 

@@ -22,12 +22,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
@@ -36,6 +30,12 @@
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/core/tsi/transport_security_test_lib.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/check.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 extern "C" {
 #include <openssl/crypto.h>
@@ -113,9 +113,23 @@ class SpiffeSslTransportSecurityTest
         CHECK(client_map.ok());
         client_spiffe_bundle_map_ = std::make_shared<RootCertInfo>(*client_map);
       }
+      // In TLS 1.3, the client-side handshake succeeds even if the client sends
+      // a bad certificate. In such a case, the server would fail the TLS
+      // handshake and send an alert to the client as the first application data
+      // message. In TLS 1.2, the client-side handshake will fail if the client
+      // sends a bad certificate.
+      //
+      // For OpenSSL versions < 1.1, TLS 1.3 is not supported, so the
+      // client-side handshake should succeed precisely when the server-side
+      // handshake succeeds. Thus, the expect_client_success_1_3_ is set to
+      // expect_client_success_1_2 in this case.
       expect_server_success_ = expect_server_success;
       expect_client_success_1_2_ = expect_client_success_1_2;
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
       expect_client_success_1_3_ = expect_client_success_1_3;
+#else
+      expect_client_success_1_3_ = expect_client_success_1_2;
+#endif
 
       server_pem_key_cert_pairs_ = static_cast<tsi_ssl_pem_key_cert_pair*>(
           gpr_malloc(sizeof(tsi_ssl_pem_key_cert_pair)));
@@ -200,21 +214,12 @@ class SpiffeSslTransportSecurityTest
 
     void CheckHandshakerPeers() {
       bool expect_server_success = expect_server_success_;
-      bool expect_client_success = false;
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
-      expect_client_success = GetParam() == tsi_tls_version::TSI_TLS1_2
-                                  ? expect_client_success_1_2_
-                                  : expect_client_success_1_3_;
-#else
-      //  If using OpenSSL version < 1.1, the CRL revocation won't
-      //  be enabled anyways, so we always expect the connection to
-      //  be successful.
-      expect_server_success = true;
-      expect_client_success = expect_server_success;
-#endif
+      bool expect_client_success = GetParam() == tsi_tls_version::TSI_TLS1_2
+                                       ? expect_client_success_1_2_
+                                       : expect_client_success_1_3_;
       tsi_peer peer;
       if (expect_client_success) {
-        EXPECT_EQ(
+        ASSERT_EQ(
             tsi_handshaker_result_extract_peer(base_.client_result, &peer),
             TSI_OK);
         tsi_peer_destruct(&peer);
@@ -222,7 +227,7 @@ class SpiffeSslTransportSecurityTest
         EXPECT_EQ(base_.client_result, nullptr);
       }
       if (expect_server_success) {
-        EXPECT_EQ(
+        ASSERT_EQ(
             tsi_handshaker_result_extract_peer(base_.server_result, &peer),
             TSI_OK);
         tsi_peer_destruct(&peer);

@@ -1844,20 +1844,19 @@ def ssl_server_credentials(
             "At least one private key-certificate chain pair is required!"
         )
         raise ValueError(error_msg)
-    elif require_client_auth and root_certificates is None:
+    if require_client_auth and root_certificates is None:
         error_msg = "Illegal to require client auth without providing root certificates!"
         raise ValueError(error_msg)
-    else:
-        return ServerCredentials(
-            _cygrpc.server_credentials_ssl(
-                root_certificates,
-                [
-                    _cygrpc.SslPemKeyCertPair(key, pem)
-                    for key, pem in private_key_certificate_chain_pairs
-                ],
-                require_client_auth,
-            )
+    return ServerCredentials(
+        _cygrpc.server_credentials_ssl(
+            root_certificates,
+            [
+                _cygrpc.SslPemKeyCertPair(key, pem)
+                for key, pem in private_key_certificate_chain_pairs
+            ],
+            require_client_auth,
         )
+    )
 
 
 def xds_server_credentials(fallback_credentials):
@@ -1910,11 +1909,8 @@ def ssl_server_certificate_configuration(
                 ],
             )
         )
-    else:
-        error_msg = (
-            "At least one private key-certificate chain pair is required!"
-        )
-        raise ValueError(error_msg)
+    error_msg = "At least one private key-certificate chain pair is required!"
+    raise ValueError(error_msg)
 
 
 def dynamic_ssl_server_credentials(
@@ -2256,70 +2252,70 @@ class Compression(enum.IntEnum):
 ###################################  __all__  #################################
 
 __all__ = (
-    "FutureTimeoutError",
-    "FutureCancelledError",
-    "Future",
-    "ChannelConnectivity",
-    "StatusCode",
-    "Status",
-    "RpcError",
-    "RpcContext",
-    "Call",
-    "ChannelCredentials",
-    "CallCredentials",
     "AuthMetadataContext",
-    "AuthMetadataPluginCallback",
     "AuthMetadataPlugin",
-    "Compression",
+    "AuthMetadataPluginCallback",
+    "Call",
+    "CallCredentials",
+    "Channel",
+    "ChannelConnectivity",
+    "ChannelCredentials",
     "ClientCallDetails",
+    "Compression",
+    "Future",
+    "FutureCancelledError",
+    "FutureTimeoutError",
+    "GenericRpcHandler",
+    "HandlerCallDetails",
+    "LocalConnectionType",
+    "RpcContext",
+    "RpcError",
+    "RpcMethodHandler",
+    "Server",
     "ServerCertificateConfiguration",
     "ServerCredentials",
-    "LocalConnectionType",
-    "UnaryUnaryMultiCallable",
-    "UnaryStreamMultiCallable",
-    "StreamUnaryMultiCallable",
-    "StreamStreamMultiCallable",
-    "UnaryUnaryClientInterceptor",
-    "UnaryStreamClientInterceptor",
-    "StreamUnaryClientInterceptor",
-    "StreamStreamClientInterceptor",
-    "Channel",
-    "ServicerContext",
-    "RpcMethodHandler",
-    "HandlerCallDetails",
-    "GenericRpcHandler",
-    "ServiceRpcHandler",
-    "Server",
     "ServerInterceptor",
-    "unary_unary_rpc_method_handler",
-    "unary_stream_rpc_method_handler",
-    "stream_unary_rpc_method_handler",
-    "stream_stream_rpc_method_handler",
-    "method_handlers_generic_handler",
-    "ssl_channel_credentials",
-    "metadata_call_credentials",
+    "ServiceRpcHandler",
+    "ServicerContext",
+    "Status",
+    "StatusCode",
+    "StreamStreamClientInterceptor",
+    "StreamStreamMultiCallable",
+    "StreamUnaryClientInterceptor",
+    "StreamUnaryMultiCallable",
+    "UnaryStreamClientInterceptor",
+    "UnaryStreamMultiCallable",
+    "UnaryUnaryClientInterceptor",
+    "UnaryUnaryMultiCallable",
     "access_token_call_credentials",
+    "alts_channel_credentials",
+    "alts_server_credentials",
+    "channel_ready_future",
     "composite_call_credentials",
     "composite_channel_credentials",
     "compute_engine_channel_credentials",
+    "dynamic_ssl_server_credentials",
+    "insecure_channel",
+    "insecure_server_credentials",
+    "intercept_channel",
     "local_channel_credentials",
     "local_server_credentials",
-    "alts_channel_credentials",
-    "alts_server_credentials",
-    "ssl_server_credentials",
-    "ssl_server_certificate_configuration",
-    "dynamic_ssl_server_credentials",
-    "channel_ready_future",
-    "insecure_channel",
-    "secure_channel",
-    "intercept_channel",
-    "server",
+    "metadata_call_credentials",
+    "method_handlers_generic_handler",
     "protos",
-    "services",
     "protos_and_services",
+    "secure_channel",
+    "server",
+    "services",
+    "ssl_channel_credentials",
+    "ssl_server_certificate_configuration",
+    "ssl_server_credentials",
+    "stream_stream_rpc_method_handler",
+    "stream_unary_rpc_method_handler",
+    "unary_stream_rpc_method_handler",
+    "unary_unary_rpc_method_handler",
     "xds_channel_credentials",
     "xds_server_credentials",
-    "insecure_server_credentials",
 )
 
 ############################### Extension Shims ################################

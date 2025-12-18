@@ -22,7 +22,7 @@
 #include <memory>
 #include <string>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
@@ -65,8 +65,8 @@ StdoutAuditLoggerFactory::ParseAuditLoggerConfig(const Json&) {
 std::unique_ptr<AuditLogger> StdoutAuditLoggerFactory::CreateAuditLogger(
     std::unique_ptr<AuditLoggerFactory::Config> config) {
   // Sanity check.
-  CHECK(config != nullptr);
-  CHECK(config->name() == name());
+  GRPC_CHECK(config != nullptr);
+  GRPC_CHECK_EQ(config->name(), name());
   return std::make_unique<StdoutAuditLogger>();
 }
 

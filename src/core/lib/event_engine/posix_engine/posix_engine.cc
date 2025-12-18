@@ -29,14 +29,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/no_destructor.h"
-#include "absl/cleanup/cleanup.h"
-#include "absl/container/inlined_vector.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/event_engine/poller.h"
@@ -51,8 +43,16 @@
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/fork.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/useful.h"
+#include "absl/base/no_destructor.h"
+#include "absl/cleanup/cleanup.h"
+#include "absl/container/inlined_vector.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 #include <errno.h>       // IWYU pragma: keep
@@ -212,7 +212,7 @@ PosixEventEngine::PollingCycle::PollingCycle(
     : executor_(std::move(executor)),
       poller_(std::move(poller)),
       is_scheduled_(1) {
-  CHECK_NE(poller_, nullptr);
+  GRPC_CHECK_NE(poller_, nullptr);
   executor_->Run([this]() { PollerWorkInternal(); });
 }
 
@@ -228,7 +228,7 @@ PosixEventEngine::PollingCycle::~PollingCycle() {
 void PosixEventEngine::PollingCycle::PollerWorkInternal() {
   grpc_core::MutexLock lock(&mu_);
   --is_scheduled_;
-  CHECK_EQ(is_scheduled_, 0);
+  GRPC_CHECK_EQ(is_scheduled_, 0);
   bool again = false;
   // TODO(vigneshbabu): The timeout specified here is arbitrary. For
   // instance, this can be improved by setting the timeout to the next
@@ -280,7 +280,7 @@ void AsyncConnect::OnWritable(absl::Status status)
   absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep;
 
   mu_.Lock();
-  CHECK_NE(fd_, nullptr);
+  GRPC_CHECK_NE(fd_, nullptr);
   fd = std::exchange(fd_, nullptr);
   bool connect_cancelled = connect_cancelled_;
   if (fd->IsHandleShutdown() && status.ok()) {
@@ -467,7 +467,7 @@ PosixEventEngine::~PosixEventEngine() {
                    << HandleToString(handle);
       }
     }
-    CHECK(GPR_LIKELY(known_handles_.empty()));
+    GRPC_CHECK(GPR_LIKELY(known_handles_.empty()));
   }
 #if defined(GRPC_POSIX_SOCKET_TCP)
   polling_cycle_.reset();
@@ -646,7 +646,7 @@ bool PosixEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
     auto it = shard->pending_connections.find(connection_handle);
     if (it != shard->pending_connections.end()) {
       ac = it->second;
-      CHECK_NE(ac, nullptr);
+      GRPC_CHECK_NE(ac, nullptr);
       // Trying to acquire ac->mu here would could cause a deadlock because
       // the OnWritable method tries to acquire the two mutexes used
       // here in the reverse order. But we dont need to acquire ac->mu before
@@ -809,7 +809,7 @@ absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>>
 PosixEventEngine::CreatePosixEndpointFromFd(int fd,
                                             const EndpointConfig& config,
                                             MemoryAllocator memory_allocator) {
-  DCHECK_GT(fd, 0);
+  GRPC_DCHECK_GT(fd, 0);
   if (poller_ == nullptr) {
     return absl::FailedPreconditionError("polling is not enabled");
   }
@@ -855,7 +855,7 @@ void PosixEventEngine::SchedulePoller() {
     return;
   }
   grpc_core::MutexLock lock(&mu_);
-  CHECK(!polling_cycle_.has_value());
+  GRPC_CHECK(!polling_cycle_.has_value());
   polling_cycle_.emplace(executor_, poller_);
 }
 

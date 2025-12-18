@@ -24,11 +24,6 @@
 #include <memory>
 #include <ostream>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/handle_containers.h"
@@ -46,8 +41,13 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/dump_args.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_event_engine::experimental {
 
@@ -75,7 +75,7 @@ WindowsEventEngine::ConnectionState::ConnectionState(
       allocator_(std::move(allocator)),
       on_connect_user_callback_(std::move(on_connect_user_callback)),
       engine_(std::move(engine)) {
-  CHECK(socket_ != nullptr);
+  GRPC_CHECK(socket_ != nullptr);
   connection_handle_ = ConnectionHandle{reinterpret_cast<intptr_t>(this),
                                         engine_->aba_token_.fetch_add(1)};
 }
@@ -112,7 +112,7 @@ void WindowsEventEngine::ConnectionState::AbortDeadlineTimer() {
 }
 
 void WindowsEventEngine::ConnectionState::OnConnectedCallback::Run() {
-  DCHECK_NE(connection_state_, nullptr)
+  GRPC_DCHECK_NE(connection_state_, nullptr)
       << "ConnectionState::OnConnectedCallback::" << this
       << " has already run. It should only ever run once.";
   bool has_run;
@@ -131,7 +131,7 @@ void WindowsEventEngine::ConnectionState::OnConnectedCallback::Run() {
 }
 
 void WindowsEventEngine::ConnectionState::DeadlineTimerCallback::Run() {
-  DCHECK_NE(connection_state_, nullptr)
+  GRPC_DCHECK_NE(connection_state_, nullptr)
       << "ConnectionState::DeadlineTimerCallback::" << this
       << " has already run. It should only ever run once.";
   bool has_run;
@@ -207,7 +207,7 @@ WindowsEventEngine::WindowsEventEngine()
       iocp_worker_(thread_pool_.get(), &iocp_) {
   WSADATA wsaData;
   int status = WSAStartup(MAKEWORD(2, 0), &wsaData);
-  CHECK_EQ(status, 0);
+  GRPC_CHECK_EQ(status, 0);
 }
 
 WindowsEventEngine::~WindowsEventEngine() {
@@ -235,13 +235,13 @@ WindowsEventEngine::~WindowsEventEngine() {
         task_mu_.Lock();
       }
     }
-    CHECK(GPR_LIKELY(known_handles_.empty()));
+    GRPC_CHECK(GPR_LIKELY(known_handles_.empty()));
     task_mu_.Unlock();
   }
   iocp_.Kick();
   iocp_worker_.WaitForShutdown();
   iocp_.Shutdown();
-  CHECK_EQ(WSACleanup(), 0);
+  GRPC_CHECK_EQ(WSACleanup(), 0);
   timer_manager_.Shutdown();
   thread_pool_->Quiesce();
 }
@@ -287,9 +287,10 @@ WindowsEventEngine::CreateEndpointFromWinSocket(SOCKET socket,
                     ->CreateMemoryAllocator(local_address_string);
   } else {
     auto* rqv = config.GetVoidPointer(GRPC_ARG_RESOURCE_QUOTA);
-    CHECK_NE(rqv, nullptr) << "WindowsEventEngine::" << this
-                           << ": config does not contain a resource quota. "
-                              "This should not happen.";
+    GRPC_CHECK_NE(rqv, nullptr)
+        << "WindowsEventEngine::" << this
+        << ": config does not contain a resource quota. "
+           "This should not happen.";
     allocator = static_cast<grpc_core::ResourceQuota*>(rqv)
                     ->memory_quota()
                     ->CreateMemoryAllocator(local_address_string);
@@ -552,10 +553,11 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
     erased_handles =
         known_connection_handles_.erase(connection_state->connection_handle());
   }
-  CHECK_EQ(erased_handles, 1) << "Did not find connection handle "
-                              << connection_state->connection_handle()
-                              << " after a synchronous connection failure. "
-                                 "This should not be possible.";
+  GRPC_CHECK_EQ(erased_handles, 1)
+      << "Did not find connection handle "
+      << connection_state->connection_handle()
+      << " after a synchronous connection failure. "
+         "This should not be possible.";
   connection_state->socket()->Shutdown(DEBUG_LOCATION, "ConnectEx");
   if (!Cancel(connection_state->timer_handle())) {
     // The deadline timer will run, or is running.

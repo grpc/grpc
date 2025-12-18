@@ -30,12 +30,6 @@
 #include <variant>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -51,6 +45,7 @@
 #include "src/core/resolver/xds/xds_dependency_manager.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
@@ -64,6 +59,11 @@
 #include "src/core/xds/grpc/xds_cluster.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_health_status.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -313,13 +313,13 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
       << "[cdslb " << this
       << "] received update: cluster=" << new_config->cluster()
       << " is_dynamic=" << new_config->is_dynamic();
-  CHECK(new_config != nullptr);
+  GRPC_CHECK(new_config != nullptr);
   // Cluster name should never change, because we should use a different
   // child name in xds_cluster_manager in that case.
   if (cluster_name_.as_string_view().empty()) {
     cluster_name_ = RefCountedStringValue(new_config->cluster());
   } else {
-    CHECK_EQ(cluster_name_.as_string_view(), new_config->cluster());
+    GRPC_CHECK_EQ(cluster_name_.as_string_view(), new_config->cluster());
   }
   // Start dynamic subscription if needed.
   if (new_config->is_dynamic() && subscription_ == nullptr) {
@@ -374,7 +374,7 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
     ReportTransientFailure(new_cluster_config.status());
     return new_cluster_config.status();
   }
-  CHECK_NE(new_cluster_config->cluster, nullptr);
+  GRPC_CHECK_NE(new_cluster_config->cluster, nullptr);
   // Find old cluster, if any.
   const XdsConfig::ClusterConfig* old_cluster_config = nullptr;
   if (xds_config_ != nullptr) {
@@ -414,7 +414,7 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
           ReportTransientFailure(aggregate_cluster_config.status());
           return aggregate_cluster_config.status();
         }
-        CHECK_NE(aggregate_cluster_config->cluster, nullptr);
+        GRPC_CHECK_NE(aggregate_cluster_config->cluster, nullptr);
         aggregate_cluster_resource = aggregate_cluster_config->cluster.get();
       }
     } else {
@@ -508,7 +508,7 @@ CdsLb::ChildNameState CdsLb::ComputeChildNames(
     const XdsConfig::ClusterConfig* old_cluster,
     const XdsConfig::ClusterConfig& new_cluster,
     const XdsConfig::ClusterConfig::EndpointConfig& endpoint_config) const {
-  CHECK(!std::holds_alternative<XdsConfig::ClusterConfig::AggregateConfig>(
+  GRPC_CHECK(!std::holds_alternative<XdsConfig::ClusterConfig::AggregateConfig>(
       new_cluster.children));
   // First, build some maps from locality to child number and the reverse
   // from old_cluster and child_name_state_.

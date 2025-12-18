@@ -20,10 +20,10 @@
 #include <memory>
 #include <optional>
 
-#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace {
@@ -32,7 +32,6 @@ namespace {
 // they complete.  This ensures that we don't drop callbacks or cause a
 // memory leak.
 CORE_END2END_TEST(RetryTests, UnrefBeforeRecv) {
-  if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,

@@ -28,13 +28,6 @@
 #include <variant>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/xds/xds_credentials.h"
@@ -56,6 +49,7 @@
 #include "src/core/resolver/xds/xds_resolver_attributes.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
@@ -72,6 +66,12 @@
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_locality.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -330,55 +330,35 @@ class XdsClusterImplLb::Picker::SubchannelCallTracker final
         call_counter_(std::move(call_counter)) {}
 
   ~SubchannelCallTracker() override {
-    locality_stats_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
-    call_counter_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
-#ifndef NDEBUG
-    DCHECK(!started_);
-#endif
-  }
-
-  void Start() override {
-    // Increment number of calls in flight.
-    call_counter_->Increment();
-    // Record a call started.
-    if (locality_stats_ != nullptr) {
-      locality_stats_->AddCallStarted();
-    }
-    // Delegate if needed.
-    if (original_subchannel_call_tracker_ != nullptr) {
-      original_subchannel_call_tracker_->Start();
-    }
-#ifndef NDEBUG
-    started_ = true;
-#endif
+    MaybeFinish(/*succeeded=*/false, /*backend_metrics=*/nullptr);
   }
 
   void Finish(FinishArgs args) override {
-    // Delegate if needed.
     if (original_subchannel_call_tracker_ != nullptr) {
       original_subchannel_call_tracker_->Finish(args);
     }
-    // Record call completion for load reporting.
-    if (locality_stats_ != nullptr) {
-      locality_stats_->AddCallFinished(
-          args.backend_metric_accessor->GetBackendMetricData(),
-          !args.status.ok());
-    }
-    // Decrement number of calls in flight.
-    call_counter_->Decrement();
-#ifndef NDEBUG
-    started_ = false;
-#endif
+    MaybeFinish(/*succeeded=*/args.status.ok(),
+                args.backend_metric_accessor->GetBackendMetricData());
   }
 
  private:
+  void MaybeFinish(bool succeeded, const BackendMetricData* backend_metrics) {
+    // Record call completion for load reporting.
+    if (locality_stats_ != nullptr) {
+      locality_stats_->AddCallFinished(backend_metrics, /*fail=*/!succeeded);
+      locality_stats_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
+    }
+    // Decrement number of calls in flight.
+    if (call_counter_ != nullptr) {
+      call_counter_->Decrement();
+      call_counter_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
+    }
+  }
+
   std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
       original_subchannel_call_tracker_;
   RefCountedPtr<LrsClient::ClusterLocalityStats> locality_stats_;
   RefCountedPtr<CircuitBreakerCallCounterMap::CallCounter> call_counter_;
-#ifndef NDEBUG
-  bool started_ = false;
-#endif
 };
 
 //
@@ -449,11 +429,14 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
               kLocality,
           subchannel_wrapper->locality());
     }
+    // Increment number of calls in flight.
+    call_counter_->Increment();
     // Handle load reporting.
     RefCountedPtr<LrsClient::ClusterLocalityStats> locality_stats;
     if (subchannel_wrapper->locality_stats() != nullptr) {
       locality_stats = subchannel_wrapper->locality_stats()->Ref(
           DEBUG_LOCATION, "SubchannelCallTracker");
+      locality_stats->AddCallStarted();
     }
     // Handle authority rewriting if needed.
     if (!subchannel_wrapper->hostname().empty()) {
@@ -561,7 +544,7 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
   // different priority child name if that happens, which means that this
   // policy instance will get replaced instead of being updated.
   if (config_ != nullptr) {
-    CHECK(config_->cluster_name() == new_config->cluster_name());
+    GRPC_CHECK(config_->cluster_name() == new_config->cluster_name());
   }
   // Get xDS config.
   auto new_xds_config = args.args.GetObjectRef<XdsConfig>();

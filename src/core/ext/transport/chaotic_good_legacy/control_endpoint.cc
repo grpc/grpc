@@ -15,6 +15,7 @@
 #include "src/core/ext/transport/chaotic_good_legacy/control_endpoint.h"
 
 #include "src/core/lib/event_engine/event_engine_context.h"
+#include "src/core/lib/event_engine/extensions/channelz.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/try_seq.h"
@@ -39,13 +40,18 @@ auto ControlEndpoint::Buffer::Pull() {
 ControlEndpoint::ControlEndpoint(
     PromiseEndpoint endpoint,
     grpc_event_engine::experimental::EventEngine* event_engine,
-    std::shared_ptr<LegacyZTraceCollector> ztrace_collector)
+    std::shared_ptr<LegacyZTraceCollector> ztrace_collector,
+    RefCountedPtr<channelz::SocketNode> socket_node)
     : endpoint_(std::make_shared<PromiseEndpoint>(std::move(endpoint))),
       ztrace_collector_(std::move(ztrace_collector)) {
   auto arena = SimpleArenaAllocator(0)->MakeArena();
   arena->SetContext(event_engine);
   write_party_ = Party::Make(arena);
   CHECK(event_engine != nullptr);
+  auto epte = grpc_event_engine::experimental::QueryExtension<
+      grpc_event_engine::experimental::ChannelzExtension>(
+      endpoint_->GetEventEngineEndpoint().get());
+  if (epte != nullptr) epte->SetSocketNode(socket_node);
   write_party_->arena()->SetContext(event_engine);
   write_party_->Spawn(
       "flush-control",

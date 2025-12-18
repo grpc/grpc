@@ -31,10 +31,6 @@
 
 #include <memory>
 
-#include "absl/log/check.h"
-#include "absl/memory/memory.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
@@ -52,6 +48,10 @@
 #include "test/core/test_util/tls_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/check.h"
+#include "absl/memory/memory.h"
 
 using grpc::channelz::v2::GetEntityRequest;
 using grpc::channelz::v2::GetEntityResponse;
@@ -169,12 +169,7 @@ std::string RemoveWhitespaces(std::string input) {
 class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
  public:
   ChannelzServerTest() {}
-  static void SetUpTestSuite() {
-#if TARGET_OS_IPHONE
-    // Workaround Apple CFStream bug
-    grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
-  }
+  static void SetUpTestSuite() {}
   void SetUp() override {
     grpc_init();
 

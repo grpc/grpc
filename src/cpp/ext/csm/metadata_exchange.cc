@@ -29,19 +29,19 @@
 #include <unordered_map>
 #include <variant>
 
-#include "absl/log/check.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/escaping.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
-#include "absl/strings/strip.h"
 #include "opentelemetry/sdk/resource/semantic_conventions.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/cpp/ext/otel/key_value_iterable.h"
 #include "upb/base/string_view.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/escaping.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 
 namespace grpc {
 namespace internal {
@@ -206,7 +206,7 @@ NextFromAttributeList(absl::Span<const RemoteAttribute> attributes,
                       size_t start_index, size_t curr,
                       google_protobuf_Struct* decoded_metadata,
                       upb_Arena* arena) {
-  DCHECK_GE(curr, start_index);
+  GRPC_DCHECK_GE(curr, start_index);
   const size_t index = curr - start_index;
   if (index >= attributes.size()) return std::nullopt;
   const auto& attribute = attributes[index];

@@ -35,10 +35,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -49,6 +45,10 @@
 #include "src/core/util/host_port.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 namespace grpc_core {
 
 grpc_event_engine::experimental::EventEngine* NativeDNSResolver::engine() {

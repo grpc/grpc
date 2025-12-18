@@ -29,10 +29,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "google/protobuf/duration.upb.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/client_channel/subchannel.h"
@@ -47,6 +43,7 @@
 #include "src/core/load_balancing/backend_metric_parser.h"
 #include "src/core/load_balancing/oob_backend_metric_internal.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/memory.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -54,6 +51,9 @@
 #include "src/core/util/time.h"
 #include "upb/mem/arena.hpp"
 #include "xds/service/orca/v3/orca.upb.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -76,6 +76,10 @@ class OrcaProducer::ConnectivityWatcher final
                                  const absl::Status&) override {
     producer_->OnConnectivityStateChange(state);
   }
+
+  void OnKeepaliveUpdate(Duration) override {}
+
+  uint32_t max_connections_per_subchannel() const override { return 1; }
 
   grpc_pollset_set* interested_parties() override {
     return interested_parties_;
@@ -215,7 +219,7 @@ void OrcaProducer::Orphaned() {
     MutexLock lock(&mu_);
     stream_client_.reset();
   }
-  CHECK(subchannel_ != nullptr);  // Should not be called before Start().
+  GRPC_CHECK(subchannel_ != nullptr);  // Should not be called before Start().
   subchannel_->CancelConnectivityStateWatch(connectivity_watcher_);
   subchannel_->RemoveDataProducer(this);
 }

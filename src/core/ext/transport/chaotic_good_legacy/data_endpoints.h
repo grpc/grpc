@@ -242,7 +242,8 @@ class Endpoint final {
            grpc_event_engine::experimental::EventEngine* event_engine,
            std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
                stats_plugin_group,
-           std::shared_ptr<LegacyZTraceCollector> ztrace_collector);
+           std::shared_ptr<LegacyZTraceCollector> ztrace_collector,
+           RefCountedPtr<channelz::SocketNode> socket_node);
 
   void AddData(channelz::DataSink sink) {
     party_->ExportToChannelz(absl::StrCat("endpoint_party", id_), sink);
@@ -274,7 +275,8 @@ class DataEndpoints {
       std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
           stats_plugin_group,
       bool enable_tracing,
-      std::shared_ptr<LegacyZTraceCollector> ztrace_collector);
+      std::shared_ptr<LegacyZTraceCollector> ztrace_collector,
+      RefCountedPtr<channelz::SocketNode> socket_node);
 
   // Try to queue output_buffer against a data endpoint.
   // Returns a promise that resolves to the data endpoint connection id

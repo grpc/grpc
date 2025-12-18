@@ -19,13 +19,13 @@
 #include <map>
 #include <string>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "client_call_tracer.h"
 #include "constants.h"
 #include "python_observability_context.h"
 #include "server_call_tracer.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 namespace grpc_observability {
 
@@ -95,7 +95,8 @@ void RecordSpan(const SpanCensusData& span_census_data) {
 
 void NativeObservabilityInit() {
   g_census_data_buffer = new std::queue<CensusData>;
-  grpc_core::CreateCollectionScope();  // Forces linking of instrument library
+  // Forces linking of instrument library
+  grpc_core::CreateCollectionScope({}, {});
 }
 
 void* CreateClientCallTracer(const char* method, const char* target,

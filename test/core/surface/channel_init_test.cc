@@ -20,8 +20,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/strings/string_view.h"
-#include "gtest/gtest.h"
 #include "src/core/call/call_arena_allocator.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
@@ -29,6 +27,8 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace {
@@ -54,8 +54,9 @@ auto RemoveFilterNamed(std::string name) {
   return [name](ChannelStackBuilder& builder) {
     auto* stk = builder.mutable_stack();
     stk->erase(std::remove_if(stk->begin(), stk->end(),
-                              [name](const grpc_channel_filter* filter) {
-                                return filter->name.name() == name;
+                              [name](const FilterAndConfig& filter_and_config) {
+                                return filter_and_config.filter->name.name() ==
+                                       name;
                               }),
                stk->end());
   };
@@ -67,8 +68,8 @@ std::vector<std::string> GetFilterNames(const ChannelInit& init,
   ChannelStackBuilderImpl b("test", type, args);
   if (!init.CreateStack(&b)) return {};
   std::vector<std::string> names;
-  for (auto f : b.stack()) {
-    names.push_back(std::string(f->name.name()));
+  for (auto& [filter, _] : b.stack()) {
+    names.push_back(std::string(filter->name.name()));
   }
   EXPECT_NE(names, std::vector<std::string>());
   return names;
@@ -224,7 +225,7 @@ TEST(ChannelInitTest, CanPostProcessFilters) {
       ChannelInit::PostProcessorSlot::kXdsChannelStackModifier,
       [&called_post_processor](ChannelStackBuilder& b) {
         ++called_post_processor;
-        b.mutable_stack()->push_back(FilterNamed("bar"));
+        b.mutable_stack()->push_back({FilterNamed("bar"), nullptr});
       });
   auto init = b.Build();
   EXPECT_EQ(called_post_processor, 0);
@@ -403,6 +404,9 @@ class TestFilter1 {
     static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnServerToClientMessage;
     static const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList().Set("filter_id", 1);
+    }
   };
 
  private:

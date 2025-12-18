@@ -12,19 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_TEST_CORE_TEST_UTIL_POSTMORTEM_EMIT_H
-#define GRPC_TEST_CORE_TEST_UTIL_POSTMORTEM_EMIT_H
+#include "src/core/lib/resource_quota/stream_quota.h"
 
-namespace grpc_core {
+#include <algorithm>
+#include <atomic>
+#include <cstdint>
+#include <limits>
 
-// Emit useful post mortem analysis from whatever in-process data we have.
-void PostMortemEmit();
-
-// Does all the work of PostMortemEmit, but doesn't emit anything.
-// This is useful for verifying that PostMortemEmit *would* succeed...
-// which means especially that channelz is working.
-void SilentPostMortemEmit();
-
-}  // namespace grpc_core
-
-#endif  // GRPC_TEST_CORE_TEST_UTIL_POSTMORTEM_EMIT_H
+namespace grpc_core {}  // namespace grpc_core

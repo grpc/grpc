@@ -32,16 +32,6 @@
 #include <variant>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/meta/type_traits.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -62,6 +52,7 @@
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
@@ -73,6 +64,15 @@
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/util/work_serializer.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
+#include "absl/meta/type_traits.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -347,8 +347,6 @@ class WeightedRoundRobin final : public LoadBalancingPolicy {
             error_utilization_penalty_(error_utilization_penalty),
             child_tracker_(std::move(child_tracker)) {}
 
-      void Start() override;
-
       void Finish(FinishArgs args) override;
 
      private:
@@ -511,10 +509,6 @@ void WeightedRoundRobin::EndpointWeight::ResetNonEmptySince() {
 // WeightedRoundRobin::Picker::SubchannelCallTracker
 //
 
-void WeightedRoundRobin::Picker::SubchannelCallTracker::Start() {
-  if (child_tracker_ != nullptr) child_tracker_->Start();
-}
-
 void WeightedRoundRobin::Picker::SubchannelCallTracker::Finish(
     FinishArgs args) {
   if (child_tracker_ != nullptr) child_tracker_->Finish(args);
@@ -577,7 +571,7 @@ void WeightedRoundRobin::Picker::Orphaned() {
 
 WeightedRoundRobin::PickResult WeightedRoundRobin::Picker::Pick(PickArgs args) {
   size_t index = PickIndex();
-  CHECK(index < endpoints_.size());
+  GRPC_CHECK(index < endpoints_.size());
   auto& endpoint_info = endpoints_[index];
   GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
       << "[WRR " << wrr_.get() << " picker " << this << "] returning index "
@@ -705,8 +699,8 @@ WeightedRoundRobin::WeightedRoundRobin(Args args)
 WeightedRoundRobin::~WeightedRoundRobin() {
   GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
       << "[WRR " << this << "] Destroying Round Robin policy";
-  CHECK(endpoint_list_ == nullptr);
-  CHECK(latest_pending_endpoint_list_ == nullptr);
+  GRPC_CHECK(endpoint_list_ == nullptr);
+  GRPC_CHECK(latest_pending_endpoint_list_ == nullptr);
 }
 
 void WeightedRoundRobin::ShutdownLocked() {
@@ -905,20 +899,20 @@ void WeightedRoundRobin::WrrEndpointList::UpdateStateCountersLocked(
   // We treat IDLE the same as CONNECTING, since it will immediately
   // transition into that state anyway.
   if (old_state.has_value()) {
-    CHECK(*old_state != GRPC_CHANNEL_SHUTDOWN);
+    GRPC_CHECK(*old_state != GRPC_CHANNEL_SHUTDOWN);
     if (*old_state == GRPC_CHANNEL_READY) {
-      CHECK_GT(num_ready_, 0u);
+      GRPC_CHECK_GT(num_ready_, 0u);
       --num_ready_;
     } else if (*old_state == GRPC_CHANNEL_CONNECTING ||
                *old_state == GRPC_CHANNEL_IDLE) {
-      CHECK_GT(num_connecting_, 0u);
+      GRPC_CHECK_GT(num_connecting_, 0u);
       --num_connecting_;
     } else if (*old_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-      CHECK_GT(num_transient_failure_, 0u);
+      GRPC_CHECK_GT(num_transient_failure_, 0u);
       --num_transient_failure_;
     }
   }
-  CHECK(new_state != GRPC_CHANNEL_SHUTDOWN);
+  GRPC_CHECK(new_state != GRPC_CHANNEL_SHUTDOWN);
   if (new_state == GRPC_CHANNEL_READY) {
     ++num_ready_;
   } else if (new_state == GRPC_CHANNEL_CONNECTING ||

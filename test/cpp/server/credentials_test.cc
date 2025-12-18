@@ -23,11 +23,11 @@
 
 #include <memory>
 
-#include "absl/log/check.h"
-#include "gtest/gtest.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/cpp/util/tls_test_utils.h"
+#include "gtest/gtest.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
@@ -76,7 +76,7 @@ TEST(
   options.set_cert_request_type(
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   auto server_credentials = grpc::experimental::TlsServerCredentials(options);
-  CHECK_NE(server_credentials.get(), nullptr);
+  GRPC_CHECK_NE(server_credentials.get(), nullptr);
 }
 
 // ServerCredentials should always have identity credential presented.
@@ -98,7 +98,7 @@ TEST(CredentialsTest,
   options.set_cert_request_type(
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   auto server_credentials = grpc::experimental::TlsServerCredentials(options);
-  CHECK_NE(server_credentials.get(), nullptr);
+  GRPC_CHECK_NE(server_credentials.get(), nullptr);
 }
 
 TEST(
@@ -114,7 +114,7 @@ TEST(
   options.set_cert_request_type(
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   auto server_credentials = grpc::experimental::TlsServerCredentials(options);
-  CHECK_NE(server_credentials.get(), nullptr);
+  GRPC_CHECK_NE(server_credentials.get(), nullptr);
 }
 
 TEST(CredentialsTest,
@@ -165,7 +165,7 @@ TEST(CredentialsTest, TlsServerCredentialsWithCrlChecking) {
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   options.set_crl_directory(CRL_DIR_PATH);
   auto server_credentials = grpc::experimental::TlsServerCredentials(options);
-  CHECK_NE(server_credentials.get(), nullptr);
+  GRPC_CHECK_NE(server_credentials.get(), nullptr);
 }
 
 // ServerCredentials should always have identity credential presented.
@@ -181,7 +181,7 @@ TEST(
   options.set_cert_request_type(
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   auto server_credentials = grpc::experimental::TlsServerCredentials(options);
-  CHECK_NE(server_credentials.get(), nullptr);
+  GRPC_CHECK_NE(server_credentials.get(), nullptr);
 }
 
 TEST(CredentialsTest, TlsServerCredentialsWithSyncExternalVerifier) {
@@ -198,7 +198,7 @@ TEST(CredentialsTest, TlsServerCredentialsWithSyncExternalVerifier) {
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   options.set_certificate_verifier(verifier);
   auto server_credentials = grpc::experimental::TlsServerCredentials(options);
-  CHECK_NE(server_credentials.get(), nullptr);
+  GRPC_CHECK_NE(server_credentials.get(), nullptr);
 }
 
 TEST(CredentialsTest, TlsServerCredentialsWithAsyncExternalVerifier) {
@@ -215,7 +215,7 @@ TEST(CredentialsTest, TlsServerCredentialsWithAsyncExternalVerifier) {
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   options.set_certificate_verifier(verifier);
   auto server_credentials = grpc::experimental::TlsServerCredentials(options);
-  CHECK_NE(server_credentials.get(), nullptr);
+  GRPC_CHECK_NE(server_credentials.get(), nullptr);
 }
 
 TEST(CredentialsTest, TlsServerCredentialsWithCrlProvider) {
@@ -226,7 +226,7 @@ TEST(CredentialsTest, TlsServerCredentialsWithCrlProvider) {
   grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
   options.set_crl_provider(*provider);
   auto channel_credentials = grpc::experimental::TlsServerCredentials(options);
-  CHECK_NE(channel_credentials.get(), nullptr);
+  GRPC_CHECK_NE(channel_credentials.get(), nullptr);
 }
 
 TEST(CredentialsTest, TlsServerCredentialsWithCrlProviderAndDirectory) {
@@ -240,7 +240,7 @@ TEST(CredentialsTest, TlsServerCredentialsWithCrlProviderAndDirectory) {
   auto server_credentials = grpc::experimental::TlsServerCredentials(options);
   //   TODO(gtcooke94) - behavior might change to make this return nullptr in
   //   the future
-  CHECK_NE(server_credentials, nullptr);
+  GRPC_CHECK_NE(server_credentials, nullptr);
 }
 
 TEST(CredentialsTest, TlsCredentialsOptionsDoesNotLeak) {

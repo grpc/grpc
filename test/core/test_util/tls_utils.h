@@ -25,11 +25,11 @@
 #include <string>
 #include <utility>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/thd.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

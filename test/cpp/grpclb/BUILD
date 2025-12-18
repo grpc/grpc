@@ -18,6 +18,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/cpp/grpclb",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "public",
 )  # Allows external users to implement grpclb tests.
 
@@ -35,6 +39,7 @@ grpc_cc_test(
         "//:grpc++",
         "//:protobuf_duration_upb",
         "//:sockaddr_utils",
+        "//src/core:grpc_check",
         "//src/core:grpc_lb_policy_grpclb",
         "//src/core:grpc_sockaddr",
         "//src/proto/grpc/lb/v1:load_balancer_cc_proto",

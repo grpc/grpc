@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <google/protobuf/text_format.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
@@ -19,8 +20,6 @@
 #include <optional>
 #include <string>
 
-#include "absl/log/check.h"
-#include "absl/status/statusor.h"
 #include "fuzztest/fuzztest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
@@ -34,6 +33,7 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
@@ -44,6 +44,8 @@
 #include "test/core/test_util/fuzz_config_vars_helpers.h"
 #include "test/core/test_util/mock_endpoint.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/status/statusor.h"
 
 bool squelch = true;
 bool leak_check = true;
@@ -79,7 +81,7 @@ class ClientFuzzer final : public BasicFuzzer {
                    ->c_ptr();
   }
 
-  ~ClientFuzzer() { CHECK_EQ(channel_, nullptr); }
+  ~ClientFuzzer() { GRPC_CHECK_EQ(channel_, nullptr); }
 
  private:
   Result CreateChannel(const api_fuzzer::CreateChannel&) override {
@@ -102,7 +104,7 @@ class ClientFuzzer final : public BasicFuzzer {
   grpc_channel* channel_ = nullptr;
 };
 
-void Run(fuzzer_input::Msg msg) {
+void Fuzz(fuzzer_input::Msg msg) {
   if (squelch && !GetEnv("GRPC_TRACE_FUZZER").has_value()) {
     grpc_disable_all_absl_logs();
   }
@@ -111,9 +113,43 @@ void Run(fuzzer_input::Msg msg) {
   TestOnlyReloadExperimentsFromConfigVariables();
   testing::ClientFuzzer(msg).Run(msg.api_actions());
 }
-FUZZ_TEST(ClientFuzzerTest, Run)
+FUZZ_TEST(ClientFuzzerTest, Fuzz)
     .WithDomains(::fuzztest::Arbitrary<fuzzer_input::Msg>().WithProtobufField(
         "config_vars", AnyConfigVars()));
+
+auto ParseTestProto(const std::string& proto) {
+  fuzzer_input::Msg msg;
+  GRPC_CHECK(google::protobuf::TextFormat::ParseFromString(proto, &msg));
+  return msg;
+}
+
+TEST(ClientFuzzerTest, RunChannelzCallTracerRegression) {
+  Fuzz(ParseTestProto(R"pb(network_input { single_read_bytes: "" }
+                           api_actions { create_call { method { value: "Z" } } }
+                           config_vars { channelz_call_tracer: true })pb"));
+}
+
+TEST(ClientFuzzerTest, RunChannelzCallTracerRegression2) {
+  Fuzz(ParseTestProto(R"pb(network_input {
+                             single_read_bytes: "K"
+                             connect_timeout_ms: -1
+                             endpoint_config { args { key: "\000" str: "" } }
+                           }
+                           api_actions {
+                             create_call {
+                               propagation_mask: 1
+                               method { value: "<" }
+                             }
+                           }
+                           config_vars {
+                             verbosity: "debug"
+                             dns_resolver: "native"
+                             trace: ""
+                             channelz_call_tracer: true
+                             channelz_max_orphaned_nodes: 1
+                           }
+                           channel_args {})pb"));
+}
 
 }  // namespace testing
 }  // namespace grpc_core

@@ -40,13 +40,6 @@
 #include <variant>
 #include <vector>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/memory/memory.h"
-#include "absl/meta/type_traits.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -58,6 +51,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
 #include "src/core/util/wait_for_single_owner.h"
 #include "test/core/call/batch_builder.h"
@@ -67,6 +61,13 @@
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/postmortem.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/globals.h"
+#include "absl/memory/memory.h"
+#include "absl/meta/type_traits.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 #ifdef GRPC_END2END_TEST_INCLUDE_FUZZER
 #include "fuzztest/fuzztest.h"
@@ -104,6 +105,7 @@
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
 #define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG "Ph2Client"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_RETRY "Ph2ClientRetry"
 
 namespace grpc_core {
 
@@ -490,7 +492,7 @@ class CoreEnd2endTest {
     if (client_ != nullptr) ShutdownAndDestroyClient();
     auto& f = fixture();
     client_ = f.MakeClient(args, cq_);
-    CHECK_NE(client_, nullptr);
+    GRPC_CHECK_NE(client_, nullptr);
   }
 
   static ChannelArgs DefaultServerArgs() {
@@ -510,7 +512,7 @@ class CoreEnd2endTest {
     if (server_ != nullptr) ShutdownAndDestroyServer();
     auto& f = fixture();
     server_ = f.MakeServer(args, cq_, pre_server_start_);
-    CHECK_NE(server_, nullptr);
+    GRPC_CHECK_NE(server_, nullptr);
   }
   // Remove the client.
   void ShutdownAndDestroyClient() {
@@ -588,7 +590,7 @@ class CoreEnd2endTest {
   }
 
   void SetPostGrpcInitFunc(absl::AnyInvocable<void()> fn) {
-    CHECK(fixture_ == nullptr);
+    GRPC_CHECK(fixture_ == nullptr);
     post_grpc_init_func_ = std::move(fn);
   }
 
@@ -721,6 +723,27 @@ inline auto MaybeAddNullConfig(
   return configs;
 }
 
+// TODO(akshitpatel) : [PH2][P3] : Remove once all the PH2 E2E tests are fixed.
+inline void EnableLoggingForPH2Tests() {
+  if (IsPromiseBasedHttp2ClientTransportEnabled()) {
+    grpc_tracer_set_enabled("http2_ph2_transport", true);
+    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
+    absl::SetGlobalVLogLevel(2);
+  }
+}
+
+// TODO(akshitpatel) : [PH2][P3] : Remove once all the PH2 E2E tests are fixed.
+inline void DisableLoggingForPH2Tests() {
+  if (IsPromiseBasedHttp2ClientTransportEnabled()) {
+    absl::SetGlobalVLogLevel(-1);
+    grpc_tracer_set_enabled("http2_ph2_transport", false);
+  }
+}
+
+inline bool IsPromiseBasedTransportEnabled() {
+  return IsPromiseBasedHttp2ClientTransportEnabled();
+}
+
 }  // namespace grpc_core
 
 // If this test fixture is being run under minstack, skip the test.
@@ -736,15 +759,32 @@ inline auto MaybeAddNullConfig(
     GTEST_SKIP() << "Disabled for initial v3 testing";         \
   }
 
+inline bool IsTokenInList(absl::string_view list, absl::string_view token) {
+  if (list.empty()) return false;
+  size_t start = 0;
+  while (start < list.size()) {
+    size_t end = list.find('|', start);
+    if (end == std::string::npos) {
+      end = list.size();
+    }
+
+    if (list.substr(start, end - start) == token) {
+      return true;
+    }
+    start = end + 1;
+  }
+  return false;
+}
+
 inline bool IsTestEnabledInConfig(absl::string_view include_suite,
                                   absl::string_view include_test,
                                   absl::string_view exclude_test,
                                   absl::string_view suite,
                                   absl::string_view test) {
   return (absl::StrContains((include_suite), "*") ||
-          absl::StrContains((include_suite), suite) ||
-          absl::StrContains(include_test, absl::StrCat(suite, ".", test))) &&
-         !absl::StrContains(exclude_test, absl::StrCat(suite, ".", test));
+          IsTokenInList((include_suite), suite) ||
+          IsTokenInList(include_test, absl::StrCat(suite, ".", test))) &&
+         !IsTokenInList(exclude_test, absl::StrCat(suite, ".", test));
 }
 
 #define SKIP_IF_DISABLED_IN_CONFIG(include_suite, include_test, exclude_test,  \

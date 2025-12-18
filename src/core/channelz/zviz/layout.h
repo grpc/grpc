@@ -17,10 +17,10 @@
 
 #include <string>
 
-#include "absl/strings/str_cat.h"
 #include "google/protobuf/duration.pb.h"
 #include "google/protobuf/timestamp.pb.h"
 #include "src/core/channelz/zviz/environment.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_zviz::layout {
 

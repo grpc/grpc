@@ -20,13 +20,13 @@
 #include <optional>
 #include <thread>
 
-#include "gtest/gtest.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/util/notification.h"
 #include "test/core/promise/poll_matcher.h"
+#include "gtest/gtest.h"
 
 using ::testing::Mock;
 using ::testing::StrictMock;

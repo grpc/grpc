@@ -21,7 +21,7 @@
 #include <optional>
 #include <vector>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/span.h"
@@ -44,7 +44,7 @@ using HistogramBuckets = absl::Span<const int64_t>;
 // The bounds array holds the upper bound of the bucket with the given index.
 inline int64_t BucketInBoundsFor(absl::Span<const int64_t> bounds,
                                  int64_t value) {
-  CHECK(!bounds.empty());
+  GRPC_CHECK(!bounds.empty());
   if (value < bounds[0]) return 0;
   if (value > bounds.back()) return bounds.size() - 1;
   // Find the first element in bounds strictly greater than value
@@ -75,8 +75,8 @@ class ExponentialHistogramShape {
   ExponentialHistogramShape(int64_t max, size_t buckets)
       : max_(max), buckets_(buckets) {
     first_non_trivial_ = -1;
-    CHECK_GT(max, 0);
-    CHECK_LT(buckets, 1000000000u);
+    GRPC_CHECK_GT(max, 0);
+    GRPC_CHECK_LT(buckets, 1000000000u);
     if (max <= static_cast<int64_t>(buckets)) {
       for (size_t i = 0; i < static_cast<size_t>(max); ++i) {
         bounds_.push_back(i + 1);
@@ -106,7 +106,7 @@ class ExponentialHistogramShape {
       }
       bounds_.push_back(nextb);
     }
-    CHECK_EQ(bounds_.size(), buckets_);
+    GRPC_CHECK_EQ(bounds_.size(), buckets_);
     if (first_non_trivial_ == -1) {
       first_non_trivial_ = max_;
       offset_ = 0;
@@ -127,8 +127,8 @@ class ExponentialHistogramShape {
         break;
       }
     }
-    CHECK_GE(shift_, 0u);
-    CHECK_LT(shift_, 64u);
+    GRPC_CHECK_GE(shift_, 0u);
+    GRPC_CHECK_LT(shift_, 64u);
     for (size_t i = 0; i <= (DoubleToUint(max_) - offset_) >> shift_; ++i) {
       lookup_table_.push_back(
           BucketInBoundsFor(bounds_, UintToDouble((i << shift_) + offset_)));
@@ -150,15 +150,15 @@ class ExponentialHistogramShape {
     }
     auto index = (DoubleToUint(value) - offset_) >> shift_;
     size_t bucket = lookup_table_[index];
-    DCHECK_LT(bucket, buckets_) << absl::StrJoin(lookup_table_, ",");
-    DCHECK_LT(bucket, bounds_.size()) << absl::StrJoin(bounds_, ",");
+    GRPC_DCHECK_LT(bucket, buckets_) << absl::StrJoin(lookup_table_, ",");
+    GRPC_DCHECK_LT(bucket, bounds_.size()) << absl::StrJoin(bounds_, ",");
     while (bucket < bounds_.size() - 1 && value >= bounds_[bucket]) {
       ++bucket;
     }
     while (bucket > 0 && value < bounds_[bucket - 1]) {
       --bucket;
     }
-    DCHECK_LT(value, bounds_[bucket]);
+    GRPC_DCHECK_LT(value, bounds_[bucket]);
     return bucket;
   }
 

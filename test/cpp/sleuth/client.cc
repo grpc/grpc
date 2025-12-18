@@ -19,13 +19,15 @@
 #include <vector>
 
 #include "src/core/transport/endpoint_transport.h"
+#include "src/cpp/latent_see/latent_see_client.h"
 
 namespace grpc_sleuth {
 
 Client::Client(std::string target, Options options)
     : channel_(grpc::CreateCustomChannel(target, options.creds,
                                          MakeChannelArguments(options))),
-      stub_(grpc::channelz::v2::Channelz::NewStub(channel_)) {}
+      stub_(grpc::channelz::v2::Channelz::NewStub(channel_)),
+      latent_see_stub_(grpc::channelz::v2::LatentSee::NewStub(channel_)) {}
 
 grpc::ChannelArguments Client::MakeChannelArguments(const Options& options) {
   grpc::ChannelArguments args;
@@ -37,6 +39,35 @@ absl::StatusOr<std::vector<grpc::channelz::v2::Entity>>
 Client::QueryAllChannelzEntities() {
   grpc::ClientContext context;
   grpc::channelz::v2::QueryEntitiesRequest request;
+  grpc::channelz::v2::QueryEntitiesResponse response;
+  std::vector<grpc::channelz::v2::Entity> entities;
+  while (true) {
+    grpc::Status status = stub_->QueryEntities(&context, request, &response);
+    if (!status.ok()) {
+      return absl::Status(static_cast<absl::StatusCode>(status.error_code()),
+                          status.error_message());
+    }
+    for (const auto& entity : response.entities()) {
+      entities.push_back(entity);
+    }
+    if (response.end()) {
+      break;
+    }
+    if (response.entities().empty()) {
+      return absl::InternalError(
+          "channelz pagination issue: received no entities but not end of "
+          "list");
+    }
+    request.set_start_entity_id(entities.back().id() + 1);
+  }
+  return entities;
+}
+
+absl::StatusOr<std::vector<grpc::channelz::v2::Entity>>
+Client::QueryAllChannelzEntitiesOfKind(absl::string_view entity_kind) {
+  grpc::ClientContext context;
+  grpc::channelz::v2::QueryEntitiesRequest request;
+  request.set_kind(entity_kind);
   grpc::channelz::v2::QueryEntitiesResponse response;
   std::vector<grpc::channelz::v2::Entity> entities;
   while (true) {
@@ -80,6 +111,17 @@ absl::Status Client::QueryTrace(
   grpc::Status status = reader->Finish();
   if (!status.ok()) {
     // Manual conversion
+    return absl::Status(static_cast<absl::StatusCode>(status.error_code()),
+                        status.error_message());
+  }
+  return absl::OkStatus();
+}
+
+absl::Status Client::FetchLatentSee(double sample_time,
+                                    grpc_core::latent_see::Output* output) {
+  grpc::Status status =
+      grpc::FetchLatentSee(latent_see_stub_.get(), sample_time, output);
+  if (!status.ok()) {
     return absl::Status(static_cast<absl::StatusCode>(status.error_code()),
                         status.error_message());
   }
