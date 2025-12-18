@@ -17,6 +17,7 @@ from __future__ import annotations
 import abc
 import contextlib
 import logging
+import grpc
 import threading
 from typing import (
     Any,
