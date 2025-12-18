@@ -1915,7 +1915,6 @@ static tsi_result ssl_handshaker_do_handshake(tsi_ssl_handshaker* impl,
     // Get ready to get some bytes from SSL.
     int ssl_result = SSL_do_handshake(impl->ssl);
     ssl_result = SSL_get_error(impl->ssl, ssl_result);
-    LOG(ERROR) << "ssl_handshaker_do_handshake " << ssl_result;
     switch (ssl_result) {
       case SSL_ERROR_WANT_READ:
         if (BIO_pending(impl->network_io) == 0) {
@@ -1929,10 +1928,8 @@ static tsi_result ssl_handshaker_do_handshake(tsi_ssl_handshaker* impl,
       case SSL_ERROR_WANT_WRITE:
         return TSI_DRAIN_BUFFER;
       case SSL_ERROR_WANT_PRIVATE_KEY_OPERATION:
-        LOG(ERROR) << "ssl_handshaker_do_handshake TSI_ASYNC ";
         return TSI_ASYNC;
       default: {
-        LOG(ERROR) << "ssl_handshaker_do_handshake other error " << ssl_result;
         char err_str[256];
         ERR_error_string_n(ERR_get_error(), err_str, sizeof(err_str));
         long verify_result = SSL_get_verify_result(impl->ssl);
@@ -1972,8 +1969,6 @@ static tsi_result ssl_handshaker_process_bytes_from_peer(
     impl->result = TSI_INTERNAL_ERROR;
     return impl->result;
   }
-  LOG(ERROR) << "ssl_handshaker_process_bytes_from_peer " << *bytes_size;
-  // LOG(ERROR) << "ssl_handshaker_process_bytes_from_peer " << *error;
   *bytes_size = static_cast<size_t>(bytes_written_into_ssl_size);
   return ssl_handshaker_do_handshake(impl, error);
 }
@@ -2059,7 +2054,6 @@ static tsi_result ssl_handshaker_next(
     if (error != nullptr) *error = "invalid argument";
     return TSI_INVALID_ARGUMENT;
   }
-  LOG(ERROR) << "ssl_handshaker_next " << received_bytes_size;
   // If there are received bytes, process them first.
   tsi_ssl_handshaker* impl = reinterpret_cast<tsi_ssl_handshaker*>(self);
 
@@ -2096,7 +2090,6 @@ static tsi_result ssl_handshaker_next(
         status =
             ssl_handshaker_write_output_buffer(self, &bytes_written, error);
         if (status != TSI_OK) return status;
-        LOG(ERROR) << "ssl_handshaker_next " << received_bytes_size;
         status = ssl_handshaker_do_handshake(impl, error);
       }
       // Move the pointer to the first byte not yet successfully written to
@@ -2104,7 +2097,9 @@ static tsi_result ssl_handshaker_next(
       remaining_bytes_to_write_to_openssl_size -= bytes_written_to_openssl;
       remaining_bytes_to_write_to_openssl += bytes_written_to_openssl;
     }
-  } else if(cb != nullptr) {
+  } else if (offload_context != nullptr &&
+             offload_context->status ==
+                 grpc_core::TlsPrivateKeyOffloadContext::kCompleted) {
     status = ssl_handshaker_do_handshake(impl, error);
   }
   if (status != TSI_OK) return status;
@@ -2117,21 +2112,18 @@ static tsi_result ssl_handshaker_next(
   if (ssl_handshaker_get_result(impl) == TSI_HANDSHAKE_IN_PROGRESS) {
     *handshaker_result = nullptr;
   } else {
-    LOG(ERROR) << "anasalazar";
     // Any bytes that remain in |impl->ssl|'s read BIO after the handshake is
     // complete must be extracted and set to the unused bytes of the
     // handshaker result. This indicates to the gRPC stack that there are
-    // bytes from the peer that must be processed.
+    // unconsumed bytes meant for the frame protector.
     unsigned char* unused_bytes = nullptr;
     size_t unused_bytes_size = 0;
-    status =
-        ssl_bytes_remaining(impl, &unused_bytes, &unused_bytes_size, error);
-    if (status != TSI_OK) return status;
-    if (unused_bytes_size > received_bytes_size) {
-      LOG(ERROR) << "More unused bytes than received bytes.";
-      gpr_free(unused_bytes);
-      if (error != nullptr) *error = "More unused bytes than received bytes.";
-      return TSI_INTERNAL_ERROR;
+    std::string tsi_error;
+    tsi_result status = ssl_bytes_remaining(impl, &unused_bytes,
+                                            &unused_bytes_size, &tsi_error);
+    if (status != TSI_OK) {
+      if (error != nullptr) *error = tsi_error;
+      return status;
     }
     status = ssl_handshaker_result_create(impl, unused_bytes, unused_bytes_size,
                                           handshaker_result, error);
@@ -2144,24 +2136,10 @@ static tsi_result ssl_handshaker_next(
       // Indicates that the handshake has completed and that a
       // handshaker_result has been created.
       self->handshaker_result_created = true;
-      LOG(ERROR) << "aaaaa " << handshaker_result;
-      if (offload_context != nullptr) {
-        LOG(ERROR) << "aaaaa";
-      }
-      // Output Cipher information
-      if (GRPC_TRACE_FLAG_ENABLED(tsi)) {
-        tsi_ssl_handshaker_result* result =
-            reinterpret_cast<tsi_ssl_handshaker_result*>(*handshaker_result);
-        auto cipher = SSL_get_current_cipher(result->ssl);
-        if (cipher != nullptr) {
-          GRPC_TRACE_LOG(tsi, INFO) << absl::StrFormat(
-              "SSL Cipher Version: %s Name: %s", SSL_CIPHER_get_version(cipher),
-              SSL_CIPHER_get_name(cipher));
-        }
-      }
     }
+    return status;
   }
-  return status;
+  return TSI_OK;
 }
 
 static const tsi_handshaker_vtable handshaker_vtable = {

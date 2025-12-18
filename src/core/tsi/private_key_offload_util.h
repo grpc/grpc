@@ -31,14 +31,20 @@ namespace grpc_core {
 
 // State associated with an SSL object for async private key operations.
 struct TlsPrivateKeyOffloadContext {
+  enum SignatureStatus {
+    kInProgress,
+    kCompleted,
+  };
+
   absl::StatusOr<std::string> signed_bytes;
 
   // TSI handshake state needed to resume.
   tsi_handshaker* handshaker;
   tsi_handshaker_on_next_done_cb notify_cb;
   tsi_handshaker_result* handshaker_result;
-  
   void* notify_user_data;
+
+  SignatureStatus status = kInProgress;
 };
 
 // Returns the TlsPrivateKeyOffloadContext associated with the SSL object.

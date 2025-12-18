@@ -303,7 +303,6 @@ void tsi_test_frame_protector_receive_message_from_peer(
 grpc_error_handle on_handshake_next_done(
     tsi_result result, void* user_data, const unsigned char* bytes_to_send,
     size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result) {
-  LOG(ERROR) << "on_handshake_next_done";
   handshaker_args* args = static_cast<handshaker_args*>(user_data);
   GRPC_CHECK_NE(args, nullptr);
   GRPC_CHECK_NE(args->fixture, nullptr);
@@ -343,7 +342,6 @@ grpc_error_handle on_handshake_next_done(
 static void on_handshake_next_done_wrapper(
     tsi_result result, void* user_data, const unsigned char* bytes_to_send,
     size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result) {
-  LOG(ERROR) << "on_handshake_next_done_wrapper";
   handshaker_args* args = static_cast<handshaker_args*>(user_data);
   args->error = on_handshake_next_done(result, user_data, bytes_to_send,
                                        bytes_to_send_size, handshaker_result);
@@ -380,12 +378,10 @@ static void do_handshaker_next(handshaker_args* args) {
       args->transferred_data = true;
     }
     // Perform handshaker next.
-    LOG(ERROR) << "do_handshaker_next start";
     result = tsi_handshaker_next(
         handshaker, args->handshake_buffer, buf_size,
         const_cast<const unsigned char**>(&bytes_to_send), &bytes_to_send_size,
         &handshaker_result, &on_handshake_next_done_wrapper, args);
-    LOG(ERROR) << "do_handshaker_next end";
     if (result != TSI_ASYNC) {
       args->error = on_handshake_next_done(
           result, args, bytes_to_send, bytes_to_send_size, handshaker_result);

@@ -20034,18 +20034,6 @@ targets:
   - absl/utility:utility
   - gpr
   uses_polling: false
-- name: private_key_offload_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/tsi/transport_security_test_lib.h
-  src:
-  - test/core/tsi/private_key_offload_test.cc
-  - test/core/tsi/transport_security_test_lib.cc
-  deps:
-  - gtest
-  - grpc_test_util
 - name: promise_endpoint_test
   gtest: true
   build: test

@@ -337,7 +337,6 @@ grpc_error_handle SecurityHandshaker::CheckPeerLocked() {
 grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
     tsi_result result, const unsigned char* bytes_to_send,
     size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result) {
-  LOG(ERROR) << "OnHandshakeNextDoneLocked " << bytes_to_send_size;
   grpc_error_handle error;
   // Handshaker was shutdown.
   if (is_shutdown_) {
@@ -357,7 +356,6 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
     return error;
   }
   if (result != TSI_OK) {
-    LOG(ERROR) << "OnHandshakeNextDoneLocked error " << bytes_to_send_size;
     // TODO(roth): Get a better signal from the TSI layer as to what
     // status code we should use here.
     return GRPC_ERROR_CREATE(absl::StrCat(
@@ -404,7 +402,6 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
 void SecurityHandshaker::OnHandshakeNextDoneGrpcWrapper(
     tsi_result result, void* user_data, const unsigned char* bytes_to_send,
     size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result) {
-  LOG(ERROR) << "OnHandshakeNextDoneGrpcWrapper " << bytes_to_send_size;
   RefCountedPtr<SecurityHandshaker> h(
       static_cast<SecurityHandshaker*>(user_data));
   MutexLock lock(&h->mu_);
@@ -417,20 +414,16 @@ void SecurityHandshaker::OnHandshakeNextDoneGrpcWrapper(
 
 grpc_error_handle SecurityHandshaker::DoHandshakerNextLocked(
     const unsigned char* bytes_received, size_t bytes_received_size) {
-  LOG(ERROR) << "DoHandshakerNextLocked " << bytes_received_size;
   // Invoke TSI handshaker.
   const unsigned char* bytes_to_send = nullptr;
   size_t bytes_to_send_size = 0;
   tsi_handshaker_result* hs_result = nullptr;
   auto self = RefAsSubclass<SecurityHandshaker>();
-  LOG(ERROR) << "DoHandshakerNextLocked call handshaker_next ";
   tsi_result result = tsi_handshaker_next(
       handshaker_, bytes_received, bytes_received_size, &bytes_to_send,
       &bytes_to_send_size, &hs_result, &OnHandshakeNextDoneGrpcWrapper,
       self.get(), &tsi_handshake_error_);
-  LOG(ERROR) << "DoHandshakerNextLocked finish call handshaker_next";
   if (result == TSI_ASYNC) {
-    LOG(ERROR) << "DoHandshakerNextLocked Async";
     // Handshaker operating asynchronously. Callback will be invoked in a TSI
     // thread. We no longer own the ref held in self.
     self.release();
@@ -438,7 +431,6 @@ grpc_error_handle SecurityHandshaker::DoHandshakerNextLocked(
   }
   // Handshaker returned synchronously. Invoke callback directly in
   // this thread with our existing exec_ctx.
-  LOG(ERROR) << "OnHandshakeNextDoneLocked " << bytes_to_send_size;
   return OnHandshakeNextDoneLocked(result, bytes_to_send, bytes_to_send_size,
                                    hs_result);
 }
@@ -449,7 +441,6 @@ grpc_error_handle SecurityHandshaker::DoHandshakerNextLocked(
 // EventEngine endpoint API.
 void SecurityHandshaker::OnHandshakeDataReceivedFromPeerFnScheduler(
     grpc_error_handle error) {
-  LOG(ERROR) << "OnHandshakeDataReceivedFromPeerFnScheduler";
   args_->event_engine->Run([self = RefAsSubclass<SecurityHandshaker>(),
                             error = std::move(error)]() mutable {
     ExecCtx exec_ctx;
@@ -462,12 +453,10 @@ void SecurityHandshaker::OnHandshakeDataReceivedFromPeerFnScheduler(
 void SecurityHandshaker::OnHandshakeDataReceivedFromPeerFn(absl::Status error) {
   MutexLock lock(&mu_);
   if (!error.ok() || is_shutdown_) {
-    LOG(ERROR) << "OnHandshakeDataReceivedFromPeerFn";
     HandshakeFailedLocked(
         GRPC_ERROR_CREATE_REFERENCING("Handshake read failed", &error, 1));
     return;
   }
-  LOG(ERROR) << "OnHandshakeDataReceivedFromPeerFn";
   // Copy all slices received.
   size_t bytes_received_size = MoveReadBufferIntoHandshakeBuffer();
   // Call TSI handshaker.
@@ -495,14 +484,12 @@ void SecurityHandshaker::OnHandshakeDataSentToPeerFnScheduler(
 void SecurityHandshaker::OnHandshakeDataSentToPeerFn(absl::Status error) {
   MutexLock lock(&mu_);
   if (!error.ok() || is_shutdown_) {
-    LOG(ERROR) << "OnHandshakeDataSentToPeerFn shutdown";
     HandshakeFailedLocked(
         GRPC_ERROR_CREATE_REFERENCING("Handshake write failed", &error, 1));
     return;
   }
   // We may be done.
   if (handshaker_result_ == nullptr) {
-    LOG(ERROR) << "OnHandshakeDataSentToPeerFn w/hs_result";
     grpc_endpoint_read(
         args_->endpoint.get(), args_->read_buffer.c_slice_buffer(),
         NewClosure([self = RefAsSubclass<SecurityHandshaker>()](
@@ -511,7 +498,6 @@ void SecurityHandshaker::OnHandshakeDataSentToPeerFn(absl::Status error) {
         }),
         /*urgent=*/true, /*min_progress_size=*/1);
   } else {
-    LOG(ERROR) << "OnHandshakeDataSentToPeerFn no handshaker_result";
     error = CheckPeerLocked();
     if (!error.ok()) {
       HandshakeFailedLocked(error);
