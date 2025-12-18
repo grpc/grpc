@@ -160,8 +160,8 @@ void CompositeFilter::InterceptCall(
               if (!unstarted_destination.ok()) {
                 return unstarted_destination.status();
               }
-              auto [initiator, unstarted_handler] = MakeCallPair(
-                  std::move(metadata), GetContext<Arena>()->Ref());
+              auto [initiator, unstarted_handler] =
+                  MakeCallPair(std::move(metadata), GetContext<Arena>()->Ref());
               (*unstarted_destination)->StartCall(std::move(unstarted_handler));
               ForwardCall(handler, initiator);
               return absl::OkStatus();

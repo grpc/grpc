@@ -1270,18 +1270,21 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
          next_promise_factory =
              std::move(next_promise_factory)](CallHandler handler) mutable {
           // Intercept all pipes from v2 API.
-          Pipe<MessageHandle> client_to_server_messages;
+          struct PipeOwner {
+            Pipe<MessageHandle> client_to_server_messages;
+            Pipe<ServerMetadataHandle> server_initial_metadata;
+            Pipe<MessageHandle> server_to_client_messages;
+          };
+          auto* pipe_owner = GetContext<Arena>()->ManagedNew<PipeOwner>();
           auto* client_to_server_messages_receiver =
               std::exchange(call_args.client_to_server_messages,
-                            &client_to_server_messages.receiver);
-          Pipe<ServerMetadataHandle> server_initial_metadata;
+                            &pipe_owner->client_to_server_messages.receiver);
           auto* server_initial_metadata_sender =
               std::exchange(call_args.server_initial_metadata,
-                            &server_initial_metadata.sender);
-          Pipe<MessageHandle> server_to_client_messages;
+                            &pipe_owner->server_initial_metadata.sender);
           auto* server_to_client_messages_sender =
               std::exchange(call_args.server_to_client_messages,
-                            &server_to_client_messages.sender);
+                            &pipe_owner->server_to_client_messages.sender);
           // Initiator-side promise for client-to-server data.
           auto initiator_client_to_server_promise =
               [initiator, client_to_server_messages_receiver]() mutable {
@@ -1315,32 +1318,33 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                             }));
               };
           // Handler-side promise for client-to-server data.
-          auto handler_client_to_server_promise =
-              [handler, &client_to_server_messages]() mutable {
-                return ForEach(
-                    MessagesFrom(handler), [&](MessageHandle message) {
-                      return Map(client_to_server_messages.sender.Push(
-                                     std::move(message)),
-                                 [](bool x) { return StatusFlag(x); });
-                    });
-              };
+          auto handler_client_to_server_promise = [handler,
+                                                   pipe_owner]() mutable {
+            return ForEach(
+                MessagesFrom(handler), [pipe_owner](MessageHandle message) {
+                  return Map(pipe_owner->client_to_server_messages.sender.Push(
+                                 std::move(message)),
+                             [](bool x) { return StatusFlag(x); });
+                });
+          };
           // Handler-side promise for server-to-client data.
-          auto handler_server_to_client_promise =
-              [handler, &server_initial_metadata,
-               &server_to_client_messages]() mutable {
-                return TrySeq(
-                    TrySeq(server_initial_metadata.receiver.Next(),
-                           [handler](NextResult<ServerMetadataHandle>
-                                         metadata) mutable -> StatusFlag {
-                             if (!metadata.has_value()) return Failure{};
-                             return handler.PushServerInitialMetadata(
-                                 std::move(*metadata));
-                           }),
-                    ForEach(std::move(server_to_client_messages.receiver),
-                            [handler](MessageHandle message) mutable {
-                              return handler.PushMessage(std::move(message));
-                            }));
-              };
+          auto handler_server_to_client_promise = [handler,
+                                                   pipe_owner]() mutable {
+            return TrySeq(
+                TrySeq(
+                    pipe_owner->server_initial_metadata.receiver.Next(),
+                    [handler](NextResult<ServerMetadataHandle> metadata) mutable
+                        -> StatusFlag {
+                      if (!metadata.has_value()) return Failure{};
+                      return handler.PushServerInitialMetadata(
+                          std::move(*metadata));
+                    }),
+                ForEach(
+                    std::move(pipe_owner->server_to_client_messages.receiver),
+                    [handler](MessageHandle message) mutable {
+                      return handler.PushMessage(std::move(message));
+                    }));
+          };
           // Now put it all together.
           return AllOk<ServerMetadataHandle>(
               next_promise_factory(std::move(call_args)),
