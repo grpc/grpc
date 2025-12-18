@@ -31,9 +31,9 @@ class TestTimeout {
   TestTimeout(
       Duration timeout,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine)
-      : engine_(engine),
-        timer_(engine->RunAfter(timeout,
-                                []() { GRPC_CHECK(false); })) {}
+      : engine_(std::move(engine)),
+        timer_(engine_->RunAfter(timeout,
+                                 []() { GRPC_CHECK(false); })) {}
   ~TestTimeout() { Cancel(); }
 
   void Cancel() { engine_->Cancel(timer_); }
