@@ -24,9 +24,11 @@
 #include <grpcpp/support/string_ref.h>
 
 namespace grpc {
+namespace experimental {
 
 using grpc_core::PrivateKeySigner;  // NOLINT(misc-unused-using-decls)
 
+}  // namespace experimental
 }  // namespace grpc
 
 #endif  // GRPCPP_SECURITY_TLS_PRIVATE_KEY_OFFLOAD_H

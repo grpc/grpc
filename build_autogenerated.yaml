@@ -4065,6 +4065,7 @@ libs:
   - include/grpcpp/security/tls_certificate_verifier.h
   - include/grpcpp/security/tls_credentials_options.h
   - include/grpcpp/security/tls_crl_provider.h
+  - include/grpcpp/security/tls_private_key_offload.h
   - include/grpcpp/server.h
   - include/grpcpp/server_builder.h
   - include/grpcpp/server_context.h
@@ -4448,6 +4449,7 @@ libs:
   - include/grpcpp/security/tls_certificate_verifier.h
   - include/grpcpp/security/tls_credentials_options.h
   - include/grpcpp/security/tls_crl_provider.h
+  - include/grpcpp/security/tls_private_key_offload.h
   - include/grpcpp/server.h
   - include/grpcpp/server_builder.h
   - include/grpcpp/server_context.h
@@ -14335,18 +14337,6 @@ targets:
   - src/compiler/php_plugin.cc
   deps:
   - grpc_plugin_support
-- name: grpc_private_key_offload_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/tsi/transport_security_test_lib.h
-  src:
-  - test/core/tsi/grpc_private_key_offload_test.cc
-  - test/core/tsi/transport_security_test_lib.cc
-  deps:
-  - gtest
-  - grpc_test_util
 - name: grpc_python_plugin
   build: protoc
   language: c++
@@ -20044,6 +20034,18 @@ targets:
   - absl/utility:utility
   - gpr
   uses_polling: false
+- name: private_key_offload_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/transport_security_test_lib.h
+  src:
+  - test/core/tsi/private_key_offload_test.cc
+  - test/core/tsi/transport_security_test_lib.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: promise_endpoint_test
   gtest: true
   build: test

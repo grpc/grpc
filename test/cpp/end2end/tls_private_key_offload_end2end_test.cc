@@ -16,7 +16,6 @@
 //
 //
 
-#include <grpc/grpc_security.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -24,6 +23,7 @@
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/security/tls_certificate_provider.h>
 #include <grpcpp/security/tls_credentials_options.h>
+#include <grpcpp/security/tls_private_key_offload.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/channel_arguments.h>
@@ -40,9 +40,6 @@
 #include <utility>
 #include <vector>
 
-#include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
-#include "src/core/tsi/ssl_transport_security.h"
-#include "src/core/tsi/ssl_transport_security_utils.h"
 #include "src/proto/grpc/testing/echo_messages.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
@@ -93,7 +90,8 @@ class TlsPrivateKeyOffloadTest : public ::testing::Test {
     options.set_identity_cert_name("identity");
     options.set_cert_request_type(
         GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
-    auto server_credentials = grpc::experimental::TlsServerCredentials(options);
+    git auto server_credentials =
+        grpc::experimental::TlsServerCredentials(options);
     CHECK_NE(server_credentials.get(), nullptr);
 
     grpc::ServerBuilder builder;
@@ -218,7 +216,7 @@ uint16_t GetBoringSslAlgorithm(
   }
 }
 
-class TestPrivateKeySigner final : public grpc_core::PrivateKeySigner {
+class TestPrivateKeySigner final : public grpc::experimental::PrivateKeySigner {
  public:
   explicit TestPrivateKeySigner(absl::string_view private_key)
       : pkey_(LoadPrivateKeyFromString(private_key)) {}
@@ -429,14 +427,11 @@ TEST_F(TlsPrivateKeyOffloadTest, OffloadWithCustomKeySignerClient) {
   auto client_certificate_provider =
       std::make_shared<experimental::InMemoryCertificateProvider>();
   signer_ = std::make_shared<TestPrivateKeySigner>(client_key);
-  grpc_core::PemKeyCertPairList identity_pairs;
-  identity_pairs.emplace_back(signer_, client_cert);
-  static_cast<grpc_core::InMemoryCertificateProvider*>(
-      client_certificate_provider->c_provider())
-      ->UpdateIdentity(identity_pairs);
-  static_cast<grpc_core::InMemoryCertificateProvider*>(
-      client_certificate_provider->c_provider())
-      ->UpdateRoot(std::make_shared<RootCertInfo>(ca_cert));
+  std::vector<grpc::experimental::IdentityKeyCertPair> identity_pairs;
+  identity_pairs.emplace_back(
+      grpc::experimental::IdentityKeyCertPair{signer_, client_cert});
+  client_certificate_provider->UpdateIdentity(identity_pairs);
+  client_certificate_provider->UpdateRoot(ca_cert);
 
   grpc::experimental::TlsChannelCredentialsOptions options;
   options.set_certificate_provider(client_certificate_provider);

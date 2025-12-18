@@ -1527,7 +1527,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx grpc_cli)
   add_dependencies(buildtests_cxx grpc_completion_queue_test)
   add_dependencies(buildtests_cxx grpc_ipv6_loopback_available_test)
-  add_dependencies(buildtests_cxx grpc_private_key_offload_test)
   add_dependencies(buildtests_cxx grpc_tls_certificate_distributor_test)
   add_dependencies(buildtests_cxx grpc_tls_certificate_provider_test)
   add_dependencies(buildtests_cxx grpc_tls_certificate_verifier_test)
@@ -1700,6 +1699,7 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx pre_stop_hook_server_test)
   add_dependencies(buildtests_cxx prioritized_race_test)
+  add_dependencies(buildtests_cxx private_key_offload_test)
   add_dependencies(buildtests_cxx promise_endpoint_test)
   add_dependencies(buildtests_cxx promise_factory_test)
   add_dependencies(buildtests_cxx promise_map_test)
@@ -5082,6 +5082,7 @@ foreach(_hdr
   include/grpcpp/security/tls_certificate_verifier.h
   include/grpcpp/security/tls_credentials_options.h
   include/grpcpp/security/tls_crl_provider.h
+  include/grpcpp/security/tls_private_key_offload.h
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
   include/grpcpp/server_context.h
@@ -5826,6 +5827,7 @@ foreach(_hdr
   include/grpcpp/security/tls_certificate_verifier.h
   include/grpcpp/security/tls_credentials_options.h
   include/grpcpp/security/tls_crl_provider.h
+  include/grpcpp/security/tls_private_key_offload.h
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
   include/grpcpp/server_context.h
@@ -19102,49 +19104,6 @@ if(gRPC_INSTALL)
 endif()
 
 endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(grpc_private_key_offload_test
-  test/core/tsi/grpc_private_key_offload_test.cc
-  test/core/tsi/transport_security_test_lib.cc
-)
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(grpc_private_key_offload_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-      "GRPC_DLL_IMPORTS"
-    )
-  endif()
-endif()
-target_compile_features(grpc_private_key_offload_test PUBLIC cxx_std_17)
-target_include_directories(grpc_private_key_offload_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(grpc_private_key_offload_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  grpc_test_util
-)
-
-
-endif()
 if(gRPC_BUILD_CODEGEN AND gRPC_BUILD_GRPC_PYTHON_PLUGIN)
 
 add_executable(grpc_python_plugin
@@ -27750,6 +27709,49 @@ target_link_libraries(prioritized_race_test
   absl::span
   absl::utility
   gpr
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(private_key_offload_test
+  test/core/tsi/private_key_offload_test.cc
+  test/core/tsi/transport_security_test_lib.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(private_key_offload_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(private_key_offload_test PUBLIC cxx_std_17)
+target_include_directories(private_key_offload_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(private_key_offload_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
 )
 
 
