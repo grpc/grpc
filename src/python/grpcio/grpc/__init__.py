@@ -435,7 +435,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
         This method blocks until the value is available.
 
         Returns:
-          The initial :term:`metadata`.
+          The initial :term:`metadata`, or None.
         """
         raise NotImplementedError()
 
@@ -446,7 +446,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
         This method blocks until the value is available.
 
         Returns:
-          The trailing :term:`metadata`.
+          The trailing :term:`metadata`, or None.
         """
         raise NotImplementedError()
 
@@ -457,7 +457,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
         This method blocks until the value is available.
 
         Returns:
-          The StatusCode value for the RPC.
+          The StatusCode value for the RPC, or None.
         """
         raise NotImplementedError()
 
@@ -468,7 +468,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
         This method blocks until the value is available.
 
         Returns:
-          The details string of the RPC.
+          The details string of the RPC, or None.
         """
         raise NotImplementedError()
 
@@ -1234,7 +1234,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         """Accesses the metadata sent by the client.
 
         Returns:
-          The invocation :term:`metadata`.
+          The invocation :term:`metadata`, or None.
         """
         raise NotImplementedError()
 
@@ -1279,7 +1279,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         """Gets the auth context for the call.
 
         Returns:
-          A map of strings to an iterable of bytes for each auth property.
+          A map of strings to an iterable of bytes for each auth property, or None.
         """
         raise NotImplementedError()
 
@@ -1328,7 +1328,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         This is an EXPERIMENTAL API.
 
         Returns:
-          The trailing :term:`metadata` for the RPC.
+          The trailing :term:`metadata` for the RPC, or None.
         """
         raise NotImplementedError()
 
@@ -1401,7 +1401,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         This is an EXPERIMENTAL API.
 
         Returns:
-          The StatusCode value for the RPC.
+          The StatusCode value for the RPC, or None.
         """
         raise NotImplementedError()
 
@@ -1411,7 +1411,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         This is an EXPERIMENTAL API.
 
         Returns:
-          The details string of the RPC.
+          The details string of the RPC, or None.
         """
         raise NotImplementedError()
 
