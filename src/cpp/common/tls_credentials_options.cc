@@ -57,24 +57,6 @@ void TlsCredentialsOptions::set_certificate_provider(
   }
 }
 
-void TlsCredentialsOptions::set_identity_certificate_provider(
-    std::shared_ptr<CertificateProviderInterface> certificate_provider) {
-  certificate_provider_ = certificate_provider;
-  if (certificate_provider_ != nullptr) {
-    grpc_tls_credentials_options_set_root_certificate_provider(
-        c_credentials_options_, certificate_provider_->c_provider());
-  }
-}
-
-void TlsCredentialsOptions::set_root_certificate_provider(
-    std::shared_ptr<CertificateProviderInterface> certificate_provider) {
-  certificate_provider_ = certificate_provider;
-  if (certificate_provider_ != nullptr) {
-    grpc_tls_credentials_options_set_identity_certificate_provider(
-        c_credentials_options_, certificate_provider_->c_provider());
-  }
-}
-
 void TlsCredentialsOptions::set_crl_provider(
     std::shared_ptr<CrlProvider> crl_provider) {
   grpc_tls_credentials_options_set_crl_provider(c_credentials_options_,
