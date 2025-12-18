@@ -679,8 +679,8 @@ grpc_cc_test(
     ],
     deps = [
         ":test_timeout",
+        "//:grpc",
         "//src/core:default_event_engine",
         "//src/core:time",
-        "//:grpc",
     ],
 )

@@ -17,8 +17,8 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/util/time.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 
@@ -32,8 +32,7 @@ class TestTimeout {
       Duration timeout,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine)
       : engine_(std::move(engine)),
-        timer_(engine_->RunAfter(timeout,
-                                 []() { GRPC_CHECK(false); })) {}
+        timer_(engine_->RunAfter(timeout, []() { GRPC_CHECK(false); })) {}
   ~TestTimeout() { Cancel(); }
 
   void Cancel() { engine_->Cancel(timer_); }
