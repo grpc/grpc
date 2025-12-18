@@ -2727,7 +2727,7 @@ add_library(grpc
   src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   src/core/handshaker/handshaker.cc
   src/core/handshaker/handshaker_registry.cc
-  src/core/handshaker/http_connect/http_connect_handshaker.cc
+  src/core/handshaker/http_connect/http_connect_client_handshaker.cc
   src/core/handshaker/http_connect/http_proxy_mapper.cc
   src/core/handshaker/http_connect/xds_http_proxy_mapper.cc
   src/core/handshaker/proxy_mapper_registry.cc
@@ -3550,7 +3550,7 @@ add_library(grpc_unsecure
   src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   src/core/handshaker/handshaker.cc
   src/core/handshaker/handshaker_registry.cc
-  src/core/handshaker/http_connect/http_connect_handshaker.cc
+  src/core/handshaker/http_connect/http_connect_client_handshaker.cc
   src/core/handshaker/http_connect/http_proxy_mapper.cc
   src/core/handshaker/proxy_mapper_registry.cc
   src/core/handshaker/security/legacy_secure_endpoint.cc
