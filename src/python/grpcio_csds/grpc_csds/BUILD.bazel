@@ -27,7 +27,7 @@ py_library(
     srcs = glob(["*.py"]),
     imports = ["../"],
     deps = [
-        "//src/python/grpcio/grpc:grpcio",
         "//py_xds_protos",
+        "//src/python/grpcio/grpc:grpcio",
     ],
 )
