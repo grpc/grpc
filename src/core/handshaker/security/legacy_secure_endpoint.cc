@@ -359,7 +359,6 @@ static void on_read(void* user_data, grpc_error_handle error) {
 static void endpoint_read(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
                           grpc_closure* cb, bool urgent,
                           int /*min_progress_size*/) {
-  LOG(ERROR) << "endpoint_read";
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
   ep->read_cb = cb;
   ep->read_buffer = slices;
