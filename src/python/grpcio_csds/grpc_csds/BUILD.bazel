@@ -28,6 +28,6 @@ py_library(
     imports = ["../"],
     deps = [
         "//src/python/grpcio/grpc:grpcio",
-        "//tools/distrib/python/xds_protos",
+        "//py_xds_protos",
     ],
 )
