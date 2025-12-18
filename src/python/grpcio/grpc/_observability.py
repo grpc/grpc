@@ -32,7 +32,10 @@ from typing import (
 from grpc._cython import cygrpc as _cygrpc
 from grpc.typing import ChannelArgumentType
 
+RPCState = TypeVar("RPCState")
+
 _LOGGER = logging.getLogger(__name__)
+
 
 _channel = Any  # _channel.py imports this module.
 ClientCallTracerCapsule = TypeVar("ClientCallTracerCapsule")
@@ -270,7 +273,7 @@ def observability_deinit() -> None:
     _cygrpc.clear_server_call_tracer_factory()
 
 
-def maybe_record_rpc_latency(state: Any) -> None:
+def maybe_record_rpc_latency(state: RPCState) -> None:
     """Record the latency of the RPC, if the plugin is registered and stats is enabled.
 
     This method will be called at the end of each RPC.
