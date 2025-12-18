@@ -38,6 +38,7 @@
 #include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/status_helper.h"
 #include "absl/log/log.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 
 // TODO(tjagtap) TODO(akshitpatel): [PH2][P3] : Write micro benchmarks for
@@ -284,21 +285,32 @@ class HeaderAssembler {
                              args.is_client});
     // TODO(tjagtap) [PH2][P5] Bug fix : Check if the received metadata honours
     // allow_true_binary_metadata or not. Will need changes to HPack code.
+    absl::Status stream_error = absl::OkStatus();
     for (size_t i = 0; i < buffer.Count(); i++) {
       absl::Status result = parser.Parse(
           buffer.c_slice_at(i), i == buffer.Count() - 1, SharedBitGen(),
           /*call_tracer=*/nullptr);
       if (GPR_UNLIKELY(!result.ok())) {
+        parser.StopBufferingFrame();
         intptr_t unused;
         if (grpc_error_get_int(result, StatusIntProperty::kStreamId, &unused)) {
-          return Http2Status::AbslStreamError(result.code(),
-                                              std::string(result.message()));
+          // We need to keep parsing the other slices in slice buffer. Because
+          // HPACK state needs to be maintained for the other streams. Store the
+          // error and continue.
+          if (stream_error.ok()) {
+            stream_error = result;
+          }
+        } else {
+          LOG(ERROR) << "Connection Error: " << kAssemblerHpackError;
+          return Http2Status::Http2ConnectionError(
+              Http2ErrorCode::kCompressionError,
+              std::string(kAssemblerHpackError));
         }
-        LOG(ERROR) << "Connection Error: " << kAssemblerHpackError;
-        return Http2Status::Http2ConnectionError(
-            Http2ErrorCode::kCompressionError,
-            std::string(kAssemblerHpackError));
       }
+    }
+    if (GPR_UNLIKELY(!stream_error.ok())) {
+      return Http2Status::AbslStreamError(stream_error.code(),
+                                          std::string(stream_error.message()));
     }
     parser.FinishFrame();
     return Http2Status::Ok();

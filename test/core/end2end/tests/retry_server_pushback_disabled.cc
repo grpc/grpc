@@ -35,7 +35,6 @@ namespace {
 // - first attempt gets ABORTED
 // - second attempt gets ABORTED but server push back disables retrying
 CORE_END2END_TEST(RetryTests, RetryServerPushbackDisabled) {
-  if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,

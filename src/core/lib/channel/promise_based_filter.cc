@@ -1305,6 +1305,7 @@ ClientCallData::ClientCallData(grpc_call_element* elem,
   if (server_initial_metadata_pipe() != nullptr) {
     recv_initial_metadata_ = arena()->New<RecvInitialMetadata>();
   }
+  SourceConstructed();
 }
 
 ClientCallData::~ClientCallData() {
@@ -1995,6 +1996,7 @@ ServerCallData::ServerCallData(grpc_call_element* elem,
   GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_,
                     RecvTrailingMetadataReadyCallback, this,
                     grpc_schedule_on_exec_ctx);
+  SourceConstructed();
 }
 
 ServerCallData::~ServerCallData() {
