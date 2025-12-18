@@ -144,7 +144,7 @@ std::vector<RefCountedPtr<CallCredsConfig>> ParseXdsBootstrapCallCreds(
     const Json& json, const JsonArgs& args, ValidationErrors* errors) {
   std::vector<RefCountedPtr<CallCredsConfig>> call_creds_configs;
   auto call_creds_list = LoadJsonObjectField<std::vector<ChannelOrCallCreds>>(
-      json.object(), args, "call_creds", errors);
+      json.object(), args, "call_creds", errors, /*required=*/false);
   if (call_creds_list.has_value()) {
     ValidationErrors::ScopedField field(errors, ".call_creds");
     for (size_t i = 0; i < call_creds_list->size(); ++i) {

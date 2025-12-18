@@ -266,9 +266,9 @@ std::string GrpcXdsBootstrap::ToString() const {
           ", config=", creds.channel_creds_config->ToString(), "},\n"));
     }
     for (const auto& call_creds_config : creds.call_creds_configs) {
-      parts.push_back(absl::StrCat(
-          "    call_creds={type=", call_creds_config->type(), ", config=",
-          call_creds_config->ToString(), "},\n"));
+      parts.push_back(
+          absl::StrCat("    call_creds={type=", call_creds_config->type(),
+                       ", config=", call_creds_config->ToString(), "},\n"));
     }
     parts.push_back("  },\n");
   }

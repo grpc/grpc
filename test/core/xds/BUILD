@@ -390,6 +390,7 @@ grpc_cc_test(
         "//src/core:validation_errors",
         "//src/core:xds_common_types",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
         "//test/cpp/util:grpc_cli_utils",
         "@com_github_cncf_xds//udpa/type/v1:pkg_cc_proto",
         "@com_github_cncf_xds//xds/type/v3:pkg_cc_proto",
