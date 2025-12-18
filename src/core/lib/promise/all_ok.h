@@ -115,6 +115,11 @@ class AllOk {
     return state_.PollOnce();
   }
 
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    state_.ToProto(grpc_channelz_v2_Promise_ALL_OK, promise_proto, arena);
+  }
+
  private:
   JoinState<AllOkTraits<Result>, Promises...> state_;
 };

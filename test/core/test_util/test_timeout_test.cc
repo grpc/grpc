@@ -14,13 +14,14 @@
 
 #include "test/core/test_util/test_timeout.h"
 
+#include <grpc/grpc.h>
+
 #include <memory>
 #include <thread>
 
-#include "gtest/gtest.h"
-#include "src/core/util/time.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include <grpc/grpc.h>
+#include "src/core/util/time.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace {
@@ -35,11 +36,13 @@ TEST(TestTimeoutTest, NoCrashIfDestroyedBeforeTimeout) {
 }
 
 TEST(TestTimeoutTest, CrashIfTimeoutExpires) {
-  EXPECT_DEATH({
-    auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
-    TestTimeout timeout(Duration::Milliseconds(10), engine);
-    std::this_thread::sleep_for(std::chrono::seconds(20));
-  }, "");
+  EXPECT_DEATH(
+      {
+        auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+        TestTimeout timeout(Duration::Milliseconds(10), engine);
+        std::this_thread::sleep_for(std::chrono::seconds(20));
+      },
+      "");
 }
 
 }  // namespace

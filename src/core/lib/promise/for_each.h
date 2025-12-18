@@ -164,6 +164,28 @@ class ForEach {
     return PollAction();
   }
 
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* for_each_promise =
+        grpc_channelz_v2_Promise_mutable_for_each_promise(promise_proto, arena);
+
+    grpc_channelz_v2_Promise_ForEach_set_reader_factory(
+        for_each_promise, StdStringToUpbString(TypeName<Reader>()));
+    grpc_channelz_v2_Promise_ForEach_set_action_factory(
+        for_each_promise, StdStringToUpbString(TypeName<ActionFactory>()));
+    if (reading_next_) {
+      PromiseAsProto(reader_next_,
+                     grpc_channelz_v2_Promise_ForEach_mutable_reader_promise(
+                         for_each_promise, arena),
+                     arena);
+    } else {
+      PromiseAsProto(in_action_.promise,
+                     grpc_channelz_v2_Promise_ForEach_mutable_action_promise(
+                         for_each_promise, arena),
+                     arena);
+    }
+  }
+
  private:
   struct InAction {
     InAction(ActionPromise promise, ReaderResult result)

@@ -164,7 +164,7 @@ void BaseCallData::AddData(channelz::DataSink sink) {
     };
     GRPC_CALL_STACK_REF(call_stack_, "channelz_add_data");
     GRPC_CALL_COMBINER_START(call_combiner_, NewClosure(std::move(add)),
-                            absl::OkStatus(), "channelz_add_data");
+                             absl::OkStatus(), "channelz_add_data");
   });
 }
 
