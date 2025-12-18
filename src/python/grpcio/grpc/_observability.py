@@ -17,7 +17,6 @@ from __future__ import annotations
 import abc
 import contextlib
 import logging
-import grpc
 import threading
 from typing import (
     Any,
@@ -31,6 +30,7 @@ from typing import (
     Union,
 )
 
+import grpc
 from grpc._cython import cygrpc as _cygrpc
 from grpc.typing import ChannelArgumentType
 
