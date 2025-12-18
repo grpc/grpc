@@ -18,20 +18,20 @@ import abc
 import contextlib
 import logging
 import threading
-from grpc import StatusCode
+import typing
 from typing import (
     Any,
     Generator,
     Generic,
     List,
     Optional,
+    Protocol,
     Tuple,
     TypeVar,
     Union,
-    Protocol,
 )
-import typing
 
+from grpc import StatusCode
 from grpc._cython import cygrpc as _cygrpc
 from grpc.typing import ChannelArgumentType
 
