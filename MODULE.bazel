@@ -112,3 +112,25 @@ http_archive(
     strip_prefix = "typing_extensions-4.12.2",
     url = "https://github.com/python/typing_extensions/archive/4.12.2.tar.gz",
 )
+
+# Required by bazel/extensions.bzl
+http_archive(
+    name = "bazel_toolchains",
+    integrity = "sha256-F57AL4Cehqv1Y1bYiYyL10Bp8b18VgRAUMLNPXnQ4CQ=",
+    strip_prefix = "bazel-toolchains-4.1.0",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/releases/download/4.1.0/bazel-toolchains-4.1.0.tar.gz",
+        "https://github.com/bazelbuild/bazel-toolchains/releases/download/4.1.0/bazel-toolchains-4.1.0.tar.gz",
+    ],
+)
+
+exec_properties = use_extension("//bazel:extensions.bzl", "exec_properties")
+exec_properties.custom_exec_properties(
+    name = "grpc_custom_exec_properties",
+    constant = "LARGE_MACHINE",
+    rbe_exec_properties_dict = {
+        "os": "ubuntu",
+        "machine_size": "large",
+    },
+)
+use_repo(exec_properties, "grpc_custom_exec_properties")
