@@ -8553,6 +8553,8 @@ grpc_cc_library(
     name = "http2_server_transport",
     srcs = [
         "ext/transport/chttp2/transport/http2_server_transport.cc",
+        "ext/transport/chttp2/transport/http2_server_transport_read.cc",
+        "ext/transport/chttp2/transport/http2_server_transport_write.cc",
     ],
     hdrs = [
         "ext/transport/chttp2/transport/http2_server_transport.h",
