@@ -2104,6 +2104,8 @@ static tsi_result ssl_handshaker_next(
       remaining_bytes_to_write_to_openssl_size -= bytes_written_to_openssl;
       remaining_bytes_to_write_to_openssl += bytes_written_to_openssl;
     }
+  } else if(cb != nullptr) {
+    status = ssl_handshaker_do_handshake(impl, error);
   }
   if (status != TSI_OK) return status;
   // Get bytes to send to the peer, if available.

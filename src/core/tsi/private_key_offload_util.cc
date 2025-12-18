@@ -19,7 +19,9 @@
 #include "src/core/tsi/private_key_offload_util.h"
 
 #include <openssl/ssl.h>
+#include <sys/types.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <utility>
@@ -64,19 +66,24 @@ void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
   LOG(ERROR) << "TlsOffloadSignDoneCallback hs_result_addr "
              << ctx->handshaker_result;
   if (signed_data.ok()) {
-    LOG(ERROR) << "TlsOffloadSignDoneCallback data_length "
-               << signed_data->length();
+    const uint8_t* bytes_to_send = nullptr;
+    size_t bytes_to_send_size = 0;
     ctx->signed_bytes = std::move(signed_data);
 
-    // Notify the TSI layer to re-enter the handshake.
-    // This call is thread-safe as per TSI requirements for the callback.
-    if (ctx->notify_cb) {
-      LOG(ERROR) << "TlsOffloadSignDoneCallback start notify";
-      ctx->notify_cb(
-          TSI_OK, ctx->notify_user_data,
-          reinterpret_cast<const uint8_t*>(ctx->signed_bytes->data()),
-          ctx->signed_bytes->length(), ctx->handshaker_result);
-      LOG(ERROR) << "TlsOffloadSignDoneCallback finish notify";
+    tsi_result result = tsi_handshaker_next(
+        ctx->handshaker, nullptr, 0, &bytes_to_send, &bytes_to_send_size,
+        &ctx->handshaker_result, ctx->notify_cb, ctx->notify_user_data);
+
+    if (result != TSI_ASYNC) {
+      // Notify the TSI layer to re-enter the handshake.
+      // This call is thread-safe as per TSI requirements
+      // for the callback.
+      if (ctx->notify_cb) {
+        LOG(ERROR) << "TlsOffloadSignDoneCallback start notify";
+        ctx->notify_cb(result, ctx->notify_user_data, bytes_to_send,
+                       bytes_to_send_size, ctx->handshaker_result);
+        LOG(ERROR) << "TlsOffloadSignDoneCallback finish notify";
+      }
     }
   } else {
     ctx->signed_bytes = signed_data.status();

@@ -37,7 +37,7 @@ struct TlsPrivateKeyOffloadContext {
   tsi_handshaker* handshaker;
   tsi_handshaker_on_next_done_cb notify_cb;
   tsi_handshaker_result* handshaker_result;
-
+  
   void* notify_user_data;
 };
 

@@ -90,7 +90,7 @@ class TlsPrivateKeyOffloadTest : public ::testing::Test {
     options.set_identity_cert_name("identity");
     options.set_cert_request_type(
         GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
-    git auto server_credentials =
+    auto server_credentials =
         grpc::experimental::TlsServerCredentials(options);
     CHECK_NE(server_credentials.get(), nullptr);
 
@@ -214,6 +214,7 @@ uint16_t GetBoringSslAlgorithm(
     case grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha512:
       return SSL_SIGN_RSA_PSS_RSAE_SHA512;
   }
+  return SSL_SIGN_RSA_PSS_RSAE_SHA512;
 }
 
 class TestPrivateKeySigner final : public grpc::experimental::PrivateKeySigner {
