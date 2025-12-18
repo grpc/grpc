@@ -10414,6 +10414,7 @@ grpc_cc_library(
         "error_utils",
         "metadata_batch",
         "try_seq",
+        "all_ok",
         "//:gpr_platform",
     ],
 )
