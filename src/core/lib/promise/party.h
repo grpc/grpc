@@ -284,11 +284,11 @@ class Party : public Activity, private Wakeable {
       auto empty_completion = [](Empty) {};
       next_.Push(new ParticipantImpl<Factory, decltype(empty_completion)>(
           "SpawnSerializer", std::move(factory), empty_completion));
-    if (party_->is_current()) {
-      party_->ForceImmediateRepoll(wakeup_mask_);
-      return;
-    }
-    party_->WakeupFromState<false>(
+      if (party_->is_current()) {
+        party_->ForceImmediateRepoll(wakeup_mask_);
+        return;
+      }
+      party_->WakeupFromState<false>(
           party_->state_.load(std::memory_order_relaxed), wakeup_mask_);
     }
 
