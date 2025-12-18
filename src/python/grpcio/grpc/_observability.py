@@ -30,7 +30,6 @@ from typing import (
     Union,
 )
 
-from grpc import StatusCode
 from grpc._cython import cygrpc as _cygrpc
 from grpc.typing import ChannelArgumentType
 
@@ -41,7 +40,7 @@ class RPCState(Protocol):
     target: Optional[str]
     rpc_start_time: Optional[float]
     rpc_end_time: Optional[float]
-    code: Optional[StatusCode]
+    code: Optional[grpc.StatusCode]
 
 
 _LOGGER = logging.getLogger(__name__)
