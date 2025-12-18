@@ -4797,6 +4797,7 @@ grpc_cc_library(
         "arena_promise",
         "channel_args",
         "closure",
+        "down_cast",
         "error",
         "grpc_check",
         "iomgr_fwd",

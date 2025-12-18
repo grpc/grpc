@@ -1927,8 +1927,10 @@ static tsi_result ssl_handshaker_do_handshake(tsi_ssl_handshaker* impl,
         return TSI_OK;
       case SSL_ERROR_WANT_WRITE:
         return TSI_DRAIN_BUFFER;
+#if defined(OPENSSL_IS_BORINGSSL)
       case SSL_ERROR_WANT_PRIVATE_KEY_OPERATION:
         return TSI_ASYNC;
+#endif  // OPENSSL_IS_BORINGSSL
       default: {
         char err_str[256];
         ERR_error_string_n(ERR_get_error(), err_str, sizeof(err_str));

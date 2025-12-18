@@ -24,6 +24,7 @@
 
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/match.h"
 
 namespace grpc {
 namespace experimental {
