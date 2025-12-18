@@ -343,6 +343,7 @@ TEST(XdsBootstrapTest, MultipleChannelCreds) {
   EXPECT_EQ((*bootstrap)->node(), nullptr);
 }
 
+// FIXME: add tests similar to these for allowed_grpc_services
 TEST(XdsBootstrapTest, WithCallCreds) {
   ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_BOOTSTRAP_CALL_CREDS");
   const char* json_str =

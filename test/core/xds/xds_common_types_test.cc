@@ -25,6 +25,7 @@
 #include <utility>
 #include <vector>
 
+#include "envoy/config/core/v3/grpc_service.pb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.pb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/type/matcher/v3/regex.pb.h"
@@ -57,6 +58,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 
+using envoy::config::core::v3::GrpcService;
 using CommonTlsContextProto =
     envoy::extensions::transport_sockets::tls::v3::CommonTlsContext;
 using xds::type::v3::TypedStruct;
@@ -923,6 +925,79 @@ TEST_F(ExtractXdsExtensionTest, TypedStructWithInvalidProtobufStruct) {
             "error:error encoding google::Protobuf::Struct as JSON: "
             "No value set in Value proto]")
       << status;
+}
+
+//
+// ParseXdsGrpcService() tests
+//
+
+class ParseXdsGrpcServiceTest : public XdsCommonTypesTest {
+ protected:
+  // For convenience, tests build protos using the protobuf API, and
+  // we convert it to a upb object, which is then passed to
+  // ParseXdsGrpcService() for testing.
+  absl::StatusOr<XdsGrpcService> Parse(const GrpcService& proto) {
+    // Serialize the protobuf proto.
+    std::string serialized_proto;
+    if (!proto.SerializeToString(&serialized_proto)) {
+      return absl::InternalError("protobuf serialization failed");
+    }
+    // Deserialize as upb proto.
+    const auto* upb_proto = envoy_config_core_v3_GrpcService_parse(
+        serialized_proto.data(), serialized_proto.size(), upb_arena_.ptr());
+    if (upb_proto == nullptr) {
+      return absl::InternalError("upb parsing failed");
+    }
+    // Now parse the upb proto.
+    ValidationErrors errors;
+    XdsGrpcService xds_grpc_service =
+        ParseXdsGrpcService(decode_context_, upb_proto, &errors);
+    if (!errors.ok()) {
+      return errors.status(absl::StatusCode::kInvalidArgument,
+                           "validation failed");
+    }
+    return xds_grpc_service;
+  }
+};
+
+TEST_F(ParseXdsGrpcServiceTest,
+       NonTrustedXdsServerAndServicePresentInBootstrap) {
+// FIXME: add service in bootstrap
+  GrpcService grpc_service;
+  grpc_service.mutable_timeout()->set_seconds(5);
+  auto* header_value = grpc_service.add_initial_metadata();
+  header_value->set_key("foo");
+  header_value->set_value("bar");
+  auto* google_grpc = grpc_service.mutable_google_grpc();
+  google_grpc->set_target_uri("dns:server.example.com");
+// FIXME: set creds
+  auto xds_grpc_service = Parse(grpc_service);
+  ASSERT_TRUE(xds_grpc_service.ok()) << xds_grpc_service.status();
+  EXPECT_EQ(xds_grpc_service->timeout, Duration::Seconds(5));
+  EXPECT_THAT(xds_grpc_service->initial_metadata,
+              ::testing::ElementsAre(::testing::Pair("foo", "bar")));
+  ASSERT_NE(xds_grpc_service->server_target, nullptr);
+  EXPECT_EQ(xds_grpc_service->server_target->server_uri(),
+            "dns:server.example.com");
+// FIXME: check creds
+}
+
+TEST_F(ParseXdsGrpcServiceTest,
+       NonTrustedXdsServerAndServiceNotPresentInBootstrap) {
+  GrpcService grpc_service;
+  grpc_service.mutable_timeout()->set_seconds(5);
+  auto* header_value = grpc_service.add_initial_metadata();
+  header_value->set_key("foo");
+  header_value->set_value("bar");
+  auto* google_grpc = grpc_service.mutable_google_grpc();
+  google_grpc->set_target_uri("dns:server.example.com");
+  auto xds_grpc_service = Parse(grpc_service);
+  EXPECT_EQ(
+      xds_grpc_service.status(),
+      absl::InvalidArgumentError(
+          "validation failed: [field:grpc_service.target_uri "
+          "error:service not present in \"allowed_grpc_services\" in "
+          "bootstrap config]"));
 }
 
 }  // namespace

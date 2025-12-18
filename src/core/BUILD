@@ -6058,6 +6058,7 @@ grpc_cc_library(
         "json",
         "match",
         "validation_errors",
+        "xds_server_grpc",
     ],
 )
 
