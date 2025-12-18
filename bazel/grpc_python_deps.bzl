@@ -47,9 +47,9 @@ def grpc_python_deps():
         http_archive(
             name = "cython",
             build_file = "@com_github_grpc_grpc//third_party:cython.BUILD",
-            sha256 = "2ec7d66d23d6da2328fb24f5c1bec6c63a59ec2e91027766ab904f417e1078aa",
-            strip_prefix = "cython-3.0.11",
+            sha256 = "72d00515d74df2eaffe3802800448b6055d8d2f2dbc4564fa1e2e1c770a16f20",
+            strip_prefix = "cython-3.2.1",
             urls = [
-                "https://github.com/cython/cython/archive/3.0.11.tar.gz",
+                "https://github.com/cython/cython/archive/3.2.1.tar.gz",
             ],
         )
