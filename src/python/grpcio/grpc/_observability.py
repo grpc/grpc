@@ -18,7 +18,6 @@ import abc
 import contextlib
 import logging
 import threading
-import typing
 from typing import (
     Any,
     Generator,

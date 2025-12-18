@@ -1454,7 +1454,7 @@ class _Server(grpc.Server):
     def add_registered_method_handlers(
         self,
         service_name: str,
-        method_handlers: Dict[str, grpc.RpcMethodHandler],
+        method_handlers: Mapping[str, grpc.RpcMethodHandler],
     ) -> None:
         # Can't register method once server started.
         with self._state.lock:
