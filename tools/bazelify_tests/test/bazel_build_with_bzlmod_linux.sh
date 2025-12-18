@@ -37,8 +37,10 @@ tools/bazel \
 tools/bazel \
     --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
     test \
+    --ignore_dev_dependency=false
     -- \
     //test/core/config:all \
+    //test/core/util:all \
     //test/cpp/common:all
 
 # Test if public targets are buildable with openssl and without dev
