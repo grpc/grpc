@@ -295,7 +295,11 @@ grpc_cc_test(
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
-    deps = ["//src/core:try_join"],
+    deps = [
+        "//src/core:try_join",
+        "//src/proto/grpc/channelz/v2:promise_upb_proto",
+        "@com_google_protobuf//upb/mem",
+    ],
 )
 
 grpc_cc_test(
@@ -311,6 +315,8 @@ grpc_cc_test(
     deps = [
         "//:promise",
         "//src/core:all_ok",
+        "//src/proto/grpc/channelz/v2:promise_upb_proto",
+        "@com_google_protobuf//upb/mem",
     ],
 )
 
@@ -411,7 +417,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "for_each_test",
     srcs = ["for_each_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "@com_google_protobuf//upb/mem",
+    ],
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
@@ -430,6 +439,7 @@ grpc_cc_test(
         "//src/core:resource_quota",
         "//src/core:seq",
         "//src/core:try_seq",
+        "//src/proto/grpc/channelz/v2:promise_upb_proto",
     ],
 )
 
