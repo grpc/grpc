@@ -15,7 +15,7 @@
 
 #include "src/core/lib/iomgr/timer.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 
