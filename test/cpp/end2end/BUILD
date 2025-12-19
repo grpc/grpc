@@ -1562,6 +1562,8 @@ grpc_cc_test(
         "absl/strings",
         "absl/synchronization",
         "gtest",
+        "libcrypto",
+        "libssl",
     ],
     tags = ["tls_private_key_offload_test"],
     deps = [
