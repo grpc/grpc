@@ -156,7 +156,7 @@ std::string BaseCallData::LogTag() const {
 }
 
 void BaseCallData::AddData(channelz::DataSink sink) {
-  EnsureRunInExecCtx([this, sink = std::move(sink)]() {
+  EnsureRunInExecCtx([this, sink = std::move(sink)]() mutable {
     auto add = [sink, this](grpc_error_handle) mutable {
       sink.AddData(elem_->filter->name.name(), ChannelzProperties());
       GRPC_CALL_COMBINER_STOP(call_combiner(), "channelz_add_data");
