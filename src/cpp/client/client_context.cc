@@ -121,7 +121,8 @@ void ClientContext::AddMetadata(const std::string& meta_key,
                                 const std::string& meta_value) {
   auto status = grpc_core::ValidateMetadata(meta_key, meta_value);
   if (!status.ok()) {
-    LOG(ERROR) << "Invalid Metadata: " << status;
+    LOG(ERROR) << "Invalid Metadata. key:" << meta_key
+               << " value:" << meta_value << " status" << status;
     return;
   }
   send_initial_metadata_.insert(std::pair(meta_key, meta_value));
