@@ -99,7 +99,7 @@ absl::Status ValidateMetadata(absl::string_view key, absl::string_view value) {
   auto status = ValidateHeaderKeyIsLegal(key);
   if (status != ValidateMetadataResult::kOk) return UpgradeToStatus(status);
   if (absl::EndsWith(key, "-bin")) {
-    return ValidateMetadataResult::kOk;
+    return absl::OkStatus();
   }
   return UpgradeToStatus(ValidateNonBinaryHeaderDataIsLegal(value));
 }
