@@ -185,7 +185,7 @@ void ExternalAccountCredentials::ExternalFetchRequest::ExchangeToken(
   // Parse URI.
   absl::StatusOr<URI> uri = URI::Parse(options().token_url);
   if (!uri.ok()) {
-    return FinishTokenFetch(GRPC_ERROR_CREATE(
+    return FinishTokenFetch(absl::UnauthenticatedError(
         absl::StrFormat("Invalid token url: %s. Error: %s", options().token_url,
                         uri.status().ToString())));
   }
@@ -289,7 +289,7 @@ void ExternalAccountCredentials::ExternalFetchRequest::
   }
   auto it = json->object().find("access_token");
   if (it == json->object().end() || it->second.type() != Json::Type::kString) {
-    FinishTokenFetch(GRPC_ERROR_CREATE(absl::StrFormat(
+    FinishTokenFetch(absl::UnauthenticatedError(absl::StrFormat(
         "Missing or invalid access_token in %s.", *response_body)));
     return;
   }
@@ -297,7 +297,7 @@ void ExternalAccountCredentials::ExternalFetchRequest::
   absl::StatusOr<URI> uri =
       URI::Parse(options().service_account_impersonation_url);
   if (!uri.ok()) {
-    FinishTokenFetch(GRPC_ERROR_CREATE(absl::StrFormat(
+    FinishTokenFetch(absl::UnauthenticatedError(absl::StrFormat(
         "Invalid service account impersonation url: %s. Error: %s",
         options().service_account_impersonation_url, uri.status().ToString())));
     return;

@@ -293,7 +293,7 @@ void AwsExternalAccountCredentials::AwsFetchBody::RetrieveSigningKeys() {
   }
   if (role_name_.empty()) {
     AsyncFinish(
-        GRPC_ERROR_CREATE("Missing role name when retrieving signing keys."));
+        absl::UnauthenticatedError("Missing role name when retrieving signing keys."));
     return;
   }
   std::string url_with_role_name = absl::StrCat(creds_->url_, "/", role_name_);

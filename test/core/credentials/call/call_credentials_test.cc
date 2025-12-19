@@ -3204,8 +3204,7 @@ TEST_F(ExternalAccountCredentialsTest, FailureInvalidTokenUrl) {
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
-  // TODO(roth): This should return UNAUTHENTICATED.
-  grpc_error_handle expected_error = absl::UnknownError(
+  grpc_error_handle expected_error = absl::UnauthenticatedError(
       "error fetching oauth2 token: Invalid token url: "
       "invalid_token_url. Error: INVALID_ARGUMENT: Could not parse "
       "'scheme' from uri 'invalid_token_url'. Scheme not found.");
@@ -3243,8 +3242,7 @@ TEST_F(ExternalAccountCredentialsTest,
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            external_account_creds_httpcli_post_success,
                            httpcli_put_should_not_be_called);
-  // TODO(roth): This should return UNAUTHENTICATED.
-  grpc_error_handle expected_error = absl::UnknownError(
+  grpc_error_handle expected_error = absl::UnauthenticatedError(
       "error fetching oauth2 token: Invalid service account impersonation url: "
       "invalid_service_account_impersonation_url. Error: INVALID_ARGUMENT: "
       "Could not parse 'scheme' from uri "
@@ -3284,8 +3282,7 @@ TEST_F(ExternalAccountCredentialsTest,
       httpcli_get_should_not_be_called,
       external_account_creds_httpcli_post_failure_token_exchange_response_missing_access_token,
       httpcli_put_should_not_be_called);
-  // TODO(roth): This should return UNAUTHENTICATED.
-  grpc_error_handle expected_error = absl::UnknownError(
+  grpc_error_handle expected_error = absl::UnauthenticatedError(
       "error fetching oauth2 token: Missing or invalid access_token in "
       "{\"not_access_token\":\"not_access_token\",\"expires_in\":3599, "
       "\"token_type\":\"Bearer\"}.");
@@ -3607,8 +3604,7 @@ TEST_F(ExternalAccountCredentialsTest,
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
-  // TODO(roth): This should return UNAVAILABLE.
-  grpc_error_handle expected_error = absl::InternalError(
+  grpc_error_handle expected_error = absl::UnavailableError(
       "error fetching oauth2 token: Failed to load file: "
       "non_exisiting_file due to error(fdopen): No such file or directory");
   auto state = RequestMetadataState::NewInstance(expected_error, {});
@@ -3658,8 +3654,7 @@ TEST_F(ExternalAccountCredentialsTest,
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
-  // TODO(roth): This should return UNAUTHENTICATED.
-  grpc_error_handle expected_error = absl::UnknownError(
+  grpc_error_handle expected_error = absl::UnauthenticatedError(
       "error fetching oauth2 token: The content of the file is not a "
       "valid json object.");
   auto state = RequestMetadataState::NewInstance(expected_error, {});
@@ -4364,8 +4359,7 @@ TEST_F(ExternalAccountCredentialsTest,
   ASSERT_TRUE(creds.ok()) << creds.status();
   ASSERT_NE(*creds, nullptr);
   EXPECT_EQ((*creds)->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
-  // TODO(roth): This should return UNAUTHENTICATED.
-  grpc_error_handle expected_error = absl::UnknownError(
+  grpc_error_handle expected_error = absl::UnauthenticatedError(
       "error fetching oauth2 token: "
       "Missing role name when retrieving signing keys.");
   auto state = RequestMetadataState::NewInstance(expected_error, {});
