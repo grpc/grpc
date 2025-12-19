@@ -21294,6 +21294,7 @@ add_executable(incoming_metadata_tracker_test
   src/core/call/message.cc
   src/core/call/metadata.cc
   src/core/call/metadata_batch.cc
+  src/core/call/metadata_info.cc
   src/core/call/parsed_metadata.cc
   src/core/call/server_call.cc
   src/core/call/status_util.cc

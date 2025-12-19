@@ -8376,6 +8376,7 @@ grpc_cc_library(
     ],
     deps = [
         "grpc_check",
+        ":metadata_info",
         "//:chttp2_frame",
     ],
 )
