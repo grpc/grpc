@@ -34,6 +34,7 @@
 #include "src/core/credentials/call/external/url_external_account_credentials.h"
 #include "src/core/credentials/call/json_util.h"
 #include "src/core/credentials/transport/transport_credentials.h"
+#include "src/core/lib/transport/status_conversion.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/http_client/httpcli_ssl_credentials.h"
 #include "src/core/util/http_client/parser.h"
@@ -108,7 +109,11 @@ void ExternalAccountCredentials::HttpFetchBody::OnHttpResponse(
   absl::string_view response_body(self->response_.body,
                                   self->response_.body_length);
   if (self->response_.status != 200) {
-    self->Finish(absl::UnavailableError(
+    grpc_status_code status_code = grpc_http2_status_to_grpc_status(self->response_.status);
+    if (status_code != GRPC_STATUS_UNAVAILABLE) {
+      status_code = GRPC_STATUS_UNAUTHENTICATED;
+    }
+    self->Finish(absl::Status(static_cast<absl::StatusCode>(status_code),
         absl::StrCat("Call to HTTP server ended with status ",
                      self->response_.status, " [", response_body, "]")));
     return;

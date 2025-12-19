@@ -2399,6 +2399,22 @@ int external_account_creds_httpcli_post_failure_token_exchange_response_missing_
   return 1;
 }
 
+int external_account_creds_httpcli_post_failure_token_exchange_bad_request(
+    const grpc_http_request* /*request*/, const URI& uri,
+    absl::string_view /*body*/, Timestamp /*deadline*/, grpc_closure* on_done,
+    grpc_http_response* response) {
+  if (uri.path() == "/token") {
+    *response = http_response(400,
+                              "");
+  } else if (uri.path() == "/service_account_impersonation") {
+    *response = http_response(
+        200,
+        valid_external_account_creds_service_account_impersonation_response);
+  }
+  ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
+  return 1;
+}
+
 int url_external_account_creds_httpcli_get_success(
     const grpc_http_request* /*request*/, const URI& uri,
     Timestamp /*deadline*/, grpc_closure* on_done,
@@ -3273,6 +3289,43 @@ TEST_F(ExternalAccountCredentialsTest,
       "error fetching oauth2 token: Missing or invalid access_token in "
       "{\"not_access_token\":\"not_access_token\",\"expires_in\":3599, "
       "\"token_type\":\"Bearer\"}.");
+  auto state = RequestMetadataState::NewInstance(expected_error, {});
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  event_engine_->TickUntilIdle();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+
+TEST_F(ExternalAccountCredentialsTest,
+       FailureTokenExchangeResponseNotOk) {
+  ExecCtx exec_ctx;
+  Json credential_source = Json::FromString("");
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
+  TestExternalAccountCredentials::Options options = {
+      "external_account",    // type;
+      "audience",            // audience;
+      "subject_token_type",  // subject_token_type;
+      "https://foo.com:5555/service_account_impersonation",  // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+  };
+  auto creds = MakeRefCounted<TestExternalAccountCredentials>(
+      options, std::vector<std::string>(), event_engine_);
+  HttpRequest::SetOverride(
+      httpcli_get_should_not_be_called,
+      external_account_creds_httpcli_post_failure_token_exchange_bad_request,
+      httpcli_put_should_not_be_called);
+  grpc_error_handle expected_error = absl::UnauthenticatedError(
+      "error fetching oauth2 token: Call to HTTP server ended with status 400 []");
   auto state = RequestMetadataState::NewInstance(expected_error, {});
   state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
