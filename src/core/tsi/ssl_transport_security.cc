@@ -968,9 +968,12 @@ static tsi_result populate_ssl_context(
           if (key_signer != nullptr) {
             SSL_CTX_set_private_key_method(
                 context, &grpc_core::TlsOffloadPrivateKeyMethod);
-            SSL_CTX_set_ex_data(context,
-                                g_ssl_ctx_ex_private_key_function_index,
-                                key_signer.get());
+            if (!SSL_CTX_set_ex_data(context,
+                                     g_ssl_ctx_ex_private_key_function_index,
+                                     key_signer.get())) {
+              LOG(ERROR) << "Unable to populate the PrivateKeySigner";
+              return TSI_INTERNAL_ERROR;
+            }
           }
 #endif  // OPENSSL_IS_BORINGSSL
           return TSI_OK;
@@ -1285,11 +1288,13 @@ static int CheckChainRevocation(
 
 grpc_core::TlsPrivateKeyOffloadContext*
 grpc_core::GetTlsPrivateKeyOffloadContext(SSL* ssl) {
+  GRPC_CHECK_NE(g_ssl_ex_private_key_offloading_context_index, -1);
   return static_cast<grpc_core::TlsPrivateKeyOffloadContext*>(
       SSL_get_ex_data(ssl, g_ssl_ex_private_key_offloading_context_index));
 }
 
 grpc_core::PrivateKeySigner* grpc_core::GetPrivateKeySigner(SSL_CTX* ssl_ctx) {
+  GRPC_CHECK_NE(g_ssl_ctx_ex_private_key_function_index, -1);
   return static_cast<grpc_core::PrivateKeySigner*>(
       SSL_CTX_get_ex_data(ssl_ctx, g_ssl_ctx_ex_private_key_function_index));
 }
@@ -2305,15 +2310,16 @@ static tsi_result create_tsi_ssl_handshaker(
   }
 
   grpc_core::PrivateKeySigner* sign_function =
-      static_cast<grpc_core::PrivateKeySigner*>(SSL_CTX_get_ex_data(
-          ssl_ctx, g_ssl_ctx_ex_private_key_function_index));
+      grpc_core::GetPrivateKeySigner(ssl_ctx);
   if (sign_function != nullptr) {
     grpc_core::TlsPrivateKeyOffloadContext* private_key_offload_context =
         new grpc_core::TlsPrivateKeyOffloadContext();
     private_key_offload_context->handshaker = *handshaker;
 
-    SSL_set_ex_data(ssl, g_ssl_ex_private_key_offloading_context_index,
-                    private_key_offload_context);
+    if (!SSL_set_ex_data(ssl, g_ssl_ex_private_key_offloading_context_index,
+                         private_key_offload_context)) {
+      return TSI_INTERNAL_ERROR;
+    }
   }
 
   return TSI_OK;
