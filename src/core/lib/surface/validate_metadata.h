@@ -46,7 +46,7 @@ const char* ValidateMetadataResultToString(ValidateMetadataResult result);
 ValidateMetadataResult ValidateHeaderKeyIsLegal(absl::string_view key);
 
 ValidateMetadataResult ValidateNonBinaryHeaderDataIsLegal(
-    absl::string_view data);
+    absl::string_view value);
 
 absl::Status ValidateMetadata(absl::string_view key, absl::string_view data);
 
