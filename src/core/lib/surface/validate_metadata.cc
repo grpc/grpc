@@ -23,7 +23,6 @@
 
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/util/bitset.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
