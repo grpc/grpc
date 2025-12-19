@@ -170,10 +170,9 @@ class TestPrivateKeySigner final : public grpc::experimental::PrivateKeySigner {
   bool Sign(absl::string_view data_to_sign,
             SignatureAlgorithm signature_algorithm,
             OnSignComplete on_sign_complete) override {
-    auto on_sign_complete_ptr =
-        std::make_shared<OnSignComplete>(std::move(on_sign_complete));
     std::thread([this, data_to_sign = std::string(data_to_sign),
-                 signature_algorithm, on_sign_complete_ptr]() mutable {
+                 signature_algorithm,
+                 on_sign_complete_ptr = std::move(on_sign_complete)]() mutable {
       const uint8_t* in = reinterpret_cast<const uint8_t*>(data_to_sign.data());
       const size_t in_len = data_to_sign.size();
 
@@ -191,8 +190,7 @@ class TestPrivateKeySigner final : public grpc::experimental::PrivateKeySigner {
       bssl::ScopedEVP_MD_CTX ctx;
       EVP_PKEY_CTX* pctx;
       if (!EVP_DigestSignInit(ctx.get(), &pctx, md, nullptr, private_key)) {
-        (*on_sign_complete_ptr)(
-            absl::InternalError("EVP_DigestSignInit failed"));
+        on_sign_complete_ptr(absl::InternalError("EVP_DigestSignInit failed"));
         return;
       }
 
@@ -200,27 +198,27 @@ class TestPrivateKeySigner final : public grpc::experimental::PrivateKeySigner {
       if (SSL_is_signature_algorithm_rsa_pss(boring_signature_algorithm)) {
         if (!EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PSS_PADDING) ||
             !EVP_PKEY_CTX_set_rsa_pss_saltlen(pctx, -1)) {
-          (*on_sign_complete_ptr)(absl::InternalError("EVP_PKEY_CTX failed"));
+          on_sign_complete_ptr(absl::InternalError("EVP_PKEY_CTX failed"));
           return;
         }
       }
 
       size_t len = 0;
       if (!EVP_DigestSign(ctx.get(), nullptr, &len, in, in_len)) {
-        (*on_sign_complete_ptr)(absl::InternalError("EVP_DigestSign failed"));
+        on_sign_complete_ptr(absl::InternalError("EVP_DigestSign failed"));
         return;
       }
       std::vector<uint8_t> private_key_result;
       private_key_result.resize(len);
       if (!EVP_DigestSign(ctx.get(), private_key_result.data(), &len, in,
                           in_len)) {
-        (*on_sign_complete_ptr)(absl::InternalError("EVP_DigestSign failed"));
+        on_sign_complete_ptr(absl::InternalError("EVP_DigestSign failed"));
         return;
       }
       private_key_result.resize(len);
       std::string private_key_result_str(private_key_result.begin(),
                                          private_key_result.end());
-      (*on_sign_complete_ptr)(
+      on_sign_complete_ptr(
           std::string(private_key_result.begin(), private_key_result.end()));
     }).detach();
     return false;
