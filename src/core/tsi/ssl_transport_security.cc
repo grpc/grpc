@@ -2132,6 +2132,7 @@ static tsi_result ssl_handshaker_next(
       gpr_free(unused_bytes);
       if (error != nullptr) *error = "More unused bytes than received bytes.";
       return TSI_INTERNAL_ERROR;
+    }
     status = ssl_handshaker_result_create(impl, unused_bytes, unused_bytes_size,
                                           handshaker_result, error);
     if (status == TSI_OK) {
