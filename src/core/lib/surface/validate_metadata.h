@@ -48,7 +48,7 @@ ValidateMetadataResult ValidateHeaderKeyIsLegal(absl::string_view key);
 ValidateMetadataResult ValidateNonBinaryHeaderDataIsLegal(
     absl::string_view value);
 
-absl::Status ValidateMetadata(absl::string_view key, absl::string_view data);
+absl::Status ValidateMetadata(absl::string_view key, absl::string_view value);
 
 }  // namespace grpc_core
 
