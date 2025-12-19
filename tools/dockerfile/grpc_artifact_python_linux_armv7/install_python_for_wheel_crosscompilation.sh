@@ -44,4 +44,4 @@ popd
 rm -rf "Python-${PYTHON_VERSION}"
 
 # install cython and wheel
-"${PYTHON_PREFIX}/bin/python3" -m pip install --upgrade 'cython==3.2.1' wheel
+"${PYTHON_PREFIX}/bin/python3" -m pip install --upgrade 'cython==3.2.3' wheel

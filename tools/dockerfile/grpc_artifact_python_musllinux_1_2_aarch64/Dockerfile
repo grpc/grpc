@@ -46,12 +46,12 @@ RUN apk add openssl openssl-dev zstd zstd-dev hiredis-dev
 # For some reason, this specific build segfaults on ccache unless cython is intalled.
 #===================================
 # Install Python build requirements
-RUN /opt/python/cp39-cp39/bin/pip install --upgrade 'cython==3.2.1' && \
-  /opt/python/cp310-cp310/bin/pip install --upgrade 'cython==3.2.1' && \
-  /opt/python/cp311-cp311/bin/pip install --upgrade 'cython==3.2.1' && \
-  /opt/python/cp312-cp312/bin/pip install --upgrade 'cython==3.2.1' && \
-  /opt/python/cp313-cp313/bin/pip install --upgrade 'cython==3.2.1' && \
-  /opt/python/cp314-cp314/bin/pip install --upgrade 'cython==3.2.1'
+RUN /opt/python/cp39-cp39/bin/pip install --upgrade 'cython==3.2.3' && \
+  /opt/python/cp310-cp310/bin/pip install --upgrade 'cython==3.2.3' && \
+  /opt/python/cp311-cp311/bin/pip install --upgrade 'cython==3.2.3' && \
+  /opt/python/cp312-cp312/bin/pip install --upgrade 'cython==3.2.3' && \
+  /opt/python/cp313-cp313/bin/pip install --upgrade 'cython==3.2.3' && \
+  /opt/python/cp314-cp314/bin/pip install --upgrade 'cython==3.2.3'
 
 
 #=================
