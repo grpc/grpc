@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_GRPC_PRIVATE_KEY_SIGNER_H
-#define GRPC_GRPC_PRIVATE_KEY_SIGNER_H
+#ifndef GRPC_PRIVATE_KEY_SIGNER_H
+#define GRPC_PRIVATE_KEY_SIGNER_H
 
 #include <grpc/credentials.h>
 
@@ -71,4 +71,4 @@ GRPCAPI void grpc_tls_identity_pairs_add_pair_with_signer(
     std::shared_ptr<grpc_core::PrivateKeySigner> private_key_signer,
     const char* cert_chain);
 
-#endif /* GRPC_GRPC_PRIVATE_KEY_SIGNER_H */
+#endif /* GRPC_PRIVATE_KEY_SIGNER_H */
