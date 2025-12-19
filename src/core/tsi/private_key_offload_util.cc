@@ -63,12 +63,14 @@ absl::StatusOr<PrivateKeySigner::SignatureAlgorithm> ToSignatureAlgorithmClass(
 #if defined(OPENSSL_IS_BORINGSSL)
 void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
                                 absl::StatusOr<std::string> signed_data) {
-  ctx->status = TlsPrivateKeyOffloadContext::kCompleted;
+  ctx->status = TlsPrivateKeyOffloadContext::kSignatureCompleted;
   if (signed_data.ok()) {
     const uint8_t* bytes_to_send = nullptr;
     size_t bytes_to_send_size = 0;
     ctx->signed_bytes = std::move(signed_data);
 
+    // Once the signed bytes are obtained, wrap an empty callback to
+    // tsi_handshaker_next to resume the pending async operation.
     tsi_result result = tsi_handshaker_next(
         ctx->handshaker, nullptr, 0, &bytes_to_send, &bytes_to_send_size,
         &ctx->handshaker_result, ctx->notify_cb, ctx->notify_user_data);
@@ -96,6 +98,7 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
     SSL* ssl, uint8_t* /*out*/, size_t* /*out_len*/, size_t /*max_out*/,
     uint16_t signature_algorithm, const uint8_t* in, size_t in_len) {
   TlsPrivateKeyOffloadContext* ctx = GetTlsPrivateKeyOffloadContext(ssl);
+  ctx->status = TlsPrivateKeyOffloadContext::kInProgress;
   // Create the completion callback by binding the current context.
   auto done_callback = absl::bind_front(TlsOffloadSignDoneCallback, ctx);
 
@@ -120,14 +123,13 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
     bool is_done = signer->Sign(
         absl::string_view(reinterpret_cast<const char*>(in), in_len),
         *algorithm, done_callback);
-    // The operation is not completed. Tell BoringSSL to wait for the signature
-    // result.
+    // If the signature invocation was completed, return ssl_private_key_success
+    // to continue the handshake. Otherwise tell BoringSSL to wait for the
+    // signature result.
     return is_done ? ssl_private_key_success : ssl_private_key_retry;
   }
 
-  // The operation is completed. Tell BoringSSL to wait for the signature
-  // result.
-  return ssl_private_key_retry;
+  return ssl_private_key_failure;
 }
 
 enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,

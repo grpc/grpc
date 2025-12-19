@@ -2101,8 +2101,12 @@ static tsi_result ssl_handshaker_next(
     }
   } else if (offload_context != nullptr &&
              offload_context->status ==
-                 grpc_core::TlsPrivateKeyOffloadContext::kCompleted) {
+                 grpc_core::TlsPrivateKeyOffloadContext::kSignatureCompleted) {
+    // During the PrivateKeyOffload signature, an empty call to
+    // ssl_handshaker_do_handshake needs to be forced  after the async offload
+    // has completed.
     status = ssl_handshaker_do_handshake(impl, error);
+    offload_context->status = grpc_core::TlsPrivateKeyOffloadContext::kFinished;
   }
   if (status != TSI_OK) return status;
   // Get bytes to send to the peer, if available.
@@ -2120,13 +2124,14 @@ static tsi_result ssl_handshaker_next(
     // unconsumed bytes meant for the frame protector.
     unsigned char* unused_bytes = nullptr;
     size_t unused_bytes_size = 0;
-    std::string tsi_error;
-    tsi_result status = ssl_bytes_remaining(impl, &unused_bytes,
-                                            &unused_bytes_size, &tsi_error);
-    if (status != TSI_OK) {
-      if (error != nullptr) *error = tsi_error;
-      return status;
-    }
+    status =
+        ssl_bytes_remaining(impl, &unused_bytes, &unused_bytes_size, error);
+    if (status != TSI_OK) return status;
+    if (unused_bytes_size > received_bytes_size) {
+      LOG(ERROR) << "More unused bytes than received bytes.";
+      gpr_free(unused_bytes);
+      if (error != nullptr) *error = "More unused bytes than received bytes.";
+      return TSI_INTERNAL_ERROR;
     status = ssl_handshaker_result_create(impl, unused_bytes, unused_bytes_size,
                                           handshaker_result, error);
     if (status == TSI_OK) {
@@ -2138,10 +2143,21 @@ static tsi_result ssl_handshaker_next(
       // Indicates that the handshake has completed and that a
       // handshaker_result has been created.
       self->handshaker_result_created = true;
+      // Output Cipher information
+      if (GRPC_TRACE_FLAG_ENABLED(tsi)) {
+        tsi_ssl_handshaker_result* result =
+            reinterpret_cast<tsi_ssl_handshaker_result*>(*handshaker_result);
+        auto cipher = SSL_get_current_cipher(result->ssl);
+        if (cipher != nullptr) {
+          GRPC_TRACE_LOG(tsi, INFO) << absl::StrFormat(
+              "SSL Cipher Version: %s Name: %s", SSL_CIPHER_get_version(cipher),
+              SSL_CIPHER_get_name(cipher));
+        }
+      }
     }
     return status;
   }
-  return TSI_OK;
+  return status;
 }
 
 static const tsi_handshaker_vtable handshaker_vtable = {

@@ -230,7 +230,7 @@ class TestPrivateKeySigner final : public grpc::experimental::PrivateKeySigner {
   bssl::UniquePtr<EVP_PKEY> pkey_;
 };
 
-TEST_F(TlsPrivateKeyOffloadTest, DefaultOffload) {
+TEST_F(TlsPrivateKeyOffloadTest, DefaultNoOffload) {
   server_addr_ = absl::StrCat("localhost:",
                               std::to_string(grpc_pick_unused_port_or_die()));
   std::string server_key =
