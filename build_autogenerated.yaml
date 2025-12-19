@@ -5445,6 +5445,18 @@ targets:
   - linux
   - posix
   - windows
+- name: test_core_iomgr_fd_conservation_posix_test
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/iomgr/fd_conservation_posix_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: activity_test
   gtest: true
   build: test
@@ -12419,20 +12431,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-- name: fd_conservation_posix_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/event_engine/posix/fd_conservation_posix_test.cc
-  deps:
-  - gtest
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
 - name: fd_posix_test
   gtest: true
   build: test
@@ -25003,6 +25001,20 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: test_core_event_engine_posix_fd_conservation_posix_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/event_engine/posix/fd_conservation_posix_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: test_core_event_engine_posix_timer_heap_test
   gtest: true
   build: test
