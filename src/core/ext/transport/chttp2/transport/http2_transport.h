@@ -118,6 +118,8 @@ struct TransportChannelArgs {
   Duration settings_timeout;
   bool keepalive_permit_without_calls;
   bool enable_preferred_rx_crypto_frame_advertisement;
+  // This is used to test peer behaviour when we never send a ping ack.
+  bool test_only_ack_pings;
   uint32_t max_header_list_size_soft_limit;
   int max_usable_hpack_table_size;
   int initial_sequence_number;
@@ -133,7 +135,8 @@ struct TransportChannelArgs {
         enable_preferred_rx_crypto_frame_advertisement,
         " max_header_list_size_soft_limit: ", max_header_list_size_soft_limit,
         " max_usable_hpack_table_size: ", max_usable_hpack_table_size,
-        " initial_sequence_number: ", initial_sequence_number);
+        " initial_sequence_number: ", initial_sequence_number,
+        " test_only_ack_pings: ", test_only_ack_pings);
   }
 };
 
