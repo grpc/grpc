@@ -1086,6 +1086,8 @@ grpc_cc_test(
     name = "flaky_network_test",
     srcs = ["flaky_network_test.cc"],
     external_deps = [
+        "absl/memory",
+        "absl/log",
         "gtest",
     ],
     tags = [
@@ -1100,9 +1102,11 @@ grpc_cc_test(
     ],
     deps = [
         ":test_service_impl",
+        "//:backoff",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//src/core:env",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//test/core/test_util:grpc_test_util",
