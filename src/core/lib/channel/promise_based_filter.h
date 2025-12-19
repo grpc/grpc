@@ -1291,7 +1291,8 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                 return ForEach(
                     std::move(*client_to_server_messages_receiver),
                     [initiator](MessageHandle message) mutable {
-                      return initiator.PushMessage(std::move(message));
+                      initiator.SpawnPushMessage(std::move(message));
+                      return Success{};
                     });
               };
           // Initiator-side promise for server-to-client data.
@@ -1331,23 +1332,40 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
           auto handler_server_to_client_promise = [handler,
                                                    pipe_owner]() mutable {
             return TrySeq(
-                TrySeq(
+                Map(
                     pipe_owner->server_initial_metadata.receiver.Next(),
                     [handler](NextResult<ServerMetadataHandle> metadata) mutable
                         -> StatusFlag {
                       if (!metadata.has_value()) return Failure{};
-                      return handler.PushServerInitialMetadata(
+                      handler.SpawnPushServerInitialMetadata(
                           std::move(*metadata));
+                      return Success{};
                     }),
                 ForEach(
                     std::move(pipe_owner->server_to_client_messages.receiver),
                     [handler](MessageHandle message) mutable {
-                      return handler.PushMessage(std::move(message));
+                      handler.SpawnPushMessage(std::move(message));
+                      return Success{};
                     }));
           };
+          auto client_initial_metadata_puller = [handler,
+            next_promise_factory = std::move(next_promise_factory),
+            call_args = std::move(call_args)]() mutable {
+            return TrySeq(
+                handler.PullClientInitialMetadata(),
+                [next_promise_factory = std::move(next_promise_factory),
+            call_args = std::move(call_args)](ClientMetadataHandle
+            metadata) mutable {
+              call_args.client_initial_metadata = std::move(metadata);
+              return next_promise_factory(std::move(call_args));
+            });
+          };
+
+
           // Now put it all together.
           return AllOk<ServerMetadataHandle>(
-              next_promise_factory(std::move(call_args)),
+              client_initial_metadata_puller(),
+              //next_promise_factory(std::move(call_args)),
               initiator_client_to_server_promise(),
               initiator_server_to_client_promise(),
               handler_client_to_server_promise(),

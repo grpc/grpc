@@ -81,10 +81,14 @@ class CallSpine final : public Party, public channelz::DataSource {
   }
 
   auto PullServerInitialMetadata() {
+    GRPC_TRACE_LOG(call_state, INFO)
+        << "[CallSpine " << this << "]: PullServerInitialMetadata()";
     return call_filters().PullServerInitialMetadata();
   }
 
   auto PullServerTrailingMetadata() {
+    GRPC_TRACE_LOG(call_state, INFO)
+        << "[CallSpine " << this << "]: PullServerTrailingMetadata()";
     return Map(
         call_filters().PullServerTrailingMetadata(),
         [this](ServerMetadataHandle result) {
@@ -94,35 +98,54 @@ class CallSpine final : public Party, public channelz::DataSource {
   }
 
   auto PushClientToServerMessage(MessageHandle message) {
+    GRPC_TRACE_LOG(call_state, INFO)
+        << "[CallSpine " << this << "]: PushClientToServerMessage(): "
+        << message->DebugString();
     return call_filters().PushClientToServerMessage(std::move(message));
   }
 
   auto PullClientToServerMessage() {
+    GRPC_TRACE_LOG(call_state, INFO)
+        << "[CallSpine " << this << "]: PullClientToServerMessage()";
     return call_filters().PullClientToServerMessage();
   }
 
   auto PushServerToClientMessage(MessageHandle message) {
+    GRPC_TRACE_LOG(call_state, INFO)
+        << "[CallSpine " << this << "]: PushServerToClientMessage(): "
+        << message->DebugString();
     return call_filters().PushServerToClientMessage(std::move(message));
   }
 
   auto PullServerToClientMessage() {
+    GRPC_TRACE_LOG(call_state, INFO)
+        << "[CallSpine " << this << "]: PullServerToClientMessage()";
     return call_filters().PullServerToClientMessage();
   }
 
   void PushServerTrailingMetadata(ServerMetadataHandle md) {
     GRPC_TRACE_LOG(call_state, INFO)
-        << "[call_state] PushServerTrailingMetadata: " << this << " "
+        << "[CallSpine " << this << "]: PushServerTrailingMetadata(): "
         << md->DebugString();
     call_filters().PushServerTrailingMetadata(std::move(md));
   }
 
-  void FinishSends() { call_filters().FinishClientToServerSends(); }
+  void FinishSends() {
+    GRPC_TRACE_LOG(call_state, INFO)
+        << "[CallSpine " << this << "]: FinishSends()";
+    call_filters().FinishClientToServerSends();
+  }
 
   auto PullClientInitialMetadata() {
+    GRPC_TRACE_LOG(call_state, INFO)
+        << "[CallSpine " << this << "]: PullClientInitialMetadata()";
     return call_filters().PullClientInitialMetadata();
   }
 
   StatusFlag PushServerInitialMetadata(ServerMetadataHandle md) {
+    GRPC_TRACE_LOG(call_state, INFO)
+        << "[CallSpine " << this << "]: PushServerInitialMetadata(): "
+        << md->DebugString();
     return call_filters().PushServerInitialMetadata(std::move(md));
   }
 
@@ -150,7 +173,7 @@ class CallSpine final : public Party, public channelz::DataSource {
   void CancelIfFailed(const StatusType& r) {
     if (!IsStatusOk(r)) {
       GRPC_TRACE_LOG(call_state, INFO)
-          << "[call_state] spine " << this << " fails: " << r;
+          << "[CallSpine " << this << "]: fails: " << r;
       Cancel();
     }
   }
@@ -311,6 +334,7 @@ class CallSpine final : public Party, public channelz::DataSource {
           return p->Ref();
         }()),
         call_filters_(std::move(client_initial_metadata)) {
+    GRPC_TRACE_LOG(call_state, INFO) << "[CallSpine " << this << "]: created";
     SourceConstructed();
   }
 
@@ -482,6 +506,7 @@ class CallHandler {
       : spine_(std::move(spine)) {}
 
   auto PullClientInitialMetadata() {
+
     return spine_->PullClientInitialMetadata();
   }
 
