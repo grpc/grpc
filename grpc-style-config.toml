@@ -4,6 +4,8 @@ target-version = [
   "py39",
   "py310",
   "py311",
+  "py312",
+  "py313",
 ]
 extend-exclude = '''
 # A regex preceded with ^/ will apply only to files and directories
@@ -29,6 +31,9 @@ extend-exclude = '''
 
 [tool.isort]
 profile = "black"
+py_version = 39
+follow_links = false
+
 line_length = 80
 src_paths = [
     "examples/python/data_transmission",
@@ -48,6 +53,7 @@ skip_glob = [
     "*pb2*.pyi",
     "**/site-packages/**/*",
     "py_xds_protos/*",
+    "**/.venv-*",
 ]
 single_line_exclusions = ["typing"]
 force_single_line = true
