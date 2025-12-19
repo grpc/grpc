@@ -37,6 +37,7 @@
 #include "src/core/xds/grpc/xds_http_filter_registry.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
+#include "test/core/test_util/test_timeout.h"
 #include "test/core/test_util/xds_http_add_header_filter.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "xds/type/matcher/v3/matcher.pb.h"
@@ -152,22 +153,6 @@ class XdsCompositeFilterEnd2endTest : public XdsEnd2endTest {
 INSTANTIATE_TEST_SUITE_P(XdsTest, XdsCompositeFilterEnd2endTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
-class TestTimeout {
- public:
-  TestTimeout(
-      grpc_event_engine::experimental::EventEngine::Duration timeout,
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine)
-      : engine_(engine),
-        timer_(engine->RunAfter(timeout, []() { GRPC_CHECK(false); })) {}
-  ~TestTimeout() { Cancel(); }
-
-  void Cancel() { engine_->Cancel(timer_); }
-
- private:
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
-  grpc_event_engine::experimental::EventEngine::TaskHandle timer_;
-};
-
 TEST_P(XdsCompositeFilterEnd2endTest, Basic) {
   // Configure the composite filter with a matcher tree, as follows:
   // - match on name=enterprise, add header status=legend
@@ -181,8 +166,9 @@ TEST_P(XdsCompositeFilterEnd2endTest, Basic) {
   // Send RPC with name=enterprise.
   LOG(INFO) << "Sending RPC with name=enterprise...";
   // FIXME: remove when finished debugging
-  TestTimeout timeout(grpc_core::Duration::Seconds(10),
-                      grpc_event_engine::experimental::GetDefaultEventEngine());
+  grpc_core::TestTimeout timeout(
+      grpc_core::Duration::Seconds(10),
+      grpc_event_engine::experimental::GetDefaultEventEngine());
   std::multimap<std::string, std::string> server_initial_metadata;
   Status status = SendRpc(RpcOptions()
                               .set_metadata({{"name", "enterprise"}})

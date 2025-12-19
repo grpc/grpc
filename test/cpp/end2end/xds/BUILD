@@ -542,6 +542,7 @@ grpc_cc_test(
         "//src/core:client_channel_backup_poller",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:scoped_env_var",
+        "//test/core/test_util:test_timeout",  # FIXME: remove
         "//test/core/test_util:xds_http_add_header_filter",
         "@com_github_cncf_xds//xds/type/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
