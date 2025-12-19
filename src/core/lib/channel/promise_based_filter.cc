@@ -26,6 +26,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/crash.h"
@@ -157,6 +158,7 @@ std::string BaseCallData::LogTag() const {
 
 void BaseCallData::AddData(channelz::DataSink sink) {
   auto add = [sink, this](grpc_error_handle) mutable {
+    grpc_core::ExecCtx exec_ctx;
     sink.AddData(elem_->filter->name.name(), ChannelzProperties());
     GRPC_CALL_COMBINER_STOP(call_combiner(), "channelz_add_data");
     GRPC_CALL_STACK_UNREF(call_stack_, "channelz_add_data");
