@@ -156,14 +156,16 @@ std::string BaseCallData::LogTag() const {
 }
 
 void BaseCallData::AddData(channelz::DataSink sink) {
-  auto add = [sink, this](grpc_error_handle) mutable {
-    sink.AddData(elem_->filter->name.name(), ChannelzProperties());
-    GRPC_CALL_COMBINER_STOP(call_combiner(), "channelz_add_data");
-    GRPC_CALL_STACK_UNREF(call_stack_, "channelz_add_data");
-  };
-  GRPC_CALL_STACK_REF(call_stack_, "channelz_add_data");
-  GRPC_CALL_COMBINER_START(call_combiner_, NewClosure(std::move(add)),
-                           absl::OkStatus(), "channelz_add_data");
+  EnsureRunInExecCtx([this, sink = std::move(sink)]() {
+    auto add = [sink, this](grpc_error_handle) mutable {
+      sink.AddData(elem_->filter->name.name(), ChannelzProperties());
+      GRPC_CALL_COMBINER_STOP(call_combiner(), "channelz_add_data");
+      GRPC_CALL_STACK_UNREF(call_stack_, "channelz_add_data");
+    };
+    GRPC_CALL_STACK_REF(call_stack_, "channelz_add_data");
+    GRPC_CALL_COMBINER_START(call_combiner_, NewClosure(std::move(add)),
+                             absl::OkStatus(), "channelz_add_data");
+  });
 }
 
 channelz::PropertyList BaseCallData::ChannelzProperties() const {
