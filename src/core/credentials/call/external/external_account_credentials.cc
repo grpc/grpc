@@ -109,11 +109,13 @@ void ExternalAccountCredentials::HttpFetchBody::OnHttpResponse(
   absl::string_view response_body(self->response_.body,
                                   self->response_.body_length);
   if (self->response_.status != 200) {
-    grpc_status_code status_code = grpc_http2_status_to_grpc_status(self->response_.status);
+    grpc_status_code status_code =
+        grpc_http2_status_to_grpc_status(self->response_.status);
     if (status_code != GRPC_STATUS_UNAVAILABLE) {
       status_code = GRPC_STATUS_UNAUTHENTICATED;
     }
-    self->Finish(absl::Status(static_cast<absl::StatusCode>(status_code),
+    self->Finish(absl::Status(
+        static_cast<absl::StatusCode>(status_code),
         absl::StrCat("Call to HTTP server ended with status ",
                      self->response_.status, " [", response_body, "]")));
     return;
