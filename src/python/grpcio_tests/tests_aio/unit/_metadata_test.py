@@ -137,6 +137,25 @@ class TestTypeMetadata(unittest.TestCase):
         self.assertEqual(metadata.get_all("key2"), ["value2"])
         self.assertEqual(metadata.get_all("non existing key"), [])
 
+    def test_append_values(self):
+        metadata = Metadata()
+        metadata.append(("key", "value"))
+        metadata.append(("key", "second value"))
+        metadata.append(("key2", "value2"))
+
+        self.assertEqual(metadata.get("key2"), "value2")
+        self.assertEqual(metadata.get_all("key"), ["value", "second value"])
+
+        with self.assertRaises(ValueError):
+            metadata.append(
+                ("invalid_key", "invalid_value1", "invalid_value2")
+            )  # pytype: disable=wrong-arg-types
+
+        with self.assertRaises(ValueError):
+            metadata.append(
+                ["invalid_key_in_list", "invalid_value_in_list"]
+            )  # pytype: disable=wrong-arg-types
+
     def test_container(self):
         metadata = Metadata(*self._MULTI_ENTRY_DATA)
         self.assertIn("key1", metadata)

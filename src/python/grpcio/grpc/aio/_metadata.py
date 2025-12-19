@@ -40,13 +40,33 @@ class Metadata(abc.Collection):  # noqa: PLW1641
 
     @classmethod
     def from_tuple(cls, raw_metadata: tuple):
+        """Convert to a Metadata object from a tuple"""
         if raw_metadata:
             return cls(*raw_metadata)
         return cls()
 
     def add(self, key: MetadataKey, value: MetadataValue) -> None:
+        """Adds a key-value pair to the metadata.
+        If the key already exists, the value is appended to the list of
+        existing values.
+        If the key does not exist, a new list containing the value is created.
+        """
         self._metadata.setdefault(key, [])
         self._metadata[key].append(value)
+
+    # TODO(sreenithi): Resolve MetadatumType circular import and use it instead
+    def append(self, metadata: Tuple[MetadataKey, MetadataValue]) -> None:
+        """Adds a key,value pair to the metadata.
+        Similar to add() but provided for backward compatibility with list
+        based metadata formats.
+        """
+        # check exactly two values in the tuple
+        if not isinstance(metadata, tuple) or len(metadata) != 2:
+            error_msg = "data to append must be a (key, value) tuple"
+            raise ValueError(error_msg)
+
+        key, value = metadata
+        self.add(key, value)
 
     def __len__(self) -> int:
         """Return the total number of elements that there are in the metadata,
@@ -91,29 +111,40 @@ class Metadata(abc.Collection):  # noqa: PLW1641
                 yield (key, value)
 
     def keys(self) -> abc.KeysView:
+        """Get all the keys in the metadata object"""
         return abc.KeysView(self)
 
     def values(self) -> abc.ValuesView:
+        """Get all the values in the metadata object"""
         return abc.ValuesView(self)
 
     def items(self) -> abc.ItemsView:
+        """Get all the key value pairs in the metadata object similar to
+        dict.items()
+        """
         return abc.ItemsView(self)
 
     def get(
         self, key: MetadataKey, default: MetadataValue = None
     ) -> Optional[MetadataValue]:
+        """Get all the values associated with an existing key or the supplied
+        default value if the key doesn't exist
+        """
         try:
             return self[key]
         except KeyError:
             return default
 
     def get_all(self, key: MetadataKey) -> List[MetadataValue]:
-        """For compatibility with other Metadata abstraction objects (like in Java),
-        this would return all items under the desired <key>.
+        """For compatibility with other Metadata abstraction objects (like in
+        Java), this would return all items under the desired <key>.
         """
         return self._metadata.get(key, [])
 
     def set_all(self, key: MetadataKey, values: List[MetadataValue]) -> None:
+        """Set a list of values to the key. This will overwrite any existing
+        values associated with the key
+        """
         self._metadata[key] = values
 
     def __contains__(self, key: MetadataKey) -> bool:
