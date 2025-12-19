@@ -144,7 +144,6 @@ void WaitUntilNumFilesUsedDropsBelowThreshold(int pid, int threshold) {
 
 TEST(PosixEndpointSmokeTest, FdConservationTest) {
   struct rlimit rlim;
-  struct rlimit prev_limit;
   // set max # of file descriptors to a low value, and
   // verify we can create and destroy many more than this number
   // of descriptors
@@ -152,7 +151,7 @@ TEST(PosixEndpointSmokeTest, FdConservationTest) {
   int threshold = NumFilesUsed(pid);
   // Reserve only 10 more fds.
   rlim.rlim_cur = rlim.rlim_max = threshold + 10;
-  EXPECT_EQ(prlimit(pid, RLIMIT_NOFILE, &rlim, &prev_limit), 0);
+  EXPECT_EQ(setrlimit(RLIMIT_NOFILE, &rlim), 0);
   // Verify that we can create and destroy more than rlimit_max
   for (int i = 0; i < 100; i++) {
     threshold = NumFilesUsed(pid);
