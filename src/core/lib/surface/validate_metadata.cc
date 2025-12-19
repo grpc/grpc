@@ -89,10 +89,8 @@ const char* ValidateMetadataResultToString(ValidateMetadataResult result) {
   GPR_UNREACHABLE_CODE(return "Unknown");
 }
 
-ValidateMetadataResult ValidateHeaderDataIsLegal(absl::string_view data) {
-  if (absl::EndsWith(data, "-bin")) {
-    return ValidateMetadataResult::kOk;
-  }
+ValidateMetadataResult ValidateNonBinaryHeaderDataIsLegal(
+    absl::string_view data) {
   return ConformsTo(data, g_legal_header_key_bits,
                     ValidateMetadataResult::kIllegalHeaderValue);
 }
@@ -100,7 +98,10 @@ ValidateMetadataResult ValidateHeaderDataIsLegal(absl::string_view data) {
 absl::Status ValidateMetadata(absl::string_view key, absl::string_view value) {
   auto status = ValidateHeaderKeyIsLegal(key);
   if (status != ValidateMetadataResult::kOk) return UpgradeToStatus(status);
-  return UpgradeToStatus(ValidateHeaderDataIsLegal(value));
+  if (absl::EndsWith(key, "-bin")) {
+    return ValidateMetadataResult::kOk;
+  }
+  return UpgradeToStatus(ValidateNonBinaryHeaderDataIsLegal(value));
 }
 
 }  // namespace grpc_core

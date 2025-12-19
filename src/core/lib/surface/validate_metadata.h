@@ -45,7 +45,8 @@ const char* ValidateMetadataResultToString(ValidateMetadataResult result);
 // Returns nullopt if the key is legal, otherwise returns an error message.
 ValidateMetadataResult ValidateHeaderKeyIsLegal(absl::string_view key);
 
-ValidateMetadataResult ValidateHeaderDataIsLegal(absl::string_view data);
+ValidateMetadataResult ValidateNonBinaryHeaderDataIsLegal(
+    absl::string_view data);
 
 absl::Status ValidateMetadata(absl::string_view key, absl::string_view data);
 
