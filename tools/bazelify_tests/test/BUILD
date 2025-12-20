@@ -238,9 +238,15 @@ grpc_run_simple_command_test(
 )
 
 test_suite(
-    name = "bazel_build_tests_linux",
+    name = "bzlmod_tests_linux",
     tests = [
         ":bazel_build_with_bzlmod_linux",
+    ],
+)
+
+test_suite(
+    name = "bazel_build_tests_linux",
+    tests = [
         ":bazel_build_with_grpc_no_xds_linux",
         ":bazel_build_with_grpc_no_xds_negative_test_linux",
         ":bazel_build_with_strict_warnings_linux",
@@ -443,6 +449,7 @@ test_suite(
         ":basic_tests_linux",
         ":bazel_build_tests_linux",
         ":bazel_distribtests_linux",
+        ":bzlmod_tests_linux",
         ":cpp_distribtests_linux",
         ":csharp_distribtests_linux",
         ":php_distribtests_linux",
