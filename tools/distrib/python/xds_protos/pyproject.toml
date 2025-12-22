@@ -25,16 +25,12 @@ license = "Apache-2.0"
 description = "Generated Python code from envoyproxy/data-plane-api"
 readme = {file = "README.rst", content-type = "text/x-rst"}
 authors = [{name = "The gRPC Authors", email = "grpc-io@googlegroups.com"}]
-classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-]
 
-dynamic = ["dependencies", "version", "requires-python"]
+dynamic = ["classifiers", "dependencies", "version", "requires-python"]
 
 [project.urls]
 Homepage = "https://grpc.io"
+"Source Code" = "https://github.com/grpc/grpc/tree/master/tools/distrib/python/xds_protos"
 
 [tool.setuptools.dynamic]
 version = {attr = "grpc_version.VERSION"}

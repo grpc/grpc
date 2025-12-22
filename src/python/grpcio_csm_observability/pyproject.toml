@@ -25,13 +25,8 @@ license = "Apache-2.0"
 description = "gRPC Python CSM observability package"
 readme = {file = "README.rst", content-type = "text/x-rst"}
 authors = [{name = "The gRPC Authors", email = "grpc-io@googlegroups.com"}]
-classifiers = [
-    "Development Status :: 5 - Production/Stable",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-]
 
-dynamic = ["dependencies", "version", "requires-python"]
+dynamic = ["classifiers", "dependencies", "version", "requires-python"]
 
 [project.urls]
 Homepage = "https://grpc.io"

@@ -33,8 +33,18 @@ SETUP_REQUIRES = INSTALL_REQUIRES
 
 PYTHON_REQUIRES = f">={python_version.MIN_PYTHON_VERSION}"
 
+CLASSIFIERS = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+] + [
+    f"Programming Language :: Python :: {x}"
+    for x in python_version.SUPPORTED_PYTHON_VERSIONS
+]
+
 if __name__ == "__main__":
     setuptools.setup(
+        classifiers=CLASSIFIERS,
         python_requires=f">={python_version.MIN_PYTHON_VERSION}",
         install_requires=INSTALL_REQUIRES,
         setup_requires=SETUP_REQUIRES,

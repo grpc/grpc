@@ -26,11 +26,12 @@ description = "Standard Protobuf Reflection Service for gRPC"
 readme = {file = "README.rst", content-type = "text/x-rst"}
 authors = [{name = "The gRPC Authors", email = "grpc-io@googlegroups.com"}]
 
-dynamic = ["dependencies", "version", "requires-python", "classifiers"]
+dynamic = ["classifiers", "dependencies", "version", "requires-python"]
 
 [project.urls]
 Homepage = "https://grpc.io"
 Documentation = "https://grpc.github.io/grpc/python/grpc_reflection.html"
+"Source Code" = "https://github.com/grpc/grpc/tree/master/src/python/grpcio_reflection"
 
 [tool.setuptools.dynamic]
 version = {attr = "grpc_version.VERSION"}
