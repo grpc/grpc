@@ -54,10 +54,28 @@
 namespace grpc_core {
 namespace http2 {
 
+// All Promise Based HTTP2 Transport TODOs have the tag
+// [PH2][Pn] where n = 0 to 5.
+// This helps to maintain the uniformity for quick lookup and fixing.
+//
+// [PH2][P0] MUST be fixed before the current PR is submitted.
+// [PH2][P1] MUST be fixed before the current sub-project is considered
+//           complete.
+// [PH2][P2] MUST be fixed before the current Milestone is considered
+//           complete.
+// [PH2][P3] MUST be fixed before Milestone 3 is considered complete.
+// [PH2][P4] Can be fixed after roll out begins. Evaluate these during
+//           Milestone 4. Either do the TODOs or delete them.
+// [PH2][P5] Can be fixed after roll out begins. Evaluate these during
+//           Milestone 4. Either do the TODOs or delete them.
+// [PH2][EXT] This is a TODO related to a project unrelated to PH2 but happening
+//            in parallel.
+
 constexpr Duration kDefaultPingTimeout = Duration::Minutes(1);
 constexpr Duration kDefaultKeepaliveTimeout = Duration::Seconds(20);
 constexpr bool kDefaultKeepalivePermitWithoutCalls = false;
 constexpr bool kDefaultEnablePreferredRxCryptoFrameAdvertisement = false;
+constexpr bool kDefaultAckPings = true;
 
 constexpr Duration kClientKeepaliveTime = Duration::Infinity();
 
@@ -133,6 +151,9 @@ void ReadChannelArgs(const ChannelArgs& channel_args,
     LOG(ERROR) << "Initial sequence number MUST be odd. Ignoring the value.";
     args.initial_sequence_number = -1;
   }
+
+  args.test_only_ack_pings =
+      channel_args.GetBool("grpc.http2.ack_pings").value_or(kDefaultAckPings);
 
   GRPC_HTTP2_COMMON_DLOG << "ChannelArgs: " << args.DebugString();
 }
@@ -366,6 +387,7 @@ void MaybeAddStreamWindowUpdateFrame(RefCountedPtr<Stream> stream,
 
 // /////////////////////////////////////////////////////////////////////////////
 // Header and Continuation frame processing helpers
+
 Http2Status ParseAndDiscardHeaders(HPackParser& parser, SliceBuffer&& buffer,
                                    HeaderAssembler::ParseHeaderArgs args,
                                    const RefCountedPtr<Stream> stream,

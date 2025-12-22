@@ -34,7 +34,7 @@ _XDS_PROTO_DIRECTORIES = [
 ]
 
 py_library(
-    name = "xds_protos",
+    name = "py_xds_protos",
     srcs = (["__init__.py"] +
             glob([d + "/**/*.py" for d in _XDS_PROTO_DIRECTORIES])),
     imports = ["."],

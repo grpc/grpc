@@ -8476,6 +8476,7 @@ grpc_cc_library(
     ],
     deps = [
         "grpc_check",
+        ":metadata_info",
         "//:chttp2_frame",
     ],
 )
@@ -8595,6 +8596,7 @@ grpc_cc_library(
         "grpc_check",
         "grpc_promise_endpoint",
         "header_assembler",
+        "http2_security_frame",
         "http2_settings",
         "http2_settings_manager",
         "http2_settings_promises",
@@ -8695,6 +8697,29 @@ grpc_cc_library(
         "//:hpack_parser",
         "//:promise",
         "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "http2_security_frame",
+    srcs = [
+        "ext/transport/chttp2/transport/security_frame.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/security_frame.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    deps = [
+        "grpc_promise_endpoint",
+        "//:grpc_public_hdrs",
+        "//src/core:event_engine_extensions",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
+        "//src/core:transport_framing_endpoint_extension",
     ],
 )
 
