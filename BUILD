@@ -275,7 +275,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "gutsy"  # @unused
 
-core_version = "51.0.0"  # @unused
+core_version = "52.0.0"  # @unused
 
 version = "1.77.0-dev"  # @unused
 
