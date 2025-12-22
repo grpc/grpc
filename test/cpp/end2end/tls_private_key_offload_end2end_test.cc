@@ -210,7 +210,8 @@ absl::StatusOr<std::string> SignWithBoringSSL(
 }
 
 class TestPrivateKeySignerAsync final
-    : public grpc::experimental::PrivateKeySigner {
+    : public grpc::experimental::PrivateKeySigner,
+      public std::enable_shared_from_this<TestPrivateKeySignerAsync> {
  public:
   explicit TestPrivateKeySignerAsync(absl::string_view private_key)
       : pkey_(LoadPrivateKeyFromString(private_key)) {}
@@ -221,10 +222,11 @@ class TestPrivateKeySignerAsync final
     auto event_engine =
         grpc_event_engine::experimental::GetDefaultEventEngine();
     event_engine->Run(
-        [this, data_to_sign = std::string(data_to_sign), signature_algorithm,
+        [self = shared_from_this(), data_to_sign = std::string(data_to_sign),
+         signature_algorithm,
          on_sign_complete = std::move(on_sign_complete)]() mutable {
           on_sign_complete(SignWithBoringSSL(data_to_sign, signature_algorithm,
-                                             pkey_.get()));
+                                             self->pkey_.get()));
         });
     return false;
   }
