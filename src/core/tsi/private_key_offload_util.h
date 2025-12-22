@@ -32,9 +32,17 @@ namespace grpc_core {
 // State associated with an SSL object for async private key operations.
 struct TlsPrivateKeyOffloadContext {
   enum SignatureStatus {
+    // The signature operation has not yet started.
     kNotStarted,
-    kInProgress,
+    // The signature operation has been initiated.
+    kStarted,
+    // The signature operation is currently in progress waiting for an
+    // asynchronous operation.
+    kInProgressAsync,
+    // The signature operation has completed, and the signed data is available
+    // on the cached context.
     kSignatureCompleted,
+    // The entire private key offload process for this signature is finished.
     kFinished,
   };
 

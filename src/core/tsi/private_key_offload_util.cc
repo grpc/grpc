@@ -63,12 +63,15 @@ absl::StatusOr<PrivateKeySigner::SignatureAlgorithm> ToSignatureAlgorithmClass(
 #if defined(OPENSSL_IS_BORINGSSL)
 void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
                                 absl::StatusOr<std::string> signed_data) {
+  ctx->signed_bytes = std::move(signed_data);
+  if (ctx->status != TlsPrivateKeyOffloadContext::kInProgressAsync) {
+    ctx->status = TlsPrivateKeyOffloadContext::kSignatureCompleted;
+    return;
+  }
   ctx->status = TlsPrivateKeyOffloadContext::kSignatureCompleted;
-  if (signed_data.ok()) {
+  if (ctx->signed_bytes.ok()) {
     const uint8_t* bytes_to_send = nullptr;
     size_t bytes_to_send_size = 0;
-    ctx->signed_bytes = std::move(signed_data);
-
     // Once the signed bytes are obtained, wrap an empty callback to
     // tsi_handshaker_next to resume the pending async operation.
     tsi_result result = tsi_handshaker_next(
@@ -84,7 +87,6 @@ void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
       }
     }
   } else {
-    ctx->signed_bytes = signed_data.status();
     // Notify the TSI layer to re-enter the handshake.
     // This call is thread-safe as per TSI requirements for the callback.
     if (ctx->notify_cb) {
@@ -95,10 +97,10 @@ void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
 }
 
 enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
-    SSL* ssl, uint8_t* /*out*/, size_t* /*out_len*/, size_t /*max_out*/,
+    SSL* ssl, uint8_t* out, size_t* out_len, size_t /*max_out*/,
     uint16_t signature_algorithm, const uint8_t* in, size_t in_len) {
   TlsPrivateKeyOffloadContext* ctx = GetTlsPrivateKeyOffloadContext(ssl);
-  ctx->status = TlsPrivateKeyOffloadContext::kInProgress;
+  ctx->status = TlsPrivateKeyOffloadContext::kStarted;
   // Create the completion callback by binding the current context.
   auto done_callback = absl::bind_front(TlsOffloadSignDoneCallback, ctx);
 
@@ -126,7 +128,18 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
     // If the signature invocation was completed, return ssl_private_key_success
     // to continue the handshake. Otherwise tell BoringSSL to wait for the
     // signature result.
-    return is_done ? ssl_private_key_success : ssl_private_key_retry;
+    if (is_done) {
+      if (ctx->signed_bytes.ok()) {
+        std::string out_bytes = *ctx->signed_bytes;
+        *out_len = out_bytes.size();
+        std::copy(out_bytes.cbegin(), out_bytes.cend(), out);
+        return ssl_private_key_success;
+      } else {
+        return ssl_private_key_failure;
+      }
+    }
+    ctx->status = TlsPrivateKeyOffloadContext::kInProgressAsync;
+    return ssl_private_key_retry;
   }
 
   return ssl_private_key_failure;
