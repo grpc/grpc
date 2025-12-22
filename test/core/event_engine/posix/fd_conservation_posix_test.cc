@@ -150,7 +150,7 @@ TEST(PosixEndpointSmokeTest, FdConservationTest) {
   int pid = getpid();
   int threshold = NumFilesUsed(pid);
   // Reserve only 10 more fds.
-  rlim.rlim_cur = rlim.rlim_max = threshold + 10;
+  rlim.rlim_cur = rlim.rlim_max = threshold + 50;
   EXPECT_EQ(setrlimit(RLIMIT_NOFILE, &rlim), 0);
   // Verify that we can create and destroy more than rlimit_max
   for (int i = 0; i < 100; i++) {
