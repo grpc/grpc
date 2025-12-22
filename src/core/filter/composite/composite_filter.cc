@@ -124,6 +124,9 @@ void CompositeFilter::InterceptCall(
               // call to the next filter without sending it
               // through any child filter chain.
               if (action->type() == SkipFilterAction::Type()) {
+                GRPC_TRACE_LOG(channel, INFO)
+                    << "[composite " << self.get()
+                    << "]: found SkipFilter, starting child call";
                 CallInitiator initiator = self->MakeChildCall(
                     std::move(metadata), GetContext<Arena>()->Ref());
                 ForwardCall(handler, initiator);
@@ -145,6 +148,9 @@ void CompositeFilter::InterceptCall(
                 bool sampled =
                     random_value < execute_filter_action.sample_per_million();
                 if (!sampled) {
+                  GRPC_TRACE_LOG(channel, INFO)
+                      << "[composite " << self.get()
+                      << "]: not sampled, starting child call";
                   CallInitiator initiator = self->MakeChildCall(
                       std::move(metadata), GetContext<Arena>()->Ref());
                   ForwardCall(handler, initiator);
@@ -156,6 +162,9 @@ void CompositeFilter::InterceptCall(
               if (it == self->filter_chain_map_.end()) {
                 return absl::InternalError("no filter chain found for action");
               }
+              GRPC_TRACE_LOG(channel, INFO)
+                  << "[composite " << self.get()
+                  << "]: starting call on filter chain";
               auto& unstarted_destination = it->second;
               if (!unstarted_destination.ok()) {
                 return unstarted_destination.status();
