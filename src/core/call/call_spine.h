@@ -99,8 +99,8 @@ class CallSpine final : public Party, public channelz::DataSource {
 
   auto PushClientToServerMessage(MessageHandle message) {
     GRPC_TRACE_LOG(call_state, INFO)
-        << "[CallSpine " << this << "]: PushClientToServerMessage(): "
-        << message->DebugString();
+        << "[CallSpine " << this
+        << "]: PushClientToServerMessage(): " << message->DebugString();
     return call_filters().PushClientToServerMessage(std::move(message));
   }
 
@@ -112,8 +112,8 @@ class CallSpine final : public Party, public channelz::DataSource {
 
   auto PushServerToClientMessage(MessageHandle message) {
     GRPC_TRACE_LOG(call_state, INFO)
-        << "[CallSpine " << this << "]: PushServerToClientMessage(): "
-        << message->DebugString();
+        << "[CallSpine " << this
+        << "]: PushServerToClientMessage(): " << message->DebugString();
     return call_filters().PushServerToClientMessage(std::move(message));
   }
 
@@ -125,8 +125,8 @@ class CallSpine final : public Party, public channelz::DataSource {
 
   void PushServerTrailingMetadata(ServerMetadataHandle md) {
     GRPC_TRACE_LOG(call_state, INFO)
-        << "[CallSpine " << this << "]: PushServerTrailingMetadata(): "
-        << md->DebugString();
+        << "[CallSpine " << this
+        << "]: PushServerTrailingMetadata(): " << md->DebugString();
     call_filters().PushServerTrailingMetadata(std::move(md));
   }
 
@@ -144,8 +144,8 @@ class CallSpine final : public Party, public channelz::DataSource {
 
   StatusFlag PushServerInitialMetadata(ServerMetadataHandle md) {
     GRPC_TRACE_LOG(call_state, INFO)
-        << "[CallSpine " << this << "]: PushServerInitialMetadata(): "
-        << md->DebugString();
+        << "[CallSpine " << this
+        << "]: PushServerInitialMetadata(): " << md->DebugString();
     return call_filters().PushServerInitialMetadata(std::move(md));
   }
 
@@ -506,7 +506,6 @@ class CallHandler {
       : spine_(std::move(spine)) {}
 
   auto PullClientInitialMetadata() {
-
     return spine_->PullClientInitialMetadata();
   }
 
