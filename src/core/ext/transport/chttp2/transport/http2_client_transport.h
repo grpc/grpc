@@ -88,23 +88,6 @@
 namespace grpc_core {
 namespace http2 {
 
-// All Promise Based HTTP2 Transport TODOs have the tag
-// [PH2][Pn] where n = 0 to 5.
-// This helps to maintain the uniformity for quick lookup and fixing.
-//
-// [PH2][P0] MUST be fixed before the current PR is submitted.
-// [PH2][P1] MUST be fixed before the current sub-project is considered
-//           complete.
-// [PH2][P2] MUST be fixed before the current Milestone is considered
-//           complete.
-// [PH2][P3] MUST be fixed before Milestone 3 is considered complete.
-// [PH2][P4] Can be fixed after roll out begins. Evaluate these during
-//           Milestone 4. Either do the TODOs or delete them.
-// [PH2][P5] Can be fixed after roll out begins. Evaluate these during
-//           Milestone 4. Either do the TODOs or delete them.
-// [PH2][EXT] This is a TODO related to a project unrelated to PH2 but happening
-//            in parallel.
-
 // Http2 Client Transport Spawns Overview
 
 // | Promise Spawn       | Max Duration | Promise Resolution    | Max Spawns |
@@ -423,36 +406,13 @@ class Http2ClientTransport final : public ClientTransport,
 
   RefCountedPtr<Stream> LookupStream(uint32_t stream_id);
 
-  auto EndpointReadSlice(const size_t num_bytes) {
-    return Map(endpoint_.ReadSlice(num_bytes),
-               [self = RefAsSubclass<Http2ClientTransport>(),
-                num_bytes](absl::StatusOr<Slice> status) {
-                 if (status.ok()) {
-                   self->keepalive_manager_->GotData();
-                   self->ztrace_collector_->Append(
-                       PromiseEndpointReadTrace{num_bytes});
-                 }
-                 return status;
-               });
-  }
+  auto EndpointReadSlice(const size_t num_bytes);
+  auto EndpointRead(const size_t num_bytes);
 
   // HTTP2 Settings
   auto WaitForSettingsTimeoutOnDone();
   void MaybeSpawnWaitForSettingsTimeout();
   void EnforceLatestIncomingSettings();
-
-  auto EndpointRead(const size_t num_bytes) {
-    return Map(endpoint_.Read(num_bytes),
-               [self = RefAsSubclass<Http2ClientTransport>(),
-                num_bytes](absl::StatusOr<SliceBuffer> status) {
-                 if (status.ok()) {
-                   self->keepalive_manager_->GotData();
-                   self->ztrace_collector_->Append(
-                       PromiseEndpointReadTrace{num_bytes});
-                 }
-                 return status;
-               });
-  }
 
   // This function MUST run on the transport party.
   void CloseTransport();
@@ -533,6 +493,7 @@ class Http2ClientTransport final : public ClientTransport,
 
   // Duration between two consecutive keepalive pings.
   Duration keepalive_time_;
+  bool test_only_ack_pings_;
   std::optional<PingManager> ping_manager_;
   std::optional<KeepaliveManager> keepalive_manager_;
 
@@ -732,9 +693,7 @@ class Http2ClientTransport final : public ClientTransport,
 
   /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
   /// the peer
-  // TODO(tjagtap) : [PH2][P1] : Plumb this with the necessary frame size flow
-  // control workflow corresponding to grpc_chttp2_act_on_flowctl_action
-  GRPC_UNUSED bool enable_preferred_rx_crypto_frame_advertisement_;
+  bool enable_preferred_rx_crypto_frame_advertisement_;
   MemoryOwner memory_owner_;
   chttp2::TransportFlowControl flow_control_;
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;

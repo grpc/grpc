@@ -54,10 +54,28 @@
 namespace grpc_core {
 namespace http2 {
 
+// All Promise Based HTTP2 Transport TODOs have the tag
+// [PH2][Pn] where n = 0 to 5.
+// This helps to maintain the uniformity for quick lookup and fixing.
+//
+// [PH2][P0] MUST be fixed before the current PR is submitted.
+// [PH2][P1] MUST be fixed before the current sub-project is considered
+//           complete.
+// [PH2][P2] MUST be fixed before the current Milestone is considered
+//           complete.
+// [PH2][P3] MUST be fixed before Milestone 3 is considered complete.
+// [PH2][P4] Can be fixed after roll out begins. Evaluate these during
+//           Milestone 4. Either do the TODOs or delete them.
+// [PH2][P5] Can be fixed after roll out begins. Evaluate these during
+//           Milestone 4. Either do the TODOs or delete them.
+// [PH2][EXT] This is a TODO related to a project unrelated to PH2 but happening
+//            in parallel.
+
 constexpr Duration kDefaultPingTimeout = Duration::Minutes(1);
 constexpr Duration kDefaultKeepaliveTimeout = Duration::Seconds(20);
 constexpr bool kDefaultKeepalivePermitWithoutCalls = false;
 constexpr bool kDefaultEnablePreferredRxCryptoFrameAdvertisement = false;
+constexpr bool kDefaultAckPings = true;
 
 constexpr Duration kClientKeepaliveTime = Duration::Infinity();
 
@@ -133,6 +151,9 @@ void ReadChannelArgs(const ChannelArgs& channel_args,
     LOG(ERROR) << "Initial sequence number MUST be odd. Ignoring the value.";
     args.initial_sequence_number = -1;
   }
+
+  args.test_only_ack_pings =
+      channel_args.GetBool("grpc.http2.ack_pings").value_or(kDefaultAckPings);
 
   GRPC_HTTP2_COMMON_DLOG << "ChannelArgs: " << args.DebugString();
 }
@@ -266,6 +287,9 @@ ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame_header,
           &flow_control);
       absl::Status fc_status = transport_fc.RecvData(frame_header.length);
       chttp2::FlowControlAction action = transport_fc.MakeAction();
+      GRPC_HTTP2_COMMON_DLOG
+          << "ProcessIncomingDataFrameFlowControl Transport RecvData status: "
+          << fc_status << " action: " << action.DebugString();
       if (!fc_status.ok()) {
         LOG(ERROR) << "Flow control error: " << fc_status.message();
         // RFC9113 : A receiver MAY respond with a stream error or connection
@@ -280,6 +304,9 @@ ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame_header,
           &stream->flow_control);
       absl::Status fc_status = stream_fc.RecvData(frame_header.length);
       chttp2::FlowControlAction action = stream_fc.MakeAction();
+      GRPC_HTTP2_COMMON_DLOG
+          << "ProcessIncomingDataFrameFlowControl Stream RecvData status: "
+          << fc_status << " action: " << action.DebugString();
       if (!fc_status.ok()) {
         LOG(ERROR) << "Flow control error: " << fc_status.message();
         // RFC9113 : A receiver MAY respond with a stream error or connection
@@ -288,6 +315,8 @@ ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame_header,
             Http2ErrorCode::kFlowControlError,
             std::string(fc_status.message()));
       }
+      // TODO(tjagtap) [PH2][P1][FlowControl] This is a HACK. Fix this.
+      stream_fc.HackIncrementPendingSize(frame_header.length);
       return action;
     }
   }
@@ -299,14 +328,23 @@ bool ProcessIncomingWindowUpdateFrameFlowControl(
     chttp2::TransportFlowControl& flow_control, RefCountedPtr<Stream> stream) {
   if (frame.stream_id != 0) {
     if (stream != nullptr) {
+      GRPC_HTTP2_COMMON_DLOG
+          << "ProcessIncomingWindowUpdateFrameFlowControl stream "
+          << frame.stream_id << " increment " << frame.increment;
       chttp2::StreamFlowControl::OutgoingUpdateContext fc_update(
           &stream->flow_control);
       fc_update.RecvUpdate(frame.increment);
     } else {
       // If stream id is non zero, and stream is nullptr, maybe the stream was
       // closed. Ignore this WINDOW_UPDATE frame.
+      GRPC_HTTP2_COMMON_DLOG
+          << "ProcessIncomingWindowUpdateFrameFlowControl stream "
+          << frame.stream_id << " not found. Ignoring.";
     }
   } else {
+    GRPC_HTTP2_COMMON_DLOG
+        << "ProcessIncomingWindowUpdateFrameFlowControl transport increment "
+        << frame.increment;
     chttp2::TransportFlowControl::OutgoingUpdateContext fc_update(
         &flow_control);
     fc_update.RecvUpdate(frame.increment);
@@ -316,14 +354,40 @@ bool ProcessIncomingWindowUpdateFrameFlowControl(
       // write cycle and attempt to send data from these streams.
       // Although it's possible no streams were blocked, triggering an
       // unnecessary write cycle in that super-rare case is acceptable.
+      GRPC_HTTP2_COMMON_DLOG << "ProcessIncomingWindowUpdateFrameFlowControl "
+                                "Transport Unstalled";
       return true;
     }
   }
   return false;
 }
 
+void MaybeAddStreamWindowUpdateFrame(RefCountedPtr<Stream> stream,
+                                     std::vector<Http2Frame>& frames) {
+  GRPC_HTTP2_COMMON_DLOG << "MaybeAddStreamWindowUpdateFrame stream="
+                         << ((stream == nullptr)
+                                 ? "null"
+                                 : absl::StrCat(
+                                       stream->GetStreamId(),
+                                       " CanSendWindowUpdateFrames=",
+                                       stream->CanSendWindowUpdateFrames()));
+  if (stream != nullptr && stream->CanSendWindowUpdateFrames()) {
+    const uint32_t increment = stream->flow_control.MaybeSendUpdate();
+    GRPC_HTTP2_COMMON_DLOG
+        << "MaybeAddStreamWindowUpdateFrame MaybeSendUpdate { "
+        << stream->GetStreamId() << ", " << increment << " }"
+        << (increment == 0 ? ". The frame will NOT be sent for increment 0"
+                           : "");
+    if (increment > 0) {
+      frames.emplace_back(
+          Http2WindowUpdateFrame{stream->GetStreamId(), increment});
+    }
+  }
+}
+
 // /////////////////////////////////////////////////////////////////////////////
 // Header and Continuation frame processing helpers
+
 Http2Status ParseAndDiscardHeaders(HPackParser& parser, SliceBuffer&& buffer,
                                    HeaderAssembler::ParseHeaderArgs args,
                                    const RefCountedPtr<Stream> stream,

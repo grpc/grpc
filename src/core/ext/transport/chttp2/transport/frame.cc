@@ -224,7 +224,7 @@ class SerializeHeaderAndPayload {
         << "SerializeHeaderAndPayload Http2DataFrame Type:0 { stream_id:"
         << frame.stream_id << ", end_stream:" << frame.end_stream
         << ", payload_length:" << frame.payload.Length()
-        << ", payload:" << frame.payload.JoinIntoString() << "}";
+        << ", payload:" << MaybeTruncatePayload(frame.payload) << "}";
     auto hdr = extra_bytes_.TakeFirst(kFrameHeaderSize);
     Http2FrameHeader{static_cast<uint32_t>(frame.payload.Length()),
                      static_cast<uint8_t>(FrameType::kData),
@@ -242,7 +242,7 @@ class SerializeHeaderAndPayload {
         << frame.stream_id << ", end_headers:" << frame.end_headers
         << ", end_stream:" << frame.end_stream
         << ", payload_length:" << frame.payload.Length()
-        << ", payload:" << frame.payload.JoinIntoString() << "}";
+        << ", payload:" << MaybeTruncatePayload(frame.payload) << "}";
     auto hdr = extra_bytes_.TakeFirst(kFrameHeaderSize);
     Http2FrameHeader{
         static_cast<uint32_t>(frame.payload.Length()),
@@ -262,7 +262,7 @@ class SerializeHeaderAndPayload {
                           << frame.stream_id
                           << ", end_headers:" << frame.end_headers
                           << ", payload_length:" << frame.payload.Length()
-                          << ", payload:" << frame.payload.JoinIntoString()
+                          << ", payload:" << MaybeTruncatePayload(frame.payload)
                           << "}";
     auto hdr = extra_bytes_.TakeFirst(kFrameHeaderSize);
     Http2FrameHeader{
@@ -879,6 +879,15 @@ Http2Status ValidateFrameHeader(const uint32_t max_frame_size_setting,
   // TODO(tjagtap) : [PH2][P2]:Consider validating MAX_CONCURRENT_STREAMS here
   // for server.
   return Http2Status::Ok();
+}
+
+std::string MaybeTruncatePayload(SliceBuffer& payload, const uint32_t length) {
+  if (payload.Length() <= length) {
+    return payload.JoinIntoString();
+  }
+  std::string result(length, '\0');
+  payload.CopyFirstNBytesIntoBuffer(length, result.data());
+  return absl::StrCat(result, "<clipped>");
 }
 
 }  // namespace grpc_core

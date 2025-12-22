@@ -2371,6 +2371,7 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/ping_callbacks.cc
   src/core/ext/transport/chttp2/transport/ping_promise.cc
   src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
+  src/core/ext/transport/chttp2/transport/security_frame.cc
   src/core/ext/transport/chttp2/transport/stream_lists.cc
   src/core/ext/transport/chttp2/transport/transport_common.cc
   src/core/ext/transport/chttp2/transport/varint.cc
@@ -3495,6 +3496,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/ping_callbacks.cc
   src/core/ext/transport/chttp2/transport/ping_promise.cc
   src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
+  src/core/ext/transport/chttp2/transport/security_frame.cc
   src/core/ext/transport/chttp2/transport/stream_lists.cc
   src/core/ext/transport/chttp2/transport/transport_common.cc
   src/core/ext/transport/chttp2/transport/varint.cc
@@ -11440,6 +11442,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(channelz_tool_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    absl::fixed_array
+    absl::overload
+    absl::charset
     grpcpp_channelz
     ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
     grpc_test_util
@@ -11858,6 +11863,9 @@ target_include_directories(cli_call_test
 target_link_libraries(cli_call_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::fixed_array
+  absl::overload
+  absl::charset
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc++_test_util
 )
@@ -12310,6 +12318,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_service.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_service.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_service.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_service.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
@@ -12318,10 +12330,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/google/api/httpbody.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/google/api/httpbody.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/google/api/httpbody.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/google/api/httpbody.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
@@ -18866,6 +18874,9 @@ target_include_directories(grpc_cli
 
 target_link_libraries(grpc_cli
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::fixed_array
+  absl::overload
+  absl::charset
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc++_test_config
@@ -19612,6 +19623,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(grpc_tool_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    absl::fixed_array
+    absl::overload
+    absl::charset
     grpc++_reflection
     ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
     grpc++_test_config
@@ -21283,6 +21297,7 @@ add_executable(incoming_metadata_tracker_test
   src/core/call/message.cc
   src/core/call/metadata.cc
   src/core/call/metadata_batch.cc
+  src/core/call/metadata_info.cc
   src/core/call/parsed_metadata.cc
   src/core/call/server_call.cc
   src/core/call/status_util.cc
@@ -23528,6 +23543,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(latent_see_tool_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    absl::fixed_array
+    absl::overload
+    absl::charset
     grpc++
     ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
     grpc_test_util
@@ -38019,6 +38037,9 @@ target_include_directories(xds_audit_logger_registry_test
 target_link_libraries(xds_audit_logger_registry_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::fixed_array
+  absl::overload
+  absl::charset
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util
@@ -40698,6 +40719,9 @@ target_include_directories(xds_common_types_test
 target_link_libraries(xds_common_types_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::fixed_array
+  absl::overload
+  absl::charset
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util
@@ -45430,6 +45454,9 @@ target_include_directories(xds_http_filters_test
 target_link_libraries(xds_http_filters_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::fixed_array
+  absl::overload
+  absl::charset
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util
@@ -45816,6 +45843,9 @@ target_include_directories(xds_lb_policy_registry_test
 target_link_libraries(xds_lb_policy_registry_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::fixed_array
+  absl::overload
+  absl::charset
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util
@@ -46318,6 +46348,9 @@ target_include_directories(xds_listener_resource_type_test
 target_link_libraries(xds_listener_resource_type_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::fixed_array
+  absl::overload
+  absl::charset
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util
@@ -50257,6 +50290,9 @@ target_include_directories(xds_route_config_resource_type_test
 target_link_libraries(xds_route_config_resource_type_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::fixed_array
+  absl::overload
+  absl::charset
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util
