@@ -693,9 +693,7 @@ class Http2ClientTransport final : public ClientTransport,
 
   /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
   /// the peer
-  // TODO(tjagtap) : [PH2][P1] : Plumb this with the necessary frame size flow
-  // control workflow corresponding to grpc_chttp2_act_on_flowctl_action
-  GRPC_UNUSED bool enable_preferred_rx_crypto_frame_advertisement_;
+  bool enable_preferred_rx_crypto_frame_advertisement_;
   MemoryOwner memory_owner_;
   chttp2::TransportFlowControl flow_control_;
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;

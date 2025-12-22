@@ -34,6 +34,7 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
@@ -65,6 +66,9 @@ struct CloseStreamArgs {
   bool close_reads;
   bool close_writes;
 };
+
+///////////////////////////////////////////////////////////////////////////////
+// Read and Write helpers
 
 class Http2ReadContext {
  public:
@@ -102,6 +106,31 @@ class Http2ReadContext {
   bool should_pause_read_loop_ = false;
   Waker read_loop_waker_;
 };
+
+inline PromiseEndpoint::WriteArgs GetWriteArgs(
+    const Http2Settings& peer_settings) {
+  PromiseEndpoint::WriteArgs args;
+  int max_frame_size = peer_settings.preferred_receive_crypto_message_size();
+  // Note: max frame size is 0 if the remote peer does not support adjusting the
+  // sending frame size.
+  if (max_frame_size == 0) {
+    max_frame_size = INT_MAX;
+  }
+  // `WriteArgs.max_frame_size` is a suggestion to the endpoint implementation
+  // to group data to be written into frames of the specified max_frame_size. It
+  // is different from HTTP2 SETTINGS_MAX_FRAME_SIZE. That setting limits HTTP2
+  // frame payload size.
+  args.set_max_frame_size(max_frame_size);
+
+  // TODO(akshitpatel) [PH2][P1] : Currently only the WriteArgs related to
+  // preferred_receive_crypto_message_size have been plumbed. The other write
+  // args may need to be plumbed for PH2.
+  // CHTTP2 : Reference :
+  // File : src/core/ext/transport/chttp2/transport/chttp2_transport.cc
+  // Function : write_action
+
+  return args;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Settings helpers
