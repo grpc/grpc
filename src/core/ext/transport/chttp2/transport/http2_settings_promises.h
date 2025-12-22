@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <string>
 #include <utility>
@@ -86,7 +87,8 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   SettingsPromiseManager& operator=(SettingsPromiseManager&&) = delete;
 
   void HandleTransportShutdown(
-      grpc_event_engine::experimental::EventEngine* event_engine) {
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine) {
     // If some scenario causes the transport to close without ever receiving
     // settings, we need to still invoke the closure passed to the transport.
     // Additionally, as this function will always run on the transport party, it
@@ -208,7 +210,8 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   // written to apply the settings. If the first settings frame is received from
   // the peer that that needs some special handling too.
   http2::Http2ErrorCode MaybeReportAndApplyBufferedPeerSettings(
-      grpc_event_engine::experimental::EventEngine* event_engine) {
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine) {
     http2::Http2ErrorCode status = settings_.ApplyIncomingSettings(
         std::exchange(pending_peer_settings_, {}));
     if (state_ == SettingsState::kFirstPeerSettingsReceived) {
@@ -268,8 +271,7 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
         << "Security frame must not be received before SETTINGS frame";
     // TODO(tjagtap) : [PH2][P3] : Evaluate when to accept the frame and when to
     // reject it. Compare it with the requirement and with CHTTP2.
-    return (settings_.acked().allow_security_frame() ||
-            settings_.local().allow_security_frame()) &&
+    return (settings_.local().allow_security_frame()) &&
            settings_.peer().allow_security_frame();
   };
 
@@ -280,7 +282,8 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   // Plumbing Settings with Chttp2Connector class
 
   void MaybeReportInitialSettings(
-      grpc_event_engine::experimental::EventEngine* event_engine) {
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine) {
     // TODO(tjagtap) [PH2][P2] Relook at this while writing server. I think this
     // will be different for client and server.
     if (on_receive_first_settings_ != nullptr) {
@@ -298,7 +301,8 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   }
 
   void MaybeReportInitialSettingsAbort(
-      grpc_event_engine::experimental::EventEngine* event_engine) {
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine) {
     // TODO(tjagtap) [PH2][P2] Relook at this while writing server. I think this
     // will be different for client and server.
     if (on_receive_first_settings_ != nullptr) {

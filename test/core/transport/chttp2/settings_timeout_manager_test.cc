@@ -465,7 +465,7 @@ TEST_F(SettingsPromiseManagerTest, OnReceiveSettingsCalled) {
       });
   manager.BufferPeerSettings(
       {{Http2Settings::kMaxConcurrentStreamsWireId, 100u}});
-  manager.MaybeReportAndApplyBufferedPeerSettings(event_engine.get());
+  manager.MaybeReportAndApplyBufferedPeerSettings(event_engine);
   notification.WaitForNotification();
 }
 
