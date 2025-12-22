@@ -42,6 +42,7 @@
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control_manager.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/goaway.h"
 #include "src/core/ext/transport/chttp2/transport/header_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
@@ -49,7 +50,9 @@
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/incoming_metadata_tracker.h"
+#include "src/core/ext/transport/chttp2/transport/keepalive.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
+#include "src/core/ext/transport/chttp2/transport/ping_promise.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
@@ -82,6 +85,7 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
+#include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
@@ -508,20 +512,30 @@ auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
         return self->AckPing(opaque);
       },
       [self = RefAsSubclass<Http2ClientTransport>(), opaque = frame.opaque]() {
-        // TODO(akshitpatel) : [PH2][P2] : Have a counter to track number of
-        // pending induced frames (Ping/Settings Ack). This is to ensure that
-        // if write is taking a long time, we can stop reads and prioritize
-        // writes.
-        // RFC9113: PING responses SHOULD be given higher priority than any
-        // other frame.
-        self->ping_manager_->AddPendingPingAck(opaque);
-        // TODO(akshitpatel) : [PH2][P2] : This is done assuming that the other
-        // ProcessFrame promises may return stream or connection failures. If
-        // this does not turn out to be true, consider returning absl::Status
-        // here.
-        return Map(self->TriggerWriteCycle(), [](absl::Status status) {
-          return ToHttpOkOrConnError(status);
-        });
+        return If(
+            self->test_only_ack_pings_,
+            [self, opaque]() {
+              // TODO(akshitpatel) : [PH2][P2] : Have a counter to track number
+              // of pending induced frames (Ping/Settings Ack). This is to
+              // ensure that if write is taking a long time, we can stop reads
+              // and prioritize writes. RFC9113: PING responses SHOULD be given
+              // higher priority than any other frame.
+              self->ping_manager_->AddPendingPingAck(opaque);
+              // TODO(akshitpatel) : [PH2][P2] : This is done assuming that the
+              // other ProcessFrame promises may return stream or connection
+              // failures. If this does not turn out to be true, consider
+              // returning absl::Status here.
+              return Map(self->TriggerWriteCycle(), [](absl::Status status) {
+                return ToHttpOkOrConnError(status);
+              });
+            },
+            []() {
+              GRPC_HTTP2_CLIENT_DLOG
+                  << "Http2ClientTransport ProcessHttp2PingFrame "
+                     "test_only_ack_pings_ is false. Ignoring the ping "
+                     "request.";
+              return Immediate(Http2Status::Ok());
+            });
       }));
 }
 
@@ -633,7 +647,7 @@ Http2Status Http2ClientTransport::ProcessHttp2WindowUpdateFrame(
     }
   }
 
-  bool should_trigger_write =
+  const bool should_trigger_write =
       ProcessIncomingWindowUpdateFrameFlowControl(frame, flow_control_, stream);
   if (should_trigger_write) {
     SpawnGuardedTransportParty("TransportTokensAvailable", TriggerWriteCycle());
@@ -788,6 +802,31 @@ Http2Status Http2ClientTransport::ParseAndDiscardHeaders(
 
 ///////////////////////////////////////////////////////////////////////////////
 // Read Related Promises and Promise Factories
+auto Http2ClientTransport::EndpointReadSlice(const size_t num_bytes) {
+  return Map(
+      endpoint_.ReadSlice(num_bytes),
+      [self = RefAsSubclass<Http2ClientTransport>(),
+       num_bytes](absl::StatusOr<Slice> status) {
+        if (status.ok()) {
+          self->keepalive_manager_->GotData();
+          self->ztrace_collector_->Append(PromiseEndpointReadTrace{num_bytes});
+        }
+        return status;
+      });
+}
+
+auto Http2ClientTransport::EndpointRead(const size_t num_bytes) {
+  return Map(
+      endpoint_.Read(num_bytes),
+      [self = RefAsSubclass<Http2ClientTransport>(),
+       num_bytes](absl::StatusOr<SliceBuffer> status) {
+        if (status.ok()) {
+          self->keepalive_manager_->GotData();
+          self->ztrace_collector_->Append(PromiseEndpointReadTrace{num_bytes});
+        }
+        return status;
+      });
+}
 
 auto Http2ClientTransport::ReadAndProcessOneFrame() {
   GRPC_HTTP2_CLIENT_DLOG
@@ -940,11 +979,9 @@ void Http2ClientTransport::ActOnFlowControlAction(
     }
   }
 
-  // TODO(tjagtap) : [PH2][P1] Plumb
-  // enable_preferred_rx_crypto_frame_advertisement with settings
   ActOnFlowControlActionSettings(
       action, settings_->mutable_local(),
-      /*enable_preferred_rx_crypto_frame_advertisement=*/true);
+      enable_preferred_rx_crypto_frame_advertisement_);
 
   if (action.AnyUpdateImmediately()) {
     // Prioritize sending flow control updates over reading data. If we
@@ -973,6 +1010,13 @@ auto Http2ClientTransport::ProcessAndWriteControlFrames() {
     output_buf.Append(
         Slice::FromCopiedString(GRPC_CHTTP2_CLIENT_CONNECT_STRING));
     settings_->MaybeGetSettingsAndSettingsAckFrames(flow_control_, output_buf);
+    // TODO(tjagtap) [PH2][P2][Server] : This will be opposite for server. We
+    // must read before we write for the server. So the ReadLoop will be Spawned
+    // just after the constructor, and the write loop should be spawned only
+    // after the first SETTINGS frame is completely received.
+    //
+    // Because the client is expected to write before it reads, we spawn the
+    // ReadLoop of the client only after the first write is queued.
     SpawnGuardedTransportParty("ReadLoop", UntilTransportClosed(ReadLoop()));
     is_first_write_ = false;
   }
@@ -1005,7 +1049,7 @@ auto Http2ClientTransport::ProcessAndWriteControlFrames() {
          [self = RefAsSubclass<Http2ClientTransport>(),
           output_buf = std::move(output_buf)]() mutable {
            return self->endpoint_.Write(std::move(output_buf),
-                                        PromiseEndpoint::WriteArgs{});
+                                        GetWriteArgs(self->settings_->peer()));
          },
          [self = RefAsSubclass<Http2ClientTransport>(), apply_status]() {
            if (apply_status != http2::Http2ErrorCode::kNoError) {
@@ -1042,7 +1086,7 @@ auto Http2ClientTransport::SerializeAndWrite(std::vector<Http2Frame>&& frames) {
       [self = RefAsSubclass<Http2ClientTransport>(),
        output_buf = std::move(output_buf)]() mutable {
         return self->endpoint_.Write(std::move(output_buf),
-                                     PromiseEndpoint::WriteArgs{});
+                                     GetWriteArgs(self->settings_->peer()));
       },
       []() { return absl::OkStatus(); }));
 }
@@ -1437,6 +1481,7 @@ void Http2ClientTransport::ReadChannelArgs(const ChannelArgs& channel_args,
   keepalive_permit_without_calls_ = args.keepalive_permit_without_calls;
   enable_preferred_rx_crypto_frame_advertisement_ =
       args.enable_preferred_rx_crypto_frame_advertisement;
+  test_only_ack_pings_ = args.test_only_ack_pings;
 
   if (args.initial_sequence_number > 0) {
     next_stream_id_ = args.initial_sequence_number;
@@ -1492,8 +1537,7 @@ void Http2ClientTransport::CloseStream(RefCountedPtr<Stream> stream,
                 /*stream_id=*/incoming_headers_.GetStreamId(),
             },
             stream, /*original_status=*/Http2Status::Ok());
-        if (!result.IsOk() &&
-            result.GetType() == Http2Status::Http2ErrorType::kConnectionError) {
+        if (result.GetType() == Http2Status::Http2ErrorType::kConnectionError) {
           GRPC_HTTP2_CLIENT_DLOG
               << "Http2ClientTransport::CloseStream for stream id: "
               << stream->GetStreamId()
