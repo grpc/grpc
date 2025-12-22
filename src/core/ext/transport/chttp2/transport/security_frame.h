@@ -18,7 +18,6 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_SECURITY_FRAME_H
 
 #include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include "src/core/lib/slice/slice_buffer.h"
