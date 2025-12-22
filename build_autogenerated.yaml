@@ -360,6 +360,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/ping_callbacks.h
   - src/core/ext/transport/chttp2/transport/ping_promise.h
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.h
+  - src/core/ext/transport/chttp2/transport/security_frame.h
   - src/core/ext/transport/chttp2/transport/stream.h
   - src/core/ext/transport/chttp2/transport/stream_data_queue.h
   - src/core/ext/transport/chttp2/transport/stream_lists.h
@@ -1496,6 +1497,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/ping_callbacks.cc
   - src/core/ext/transport/chttp2/transport/ping_promise.cc
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
+  - src/core/ext/transport/chttp2/transport/security_frame.cc
   - src/core/ext/transport/chttp2/transport/stream_lists.cc
   - src/core/ext/transport/chttp2/transport/transport_common.cc
   - src/core/ext/transport/chttp2/transport/varint.cc
@@ -2522,6 +2524,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/ping_callbacks.h
   - src/core/ext/transport/chttp2/transport/ping_promise.h
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.h
+  - src/core/ext/transport/chttp2/transport/security_frame.h
   - src/core/ext/transport/chttp2/transport/stream.h
   - src/core/ext/transport/chttp2/transport/stream_data_queue.h
   - src/core/ext/transport/chttp2/transport/stream_lists.h
@@ -3073,6 +3076,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/ping_callbacks.cc
   - src/core/ext/transport/chttp2/transport/ping_promise.cc
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
+  - src/core/ext/transport/chttp2/transport/security_frame.cc
   - src/core/ext/transport/chttp2/transport/stream_lists.cc
   - src/core/ext/transport/chttp2/transport/transport_common.cc
   - src/core/ext/transport/chttp2/transport/varint.cc
