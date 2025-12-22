@@ -8496,6 +8496,7 @@ grpc_cc_library(
         "grpc_check",
         "grpc_promise_endpoint",
         "header_assembler",
+        "http2_security_frame",
         "http2_settings",
         "http2_settings_manager",
         "http2_settings_promises",
