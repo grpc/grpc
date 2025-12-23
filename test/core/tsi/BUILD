@@ -258,3 +258,31 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "private_key_offload_test",
+    srcs = ["private_key_offload_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:client.key",
+        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
+    external_deps = [
+        "absl/log:log",
+        "absl/strings:str_format",
+        "gtest",
+        "libcrypto",
+        "libssl",
+    ],
+    deps = [
+        ":transport_security_test_lib",
+        "//:gpr",
+        "//:grpc",
+        "//:tsi",
+        "//:tsi_base",
+        "//:tsi_ssl_credentials",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)

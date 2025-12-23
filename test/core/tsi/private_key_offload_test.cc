@@ -27,6 +27,7 @@
 #include "test/core/tsi/transport_security_test_lib.h"
 #include "gtest/gtest.h"
 #include "absl/strings/str_cat.h"
+#include "absl/types/optional.h"
 
 extern "C" {
 #include <openssl/bio.h>
@@ -85,16 +86,9 @@ class BoringSslPrivateKeySigner
   bool Sign(absl::string_view data_to_sign,
             SignatureAlgorithm signature_algorithm,
             OnSignComplete on_sign_complete) override {
-    auto event_engine =
-        grpc_event_engine::experimental::GetDefaultEventEngine();
-    event_engine->Run(
-        [self = shared_from_this(), data_to_sign = std::string(data_to_sign),
-         signature_algorithm,
-         on_sign_complete = std::move(on_sign_complete)]() mutable {
-          on_sign_complete(self->SignWithBoringSSL(
-              data_to_sign, signature_algorithm, self->pkey_.get()));
-        });
-    return false;
+    on_sign_complete(SignWithBoringSSL(data_to_sign, signature_algorithm,
+                                             pkey_.get()));
+    return true;
   }
 
  private:
@@ -235,6 +229,8 @@ class PrivateKeyOffloadTest : public ::testing::TestWithParam<tsi_tls_version> {
       if (offload_party_ == OffloadParty::kClient) {
         client_options.pem_key_cert_pair =
             &client_pem_key_cert_pairs_with_signer_[0];
+      } else {
+        client_options.pem_key_cert_pair = &client_pem_key_cert_pairs_[0];
       }
       ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
                     &client_options, &client_handshaker_factory_),
@@ -250,6 +246,8 @@ class PrivateKeyOffloadTest : public ::testing::TestWithParam<tsi_tls_version> {
       if (offload_party_ == OffloadParty::kServer) {
         server_options.pem_key_cert_pairs =
             server_pem_key_cert_pairs_with_signer_;
+      } else {
+        server_options.pem_key_cert_pairs = server_pem_key_cert_pairs_;
       }
       ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
                     &server_options, &server_handshaker_factory_),
@@ -282,6 +280,20 @@ class PrivateKeyOffloadTest : public ::testing::TestWithParam<tsi_tls_version> {
             TSI_OK);
         tsi_peer_destruct(&peer);
       } else {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+        // When negotiating TLS 1.3, the client-side handshake succeeds
+        //  because server verification of the client certificate occurs after
+        //  the client-side handshake is complete.
+        bool expect_client_success = GetParam() == tsi_tls_version::TSI_TLS1_2
+                                    ? expect_client_success_1_2_
+                                    : expect_client_success_1_3_;
+#else
+        //  If using OpenSSL version < 1.1, the CRL revocation won't
+        //  be enabled anyways, so we always expect the connection to
+        //  be successful.
+        expect_server_success = true;
+        expect_client_success = expect_server_success;
+#endif
         EXPECT_EQ(base_.client_result, nullptr);
         EXPECT_EQ(base_.server_result, nullptr);
       }
@@ -331,13 +343,13 @@ TEST_P(PrivateKeyOffloadTest, OffloadOnClientSucceeds) {
 
 TEST_P(PrivateKeyOffloadTest, OffloadFailsWithBadSignatureOnServer) {
   auto* fixture = new SslOffloadTsiTestFixture(
-      OffloadParty::kClient, std::make_shared<BadSignatureSigner>());
+      OffloadParty::kServer, std::make_shared<BadSignatureSigner>());
   fixture->Run(/*expect_success=*/false);
 }
 
 TEST_P(PrivateKeyOffloadTest, OffloadFailsWithBadSignatureOnClient) {
   auto* fixture = new SslOffloadTsiTestFixture(
-      OffloadParty::kServer, std::make_shared<BadSignatureSigner>());
+      OffloadParty::kClient, std::make_shared<BadSignatureSigner>());
   fixture->Run(/*expect_success=*/false);
 }
 
