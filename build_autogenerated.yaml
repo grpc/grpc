@@ -25087,6 +25087,23 @@ targets:
   - absl/utility:utility
   - gpr
   uses_polling: false
+- name: uds_socket_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/address_utils/uds_socket_test.cc
+  deps:
+  - absl/log:log
+  - gtest
+  - absl/status
+  - grpc_test_util
+  uses_polling: false
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: unique_ptr_with_bitset_test
   gtest: true
   build: test

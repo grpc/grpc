@@ -16,11 +16,13 @@
  *
  */
 
-#include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
 #include "absl/log/log.h"
 #include "gtest/gtest.h"
+
+#include <grpc/grpc.h>
+
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/port.h"
@@ -50,6 +52,7 @@ TEST(UdsSocketTest, UnixSockaddrPopulateAndLen) {
   // Verify Length (Platform Specific)
 #ifdef __APPLE__
   // On Apple platforms, sun_len must be set correctly.
+  // This is expected to FAIL until the core library is fixed.
   EXPECT_GT(un->sun_len, 0);
 
   // The logic inside grpc_core::UnixSockaddrPopulate should match:
@@ -76,7 +79,7 @@ TEST(UdsSocketTest, MaxPathLength) {
 
   absl::Status status = grpc_core::UnixSockaddrPopulate(kPath, &resolved_addr);
   ASSERT_TRUE(status.ok()) << status;
-  
+
   struct sockaddr_un* un =
       reinterpret_cast<struct sockaddr_un*>(resolved_addr.addr);
   EXPECT_EQ(strlen(un->sun_path), maxlen);
@@ -85,12 +88,16 @@ TEST(UdsSocketTest, MaxPathLength) {
 TEST(UdsSocketTest, PathTooLong) {
   grpc_resolved_address resolved_addr;
   struct sockaddr_un un_struct;
-  size_t maxlen = sizeof(un_struct.sun_path); // One char too many (maxlen is size - 1)
+  size_t maxlen =
+      sizeof(un_struct.sun_path);  // One char too many (maxlen is size - 1)
   std::string kPath(maxlen, 'a');
 
   absl::Status status = grpc_core::UnixSockaddrPopulate(kPath, &resolved_addr);
   ASSERT_FALSE(status.ok());
-  EXPECT_EQ(status.code(), absl::StatusCode::kUnknown); // GRPC_ERROR_CREATE defaults to unknown/internal usually, or generic error
+  EXPECT_EQ(status.code(),
+            absl::StatusCode::kUnknown);  // GRPC_ERROR_CREATE defaults to
+                                          // unknown/internal usually, or
+                                          // generic error
 }
 
 #endif  // GRPC_HAVE_UNIX_SOCKET

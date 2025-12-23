@@ -110,8 +110,8 @@ grpc_cc_test(
     srcs = ["uds_socket_test.cc"],
     external_deps = [
         "absl/log:log",
-        "gtest",
         "absl/status",
+        "gtest",
     ],
     tags = ["no_windows"],
     deps = [
