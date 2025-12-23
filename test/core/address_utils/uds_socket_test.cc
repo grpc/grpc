@@ -33,6 +33,8 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "test/core/test_util/test_config.h"
 
+#ifdef GRPC_HAVE_UNIX_SOCKET
+
 TEST(UdsSocketTest, UnixSockaddrPopulateAndLen) {
   grpc_resolved_address resolved_addr;
   const char* kPath = "/tmp/grpc_test_socket.sock";
