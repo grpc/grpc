@@ -24,7 +24,7 @@ const grpc_completion_queue_attributes kCompletionQueueAttr = {
     GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING, NULL};
 
 const char *kEnableCustomConcurrentCompletionQueue =
-    "grpc_objc_enable_custom_concurrent_completion_queue";
+    "GRPC_OBJC_ENABLE_CUSTOM_CONCURRENT_COMPLETION_QUEUE";
 
 @implementation GRPCCompletionQueue
 
