@@ -876,6 +876,7 @@ libs:
   - src/core/filter/auth/auth_filters.h
   - src/core/filter/blackboard.h
   - src/core/filter/filter_args.h
+  - src/core/filter/filter_chain.h
   - src/core/handshaker/endpoint_info/endpoint_info_handshaker.h
   - src/core/handshaker/handshaker.h
   - src/core/handshaker/handshaker_factory.h
@@ -2591,6 +2592,7 @@ libs:
   - src/core/filter/auth/auth_filters.h
   - src/core/filter/blackboard.h
   - src/core/filter/filter_args.h
+  - src/core/filter/filter_chain.h
   - src/core/handshaker/endpoint_info/endpoint_info_handshaker.h
   - src/core/handshaker/handshaker.h
   - src/core/handshaker/handshaker_factory.h
