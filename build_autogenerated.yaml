@@ -25096,9 +25096,12 @@ targets:
   - test/core/address_utils/uds_socket_test.cc
   deps:
   - absl/log:log
-  - gtest
   - absl/status
+  - gpr
+  - grpc
   - grpc_test_util
+  - gtest
+  - sockaddr_utils
   uses_polling: false
   platforms:
   - linux
