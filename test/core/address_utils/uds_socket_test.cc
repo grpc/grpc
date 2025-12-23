@@ -18,10 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GRPC_HAVE_UNIX_SOCKET
-#include <sys/un.h>
-#endif
-
 #include "absl/log/log.h"
 #include "gtest/gtest.h"
 
@@ -34,6 +30,7 @@
 #include "test/core/test_util/test_config.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
+#include <sys/un.h>
 
 TEST(UdsSocketTest, UnixSockaddrPopulateAndLen) {
   grpc_resolved_address resolved_addr;
