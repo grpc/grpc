@@ -86,8 +86,8 @@ class BoringSslPrivateKeySigner
   bool Sign(absl::string_view data_to_sign,
             SignatureAlgorithm signature_algorithm,
             OnSignComplete on_sign_complete) override {
-    on_sign_complete(SignWithBoringSSL(data_to_sign, signature_algorithm,
-                                             pkey_.get()));
+    on_sign_complete(
+        SignWithBoringSSL(data_to_sign, signature_algorithm, pkey_.get()));
     return true;
   }
 
@@ -203,8 +203,9 @@ class PrivateKeyOffloadTest : public ::testing::TestWithParam<tsi_tls_version> {
                                                           client_cert_);
     }
 
-    void Run(bool expect_success) {
+    void Run(bool expect_success, bool expect_success_on_client) {
       expect_success_ = expect_success;
+      expect_success_on_client_ = expect_success_on_client;
       tsi_test_do_handshake(&base_);
       tsi_test_fixture_destroy(&base_);
     }
@@ -280,21 +281,7 @@ class PrivateKeyOffloadTest : public ::testing::TestWithParam<tsi_tls_version> {
             TSI_OK);
         tsi_peer_destruct(&peer);
       } else {
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
-        // When negotiating TLS 1.3, the client-side handshake succeeds
-        //  because server verification of the client certificate occurs after
-        //  the client-side handshake is complete.
-        bool expect_client_success = GetParam() == tsi_tls_version::TSI_TLS1_2
-                                    ? expect_client_success_1_2_
-                                    : expect_client_success_1_3_;
-#else
-        //  If using OpenSSL version < 1.1, the CRL revocation won't
-        //  be enabled anyways, so we always expect the connection to
-        //  be successful.
-        expect_server_success = true;
-        expect_client_success = expect_server_success;
-#endif
-        EXPECT_EQ(base_.client_result, nullptr);
+        EXPECT_EQ(base_.client_result != nullptr, expect_success_on_client_);
         EXPECT_EQ(base_.server_result, nullptr);
       }
     }
@@ -322,6 +309,7 @@ class PrivateKeyOffloadTest : public ::testing::TestWithParam<tsi_tls_version> {
     OffloadParty offload_party_;
     std::shared_ptr<PrivateKeySigner> signer_;
     bool expect_success_ = false;
+    bool expect_success_on_client_ = false;
   };
 };
 
@@ -333,36 +321,43 @@ struct tsi_test_fixture_vtable
 
 TEST_P(PrivateKeyOffloadTest, OffloadOnServerSucceeds) {
   auto* fixture = new SslOffloadTsiTestFixture(OffloadParty::kServer, nullptr);
-  fixture->Run(/*expect_success=*/true);
+  fixture->Run(/*expect_success=*/true, /*expect_success_on_client*/ true);
 }
 
 TEST_P(PrivateKeyOffloadTest, OffloadOnClientSucceeds) {
   auto* fixture = new SslOffloadTsiTestFixture(OffloadParty::kClient, nullptr);
-  fixture->Run(/*expect_success=*/true);
+  fixture->Run(/*expect_success=*/true, /*expect_success_on_client*/ true);
 }
 
 TEST_P(PrivateKeyOffloadTest, OffloadFailsWithBadSignatureOnServer) {
   auto* fixture = new SslOffloadTsiTestFixture(
       OffloadParty::kServer, std::make_shared<BadSignatureSigner>());
-  fixture->Run(/*expect_success=*/false);
+  fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false);
 }
 
 TEST_P(PrivateKeyOffloadTest, OffloadFailsWithBadSignatureOnClient) {
   auto* fixture = new SslOffloadTsiTestFixture(
       OffloadParty::kClient, std::make_shared<BadSignatureSigner>());
-  fixture->Run(/*expect_success=*/false);
+  // When negotiating TLS 1.3, the client-side handshake succeeds
+  //  because server verification of the client certificate occurs after
+  //  the client-side handshake is complete.
+  //  If using OpenSSL version < 1.1, the CRL revocation won't
+  //  be enabled so the result should fail always.
+  fixture->Run(
+      /*expect_success=*/false,
+      /*expect_success_on_client*/ GetParam() == tsi_tls_version::TSI_TLS1_3);
 }
 
 TEST_P(PrivateKeyOffloadTest, OffloadFailsWithSignerErrorOnServer) {
   auto* fixture = new SslOffloadTsiTestFixture(OffloadParty::kServer,
                                                std::make_shared<ErrorSigner>());
-  fixture->Run(/*expect_success=*/false);
+  fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false);
 }
 
 TEST_P(PrivateKeyOffloadTest, OffloadFailsWithSignerErrorOnClient) {
   auto* fixture = new SslOffloadTsiTestFixture(OffloadParty::kClient,
                                                std::make_shared<ErrorSigner>());
-  fixture->Run(/*expect_success=*/false);
+  fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false);
 }
 
 std::string TestNameSuffix(
