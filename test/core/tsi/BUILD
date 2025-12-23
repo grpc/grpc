@@ -280,6 +280,7 @@ grpc_cc_test(
     ],
     deps = [
         ":transport_security_test_lib",
+        "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc",
         "//:tsi",

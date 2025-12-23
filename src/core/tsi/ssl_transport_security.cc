@@ -171,10 +171,12 @@ struct tsi_ssl_frame_protector {
 
 namespace {
 
+#if defined(OPENSSL_IS_BORINGSSL)
 const SSL_PRIVATE_KEY_METHOD TlsOffloadPrivateKeyMethod = {
     grpc_core::TlsPrivateKeySignWrapper,
     nullptr,  // decrypt not implemented for this use case
     grpc_core::TlsPrivateKeyOffloadComplete};
+#endif
 
 // Builds the alpn protocol name list according to rfc 7301.
 // OpenSSL requires <const char**> for the input to the alpn methods.
@@ -1944,8 +1946,10 @@ static tsi_result ssl_handshaker_do_handshake(tsi_ssl_handshaker* impl,
         return TSI_OK;
       case SSL_ERROR_WANT_WRITE:
         return TSI_DRAIN_BUFFER;
+#if defined(OPENSSL_IS_BORINGSSL)
       case SSL_ERROR_WANT_PRIVATE_KEY_OPERATION:
         return TSI_ASYNC;
+#endif
       default: {
         char err_str[256];
         ERR_error_string_n(ERR_get_error(), err_str, sizeof(err_str));
