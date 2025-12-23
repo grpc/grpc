@@ -170,6 +170,12 @@ struct tsi_ssl_frame_protector {
 // --- Library Initialization. ---
 
 namespace {
+
+const SSL_PRIVATE_KEY_METHOD TlsOffloadPrivateKeyMethod = {
+    grpc_core::TlsPrivateKeySignWrapper,
+    nullptr,  // decrypt not implemented for this use case
+    grpc_core::TlsPrivateKeyOffloadComplete};
+
 // Builds the alpn protocol name list according to rfc 7301.
 // OpenSSL requires <const char**> for the input to the alpn methods.
 tsi_result BuildAlpnProtocolNameList(const char** alpn_protocols,
@@ -966,8 +972,8 @@ static tsi_result populate_ssl_context(
         [&](std::shared_ptr<grpc_core::PrivateKeySigner> key_signer) {
 #if defined(OPENSSL_IS_BORINGSSL)
           if (key_signer != nullptr) {
-            SSL_CTX_set_private_key_method(
-                context, &grpc_core::TlsOffloadPrivateKeyMethod);
+            SSL_CTX_set_private_key_method(context,
+                                           &TlsOffloadPrivateKeyMethod);
             if (!SSL_CTX_set_ex_data(context,
                                      g_ssl_ctx_ex_private_key_function_index,
                                      key_signer.get())) {
@@ -1293,7 +1299,13 @@ grpc_core::GetTlsPrivateKeyOffloadContext(SSL* ssl) {
       SSL_get_ex_data(ssl, g_ssl_ex_private_key_offloading_context_index));
 }
 
-grpc_core::PrivateKeySigner* grpc_core::GetPrivateKeySigner(SSL_CTX* ssl_ctx) {
+grpc_core::PrivateKeySigner* grpc_core::GetPrivateKeySigner(SSL* ssl) {
+  SSL_CTX* ssl_ctx = SSL_get_SSL_CTX(ssl);
+  if (ssl_ctx == nullptr) {
+    LOG(ERROR) << "Unexpected error obtaining SSL_CTX object from SSL: ";
+    SSL_CTX_free(ssl_ctx);
+    return nullptr;
+  }
   GRPC_CHECK_NE(g_ssl_ctx_ex_private_key_function_index, -1);
   return static_cast<grpc_core::PrivateKeySigner*>(
       SSL_CTX_get_ex_data(ssl_ctx, g_ssl_ctx_ex_private_key_function_index));
@@ -1932,10 +1944,8 @@ static tsi_result ssl_handshaker_do_handshake(tsi_ssl_handshaker* impl,
         return TSI_OK;
       case SSL_ERROR_WANT_WRITE:
         return TSI_DRAIN_BUFFER;
-#if defined(OPENSSL_IS_BORINGSSL)
       case SSL_ERROR_WANT_PRIVATE_KEY_OPERATION:
         return TSI_ASYNC;
-#endif  // OPENSSL_IS_BORINGSSL
       default: {
         char err_str[256];
         ERR_error_string_n(ERR_get_error(), err_str, sizeof(err_str));
@@ -2141,11 +2151,6 @@ static tsi_result ssl_handshaker_next(
     status = ssl_handshaker_result_create(impl, unused_bytes, unused_bytes_size,
                                           handshaker_result, error);
     if (status == TSI_OK) {
-      if (offload_context != nullptr) {
-        offload_context->notify_cb = cb;
-        offload_context->notify_user_data = user_data;
-        offload_context->handshaker_result = *handshaker_result;
-      }
       // Indicates that the handshake has completed and that a
       // handshaker_result has been created.
       self->handshaker_result_created = true;
@@ -2302,15 +2307,8 @@ static tsi_result create_tsi_ssl_handshaker(
   impl->factory_ref = tsi_ssl_handshaker_factory_ref(factory);
   *handshaker = &impl->base;
 
-  SSL_CTX* ssl_ctx = SSL_get_SSL_CTX(impl->ssl);
-  if (ssl_ctx == nullptr) {
-    LOG(ERROR) << "Unexpected error obtaining SSL_CTX object from SSL: ";
-    SSL_CTX_free(ssl_ctx);
-    return TSI_INTERNAL_ERROR;
-  }
-
   grpc_core::PrivateKeySigner* sign_function =
-      grpc_core::GetPrivateKeySigner(ssl_ctx);
+      grpc_core::GetPrivateKeySigner(ssl);
   if (sign_function != nullptr) {
     grpc_core::TlsPrivateKeyOffloadContext* private_key_offload_context =
         new grpc_core::TlsPrivateKeyOffloadContext();

@@ -69,29 +69,28 @@ void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
     return;
   }
   ctx->status = TlsPrivateKeyOffloadContext::kSignatureCompleted;
-  if (ctx->signed_bytes.ok()) {
-    const uint8_t* bytes_to_send = nullptr;
-    size_t bytes_to_send_size = 0;
-    // Once the signed bytes are obtained, wrap an empty callback to
-    // tsi_handshaker_next to resume the pending async operation.
-    tsi_result result = tsi_handshaker_next(
-        ctx->handshaker, nullptr, 0, &bytes_to_send, &bytes_to_send_size,
-        &ctx->handshaker_result, ctx->notify_cb, ctx->notify_user_data);
-
-    if (result != TSI_ASYNC) {
-      // Notify the TSI layer to re-enter the handshake. This call is
-      // thread-safe as per TSI requirements for the callback.
-      if (ctx->notify_cb) {
-        ctx->notify_cb(result, ctx->notify_user_data, bytes_to_send,
-                       bytes_to_send_size, ctx->handshaker_result);
-      }
-    }
-  } else {
+  if (!ctx->signed_bytes.ok()) {
     // Notify the TSI layer to re-enter the handshake.
     // This call is thread-safe as per TSI requirements for the callback.
     if (ctx->notify_cb) {
       ctx->notify_cb(TSI_INTERNAL_ERROR, ctx->notify_user_data, nullptr, 0,
                      ctx->handshaker_result);
+    }
+    return;
+  }
+  const uint8_t* bytes_to_send = nullptr;
+  size_t bytes_to_send_size = 0;
+  // Once the signed bytes are obtained, wrap an empty callback to
+  // tsi_handshaker_next to resume the pending async operation.
+  tsi_result result = tsi_handshaker_next(
+      ctx->handshaker, nullptr, 0, &bytes_to_send, &bytes_to_send_size,
+      &ctx->handshaker_result, ctx->notify_cb, ctx->notify_user_data);
+  if (result != TSI_ASYNC) {
+    // Notify the TSI layer to re-enter the handshake. This call is
+    // thread-safe as per TSI requirements for the callback.
+    if (ctx->notify_cb) {
+      ctx->notify_cb(result, ctx->notify_user_data, bytes_to_send,
+                     bytes_to_send_size, ctx->handshaker_result);
     }
   }
 }
@@ -103,46 +102,35 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
   ctx->status = TlsPrivateKeyOffloadContext::kStarted;
   // Create the completion callback by binding the current context.
   auto done_callback = absl::bind_front(TlsOffloadSignDoneCallback, ctx);
-
   // Call the user's async sign function
   // The contract with the user is that they MUST invoke the callback when
   // complete in their implementation, and their impl MUST not block.
   auto algorithm = ToSignatureAlgorithmClass(signature_algorithm);
-
   if (!algorithm.ok()) {
     return ssl_private_key_failure;
   }
-
-  SSL_CTX* ssl_ctx = SSL_get_SSL_CTX(ssl);
-  if (ssl_ctx == nullptr) {
-    LOG(ERROR) << "Unexpected error obtaining SSL_CTX object from SSL: ";
-    SSL_CTX_free(ssl_ctx);
+  PrivateKeySigner* signer = GetPrivateKeySigner(ssl);
+  if (signer == nullptr) {
     return ssl_private_key_failure;
   }
-
-  PrivateKeySigner* signer = GetPrivateKeySigner(ssl_ctx);
-  if (signer != nullptr) {
-    bool is_done = signer->Sign(
-        absl::string_view(reinterpret_cast<const char*>(in), in_len),
-        *algorithm, done_callback);
-    // If the signature invocation was completed, return ssl_private_key_success
-    // to continue the handshake. Otherwise tell BoringSSL to wait for the
-    // signature result.
-    if (is_done) {
-      if (ctx->signed_bytes.ok()) {
-        std::string out_bytes = *ctx->signed_bytes;
-        *out_len = out_bytes.size();
-        std::copy(out_bytes.cbegin(), out_bytes.cend(), out);
-        return ssl_private_key_success;
-      } else {
-        return ssl_private_key_failure;
-      }
+  bool is_done =
+      signer->Sign(absl::string_view(reinterpret_cast<const char*>(in), in_len),
+                   *algorithm, done_callback);
+  // If the signature invocation was completed, return ssl_private_key_success
+  // to continue the handshake. Otherwise tell BoringSSL to wait for the
+  // signature result.
+  if (is_done) {
+    if (ctx->signed_bytes.ok()) {
+      std::string out_bytes = *ctx->signed_bytes;
+      *out_len = out_bytes.size();
+      std::copy(out_bytes.cbegin(), out_bytes.cend(), out);
+      return ssl_private_key_success;
+    } else {
+      return ssl_private_key_failure;
     }
-    ctx->status = TlsPrivateKeyOffloadContext::kInProgressAsync;
-    return ssl_private_key_retry;
   }
-
-  return ssl_private_key_failure;
+  ctx->status = TlsPrivateKeyOffloadContext::kInProgressAsync;
+  return ssl_private_key_retry;
 }
 
 enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,
@@ -150,7 +138,6 @@ enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,
                                                            size_t* out_len,
                                                            size_t max_out) {
   TlsPrivateKeyOffloadContext* ctx = GetTlsPrivateKeyOffloadContext(ssl);
-
   if (!ctx->signed_bytes.ok()) {
     return ssl_private_key_failure;
   }

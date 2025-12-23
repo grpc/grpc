@@ -271,7 +271,9 @@ grpc_cc_test(
     ],
     external_deps = [
         "absl/log:log",
+        "absl/strings",
         "absl/strings:str_format",
+        "absl/types:optional",
         "gtest",
         "libcrypto",
         "libssl",
@@ -283,6 +285,7 @@ grpc_cc_test(
         "//:tsi",
         "//:tsi_base",
         "//:tsi_ssl_credentials",
+        "//src/core:default_event_engine",
         "//test/core/test_util:grpc_test_util",
     ],
 )

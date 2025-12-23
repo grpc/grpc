@@ -46,6 +46,10 @@ struct TlsPrivateKeyOffloadContext {
     kFinished,
   };
 
+  SignatureStatus status = kNotStarted;
+  // The signed_bytes are populated when the signature process is completed if
+  // the Private Key offload was successful. If there was an error during the
+  // signature, the status will be returned.
   absl::StatusOr<std::string> signed_bytes;
 
   // TSI handshake state needed to resume.
@@ -53,15 +57,13 @@ struct TlsPrivateKeyOffloadContext {
   tsi_handshaker_on_next_done_cb notify_cb;
   tsi_handshaker_result* handshaker_result;
   void* notify_user_data;
-
-  SignatureStatus status = kNotStarted;
 };
 
 // Returns the TlsPrivateKeyOffloadContext associated with the SSL object.
 TlsPrivateKeyOffloadContext* GetTlsPrivateKeyOffloadContext(SSL* ssl);
 
 // Returns the PrivateKeySigner associated with the SSL_CTX object.
-PrivateKeySigner* GetPrivateKeySigner(SSL_CTX* ssl_ctx);
+PrivateKeySigner* GetPrivateKeySigner(SSL* ssl);
 
 #if defined(OPENSSL_IS_BORINGSSL)
 // Callback function to be invoked when the user's async sign operation is
@@ -77,11 +79,6 @@ enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,
                                                            uint8_t* out,
                                                            size_t* out_len,
                                                            size_t max_out);
-
-const SSL_PRIVATE_KEY_METHOD TlsOffloadPrivateKeyMethod = {
-    TlsPrivateKeySignWrapper,
-    nullptr,  // decrypt not implemented for this use case
-    TlsPrivateKeyOffloadComplete};
 #endif  // OPENSSL_IS_BORINGSSL
 
 }  // namespace grpc_core
