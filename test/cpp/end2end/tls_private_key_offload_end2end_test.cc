@@ -16,6 +16,7 @@
 //
 //
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -40,7 +41,6 @@
 #include <utility>
 #include <vector>
 
-#include "grpc/event_engine/event_engine.h"
 #include "src/proto/grpc/testing/echo_messages.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
