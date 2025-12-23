@@ -58,6 +58,7 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.coverage',
     'sphinx.ext.autodoc.typehints',
+    'sphinx_rtd_theme'
 ]
 
 napoleon_google_docstring = True
@@ -68,22 +69,26 @@ autodoc_default_options = {
     'members': None,
 }
 
-autodoc_mock_imports = ["envoy"]
+# autodoc_mock_imports = ["envoy"]
+autodoc_mock_imports = [
+    "envoy",
+    # "grpc._cython", # TODO: Verify if this is only needed to run locally or everywhere
+    # "grpc_observability._cyobservability",
+]
 
 autodoc_typehints = 'description'
 
 # -- HTML Configuration -------------------------------------------------
 
-html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
 html_theme_options = {
-    'fixed_sidebar': True,
-    'page_width': 'auto',
-    'show_related': True,
     'analytics_id': 'UA-60127042-1',
-    'description': grpc_version.VERSION,
-    'show_powered_by': False,
+    'sticky_navigation': True,
 }
 html_static_path = ["_static"]
+html_css_files = [
+    'custom.css',
+]
 
 # -- Options for manual page output ------------------------------------------
 
