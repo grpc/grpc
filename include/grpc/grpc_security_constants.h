@@ -69,7 +69,8 @@ typedef enum {
   GRPC_SSL_ROOTS_OVERRIDE_FAIL
 } grpc_ssl_roots_override_result;
 
-/** Callback results for dynamically loading a SSL certificate config. */
+/** Callback results for dynamically loading a SSL certificate config.
+    Used for both server and client certificate reloading. */
 typedef enum {
   GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED,
   GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW,
