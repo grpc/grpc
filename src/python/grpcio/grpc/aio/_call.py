@@ -252,6 +252,8 @@ class Call:
         raw_metadata_tuple = (
             await self._cython_call.status()
         ).trailing_metadata()
+        if not raw_metadata_tuple:
+            return Metadata()
         return Metadata.from_tuple(raw_metadata_tuple)
 
     async def code(self) -> grpc.StatusCode:
