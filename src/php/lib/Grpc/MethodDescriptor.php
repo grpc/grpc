@@ -19,6 +19,8 @@
 
 namespace Grpc;
 
+use Google\Protobuf\Internal\Message;
+
 /**
  * This is an experimental and incomplete implementation of gRPC server
  * for PHP. APIs are _definitely_ going to be changed.
@@ -26,10 +28,20 @@ namespace Grpc;
  * DO NOT USE in production.
  */
 
+/**
+ * @template T of Message
+ * @template S of BaseStub
+ */
 class MethodDescriptor
 {
+    /**
+     * @param S $service
+     * @param string $method_name
+     * @param class-string<T> $request_type
+     * @param int    $call_type
+     */
     public function __construct(
-        object $service,
+        $service,
         string $method_name,
         string $request_type,
         int $call_type
@@ -45,8 +57,20 @@ class MethodDescriptor
     public const CLIENT_STREAMING_CALL = 2;
     public const BIDI_STREAMING_CALL = 3;
 
+    /**
+     * @var S
+     */
     public $service;
+    /**
+     * @var string
+     */
     public $method_name;
+    /**
+     * @var class-string<T>
+     */
     public $request_type;
+    /**
+     * @var int
+     */
     public $call_type;
 }
