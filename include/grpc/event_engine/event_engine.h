@@ -158,7 +158,11 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
   /// * sockaddr_in6
   class ResolvedAddress {
    public:
+#if defined (GPR_OPENBSD)
+    static constexpr socklen_t MAX_SIZE_BYTES = 256;
+#else
     static constexpr socklen_t MAX_SIZE_BYTES = 128;
+#endif
 
     ResolvedAddress(const sockaddr* address, socklen_t size);
     ResolvedAddress() = default;

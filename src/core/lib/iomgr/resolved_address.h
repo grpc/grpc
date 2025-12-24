@@ -28,7 +28,11 @@
 #include <sys/socket.h>
 #endif
 
+#if defined (GPR_OPENBSD)
+#define GRPC_MAX_SOCKADDR_SIZE 256
+#else
 #define GRPC_MAX_SOCKADDR_SIZE 128
+#endif
 
 struct grpc_resolved_address {
   char addr[GRPC_MAX_SOCKADDR_SIZE];
