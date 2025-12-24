@@ -23,7 +23,7 @@
 #include <vector>
 
 #if defined(GPR_LINUX) || defined(GPR_ANDROID) || defined(GPR_FREEBSD) || \
-    defined(GPR_APPLE)
+    defined(GPR_APPLE) || defined(GPR_NETBSD) || defined(GPR_OPENBSD)
 
 #include <dirent.h>
 #include <fcntl.h>
@@ -59,7 +59,13 @@ const char* kCertDirectories[] = {""};
 #elif defined(GPR_APPLE)    // endif GPR_FREEBSD
 const char* kCertFiles[] = {"/etc/ssl/cert.pem"};
 const char* kCertDirectories[] = {""};
-#endif                      // GPR_APPLE
+#elif defined(GPR_NETBSD)   // endif GPR_APPLE
+const char* kCertFiles[] = {"/etc/openssl/certs/ca-certificates.crt"};
+const char* kCertDirectories[] = {"/etc/openssl/certs"};
+#elif defined(GPR_OPENBSD)  // endif GPR_NETBSD
+const char* kCertFiles[] = {"/etc/ssl/cert.pem"};
+const char* kCertDirectories[] = {""};
+#endif                      // GPR_OPENBSD
 
 grpc_slice GetSystemRootCerts() {
   size_t num_cert_files_ = GPR_ARRAY_SIZE(kCertFiles);
@@ -163,4 +169,5 @@ grpc_slice LoadSystemRootCerts() {
 
 }  // namespace grpc_core
 
-#endif  // GPR_LINUX || GPR_ANDROID || GPR_FREEBSD || GPR_APPLE
+#endif  // GPR_LINUX || GPR_ANDROID || GPR_FREEBSD || GPR_APPLE ||
+        // GPR_NETNSD || GPR_OPENBSD
