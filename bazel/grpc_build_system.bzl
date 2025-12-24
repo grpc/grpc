@@ -37,6 +37,8 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_shell//shell:sh_binary.bzl, "sh_binary")
+load("@rules_shell//shell:sh_test.bzl, "sh_test")
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("//bazel:copts.bzl", "GRPC_DEFAULT_COPTS")
 load("//bazel:experiments.bzl", "EXPERIMENTS", "EXPERIMENT_ENABLES", "EXPERIMENT_POLLERS")
@@ -696,7 +698,7 @@ def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, siz
     }
 
     for poller_config in expand_tests(name, srcs, [], tags, args, exclude_pollers, uses_polling, uses_event_engine, flaky):
-        native.sh_test(
+        sh_test(
             name = poller_config["name"],
             srcs = poller_config["srcs"],
             deps = poller_config["deps"],
@@ -708,7 +710,7 @@ def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, siz
         )
 
 def grpc_sh_binary(name, srcs, data = []):
-    native.sh_binary(
+    sh_binary(
         name = name,
         srcs = srcs,
         data = data,
