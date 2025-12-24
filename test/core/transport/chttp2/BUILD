@@ -953,6 +953,7 @@ grpc_cc_test(
         "//:orphanable",
         "//src/core:arena",
         "//src/core:default_event_engine",
+        "//src/core:http2_security_frame",
         "//src/core:http2_settings",
         "//src/core:map",
         "//src/core:notification",
