@@ -204,6 +204,10 @@ bool ProcessIncomingWindowUpdateFrameFlowControl(
     const Http2WindowUpdateFrame& frame,
     chttp2::TransportFlowControl& flow_control, RefCountedPtr<Stream> stream);
 
+void MaybeAddTransportWindowUpdateFrame(
+    chttp2::TransportFlowControl& flow_control,
+    std::vector<Http2Frame>& frames);
+
 void MaybeAddStreamWindowUpdateFrame(RefCountedPtr<Stream> stream,
                                      std::vector<Http2Frame>& frames);
 
