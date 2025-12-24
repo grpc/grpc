@@ -18,6 +18,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <gtest/gtest.h>
 
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/server/server.h"
@@ -132,6 +133,7 @@ static void single_request_verifier(grpc_server* server,
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   grpc_tracer_set_enabled("api", true);
   grpc_tracer_set_enabled("http", true);
