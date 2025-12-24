@@ -26,12 +26,6 @@ def wakey_thread(&blk)
   t
 end
 
-def load_test_certs
-  test_root = File.join(File.dirname(File.dirname(__FILE__)), 'testdata')
-  files = ['ca.pem', 'server1.key', 'server1.pem']
-  files.map { |f| File.open(File.join(test_root, f)).read }
-end
-
 include GRPC::Core::StatusCodes
 include GRPC::Core::TimeConsts
 include GRPC::Core::CallOps
@@ -1055,7 +1049,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
   def create_secure_test_server
     certs = load_test_certs
     secure_credentials = GRPC::Core::ServerCredentials.new(
-      nil, [{ private_key: certs[1], cert_chain: certs[2] }], false)
+      nil, certs[1], certs[2])
 
     @server = new_core_server_for_testing(nil)
     @server.add_http2_port('0.0.0.0:0', secure_credentials)
