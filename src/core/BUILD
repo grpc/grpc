@@ -8602,9 +8602,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "http2_security_frame",
-    srcs = [
-        "ext/transport/chttp2/transport/security_frame.cc",
-    ],
     hdrs = [
         "ext/transport/chttp2/transport/security_frame.h",
     ],
@@ -8612,11 +8609,21 @@ grpc_cc_library(
         "absl/log",
         "absl/status",
         "absl/status:statusor",
+        "absl/base:core_headers",
+        "absl/types:span",
     ],
     deps = [
+        "grpc_check",
         "grpc_promise_endpoint",
+        ":activity",
+        ":context",
+        ":poll",
+        ":ref_counted",
+        ":sync",
+        "//:chttp2_frame",
         "//:grpc_public_hdrs",
         "//src/core:event_engine_extensions",
+        "//src/core:event_engine_query_extensions",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:transport_framing_endpoint_extension",
