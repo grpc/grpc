@@ -19,8 +19,11 @@ import sys
 PYTHON_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..',
                              '..', '..', 'src', 'python')
 sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio'))
+sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_admin'))
 sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_channelz'))
+sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_csds'))
 sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_health_checking'))
+sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_observability'))
 sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_reflection'))
 sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_status'))
 sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_testing'))
@@ -68,22 +71,38 @@ autodoc_default_options = {
     'members': None,
 }
 
-autodoc_mock_imports = ["envoy"]
+# autodoc_mock_imports = ["envoy"]
+autodoc_mock_imports = [
+    "envoy",
+    "grpc._cython",
+    # "grpc_observability._cyobservability", # TODO: Verify if this is only needed to run locally or everywhere
+]
+
 
 autodoc_typehints = 'description'
 
 # -- HTML Configuration -------------------------------------------------
 
-html_theme = 'alabaster'
+html_theme = 'pydata_sphinx_theme'
+html_title = f"gRPC Python Docs v{version}"
 html_theme_options = {
-    'fixed_sidebar': True,
-    'page_width': 'auto',
-    'show_related': True,
-    'analytics_id': 'UA-60127042-1',
-    'description': grpc_version.VERSION,
-    'show_powered_by': False,
+    "navbar_center": [],
+    "header_links_before_dropdown": 15,
+    "secondary_sidebar_items": ["page-toc", "edit-this-page"],
 }
+
+html_theme_options["analytics"] = {
+    "google_analytics_id": "UA-60127042-1",
+}
+
+html_sidebars = {
+    "**": ["sidebar-nav-bs"]
+}
+
 html_static_path = ["_static"]
+html_css_files = [
+    "custom.css"
+]
 
 # -- Options for manual page output ------------------------------------------
 
