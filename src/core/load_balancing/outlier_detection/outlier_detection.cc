@@ -53,6 +53,9 @@
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/telemetry/metrics.h"
+#include "src/core/telemetry/stats.h"
+#include "src/core/telemetry/stats_data.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
@@ -80,6 +83,31 @@ using ::grpc_event_engine::experimental::EventEngine;
 
 constexpr absl::string_view kOutlierDetection =
     "outlier_detection_experimental";
+
+// Metric label constants
+constexpr absl::string_view kMetricLabelDetectionMethod = "grpc.lb.outlier_detection.detection_method";
+constexpr absl::string_view kMetricLabelUnenforcedReason = "grpc.lb.outlier_detection.unenforced_reason";
+// TODO: Add backend_service label when A75 is implemented
+// constexpr absl::string_view kMetricLabelBackendService = "grpc.lb.backend_service";
+
+// Metric definitions
+const auto kMetricEjectionsEnforced =
+    GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        "grpc.lb.outlier_detection.ejections_enforced",
+        "EXPERIMENTAL. Enforced outlier ejections by ejection reason.",
+        "{ejection}", false)
+        .Labels(kMetricLabelTarget, kMetricLabelDetectionMethod)
+        // .OptionalLabels(kMetricLabelBackendService)  // TODO: Add when A75 is implemented
+        .Build();
+
+const auto kMetricEjectionsUnenforced =
+    GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        "grpc.lb.outlier_detection.ejections_unenforced",
+        "EXPERIMENTAL. Unenforced outlier ejections due to either max ejection percentage or enforcement_percentage.",
+        "{ejection}", false)
+        .Labels(kMetricLabelTarget, kMetricLabelUnenforcedReason)
+        // .OptionalLabels(kMetricLabelBackendService)  // TODO: Add when A75 is implemented
+        .Build();
 
 // Config for xDS Cluster Impl LB policy.
 class OutlierDetectionLbConfig final : public LoadBalancingPolicy::Config {
@@ -935,6 +963,26 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
               << "] ejecting candidate";
           endpoint_state->Eject(time_now);
           ++ejected_host_count;
+          
+          // Report metric for enforced ejection
+          auto& stats_plugins = parent_->channel_control_helper()->GetStatsPluginGroup();
+          stats_plugins.AddCounter(kMetricEjectionsEnforced, 1,
+                                   {parent_->channel_control_helper()->GetTarget(), "success_rate"},
+                                   {});
+          // TODO: Add backend_service label when A75 is implemented
+        } else {
+          // Report metric for unenforced ejection
+          auto& stats_plugins = parent_->channel_control_helper()->GetStatsPluginGroup();
+          std::string unenforced_reason;
+          if (random_key >= config.success_rate_ejection->enforcement_percentage) {
+            unenforced_reason = "enforcement_percentage";
+          } else {
+            unenforced_reason = "max_ejection_overflow";
+          }
+          stats_plugins.AddCounter(kMetricEjectionsUnenforced, 1,
+                                   {parent_->channel_control_helper()->GetTarget(), unenforced_reason},
+                                   {});
+          // TODO: Add backend_service label when A75 is implemented
         }
       }
     }
@@ -979,6 +1027,26 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
               << "] ejecting candidate";
           endpoint_state->Eject(time_now);
           ++ejected_host_count;
+          
+          // Report metric for enforced ejection
+          auto& stats_plugins = parent_->channel_control_helper()->GetStatsPluginGroup();
+          stats_plugins.AddCounter(kMetricEjectionsEnforced, 1,
+                                   {parent_->channel_control_helper()->GetTarget(), "failure_percentage"},
+                                   {});
+          // TODO: Add backend_service label when A75 is implemented
+        } else {
+          // Report metric for unenforced ejection
+          auto& stats_plugins = parent_->channel_control_helper()->GetStatsPluginGroup();
+          std::string unenforced_reason;
+          if (random_key >= config.failure_percentage_ejection->enforcement_percentage) {
+            unenforced_reason = "enforcement_percentage";
+          } else {
+            unenforced_reason = "max_ejection_overflow";
+          }
+          stats_plugins.AddCounter(kMetricEjectionsUnenforced, 1,
+                                   {parent_->channel_control_helper()->GetTarget(), unenforced_reason},
+                                   {});
+          // TODO: Add backend_service label when A75 is implemented
         }
       }
     }
