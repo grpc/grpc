@@ -389,6 +389,7 @@ grpc_cc_library(
         "absl/memory",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/synchronization",
         "gtest",
     ],
     linkstatic = True,
