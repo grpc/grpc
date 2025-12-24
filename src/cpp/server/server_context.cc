@@ -316,7 +316,7 @@ void ServerContextBase::BeginCompletionOp(
   } else if (has_notify_when_done_tag_) {
     completion_op_->set_tag(async_notify_when_done_tag_);
   }
-  call->PerformOps(completion_op_);
+  completion_op_->FillOps(call);
 }
 
 internal::CompletionQueueTag* ServerContextBase::GetCompletionOpTag() {
