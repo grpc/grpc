@@ -931,7 +931,7 @@ bool Subchannel::PublishTransportLocked() {
         std::exchange(connecting_result_.transport, nullptr)
             ->client_transport());
     InterceptionChainBuilder builder(
-        connecting_result_.channel_args.SetObject(transport.get()));
+        connecting_result_.channel_args.SetObject(transport.get()), nullptr);
     if (channelz_node_ != nullptr) {
       // TODO(ctiller): If/when we have a good way to access the subchannel
       // from a filter (maybe GetContext<Subchannel>?), consider replacing

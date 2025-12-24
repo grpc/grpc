@@ -433,7 +433,8 @@ TEST(ChannelInitTest, CanCreateFilterWithCall) {
   auto init = b.Build();
   int p = 0;
   InterceptionChainBuilder chain_builder{
-      ChannelArgs().Set("foo", 1).Set("p", ChannelArgs::UnownedPointer(&p))};
+      ChannelArgs().Set("foo", 1).Set("p", ChannelArgs::UnownedPointer(&p)),
+      nullptr};
   init.AddToInterceptionChainBuilder(GRPC_CLIENT_CHANNEL, chain_builder);
   int handled = 0;
   auto stack = chain_builder.Build(MakeCallDestinationFromHandlerFunction(

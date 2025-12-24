@@ -1849,6 +1849,7 @@ grpc_cc_library(
         "//bazel:alt_grpc_base_legacy",
     ],
     deps = [
+        "bitset",
         "construct_destruct",
         "context",
         "event_engine_memory_allocator",
@@ -10285,6 +10286,7 @@ grpc_cc_library(
         "call/interception_chain.h",
     ],
     deps = [
+        "call_arena_allocator",
         "call_destination",
         "call_filters",
         "call_spine",
@@ -10292,6 +10294,7 @@ grpc_cc_library(
         "match",
         "metadata",
         "ref_counted",
+        "resource_quota",
         "//:gpr_platform",
         "//:grpc_trace",
     ],
