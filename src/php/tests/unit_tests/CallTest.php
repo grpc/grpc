@@ -145,14 +145,14 @@ class CallTest extends \PHPUnit\Framework\TestCase
         $result = $this->call->startBatch($batch);
     }
 
-    public function testInvalidConstuctor()
+    public function testInvalidConstructor()
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->call = new Grpc\Call();
         $this->assertNull($this->call);
     }
 
-    public function testInvalidConstuctor2()
+    public function testInvalidConstructor2()
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->call = new Grpc\Call('hi', 'hi', 'hi');
