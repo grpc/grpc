@@ -1002,7 +1002,7 @@ void Http2ClientTransport::ActOnFlowControlAction(
     if (GPR_LIKELY(stream != nullptr)) {
       GRPC_DCHECK_GT(stream->GetStreamId(), 0u);
       if (stream->CanSendWindowUpdateFrames()) {
-        window_update_list_.insert(stream->GetStreamId());
+        flow_control_.AddStreamToWindowUpdateList(stream->GetStreamId());
         GRPC_HTTP2_CLIENT_DLOG
             << "Http2ClientTransport::ActOnFlowControlAction "
                "added stream "
@@ -1406,22 +1406,12 @@ void Http2ClientTransport::MaybeSpawnWaitForSettingsTimeout() {
 
 void Http2ClientTransport::MaybeGetWindowUpdateFrames(SliceBuffer& output_buf) {
   std::vector<Http2Frame> frames;
-  frames.reserve(window_update_list_.size() + 1);
-  uint32_t window_size =
-      flow_control_.DesiredAnnounceSize(/*writing_anyway=*/true);
-  if (window_size > 0) {
-    GRPC_HTTP2_CLIENT_DLOG
-        << "Http2ClientTransport::MaybeGetWindowUpdateFrames Transport Window "
-           "Update : "
-        << window_size;
-    frames.emplace_back(Http2WindowUpdateFrame{/*stream_id=*/0, window_size});
-    flow_control_.SentUpdate(window_size);
-  }
-  for (const uint32_t stream_id : window_update_list_) {
+  frames.reserve(flow_control_.window_update_list_size() + 1);
+  MaybeAddTransportWindowUpdateFrame(flow_control_, frames);
+  for (const uint32_t stream_id : flow_control_.DrainWindowUpdateList()) {
     RefCountedPtr<Stream> stream = LookupStream(stream_id);
     MaybeAddStreamWindowUpdateFrame(stream, frames);
   }
-  window_update_list_.clear();
   if (!frames.empty()) {
     GRPC_HTTP2_CLIENT_DLOG
         << "Http2ClientTransport::MaybeGetWindowUpdateFrames Total Window "
