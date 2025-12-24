@@ -16,13 +16,11 @@
 //
 //
 
+#include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
 #include "absl/log/log.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/port.h"
