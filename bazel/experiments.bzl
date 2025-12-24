@@ -67,6 +67,7 @@ EXPERIMENT_ENABLES = {
     "transport_state_watcher": "transport_state_watcher",
     "tsi_frame_protector_without_locks": "tsi_frame_protector_without_locks",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
+    "xds_channel_filter_chain_per_route": "xds_channel_filter_chain_per_route",
 }
 
 EXPERIMENT_POLLERS = [
@@ -155,6 +156,10 @@ EXPERIMENTS = {
             "xds_end2end_test": [
                 "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
+                "xds_channel_filter_chain_per_route",
+            ],
+            "xds_test": [
+                "xds_channel_filter_chain_per_route",
             ],
         },
         "on": {
@@ -263,6 +268,10 @@ EXPERIMENTS = {
             "xds_end2end_test": [
                 "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
+                "xds_channel_filter_chain_per_route",
+            ],
+            "xds_test": [
+                "xds_channel_filter_chain_per_route",
             ],
         },
         "on": {
@@ -371,6 +380,10 @@ EXPERIMENTS = {
             "xds_end2end_test": [
                 "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
+                "xds_channel_filter_chain_per_route",
+            ],
+            "xds_test": [
+                "xds_channel_filter_chain_per_route",
             ],
         },
         "on": {

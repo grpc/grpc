@@ -158,9 +158,9 @@ TEST_F(GcpAuthenticationFilterTest, CreateFailsXdsConfigNotFoundInChannelArgs) {
       ChannelArgs().SetObject(MakeServiceConfig(kServiceConfigJson));
   auto filter = GcpAuthenticationFilter::Create(
       channel_args, ChannelFilter::Args(/*instance_id=*/0));
-  EXPECT_EQ(filter.status(),
-            absl::InvalidArgumentError(
-                "gcp_auth: xds config not found in channel args"));
+  EXPECT_EQ(
+      filter.status(),
+      absl::InternalError("gcp_auth: xds config not found in channel args"));
 }
 
 TEST_F(GcpAuthenticationFilterTest, FailsCallIfNoXdsClusterAttribute) {
@@ -175,7 +175,8 @@ TEST_F(GcpAuthenticationFilterTest, FailsCallIfNoXdsClusterAttribute) {
   auto channel_args = MakeChannelArgs(kServiceConfigJson, kClusterName,
                                       kFilterInstanceName, nullptr);
   auto blackboard = MakeBlackboard(kFilterInstanceName);
-  Call call(MakeChannel(channel_args, blackboard.get()).value());
+  Call call(
+      MakeChannel(channel_args, /*config=*/nullptr, blackboard.get()).value());
   call.arena()->New<ServiceConfigCallData>(call.arena());
   call.Start(call.NewClientMetadata());
   EXPECT_EVENT(Finished(
@@ -201,7 +202,8 @@ TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterAttributeHasWrongPrefix) {
       kServiceConfigJson, kClusterName, kFilterInstanceName,
       std::make_unique<XdsGcpAuthnAudienceMetadataValue>(kAudience));
   auto blackboard = MakeBlackboard(kFilterInstanceName);
-  Call call(MakeChannel(channel_args, blackboard.get()).value());
+  Call call(
+      MakeChannel(channel_args, /*config=*/nullptr, blackboard.get()).value());
   auto* service_config_call_data =
       call.arena()->New<ServiceConfigCallData>(call.arena());
   XdsClusterAttribute xds_cluster_attribute(kClusterName);
@@ -226,7 +228,8 @@ TEST_F(GcpAuthenticationFilterTest, FailsCallIfClusterNotPresentInXdsConfig) {
   auto channel_args = MakeChannelArgs(kServiceConfigJson, /*cluster=*/"",
                                       /*filter_instance_name=*/"", nullptr);
   auto blackboard = MakeBlackboard("gcp_authn_filter");
-  Call call(MakeChannel(channel_args, blackboard.get()).value());
+  Call call(
+      MakeChannel(channel_args, /*config=*/nullptr, blackboard.get()).value());
   auto* service_config_call_data =
       call.arena()->New<ServiceConfigCallData>(call.arena());
   std::string cluster_name_with_prefix = absl::StrCat("cluster:", kClusterName);
@@ -255,7 +258,8 @@ TEST_F(GcpAuthenticationFilterTest, FailsCallIfClusterNotOkayInXdsConfig) {
                           .SetObject(MakeXdsConfigWithCluster(
                               kClusterName, absl::UnavailableError("nope")));
   auto blackboard = MakeBlackboard("gcp_authn_filter");
-  Call call(MakeChannel(channel_args, blackboard.get()).value());
+  Call call(
+      MakeChannel(channel_args, /*config=*/nullptr, blackboard.get()).value());
   auto* service_config_call_data =
       call.arena()->New<ServiceConfigCallData>(call.arena());
   std::string cluster_name_with_prefix = absl::StrCat("cluster:", kClusterName);
@@ -286,7 +290,8 @@ TEST_F(GcpAuthenticationFilterTest,
           .SetObject(MakeXdsConfigWithCluster(
               kClusterName, XdsConfig::ClusterConfig(nullptr, nullptr, "")));
   auto blackboard = MakeBlackboard("gcp_authn_filter");
-  Call call(MakeChannel(channel_args, blackboard.get()).value());
+  Call call(
+      MakeChannel(channel_args, /*config=*/nullptr, blackboard.get()).value());
   auto* service_config_call_data =
       call.arena()->New<ServiceConfigCallData>(call.arena());
   std::string cluster_name_with_prefix = absl::StrCat("cluster:", kClusterName);
@@ -315,7 +320,8 @@ TEST_F(GcpAuthenticationFilterTest, NoOpIfClusterHasNoAudience) {
   auto channel_args = MakeChannelArgs(kServiceConfigJson, kClusterName,
                                       kFilterInstanceName, nullptr);
   auto blackboard = MakeBlackboard(kFilterInstanceName);
-  Call call(MakeChannel(channel_args, blackboard.get()).value());
+  Call call(
+      MakeChannel(channel_args, /*config=*/nullptr, blackboard.get()).value());
   auto* service_config_call_data =
       call.arena()->New<ServiceConfigCallData>(call.arena());
   std::string cluster_name_with_prefix = absl::StrCat("cluster:", kClusterName);
@@ -343,7 +349,8 @@ TEST_F(GcpAuthenticationFilterTest, FailsCallIfAudienceMetadataWrongType) {
       MakeChannelArgs(kServiceConfigJson, kClusterName, kFilterInstanceName,
                       std::make_unique<XdsStructMetadataValue>(Json()));
   auto blackboard = MakeBlackboard(kFilterInstanceName);
-  Call call(MakeChannel(channel_args, blackboard.get()).value());
+  Call call(
+      MakeChannel(channel_args, /*config=*/nullptr, blackboard.get()).value());
   auto* service_config_call_data =
       call.arena()->New<ServiceConfigCallData>(call.arena());
   std::string cluster_name_with_prefix = absl::StrCat("cluster:", kClusterName);
@@ -374,7 +381,8 @@ TEST_F(GcpAuthenticationFilterTest, SetsCallCredsIfClusterHasAudience) {
       kServiceConfigJson, kClusterName, kFilterInstanceName,
       std::make_unique<XdsGcpAuthnAudienceMetadataValue>(kAudience));
   auto blackboard = MakeBlackboard(kFilterInstanceName);
-  Call call(MakeChannel(channel_args, blackboard.get()).value());
+  Call call(
+      MakeChannel(channel_args, /*config=*/nullptr, blackboard.get()).value());
   auto* service_config_call_data =
       call.arena()->New<ServiceConfigCallData>(call.arena());
   std::string cluster_name_with_prefix = absl::StrCat("cluster:", kClusterName);
