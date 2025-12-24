@@ -5145,6 +5145,7 @@ grpc_cc_library(
         "load_file",
         "slice",
         "slice_refcount",
+        "status_conversion",
         "status_helper",
         "time",
         "token_fetcher_credentials",
