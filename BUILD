@@ -646,7 +646,7 @@ grpc_cc_library(
         "grpc_http_filters",
         "grpc_security_base",
         "grpc_trace",
-        "http_connect_handshaker",
+        "http_connect_client_handshaker",
         "iomgr_timer",
         "server",
         "transport_auth_context",
@@ -743,7 +743,7 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_security_base",
         "grpc_trace",
-        "http_connect_handshaker",
+        "http_connect_client_handshaker",
         "httpcli",
         "iomgr_timer",
         "promise",
@@ -3496,9 +3496,9 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "http_connect_handshaker",
+    name = "http_connect_client_handshaker",
     srcs = [
-        "//src/core:handshaker/http_connect/http_connect_handshaker.cc",
+        "//src/core:handshaker/http_connect/http_connect_client_handshaker.cc",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -3507,7 +3507,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     public_hdrs = [
-        "//src/core:handshaker/http_connect/http_connect_handshaker.h",
+        "//src/core:handshaker/http_connect/http_connect_client_handshaker.h",
     ],
     visibility = ["//bazel:alt_grpc_base_legacy"],
     deps = [

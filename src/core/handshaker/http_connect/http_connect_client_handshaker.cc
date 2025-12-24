@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/handshaker/http_connect/http_connect_handshaker.h"
+#include "src/core/handshaker/http_connect/http_connect_client_handshaker.h"
 
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
@@ -58,17 +58,17 @@ namespace grpc_core {
 
 namespace {
 
-class HttpConnectHandshaker : public Handshaker {
+class HttpConnectClientHandshaker : public Handshaker {
  public:
-  HttpConnectHandshaker();
-  absl::string_view name() const override { return "http_connect"; }
+  HttpConnectClientHandshaker();
+  absl::string_view name() const override { return "http_connect_client"; }
   void DoHandshake(
       HandshakerArgs* args,
       absl::AnyInvocable<void(absl::Status)> on_handshake_done) override;
   void Shutdown(absl::Status error) override;
 
  private:
-  ~HttpConnectHandshaker() override;
+  ~HttpConnectClientHandshaker() override;
   void HandshakeFailedLocked(absl::Status error)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   void FinishLocked(absl::Status error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
@@ -93,14 +93,14 @@ class HttpConnectHandshaker : public Handshaker {
   grpc_http_response http_response_ ABSL_GUARDED_BY(mu_);
 };
 
-HttpConnectHandshaker::~HttpConnectHandshaker() {
+HttpConnectClientHandshaker::~HttpConnectClientHandshaker() {
   grpc_http_parser_destroy(&http_parser_);
   grpc_http_response_destroy(&http_response_);
 }
 
 // If the handshake failed or we're shutting down, clean up and invoke the
 // callback with the error.
-void HttpConnectHandshaker::HandshakeFailedLocked(absl::Status error) {
+void HttpConnectClientHandshaker::HandshakeFailedLocked(absl::Status error) {
   if (error.ok()) {
     // If we were shut down after an endpoint operation succeeded but
     // before the endpoint callback was invoked, we need to generate our
@@ -117,7 +117,7 @@ void HttpConnectHandshaker::HandshakeFailedLocked(absl::Status error) {
   FinishLocked(std::move(error));
 }
 
-void HttpConnectHandshaker::FinishLocked(absl::Status error) {
+void HttpConnectClientHandshaker::FinishLocked(absl::Status error) {
   InvokeOnHandshakeDone(args_, std::move(on_handshake_done_), std::move(error));
 }
 
@@ -125,9 +125,9 @@ void HttpConnectHandshaker::FinishLocked(absl::Status error) {
 // avoid deadlocks, schedule OnWriteDone on ExecCtx.
 // TODO(roth): This hop will no longer be needed when we migrate to the
 // EventEngine endpoint API.
-void HttpConnectHandshaker::OnWriteDoneScheduler(void* arg,
-                                                 grpc_error_handle error) {
-  auto* handshaker = static_cast<HttpConnectHandshaker*>(arg);
+void HttpConnectClientHandshaker::OnWriteDoneScheduler(
+    void* arg, grpc_error_handle error) {
+  auto* handshaker = static_cast<HttpConnectClientHandshaker*>(arg);
   handshaker->args_->event_engine->Run(
       [handshaker, error = std::move(error)]() mutable {
         ExecCtx exec_ctx;
@@ -136,7 +136,7 @@ void HttpConnectHandshaker::OnWriteDoneScheduler(void* arg,
 }
 
 // Callback invoked when finished writing HTTP CONNECT request.
-void HttpConnectHandshaker::OnWriteDone(absl::Status error) {
+void HttpConnectClientHandshaker::OnWriteDone(absl::Status error) {
   ReleasableMutexLock lock(&mu_);
   if (!error.ok() || args_->endpoint == nullptr) {
     // If the write failed or we're shutting down, clean up and invoke the
@@ -150,8 +150,8 @@ void HttpConnectHandshaker::OnWriteDone(absl::Status error) {
     grpc_endpoint_read(
         args_->endpoint.get(), args_->read_buffer.c_slice_buffer(),
         GRPC_CLOSURE_INIT(&on_read_done_scheduler_,
-                          &HttpConnectHandshaker::OnReadDoneScheduler, this,
-                          grpc_schedule_on_exec_ctx),
+                          &HttpConnectClientHandshaker::OnReadDoneScheduler,
+                          this, grpc_schedule_on_exec_ctx),
         /*urgent=*/true, /*min_progress_size=*/1);
   }
 }
@@ -160,9 +160,9 @@ void HttpConnectHandshaker::OnWriteDone(absl::Status error) {
 // avoid deadlocks, schedule OnReadDone on ExecCtx.
 // TODO(roth): This hop will no longer be needed when we migrate to the
 // EventEngine endpoint API.
-void HttpConnectHandshaker::OnReadDoneScheduler(void* arg,
-                                                grpc_error_handle error) {
-  auto* handshaker = static_cast<HttpConnectHandshaker*>(arg);
+void HttpConnectClientHandshaker::OnReadDoneScheduler(void* arg,
+                                                      grpc_error_handle error) {
+  auto* handshaker = static_cast<HttpConnectClientHandshaker*>(arg);
   handshaker->args_->event_engine->Run(
       [handshaker, error = std::move(error)]() mutable {
         ExecCtx exec_ctx;
@@ -171,7 +171,7 @@ void HttpConnectHandshaker::OnReadDoneScheduler(void* arg,
 }
 
 // Callback invoked for reading HTTP CONNECT response.
-void HttpConnectHandshaker::OnReadDone(absl::Status error) {
+void HttpConnectClientHandshaker::OnReadDone(absl::Status error) {
   bool done;
   {
     MutexLock lock(&mu_);
@@ -180,7 +180,7 @@ void HttpConnectHandshaker::OnReadDone(absl::Status error) {
   if (done) Unref();
 }
 
-bool HttpConnectHandshaker::OnReadDoneLocked(absl::Status error) {
+bool HttpConnectClientHandshaker::OnReadDoneLocked(absl::Status error) {
   if (!error.ok() || args_->endpoint == nullptr) {
     // If the read failed or we're shutting down, clean up and invoke the
     // callback with the error.
@@ -227,8 +227,8 @@ bool HttpConnectHandshaker::OnReadDoneLocked(absl::Status error) {
     grpc_endpoint_read(
         args_->endpoint.get(), args_->read_buffer.c_slice_buffer(),
         GRPC_CLOSURE_INIT(&on_read_done_scheduler_,
-                          &HttpConnectHandshaker::OnReadDoneScheduler, this,
-                          grpc_schedule_on_exec_ctx),
+                          &HttpConnectClientHandshaker::OnReadDoneScheduler,
+                          this, grpc_schedule_on_exec_ctx),
         /*urgent=*/true, /*min_progress_size=*/1);
     return false;
   }
@@ -248,12 +248,12 @@ bool HttpConnectHandshaker::OnReadDoneLocked(absl::Status error) {
 // Public handshaker methods
 //
 
-void HttpConnectHandshaker::Shutdown(absl::Status /*error*/) {
+void HttpConnectClientHandshaker::Shutdown(absl::Status /*error*/) {
   MutexLock lock(&mu_);
   if (on_handshake_done_ != nullptr) args_->endpoint.reset();
 }
 
-void HttpConnectHandshaker::DoHandshake(
+void HttpConnectClientHandshaker::DoHandshake(
     HandshakerArgs* args,
     absl::AnyInvocable<void(absl::Status)> on_handshake_done) {
   // Check for HTTP CONNECT channel arg.
@@ -323,12 +323,12 @@ void HttpConnectHandshaker::DoHandshake(
   grpc_endpoint_write(
       args->endpoint.get(), write_buffer_.c_slice_buffer(),
       GRPC_CLOSURE_INIT(&on_write_done_scheduler_,
-                        &HttpConnectHandshaker::OnWriteDoneScheduler, this,
-                        grpc_schedule_on_exec_ctx),
+                        &HttpConnectClientHandshaker::OnWriteDoneScheduler,
+                        this, grpc_schedule_on_exec_ctx),
       std::move(write_args));
 }
 
-HttpConnectHandshaker::HttpConnectHandshaker() {
+HttpConnectClientHandshaker::HttpConnectClientHandshaker() {
   grpc_http_parser_init(&http_parser_, GRPC_HTTP_RESPONSE, &http_response_);
 }
 
@@ -336,24 +336,25 @@ HttpConnectHandshaker::HttpConnectHandshaker() {
 // handshaker factory
 //
 
-class HttpConnectHandshakerFactory : public HandshakerFactory {
+class HttpConnectClientHandshakerFactory : public HandshakerFactory {
  public:
   void AddHandshakers(const ChannelArgs& /*args*/,
                       grpc_pollset_set* /*interested_parties*/,
                       HandshakeManager* handshake_mgr) override {
-    handshake_mgr->Add(MakeRefCounted<HttpConnectHandshaker>());
+    handshake_mgr->Add(MakeRefCounted<HttpConnectClientHandshaker>());
   }
   HandshakerPriority Priority() override {
     return HandshakerPriority::kHTTPConnectHandshakers;
   }
-  ~HttpConnectHandshakerFactory() override = default;
+  ~HttpConnectClientHandshakerFactory() override = default;
 };
 
 }  // namespace
 
-void RegisterHttpConnectHandshaker(CoreConfiguration::Builder* builder) {
+void RegisterHttpConnectClientHandshaker(CoreConfiguration::Builder* builder) {
   builder->handshaker_registry()->RegisterHandshakerFactory(
-      HANDSHAKER_CLIENT, std::make_unique<HttpConnectHandshakerFactory>());
+      HANDSHAKER_CLIENT,
+      std::make_unique<HttpConnectClientHandshakerFactory>());
 }
 
 }  // namespace grpc_core
