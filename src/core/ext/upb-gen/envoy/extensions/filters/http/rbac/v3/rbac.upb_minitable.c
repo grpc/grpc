@@ -10,7 +10,6 @@
 #include "upb/generated_code_support.h"
 #include "envoy/extensions/filters/http/rbac/v3/rbac.upb_minitable.h"
 #include "envoy/config/rbac/v3/rbac.upb_minitable.h"
-#include "xds/annotations/v3/status.upb_minitable.h"
 #include "xds/type/matcher/v3/matcher.upb_minitable.h"
 #include "udpa/annotations/migrate.upb_minitable.h"
 #include "udpa/annotations/status.upb_minitable.h"

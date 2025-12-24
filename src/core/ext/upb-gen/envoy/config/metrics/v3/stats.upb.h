@@ -41,6 +41,7 @@ struct envoy_type_matcher_v3_ListStringMatcher;
 struct envoy_type_matcher_v3_StringMatcher;
 struct google_protobuf_Any;
 struct google_protobuf_BoolValue;
+struct google_protobuf_UInt32Value;
 struct google_protobuf_UInt64Value;
 
 
@@ -700,6 +701,23 @@ UPB_INLINE upb_Array* _envoy_config_metrics_v3_HistogramBucketSettings_buckets_m
   }
   return arr;
 }
+UPB_INLINE void envoy_config_metrics_v3_HistogramBucketSettings_clear_bins(envoy_config_metrics_v3_HistogramBucketSettings* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(20, 32), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_metrics_v3_HistogramBucketSettings_bins(const envoy_config_metrics_v3_HistogramBucketSettings* msg) {
+  const struct google_protobuf_UInt32Value* default_val = NULL;
+  const struct google_protobuf_UInt32Value* ret;
+  const upb_MiniTableField field = {3, UPB_SIZE(20, 32), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt32Value_msg_init);
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool envoy_config_metrics_v3_HistogramBucketSettings_has_bins(const envoy_config_metrics_v3_HistogramBucketSettings* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(20, 32), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
+}
 
 UPB_INLINE void envoy_config_metrics_v3_HistogramBucketSettings_set_match(envoy_config_metrics_v3_HistogramBucketSettings *msg, struct envoy_type_matcher_v3_StringMatcher* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -741,6 +759,19 @@ UPB_INLINE bool envoy_config_metrics_v3_HistogramBucketSettings_add_buckets(envo
   UPB_PRIVATE(_upb_Array_Set)
   (arr, arr->UPB_PRIVATE(size) - 1, &val, sizeof(val));
   return true;
+}
+UPB_INLINE void envoy_config_metrics_v3_HistogramBucketSettings_set_bins(envoy_config_metrics_v3_HistogramBucketSettings *msg, struct google_protobuf_UInt32Value* value) {
+  const upb_MiniTableField field = {3, UPB_SIZE(20, 32), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt32Value_msg_init);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+}
+UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_metrics_v3_HistogramBucketSettings_mutable_bins(envoy_config_metrics_v3_HistogramBucketSettings* msg, upb_Arena* arena) {
+  struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_config_metrics_v3_HistogramBucketSettings_bins(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_UInt32Value*)_upb_Message_New(&google__protobuf__UInt32Value_msg_init, arena);
+    if (sub) envoy_config_metrics_v3_HistogramBucketSettings_set_bins(msg, sub);
+  }
+  return sub;
 }
 
 /* envoy.config.metrics.v3.StatsdSink */
