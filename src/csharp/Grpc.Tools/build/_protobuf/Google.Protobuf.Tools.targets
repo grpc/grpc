@@ -3,7 +3,7 @@
   <PropertyGroup>
     <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     <!-- We allow a non-C# generator be set by the user, but skip adding outputs to Compile in this case. -->
-    <Protobuf_Generator Condition=" '$(Protobuf_Generator)' == '' and '$(Language)' == 'C#' ">CSharp</Protobuf_Generator>
+    <Protobuf_Generator Condition=" '$(Protobuf_Generator)' == '' and '$(MSBuildProjectExtension)' == 'csproj' ">CSharp</Protobuf_Generator>
     <!-- Configuration is passing the smoke test. -->
     <Protobuf_ProjectSupported Condition=" '$(Protobuf_Generator)' != '' ">true</Protobuf_ProjectSupported>
     <!-- Allow assembly file to be specified externally for testing by setting property _Protobuf_MsBuildAssembly -->
@@ -22,7 +22,7 @@
     <Protobuf_DepFilesPath Condition=" '$(Protobuf_DepFilesPath)' == '' ">$(Protobuf_IntermediatePath)</Protobuf_DepFilesPath>
   </PropertyGroup>
 
-  <ItemDefinitionGroup Condition=" '$(Protobuf_ProjectSupported)' == 'true' and '$(Language)' == 'C#' ">
+  <ItemDefinitionGroup Condition=" '$(Protobuf_ProjectSupported)' == 'true' and '$(MSBuildProjectExtension)' == 'csproj' ">
     <Protobuf>
       <Access Condition="'%(Protobuf.Access)' == '' ">Public</Access>
       <ProtoCompile Condition="'%(Protobuf.ProtoCompile)' == '' ">True</ProtoCompile>
@@ -33,7 +33,7 @@
     </Protobuf>
   </ItemDefinitionGroup>
 
-  <ItemGroup Condition=" '$(Protobuf_ProjectSupported)' == 'true' and '$(Language)' == 'C#' ">
+  <ItemGroup Condition=" '$(Protobuf_ProjectSupported)' == 'true' and '$(MSBuildProjectExtension)' == 'csproj' ">
     <PropertyPageSchema Include="$(MSBuildThisFileDirectory)Protobuf.CSharp.xml">
       <Context>File;BrowseObject</Context>
     </PropertyPageSchema>
