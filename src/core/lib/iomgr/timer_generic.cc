@@ -266,6 +266,7 @@ static void timer_list_init() {
 }
 
 static void timer_list_shutdown() {
+  if (!g_shared_mutables.initialized) return;
   size_t i;
   run_some_expired_timers(grpc_core::Timestamp::InfFuture(), nullptr,
                           GRPC_ERROR_CREATE("Timer list shutdown"));
