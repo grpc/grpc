@@ -62,7 +62,7 @@ cd "${dir}/../../.."
 # Clones the API reference GitHub Pages branch
 PAGES_PATH="/tmp/gh-pages"
 rm -rf "${PAGES_PATH}"
-git clone -o upstream --single-branch https://github.com/grpc/grpc -b gh-pages "${PAGES_PATH}"
+git clone -o origin --single-branch https://github.com/sreenithi/grpc -b gh-pages "${PAGES_PATH}"
 
 # Generates Core / C++ / ObjC / PHP documents
 rm -rf "${PAGES_PATH}/core" "${PAGES_PATH}/cpp" "${PAGES_PATH}/objc" "${PAGES_PATH}/php"
