@@ -33,6 +33,7 @@
 #include "src/core/credentials/transport/channel_creds_registry.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/credentials/transport/google_default/google_default_credentials.h"  // IWYU pragma: keep
+#include "src/core/credentials/transport/ssl/ssl_credentials.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
 #include "src/core/credentials/transport/tls/tls_credentials.h"
@@ -42,6 +43,7 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -242,6 +244,15 @@ void RegisterChannelDefaultCreds(CoreConfiguration::Builder* builder) {
       std::make_unique<InsecureChannelCredsFactory>());
   builder->channel_creds_registry()->RegisterChannelCredsFactory(
       std::make_unique<FakeChannelCredsFactory>());
+}
+
+void RegisterAuthComparators(CoreConfiguration::Builder* builder) {
+  builder->auth_context_comparator_registry()->RegisterComparator(
+      std::string(grpc_ssl_credentials::Type().name()),
+      std::make_unique<absl::AnyInvocable<bool(const grpc_auth_context*,
+                                               const grpc_auth_context*)>>(
+          [&](const grpc_auth_context* ctx1, const grpc_auth_context* ctx2)
+              -> bool { return SslLeafHashComparator(ctx1, ctx2); }));
 }
 
 }  // namespace grpc_core

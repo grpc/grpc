@@ -25,9 +25,12 @@
 
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/tsi/ssl_transport_security.h"
-#include "src/core/util/crash.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "test/core/test_util/test_config.h"
 #include "gtest/gtest.h"
+
+using grpc_core::MakeRefCounted;
+using grpc_core::RefCountedPtr;
 
 TEST(SslCredentialsTest, ConvertGrpcToTsiCertPairs) {
   grpc_ssl_pem_key_cert_pair grpc_pairs[] = {{"private_key1", "cert_chain1"},
@@ -57,6 +60,61 @@ TEST(SslCredentialsTest, ConvertGrpcToTsiCertPairs) {
 
     grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_pairs, num_pairs);
   }
+}
+
+class SslLeafHashComparatorTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    ctx1_ = MakeRefCounted<grpc_auth_context>(nullptr);
+    ctx2_ = MakeRefCounted<grpc_auth_context>(nullptr);
+  }
+
+  void TearDown() override {
+    ctx1_.reset();
+    ctx2_.reset();
+  }
+
+  RefCountedPtr<grpc_auth_context> ctx1_;
+  RefCountedPtr<grpc_auth_context> ctx2_;
+};
+
+TEST_F(SslLeafHashComparatorTest, BothEmpty) {
+  EXPECT_FALSE(SslLeafHashComparator(ctx1_.get(), ctx2_.get()));
+}
+
+TEST_F(SslLeafHashComparatorTest, OneEmpty) {
+  grpc_auth_context_add_cstring_property(
+      ctx1_.get(), GRPC_X509_PEM_CERT_PROPERTY_NAME, "cert");
+  EXPECT_FALSE(SslLeafHashComparator(ctx1_.get(), ctx2_.get()));
+  EXPECT_FALSE(SslLeafHashComparator(ctx2_.get(), ctx1_.get()));
+}
+
+TEST_F(SslLeafHashComparatorTest, Match) {
+  grpc_auth_context_add_cstring_property(
+      ctx1_.get(), GRPC_X509_PEM_CERT_PROPERTY_NAME, "cert");
+  grpc_auth_context_add_cstring_property(
+      ctx2_.get(), GRPC_X509_PEM_CERT_PROPERTY_NAME, "cert");
+  EXPECT_TRUE(SslLeafHashComparator(ctx1_.get(), ctx2_.get()));
+}
+
+TEST_F(SslLeafHashComparatorTest, Mismatch) {
+  grpc_auth_context_add_cstring_property(
+      ctx1_.get(), GRPC_X509_PEM_CERT_PROPERTY_NAME, "cert1");
+  grpc_auth_context_add_cstring_property(
+      ctx2_.get(), GRPC_X509_PEM_CERT_PROPERTY_NAME, "cert2");
+  EXPECT_FALSE(SslLeafHashComparator(ctx1_.get(), ctx2_.get()));
+}
+
+TEST_F(SslLeafHashComparatorTest, IgnoresOtherProperties) {
+  grpc_auth_context_add_cstring_property(
+      ctx1_.get(), GRPC_X509_PEM_CERT_PROPERTY_NAME, "cert");
+  grpc_auth_context_add_cstring_property(ctx1_.get(), "other_prop", "val1");
+
+  grpc_auth_context_add_cstring_property(
+      ctx2_.get(), GRPC_X509_PEM_CERT_PROPERTY_NAME, "cert");
+  grpc_auth_context_add_cstring_property(ctx2_.get(), "other_prop", "val2");
+
+  EXPECT_TRUE(SslLeafHashComparator(ctx1_.get(), ctx2_.get()));
 }
 
 int main(int argc, char** argv) {

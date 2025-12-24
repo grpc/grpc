@@ -6680,11 +6680,15 @@ grpc_cc_library(
     srcs = [
         "credentials/transport/channel_creds_registry_init.cc",
     ],
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/strings",
+    ],
     deps = [
         "channel_creds_registry",
         "grpc_fake_credentials",
         "grpc_google_default_credentials",
+        "grpc_ssl_credentials",
         "grpc_tls_credentials",
         "json",
         "json_args",
