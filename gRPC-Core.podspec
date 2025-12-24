@@ -576,7 +576,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/ping_promise.h',
                       'src/core/ext/transport/chttp2/transport/ping_rate_policy.cc',
                       'src/core/ext/transport/chttp2/transport/ping_rate_policy.h',
-                      'src/core/ext/transport/chttp2/transport/security_frame.cc',
                       'src/core/ext/transport/chttp2/transport/security_frame.h',
                       'src/core/ext/transport/chttp2/transport/stream.h',
                       'src/core/ext/transport/chttp2/transport/stream_data_queue.h',
