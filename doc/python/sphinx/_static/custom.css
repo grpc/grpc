@@ -1,43 +1,36 @@
-dl.field-list > dt {
-    word-break: keep-all !important;
-}
-.document {
-  width: 90% !important;
-  margin: 0 auto;
-  display: flex;
-}
-.sphinxsidebar {
-    overflow-y: scroll;
-    top: 0;
-    bottom: 0;
-    width: 35% !important;
-    flex-shrink: 0 !important;
-    min-width: 340px !important;
-    position: unset !important;
-}
-.bodywrapper {
-  margin: auto !important;
-}
-.body {
-  max-width: 100% !important;
-  min-width: 800px !important;
-}
-.footer {
-  margin: 20px 50px 30px auto !important;
+dl.field-list>dt {
+  word-break: keep-all !important;
 }
 
-@media (max-width: 875px) {
-  .document {
-    flex-direction: column;
+/* Sticky Navigation Header for Mobile View */
+@media screen and (max-width: 875px) {
+
+  /* Aggressively ensure no parent container restricts the sticky position or clips it */
+  html,
+  body,
+  .wy-grid-for-nav,
+  .wy-nav-content-wrap {
+    overflow: visible !important;
+    height: auto !important;
+    /* Prevent parent height constraints */
   }
-  .sphinxsidebar {
+
+  /* Fixed/Sticky Mobile Header */
+  .wy-nav-top {
+    position: fixed !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    /* z-index: 1000 !important;
     width: 100% !important;
-    background: white !important;
+    margin: 0 !important;
+    left: 0 !important;
+    height: 50px !important;
+    display: flex !important;
+    align-items: center !important; */
   }
-  .sphinxsidebar a {
-    color: #444 !important;
-  }
-  .sphinxsidebar h3, .sphinxsidebar h4, .sphinxsidebar p, .sphinxsidebar h3 a {
-    color: #444 !important;
-  }
+
+  /* Adjust content padding to compensate for fixed header */
+  /* .wy-nav-content-wrap {
+    padding-top: 50px !important;
+  } */
 }
