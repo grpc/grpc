@@ -941,6 +941,11 @@ bool PythonGrpcGenerator::Generate(const FileDescriptor* file,
                                    const std::string& parameter,
                                    GeneratorContext* context,
                                    std::string* error) const {
+  if (file->service_count() == 0) {
+    // Nothing to do be done for this file.
+    return true;
+  }
+
   // Get output file name.
   std::string pb2_file_name;
   std::string pb2_grpc_file_name;
