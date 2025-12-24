@@ -8602,9 +8602,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "http2_security_frame",
-    srcs = [
-        "ext/transport/chttp2/transport/security_frame.cc",
-    ],
     hdrs = [
         "ext/transport/chttp2/transport/security_frame.h",
     ],
