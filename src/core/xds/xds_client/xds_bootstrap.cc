@@ -28,11 +28,15 @@ namespace grpc_core {
 // TODO(roth,apolcyn): remove this federation env var after the 1.55
 // release.
 bool XdsFederationEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
-  if (!value.has_value()) return true;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
+  // disabled it to true for testing b/459985396 as per recommendation from TD
+  // team. This is a temporary measure and will be reverted back once the
+  // testing is complete.
+  return false;
+  // auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_FEDERATION");
+  // if (!value.has_value()) return true;
+  // bool parsed_value;
+  // bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  // return parse_succeeded && parsed_value;
 }
 
 // TODO(roth): Remove this once the feature passes interop tests.
