@@ -84,6 +84,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/slice_type.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/load_reporting.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/passive_listener.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/private_key_signer.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/slice_buffer.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/status.h" role="src" />
@@ -1938,6 +1939,8 @@
     <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/local_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/local_transport_security.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/private_key_offload_util.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/private_key_offload_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl/key_logging/ssl_key_logging.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl/key_logging/ssl_key_logging.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session.h" role="src" />

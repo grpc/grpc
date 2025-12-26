@@ -31,6 +31,23 @@
 
 namespace grpc_core {
 namespace {
+RefCountedPtr<grpc_tls_certificate_provider>
+CreateTestingCertificateProvider(
+    const std::string&  root_cert_info, const PemKeyCertPairList& pem_key_cert_pairs) {
+  auto provider = MakeRefCounted<InMemoryCertificateProvider>();
+  provider->UpdateRoot(std::make_shared<RootCertInfo>(root_cert_info));
+  provider->UpdateIdentity(pem_key_cert_pairs);
+  return provider;
+}
+
+PemKeyCertPairList MakeCertKeyPairs(const std::string&  private_key,
+                                    const std::string&  certs) {
+  if (private_key.empty() && certs.empty()) {
+    return {};
+  }
+  return PemKeyCertPairList{PemKeyCertPair(private_key, certs)};
+}
+
 
 TEST(TlsCredentialsOptionsComparatorTest, DifferentCertRequestType) {
   auto* options_1 = grpc_tls_credentials_options_create();
@@ -87,16 +104,6 @@ TEST(TlsCredentialsOptionsComparatorTest, DifferentCheckCallHost) {
   auto* options_2 = grpc_tls_credentials_options_create();
   options_1->set_check_call_host(false);
   options_2->set_check_call_host(true);
-  EXPECT_FALSE(*options_1 == *options_2);
-  EXPECT_FALSE(*options_2 == *options_1);
-  delete options_1;
-  delete options_2;
-}
-TEST(TlsCredentialsOptionsComparatorTest, DifferentCertificateProvider) {
-  auto* options_1 = grpc_tls_credentials_options_create();
-  auto* options_2 = grpc_tls_credentials_options_create();
-  options_1->set_certificate_provider(MakeRefCounted<StaticDataCertificateProvider>("root_cert_1", PemKeyCertPairList()));
-  options_2->set_certificate_provider(MakeRefCounted<StaticDataCertificateProvider>("root_cert_2", PemKeyCertPairList()));
   EXPECT_FALSE(*options_1 == *options_2);
   EXPECT_FALSE(*options_2 == *options_1);
   delete options_1;
@@ -177,6 +184,26 @@ TEST(TlsCredentialsOptionsComparatorTest, DifferentSendClientCaListValues) {
   auto* options_2 = grpc_tls_credentials_options_create();
   options_1->set_send_client_ca_list(false);
   options_2->set_send_client_ca_list(true);
+  EXPECT_FALSE(*options_1 == *options_2);
+  EXPECT_FALSE(*options_2 == *options_1);
+  delete options_1;
+  delete options_2;
+}
+TEST(TlsCredentialsOptionsComparatorTest, DifferentIdentityCertificateProvider) {
+  auto* options_1 = grpc_tls_credentials_options_create();
+  auto* options_2 = grpc_tls_credentials_options_create();
+  options_1->set_identity_certificate_provider(CreateTestingCertificateProvider("", PemKeyCertPairList()));
+  options_2->set_identity_certificate_provider(CreateTestingCertificateProvider("", PemKeyCertPairList()));
+  EXPECT_FALSE(*options_1 == *options_2);
+  EXPECT_FALSE(*options_2 == *options_1);
+  delete options_1;
+  delete options_2;
+}
+TEST(TlsCredentialsOptionsComparatorTest, DifferentRootCertificateProvider) {
+  auto* options_1 = grpc_tls_credentials_options_create();
+  auto* options_2 = grpc_tls_credentials_options_create();
+  options_1->set_root_certificate_provider(CreateTestingCertificateProvider("", PemKeyCertPairList()));
+  options_2->set_root_certificate_provider(CreateTestingCertificateProvider("root_cert_2", PemKeyCertPairList()));
   EXPECT_FALSE(*options_1 == *options_2);
   EXPECT_FALSE(*options_2 == *options_1);
   delete options_1;
