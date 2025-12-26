@@ -1,0 +1,101 @@
+# Copied from https://github.com/bazelbuild/bazel-central-registry/blob/main/modules/googleapis/0.0.0-20240819-fe8ba054a/patches/add_module_bazel.patch
+diff --git a/MODULE.bazel b/MODULE.bazel
+new file mode 100644
+index 000000000..169133e43
+--- /dev/null
++++ b/MODULE.bazel
+@@ -0,0 +1,29 @@
++module(
++    name = "googleapis",
++    version = "0.0.0-20240819-fe8ba054a",
++    repo_name = "com_google_googleapis",
++)
++
++bazel_dep(name = "grpc", version = "1.66.0.bcr.2", repo_name = "com_github_grpc_grpc")
++bazel_dep(name = "grpc-java", version = "1.66.0", repo_name = "io_grpc_grpc_java")
++bazel_dep(name = "protobuf", version = "21.7", repo_name = "com_google_protobuf")
++bazel_dep(name = "rules_go", version = "0.46.0", repo_name = "io_bazel_rules_go")
++bazel_dep(name = "rules_proto", version = "5.3.0-21.7")
++bazel_dep(name = "rules_python", version = "0.31.0")
++
++switched_rules = use_extension("//:extensions.bzl", "switched_rules")
++
++# TODO: Enable support for other languages with bzlmod
++switched_rules.use_languages(
++    cc = True,
++    # csharp = True,
++    # gapic = True,
++    go = True,
++    grpc = True,
++    java = True,
++    # nodejs = True,
++    # php = True,
++    python = True,
++    # ruby = True,
++)
++use_repo(switched_rules, "com_google_googleapis_imports")
+diff --git a/extensions.bzl b/extensions.bzl
+new file mode 100644
+index 000000000..9aa161841
+--- /dev/null
++++ b/extensions.bzl
+@@ -0,0 +1,59 @@
++load(":repository_rules.bzl", "switched_rules_by_language")
++
++_use_languages_tag = tag_class(
++    attrs = {
++        "cc": attr.bool(default = False),
++        "csharp": attr.bool(default = False),
++        "gapic": attr.bool(default = False),
++        "go": attr.bool(default = False),
++        "go_test": attr.bool(default = False),
++        "grpc": attr.bool(default = False),
++        "java": attr.bool(default = False),
++        "nodejs": attr.bool(default = False),
++        "php": attr.bool(default = False),
++        "python": attr.bool(default = False),
++        "ruby": attr.bool(default = False),
++    },
++)
++
++def _switched_rules_impl(ctx):
++    attrs = {}
++    for module in ctx.modules:
++        if not module.is_root:
++            continue
++
++        is_tag_set = False
++        set_tag_name = ""
++
++        for t in module.tags.use_languages:
++            if is_tag_set:
++                fail("Multiple use_language tags are set in the root module: '{}' and '{}'. Only one is allowed.".format(set_tag_name, module.name))
++
++            is_tag_set = True
++            set_tag_name = module.name
++
++            attrs = {
++                "cc": t.cc,
++                "csharp": t.csharp,
++                "gapic": t.gapic,
++                "go": t.go,
++                "go_test": t.go_test,
++                "grpc": t.grpc,
++                "java": t.java,
++                "nodejs": t.nodejs,
++                "php": t.php,
++                "python": t.python,
++                "ruby": t.ruby,
++            }
++
++    switched_rules_by_language(
++        name = "com_google_googleapis_imports",
++        **attrs
++    )
++
++switched_rules = module_extension(
++    implementation = _switched_rules_impl,
++    tag_classes = {
++        "use_languages": _use_languages_tag,
++    },
++)
