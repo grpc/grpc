@@ -37,10 +37,10 @@ tools/bazel \
 tools/bazel \
     --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
     test \
-    --ignore_dev_dependency=false
+    --ignore_dev_dependency=false \
     -- \
     //test/core/config:all \
-    //test/core/util:all \
+    //test/core/util:directory_reader_test \ # TODO(weizheyuan): Replace this with //test/core/util:all once we fixed fuzztest.
     //test/cpp/common:all
 
 # Test if public targets are buildable with openssl and without dev
