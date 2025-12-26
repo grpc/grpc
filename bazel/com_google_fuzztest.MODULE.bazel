@@ -1,0 +1,4 @@
+bazel_dep(name = "fuzztest", version = "20241028.0", dev_dependency = True, repo_name = "com_google_fuzztest")  # mistmached 2023-05-16
+
+# Not directly used, but required by fuzztest and it needs a higher versions to be compatible with abseil-cpp@20250512.1.
+bazel_dep(name = "riegeli", version = "0.0.0-20250706-c4d1f27", dev_dependency = True)
