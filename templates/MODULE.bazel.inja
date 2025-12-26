@@ -28,7 +28,6 @@ bazel_dep(name = "bazel_skylib", version = "1.8.1")
 bazel_dep(name = "boringssl", version = "0.20241024.0")  # mistmatched 20241211
 bazel_dep(name = "c-ares", version = "1.19.1", repo_name = "com_github_cares_cares")
 bazel_dep(name = "envoy_api", version = "0.0.0-20250128-4de3c74")
-bazel_dep(name = "googleapis", version = "0.0.0-20240819-fe8ba054a", repo_name = "com_google_googleapis")
 bazel_dep(name = "googletest", version = "1.17.0", repo_name = "com_google_googletest")
 bazel_dep(name = "opencensus-cpp", version = "0.0.0-20230502-50eb5de.bcr.2", repo_name = "io_opencensus_cpp")
 bazel_dep(name = "openssl", version = "3.3.1.bcr.1")
@@ -39,7 +38,7 @@ bazel_dep(name = "protoc-gen-validate", version = "1.2.1.bcr.1", repo_name = "co
 bazel_dep(name = "re2", version = "2024-07-02.bcr.1", repo_name = "com_googlesource_code_re2")  # mistmached 2022-04-01
 bazel_dep(name = "rules_apple", version = "3.16.0", repo_name = "build_bazel_rules_apple")
 bazel_dep(name = "rules_cc", version = "0.1.1")
-bazel_dep(name = "rules_proto", version = "7.0.2")
+bazel_dep(name = "rules_proto", version = "7.1.0")
 bazel_dep(name = "xds", version = "0.0.0-20240423-555b57e", repo_name = "com_github_cncf_xds")  # mismatched 20231116
 bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
 
@@ -107,5 +106,11 @@ http_archive(
 # Provide repo @com_google_fuzztest.
 include("//bazel:com_google_fuzztest.MODULE.bazel")
 
+# Provides repo @com_google_googleapis.
+include("//bazel:googleapis.MODULE.bazel")
+
 # Provides repo @grpc_custom_exec_properties.
 include("//bazel:grpc_custom_exec_properties.MODULE.bazel")
+
+# Provides repo @google_cloud_cpp
+include("//bazel:google_cloud_cpp.MODULE.bazel")
