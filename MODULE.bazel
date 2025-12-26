@@ -110,8 +110,11 @@ include("//bazel:com_google_fuzztest.MODULE.bazel")
 # Provides repo @grpc_custom_exec_properties.
 include("//bazel:grpc_custom_exec_properties.MODULE.bazel")
 
-http_archive(
-    name = "google_cloud_cpp",
+# Provides repo @google_cloud_cpp
+#include("//bazel:google_cloud_cpp.MODULE.bazel")
+bazel_dep(name = "google_cloud_cpp", version = "2.35.0")
+archive_override(
+    module_name = "google_cloud_cpp",
     sha256 = "81ea28cf9e5bb032d356b0187409f30b1035f8ea5b530675ea248c8a6c0070aa",
     strip_prefix = "google-cloud-cpp-2.35.0",
     urls = [
