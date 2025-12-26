@@ -50,6 +50,26 @@ class HPackCompressor;
 
 namespace hpack_encoder_detail {
 
+struct HPackWriter {
+  GRPC_MUST_USE_RESULT
+  static uint32_t EmitLitHdrWithNonBinaryStringKeyIncIdx(
+      Slice key_slice, Slice value_slice, SliceBuffer& output,
+      HPackEncoderTable& table);
+  GRPC_MUST_USE_RESULT
+  static uint32_t EmitLitHdrWithBinaryStringKeyIncIdx(
+      Slice key_slice, Slice value_slice, SliceBuffer& output,
+      HPackEncoderTable& table, bool use_true_binary_metadata);
+  static void EmitLitHdrWithBinaryStringKeyNotIdx(
+      Slice key_slice, Slice value_slice, SliceBuffer& output,
+      bool use_true_binary_metadata);
+  static void EmitLitHdrWithBinaryStringKeyNotIdx(
+      uint32_t key_index, Slice value_slice, SliceBuffer& output,
+      bool use_true_binary_metadata);
+  static void EmitLitHdrWithNonBinaryStringKeyNotIdx(Slice key_slice,
+                                                     Slice value_slice,
+                                                     SliceBuffer& output);
+};
+
 class Encoder {
  public:
   Encoder(HPackCompressor* compressor, bool use_true_binary_metadata,
@@ -410,6 +430,58 @@ void Encoder::Encode(MetadataTrait,
 inline HPackEncoderTable& Encoder::hpack_table() { return compressor_->table_; }
 
 }  // namespace hpack_encoder_detail
+
+// Class to encode metadata in uncompressed and un-indexed form.
+class RawEncoder {
+ public:
+  explicit RawEncoder(bool is_true_binary_metadata);
+
+  void Encode(const grpc_core::Slice& key, const grpc_core::Slice& value);
+
+  // Status MUST always be encoded at most once.
+  void Encode(grpc_core::GrpcStatusMetadata, grpc_status_code status);
+
+  // Message MUST always be encoded at most once.
+  void Encode(grpc_core::GrpcMessageMetadata, const grpc_core::Slice& message);
+
+  template <typename MetadataTraits>
+  void Encode(const MetadataTraits&,
+              const typename MetadataTraits::ValueType& value);
+
+  uint32_t Length() const { return buffer_.Length(); }
+  void Flush(grpc_slice_buffer* output_buffer) &&;
+
+ private:
+  bool CheckLength(size_t length);
+  void MaybeAppend(SliceBuffer&& buffer);
+
+  // Size limit on all the key values combined. This is set to the minimum
+  // frame size that HTTP/2 can send. This is done to avoid sending a
+  // CONTINUATION frame in all cases.
+  static constexpr uint32_t kMaxSize = (1 << 14u);
+  static constexpr uint32_t kMaxKeyValueSize = /*1kb*/ 1024u;
+  bool status_encoded_ = false;
+  bool message_encoded_ = false;
+  const bool is_true_binary_metadata_ = false;
+  SliceBuffer buffer_;
+};
+
+template <typename MetadataTraits>
+void RawEncoder::Encode(const MetadataTraits&,
+                        const typename MetadataTraits::ValueType& value) {
+  SliceBuffer temp_buffer;
+  if (absl::EndsWith(MetadataTraits::key(), "-bin")) {
+    hpack_encoder_detail::HPackWriter::EmitLitHdrWithBinaryStringKeyNotIdx(
+        Slice::FromCopiedString(MetadataTraits::key()),
+        MetadataValueAsSlice<MetadataTraits>(value).Ref(), temp_buffer,
+        is_true_binary_metadata_);
+  } else {
+    hpack_encoder_detail::HPackWriter::EmitLitHdrWithNonBinaryStringKeyNotIdx(
+        Slice::FromCopiedString(MetadataTraits::key()),
+        MetadataValueAsSlice<MetadataTraits>(value).Ref(), temp_buffer);
+  }
+  MaybeAppend(std::move(temp_buffer));
+}
 
 }  // namespace grpc_core
 
