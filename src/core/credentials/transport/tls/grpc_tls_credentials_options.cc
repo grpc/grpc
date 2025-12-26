@@ -62,18 +62,6 @@ void grpc_tls_credentials_options_set_verify_server_cert(
   options->set_verify_server_cert(verify_server_cert);
 }
 
-void grpc_tls_credentials_options_set_certificate_provider(
-    grpc_tls_credentials_options* options,
-    grpc_tls_certificate_provider* provider) {
-  GRPC_CHECK_NE(options, nullptr);
-  GRPC_CHECK_NE(provider, nullptr);
-  grpc_core::ExecCtx exec_ctx;
-  options->set_root_certificate_provider(
-      provider->Ref(DEBUG_LOCATION, "set_certificate_provider"));
-  options->set_identity_certificate_provider(
-      provider->Ref(DEBUG_LOCATION, "set_certificate_provider"));
-}
-
 void grpc_tls_credentials_options_watch_root_certs(
     grpc_tls_credentials_options* options) {
   GRPC_CHECK_NE(options, nullptr);

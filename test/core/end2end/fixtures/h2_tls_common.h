@@ -177,8 +177,10 @@ class TlsFixture : public SecureFixture {
     options->set_min_tls_version(tls_version_);
     options->set_max_tls_version(tls_version_);
     // Set credential provider.
-    grpc_tls_credentials_options_set_certificate_provider(options,
-                                                          client_provider_);
+    grpc_tls_credentials_options_set_root_certificate_provider(
+        options, client_provider_);
+    grpc_tls_credentials_options_set_identity_certificate_provider(
+        options, client_provider_);
     grpc_tls_credentials_options_watch_root_certs(options);
     grpc_tls_credentials_options_watch_identity_key_cert_pairs(options);
     // Set credential verifier.
@@ -197,8 +199,10 @@ class TlsFixture : public SecureFixture {
     options->set_min_tls_version(tls_version_);
     options->set_max_tls_version(tls_version_);
     // Set credential provider.
-    grpc_tls_credentials_options_set_certificate_provider(options,
-                                                          server_provider_);
+    grpc_tls_credentials_options_set_root_certificate_provider(
+        options, server_provider_);
+    grpc_tls_credentials_options_set_identity_certificate_provider(
+        options, server_provider_);
     grpc_tls_credentials_options_watch_root_certs(options);
     grpc_tls_credentials_options_watch_identity_key_cert_pairs(options);
     // Set client certificate request type.

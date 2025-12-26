@@ -50,10 +50,30 @@ TlsCredentialsOptions::TlsCredentialsOptions(
 
 void TlsCredentialsOptions::set_certificate_provider(
     std::shared_ptr<CertificateProviderInterface> certificate_provider) {
-  certificate_provider_ = certificate_provider;
-  if (certificate_provider_ != nullptr) {
-    grpc_tls_credentials_options_set_certificate_provider(
-        c_credentials_options_, certificate_provider_->c_provider());
+  set_root_certificate_provider(certificate_provider);
+  set_identity_certificate_provider(certificate_provider);
+}
+
+void TlsCredentialsOptions::set_root_certificate_provider(
+    std::shared_ptr<CertificateProviderInterface> certificate_provider) {
+  root_certificate_provider_ = certificate_provider;
+  if (root_certificate_provider_ != nullptr) {
+    grpc_tls_credentials_options_set_root_certificate_provider(
+        c_credentials_options_, root_certificate_provider_->c_provider());
+  }
+  identity_certificate_provider_ = certificate_provider;
+  if (identity_certificate_provider_ != nullptr) {
+    grpc_tls_credentials_options_set_identity_certificate_provider(
+        c_credentials_options_, identity_certificate_provider_->c_provider());
+  }
+}
+
+void TlsCredentialsOptions::set_identity_certificate_provider(
+    std::shared_ptr<CertificateProviderInterface> certificate_provider) {
+  identity_certificate_provider_ = certificate_provider;
+  if (identity_certificate_provider_ != nullptr) {
+    grpc_tls_credentials_options_set_identity_certificate_provider(
+        c_credentials_options_, identity_certificate_provider_->c_provider());
   }
 }
 
