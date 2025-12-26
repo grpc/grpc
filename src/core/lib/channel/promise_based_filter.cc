@@ -2040,6 +2040,7 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
                !batch->recv_trailing_metadata);
     PollContext poll_ctx(this, &flusher);
     Completed(batch->payload->cancel_stream.cancel_error,
+              std::move(batch->payload->cancel_stream.send_trailing_metadata),
               batch->payload->cancel_stream.tarpit, &flusher);
     if (is_last()) {
       batch.CompleteWith(&flusher);
@@ -2159,7 +2160,7 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
 }
 
 // Handle cancellation.
-void ServerCallData::Completed(grpc_error_handle error,
+void ServerCallData::Completed(grpc_error_handle error, ServerMetadataHandle md,
                                bool tarpit_cancellation, Flusher* flusher) {
   GRPC_TRACE_VLOG(channel, 2)
       << LogTag() << "ServerCallData::Completed: send_trailing_state="
@@ -2187,6 +2188,7 @@ void ServerCallData::Completed(grpc_error_handle error,
         batch->cancel_stream = true;
         batch->payload->cancel_stream.cancel_error = error;
         batch->payload->cancel_stream.tarpit = tarpit_cancellation;
+        batch->payload->cancel_stream.send_trailing_metadata = std::move(md);
         flusher->Resume(batch);
       }
       break;
@@ -2319,8 +2321,8 @@ void ServerCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
       << " md=" << recv_trailing_metadata_->DebugString();
   Flusher flusher(this);
   PollContext poll_ctx(this, &flusher);
-  Completed(error, recv_trailing_metadata_->get(GrpcTarPit()).has_value(),
-            &flusher);
+  Completed(error, /*md=*/nullptr,
+            recv_trailing_metadata_->get(GrpcTarPit()).has_value(), &flusher);
   flusher.AddClosure(original_recv_trailing_metadata_ready_, std::move(error),
                      "continue recv trailing");
 }
@@ -2527,8 +2529,9 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
           break;
         case SendTrailingState::kInitial: {
           GRPC_CHECK(*md->get_pointer(GrpcStatusMetadata()) != GRPC_STATUS_OK);
-          Completed(StatusFromMetadata(*md), md->get(GrpcTarPit()).has_value(),
-                    flusher);
+          absl::Status status = StatusFromMetadata(*md);
+          bool tar_pit_set = md->get(GrpcTarPit()).has_value();
+          Completed(std::move(status), std::move(md), tar_pit_set, flusher);
         } break;
         case SendTrailingState::kCancelled:
           // Nothing to do.

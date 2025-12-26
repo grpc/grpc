@@ -20,11 +20,14 @@
 
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
+#include <grpc/status.h>
 #include <grpc/support/port_platform.h>
 
 #include <algorithm>
 #include <cstdint>
+#include <utility>
 
+#include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
@@ -246,72 +249,77 @@ class StringKey {
 }  // namespace
 
 namespace hpack_encoder_detail {
-void Encoder::EmitIndexed(uint32_t elem_index) {
-  VarintWriter<1> w(elem_index);
-  w.Write(0x80, output_.AddTiny(w.length()));
-}
-
-uint32_t Encoder::EmitLitHdrWithNonBinaryStringKeyIncIdx(Slice key_slice,
-                                                         Slice value_slice) {
+uint32_t HPackWriter::EmitLitHdrWithNonBinaryStringKeyIncIdx(
+    Slice key_slice, Slice value_slice, SliceBuffer& output,
+    HPackEncoderTable& table) {
   auto key_len = key_slice.length();
   auto value_len = value_slice.length();
   StringKey key(std::move(key_slice));
-  key.WritePrefix(0x40, output_.AddTiny(key.prefix_length()));
-  output_.Append(key.key());
+  key.WritePrefix(0x40, output.AddTiny(key.prefix_length()));
+  output.Append(key.key());
   NonBinaryStringValue emit(std::move(value_slice));
-  emit.WritePrefix(output_.AddTiny(emit.prefix_length()));
+  emit.WritePrefix(output.AddTiny(emit.prefix_length()));
   // Allocate an index in the hpack table for this newly emitted entry.
   // (we do so here because we know the length of the key and value)
-  uint32_t index = compressor_->table_.AllocateIndex(
-      key_len + value_len + hpack_constants::kEntryOverhead);
-  output_.Append(emit.data());
+  uint32_t index = table.AllocateIndex(key_len + value_len +
+                                       hpack_constants::kEntryOverhead);
+  output.Append(emit.data());
   return index;
 }
 
-void Encoder::EmitLitHdrWithBinaryStringKeyNotIdx(Slice key_slice,
-                                                  Slice value_slice) {
+void HPackWriter::EmitLitHdrWithBinaryStringKeyNotIdx(
+    Slice key_slice, Slice value_slice, SliceBuffer& output,
+    bool use_true_binary_metadata) {
   StringKey key(std::move(key_slice));
-  key.WritePrefix(0x00, output_.AddTiny(key.prefix_length()));
-  output_.Append(key.key());
-  BinaryStringValue emit(std::move(value_slice), use_true_binary_metadata_);
-  emit.WritePrefix(output_.AddTiny(emit.prefix_length()));
-  output_.Append(emit.data());
+  key.WritePrefix(0x00, output.AddTiny(key.prefix_length()));
+  output.Append(key.key());
+  BinaryStringValue emit(std::move(value_slice), use_true_binary_metadata);
+  emit.WritePrefix(output.AddTiny(emit.prefix_length()));
+  output.Append(emit.data());
 }
 
-uint32_t Encoder::EmitLitHdrWithBinaryStringKeyIncIdx(Slice key_slice,
-                                                      Slice value_slice) {
+uint32_t HPackWriter::EmitLitHdrWithBinaryStringKeyIncIdx(
+    Slice key_slice, Slice value_slice, SliceBuffer& output,
+    HPackEncoderTable& table, bool use_true_binary_metadata) {
   auto key_len = key_slice.length();
   StringKey key(std::move(key_slice));
-  key.WritePrefix(0x40, output_.AddTiny(key.prefix_length()));
-  output_.Append(key.key());
-  BinaryStringValue emit(std::move(value_slice), use_true_binary_metadata_);
-  emit.WritePrefix(output_.AddTiny(emit.prefix_length()));
+  key.WritePrefix(0x40, output.AddTiny(key.prefix_length()));
+  output.Append(key.key());
+  BinaryStringValue emit(std::move(value_slice), use_true_binary_metadata);
+  emit.WritePrefix(output.AddTiny(emit.prefix_length()));
   // Allocate an index in the hpack table for this newly emitted entry.
   // (we do so here because we know the length of the key and value)
-  uint32_t index = compressor_->table_.AllocateIndex(
-      key_len + emit.hpack_length() + hpack_constants::kEntryOverhead);
-  output_.Append(emit.data());
+  uint32_t index = table.AllocateIndex(key_len + emit.hpack_length() +
+                                       hpack_constants::kEntryOverhead);
+  output.Append(emit.data());
   return index;
 }
 
-void Encoder::EmitLitHdrWithBinaryStringKeyNotIdx(uint32_t key_index,
-                                                  Slice value_slice) {
-  BinaryStringValue emit(std::move(value_slice), use_true_binary_metadata_);
+void HPackWriter::EmitLitHdrWithBinaryStringKeyNotIdx(
+    uint32_t key_index, Slice value_slice, SliceBuffer& output,
+    bool use_true_binary_metadata) {
+  BinaryStringValue emit(std::move(value_slice), use_true_binary_metadata);
   VarintWriter<4> key(key_index);
-  uint8_t* data = output_.AddTiny(key.length() + emit.prefix_length());
+  uint8_t* data = output.AddTiny(key.length() + emit.prefix_length());
   key.Write(0x00, data);
   emit.WritePrefix(data + key.length());
-  output_.Append(emit.data());
+  output.Append(emit.data());
 }
 
-void Encoder::EmitLitHdrWithNonBinaryStringKeyNotIdx(Slice key_slice,
-                                                     Slice value_slice) {
+void HPackWriter::EmitLitHdrWithNonBinaryStringKeyNotIdx(Slice key_slice,
+                                                         Slice value_slice,
+                                                         SliceBuffer& output) {
   StringKey key(std::move(key_slice));
-  key.WritePrefix(0x00, output_.AddTiny(key.prefix_length()));
-  output_.Append(key.key());
+  key.WritePrefix(0x00, output.AddTiny(key.prefix_length()));
+  output.Append(key.key());
   NonBinaryStringValue emit(std::move(value_slice));
-  emit.WritePrefix(output_.AddTiny(emit.prefix_length()));
-  output_.Append(emit.data());
+  emit.WritePrefix(output.AddTiny(emit.prefix_length()));
+  output.Append(emit.data());
+}
+
+void Encoder::EmitIndexed(uint32_t elem_index) {
+  VarintWriter<1> w(elem_index);
+  w.Write(0x80, output_.AddTiny(w.length()));
 }
 
 void Encoder::AdvertiseTableSizeChange() {
@@ -513,4 +521,57 @@ Encoder::Encoder(HPackCompressor* compressor, bool use_true_binary_metadata,
 }
 
 }  // namespace hpack_encoder_detail
+
+RawEncoder::RawEncoder(bool is_true_binary_metadata)
+    : is_true_binary_metadata_(is_true_binary_metadata) {}
+
+void RawEncoder::Encode(const Slice& key, const Slice& value) {
+  SliceBuffer temp_buffer;
+  if (absl::EndsWith(key.as_string_view(), "-bin")) {
+    hpack_encoder_detail::HPackWriter::EmitLitHdrWithBinaryStringKeyNotIdx(
+        key.Ref(), value.Ref(), temp_buffer, is_true_binary_metadata_);
+  } else {
+    hpack_encoder_detail::HPackWriter::EmitLitHdrWithNonBinaryStringKeyNotIdx(
+        key.Ref(), value.Ref(), temp_buffer);
+  }
+  MaybeAppend(std::move(temp_buffer));
+}
+
+void RawEncoder::Encode(GrpcStatusMetadata, grpc_status_code status) {
+  if (std::exchange(status_encoded_, true)) return;
+  SliceBuffer temp_buffer;
+  hpack_encoder_detail::HPackWriter::EmitLitHdrWithNonBinaryStringKeyNotIdx(
+      Slice::FromCopiedString(GrpcStatusMetadata::key()),
+      MetadataValueAsSlice<GrpcStatusMetadata>(status).Ref(), temp_buffer);
+  MaybeAppend(std::move(temp_buffer));
+}
+
+void RawEncoder::Encode(GrpcMessageMetadata, const Slice& message) {
+  if (std::exchange(message_encoded_, true)) return;
+  SliceBuffer temp_buffer;
+  hpack_encoder_detail::HPackWriter::EmitLitHdrWithNonBinaryStringKeyNotIdx(
+      Slice::FromCopiedString(GrpcMessageMetadata::key()), message.Ref(),
+      temp_buffer);
+  MaybeAppend(std::move(temp_buffer));
+}
+
+void RawEncoder::Flush(grpc_slice_buffer* output_buffer) && {
+  grpc_slice_buffer_move_into(buffer_.c_slice_buffer(), output_buffer);
+}
+
+bool RawEncoder::CheckLength(const size_t length) {
+  return (length <= kMaxKeyValueSize) && (Length() <= kMaxSize - length);
+}
+
+void RawEncoder::MaybeAppend(SliceBuffer&& buffer) {
+  if (CheckLength(buffer.Length())) {
+    buffer_.TakeAndAppend(buffer);
+  } else {
+    LOG(ERROR)
+        << "Ignoring key value pair due to size limit. Current buffer size: "
+        << buffer_.Length() << " new key value size: " << buffer.Length()
+        << " KeyValueSizeLimit: " << kMaxKeyValueSize
+        << " TotalSizeLimit: " << kMaxSize;
+  }
+}
 }  // namespace grpc_core
