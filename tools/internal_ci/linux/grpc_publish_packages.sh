@@ -34,6 +34,7 @@ GCS_ROOT=gs://packages.grpc.io/
 GCS_ARCHIVE_PREFIX=archive/
 GCS_ARCHIVE_ROOT=$GCS_ROOT$GCS_ARCHIVE_PREFIX
 GCS_INDEX=$GCS_ROOT$INDEX_FILENAME
+GCS_NATIVE_DEBUG=${GCS_ROOT}grpc-ruby-native-debug-symbols
 
 LOCAL_STAGING_TEMPDIR=$(mktemp -d)
 LOCAL_BUILD_ROOT=$LOCAL_STAGING_TEMPDIR/$BUILD_RELPATH
@@ -102,6 +103,11 @@ RUBY_PACKAGES=(
   "$INPUT_ARTIFACTS"/grpc-tools-[0-9]*.gem
 )
 
+# Ruby Native Debug packages (too large for RubyGems)
+RUBY_NATIVE_DEBUG_PACKAGES=(
+  "$INPUT_ARTIFACTS"/grpc-native-debug-[0-9]*.gem
+)
+
 function add_to_manifest() {
   local artifact_type=$1
   local artifact_file=$2
@@ -153,6 +159,13 @@ EOF
 </build>
 EOF
 }> "$LOCAL_BUILD_INDEX"
+
+# Upload Ruby native debug gems to GCS location
+if [ ${#RUBY_NATIVE_DEBUG_PACKAGES[@]} -gt 0 ]; then
+  gsutil -m cp "${RUBY_NATIVE_DEBUG_PACKAGES[@]}" "$GCS_NATIVE_DEBUG/v$GRPC_VERSION/"
+  (cd "$INPUT_ARTIFACTS" && sha256sum grpc-native-debug-*.gem) | \
+    gsutil cp - "$GCS_NATIVE_DEBUG/v$GRPC_VERSION/checksums.txt"
+fi
 
 LOCAL_BUILD_INDEX_SIZE=$(stat -c%s "$LOCAL_BUILD_INDEX")
 LOCAL_BUILD_INDEX_SHA256=$(openssl sha256 -r "$LOCAL_BUILD_INDEX" | cut -d " " -f 1)

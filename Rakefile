@@ -247,7 +247,8 @@ task 'gem:native', [:plat] do |t, args|
   unix_platforms.each do |plat|
     unless unix_platforms_without_debug_symbols.include?(plat)
       `bash src/ruby/nativedebug/build_package.sh #{plat}`
-      `cp src/ruby/nativedebug/pkg/*.gem pkg/`
+      # Native debug gems uploaded to GCS, skip pkg/ to avoid RubyGems upload
+      # `cp src/ruby/nativedebug/pkg/*.gem pkg/`
     end
   end
 end
