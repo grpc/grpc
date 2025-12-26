@@ -41,7 +41,8 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
           grpc_tls_identity_pairs_add_pair(pairs_core, pem_root_certs.c_str(),
                                            pair.certificate_chain.c_str());
         },
-        [&](std::shared_ptr<grpc::experimental::PrivateKeySigner> key_sign) {
+        [&](const std::shared_ptr<grpc::experimental::PrivateKeySigner>&
+                key_sign) {
           grpc_tls_identity_pairs_add_pair_with_signer(
               pairs_core, key_sign, pair.certificate_chain.c_str());
         });
@@ -115,9 +116,10 @@ void InMemoryCertificateProvider::UpdateIdentity(
           grpc_tls_identity_pairs_add_pair(pairs_core, pem_root_certs.c_str(),
                                            pair.certificate_chain.c_str());
         },
-        [&](std::shared_ptr<grpc::experimental::PrivateKeySigner> key_sign) {
+        [&](const std::shared_ptr<grpc::experimental::PrivateKeySigner>&
+                key_signer) {
           grpc_tls_identity_pairs_add_pair_with_signer(
-              pairs_core, key_sign, pair.certificate_chain.c_str());
+              pairs_core, key_signer, pair.certificate_chain.c_str());
         });
   }
   grpc_tls_certificate_provider_in_memory_set_identity_certificate(c_provider_,

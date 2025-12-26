@@ -264,7 +264,7 @@ _DATA_MEMBERS = [
             'CreateTestingCertificateProvider("", PemKeyCertPairList())'
         ),
         test_value_2=(
-            'CreateTestingCertificateProvider("root_cert_2", PemKeyCertPairList())'
+            'CreateTestingCertificateProvider("", PemKeyCertPairList())'
         ),
     ),
 ]

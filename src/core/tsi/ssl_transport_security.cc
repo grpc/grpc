@@ -971,7 +971,7 @@ static tsi_result populate_ssl_context(
           }
           return result;
         },
-        [&](std::shared_ptr<grpc_core::PrivateKeySigner> key_signer) {
+        [&](const std::shared_ptr<grpc_core::PrivateKeySigner>& key_signer) {
 #if defined(OPENSSL_IS_BORINGSSL)
           if (key_signer != nullptr) {
             SSL_CTX_set_private_key_method(context,
@@ -2170,7 +2170,6 @@ static tsi_result ssl_handshaker_next(
         }
       }
     }
-    return status;
   }
   return status;
 }
