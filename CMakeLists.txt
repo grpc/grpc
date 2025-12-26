@@ -1867,7 +1867,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx timer_test)
   add_dependencies(buildtests_cxx tls_certificate_verifier_test)
   add_dependencies(buildtests_cxx tls_key_export_test)
-  add_dependencies(buildtests_cxx tls_private_key_offload_end2end_test)
+  add_dependencies(buildtests_cxx tls_private_key_signer_end2end_test)
   add_dependencies(buildtests_cxx tls_security_connector_test)
   add_dependencies(buildtests_cxx too_many_pings_test)
   add_dependencies(buildtests_cxx tool_test_test)
@@ -5082,7 +5082,7 @@ foreach(_hdr
   include/grpcpp/security/tls_certificate_verifier.h
   include/grpcpp/security/tls_credentials_options.h
   include/grpcpp/security/tls_crl_provider.h
-  include/grpcpp/security/tls_private_key_offload.h
+  include/grpcpp/security/tls_private_key_signer.h
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
   include/grpcpp/server_context.h
@@ -5827,7 +5827,7 @@ foreach(_hdr
   include/grpcpp/security/tls_certificate_verifier.h
   include/grpcpp/security/tls_credentials_options.h
   include/grpcpp/security/tls_crl_provider.h
-  include/grpcpp/security/tls_private_key_offload.h
+  include/grpcpp/security/tls_private_key_signer.h
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
   include/grpcpp/server_context.h
@@ -35105,7 +35105,7 @@ target_link_libraries(tls_key_export_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(tls_private_key_offload_end2end_test
+add_executable(tls_private_key_signer_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
@@ -35139,11 +35139,11 @@ add_executable(tls_private_key_offload_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.h
   ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
   test/cpp/end2end/test_service_impl.cc
-  test/cpp/end2end/tls_private_key_offload_end2end_test.cc
+  test/cpp/end2end/tls_private_key_signer_end2end_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
-    target_compile_definitions(tls_private_key_offload_end2end_test
+    target_compile_definitions(tls_private_key_signer_end2end_test
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
@@ -35151,8 +35151,8 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(tls_private_key_offload_end2end_test PUBLIC cxx_std_17)
-target_include_directories(tls_private_key_offload_end2end_test
+target_compile_features(tls_private_key_signer_end2end_test PUBLIC cxx_std_17)
+target_include_directories(tls_private_key_signer_end2end_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -35171,7 +35171,7 @@ target_include_directories(tls_private_key_offload_end2end_test
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(tls_private_key_offload_end2end_test
+target_link_libraries(tls_private_key_signer_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc++_test_util

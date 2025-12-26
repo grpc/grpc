@@ -22,7 +22,7 @@
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
 #include <grpc/support/port_platform.h>
-#include <grpcpp/security/tls_private_key_offload.h>
+#include <grpcpp/security/tls_private_key_signer.h>
 #include <grpcpp/support/config.h>
 
 #include <memory>
@@ -46,9 +46,7 @@ class GRPCXX_DLL CertificateProviderInterface {
 // to show local identity. The private_key and certificate_chain should always
 // match.
 struct GRPCXX_DLL IdentityKeyCertPair {
-  std::variant<std::string,
-               std::shared_ptr<grpc::experimental::PrivateKeySigner>>
-      private_key;
+  std::variant<std::string, std::shared_ptr<PrivateKeySigner>> private_key;
   std::string certificate_chain;
 };
 
@@ -161,7 +159,8 @@ class GRPCXX_DLL InMemoryCertificateProvider
 
   grpc_tls_certificate_provider* c_provider() override { return c_provider_; }
 
-  // TODO(anasalazar): Expose APIs so that callers can update with RootCertInfo.
+  // TODO(anasalazar): Expose some API for callers to pass in a SPIFFE bundle
+  // map for the root cert.
   void UpdateRoot(const std::string& root_certificate);
   void UpdateIdentity(
       const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs);

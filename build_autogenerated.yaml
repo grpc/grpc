@@ -4065,7 +4065,7 @@ libs:
   - include/grpcpp/security/tls_certificate_verifier.h
   - include/grpcpp/security/tls_credentials_options.h
   - include/grpcpp/security/tls_crl_provider.h
-  - include/grpcpp/security/tls_private_key_offload.h
+  - include/grpcpp/security/tls_private_key_signer.h
   - include/grpcpp/server.h
   - include/grpcpp/server_builder.h
   - include/grpcpp/server_context.h
@@ -4449,7 +4449,7 @@ libs:
   - include/grpcpp/security/tls_certificate_verifier.h
   - include/grpcpp/security/tls_credentials_options.h
   - include/grpcpp/security/tls_crl_provider.h
-  - include/grpcpp/security/tls_private_key_offload.h
+  - include/grpcpp/security/tls_private_key_signer.h
   - include/grpcpp/server.h
   - include/grpcpp/server_builder.h
   - include/grpcpp/server_context.h
@@ -24729,7 +24729,7 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
-- name: tls_private_key_offload_end2end_test
+- name: tls_private_key_signer_end2end_test
   gtest: true
   build: test
   language: c++
@@ -24745,7 +24745,7 @@ targets:
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/test_service_impl.cc
-  - test/cpp/end2end/tls_private_key_offload_end2end_test.cc
+  - test/cpp/end2end/tls_private_key_signer_end2end_test.cc
   deps:
   - gtest
   - grpc++_test_util

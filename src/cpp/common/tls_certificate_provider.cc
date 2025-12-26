@@ -17,7 +17,7 @@
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/security/tls_certificate_provider.h>
-#include <grpcpp/security/tls_private_key_offload.h>
+#include <grpcpp/security/tls_private_key_signer.h>
 
 #include <string>
 #include <vector>

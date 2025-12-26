@@ -493,7 +493,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/security/credentials.h",
     "include/grpcpp/security/server_credentials.h",
     "include/grpcpp/security/tls_certificate_provider.h",
-    "include/grpcpp/security/tls_private_key_offload.h",
+    "include/grpcpp/security/tls_private_key_signer.h",
     "include/grpcpp/security/authorization_policy_provider.h",
     "include/grpcpp/security/tls_certificate_verifier.h",
     "include/grpcpp/security/tls_credentials_options.h",

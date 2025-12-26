@@ -9890,7 +9890,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "tls_private_key_offload_end2end_test",
+    "name": "tls_private_key_signer_end2end_test",
     "platforms": [
       "linux",
       "mac",

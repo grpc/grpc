@@ -1546,8 +1546,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "tls_private_key_offload_end2end_test",
-    srcs = ["tls_private_key_offload_end2end_test.cc"],
+    name = "tls_private_key_signer_end2end_test",
+    srcs = ["tls_private_key_signer_end2end_test.cc"],
     data = [
         "//src/core/tsi/test_creds:ca.pem",
         "//src/core/tsi/test_creds:client.key",
@@ -1565,7 +1565,7 @@ grpc_cc_test(
         "libcrypto",
         "libssl",
     ],
-    tags = ["tls_private_key_offload_test"],
+    tags = ["tls_private_key_signer_test"],
     deps = [
         ":test_service_impl",
         "//:gpr",
