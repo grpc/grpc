@@ -1,4 +1,9 @@
 bazel_dep(name = "fuzztest", version = "20241028.0", dev_dependency = True, repo_name = "com_google_fuzztest")  # mistmached 2023-05-16
 
-# Not directly used, but required by fuzztest and it needs a higher versions to be compatible with abseil-cpp@20250512.1.
+# This package is not directly used by grpc, but requested by fuzztest.
+#
+# The reason for version bump is because bazel resolve this package to riegeli@0.0.0-20240606-973b6f0,
+# which is incompatible with the version of abseil-cpp we use.
+#
+# See also https://bazel.build/external/module#version-selection.
 bazel_dep(name = "riegeli", version = "0.0.0-20250706-c4d1f27", dev_dependency = True)
