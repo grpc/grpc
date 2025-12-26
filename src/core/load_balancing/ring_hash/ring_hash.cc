@@ -454,8 +454,7 @@ RingHash::Ring::Ring(RingHash* ring_hash, RingHashLbConfig* config) {
     if (hash_key.has_value()) {
       endpoint_weight.hash_key = std::string(*hash_key);
     } else {
-      endpoint_weight.hash_key =
-          grpc_sockaddr_to_string(&endpoint.addresses().front(), false).value();
+      endpoint_weight.hash_key = endpoint.addresses().front();
     }
     // Weight should never be zero, but ignore it just in case, since
     // that value would screw up the ring-building algorithm.

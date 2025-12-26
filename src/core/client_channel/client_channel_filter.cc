@@ -54,7 +54,7 @@
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/handshaker/proxy_mapper_registry.h"
-#include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
@@ -887,7 +887,7 @@ class ClientChannelFilter::ClientChannelControlHelper final
   }
 
   RefCountedPtr<SubchannelInterface> CreateSubchannel(
-      const grpc_resolved_address& address, const ChannelArgs& per_address_args,
+      const std::string& address_uri, const ChannelArgs& per_address_args,
       const ChannelArgs& args) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
     if (chand_->resolver_ == nullptr) return nullptr;  // Shutting down.
@@ -906,6 +906,16 @@ class ClientChannelFilter::ClientChannelControlHelper final
         args, per_address_args, chand_->subchannel_pool_,
         chand_->default_authority_);
     // Create subchannel.
+    auto uri = grpc_core::URI::Parse(address_uri);
+    if (!uri.ok()) {
+      LOG(ERROR) << "Failed to parse address URI: " << address_uri;
+      return nullptr;
+    }
+    grpc_resolved_address address;
+    if (!grpc_parse_uri(*uri, &address)) {
+      LOG(ERROR) << "Failed to parse address URI: " << address_uri;
+      return nullptr;
+    }
     RefCountedPtr<Subchannel> subchannel =
         chand_->client_channel_factory_->CreateSubchannel(address,
                                                           subchannel_args);

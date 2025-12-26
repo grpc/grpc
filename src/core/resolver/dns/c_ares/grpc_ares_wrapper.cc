@@ -24,6 +24,7 @@
 
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/util/status_helper.h"
+#include "src/core/util/uri.h"
 #include "absl/strings/string_view.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
@@ -579,12 +580,9 @@ static void log_address_sorting_list(const grpc_ares_request* r,
                                      const EndpointAddressesList& addresses,
                                      const char* input_output_str) {
   for (size_t i = 0; i < addresses.size(); i++) {
-    auto addr_str = grpc_sockaddr_to_string(&addresses[i].address(), true);
     LOG(INFO) << "(c-ares resolver) request:" << r
               << " c-ares address sorting: " << input_output_str << "[" << i
-              << "]="
-              << (addr_str.ok() ? addr_str->c_str()
-                                : addr_str.status().ToString().c_str());
+              << "]=" << addresses[i].address();
   }
 }
 
@@ -597,9 +595,15 @@ void grpc_cares_wrapper_address_sorting_sort(const grpc_ares_request* r,
       gpr_zalloc(sizeof(address_sorting_sortable) * addresses->size()));
   for (size_t i = 0; i < addresses->size(); ++i) {
     sortables[i].user_data = &(*addresses)[i];
-    memcpy(&sortables[i].dest_addr.addr, &(*addresses)[i].address().addr,
-           (*addresses)[i].address().len);
-    sortables[i].dest_addr.len = (*addresses)[i].address().len;
+    grpc_resolved_address resolved_address;
+    auto uri = grpc_core::URI::Parse((*addresses)[i].address());
+    if (!uri.ok() || !grpc_parse_uri(*uri, &resolved_address)) {
+      gpr_free(sortables);
+      return;
+    }
+    memcpy(&sortables[i].dest_addr.addr, &resolved_address.addr,
+           resolved_address.len);
+    sortables[i].dest_addr.len = resolved_address.len;
   }
   address_sorting_rfc_6724_sort(sortables, addresses->size());
   EndpointAddressesList sorted;
@@ -734,7 +738,12 @@ static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
           break;
         }
       }
-      addresses.emplace_back(address, args);
+      auto uri = grpc_sockaddr_to_uri(&address);
+      if (uri.ok()) {
+        addresses.emplace_back(*uri, args);
+      } else {
+        LOG(ERROR) << "Failed to convert address to URI: " << uri.status();
+      }
     }
   } else {
     std::string error_msg = absl::StrFormat(
@@ -951,8 +960,12 @@ static bool inner_resolve_as_ip_literal_locked(
                                false /* log errors */)) {
     GRPC_CHECK(*addrs == nullptr);
     *addrs = std::make_unique<EndpointAddressesList>();
-    (*addrs)->emplace_back(addr, grpc_core::ChannelArgs());
-    return true;
+    auto uri = grpc_sockaddr_to_uri(&addr);
+    if (uri.ok()) {
+      (*addrs)->emplace_back(*uri, grpc_core::ChannelArgs());
+      return true;
+    }
+    LOG(ERROR) << "Failed to convert address to URI: " << uri.status();
   }
   return false;
 }
@@ -1015,7 +1028,13 @@ static bool inner_maybe_resolve_localhost_manually_locked(
     ipv6_loopback_addr->sin6_family = AF_INET6;
     ipv6_loopback_addr->sin6_port = numeric_port;
     address.len = sizeof(struct sockaddr_in6);
-    (*addrs)->emplace_back(address, grpc_core::ChannelArgs());
+    auto uri = grpc_sockaddr_to_uri(&address);
+    if (uri.ok()) {
+      (*addrs)->emplace_back(*uri, grpc_core::ChannelArgs());
+    } else {
+      LOG(ERROR) << "Failed to convert ipv6 localhost address to URI: "
+                 << uri.status();
+    }
     // Append the ipv4 loopback address.
     memset(&address, 0, sizeof(address));
     auto* ipv4_loopback_addr =
@@ -1025,7 +1044,13 @@ static bool inner_maybe_resolve_localhost_manually_locked(
     ipv4_loopback_addr->sin_family = AF_INET;
     ipv4_loopback_addr->sin_port = numeric_port;
     address.len = sizeof(struct sockaddr_in);
-    (*addrs)->emplace_back(address, grpc_core::ChannelArgs());
+    uri = grpc_sockaddr_to_uri(&address);
+    if (uri.ok()) {
+      (*addrs)->emplace_back(*uri, grpc_core::ChannelArgs());
+    } else {
+      LOG(ERROR) << "Failed to convert ipv4 localhost address to URI: "
+                 << uri.status();
+    }
     // Let the address sorter figure out which one should be tried first.
     grpc_cares_wrapper_address_sorting_sort(r, addrs->get());
     return true;
