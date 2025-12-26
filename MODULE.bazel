@@ -64,6 +64,12 @@ bazel_dep(name = "fuzztest", version = "20241028.0", dev_dependency = True, repo
 bazel_dep(name = "google_benchmark", version = "1.9.0", dev_dependency = True, repo_name = "com_github_google_benchmark")
 bazel_dep(name = "rules_shell", version = "0.4.0", dev_dependency = True)
 
+# Version bumps.
+# ========================
+
+# Not directly used, but required by fuzztest and it needs a higher versions can work with abseil-cpp@20250512.1.
+bazel_dep(name = "riegeli", version = "0.0.0-20250706-c4d1f27", dev_dependency = True)
+
 # Python dependencies
 # ===================
 
