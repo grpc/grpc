@@ -1,0 +1,16 @@
+# Provides a modified version of googleapis which can be used by google_cloud_cpp.
+
+bazel_dep(name = "googleapis", version = "0.0.0-20240819-fe8ba054a", repo_name = "com_google_googleapis")
+archive_override(
+    module_name = "googleapis",
+    integrity = "sha256-BRPw9Ar2O9Bdx4nKzDNKts7CfMidtZZVfLLf6JGUY+Q=",
+    patch_strip = 1,
+    patches = [
+        "//bazel:googleapis/patches/add_module_bazel.patch",
+        "//bazel:googleapis/patches/fix_google_cloud_cpp.patch",
+    ],
+    strip_prefix = "googleapis-fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0",
+    urls = [
+        "https://github.com/googleapis/googleapis/archive/fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0.tar.gz",
+    ],
+)

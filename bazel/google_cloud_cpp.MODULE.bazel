@@ -1,24 +1,5 @@
-#http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
-#bazel_dep(name = "nlohmann_json", version = "3.11.3", repo_name = "com_github_nlohmann_json")
-#bazel_dep(name = "curl", version = "8.8.0.bcr.3", repo_name = "com_github_curl_curl")
-#bazel_dep(name = "googleapis", version = "0.0.0-20240819-fe8ba054a", repo_name = "com_google_googleapis")
 bazel_dep(name = "google_cloud_cpp", version = "2.35.0")
-
-#archive_override(
-#    module_name = "googleapis",
-#    integrity = "sha256-WpRQzxrRGHyCorXN/1Pk1YS21FKStfcbUECDrLA619A=",
-#    patch_strip = 1,
-#    patches = ["//bazel:googleapis.modules.patch"],
-#    strip_prefix = "googleapis-280725e991516d4a0f136268faf5aa6d32d21b54",
-#    urls = [
-#        "https://github.com/googleapis/googleapis/archive/280725e991516d4a0f136268faf5aa6d32d21b54.tar.gz",
-#    ],
-#)
-
 archive_override(
-    #http_archive(
-    #name = "google_cloud_cpp",
     module_name = "google_cloud_cpp",
     sha256 = "81ea28cf9e5bb032d356b0187409f30b1035f8ea5b530675ea248c8a6c0070aa",
     strip_prefix = "google-cloud-cpp-2.35.0",
