@@ -55,6 +55,7 @@ grpc_fuzz_test(
     ],
     deps = [
         "//:config",
+        "//:endpoint_addresses",
         "//:grpc",
         "//:grpc_base",
         "//:grpc_client_channel",
@@ -194,6 +195,7 @@ grpc_cc_benchmark(
     ],
     monitoring = HISTORY,
     deps = [
+        "//:endpoint_addresses",
         "//:grpc",
         "//:grpc_client_channel",
         "//:parse_address",
