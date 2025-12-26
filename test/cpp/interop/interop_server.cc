@@ -78,24 +78,24 @@ void MaybeEchoMetadata(ServerContext* context) {
   GRPC_CHECK_LE(client_metadata.count(kEchoInitialMetadataKey), 1u);
   GRPC_CHECK_LE(client_metadata.count(kEchoTrailingBinMetadataKey), 1u);
 
-  auto iter = client_metadata.find(kEchoInitialMetadataKey);
-  if (iter != client_metadata.end()) {
+  if (auto [iter, end] = client_metadata.equal_range(kEchoInitialMetadataKey);
+      iter != end) {
     context->AddInitialMetadata(
         kEchoInitialMetadataKey,
         std::string(iter->second.begin(), iter->second.end()));
   }
-  iter = client_metadata.find(kEchoTrailingBinMetadataKey);
-  if (iter != client_metadata.end()) {
+  if (auto [iter, end] =
+          client_metadata.equal_range(kEchoTrailingBinMetadataKey);
+      iter != end) {
     context->AddTrailingMetadata(
         kEchoTrailingBinMetadataKey,
         std::string(iter->second.begin(), iter->second.end()));
   }
   // Check if client sent a magic key in the header that makes us echo
   // back the user-agent (for testing purpose)
-  iter = client_metadata.find(kEchoUserAgentKey);
-  if (iter != client_metadata.end()) {
-    iter = client_metadata.find("user-agent");
-    if (iter != client_metadata.end()) {
+  if (client_metadata.count(kEchoUserAgentKey) > 0) {
+    if (auto [iter, end] = client_metadata.equal_range("user-agent");
+        iter != end) {
       context->AddInitialMetadata(
           kEchoUserAgentKey,
           std::string(iter->second.begin(), iter->second.end()));
