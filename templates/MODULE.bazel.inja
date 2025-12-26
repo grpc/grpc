@@ -105,3 +105,6 @@ http_archive(
     strip_prefix = "typing_extensions-4.12.2",
     url = "https://github.com/python/typing_extensions/archive/4.12.2.tar.gz",
 )
+
+# Provides repo @grpc_custom_exec_properties.
+include("//bazel:grpc_custom_exec_properties.MODULE.bazel")
