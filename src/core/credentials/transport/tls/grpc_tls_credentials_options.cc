@@ -30,7 +30,7 @@
 #include "src/core/util/grpc_check.h"
 #include "absl/log/log.h"
 
-/// -- Wrapper APIs declared in grpc_security.h -- *
+/// -- Wrapper APIs declared in credentials.h -- *
 
 grpc_tls_credentials_options* grpc_tls_credentials_options_create() {
   grpc_core::ExecCtx exec_ctx;
@@ -158,4 +158,11 @@ void grpc_tls_credentials_options_set_max_tls_version(
     grpc_tls_credentials_options* options, grpc_tls_version max_tls_version) {
   GRPC_CHECK_NE(options, nullptr);
   options->set_max_tls_version(max_tls_version);
+}
+
+GRPCAPI void grpc_tls_credentials_options_set_sni_override(
+    grpc_tls_credentials_options* options,
+    std::optional<std::string> sni_override) {
+  GRPC_CHECK_NE(options, nullptr);
+  options->set_sni_override(sni_override);
 }
