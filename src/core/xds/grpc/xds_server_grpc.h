@@ -32,6 +32,12 @@
 
 namespace grpc_core {
 
+RefCountedPtr<ChannelCredsConfig> ParseXdsBootstrapChannelCreds(
+    const Json& json, const JsonArgs& args, ValidationErrors* errors);
+
+std::vector<RefCountedPtr<CallCredsConfig>> ParseXdsBootstrapCallCreds(
+    const Json& json, const JsonArgs& args, ValidationErrors* errors);
+
 class GrpcXdsServerTarget final : public GrpcXdsServerInterface {
  public:
   explicit GrpcXdsServerTarget(

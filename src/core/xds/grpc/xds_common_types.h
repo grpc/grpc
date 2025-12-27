@@ -24,6 +24,7 @@
 #include "src/core/util/json/json.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/validation_errors.h"
+#include "src/core/xds/grpc/xds_server_grpc.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -83,6 +84,12 @@ struct XdsExtension {
   // Validation fields that need to stay in scope until we're done
   // processing the extension.
   std::vector<ValidationErrors::ScopedField> validation_fields;
+};
+
+struct XdsGrpcService {
+  std::unique_ptr<GrpcXdsServerTarget> server_target;
+  Duration timeout;
+  std::vector<std::pair<std::string, std::string>> initial_metadata;
 };
 
 }  // namespace grpc_core
