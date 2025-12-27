@@ -604,6 +604,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
         "Delayed close due to in-progress write|"
         // Syscall
         "((connect|sendmsg|recvmsg|getsockopt\\(SO\\_ERROR\\)): ?)?"
+        // Apple
+        "(domain:NSPOSIXErrorDomain,.*)?"
         // strerror() output or other message
         "(Connection refused"
         "|Connection reset by peer"
@@ -1791,7 +1793,7 @@ TEST_F(RoundRobinTest, TransientFailure) {
   auto predicate = [](grpc_connectivity_state state) {
     return state == GRPC_CHANNEL_TRANSIENT_FAILURE;
   };
-  EXPECT_TRUE(WaitForChannelState(channel.get(), predicate));
+  EXPECT_TRUE(WaitForChannelState(channel.get(), predicate, 15 /*timeout*/));
   CheckRpcSendFailure(
       DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
       MakeConnectionFailureRegex("connections to all backends failing"));
@@ -3379,6 +3381,8 @@ TEST_P(WeightedRoundRobinParamTest, Basic) {
 }  // namespace testing
 }  // namespace grpc
 
+#if !defined(GRPC_CFSTREAM)
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
@@ -3393,3 +3397,5 @@ int main(int argc, char** argv) {
   grpc_shutdown();
   return result;
 }
+
+#endif  // !defined(GRPC_CFSTREAM)

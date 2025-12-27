@@ -93,8 +93,12 @@ TEST_F(DelegatingChannelTest, SimpleTest) {
 }  // namespace testing
 }  // namespace grpc
 
+#if !defined(GRPC_CFSTREAM)
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
+
+#endif  // !defined(GRPC_CFSTREAM)
