@@ -705,13 +705,12 @@ class GrpclbEnd2endTest : public ::testing::Test {
       absl::StatusOr<grpc_core::URI> lb_uri =
           grpc_core::URI::Parse(grpc_core::LocalIpUri(port));
       GRPC_CHECK_OK(lb_uri);
-      grpc_resolved_address address;
-      GRPC_CHECK(grpc_parse_uri(*lb_uri, &address));
+
       grpc_core::ChannelArgs args;
       if (!balancer_name.empty()) {
         args = args.Set(GRPC_ARG_DEFAULT_AUTHORITY, balancer_name);
       }
-      addresses.emplace_back(address, args);
+      addresses.emplace_back(lb_uri->ToString(), args);
     }
     return addresses;
   }

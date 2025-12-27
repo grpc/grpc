@@ -239,9 +239,7 @@ class FakeResolverResponseGeneratorWrapper {
       absl::StatusOr<grpc_core::URI> lb_uri =
           grpc_core::URI::Parse(grpc_core::LocalIpUri(port));
       GRPC_CHECK_OK(lb_uri);
-      grpc_resolved_address address;
-      GRPC_CHECK(grpc_parse_uri(*lb_uri, &address));
-      result.addresses->emplace_back(address, per_address_args);
+      result.addresses->emplace_back(lb_uri->ToString(), per_address_args);
     }
     if (result.addresses->empty()) {
       result.resolution_note = "fake resolver empty address list";
@@ -2985,7 +2983,11 @@ class OobBackendMetricTest : public ClientLbEnd2endTest {
       const grpc_core::EndpointAddresses& address,
       const grpc_core::BackendMetricData& backend_metric_data) {
     auto load_report = BackendMetricDataToOrcaLoadReport(backend_metric_data);
-    int port = grpc_sockaddr_get_port(&address.address());
+    auto uri = grpc_core::URI::Parse(address.address());
+    CHECK_OK(uri);
+    grpc_resolved_address resolved_address;
+    CHECK(grpc_parse_uri(*uri, &resolved_address));
+    int port = grpc_sockaddr_get_port(&resolved_address);
     grpc_core::MutexLock lock(&current_test_instance_->mu_);
     current_test_instance_->backend_metric_reports_.push_back(
         {port, std::move(load_report)});

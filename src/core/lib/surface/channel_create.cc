@@ -169,7 +169,13 @@ grpc_channel* CreateChannelFromEndpoint(
   }
   Resolver::Result result;
   result.args = channel_args;
-  result.addresses = EndpointAddressesList({EndpointAddresses{address, {}}});
+  auto uri = grpc_sockaddr_to_uri(&address);
+  if (!uri.ok()) {
+    return grpc_lame_client_channel_create(
+        "fake:created-from-endpoint", GRPC_STATUS_INTERNAL,
+        "Failed to convert address to URI");
+  }
+  result.addresses = EndpointAddressesList({EndpointAddresses{*uri, {}}});
   response_generator->SetResponseAsync(std::move(result));
   auto r = CreateClientEndpointChannel(
       "fake:created-from-endpoint", creds,

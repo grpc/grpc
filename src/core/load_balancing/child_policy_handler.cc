@@ -51,7 +51,7 @@ class ChildPolicyHandler::Helper final
       : ParentOwningDelegatingChannelControlHelper(std::move(parent)) {}
 
   RefCountedPtr<SubchannelInterface> CreateSubchannel(
-      const grpc_resolved_address& address, const ChannelArgs& per_address_args,
+      const std::string& address, const ChannelArgs& per_address_args,
       const ChannelArgs& args) override {
     if (parent()->shutting_down_) return nullptr;
     if (!CalledByCurrentChild() && !CalledByPendingChild()) return nullptr;

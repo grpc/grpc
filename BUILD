@@ -4042,6 +4042,7 @@ grpc_cc_library(
         "iomgr",
         "lb_child_policy_handler",
         "orphanable",
+        "parse_address",
         "promise",
         "ref_counted_ptr",
         "sockaddr_utils",
