@@ -115,7 +115,7 @@ class Http2ClientTransport final : public ClientTransport,
   ServerTransport* server_transport() override { return nullptr; }
   absl::string_view GetTransportName() const override { return "http2"; }
 
-  // TODO(tjagtap) : [PH2][EXT] : Removed after event engine rollout
+  // TODO(tjagtap) : [PH2][EXT] : Remove after event engine rollout
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
 
@@ -504,7 +504,6 @@ class Http2ClientTransport final : public ClientTransport,
   MemoryOwner memory_owner_;
   chttp2::TransportFlowControl flow_control_;
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
-  absl::flat_hash_set<uint32_t> window_update_list_;
 
   // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
   Waker periodic_updates_waker_;
