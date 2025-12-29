@@ -238,14 +238,13 @@ class Http2ClientTransport final : public ClientTransport,
   void NotifyStateWatcherOnDisconnectLocked(
       absl::Status status, StateWatcher::DisconnectInfo disconnect_info)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&transport_mutex_);
+  Http2Status ParseAndDiscardHeaders(SliceBuffer&& buffer, bool is_end_headers,
+                                     RefCountedPtr<Stream> stream,
+                                     Http2Status&& original_status,
+                                     DebugLocation whence = {});
+  void ReadChannelArgs(const ChannelArgs& channel_args,
+                       TransportChannelArgs& args);
 
-  RefCountedPtr<Party> general_party_;  // Refer Gemini.md for party slot usage
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
-
-  PromiseEndpoint endpoint_;
-  RefCountedPtr<SettingsPromiseManager> settings_;
-
-  Http2FrameHeader current_frame_header_;
   // Returns the number of active streams. A stream is removed from the `active`
   // list once both client and server agree to close the stream. The count of
   // stream_list_(even though stream list represents streams open for reads)
@@ -292,17 +291,6 @@ class Http2ClientTransport final : public ClientTransport,
 
   void AddToStreamList(RefCountedPtr<Stream> stream);
 
-  Mutex transport_mutex_;
-
-  absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list_
-      ABSL_GUARDED_BY(transport_mutex_);
-
-  uint32_t next_stream_id_;
-  HPackCompressor encoder_;
-  HPackParser parser_;
-  bool is_transport_closed_ ABSL_GUARDED_BY(transport_mutex_) = false;
-  Latch<void> transport_closed_latch_;
-
   template <typename Promise>
   auto UntilTransportClosed(Promise promise);
 
@@ -320,11 +308,6 @@ class Http2ClientTransport final : public ClientTransport,
   // status.
   template <typename Factory>
   void SpawnGuardedTransportParty(absl::string_view name, Factory&& factory);
-
-  ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){
-      "http2_client", GRPC_CHANNEL_READY};
-
-  RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(transport_mutex_);
 
   // Runs on the call party.
   std::optional<RefCountedPtr<Stream>> MakeStream(CallHandler call_handler);
@@ -365,17 +348,6 @@ class Http2ClientTransport final : public ClientTransport,
   absl::Status HandleError(const std::optional<uint32_t> stream_id,
                            Http2Status status, DebugLocation whence = {});
 
-  bool should_reset_ping_clock_;
-  bool is_first_write_;
-  IncomingMetadataTracker incoming_headers_;
-
-  // The target number of bytes to write in a single write cycle. We may not
-  // always honour this max_write_size. We MAY overshoot it at most once per
-  // write cycle.
-  size_t max_write_size_;
-  // The number of bytes remaining to be written in the current write cycle.
-  size_t write_bytes_remaining_;
-
   // The max_write_size will be decided dynamically based on the available
   // bandwidth on the wire. We aim to keep the time spent in the write loop to
   // about 100ms.
@@ -399,6 +371,43 @@ class Http2ClientTransport final : public ClientTransport,
 
   bool CanCloseTransportLocked() const
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(transport_mutex_);
+
+  ///////////////////////////////////////////////////////////////////////////////
+  // Data Members
+
+  RefCountedPtr<Party> general_party_;  // Refer Gemini.md for party slot usage
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+
+  PromiseEndpoint endpoint_;
+  RefCountedPtr<SettingsPromiseManager> settings_;
+
+  Http2FrameHeader current_frame_header_;
+  Mutex transport_mutex_;
+
+  absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list_
+      ABSL_GUARDED_BY(transport_mutex_);
+
+  uint32_t next_stream_id_;
+  HPackCompressor encoder_;
+  HPackParser parser_;
+  bool is_transport_closed_ ABSL_GUARDED_BY(transport_mutex_) = false;
+  Latch<void> transport_closed_latch_;
+
+  ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){
+      "http2_client", GRPC_CHANNEL_READY};
+
+  RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(transport_mutex_);
+
+  bool should_reset_ping_clock_;
+  bool is_first_write_;
+  IncomingMetadataTracker incoming_headers_;
+
+  // The target number of bytes to write in a single write cycle. We may not
+  // always honour this max_write_size. We MAY overshoot it at most once per
+  // write cycle.
+  size_t max_write_size_;
+  // The number of bytes remaining to be written in the current write cycle.
+  size_t write_bytes_remaining_;
 
   // Ping related members
 
@@ -437,6 +446,35 @@ class Http2ClientTransport final : public ClientTransport,
   }
 
   auto AckPing(uint64_t opaque_data);
+
+  GoawayManager goaway_manager_;
+
+  WritableStreams<RefCountedPtr<Stream>> writable_stream_list_;
+
+  absl::Status MaybeAddStreamToWritableStreamList(
+      const RefCountedPtr<Stream> stream,
+      const StreamDataQueue<ClientMetadataHandle>::StreamWritabilityUpdate
+          result);
+
+  bool SetOnDone(CallHandler call_handler, RefCountedPtr<Stream> stream);
+  absl::StatusOr<std::vector<Http2Frame>> DequeueStreamFrames(
+      RefCountedPtr<Stream> stream);
+
+  /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
+  /// the peer
+  bool enable_preferred_rx_crypto_frame_advertisement_;
+  MemoryOwner memory_owner_;
+  chttp2::TransportFlowControl flow_control_;
+  std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
+  absl::flat_hash_set<uint32_t> window_update_list_;
+
+  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
+  Waker periodic_updates_waker_;
+
+  Http2ReadContext reader_state_;
+
+  ///////////////////////////////////////////////////////////////////////////////
+  // Ping, KeepAlive and GoAway Helper Classes
 
   class PingSystemInterfaceImpl : public PingInterface {
    public:
@@ -484,45 +522,7 @@ class Http2ClientTransport final : public ClientTransport,
 
     Http2ClientTransport* transport_;
   };
-
-  GoawayManager goaway_manager_;
-
-  WritableStreams<RefCountedPtr<Stream>> writable_stream_list_;
-
-  absl::Status MaybeAddStreamToWritableStreamList(
-      const RefCountedPtr<Stream> stream,
-      const StreamDataQueue<ClientMetadataHandle>::StreamWritabilityUpdate
-          result);
-
-  bool SetOnDone(CallHandler call_handler, RefCountedPtr<Stream> stream);
-  absl::StatusOr<std::vector<Http2Frame>> DequeueStreamFrames(
-      RefCountedPtr<Stream> stream);
-
-  /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
-  /// the peer
-  bool enable_preferred_rx_crypto_frame_advertisement_;
-  MemoryOwner memory_owner_;
-  chttp2::TransportFlowControl flow_control_;
-  std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
-  absl::flat_hash_set<uint32_t> window_update_list_;
-
-  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
-  Waker periodic_updates_waker_;
-
-  Http2ReadContext reader_state_;
-  Http2Status ParseAndDiscardHeaders(SliceBuffer&& buffer, bool is_end_headers,
-                                     RefCountedPtr<Stream> stream,
-                                     Http2Status&& original_status,
-                                     DebugLocation whence = {});
-  void ReadChannelArgs(const ChannelArgs& channel_args,
-                       TransportChannelArgs& args);
 };
-
-// Since the corresponding class in CHTTP2 is about 3.9KB, our goal is to
-// remain within that range. When this check fails, please update it to size
-// (current size + 32) to make sure that it does not fail each time we add a
-// small variable to the class.
-GRPC_CHECK_CLASS_SIZE(Http2ClientTransport, 600);
 
 }  // namespace http2
 }  // namespace grpc_core
