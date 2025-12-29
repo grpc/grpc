@@ -18,6 +18,9 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/cpp/end2end",
+    features = [
+        "layering_check",
+    ],
     visibility = "public",
 )  # Allows external users to implement end2end tests.
 
