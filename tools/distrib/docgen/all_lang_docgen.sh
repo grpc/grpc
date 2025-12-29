@@ -62,19 +62,19 @@ cd "${dir}/../../.."
 # Clones the API reference GitHub Pages branch
 PAGES_PATH="/tmp/gh-pages"
 rm -rf "${PAGES_PATH}"
-git clone -o origin --single-branch https://github.com/sreenithi/grpc -b gh-pages "${PAGES_PATH}"
+git clone -o upstream --single-branch https://github.com/grpc/grpc -b gh-pages "${PAGES_PATH}"
 
 # Generates Core / C++ / ObjC / PHP documents
-# rm -rf "${PAGES_PATH}/core" "${PAGES_PATH}/cpp" "${PAGES_PATH}/objc" "${PAGES_PATH}/php"
-# echo "Generating Core / C++ / ObjC / PHP documents in Docker..."
-# docker run --rm -it \
-#     -v "$(pwd)":/work/grpc \
-#     --user "$(id -u):$(id -g)" \
-#     hrektts/doxygen /work/grpc/tools/doxygen/run_doxygen.sh
-# mv doc/ref/c++/html "${PAGES_PATH}/cpp"
-# mv doc/ref/core/html "${PAGES_PATH}/core"
-# mv doc/ref/objc/html "${PAGES_PATH}/objc"
-# mv doc/ref/php/html "${PAGES_PATH}/php"
+rm -rf "${PAGES_PATH}/core" "${PAGES_PATH}/cpp" "${PAGES_PATH}/objc" "${PAGES_PATH}/php"
+echo "Generating Core / C++ / ObjC / PHP documents in Docker..."
+docker run --rm -it \
+    -v "$(pwd)":/work/grpc \
+    --user "$(id -u):$(id -g)" \
+    hrektts/doxygen /work/grpc/tools/doxygen/run_doxygen.sh
+mv doc/ref/c++/html "${PAGES_PATH}/cpp"
+mv doc/ref/core/html "${PAGES_PATH}/core"
+mv doc/ref/objc/html "${PAGES_PATH}/objc"
+mv doc/ref/php/html "${PAGES_PATH}/php"
 
 # Generates Python documents
 rm -rf "${PAGES_PATH}/python"

@@ -76,7 +76,6 @@ autodoc_default_options = {
 
 autodoc_mock_imports = ["envoy"]
 
-
 autodoc_typehints = 'description'
 
 # -- HTML Configuration -------------------------------------------------
