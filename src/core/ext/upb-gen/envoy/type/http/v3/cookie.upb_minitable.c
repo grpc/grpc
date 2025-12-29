@@ -30,16 +30,10 @@ static const upb_MiniTableField envoy_type_http_v3_Cookie__fields[3] = {
 const upb_MiniTable envoy__type__http__v3__Cookie_msg_init = {
   &envoy_type_http_v3_Cookie__submsgs[0],
   &envoy_type_http_v3_Cookie__fields[0],
-  UPB_SIZE(32, 56), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(32, 56), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.type.http.v3.Cookie",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x002000003f00001a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* envoy__type__http__v3__Cookie_msg_init_ptr = &envoy__type__http__v3__Cookie_msg_init;

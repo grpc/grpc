@@ -28,14 +28,10 @@ static const upb_MiniTableField xds_type_matcher_v3_ServerNameMatcher__fields[1]
 const upb_MiniTable xds__type__matcher__v3__ServerNameMatcher_msg_init = {
   &xds_type_matcher_v3_ServerNameMatcher__submsgs[0],
   &xds_type_matcher_v3_ServerNameMatcher__fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.type.matcher.v3.ServerNameMatcher",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_prm_1bt_max64b},
-  })
 };
 
 const upb_MiniTable* xds__type__matcher__v3__ServerNameMatcher_msg_init_ptr = &xds__type__matcher__v3__ServerNameMatcher_msg_init;
@@ -51,14 +47,10 @@ static const upb_MiniTableField xds_type_matcher_v3_ServerNameMatcher_DomainMatc
 const upb_MiniTable xds__type__matcher__v3__ServerNameMatcher__DomainMatcher_msg_init = {
   &xds_type_matcher_v3_ServerNameMatcher_DomainMatcher__submsgs[0],
   &xds_type_matcher_v3_ServerNameMatcher_DomainMatcher__fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.type.matcher.v3.ServerNameMatcher.DomainMatcher",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_prs_1bt},
-  })
 };
 
 const upb_MiniTable* xds__type__matcher__v3__ServerNameMatcher__DomainMatcher_msg_init_ptr = &xds__type__matcher__v3__ServerNameMatcher__DomainMatcher_msg_init;

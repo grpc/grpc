@@ -27,14 +27,10 @@ static const upb_MiniTableField envoy_type_matcher_v3_AddressMatcher__fields[1] 
 const upb_MiniTable envoy__type__matcher__v3__AddressMatcher_msg_init = {
   &envoy_type_matcher_v3_AddressMatcher__submsgs[0],
   &envoy_type_matcher_v3_AddressMatcher__fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.type.matcher.v3.AddressMatcher",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_prm_1bt_maxmaxb},
-  })
 };
 
 const upb_MiniTable* envoy__type__matcher__v3__AddressMatcher_msg_init_ptr = &envoy__type__matcher__v3__AddressMatcher_msg_init;

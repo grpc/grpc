@@ -36,20 +36,10 @@ static const upb_MiniTableField envoy_config_metrics_v3_MetricsServiceConfig__fi
 const upb_MiniTable envoy__config__metrics__v3__MetricsServiceConfig_msg_init = {
   &envoy_config_metrics_v3_MetricsServiceConfig__submsgs[0],
   &envoy_config_metrics_v3_MetricsServiceConfig__fields[0],
-  UPB_SIZE(32, 40), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(32, 40), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.metrics.v3.MetricsServiceConfig",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000c00003f000018, &upb_psv4_1bt},
-    {0x000900003f000020, &upb_psb1_1bt},
-    {0x001000003f000028, &upb_psv4_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__config__metrics__v3__MetricsServiceConfig_msg_init_ptr = &envoy__config__metrics__v3__MetricsServiceConfig_msg_init;

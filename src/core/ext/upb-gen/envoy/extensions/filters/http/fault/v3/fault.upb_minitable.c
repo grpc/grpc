@@ -37,20 +37,10 @@ static const upb_MiniTableField envoy_extensions_filters_http_fault_v3_FaultAbor
 const upb_MiniTable envoy__extensions__filters__http__fault__v3__FaultAbort_msg_init = {
   &envoy_extensions_filters_http_fault_v3_FaultAbort__submsgs[0],
   &envoy_extensions_filters_http_fault_v3_FaultAbort__fields[0],
-  UPB_SIZE(24, 32), 4, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(24, 32), 4, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.filters.http.fault.v3.FaultAbort",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0018000c02000010, &upb_pov4_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0018000c04010022, &upb_pom_1bt_max64b},
-    {0x0018000c05000028, &upb_pov4_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__extensions__filters__http__fault__v3__FaultAbort_msg_init_ptr = &envoy__extensions__filters__http__fault__v3__FaultAbort_msg_init;
@@ -95,28 +85,10 @@ static const upb_MiniTableField envoy_extensions_filters_http_fault_v3_HTTPFault
 const upb_MiniTable envoy__extensions__filters__http__fault__v3__HTTPFault_msg_init = {
   &envoy_extensions_filters_http_fault_v3_HTTPFault__submsgs[0],
   &envoy_extensions_filters_http_fault_v3_HTTPFault__fields[0],
-  UPB_SIZE(104, 200), 16, kUpb_ExtMode_NonExtendable, 16, UPB_FASTTABLE_MASK(120), 0,
+  UPB_SIZE(104, 200), 16, kUpb_ExtMode_NonExtendable, 16, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.filters.http.fault.v3.HTTPFault",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00001a, &upb_pss_1bt},
-    {0x00a000003f020022, &upb_prm_1bt_maxmaxb},
-    {0x00a800003f00002a, &upb_prs_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x002000003f000042, &upb_pss_1bt},
-    {0x003000003f00004a, &upb_pss_1bt},
-    {0x004000003f000052, &upb_pss_1bt},
-    {0x005000003f00005a, &upb_pss_1bt},
-    {0x006000003f000062, &upb_pss_1bt},
-    {0x007000003f00006a, &upb_pss_1bt},
-    {0x008000003f000072, &upb_pss_1bt},
-    {0x000900003f000078, &upb_psb1_1bt},
-  })
 };
 
 const upb_MiniTable* envoy__extensions__filters__http__fault__v3__HTTPFault_msg_init_ptr = &envoy__extensions__filters__http__fault__v3__HTTPFault_msg_init;

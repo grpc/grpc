@@ -38,20 +38,10 @@ static const upb_MiniTableField envoy_admin_v3_ServerInfo__fields[7] = {
 const upb_MiniTable envoy__admin__v3__ServerInfo_msg_init = {
   &envoy_admin_v3_ServerInfo__submsgs[0],
   &envoy_admin_v3_ServerInfo__fields[0],
-  UPB_SIZE(48, 80), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(48, 80), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.admin.v3.ServerInfo",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x000c00003f000010, &upb_psv4_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x002000003f00002a, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__admin__v3__ServerInfo_msg_init_ptr = &envoy__admin__v3__ServerInfo_msg_init;
@@ -104,44 +94,10 @@ static const upb_MiniTableField envoy_admin_v3_CommandLineOptions__fields[37] = 
 const upb_MiniTable envoy__admin__v3__CommandLineOptions_msg_init = {
   &envoy_admin_v3_CommandLineOptions__submsgs[0],
   &envoy_admin_v3_CommandLineOptions__fields[0],
-  UPB_SIZE(176, 288), 37, kUpb_ExtMode_NonExtendable, 11, UPB_FASTTABLE_MASK(248), 0,
+  UPB_SIZE(176, 288), 37, kUpb_ExtMode_NonExtendable, 11, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.admin.v3.CommandLineOptions",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x00f000003f000008, &upb_psv8_1bt},
-    {0x001800003f000010, &upb_psv4_1bt},
-    {0x003000003f00001a, &upb_pss_1bt},
-    {0x004000003f000022, &upb_pss_1bt},
-    {0x000900003f000028, &upb_psb1_1bt},
-    {0x005000003f000032, &upb_pss_1bt},
-    {0x001c00003f000038, &upb_psv4_1bt},
-    {0x006000003f000042, &upb_pss_1bt},
-    {0x007000003f00004a, &upb_pss_1bt},
-    {0x008000003f000052, &upb_pss_1bt},
-    {0x009000003f00005a, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x00a000003f00006a, &upb_pss_1bt},
-    {0x00b000003f000072, &upb_pss_1bt},
-    {0x00c000003f00007a, &upb_pss_1bt},
-    {0x00d000003f000282, &upb_pss_2bt},
-    {0x002800003f000288, &upb_psv4_2bt},
-    {0x001100003f000290, &upb_psb1_2bt},
-    {0x002000003f000198, &upb_psv4_2bt},
-    {0x002c00003f0002a0, &upb_psv4_2bt},
-    {0x001200003f0002a8, &upb_psb1_2bt},
-    {0x000a00003f0001b0, &upb_psb1_2bt},
-    {0x000b00003f0001b8, &upb_psb1_2bt},
-    {0x002400003f0001c0, &upb_psv4_2bt},
-    {0x000c00003f0001c8, &upb_psb1_2bt},
-    {0x000d00003f0001d0, &upb_psb1_2bt},
-    {0x000e00003f0001d8, &upb_psb1_2bt},
-    {0x011000003f0001e2, &upb_prs_2bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000f00003f0001f0, &upb_psb1_2bt},
-    {0x001000003f0001f8, &upb_psb1_2bt},
-  })
 };
 
 const upb_MiniTable* envoy__admin__v3__CommandLineOptions_msg_init_ptr = &envoy__admin__v3__CommandLineOptions_msg_init;

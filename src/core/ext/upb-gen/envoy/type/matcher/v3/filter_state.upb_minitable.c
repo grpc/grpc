@@ -32,16 +32,10 @@ static const upb_MiniTableField envoy_type_matcher_v3_FilterStateMatcher__fields
 const upb_MiniTable envoy__type__matcher__v3__FilterStateMatcher_msg_init = {
   &envoy_type_matcher_v3_FilterStateMatcher__submsgs[0],
   &envoy_type_matcher_v3_FilterStateMatcher__fields[0],
-  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.type.matcher.v3.FilterStateMatcher",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x0020000802000012, &upb_pom_1bt_maxmaxb},
-    {0x002000080301001a, &upb_pom_1bt_maxmaxb},
-  })
 };
 
 const upb_MiniTable* envoy__type__matcher__v3__FilterStateMatcher_msg_init_ptr = &envoy__type__matcher__v3__FilterStateMatcher_msg_init;

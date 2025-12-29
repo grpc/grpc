@@ -24,16 +24,10 @@ static const upb_MiniTableField envoy_type_v3_Int64Range__fields[2] = {
 const upb_MiniTable envoy__type__v3__Int64Range_msg_init = {
   NULL,
   &envoy_type_v3_Int64Range__fields[0],
-  24, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  24, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.type.v3.Int64Range",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f000008, &upb_psv8_1bt},
-    {0x001000003f000010, &upb_psv8_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__type__v3__Int64Range_msg_init_ptr = &envoy__type__v3__Int64Range_msg_init;
@@ -45,16 +39,10 @@ static const upb_MiniTableField envoy_type_v3_Int32Range__fields[2] = {
 const upb_MiniTable envoy__type__v3__Int32Range_msg_init = {
   NULL,
   &envoy_type_v3_Int32Range__fields[0],
-  16, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  16, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.type.v3.Int32Range",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f000008, &upb_psv4_1bt},
-    {0x000c00003f000010, &upb_psv4_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__type__v3__Int32Range_msg_init_ptr = &envoy__type__v3__Int32Range_msg_init;
@@ -72,8 +60,8 @@ const upb_MiniTable envoy__type__v3__DoubleRange_msg_init = {
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f000009, &upb_psf8_1bt},
-    {0x001000003f000011, &upb_psf8_1bt},
+    {0x000800003f000009, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x001000003f000011, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };

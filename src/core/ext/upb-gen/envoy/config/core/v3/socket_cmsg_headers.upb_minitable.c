@@ -30,16 +30,10 @@ static const upb_MiniTableField envoy_config_core_v3_SocketCmsgHeaders__fields[3
 const upb_MiniTable envoy__config__core__v3__SocketCmsgHeaders_msg_init = {
   &envoy_config_core_v3_SocketCmsgHeaders__submsgs[0],
   &envoy_config_core_v3_SocketCmsgHeaders__fields[0],
-  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.SocketCmsgHeaders",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000c00003f000018, &upb_psv4_1bt},
-  })
 };
 
 const upb_MiniTable* envoy__config__core__v3__SocketCmsgHeaders_msg_init_ptr = &envoy__config__core__v3__SocketCmsgHeaders_msg_init;
