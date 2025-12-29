@@ -29,8 +29,10 @@ from typing import (
 
 from grpc._cython import cygrpc
 
+
 class CygrpcChannelCredentials:
     """Type alias for cygrpc.ChannelCredentials."""
+
     _cy_creds: cygrpc.ChannelCredentials
 
     def __init__(self, cy_creds: cygrpc.ChannelCredentials):
@@ -39,6 +41,7 @@ class CygrpcChannelCredentials:
 
 class CygrpcCallCredentials:
     """Type alias for cygrpc.CallCredentials."""
+
     _cy_creds: cygrpc.CallCredentials
 
     def __init__(self, cy_creds: cygrpc.CallCredentials):
@@ -47,6 +50,7 @@ class CygrpcCallCredentials:
 
 class CygrpcServerCredentials:
     """Type alias for cygrpc.ServerCredentials."""
+
     _cy_creds: cygrpc.ServerCredentials
 
     def __init__(self, cy_creds: cygrpc.ServerCredentials):
@@ -55,6 +59,7 @@ class CygrpcServerCredentials:
 
 class CygrpcServerCertificateConfig:
     """Type alias for cygrpc.ServerCertificateConfig."""
+
     _cy_config: cygrpc.ServerCertificateConfig
 
     def __init__(self, cy_config: cygrpc.ServerCertificateConfig):
@@ -63,10 +68,12 @@ class CygrpcServerCertificateConfig:
 
 class CygrpcBaseEvent:
     """Type alias for cygrpc.BaseEvent."""
+
     _cy_event: cygrpc.BaseEvent
 
     def __init__(self, cy_event: cygrpc.BaseEvent):
         self._cy_event = cy_event
+
 
 if TYPE_CHECKING:
     from grpc import ChannelConnectivity

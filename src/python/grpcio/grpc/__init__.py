@@ -2240,7 +2240,9 @@ def alts_server_credentials() -> ServerCredentials:
     Returns:
       A ServerCredentials for use with an ALTS-enabled Server
     """
-    return ServerCredentials(CygrpcServerCredentials(_cygrpc.server_credentials_alts()))
+    return ServerCredentials(
+        CygrpcServerCredentials(_cygrpc.server_credentials_alts())
+    )
 
 
 def compute_engine_channel_credentials(
