@@ -179,7 +179,6 @@
   - absl/base:config
   - absl/base:core_headers
   headers:
-  - third_party/abseil-cpp/absl/base/internal/nullability_deprecated.h
   - third_party/abseil-cpp/absl/base/nullability.h
   name: absl/base:nullability
   src: []
@@ -327,6 +326,7 @@
 - cmake_target: absl::container_memory
   deps:
   - absl/base:config
+  - absl/hash:hash
   - absl/memory:memory
   - absl/meta:type_traits
   - absl/utility:utility
@@ -397,6 +397,7 @@
 - cmake_target: absl::hash_policy_traits
   deps:
   - absl/container:common_policy_traits
+  - absl/container:container_memory
   - absl/meta:type_traits
   headers:
   - third_party/abseil-cpp/absl/container/internal/hash_policy_traits.h
@@ -536,6 +537,7 @@
   src: []
 - cmake_target: absl::raw_hash_set
   deps:
+  - absl/base:base
   - absl/base:config
   - absl/base:core_headers
   - absl/base:dynamic_annotations
@@ -747,6 +749,7 @@
   - absl/base:config
   - absl/base:core_headers
   - absl/base:dynamic_annotations
+  - absl/base:malloc_internal
   - absl/base:raw_logging_internal
   - absl/debugging:debugging_internal
   headers:
@@ -995,6 +998,7 @@
   deps:
   - absl/base:config
   - absl/base:core_headers
+  - absl/base:nullability
   - absl/meta:type_traits
   - absl/utility:utility
   headers:
@@ -1045,10 +1049,10 @@
   - absl/base:config
   - absl/base:core_headers
   - absl/base:endian
+  - absl/base:prefetch
   - absl/container:fixed_array
   - absl/functional:function_ref
   - absl/hash:city
-  - absl/hash:low_level_hash
   - absl/hash:weakly_mixed_integer
   - absl/meta:type_traits
   - absl/numeric:bits
@@ -1063,18 +1067,6 @@
   name: absl/hash:hash
   src:
   - third_party/abseil-cpp/absl/hash/internal/hash.cc
-- cmake_target: absl::low_level_hash
-  deps:
-  - absl/base:config
-  - absl/base:core_headers
-  - absl/base:endian
-  - absl/base:prefetch
-  - absl/numeric:int128
-  headers:
-  - third_party/abseil-cpp/absl/hash/internal/low_level_hash.h
-  name: absl/hash:low_level_hash
-  src:
-  - third_party/abseil-cpp/absl/hash/internal/low_level_hash.cc
 - cmake_target: absl::weakly_mixed_integer
   deps:
   - absl/base:config
@@ -1113,6 +1105,7 @@
   - absl/log/internal:nullguard
   - absl/log/internal:nullstream
   - absl/log/internal:strip
+  - absl/strings:has_ostream_operator
   - absl/strings:strings
   headers:
   - third_party/abseil-cpp/absl/log/internal/check_op.h
@@ -1442,13 +1435,15 @@
   - absl/base:core_headers
   - absl/base:log_severity
   - absl/log/internal:config
+  - absl/log/internal:proto
   - absl/strings:strings
   - absl/time:time
   - absl/types:span
   headers:
   - third_party/abseil-cpp/absl/log/log_entry.h
   name: absl/log:log_entry
-  src: []
+  src:
+  - third_party/abseil-cpp/absl/log/log_entry.cc
 - cmake_target: absl::log_sink
   deps:
   - absl/base:config
@@ -1553,6 +1548,21 @@
   name: absl/profiling:exponential_biased
   src:
   - third_party/abseil-cpp/absl/profiling/internal/exponential_biased.cc
+- cmake_target: absl::hashtable_profiler
+  deps:
+  - absl/base:config
+  - absl/container:hashtablez_sampler
+  - absl/profiling:profile_builder
+  - absl/status:statusor
+  - absl/strings:string_view
+  - absl/strings:strings
+  - absl/time:time
+  - absl/types:span
+  headers:
+  - third_party/abseil-cpp/absl/profiling/hashtable.h
+  name: absl/profiling:hashtable
+  src:
+  - third_party/abseil-cpp/absl/profiling/hashtable.cc
 - cmake_target: absl::periodic_sampler
   deps:
   - absl/base:core_headers
@@ -1562,6 +1572,20 @@
   name: absl/profiling:periodic_sampler
   src:
   - third_party/abseil-cpp/absl/profiling/internal/periodic_sampler.cc
+- cmake_target: absl::profile_builder
+  deps:
+  - absl/base:base
+  - absl/base:config
+  - absl/base:raw_logging_internal
+  - absl/container:btree
+  - absl/container:flat_hash_map
+  - absl/strings:strings
+  - absl/types:span
+  headers:
+  - third_party/abseil-cpp/absl/profiling/internal/profile_builder.h
+  name: absl/profiling:profile_builder
+  src:
+  - third_party/abseil-cpp/absl/profiling/internal/profile_builder.cc
 - cmake_target: absl::sample_recorder
   deps:
   - absl/base:config
