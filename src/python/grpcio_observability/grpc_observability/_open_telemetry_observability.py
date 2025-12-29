@@ -18,7 +18,6 @@ import time
 from typing import Any, AnyStr, Dict, Iterable, List, Optional, Set, Union
 
 import grpc
-from grpc import _observability as _grpc_observability
 
 # pytype: disable=pyi-error
 from grpc_observability import _cyobservability
@@ -325,7 +324,7 @@ class _OpenTelemetryExporterDelegator(_observability.Exporter):
 
 
 # pylint: disable=no-self-use
-class OpenTelemetryObservability(_grpc_observability.ObservabilityPlugin):
+class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
     """OpenTelemetry based plugin implementation.
 
     This is class is part of an EXPERIMENTAL API.
@@ -365,7 +364,7 @@ class OpenTelemetryObservability(_grpc_observability.ObservabilityPlugin):
         except Exception as e:  # pylint: disable=broad-except
             _LOGGER.exception("Initiate observability failed with: %s", e)
 
-        _grpc_observability.observability_init(self)
+        grpc._observability.observability_init(self)
 
     def observability_deinit(self) -> None:
         # Sleep so we don't loss any data. If we shutdown export thread
@@ -380,7 +379,7 @@ class OpenTelemetryObservability(_grpc_observability.ObservabilityPlugin):
         self.set_tracing(False)
         self.set_stats(False)
         _cyobservability.observability_deinit()
-        _grpc_observability.observability_deinit()
+        grpc._observability.observability_deinit()
 
     def create_client_call_tracer(
         self, method_name: bytes, target: bytes
