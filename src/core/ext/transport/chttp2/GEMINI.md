@@ -98,34 +98,43 @@ and the underlying endpoint.
 *   Frame Parsers and Validators for PH2:
     *   `frame.{h,cc}`: Newer frame parsing/serialization.
 *   Assemblers:
-    *   `header_assembler.{h,cc}`: Converts gRPC Initial and Trailing Metadata into HTTP2 HEADER and CONTINUATION Frames and back.
-    *   `message_assembler.{h,cc}`: Converts gRPC Messages into HTTP2 DATA Frames and back.
+    *   `header_assembler.h`: Converts gRPC Initial and Trailing Metadata into HTTP2 HEADER and CONTINUATION Frames and back.
+    *   `message_assembler.h`: Converts gRPC Messages into HTTP2 DATA Frames and back.
 *   Error Handling Classes:
     *   `http2_status.h`: Custom HTTP/2 error types (Stream vs Connection).
 *   Ping and Keep Alive Helpers:
     *   `ping_promise.{h,cc}`
     *   `keepalive.{h,cc}`
 *   Helper classes for PH2 writes:
-    *   `stream_data_queue.{h,cc}` Stores gRPC messages and Metadata from the CallV3 stack for each stream in a queue.
-    *   `writable_streams.{h,cc}` Track streams that have some data to send to the peer and have available flow control tokens.
+    *   `stream_data_queue.h` Stores gRPC messages and Metadata from the CallV3 stack for each stream in a queue.
+    *   `writable_streams.h` Track streams that have some data to send to the peer and have available flow control tokens.
 *   Settings Helper : `http2_settings_promises.h`
 *   Flow Control Helper : `flow_control_manager.h`
 *   Stream : `stream.h` representation of each HTTP2 stream in the HTTP2 transport.
 *   GoAway : `goaway.{h,cc}` for implementation of HTTP2 GOAWAY
+*   Metadata: `incoming_metadata_tracker.h`
+*   Security : `security_frame.h`
 
 ## 3. Common Files (Shared by CHTTP2 and PH2)
 
 *   **`alpn`**: Contains code for ALPN (Application-Layer Protocol Negotiation), which is used to select the HTTP/2 protocol during the TLS handshake.
 *   **`client/chttp2_connector.h`, `client/chttp2_connector.cc`**: These files define the client-side connector, which is responsible for creating a new HTTP2 transport.
 *   **`server/chttp2_server.h`, `server/chttp2_server.cc`**: These files define the server-side listener, which is responsible for accepting new connections and creating new HTTP2 transports.
-*   HPACK implementation: `hpack_*.{h,cc}` (e.g., `hpack_encoder.cc`, `hpack_parser.cc`)
-*   Flow Control: `flow_control.{h,cc}`
-*   Settings: `http2_settings*.{h,cc}` (e.g., `http2_settings.cc`, `http2_settings_manager.cc`)
-*   Ping policies: `ping_abuse_policy.{h,cc}`, `ping_callbacks.{h,cc}`, `ping_rate_policy.{h,cc}`
-*   Other utilities: `bin_encoder.{h,cc}`, `decode_huff.{h,cc}`, `huffsyms.{h,cc}`, `varint.{h,cc}`
-*   `transport_common.{h,cc}`
-*   `internal_channel_arg_names.h`
-*   `http2_ztrace_collector.h`: Collects events for z-trace debugging.
+*   Files in `transport/`:
+    *   HPACK implementation:
+        *   `hpack_constants.h`
+        *   `hpack_encoder.{h,cc}`
+        *   `hpack_encoder_table.{h,cc}`
+        *   `hpack_parse_result.{h,cc}`
+        *   `hpack_parser.{h,cc}`
+        *   `hpack_parser_table.{h,cc}`
+    *   Flow Control: `flow_control.{h,cc}`
+    *   Settings: `http2_settings.{h,cc}`, `http2_settings_manager.{h,cc}`
+    *   Ping policies: `ping_abuse_policy.{h,cc}`, `ping_callbacks.{h,cc}`, `ping_rate_policy.{h,cc}`
+    *   Other utilities: `bin_encoder.{h,cc}`, `decode_huff.{h,cc}`, `huffsyms.{h,cc}`, `varint.{h,cc}`
+    *   `transport_common.{h,cc}`
+    *   `internal_channel_arg_names.h`
+    *   `http2_ztrace_collector.h`: Collects events for z-trace debugging.
 
 ## 4. Unused or TBD Files
 
@@ -183,6 +192,8 @@ Key test files include:
     *   `test/core/transport/chttp2/stream_data_queue_test.cc`
     *   `test/core/transport/chttp2/writable_streams_fuzz_test.cc`
     *   `test/core/transport/chttp2/writable_streams_test.cc`
+    *   `test/core/transport/chttp2/incoming_metadata_tracker_test.cc`
+    *   `test/core/transport/chttp2/http2_security_frame_test.cc`
 
 *   **Common Component Tests:**
     *   `test/core/transport/chttp2/flow_control_fuzzer.cc`
