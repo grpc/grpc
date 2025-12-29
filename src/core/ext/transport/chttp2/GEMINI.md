@@ -230,3 +230,21 @@ PH2 shares several architectural similarities with the [Chaotic Good transport](
 *   **Framing Concepts:** While the specific frame types and serialization differ (HTTP/2 vs. custom proto-based for Chaotic Good), the underlying concepts of defining frame structures (e.g., `frame.h` in both transports) and managing their serialization/deserialization are present in both.
 *   **Endpoint Interaction:** Both transports use the `PromiseEndpoint` abstraction or reading from and writing to the network, making the core transport logic independent of the underlying I/O mechanism.
 *   **Stream Initiation:** In PH2, `Http2ClientTransport::StartCall` initiates a new stream. It acquires a lock, assigns a new stream ID, creates a `Stream` object, and spawns the `CallOutboundLoop` to handle the stream's outgoing messages. Chaotic Good follows a similar pattern in `ChaoticGoodClientTransport::StartCall`, where it calls `StreamDispatch::MakeStream` to allocate a stream ID and create a `Stream` object, and then spawns `CallOutboundLoop` for the stream's lifecycle.
+
+# PH2 Transport Party Slots
+
+The HTTP2 transport uses Promise Party internally to manage scheduling of jobs.
+Since the number of slots in a Party is 16, we need to account for all the slots
+that we use in the transport.
+
+| Name | Category | Description | Max Spawns at a time | When is it spawned | Max Duration | Resolution |
+|---|---|---|---|---|---|---|
+| SecurityFrameLoop | Loop | Security Frame | 1 | After Constructor | Lifetime of the transport | Transport Close |
+| ReadLoop | Loop | | 1 | After 1st write | Lifetime of the transport | Transport Close |
+| FlowControlPeriodicUpdateLoop | Loop | | 1 | After Constructor | Lifetime of the transport | Transport Close |
+| MultiplexerLoop | Loop | | 1 | After Constructor | Lifetime of the transport | Transport Close |
+| AddData | Misc | ChannelZ AddData | 1 | On demand | Immediate | Immediate |
+| CloseTransport | Misc | Close transport | 1 | While closing transport. Only once in the life of a transport | As long as it takes to close the transport | Transport Close |
+| WaitForSettingsTimeout | Timeout | Settings Timeout | 1 | When we write SETTINGS | Settings timeout | Settings Ack Received or Settings Timeout |
+|`TODO(akshitpatel) [PH2][P4] Fill this out for Ping, Keepalive etc. Also update the total.` |
+| | | **Total** | ** 7 + Ping ** | | | |

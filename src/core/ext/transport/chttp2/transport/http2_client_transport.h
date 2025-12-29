@@ -88,19 +88,6 @@
 namespace grpc_core {
 namespace http2 {
 
-// Http2 Client Transport Spawns Overview
-
-// | Promise Spawn       | Max Duration | Promise Resolution    | Max Spawns |
-// |                     | for Spawn    |                       |            |
-// |---------------------|--------------|-----------------------|------------|
-// | Endpoint Read Loop  | Infinite     | On transport close    | One        |
-// | Endpoint Write Loop | Infinite     | On transport close    | One        |
-// | Stream Multiplexer  | Infinite     | On transport close    | One        |
-// | Close Transport     | CloseTimeout | On transport close    | One        |
-
-// Max Party Slots (Always): 3
-// Max Promise Slots (Worst Case): 4
-
 // Experimental : The code will be written iteratively.
 // Do not use or edit any of these functions unless you are
 // familiar with the PH2 project (Moving chttp2 to promises.)
@@ -252,7 +239,7 @@ class Http2ClientTransport final : public ClientTransport,
       absl::Status status, StateWatcher::DisconnectInfo disconnect_info)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&transport_mutex_);
 
-  RefCountedPtr<Party> general_party_;
+  RefCountedPtr<Party> general_party_;  // Refer Gemini.md for party slot usage
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 
   PromiseEndpoint endpoint_;
