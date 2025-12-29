@@ -78,8 +78,10 @@ grpc_server* server_create(grpc_completion_queue* cq, const char* server_addr,
                                                                ca_cert.c_str());
   grpc_tls_certificate_provider_in_memory_set_identity_certificate(
       *server_provider, server_pairs);
-  grpc_tls_credentials_options_set_certificate_provider(options,
-                                                        *server_provider);
+  grpc_tls_credentials_options_set_root_certificate_provider(options,
+                                                             *server_provider);
+  grpc_tls_credentials_options_set_identity_certificate_provider(
+      options, *server_provider);
   grpc_tls_credentials_options_watch_root_certs(options);
   grpc_tls_credentials_options_watch_identity_key_cert_pairs(options);
   // Set client certificate request type.
@@ -122,8 +124,10 @@ grpc_channel* client_create(const char* server_addr,
   grpc_tls_certificate_provider_in_memory_set_identity_certificate(
       *client_provider, client_pairs);
 
-  grpc_tls_credentials_options_set_certificate_provider(options,
-                                                        *client_provider);
+  grpc_tls_credentials_options_set_root_certificate_provider(options,
+                                                             *client_provider);
+  grpc_tls_credentials_options_set_identity_certificate_provider(
+      options, *client_provider);
   grpc_tls_credentials_options_watch_root_certs(options);
   grpc_tls_credentials_options_watch_identity_key_cert_pairs(options);
   // Set client certificate request type.

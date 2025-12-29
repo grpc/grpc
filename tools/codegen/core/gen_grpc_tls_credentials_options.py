@@ -115,37 +115,6 @@ _DATA_MEMBERS = [
         test_value_2="true",
     ),
     DataMember(
-        name="certificate_provider",
-        type="grpc_core::RefCountedPtr<grpc_tls_certificate_provider>",
-        getter_comment=(
-            "Returns the distributor from certificate_provider_ if it is set,"
-            " nullptr otherwise."
-        ),
-        override_getter="""grpc_tls_certificate_distributor* certificate_distributor() {
-    if (certificate_provider_ != nullptr) { return certificate_provider_->distributor().get(); }
-    return nullptr;
-  }""",
-        setter_comment=(
-            "Deprecated. Use `set_root_certificate_provider` and"
-            " `set_identity_certificate_provider` instead."
-        ),
-        setter_move_semantics=True,
-        special_comparator=(
-            "(certificate_provider_ == other.certificate_provider_ ||"
-            " (certificate_provider_ != nullptr && other.certificate_provider_"
-            " != nullptr &&"
-            " certificate_provider_->Compare(other.certificate_provider_.get())"
-            " == 0))"
-        ),
-        test_name="DifferentCertificateProvider",
-        test_value_1=(
-            'CreateTestingCertificateProvider("root_cert_1", PemKeyCertPairList())'
-        ),
-        test_value_2=(
-            'CreateTestingCertificateProvider("root_cert_2", PemKeyCertPairList())'
-        ),
-    ),
-    DataMember(
         name="watch_root_cert",
         type="bool",
         default_initializer="false",
@@ -265,10 +234,10 @@ _DATA_MEMBERS = [
         ),
         test_name="DifferentIdentityCertificateProvider",
         test_value_1=(
-            'CreateTestingCertificateProvider("root_cert_1", MakeCertKeyPairs("private_key_1", "cert_chain_1"))'
+            'CreateTestingCertificateProvider("", PemKeyCertPairList())'
         ),
         test_value_2=(
-            'CreateTestingCertificateProvider("root_cert_1", MakeCertKeyPairs("private_key_2", "cert_chain_2"))'
+            'CreateTestingCertificateProvider("", PemKeyCertPairList())'
         ),
     ),
     DataMember(
@@ -292,10 +261,10 @@ _DATA_MEMBERS = [
         ),
         test_name="DifferentRootCertificateProvider",
         test_value_1=(
-            'CreateTestingCertificateProvider("root_cert_1", PemKeyCertPairList())'
+            'CreateTestingCertificateProvider("", PemKeyCertPairList())'
         ),
         test_value_2=(
-            'CreateTestingCertificateProvider("root_cert_2", PemKeyCertPairList())'
+            'CreateTestingCertificateProvider("", PemKeyCertPairList())'
         ),
     ),
 ]

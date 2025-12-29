@@ -52,6 +52,8 @@ class TlsCredentialsOptions {
 
   // ---- Setters for member fields ----
   // Sets the certificate provider used to store root certs and identity certs.
+  // DEPRECATED. Use set_root_certificate_provider and
+  // set_identity_certificate_provider instead.
   void set_certificate_provider(
       std::shared_ptr<CertificateProviderInterface> certificate_provider);
   void set_root_certificate_provider(
@@ -144,7 +146,8 @@ class TlsCredentialsOptions {
   }
 
  private:
-  std::shared_ptr<CertificateProviderInterface> certificate_provider_;
+  std::shared_ptr<CertificateProviderInterface> root_certificate_provider_;
+  std::shared_ptr<CertificateProviderInterface> identity_certificate_provider_;
   std::shared_ptr<CertificateVerifier> certificate_verifier_;
   grpc_tls_credentials_options* c_credentials_options_ = nullptr;
 };

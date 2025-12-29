@@ -56,8 +56,7 @@
 using RootCertInfo = std::variant<std::string, grpc_core::SpiffeBundleMap>;
 
 using PrivateKey =
-    std::variant<std::string,
-                 std::shared_ptr<grpc_core::CustomPrivateKeySigner>>;
+    std::variant<std::string, std::shared_ptr<grpc_core::PrivateKeySigner>>;
 
 // --- tsi_ssl_root_certs_store object ---
 
@@ -112,7 +111,7 @@ typedef struct tsi_ssl_client_handshaker_factory
 // Object that holds a private key / certificate chain pair in PEM format.
 struct tsi_ssl_pem_key_cert_pair {
   // private_key is either NULL-terminated string containing the PEM encoding of
-  // the client's private key or custom private key offloading function.
+  // the client's private key or an implementation of PrivateKeySigner.
   PrivateKey private_key;
 
   // cert_chain is the NULL-terminated string containing the PEM encoding of

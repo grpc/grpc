@@ -36,8 +36,8 @@
 #endif
 
 #include <grpc/grpc_crl_provider.h>
-#include <grpc/grpc_private_key_offload.h>
 #include <grpc/grpc_security.h>
+#include <grpc/private_key_signer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
@@ -170,6 +170,14 @@ struct tsi_ssl_frame_protector {
 // --- Library Initialization. ---
 
 namespace {
+
+#if defined(OPENSSL_IS_BORINGSSL)
+const SSL_PRIVATE_KEY_METHOD TlsOffloadPrivateKeyMethod = {
+    grpc_core::TlsPrivateKeySignWrapper,
+    nullptr,  // decrypt not implemented for this use case
+    grpc_core::TlsPrivateKeyOffloadComplete};
+#endif
+
 // Builds the alpn protocol name list according to rfc 7301.
 // OpenSSL requires <const char**> for the input to the alpn methods.
 tsi_result BuildAlpnProtocolNameList(const char** alpn_protocols,
@@ -294,10 +302,13 @@ static void verified_root_cert_free(void* /*parent*/, void* ptr,
   X509_free(static_cast<X509*>(ptr));
 }
 
-static void private_key_offloading_free(void* /*parent*/, void* ptr,
-                                        CRYPTO_EX_DATA* /*ad*/, int /*index*/,
-                                        long /*argl*/, void* /*argp*/) {
-  X509_free(static_cast<X509*>(ptr));
+static void private_key_offloading_context_free(void* /*parent*/, void* ptr,
+                                                CRYPTO_EX_DATA* /*ad*/,
+                                                int /*index*/, long /*argl*/,
+                                                void* /*argp*/) {
+  grpc_core::TlsPrivateKeyOffloadContext* ctx =
+      static_cast<grpc_core::TlsPrivateKeyOffloadContext*>(ptr);
+  delete ctx;
 }
 
 static void init_openssl(void) {
@@ -364,15 +375,14 @@ static void init_openssl(void) {
       0, nullptr, nullptr, nullptr, verified_root_cert_free);
   GRPC_CHECK_NE(g_ssl_ex_verified_root_cert_index, -1);
 
-  g_ssl_ctx_ex_private_key_function_index = SSL_CTX_get_ex_new_index(
-      0, nullptr, nullptr, nullptr, private_key_offloading_free);
+  g_ssl_ctx_ex_private_key_function_index =
+      SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
   GRPC_CHECK_NE(g_ssl_ctx_ex_private_key_function_index, -1);
 
   g_ssl_ex_private_key_offloading_context_index = SSL_get_ex_new_index(
-      0, nullptr, nullptr, nullptr, private_key_offloading_free);
+      0, nullptr, nullptr, nullptr, private_key_offloading_context_free);
   GRPC_CHECK_NE(g_ssl_ex_private_key_offloading_context_index, -1);
 }
-
 // --- Ssl utils. ---
 
 // TODO(jboeuf): Remove when we are past the debugging phase with this code.
@@ -961,13 +971,17 @@ static tsi_result populate_ssl_context(
           }
           return result;
         },
-        [&](std::shared_ptr<grpc_core::CustomPrivateKeySigner> key_sign) {
+        [&](const std::shared_ptr<grpc_core::PrivateKeySigner>& key_signer) {
 #if defined(OPENSSL_IS_BORINGSSL)
-          if (key_sign != nullptr) {
-            SSL_CTX_set_private_key_method(
-                context, &grpc_core::TlsOffloadPrivateKeyMethod);
-            SSL_CTX_set_ex_data(
-                context, g_ssl_ctx_ex_private_key_function_index, &key_sign);
+          if (key_signer != nullptr) {
+            SSL_CTX_set_private_key_method(context,
+                                           &TlsOffloadPrivateKeyMethod);
+            if (!SSL_CTX_set_ex_data(context,
+                                     g_ssl_ctx_ex_private_key_function_index,
+                                     key_signer.get())) {
+              LOG(ERROR) << "Unable to populate the PrivateKeySigner";
+              return TSI_INTERNAL_ERROR;
+            }
           }
 #endif  // OPENSSL_IS_BORINGSSL
           return TSI_OK;
@@ -1282,13 +1296,20 @@ static int CheckChainRevocation(
 
 grpc_core::TlsPrivateKeyOffloadContext*
 grpc_core::GetTlsPrivateKeyOffloadContext(SSL* ssl) {
+  GRPC_CHECK_NE(g_ssl_ex_private_key_offloading_context_index, -1);
   return static_cast<grpc_core::TlsPrivateKeyOffloadContext*>(
       SSL_get_ex_data(ssl, g_ssl_ex_private_key_offloading_context_index));
 }
 
-grpc_core::CustomPrivateKeySigner* grpc_core::GetCustomPrivateKeySigner(
-    SSL_CTX* ssl_ctx) {
-  return static_cast<grpc_core::CustomPrivateKeySigner*>(
+grpc_core::PrivateKeySigner* grpc_core::GetPrivateKeySigner(SSL* ssl) {
+  SSL_CTX* ssl_ctx = SSL_get_SSL_CTX(ssl);
+  if (ssl_ctx == nullptr) {
+    LOG(ERROR) << "Unexpected error obtaining SSL_CTX object from SSL: ";
+    SSL_CTX_free(ssl_ctx);
+    return nullptr;
+  }
+  GRPC_CHECK_NE(g_ssl_ctx_ex_private_key_function_index, -1);
+  return static_cast<grpc_core::PrivateKeySigner*>(
       SSL_CTX_get_ex_data(ssl_ctx, g_ssl_ctx_ex_private_key_function_index));
 }
 
@@ -1925,6 +1946,10 @@ static tsi_result ssl_handshaker_do_handshake(tsi_ssl_handshaker* impl,
         return TSI_OK;
       case SSL_ERROR_WANT_WRITE:
         return TSI_DRAIN_BUFFER;
+#if defined(OPENSSL_IS_BORINGSSL)
+      case SSL_ERROR_WANT_PRIVATE_KEY_OPERATION:
+        return TSI_ASYNC;
+#endif
       default: {
         char err_str[256];
         ERR_error_string_n(ERR_get_error(), err_str, sizeof(err_str));
@@ -2093,6 +2118,14 @@ static tsi_result ssl_handshaker_next(
       remaining_bytes_to_write_to_openssl_size -= bytes_written_to_openssl;
       remaining_bytes_to_write_to_openssl += bytes_written_to_openssl;
     }
+  } else if (offload_context != nullptr &&
+             offload_context->status ==
+                 grpc_core::TlsPrivateKeyOffloadContext::kSignatureCompleted) {
+    // During the PrivateKeyOffload signature, an empty call to
+    // ssl_handshaker_do_handshake needs to be forced  after the async offload
+    // has completed.
+    status = ssl_handshaker_do_handshake(impl, error);
+    offload_context->status = grpc_core::TlsPrivateKeyOffloadContext::kFinished;
   }
   if (status != TSI_OK) return status;
   // Get bytes to send to the peer, if available.
@@ -2107,7 +2140,7 @@ static tsi_result ssl_handshaker_next(
     // Any bytes that remain in |impl->ssl|'s read BIO after the handshake is
     // complete must be extracted and set to the unused bytes of the
     // handshaker result. This indicates to the gRPC stack that there are
-    // bytes from the peer that must be processed.
+    // unconsumed bytes meant for the frame protector.
     unsigned char* unused_bytes = nullptr;
     size_t unused_bytes_size = 0;
     status =
@@ -2122,9 +2155,6 @@ static tsi_result ssl_handshaker_next(
     status = ssl_handshaker_result_create(impl, unused_bytes, unused_bytes_size,
                                           handshaker_result, error);
     if (status == TSI_OK) {
-      if (offload_context != nullptr) {
-        offload_context->handshaker_result = handshaker_result;
-      }
       // Indicates that the handshake has completed and that a
       // handshaker_result has been created.
       self->handshaker_result_created = true;
@@ -2280,22 +2310,17 @@ static tsi_result create_tsi_ssl_handshaker(
   impl->factory_ref = tsi_ssl_handshaker_factory_ref(factory);
   *handshaker = &impl->base;
 
-  SSL_CTX* ssl_ctx = SSL_get_SSL_CTX(impl->ssl);
-  if (ssl_ctx == nullptr) {
-    LOG(ERROR) << "Unexpected error obtaining SSL_CTX object from SSL: ";
-    SSL_CTX_free(ssl_ctx);
-    return TSI_INTERNAL_ERROR;
-  }
-
-  grpc_core::CustomPrivateKeySigner* sign_function =
-      static_cast<grpc_core::CustomPrivateKeySigner*>(SSL_CTX_get_ex_data(
-          ssl_ctx, g_ssl_ctx_ex_private_key_function_index));
+  grpc_core::PrivateKeySigner* sign_function =
+      grpc_core::GetPrivateKeySigner(ssl);
   if (sign_function != nullptr) {
-    grpc_core::TlsPrivateKeyOffloadContext* private_key_offload_context = {};
+    grpc_core::TlsPrivateKeyOffloadContext* private_key_offload_context =
+        new grpc_core::TlsPrivateKeyOffloadContext();
     private_key_offload_context->handshaker = *handshaker;
 
-    SSL_set_ex_data(ssl, g_ssl_ex_private_key_offloading_context_index,
-                    &private_key_offload_context);
+    if (!SSL_set_ex_data(ssl, g_ssl_ex_private_key_offloading_context_index,
+                         private_key_offload_context)) {
+      return TSI_INTERNAL_ERROR;
+    }
   }
 
   return TSI_OK;

@@ -52,11 +52,6 @@ struct grpc_tls_credentials_options
     return certificate_verifier_.get();
   }
   bool check_call_host() const { return check_call_host_; }
-  // Returns the distributor from certificate_provider_ if it is set, nullptr otherwise.
-  grpc_tls_certificate_distributor* certificate_distributor() {
-    if (certificate_provider_ != nullptr) { return certificate_provider_->distributor().get(); }
-    return nullptr;
-  }
   bool watch_root_cert() const { return watch_root_cert_; }
   const std::string& root_cert_name() const { return root_cert_name_; }
   bool watch_identity_pair() const { return watch_identity_pair_; }
@@ -84,8 +79,6 @@ struct grpc_tls_credentials_options
   void set_max_tls_version(grpc_tls_version max_tls_version) { max_tls_version_ = max_tls_version; }
   void set_certificate_verifier(grpc_core::RefCountedPtr<grpc_tls_certificate_verifier> certificate_verifier) { certificate_verifier_ = std::move(certificate_verifier); }
   void set_check_call_host(bool check_call_host) { check_call_host_ = check_call_host; }
-  // Deprecated. Use `set_root_certificate_provider` and `set_identity_certificate_provider` instead.
-  void set_certificate_provider(grpc_core::RefCountedPtr<grpc_tls_certificate_provider> certificate_provider) { certificate_provider_ = std::move(certificate_provider); }
   // If need to watch the updates of root certificates with name |root_cert_name|. The default value is false. If used in tls_credentials, it should always be set to true unless the root certificates are not needed.
   void set_watch_root_cert(bool watch_root_cert) { watch_root_cert_ = watch_root_cert; }
   // Sets the name of root certificates being watched, if |set_watch_root_cert| is called. If not set, an empty string will be used as the name.
@@ -109,7 +102,6 @@ struct grpc_tls_credentials_options
       max_tls_version_ == other.max_tls_version_ &&
       (certificate_verifier_ == other.certificate_verifier_ || (certificate_verifier_ != nullptr && other.certificate_verifier_ != nullptr && certificate_verifier_->Compare(other.certificate_verifier_.get()) == 0)) &&
       check_call_host_ == other.check_call_host_ &&
-      (certificate_provider_ == other.certificate_provider_ || (certificate_provider_ != nullptr && other.certificate_provider_ != nullptr && certificate_provider_->Compare(other.certificate_provider_.get()) == 0)) &&
       watch_root_cert_ == other.watch_root_cert_ &&
       root_cert_name_ == other.root_cert_name_ &&
       watch_identity_pair_ == other.watch_identity_pair_ &&
@@ -129,7 +121,6 @@ struct grpc_tls_credentials_options
       max_tls_version_(other.max_tls_version_),
       certificate_verifier_(other.certificate_verifier_),
       check_call_host_(other.check_call_host_),
-      certificate_provider_(other.certificate_provider_),
       watch_root_cert_(other.watch_root_cert_),
       root_cert_name_(other.root_cert_name_),
       watch_identity_pair_(other.watch_identity_pair_),
@@ -148,7 +139,6 @@ struct grpc_tls_credentials_options
   grpc_tls_version max_tls_version_ = grpc_tls_version::TLS1_3;
   grpc_core::RefCountedPtr<grpc_tls_certificate_verifier> certificate_verifier_;
   bool check_call_host_ = true;
-  grpc_core::RefCountedPtr<grpc_tls_certificate_provider> certificate_provider_;
   bool watch_root_cert_ = false;
   std::string root_cert_name_;
   bool watch_identity_pair_ = false;

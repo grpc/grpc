@@ -19,7 +19,7 @@
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
 
 #include <grpc/grpc_crl_provider.h>
-#include <grpc/grpc_private_key_offload.h>
+#include <grpc/private_key_signer.h>
 #include <grpc/support/port_platform.h>
 
 #include <memory>
@@ -60,16 +60,6 @@ void grpc_tls_credentials_options_set_verify_server_cert(
     grpc_tls_credentials_options* options, int verify_server_cert) {
   GRPC_CHECK_NE(options, nullptr);
   options->set_verify_server_cert(verify_server_cert);
-}
-
-void grpc_tls_credentials_options_set_certificate_provider(
-    grpc_tls_credentials_options* options,
-    grpc_tls_certificate_provider* provider) {
-  GRPC_CHECK_NE(options, nullptr);
-  GRPC_CHECK_NE(provider, nullptr);
-  grpc_core::ExecCtx exec_ctx;
-  options->set_certificate_provider(
-      provider->Ref(DEBUG_LOCATION, "set_certificate_provider"));
 }
 
 void grpc_tls_credentials_options_watch_root_certs(

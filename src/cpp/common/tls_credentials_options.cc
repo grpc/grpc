@@ -18,9 +18,9 @@
 
 #include <grpc/credentials.h>
 #include <grpc/grpc_crl_provider.h>
-#include <grpc/grpc_private_key_offload.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
+#include <grpc/private_key_signer.h>
 #include <grpcpp/security/tls_certificate_provider.h>
 #include <grpcpp/security/tls_certificate_verifier.h>
 #include <grpcpp/security/tls_credentials_options.h>
@@ -50,28 +50,30 @@ TlsCredentialsOptions::TlsCredentialsOptions(
 
 void TlsCredentialsOptions::set_certificate_provider(
     std::shared_ptr<CertificateProviderInterface> certificate_provider) {
-  certificate_provider_ = certificate_provider;
-  if (certificate_provider_ != nullptr) {
-    grpc_tls_credentials_options_set_certificate_provider(
-        c_credentials_options_, certificate_provider_->c_provider());
+  set_root_certificate_provider(certificate_provider);
+  set_identity_certificate_provider(certificate_provider);
+}
+
+void TlsCredentialsOptions::set_root_certificate_provider(
+    std::shared_ptr<CertificateProviderInterface> certificate_provider) {
+  root_certificate_provider_ = certificate_provider;
+  if (root_certificate_provider_ != nullptr) {
+    grpc_tls_credentials_options_set_root_certificate_provider(
+        c_credentials_options_, root_certificate_provider_->c_provider());
+  }
+  identity_certificate_provider_ = certificate_provider;
+  if (identity_certificate_provider_ != nullptr) {
+    grpc_tls_credentials_options_set_identity_certificate_provider(
+        c_credentials_options_, identity_certificate_provider_->c_provider());
   }
 }
 
 void TlsCredentialsOptions::set_identity_certificate_provider(
     std::shared_ptr<CertificateProviderInterface> certificate_provider) {
-  certificate_provider_ = certificate_provider;
-  if (certificate_provider_ != nullptr) {
-    grpc_tls_credentials_options_set_root_certificate_provider(
-        c_credentials_options_, certificate_provider_->c_provider());
-  }
-}
-
-void TlsCredentialsOptions::set_root_certificate_provider(
-    std::shared_ptr<CertificateProviderInterface> certificate_provider) {
-  certificate_provider_ = certificate_provider;
-  if (certificate_provider_ != nullptr) {
+  identity_certificate_provider_ = certificate_provider;
+  if (identity_certificate_provider_ != nullptr) {
     grpc_tls_credentials_options_set_identity_certificate_provider(
-        c_credentials_options_, certificate_provider_->c_provider());
+        c_credentials_options_, identity_certificate_provider_->c_provider());
   }
 }
 

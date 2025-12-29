@@ -16,11 +16,12 @@
 //
 //
 
-#ifndef GRPC_GRPC_PRIVATE_KEY_OFFLOAD_H
-#define GRPC_GRPC_PRIVATE_KEY_OFFLOAD_H
+#ifndef GRPC_PRIVATE_KEY_SIGNER_H
+#define GRPC_PRIVATE_KEY_SIGNER_H
 
 #include <grpc/credentials.h>
 
+#include <memory>
 #include <string>
 
 #include "absl/status/statusor.h"
@@ -28,10 +29,7 @@
 
 namespace grpc_core {
 
-// A user's implementation MUST invoke `done_callback` with the signed bytes.
-// This will let gRPC take control when the async operation is complete. MUST
-// not block MUST support concurrent calls
-class CustomPrivateKeySigner {
+class PrivateKeySigner {
  public:
   // Enum class representing TLS signature algorithm identifiers from BoringSSL.
   // The values correspond to the SSL_SIGN_* macros in <openssl/ssl.h>.
@@ -49,9 +47,13 @@ class CustomPrivateKeySigner {
 
   using OnSignComplete = absl::AnyInvocable<void(absl::StatusOr<std::string>)>;
 
-  virtual ~CustomPrivateKeySigner() = default;
+  virtual ~PrivateKeySigner() = default;
 
-  virtual void Sign(absl::string_view data_to_sign,
+  // A user's implementation MUST invoke `on_sign_complete` with the signed
+  // bytes. This will let gRPC take control when the async operation is
+  // complete. MUST not block MUST support concurrent calls.
+  // Returns whether or not the operation was completed.
+  virtual bool Sign(absl::string_view data_to_sign,
                     SignatureAlgorithm signature_algorithm,
                     OnSignComplete on_sign_complete) = 0;
 };
@@ -60,21 +62,13 @@ class CustomPrivateKeySigner {
 /**
  * EXPERIMENTAL API - Subject to change
  *
- * Sets the identity ceritifcate provider in the options.
- * The |options| will implicitly take a new ref to the |provider|.
+ * Adds a identity private key and a identity certificate chain to
+ * grpc_tls_identity_pairs. This function will make an internal copy of
+ * |cert_chain| and take ownership of |private_key|.
  */
-GRPCAPI void grpc_tls_credentials_options_set_identity_certificate_provider(
-    grpc_tls_credentials_options* options,
-    grpc_tls_certificate_provider* provider);
+GRPCAPI void grpc_tls_identity_pairs_add_pair_with_signer(
+    grpc_tls_identity_pairs* pairs,
+    std::shared_ptr<grpc_core::PrivateKeySigner> private_key_signer,
+    const char* cert_chain);
 
-/**
- * EXPERIMENTAL API - Subject to change
- *
- * Sets the root ceritifcate provider in the options.
- * The |options| will implicitly take a new ref to the |provider|.
- */
-GRPCAPI void grpc_tls_credentials_options_set_root_certificate_provider(
-    grpc_tls_credentials_options* options,
-    grpc_tls_certificate_provider* provider);
-
-#endif  // GRPC_GRPC_PRIVATE_KEY_OFFLOAD_H
+#endif /* GRPC_PRIVATE_KEY_SIGNER_H */

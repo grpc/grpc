@@ -19,7 +19,7 @@
 #ifndef GRPC_SRC_CORE_TSI_PRIVATE_KEY_OFFLOAD_UTIL_H
 #define GRPC_SRC_CORE_TSI_PRIVATE_KEY_OFFLOAD_UTIL_H
 
-#include <grpc/grpc_private_key_offload.h>
+#include <grpc/private_key_signer.h>
 #include <openssl/ssl.h>
 
 #include <string>
@@ -31,21 +31,39 @@ namespace grpc_core {
 
 // State associated with an SSL object for async private key operations.
 struct TlsPrivateKeyOffloadContext {
+  enum SignatureStatus {
+    // The signature operation has not yet started.
+    kNotStarted,
+    // The signature operation has been initiated.
+    kStarted,
+    // The signature operation is currently in progress waiting for an
+    // asynchronous operation.
+    kInProgressAsync,
+    // The signature operation has completed, and the signed data is available
+    // on the cached context.
+    kSignatureCompleted,
+    // The entire private key offload process for this signature is finished.
+    kFinished,
+  };
+
+  SignatureStatus status = kNotStarted;
+  // The signed_bytes are populated when the signature process is completed if
+  // the Private Key offload was successful. If there was an error during the
+  // signature, the status will be returned.
   absl::StatusOr<std::string> signed_bytes;
 
   // TSI handshake state needed to resume.
   tsi_handshaker* handshaker;
   tsi_handshaker_on_next_done_cb notify_cb;
-  tsi_handshaker_result** handshaker_result;
-
+  tsi_handshaker_result* handshaker_result;
   void* notify_user_data;
 };
 
 // Returns the TlsPrivateKeyOffloadContext associated with the SSL object.
 TlsPrivateKeyOffloadContext* GetTlsPrivateKeyOffloadContext(SSL* ssl);
 
-// Returns the CustomPrivateKeySigner associated with the SSL_CTX object.
-CustomPrivateKeySigner* GetCustomPrivateKeySigner(SSL_CTX* ssl_ctx);
+// Returns the PrivateKeySigner associated with the SSL_CTX object.
+PrivateKeySigner* GetPrivateKeySigner(SSL* ssl);
 
 #if defined(OPENSSL_IS_BORINGSSL)
 // Callback function to be invoked when the user's async sign operation is
@@ -61,11 +79,6 @@ enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,
                                                            uint8_t* out,
                                                            size_t* out_len,
                                                            size_t max_out);
-
-const SSL_PRIVATE_KEY_METHOD TlsOffloadPrivateKeyMethod = {
-    TlsPrivateKeySignWrapper,
-    nullptr,  // decrypt not implemented for this use case
-    TlsPrivateKeyOffloadComplete};
 #endif  // OPENSSL_IS_BORINGSSL
 
 }  // namespace grpc_core

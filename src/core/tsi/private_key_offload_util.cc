@@ -19,7 +19,9 @@
 #include "src/core/tsi/private_key_offload_util.h"
 
 #include <openssl/ssl.h>
+#include <sys/types.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <utility>
@@ -31,28 +33,28 @@
 
 namespace grpc_core {
 
-absl::StatusOr<CustomPrivateKeySigner::SignatureAlgorithm>
-ToSignatureAlgorithmClass(uint16_t algorithm) {
+absl::StatusOr<PrivateKeySigner::SignatureAlgorithm> ToSignatureAlgorithmClass(
+    uint16_t algorithm) {
 #if defined(OPENSSL_IS_BORINGSSL)
   switch (algorithm) {
     case SSL_SIGN_RSA_PKCS1_SHA256:
-      return CustomPrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha256;
+      return PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha256;
     case SSL_SIGN_RSA_PKCS1_SHA384:
-      return CustomPrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha384;
+      return PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha384;
     case SSL_SIGN_RSA_PKCS1_SHA512:
-      return CustomPrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha512;
+      return PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha512;
     case SSL_SIGN_ECDSA_SECP256R1_SHA256:
-      return CustomPrivateKeySigner::SignatureAlgorithm::kEcdsaSecp256r1Sha256;
+      return PrivateKeySigner::SignatureAlgorithm::kEcdsaSecp256r1Sha256;
     case SSL_SIGN_ECDSA_SECP384R1_SHA384:
-      return CustomPrivateKeySigner::SignatureAlgorithm::kEcdsaSecp384r1Sha384;
+      return PrivateKeySigner::SignatureAlgorithm::kEcdsaSecp384r1Sha384;
     case SSL_SIGN_ECDSA_SECP521R1_SHA512:
-      return CustomPrivateKeySigner::SignatureAlgorithm::kEcdsaSecp521r1Sha512;
+      return PrivateKeySigner::SignatureAlgorithm::kEcdsaSecp521r1Sha512;
     case SSL_SIGN_RSA_PSS_RSAE_SHA256:
-      return CustomPrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha256;
+      return PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha256;
     case SSL_SIGN_RSA_PSS_RSAE_SHA384:
-      return CustomPrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha384;
+      return PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha384;
     case SSL_SIGN_RSA_PSS_RSAE_SHA512:
-      return CustomPrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha512;
+      return PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha512;
   }
 #endif  // OPENSSL_IS_BORINGSSL
   return absl::InvalidArgumentError("Unknown signature algorithm.");
@@ -61,58 +63,73 @@ ToSignatureAlgorithmClass(uint16_t algorithm) {
 #if defined(OPENSSL_IS_BORINGSSL)
 void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
                                 absl::StatusOr<std::string> signed_data) {
-  if (signed_data.ok()) {
-    ctx->signed_bytes = std::move(signed_data);
-
-    // Notify the TSI layer to re-enter the handshake.
-    // This call is thread-safe as per TSI requirements for the callback.
-    if (ctx->notify_cb) {
-      std::string bytes_to_send = *ctx->signed_bytes;
-      const unsigned char* bytes_to_send_ptr =
-          reinterpret_cast<const unsigned char*>(bytes_to_send.c_str());
-      ctx->notify_cb(TSI_OK, ctx->notify_user_data, bytes_to_send_ptr,
-                     bytes_to_send.length(), *ctx->handshaker_result);
-    }
-  } else {
-    ctx->signed_bytes = signed_data.status();
+  ctx->signed_bytes = std::move(signed_data);
+  if (ctx->status != TlsPrivateKeyOffloadContext::kInProgressAsync) {
+    ctx->status = TlsPrivateKeyOffloadContext::kSignatureCompleted;
+    return;
+  }
+  ctx->status = TlsPrivateKeyOffloadContext::kSignatureCompleted;
+  if (!ctx->signed_bytes.ok()) {
     // Notify the TSI layer to re-enter the handshake.
     // This call is thread-safe as per TSI requirements for the callback.
     if (ctx->notify_cb) {
       ctx->notify_cb(TSI_INTERNAL_ERROR, ctx->notify_user_data, nullptr, 0,
-                     *ctx->handshaker_result);
+                     ctx->handshaker_result);
+    }
+    return;
+  }
+  const uint8_t* bytes_to_send = nullptr;
+  size_t bytes_to_send_size = 0;
+  // Once the signed bytes are obtained, wrap an empty callback to
+  // tsi_handshaker_next to resume the pending async operation.
+  tsi_result result = tsi_handshaker_next(
+      ctx->handshaker, nullptr, 0, &bytes_to_send, &bytes_to_send_size,
+      &ctx->handshaker_result, ctx->notify_cb, ctx->notify_user_data);
+  if (result != TSI_ASYNC) {
+    // Notify the TSI layer to re-enter the handshake. This call is
+    // thread-safe as per TSI requirements for the callback.
+    if (ctx->notify_cb) {
+      ctx->notify_cb(result, ctx->notify_user_data, bytes_to_send,
+                     bytes_to_send_size, ctx->handshaker_result);
     }
   }
 }
 
 enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
-    SSL* ssl, uint8_t* /*out*/, size_t* /*out_len*/, size_t /*max_out*/,
+    SSL* ssl, uint8_t* out, size_t* out_len, size_t /*max_out*/,
     uint16_t signature_algorithm, const uint8_t* in, size_t in_len) {
   TlsPrivateKeyOffloadContext* ctx = GetTlsPrivateKeyOffloadContext(ssl);
+  ctx->status = TlsPrivateKeyOffloadContext::kStarted;
   // Create the completion callback by binding the current context.
   auto done_callback = absl::bind_front(TlsOffloadSignDoneCallback, ctx);
-
   // Call the user's async sign function
   // The contract with the user is that they MUST invoke the callback when
   // complete in their implementation, and their impl MUST not block.
   auto algorithm = ToSignatureAlgorithmClass(signature_algorithm);
-
   if (!algorithm.ok()) {
     return ssl_private_key_failure;
   }
-
-  SSL_CTX* ssl_ctx = SSL_get_SSL_CTX(ssl);
-  if (ssl_ctx == nullptr) {
-    LOG(ERROR) << "Unexpected error obtaining SSL_CTX object from SSL: ";
-    SSL_CTX_free(ssl_ctx);
+  PrivateKeySigner* signer = GetPrivateKeySigner(ssl);
+  if (signer == nullptr) {
     return ssl_private_key_failure;
   }
-
-  CustomPrivateKeySigner* signer = GetCustomPrivateKeySigner(ssl_ctx);
-  signer->Sign(absl::string_view(reinterpret_cast<const char*>(in), in_len),
-               *algorithm, done_callback);
-
-  // The operation is not completed. Tell BoringSSL to wait for the signature
-  // result.
+  bool is_done =
+      signer->Sign(absl::string_view(reinterpret_cast<const char*>(in), in_len),
+                   *algorithm, done_callback);
+  // If the signature invocation was completed, return ssl_private_key_success
+  // to continue the handshake. Otherwise tell BoringSSL to wait for the
+  // signature result.
+  if (is_done) {
+    if (ctx->signed_bytes.ok()) {
+      std::string out_bytes = *ctx->signed_bytes;
+      *out_len = out_bytes.size();
+      std::copy(out_bytes.cbegin(), out_bytes.cend(), out);
+      return ssl_private_key_success;
+    } else {
+      return ssl_private_key_failure;
+    }
+  }
+  ctx->status = TlsPrivateKeyOffloadContext::kInProgressAsync;
   return ssl_private_key_retry;
 }
 
@@ -121,7 +138,6 @@ enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,
                                                            size_t* out_len,
                                                            size_t max_out) {
   TlsPrivateKeyOffloadContext* ctx = GetTlsPrivateKeyOffloadContext(ssl);
-
   if (!ctx->signed_bytes.ok()) {
     return ssl_private_key_failure;
   }
