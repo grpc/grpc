@@ -20,7 +20,7 @@ from typing import AnyStr, Callable, Optional
 import grpc
 from grpc import _common
 from grpc._cython import cygrpc  # type: ignore[reportMissingModuleSource]
-from grpc.typing import MetadataType
+from grpc.typing import CygrpcCallCredentials, MetadataType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -130,7 +130,9 @@ def metadata_plugin_call_credentials(
     else:
         effective_name = name
     return grpc.CallCredentials(
-        cygrpc.MetadataPluginCallCredentials(
-            _Plugin(metadata_plugin), _common.encode(effective_name)
+        CygrpcCallCredentials(
+            cygrpc.MetadataPluginCallCredentials(
+                _Plugin(metadata_plugin), _common.encode(effective_name)
+            )
         )
     )

@@ -673,7 +673,7 @@ class ChannelCredentials(object):
     """
 
     def __init__(self, credentials: CygrpcChannelCredentials):
-        self._credentials = credentials
+        self._credentials = credentials._cy_creds
 
 
 class CallCredentials(object):
@@ -690,7 +690,7 @@ class CallCredentials(object):
     """
 
     def __init__(self, credentials: CygrpcCallCredentials):
-        self._credentials = credentials
+        self._credentials = credentials._cy_creds
 
 
 class AuthMetadataContext(abc.ABC):
@@ -747,7 +747,7 @@ class ServerCredentials(object):
     """
 
     def __init__(self, credentials: CygrpcServerCredentials):
-        self._credentials = credentials
+        self._credentials = credentials._cy_creds
 
 
 class ServerCertificateConfiguration(object):
@@ -764,7 +764,7 @@ class ServerCertificateConfiguration(object):
     def __init__(
         self, certificate_configuration: CygrpcServerCertificateConfig
     ):
-        self._certificate_configuration = certificate_configuration
+        self._certificate_configuration = certificate_configuration._cy_config
 
 
 ########################  Multi-Callable Interfaces  ###########################
@@ -1857,8 +1857,10 @@ def ssl_channel_credentials(
       A ChannelCredentials for use with an SSL-enabled Channel.
     """
     return ChannelCredentials(
-        _cygrpc.SSLChannelCredentials(
-            root_certificates, private_key, certificate_chain
+        CygrpcChannelCredentials(
+            _cygrpc.SSLChannelCredentials(
+                root_certificates, private_key, certificate_chain
+            )
         )
     )
 
@@ -1880,7 +1882,9 @@ def xds_channel_credentials(
         else fallback_credentials
     )
     return ChannelCredentials(
-        _cygrpc.XDSChannelCredentials(fallback_credentials._credentials)
+        CygrpcChannelCredentials(
+            _cygrpc.XDSChannelCredentials(fallback_credentials._credentials)
+        )
     )
 
 
@@ -1934,10 +1938,12 @@ def composite_call_credentials(
       A CallCredentials object composed of the given CallCredentials objects.
     """
     return CallCredentials(
-        _cygrpc.CompositeCallCredentials(
-            tuple(
-                single_call_credentials._credentials
-                for single_call_credentials in call_credentials
+        CygrpcCallCredentials(
+            _cygrpc.CompositeCallCredentials(
+                tuple(
+                    single_call_credentials._credentials
+                    for single_call_credentials in call_credentials
+                )
             )
         )
     )
@@ -1957,12 +1963,14 @@ def composite_channel_credentials(
         CallCredentials objects.
     """
     return ChannelCredentials(
-        _cygrpc.CompositeChannelCredentials(
-            tuple(
-                single_call_credentials._credentials
-                for single_call_credentials in call_credentials
-            ),
-            channel_credentials._credentials,
+        CygrpcChannelCredentials(
+            _cygrpc.CompositeChannelCredentials(
+                tuple(
+                    single_call_credentials._credentials
+                    for single_call_credentials in call_credentials
+                ),
+                channel_credentials._credentials,
+            )
         )
     )
 
@@ -1997,13 +2005,15 @@ def ssl_server_credentials(
         error_msg = "Illegal to require client auth without providing root certificates!"
         raise ValueError(error_msg)
     return ServerCredentials(
-        _cygrpc.server_credentials_ssl(
-            root_certificates,
-            [
-                _cygrpc.SslPemKeyCertPair(key, pem)
-                for key, pem in private_key_certificate_chain_pairs
-            ],
-            require_client_auth,
+        CygrpcServerCredentials(
+            _cygrpc.server_credentials_ssl(
+                root_certificates,
+                [
+                    _cygrpc.SslPemKeyCertPair(key, pem)
+                    for key, pem in private_key_certificate_chain_pairs
+                ],
+                require_client_auth,
+            )
         )
     )
 
@@ -2019,7 +2029,9 @@ def xds_server_credentials(
         establish a secure connection via xDS. No default value is provided.
     """
     return ServerCredentials(
-        _cygrpc.xds_server_credentials(fallback_credentials._credentials)
+        CygrpcServerCredentials(
+            _cygrpc.xds_server_credentials(fallback_credentials._credentials)
+        )
     )
 
 
@@ -2031,7 +2043,9 @@ def insecure_server_credentials() -> ServerCredentials:
     Instead, it should be used to construct other credentials objects, e.g.
     with xds_server_credentials.
     """
-    return ServerCredentials(_cygrpc.insecure_server_credentials())
+    return ServerCredentials(
+        CygrpcServerCredentials(_cygrpc.insecure_server_credentials())
+    )
 
 
 def ssl_server_certificate_configuration(
@@ -2053,12 +2067,14 @@ def ssl_server_certificate_configuration(
     """
     if private_key_certificate_chain_pairs:
         return ServerCertificateConfiguration(
-            _cygrpc.server_certificate_config_ssl(
-                root_certificates,
-                [
-                    _cygrpc.SslPemKeyCertPair(key, pem)
-                    for key, pem in private_key_certificate_chain_pairs
-                ],
+            CygrpcServerCertificateConfig(
+                _cygrpc.server_certificate_config_ssl(
+                    root_certificates,
+                    [
+                        _cygrpc.SslPemKeyCertPair(key, pem)
+                        for key, pem in private_key_certificate_chain_pairs
+                    ],
+                )
             )
         )
     error_msg = "At least one private key-certificate chain pair is required!"
@@ -2093,10 +2109,12 @@ def dynamic_ssl_server_credentials(
       A ServerCredentials.
     """
     return ServerCredentials(
-        _cygrpc.server_credentials_ssl_dynamic_cert_config(
-            initial_certificate_configuration,
-            certificate_configuration_fetcher,
-            require_client_authentication,
+        CygrpcServerCredentials(
+            _cygrpc.server_credentials_ssl_dynamic_cert_config(
+                initial_certificate_configuration,
+                certificate_configuration_fetcher,
+                require_client_authentication,
+            )
         )
     )
 
@@ -2143,7 +2161,9 @@ def local_channel_credentials(
       A ChannelCredentials for use with a local Channel
     """
     return ChannelCredentials(
-        _cygrpc.channel_credentials_local(local_connect_type.value)
+        CygrpcChannelCredentials(
+            _cygrpc.channel_credentials_local(local_connect_type.value)
+        )
     )
 
 
@@ -2176,7 +2196,9 @@ def local_server_credentials(
       A ServerCredentials for use with a local Server
     """
     return ServerCredentials(
-        _cygrpc.server_credentials_local(local_connect_type.value)
+        CygrpcServerCredentials(
+            _cygrpc.server_credentials_local(local_connect_type.value)
+        )
     )
 
 
@@ -2201,7 +2223,9 @@ def alts_channel_credentials(
       A ChannelCredentials for use with an ALTS-enabled Channel
     """
     return ChannelCredentials(
-        _cygrpc.channel_credentials_alts(service_accounts or [])
+        CygrpcChannelCredentials(
+            _cygrpc.channel_credentials_alts(service_accounts or [])
+        )
     )
 
 
@@ -2216,7 +2240,7 @@ def alts_server_credentials() -> ServerCredentials:
     Returns:
       A ServerCredentials for use with an ALTS-enabled Server
     """
-    return ServerCredentials(_cygrpc.server_credentials_alts())
+    return ServerCredentials(CygrpcServerCredentials(_cygrpc.server_credentials_alts()))
 
 
 def compute_engine_channel_credentials(
@@ -2237,8 +2261,10 @@ def compute_engine_channel_credentials(
         msg = "call_credentials must not be None."
         raise ValueError(msg)
     return ChannelCredentials(
-        _cygrpc.channel_credentials_compute_engine(
-            call_credentials._credentials
+        CygrpcChannelCredentials(
+            _cygrpc.channel_credentials_compute_engine(
+                call_credentials._credentials
+            )
         )
     )
 
