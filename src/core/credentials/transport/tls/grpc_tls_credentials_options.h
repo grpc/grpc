@@ -52,9 +52,7 @@ struct grpc_tls_credentials_options
     return certificate_verifier_.get();
   }
   bool check_call_host() const { return check_call_host_; }
-  bool watch_root_cert() const { return watch_root_cert_; }
   const std::string& root_cert_name() const { return root_cert_name_; }
-  bool watch_identity_pair() const { return watch_identity_pair_; }
   const std::string& identity_cert_name() const { return identity_cert_name_; }
   const std::string& tls_session_key_log_file_path() const { return tls_session_key_log_file_path_; }
   const std::string& crl_directory() const { return crl_directory_; }
@@ -79,12 +77,8 @@ struct grpc_tls_credentials_options
   void set_max_tls_version(grpc_tls_version max_tls_version) { max_tls_version_ = max_tls_version; }
   void set_certificate_verifier(grpc_core::RefCountedPtr<grpc_tls_certificate_verifier> certificate_verifier) { certificate_verifier_ = std::move(certificate_verifier); }
   void set_check_call_host(bool check_call_host) { check_call_host_ = check_call_host; }
-  // If need to watch the updates of root certificates with name |root_cert_name|. The default value is false. If used in tls_credentials, it should always be set to true unless the root certificates are not needed.
-  void set_watch_root_cert(bool watch_root_cert) { watch_root_cert_ = watch_root_cert; }
   // Sets the name of root certificates being watched, if |set_watch_root_cert| is called. If not set, an empty string will be used as the name.
   void set_root_cert_name(std::string root_cert_name) { root_cert_name_ = std::move(root_cert_name); }
-  // If need to watch the updates of identity certificates with name |identity_cert_name|. The default value is false. If used in tls_credentials, it should always be set to true unless the identity key-cert pairs are not needed.
-  void set_watch_identity_pair(bool watch_identity_pair) { watch_identity_pair_ = watch_identity_pair; }
   // Sets the name of identity key-cert pairs being watched, if |set_watch_identity_pair| is called. If not set, an empty string will be used as the name.
   void set_identity_cert_name(std::string identity_cert_name) { identity_cert_name_ = std::move(identity_cert_name); }
   void set_tls_session_key_log_file_path(std::string tls_session_key_log_file_path) { tls_session_key_log_file_path_ = std::move(tls_session_key_log_file_path); }
@@ -102,9 +96,7 @@ struct grpc_tls_credentials_options
       max_tls_version_ == other.max_tls_version_ &&
       (certificate_verifier_ == other.certificate_verifier_ || (certificate_verifier_ != nullptr && other.certificate_verifier_ != nullptr && certificate_verifier_->Compare(other.certificate_verifier_.get()) == 0)) &&
       check_call_host_ == other.check_call_host_ &&
-      watch_root_cert_ == other.watch_root_cert_ &&
       root_cert_name_ == other.root_cert_name_ &&
-      watch_identity_pair_ == other.watch_identity_pair_ &&
       identity_cert_name_ == other.identity_cert_name_ &&
       tls_session_key_log_file_path_ == other.tls_session_key_log_file_path_ &&
       crl_directory_ == other.crl_directory_ &&
@@ -121,9 +113,7 @@ struct grpc_tls_credentials_options
       max_tls_version_(other.max_tls_version_),
       certificate_verifier_(other.certificate_verifier_),
       check_call_host_(other.check_call_host_),
-      watch_root_cert_(other.watch_root_cert_),
       root_cert_name_(other.root_cert_name_),
-      watch_identity_pair_(other.watch_identity_pair_),
       identity_cert_name_(other.identity_cert_name_),
       tls_session_key_log_file_path_(other.tls_session_key_log_file_path_),
       crl_directory_(other.crl_directory_),
@@ -139,9 +129,7 @@ struct grpc_tls_credentials_options
   grpc_tls_version max_tls_version_ = grpc_tls_version::TLS1_3;
   grpc_core::RefCountedPtr<grpc_tls_certificate_verifier> certificate_verifier_;
   bool check_call_host_ = true;
-  bool watch_root_cert_ = false;
   std::string root_cert_name_;
-  bool watch_identity_pair_ = false;
   std::string identity_cert_name_;
   std::string tls_session_key_log_file_path_;
   std::string crl_directory_;

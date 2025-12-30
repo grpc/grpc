@@ -115,20 +115,6 @@ _DATA_MEMBERS = [
         test_value_2="true",
     ),
     DataMember(
-        name="watch_root_cert",
-        type="bool",
-        default_initializer="false",
-        setter_comment=(
-            "If need to watch the updates of root certificates with name"
-            " |root_cert_name|. The default value is false. If used in"
-            " tls_credentials, it should always be set to true unless the root"
-            " certificates are not needed."
-        ),
-        test_name="DifferentWatchRootCert",
-        test_value_1="false",
-        test_value_2="true",
-    ),
-    DataMember(
         name="root_cert_name",
         type="std::string",
         special_getter_return_type="const std::string&",
@@ -141,20 +127,6 @@ _DATA_MEMBERS = [
         test_name="DifferentRootCertName",
         test_value_1='"root_cert_name_1"',
         test_value_2='"root_cert_name_2"',
-    ),
-    DataMember(
-        name="watch_identity_pair",
-        type="bool",
-        default_initializer="false",
-        setter_comment=(
-            "If need to watch the updates of identity certificates with name"
-            " |identity_cert_name|. The default value is false. If used in"
-            " tls_credentials, it should always be set to true unless the"
-            " identity key-cert pairs are not needed."
-        ),
-        test_name="DifferentWatchIdentityPair",
-        test_value_1="false",
-        test_value_2="true",
     ),
     DataMember(
         name="identity_cert_name",
