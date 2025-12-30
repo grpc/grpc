@@ -924,7 +924,7 @@ TEST(XdsBootstrapTest, MultipleXdsServers) {
 }
 
 TEST(XdsBootstrapTest, WithAllowedGrpcServices) {
-  ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_EXT_PROC");
+  ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT");
   const char* json_str =
       "{"
       "  \"xds_servers\": ["

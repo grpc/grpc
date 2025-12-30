@@ -42,7 +42,7 @@
 
 namespace grpc_core {
 
-bool XdsExtProcEnabled();
+bool XdsExtProcOnClientEnabled();
 
 class GrpcXdsBootstrap final : public XdsBootstrap {
  public:

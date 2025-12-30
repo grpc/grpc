@@ -995,7 +995,7 @@ class ParseXdsGrpcServiceTest : public XdsCommonTypesTest {
 
 TEST_F(ParseXdsGrpcServiceTest,
        NonTrustedXdsServerAndServicePresentInBootstrap) {
-  ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_EXT_PROC");
+  ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT");
   AddAllowedGrpcServicesToBootstrap({"dns:server.example.com"});
   GrpcService grpc_service;
   grpc_service.mutable_timeout()->set_seconds(5);

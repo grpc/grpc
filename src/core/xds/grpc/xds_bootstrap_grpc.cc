@@ -43,8 +43,8 @@
 namespace grpc_core {
 
 // TODO(roth): Remove this once the feature passes interop tests.
-bool XdsExtProcEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_EXT_PROC");
+bool XdsExtProcOnClientEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT");
   if (!value.has_value()) return false;
   bool parsed_value;
   bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
@@ -134,7 +134,7 @@ absl::StatusOr<std::unique_ptr<GrpcXdsBootstrap>> GrpcXdsBootstrap::Create(
    public:
     bool IsEnabled(absl::string_view key) const override {
       if (key == "federation") return XdsFederationEnabled();
-      if (key == "grpc_service") return XdsExtProcEnabled();
+      if (key == "grpc_service") return XdsExtProcOnClientEnabled();
       return true;
     }
   };
