@@ -30,6 +30,7 @@ bazel_dep(name = "c-ares", version = "1.19.1", repo_name = "com_github_cares_car
 bazel_dep(name = "envoy_api", version = "0.0.0-20251216-6ef568c")
 bazel_dep(name = "googleapis", version = "0.0.0-20240819-fe8ba054a", repo_name = "com_google_googleapis")
 bazel_dep(name = "googleapis-cc", version = "1.0.0")
+bazel_dep(name = "googleapis-grpc-cc", version = "1.0.0")
 bazel_dep(name = "googletest", version = "1.17.0", repo_name = "com_google_googletest")
 bazel_dep(name = "opencensus-cpp", version = "0.0.0-20230502-50eb5de.bcr.2", repo_name = "io_opencensus_cpp")
 bazel_dep(name = "openssl", version = "3.3.1.bcr.1")
