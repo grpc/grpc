@@ -72,6 +72,7 @@
 #include "src/core/util/match.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/useful.h"
+#include "absl/functional/bind_front.h"
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
@@ -104,6 +105,15 @@ const size_t kMaxChainLength = 100;
 #define TSI_SSL_MAX_PROTECTION_OVERHEAD 100
 
 using TlsSessionKeyLogger = tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger;
+
+static tsi_result ssl_handshaker_next(
+    tsi_handshaker* self, const unsigned char* received_bytes,
+    size_t received_bytes_size, const unsigned char** bytes_to_send,
+    size_t* bytes_to_send_size, tsi_handshaker_result** handshaker_result,
+    tsi_handshaker_on_next_done_cb cb, void* user_data, std::string* error);
+
+void TlsOffloadSignDoneCallback(grpc_core::TlsPrivateKeyOffloadContext* ctx,
+                                absl::StatusOr<std::string> signed_data);
 
 // --- Structure definitions. ---
 
@@ -172,8 +182,81 @@ struct tsi_ssl_frame_protector {
 namespace {
 
 #if defined(OPENSSL_IS_BORINGSSL)
+
+absl::StatusOr<grpc_core::PrivateKeySigner::SignatureAlgorithm>
+ToSignatureAlgorithmClass(uint16_t algorithm) {
+#if defined(OPENSSL_IS_BORINGSSL)
+  switch (algorithm) {
+    case SSL_SIGN_RSA_PKCS1_SHA256:
+      return grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha256;
+    case SSL_SIGN_RSA_PKCS1_SHA384:
+      return grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha384;
+    case SSL_SIGN_RSA_PKCS1_SHA512:
+      return grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha512;
+    case SSL_SIGN_ECDSA_SECP256R1_SHA256:
+      return grpc_core::PrivateKeySigner::SignatureAlgorithm::
+          kEcdsaSecp256r1Sha256;
+    case SSL_SIGN_ECDSA_SECP384R1_SHA384:
+      return grpc_core::PrivateKeySigner::SignatureAlgorithm::
+          kEcdsaSecp384r1Sha384;
+    case SSL_SIGN_ECDSA_SECP521R1_SHA512:
+      return grpc_core::PrivateKeySigner::SignatureAlgorithm::
+          kEcdsaSecp521r1Sha512;
+    case SSL_SIGN_RSA_PSS_RSAE_SHA256:
+      return grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha256;
+    case SSL_SIGN_RSA_PSS_RSAE_SHA384:
+      return grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha384;
+    case SSL_SIGN_RSA_PSS_RSAE_SHA512:
+      return grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha512;
+  }
+#endif  // OPENSSL_IS_BORINGSSL
+  return absl::InvalidArgumentError("Unknown signature algorithm.");
+}
+
+enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
+    SSL* ssl, uint8_t* out, size_t* out_len, size_t /*max_out*/,
+    uint16_t signature_algorithm, const uint8_t* in, size_t in_len) {
+  grpc_core::TlsPrivateKeyOffloadContext* ctx =
+      grpc_core::GetTlsPrivateKeyOffloadContext(ssl);
+  ctx->status = grpc_core::TlsPrivateKeyOffloadContext::kStarted;
+  // Create the completion callback by binding the current context.
+  auto done_callback = absl::bind_front(TlsOffloadSignDoneCallback, ctx);
+  // Call the user's async sign function
+  // The contract with the user is that they MUST invoke the callback when
+  // complete in their implementation, and their impl MUST not block.
+  auto algorithm = ToSignatureAlgorithmClass(signature_algorithm);
+  if (!algorithm.ok()) {
+    return ssl_private_key_failure;
+  }
+  grpc_core::PrivateKeySigner* signer = grpc_core::GetPrivateKeySigner(ssl);
+  if (signer == nullptr) {
+    return ssl_private_key_failure;
+  }
+  bool is_done =
+      signer->Sign(absl::string_view(reinterpret_cast<const char*>(in), in_len),
+                   *algorithm, done_callback);
+  // If the signature invocation was completed, return ssl_private_key_success
+  // to continue the handshake. Otherwise tell BoringSSL to wait for the
+  // signature result.
+  if (is_done) {
+    if (ctx->signed_bytes.ok()) {
+      std::string out_bytes = *ctx->signed_bytes;
+      *out_len = out_bytes.size();
+      std::copy(out_bytes.cbegin(), out_bytes.cend(), out);
+      return ssl_private_key_success;
+    } else {
+      return ssl_private_key_failure;
+    }
+  }
+  ctx->status = grpc_core::TlsPrivateKeyOffloadContext::kInProgressAsync;
+  return ssl_private_key_retry;
+}
+
+#endif  // OPENSSL_IS_BORINGSSL
+
+#if defined(OPENSSL_IS_BORINGSSL)
 const SSL_PRIVATE_KEY_METHOD TlsOffloadPrivateKeyMethod = {
-    grpc_core::TlsPrivateKeySignWrapper,
+    TlsPrivateKeySignWrapper,
     nullptr,  // decrypt not implemented for this use case
     grpc_core::TlsPrivateKeyOffloadComplete};
 #endif
@@ -261,6 +344,41 @@ int ServerHandshakerFactoryAlpnCallback(SSL* /*ssl*/, const unsigned char** out,
 }
 #endif  // TSI_OPENSSL_ALPN_SUPPORT
 }  // namespace
+
+void TlsOffloadSignDoneCallback(grpc_core::TlsPrivateKeyOffloadContext* ctx,
+                                absl::StatusOr<std::string> signed_data) {
+  ctx->signed_bytes = std::move(signed_data);
+  if (ctx->status != grpc_core::TlsPrivateKeyOffloadContext::kInProgressAsync) {
+    ctx->status = grpc_core::TlsPrivateKeyOffloadContext::kSignatureCompleted;
+    return;
+  }
+  ctx->status = grpc_core::TlsPrivateKeyOffloadContext::kSignatureCompleted;
+  if (!ctx->signed_bytes.ok()) {
+    // Notify the TSI layer to re-enter the handshake.
+    // This call is thread-safe as per TSI requirements for the callback.
+    if (ctx->notify_cb) {
+      ctx->notify_cb(TSI_INTERNAL_ERROR, ctx->notify_user_data, nullptr, 0,
+                     ctx->handshaker_result);
+    }
+    return;
+  }
+  const uint8_t* bytes_to_send = nullptr;
+  size_t bytes_to_send_size = 0;
+  std::string error;
+  // Once the signed bytes are obtained, wrap an empty callback to
+  // tsi_handshaker_next to resume the pending async operation.
+  tsi_result result = ssl_handshaker_next(
+      ctx->handshaker, nullptr, 0, &bytes_to_send, &bytes_to_send_size,
+      &ctx->handshaker_result, ctx->notify_cb, ctx->notify_user_data, &error);
+  if (result != TSI_ASYNC) {
+    // Notify the TSI layer to re-enter the handshake. This call is
+    // thread-safe as per TSI requirements for the callback.
+    if (ctx->notify_cb) {
+      ctx->notify_cb(result, ctx->notify_user_data, bytes_to_send,
+                     bytes_to_send_size, ctx->handshaker_result);
+    }
+  }
+}
 
 static gpr_once g_init_openssl_once = GPR_ONCE_INIT;
 static int g_ssl_ctx_ex_factory_index = -1;

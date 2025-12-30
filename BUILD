@@ -4521,6 +4521,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/functional:bind_front",
         "absl/log:log",
         "absl/status",
         "absl/status:statusor",

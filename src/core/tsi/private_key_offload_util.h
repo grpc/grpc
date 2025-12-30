@@ -66,14 +66,14 @@ TlsPrivateKeyOffloadContext* GetTlsPrivateKeyOffloadContext(SSL* ssl);
 PrivateKeySigner* GetPrivateKeySigner(SSL* ssl);
 
 #if defined(OPENSSL_IS_BORINGSSL)
-// Callback function to be invoked when the user's async sign operation is
-// complete.
-void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
-                                absl::StatusOr<std::string> signed_data);
+// // Callback function to be invoked when the user's async sign operation is
+// // complete.
+// void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
+//                                 absl::StatusOr<std::string> signed_data);
 
-enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
-    SSL* ssl, uint8_t* out, size_t* out_len, size_t max_out,
-    uint16_t signature_algorithm, const uint8_t* in, size_t in_len);
+// enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
+//     SSL* ssl, uint8_t* out, size_t* out_len, size_t max_out,
+//     uint16_t signature_algorithm, const uint8_t* in, size_t in_len);
 
 enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,
                                                            uint8_t* out,
