@@ -16,7 +16,10 @@
 cimport cpython
 
 include "_cygrpc/grpc.pxi"
+
+# grpc-oss-only-begin
 include "_cygrpc/absl.pxi"
+# grpc-oss-only-end
 
 include "_cygrpc/arguments.pxd.pxi"
 include "_cygrpc/call.pxd.pxi"

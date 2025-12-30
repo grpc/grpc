@@ -14,5 +14,7 @@
 
 # absl Utilities
 
+# grpc-oss-only-begin
 cdef extern from "absl/log/initialize.h" namespace "absl":
   void InitializeLog() nogil
+# grpc-oss-only-end
