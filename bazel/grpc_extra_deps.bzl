@@ -24,6 +24,8 @@ load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 load("@envoy_api//bazel:repositories.bzl", "api_dependencies")
 load("@google_cloud_cpp//bazel:google_cloud_cpp_deps.bzl", "google_cloud_cpp_deps")
 load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
+load("@rules_cc//cc:repositories.bzl", "rules_cc_dependencies", "rules_cc_toolchains")
+load("@rules_cc//cc:extensions.bzl", "compatibility_proxy_repo")
 load("@rules_java//java:rules_java_deps.bzl", "rules_java_dependencies")
 load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies")
 load("@rules_python//python:repositories.bzl", "py_repositories")
@@ -52,6 +54,10 @@ def grpc_extra_deps(ignore_version_differences = False):
       ignore_version_differences: Plumbed directly to the invocation of
         apple_rules_dependencies.
     """
+    rules_cc_dependencies()
+    rules_cc_toolchains()
+    compatibility_proxy_repo()
+
     rules_shell_dependencies()
     rules_shell_toolchains()
 
