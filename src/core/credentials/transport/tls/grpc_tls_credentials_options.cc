@@ -62,22 +62,10 @@ void grpc_tls_credentials_options_set_verify_server_cert(
   options->set_verify_server_cert(verify_server_cert);
 }
 
-void grpc_tls_credentials_options_watch_root_certs(
-    grpc_tls_credentials_options* options) {
-  GRPC_CHECK_NE(options, nullptr);
-  options->set_watch_root_cert(true);
-}
-
 void grpc_tls_credentials_options_set_root_cert_name(
     grpc_tls_credentials_options* options, const char* root_cert_name) {
   GRPC_CHECK_NE(options, nullptr);
   options->set_root_cert_name(root_cert_name);
-}
-
-void grpc_tls_credentials_options_watch_identity_key_cert_pairs(
-    grpc_tls_credentials_options* options) {
-  GRPC_CHECK_NE(options, nullptr);
-  options->set_watch_identity_pair(true);
 }
 
 void grpc_tls_credentials_options_set_identity_cert_name(

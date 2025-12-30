@@ -84,7 +84,8 @@ void TlsCredentialsOptions::set_crl_provider(
 }
 
 void TlsCredentialsOptions::watch_root_certs() {
-  grpc_tls_credentials_options_watch_root_certs(c_credentials_options_);
+  GRPC_CHECK_NE(root_certificate_provider_, nullptr);
+  set_root_certificate_provider(root_certificate_provider_);
 }
 
 void TlsCredentialsOptions::set_root_cert_name(
@@ -94,8 +95,8 @@ void TlsCredentialsOptions::set_root_cert_name(
 }
 
 void TlsCredentialsOptions::watch_identity_key_cert_pairs() {
-  grpc_tls_credentials_options_watch_identity_key_cert_pairs(
-      c_credentials_options_);
+  GRPC_CHECK_NE(identity_certificate_provider_, nullptr);
+  set_identity_certificate_provider(identity_certificate_provider_);
 }
 
 void TlsCredentialsOptions::set_identity_cert_name(
