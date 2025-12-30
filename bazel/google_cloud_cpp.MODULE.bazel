@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-bazel_dep(name = "google_cloud_cpp", version = "2.35.0")
+bazel_dep(name = "google_cloud_cpp", version = "2.35.0", dev_dependency = True)
 archive_override(
     module_name = "google_cloud_cpp",
-    sha256 = "81ea28cf9e5bb032d356b0187409f30b1035f8ea5b530675ea248c8a6c0070aa",
+    integrity = "sha256-geooz55bsDLTVrAYdAnzCxA1+OpbUwZ16iSMimwAcKo=",
     strip_prefix = "google-cloud-cpp-2.35.0",
     urls = [
         "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.35.0.tar.gz",
