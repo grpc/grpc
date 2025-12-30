@@ -468,6 +468,10 @@ class OpenTelemetryPluginImpl
       grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
       double value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) override;
+  void AddCounter(
+      grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
+      int64_t value, absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_values) override;
   void RecordHistogram(
       grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
       uint64_t value, absl::Span<const absl::string_view> label_values,
@@ -547,14 +551,14 @@ class OpenTelemetryPluginImpl
   OptionalLabelsBitSet per_call_optional_label_bits_;
   // Instruments for non-per-call metrics.
   struct Disabled {};
-  using Instrument =
-      std::variant<Disabled,
-                   std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>,
-                   std::unique_ptr<opentelemetry::metrics::Counter<double>>,
-                   std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>,
-                   std::unique_ptr<opentelemetry::metrics::Histogram<double>>,
-                   std::unique_ptr<CallbackGaugeState<int64_t>>,
-                   std::unique_ptr<CallbackGaugeState<double>>>;
+  using Instrument = std::variant<
+      Disabled, std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>,
+      std::unique_ptr<opentelemetry::metrics::Counter<double>>,
+      std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>,
+      std::unique_ptr<opentelemetry::metrics::Histogram<double>>,
+      std::unique_ptr<CallbackGaugeState<int64_t>>,
+      std::unique_ptr<CallbackGaugeState<double>>,
+      std::unique_ptr<opentelemetry::metrics::UpDownCounter<int64_t>>>;
   struct InstrumentData {
     Instrument instrument;
     OptionalLabelsBitSet optional_labels_bits;
