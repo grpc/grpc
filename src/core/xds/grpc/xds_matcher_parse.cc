@@ -299,6 +299,10 @@ std::unique_ptr<XdsMatcher> ParseXdsMatcher(
     const xds_type_matcher_v3_Matcher* matcher,
     const XdsMatcherActionRegistry& action_registry,
     const UniqueTypeName& matcher_context, ValidationErrors* errors) {
+  if (matcher == nullptr) {
+    errors->AddError("field not set");
+    return nullptr;
+  }
   std::optional<XdsMatcher::OnMatch> on_no_match;
   if (xds_type_matcher_v3_Matcher_has_on_no_match(matcher)) {
     ValidationErrors::ScopedField field(errors, ".on_no_match");
