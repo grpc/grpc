@@ -56,7 +56,7 @@ const char *kEnableCustomConcurrentCompletionQueue =
     static dispatch_queue_t concurrentDispatchQueue;
     dispatch_once(&initialization, ^{
       char *useCustomQueue = getenv(kEnableCustomConcurrentCompletionQueue);
-      if (useCustomQueue != nil && useCustomQueue[0] == '1') {
+      if (useCustomQueue != nil && strcmp(useCustomQueue, "1") == 0) {
         dispatch_queue_attr_t attr = dispatch_queue_attr_make_with_qos_class(
             DISPATCH_QUEUE_CONCURRENT, QOS_CLASS_DEFAULT, 0);
         concurrentDispatchQueue = dispatch_queue_create("grpc.completionQueue", attr);
