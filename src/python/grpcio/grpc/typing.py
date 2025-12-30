@@ -66,13 +66,7 @@ class CygrpcServerCertificateConfig:
         self._cy_config = cy_config
 
 
-class CygrpcBaseEvent:
-    """Type alias for cygrpc.BaseEvent."""
-
-    _cy_event: cygrpc.BaseEvent
-
-    def __init__(self, cy_event: cygrpc.BaseEvent):
-        self._cy_event = cy_event
+CygrpcBaseEvent = cygrpc.BaseEvent
 
 
 if TYPE_CHECKING:
