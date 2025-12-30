@@ -14,17 +14,52 @@
 
 module GRPC
   module Core
-    # An abstract base class for providing per-call authentication credentials.
-    #
-    # Implementers should subclass this and provide a concrete implementation for
-    # the `#get_metadata` method. Instances of these subclasses can then be passed
-    # to a client stub's initializer via the `:call_credentials` keyword argument.
-
+    # Provides per-call authentication by accepting a proc that generates
+    # authentication metadata for each RPC.
     class CallCredentials
+      def initialize(auth_proc)
+        fail(TypeError, 'Argument to CallCredentials#new must be a proc') unless auth_proc.is_a? Proc
+        @auth_proc = auth_proc
+      end
 
-      # Returns [Hash{String => String}] A hash of metadata headers to be sent with an RPC.
       def get_metadata(service_url: nil, method_name: nil)
-        raise NotImplementedError, "#{self.class} must implement #get_metadata"
+        @auth_proc.call(jwt_aud_uri: service_url)
+      end
+
+      def compose(*other_call_credentials)
+        other_call_credentials.each do |cred|
+          unless cred.is_a?(GRPC::Core::CallCredentials)
+            fail TypeError, 'can only compose with CallCredentials'
+          end
+        end
+        CompositeCallCredentials.new([self] + other_call_credentials)
+      end
+    end
+
+    # Combines multiple CallCredentials instances into one.
+    class CompositeCallCredentials < CallCredentials
+      attr_reader :call_credentials
+
+      def initialize(call_credentials_list)
+        @call_credentials = call_credentials_list
+      end
+
+      def get_metadata(service_url: nil, method_name: nil)
+        result = {}
+        @call_credentials.each do |cred|
+          metadata = cred.get_metadata(service_url: service_url, method_name: method_name)
+          result.merge!(metadata) if metadata
+        end
+        result
+      end
+
+      def compose(*other_call_credentials)
+        other_call_credentials.each do |cred|
+          unless cred.is_a?(GRPC::Core::CallCredentials)
+            fail TypeError, 'can only compose with CallCredentials'
+          end
+        end
+        CompositeCallCredentials.new(@call_credentials + other_call_credentials)
       end
     end
   end

@@ -44,6 +44,7 @@ module GRPC
     include Core::CallOps
     extend Forwardable
     attr_reader :deadline, :metadata_sent, :metadata_to_send, :peer, :peer_cert
+    attr_accessor :call_credentials
     def_delegators :@call, :cancel, :cancel_with_status, :metadata,
                    :write_flag, :write_flag=, :trailing_metadata, :status
 

@@ -104,9 +104,9 @@ module GRPC
 
       call_creds_obj = nil
       if creds.is_a?(Core::CompositeChannelCredentials)
-        call_creds_obj = creds.call_creds
-        creds = creds.channel_creds
-        interceptors.unshift(ClientAuthInterceptor.new)
+        call_creds_obj = creds.call_credentials
+        creds = creds.channel_credentials
+        interceptors.push(ClientAuthInterceptor.new)
       end
 
       @ch = ClientStub.setup_channel(channel_override, host, creds,
@@ -506,9 +506,10 @@ module GRPC
                              method,
                              nil, # host use nil,
                              deadline)
-      call.set_credentials! credentials unless credentials.nil?
-      ActiveCall.new(call, marshal, unmarshal, deadline,
-                     started: false)
+      active_call = ActiveCall.new(call, marshal, unmarshal, deadline,
+                                   started: false)
+      active_call.call_credentials = credentials if credentials
+      active_call
     end
   end
 end

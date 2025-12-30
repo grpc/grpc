@@ -27,7 +27,7 @@ module GRPC
 
         base = is_a?(CompositeChannelCredentials) ? channel_credentials : self
         existing = is_a?(CompositeChannelCredentials) ? call_credentials : []
-        
+
         CompositeChannelCredentials.new(base, existing + new_call_credentials)
       end
     end

@@ -155,39 +155,47 @@ module GRPC
     end
 
     def request_response(request:, call:, method:, metadata:)
-      apply_metadata_from_channel(call.channel, metadata, method)
+      apply_call_credentials(call, metadata, method)
       yield
     end
 
     def client_streamer(requests:, call:, method:, metadata:)
-      apply_metadata_from_channel(call.channel, metadata, method)
+      apply_call_credentials(call, metadata, method)
       yield
     end
 
     def server_streamer(request:, call:, method:, metadata:)
-      apply_metadata_from_channel(call.channel, metadata, method)
+      apply_call_credentials(call, metadata, method)
       yield
     end
 
     def bidi_streamer(requests:, call:, method:, metadata:)
-      apply_metadata_from_channel(call.channel, metadata, method)
+      apply_call_credentials(call, metadata, method)
       yield
     end
 
     private
-    def apply_credentials_from_channel(channel, metadata, method)
-      call_credentials = channel.call_credentials
-      return unless call_credentials
 
-      call_credentials.each do |call_credential|
+    def apply_call_credentials(interceptable_call, metadata, method)
+      channel = interceptable_call.channel
+      creds = []
+      creds.concat(Array(channel.call_credentials)) if channel.call_credentials
+      if interceptable_call.respond_to?(:call_credentials)
+        creds.concat(Array(interceptable_call.call_credentials))
+      end
+      return if creds.empty?
+
+      creds.each do |call_credential|
         auth_metadata = call_credential.get_metadata(
           service_url: channel.target,
           method_name: method
         )
         metadata.merge!(auth_metadata) if auth_metadata
       end
-    rescue => e
-      raise GRPC::Unavailable.new("Failed to get call credentials: #{e.message}", cause: e)
+    rescue StandardError => e
+      fail GRPC::Unavailable.new(
+        "Failed to get call credentials: #{e.message}", cause: e
+      )
     end
   end
 
