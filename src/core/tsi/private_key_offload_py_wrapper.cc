@@ -24,9 +24,9 @@
 
 namespace grpc_core {
 
-void CustomPrivateKeySignerPyWrapper::Sign(
-    absl::string_view data_to_sign, SignatureAlgorithm signature_algorithm,
-    OnSignComplete on_sign_complete) {
+void PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
+                                     SignatureAlgorithm signature_algorithm,
+                                     OnSignComplete on_sign_complete) {
   auto on_sign_complete_cpp_callback =
       [](const absl::StatusOr<std::string> result, void* completion_data) {
         grpc_core::ExecCtx exec_ctx;
@@ -45,9 +45,9 @@ void CustomPrivateKeySignerPyWrapper::Sign(
                    sign_user_data_);
 }
 
-CustomPrivateKeySigner* BuildCustomPrivateKeySigner(
-    SignPyWrapper sign_py_wrapper, void* user_data) {
-  return new CustomPrivateKeySignerPyWrapper(sign_py_wrapper, user_data);
+PrivateKeySigner* BuildPrivateKeySigner(SignPyWrapper sign_py_wrapper,
+                                        void* user_data) {
+  return new PrivateKeySignerPyWrapper(sign_py_wrapper, user_data);
 }
 
 }  // namespace grpc_core

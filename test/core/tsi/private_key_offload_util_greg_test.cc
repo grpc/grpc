@@ -61,42 +61,42 @@ bssl::UniquePtr<EVP_PKEY> LoadPublicKeyFromString(
 }
 
 bool GetBoringSslAlgorithm(
-    CustomPrivateKeySigner::SignatureAlgorithm signature_algorithm,
-    const EVP_MD** md, int* padding) {
+    PrivateKeySigner::SignatureAlgorithm signature_algorithm, const EVP_MD** md,
+    int* padding) {
   switch (signature_algorithm) {
-    case CustomPrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha256:
+    case PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha256:
       *md = EVP_sha256();
       *padding = RSA_PKCS1_PADDING;
       return true;
-    case CustomPrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha384:
+    case PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha384:
       *md = EVP_sha384();
       *padding = RSA_PKCS1_PADDING;
       return true;
-    case CustomPrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha512:
+    case PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha512:
       *md = EVP_sha512();
       *padding = RSA_PKCS1_PADDING;
       return true;
-    case CustomPrivateKeySigner::SignatureAlgorithm::kEcdsaSecp256r1Sha256:
+    case PrivateKeySigner::SignatureAlgorithm::kEcdsaSecp256r1Sha256:
       *md = EVP_sha256();
       *padding = 0;
       return true;
-    case CustomPrivateKeySigner::SignatureAlgorithm::kEcdsaSecp384r1Sha384:
+    case PrivateKeySigner::SignatureAlgorithm::kEcdsaSecp384r1Sha384:
       *md = EVP_sha384();
       *padding = 0;
       return true;
-    case CustomPrivateKeySigner::SignatureAlgorithm::kEcdsaSecp521r1Sha512:
+    case PrivateKeySigner::SignatureAlgorithm::kEcdsaSecp521r1Sha512:
       *md = EVP_sha512();
       *padding = 0;
       return true;
-    case CustomPrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha256:
+    case PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha256:
       *md = EVP_sha256();
       *padding = RSA_PKCS1_PSS_PADDING;
       return true;
-    case CustomPrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha384:
+    case PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha384:
       *md = EVP_sha384();
       *padding = RSA_PKCS1_PSS_PADDING;
       return true;
-    case CustomPrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha512:
+    case PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha512:
       *md = EVP_sha512();
       *padding = RSA_PKCS1_PSS_PADDING;
       return true;
@@ -105,7 +105,7 @@ bool GetBoringSslAlgorithm(
   }
 }
 
-class BoringSslPrivateKeySigner : public CustomPrivateKeySigner {
+class BoringSslPrivateKeySigner : public PrivateKeySigner {
  public:
   explicit BoringSslPrivateKeySigner(bssl::UniquePtr<EVP_PKEY> pkey)
       : pkey_(std::move(pkey)) {}
@@ -159,8 +159,7 @@ class BoringSslPrivateKeySigner : public CustomPrivateKeySigner {
   bssl::UniquePtr<EVP_PKEY> pkey_;
 };
 
-absl::Status Verify(EVP_PKEY* pkey,
-                    CustomPrivateKeySigner::SignatureAlgorithm alg,
+absl::Status Verify(EVP_PKEY* pkey, PrivateKeySigner::SignatureAlgorithm alg,
                     absl::string_view data, absl::string_view sig) {
   const EVP_MD* md = nullptr;
   int padding = 0;
@@ -196,7 +195,7 @@ struct TestVector {
   std::string name;
   std::string key_path;
   std::string cert_path;
-  CustomPrivateKeySigner::SignatureAlgorithm alg;
+  PrivateKeySigner::SignatureAlgorithm alg;
 };
 
 class BoringSslPrivateKeySignerTest
@@ -232,15 +231,12 @@ TEST_P(BoringSslPrivateKeySignerTest, SignAndVerify) {
 
 INSTANTIATE_TEST_SUITE_P(
     BoringSslPrivateKeySignerTest, BoringSslPrivateKeySignerTest,
-    ::testing::Values(
-        TestVector{"RsaPkcs1Sha256",
-                   "test/core/tsi/test_creds/spiffe_end2end/ca.key",
-                   "test/core/tsi/test_creds/spiffe_end2end/ca.pem",
-                   CustomPrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha256}),
-    [](const ::testing::TestParamInfo<
-        BoringSslPrivateKeySignerTest::ParamType>& info) {
-      return info.param.name;
-    });
+    ::testing::Values(TestVector{
+        "RsaPkcs1Sha256", "test/core/tsi/test_creds/spiffe_end2end/ca.key",
+        "test/core/tsi/test_creds/spiffe_end2end/ca.pem",
+        PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha256}),
+    [](const ::testing::TestParamInfo<BoringSslPrivateKeySignerTest::ParamType>&
+           info) { return info.param.name; });
 
 }  // namespace
 }  // namespace testing

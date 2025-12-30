@@ -16,14 +16,14 @@ from cpython.pystate cimport PyGILState_STATE, PyGILState_Ensure, PyGILState_Rel
 
 cdef void sign_trampoline(string_view data_to_sign, CSignatureAlgorithm signature_algorithm, OnSignCompletePyWrapper on_sign_complete_py_wrapper, void* completion_data, void* user_data) noexcept:
     cdef PyGILState_STATE gstate
-    cdef PyCustomPrivateKeySigner py_signer
+    cdef PyPrivateKeySigner py_signer
     cdef string cpp_signature
     cdef StatusOr[string]* result
     cdef string cpp_error_message
     cdef Status* status
     gstate = PyGILState_Ensure()
     try:
-        py_signer = <PyCustomPrivateKeySigner>user_data
+        py_signer = <PyPrivateKeySigner>user_data
         try:
             py_data_to_sign = data_to_sign.data()[:data_to_sign.length()]
             
@@ -56,17 +56,17 @@ cdef void sign_trampoline(string_view data_to_sign, CSignatureAlgorithm signatur
         PyGILState_Release(gstate)
 
 
-cdef class PyCustomPrivateKeySigner:
+cdef class PyPrivateKeySigner:
     def __cinit__(self, py_callable):
         if not callable(py_callable):
             raise TypeError("py_callable must be callable")
         self._py_callable = py_callable
         
         cpython.Py_INCREF(self)
-        self.c_signer = BuildCustomPrivateKeySigner(sign_trampoline, <void*>self)
+        self.c_signer = BuildPrivateKeySigner(sign_trampoline, <void*>self)
         if self.c_signer == NULL:
             cpython.Py_DECREF(self)
-            raise MemoryError("Failed to create CustomPrivateKeySigner")
+            raise MemoryError("Failed to create PrivateKeySigner")
 
     def __dealloc__(self):
         if self.c_signer != NULL:
@@ -74,5 +74,5 @@ cdef class PyCustomPrivateKeySigner:
             self.c_signer = NULL
             cpython.Py_DECREF(self)
 
-    cdef CustomPrivateKeySigner* c_ptr(self):
+    cdef PrivateKeySigner* c_ptr(self):
         return self.c_signer

@@ -39,9 +39,9 @@ cdef extern from "absl/strings/string_view.h" namespace "absl":
         size_t length()
 
 cdef extern from "grpc/grpc_private_key_offload.h" namespace "grpc_core":
-    cdef cppclass CustomPrivateKeySigner:
+    cdef cppclass PrivateKeySigner:
         pass
-    cdef enum class CSignatureAlgorithm "grpc_core::CustomPrivateKeySigner::SignatureAlgorithm":
+    cdef enum class CSignatureAlgorithm "grpc_core::PrivateKeySigner::SignatureAlgorithm":
         kRsaPkcs1Sha256,
         kRsaPkcs1Sha384,
         kRsaPkcs1Sha512,
@@ -67,9 +67,9 @@ cpdef enum SignatureAlgorithm:
 cdef extern from "src/core/tsi/private_key_offload_py_wrapper.h" namespace "grpc_core":
     ctypedef void (*OnSignCompletePyWrapper)(const StatusOr[string], void*) noexcept
     ctypedef void (*SignPyWrapper)(string_view, CSignatureAlgorithm, OnSignCompletePyWrapper, void*, void*) noexcept
-    CustomPrivateKeySigner* BuildCustomPrivateKeySigner(SignPyWrapper, void*)
+    PrivateKeySigner* BuildPrivateKeySigner(SignPyWrapper, void*)
 
-cdef class PyCustomPrivateKeySigner:
-    cdef CustomPrivateKeySigner* c_signer
+cdef class PyPrivateKeySigner:
+    cdef PrivateKeySigner* c_signer
     cdef object _py_callable
-    cdef CustomPrivateKeySigner* c_ptr(self)
+    cdef PrivateKeySigner* c_ptr(self)

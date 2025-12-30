@@ -20,30 +20,35 @@
 #define GRPC_GRPC_PRIVATE_KEY_OFFLOAD_PY_WRAPPER_H
 
 #include <string>
-#include "absl/status/statusor.h"
-#include "grpc/grpc_private_key_offload.h"
 
-// This needs to be an impl of `CustomPrivateKeySigner`
+#include "grpc/private_key_signer.h"
+#include "absl/status/statusor.h"
+
+// This needs to be an impl of `PrivateKeySigner`
 
 namespace grpc_core {
     typedef void (*OnSignCompletePyWrapper)(const absl::StatusOr<std::string> result, void* completion_data);
-    typedef void (*SignPyWrapper)(absl::string_view data_to_sign, grpc_core::CustomPrivateKeySigner::SignatureAlgorithm signature_algorithm, OnSignCompletePyWrapper on_sign_complete_py_wrapper, void* completion_data, void* user_data);
+    typedef void (*SignPyWrapper)(
+        absl::string_view data_to_sign,
+        grpc_core::PrivateKeySigner::SignatureAlgorithm signature_algorithm,
+        OnSignCompletePyWrapper on_sign_complete_py_wrapper,
+        void* completion_data, void* user_data);
 
-    class CustomPrivateKeySignerPyWrapper : public CustomPrivateKeySigner {
+    class PrivateKeySignerPyWrapper : public PrivateKeySigner {
      public:
-        CustomPrivateKeySignerPyWrapper(SignPyWrapper sign_py_wrapper, void* user_data)
-            : sign_py_wrapper_(sign_py_wrapper), sign_user_data_(user_data) {}
-        void Sign(absl::string_view data_to_sign, SignatureAlgorithm signature_algorithm, OnSignComplete on_sign_complete) override;
+      PrivateKeySignerPyWrapper(SignPyWrapper sign_py_wrapper, void* user_data)
+          : sign_py_wrapper_(sign_py_wrapper), sign_user_data_(user_data) {}
+      void Sign(absl::string_view data_to_sign,
+                SignatureAlgorithm signature_algorithm,
+                OnSignComplete on_sign_complete) override;
 
      private:
-        SignPyWrapper sign_py_wrapper_;
-        void* sign_user_data_;
-
+      SignPyWrapper sign_py_wrapper_;
+      void* sign_user_data_;
     };
 
-
-
-    CustomPrivateKeySigner* BuildCustomPrivateKeySigner(SignPyWrapper sign, void* user_data);
+    PrivateKeySigner* BuildPrivateKeySigner(SignPyWrapper sign,
+                                            void* user_data);
     }  // namespace grpc_core
 
 #endif  // GRPC_GRPC_PRIVATE_KEY_OFFLOAD_PY_WRAPPER_H
