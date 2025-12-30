@@ -108,6 +108,7 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "error_flatten",
+                "promise_based_http2_client_transport",
                 "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
@@ -216,6 +217,7 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "error_flatten",
+                "promise_based_http2_client_transport",
                 "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
@@ -324,6 +326,7 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "error_flatten",
+                "promise_based_http2_client_transport",
                 "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
