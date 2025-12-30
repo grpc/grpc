@@ -365,8 +365,8 @@ void TlsOffloadSignDoneCallback(grpc_core::TlsPrivateKeyOffloadContext* ctx,
   const uint8_t* bytes_to_send = nullptr;
   size_t bytes_to_send_size = 0;
   std::string error;
-  // Once the signed bytes are obtained, wrap an empty callback to
-  // tsi_handshaker_next to resume the pending async operation.
+  // Once the signed bytes are obtained, tell everything to resume the pending
+  // async operation.
   tsi_result result = ssl_handshaker_next(
       ctx->handshaker, nullptr, 0, &bytes_to_send, &bytes_to_send_size,
       &ctx->handshaker_result, ctx->notify_cb, ctx->notify_user_data, &error);
