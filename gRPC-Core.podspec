@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.77.0-dev'
+  version = '1.79.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -576,7 +576,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/ping_promise.h',
                       'src/core/ext/transport/chttp2/transport/ping_rate_policy.cc',
                       'src/core/ext/transport/chttp2/transport/ping_rate_policy.h',
-                      'src/core/ext/transport/chttp2/transport/security_frame.cc',
                       'src/core/ext/transport/chttp2/transport/security_frame.h',
                       'src/core/ext/transport/chttp2/transport/stream.h',
                       'src/core/ext/transport/chttp2/transport/stream_data_queue.h',

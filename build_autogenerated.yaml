@@ -1503,7 +1503,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/ping_callbacks.cc
   - src/core/ext/transport/chttp2/transport/ping_promise.cc
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
-  - src/core/ext/transport/chttp2/transport/security_frame.cc
   - src/core/ext/transport/chttp2/transport/stream_lists.cc
   - src/core/ext/transport/chttp2/transport/transport_common.cc
   - src/core/ext/transport/chttp2/transport/varint.cc
@@ -3086,7 +3085,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/ping_callbacks.cc
   - src/core/ext/transport/chttp2/transport/ping_promise.cc
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
-  - src/core/ext/transport/chttp2/transport/security_frame.cc
   - src/core/ext/transport/chttp2/transport/stream_lists.cc
   - src/core/ext/transport/chttp2/transport/transport_common.cc
   - src/core/ext/transport/chttp2/transport/varint.cc
@@ -14993,6 +14991,28 @@ targets:
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/transport/chttp2/http2_client_transport_test.cc
+  - test/core/transport/util/mock_promise_endpoint.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  uses_polling: false
+- name: http2_security_frame_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/promise/poll_matcher.h
+  - test/core/test_util/postmortem.h
+  - test/core/transport/util/mock_promise_endpoint.h
+  - test/core/transport/util/transport_test.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/transport/chttp2/http2_security_frame_test.cc
   - test/core/transport/util/mock_promise_endpoint.cc
   deps:
   - gtest

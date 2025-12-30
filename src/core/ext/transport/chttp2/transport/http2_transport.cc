@@ -362,6 +362,20 @@ bool ProcessIncomingWindowUpdateFrameFlowControl(
   return false;
 }
 
+void MaybeAddTransportWindowUpdateFrame(
+    chttp2::TransportFlowControl& flow_control,
+    std::vector<Http2Frame>& frames) {
+  uint32_t window_size =
+      flow_control.DesiredAnnounceSize(/*writing_anyway=*/true);
+  if (window_size > 0) {
+    GRPC_HTTP2_COMMON_DLOG
+        << "MaybeGetWindowUpdateFrames Transport Window Update : "
+        << window_size;
+    frames.emplace_back(Http2WindowUpdateFrame{/*stream_id=*/0, window_size});
+    flow_control.SentUpdate(window_size);
+  }
+}
+
 void MaybeAddStreamWindowUpdateFrame(RefCountedPtr<Stream> stream,
                                      std::vector<Http2Frame>& frames) {
   GRPC_HTTP2_COMMON_DLOG << "MaybeAddStreamWindowUpdateFrame stream="

@@ -141,6 +141,10 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
         /* exclude_specific_tests */
         GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST});
 
+#ifdef GPR_WINDOWS
+#else
+    // Temporarily disable retry tests on Windows.
+    // TODO(akshitpatel): [PH2][P4] - Re-enable retry tests on Windows.
     list_of_configs.push_back(CoreTestConfiguration{
         /*name=*/GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_RETRY,
         /*feature_mask=*/FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
@@ -161,6 +165,7 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
         /* exclude_specific_tests */
         GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST
             GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_RETRY_AVOID_LIST});
+#endif
   }
   return list_of_configs;
 }
