@@ -146,6 +146,7 @@ grpc_cc_test(
     shard_count = 10,
     tags = [
         "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
         "no_test_ios",
         "thready_tsan",
     ],
