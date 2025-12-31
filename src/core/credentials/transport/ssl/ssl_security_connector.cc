@@ -78,7 +78,8 @@ class grpc_ssl_channel_security_connector final
   grpc_ssl_channel_security_connector(
       grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
       grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
-      const grpc_ssl_config* config, const char* target_name,
+      const grpc_ssl_config* config,
+      const char* target_name,
       const char* overridden_target_name,
       tsi_ssl_client_handshaker_factory* client_handshaker_factory)
       : grpc_channel_security_connector(GRPC_SSL_URL_SCHEME,
@@ -87,7 +88,7 @@ class grpc_ssl_channel_security_connector final
         client_handshaker_factory_(client_handshaker_factory),
         overridden_target_name_(
             overridden_target_name == nullptr ? "" : overridden_target_name),
-        verify_options_(&config->verify_options) {
+        verify_options_(config != nullptr ? &config->verify_options : nullptr) {
     absl::string_view host;
     absl::string_view port;
     grpc_core::SplitHostPort(target_name, &host, &port);
@@ -95,12 +96,24 @@ class grpc_ssl_channel_security_connector final
   }
 
   ~grpc_ssl_channel_security_connector() override {
-    tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
+    if (client_handshaker_factory_ != nullptr) {
+      tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
+    }
   }
 
   void add_handshakers(const grpc_core::ChannelArgs& args,
                        grpc_pollset_set* /*interested_parties*/,
                        grpc_core::HandshakeManager* handshake_mgr) override {
+    // Try to fetch new credentials if a fetcher is configured
+    try_fetch_ssl_channel_credentials();
+
+    // Check if we have a factory after potential fetch
+    if (client_handshaker_factory_ == nullptr) {
+      LOG(ERROR) << "No handshaker factory available. Certificate fetcher may "
+                    "have failed to provide certificates.";
+      return;
+    }
+
     // Instantiate TSI handshaker.
     tsi_handshaker* tsi_hs = nullptr;
     tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
@@ -127,7 +140,8 @@ class grpc_ssl_channel_security_connector final
                                   ? target_name_.c_str()
                                   : overridden_target_name_.c_str();
     grpc_error_handle error = ssl_check_peer(target_name, &peer, auth_context);
-    if (error.ok() && verify_options_->verify_peer_callback != nullptr) {
+    if (error.ok() && verify_options_ != nullptr &&
+        verify_options_->verify_peer_callback != nullptr) {
       const tsi_peer_property* p =
           tsi_peer_get_property_by_name(&peer, TSI_X509_PEM_CERT_PROPERTY);
       if (p == nullptr) {
@@ -172,6 +186,109 @@ class grpc_ssl_channel_security_connector final
   }
 
  private:
+  bool has_cert_config_fetcher() const {
+    return static_cast<const grpc_ssl_credentials*>(channel_creds())
+        ->has_cert_config_fetcher();
+  }
+
+  // Attempts to fetch the channel certificate config if a callback is
+  // available. Current certificate config will continue to be used if the
+  // callback returns an error. Returns true if new credentials were
+  // successfully loaded.
+  bool try_fetch_ssl_channel_credentials() {
+    grpc_ssl_certificate_config* certificate_config = nullptr;
+    bool status;
+    if (!has_cert_config_fetcher()) return false;
+
+    grpc_core::MutexLock lock(&mu_);
+    grpc_ssl_credentials* channel_creds =
+        static_cast<grpc_ssl_credentials*>(this->mutable_channel_creds());
+    grpc_ssl_certificate_config_reload_status cb_result =
+        channel_creds->FetchCertConfig(&certificate_config);
+    if (cb_result == GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED) {
+      status = false;
+    } else if (cb_result == GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW) {
+      status = try_replace_client_handshaker_factory(certificate_config);
+    } else {
+      // Log error, continue using previously-loaded credentials.
+      LOG(ERROR) << "Failed fetching new channel credentials, continuing to "
+                    "use previously-loaded credentials.";
+      status = false;
+    }
+
+    if (certificate_config != nullptr) {
+      grpc_ssl_certificate_config_destroy(certificate_config);
+    }
+    return status;
+  }
+
+  // Attempts to replace the client_handshaker_factory with a new factory
+  // using the provided grpc_ssl_certificate_config. Should new factory
+  // creation fail, the existing factory will not be replaced. Returns true on
+  // success (new factory created).
+  bool try_replace_client_handshaker_factory(
+      const grpc_ssl_certificate_config* config) {
+    if (config == nullptr) {
+      LOG(ERROR)
+          << "Channel certificate config callback returned invalid (NULL) "
+             "config.";
+      return false;
+    }
+    VLOG(2) << "Using new channel certificate config (" << config << ").";
+
+    tsi_ssl_client_handshaker_factory* new_handshaker_factory = nullptr;
+    const grpc_ssl_credentials* channel_creds =
+        static_cast<const grpc_ssl_credentials*>(this->channel_creds());
+
+    // Build handshaker options
+    tsi_ssl_client_handshaker_options options;
+    if (config->pem_root_certs != nullptr) {
+      options.root_cert_info = std::make_shared<RootCertInfo>(config->pem_root_certs);
+    }
+    options.root_store = nullptr; // Dynamic reload doesn't use root store
+    options.alpn_protocols =
+        grpc_fill_alpn_protocol_strings(&options.num_alpn_protocols);
+
+    // Convert key cert pairs
+    if (config->num_key_cert_pairs > 0) {
+      options.pem_key_cert_pair = grpc_convert_grpc_to_tsi_cert_pairs(
+          config->pem_key_cert_pairs, config->num_key_cert_pairs);
+    }
+
+    options.cipher_suites = grpc_get_ssl_cipher_suites();
+    options.session_cache = nullptr;
+    options.min_tls_version = grpc_get_tsi_tls_version(
+        channel_creds->config().min_tls_version);
+    options.max_tls_version = grpc_get_tsi_tls_version(
+        channel_creds->config().max_tls_version);
+
+    tsi_result result = tsi_create_ssl_client_handshaker_factory_with_options(
+        &options, &new_handshaker_factory);
+
+    // Cleanup
+    grpc_tsi_ssl_pem_key_cert_pairs_destroy(
+        const_cast<tsi_ssl_pem_key_cert_pair*>(options.pem_key_cert_pair),
+        config->num_key_cert_pairs);
+    gpr_free(options.alpn_protocols);
+
+    if (result != TSI_OK) {
+      LOG(ERROR) << "Handshaker factory creation failed with "
+                 << tsi_result_to_string(result);
+      return false;
+    }
+    set_client_handshaker_factory(new_handshaker_factory);
+    return true;
+  }
+
+  void set_client_handshaker_factory(
+      tsi_ssl_client_handshaker_factory* new_factory) {
+    if (client_handshaker_factory_) {
+      tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
+    }
+    client_handshaker_factory_ = new_factory;
+  }
+
+  grpc_core::Mutex mu_;
   tsi_ssl_client_handshaker_factory* client_handshaker_factory_ = nullptr;
   std::string target_name_;
   std::string overridden_target_name_;
@@ -405,11 +522,12 @@ grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_ssl_channel_security_connector_create(
     grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
     grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
-    const grpc_ssl_config* config, const char* target_name,
+    const grpc_ssl_config* config,
+    const char* target_name,
     const char* overridden_target_name,
     tsi_ssl_client_handshaker_factory* client_factory) {
-  if (config == nullptr || target_name == nullptr) {
-    LOG(ERROR) << "An ssl channel needs a config and a target name.";
+  if (target_name == nullptr) {
+    LOG(ERROR) << "An ssl channel needs a target name.";
     return nullptr;
   }
 
