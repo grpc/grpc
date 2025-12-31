@@ -134,6 +134,7 @@ grpc_cc_library(
 
 grpc_cc_test(
     name = "async_end2end_test",
+    timeout = "long",
     srcs = ["async_end2end_test.cc"],
     external_deps = [
         "absl/log",
