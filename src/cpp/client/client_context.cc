@@ -37,8 +37,10 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 
 namespace grpc {
@@ -117,6 +119,12 @@ std::unique_ptr<ClientContext> ClientContext::FromCallbackServerContext(
 
 void ClientContext::AddMetadata(const std::string& meta_key,
                                 const std::string& meta_value) {
+  auto status = grpc_core::ValidateMetadata(meta_key, meta_value);
+  if (!status.ok()) {
+    LOG(ERROR) << "Invalid Metadata. key:" << meta_key
+               << " value:" << meta_value << " status" << status;
+    return;
+  }
   send_initial_metadata_.insert(std::pair(meta_key, meta_value));
 }
 
