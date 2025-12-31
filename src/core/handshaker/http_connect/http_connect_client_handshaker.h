@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_HANDSHAKER_HTTP_CONNECT_HTTP_CONNECT_HANDSHAKER_H
-#define GRPC_SRC_CORE_HANDSHAKER_HTTP_CONNECT_HTTP_CONNECT_HANDSHAKER_H
+#ifndef GRPC_SRC_CORE_HANDSHAKER_HTTP_CONNECT_HTTP_CONNECT_CLIENT_HANDSHAKER_H
+#define GRPC_SRC_CORE_HANDSHAKER_HTTP_CONNECT_HTTP_CONNECT_CLIENT_HANDSHAKER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -35,8 +35,8 @@
 namespace grpc_core {
 
 // Register the HTTP Connect handshaker into the configuration builder.
-void RegisterHttpConnectHandshaker(CoreConfiguration::Builder* builder);
+void RegisterHttpConnectClientHandshaker(CoreConfiguration::Builder* builder);
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_HANDSHAKER_HTTP_CONNECT_HTTP_CONNECT_HANDSHAKER_H
+#endif  // GRPC_SRC_CORE_HANDSHAKER_HTTP_CONNECT_HTTP_CONNECT_CLIENT_HANDSHAKER_H
