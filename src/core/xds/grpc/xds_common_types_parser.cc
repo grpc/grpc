@@ -680,8 +680,8 @@ XdsGrpcService ParseXdsGrpcService(
       errors->AddError("invalid target URI");
     }
     // credentials
-    RefCountedPtr<ChannelCredsConfig> channel_creds_config;
-    std::vector<RefCountedPtr<CallCredsConfig>> call_creds_configs;
+    RefCountedPtr<const ChannelCredsConfig> channel_creds_config;
+    std::vector<RefCountedPtr<const CallCredsConfig>> call_creds_configs;
     if (DownCast<const GrpcXdsServer&>(context.server).TrustedXdsServer()) {
       // Trusted xDS server.  Use credentials from the GoogleGrpc proto.
       // FIXME: add parsing for channel_credentials_plugin

@@ -30,13 +30,13 @@ namespace {
 class TestCallCredsFactory : public CallCredsFactory<> {
  public:
   absl::string_view type() const override { return Type(); }
-  RefCountedPtr<CallCredsConfig> ParseConfig(
+  RefCountedPtr<const CallCredsConfig> ParseConfig(
       const Json& /*config*/, const JsonArgs& /*args*/,
       ValidationErrors* /*errors*/) const override {
     return MakeRefCounted<Config>();
   }
   RefCountedPtr<grpc_call_credentials> CreateCallCreds(
-      RefCountedPtr<CallCredsConfig> /*config*/) const override {
+      RefCountedPtr<const CallCredsConfig> /*config*/) const override {
     return MakeRefCounted<grpc_md_only_test_credentials>("key", "value");
   }
 

@@ -109,9 +109,9 @@ bool XdsBootstrapCallCredsEnabled() {
 
 }  // namespace
 
-RefCountedPtr<ChannelCredsConfig> ParseXdsBootstrapChannelCreds(
+RefCountedPtr<const ChannelCredsConfig> ParseXdsBootstrapChannelCreds(
     const Json& json, const JsonArgs& args, ValidationErrors* errors) {
-  RefCountedPtr<ChannelCredsConfig> channel_creds_config;
+  RefCountedPtr<const ChannelCredsConfig> channel_creds_config;
   auto channel_creds_list =
       LoadJsonObjectField<std::vector<ChannelOrCallCreds>>(
           json.object(), args, "channel_creds", errors);
@@ -140,9 +140,9 @@ RefCountedPtr<ChannelCredsConfig> ParseXdsBootstrapChannelCreds(
   return channel_creds_config;
 }
 
-std::vector<RefCountedPtr<CallCredsConfig>> ParseXdsBootstrapCallCreds(
+std::vector<RefCountedPtr<const CallCredsConfig>> ParseXdsBootstrapCallCreds(
     const Json& json, const JsonArgs& args, ValidationErrors* errors) {
-  std::vector<RefCountedPtr<CallCredsConfig>> call_creds_configs;
+  std::vector<RefCountedPtr<const CallCredsConfig>> call_creds_configs;
   auto call_creds_list = LoadJsonObjectField<std::vector<ChannelOrCallCreds>>(
       json.object(), args, "call_creds", errors, /*required=*/false);
   if (call_creds_list.has_value()) {
@@ -165,10 +165,10 @@ std::vector<RefCountedPtr<CallCredsConfig>> ParseXdsBootstrapCallCreds(
 void GrpcXdsServer::JsonPostLoad(const Json& json, const JsonArgs& args,
                                  ValidationErrors* errors) {
   // Parse "channel_creds".
-  RefCountedPtr<ChannelCredsConfig> channel_creds_config =
+  RefCountedPtr<const ChannelCredsConfig> channel_creds_config =
       ParseXdsBootstrapChannelCreds(json, args, errors);
   // Parse "call_creds".
-  std::vector<RefCountedPtr<CallCredsConfig>> call_creds_configs;
+  std::vector<RefCountedPtr<const CallCredsConfig>> call_creds_configs;
   if (XdsBootstrapCallCredsEnabled()) {
     call_creds_configs = ParseXdsBootstrapCallCreds(json, args, errors);
   }

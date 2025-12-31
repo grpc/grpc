@@ -278,9 +278,13 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
     grpc_channel_args* xds_channel_args = args.GetPointer<grpc_channel_args>(
         GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS);
     auto channel_args = ChannelArgs::FromC(xds_channel_args);
+    auto certificate_provider_store = MakeRefCounted<CertificateProviderStore>(
+        (*bootstrap)->certificate_providers());
     return MakeRefCounted<GrpcXdsClient>(
         key, std::move(*bootstrap), channel_args,
-        MakeRefCounted<GrpcXdsTransportFactory>(channel_args),
+        MakeRefCounted<GrpcXdsTransportFactory>(channel_args,
+                                                certificate_provider_store),
+        certificate_provider_store,
         GetStatsPluginGroupForKeyAndChannelArgs(key, args));
   }
   // Otherwise, check the global map to see if the XdsClient instance
@@ -301,9 +305,13 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
     bootstrap = std::move(*global_bootstrap);
   }
   auto channel_args = ChannelArgs::FromC(g_channel_args);
+  auto certificate_provider_store = MakeRefCounted<CertificateProviderStore>(
+      bootstrap->certificate_providers());
   auto xds_client = MakeRefCounted<GrpcXdsClient>(
       key, std::move(bootstrap), channel_args,
-      MakeRefCounted<GrpcXdsTransportFactory>(channel_args),
+      MakeRefCounted<GrpcXdsTransportFactory>(channel_args,
+                                              certificate_provider_store),
+      certificate_provider_store,
       GetStatsPluginGroupForKeyAndChannelArgs(key, args));
   g_xds_client_map->emplace(xds_client->key(), xds_client.get());
   GRPC_TRACE_LOG(xds_client, INFO) << "[xds_client " << xds_client.get()
@@ -330,6 +338,7 @@ GrpcXdsClient::GrpcXdsClient(
     absl::string_view key, std::shared_ptr<GrpcXdsBootstrap> bootstrap,
     const ChannelArgs& args,
     RefCountedPtr<XdsTransportFactory> transport_factory,
+    RefCountedPtr<CertificateProviderStore> certificate_provider_store,
     std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
         stats_plugin_group)
     : XdsClient(
@@ -342,9 +351,7 @@ GrpcXdsClient::GrpcXdsClient(
                            GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS)
                        .value_or(Duration::Seconds(15)))),
       key_(key),
-      certificate_provider_store_(MakeOrphanable<CertificateProviderStore>(
-          DownCast<const GrpcXdsBootstrap&>(this->bootstrap())
-              .certificate_providers())),
+      certificate_provider_store_(std::move(certificate_provider_store)),
       stats_plugin_group_(std::move(stats_plugin_group)),
       registered_metric_callback_(stats_plugin_group_->RegisterCallback(
           [this](CallbackMetricReporter& reporter) {

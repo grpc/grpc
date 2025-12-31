@@ -104,8 +104,8 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
   };
 
   struct AllowedGrpcService {
-    RefCountedPtr<ChannelCredsConfig> channel_creds_config;
-    std::vector<RefCountedPtr<CallCredsConfig>> call_creds_configs;
+    RefCountedPtr<const ChannelCredsConfig> channel_creds_config;
+    std::vector<RefCountedPtr<const CallCredsConfig>> call_creds_configs;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
     void JsonPostLoad(const Json& json, const JsonArgs& args,

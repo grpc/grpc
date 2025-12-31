@@ -47,11 +47,11 @@ class CallCredsFactory final {
  public:
   virtual ~CallCredsFactory() {}
   virtual absl::string_view type() const = delete;
-  virtual RefCountedPtr<CallCredsConfig> ParseConfig(
+  virtual RefCountedPtr<const CallCredsConfig> ParseConfig(
       const Json& config, const JsonArgs& args,
       ValidationErrors* errors) const = delete;
   virtual RefCountedPtr<T> CreateCallCreds(
-      RefCountedPtr<CallCredsConfig> config) const = delete;
+      RefCountedPtr<const CallCredsConfig> config) const = delete;
 };
 
 template <>
@@ -59,11 +59,11 @@ class CallCredsFactory<grpc_call_credentials> {
  public:
   virtual ~CallCredsFactory() {}
   virtual absl::string_view type() const = 0;
-  virtual RefCountedPtr<CallCredsConfig> ParseConfig(
+  virtual RefCountedPtr<const CallCredsConfig> ParseConfig(
       const Json& config, const JsonArgs& args,
       ValidationErrors* errors) const = 0;
   virtual RefCountedPtr<grpc_call_credentials> CreateCallCreds(
-      RefCountedPtr<CallCredsConfig> config) const = 0;
+      RefCountedPtr<const CallCredsConfig> config) const = 0;
 };
 
 template <typename T = grpc_call_credentials>
@@ -96,17 +96,16 @@ class CallCredsRegistry {
     return factories_.find(type) != factories_.end();
   }
 
-  RefCountedPtr<CallCredsConfig> ParseConfig(absl::string_view type,
-                                             const Json& config,
-                                             const JsonArgs& args,
-                                             ValidationErrors* errors) const {
+  RefCountedPtr<const CallCredsConfig> ParseConfig(
+      absl::string_view type, const Json& config, const JsonArgs& args,
+      ValidationErrors* errors) const {
     const auto it = factories_.find(type);
     if (it == factories_.cend()) return nullptr;
     return it->second->ParseConfig(config, args, errors);
   }
 
   RefCountedPtr<T> CreateCallCreds(
-      RefCountedPtr<CallCredsConfig> config) const {
+      RefCountedPtr<const CallCredsConfig> config) const {
     if (config == nullptr) return nullptr;
     const auto it = factories_.find(config->type());
     if (it == factories_.cend()) return nullptr;

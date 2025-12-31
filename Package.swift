@@ -2132,6 +2132,7 @@ let package = Package(
         "src/core/util/xxhash_inline.h",
         "src/core/xds/grpc/certificate_provider_store.cc",
         "src/core/xds/grpc/certificate_provider_store.h",
+        "src/core/xds/grpc/certificate_provider_store_interface.h",
         "src/core/xds/grpc/file_watcher_certificate_provider_factory.cc",
         "src/core/xds/grpc/file_watcher_certificate_provider_factory.h",
         "src/core/xds/grpc/xds_audit_logger_registry.cc",

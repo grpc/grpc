@@ -2134,6 +2134,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/util/xxhash_inline.h )
   s.files += %w( src/core/xds/grpc/certificate_provider_store.cc )
   s.files += %w( src/core/xds/grpc/certificate_provider_store.h )
+  s.files += %w( src/core/xds/grpc/certificate_provider_store_interface.h )
   s.files += %w( src/core/xds/grpc/file_watcher_certificate_provider_factory.cc )
   s.files += %w( src/core/xds/grpc/file_watcher_certificate_provider_factory.h )
   s.files += %w( src/core/xds/grpc/xds_audit_logger_registry.cc )

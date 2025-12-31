@@ -2116,6 +2116,7 @@
     <file baseinstalldir="/" name="src/core/util/xxhash_inline.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/certificate_provider_store.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/certificate_provider_store.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/certificate_provider_store_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/file_watcher_certificate_provider_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/file_watcher_certificate_provider_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_audit_logger_registry.cc" role="src" />
