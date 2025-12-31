@@ -224,9 +224,9 @@ class TestAuthMetadataProcessor : public AuthMetadataProcessor {
     EXPECT_TRUE(consumed_auth_metadata != nullptr);
     EXPECT_TRUE(context != nullptr);
     EXPECT_TRUE(response_metadata != nullptr);
-    auto auth_md =
-        auth_metadata.find(TestMetadataCredentialsPlugin::kGoodMetadataKey);
-    EXPECT_NE(auth_md, auth_metadata.end());
+    auto [auth_md, auth_md_end] = auth_metadata.equal_range(
+        TestMetadataCredentialsPlugin::kGoodMetadataKey);
+    EXPECT_NE(auth_md, auth_md_end);
     string_ref auth_md_value = auth_md->second;
     if (auth_md_value == kGoodGuy) {
       context->AddProperty(kIdentityPropName, kGoodGuy);
@@ -828,8 +828,8 @@ TEST_P(End2endTest, SimpleRpcWithCustomUserAgentPrefix) {
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(s.ok());
   const auto& trailing_metadata = context.GetServerTrailingMetadata();
-  auto iter = trailing_metadata.find("user-agent");
-  EXPECT_TRUE(iter != trailing_metadata.end());
+  auto [iter, end] = trailing_metadata.equal_range("user-agent");
+  EXPECT_TRUE(iter != end);
   std::string expected_prefix = user_agent_prefix_ + " grpc-c++/";
   EXPECT_TRUE(iter->second.starts_with(expected_prefix)) << iter->second;
 }
@@ -1474,7 +1474,8 @@ TEST_P(End2endTest, BinaryTrailerTest) {
   EXPECT_FALSE(s.ok());
   auto trailers = context.GetServerTrailingMetadata();
   EXPECT_EQ(1u, trailers.count(kDebugInfoTrailerKey));
-  auto iter = trailers.find(kDebugInfoTrailerKey);
+  auto [iter, end] = trailers.equal_range(kDebugInfoTrailerKey);
+  EXPECT_TRUE(iter != end);
   EXPECT_EQ(expected_string, iter->second);
   // Parse the returned trailer into a DebugInfo proto.
   DebugInfo returned_info;
