@@ -1175,6 +1175,7 @@ grpc_cc_test(
     shard_count = 5,
     tags = [
         "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
         "no_windows",
     ],  # TODO(jtattermusch): fix test on windows
     deps = [
