@@ -1262,6 +1262,8 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
   EXPECT_GE(server_trailing_metadata.size(), 2);
 }
 
+// Below this is validated. Above this is WIP
+
 // Server uses AsyncNotifyWhenDone API to check for cancellation
 TEST_P(AsyncEnd2endTest, ServerCheckCancellation) {
   ResetStub();
