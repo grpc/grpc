@@ -522,6 +522,25 @@ absl::StatusOr<Json> ParseProtobufStructToJson(
 // ExtractXdsExtension()
 //
 
+namespace {
+
+bool StripTypePrefix(absl::string_view& type, ValidationErrors* errors) {
+  ValidationErrors::ScopedField field(errors, ".type_url");
+  if (type.empty()) {
+    errors->AddError("field not present");
+    return false;
+  }
+  size_t pos = type.rfind('/');
+  if (pos == absl::string_view::npos || pos == type.size() - 1) {
+    errors->AddError(absl::StrCat("invalid value \"", type, "\""));
+  } else {
+    type = type.substr(pos + 1);
+  }
+  return true;
+}
+
+}  // namespace
+
 std::optional<XdsExtension> ExtractXdsExtension(
     const XdsResourceType::DecodeContext& context,
     const google_protobuf_Any* any, ValidationErrors* errors) {
@@ -530,22 +549,8 @@ std::optional<XdsExtension> ExtractXdsExtension(
     return std::nullopt;
   }
   XdsExtension extension;
-  auto strip_type_prefix = [&]() {
-    ValidationErrors::ScopedField field(errors, ".type_url");
-    if (extension.type.empty()) {
-      errors->AddError("field not present");
-      return false;
-    }
-    size_t pos = extension.type.rfind('/');
-    if (pos == absl::string_view::npos || pos == extension.type.size() - 1) {
-      errors->AddError(absl::StrCat("invalid value \"", extension.type, "\""));
-    } else {
-      extension.type = extension.type.substr(pos + 1);
-    }
-    return true;
-  };
   extension.type = UpbStringToAbsl(google_protobuf_Any_type_url(any));
-  if (!strip_type_prefix()) return std::nullopt;
+  if (!StripTypePrefix(extension.type, errors)) return std::nullopt;
   extension.validation_fields.emplace_back(
       errors, absl::StrCat(".value[", extension.type, "]"));
   absl::string_view any_value = UpbStringToAbsl(google_protobuf_Any_value(any));
@@ -559,7 +564,7 @@ std::optional<XdsExtension> ExtractXdsExtension(
     }
     extension.type =
         UpbStringToAbsl(xds_type_v3_TypedStruct_type_url(typed_struct));
-    if (!strip_type_prefix()) return std::nullopt;
+    if (!StripTypePrefix(extension.type, errors)) return std::nullopt;
     extension.validation_fields.emplace_back(
         errors, absl::StrCat(".value[", extension.type, "]"));
     auto* protobuf_struct = xds_type_v3_TypedStruct_value(typed_struct);
@@ -671,6 +676,7 @@ XdsGrpcService ParseXdsGrpcService(
   if (google_grpc == nullptr) {
     errors->AddError("field not set");
   } else {
+    ValidationErrors::ScopedField field(errors, ".google_grpc");
     // target_uri
     std::string target_uri = UpbStringToStdString(
         envoy_config_core_v3_GrpcService_GoogleGrpc_target_uri(google_grpc));
@@ -684,8 +690,72 @@ XdsGrpcService ParseXdsGrpcService(
     std::vector<RefCountedPtr<const CallCredsConfig>> call_creds_configs;
     if (DownCast<const GrpcXdsServer&>(context.server).TrustedXdsServer()) {
       // Trusted xDS server.  Use credentials from the GoogleGrpc proto.
-      // FIXME: add parsing for channel_credentials_plugin
-      // FIXME: add parsing for call_credentials_plugin
+// FIXME: enable once xDS proto update is merged
+#if 0
+      // First, look at channel creds.
+      {
+        ValidationErrors::ScopedField field(
+            errors, ".channel_credentials_plugin");
+        size_t size;
+        const auto** channel_creds_plugin =
+            envoy_config_core_v3_GrpcService_GoogleGrpc_channel_credentials_plugin(
+                google_grpc, &size);
+        if (size == 0) {
+          errors->AddError("field not set");
+        } else {
+          const auto& registry =
+              CoreConfiguration::Get().channel_creds_registry();
+          const auto& certificate_providers =
+              DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
+                  .certificate_providers();
+          for (size_t i = 0; i < size; ++i) {
+            ValidationErrors::ScopedField field(
+                errors, absl::StrCat("[", i, "]"));
+            absl::string_view type = UpbStringToAbsl(
+                google_protobuf_Any_type_url(channel_creds_plugin[i]));
+            if (!StripTypePrefix(type, errors)) continue;
+            if (!registry.IsProtoSupported(type)) continue;
+            ValidationErrors::ScopedField field2(errors, ".value");
+            absl::string_view serialized_config = UpbStringToAbsl(
+                google_protobuf_Any_value(channel_creds_plugin[i]));
+            channel_creds_config = registry.ParseProto(
+                type, serialized_config, certificate_providers, errors);
+            break;
+          }
+          if (channel_creds_config == nullptr) {
+            errors->AddError("no supported channel credentials type found");
+          }
+        }
+      }
+      // Now look at call creds.
+      {
+        ValidationErrors::ScopedField field(
+            errors, ".call_credentials_plugin");
+        size_t size;
+        const auto** call_creds_plugin =
+            envoy_config_core_v3_GrpcService_GoogleGrpc_call_credentials_plugin(
+                google_grpc, &size);
+        if (size == 0) {
+          errors->AddError("field not set");
+        } else {
+          const auto& registry =
+              CoreConfiguration::Get().call_creds_registry();
+          for (size_t i = 0; i < size; ++i) {
+            ValidationErrors::ScopedField field(
+                errors, absl::StrCat("[", i, "]"));
+            absl::string_view type = UpbStringToAbsl(
+                google_protobuf_Any_type_url(call_creds_plugin[i]));
+            if (!StripTypePrefix(type, errors)) continue;
+            if (!registry.IsProtoSupported(type)) continue;
+            ValidationErrors::ScopedField field2(errors, ".value");
+            absl::string_view serialized_config = UpbStringToAbsl(
+                google_protobuf_Any_value(call_creds_plugin[i]));
+            call_creds_configs.push_back(registry.ParseProto(
+                type, serialized_config, errors));
+          }
+        }
+      }
+#endif
     } else {
       // Not a trusted xDS server.  Do lookup in bootstrap.
       const auto& bootstrap =
