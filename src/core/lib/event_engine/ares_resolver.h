@@ -132,13 +132,13 @@ class AresResolver : public RefCountedDNSResolverInterface {
   // These callbacks are invoked from the c-ares library, so disable thread
   // safety analysis. We are guaranteed to be holding mutex_.
   static void OnHostbynameDoneLocked(void* arg, int status, int /*timeouts*/,
-                                     struct hostent* hostent)
+                                     const struct hostent* hostent)
       ABSL_NO_THREAD_SAFETY_ANALYSIS;
   static void OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
-                                   unsigned char* abuf,
+                                   const unsigned char* abuf,
                                    int alen) ABSL_NO_THREAD_SAFETY_ANALYSIS;
   static void OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
-                              unsigned char* buf,
+                              const unsigned char* buf,
                               int len) ABSL_NO_THREAD_SAFETY_ANALYSIS;
 #ifdef GRPC_ENABLE_FORK_SUPPORT
   // Is executed on fork before the poller is restarted. Cleans up the resources

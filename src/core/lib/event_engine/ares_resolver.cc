@@ -374,7 +374,8 @@ void AresResolver::LookupHostname(
     // ::1).
     resolver_arg->pending_requests = 2;
     ares_gethostbyname(channel_, std::string(host).c_str(), AF_INET,
-                       &AresResolver::OnHostbynameDoneLocked, resolver_arg);
+
+      &AresResolver::OnHostbynameDoneLocked, resolver_arg);
     ares_gethostbyname(channel_, std::string(host).c_str(), AF_INET6,
                        &AresResolver::OnHostbynameDoneLocked, resolver_arg);
   } else {
@@ -648,7 +649,7 @@ void AresResolver::OnAresBackupPollAlarm() {
 
 void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
                                           int /*timeouts*/,
-                                          struct hostent* hostent) {
+                                          const struct hostent* hostent) {
   auto* hostname_qa = static_cast<HostnameQueryArg*>(arg);
   GRPC_CHECK_GT(hostname_qa->pending_requests--, 0);
   auto* ares_resolver = hostname_qa->ares_resolver;
@@ -744,7 +745,7 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
 }
 
 void AresResolver::OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
-                                        unsigned char* abuf, int alen) {
+                                        const unsigned char* abuf, int alen) {
   std::unique_ptr<QueryArg> qa(static_cast<QueryArg*>(arg));
   auto* ares_resolver = qa->ares_resolver;
   auto nh = ares_resolver->callback_map_.extract(qa->callback_map_id);
@@ -808,7 +809,7 @@ void AresResolver::OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
 }
 
 void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
-                                   unsigned char* buf, int len) {
+                                   const unsigned char* buf, int len) {
   std::unique_ptr<QueryArg> qa(static_cast<QueryArg*>(arg));
   auto* ares_resolver = qa->ares_resolver;
   auto nh = ares_resolver->callback_map_.extract(qa->callback_map_id);

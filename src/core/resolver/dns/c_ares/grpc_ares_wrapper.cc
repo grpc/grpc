@@ -676,7 +676,7 @@ static void destroy_hostbyname_request_locked(grpc_ares_hostbyname_request* hr)
 }
 
 static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
-                                      struct hostent* hostent)
+                                      const struct hostent* hostent)
     ABSL_NO_THREAD_SAFETY_ANALYSIS {
   // This callback is invoked from the c-ares library, so disable thread safety
   // analysis. Note that we are guaranteed to be holding r->mu, though.
@@ -750,7 +750,7 @@ static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
 }
 
 static void on_srv_query_done_locked(void* arg, int status, int /*timeouts*/,
-                                     unsigned char* abuf,
+                                     const unsigned char* abuf,
                                      int alen) ABSL_NO_THREAD_SAFETY_ANALYSIS {
   // This callback is invoked from the c-ares library, so disable thread safety
   // analysis. Note that we are guaranteed to be holding r->mu, though.
@@ -800,7 +800,7 @@ static void on_srv_query_done_locked(void* arg, int status, int /*timeouts*/,
 static const char g_service_config_attribute_prefix[] = "grpc_config=";
 
 static void on_txt_done_locked(void* arg, int status, int /*timeouts*/,
-                               unsigned char* buf,
+                               const unsigned char* buf,
                                int len) ABSL_NO_THREAD_SAFETY_ANALYSIS {
   // This callback is invoked from the c-ares library, so disable thread safety
   // analysis. Note that we are guaranteed to be holding r->mu, though.
