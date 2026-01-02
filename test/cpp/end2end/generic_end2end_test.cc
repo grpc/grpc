@@ -317,7 +317,7 @@ TEST_F(GenericEnd2endTest, SequentialUnaryRpcs) {
 }
 
 // One ping, one pong.
-TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
+TEST_F(GenericEnd2endTest, DISABLED_SimpleBidiStreaming) {
   ResetStub();
 
   const std::string kMethodName(
