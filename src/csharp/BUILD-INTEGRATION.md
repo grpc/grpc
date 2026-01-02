@@ -33,7 +33,7 @@ It should be marked with `PrivateAssets="All"` to prevent it from being included
 
 Support is provided for the following platforms:
 * Windows (x86, x64, and arm64 via using the x86 binaries)
-* MacOS (x64 and arm64 via using the x64 binaries)
+* MacOS (x64 and arm64)
 * Linux (x86, x64, and arm64)
 
 You may still use the MSBuild integration provided by `Grpc.Tools` for other architectures provided you can supply the codegen binaries for that platform/architecture.
