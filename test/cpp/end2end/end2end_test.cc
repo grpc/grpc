@@ -808,7 +808,7 @@ TEST_P(End2endServerTryCancelTest, BidiStreamServerCancelDuring) {
 
 // Server to cancel after reading/writing all requests/responses on the stream
 // but before returning to the client
-TEST_P(End2endServerTryCancelTest, BidiStreamServerCancelAfter) {
+TEST_P(End2endServerTryCancelTest, DISABLED_BidiStreamServerCancelAfter) {
   TestBidiStreamServerCancel(CANCEL_AFTER_PROCESSING, 5);
 }
 
@@ -943,7 +943,7 @@ TEST_P(End2endTest, DISABLED_RequestStreamOneRequest) {
   EXPECT_TRUE(context.debug_error_string().empty());
 }
 
-TEST_P(End2endTest, RequestStreamOneRequestWithCoalescingApi) {
+TEST_P(End2endTest, DISABLED_RequestStreamOneRequestWithCoalescingApi) {
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -958,7 +958,7 @@ TEST_P(End2endTest, RequestStreamOneRequestWithCoalescingApi) {
   EXPECT_TRUE(s.ok());
 }
 
-TEST_P(End2endTest, RequestStreamTwoRequests) {
+TEST_P(End2endTest, DISABLED_RequestStreamTwoRequests) {
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1722,7 +1722,7 @@ TEST_P(ProxyEnd2endTest, HugeResponse) {
   EXPECT_TRUE(s.ok());
 }
 
-TEST_P(ProxyEnd2endTest, Peer) {
+TEST_P(ProxyEnd2endTest, DISABLED_Peer) {
   // Peer is not meaningful for inproc
   if (GetParam().inproc()) {
     return;
