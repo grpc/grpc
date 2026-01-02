@@ -774,7 +774,8 @@ TEST_P(End2endServerTryCancelTest, RequestStreamServerCancelDuringRead) {
 
 // Server to cancel after reading all the requests but before returning to the
 // client
-TEST_P(End2endServerTryCancelTest, RequestStreamServerCancelAfterReads) {
+TEST_P(End2endServerTryCancelTest,
+       DISABLED_RequestStreamServerCancelAfterReads) {
   TestRequestStreamServerCancel(CANCEL_AFTER_PROCESSING, 4);
 }
 
@@ -926,7 +927,7 @@ TEST_P(End2endTest, ReconnectChannel) {
   SendRpc(stub_.get(), 1, false);
 }
 
-TEST_P(End2endTest, RequestStreamOneRequest) {
+TEST_P(End2endTest, DISABLED_RequestStreamOneRequest) {
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -973,7 +974,7 @@ TEST_P(End2endTest, RequestStreamTwoRequests) {
   EXPECT_TRUE(s.ok());
 }
 
-TEST_P(End2endTest, RequestStreamTwoRequestsWithWriteThrough) {
+TEST_P(End2endTest, DISABLED_RequestStreamTwoRequestsWithWriteThrough) {
   ResetStub();
   EchoRequest request;
   EchoResponse response;

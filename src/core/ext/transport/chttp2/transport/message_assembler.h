@@ -37,7 +37,7 @@
 namespace grpc_core {
 namespace http2 {
 
-#define GRPC_MESSAGE_ASSEMBLER_DEBUG VLOG(2)
+#define GRPC_MESSAGE_ASSEMBLER_DEBUG VLOG(3)
 
 // TODO(tjagtap) TODO(akshitpatel): [PH2][P3] : Write micro benchmarks for
 // assembler and disassembler code
