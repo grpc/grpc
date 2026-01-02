@@ -244,7 +244,7 @@
     and also help with interop testing.
   expiry: 2026/01/30
   owner: tjagtap@google.com
-  test_tags: ["core_end2end_test", "cpp_end2end_test"]
+  test_tags: ["core_end2end_test", "cpp_end2end_test", "cpp_end2end_test_client_ph2"]
   allow_in_fuzzing_config: true
 - name: promise_based_http2_server_transport
   description:
