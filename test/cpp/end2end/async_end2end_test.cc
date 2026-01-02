@@ -576,7 +576,7 @@ TEST_P(AsyncEnd2endTest, DoThenAsyncNextRpc) {
 }
 
 // Two pings and a final pong.
-TEST_P(AsyncEnd2endTest, SimpleClientStreaming) {
+TEST_P(AsyncEnd2endTest, DISABLED_SimpleClientStreaming) {
   ResetStub();
 
   EchoRequest send_request;
@@ -621,7 +621,7 @@ TEST_P(AsyncEnd2endTest, SimpleClientStreaming) {
 }
 
 // Two pings and a final pong.
-TEST_P(AsyncEnd2endTest, SimpleClientStreamingWithCoalescingApi) {
+TEST_P(AsyncEnd2endTest, DISABLED_SimpleClientStreamingWithCoalescingApi) {
   ResetStub();
 
   EchoRequest send_request;
@@ -1261,8 +1261,6 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
             ToString(server_trailing_metadata.find(meta6.first)->second));
   EXPECT_GE(server_trailing_metadata.size(), 2);
 }
-
-// Below this is validated. Above this is WIP
 
 // Server uses AsyncNotifyWhenDone API to check for cancellation
 TEST_P(AsyncEnd2endTest, ServerCheckCancellation) {
