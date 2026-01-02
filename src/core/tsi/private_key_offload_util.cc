@@ -25,6 +25,7 @@
 #include <cstdint>
 #include <string>
 #include <utility>
+#include <variant>
 
 #include "src/core/tsi/transport_security_interface.h"
 #include "absl/functional/bind_front.h"
@@ -96,7 +97,7 @@ void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
 }
 
 enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
-    SSL* ssl, uint8_t* out, size_t* out_len, size_t /*max_out*/,
+    SSL* ssl, uint8_t* out, size_t* out_len, size_t max_out,
     uint16_t signature_algorithm, const uint8_t* in, size_t in_len) {
   TlsPrivateKeyOffloadContext* ctx = GetTlsPrivateKeyOffloadContext(ssl);
   ctx->status = TlsPrivateKeyOffloadContext::kStarted;
@@ -113,24 +114,32 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
   if (signer == nullptr) {
     return ssl_private_key_failure;
   }
-  bool is_done =
+  auto result =
       signer->Sign(absl::string_view(reinterpret_cast<const char*>(in), in_len),
-                   *algorithm, done_callback);
-  // If the signature invocation was completed, return ssl_private_key_success
-  // to continue the handshake. Otherwise tell BoringSSL to wait for the
-  // signature result.
-  if (is_done) {
-    if (ctx->signed_bytes.ok()) {
-      std::string out_bytes = *ctx->signed_bytes;
+                   *algorithm, std::move(done_callback));
+  // Handle synchronous return.
+  if (auto* status_or_string =
+          std::get_if<absl::StatusOr<std::string>>(&result)) {
+    if (status_or_string->ok()) {
+      std::string out_bytes = **status_or_string;
+      if (out_bytes.size() > max_out) {
+        return ssl_private_key_failure;
+      }
       *out_len = out_bytes.size();
-      std::copy(out_bytes.cbegin(), out_bytes.cend(), out);
+      memcpy(out, out_bytes.c_str(), *out_len);
       return ssl_private_key_success;
     } else {
       return ssl_private_key_failure;
     }
   }
-  ctx->status = TlsPrivateKeyOffloadContext::kInProgressAsync;
-  return ssl_private_key_retry;
+  // Handle asynchronous return.
+  if (auto* handle = std::get_if<std::shared_ptr<AsyncSigningHandle>>(&result)) {
+    ctx->signing_handle = std::move(*handle);
+    ctx->status = TlsPrivateKeyOffloadContext::kInProgressAsync;
+    return ssl_private_key_retry;
+  }
+  // Should never be reached.
+  return ssl_private_key_failure;
 }
 
 enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,

@@ -216,9 +216,10 @@ class TestPrivateKeySignerAsync final
   explicit TestPrivateKeySignerAsync(absl::string_view private_key)
       : pkey_(LoadPrivateKeyFromString(private_key)) {}
 
-  bool Sign(absl::string_view data_to_sign,
-            SignatureAlgorithm signature_algorithm,
-            OnSignComplete on_sign_complete) override {
+  std::variant<absl::StatusOr<std::string>,
+               std::shared_ptr<grpc_core::AsyncSigningHandle>>
+  Sign(absl::string_view data_to_sign, SignatureAlgorithm signature_algorithm,
+       OnSignComplete on_sign_complete) override {
     auto event_engine =
         grpc_event_engine::experimental::GetDefaultEventEngine();
     event_engine->Run(
@@ -228,8 +229,11 @@ class TestPrivateKeySignerAsync final
           on_sign_complete(SignWithBoringSSL(data_to_sign, signature_algorithm,
                                              self->pkey_.get()));
         });
-    return false;
+    return std::make_shared<grpc_core::AsyncSigningHandle>();
   }
+
+  void Cancel(
+      std::shared_ptr<grpc_core::AsyncSigningHandle> handle) override {}
 
  private:
   bssl::UniquePtr<EVP_PKEY> pkey_;
@@ -241,13 +245,15 @@ class TestPrivateKeySignerSync final
   explicit TestPrivateKeySignerSync(absl::string_view private_key)
       : pkey_(LoadPrivateKeyFromString(private_key)) {}
 
-  bool Sign(absl::string_view data_to_sign,
-            SignatureAlgorithm signature_algorithm,
-            OnSignComplete on_sign_complete) override {
-    on_sign_complete(
-        SignWithBoringSSL(data_to_sign, signature_algorithm, pkey_.get()));
-    return true;
+  std::variant<absl::StatusOr<std::string>,
+               std::shared_ptr<grpc_core::AsyncSigningHandle>>
+  Sign(absl::string_view data_to_sign, SignatureAlgorithm signature_algorithm,
+       OnSignComplete on_sign_complete) override {
+    return SignWithBoringSSL(data_to_sign, signature_algorithm, pkey_.get());
   }
+
+  void Cancel(
+      std::shared_ptr<grpc_core::AsyncSigningHandle> handle) override {}
 
  private:
   bssl::UniquePtr<EVP_PKEY> pkey_;
