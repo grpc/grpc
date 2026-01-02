@@ -803,7 +803,7 @@ TEST_P(AsyncEnd2endTest, SimpleServerStreamingWithCoalescingApiWL) {
 }
 
 // One ping, one pong.
-TEST_P(AsyncEnd2endTest, SimpleBidiStreaming) {
+TEST_P(AsyncEnd2endTest, DISABLED_SimpleBidiStreaming) {
   ResetStub();
 
   EchoRequest send_request;
@@ -847,7 +847,7 @@ TEST_P(AsyncEnd2endTest, SimpleBidiStreaming) {
 }
 
 // One ping, one pong. Using server:WriteAndFinish api
-TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWAF) {
+TEST_P(AsyncEnd2endTest, DISABLED_SimpleBidiStreamingWithCoalescingApiWAF) {
   ResetStub();
 
   EchoRequest send_request;

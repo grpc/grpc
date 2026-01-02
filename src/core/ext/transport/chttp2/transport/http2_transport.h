@@ -49,14 +49,12 @@ namespace http2 {
 // TODO(tjagtap) : [PH2][P3] : Update the experimental status of the code before
 // http2 rollout begins.
 
-#define GRPC_HTTP2_CLIENT_DLOG \
-  DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
+#define GRPC_HTTP2_CLIENT_DLOG VLOG(4)
 
 #define GRPC_HTTP2_CLIENT_ERROR_DLOG \
   LOG_IF(ERROR, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
 
-#define GRPC_HTTP2_COMMON_DLOG \
-  DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
+#define GRPC_HTTP2_COMMON_DLOG VLOG(4)
 
 constexpr uint32_t kMaxWriteSize = /*10 MB*/ 10u * 1024u * 1024u;
 
