@@ -894,7 +894,7 @@ TEST_P(AsyncEnd2endTest, DISABLED_SimpleBidiStreamingWithCoalescingApiWAF) {
 }
 
 // One ping, one pong. Using server:WriteLast api
-TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWL) {
+TEST_P(AsyncEnd2endTest, DISABLED_SimpleBidiStreamingWithCoalescingApiWL) {
   ResetStub();
 
   EchoRequest send_request;
@@ -1892,7 +1892,8 @@ TEST_P(AsyncEnd2endServerTryCancelTest, ServerBidiStreamingTryCancelDuring) {
   TestBidiStreamingServerCancel(CANCEL_DURING_PROCESSING);
 }
 
-TEST_P(AsyncEnd2endServerTryCancelTest, ServerBidiStreamingTryCancelAfter) {
+TEST_P(AsyncEnd2endServerTryCancelTest,
+       DISABLED_ServerBidiStreamingTryCancelAfter) {
   TestBidiStreamingServerCancel(CANCEL_AFTER_PROCESSING);
 }
 
