@@ -69,15 +69,6 @@ class SecurityFrameHandler final : public RefCounted<SecurityFrameHandler> {
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine) {
     return [self = this->Ref(), event_engine](SliceBuffer* data) {
-      {
-        MutexLock lock(&self->mutex_);
-        if (self->transport_closed_) {
-          return;
-        }
-        // Avoid scheduling if the transport is already closed.
-        // The transport might close between this check and task execution.
-        // Thus, the task must re-check transport_closed_.
-      }
       event_engine->Run([self, data = std::move(*data)]() mutable {
         GRPC_HTTP2_SECURITY_FRAME_DLOG << "SecurityFrameHandler::Callback";
         bool call_wakeup = false;
@@ -185,6 +176,9 @@ class SecurityFrameHandler final : public RefCounted<SecurityFrameHandler> {
     return TerminateSecurityFrameLoop{
         (sleep_state_ == SleepState::kTransportClosed)};
   }
+
+  // TODO(tjagtap) [PH2][P5] Simplify WaitForSecurityFrameSending and
+  // TriggerWriteSecurityFrame by merging the two.
 
   // Only run on the Transport Party - From MultiplexerLoop Promise
   void MaybeAppendSecurityFrame(SliceBuffer& outbuf) {
