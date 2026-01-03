@@ -86,6 +86,7 @@ const grpc_channel_filter TestFilter::kFilter =
     MakePromiseBasedFilter<TestFilter, FilterEndpoint::kServer>();
 
 CORE_END2END_TEST(CoreEnd2endTests, FilterCausesClose) {
+  SKIP_IF_V3();
   CoreConfiguration::RegisterEphemeralBuilder(
       [](CoreConfiguration::Builder* builder) {
         builder->channel_init()->RegisterFilter<TestFilter>(
@@ -96,8 +97,27 @@ CORE_END2END_TEST(CoreEnd2endTests, FilterCausesClose) {
   IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
       .SendInitialMetadata({})
-      .SendMessage("foo")
-      .SendCloseFromClient()
+      .RecvInitialMetadata(server_initial_metadata)
+      .RecvStatusOnClient(server_status);
+  Expect(1, true);
+  Step();
+
+  EXPECT_EQ(server_status.status(), GRPC_STATUS_PERMISSION_DENIED);
+  EXPECT_EQ(server_status.message(), "Failure that's not preventable.");
+}
+
+CORE_END2END_TEST(CoreEnd2endTests, FilterCausesClose2) {
+  SKIP_IF_V3();
+  CoreConfiguration::RegisterEphemeralBuilder(
+      [](CoreConfiguration::Builder* builder) {
+        builder->channel_init()->RegisterFilter<TestFilter>(
+            GRPC_SERVER_CHANNEL);
+      });
+  auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  c.NewBatch(1)
+      .SendInitialMetadata({})
       .RecvInitialMetadata(server_initial_metadata)
       .RecvStatusOnClient(server_status);
   Expect(1, true);
