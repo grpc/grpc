@@ -106,6 +106,7 @@ void grpc_tls_certificate_distributor::SetErrorForCert(
     std::optional<grpc_error_handle> root_cert_error,
     std::optional<grpc_error_handle> identity_cert_error) {
   GRPC_CHECK(root_cert_error.has_value() || identity_cert_error.has_value());
+
   grpc_core::MutexLock lock(&mu_);
   CertificateInfo& cert_info = certificate_info_map_[cert_name];
   if (root_cert_error.has_value()) {
@@ -154,6 +155,7 @@ void grpc_tls_certificate_distributor::SetErrorForCert(
 
 void grpc_tls_certificate_distributor::SetError(grpc_error_handle error) {
   GRPC_CHECK(!error.ok());
+
   grpc_core::MutexLock lock(&mu_);
   for (const auto& watcher : watchers_) {
     const auto watcher_ptr = watcher.first;
@@ -334,6 +336,17 @@ void grpc_tls_identity_pairs_add_pair(grpc_tls_identity_pairs* pairs,
   GRPC_CHECK_NE(private_key, nullptr);
   GRPC_CHECK_NE(cert_chain, nullptr);
   pairs->pem_key_cert_pairs.emplace_back(private_key, cert_chain);
+}
+
+void grpc_tls_identity_pairs_add_pair_with_signer(
+    grpc_tls_identity_pairs* pairs,
+    std::shared_ptr<grpc_core::PrivateKeySigner> private_key_signer,
+    const char* cert_chain) {
+  GRPC_CHECK_NE(pairs, nullptr);
+  GRPC_CHECK_NE(private_key_signer, nullptr);
+  GRPC_CHECK_NE(cert_chain, nullptr);
+  pairs->pem_key_cert_pairs.emplace_back(std::move(private_key_signer),
+                                         cert_chain);
 }
 
 void grpc_tls_identity_pairs_destroy(grpc_tls_identity_pairs* pairs) {

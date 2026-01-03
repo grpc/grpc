@@ -158,7 +158,9 @@ class TlsChannelSecurityConnector final
   Mutex verifier_request_map_mu_;
   RefCountedPtr<grpc_tls_credentials_options> options_;
   grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface*
-      certificate_watcher_ = nullptr;
+      root_certificate_watcher_ = nullptr;
+  grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface*
+      identity_certificate_watcher_ = nullptr;
   std::string target_name_;
   std::string overridden_target_name_;
   tsi_ssl_client_handshaker_factory* client_handshaker_factory_
@@ -269,7 +271,9 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
   Mutex verifier_request_map_mu_;
   RefCountedPtr<grpc_tls_credentials_options> options_;
   grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface*
-      certificate_watcher_ = nullptr;
+      root_certificate_watcher_ = nullptr;
+  grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface*
+      identity_certificate_watcher_ = nullptr;
   tsi_ssl_server_handshaker_factory* server_handshaker_factory_
       ABSL_GUARDED_BY(mu_) = nullptr;
   std::optional<PemKeyCertPairList> pem_key_cert_pair_list_

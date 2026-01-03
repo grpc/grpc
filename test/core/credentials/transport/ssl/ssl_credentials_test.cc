@@ -23,10 +23,13 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <vector>
+
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/util/crash.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 TEST(SslCredentialsTest, ConvertGrpcToTsiCertPairs) {
@@ -36,26 +39,24 @@ TEST(SslCredentialsTest, ConvertGrpcToTsiCertPairs) {
   const size_t num_pairs = 3;
 
   {
-    tsi_ssl_pem_key_cert_pair* tsi_pairs =
+    std::vector<tsi_ssl_pem_key_cert_pair> tsi_pairs =
         grpc_convert_grpc_to_tsi_cert_pairs(grpc_pairs, 0);
-    ASSERT_EQ(tsi_pairs, nullptr);
+    ASSERT_EQ(tsi_pairs.size(), 0);
   }
 
   {
-    tsi_ssl_pem_key_cert_pair* tsi_pairs =
+    std::vector<tsi_ssl_pem_key_cert_pair> tsi_pairs =
         grpc_convert_grpc_to_tsi_cert_pairs(grpc_pairs, num_pairs);
 
-    ASSERT_NE(tsi_pairs, nullptr);
+    ASSERT_NE(tsi_pairs.size(), 0);
     for (size_t i = 0; i < num_pairs; i++) {
-      ASSERT_EQ(strncmp(grpc_pairs[i].private_key, tsi_pairs[i].private_key,
-                        strlen(grpc_pairs[i].private_key)),
-                0);
-      ASSERT_EQ(strncmp(grpc_pairs[i].cert_chain, tsi_pairs[i].cert_chain,
-                        strlen(grpc_pairs[i].cert_chain)),
-                0);
+      EXPECT_THAT(tsi_pairs[i].private_key, ::testing::VariantWith<std::string>(
+                                                grpc_pairs[i].private_key));
+      ASSERT_EQ(
+          strncmp(grpc_pairs[i].cert_chain, tsi_pairs[i].cert_chain.c_str(),
+                  strlen(grpc_pairs[i].cert_chain)),
+          0);
     }
-
-    grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_pairs, num_pairs);
   }
 }
 

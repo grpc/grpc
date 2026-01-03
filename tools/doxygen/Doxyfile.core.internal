@@ -867,6 +867,7 @@ include/grpc/impl/propagation_bits.h \
 include/grpc/impl/slice_type.h \
 include/grpc/load_reporting.h \
 include/grpc/passive_listener.h \
+include/grpc/private_key_signer.h \
 include/grpc/slice.h \
 include/grpc/slice_buffer.h \
 include/grpc/status.h \
@@ -2793,6 +2794,8 @@ src/core/tsi/fake_transport_security.cc \
 src/core/tsi/fake_transport_security.h \
 src/core/tsi/local_transport_security.cc \
 src/core/tsi/local_transport_security.h \
+src/core/tsi/private_key_offload_util.cc \
+src/core/tsi/private_key_offload_util.h \
 src/core/tsi/ssl/GEMINI.md \
 src/core/tsi/ssl/key_logging/ssl_key_logging.cc \
 src/core/tsi/ssl/key_logging/ssl_key_logging.h \
