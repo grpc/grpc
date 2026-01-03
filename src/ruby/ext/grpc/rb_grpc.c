@@ -30,7 +30,6 @@
 #include <unistd.h>
 
 #include "rb_call.h"
-#include "rb_call_credentials.h"
 #include "rb_channel.h"
 #include "rb_channel_credentials.h"
 #include "rb_compression_options.h"
@@ -479,7 +478,6 @@ void Init_grpc_c() {
   // init C-defined classes
   Init_grpc_channel();
   Init_grpc_call();
-  Init_grpc_call_credentials();
   Init_grpc_channel_credentials();
   Init_grpc_xds_channel_credentials();
   Init_grpc_server();
