@@ -194,6 +194,7 @@ grpc_cc_benchmark(
     ],
     monitoring = HISTORY,
     deps = [
+        "//:endpoint_addresses",
         "//:grpc",
         "//:grpc_client_channel",
         "//:parse_address",

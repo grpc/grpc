@@ -109,11 +109,7 @@ class FakeResolverTest : public ::testing::Test {
     for (size_t i = 0; i < num_addresses; ++i) {
       std::string uri_string = absl::StrFormat(
           "ipv4:127.0.0.1:100%" PRIuPTR, (test_counter * num_addresses) + i);
-      absl::StatusOr<URI> uri = URI::Parse(uri_string);
-      EXPECT_TRUE(uri.ok());
-      grpc_resolved_address address;
-      EXPECT_TRUE(grpc_parse_uri(*uri, &address));
-      addresses.emplace_back(address, ChannelArgs());
+      addresses.emplace_back(uri_string, ChannelArgs());
     }
     ++test_counter;
     Resolver::Result result;

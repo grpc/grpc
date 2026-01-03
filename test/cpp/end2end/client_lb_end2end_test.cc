@@ -46,6 +46,7 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/resolver/endpoint_addresses.h"
@@ -239,9 +240,7 @@ class FakeResolverResponseGeneratorWrapper {
       absl::StatusOr<grpc_core::URI> lb_uri =
           grpc_core::URI::Parse(grpc_core::LocalIpUri(port));
       GRPC_CHECK_OK(lb_uri);
-      grpc_resolved_address address;
-      GRPC_CHECK(grpc_parse_uri(*lb_uri, &address));
-      result.addresses->emplace_back(address, per_address_args);
+      result.addresses->emplace_back(lb_uri->ToString(), per_address_args);
     }
     if (result.addresses->empty()) {
       result.resolution_note = "fake resolver empty address list";
@@ -2938,8 +2937,9 @@ TEST_F(ClientLbAddressTest, Basic) {
   // Make sure that the attributes wind up on the subchannels.
   std::vector<std::string> expected;
   for (const int port : GetServersPorts()) {
-    expected.emplace_back(absl::StrCat("addrs=[", grpc_core::LocalIp(), ":",
-                                       port, "] args={test_key=test_value}"));
+    expected.emplace_back(absl::StrCat("addrs=[ipv4:", grpc_core::LocalIp(),
+                                       ":", port,
+                                       "] args={test_key=test_value}"));
   }
   EXPECT_EQ(addresses_seen(), expected);
 }
@@ -2985,7 +2985,11 @@ class OobBackendMetricTest : public ClientLbEnd2endTest {
       const grpc_core::EndpointAddresses& address,
       const grpc_core::BackendMetricData& backend_metric_data) {
     auto load_report = BackendMetricDataToOrcaLoadReport(backend_metric_data);
-    int port = grpc_sockaddr_get_port(&address.address());
+    auto uri = grpc_core::URI::Parse(address.address());
+    GRPC_CHECK_OK(uri);
+    grpc_resolved_address resolved_address;
+    GRPC_CHECK(grpc_parse_uri(*uri, &resolved_address));
+    int port = grpc_sockaddr_get_port(&resolved_address);
     grpc_core::MutexLock lock(&current_test_instance_->mu_);
     current_test_instance_->backend_metric_reports_.push_back(
         {port, std::move(load_report)});

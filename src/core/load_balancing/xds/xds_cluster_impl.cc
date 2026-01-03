@@ -260,7 +260,7 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
               std::move(xds_cluster_impl_policy)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        const grpc_resolved_address& address,
+        const std::string& address,
         const ChannelArgs& per_address_args, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      RefCountedPtr<SubchannelPicker> picker) override;
@@ -791,7 +791,7 @@ absl::Status XdsClusterImplLb::UpdateChildPolicyLocked(
 //
 
 RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
-    const grpc_resolved_address& address, const ChannelArgs& per_address_args,
+    const std::string& address, const ChannelArgs& per_address_args,
     const ChannelArgs& args) {
   if (parent()->shutting_down_) return nullptr;
   // Wrap the subchannel so that we pass along the locality label and

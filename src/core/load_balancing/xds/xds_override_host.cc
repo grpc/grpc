@@ -345,7 +345,7 @@ class XdsOverrideHostLb final : public LoadBalancingPolicy {
               std::move(xds_override_host_policy)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        const grpc_resolved_address& address,
+        const std::string& address,
         const ChannelArgs& per_address_args, const ChannelArgs& args) override;
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      RefCountedPtr<SubchannelPicker> picker) override;
@@ -379,7 +379,7 @@ class XdsOverrideHostLb final : public LoadBalancingPolicy {
   void UpdateAddressMap(const EndpointAddressesIterator& endpoints);
 
   RefCountedPtr<SubchannelWrapper> AdoptSubchannel(
-      const grpc_resolved_address& address,
+      const std::string& address,
       RefCountedPtr<SubchannelInterface> subchannel);
 
   void CreateSubchannelForAddress(absl::string_view address);
@@ -805,14 +805,7 @@ void XdsOverrideHostLb::UpdateAddressMap(
     std::vector<std::string> addresses;
     addresses.reserve(endpoint.addresses().size());
     for (const auto& address : endpoint.addresses()) {
-      auto key = grpc_sockaddr_to_string(&address, /*normalize=*/false);
-      if (!key.ok()) {
-        GRPC_TRACE_LOG(xds_override_host_lb, INFO)
-            << "[xds_override_host_lb " << this
-            << "] no key for endpoint address; not adding to map";
-      } else {
-        addresses.push_back(*std::move(key));
-      }
+      addresses.push_back(std::move(address));
     }
     absl::Span<const std::string> addresses_span = addresses;
     for (size_t i = 0; i < addresses.size(); ++i) {
@@ -880,21 +873,18 @@ void XdsOverrideHostLb::UpdateAddressMap(
 
 RefCountedPtr<XdsOverrideHostLb::SubchannelWrapper>
 XdsOverrideHostLb::AdoptSubchannel(
-    const grpc_resolved_address& address,
+    const std::string& address,
     RefCountedPtr<SubchannelInterface> subchannel) {
   auto wrapper = MakeRefCounted<SubchannelWrapper>(
       std::move(subchannel), RefAsSubclass<XdsOverrideHostLb>());
-  auto key = grpc_sockaddr_to_string(&address, /*normalize=*/false);
-  if (key.ok()) {
-    // Drop ref to previously owned subchannel (if any) after releasing
-    // the lock.
-    RefCountedPtr<SubchannelWrapper> subchannel_ref_to_drop;
-    MutexLock lock(&mu_);
-    auto it = subchannel_map_.find(*key);
-    if (it != subchannel_map_.end()) {
-      wrapper->set_subchannel_entry(it->second);
-      subchannel_ref_to_drop = it->second->SetUnownedSubchannel(wrapper.get());
-    }
+  // Drop ref to previously owned subchannel (if any) after releasing
+  // the lock.
+  RefCountedPtr<SubchannelWrapper> subchannel_ref_to_drop;
+  MutexLock lock(&mu_);
+  auto it = subchannel_map_.find(address);
+  if (it != subchannel_map_.end()) {
+    wrapper->set_subchannel_entry(it->second);
+    subchannel_ref_to_drop = it->second->SetUnownedSubchannel(wrapper.get());
   }
   return wrapper;
 }
@@ -903,8 +893,6 @@ void XdsOverrideHostLb::CreateSubchannelForAddress(absl::string_view address) {
   GRPC_TRACE_LOG(xds_override_host_lb, INFO)
       << "[xds_override_host_lb " << this << "] creating owned subchannel for "
       << address;
-  auto addr = StringToSockaddr(address);
-  GRPC_CHECK(addr.ok());
   // We need to do 3 things here:
   // 1. Get the per-endpoint args from the entry in subchannel_map_.
   // 2. Create the subchannel using those per-endpoint args.
@@ -933,7 +921,7 @@ void XdsOverrideHostLb::CreateSubchannelForAddress(absl::string_view address) {
   }
   // Step 2.
   auto subchannel = channel_control_helper()->CreateSubchannel(
-      *addr, per_endpoint_args, args_);
+      std::string(address), per_endpoint_args, args_);
   auto wrapper = MakeRefCounted<SubchannelWrapper>(
       std::move(subchannel), RefAsSubclass<XdsOverrideHostLb>());
   // Step 3.
@@ -989,12 +977,11 @@ void XdsOverrideHostLb::CleanupSubchannels() {
 //
 
 RefCountedPtr<SubchannelInterface> XdsOverrideHostLb::Helper::CreateSubchannel(
-    const grpc_resolved_address& address, const ChannelArgs& per_address_args,
+    const std::string& address, const ChannelArgs& per_address_args,
     const ChannelArgs& args) {
   if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
-    auto key = grpc_sockaddr_to_string(&address, /*normalize=*/false);
     LOG(INFO) << "[xds_override_host_lb " << this
-              << "] creating subchannel for " << key.value_or("<unknown>")
+              << "] creating subchannel for " << address
               << ", per_address_args=" << per_address_args << ", args=" << args;
   }
   auto subchannel = parent()->channel_control_helper()->CreateSubchannel(
