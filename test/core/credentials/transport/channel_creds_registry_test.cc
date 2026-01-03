@@ -38,13 +38,13 @@ namespace {
 class TestChannelCredsFactory : public ChannelCredsFactory<> {
  public:
   absl::string_view type() const override { return Type(); }
-  RefCountedPtr<ChannelCredsConfig> ParseConfig(
+  RefCountedPtr<const ChannelCredsConfig> ParseConfig(
       const Json& /*config*/, const JsonArgs& /*args*/,
       ValidationErrors* /*errors*/) const override {
     return MakeRefCounted<Config>();
   }
   RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
-      RefCountedPtr<ChannelCredsConfig> /*config*/) const override {
+      RefCountedPtr<const ChannelCredsConfig> /*config*/) const override {
     return RefCountedPtr<grpc_channel_credentials>(
         grpc_fake_transport_security_credentials_create());
   }

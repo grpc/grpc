@@ -6164,6 +6164,7 @@ add_library(grpc_authorization_provider
   src/core/util/grpc_check.cc
   src/core/util/grpc_if_nametoindex_posix.cc
   src/core/util/grpc_if_nametoindex_unsupported.cc
+  src/core/util/json/json_object_loader.cc
   src/core/util/json/json_reader.cc
   src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
@@ -10226,6 +10227,7 @@ add_executable(call_utils_test
   src/core/util/grpc_check.cc
   src/core/util/grpc_if_nametoindex_posix.cc
   src/core/util/grpc_if_nametoindex_unsupported.cc
+  src/core/util/json/json_object_loader.cc
   src/core/util/json/json_reader.cc
   src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
@@ -17170,6 +17172,7 @@ add_executable(filter_fusion_test
   src/core/util/grpc_check.cc
   src/core/util/grpc_if_nametoindex_posix.cc
   src/core/util/grpc_if_nametoindex_unsupported.cc
+  src/core/util/json/json_object_loader.cc
   src/core/util/json/json_reader.cc
   src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
@@ -21590,6 +21593,7 @@ add_executable(incoming_metadata_tracker_test
   src/core/util/grpc_check.cc
   src/core/util/grpc_if_nametoindex_posix.cc
   src/core/util/grpc_if_nametoindex_unsupported.cc
+  src/core/util/json/json_object_loader.cc
   src/core/util/json/json_reader.cc
   src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
@@ -21914,6 +21918,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/util/grpc_check.cc
     src/core/util/grpc_if_nametoindex_posix.cc
     src/core/util/grpc_if_nametoindex_unsupported.cc
+    src/core/util/json/json_object_loader.cc
     src/core/util/json/json_reader.cc
     src/core/util/json/json_writer.cc
     src/core/util/latent_see.cc
@@ -36034,6 +36039,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/util/grpc_check.cc
     src/core/util/grpc_if_nametoindex_posix.cc
     src/core/util/grpc_if_nametoindex_unsupported.cc
+    src/core/util/json/json_object_loader.cc
     src/core/util/json/json_reader.cc
     src/core/util/json/json_writer.cc
     src/core/util/latent_see.cc

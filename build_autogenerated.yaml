@@ -1291,6 +1291,7 @@ libs:
   - src/core/util/work_serializer.h
   - src/core/util/xxhash_inline.h
   - src/core/xds/grpc/certificate_provider_store.h
+  - src/core/xds/grpc/certificate_provider_store_interface.h
   - src/core/xds/grpc/file_watcher_certificate_provider_factory.h
   - src/core/xds/grpc/xds_audit_logger_registry.h
   - src/core/xds/grpc/xds_bootstrap_grpc.h
@@ -2960,6 +2961,7 @@ libs:
   - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
   - src/core/util/xxhash_inline.h
+  - src/core/xds/grpc/certificate_provider_store_interface.h
   - third_party/upb/upb/generated_code_support.h
   - third_party/xxhash/xxhash.h
   src:
@@ -4957,6 +4959,7 @@ libs:
   - src/core/util/if_list.h
   - src/core/util/json/json.h
   - src/core/util/json/json_args.h
+  - src/core/util/json/json_object_loader.h
   - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
@@ -4989,6 +4992,7 @@ libs:
   - src/core/util/validation_errors.h
   - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
+  - src/core/xds/grpc/certificate_provider_store_interface.h
   - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/call/call_arena_allocator.cc
@@ -5276,6 +5280,7 @@ libs:
   - src/core/util/grpc_check.cc
   - src/core/util/grpc_if_nametoindex_posix.cc
   - src/core/util/grpc_if_nametoindex_unsupported.cc
+  - src/core/util/json/json_object_loader.cc
   - src/core/util/json/json_reader.cc
   - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
@@ -7597,6 +7602,7 @@ targets:
   - src/core/util/if_list.h
   - src/core/util/json/json.h
   - src/core/util/json/json_args.h
+  - src/core/util/json/json_object_loader.h
   - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
@@ -7628,6 +7634,7 @@ targets:
   - src/core/util/validation_errors.h
   - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
+  - src/core/xds/grpc/certificate_provider_store_interface.h
   - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/call/call_arena_allocator.cc
@@ -7881,6 +7888,7 @@ targets:
   - src/core/util/grpc_check.cc
   - src/core/util/grpc_if_nametoindex_posix.cc
   - src/core/util/grpc_if_nametoindex_unsupported.cc
+  - src/core/util/json/json_object_loader.cc
   - src/core/util/json/json_reader.cc
   - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
@@ -12805,6 +12813,7 @@ targets:
   - src/core/util/if_list.h
   - src/core/util/json/json.h
   - src/core/util/json/json_args.h
+  - src/core/util/json/json_object_loader.h
   - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
@@ -12836,6 +12845,7 @@ targets:
   - src/core/util/validation_errors.h
   - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
+  - src/core/xds/grpc/certificate_provider_store_interface.h
   - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/call/call_arena_allocator.cc
@@ -13089,6 +13099,7 @@ targets:
   - src/core/util/grpc_check.cc
   - src/core/util/grpc_if_nametoindex_posix.cc
   - src/core/util/grpc_if_nametoindex_unsupported.cc
+  - src/core/util/json/json_object_loader.cc
   - src/core/util/json/json_reader.cc
   - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
@@ -15903,6 +15914,7 @@ targets:
   - src/core/util/if_list.h
   - src/core/util/json/json.h
   - src/core/util/json/json_args.h
+  - src/core/util/json/json_object_loader.h
   - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
@@ -15934,6 +15946,7 @@ targets:
   - src/core/util/validation_errors.h
   - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
+  - src/core/xds/grpc/certificate_provider_store_interface.h
   - test/core/transport/chttp2/http2_common_test_inputs.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -16191,6 +16204,7 @@ targets:
   - src/core/util/grpc_check.cc
   - src/core/util/grpc_if_nametoindex_posix.cc
   - src/core/util/grpc_if_nametoindex_unsupported.cc
+  - src/core/util/json/json_object_loader.cc
   - src/core/util/json/json_reader.cc
   - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
@@ -16557,6 +16571,7 @@ targets:
   - src/core/util/if_list.h
   - src/core/util/json/json.h
   - src/core/util/json/json_args.h
+  - src/core/util/json/json_object_loader.h
   - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
@@ -16588,6 +16603,7 @@ targets:
   - src/core/util/validation_errors.h
   - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
+  - src/core/xds/grpc/certificate_provider_store_interface.h
   - test/cpp/sleuth/tool.h
   - test/cpp/sleuth/tool_test.h
   - test/cpp/sleuth/version.h
@@ -16844,6 +16860,7 @@ targets:
   - src/core/util/grpc_check.cc
   - src/core/util/grpc_if_nametoindex_posix.cc
   - src/core/util/grpc_if_nametoindex_unsupported.cc
+  - src/core/util/json/json_object_loader.cc
   - src/core/util/json/json_reader.cc
   - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
@@ -26269,6 +26286,7 @@ targets:
   - src/core/util/if_list.h
   - src/core/util/json/json.h
   - src/core/util/json/json_args.h
+  - src/core/util/json/json_object_loader.h
   - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
@@ -26300,6 +26318,7 @@ targets:
   - src/core/util/validation_errors.h
   - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
+  - src/core/xds/grpc/certificate_provider_store_interface.h
   - test/cpp/sleuth/tool.h
   - test/cpp/sleuth/tool_test.h
   - third_party/upb/upb/generated_code_support.h
@@ -26555,6 +26574,7 @@ targets:
   - src/core/util/grpc_check.cc
   - src/core/util/grpc_if_nametoindex_posix.cc
   - src/core/util/grpc_if_nametoindex_unsupported.cc
+  - src/core/util/json/json_object_loader.cc
   - src/core/util/json/json_reader.cc
   - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
@@ -28749,6 +28769,7 @@ targets:
   - src/core/ext/upb-gen/xds/core/v3/resource_locator.upb_minitable.h
   - src/core/ext/upb-gen/xds/core/v3/resource_name.upb.h
   - src/core/ext/upb-gen/xds/core/v3/resource_name.upb_minitable.h
+  - test/core/test_util/scoped_env_var.h
   - test/cpp/util/cli_call.h
   - test/cpp/util/cli_credentials.h
   - test/cpp/util/config_grpc_cli.h

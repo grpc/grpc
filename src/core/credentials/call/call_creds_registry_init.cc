@@ -41,14 +41,22 @@ class JwtTokenFileCallCredsFactory : public CallCredsFactory<> {
  public:
   absl::string_view type() const override { return Type(); }
 
-  RefCountedPtr<CallCredsConfig> ParseConfig(
+  RefCountedPtr<const CallCredsConfig> ParseConfig(
       const Json& config, const JsonArgs& args,
       ValidationErrors* errors) const override {
     return LoadFromJson<RefCountedPtr<Config>>(config, args, errors);
   }
 
+  absl::string_view proto_type() const override { return ""; }
+
+  RefCountedPtr<const CallCredsConfig> ParseProto(
+      absl::string_view serialized_proto,
+      ValidationErrors* errors) const override {
+    return nullptr;
+  }
+
   RefCountedPtr<grpc_call_credentials> CreateCallCreds(
-      RefCountedPtr<CallCredsConfig> base_config) const override {
+      RefCountedPtr<const CallCredsConfig> base_config) const override {
     auto* config = DownCast<const Config*>(base_config.get());
     return MakeRefCounted<JwtTokenFileCallCredentials>(config->path());
   }
