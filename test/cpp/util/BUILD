@@ -532,6 +532,7 @@ grpc_cc_test(
 )
 
 grpc_cc_library(
+    testonly = 1,
     name = "get_grpc_test_runfile_dir",
     srcs = [
         "get_grpc_test_runfile_dir.cc",
@@ -540,6 +541,7 @@ grpc_cc_library(
         "get_grpc_test_runfile_dir.h",
     ],
     external_deps = [
+        "absl/flags:flag",
     ],
     deps = [
         "//src/core:env",

@@ -42,6 +42,7 @@
 #include "src/core/util/env.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "test/cpp/util/get_grpc_test_runfile_dir.h"
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_config.h"
 #ifdef GPR_WINDOWS
@@ -93,6 +94,17 @@ int InvokeResolverComponentTestsRunner(
 }  // namespace testing
 
 }  // namespace grpc
+namespace {
+// TODO(weizheyuan): Find a better way to handle google3.
+std::string GetTestDirRelativeToSrcDir() {
+  std::string const relative_dir_override =
+      absl::GetFlag(FLAGS_grpc_test_directory_relative_to_test_srcdir);
+  if (relative_dir_override.find("google3") != std::string::npos) {
+    return relative_dir_override;
+  }
+  return std::string("/") + absl::GetFlag(&FLAGS_bazel_repo_name);
+}
+}  // namespace
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
@@ -108,13 +120,13 @@ int main(int argc, char** argv) {
     // binaries.
     auto test_srcdir = grpc_core::GetEnv("TEST_SRCDIR");
 #ifndef GPR_WINDOWS
-    std::string const bin_dir =
-        test_srcdir.value() +
-        absl::GetFlag(FLAGS_grpc_test_directory_relative_to_test_srcdir) +
-        std::string("/test/cpp/naming");
+    std::string const bin_dir = test_srcdir.value() +
+                                GetTestDirRelativeToSrcDir() +
+                                std::string("/test/cpp/naming");
     // Invoke bazel's executable links to the .sh and .py scripts (don't use
     // the .sh and .py suffixes) to make
     // sure that we're using bazel's test environment.
+
     result = grpc::testing::InvokeResolverComponentTestsRunner(
         bin_dir + "/resolver_component_tests_runner",
         bin_dir + "/" + absl::GetFlag(FLAGS_test_bin_name),
@@ -129,25 +141,24 @@ int main(int argc, char** argv) {
     LOG(ERROR) << "You are invoking the test locally with Bazel, you may need "
                   "to invoke Bazel with --enable_runfiles=yes.";
 #endif  // GRPC_PORT_ISOLATED_RUNTIME
+    std::string const runfile_dir =
+        test_srcdir.value() + GetTestDirRelativeToSrcDir();
     result = grpc::testing::InvokeResolverComponentTestsRunner(
+        grpc::testing::NormalizeFilePath(runfile_dir +
+                                         "/test/cpp/naming/"
+                                         "resolver_component_tests_runner.exe"),
+        grpc::testing::NormalizeFilePath(runfile_dir + "/test/cpp/naming/" +
+                                         absl::GetFlag(FLAGS_test_bin_name) +
+                                         ".exe"),
         grpc::testing::NormalizeFilePath(
-            test_srcdir.value() + "/com_github_grpc_grpc/test/cpp/naming/"
-                                  "resolver_component_tests_runner.exe"),
+            runfile_dir + "/test/cpp/naming/utils/dns_server.exe"),
+        grpc::testing::NormalizeFilePath(runfile_dir +
+                                         "/test/cpp/naming/"
+                                         "resolver_test_record_groups.yaml"),
         grpc::testing::NormalizeFilePath(
-            test_srcdir.value() + "/com_github_grpc_grpc/test/cpp/naming/" +
-            absl::GetFlag(FLAGS_test_bin_name) + ".exe"),
+            runfile_dir + "/test/cpp/naming/utils/dns_resolver.exe"),
         grpc::testing::NormalizeFilePath(
-            test_srcdir.value() +
-            "/com_github_grpc_grpc/test/cpp/naming/utils/dns_server.exe"),
-        grpc::testing::NormalizeFilePath(
-            test_srcdir.value() + "/com_github_grpc_grpc/test/cpp/naming/"
-                                  "resolver_test_record_groups.yaml"),
-        grpc::testing::NormalizeFilePath(
-            test_srcdir.value() +
-            "/com_github_grpc_grpc/test/cpp/naming/utils/dns_resolver.exe"),
-        grpc::testing::NormalizeFilePath(
-            test_srcdir.value() +
-            "/com_github_grpc_grpc/test/cpp/naming/utils/tcp_connect.exe"));
+            runfile_dir + "/test/cpp/naming/utils/tcp_connect.exe"));
 #endif  // GPR_WINDOWS
   } else {
 #ifdef GPR_WINDOWS

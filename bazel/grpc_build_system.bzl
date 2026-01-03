@@ -429,6 +429,12 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
     """
 
     experiments = {}
+    repo_name = "com_github_grpc_grpc" if native.module_version() == None else "_main"
+    # Consumed by grpc::GetGrpcTestRunFileDir().
+    args = [
+        "--bazel_repo_name={}".format(repo_name),
+        "--undefok=bazel_repo_name",
+    ] + args
 
     # buildifier: disable=uninitialized
     def _populate_experiments_platform_config(config, platform_experiments_map):

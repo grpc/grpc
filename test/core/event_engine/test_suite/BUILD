@@ -49,7 +49,7 @@ grpc_cc_library(
 grpc_cc_test(
     name = "posix_event_engine_test",
     srcs = ["posix_event_engine_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = ["gtest", "absl/flags:parse"],
     tags = [
         "grpc:fails-internally",
         "no_mac",

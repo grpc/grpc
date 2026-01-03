@@ -23,9 +23,12 @@
 #include "test/core/event_engine/test_suite/tests/timer_test.h"
 #include "test/core/test_util/test_config.h"
 #include "gtest/gtest.h"
+#include "absl/flags/parse.h"
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
+  absl::ParseCommandLine(argc, argv);
+
   grpc::testing::TestEnvironment env(&argc, argv);
   SetEventEngineFactories(
       []() {

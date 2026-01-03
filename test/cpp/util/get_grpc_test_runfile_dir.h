@@ -18,6 +18,11 @@
 #include <optional>
 #include <string>
 
+#include "absl/flags/declare.h"
+
+// The name of current bazel repository. Used to determine runfile directory.
+ABSL_DECLARE_FLAG(std::string, bazel_repo_name);
+
 namespace grpc {
 
 // Gets the absolute path of the runfile directory (a bazel/blaze concept) for a
