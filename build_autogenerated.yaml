@@ -410,12 +410,16 @@ libs:
   - src/core/ext/upb-gen/envoy/config/cluster/v3/outlier_detection.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/common/matcher/v3/matcher.upb.h
   - src/core/ext/upb-gen/envoy/config/common/matcher/v3/matcher.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb.h
+  - src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/address.upb.h
   - src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb.h
   - src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/base.upb.h
   - src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/cel.upb.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/cel.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb.h
   - src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/event_service_config.upb.h
@@ -734,9 +738,11 @@ libs:
   - src/core/ext/upbdefs-gen/envoy/config/cluster/v3/filter.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/cluster/v3/outlier_detection.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/common/matcher/v3/matcher.upbdefs.h
+  - src/core/ext/upbdefs-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/address.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/backoff.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/base.upbdefs.h
+  - src/core/ext/upbdefs-gen/envoy/config/core/v3/cel.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/config_source.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/event_service_config.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/extension.upbdefs.h
@@ -1524,9 +1530,11 @@ libs:
   - src/core/ext/upb-gen/envoy/config/cluster/v3/filter.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/cluster/v3/outlier_detection.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/common/matcher/v3/matcher.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/core/v3/cel.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/event_service_config.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/extension.upb_minitable.c
@@ -1696,9 +1704,11 @@ libs:
   - src/core/ext/upbdefs-gen/envoy/config/cluster/v3/filter.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/cluster/v3/outlier_detection.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/common/matcher/v3/matcher.upbdefs.c
+  - src/core/ext/upbdefs-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/address.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/backoff.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/base.upbdefs.c
+  - src/core/ext/upbdefs-gen/envoy/config/core/v3/cel.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/config_source.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/event_service_config.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/extension.upbdefs.c
@@ -5729,9 +5739,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
   - third_party/envoy-api/envoy/config/common/matcher/v3/matcher.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -8161,12 +8173,16 @@ targets:
   - src/core/ext/upb-gen/envoy/annotations/deprecation.upb_minitable.h
   - src/core/ext/upb-gen/envoy/annotations/resource.upb.h
   - src/core/ext/upb-gen/envoy/annotations/resource.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb.h
+  - src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/address.upb.h
   - src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb.h
   - src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/base.upb.h
   - src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/cel.upb.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/cel.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb.h
   - src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/event_service_config.upb.h
@@ -8347,9 +8363,11 @@ targets:
   src:
   - src/core/ext/upb-gen/envoy/annotations/deprecation.upb_minitable.c
   - src/core/ext/upb-gen/envoy/annotations/resource.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/core/v3/cel.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/event_service_config.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/extension.upb_minitable.c
@@ -20851,9 +20869,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
   - third_party/envoy-api/envoy/config/common/matcher/v3/matcher.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -27868,9 +27888,11 @@ targets:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -28023,9 +28045,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
   - third_party/envoy-api/envoy/config/common/matcher/v3/matcher.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -28179,9 +28203,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -28318,9 +28344,12 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/matcher/v3/matcher.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -28468,9 +28497,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -28607,6 +28638,8 @@ targets:
   - src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/base.upb.h
   - src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/cel.upb.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/cel.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb.h
   - src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/event_service_config.upb.h
@@ -28764,6 +28797,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -28839,6 +28873,7 @@ targets:
   - src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/core/v3/cel.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/event_service_config.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/extension.upb_minitable.c
@@ -28952,9 +28987,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -29143,9 +29180,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
   - third_party/envoy-api/envoy/config/common/matcher/v3/matcher.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -29302,9 +29341,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -29437,6 +29478,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -29538,9 +29580,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -29685,9 +29729,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -29833,9 +29879,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -29982,9 +30030,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -30125,9 +30175,11 @@ targets:
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -30264,9 +30316,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -30285,6 +30339,9 @@ targets:
   - third_party/envoy-api/envoy/config/endpoint/v3/endpoint.proto
   - third_party/envoy-api/envoy/config/endpoint/v3/endpoint_components.proto
   - third_party/envoy-api/envoy/config/endpoint/v3/load_report.proto
+  - third_party/envoy-api/envoy/config/route/v3/route.proto
+  - third_party/envoy-api/envoy/config/route/v3/route_components.proto
+  - third_party/envoy-api/envoy/config/route/v3/scoped_route.proto
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.proto
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/common/v3/common.proto
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.proto
@@ -30304,6 +30361,7 @@ targets:
   - third_party/envoy-api/envoy/type/matcher/v3/struct.proto
   - third_party/envoy-api/envoy/type/matcher/v3/value.proto
   - third_party/envoy-api/envoy/type/metadata/v3/metadata.proto
+  - third_party/envoy-api/envoy/type/tracing/v3/custom_tag.proto
   - third_party/envoy-api/envoy/type/v3/hash_policy.proto
   - third_party/envoy-api/envoy/type/v3/http.proto
   - third_party/envoy-api/envoy/type/v3/http_status.proto
@@ -30338,6 +30396,14 @@ targets:
   - third_party/xds/xds/core/v3/resource.proto
   - third_party/xds/xds/core/v3/resource_locator.proto
   - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/type/matcher/v3/cel.proto
+  - third_party/xds/xds/type/matcher/v3/domain.proto
+  - third_party/xds/xds/type/matcher/v3/http_inputs.proto
+  - third_party/xds/xds/type/matcher/v3/ip.proto
+  - third_party/xds/xds/type/matcher/v3/matcher.proto
+  - third_party/xds/xds/type/matcher/v3/range.proto
+  - third_party/xds/xds/type/matcher/v3/regex.proto
+  - third_party/xds/xds/type/matcher/v3/string.proto
   - third_party/xds/xds/type/v3/cel.proto
   - third_party/xds/xds/type/v3/range.proto
   - third_party/xds/xds/type/v3/typed_struct.proto
@@ -30374,9 +30440,11 @@ targets:
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -30582,9 +30650,11 @@ targets:
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/common/matcher/v3/matcher.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -30728,6 +30798,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -30819,9 +30890,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -30968,9 +31041,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -31147,9 +31222,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -31299,9 +31376,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -31451,9 +31530,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -31593,9 +31674,11 @@ targets:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -31718,9 +31801,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -31869,9 +31954,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -32025,9 +32112,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -32188,9 +32277,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
   - third_party/envoy-api/envoy/config/common/matcher/v3/matcher.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -32334,9 +32425,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -32379,6 +32472,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.proto
+  - third_party/envoy-api/envoy/extensions/load_balancing_policies/common/v3/common.proto
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.proto
   - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
   - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
@@ -32479,12 +32573,12 @@ targets:
   - mac
 external_proto_libraries:
 - destination: third_party/envoy-api
-  hash: cd8b49614408b43bd45d90e3e98d69e24eea632ff42ac3bfb8bca68bc31e377f
+  hash: ed5e6c319f8ebcdf24a9491f866a599bb9a3c193b859a94ad13bd31f85b46855
   proto_prefix: third_party/envoy-api/
-  strip_prefix: data-plane-api-4de3c74cf21a9958c1cf26d8993c55c6e0d28b49
+  strip_prefix: data-plane-api-6ef568cf4a67362849911d1d2a546fd9f35db2ff
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/4de3c74cf21a9958c1cf26d8993c55c6e0d28b49.tar.gz
-  - https://github.com/envoyproxy/data-plane-api/archive/4de3c74cf21a9958c1cf26d8993c55c6e0d28b49.tar.gz
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/6ef568cf4a67362849911d1d2a546fd9f35db2ff.tar.gz
+  - https://github.com/envoyproxy/data-plane-api/archive/6ef568cf4a67362849911d1d2a546fd9f35db2ff.tar.gz
 - destination: third_party/googleapis
   hash: 0513f0f40af63bd05dc789cacc334ab6cec27cc89db596557cb2dfe8919463e4
   proto_prefix: third_party/googleapis/

@@ -14,6 +14,8 @@
 #include "envoy/config/core/v3/config_source.upb_minitable.h"
 #include "envoy/config/core/v3/health_check.upb_minitable.h"
 #include "google/protobuf/wrappers.upb_minitable.h"
+#include "xds/core/v3/collection_entry.upb_minitable.h"
+#include "envoy/annotations/deprecation.upb_minitable.h"
 #include "udpa/annotations/status.upb_minitable.h"
 #include "udpa/annotations/versioning.upb_minitable.h"
 #include "validate/validate.upb_minitable.h"
@@ -138,6 +140,24 @@ const upb_MiniTable envoy__config__endpoint__v3__LbEndpoint_msg_init = {
 };
 
 const upb_MiniTable* envoy__config__endpoint__v3__LbEndpoint_msg_init_ptr = &envoy__config__endpoint__v3__LbEndpoint_msg_init;
+static const upb_MiniTableSubInternal envoy_config_endpoint_v3_LbEndpointCollection__submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &xds__core__v3__CollectionEntry_msg_init_ptr},
+};
+
+static const upb_MiniTableField envoy_config_endpoint_v3_LbEndpointCollection__fields[1] = {
+  {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+};
+
+const upb_MiniTable envoy__config__endpoint__v3__LbEndpointCollection_msg_init = {
+  &envoy_config_endpoint_v3_LbEndpointCollection__submsgs[0],
+  &envoy_config_endpoint_v3_LbEndpointCollection__fields[0],
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.endpoint.v3.LbEndpointCollection",
+#endif
+};
+
+const upb_MiniTable* envoy__config__endpoint__v3__LbEndpointCollection_msg_init_ptr = &envoy__config__endpoint__v3__LbEndpointCollection_msg_init;
 static const upb_MiniTableSubInternal envoy_config_endpoint_v3_LedsClusterLocalityConfig__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ConfigSource_msg_init_ptr},
 };
@@ -234,11 +254,12 @@ const upb_MiniTable envoy__config__endpoint__v3__LocalityLbEndpoints__LbEndpoint
 };
 
 const upb_MiniTable* envoy__config__endpoint__v3__LocalityLbEndpoints__LbEndpointList_msg_init_ptr = &envoy__config__endpoint__v3__LocalityLbEndpoints__LbEndpointList_msg_init;
-static const upb_MiniTable *messages_layout[7] = {
+static const upb_MiniTable *messages_layout[8] = {
   &envoy__config__endpoint__v3__Endpoint_msg_init,
   &envoy__config__endpoint__v3__Endpoint__HealthCheckConfig_msg_init,
   &envoy__config__endpoint__v3__Endpoint__AdditionalAddress_msg_init,
   &envoy__config__endpoint__v3__LbEndpoint_msg_init,
+  &envoy__config__endpoint__v3__LbEndpointCollection_msg_init,
   &envoy__config__endpoint__v3__LedsClusterLocalityConfig_msg_init,
   &envoy__config__endpoint__v3__LocalityLbEndpoints_msg_init,
   &envoy__config__endpoint__v3__LocalityLbEndpoints__LbEndpointList_msg_init,
@@ -248,7 +269,7 @@ const upb_MiniTableFile envoy_config_endpoint_v3_endpoint_components_proto_upb_f
   messages_layout,
   NULL,
   NULL,
-  7,
+  8,
   0,
   0,
 };
