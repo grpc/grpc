@@ -39,28 +39,10 @@ static const upb_MiniTableField grpc_channelz_v2_Promise__fields[8] = {
 const upb_MiniTable grpc__channelz__v2__Promise_msg_init = {
   &grpc_channelz_v2_Promise__submsgs[0],
   &grpc_channelz_v2_Promise__fields[0],
-  UPB_SIZE(24, 32), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(120), 0,
+  UPB_SIZE(24, 32), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.Promise",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000080100000a, &upb_pom_1bt_max64b},
-    {0x0010000802000012, &upb_pos_1bt},
-    {0x001000080301001a, &upb_pom_1bt_max64b},
-    {0x0010000804020022, &upb_pom_1bt_max64b},
-    {0x001000080503002a, &upb_pom_1bt_max64b},
-    {0x0010000806040032, &upb_pom_1bt_max64b},
-    {0x001000080705003a, &upb_pom_1bt_max64b},
-    {0x0010000808060042, &upb_pom_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* grpc__channelz__v2__Promise_msg_init_ptr = &grpc__channelz__v2__Promise_msg_init;
@@ -76,14 +58,10 @@ static const upb_MiniTableField grpc_channelz_v2_Promise_Custom__fields[2] = {
 const upb_MiniTable grpc__channelz__v2__Promise__Custom_msg_init = {
   &grpc_channelz_v2_Promise_Custom__submsgs[0],
   &grpc_channelz_v2_Promise_Custom__fields[0],
-  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.Promise.Custom",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* grpc__channelz__v2__Promise__Custom_msg_init_ptr = &grpc__channelz__v2__Promise__Custom_msg_init;
@@ -101,16 +79,10 @@ static const upb_MiniTableField grpc_channelz_v2_Promise_If__fields[4] = {
 const upb_MiniTable grpc__channelz__v2__Promise__If_msg_init = {
   &grpc_channelz_v2_Promise_If__submsgs[0],
   &grpc_channelz_v2_Promise_If__fields[0],
-  UPB_SIZE(32, 56), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(32, 56), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.Promise.If",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000900003f000008, &upb_psb1_1bt},
-    {0x001000003f000012, &upb_pss_1bt},
-    {0x002000003f00001a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* grpc__channelz__v2__Promise__If_msg_init_ptr = &grpc__channelz__v2__Promise__If_msg_init;
@@ -127,16 +99,10 @@ static const upb_MiniTableField grpc_channelz_v2_Promise_Loop__fields[3] = {
 const upb_MiniTable grpc__channelz__v2__Promise__Loop_msg_init = {
   &grpc_channelz_v2_Promise_Loop__submsgs[0],
   &grpc_channelz_v2_Promise_Loop__fields[0],
-  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.Promise.Loop",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000900003f000018, &upb_psb1_1bt},
-  })
 };
 
 const upb_MiniTable* grpc__channelz__v2__Promise__Loop_msg_init_ptr = &grpc__channelz__v2__Promise__Loop_msg_init;
@@ -151,14 +117,10 @@ static const upb_MiniTableField grpc_channelz_v2_Promise_Race__fields[1] = {
 const upb_MiniTable grpc__channelz__v2__Promise__Race_msg_init = {
   &grpc_channelz_v2_Promise_Race__submsgs[0],
   &grpc_channelz_v2_Promise_Race__fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.Promise.Race",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_prm_1bt_max64b},
-  })
 };
 
 const upb_MiniTable* grpc__channelz__v2__Promise__Race_msg_init_ptr = &grpc__channelz__v2__Promise__Race_msg_init;
@@ -174,14 +136,10 @@ static const upb_MiniTableField grpc_channelz_v2_Promise_SeqStep__fields[2] = {
 const upb_MiniTable grpc__channelz__v2__Promise__SeqStep_msg_init = {
   &grpc_channelz_v2_Promise_SeqStep__submsgs[0],
   &grpc_channelz_v2_Promise_SeqStep__fields[0],
-  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.Promise.SeqStep",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* grpc__channelz__v2__Promise__SeqStep_msg_init_ptr = &grpc__channelz__v2__Promise__SeqStep_msg_init;
@@ -197,16 +155,10 @@ static const upb_MiniTableField grpc_channelz_v2_Promise_Seq__fields[2] = {
 const upb_MiniTable grpc__channelz__v2__Promise__Seq_msg_init = {
   &grpc_channelz_v2_Promise_Seq__submsgs[0],
   &grpc_channelz_v2_Promise_Seq__fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.Promise.Seq",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f000008, &upb_psv4_1bt},
-    {0x001000003f000012, &upb_prm_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* grpc__channelz__v2__Promise__Seq_msg_init_ptr = &grpc__channelz__v2__Promise__Seq_msg_init;
@@ -223,16 +175,10 @@ static const upb_MiniTableField grpc_channelz_v2_Promise_JoinBranch__fields[3] =
 const upb_MiniTable grpc__channelz__v2__Promise__JoinBranch_msg_init = {
   &grpc_channelz_v2_Promise_JoinBranch__submsgs[0],
   &grpc_channelz_v2_Promise_JoinBranch__fields[0],
-  UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.Promise.JoinBranch",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x0020000802000012, &upb_pom_1bt_max64b},
-    {0x002000080300001a, &upb_pos_1bt},
-  })
 };
 
 const upb_MiniTable* grpc__channelz__v2__Promise__JoinBranch_msg_init_ptr = &grpc__channelz__v2__Promise__JoinBranch_msg_init;
@@ -248,16 +194,10 @@ static const upb_MiniTableField grpc_channelz_v2_Promise_Join__fields[2] = {
 const upb_MiniTable grpc__channelz__v2__Promise__Join_msg_init = {
   &grpc_channelz_v2_Promise_Join__submsgs[0],
   &grpc_channelz_v2_Promise_Join__fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.Promise.Join",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f000008, &upb_psv4_1bt},
-    {0x001000003f000012, &upb_prm_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* grpc__channelz__v2__Promise__Join_msg_init_ptr = &grpc__channelz__v2__Promise__Join_msg_init;
@@ -273,16 +213,10 @@ static const upb_MiniTableField grpc_channelz_v2_Promise_Map__fields[2] = {
 const upb_MiniTable grpc__channelz__v2__Promise__Map_msg_init = {
   &grpc_channelz_v2_Promise_Map__submsgs[0],
   &grpc_channelz_v2_Promise_Map__fields[0],
-  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.Promise.Map",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f000012, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* grpc__channelz__v2__Promise__Map_msg_init_ptr = &grpc__channelz__v2__Promise__Map_msg_init;

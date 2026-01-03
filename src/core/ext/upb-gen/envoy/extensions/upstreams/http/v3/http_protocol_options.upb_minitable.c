@@ -42,20 +42,10 @@ static const upb_MiniTableField envoy_extensions_upstreams_http_v3_HttpProtocolO
 const upb_MiniTable envoy__extensions__upstreams__http__v3__HttpProtocolOptions_msg_init = {
   &envoy_extensions_upstreams_http_v3_HttpProtocolOptions__submsgs[0],
   &envoy_extensions_upstreams_http_v3_HttpProtocolOptions__fields[0],
-  UPB_SIZE(40, 56), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(40, 56), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.upstreams.http.v3.HttpProtocolOptions",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0030000c0302001a, &upb_pom_1bt_max64b},
-    {0x0030000c04030022, &upb_pom_1bt_max64b},
-    {0x0030000c0504002a, &upb_pom_1bt_max64b},
-    {0x002000003f050032, &upb_prm_1bt_maxmaxb},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__extensions__upstreams__http__v3__HttpProtocolOptions_msg_init_ptr = &envoy__extensions__upstreams__http__v3__HttpProtocolOptions_msg_init;
@@ -74,16 +64,10 @@ static const upb_MiniTableField envoy_extensions_upstreams_http_v3_HttpProtocolO
 const upb_MiniTable envoy__extensions__upstreams__http__v3__HttpProtocolOptions__ExplicitHttpConfig_msg_init = {
   &envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig__submsgs[0],
   &envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig__fields[0],
-  UPB_SIZE(16, 24), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(16, 24), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.upstreams.http.v3.HttpProtocolOptions.ExplicitHttpConfig",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000080100000a, &upb_pom_1bt_maxmaxb},
-    {0x0010000802010012, &upb_pom_1bt_maxmaxb},
-    {0x001000080302001a, &upb_pom_1bt_maxmaxb},
-  })
 };
 
 const upb_MiniTable* envoy__extensions__upstreams__http__v3__HttpProtocolOptions__ExplicitHttpConfig_msg_init_ptr = &envoy__extensions__upstreams__http__v3__HttpProtocolOptions__ExplicitHttpConfig_msg_init;

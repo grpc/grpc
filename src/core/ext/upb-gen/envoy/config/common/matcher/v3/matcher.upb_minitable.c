@@ -34,16 +34,10 @@ static const upb_MiniTableField envoy_config_common_matcher_v3_Matcher__fields[3
 const upb_MiniTable envoy__config__common__matcher__v3__Matcher_msg_init = {
   &envoy_config_common_matcher_v3_Matcher__submsgs[0],
   &envoy_config_common_matcher_v3_Matcher__fields[0],
-  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.common.matcher.v3.Matcher",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0018000c0100000a, &upb_pom_1bt_max64b},
-    {0x0018000c02010012, &upb_pom_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__config__common__matcher__v3__Matcher_msg_init_ptr = &envoy__config__common__matcher__v3__Matcher_msg_init;
@@ -60,16 +54,10 @@ static const upb_MiniTableField envoy_config_common_matcher_v3_Matcher_OnMatch__
 const upb_MiniTable envoy__config__common__matcher__v3__Matcher__OnMatch_msg_init = {
   &envoy_config_common_matcher_v3_Matcher_OnMatch__submsgs[0],
   &envoy_config_common_matcher_v3_Matcher_OnMatch__fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.common.matcher.v3.Matcher.OnMatch",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000080100000a, &upb_pom_1bt_max64b},
-    {0x0010000802010012, &upb_pom_1bt_maxmaxb},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__config__common__matcher__v3__Matcher__OnMatch_msg_init_ptr = &envoy__config__common__matcher__v3__Matcher__OnMatch_msg_init;
@@ -84,14 +72,10 @@ static const upb_MiniTableField envoy_config_common_matcher_v3_Matcher_MatcherLi
 const upb_MiniTable envoy__config__common__matcher__v3__Matcher__MatcherList_msg_init = {
   &envoy_config_common_matcher_v3_Matcher_MatcherList__submsgs[0],
   &envoy_config_common_matcher_v3_Matcher_MatcherList__fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.common.matcher.v3.Matcher.MatcherList",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_prm_1bt_max64b},
-  })
 };
 
 const upb_MiniTable* envoy__config__common__matcher__v3__Matcher__MatcherList_msg_init_ptr = &envoy__config__common__matcher__v3__Matcher__MatcherList_msg_init;
@@ -112,20 +96,10 @@ static const upb_MiniTableField envoy_config_common_matcher_v3_Matcher_MatcherLi
 const upb_MiniTable envoy__config__common__matcher__v3__Matcher__MatcherList__Predicate_msg_init = {
   &envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate__submsgs[0],
   &envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate__fields[0],
-  UPB_SIZE(16, 24), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(16, 24), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.common.matcher.v3.Matcher.MatcherList.Predicate",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000080100000a, &upb_pom_1bt_max64b},
-    {0x0010000802010012, &upb_pom_1bt_max64b},
-    {0x001000080302001a, &upb_pom_1bt_max64b},
-    {0x0010000804030022, &upb_pom_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__config__common__matcher__v3__Matcher__MatcherList__Predicate_msg_init_ptr = &envoy__config__common__matcher__v3__Matcher__MatcherList__Predicate_msg_init;
@@ -144,16 +118,10 @@ static const upb_MiniTableField envoy_config_common_matcher_v3_Matcher_MatcherLi
 const upb_MiniTable envoy__config__common__matcher__v3__Matcher__MatcherList__Predicate__SinglePredicate_msg_init = {
   &envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate__submsgs[0],
   &envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate__fields[0],
-  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.common.matcher.v3.Matcher.MatcherList.Predicate.SinglePredicate",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0018000c02010012, &upb_pom_1bt_maxmaxb},
-    {0x0018000c0302001a, &upb_pom_1bt_maxmaxb},
-  })
 };
 
 const upb_MiniTable* envoy__config__common__matcher__v3__Matcher__MatcherList__Predicate__SinglePredicate_msg_init_ptr = &envoy__config__common__matcher__v3__Matcher__MatcherList__Predicate__SinglePredicate_msg_init;
@@ -168,14 +136,10 @@ static const upb_MiniTableField envoy_config_common_matcher_v3_Matcher_MatcherLi
 const upb_MiniTable envoy__config__common__matcher__v3__Matcher__MatcherList__Predicate__PredicateList_msg_init = {
   &envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_PredicateList__submsgs[0],
   &envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_PredicateList__fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.common.matcher.v3.Matcher.MatcherList.Predicate.PredicateList",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_prm_1bt_max64b},
-  })
 };
 
 const upb_MiniTable* envoy__config__common__matcher__v3__Matcher__MatcherList__Predicate__PredicateList_msg_init_ptr = &envoy__config__common__matcher__v3__Matcher__MatcherList__Predicate__PredicateList_msg_init;
@@ -216,20 +180,10 @@ static const upb_MiniTableField envoy_config_common_matcher_v3_Matcher_MatcherTr
 const upb_MiniTable envoy__config__common__matcher__v3__Matcher__MatcherTree_msg_init = {
   &envoy_config_common_matcher_v3_Matcher_MatcherTree__submsgs[0],
   &envoy_config_common_matcher_v3_Matcher_MatcherTree__fields[0],
-  UPB_SIZE(24, 32), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(24, 32), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.common.matcher.v3.Matcher.MatcherTree",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0018000c02010012, &upb_pom_1bt_max64b},
-    {0x0018000c0302001a, &upb_pom_1bt_max64b},
-    {0x0018000c04030022, &upb_pom_1bt_maxmaxb},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__config__common__matcher__v3__Matcher__MatcherTree_msg_init_ptr = &envoy__config__common__matcher__v3__Matcher__MatcherTree_msg_init;
@@ -263,14 +217,10 @@ static const upb_MiniTableField envoy_config_common_matcher_v3_Matcher_MatcherTr
 const upb_MiniTable envoy__config__common__matcher__v3__Matcher__MatcherTree__MatchMap__MapEntry_msg_init = {
   &envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap_MapEntry__submsgs[0],
   &envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap_MapEntry__fields[0],
-  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.common.matcher.v3.Matcher.MatcherTree.MatchMap.MapEntry",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* envoy__config__common__matcher__v3__Matcher__MatcherTree__MatchMap__MapEntry_msg_init_ptr = &envoy__config__common__matcher__v3__Matcher__MatcherTree__MatchMap__MapEntry_msg_init;
@@ -302,28 +252,10 @@ static const upb_MiniTableField envoy_config_common_matcher_v3_MatchPredicate__f
 const upb_MiniTable envoy__config__common__matcher__v3__MatchPredicate_msg_init = {
   &envoy_config_common_matcher_v3_MatchPredicate__submsgs[0],
   &envoy_config_common_matcher_v3_MatchPredicate__fields[0],
-  UPB_SIZE(16, 24), 10, kUpb_ExtMode_NonExtendable, 10, UPB_FASTTABLE_MASK(120), 0,
+  UPB_SIZE(16, 24), 10, kUpb_ExtMode_NonExtendable, 10, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.common.matcher.v3.MatchPredicate",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000080100000a, &upb_pom_1bt_max64b},
-    {0x0010000802010012, &upb_pom_1bt_max64b},
-    {0x001000080302001a, &upb_pom_1bt_max64b},
-    {0x0010000804000020, &upb_pob1_1bt},
-    {0x001000080503002a, &upb_pom_1bt_max64b},
-    {0x0010000806040032, &upb_pom_1bt_max64b},
-    {0x001000080705003a, &upb_pom_1bt_max64b},
-    {0x0010000808060042, &upb_pom_1bt_max64b},
-    {0x001000080907004a, &upb_pom_1bt_max64b},
-    {0x001000080a080052, &upb_pom_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__config__common__matcher__v3__MatchPredicate_msg_init_ptr = &envoy__config__common__matcher__v3__MatchPredicate_msg_init;
@@ -338,14 +270,10 @@ static const upb_MiniTableField envoy_config_common_matcher_v3_MatchPredicate_Ma
 const upb_MiniTable envoy__config__common__matcher__v3__MatchPredicate__MatchSet_msg_init = {
   &envoy_config_common_matcher_v3_MatchPredicate_MatchSet__submsgs[0],
   &envoy_config_common_matcher_v3_MatchPredicate_MatchSet__fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.common.matcher.v3.MatchPredicate.MatchSet",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_prm_1bt_max64b},
-  })
 };
 
 const upb_MiniTable* envoy__config__common__matcher__v3__MatchPredicate__MatchSet_msg_init_ptr = &envoy__config__common__matcher__v3__MatchPredicate__MatchSet_msg_init;
@@ -360,14 +288,10 @@ static const upb_MiniTableField envoy_config_common_matcher_v3_HttpHeadersMatch_
 const upb_MiniTable envoy__config__common__matcher__v3__HttpHeadersMatch_msg_init = {
   &envoy_config_common_matcher_v3_HttpHeadersMatch__submsgs[0],
   &envoy_config_common_matcher_v3_HttpHeadersMatch__fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.common.matcher.v3.HttpHeadersMatch",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_prm_1bt_maxmaxb},
-  })
 };
 
 const upb_MiniTable* envoy__config__common__matcher__v3__HttpHeadersMatch_msg_init_ptr = &envoy__config__common__matcher__v3__HttpHeadersMatch_msg_init;
@@ -383,16 +307,10 @@ static const upb_MiniTableField envoy_config_common_matcher_v3_HttpGenericBodyMa
 const upb_MiniTable envoy__config__common__matcher__v3__HttpGenericBodyMatch_msg_init = {
   &envoy_config_common_matcher_v3_HttpGenericBodyMatch__submsgs[0],
   &envoy_config_common_matcher_v3_HttpGenericBodyMatch__fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.common.matcher.v3.HttpGenericBodyMatch",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f000008, &upb_psv4_1bt},
-    {0x001000003f000012, &upb_prm_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__config__common__matcher__v3__HttpGenericBodyMatch_msg_init_ptr = &envoy__config__common__matcher__v3__HttpGenericBodyMatch_msg_init;
@@ -404,16 +322,10 @@ static const upb_MiniTableField envoy_config_common_matcher_v3_HttpGenericBodyMa
 const upb_MiniTable envoy__config__common__matcher__v3__HttpGenericBodyMatch__GenericTextMatch_msg_init = {
   NULL,
   &envoy_config_common_matcher_v3_HttpGenericBodyMatch_GenericTextMatch__fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.common.matcher.v3.HttpGenericBodyMatch.GenericTextMatch",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000080100000a, &upb_pos_1bt},
-    {0x0010000802000012, &upb_pob_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__config__common__matcher__v3__HttpGenericBodyMatch__GenericTextMatch_msg_init_ptr = &envoy__config__common__matcher__v3__HttpGenericBodyMatch__GenericTextMatch_msg_init;

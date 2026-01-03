@@ -58,28 +58,10 @@ static const upb_MiniTableField envoy_config_listener_v3_QuicProtocolOptions__fi
 const upb_MiniTable envoy__config__listener__v3__QuicProtocolOptions_msg_init = {
   &envoy_config_listener_v3_QuicProtocolOptions__submsgs[0],
   &envoy_config_listener_v3_QuicProtocolOptions__fields[0],
-  UPB_SIZE(64, 112), 13, kUpb_ExtMode_NonExtendable, 13, UPB_FASTTABLE_MASK(120), 0,
+  UPB_SIZE(64, 112), 13, kUpb_ExtMode_NonExtendable, 13, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.listener.v3.QuicProtocolOptions",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x006800003f0b0062, &upb_prm_1bt_maxmaxb},
-    {0x000a00003f000068, &upb_psb1_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__config__listener__v3__QuicProtocolOptions_msg_init_ptr = &envoy__config__listener__v3__QuicProtocolOptions_msg_init;

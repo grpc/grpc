@@ -40,20 +40,10 @@ static const upb_MiniTableField envoy_extensions_load_balancing_policies_ring_ha
 const upb_MiniTable envoy__extensions__load_0balancing_0policies__ring_0hash__v3__RingHash_msg_init = {
   &envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash__submsgs[0],
   &envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash__fields[0],
-  UPB_SIZE(40, 56), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(40, 56), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.load_balancing_policies.ring_hash.v3.RingHash",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000c00003f000008, &upb_psv4_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000900003f000020, &upb_psb1_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__extensions__load_0balancing_0policies__ring_0hash__v3__RingHash_msg_init_ptr = &envoy__extensions__load_0balancing_0policies__ring_0hash__v3__RingHash_msg_init;

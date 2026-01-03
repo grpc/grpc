@@ -58,12 +58,12 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "d0e3a75876a81e1536028bb9cf9181382b198da4cc6fa6aef86879ef629ac807",
-            strip_prefix = "protobuf-74211c0dfc2777318ab53c2cd2c317a2ef9012de",
+            sha256 = "330d0df9f6d87c8f553ae5a9364cdb0fc0ebad0b8260c823aef082115517038a",
+            strip_prefix = "protobuf-7ccf2060af4cd13c44a8659d0999be6c7a98fcc1",
             urls = [
-                # https://github.com/protocolbuffers/protobuf/commits/v31.1
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/74211c0dfc2777318ab53c2cd2c317a2ef9012de.tar.gz",
-                "https://github.com/protocolbuffers/protobuf/archive/74211c0dfc2777318ab53c2cd2c317a2ef9012de.tar.gz",
+                # https://github.com/protocolbuffers/protobuf/commits/v33.2
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/7ccf2060af4cd13c44a8659d0999be6c7a98fcc1.tar.gz",
+                "https://github.com/protocolbuffers/protobuf/archive/7ccf2060af4cd13c44a8659d0999be6c7a98fcc1.tar.gz",
             ],
             patches = [
                 "@com_github_grpc_grpc//third_party:protobuf.patch",
@@ -241,11 +241,11 @@ def grpc_deps():
     if "rules_proto" not in native.existing_rules():
         http_archive(
             name = "rules_proto",
-            sha256 = "0e5c64a2599a6e26c6a03d6162242d231ecc0de219534c38cb4402171def21e8",
-            strip_prefix = "rules_proto-7.0.2",
+            sha256 = "14a225870ab4e91869652cfd69ef2028277fc1dc4910d65d353b62d6e0ae21f4",
+            strip_prefix = "rules_proto-7.1.0",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/bazelbuild/rules_proto/archive/refs/tags/7.0.2.tar.gz",
-                "https://github.com/bazelbuild/rules_proto/archive/refs/tags/7.0.2.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/bazelbuild/rules_proto/releases/download/7.1.0/rules_proto-7.1.0.tar.gz",
+                "https://github.com/bazelbuild/rules_proto/releases/download/7.1.0/rules_proto-7.1.0.tar.gz",
             ],
         )
 
