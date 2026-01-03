@@ -426,11 +426,8 @@ absl::StatusOr<std::string> ResolvedAddressToURI(
   }
   auto path = ResolvedAddressToString(addr);
   GRPC_RETURN_IF_ERROR(path.status());
-  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Create(
-      *scheme, /*user_info=*/"", /*host_port=*/"", std::move(path.value()),
-      /*query_parameter_pairs=*/{}, /*fragment=*/"");
-  if (!uri.ok()) return uri.status();
-  return uri->ToString();
+  // Use Opaque URI for accepting all address types, such as ipv6:[::1]:12345.
+  return absl::StrCat(*scheme, ":", *path);
 }
 
 absl::StatusOr<EventEngine::ResolvedAddress> URIToResolvedAddress(
