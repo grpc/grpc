@@ -18,6 +18,7 @@
 #include <stddef.h>
 
 #include "absl/strings/string_view.h"
+#include <string>
 
 namespace grpc_event_engine {
 namespace experimental {
