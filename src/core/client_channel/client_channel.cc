@@ -1456,6 +1456,12 @@ absl::Status ClientChannel::ApplyServiceConfigToCall(
       const Timestamp per_method_deadline =
           Timestamp::FromCycleCounterRoundUp(call->start_time()) +
           method_params->timeout();
+      GRPC_TRACE_LOG(client_channel_call, INFO)
+          << "client_channel=" << this
+          << " per_method_deadline: " << per_method_deadline.ToString()
+          << " start_time: " << call->start_time() << " round up: "
+          << Timestamp::FromCycleCounterRoundUp(call->start_time()).ToString()
+          << " now: " << Timestamp::Now().ToString();
       call->UpdateDeadline(per_method_deadline).IgnoreError();
     }
     // If the service config set wait_for_ready and the application
