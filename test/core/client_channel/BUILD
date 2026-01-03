@@ -65,8 +65,8 @@ grpc_fuzz_test(
 )
 
 grpc_fuzz_test(
-    name = "connected_subchannel_test",
-    srcs = ["connected_subchannel_test.cc"],
+    name = "subchannel_test",
+    srcs = ["subchannel_test.cc"],
     external_deps = [
         "fuzztest",
         "fuzztest_main",
