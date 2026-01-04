@@ -8611,6 +8611,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/base:core_headers",
+        "absl/strings:str_format",
         "absl/types:span",
     ],
     deps = [
@@ -8622,7 +8623,9 @@ grpc_cc_library(
         ":ref_counted",
         ":sync",
         "//:chttp2_frame",
+        "//:gpr_platform",
         "//:grpc_public_hdrs",
+        "//:grpc_trace",
         "//src/core:event_engine_extensions",
         "//src/core:event_engine_query_extensions",
         "//src/core:slice",

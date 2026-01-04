@@ -65,6 +65,10 @@ struct CloseStreamArgs {
   bool close_writes;
 };
 
+// TODO(akshitpatel) [PH2][P3] : Write a way to measure the total size of a
+// transport object. Reference :
+// https://github.com/grpc/grpc/pull/41294/files#diff-c685cc4847f228327938326e2a45083a2d0845bacff0ac004bd802027a670c4e
+
 ///////////////////////////////////////////////////////////////////////////////
 // Read and Write helpers
 
