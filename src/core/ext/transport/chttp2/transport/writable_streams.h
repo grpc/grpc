@@ -56,7 +56,7 @@ struct HasGetStreamId<
 
 }  // namespace writable_streams_internal
 
-#define GRPC_WRITABLE_STREAMS_DEBUG VLOG(3)
+#define GRPC_WRITABLE_STREAMS_DEBUG VLOG(2)
 
 template <typename StreamPtr>
 class WritableStreams {

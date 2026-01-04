@@ -44,7 +44,7 @@
 namespace grpc_core {
 namespace http2 {
 
-#define GRPC_HTTP2_STREAM_LOG VLOG(3)
+#define GRPC_HTTP2_STREAM_LOG VLOG(2)
 
 // TODO(akshitpatel) : [PH2][P4] : Choose appropriate size later.
 constexpr uint32_t kStreamQueueSize = /*1 MB*/ 1024u * 1024u;

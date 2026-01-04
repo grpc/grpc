@@ -52,7 +52,7 @@
 namespace grpc_core {
 namespace http2 {
 
-#define GRPC_STREAM_DATA_QUEUE_DEBUG VLOG(3)
+#define GRPC_STREAM_DATA_QUEUE_DEBUG VLOG(2)
 
 // SimpleQueue is a NOT thread safe.
 // Note: SimpleQueue is a single producer single consumer queue.
