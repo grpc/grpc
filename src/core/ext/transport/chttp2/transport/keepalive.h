@@ -26,7 +26,7 @@
 namespace grpc_core {
 namespace http2 {
 
-#define GRPC_HTTP2_KEEPALIVE_LOG VLOG(3)
+#define GRPC_HTTP2_KEEPALIVE_LOG VLOG(2)
 
 class KeepAliveInterface {
  public:
