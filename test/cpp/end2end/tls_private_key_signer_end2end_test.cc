@@ -232,8 +232,7 @@ class TestPrivateKeySignerAsync final
     return std::make_shared<grpc_core::AsyncSigningHandle>();
   }
 
-  void Cancel(
-      std::shared_ptr<grpc_core::AsyncSigningHandle> handle) override {}
+  void Cancel(std::shared_ptr<grpc_core::AsyncSigningHandle> handle) override {}
 
  private:
   bssl::UniquePtr<EVP_PKEY> pkey_;
@@ -252,8 +251,7 @@ class TestPrivateKeySignerSync final
     return SignWithBoringSSL(data_to_sign, signature_algorithm, pkey_.get());
   }
 
-  void Cancel(
-      std::shared_ptr<grpc_core::AsyncSigningHandle> handle) override {}
+  void Cancel(std::shared_ptr<grpc_core::AsyncSigningHandle> handle) override {}
 
  private:
   bssl::UniquePtr<EVP_PKEY> pkey_;

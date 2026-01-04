@@ -133,7 +133,8 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
     }
   }
   // Handle asynchronous return.
-  if (auto* handle = std::get_if<std::shared_ptr<AsyncSigningHandle>>(&result)) {
+  if (auto* handle =
+          std::get_if<std::shared_ptr<AsyncSigningHandle>>(&result)) {
     ctx->signing_handle = std::move(*handle);
     ctx->status = TlsPrivateKeyOffloadContext::kInProgressAsync;
     return ssl_private_key_retry;
