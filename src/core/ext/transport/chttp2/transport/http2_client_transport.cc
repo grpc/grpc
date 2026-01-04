@@ -1794,12 +1794,11 @@ void Http2ClientTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
       absl::StrCat("Transport closed: ", http2_status.DebugString()).c_str());
   lock.Release();
 
-  security_frame_handler_->OnTransportClosed();
-
   SpawnInfallibleTransportParty(
       "CloseTransport", [self = RefAsSubclass<Http2ClientTransport>(),
                          stream_list = std::move(stream_list),
                          http2_status = std::move(http2_status)]() mutable {
+        self->security_frame_handler_->OnTransportClosed();
         GRPC_HTTP2_CLIENT_DLOG
             << "Http2ClientTransport::CloseTransport Cleaning up call stacks";
         // Clean up the call stacks for all active streams.
