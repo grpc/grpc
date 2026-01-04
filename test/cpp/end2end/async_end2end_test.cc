@@ -576,7 +576,7 @@ TEST_P(AsyncEnd2endTest, DoThenAsyncNextRpc) {
 }
 
 // Two pings and a final pong.
-TEST_P(AsyncEnd2endTest, DISABLED_SimpleClientStreaming) {
+TEST_P(AsyncEnd2endTest, SimpleClientStreaming) {
   ResetStub();
 
   EchoRequest send_request;
@@ -621,7 +621,7 @@ TEST_P(AsyncEnd2endTest, DISABLED_SimpleClientStreaming) {
 }
 
 // Two pings and a final pong.
-TEST_P(AsyncEnd2endTest, DISABLED_SimpleClientStreamingWithCoalescingApi) {
+TEST_P(AsyncEnd2endTest, SimpleClientStreamingWithCoalescingApi) {
   ResetStub();
 
   EchoRequest send_request;
@@ -803,7 +803,7 @@ TEST_P(AsyncEnd2endTest, SimpleServerStreamingWithCoalescingApiWL) {
 }
 
 // One ping, one pong.
-TEST_P(AsyncEnd2endTest, DISABLED_SimpleBidiStreaming) {
+TEST_P(AsyncEnd2endTest, SimpleBidiStreaming) {
   ResetStub();
 
   EchoRequest send_request;
@@ -847,7 +847,7 @@ TEST_P(AsyncEnd2endTest, DISABLED_SimpleBidiStreaming) {
 }
 
 // One ping, one pong. Using server:WriteAndFinish api
-TEST_P(AsyncEnd2endTest, DISABLED_SimpleBidiStreamingWithCoalescingApiWAF) {
+TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWAF) {
   ResetStub();
 
   EchoRequest send_request;
@@ -894,7 +894,7 @@ TEST_P(AsyncEnd2endTest, DISABLED_SimpleBidiStreamingWithCoalescingApiWAF) {
 }
 
 // One ping, one pong. Using server:WriteLast api
-TEST_P(AsyncEnd2endTest, DISABLED_SimpleBidiStreamingWithCoalescingApiWL) {
+TEST_P(AsyncEnd2endTest, SimpleBidiStreamingWithCoalescingApiWL) {
   ResetStub();
 
   EchoRequest send_request;
@@ -1860,8 +1860,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
   }
 };
 
-TEST_P(AsyncEnd2endServerTryCancelTest,
-       DISABLED_ClientStreamingServerTryCancelBefore) {
+TEST_P(AsyncEnd2endServerTryCancelTest, ClientStreamingServerTryCancelBefore) {
   TestClientStreamingServerCancel(CANCEL_BEFORE_PROCESSING);
 }
 
@@ -1893,8 +1892,7 @@ TEST_P(AsyncEnd2endServerTryCancelTest, ServerBidiStreamingTryCancelDuring) {
   TestBidiStreamingServerCancel(CANCEL_DURING_PROCESSING);
 }
 
-TEST_P(AsyncEnd2endServerTryCancelTest,
-       DISABLED_ServerBidiStreamingTryCancelAfter) {
+TEST_P(AsyncEnd2endServerTryCancelTest, ServerBidiStreamingTryCancelAfter) {
   TestBidiStreamingServerCancel(CANCEL_AFTER_PROCESSING);
 }
 
