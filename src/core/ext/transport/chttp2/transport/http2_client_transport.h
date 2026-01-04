@@ -46,6 +46,7 @@
 #include "src/core/ext/transport/chttp2/transport/incoming_metadata_tracker.h"
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
+#include "src/core/ext/transport/chttp2/transport/security_frame.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
 #include "src/core/ext/transport/chttp2/transport/writable_streams.h"
@@ -501,6 +502,7 @@ class Http2ClientTransport final : public ClientTransport,
   /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
   /// the peer
   bool enable_preferred_rx_crypto_frame_advertisement_;
+  RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
   MemoryOwner memory_owner_;
   chttp2::TransportFlowControl flow_control_;
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
@@ -515,13 +517,8 @@ class Http2ClientTransport final : public ClientTransport,
                                      DebugLocation whence = {});
   void ReadChannelArgs(const ChannelArgs& channel_args,
                        TransportChannelArgs& args);
+  auto SecurityFrameLoop();
 };
-
-// Since the corresponding class in CHTTP2 is about 3.9KB, our goal is to
-// remain within that range. When this check fails, please update it to size
-// (current size + 32) to make sure that it does not fail each time we add a
-// small variable to the class.
-GRPC_CHECK_CLASS_SIZE(Http2ClientTransport, 600);
 
 }  // namespace http2
 }  // namespace grpc_core

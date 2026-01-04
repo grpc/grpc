@@ -53,6 +53,7 @@
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
+#include "src/core/ext/transport/chttp2/transport/security_frame.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
@@ -274,6 +275,24 @@ void Http2ClientTransport::Orphan() {
       ToHttpOkOrConnError(absl::UnavailableError("Orphaned")));
   Unref();
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Orphan End";
+}
+
+auto Http2ClientTransport::SecurityFrameLoop() {
+  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::SecurityFrameLoop Factory";
+  return AssertResultType<Empty>(
+      Loop([self = RefAsSubclass<Http2ClientTransport>()]() {
+        return Map(
+            self->security_frame_handler_->WaitForSecurityFrameSending(),
+            [self](Empty) -> LoopCtl<Empty> {
+              if (self->security_frame_handler_->TriggerWriteSecurityFrame()
+                      .terminate) {
+                return Empty{};
+              }
+              self->SpawnGuardedTransportParty("WriteSecurityFrame",
+                                               self->TriggerWriteCycle());
+              return Continue();
+            });
+      }));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -746,14 +765,10 @@ Http2Status Http2ClientTransport::ProcessHttp2ContinuationFrame(
 Http2Status Http2ClientTransport::ProcessHttp2SecurityFrame(
     Http2SecurityFrame frame) {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessHttp2SecurityFrame "
-                            "{ payload.Length="
-                         << frame.payload.Length() << " }";
+                         << frame.payload.Length();
   if (settings_->IsSecurityFrameExpected()) {
-    // TODO(tjagtap) : [PH2][P3] : Add handling of Security frame
-    // Just the frame.payload needs to be passed to the endpoint_ object.
-    // Refer usage of TransportFramingEndpointExtension.
+    security_frame_handler_->ProcessPayload(std::move(frame.payload));
   }
-  // Ignore the Security frame if it is not expected.
   return Http2Status::Ok();
 }
 
@@ -1065,8 +1080,18 @@ auto Http2ClientTransport::ProcessAndWriteControlFrames() {
   // 5. Custom gRPC security frame
 
   goaway_manager_.MaybeGetSerializedGoawayFrame(output_buf);
+  bool should_spawn_security_frame_loop = false;
   http2::Http2ErrorCode apply_status =
-      settings_->MaybeReportAndApplyBufferedPeerSettings(event_engine_.get());
+      settings_->MaybeReportAndApplyBufferedPeerSettings(
+          event_engine_.get(), should_spawn_security_frame_loop);
+  if (should_spawn_security_frame_loop) {
+    const SecurityFrameHandler::EndpointExtensionState state =
+        security_frame_handler_->Initialize(event_engine_);
+    if (state.is_set) {
+      SpawnInfallibleTransportParty("SecurityFrameLoop", SecurityFrameLoop());
+    }
+  }
+
   if (!goaway_manager_.IsImmediateGoAway() &&
       apply_status == http2::Http2ErrorCode::kNoError) {
     EnforceLatestIncomingSettings();
@@ -1074,6 +1099,7 @@ auto Http2ClientTransport::ProcessAndWriteControlFrames() {
     ping_manager_->MaybeGetSerializedPingFrames(output_buf,
                                                 NextAllowedPingInterval());
     MaybeGetWindowUpdateFrames(output_buf);
+    security_frame_handler_->MaybeAppendSecurityFrame(output_buf);
   }
   const uint64_t buffer_length = output_buf.Length();
   ztrace_collector_->Append(PromiseEndpointWriteTrace{buffer_length});
@@ -1441,6 +1467,7 @@ Http2ClientTransport::Http2ClientTransport(
       ping_manager_(std::nullopt),
       keepalive_manager_(std::nullopt),
       goaway_manager_(GoawayInterfaceImpl::Make(this)),
+      security_frame_handler_(MakeRefCounted<SecurityFrameHandler>()),
       memory_owner_(channel_args.GetObject<ResourceQuota>()
                         ->memory_quota()
                         ->CreateMemoryOwner()),
@@ -1468,13 +1495,6 @@ Http2ClientTransport::Http2ClientTransport(
       ((args.keepalive_timeout < args.ping_timeout) ? args.keepalive_timeout
                                                     : Duration::Infinity()),
       args.keepalive_time, general_party_.get());
-
-  if (settings_->local().allow_security_frame()) {
-    // TODO(tjagtap) : [PH2][P3] : Setup the plumbing to pass the security frame
-    // to the endpoing via TransportFramingEndpointExtension.
-    // Also decide if this plumbing is done here, or when the peer sends
-    // allow_security_frame too.
-  }
 
   GRPC_DCHECK(ping_manager_.has_value());
   GRPC_DCHECK(keepalive_manager_.has_value());
@@ -1773,6 +1793,8 @@ void Http2ClientTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
       http2_status.GetAbslConnectionError(), {},
       absl::StrCat("Transport closed: ", http2_status.DebugString()).c_str());
   lock.Release();
+
+  security_frame_handler_->OnTransportClosed();
 
   SpawnInfallibleTransportParty(
       "CloseTransport", [self = RefAsSubclass<Http2ClientTransport>(),
@@ -2277,10 +2299,8 @@ Http2ClientTransport::GoawayInterfaceImpl::Make(
 }
 
 uint32_t Http2ClientTransport::GoawayInterfaceImpl::GetLastAcceptedStreamId() {
-  GRPC_DCHECK(false)
-      << "GetLastAcceptedStreamId is not implemented for client transport.";
-  LOG(ERROR) << "GetLastAcceptedStreamId is not implemented for client "
-                "transport.";
+  LOG(DFATAL) << "GetLastAcceptedStreamId is not implemented for client "
+                 "transport.";
   return 0;
 }
 
