@@ -789,6 +789,7 @@ grpc_cc_test(
     flaky = True,
     tags = [
         "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
         "no_test_ios",
     ],
     deps = [
@@ -841,7 +842,10 @@ grpc_cc_test(
         "absl/strings",
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    tags = [
+        "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
+    ],
     deps = [
         ":test_service_impl",
         "//:backoff",
@@ -1357,7 +1361,10 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    tags = [
+        "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
+    ],
     deps = [
         ":test_service_impl",
         "//:gpr",
