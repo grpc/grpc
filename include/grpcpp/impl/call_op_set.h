@@ -329,7 +329,7 @@ class CallOpSendMessage {
       return;
     }
     if (msg_ != nullptr) {
-      ABSL_CHECK(serializer_(msg_).ok());
+      GRPC_CHECK_OK(serializer_(msg_));
     }
     serializer_ = nullptr;
     grpc_op* op = &ops[(*nops)++];

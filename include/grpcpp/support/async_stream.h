@@ -271,8 +271,8 @@ class ClientAsyncReader final : public ClientAsyncReaderInterface<R> {
                     void* tag)
       : channel_(channel), context_(context), call_(call), started_(start) {
     // TODO(ctiller): don't assert
-    ABSL_CHECK(
-        init_ops_.SendMessage(request, channel_->memory_allocator()).ok());
+    GRPC_CHECK_OK(
+        init_ops_.SendMessage(request, channel_->memory_allocator()));
     init_ops_.ClientSendClose();
     if (start) {
       StartCallInternal(tag);
@@ -392,7 +392,7 @@ class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
     ABSL_CHECK(started_);
     write_ops_.set_output_tag(tag);
     // TODO(ctiller): don't assert
-    ABSL_CHECK(write_ops_.SendMessage(msg, channel_->memory_allocator()).ok());
+    GRPC_CHECK_OK(write_ops_.SendMessage(msg, channel_->memory_allocator()));
     call_.PerformOps(&write_ops_);
   }
 
@@ -405,9 +405,8 @@ class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
     }
 
     // TODO(ctiller): don't assert
-    ABSL_CHECK(
-        write_ops_.SendMessage(msg, options, channel_->memory_allocator())
-            .ok());
+    GRPC_CHECK_OK(
+        write_ops_.SendMessage(msg, options, channel_->memory_allocator()));
     call_.PerformOps(&write_ops_);
   }
 
@@ -574,7 +573,7 @@ class ClientAsyncReaderWriter final
     ABSL_CHECK(started_);
     write_ops_.set_output_tag(tag);
     // TODO(ctiller): don't assert
-    ABSL_CHECK(write_ops_.SendMessage(msg, channel_->memory_allocator()).ok());
+    GRPC_CHECK_OK(write_ops_.SendMessage(msg, channel_->memory_allocator()));
     call_.PerformOps(&write_ops_);
   }
 
@@ -586,9 +585,8 @@ class ClientAsyncReaderWriter final
       write_ops_.ClientSendClose();
     }
     // TODO(ctiller): don't assert
-    ABSL_CHECK(
-        write_ops_.SendMessage(msg, options, channel_->memory_allocator())
-            .ok());
+    GRPC_CHECK_OK(
+        write_ops_.SendMessage(msg, options, channel_->memory_allocator()));
     call_.PerformOps(&write_ops_);
   }
 
@@ -889,7 +887,7 @@ class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
     write_ops_.set_output_tag(tag);
     EnsureInitialMetadataSent(&write_ops_);
     // TODO(ctiller): don't assert
-    ABSL_CHECK(write_ops_.SendMessage(msg, ctx_->memory_allocator()).ok());
+    GRPC_CHECK_OK(write_ops_.SendMessage(msg, ctx_->memory_allocator()));
     call_.PerformOps(&write_ops_);
   }
 
@@ -901,8 +899,8 @@ class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
 
     EnsureInitialMetadataSent(&write_ops_);
     // TODO(ctiller): don't assert
-    ABSL_CHECK(
-        write_ops_.SendMessage(msg, options, ctx_->memory_allocator()).ok());
+    GRPC_CHECK_OK(
+        write_ops_.SendMessage(msg, options, ctx_->memory_allocator()));
     call_.PerformOps(&write_ops_);
   }
 
@@ -921,8 +919,8 @@ class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
     write_ops_.set_output_tag(tag);
     EnsureInitialMetadataSent(&write_ops_);
     options.set_buffer_hint();
-    ABSL_CHECK(
-        write_ops_.SendMessage(msg, options, ctx_->memory_allocator()).ok());
+    GRPC_CHECK_OK(
+        write_ops_.SendMessage(msg, options, ctx_->memory_allocator()));
     write_ops_.ServerSendStatus(&ctx_->trailing_metadata_, status);
     call_.PerformOps(&write_ops_);
   }
@@ -1063,7 +1061,7 @@ class ServerAsyncReaderWriter final
     write_ops_.set_output_tag(tag);
     EnsureInitialMetadataSent(&write_ops_);
     // TODO(ctiller): don't assert
-    ABSL_CHECK(write_ops_.SendMessage(msg, ctx_->memory_allocator()).ok());
+    GRPC_CHECK_OK(write_ops_.SendMessage(msg, ctx_->memory_allocator()));
     call_.PerformOps(&write_ops_);
   }
 
@@ -1073,8 +1071,8 @@ class ServerAsyncReaderWriter final
       options.set_buffer_hint();
     }
     EnsureInitialMetadataSent(&write_ops_);
-    ABSL_CHECK(
-        write_ops_.SendMessage(msg, options, ctx_->memory_allocator()).ok());
+    GRPC_CHECK_OK(
+        write_ops_.SendMessage(msg, options, ctx_->memory_allocator()));
     call_.PerformOps(&write_ops_);
   }
 
@@ -1094,8 +1092,8 @@ class ServerAsyncReaderWriter final
     write_ops_.set_output_tag(tag);
     EnsureInitialMetadataSent(&write_ops_);
     options.set_buffer_hint();
-    ABSL_CHECK(
-        write_ops_.SendMessage(msg, options, ctx_->memory_allocator()).ok());
+    GRPC_CHECK_OK(
+        write_ops_.SendMessage(msg, options, ctx_->memory_allocator()));
     write_ops_.ServerSendStatus(&ctx_->trailing_metadata_, status);
     call_.PerformOps(&write_ops_);
   }

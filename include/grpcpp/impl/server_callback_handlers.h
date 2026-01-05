@@ -578,9 +578,8 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
         ctx_->sent_initial_metadata_ = true;
       }
       // TODO(vjpai): don't assert
-      ABSL_CHECK(
-          write_ops_.SendMessagePtr(resp, options, ctx_->memory_allocator())
-              .ok());
+      GRPC_CHECK_OK(
+          write_ops_.SendMessagePtr(resp, options, ctx_->memory_allocator()));
       call_.PerformOps(&write_ops_);
     }
 
@@ -588,9 +587,8 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
                         grpc::Status s) override {
       // This combines the write into the finish callback
       // TODO(vjpai): don't assert
-      ABSL_CHECK(
-          finish_ops_.SendMessagePtr(resp, options, ctx_->memory_allocator())
-              .ok());
+      GRPC_CHECK_OK(
+          finish_ops_.SendMessagePtr(resp, options, ctx_->memory_allocator()));
       Finish(std::move(s));
     }
 
@@ -794,18 +792,16 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
         ctx_->sent_initial_metadata_ = true;
       }
       // TODO(vjpai): don't assert
-      ABSL_CHECK(
-          write_ops_.SendMessagePtr(resp, options, ctx_->memory_allocator())
-              .ok());
+      GRPC_CHECK_OK(
+          write_ops_.SendMessagePtr(resp, options, ctx_->memory_allocator()));
       call_.PerformOps(&write_ops_);
     }
 
     void WriteAndFinish(const ResponseType* resp, grpc::WriteOptions options,
                         grpc::Status s) override {
       // TODO(vjpai): don't assert
-      ABSL_CHECK(
-          finish_ops_.SendMessagePtr(resp, options, ctx_->memory_allocator())
-              .ok());
+      GRPC_CHECK_OK(
+          finish_ops_.SendMessagePtr(resp, options, ctx_->memory_allocator()));
       Finish(std::move(s));
     }
 
