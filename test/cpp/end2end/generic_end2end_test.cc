@@ -39,6 +39,7 @@
 #include "test/cpp/util/byte_buffer_proto_helper.h"
 #include "gtest/gtest.h"
 #include "absl/log/globals.h"
+#include "absl/log/log.h"
 #include "absl/memory/memory.h"
 
 namespace grpc {
@@ -99,10 +100,26 @@ class GenericEnd2endTest : public ::testing::Test {
     generic_stub_ = std::make_unique<GenericStub>(channel);
   }
 
-  void server_ok(int i) { verify_ok(srv_cq_.get(), i, true); }
-  void client_ok(int i) { verify_ok(&cli_cq_, i, true); }
-  void server_fail(int i) { verify_ok(srv_cq_.get(), i, false); }
-  void client_fail(int i) { verify_ok(&cli_cq_, i, false); }
+  void server_ok(int i) {
+    LOG(INFO) << "server_ok start tag " << i;
+    verify_ok(srv_cq_.get(), i, true);
+    LOG(INFO) << "server_ok end tag " << i;
+  }
+  void client_ok(int i) {
+    LOG(INFO) << "client_ok start tag " << i;
+    verify_ok(&cli_cq_, i, true);
+    LOG(INFO) << "client_ok end tag " << i;
+  }
+  void server_fail(int i) {
+    LOG(INFO) << "server_fail start tag " << i;
+    verify_ok(srv_cq_.get(), i, false);
+    LOG(INFO) << "server_fail end tag " << i;
+  }
+  void client_fail(int i) {
+    LOG(INFO) << "client_fail start tag " << i;
+    verify_ok(&cli_cq_, i, false);
+    LOG(INFO) << "client_fail end tag " << i;
+  }
 
   void SendRpc(int num_rpcs) {
     SendRpc(num_rpcs, false, gpr_inf_future(GPR_CLOCK_MONOTONIC));
@@ -346,6 +363,7 @@ inline void EnableLoggingForPH2Tests() {
 
 // One ping, one pong.
 TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
+  LOG(INFO) << "SimpleBidiStreaming End";
   EnableLoggingForPH2Tests();
   ResetStub();
 
@@ -365,9 +383,13 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
   std::thread request_call([this]() { server_ok(2); });
   std::unique_ptr<GenericClientAsyncReaderWriter> cli_stream =
       generic_stub_->PrepareCall(&cli_ctx, kMethodName, &cli_cq_);
+
+  LOG(INFO) << "Client StartCall";
   cli_stream->StartCall(tag(1));
+  LOG(INFO) << "Client StartCall Done";
   client_ok(1);
 
+  LOG(INFO) << "RequestCall";
   generic_service_.RequestCall(&srv_ctx, &srv_stream, srv_cq_.get(),
                                srv_cq_.get(), tag(2));
   request_call.join();
@@ -377,42 +399,59 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
 
   std::unique_ptr<ByteBuffer> send_buffer =
       SerializeToByteBuffer(&send_request);
+  LOG(INFO) << "Client Write";
   cli_stream->Write(*send_buffer, tag(3));
   send_buffer.reset();
+  LOG(INFO) << "Client Write Done";
   client_ok(3);
 
   ByteBuffer recv_buffer;
+  LOG(INFO) << "Server Read";
   srv_stream.Read(&recv_buffer, tag(4));
+  LOG(INFO) << "Server Read Done";
   server_ok(4);
   EXPECT_TRUE(ParseFromByteBuffer(&recv_buffer, &recv_request));
   EXPECT_EQ(send_request.message(), recv_request.message());
 
   send_response.set_message(recv_request.message());
   send_buffer = SerializeToByteBuffer(&send_response);
+  LOG(INFO) << "Server Write";
   srv_stream.Write(*send_buffer, tag(5));
   send_buffer.reset();
+  LOG(INFO) << "Server Write Done";
   server_ok(5);
 
+  LOG(INFO) << "Client Read";
   cli_stream->Read(&recv_buffer, tag(6));
+  LOG(INFO) << "Client Read Done";
   client_ok(6);
   EXPECT_TRUE(ParseFromByteBuffer(&recv_buffer, &recv_response));
   EXPECT_EQ(send_response.message(), recv_response.message());
 
+  LOG(INFO) << "Client WritesDone";
   cli_stream->WritesDone(tag(7));
+  LOG(INFO) << "Client WritesDone Done";
   client_ok(7);
 
+  LOG(INFO) << "Server Read";
   srv_stream.Read(&recv_buffer, tag(8));
+  LOG(INFO) << "Server Read Done";
   server_fail(8);
 
+  LOG(INFO) << "Server Finish";
   srv_stream.Finish(Status::OK, tag(9));
+  LOG(INFO) << "Server Finish Done";
   server_ok(9);
 
+  LOG(INFO) << "Client Finish";
   cli_stream->Finish(&recv_status, tag(10));
+  LOG(INFO) << "Client Finish Done";
   client_ok(10);
 
   EXPECT_EQ(send_response.message(), recv_response.message());
   EXPECT_TRUE(recv_status.ok());
   DisableLoggingForPH2Tests();
+  LOG(INFO) << "SimpleBidiStreaming End";
 }
 
 TEST_F(GenericEnd2endTest, Deadline) {
