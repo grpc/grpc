@@ -65,9 +65,7 @@ EXPORTS
     grpc_tls_credentials_options_destroy
     grpc_tls_credentials_options_set_identity_certificate_provider
     grpc_tls_credentials_options_set_root_certificate_provider
-    grpc_tls_credentials_options_watch_root_certs
     grpc_tls_credentials_options_set_root_cert_name
-    grpc_tls_credentials_options_watch_identity_key_cert_pairs
     grpc_tls_credentials_options_set_identity_cert_name
     grpc_tls_credentials_options_set_cert_request_type
     grpc_tls_credentials_options_set_crl_directory
