@@ -116,7 +116,7 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
   }
   auto result =
       signer->Sign(absl::string_view(reinterpret_cast<const char*>(in), in_len),
-                   *algorithm, std::move(done_callback));
+                   *algorithm, done_callback);
   // Handle synchronous return.
   if (auto* status_or_string =
           std::get_if<absl::StatusOr<std::string>>(&result)) {

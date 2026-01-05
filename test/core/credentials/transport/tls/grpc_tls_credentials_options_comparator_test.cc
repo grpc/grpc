@@ -31,23 +31,6 @@
 
 namespace grpc_core {
 namespace {
-RefCountedPtr<grpc_tls_certificate_provider>
-CreateTestingCertificateProvider(
-    const std::string&  root_cert_info, const PemKeyCertPairList& pem_key_cert_pairs) {
-  auto provider = MakeRefCounted<InMemoryCertificateProvider>();
-  provider->UpdateRoot(std::make_shared<RootCertInfo>(root_cert_info));
-  provider->UpdateIdentity(pem_key_cert_pairs);
-  return provider;
-}
-
-PemKeyCertPairList MakeCertKeyPairs(const std::string&  private_key,
-                                    const std::string&  certs) {
-  if (private_key.empty() && certs.empty()) {
-    return {};
-  }
-  return PemKeyCertPairList{PemKeyCertPair(private_key, certs)};
-}
-
 
 TEST(TlsCredentialsOptionsComparatorTest, DifferentCertRequestType) {
   auto* options_1 = grpc_tls_credentials_options_create();
@@ -172,8 +155,8 @@ TEST(TlsCredentialsOptionsComparatorTest, DifferentSendClientCaListValues) {
 TEST(TlsCredentialsOptionsComparatorTest, DifferentIdentityCertificateProvider) {
   auto* options_1 = grpc_tls_credentials_options_create();
   auto* options_2 = grpc_tls_credentials_options_create();
-  options_1->set_identity_certificate_provider(CreateTestingCertificateProvider("", PemKeyCertPairList()));
-  options_2->set_identity_certificate_provider(CreateTestingCertificateProvider("", PemKeyCertPairList()));
+  options_1->set_identity_certificate_provider(MakeRefCounted<InMemoryCertificateProvider>());
+  options_2->set_identity_certificate_provider(MakeRefCounted<InMemoryCertificateProvider>());
   EXPECT_FALSE(*options_1 == *options_2);
   EXPECT_FALSE(*options_2 == *options_1);
   delete options_1;
@@ -182,8 +165,8 @@ TEST(TlsCredentialsOptionsComparatorTest, DifferentIdentityCertificateProvider) 
 TEST(TlsCredentialsOptionsComparatorTest, DifferentRootCertificateProvider) {
   auto* options_1 = grpc_tls_credentials_options_create();
   auto* options_2 = grpc_tls_credentials_options_create();
-  options_1->set_root_certificate_provider(CreateTestingCertificateProvider("", PemKeyCertPairList()));
-  options_2->set_root_certificate_provider(CreateTestingCertificateProvider("", PemKeyCertPairList()));
+  options_1->set_root_certificate_provider(MakeRefCounted<InMemoryCertificateProvider>());
+  options_2->set_root_certificate_provider(MakeRefCounted<InMemoryCertificateProvider>());
   EXPECT_FALSE(*options_1 == *options_2);
   EXPECT_FALSE(*options_2 == *options_1);
   delete options_1;

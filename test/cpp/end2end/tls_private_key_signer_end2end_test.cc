@@ -115,7 +115,7 @@ class TlsPrivateKeyOffloadTest : public ::testing::Test {
   std::unique_ptr<Server> server_ = nullptr;
   std::thread* server_thread_ = nullptr;
   std::string server_addr_;
-  std::shared_ptr<grpc_core::PrivateKeySigner> signer_;
+  std::shared_ptr<grpc::experimental::PrivateKeySigner> signer_;
 };
 
 void DoRpc(const std::string& server_addr,
@@ -139,25 +139,35 @@ void DoRpc(const std::string& server_addr,
 }
 
 uint16_t GetBoringSslAlgorithm(
-    grpc_core::PrivateKeySigner::SignatureAlgorithm signature_algorithm) {
+    grpc::experimental::PrivateKeySigner::SignatureAlgorithm
+        signature_algorithm) {
   switch (signature_algorithm) {
-    case grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha256:
+    case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::
+        kRsaPkcs1Sha256:
       return SSL_SIGN_RSA_PKCS1_SHA256;
-    case grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha384:
+    case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::
+        kRsaPkcs1Sha384:
       return SSL_SIGN_RSA_PKCS1_SHA384;
-    case grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha512:
+    case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::
+        kRsaPkcs1Sha512:
       return SSL_SIGN_RSA_PKCS1_SHA512;
-    case grpc_core::PrivateKeySigner::SignatureAlgorithm::kEcdsaSecp256r1Sha256:
+    case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::
+        kEcdsaSecp256r1Sha256:
       return SSL_SIGN_ECDSA_SECP256R1_SHA256;
-    case grpc_core::PrivateKeySigner::SignatureAlgorithm::kEcdsaSecp384r1Sha384:
+    case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::
+        kEcdsaSecp384r1Sha384:
       return SSL_SIGN_ECDSA_SECP384R1_SHA384;
-    case grpc_core::PrivateKeySigner::SignatureAlgorithm::kEcdsaSecp521r1Sha512:
+    case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::
+        kEcdsaSecp521r1Sha512:
       return SSL_SIGN_ECDSA_SECP521R1_SHA512;
-    case grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha256:
+    case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::
+        kRsaPssRsaeSha256:
       return SSL_SIGN_RSA_PSS_RSAE_SHA256;
-    case grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha384:
+    case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::
+        kRsaPssRsaeSha384:
       return SSL_SIGN_RSA_PSS_RSAE_SHA384;
-    case grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha512:
+    case grpc::experimental::PrivateKeySigner::SignatureAlgorithm::
+        kRsaPssRsaeSha512:
       return SSL_SIGN_RSA_PSS_RSAE_SHA512;
   }
   return -1;
@@ -165,7 +175,8 @@ uint16_t GetBoringSslAlgorithm(
 
 absl::StatusOr<std::string> SignWithBoringSSL(
     absl::string_view data_to_sign,
-    grpc_core::PrivateKeySigner::SignatureAlgorithm signature_algorithm,
+    grpc::experimental::PrivateKeySigner::SignatureAlgorithm
+        signature_algorithm,
     EVP_PKEY* private_key) {
   const uint8_t* in = reinterpret_cast<const uint8_t*>(data_to_sign.data());
   const size_t in_len = data_to_sign.size();
