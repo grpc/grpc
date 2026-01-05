@@ -25556,6 +25556,17 @@ targets:
   - grpc++_test_config
   - grpc++_test_util
   uses_polling: false
+- name: test_timeout_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/test_util/test_timeout.h
+  src:
+  - test/core/test_util/test_timeout_test.cc
+  deps:
+  - gtest
+  - grpc
 - name: thd_test
   gtest: true
   build: test
