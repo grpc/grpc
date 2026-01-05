@@ -2099,44 +2099,57 @@ auto Http2ClientTransport::CallOutboundLoop(CallHandler call_handler,
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop";
   GRPC_DCHECK(stream != nullptr);
 
-  auto send_message = [self = RefAsSubclass<Http2ClientTransport>(),
-                       stream](MessageHandle&& message) mutable {
-    return TrySeq(stream->EnqueueMessage(std::move(message)),
-                  [self, stream](const StreamWritabilityUpdate result) mutable {
-                    GRPC_HTTP2_CLIENT_DLOG
-                        << "Http2ClientTransport CallOutboundLoop "
-                           "Enqueued Message";
-                    return self->MaybeAddStreamToWritableStreamList(
-                        std::move(stream), result);
-                  });
-  };
+  auto send_message =
+      [self = RefAsSubclass<Http2ClientTransport>(),
+       stream](MessageHandle&& message) mutable {
+        GRPC_HTTP2_CLIENT_DLOG
+            << "Http2ClientTransport CallOutboundLoop send_message";
+        return TrySeq(
+            stream->EnqueueMessage(std::move(message)),
+            [self, stream](const StreamWritabilityUpdate result) mutable {
+              GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop "
+                                        "MaybeAddStreamToWritableStreamList";
+              return self->MaybeAddStreamToWritableStreamList(std::move(stream),
+                                                              result);
+            });
+      };
 
   auto send_initial_metadata = [self = RefAsSubclass<Http2ClientTransport>(),
                                 stream,
                                 metadata = std::move(metadata)]() mutable {
+    GRPC_HTTP2_CLIENT_DLOG
+        << "Http2ClientTransport CallOutboundLoop send_initial_metadata";
     return TrySeq(
         [stream, metadata = std::move(metadata)]() mutable {
+          GRPC_HTTP2_CLIENT_DLOG
+              << "Http2ClientTransport CallOutboundLoop EnqueueInitialMetadata";
           return stream->EnqueueInitialMetadata(std::move(metadata));
         },
         [self, stream](const StreamWritabilityUpdate result) mutable {
           GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop "
-                                    "Enqueued Initial Metadata";
+                                    "MaybeAddStreamToWritableStreamList";
           return self->MaybeAddStreamToWritableStreamList(std::move(stream),
                                                           result);
         });
   };
 
-  auto send_half_closed = [self = RefAsSubclass<Http2ClientTransport>(),
-                           stream]() mutable {
-    return TrySeq([stream]() { return stream->EnqueueHalfClosed(); },
-                  [self, stream](const StreamWritabilityUpdate result) mutable {
-                    GRPC_HTTP2_CLIENT_DLOG
-                        << "Http2ClientTransport CallOutboundLoop "
-                           "Enqueued Half Closed";
-                    return self->MaybeAddStreamToWritableStreamList(
-                        std::move(stream), result);
-                  });
-  };
+  auto send_half_closed =
+      [self = RefAsSubclass<Http2ClientTransport>(), stream]() mutable {
+        GRPC_HTTP2_CLIENT_DLOG
+            << "Http2ClientTransport CallOutboundLoop send_half_closed";
+        return TrySeq(
+            [stream]() {
+              GRPC_HTTP2_CLIENT_DLOG
+                  << "Http2ClientTransport CallOutboundLoop EnqueueHalfClosed";
+              return stream->EnqueueHalfClosed();
+            },
+            [self, stream](const StreamWritabilityUpdate result) mutable {
+              GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop "
+                                        "MaybeAddStreamToWritableStreamList";
+              return self->MaybeAddStreamToWritableStreamList(std::move(stream),
+                                                              result);
+            });
+      };
   return GRPC_LATENT_SEE_PROMISE(
       "Ph2CallOutboundLoop",
       TrySeq(
@@ -2145,18 +2158,27 @@ auto Http2ClientTransport::CallOutboundLoop(CallHandler call_handler,
             // The lock will be released once the promise is constructed from
             // this factory. ForEach will be polled after the lock is
             // released.
-            return ForEach(MessagesFrom(call_handler), send_message);
+            GRPC_HTTP2_CLIENT_DLOG
+                << "Http2ClientTransport CallOutboundLoop ForEach";
+            return Map(
+                ForEach(MessagesFrom(call_handler), send_message),
+                [](absl::Status status) {
+                  GRPC_HTTP2_CLIENT_DLOG
+                      << "Http2ClientTransport CallOutboundLoop MessagesFrom "
+                      << status;
+                  return status;
+                });
           },
           [self = RefAsSubclass<Http2ClientTransport>(),
            send_half_closed = std::move(send_half_closed)]() mutable {
+            GRPC_HTTP2_CLIENT_DLOG
+                << "Http2ClientTransport CallOutboundLoop send_half_closed";
             return send_half_closed();
           },
           [call_handler]() mutable {
             return Map(call_handler.WasCancelled(), [](bool cancelled) {
-              GRPC_HTTP2_CLIENT_DLOG
-                  << "Http2ClientTransport PH2CallOutboundLoop End with "
-                     "cancelled="
-                  << cancelled;
+              GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop "
+                                     << cancelled;
               return (cancelled) ? absl::CancelledError() : absl::OkStatus();
             });
           }));
