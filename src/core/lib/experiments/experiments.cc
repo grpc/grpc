@@ -32,6 +32,9 @@ const char* const additional_constraints_channelz_use_v2_for_v1_api = "{}";
 const char* const description_channelz_use_v2_for_v1_service =
     "Use the v2 channelz service for the v1 channelz service.";
 const char* const additional_constraints_channelz_use_v2_for_v1_service = "{}";
+const char* const description_chaotic_good_connect_deadline =
+    "Use the deadline from the connect args in chaotic good connector";
+const char* const additional_constraints_chaotic_good_connect_deadline = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -104,9 +107,6 @@ const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
 const char* const additional_constraints_local_connector_secure = "{}";
-const char* const description_max_age_filter_float_to_top =
-    "If set, the max age filter is placed at the top of the stack.";
-const char* const additional_constraints_max_age_filter_float_to_top = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
@@ -122,6 +122,10 @@ const char* const additional_constraints_otel_export_telemetry_domains = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
+const char* const description_pick_first_ready_to_connecting =
+    "When the subchannel goes from READY to CONNECTING or TRANSIENT_FAILURE, "
+    "pick_first goes to CONNECTING and starts a new Happy Eyeballs pass.";
+const char* const additional_constraints_pick_first_ready_to_connecting = "{}";
 const char* const description_pipelined_read_secure_endpoint =
     "Enable pipelined reads for EventEngine secure endpoints";
 const char* const additional_constraints_pipelined_read_secure_endpoint = "{}";
@@ -239,6 +243,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_channelz_use_v2_for_v1_service,
      additional_constraints_channelz_use_v2_for_v1_service, nullptr, 0, false,
      true},
+    {"chaotic_good_connect_deadline", description_chaotic_good_connect_deadline,
+     additional_constraints_chaotic_good_connect_deadline, nullptr, 0, true,
+     true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -289,9 +296,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
-    {"max_age_filter_float_to_top", description_max_age_filter_float_to_top,
-     additional_constraints_max_age_filter_float_to_top, nullptr, 0, true,
-     true},
     {"max_inflight_pings_strict_limit",
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
@@ -306,6 +310,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"pick_first_ignore_empty_updates",
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
+     true},
+    {"pick_first_ready_to_connecting",
+     description_pick_first_ready_to_connecting,
+     additional_constraints_pick_first_ready_to_connecting, nullptr, 0, false,
      true},
     {"pipelined_read_secure_endpoint",
      description_pipelined_read_secure_endpoint,
@@ -399,6 +407,9 @@ const char* const additional_constraints_channelz_use_v2_for_v1_api = "{}";
 const char* const description_channelz_use_v2_for_v1_service =
     "Use the v2 channelz service for the v1 channelz service.";
 const char* const additional_constraints_channelz_use_v2_for_v1_service = "{}";
+const char* const description_chaotic_good_connect_deadline =
+    "Use the deadline from the connect args in chaotic good connector";
+const char* const additional_constraints_chaotic_good_connect_deadline = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -471,9 +482,6 @@ const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
 const char* const additional_constraints_local_connector_secure = "{}";
-const char* const description_max_age_filter_float_to_top =
-    "If set, the max age filter is placed at the top of the stack.";
-const char* const additional_constraints_max_age_filter_float_to_top = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
@@ -489,6 +497,10 @@ const char* const additional_constraints_otel_export_telemetry_domains = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
+const char* const description_pick_first_ready_to_connecting =
+    "When the subchannel goes from READY to CONNECTING or TRANSIENT_FAILURE, "
+    "pick_first goes to CONNECTING and starts a new Happy Eyeballs pass.";
+const char* const additional_constraints_pick_first_ready_to_connecting = "{}";
 const char* const description_pipelined_read_secure_endpoint =
     "Enable pipelined reads for EventEngine secure endpoints";
 const char* const additional_constraints_pipelined_read_secure_endpoint = "{}";
@@ -606,6 +618,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_channelz_use_v2_for_v1_service,
      additional_constraints_channelz_use_v2_for_v1_service, nullptr, 0, false,
      true},
+    {"chaotic_good_connect_deadline", description_chaotic_good_connect_deadline,
+     additional_constraints_chaotic_good_connect_deadline, nullptr, 0, true,
+     true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -656,9 +671,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
-    {"max_age_filter_float_to_top", description_max_age_filter_float_to_top,
-     additional_constraints_max_age_filter_float_to_top, nullptr, 0, true,
-     true},
     {"max_inflight_pings_strict_limit",
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
@@ -673,6 +685,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"pick_first_ignore_empty_updates",
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
+     true},
+    {"pick_first_ready_to_connecting",
+     description_pick_first_ready_to_connecting,
+     additional_constraints_pick_first_ready_to_connecting, nullptr, 0, false,
      true},
     {"pipelined_read_secure_endpoint",
      description_pipelined_read_secure_endpoint,
@@ -766,6 +782,9 @@ const char* const additional_constraints_channelz_use_v2_for_v1_api = "{}";
 const char* const description_channelz_use_v2_for_v1_service =
     "Use the v2 channelz service for the v1 channelz service.";
 const char* const additional_constraints_channelz_use_v2_for_v1_service = "{}";
+const char* const description_chaotic_good_connect_deadline =
+    "Use the deadline from the connect args in chaotic good connector";
+const char* const additional_constraints_chaotic_good_connect_deadline = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -838,9 +857,6 @@ const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
 const char* const additional_constraints_local_connector_secure = "{}";
-const char* const description_max_age_filter_float_to_top =
-    "If set, the max age filter is placed at the top of the stack.";
-const char* const additional_constraints_max_age_filter_float_to_top = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
@@ -856,6 +872,10 @@ const char* const additional_constraints_otel_export_telemetry_domains = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
+const char* const description_pick_first_ready_to_connecting =
+    "When the subchannel goes from READY to CONNECTING or TRANSIENT_FAILURE, "
+    "pick_first goes to CONNECTING and starts a new Happy Eyeballs pass.";
+const char* const additional_constraints_pick_first_ready_to_connecting = "{}";
 const char* const description_pipelined_read_secure_endpoint =
     "Enable pipelined reads for EventEngine secure endpoints";
 const char* const additional_constraints_pipelined_read_secure_endpoint = "{}";
@@ -973,6 +993,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_channelz_use_v2_for_v1_service,
      additional_constraints_channelz_use_v2_for_v1_service, nullptr, 0, false,
      true},
+    {"chaotic_good_connect_deadline", description_chaotic_good_connect_deadline,
+     additional_constraints_chaotic_good_connect_deadline, nullptr, 0, true,
+     true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -1023,9 +1046,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
-    {"max_age_filter_float_to_top", description_max_age_filter_float_to_top,
-     additional_constraints_max_age_filter_float_to_top, nullptr, 0, true,
-     true},
     {"max_inflight_pings_strict_limit",
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
@@ -1040,6 +1060,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"pick_first_ignore_empty_updates",
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
+     true},
+    {"pick_first_ready_to_connecting",
+     description_pick_first_ready_to_connecting,
+     additional_constraints_pick_first_ready_to_connecting, nullptr, 0, false,
      true},
     {"pipelined_read_secure_endpoint",
      description_pipelined_read_secure_endpoint,

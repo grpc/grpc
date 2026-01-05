@@ -1,4 +1,4 @@
-# Copyright 2024 gRPC authors.
+# Copyright 2023 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/distrib/python/xds_protos/python_version.py.template`!!!
+# AUTO-GENERATED FROM `$REPO_ROOT/templates/py_xds_protos/grpc_version.py.template`!!!
 
-SUPPORTED_PYTHON_VERSIONS = {{settings.supported_python_versions}}
-
-MIN_PYTHON_VERSION = {{settings.min_python_version}}
-MAX_PYTHON_VERSION = {{settings.max_python_version}}
+VERSION = '1.79.0.dev0'
+PROTOBUF_VERSION = '4.31.1'

@@ -722,10 +722,13 @@ grpc_chttp2_transport::grpc_chttp2_transport(
     auto epte = QueryExtension<TcpTraceExtension>(
         grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
             ep.get()));
-    if (epte != nullptr) {
+    auto stats_plugin_group = channel_args.GetObjectRef<
+        grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>();
+    if (epte != nullptr && stats_plugin_group != nullptr) {
+      epte->EnableTcpTelemetry(stats_plugin_group->GetCollectionScope(),
+                               /*is_control_endpoint=*/false);
       epte->SetTcpTracer(std::make_shared<grpc_core::DefaultTcpTracer>(
-          channel_args.GetObjectRef<
-              grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>()));
+          std::move(stats_plugin_group)));
     }
   }
 

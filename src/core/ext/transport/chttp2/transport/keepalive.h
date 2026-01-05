@@ -45,11 +45,8 @@ class KeepAliveInterface {
 class KeepaliveManager {
  public:
   KeepaliveManager(std::unique_ptr<KeepAliveInterface> keep_alive_interface,
-                   Duration keepalive_timeout, Duration keepalive_time);
-
-  // Spawns the keepalive loop on the given party. This MUST be called at most
-  // once during the lifetime of the keepalive manager.
-  void Spawn(Party* party);
+                   Duration keepalive_timeout, Duration keepalive_time,
+                   Party* party);
 
   // Needs to be called when any data is read from the endpoint.
   void GotData() {
@@ -70,6 +67,10 @@ class KeepaliveManager {
   }
 
  private:
+  // Spawns the keepalive loop on the given party. This MUST be called at most
+  // once during the lifetime of the keepalive manager.
+  void MaybeSpawnKeepaliveLoop(Party* party);
+
   // Returns a promise that sleeps for the keepalive_timeout_ and triggers the
   // keepalive timeout unless data is read within the keepalive timeout.
   auto WaitForKeepAliveTimeout();
@@ -122,10 +123,12 @@ class KeepaliveManager {
   }
 
   std::unique_ptr<KeepAliveInterface> keep_alive_interface_;
-  // If the keepalive_timeout_ is set to infinity, then the timeout is dictated
-  // by the ping timeout. Otherwise, this field can be used to set a specific
-  // timeout for keepalive pings.
+  // Duration to wait before triggering a keepalive timeout. If the
+  // keepalive_timeout_ is set to infinity, then the timeout is dictated by the
+  // ping timeout. Otherwise, this field can be used to set a specific timeout
+  // for keepalive pings.
   Duration keepalive_timeout_;
+  // Duration between two consecutive keepalive pings.
   const Duration keepalive_time_;
   bool data_received_in_last_cycle_ = false;
   bool keep_alive_timeout_triggered_ = false;

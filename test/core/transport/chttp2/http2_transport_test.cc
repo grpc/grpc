@@ -24,6 +24,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -35,15 +36,24 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/promise/loop.h"
+#include "src/core/lib/promise/party.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_join.h"
+#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "test/core/promise/poll_matcher.h"
@@ -55,6 +65,7 @@
 #include "gtest/gtest.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 
@@ -83,10 +94,10 @@ class TestsNeedingStreamObjects : public ::testing::Test {
         std::make_unique<CallInitiatorAndHandler>(
             MakeCallPair(std::move(client_initial_metadata), std::move(arena)));
     RefCountedPtr<Stream> stream = MakeRefCounted<Stream>(
-        call_pair->handler.StartCall(),
-        /*allow_true_binary_metadata_peer=*/true,
-        /*allow_true_binary_metadata_acked=*/true, transport_flow_control_);
-    stream->SetStreamId(stream_id);
+        call_pair->handler.StartCall(), transport_flow_control_);
+    stream->InitializeStream(stream_id,
+                             /*allow_true_binary_metadata_peer=*/true,
+                             /*allow_true_binary_metadata_acked=*/true);
     GRPC_CHECK_EQ(stream->stream_id, stream_id);
     stream_set_.push_back(std::move(stream));
     return stream_set_.back();
@@ -159,6 +170,88 @@ TEST(Http2CommonTransportTest, TestReadChannelArgs) {
   EXPECT_EQ(settings2.enable_push(), true);
   EXPECT_EQ(settings2.allow_true_binary_metadata(), false);
   EXPECT_EQ(settings2.allow_security_frame(), false);
+}
+
+TEST(Http2CommonTransportTest, TestReadTransportChannelArgs) {
+  // Test to validate that ReadChannelArgs reads all the channel args
+  // correctly into TransportChannelArgs.
+  Http2Settings settings;
+  chttp2::TransportFlowControl transport_flow_control(
+      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*memory_owner=*/nullptr);
+
+  {
+    TransportChannelArgs args;
+    // 1. Test Client Defaults
+    ReadChannelArgs(ChannelArgs(), args, settings, transport_flow_control,
+                    /*is_client=*/true);
+
+    EXPECT_EQ(args.keepalive_time, Duration::Infinity());
+    EXPECT_EQ(args.keepalive_timeout, Duration::Infinity());
+    EXPECT_EQ(args.ping_timeout, Duration::Infinity());
+    EXPECT_EQ(args.settings_timeout, Duration::Infinity());
+    EXPECT_EQ(args.keepalive_permit_without_calls, false);
+    EXPECT_EQ(args.enable_preferred_rx_crypto_frame_advertisement, false);
+    EXPECT_EQ(args.max_usable_hpack_table_size, -1);
+    EXPECT_GE(args.max_header_list_size_soft_limit, 8192u);
+  }
+
+  {
+    // 2. Test Server Defaults
+    TransportChannelArgs args;
+    ReadChannelArgs(ChannelArgs(), args, settings, transport_flow_control,
+                    /*is_client=*/false);
+
+    EXPECT_EQ(args.keepalive_time, Duration::Hours(2));
+    EXPECT_EQ(args.keepalive_timeout, Duration::Seconds(20));
+    EXPECT_EQ(args.ping_timeout, Duration::Minutes(1));
+    EXPECT_EQ(args.settings_timeout, Duration::Minutes(1));
+    EXPECT_EQ(args.keepalive_permit_without_calls, false);
+    EXPECT_EQ(args.enable_preferred_rx_crypto_frame_advertisement, false);
+    EXPECT_EQ(args.max_usable_hpack_table_size, -1);
+    EXPECT_GE(args.max_header_list_size_soft_limit, 8192u);
+  }
+
+  {
+    // 3. Test Overrides
+    TransportChannelArgs args;
+    ChannelArgs channel_args =
+        ChannelArgs()
+            .Set(GRPC_ARG_KEEPALIVE_TIME_MS, 10000)    // 10s
+            .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 5000)  // 5s
+            .Set(GRPC_ARG_PING_TIMEOUT_MS, 3000)       // 3s
+            .Set(GRPC_ARG_SETTINGS_TIMEOUT, 15000)     // 15s
+            .Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, true)
+            .Set(GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE, true)
+            .Set(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER, 1024)
+            .Set(GRPC_ARG_MAX_METADATA_SIZE, 12345);
+
+    ReadChannelArgs(channel_args, args, settings, transport_flow_control,
+                    /*is_client=*/true);
+
+    EXPECT_EQ(args.keepalive_time, Duration::Seconds(10));
+    EXPECT_EQ(args.keepalive_timeout, Duration::Seconds(5));
+    EXPECT_EQ(args.ping_timeout, Duration::Seconds(3));
+    EXPECT_EQ(args.settings_timeout, Duration::Seconds(15));
+    EXPECT_EQ(args.keepalive_permit_without_calls, true);
+    EXPECT_EQ(args.enable_preferred_rx_crypto_frame_advertisement, true);
+    EXPECT_EQ(args.max_usable_hpack_table_size, 1024);
+    EXPECT_EQ(args.max_header_list_size_soft_limit, 12345u);
+  }
+
+  {
+    // 4. Test Settings Timeout logic derived from keepalive_timeout
+    TransportChannelArgs args;
+    ChannelArgs channel_args_2 =
+        ChannelArgs()
+            .Set(GRPC_ARG_KEEPALIVE_TIME_MS, 100000)  // 100s, just to be finite
+            .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 40000);  // 40s
+
+    ReadChannelArgs(channel_args_2, args, settings, transport_flow_control,
+                    /*is_client=*/true);
+
+    EXPECT_EQ(args.settings_timeout, Duration::Seconds(80));
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -507,8 +600,8 @@ TEST_F(TestsNeedingStreamObjects,
   Http2WindowUpdateFrame frame;
   frame.increment = 1000;
 
-  // If stream_id != 0 and stream is not null, stream flow control window should
-  // increase.
+  // If stream_id != 0 and stream is not null, stream flow control window
+  // should increase.
   frame.stream_id = 1;
   ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
                                               stream);
@@ -548,6 +641,163 @@ TEST_F(TestsNeedingStreamObjects,
   EXPECT_EQ(transport_flow_control_.remote_window(),
             chttp2::kDefaultWindow + 1000);
   EXPECT_EQ(stream->flow_control.remote_window_delta(), 1000 + 10000);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Read and Write helper tests
+
+class Http2ReadContextTest : public ::testing::Test {
+ protected:
+  RefCountedPtr<Party> MakeParty() {
+    auto arena = SimpleArenaAllocator()->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine_.get());
+    return Party::Make(std::move(arena));
+  }
+
+ private:
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
+      grpc_event_engine::experimental::GetDefaultEventEngine();
+};
+
+TEST_F(Http2ReadContextTest, WakeWithoutPause) {
+  // Test that calling ResumeReadLoopIfPaused before MaybePauseReadLoop has
+  // no effect and does not crash.
+  Http2ReadContext read_context;
+  read_context.ResumeReadLoopIfPaused();
+  read_context.ResumeReadLoopIfPaused();
+  read_context.ResumeReadLoopIfPaused();
+  read_context.MaybePauseReadLoop();
+  read_context.SetPauseReadLoop();
+}
+
+class SimulatedTransport : public RefCounted<SimulatedTransport> {
+ public:
+  auto SimulatedReadAndProcessOneFrame() {
+    return [self = this->Ref()]() -> Poll<absl::Status> {
+      ++(self->i);
+      if (self->i % 2 == 0) {
+        // Doing this alternate times to make sure that SetPauseReadLoop is
+        // idempotent
+        absl::StrAppend(&self->execution_order, "Pause ");
+        return self->context.MaybePauseReadLoop();
+      }
+      absl::StrAppend(&self->execution_order, ". ");
+      return absl::OkStatus();
+    };
+  }
+  auto SimulatedReadLoop() {
+    return AssertResultType<absl::Status>(Loop([self = this->Ref()]() {
+      return TrySeq(self->SimulatedReadAndProcessOneFrame(),
+                    [self]() -> LoopCtl<absl::Status> {
+                      if (self->i < 10) {
+                        absl::StrAppend(&self->execution_order, "SetPause ");
+                        self->context.SetPauseReadLoop();
+                        return Continue();
+                      }
+                      absl::StrAppend(&self->execution_order, "EndRead ");
+                      self->did_end_read = true;
+                      return absl::OkStatus();
+                    });
+    }));
+  }
+  auto SimulatedOneWrite() {
+    return [self = this->Ref()]() -> Poll<absl::Status> {
+      absl::StrAppend(&self->execution_order, "Wake ");
+      self->context.ResumeReadLoopIfPaused();
+      return absl::OkStatus();
+    };
+  }
+
+  auto SimulatedWriteLoop() {
+    return AssertResultType<absl::Status>(Loop([self = this->Ref()]() {
+      return TrySeq(Sleep(Duration::Milliseconds(100)),
+                    self->SimulatedOneWrite(),
+                    [self]() -> LoopCtl<absl::Status> {
+                      if (self->did_end_read) {
+                        absl::StrAppend(&self->execution_order, "EndWrite ");
+                        return absl::OkStatus();
+                      }
+                      absl::StrAppend(&self->execution_order, "_ ");
+                      return Continue();
+                    });
+    }));
+  }
+
+  std::string execution_order;
+
+ private:
+  Http2ReadContext context;
+  int i = 0;
+  bool did_end_read = false;
+};
+
+TEST_F(Http2ReadContextTest, PauseAndWake) {
+  RefCountedPtr<SimulatedTransport> transport =
+      MakeRefCounted<SimulatedTransport>();
+  ExecCtx ctx;
+  RefCountedPtr<Party> party = MakeParty();
+  Notification n1;
+  Notification n2;
+  party->Spawn("Read", transport->SimulatedReadLoop(),
+               [&n1](absl::Status status) { n1.Notify(); });
+  party->Spawn("Write", transport->SimulatedWriteLoop(),
+               [&n2](absl::Status status) { n2.Notify(); });
+  n1.WaitForNotification();
+  n2.WaitForNotification();
+  EXPECT_STREQ(transport->execution_order.c_str(),
+               ". SetPause Pause Wake _ . SetPause Pause Wake _ . "
+               "SetPause Pause Wake _ . SetPause Pause Wake _ . "
+               "SetPause Pause Wake _ . EndRead Wake EndWrite ");
+}
+
+TEST(Http2CommonTransportTest, GetWriteArgsTest) {
+  Http2Settings settings;
+  // Default value of preferred_receive_crypto_message_size is 0, yields
+  // INT_MAX for max_frame_size.
+  PromiseEndpoint::WriteArgs args = GetWriteArgs(settings);
+  EXPECT_EQ(args.max_frame_size(), INT_MAX);
+
+  // If we set 0, it's clamped to min_preferred_receive_crypto_message_size.
+  settings.SetPreferredReceiveCryptoMessageSize(0);
+  args = GetWriteArgs(settings);
+  EXPECT_EQ(args.max_frame_size(),
+            Http2Settings::min_preferred_receive_crypto_message_size());
+
+  // If we set 1024, it's clamped to min_preferred_receive_crypto_message_size.
+  settings.SetPreferredReceiveCryptoMessageSize(1024);
+  args = GetWriteArgs(settings);
+  EXPECT_EQ(args.max_frame_size(),
+            Http2Settings::min_preferred_receive_crypto_message_size());
+
+  // If we set min_preferred_receive_crypto_message_size, it's clamped to
+  // min_preferred_receive_crypto_message_size.
+  settings.SetPreferredReceiveCryptoMessageSize(
+      Http2Settings::min_preferred_receive_crypto_message_size());
+  args = GetWriteArgs(settings);
+  EXPECT_EQ(args.max_frame_size(),
+            Http2Settings::min_preferred_receive_crypto_message_size());
+
+  // If we set min_preferred_receive_crypto_message_size + 1, it's within range.
+  settings.SetPreferredReceiveCryptoMessageSize(
+      Http2Settings::min_preferred_receive_crypto_message_size() + 1);
+  args = GetWriteArgs(settings);
+  EXPECT_EQ(args.max_frame_size(),
+            Http2Settings::min_preferred_receive_crypto_message_size() + 1);
+
+  // If we set to max value, it's within range.
+  settings.SetPreferredReceiveCryptoMessageSize(
+      Http2Settings::max_preferred_receive_crypto_message_size());
+  args = GetWriteArgs(settings);
+  EXPECT_EQ(args.max_frame_size(),
+            Http2Settings::max_preferred_receive_crypto_message_size());
+
+  // If we set value > max value, it's clamped to max value.
+  settings.SetPreferredReceiveCryptoMessageSize(
+      Http2Settings::max_preferred_receive_crypto_message_size() + 1u);
+  args = GetWriteArgs(settings);
+  EXPECT_EQ(args.max_frame_size(),
+            Http2Settings::max_preferred_receive_crypto_message_size());
 }
 
 }  // namespace testing
