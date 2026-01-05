@@ -22,12 +22,15 @@
 #include <grpc/private_key_signer.h>
 #include <openssl/ssl.h>
 
+#include <memory>
 #include <string>
 
 #include "src/core/tsi/transport_security_interface.h"
 #include "absl/status/statusor.h"
 
 namespace grpc_core {
+
+class AsyncSigningHandle;
 
 // State associated with an SSL object for async private key operations.
 struct TlsPrivateKeyOffloadContext {
@@ -51,6 +54,8 @@ struct TlsPrivateKeyOffloadContext {
   // the Private Key offload was successful. If there was an error during the
   // signature, the status will be returned.
   absl::StatusOr<std::string> signed_bytes;
+  // The handle for an in-flight async signing operation.
+  std::shared_ptr<AsyncSigningHandle> signing_handle;
 
   // TSI handshake state needed to resume.
   tsi_handshaker* handshaker;

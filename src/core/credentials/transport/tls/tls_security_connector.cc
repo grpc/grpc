@@ -611,11 +611,8 @@ TlsServerSecurityConnector::TlsServerSecurityConnector(
   if (options_->identity_certificate_distributor() != nullptr) {
     watched_identity_cert_name = options_->identity_cert_name();
   }
-  // Server side won't use default system roots at any time.
-  if (watched_root_cert_name.has_value()) {
-    options_->root_certificate_distributor()->WatchTlsCertificates(
-        std::move(root_watcher_ptr), watched_root_cert_name, std::nullopt);
-  }
+  options_->root_certificate_distributor()->WatchTlsCertificates(
+      std::move(root_watcher_ptr), watched_root_cert_name, std::nullopt);
   if (watched_identity_cert_name.has_value()) {
     options_->identity_certificate_distributor()->WatchTlsCertificates(
         std::move(identity_watcher_ptr), std::nullopt,

@@ -18,6 +18,7 @@
 
 #include "src/core/tsi/ssl_transport_security.h"
 
+#include <grpc/private_key_signer.h>
 #include <grpc/support/port_platform.h>
 #include <limits.h>
 #include <string.h>
@@ -214,7 +215,7 @@ ToSignatureAlgorithmClass(uint16_t algorithm) {
 }
 
 enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
-    SSL* ssl, uint8_t* out, size_t* out_len, size_t /*max_out*/,
+    SSL* ssl, uint8_t* out, size_t* out_len, size_t max_out,
     uint16_t signature_algorithm, const uint8_t* in, size_t in_len) {
   grpc_core::TlsPrivateKeyOffloadContext* ctx =
       grpc_core::GetTlsPrivateKeyOffloadContext(ssl);
@@ -232,23 +233,32 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
   if (signer == nullptr) {
     return ssl_private_key_failure;
   }
-  bool is_done =
+  auto result =
       signer->Sign(absl::string_view(reinterpret_cast<const char*>(in), in_len),
                    *algorithm, done_callback);
-  // If the signature invocation was completed, return ssl_private_key_success
-  // to continue the handshake. Otherwise tell BoringSSL to wait for the
-  // signature result.
-  if (is_done) {
-    if (ctx->signed_bytes.ok()) {
-      std::string out_bytes = *ctx->signed_bytes;
+  // Handle synchronous return.
+  if (auto* status_or_string =
+          std::get_if<absl::StatusOr<std::string>>(&result)) {
+    if (status_or_string->ok()) {
+      std::string out_bytes = **status_or_string;
+      if (out_bytes.size() > max_out) {
+        return ssl_private_key_failure;
+      }
       *out_len = out_bytes.size();
-      std::copy(out_bytes.cbegin(), out_bytes.cend(), out);
+      memcpy(out, out_bytes.c_str(), *out_len);
       return ssl_private_key_success;
     } else {
       return ssl_private_key_failure;
     }
   }
-  ctx->status = grpc_core::TlsPrivateKeyOffloadContext::kInProgressAsync;
+  // Handle asynchronous return.
+  if (auto* handle =
+          std::get_if<std::shared_ptr<grpc_core::AsyncSigningHandle>>(
+              &result)) {
+    ctx->signing_handle = std::move(*handle);
+    ctx->status = grpc_core::TlsPrivateKeyOffloadContext::kInProgressAsync;
+    return ssl_private_key_retry;
+  }
   return ssl_private_key_retry;
 }
 

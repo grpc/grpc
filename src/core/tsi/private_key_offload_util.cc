@@ -25,6 +25,7 @@
 #include <cstdint>
 #include <string>
 #include <utility>
+#include <variant>
 
 #include "src/core/tsi/transport_security_interface.h"
 #include "absl/functional/bind_front.h"
@@ -34,7 +35,6 @@
 namespace grpc_core {
 
 #if defined(OPENSSL_IS_BORINGSSL)
-
 enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,
                                                            uint8_t* out,
                                                            size_t* out_len,

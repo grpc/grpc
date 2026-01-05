@@ -41,6 +41,10 @@ struct grpc_tls_identity_pairs {
 };
 
 // TLS certificate distributor.
+// TODO(anasalazar): Since there are no use-cases where we need to update root
+// and identity certs as an atomic unit, the flow of the certs through the cert
+// providers and to the TLS security connector can be greatly simplified. We may
+// even be able to remove the distributor code completely.
 struct grpc_tls_certificate_distributor
     : public grpc_core::RefCounted<grpc_tls_certificate_distributor> {
  public:

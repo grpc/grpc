@@ -23,11 +23,21 @@
 
 #include <memory>
 #include <string>
+#include <variant>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
+
+// A base class for a handle for an async signing operation.
+// Implementations that support async signing will need to define
+// their own concrete implementations.
+class AsyncSigningHandle {
+ public:
+  virtual ~AsyncSigningHandle() = default;
+};
 
 class PrivateKeySigner {
  public:
@@ -49,13 +59,23 @@ class PrivateKeySigner {
 
   virtual ~PrivateKeySigner() = default;
 
-  // A user's implementation MUST invoke `on_sign_complete` with the signed
-  // bytes. This will let gRPC take control when the async operation is
-  // complete. MUST not block MUST support concurrent calls.
-  // Returns whether or not the operation was completed.
-  virtual bool Sign(absl::string_view data_to_sign,
-                    SignatureAlgorithm signature_algorithm,
-                    OnSignComplete on_sign_complete) = 0;
+  // Signs data_to_sign.
+  // May return either synchronously or asynchronously.
+  // For synchronous returns, directly returns either the signed bytes
+  // or a failed status, and the callback will never be invoked.
+  // For asynchronous returns, returns a handle for the asynchronous signing
+  // operation, and the callback will be invoked later. The handle may be
+  // passed to the Cancel() method to cancel the async operation.
+  // Note that implementations must never invoke the callback before this
+  // method returns, since that could lead to a deadlock.
+  virtual std::variant<absl::StatusOr<std::string>,
+                       std::shared_ptr<AsyncSigningHandle>>
+  Sign(absl::string_view data_to_sign, SignatureAlgorithm signature_algorithm,
+       OnSignComplete on_sign_complete) = 0;
+
+  // Cancels an in-flight async signing operation using a handle returned
+  // from a previous call to Sign().
+  virtual void Cancel(std::shared_ptr<AsyncSigningHandle> handle) = 0;
 };
 }  // namespace grpc_core
 

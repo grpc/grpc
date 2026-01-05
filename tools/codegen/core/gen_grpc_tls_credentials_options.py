@@ -205,12 +205,8 @@ _DATA_MEMBERS = [
             " == 0))"
         ),
         test_name="DifferentIdentityCertificateProvider",
-        test_value_1=(
-            'CreateTestingCertificateProvider("", PemKeyCertPairList())'
-        ),
-        test_value_2=(
-            'CreateTestingCertificateProvider("", PemKeyCertPairList())'
-        ),
+        test_value_1="MakeRefCounted<InMemoryCertificateProvider>()",
+        test_value_2="MakeRefCounted<InMemoryCertificateProvider>()",
     ),
     DataMember(
         name="root_certificate_provider",
@@ -232,12 +228,8 @@ _DATA_MEMBERS = [
             " == 0))"
         ),
         test_name="DifferentRootCertificateProvider",
-        test_value_1=(
-            'CreateTestingCertificateProvider("", PemKeyCertPairList())'
-        ),
-        test_value_2=(
-            'CreateTestingCertificateProvider("", PemKeyCertPairList())'
-        ),
+        test_value_1="MakeRefCounted<InMemoryCertificateProvider>()",
+        test_value_2="MakeRefCounted<InMemoryCertificateProvider>()",
     ),
 ]
 
@@ -478,23 +470,6 @@ print(
 
 namespace grpc_core {
 namespace {
-RefCountedPtr<grpc_tls_certificate_provider>
-CreateTestingCertificateProvider(
-    const std::string&  root_cert_info, const PemKeyCertPairList& pem_key_cert_pairs) {
-  auto provider = MakeRefCounted<InMemoryCertificateProvider>();
-  provider->UpdateRoot(std::make_shared<RootCertInfo>(root_cert_info));
-  provider->UpdateIdentity(pem_key_cert_pairs);
-  return provider;
-}
-
-PemKeyCertPairList MakeCertKeyPairs(const std::string&  private_key,
-                                    const std::string&  certs) {
-  if (private_key.empty() && certs.empty()) {
-    return {};
-  }
-  return PemKeyCertPairList{PemKeyCertPair(private_key, certs)};
-}
-
 """,
     file=T,
 )

@@ -83,13 +83,13 @@ class BoringSslPrivateKeySigner
   explicit BoringSslPrivateKeySigner(absl::string_view private_key)
       : pkey_(LoadPrivateKeyFromString(private_key)) {}
 
-  bool Sign(absl::string_view data_to_sign,
-            SignatureAlgorithm signature_algorithm,
-            OnSignComplete on_sign_complete) override {
-    on_sign_complete(
-        SignWithBoringSSL(data_to_sign, signature_algorithm, pkey_.get()));
-    return true;
+  std::variant<absl::StatusOr<std::string>, std::shared_ptr<AsyncSigningHandle>>
+  Sign(absl::string_view data_to_sign, SignatureAlgorithm signature_algorithm,
+       OnSignComplete on_sign_complete) override {
+    return SignWithBoringSSL(data_to_sign, signature_algorithm, pkey_.get());
   }
+
+  void Cancel(std::shared_ptr<AsyncSigningHandle> handle) override {}
 
  private:
   absl::StatusOr<std::string> SignWithBoringSSL(
@@ -144,22 +144,26 @@ class BoringSslPrivateKeySigner
 
 class BadSignatureSigner : public PrivateKeySigner {
  public:
-  bool Sign(absl::string_view /*data_to_sign*/,
-            SignatureAlgorithm /*signature_algorithm*/,
-            OnSignComplete on_sign_complete) override {
-    on_sign_complete("bad signature");
-    return true;
+  std::variant<absl::StatusOr<std::string>, std::shared_ptr<AsyncSigningHandle>>
+  Sign(absl::string_view /*data_to_sign*/,
+       SignatureAlgorithm /*signature_algorithm*/,
+       OnSignComplete on_sign_complete) override {
+    return "bad signature";
   }
+
+  void Cancel(std::shared_ptr<AsyncSigningHandle> handle) override {}
 };
 
 class ErrorSigner : public PrivateKeySigner {
  public:
-  bool Sign(absl::string_view /*data_to_sign*/,
-            SignatureAlgorithm /*signature_algorithm*/,
-            OnSignComplete on_sign_complete) override {
-    on_sign_complete(absl::InternalError("signer error"));
-    return true;
+  std::variant<absl::StatusOr<std::string>, std::shared_ptr<AsyncSigningHandle>>
+  Sign(absl::string_view /*data_to_sign*/,
+       SignatureAlgorithm /*signature_algorithm*/,
+       OnSignComplete on_sign_complete) override {
+    return absl::InternalError("signer error");
   }
+
+  void Cancel(std::shared_ptr<AsyncSigningHandle> handle) override {}
 };
 
 enum class OffloadParty {
