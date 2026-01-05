@@ -24,9 +24,11 @@
 
 namespace grpc_core {
 
-bool PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
-                                     SignatureAlgorithm signature_algorithm,
-                                     OnSignComplete on_sign_complete) {
+std::variant<absl::StatusOr<std::string>, std::shared_ptr<AsyncSigningHandle>>
+PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
+                                SignatureAlgorithm signature_algorithm,
+                                OnSignComplete on_sign_complete) {
+  // TODO(gregorycooke) do impl with new type
   auto on_sign_complete_cpp_callback =
       [](const absl::StatusOr<std::string> result, void* completion_data) {
         grpc_core::ExecCtx exec_ctx;
@@ -43,7 +45,12 @@ bool PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
   sign_py_wrapper_(data_to_sign, signature_algorithm,
                    on_sign_complete_cpp_callback, on_sign_complete_heap,
                    sign_user_data_);
-  return false;
+  return absl::UnimplementedError("TODO impl");
+}
+
+void Cancel(
+    std::shared_ptr<AsyncSigningHandle>) { /* TODO(gregorycooke) will need to
+                                              bubble up to Python? */
 }
 
 PrivateKeySigner* BuildPrivateKeySigner(SignPyWrapper sign_py_wrapper,

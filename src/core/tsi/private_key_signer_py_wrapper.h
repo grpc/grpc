@@ -38,9 +38,13 @@ namespace grpc_core {
      public:
       PrivateKeySignerPyWrapper(SignPyWrapper sign_py_wrapper, void* user_data)
           : sign_py_wrapper_(sign_py_wrapper), sign_user_data_(user_data) {}
-      bool Sign(absl::string_view data_to_sign,
-                SignatureAlgorithm signature_algorithm,
-                OnSignComplete on_sign_complete) override;
+      std::variant<absl::StatusOr<std::string>,
+                   std::shared_ptr<AsyncSigningHandle>>
+      Sign(absl::string_view data_to_sign,
+           SignatureAlgorithm signature_algorithm,
+           OnSignComplete on_sign_complete) override;
+
+      void Cancel(std::shared_ptr<AsyncSigningHandle> handle) override;
 
      private:
       SignPyWrapper sign_py_wrapper_;
