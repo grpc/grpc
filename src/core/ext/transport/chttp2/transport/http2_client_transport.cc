@@ -1979,7 +1979,12 @@ absl::Status Http2ClientTransport::MaybeAddStreamToWritableStreamList(
         << stream->GetStreamId() << " became writable";
     absl::Status status =
         writable_stream_list_.Enqueue(stream, result.priority);
+    GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport "
+                              "MaybeAddStreamToWritableStreamList Enqueue Done";
     if (!status.ok()) {
+      GRPC_HTTP2_CLIENT_DLOG
+          << "Http2ClientTransport MaybeAddStreamToWritableStreamList Enqueue "
+             "ERROR";
       return HandleError(
           std::nullopt,
           Http2Status::Http2ConnectionError(
@@ -1987,6 +1992,8 @@ absl::Status Http2ClientTransport::MaybeAddStreamToWritableStreamList(
               "Failed to enqueue stream to writable stream list"));
     }
   }
+  GRPC_HTTP2_CLIENT_DLOG
+      << "Http2ClientTransport MaybeAddStreamToWritableStreamList OK";
   return absl::OkStatus();
 }
 
