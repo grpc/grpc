@@ -32,10 +32,12 @@
 #include <memory>
 #include <thread>
 
+#include "src/core/lib/experiments/experiments.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
+#include "third_party/absl/log/globals.h"
 #include "gtest/gtest.h"
 #include "absl/memory/memory.h"
 
@@ -316,8 +318,35 @@ TEST_F(GenericEnd2endTest, SequentialUnaryRpcs) {
   }
 }
 
+// TODO(tjagtap) : [PH2][P3] : Remove once all the PH2 E2E tests are fixed.
+inline void DisableLoggingForPH2Tests() {
+  if (grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()) {
+    grpc_tracer_set_enabled("http", false);
+    grpc_tracer_set_enabled("channel", false);
+    grpc_tracer_set_enabled("subchannel", false);
+    grpc_tracer_set_enabled("client_channel", false);
+    grpc_tracer_set_enabled("http2_ph2_transport", false);
+    grpc_tracer_set_enabled("call", false);
+    absl::SetGlobalVLogLevel(-1);
+  }
+}
+
+// TODO(tjagtap) : [PH2][P3] : Remove once all the PH2 E2E tests are fixed.
+inline void EnableLoggingForPH2Tests() {
+  if (grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()) {
+    grpc_tracer_set_enabled("http", 1);
+    grpc_tracer_set_enabled("channel", 1);
+    grpc_tracer_set_enabled("subchannel", 1);
+    grpc_tracer_set_enabled("client_channel", 1);
+    grpc_tracer_set_enabled("http2_ph2_transport", 1);
+    grpc_tracer_set_enabled("call", 1);
+    absl::SetGlobalVLogLevel(2);
+  }
+}
+
 // One ping, one pong.
 TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
+  EnableLoggingForPH2Tests();
   ResetStub();
 
   const std::string kMethodName(
@@ -383,6 +412,7 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
 
   EXPECT_EQ(send_response.message(), recv_response.message());
   EXPECT_TRUE(recv_status.ok());
+  DisableLoggingForPH2Tests();
 }
 
 TEST_F(GenericEnd2endTest, Deadline) {
