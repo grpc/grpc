@@ -23,6 +23,9 @@
 
 #if defined(GRPC_CFSTREAM)
 namespace {
+const char* const description_buffer_list_deletion_prep =
+    "Gate the removal of old TCP timestamp collection mechanism.";
+const char* const additional_constraints_buffer_list_deletion_prep = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
@@ -234,6 +237,8 @@ const char* const additional_constraints_unconstrained_max_quota_buffer_size =
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
+    {"buffer_list_deletion_prep", description_buffer_list_deletion_prep,
+     additional_constraints_buffer_list_deletion_prep, nullptr, 0, false, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
     {"channelz_use_v2_for_v1_api", description_channelz_use_v2_for_v1_api,
@@ -398,6 +403,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
 
 #elif defined(GPR_WINDOWS)
 namespace {
+const char* const description_buffer_list_deletion_prep =
+    "Gate the removal of old TCP timestamp collection mechanism.";
+const char* const additional_constraints_buffer_list_deletion_prep = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
@@ -609,6 +617,8 @@ const char* const additional_constraints_unconstrained_max_quota_buffer_size =
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
+    {"buffer_list_deletion_prep", description_buffer_list_deletion_prep,
+     additional_constraints_buffer_list_deletion_prep, nullptr, 0, false, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
     {"channelz_use_v2_for_v1_api", description_channelz_use_v2_for_v1_api,
@@ -773,6 +783,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
 
 #else
 namespace {
+const char* const description_buffer_list_deletion_prep =
+    "Gate the removal of old TCP timestamp collection mechanism.";
+const char* const additional_constraints_buffer_list_deletion_prep = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
@@ -984,6 +997,8 @@ const char* const additional_constraints_unconstrained_max_quota_buffer_size =
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
+    {"buffer_list_deletion_prep", description_buffer_list_deletion_prep,
+     additional_constraints_buffer_list_deletion_prep, nullptr, 0, false, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
     {"channelz_use_v2_for_v1_api", description_channelz_use_v2_for_v1_api,
