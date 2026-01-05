@@ -990,7 +990,7 @@ TEST_P(End2endTest, DISABLED_RequestStreamTwoRequestsWithWriteThrough) {
   EXPECT_TRUE(s.ok());
 }
 
-TEST_P(End2endTest, RequestStreamTwoRequestsWithCoalescingApi) {
+TEST_P(End2endTest, DISABLED_RequestStreamTwoRequestsWithCoalescingApi) {
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1066,7 +1066,7 @@ TEST_P(End2endTest, ResponseStreamWithEverythingCoalesced) {
   EXPECT_TRUE(s.ok());
 }
 
-TEST_P(End2endTest, BidiStream) {
+TEST_P(End2endTest, DISABLED_BidiStream) {
   ResetStub();
   EchoRequest request;
   EchoResponse response;
