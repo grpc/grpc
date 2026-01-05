@@ -38,7 +38,7 @@ cdef extern from "absl/strings/string_view.h" namespace "absl":
         const char* data()
         size_t length()
 
-cdef extern from "grpc/grpc_private_key_offload.h" namespace "grpc_core":
+cdef extern from "grpc/private_key_signer.h" namespace "grpc_core":
     cdef cppclass PrivateKeySigner:
         pass
     cdef enum class CSignatureAlgorithm "grpc_core::PrivateKeySigner::SignatureAlgorithm":
@@ -64,7 +64,7 @@ cpdef enum SignatureAlgorithm:
     RSA_PSS_RSAE_SHA512 = <int>CSignatureAlgorithm.kRsaPssRsaeSha512
     
 
-cdef extern from "src/core/tsi/private_key_offload_py_wrapper.h" namespace "grpc_core":
+cdef extern from "src/core/tsi/private_key_signer_py_wrapper.h" namespace "grpc_core":
     ctypedef void (*OnSignCompletePyWrapper)(const StatusOr[string], void*) noexcept
     ctypedef void (*SignPyWrapper)(string_view, CSignatureAlgorithm, OnSignCompletePyWrapper, void*, void*) noexcept
     PrivateKeySigner* BuildPrivateKeySigner(SignPyWrapper, void*)

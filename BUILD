@@ -2402,12 +2402,12 @@ grpc_cc_library(
 grpc_cc_library(
     name = "tsi_base",
     srcs = [
-        "//src/core:tsi/private_key_offload_py_wrapper.cc",
+        "//src/core:tsi/private_key_signer_py_wrapper.cc",
         "//src/core:tsi/transport_security.cc",
         "//src/core:tsi/transport_security_grpc.cc",
     ],
     hdrs = [
-        "//src/core:tsi/private_key_offload_py_wrapper.h",
+        "//src/core:tsi/private_key_signer_py_wrapper.h",
         "//src/core:tsi/transport_security.h",
         "//src/core:tsi/transport_security_grpc.h",
         "//src/core:tsi/transport_security_interface.h",

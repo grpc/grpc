@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_GRPC_PRIVATE_KEY_OFFLOAD_PY_WRAPPER_H
-#define GRPC_GRPC_PRIVATE_KEY_OFFLOAD_PY_WRAPPER_H
+#ifndef GRPC_PRIVATE_KEY_SIGNER_PY_WRAPPER_H
+#define GRPC_PRIVATE_KEY_SIGNER_PY_WRAPPER_H
 
 #include <string>
 
@@ -38,7 +38,7 @@ namespace grpc_core {
      public:
       PrivateKeySignerPyWrapper(SignPyWrapper sign_py_wrapper, void* user_data)
           : sign_py_wrapper_(sign_py_wrapper), sign_user_data_(user_data) {}
-      void Sign(absl::string_view data_to_sign,
+      bool Sign(absl::string_view data_to_sign,
                 SignatureAlgorithm signature_algorithm,
                 OnSignComplete on_sign_complete) override;
 
@@ -51,4 +51,4 @@ namespace grpc_core {
                                             void* user_data);
     }  // namespace grpc_core
 
-#endif  // GRPC_GRPC_PRIVATE_KEY_OFFLOAD_PY_WRAPPER_H
+#endif  // GRPC_PRIVATE_KEY_SIGNER_PY_WRAPPER_H

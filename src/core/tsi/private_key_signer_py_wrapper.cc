@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/tsi/private_key_offload_py_wrapper.h"
+#include "src/core/tsi/private_key_signer_py_wrapper.h"
 
 #include <grpc/support/log.h>
 
@@ -24,7 +24,7 @@
 
 namespace grpc_core {
 
-void PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
+bool PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
                                      SignatureAlgorithm signature_algorithm,
                                      OnSignComplete on_sign_complete) {
   auto on_sign_complete_cpp_callback =
@@ -43,6 +43,7 @@ void PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
   sign_py_wrapper_(data_to_sign, signature_algorithm,
                    on_sign_complete_cpp_callback, on_sign_complete_heap,
                    sign_user_data_);
+  return false;
 }
 
 PrivateKeySigner* BuildPrivateKeySigner(SignPyWrapper sign_py_wrapper,
