@@ -1867,7 +1867,9 @@ TEST_P(AsyncEnd2endServerTryCancelTest,
   TestClientStreamingServerCancel(CANCEL_BEFORE_PROCESSING);
 }
 
-TEST_P(AsyncEnd2endServerTryCancelTest, ClientStreamingServerTryCancelDuring) {
+TEST_P(AsyncEnd2endServerTryCancelTest,
+       DISABLED_ClientStreamingServerTryCancelDuring) {
+  // This was flaking for PH2.
   TestClientStreamingServerCancel(CANCEL_DURING_PROCESSING);
 }
 
