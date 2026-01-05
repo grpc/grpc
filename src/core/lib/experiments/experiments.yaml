@@ -41,6 +41,11 @@
 
 # This file only defines the experiments. Refer to rollouts.yaml for the rollout
 # state of each experiment.
+- name: buffer_list_deletion_prep
+  description: Gate the removal of old TCP timestamp collection mechanism.
+  expiry: 2026/02/01
+  owner: ctiller@google.com
+  test_tags: [core_end2end_test]
 - name: call_tracer_in_transport
   description: Transport directly passes byte counts to CallTracer.
   expiry: 2026/02/01
