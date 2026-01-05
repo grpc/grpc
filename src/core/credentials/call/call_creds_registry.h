@@ -125,7 +125,7 @@ class CallCredsRegistry {
       ValidationErrors* errors) const {
     const auto it = proto_map_.find(proto_type);
     if (it == proto_map_.cend()) return nullptr;
-    return it->second->ParseConfig(serialized_proto, errors);
+    return it->second->ParseProto(serialized_proto, errors);
   }
 
   RefCountedPtr<T> CreateCallCreds(

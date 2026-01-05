@@ -29,8 +29,7 @@
 #include <utility>
 
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
-// #include
-// "envoy/extensions/grpc_service/channel_credentials/tls/v3/tls_credentials.upb.h"
+#include "envoy/extensions/grpc_service/channel_credentials/tls/v3/tls_credentials.upb.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/credentials/transport/channel_creds_registry.h"
@@ -281,8 +280,6 @@ class TlsChannelCredsFactory : public ChannelCredsFactory<> {
             certificate_provider_definitions,
         ValidationErrors* errors) {
       upb_Arena arena;
-// FIXME: enable after xDS proto update
-#if 0
       const auto* proto =
           envoy_extensions_grpc_service_channel_credentials_tls_v3_TlsCredentials_parse(
               serialized_proto.data(), serialized_proto.size(), &arena);
@@ -318,7 +315,6 @@ class TlsChannelCredsFactory : public ChannelCredsFactory<> {
         }
         return config;
       }
-#endif
     }
 
    private:

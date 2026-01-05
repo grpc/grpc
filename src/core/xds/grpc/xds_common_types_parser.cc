@@ -690,14 +690,12 @@ XdsGrpcService ParseXdsGrpcService(
     std::vector<RefCountedPtr<const CallCredsConfig>> call_creds_configs;
     if (DownCast<const GrpcXdsServer&>(context.server).TrustedXdsServer()) {
       // Trusted xDS server.  Use credentials from the GoogleGrpc proto.
-// FIXME: enable once xDS proto update is merged
-#if 0
       // First, look at channel creds.
       {
         ValidationErrors::ScopedField field(
             errors, ".channel_credentials_plugin");
         size_t size;
-        const auto** channel_creds_plugin =
+        const auto* const* channel_creds_plugin =
             envoy_config_core_v3_GrpcService_GoogleGrpc_channel_credentials_plugin(
                 google_grpc, &size);
         if (size == 0) {
@@ -732,7 +730,7 @@ XdsGrpcService ParseXdsGrpcService(
         ValidationErrors::ScopedField field(
             errors, ".call_credentials_plugin");
         size_t size;
-        const auto** call_creds_plugin =
+        const auto* const* call_creds_plugin =
             envoy_config_core_v3_GrpcService_GoogleGrpc_call_credentials_plugin(
                 google_grpc, &size);
         if (size == 0) {
@@ -755,7 +753,6 @@ XdsGrpcService ParseXdsGrpcService(
           }
         }
       }
-#endif
     } else {
       // Not a trusted xDS server.  Do lookup in bootstrap.
       const auto& bootstrap =

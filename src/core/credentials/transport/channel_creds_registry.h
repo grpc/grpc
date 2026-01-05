@@ -141,8 +141,8 @@ class ChannelCredsRegistry {
       ValidationErrors* errors) const {
     const auto it = proto_map_.find(proto_type);
     if (it == proto_map_.cend()) return nullptr;
-    return it->second->ParseConfig(serialized_proto,
-                                   certificate_provider_definitions, errors);
+    return it->second->ParseProto(serialized_proto,
+                                  certificate_provider_definitions, errors);
   }
 
   RefCountedPtr<T> CreateChannelCreds(
