@@ -48,7 +48,7 @@ PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
   return absl::UnimplementedError("TODO impl");
 }
 
-void Cancel(
+void PrivateKeySignerPyWrapper::Cancel(
     std::shared_ptr<AsyncSigningHandle>) { /* TODO(gregorycooke) will need to
                                               bubble up to Python? */
 }
