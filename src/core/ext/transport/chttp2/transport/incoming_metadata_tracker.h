@@ -22,6 +22,7 @@
 #include <cstdint>
 #include <string>
 
+#include "src/core/call/metadata_info.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/util/grpc_check.h"
 #include "absl/strings/str_cat.h"
@@ -117,8 +118,8 @@ class IncomingMetadataTracker {
   bool incoming_header_in_progress_ = false;
   bool incoming_header_end_stream_ = false;
   uint32_t incoming_header_stream_id_ = 0;
-  // DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT
-  uint32_t max_header_list_size_soft_limit_ = 8 * 1024;
+  uint32_t max_header_list_size_soft_limit_ =
+      DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT;
 };
 
 }  // namespace http2

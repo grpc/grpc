@@ -99,19 +99,17 @@ struct Stream : public RefCounted<Stream> {
   // All enqueue methods are called from the call party.
 
   auto EnqueueInitialMetadata(ClientMetadataHandle&& metadata) {
-    GRPC_HTTP2_STREAM_LOG << "Stream::EnqueueInitialMetadata stream_id="
-                          << stream_id;
+    GRPC_HTTP2_STREAM_LOG << "Stream::EnqueueInitialMetadata";
     return data_queue->EnqueueInitialMetadata(std::move(metadata));
   }
 
   auto EnqueueTrailingMetadata(ClientMetadataHandle&& metadata) {
-    GRPC_HTTP2_STREAM_LOG << "Stream::EnqueueTrailingMetadata stream_id="
-                          << stream_id;
+    GRPC_HTTP2_STREAM_LOG << "Stream::EnqueueTrailingMetadata";
     return data_queue->EnqueueTrailingMetadata(std::move(metadata));
   }
 
   auto EnqueueMessage(MessageHandle&& message) {
-    GRPC_HTTP2_STREAM_LOG << "Stream::EnqueueMessage stream_id=" << stream_id
+    GRPC_HTTP2_STREAM_LOG << "Stream::EnqueueMessage"
                           << " with payload size = "
                           << message->payload()->Length()
                           << " and flags = " << message->flags();
@@ -119,31 +117,28 @@ struct Stream : public RefCounted<Stream> {
   }
 
   auto EnqueueHalfClosed() {
-    GRPC_HTTP2_STREAM_LOG << "Stream::EnqueueHalfClosed stream_id="
-                          << stream_id;
+    GRPC_HTTP2_STREAM_LOG << "Stream::EnqueueHalfClosed";
     return data_queue->EnqueueHalfClosed();
   }
 
   auto EnqueueResetStream(const uint32_t error_code) {
-    GRPC_HTTP2_STREAM_LOG << "Stream::EnqueueResetStream stream_id="
-                          << stream_id << " with error_code = " << error_code;
+    GRPC_HTTP2_STREAM_LOG << "Stream::EnqueueResetStream"
+                          << " with error_code = " << error_code;
     return data_queue->EnqueueResetStream(error_code);
   }
 
   // Called from the transport party
-  auto DequeueFrames(const uint32_t transport_tokens,
+  auto DequeueFrames(const uint32_t tokens,
+                     const uint32_t stream_flow_control_tokens,
                      const uint32_t max_frame_length,
                      HPackCompressor& encoder) {
     HttpStreamState state = stream_state;
     // Reset stream MUST not be sent if the stream is idle or closed.
-    // TODO(tjagtap) : [PH2][P1][FlowControl] : Populate the correct stream flow
-    // control tokens.
-    return data_queue->DequeueFrames(
-        transport_tokens, max_frame_length,
-        /*stream_fc_tokens=*/std::numeric_limits<uint32_t>::max(), encoder,
-        /*can_send_reset_stream=*/
-        !(state == HttpStreamState::kIdle ||
-          state == HttpStreamState::kClosed));
+    return data_queue->DequeueFrames(tokens, max_frame_length,
+                                     stream_flow_control_tokens, encoder,
+                                     /*can_send_reset_stream=*/
+                                     !(state == HttpStreamState::kIdle ||
+                                       state == HttpStreamState::kClosed));
   }
 
   auto ReceivedFlowControlWindowUpdate(const uint32_t stream_fc_tokens) {

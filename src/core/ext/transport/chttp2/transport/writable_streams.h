@@ -74,6 +74,16 @@ class WritableStreams {
   WritableStreams(WritableStreams&&) = delete;
   WritableStreams& operator=(WritableStreams&&) = delete;
 
+  absl::Status EnqueueWrapper(const StreamPtr stream,
+                              const WritableStreamPriority priority,
+                              bool transport_tokens_available) {
+    if (transport_tokens_available) {
+      return Enqueue(stream, priority);
+    } else {
+      return BlockedOnTransportFlowControl(stream);
+    }
+  }
+
   // Enqueues a stream id with the given priority.
   // If this returns error, transport MUST be closed.
   absl::Status Enqueue(const StreamPtr stream,

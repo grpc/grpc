@@ -129,5 +129,27 @@ TEST(ClientFuzzerTest, RunChannelzCallTracerRegression) {
                            config_vars { channelz_call_tracer: true })pb"));
 }
 
+TEST(ClientFuzzerTest, RunChannelzCallTracerRegression2) {
+  Fuzz(ParseTestProto(R"pb(network_input {
+                             single_read_bytes: "K"
+                             connect_timeout_ms: -1
+                             endpoint_config { args { key: "\000" str: "" } }
+                           }
+                           api_actions {
+                             create_call {
+                               propagation_mask: 1
+                               method { value: "<" }
+                             }
+                           }
+                           config_vars {
+                             verbosity: "debug"
+                             dns_resolver: "native"
+                             trace: ""
+                             channelz_call_tracer: true
+                             channelz_max_orphaned_nodes: 1
+                           }
+                           channel_args {})pb"));
+}
+
 }  // namespace testing
 }  // namespace grpc_core
