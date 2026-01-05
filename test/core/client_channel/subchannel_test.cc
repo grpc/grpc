@@ -36,23 +36,24 @@ const absl::string_view kTestAddress = "ipv4:127.0.0.1:1234";
 const absl::string_view kDefaultAuthority = "test-authority";
 }  // namespace
 
-class ConnectedSubchannelTest : public YodelTest {
+class SubchannelTest : public YodelTest {
  protected:
   using YodelTest::YodelTest;
 
-  RefCountedPtr<ConnectedSubchannel> InitChannel(const ChannelArgs& args) {
+  RefCountedPtr<Subchannel> InitChannel(const ChannelArgs& args) {
     grpc_resolved_address addr;
     CHECK(grpc_parse_uri(URI::Parse(kTestAddress).value(), &addr));
     auto subchannel = Subchannel::Create(MakeOrphanable<TestConnector>(this),
                                          addr, CompleteArgs(args));
+    auto watcher = MakeRefCounted<Watcher>();
     {
       ExecCtx exec_ctx;
+      subchannel->WatchConnectivityState(watcher);
       subchannel->RequestConnection();
     }
-    return TickUntil<RefCountedPtr<ConnectedSubchannel>>(
-        [subchannel]() -> Poll<RefCountedPtr<ConnectedSubchannel>> {
-          auto connected_subchannel = subchannel->connected_subchannel();
-          if (connected_subchannel != nullptr) return connected_subchannel;
+    return TickUntil<RefCountedPtr<Subchannel>>(
+        [subchannel, watcher]() -> Poll<RefCountedPtr<Subchannel>> {
+          if (watcher->state() == GRPC_CHANNEL_READY) return subchannel;
           return Pending();
         });
   }
@@ -82,9 +83,28 @@ class ConnectedSubchannelTest : public YodelTest {
   }
 
  private:
+  class Watcher final : public Subchannel::ConnectivityStateWatcherInterface {
+   public:
+    void OnConnectivityStateChange(grpc_connectivity_state state,
+                                   const absl::Status&) override {
+      state_ = state;
+    }
+
+    void OnKeepaliveUpdate(Duration) override {}
+
+    uint32_t max_connections_per_subchannel() const override { return 1; }
+
+    grpc_pollset_set* interested_parties() override { return nullptr; }
+
+    grpc_connectivity_state state() const { return state_; }
+
+   private:
+    grpc_connectivity_state state_ = GRPC_CHANNEL_IDLE;
+  };
+
   class TestTransport final : public ClientTransport {
    public:
-    explicit TestTransport(ConnectedSubchannelTest* test) : test_(test) {}
+    explicit TestTransport(SubchannelTest* test) : test_(test) {}
 
     void Orphan() override {
       state_tracker_.SetState(GRPC_CHANNEL_SHUTDOWN, absl::OkStatus(),
@@ -123,14 +143,14 @@ class ConnectedSubchannelTest : public YodelTest {
     }
 
    private:
-    ConnectedSubchannelTest* const test_;
+    SubchannelTest* const test_;
     ConnectivityStateTracker state_tracker_{"test-transport"};
     RefCountedPtr<StateWatcher> watcher_;
   };
 
   class TestConnector final : public SubchannelConnector {
    public:
-    explicit TestConnector(ConnectedSubchannelTest* test) : test_(test) {}
+    explicit TestConnector(SubchannelTest* test) : test_(test) {}
 
     void Connect(const Args& args, Result* result,
                  grpc_closure* notify) override {
@@ -142,7 +162,7 @@ class ConnectedSubchannelTest : public YodelTest {
     void Shutdown(grpc_error_handle) override {}
 
    private:
-    ConnectedSubchannelTest* const test_;
+    SubchannelTest* const test_;
   };
 
   ChannelArgs CompleteArgs(const ChannelArgs& args) {
@@ -166,18 +186,17 @@ class ConnectedSubchannelTest : public YodelTest {
   std::queue<CallHandler> handlers_;
 };
 
-#define CONNECTED_SUBCHANNEL_CHANNEL_TEST(name) \
-  YODEL_TEST(ConnectedSubchannelTest, name)
+#define SUBCHANNEL_CHANNEL_TEST(name) YODEL_TEST(SubchannelTest, name)
 
-CONNECTED_SUBCHANNEL_CHANNEL_TEST(NoOp) { InitChannel(ChannelArgs()); }
+SUBCHANNEL_CHANNEL_TEST(NoOp) { InitChannel(ChannelArgs()); }
 
-CONNECTED_SUBCHANNEL_CHANNEL_TEST(StartCall) {
+SUBCHANNEL_CHANNEL_TEST(StartCall) {
   auto channel = InitChannel(ChannelArgs());
   auto call = MakeCall(MakeClientInitialMetadata());
-  SpawnTestSeq(
-      call.handler, "start-call", [channel, handler = call.handler]() mutable {
-        channel->unstarted_call_destination()->StartCall(std::move(handler));
-      });
+  SpawnTestSeq(call.handler, "start-call",
+               [channel, handler = call.handler]() mutable {
+                 channel->call_destination()->StartCall(std::move(handler));
+               });
   auto handler = TickUntilCallStarted();
   WaitForAllPendingWork();
 }
