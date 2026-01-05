@@ -205,12 +205,8 @@ _DATA_MEMBERS = [
             " == 0))"
         ),
         test_name="DifferentIdentityCertificateProvider",
-        test_value_1=(
-            'MakeRefCounted<InMemoryCertificateProvider>()'
-        ),
-        test_value_2=(
-            'MakeRefCounted<InMemoryCertificateProvider>()'
-        ),
+        test_value_1="MakeRefCounted<InMemoryCertificateProvider>()",
+        test_value_2="MakeRefCounted<InMemoryCertificateProvider>()",
     ),
     DataMember(
         name="root_certificate_provider",
@@ -232,12 +228,8 @@ _DATA_MEMBERS = [
             " == 0))"
         ),
         test_name="DifferentRootCertificateProvider",
-        test_value_1=(
-            'MakeRefCounted<InMemoryCertificateProvider>()'
-        ),
-        test_value_2=(
-            'MakeRefCounted<InMemoryCertificateProvider>()'
-        ),
+        test_value_1="MakeRefCounted<InMemoryCertificateProvider>()",
+        test_value_2="MakeRefCounted<InMemoryCertificateProvider>()",
     ),
 ]
 
