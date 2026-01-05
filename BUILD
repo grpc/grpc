@@ -273,11 +273,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gutsy"  # @unused
+g_stands_for = "glimmering"  # @unused
 
-core_version = "51.0.0"  # @unused
+core_version = "52.0.0"  # @unused
 
-version = "1.77.0-dev"  # @unused
+version = "1.79.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -2030,6 +2030,7 @@ grpc_cc_library(
         "absl/types:span",
         "absl/utility",
         "madler_zlib",
+        "@com_google_protobuf//upb/mem",
     ],
     linkopts = select({
         "systemd": ["-lsystemd"],
@@ -2133,7 +2134,9 @@ grpc_cc_library(
         "//src/core:try_seq",
         "//src/core:type_list",
         "//src/core:unique_type_name",
+        "//src/core:upb_utils",
         "//src/core:useful",
+        "//src/proto/grpc/channelz/v2:promise_upb_proto",
     ],
 )
 
@@ -4817,6 +4820,7 @@ grpc_cc_library(
         "//src/core:http2_settings",
         "//src/core:http2_status",
         "//src/core:memory_usage",
+        "//src/core:message",
         "//src/core:slice",
         "//src/core:slice_buffer",
     ],
@@ -5045,6 +5049,7 @@ grpc_cc_library(
         "absl/strings:cord",
         "absl/strings:str_format",
         "absl/time",
+        "@com_google_protobuf//upb/mem",
     ],
     visibility = ["//bazel:grpclb"],
     deps = [
@@ -5124,6 +5129,7 @@ grpc_cc_library(
         "//src/core:transport_framing_endpoint_extension",
         "//src/core:useful",
         "//src/core:write_size_policy",
+        "//src/proto/grpc/channelz/v2:promise_upb_proto",
     ],
 )
 

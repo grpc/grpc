@@ -879,7 +879,12 @@ Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
                 auto* epte = grpc_event_engine::experimental::QueryExtension<
                     grpc_event_engine::experimental::TcpTraceExtension>(
                     endpoint->GetEventEngineEndpoint().get());
-                if (epte != nullptr) {
+                if (epte != nullptr &&
+                    ep_ctx->transport_ctx->stats_plugin_group != nullptr) {
+                  epte->EnableTcpTelemetry(
+                      ep_ctx->transport_ctx->stats_plugin_group
+                          ->GetCollectionScope(),
+                      /*is_control_endpoint=*/false);
                   epte->SetTcpTracer(std::make_shared<DefaultTcpTracer>(
                       ep_ctx->transport_ctx->stats_plugin_group));
                 }

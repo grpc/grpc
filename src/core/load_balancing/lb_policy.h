@@ -178,13 +178,16 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
    public:
     virtual ~SubchannelCallTrackerInterface() = default;
 
-    /// Called when a subchannel call is started after an LB pick.
-    virtual void Start() = 0;
-
     /// Called when a subchannel call is completed.
     /// The metadata may be modified by the implementation.  However, the
     /// implementation does not take ownership, so any data that needs to be
     /// used after returning must be copied.
+    ///
+    /// Note that when the picker returns a complete pick, it's possible
+    /// that the returned subchannel has already lost its connection, in
+    /// which case the channel will queue the pick.  In that case,
+    /// the SubchannelCallTrackerInterface object will be destroyed
+    /// without ever calling Finish().
     struct FinishArgs {
       absl::string_view peer_address;
       absl::Status status;

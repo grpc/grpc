@@ -217,6 +217,7 @@ grpc_fuzz_test(
         "//test/core/test_util:fuzz_config_vars_helpers",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 

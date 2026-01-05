@@ -22,6 +22,7 @@
 #include <cstdint>
 #include <string>
 
+#include "src/core/call/metadata_info.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/util/grpc_check.h"
 #include "absl/strings/str_cat.h"
@@ -47,6 +48,11 @@ class IncomingMetadataTracker {
   IncomingMetadataTracker& operator=(IncomingMetadataTracker&& rvalue) = delete;
   IncomingMetadataTracker(const IncomingMetadataTracker&) = delete;
   IncomingMetadataTracker& operator=(const IncomingMetadataTracker&) = delete;
+
+  void set_soft_limit(uint32_t limit) {
+    max_header_list_size_soft_limit_ = limit;
+  }
+  uint32_t soft_limit() const { return max_header_list_size_soft_limit_; }
 
   //////////////////////////////////////////////////////////////////////////////
   // Writing Header and Continuation State
@@ -112,6 +118,8 @@ class IncomingMetadataTracker {
   bool incoming_header_in_progress_ = false;
   bool incoming_header_end_stream_ = false;
   uint32_t incoming_header_stream_id_ = 0;
+  uint32_t max_header_list_size_soft_limit_ =
+      DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT;
 };
 
 }  // namespace http2
