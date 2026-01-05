@@ -110,7 +110,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
          {"config.cc", std::regex("gRPC experiments.*")},
          // logs from fixtures are never a production issue
          {"http_proxy_fixture.cc", std::regex(".*")},
-         {"http_connect_handshaker.cc",
+         {"http_client_connect_handshaker.cc",
           std::regex("HTTP proxy handshake with .* failed:.*")}});
 
     if (allow_non_error_logs_.load(std::memory_order_relaxed) &&
