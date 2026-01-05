@@ -692,8 +692,8 @@ XdsGrpcService ParseXdsGrpcService(
       // Trusted xDS server.  Use credentials from the GoogleGrpc proto.
       // First, look at channel creds.
       {
-        ValidationErrors::ScopedField field(
-            errors, ".channel_credentials_plugin");
+        ValidationErrors::ScopedField field(errors,
+                                            ".channel_credentials_plugin");
         size_t size;
         const auto* const* channel_creds_plugin =
             envoy_config_core_v3_GrpcService_GoogleGrpc_channel_credentials_plugin(
@@ -707,8 +707,8 @@ XdsGrpcService ParseXdsGrpcService(
               DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
                   .certificate_providers();
           for (size_t i = 0; i < size; ++i) {
-            ValidationErrors::ScopedField field(
-                errors, absl::StrCat("[", i, "]"));
+            ValidationErrors::ScopedField field(errors,
+                                                absl::StrCat("[", i, "]"));
             absl::string_view type = UpbStringToAbsl(
                 google_protobuf_Any_type_url(channel_creds_plugin[i]));
             if (!StripTypePrefix(type, errors)) continue;
@@ -727,8 +727,7 @@ XdsGrpcService ParseXdsGrpcService(
       }
       // Now look at call creds.
       {
-        ValidationErrors::ScopedField field(
-            errors, ".call_credentials_plugin");
+        ValidationErrors::ScopedField field(errors, ".call_credentials_plugin");
         size_t size;
         const auto* const* call_creds_plugin =
             envoy_config_core_v3_GrpcService_GoogleGrpc_call_credentials_plugin(
@@ -736,11 +735,10 @@ XdsGrpcService ParseXdsGrpcService(
         if (size == 0) {
           errors->AddError("field not set");
         } else {
-          const auto& registry =
-              CoreConfiguration::Get().call_creds_registry();
+          const auto& registry = CoreConfiguration::Get().call_creds_registry();
           for (size_t i = 0; i < size; ++i) {
-            ValidationErrors::ScopedField field(
-                errors, absl::StrCat("[", i, "]"));
+            ValidationErrors::ScopedField field(errors,
+                                                absl::StrCat("[", i, "]"));
             absl::string_view type = UpbStringToAbsl(
                 google_protobuf_Any_type_url(call_creds_plugin[i]));
             if (!StripTypePrefix(type, errors)) continue;
@@ -748,8 +746,8 @@ XdsGrpcService ParseXdsGrpcService(
             ValidationErrors::ScopedField field2(errors, ".value");
             absl::string_view serialized_config = UpbStringToAbsl(
                 google_protobuf_Any_value(call_creds_plugin[i]));
-            call_creds_configs.push_back(registry.ParseProto(
-                type, serialized_config, errors));
+            call_creds_configs.push_back(
+                registry.ParseProto(type, serialized_config, errors));
           }
         }
       }

@@ -28,8 +28,8 @@
 #include <string>
 #include <utility>
 
-#include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/extensions/grpc_service/channel_credentials/tls/v3/tls_credentials.upb.h"
+#include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/credentials/transport/channel_creds_registry.h"
@@ -290,8 +290,8 @@ class TlsChannelCredsFactory : public ChannelCredsFactory<> {
       auto config = MakeRefCounted<TlsConfig>();
       // root_certificate_provider
       {
-        ValidationErrors::ScopedField field(
-            errors, ".root_certificate_provider");
+        ValidationErrors::ScopedField field(errors,
+                                            ".root_certificate_provider");
         const auto* root_provider =
             envoy_extensions_grpc_service_channel_credentials_tls_v3_TlsCredentials_root_certificate_provider(
                 proto);
@@ -304,8 +304,8 @@ class TlsChannelCredsFactory : public ChannelCredsFactory<> {
       }
       // identity_certificate_provider
       {
-        ValidationErrors::ScopedField field(
-            errors, ".identity_certificate_provider");
+        ValidationErrors::ScopedField field(errors,
+                                            ".identity_certificate_provider");
         const auto* identity_provider =
             envoy_extensions_grpc_service_channel_credentials_tls_v3_TlsCredentials_identity_certificate_provider(
                 proto);
