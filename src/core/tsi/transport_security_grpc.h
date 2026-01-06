@@ -24,6 +24,9 @@
 
 #include "src/core/tsi/transport_security.h"
 
+typedef grpc_slice (*tsi_zero_copy_grpc_protector_allocator_cb)(
+    size_t size, void* user_data);
+
 // This method creates a tsi_zero_copy_grpc_protector object. It return TSI_OK
 // assuming there is no fatal error.
 // The caller is responsible for destroying the protector.
@@ -75,6 +78,15 @@ bool tsi_zero_copy_grpc_protector_read_frame_size(
     tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* protected_slices,
     uint32_t* frame_size);
 
+// Sets the allocator callback for the tsi_zero_copy_grpc_protector object.
+// The allocator callback is used to allocate memory for the protected and
+// unprotected slices.
+// - alloc_cb is the allocator callback.
+// - user_data is the user data to be passed to the allocator callback.
+void tsi_zero_copy_grpc_protector_set_allocator(
+    tsi_zero_copy_grpc_protector* self,
+    tsi_zero_copy_grpc_protector_allocator_cb alloc_cb, void* user_data);
+
 // Base for tsi_zero_copy_grpc_protector implementations.
 // Implementations must guarantee that protect and unprotect can be called
 // concurrently.
@@ -92,6 +104,9 @@ struct tsi_zero_copy_grpc_protector_vtable {
   bool (*read_frame_size)(tsi_zero_copy_grpc_protector* self,
                           grpc_slice_buffer* protected_slices,
                           uint32_t* frame_size);
+  void (*set_allocator)(tsi_zero_copy_grpc_protector* self,
+                        tsi_zero_copy_grpc_protector_allocator_cb alloc_cb,
+                        void* user_data);
 };
 
 struct tsi_zero_copy_grpc_protector {

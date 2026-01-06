@@ -140,7 +140,8 @@ class ConfigQuery {
     }
     exclude_experiments_except_for_configs_.insert(
         {ExperimentIds::kExperimentIdPromiseBasedHttp2ClientTransport,
-         {GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG}});
+         {GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG,
+          GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_RETRY}});
   }
   ConfigQuery(const ConfigQuery&) = delete;
   ConfigQuery& operator=(const ConfigQuery&) = delete;
@@ -214,7 +215,7 @@ class ConfigQuery {
   uint32_t enforce_features_ = 0;
   uint32_t exclude_features_ = 0;
 
-  // TODO(tjagtap) : [PH2][P3] Consider deprecating allowed_names_ and
+  // TODO(tjagtap) : [PH2][P5] Consider deprecating allowed_names_ and
   // excluded_names_ in favour of include_test_suites , include_specific_tests
   // and exclude_specific_tests
   // This is poor design because the suite knows about the config. So when we

@@ -29,9 +29,12 @@
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/race.h"
+#include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/util/grpc_check.h"
 #include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -71,6 +74,16 @@ class WritableStreams {
   WritableStreams(WritableStreams&&) = delete;
   WritableStreams& operator=(WritableStreams&&) = delete;
 
+  absl::Status EnqueueWrapper(const StreamPtr stream,
+                              const WritableStreamPriority priority,
+                              bool transport_tokens_available) {
+    if (transport_tokens_available) {
+      return Enqueue(stream, priority);
+    } else {
+      return BlockedOnTransportFlowControl(stream);
+    }
+  }
+
   // Enqueues a stream id with the given priority.
   // If this returns error, transport MUST be closed.
   absl::Status Enqueue(const StreamPtr stream,
@@ -85,14 +98,13 @@ class WritableStreams {
     StatusFlag status = sender_.UnbufferedImmediateSend(
         StreamIDAndPriority{stream, priority}, /*tokens*/ 1);
     GRPC_WRITABLE_STREAMS_DEBUG
-        << "UnbufferedImmediateEnqueue stream id: " << stream->GetStreamId()
-        << " with priority " << GetWritableStreamPriorityString(priority)
-        << " status " << status;
+        << "UnbufferedImmediateEnqueue stream with priority "
+        << GetWritableStreamPriorityString(priority) << " status " << status;
 
     return (status.ok())
                ? absl::OkStatus()
                : absl::InternalError(absl::StrCat(
-                     "Failed to enqueue stream id: ", stream->GetStreamId()));
+                     "Failed to enqueue stream to list of writable streams "));
   }
 
   // A synchronous function to add a stream id to the transport flow control
@@ -100,8 +112,8 @@ class WritableStreams {
   absl::Status BlockedOnTransportFlowControl(const StreamPtr stream) {
     prioritized_queue_.Push(
         stream, WritableStreamPriority::kWaitForTransportFlowControl);
-    GRPC_WRITABLE_STREAMS_DEBUG << "BlockedOnTransportFlowControl stream id: "
-                                << stream->GetStreamId();
+    GRPC_WRITABLE_STREAMS_DEBUG << "Enqueuing a stream with priority "
+                                   "kWaitForTransportFlowControl ";
     return absl::OkStatus();
   }
 

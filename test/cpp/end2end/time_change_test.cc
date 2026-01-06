@@ -92,21 +92,21 @@ namespace testing {
 namespace {
 
 // gpr_now() is called with invalid clock_type
-TEST(TimespecTest, GprNowInvalidClockType) {
+TEST(TimespecDeathTest, GprNowInvalidClockType) {
   // initialize to some junk value
   gpr_clock_type invalid_clock_type = static_cast<gpr_clock_type>(32641);
   EXPECT_DEATH(gpr_now(invalid_clock_type), ".*");
 }
 
 // Add timespan with negative nanoseconds
-TEST(TimespecTest, GprTimeAddNegativeNs) {
+TEST(TimespecDeathTest, GprTimeAddNegativeNs) {
   gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
   gpr_timespec bad_ts = {1, -1000, GPR_TIMESPAN};
   EXPECT_DEATH(gpr_time_add(now, bad_ts), ".*");
 }
 
 // Subtract timespan with negative nanoseconds
-TEST(TimespecTest, GprTimeSubNegativeNs) {
+TEST(TimespecDeathTest, GprTimeSubNegativeNs) {
   // Nanoseconds must always be positive. Negative timestamps are represented by
   // (negative seconds, positive nanoseconds)
   gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);

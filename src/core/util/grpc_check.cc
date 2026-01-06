@@ -19,4 +19,6 @@ bool PostMortemEmitAndReturnTrue() {
   grpc_core::PostMortemEmit();
   return true;
 }
+#else
+bool PostMortemEmitAndReturnTrue() { return true; }
 #endif

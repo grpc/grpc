@@ -310,7 +310,10 @@ Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
                 auto* epte = grpc_event_engine::experimental::QueryExtension<
                     grpc_event_engine::experimental::TcpTraceExtension>(
                     endpoint->GetEventEngineEndpoint().get());
-                if (epte != nullptr) {
+                if (epte != nullptr && stats_plugin_group != nullptr) {
+                  epte->EnableTcpTelemetry(
+                      stats_plugin_group->GetCollectionScope(),
+                      /*is_control_endpoint=*/false);
                   epte->SetTcpTracer(std::make_shared<DefaultTcpTracer>(
                       std::move(stats_plugin_group)));
                 }
