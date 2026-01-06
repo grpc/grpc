@@ -38,7 +38,6 @@
 
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security.h>
-#include <grpc/private_key_signer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
@@ -2128,7 +2127,7 @@ static void ssl_handshaker_destroy(tsi_handshaker* self) {
   BIO_free(impl->network_io);
   gpr_free(impl->outgoing_bytes_buffer);
   tsi_ssl_handshaker_factory_unref(impl->factory_ref);
-  gpr_free(impl);
+  delete impl;
 }
 
 // Removes the bytes remaining in |impl->SSL|'s read BIO and writes them to
@@ -2196,25 +2195,31 @@ static tsi_result ssl_handshaker_next(
     size_t received_bytes_size, const unsigned char** bytes_to_send,
     size_t* bytes_to_send_size, tsi_handshaker_result** handshaker_result,
     tsi_handshaker_on_next_done_cb cb, void* user_data, std::string* error) {
-  // Input sanity check.
-  if ((received_bytes_size > 0 && received_bytes == nullptr) ||
-      bytes_to_send == nullptr || bytes_to_send_size == nullptr ||
-      handshaker_result == nullptr) {
-    if (error != nullptr) *error = "invalid argument";
-    return TSI_INVALID_ARGUMENT;
-  }
-  // If there are received bytes, process them first.
   tsi_ssl_handshaker* impl = reinterpret_cast<tsi_ssl_handshaker*>(self);
-
-  // Fetch the offload context.
   grpc_core::TlsPrivateKeyOffloadContext* offload_context =
       static_cast<grpc_core::TlsPrivateKeyOffloadContext*>(SSL_get_ex_data(
           impl->ssl, g_ssl_ex_private_key_offloading_context_index));
-  if (offload_context != nullptr) {
-    offload_context->notify_cb = cb;
-    offload_context->notify_user_data = user_data;
+  // If this is a re-entry from an async private key operation, use the saved
+  // state.
+  if (offload_context != nullptr &&
+      offload_context->status ==
+          grpc_core::TlsPrivateKeyOffloadContext::kSignatureCompleted) {
+    received_bytes = offload_context->received_bytes;
+    received_bytes_size = offload_context->received_bytes_size;
+    error = offload_context->error;
+    // We're re-entering, so we don't need the async_state anymore for saving
+    // arguments. It will be deleted at the end of this function if not
+    // TSI_ASYNC.
+  } else {
+    // Input sanity check.
+    if ((received_bytes_size > 0 && received_bytes == nullptr) ||
+        bytes_to_send == nullptr || bytes_to_send_size == nullptr ||
+        handshaker_result == nullptr) {
+      if (error != nullptr) *error = "invalid argument";
+      return TSI_INVALID_ARGUMENT;
+    }
   }
-
+  // If there are received bytes, process them first.
   tsi_result status = TSI_OK;
   size_t bytes_written = 0;
   if (received_bytes_size > 0) {
@@ -2238,7 +2243,21 @@ static tsi_result ssl_handshaker_next(
       while (status == TSI_DRAIN_BUFFER) {
         status =
             ssl_handshaker_write_output_buffer(self, &bytes_written, error);
-        if (status != TSI_OK) return status;
+        if (status != TSI_OK) {
+          if (status == TSI_ASYNC) {
+            // Fetch the offload context.
+            GRPC_CHECK_NE(offload_context, nullptr);
+            offload_context->notify_cb = cb;
+            offload_context->notify_user_data = user_data;
+            offload_context->received_bytes =
+                remaining_bytes_to_write_to_openssl + bytes_written_to_openssl;
+            offload_context->received_bytes_size =
+                remaining_bytes_to_write_to_openssl_size -
+                bytes_written_to_openssl;
+            offload_context->error = error;
+          }
+          return status;
+        }
         status = ssl_handshaker_do_handshake(impl, error);
       }
       // Move the pointer to the first byte not yet successfully written to
@@ -2255,10 +2274,27 @@ static tsi_result ssl_handshaker_next(
     status = ssl_handshaker_do_handshake(impl, error);
     offload_context->status = grpc_core::TlsPrivateKeyOffloadContext::kFinished;
   }
-  if (status != TSI_OK) return status;
+
+  if (status != TSI_OK) {
+    if (status == TSI_ASYNC) {
+      GRPC_CHECK_NE(offload_context, nullptr);
+      offload_context->notify_cb = cb;
+      offload_context->notify_user_data = user_data;
+      offload_context->error = error;
+    }
+    return status;
+  }
   // Get bytes to send to the peer, if available.
   status = ssl_handshaker_write_output_buffer(self, &bytes_written, error);
-  if (status != TSI_OK) return status;
+  if (status != TSI_OK) {
+    if (status == TSI_ASYNC) {
+      GRPC_CHECK_NE(offload_context, nullptr);
+      offload_context->notify_cb = cb;
+      offload_context->notify_user_data = user_data;
+      offload_context->error = error;
+    }
+    return status;
+  }
   *bytes_to_send = impl->outgoing_bytes_buffer;
   *bytes_to_send_size = bytes_written;
   // If handshake completes, create tsi_handshaker_result.
@@ -2273,7 +2309,15 @@ static tsi_result ssl_handshaker_next(
     size_t unused_bytes_size = 0;
     status =
         ssl_bytes_remaining(impl, &unused_bytes, &unused_bytes_size, error);
-    if (status != TSI_OK) return status;
+    if (status != TSI_OK) {
+      if (status == TSI_ASYNC) {
+        GRPC_CHECK_NE(offload_context, nullptr);
+        offload_context->notify_cb = cb;
+        offload_context->notify_user_data = user_data;
+        offload_context->error = error;
+      }
+      return status;
+    }
     if (unused_bytes_size > received_bytes_size) {
       LOG(ERROR) << "More unused bytes than received bytes.";
       gpr_free(unused_bytes);
@@ -2426,7 +2470,7 @@ static tsi_result create_tsi_ssl_handshaker(
     SSL_set_accept_state(ssl);
   }
 
-  impl = grpc_core::Zalloc<tsi_ssl_handshaker>();
+  impl = new tsi_ssl_handshaker();
   impl->ssl = ssl;
   impl->network_io = network_io;
   impl->result = TSI_HANDSHAKE_IN_PROGRESS;

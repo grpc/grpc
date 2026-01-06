@@ -62,6 +62,10 @@ struct TlsPrivateKeyOffloadContext {
   tsi_handshaker_on_next_done_cb notify_cb;
   tsi_handshaker_result* handshaker_result;
   void* notify_user_data;
+
+  size_t received_bytes_size;
+  unsigned char* received_bytes;
+  std::string* error;
 };
 
 // Returns the TlsPrivateKeyOffloadContext associated with the SSL object.
