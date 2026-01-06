@@ -36,25 +36,28 @@ namespace grpc_core {
 
 class Ph2InsecureFixture : public InsecureFixture {
  public:
-  Ph2InsecureFixture() {
+  explicit Ph2InsecureFixture(bool enable_retry) : enable_retry_(enable_retry) {
     // At Least one of the 2 peers MUST be a PH2
     GRPC_DCHECK(IsPromiseBasedHttp2ClientTransportEnabled() ||
                 IsPromiseBasedHttp2ServerTransportEnabled());
   }
 
   ChannelArgs MutateClientArgs(ChannelArgs args) override {
-    return args.Set(GRPC_ARG_ENABLE_CHANNELZ, true);
+    return args.Set(GRPC_ARG_ENABLE_CHANNELZ, true)
+        .SetIfUnset(GRPC_ARG_ENABLE_RETRIES, enable_retry_);
   }
 
   ChannelArgs MutateServerArgs(ChannelArgs args) override {
     return args.Set(GRPC_ARG_ENABLE_CHANNELZ, true);
   }
+
+ private:
+  const bool enable_retry_;
 };
 
 // This macro defines a set of cancellation and deadline tests that are
-// frequently broken and have been temporarily disabled. Grouping them here
-// allows them to be added to the GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST
-// list easily.
+// frequently broken. Grouping them here allows them to be added to the
+// GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST list easily.
 #define CANCEL_SUITE                        \
   "|CoreEnd2endTests.CancelAfterAccept"     \
   "|CoreEnd2endTests.CancelAfterClientDone" \
@@ -72,59 +75,18 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|CoreDeadlineTests.DeadlineAfterInvoke3" \
   "|CoreDeadlineTests.DeadlineAfterInvoke4" \
   "|CoreDeadlineTests.DeadlineAfterInvoke5" \
-  "|CoreDeadlineTests.DeadlineAfterInvoke6"
+  "|CoreDeadlineTests.DeadlineAfterInvoke6" \
+  "|CoreDeadlineTests.DeadlineAfterRoundTrip"
 
-#define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST                         \
-  CANCEL_SUITE                                                                 \
-  DEADLINE_SUITE                                                               \
-  "CoreClientChannelTests.DeadlineAfterAcceptWithServiceConfig"                \
-  "|CoreClientChannelTests.DeadlineAfterRoundTripWithServiceConfig"            \
-  "|CoreDeadlineTests.DeadlineAfterRoundTrip"                                  \
-  "|CoreDeadlineSingleHopTests."                                               \
-  "TimeoutBeforeRequestCallWithRegisteredMethodWithPayload"                    \
-  "|CoreEnd2endTests.BinaryMetadataServerHttp2FallbackClientHttp2Fallback"     \
-  "|CoreEnd2endTests.BinaryMetadataServerHttp2FallbackClientTrueBinary"        \
-  "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientTrueBinary"           \
-  "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientHttp2Fallback"        \
-  "|CoreLargeSendTests.RequestResponseWithPayload"                             \
-  "|CoreLargeSendTests.RequestResponseWithPayload10Times"                      \
-  "|Http2SingleHopTests.DisabledAlgorithmDecompressInCore"                     \
-  "|Http2SingleHopTests.DisabledAlgorithmDecompressInApp"                      \
-  "|Http2SingleHopTests."                                                      \
-  "RequestWithExceptionallyUncompressedPayloadDecompressInCore"                \
-  "|Http2SingleHopTests."                                                      \
-  "RequestWithExceptionallyUncompressedPayloadDecompressInApp"                 \
-  "|Http2SingleHopTests.RequestWithUncompressedPayloadDecompressInCore"        \
-  "|Http2SingleHopTests.RequestWithUncompressedPayloadDecompressInApp"         \
-  "|Http2SingleHopTests.RequestWithCompressedPayloadDecompressInCore"          \
-  "|Http2SingleHopTests.RequestWithCompressedPayloadDecompressInApp"           \
-  "|Http2SingleHopTests."                                                      \
-  "RequestWithSendMessageBeforeInitialMetadataDecompressInCore"                \
-  "|Http2SingleHopTests."                                                      \
-  "RequestWithSendMessageBeforeInitialMetadataDecompressInApp"                 \
-  "|Http2SingleHopTests.RequestWithServerLevelDecompressInCore"                \
-  "|Http2SingleHopTests.RequestWithServerLevelDecompressInApp"                 \
-  "|Http2SingleHopTests."                                                      \
-  "RequestWithCompressedPayloadMetadataOverrideNoneToGzipDecompressInCore"     \
-  "|Http2SingleHopTests."                                                      \
-  "RequestWithCompressedPayloadMetadataOverrideNoneToGzipDecompressInApp"      \
-  "|Http2SingleHopTests."                                                      \
-  "RequestWithCompressedPayloadMetadataOverrideDeflateToGzipDecompressInCore"  \
-  "|Http2SingleHopTests."                                                      \
-  "RequestWithCompressedPayloadMetadataOverrideDeflateToGzipDecompressInApp"   \
-  "|Http2SingleHopTests."                                                      \
-  "RequestWithCompressedPayloadMetadataOverrideDeflateToIdentityDecompressInC" \
-  "ore"                                                                        \
-  "|Http2SingleHopTests."                                                      \
-  "RequestWithCompressedPayloadMetadataOverrideDeflateToIdentityDecompressInA" \
-  "pp"                                                                         \
-  "|Http2SingleHopTests.RequestWithDefaultHighLevelDecompressInCore"           \
-  "|Http2SingleHopTests.RequestWithDefaultMediumLevelDecompressInCore"         \
-  "|Http2SingleHopTests.RequestWithDefaultLowLevelDecompressInCore"            \
-  "|Http2SingleHopTests.RequestWithDefaultNoneLevelDecompressInCore"           \
-  "|Http2SingleHopTests.InvokeLargeRequest"                                    \
-  "|Http2SingleHopTests.KeepaliveTimeout"                                      \
-  "|Http2SingleHopTests.ReadDelaysKeepalive"                                   \
+#define RETRY_SUITE "|RetryTests|RetryHttp2Tests"
+
+#define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_RETRY_AVOID_LIST \
+  "|RetryHttp2Tests.Ping"                                    \
+  "|RetryHttp2Tests.BadPing"                                 \
+  "|RetryHttp2Tests.RetryTransparentMaxConcurrentStreams"    \
+  "|RetryHttp2Tests.HighInitialSeqno"
+
+#define LARGE_METADATA_SUITE                                                   \
   "|Http2SingleHopTests.RequestWithLargeMetadataUnderSoftLimit"                \
   "|Http2SingleHopTests.RequestWithLargeMetadataBetweenSoftAndHardLimits"      \
   "|Http2SingleHopTests.RequestWithLargeMetadataAboveHardLimit"                \
@@ -132,24 +94,21 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|Http2SingleHopTests.RequestWithLargeMetadataSoftLimitOverridesDefaultHard" \
   "|Http2SingleHopTests.RequestWithLargeMetadataHardLimitOverridesDefaultSoft" \
   "|Http2SingleHopTests.RequestWithLargeMetadataHardLimitBelowDefaultHard"     \
-  "|Http2SingleHopTests.RequestWithLargeMetadataSoftLimitBelowDefaultSoft"     \
-  "|Http2SingleHopTests.MaxConcurrentStreams"                                  \
-  "|Http2SingleHopTests.MaxConcurrentStreamsTimeoutOnFirst"                    \
-  "|Http2SingleHopTests.MaxConcurrentStreamsTimeoutOnSecond"                   \
-  "|Http2SingleHopTests.MaxConcurrentStreamsRejectOnClient"                    \
-  "|Http2SingleHopTests.SimpleDelayedRequestShort"                             \
-  "|Http2Tests.HighInitialSeqno"                                               \
-  "|Http2Tests.ServerStreaming"                                                \
-  "|Http2Tests.ServerStreamingEmptyStream"                                     \
-  "|Http2Tests.ServerStreaming10Messages"                                      \
-  "|Http2Tests.GracefulServerShutdown"                                         \
-  "|Http2Tests.MaxAgeForciblyClose"                                            \
+  "|Http2SingleHopTests.RequestWithLargeMetadataSoftLimitBelowDefaultSoft"
+
+#define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST       \
+  "|Http2SingleHopTests.MaxConcurrentStreams"                \
+  "|Http2SingleHopTests.MaxConcurrentStreamsTimeoutOnFirst"  \
+  "|Http2SingleHopTests.MaxConcurrentStreamsTimeoutOnSecond" \
+  "|Http2SingleHopTests.MaxConcurrentStreamsRejectOnClient"  \
+  "|Http2Tests.GracefulServerShutdown"                       \
+  "|Http2Tests.MaxAgeForciblyClose"                          \
   "|Http2Tests.MaxAgeGracefullyClose"
 
 #define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE    \
   "CoreEnd2endTests|CoreDeadlineTests|CoreLargeSendTests|" \
   "CoreClientChannelTests|CoreDeadlineSingleHopTests|"     \
-  "Http2SingleHopTests|Http2Tests"
+  "Http2SingleHopTests|Http2Tests|CoreDeadlineSingleHopTests"
 
 std::vector<CoreTestConfiguration> End2endTestConfigs() {
   std::vector<CoreTestConfiguration> list_of_configs;
@@ -162,13 +121,15 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
         /*name=*/GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG,
         /*feature_mask=*/FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
             FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_IS_CALL_V3 |
-            FEATURE_MASK_IS_PH2_CLIENT | FEATURE_MASK_DO_NOT_FUZZ,
+            FEATURE_MASK_IS_PH2_CLIENT | FEATURE_MASK_DO_NOT_FUZZ |
+            FEATURE_MASK_DOES_NOT_SUPPORT_RETRY,
         // TODO(tjagtap) : [PH2][P3] Explore if fuzzing can be enabled.
         /*overridden_call_host=*/nullptr,
         /*create_fixture=*/
         [](const ChannelArgs& /*client_args*/,
            const ChannelArgs& /*server_args*/) {
-          return std::make_unique<Ph2InsecureFixture>();
+          return std::make_unique<Ph2InsecureFixture>(
+              /*enable_retry=*/false);
         },
         /* include_test_suites */
         GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE,
@@ -176,6 +137,32 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
         "",
         /* exclude_specific_tests */
         GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST});
+
+#ifdef GPR_WINDOWS
+#else
+    // Temporarily disable retry tests on Windows.
+    // TODO(akshitpatel): [PH2][P4] - Re-enable retry tests on Windows.
+    list_of_configs.push_back(CoreTestConfiguration{
+        /*name=*/GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_RETRY,
+        /*feature_mask=*/FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+            FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_IS_CALL_V3 |
+            FEATURE_MASK_IS_PH2_CLIENT | FEATURE_MASK_DO_NOT_FUZZ,
+        // TODO(tjagtap) : [PH2][P3] Explore if fuzzing can be enabled.
+        /*overridden_call_host=*/nullptr,
+        /*create_fixture=*/
+        [](const ChannelArgs& /*client_args*/,
+           const ChannelArgs& /*server_args*/) {
+          return std::make_unique<Ph2InsecureFixture>(
+              /*enable_retry=*/true);
+        },
+        /* include_test_suites */
+        GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE RETRY_SUITE,
+        /* include_specific_tests */
+        "",
+        /* exclude_specific_tests */
+        GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST
+            GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_RETRY_AVOID_LIST});
+#endif
   }
   return list_of_configs;
 }
