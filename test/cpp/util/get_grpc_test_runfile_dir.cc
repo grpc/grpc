@@ -14,8 +14,8 @@
 
 #include "test/cpp/util/get_grpc_test_runfile_dir.h"
 
-#include "absl/strings/str_cat.h"
 #include "src/core/util/env.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc {
 
