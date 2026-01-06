@@ -972,12 +972,15 @@ TEST_P(AsyncEnd2endTest, ClientInitialMetadataRpc) {
   Verifier().Expect(2, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
   const auto& client_initial_metadata = srv_ctx.client_metadata();
-  EXPECT_EQ(meta1.second,
-            ToString(client_initial_metadata.find(meta1.first)->second));
-  EXPECT_EQ(meta2.second,
-            ToString(client_initial_metadata.find(meta2.first)->second));
-  EXPECT_EQ(meta3.second,
-            ToString(client_initial_metadata.find(meta3.first)->second));
+  EXPECT_EQ(
+      meta1.second,
+      ToString(client_initial_metadata.equal_range(meta1.first).first->second));
+  EXPECT_EQ(
+      meta2.second,
+      ToString(client_initial_metadata.equal_range(meta2.first).first->second));
+  EXPECT_EQ(
+      meta3.second,
+      ToString(client_initial_metadata.equal_range(meta3.first).first->second));
   EXPECT_GE(client_initial_metadata.size(), 2);
 
   send_response.set_message(recv_request.message());
@@ -1018,10 +1021,12 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataRpc) {
   response_writer.SendInitialMetadata(tag(3));
   Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
   const auto& server_initial_metadata = cli_ctx.GetServerInitialMetadata();
-  EXPECT_EQ(meta1.second,
-            ToString(server_initial_metadata.find(meta1.first)->second));
-  EXPECT_EQ(meta2.second,
-            ToString(server_initial_metadata.find(meta2.first)->second));
+  EXPECT_EQ(
+      meta1.second,
+      ToString(server_initial_metadata.equal_range(meta1.first).first->second));
+  EXPECT_EQ(
+      meta2.second,
+      ToString(server_initial_metadata.equal_range(meta2.first).first->second));
   EXPECT_EQ(2, server_initial_metadata.size());
 
   send_response.set_message(recv_request.message());
@@ -1061,10 +1066,12 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataServerStreaming) {
   srv_stream.SendInitialMetadata(tag(10));
   Verifier().Expect(10, true).Expect(11, true).Verify(cq_.get());
   auto server_initial_metadata = cli_ctx.GetServerInitialMetadata();
-  EXPECT_EQ(meta1.second,
-            ToString(server_initial_metadata.find(meta1.first)->second));
-  EXPECT_EQ(meta2.second,
-            ToString(server_initial_metadata.find(meta2.first)->second));
+  EXPECT_EQ(
+      meta1.second,
+      ToString(server_initial_metadata.equal_range(meta1.first).first->second));
+  EXPECT_EQ(
+      meta2.second,
+      ToString(server_initial_metadata.equal_range(meta2.first).first->second));
   EXPECT_EQ(2, server_initial_metadata.size());
 
   srv_stream.Write(send_response, tag(3));
@@ -1121,10 +1128,12 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataServerStreamingImplicit) {
   EXPECT_EQ(send_response.message(), recv_response.message());
 
   auto server_initial_metadata = cli_ctx.GetServerInitialMetadata();
-  EXPECT_EQ(meta1.second,
-            ToString(server_initial_metadata.find(meta1.first)->second));
-  EXPECT_EQ(meta2.second,
-            ToString(server_initial_metadata.find(meta2.first)->second));
+  EXPECT_EQ(
+      meta1.second,
+      ToString(server_initial_metadata.equal_range(meta1.first).first->second));
+  EXPECT_EQ(
+      meta2.second,
+      ToString(server_initial_metadata.equal_range(meta2.first).first->second));
   EXPECT_EQ(2, server_initial_metadata.size());
 
   srv_stream.Write(send_response, tag(5));
@@ -1179,10 +1188,14 @@ TEST_P(AsyncEnd2endTest, ServerTrailingMetadataRpc) {
   EXPECT_EQ(send_response.message(), recv_response.message());
   EXPECT_TRUE(recv_status.ok());
   const auto& server_trailing_metadata = cli_ctx.GetServerTrailingMetadata();
-  EXPECT_EQ(meta1.second,
-            ToString(server_trailing_metadata.find(meta1.first)->second));
-  EXPECT_EQ(meta2.second,
-            ToString(server_trailing_metadata.find(meta2.first)->second));
+  EXPECT_EQ(
+      meta1.second,
+      ToString(
+          server_trailing_metadata.equal_range(meta1.first).first->second));
+  EXPECT_EQ(
+      meta2.second,
+      ToString(
+          server_trailing_metadata.equal_range(meta2.first).first->second));
   EXPECT_EQ(2, server_trailing_metadata.size());
 }
 
@@ -1227,10 +1240,12 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
   Verifier().Expect(2, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
   const auto& client_initial_metadata = srv_ctx.client_metadata();
-  EXPECT_EQ(meta1.second,
-            ToString(client_initial_metadata.find(meta1.first)->second));
-  EXPECT_EQ(meta2.second,
-            ToString(client_initial_metadata.find(meta2.first)->second));
+  EXPECT_EQ(
+      meta1.second,
+      ToString(client_initial_metadata.equal_range(meta1.first).first->second));
+  EXPECT_EQ(
+      meta2.second,
+      ToString(client_initial_metadata.equal_range(meta2.first).first->second));
   EXPECT_GE(client_initial_metadata.size(), 2);
 
   srv_ctx.AddInitialMetadata(meta3.first, meta3.second);
@@ -1238,10 +1253,12 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
   response_writer.SendInitialMetadata(tag(3));
   Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
   const auto& server_initial_metadata = cli_ctx.GetServerInitialMetadata();
-  EXPECT_EQ(meta3.second,
-            ToString(server_initial_metadata.find(meta3.first)->second));
-  EXPECT_EQ(meta4.second,
-            ToString(server_initial_metadata.find(meta4.first)->second));
+  EXPECT_EQ(
+      meta3.second,
+      ToString(server_initial_metadata.equal_range(meta3.first).first->second));
+  EXPECT_EQ(
+      meta4.second,
+      ToString(server_initial_metadata.equal_range(meta4.first).first->second));
   EXPECT_GE(server_initial_metadata.size(), 2);
 
   send_response.set_message(recv_request.message());
@@ -1255,10 +1272,14 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
   EXPECT_EQ(send_response.message(), recv_response.message());
   EXPECT_TRUE(recv_status.ok());
   const auto& server_trailing_metadata = cli_ctx.GetServerTrailingMetadata();
-  EXPECT_EQ(meta5.second,
-            ToString(server_trailing_metadata.find(meta5.first)->second));
-  EXPECT_EQ(meta6.second,
-            ToString(server_trailing_metadata.find(meta6.first)->second));
+  EXPECT_EQ(
+      meta5.second,
+      ToString(
+          server_trailing_metadata.equal_range(meta5.first).first->second));
+  EXPECT_EQ(
+      meta6.second,
+      ToString(
+          server_trailing_metadata.equal_range(meta6.first).first->second));
   EXPECT_GE(server_trailing_metadata.size(), 2);
 }
 

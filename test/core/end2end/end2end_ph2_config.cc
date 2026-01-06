@@ -101,6 +101,7 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|Http2SingleHopTests.MaxConcurrentStreamsTimeoutOnFirst"  \
   "|Http2SingleHopTests.MaxConcurrentStreamsTimeoutOnSecond" \
   "|Http2SingleHopTests.MaxConcurrentStreamsRejectOnClient"  \
+  "|Http2SingleHopTests.ServerMaxConcurrentStreams"          \
   "|Http2Tests.GracefulServerShutdown"                       \
   "|Http2Tests.MaxAgeForciblyClose"                          \
   "|Http2Tests.MaxAgeGracefullyClose"
