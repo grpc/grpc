@@ -1950,8 +1950,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/tsi/fake_transport_security.h )
   s.files += %w( src/core/tsi/local_transport_security.cc )
   s.files += %w( src/core/tsi/local_transport_security.h )
-  s.files += %w( src/core/tsi/private_key_offload_util.cc )
-  s.files += %w( src/core/tsi/private_key_offload_util.h )
   s.files += %w( src/core/tsi/ssl/key_logging/ssl_key_logging.cc )
   s.files += %w( src/core/tsi/ssl/key_logging/ssl_key_logging.h )
   s.files += %w( src/core/tsi/ssl/session_cache/ssl_session.h )

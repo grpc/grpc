@@ -1948,8 +1948,6 @@ let package = Package(
         "src/core/tsi/fake_transport_security.h",
         "src/core/tsi/local_transport_security.cc",
         "src/core/tsi/local_transport_security.h",
-        "src/core/tsi/private_key_offload_util.cc",
-        "src/core/tsi/private_key_offload_util.h",
         "src/core/tsi/ssl/key_logging/ssl_key_logging.cc",
         "src/core/tsi/ssl/key_logging/ssl_key_logging.h",
         "src/core/tsi/ssl/session_cache/ssl_session.h",
