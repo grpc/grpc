@@ -120,8 +120,6 @@ int main(int argc, char** argv) {
   std::string my_bin = argv[0];
   int result = 0;
   if (absl::GetFlag(FLAGS_running_under_bazel)) {
-    GRPC_CHECK(!absl::GetFlag(FLAGS_grpc_test_directory_relative_to_test_srcdir)
-                    .empty());
     std::string test_directory = grpc::testing::GetTestDirectory(
         absl::GetFlag(FLAGS_grpc_test_directory_relative_to_test_srcdir));
     // Use bazel's TEST_SRCDIR environment variable to locate the "test data"
