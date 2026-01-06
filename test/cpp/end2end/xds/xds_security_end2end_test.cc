@@ -816,19 +816,23 @@ class XdsSniSecurityTest : public XdsEnd2endTest {
                /*xds_resource_does_not_exist_timeout_ms=*/0,
                /*balancer_authority_override=*/"", /*args=*/&args,
                CreateXdsChannelCredentials());
-    CreateAndStartBackends(2, /*xds_enabled=*/false,
+    CreateAndStartBackends(1, /*xds_enabled=*/false,
                            /*credentials=*/CreateSniServerCredentials());
     root_cert_ = grpc_core::testing::GetFileContents(kCaCertPath);
     identity_pair_ = ReadTlsIdentityPair(kClientKeyPath, kClientCertPath);
   }
 
   static std::shared_ptr<ServerCredentials> CreateSniServerCredentials() {
-    std::string sni1_cert = grpc_core::testing::GetFileContents(kSni1CertPath);
-    std::string sni1_key = grpc_core::testing::GetFileContents(kSni1KeyPath);
-    std::string sni2_cert = grpc_core::testing::GetFileContents(kSni2CertPath);
-    std::string sni2_key = grpc_core::testing::GetFileContents(kSni2KeyPath);
-    std::string sni3_cert = grpc_core::testing::GetFileContents(kSni3CertPath);
-    std::string sni3_key = grpc_core::testing::GetFileContents(kSni3KeyPath);
+    std::string sni1_cert =
+        grpc_core::testing::GetFileContents(kSniFooCertPath);
+    std::string sni1_key = grpc_core::testing::GetFileContents(kSniFooKeyPath);
+    std::string sni2_cert =
+        grpc_core::testing::GetFileContents(kSniBarCertPath);
+    std::string sni2_key = grpc_core::testing::GetFileContents(kSniBarKeyPath);
+    std::string sni3_cert =
+        grpc_core::testing::GetFileContents(kSniServerExampleComCertPath);
+    std::string sni3_key =
+        grpc_core::testing::GetFileContents(kSniServerExampleComKeyPath);
     std::vector<IdentityKeyCertPair> identity_key_cert_pairs;
     IdentityKeyCertPair sni1_pair = {std::move(sni1_key), std::move(sni1_cert)};
     identity_key_cert_pairs.emplace_back(sni1_pair);
@@ -843,6 +847,20 @@ class XdsSniSecurityTest : public XdsEnd2endTest {
         std::move(certificate_provider));
     options.watch_identity_key_cert_pairs();
     return grpc::experimental::TlsServerCredentials(options);
+  }
+
+  static grpc_core::EndpointAddressesList CreateAddressListFromPortList(
+      const std::vector<int>& ports) {
+    grpc_core::EndpointAddressesList addresses;
+    for (int port : ports) {
+      absl::StatusOr<grpc_core::URI> lb_uri =
+          grpc_core::URI::Parse(grpc_core::LocalIpUri(port));
+      GRPC_CHECK_OK(lb_uri);
+      grpc_resolved_address address;
+      GRPC_CHECK(grpc_parse_uri(*lb_uri, &address));
+      addresses.emplace_back(address, grpc_core::ChannelArgs());
+    }
+    return addresses;
   }
 
   void MaybeSetUpstreamTlsContextWithSniOnCluster(
@@ -878,12 +896,14 @@ class XdsSniSecurityTest : public XdsEnd2endTest {
       transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
     }
   }
-  static const char kSni1CertPath[];
-  static const char kSni1KeyPath[];
-  static const char kSni2CertPath[];
-  static const char kSni2KeyPath[];
-  static const char kSni3CertPath[];
-  static const char kSni3KeyPath[];
+  static constexpr char kSniFooCertPath[] = "src/core/tsi/test_creds/sni1.pem";
+  static constexpr char kSniFooKeyPath[] = "src/core/tsi/test_creds/sni1.key";
+  static constexpr char kSniBarCertPath[] = "src/core/tsi/test_creds/sni2.pem";
+  static constexpr char kSniBarKeyPath[] = "src/core/tsi/test_creds/sni2.key";
+  static constexpr char kSniServerExampleComCertPath[] =
+      "src/core/tsi/test_creds/sni3.pem";
+  static constexpr char kSniServerExampleComKeyPath[] =
+      "src/core/tsi/test_creds/sni3.key";
 
   std::string root_cert_;
   grpc_core::PemKeyCertPairList identity_pair_;
@@ -891,146 +911,133 @@ class XdsSniSecurityTest : public XdsEnd2endTest {
       logical_dns_cluster_resolver_response_generator_;
 };
 
-static grpc_core::EndpointAddressesList CreateAddressListFromPortList(
-    const std::vector<int>& ports) {
-  grpc_core::EndpointAddressesList addresses;
-  for (int port : ports) {
-    absl::StatusOr<grpc_core::URI> lb_uri =
-        grpc_core::URI::Parse(grpc_core::LocalIpUri(port));
-    GRPC_CHECK_OK(lb_uri);
-    grpc_resolved_address address;
-    GRPC_CHECK(grpc_parse_uri(*lb_uri, &address));
-    addresses.emplace_back(address, grpc_core::ChannelArgs());
-  }
-  return addresses;
-}
-
-const char XdsSniSecurityTest::kSni1CertPath[] =
-    "src/core/tsi/test_creds/sni1.pem";
-const char XdsSniSecurityTest::kSni1KeyPath[] =
-    "src/core/tsi/test_creds/sni1.key";
-const char XdsSniSecurityTest::kSni2CertPath[] =
-    "src/core/tsi/test_creds/sni2.pem";
-const char XdsSniSecurityTest::kSni2KeyPath[] =
-    "src/core/tsi/test_creds/sni2.key";
-const char XdsSniSecurityTest::kSni3CertPath[] =
-    "src/core/tsi/test_creds/sni3.pem";
-const char XdsSniSecurityTest::kSni3KeyPath[] =
-    "src/core/tsi/test_creds/sni3.key";
-
 INSTANTIATE_TEST_SUITE_P(XdsTest, XdsSniSecurityTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
-TEST_P(XdsSniSecurityTest, TestLegacySniBehavior) {
+TEST_P(XdsSniSecurityTest, LegacySniBehavior) {
   grpc_core::testing::ScopedExperimentalEnvVar env(
       "GRPC_USE_CHANNEL_AUTHORITY_IF_NO_SNI_APPLICABLE");
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  const char* kEdsServiceName = "eds_service_name";
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, kEdsServiceName));
+      BuildEdsResource(args, kDefaultEdsServiceName));
   auto cluster = default_cluster_;
-  cluster.mutable_eds_cluster_config()->set_service_name(kEdsServiceName);
+  cluster.mutable_eds_cluster_config()->set_service_name(
+      kDefaultEdsServiceName);
   StringMatcher san_matcher;
   // Expect the default channel target (server.example.com)
-  san_matcher.set_exact("server.example.com");
-  MaybeSetUpstreamTlsContextWithSniOnCluster("fake_plugin1", "", "", false,
-                                             false, {san_matcher}, &cluster);
+  san_matcher.set_exact(kServerName);
+  MaybeSetUpstreamTlsContextWithSniOnCluster(
+      /*root_instance_name=*/"fake_plugin1", /*root_certificate_name=*/"",
+      /*sni=*/"", /*auto_host_sni=*/false,
+      /*auto_sni_san_validation=*/false, /*san_matchers=*/{san_matcher},
+      /*cluster=*/&cluster);
   balancer_->ads_service()->SetCdsResource(cluster);
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 
-TEST_P(XdsSniSecurityTest, TestNoSni) {
+TEST_P(XdsSniSecurityTest, NoSniGetsFirstCertificate) {
   grpc_core::testing::ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_SNI");
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  const char* kEdsServiceName = "eds_service_name";
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, kEdsServiceName));
+      BuildEdsResource(args, kDefaultEdsServiceName));
   auto cluster = default_cluster_;
-  cluster.mutable_eds_cluster_config()->set_service_name(kEdsServiceName);
+  cluster.mutable_eds_cluster_config()->set_service_name(
+      kDefaultEdsServiceName);
   StringMatcher san_matcher;
   // Expect that the server sends the first configured certificate
   san_matcher.set_exact("foo");
-  MaybeSetUpstreamTlsContextWithSniOnCluster("fake_plugin1", "", "", false,
-                                             false, {san_matcher}, &cluster);
+  MaybeSetUpstreamTlsContextWithSniOnCluster(
+      /*root_instance_name=*/"fake_plugin1", /*root_certificate_name=*/"",
+      /*sni=*/"", /*auto_host_sni=*/false,
+      /*auto_sni_san_validation=*/false, /*san_matchers=*/{san_matcher},
+      /*cluster=*/&cluster);
   balancer_->ads_service()->SetCdsResource(cluster);
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 
-TEST_P(XdsSniSecurityTest, TestFixedSni) {
-  /* This test effectively tests for two different things at once:
-   * 1. That the client sends the SNI "foo" when configured to do so.
-   * 2. That the client successfully validates the SAN "foo" with a SAN matcher.
-   */
+TEST_P(XdsSniSecurityTest, FixedSni) {
+  // This test effectively tests for two different things at once:
+  // 1. That the client sends the SNI "foo" when configured to do so.
+  // 2. That the client successfully validates the SAN "foo" with a SAN matcher.
   grpc_core::testing::ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_SNI");
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  const char* kEdsServiceName = "eds_service_name";
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, kEdsServiceName));
+      BuildEdsResource(args, kDefaultEdsServiceName));
   auto cluster = default_cluster_;
-  cluster.mutable_eds_cluster_config()->set_service_name(kEdsServiceName);
+  cluster.mutable_eds_cluster_config()->set_service_name(
+      kDefaultEdsServiceName);
   StringMatcher san_matcher;
   // Expect the SAN to match the configured fixed SNI
   san_matcher.set_exact("foo");
-  MaybeSetUpstreamTlsContextWithSniOnCluster("fake_plugin1", "", "foo", false,
-                                             false, {san_matcher}, &cluster);
+  MaybeSetUpstreamTlsContextWithSniOnCluster(
+      /*root_instance_name=*/"fake_plugin1", /*root_certificate_name=*/"",
+      /*sni=*/"foo", /*auto_host_sni=*/false,
+      /*auto_sni_san_validation=*/false, /*san_matchers=*/{san_matcher},
+      /*cluster=*/&cluster);
   balancer_->ads_service()->SetCdsResource(cluster);
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 
-TEST_P(XdsSniSecurityTest, TestFixedSniWithAutoHostSniEnabled) {
+TEST_P(XdsSniSecurityTest, AutoHostSniNoOpWhenEndpointHasNoHostname) {
   grpc_core::testing::ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_SNI");
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  const char* kEdsServiceName = "eds_service_name";
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, kEdsServiceName));
+      BuildEdsResource(args, kDefaultEdsServiceName));
   auto cluster = default_cluster_;
-  cluster.mutable_eds_cluster_config()->set_service_name(kEdsServiceName);
+  cluster.mutable_eds_cluster_config()->set_service_name(
+      kDefaultEdsServiceName);
   StringMatcher san_matcher;
   // Expect the SAN to match the configured SNI even with auto_host_sni enabled
   // because the endpoint hostname is unset
   san_matcher.set_exact("foo");
-  MaybeSetUpstreamTlsContextWithSniOnCluster("fake_plugin1", "", "foo", true,
-                                             false, {san_matcher}, &cluster);
+  MaybeSetUpstreamTlsContextWithSniOnCluster(
+      /*root_instance_name=*/"fake_plugin1", /*root_certificate_name=*/"",
+      /*sni=*/"foo", /*auto_host_sni=*/true,
+      /*auto_sni_san_validation=*/false, /*san_matchers=*/{san_matcher},
+      /*cluster=*/&cluster);
   balancer_->ads_service()->SetCdsResource(cluster);
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 
-TEST_P(XdsSniSecurityTest, TestEdsAutoHostSni) {
+TEST_P(XdsSniSecurityTest, EdsAutoHostSni) {
   grpc_core::testing::ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_SNI");
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  const char* kEdsServiceName = "eds_service_name";
   EdsResourceArgs args({
       {"locality0",
        {CreateEndpoint(0, ::envoy::config::core::v3::HealthStatus::UNKNOWN, 1,
                        {}, "bar")}},
   });
   balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, kEdsServiceName));
+      BuildEdsResource(args, kDefaultEdsServiceName));
   auto cluster = default_cluster_;
-  cluster.mutable_eds_cluster_config()->set_service_name(kEdsServiceName);
+  cluster.mutable_eds_cluster_config()->set_service_name(
+      kDefaultEdsServiceName);
   StringMatcher san_matcher;
   // Expect the SAN to match the endpoint hostname, not the configured SNI,
   // with auto_host_sni enabled
   san_matcher.set_exact("bar");
-  MaybeSetUpstreamTlsContextWithSniOnCluster("fake_plugin1", "", "foo", true,
-                                             false, {san_matcher}, &cluster);
+  MaybeSetUpstreamTlsContextWithSniOnCluster(
+      /*root_instance_name=*/"fake_plugin1", /*root_certificate_name=*/"",
+      /*sni=*/"foo", /*auto_host_sni=*/true,
+      /*auto_sni_san_validation=*/false, /*san_matchers=*/{san_matcher},
+      /*cluster=*/&cluster);
   balancer_->ads_service()->SetCdsResource(cluster);
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 
-TEST_P(XdsSniSecurityTest, TestLogicalDNSAutoHostSni) {
+TEST_P(XdsSniSecurityTest, LogicalDNSAutoHostSni) {
   grpc_core::testing::ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_SNI");
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
   auto cluster = default_cluster_;
@@ -1047,8 +1054,11 @@ TEST_P(XdsSniSecurityTest, TestLogicalDNSAutoHostSni) {
   // Expect the SAN to match the endpoint hostname, not the configured SNI,
   // with auto_host_sni enabled
   san_matcher.set_exact("bar");
-  MaybeSetUpstreamTlsContextWithSniOnCluster("fake_plugin1", "", "foo", true,
-                                             false, {san_matcher}, &cluster);
+  MaybeSetUpstreamTlsContextWithSniOnCluster(
+      /*root_instance_name=*/"fake_plugin1", /*root_certificate_name=*/"",
+      /*sni=*/"foo", /*auto_host_sni=*/true,
+      /*auto_sni_san_validation=*/false, /*san_matchers=*/{san_matcher},
+      /*cluster=*/&cluster);
   balancer_->ads_service()->SetCdsResource(cluster);
   // Set Logical DNS result
   {
@@ -1061,67 +1071,76 @@ TEST_P(XdsSniSecurityTest, TestLogicalDNSAutoHostSni) {
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 
-TEST_P(XdsSniSecurityTest, TestAutoSniSanValidation) {
+TEST_P(XdsSniSecurityTest, AutoSniSanValidation) {
   grpc_core::testing::ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_SNI");
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  const char* kEdsServiceName = "eds_service_name";
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, kEdsServiceName));
+      BuildEdsResource(args, kDefaultEdsServiceName));
   auto cluster = default_cluster_;
-  cluster.mutable_eds_cluster_config()->set_service_name(kEdsServiceName);
+  cluster.mutable_eds_cluster_config()->set_service_name(
+      kDefaultEdsServiceName);
   StringMatcher san_matcher;
   // The SAN matcher should not apply, because auto_sni_san_validation should
   // override it
   san_matcher.set_exact("bar");
-  MaybeSetUpstreamTlsContextWithSniOnCluster("fake_plugin1", "", "foo", false,
-                                             true, {san_matcher}, &cluster);
+  MaybeSetUpstreamTlsContextWithSniOnCluster(
+      /*root_instance_name=*/"fake_plugin1", /*root_certificate_name=*/"",
+      /*sni=*/"foo", /*auto_host_sni=*/false,
+      /*auto_sni_san_validation=*/true, /*san_matchers=*/{san_matcher},
+      /*cluster=*/&cluster);
   balancer_->ads_service()->SetCdsResource(cluster);
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 
-TEST_P(XdsSniSecurityTest, TestAutoSniSanValidationWithAutoHostSni) {
+TEST_P(XdsSniSecurityTest, AutoSniSanValidationWithAutoHostSni) {
   grpc_core::testing::ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_SNI");
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  const char* kEdsServiceName = "eds_service_name";
   EdsResourceArgs args({
       {"locality0",
        {CreateEndpoint(0, ::envoy::config::core::v3::HealthStatus::UNKNOWN, 1,
                        {}, "foo")}},
   });
   balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, kEdsServiceName));
+      BuildEdsResource(args, kDefaultEdsServiceName));
   auto cluster = default_cluster_;
-  cluster.mutable_eds_cluster_config()->set_service_name(kEdsServiceName);
+  cluster.mutable_eds_cluster_config()->set_service_name(
+      kDefaultEdsServiceName);
   StringMatcher san_matcher;
   // The SAN matcher should not apply, because auto_sni_san_validation should
   // override it
   san_matcher.set_exact("bar");
-  MaybeSetUpstreamTlsContextWithSniOnCluster("fake_plugin1", "", "", true, true,
-                                             {san_matcher}, &cluster);
+  MaybeSetUpstreamTlsContextWithSniOnCluster(
+      /*root_instance_name=*/"fake_plugin1", /*root_certificate_name=*/"",
+      /*sni=*/"", /*auto_host_sni=*/true,
+      /*auto_sni_san_validation=*/true, /*san_matchers=*/{san_matcher},
+      /*cluster=*/&cluster);
   balancer_->ads_service()->SetCdsResource(cluster);
   CheckRpcSendOk(DEBUG_LOCATION);
 }
 
-TEST_P(XdsSniSecurityTest, TestSanValidationFailure) {
+TEST_P(XdsSniSecurityTest, SanValidationFailure) {
   grpc_core::testing::ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_SNI");
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
-  const char* kEdsServiceName = "eds_service_name";
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, kEdsServiceName));
+      BuildEdsResource(args, kDefaultEdsServiceName));
   auto cluster = default_cluster_;
-  cluster.mutable_eds_cluster_config()->set_service_name(kEdsServiceName);
+  cluster.mutable_eds_cluster_config()->set_service_name(
+      kDefaultEdsServiceName);
   StringMatcher san_matcher;
   // We actually expect the server to send the foo certificate, so this should
   // fail to match.
   san_matcher.set_exact("bar");
-  MaybeSetUpstreamTlsContextWithSniOnCluster("fake_plugin1", "", "foo", false,
-                                             false, {san_matcher}, &cluster);
+  MaybeSetUpstreamTlsContextWithSniOnCluster(
+      /*root_instance_name=*/"fake_plugin1", /*root_certificate_name=*/"",
+      /*sni=*/"foo", /*auto_host_sni=*/false,
+      /*auto_sni_san_validation=*/false, /*san_matchers=*/{san_matcher},
+      /*cluster=*/&cluster);
   balancer_->ads_service()->SetCdsResource(cluster);
   CheckRpcSendFailure(
       DEBUG_LOCATION, grpc::StatusCode::UNAVAILABLE,
