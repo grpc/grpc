@@ -6811,6 +6811,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: call_filters_test
   gtest: true
   build: test
@@ -8584,6 +8585,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: channel_init_test
   gtest: true
   build: test

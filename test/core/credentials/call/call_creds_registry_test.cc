@@ -35,6 +35,12 @@ class TestCallCredsFactory : public CallCredsFactory<> {
       ValidationErrors* /*errors*/) const override {
     return MakeRefCounted<Config>();
   }
+  absl::string_view proto_type() const override { return ""; }
+  RefCountedPtr<const CallCredsConfig> ParseProto(
+      absl::string_view /*serialized_proto*/, ValidationErrors* /*errors*/)
+      const override {
+    return nullptr;
+  }
   RefCountedPtr<grpc_call_credentials> CreateCallCreds(
       RefCountedPtr<const CallCredsConfig> /*config*/) const override {
     return MakeRefCounted<grpc_md_only_test_credentials>("key", "value");

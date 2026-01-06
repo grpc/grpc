@@ -22,11 +22,15 @@
 
 #include <optional>
 
+#include "envoy/extensions/grpc_service/channel_credentials/tls/v3/tls_credentials.pb.h"
+#include "google/protobuf/any.pb.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/composite/composite_channel_credentials.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/credentials/transport/insecure/insecure_credentials.h"
 #include "src/core/credentials/transport/tls/tls_credentials.h"
+#include "src/core/xds/grpc/certificate_provider_store.h"
+#include "src/core/xds/grpc/file_watcher_certificate_provider_factory.h"
 #include "test/core/test_util/test_config.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -43,8 +47,18 @@ class TestChannelCredsFactory : public ChannelCredsFactory<> {
       ValidationErrors* /*errors*/) const override {
     return MakeRefCounted<Config>();
   }
+  absl::string_view proto_type() const override { return ""; }
+  RefCountedPtr<const ChannelCredsConfig> ParseProto(
+      absl::string_view /*serialized_proto*/,
+      const CertificateProviderStoreInterface::PluginDefinitionMap&
+          /*certificate_provider_definitions*/,
+      ValidationErrors* /*errors*/) const override {
+    return nullptr;
+  }
   RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
-      RefCountedPtr<const ChannelCredsConfig> /*config*/) const override {
+      RefCountedPtr<const ChannelCredsConfig> /*config*/,
+      const CertificateProviderStoreInterface&
+          /*certificate_provider_store*/) const override {
     return RefCountedPtr<grpc_channel_credentials>(
         grpc_fake_transport_security_credentials_create());
   }
@@ -62,15 +76,19 @@ class TestChannelCredsFactory : public ChannelCredsFactory<> {
 
 class ChannelCredsRegistryTest : public ::testing::Test {
  protected:
-  void SetUp() override { CoreConfiguration::Reset(); }
+  void SetUp() override {
+    cert_provider_store_ = MakeRefCounted<CertificateProviderStore>(
+        CertificateProviderStoreInterface::PluginDefinitionMap{});
+    CoreConfiguration::Reset();
+  }
 
-  // Run a basic test for a given credential type.
+  // Run a basic test for a given credential type from a JSON config.
   // type is the string identifying the type in the registry.
   // credential_type is the resulting type of the actual channel creds object;
   // if nullopt, does not attempt to instantiate the credentials.
-  void TestCreds(absl::string_view type,
-                 std::optional<UniqueTypeName> credential_type,
-                 Json json = Json::FromObject({})) {
+  void TestCredsConfig(absl::string_view type,
+                       std::optional<UniqueTypeName> credential_type,
+                       Json json = Json::FromObject({})) {
     EXPECT_TRUE(
         CoreConfiguration::Get().channel_creds_registry().IsSupported(type));
     ValidationErrors errors;
@@ -82,7 +100,7 @@ class ChannelCredsRegistryTest : public ::testing::Test {
     if (credential_type.has_value()) {
       auto creds =
           CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
-              std::move(config));
+              std::move(config), *cert_provider_store_);
       ASSERT_NE(creds, nullptr);
       UniqueTypeName actual_type = creds->type();
       // If we get composite creds, unwrap them.
@@ -98,24 +116,66 @@ class ChannelCredsRegistryTest : public ::testing::Test {
           << "\nExpected: " << credential_type->name();
     }
   }
+
+  // Run a basic test for a given credential type from a protobuf.
+  // type is the string identifying the type in the registry.
+  // credential_type is the resulting type of the actual channel creds object;
+  // if nullopt, does not attempt to instantiate the credentials.
+  void TestCredsProto(absl::string_view type,
+                      const google::protobuf::Any& proto,
+                      std::optional<UniqueTypeName> credential_type) {
+    absl::string_view proto_type =
+        absl::StripPrefix(proto.type_url(), "type.googleapis.com/");
+    LOG(INFO) << "Protobuf type: \"" << proto_type << "\"";
+    EXPECT_TRUE(
+        CoreConfiguration::Get().channel_creds_registry().IsProtoSupported(
+            proto_type));
+    ValidationErrors errors;
+    auto config = CoreConfiguration::Get().channel_creds_registry().ParseProto(
+        proto_type, proto.value(), cert_provider_map_, &errors);
+    EXPECT_TRUE(errors.ok()) << errors.message("unexpected errors");
+    ASSERT_NE(config, nullptr);
+    EXPECT_EQ(config->type(), type);
+    if (credential_type.has_value()) {
+      auto creds =
+          CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
+              std::move(config), *cert_provider_store_);
+      ASSERT_NE(creds, nullptr);
+      UniqueTypeName actual_type = creds->type();
+      // If we get composite creds, unwrap them.
+      // (This happens for GoogleDefaultCreds.)
+      if (creds->type() == grpc_composite_channel_credentials::Type()) {
+        actual_type =
+            static_cast<grpc_composite_channel_credentials*>(creds.get())
+                ->inner_creds()
+                ->type();
+      }
+      EXPECT_EQ(actual_type, *credential_type)
+          << "Actual: " << actual_type.name()
+          << "\nExpected: " << credential_type->name();
+    }
+  }
+
+  RefCountedPtr<CertificateProviderStore> cert_provider_store_;
+  CertificateProviderStoreInterface::PluginDefinitionMap cert_provider_map_;
 };
 
 TEST_F(ChannelCredsRegistryTest, GoogleDefaultCreds) {
   // Don't actually instantiate the credentials, since that fails in
   // some environments.
-  TestCreds("google_default", std::nullopt);
+  TestCredsConfig("google_default", std::nullopt);
 }
 
 TEST_F(ChannelCredsRegistryTest, InsecureCreds) {
-  TestCreds("insecure", InsecureCredentials::Type());
+  TestCredsConfig("insecure", InsecureCredentials::Type());
 }
 
 TEST_F(ChannelCredsRegistryTest, FakeCreds) {
-  TestCreds("fake", grpc_fake_channel_credentials::Type());
+  TestCredsConfig("fake", grpc_fake_channel_credentials::Type());
 }
 
 TEST_F(ChannelCredsRegistryTest, TlsCredsNoConfig) {
-  TestCreds("tls", TlsCredentials::Type());
+  TestCredsConfig("tls", TlsCredentials::Type());
 }
 
 TEST_F(ChannelCredsRegistryTest, TlsCredsFullConfig) {
@@ -125,7 +185,7 @@ TEST_F(ChannelCredsRegistryTest, TlsCredsFullConfig) {
       {"ca_certificate_file", Json::FromString("/path/to/ca_cert_file")},
       {"refresh_interval", Json::FromString("1s")},
   });
-  TestCreds("tls", TlsCredentials::Type(), json);
+  TestCredsConfig("tls", TlsCredentials::Type(), json);
 }
 
 TEST_F(ChannelCredsRegistryTest, TlsCredsConfigInvalid) {
@@ -146,6 +206,34 @@ TEST_F(ChannelCredsRegistryTest, TlsCredsConfigInvalid) {
             "field:refresh_interval error:is not a string]");
 }
 
+// FIXME: add more test cases
+TEST_F(ChannelCredsRegistryTest, TlsCredsProto) {
+  // Generate cert provider config.
+  Json json = Json::FromObject({
+      {"certificate_file", Json::FromString("/path/to/cert_file")},
+      {"private_key_file", Json::FromString("/path/to/private_key_file")},
+      {"ca_certificate_file", Json::FromString("/path/to/ca_cert_file")},
+      {"refresh_interval", Json::FromString("1s")},
+  });
+  FileWatcherCertificateProviderFactory cert_provider_factory;
+  ValidationErrors errors;
+  cert_provider_map_["foo"] = {
+      "foo",
+      cert_provider_factory.CreateCertificateProviderConfig(
+          json, JsonArgs(), &errors)
+  };
+  ASSERT_TRUE(errors.ok()) << errors.message("unexpected errors");
+  // Now construct TlsCredentials extension proto.
+  envoy::extensions::grpc_service::channel_credentials::tls::v3::TlsCredentials
+      tls_creds_proto;
+  auto* cert_provider = tls_creds_proto.mutable_root_certificate_provider();
+  cert_provider->set_instance_name("foo");
+  google::protobuf::Any proto;
+  proto.PackFrom(tls_creds_proto);
+  // Test parsing.
+  TestCredsProto("tls", proto, TlsCredentials::Type());
+}
+
 TEST_F(ChannelCredsRegistryTest, Register) {
   // Before registration.
   EXPECT_FALSE(
@@ -157,7 +245,7 @@ TEST_F(ChannelCredsRegistryTest, Register) {
   EXPECT_EQ(config, nullptr);
   auto creds =
       CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
-          std::move(config));
+          std::move(config), *cert_provider_store_);
   EXPECT_EQ(creds, nullptr);
   // Registration.
   CoreConfiguration::WithSubstituteBuilder builder(
@@ -175,7 +263,7 @@ TEST_F(ChannelCredsRegistryTest, Register) {
   EXPECT_NE(config, nullptr);
   EXPECT_EQ(config->type(), "test");
   creds = CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
-      std::move(config));
+      std::move(config), *cert_provider_store_);
   ASSERT_NE(creds, nullptr);
   EXPECT_EQ(creds->type(), grpc_fake_channel_credentials::Type());
 }

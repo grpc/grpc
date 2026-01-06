@@ -279,10 +279,10 @@ class TlsChannelCredsFactory : public ChannelCredsFactory<> {
         const CertificateProviderStoreInterface::PluginDefinitionMap&
             certificate_provider_definitions,
         ValidationErrors* errors) {
-      upb_Arena arena;
+      upb::Arena arena;
       const auto* proto =
           envoy_extensions_grpc_service_channel_credentials_tls_v3_TlsCredentials_parse(
-              serialized_proto.data(), serialized_proto.size(), &arena);
+              serialized_proto.data(), serialized_proto.size(), arena.ptr());
       if (proto == nullptr) {
         errors->AddError("could not parse channel credentials config");
         return nullptr;

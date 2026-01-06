@@ -54,6 +54,8 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    uses_event_engine = False,
+    uses_polling = False,
     deps = [
         "//:config",
         "//:gpr",
@@ -65,5 +67,7 @@ grpc_cc_test(
         "//src/core:grpc_tls_credentials",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
+        "@com_google_protobuf//:any_cc_proto",
+        "@envoy_api//envoy/extensions/grpc_service/channel_credentials/tls/v3:pkg_cc_proto",
     ],
 )
