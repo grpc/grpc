@@ -9956,6 +9956,7 @@ targets:
   - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
   - test/core/end2end/fixtures/h2_ssl_tls_common.h
   - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_common_secure_fixtures.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/inproc_fixture.h
   - test/core/end2end/fixtures/local_util.h
@@ -10085,6 +10086,7 @@ targets:
   - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
   - test/core/end2end/fixtures/h2_ssl_tls_common.h
   - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_common_secure_fixtures.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/inproc_fixture.h
   - test/core/end2end/fixtures/local_util.h
@@ -10302,6 +10304,7 @@ targets:
   - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
   - test/core/end2end/fixtures/h2_ssl_tls_common.h
   - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_common_secure_fixtures.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/inproc_fixture.h
   - test/core/end2end/fixtures/local_util.h
@@ -10427,6 +10430,7 @@ targets:
   - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
   - test/core/end2end/fixtures/h2_ssl_tls_common.h
   - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_common_secure_fixtures.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/inproc_fixture.h
   - test/core/end2end/fixtures/local_util.h
@@ -10552,6 +10556,7 @@ targets:
   - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
   - test/core/end2end/fixtures/h2_ssl_tls_common.h
   - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_common_secure_fixtures.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/inproc_fixture.h
   - test/core/end2end/fixtures/local_util.h
@@ -10765,6 +10770,7 @@ targets:
   - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
   - test/core/end2end/fixtures/h2_ssl_tls_common.h
   - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_common_secure_fixtures.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/inproc_fixture.h
   - test/core/end2end/fixtures/local_util.h
@@ -10978,6 +10984,7 @@ targets:
   - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
   - test/core/end2end/fixtures/h2_ssl_tls_common.h
   - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_common_secure_fixtures.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/inproc_fixture.h
   - test/core/end2end/fixtures/local_util.h
@@ -11103,6 +11110,7 @@ targets:
   - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
   - test/core/end2end/fixtures/h2_ssl_tls_common.h
   - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_common_secure_fixtures.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/inproc_fixture.h
   - test/core/end2end/fixtures/local_util.h
@@ -11316,6 +11324,7 @@ targets:
   - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
   - test/core/end2end/fixtures/h2_ssl_tls_common.h
   - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_common_secure_fixtures.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/inproc_fixture.h
   - test/core/end2end/fixtures/local_util.h
@@ -11441,6 +11450,7 @@ targets:
   - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
   - test/core/end2end/fixtures/h2_ssl_tls_common.h
   - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_common_secure_fixtures.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/inproc_fixture.h
   - test/core/end2end/fixtures/local_util.h
@@ -11654,6 +11664,7 @@ targets:
   - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
   - test/core/end2end/fixtures/h2_ssl_tls_common.h
   - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_common_secure_fixtures.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/inproc_fixture.h
   - test/core/end2end/fixtures/local_util.h
@@ -11779,6 +11790,7 @@ targets:
   - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
   - test/core/end2end/fixtures/h2_ssl_tls_common.h
   - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_common_secure_fixtures.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/inproc_fixture.h
   - test/core/end2end/fixtures/local_util.h
@@ -14733,6 +14745,7 @@ targets:
   - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
   - test/core/end2end/fixtures/h2_ssl_tls_common.h
   - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_common_secure_fixtures.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/inproc_fixture.h
   - test/core/end2end/fixtures/local_util.h
