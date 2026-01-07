@@ -5138,6 +5138,7 @@ grpc_cc_library(
     srcs = [
         "src/cpp/util/status.cc",
     ],
+    google_deps = ["//third_party/absl/log:absl_check"],
     public_hdrs = [
         "include/grpc++/support/status.h",
         "include/grpcpp/impl/status.h",

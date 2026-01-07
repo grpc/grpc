@@ -533,9 +533,8 @@ class ClientCallbackReaderWriterImpl
     }
 
     // TODO(vjpai): don't assert
-    ABSL_CHECK(
-        write_ops_.SendMessagePtr(msg, options, channel_->memory_allocator())
-            .ok());
+    GRPC_CHECK_OK(
+        write_ops_.SendMessagePtr(msg, options, channel_->memory_allocator()));
     callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
     if (GPR_UNLIKELY(corked_write_needed_)) {
       write_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
@@ -816,8 +815,8 @@ class ClientCallbackReaderImpl : public ClientCallbackReader<Response> {
       : context_(context), call_(call), reactor_(reactor) {
     this->BindReactor(reactor);
     // TODO(vjpai): don't assert
-    ABSL_CHECK(
-        start_ops_.SendMessagePtr(request, channel->memory_allocator()).ok());
+    GRPC_CHECK_OK(
+        start_ops_.SendMessagePtr(request, channel->memory_allocator()));
     start_ops_.ClientSendClose();
   }
 
@@ -944,9 +943,8 @@ class ClientCallbackWriterImpl : public ClientCallbackWriter<Request> {
     }
 
     // TODO(vjpai): don't assert
-    ABSL_CHECK(
-        write_ops_.SendMessagePtr(msg, options, channel_->memory_allocator())
-            .ok());
+    GRPC_CHECK_OK(
+        write_ops_.SendMessagePtr(msg, options, channel_->memory_allocator()));
     callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
 
     if (GPR_UNLIKELY(corked_write_needed_)) {
@@ -1180,8 +1178,8 @@ class ClientCallbackUnaryImpl final : public ClientCallbackUnary {
     this->BindReactor(reactor);
 
     // TODO(vjpai): don't assert
-    ABSL_CHECK(
-        start_ops_.SendMessagePtr(request, channel->memory_allocator()).ok());
+    GRPC_CHECK_OK(
+        start_ops_.SendMessagePtr(request, channel->memory_allocator()));
     start_ops_.ClientSendClose();
     finish_ops_.RecvMessage(response);
     finish_ops_.AllowNoMessage();

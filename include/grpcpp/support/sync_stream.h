@@ -260,7 +260,7 @@ class ClientReader final : public ClientReaderInterface<R> {
     ops.SendInitialMetadata(&context->send_initial_metadata_,
                             context->initial_metadata_flags());
     // TODO(ctiller): don't assert
-    ABSL_CHECK(ops.SendMessagePtr(&request, channel->memory_allocator()).ok());
+    ABSL_CHECK_OK(ops.SendMessagePtr(&request, channel->memory_allocator()));
     ops.ClientSendClose();
     call_.PerformOps(&ops);
     cq_.Pluck(&ops);

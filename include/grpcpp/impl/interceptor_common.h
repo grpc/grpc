@@ -83,7 +83,7 @@ class InterceptorBatchMethodsImpl
   ByteBuffer* GetSerializedSendMessage() override {
     ABSL_CHECK_NE(orig_send_message_, nullptr);
     if (*orig_send_message_ != nullptr) {
-      ABSL_CHECK(serializer_(*orig_send_message_).ok());
+      GRPC_CHECK_OK(serializer_(*orig_send_message_));
       *orig_send_message_ = nullptr;
     }
     return send_message_;

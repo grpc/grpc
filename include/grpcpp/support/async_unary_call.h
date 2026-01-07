@@ -133,8 +133,8 @@ class ClientAsyncResponseReaderHelper {
     *single_buf_ptr = single_buf;
 
     // TODO(ctiller): don't assert
-    ABSL_CHECK(
-        single_buf->SendMessage(request, channel->memory_allocator()).ok());
+    GRPC_CHECK_OK(
+        single_buf->SendMessage(request, channel->memory_allocator()));
     single_buf->ClientSendClose();
 
     // The purpose of the following functions is to type-erase the actual
