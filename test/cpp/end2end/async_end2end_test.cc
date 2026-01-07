@@ -65,6 +65,9 @@ namespace testing {
 
 namespace {
 
+// Change this to LOG(INFO) to debug this test. Do not submit LOG(INFO).
+#define GRPC_TESTING_LOCAL_LOG VLOG(3)
+
 void* tag(int t) { return reinterpret_cast<void*>(t); }
 int detag(void* p) { return static_cast<int>(reinterpret_cast<intptr_t>(p)); }
 
@@ -73,9 +76,10 @@ class Verifier {
   Verifier() : lambda_run_(false) {}
   // Expect sets the expected ok value for a specific tag
   Verifier& Expect(
-      int i, bool expect_ok,
+      int tag, bool expect_ok,
       grpc_core::SourceLocation whence = grpc_core::SourceLocation()) {
-    return ExpectUnless(i, expect_ok, false, whence);
+    GRPC_TESTING_LOCAL_LOG << "Expect tag " << tag;
+    return ExpectUnless(tag, expect_ok, false, whence);
   }
   // ExpectUnless sets the expected ok value for a specific tag
   // unless the tag was already marked seen (as a result of ExpectMaybe)
@@ -104,7 +108,10 @@ class Verifier {
   int Next(CompletionQueue* cq, bool ignore_ok) {
     bool ok;
     void* got_tag;
+    GRPC_TESTING_LOCAL_LOG << "Next: waiting for next tag";
     EXPECT_TRUE(cq->Next(&got_tag, &ok));
+    GRPC_TESTING_LOCAL_LOG << "Next: got tag " << detag(got_tag)
+                           << ", ok=" << ok;
     GotTag(got_tag, ok, ignore_ok);
     return detag(got_tag);
   }
@@ -141,14 +148,19 @@ class Verifier {
     if (expectations_.empty()) {
       bool ok;
       void* got_tag;
+      GRPC_TESTING_LOCAL_LOG << "Verify: waiting for timeout";
       EXPECT_EQ(cq->AsyncNext(&got_tag, &ok, deadline),
                 CompletionQueue::TIMEOUT);
+      GRPC_TESTING_LOCAL_LOG << "Verify: got timeout as expected";
     } else {
       while (!expectations_.empty()) {
         bool ok;
         void* got_tag;
+        GRPC_TESTING_LOCAL_LOG << "Verify: waiting for tag";
         EXPECT_EQ(cq->AsyncNext(&got_tag, &ok, deadline),
                   CompletionQueue::GOT_EVENT);
+        GRPC_TESTING_LOCAL_LOG << "Verify: got tag " << detag(got_tag)
+                               << ", ok=" << ok;
         GotTag(got_tag, ok, false);
       }
     }
@@ -164,14 +176,19 @@ class Verifier {
     if (expectations_.empty()) {
       bool ok;
       void* got_tag;
+      GRPC_TESTING_LOCAL_LOG << "Verify(lambda): waiting for timeout";
       EXPECT_EQ(DoOnceThenAsyncNext(cq, &got_tag, &ok, deadline, lambda),
                 CompletionQueue::TIMEOUT);
+      GRPC_TESTING_LOCAL_LOG << "Verify(lambda): got timeout as expected";
     } else {
       while (!expectations_.empty()) {
         bool ok;
         void* got_tag;
+        GRPC_TESTING_LOCAL_LOG << "Verify(lambda): waiting for tag";
         EXPECT_EQ(DoOnceThenAsyncNext(cq, &got_tag, &ok, deadline, lambda),
                   CompletionQueue::GOT_EVENT);
+        GRPC_TESTING_LOCAL_LOG << "Verify(lambda): got tag " << detag(got_tag)
+                               << ", ok=" << ok;
         GotTag(got_tag, ok, false);
       }
     }
