@@ -22,8 +22,8 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/experiments/experiments.h"
-#include "third_party/absl/log/globals.h"
-#include "third_party/absl/log/log.h"
+#include "absl/log/globals.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace testing {
