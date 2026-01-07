@@ -87,6 +87,7 @@ class ChannelCredsRegistryTest : public ::testing::Test {
   // credential_type is the resulting type of the actual channel creds object;
   // if nullopt, does not attempt to instantiate the credentials.
   void TestCredsConfig(absl::string_view type,
+                       absl::string_view expected_config,
                        std::optional<UniqueTypeName> credential_type,
                        Json json = Json::FromObject({})) {
     EXPECT_TRUE(
@@ -97,6 +98,7 @@ class ChannelCredsRegistryTest : public ::testing::Test {
     EXPECT_TRUE(errors.ok()) << errors.message("unexpected errors");
     ASSERT_NE(config, nullptr);
     EXPECT_EQ(config->type(), type);
+    EXPECT_EQ(config->ToString(), expected_config);
     if (credential_type.has_value()) {
       auto creds =
           CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
@@ -123,9 +125,9 @@ class ChannelCredsRegistryTest : public ::testing::Test {
   // if nullopt, does not attempt to instantiate the credentials.
   void TestCredsProto(absl::string_view type,
                       const google::protobuf::Any& proto,
+                      absl::string_view expected_config,
                       std::optional<UniqueTypeName> credential_type) {
-    absl::string_view proto_type =
-        absl::StripPrefix(proto.type_url(), "type.googleapis.com/");
+    absl::string_view proto_type = ProtoType(proto);
     LOG(INFO) << "Protobuf type: \"" << proto_type << "\"";
     EXPECT_TRUE(
         CoreConfiguration::Get().channel_creds_registry().IsProtoSupported(
@@ -136,6 +138,7 @@ class ChannelCredsRegistryTest : public ::testing::Test {
     EXPECT_TRUE(errors.ok()) << errors.message("unexpected errors");
     ASSERT_NE(config, nullptr);
     EXPECT_EQ(config->type(), type);
+    EXPECT_EQ(config->ToString(), expected_config);
     if (credential_type.has_value()) {
       auto creds =
           CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
@@ -156,6 +159,10 @@ class ChannelCredsRegistryTest : public ::testing::Test {
     }
   }
 
+  static absl::string_view ProtoType(const google::protobuf::Any& any) {
+    return absl::StripPrefix(any.type_url(), "type.googleapis.com/");
+  }
+
   RefCountedPtr<CertificateProviderStore> cert_provider_store_;
   CertificateProviderStoreInterface::PluginDefinitionMap cert_provider_map_;
 };
@@ -163,19 +170,19 @@ class ChannelCredsRegistryTest : public ::testing::Test {
 TEST_F(ChannelCredsRegistryTest, GoogleDefaultCreds) {
   // Don't actually instantiate the credentials, since that fails in
   // some environments.
-  TestCredsConfig("google_default", std::nullopt);
+  TestCredsConfig("google_default", "{}", std::nullopt);
 }
 
 TEST_F(ChannelCredsRegistryTest, InsecureCreds) {
-  TestCredsConfig("insecure", InsecureCredentials::Type());
+  TestCredsConfig("insecure", "{}", InsecureCredentials::Type());
 }
 
 TEST_F(ChannelCredsRegistryTest, FakeCreds) {
-  TestCredsConfig("fake", grpc_fake_channel_credentials::Type());
+  TestCredsConfig("fake", "{}", grpc_fake_channel_credentials::Type());
 }
 
 TEST_F(ChannelCredsRegistryTest, TlsCredsNoConfig) {
-  TestCredsConfig("tls", TlsCredentials::Type());
+  TestCredsConfig("tls", "{}", TlsCredentials::Type());
 }
 
 TEST_F(ChannelCredsRegistryTest, TlsCredsFullConfig) {
@@ -185,7 +192,13 @@ TEST_F(ChannelCredsRegistryTest, TlsCredsFullConfig) {
       {"ca_certificate_file", Json::FromString("/path/to/ca_cert_file")},
       {"refresh_interval", Json::FromString("1s")},
   });
-  TestCredsConfig("tls", TlsCredentials::Type(), json);
+  TestCredsConfig(
+      "tls",
+      "{certificate_file=/path/to/cert_file,"
+      "private_key_file=/path/to/private_key_file,"
+      "ca_certificate_file=/path/to/ca_cert_file,"
+      "refresh_interval=1000ms}",
+      TlsCredentials::Type(), json);
 }
 
 TEST_F(ChannelCredsRegistryTest, TlsCredsConfigInvalid) {
@@ -206,7 +219,32 @@ TEST_F(ChannelCredsRegistryTest, TlsCredsConfigInvalid) {
             "field:refresh_interval error:is not a string]");
 }
 
-// FIXME: add more test cases
+TEST_F(ChannelCredsRegistryTest, TlsCredsConfigCertFileWithoutPrivateKeyFile) {
+  Json json = Json::FromObject({
+      {"certificate_file", Json::FromString("/path/to/cert_file")},
+  });
+  ValidationErrors errors;
+  auto config = CoreConfiguration::Get().channel_creds_registry().ParseConfig(
+      "tls", json, JsonArgs(), &errors);
+  EXPECT_EQ(errors.message("errors"),
+            "errors: ["
+            "field: error:fields \"certificate_file\" and "
+            "\"private_key_file\" must be both set or both unset]");
+}
+
+TEST_F(ChannelCredsRegistryTest, TlsCredsConfigPrivateKeyFileWithoutCertFile) {
+  Json json = Json::FromObject({
+      {"private_key_file", Json::FromString("/path/to/private_key_file")},
+  });
+  ValidationErrors errors;
+  auto config = CoreConfiguration::Get().channel_creds_registry().ParseConfig(
+      "tls", json, JsonArgs(), &errors);
+  EXPECT_EQ(errors.message("errors"),
+            "errors: ["
+            "field: error:fields \"certificate_file\" and "
+            "\"private_key_file\" must be both set or both unset]");
+}
+
 TEST_F(ChannelCredsRegistryTest, TlsCredsProto) {
   // Generate cert provider config.
   Json json = Json::FromObject({
@@ -231,7 +269,62 @@ TEST_F(ChannelCredsRegistryTest, TlsCredsProto) {
   google::protobuf::Any proto;
   proto.PackFrom(tls_creds_proto);
   // Test parsing.
-  TestCredsProto("tls", proto, TlsCredentials::Type());
+  TestCredsProto("tls", proto,
+                 "{root_cert_provider={instance_name=\"foo\"}}",
+                 TlsCredentials::Type());
+}
+
+TEST_F(ChannelCredsRegistryTest, TlsCredsProtoAllFields) {
+  // Generate cert provider config.
+  Json json = Json::FromObject({
+      {"certificate_file", Json::FromString("/path/to/cert_file")},
+      {"private_key_file", Json::FromString("/path/to/private_key_file")},
+      {"ca_certificate_file", Json::FromString("/path/to/ca_cert_file")},
+      {"refresh_interval", Json::FromString("1s")},
+  });
+  FileWatcherCertificateProviderFactory cert_provider_factory;
+  ValidationErrors errors;
+  cert_provider_map_["foo"] = {
+      "foo",
+      cert_provider_factory.CreateCertificateProviderConfig(
+          json, JsonArgs(), &errors)
+  };
+  ASSERT_TRUE(errors.ok()) << errors.message("unexpected errors");
+  // Now construct TlsCredentials extension proto.
+  envoy::extensions::grpc_service::channel_credentials::tls::v3::TlsCredentials
+      tls_creds_proto;
+  auto* cert_provider = tls_creds_proto.mutable_root_certificate_provider();
+  cert_provider->set_instance_name("foo");
+  cert_provider->set_certificate_name("bar");
+  *tls_creds_proto.mutable_identity_certificate_provider() = *cert_provider;
+  google::protobuf::Any proto;
+  proto.PackFrom(tls_creds_proto);
+  // Test parsing.
+  TestCredsProto(
+      "tls", proto,
+      "{root_cert_provider={instance_name=\"foo\",certificate_name=\"bar\"},"
+      "identity_cert_provider={instance_name=\"foo\","
+      "certificate_name=\"bar\"}}",
+      TlsCredentials::Type());
+}
+
+TEST_F(ChannelCredsRegistryTest, TlsCredsProtoErrors) {
+  // Construct TlsCredentials extension proto with errors.
+  envoy::extensions::grpc_service::channel_credentials::tls::v3::TlsCredentials
+      tls_creds_proto;
+  auto* cert_provider = tls_creds_proto.mutable_identity_certificate_provider();
+  cert_provider->set_instance_name("foo");  // Does not exist.
+  google::protobuf::Any proto;
+  proto.PackFrom(tls_creds_proto);
+  // Test parsing.
+  ValidationErrors errors;
+  auto config = CoreConfiguration::Get().channel_creds_registry().ParseProto(
+      ProtoType(proto), proto.value(), cert_provider_map_, &errors);
+  EXPECT_EQ(errors.message("errors"),
+            "errors: ["
+            "field:identity_certificate_provider.instance_name "
+            "error:unrecognized certificate provider instance name: foo; "
+            "field:root_certificate_provider error:field not set]");
 }
 
 TEST_F(ChannelCredsRegistryTest, Register) {

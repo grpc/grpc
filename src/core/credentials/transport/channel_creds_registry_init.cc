@@ -188,7 +188,7 @@ class TlsChannelCredsFactory : public ChannelCredsFactory<> {
       }
 
       std::string ToString() const {
-        std::vector<absl::string_view> parts;
+        std::vector<std::string> parts;
         parts.push_back(absl::StrCat("instance_name=\"", instance_name, "\""));
         if (!certificate_name.empty()) {
           parts.push_back(
