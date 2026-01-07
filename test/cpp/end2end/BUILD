@@ -132,6 +132,20 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "end2end_test_utils",
+    testonly = True,
+    hdrs = ["end2end_test_utils.h"],
+    external_deps = [
+        "absl/log",
+        "absl/log:globals",
+    ],
+    deps = [
+        "//:grpc",
+        "//src/core:experiments",
+    ],
+)
+
 grpc_cc_test(
     name = "async_end2end_test",
     srcs = ["async_end2end_test.cc"],
