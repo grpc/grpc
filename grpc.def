@@ -83,6 +83,7 @@ EXPORTS
     grpc_local_server_credentials_create
     grpc_tls_credentials_options_set_check_call_host
     grpc_tls_credentials_options_set_tls_session_key_log_file_path
+    grpc_tls_credentials_options_set_sni_override
     grpc_metadata_array_init
     grpc_metadata_array_destroy
     grpc_call_details_init
