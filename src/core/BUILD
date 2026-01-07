@@ -8373,10 +8373,14 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log",
+        "absl/status:statusor",
         "absl/strings",
     ],
     deps = [
+        "event_engine_tcp_socket_utils",
         "grpc_check",
+        "grpc_promise_endpoint",
+        "slice",
         ":metadata_info",
         "//:chttp2_frame",
     ],
