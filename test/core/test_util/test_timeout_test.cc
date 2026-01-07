@@ -35,7 +35,7 @@ TEST(TestTimeoutTest, NoCrashIfDestroyedBeforeTimeout) {
   std::this_thread::sleep_for(std::chrono::seconds(2));
 }
 
-TEST(TestTimeoutTest, CrashIfTimeoutExpires) {
+TEST(TestTimeoutDeathTest, CrashIfTimeoutExpires) {
   EXPECT_DEATH(
       {
         auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();

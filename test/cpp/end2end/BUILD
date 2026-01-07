@@ -132,6 +132,20 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "end2end_test_utils",
+    testonly = True,
+    hdrs = ["end2end_test_utils.h"],
+    external_deps = [
+        "absl/log",
+        "absl/log:globals",
+    ],
+    deps = [
+        "//:grpc",
+        "//src/core:experiments",
+    ],
+)
+
 grpc_cc_test(
     name = "async_end2end_test",
     srcs = ["async_end2end_test.cc"],
@@ -567,6 +581,7 @@ grpc_cc_test(
     name = "generic_end2end_test",
     srcs = ["generic_end2end_test.cc"],
     external_deps = [
+        "absl/log",
         "absl/memory",
         "gtest",
     ],
@@ -576,6 +591,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//:grpc++_codegen_proto",
+        "//src/core:experiments",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_cc_grpc",

@@ -99,8 +99,8 @@ class TestServiceImpl : public grpc::testing::EchoTestService::Service {
   int GetIntValueFromMetadata(ServerContext* context, const char* key,
                               int default_value) {
     auto metadata = context->client_metadata();
-    if (metadata.find(key) != metadata.end()) {
-      std::istringstream iss(ToString(metadata.find(key)->second));
+    if (auto [it, end] = metadata.equal_range(key); it != end) {
+      std::istringstream iss(ToString(it->second));
       iss >> default_value;
     }
     return default_value;
