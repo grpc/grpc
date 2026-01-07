@@ -99,9 +99,10 @@ grpc_call_error ValidateClientBatch(const grpc_op* ops, size_t nops) {
 
 }  // namespace
 
-ClientCall::ClientCall(grpc_call*, uint32_t, grpc_completion_queue* cq,
-                       Slice path, std::optional<Slice> authority,
-                       bool registered_method, Timestamp deadline,
+ClientCall::ClientCall(grpc_call* parent_call, const uint32_t propagation_mask,
+                       grpc_completion_queue* cq, Slice path,
+                       std::optional<Slice> authority, bool registered_method,
+                       Timestamp deadline,
                        grpc_compression_options compression_options,
                        RefCountedPtr<Arena> arena,
                        RefCountedPtr<UnstartedCallDestination> destination)
@@ -110,6 +111,11 @@ ClientCall::ClientCall(grpc_call*, uint32_t, grpc_completion_queue* cq,
       cq_(cq),
       call_destination_(std::move(destination)),
       compression_options_(compression_options) {
+  if (parent_call != nullptr) {
+    Call* const parent = Call::FromC(parent_call);
+    InitParent(parent, propagation_mask).IgnoreError();
+    deadline = this->send_deadline();
+  }
   global_stats().IncrementClientCallsCreated();
   send_initial_metadata_->Set(HttpPathMetadata(), std::move(path));
   if (authority.has_value()) {
