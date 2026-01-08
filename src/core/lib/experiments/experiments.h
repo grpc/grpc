@@ -105,6 +105,7 @@ inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
+inline bool IsPromiseFilterSendCancelMetadataEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 inline bool IsRrWrrConnectFromRandomIndexEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
@@ -172,6 +173,7 @@ inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
+inline bool IsPromiseFilterSendCancelMetadataEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 inline bool IsRrWrrConnectFromRandomIndexEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
@@ -239,6 +241,7 @@ inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
+inline bool IsPromiseFilterSendCancelMetadataEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 inline bool IsRrWrrConnectFromRandomIndexEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
@@ -295,6 +298,7 @@ enum ExperimentIds {
   kExperimentIdPromiseBasedHttp2ClientTransport,
   kExperimentIdPromiseBasedHttp2ServerTransport,
   kExperimentIdPromiseBasedInprocTransport,
+  kExperimentIdPromiseFilterSendCancelMetadata,
   kExperimentIdRetryInCallv3,
   kExperimentIdRrWrrConnectFromRandomIndex,
   kExperimentIdScheduleCancellationOverWrite,
@@ -452,6 +456,10 @@ inline bool IsPromiseBasedHttp2ServerTransportEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_INPROC_TRANSPORT
 inline bool IsPromiseBasedInprocTransportEnabled() {
   return IsExperimentEnabled<kExperimentIdPromiseBasedInprocTransport>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_FILTER_SEND_CANCEL_METADATA
+inline bool IsPromiseFilterSendCancelMetadataEnabled() {
+  return IsExperimentEnabled<kExperimentIdPromiseFilterSendCancelMetadata>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RETRY_IN_CALLV3
 inline bool IsRetryInCallv3Enabled() {
