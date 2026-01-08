@@ -19,7 +19,9 @@
 #ifndef GRPC_PRIVATE_KEY_SIGNER_PY_WRAPPER_H
 #define GRPC_PRIVATE_KEY_SIGNER_PY_WRAPPER_H
 
+#include <memory>
 #include <string>
+#include <variant>
 
 #include "grpc/private_key_signer.h"
 #include "absl/status/statusor.h"
@@ -27,32 +29,32 @@
 // This needs to be an impl of `PrivateKeySigner`
 
 namespace grpc_core {
-    typedef void (*OnSignCompletePyWrapper)(const absl::StatusOr<std::string> result, void* completion_data);
-    typedef void (*SignPyWrapper)(
-        absl::string_view data_to_sign,
-        grpc_core::PrivateKeySigner::SignatureAlgorithm signature_algorithm,
-        OnSignCompletePyWrapper on_sign_complete_py_wrapper,
-        void* completion_data, void* user_data);
+typedef absl::StatusOr<std::string> (*SignWrapperForPy)(
+    absl::string_view data_to_sign,
+    grpc_core::PrivateKeySigner::SignatureAlgorithm signature_algorithm,
+    void* user_data);
 
-    class PrivateKeySignerPyWrapper : public PrivateKeySigner {
-     public:
-      PrivateKeySignerPyWrapper(SignPyWrapper sign_py_wrapper, void* user_data)
-          : sign_py_wrapper_(sign_py_wrapper), sign_user_data_(user_data) {}
-      std::variant<absl::StatusOr<std::string>,
-                   std::shared_ptr<AsyncSigningHandle>>
-      Sign(absl::string_view data_to_sign,
-           SignatureAlgorithm signature_algorithm,
-           OnSignComplete on_sign_complete) override;
+class PrivateKeySignerPyWrapper
+    : public PrivateKeySigner,
+      public std::enable_shared_from_this<PrivateKeySignerPyWrapper> {
+ public:
+  PrivateKeySignerPyWrapper(SignWrapperForPy sign_py_wrapper, void* user_data)
+      : sign_py_wrapper_(sign_py_wrapper), sign_user_data_(user_data) {}
+  std::variant<absl::StatusOr<std::string>, std::shared_ptr<AsyncSigningHandle>>
+  Sign(absl::string_view data_to_sign, SignatureAlgorithm signature_algorithm,
+       OnSignComplete on_sign_complete) override;
 
-      void Cancel(std::shared_ptr<AsyncSigningHandle> handle) override;
+  void Cancel(std::shared_ptr<AsyncSigningHandle> handle) override;
+  // ~PrivateKeySignerPyWrapper() override{};
 
-     private:
-      SignPyWrapper sign_py_wrapper_;
-      void* sign_user_data_;
-    };
+ private:
+  SignWrapperForPy sign_py_wrapper_;
+  void* sign_user_data_;
+};
 
-    PrivateKeySigner* BuildPrivateKeySigner(SignPyWrapper sign,
-                                            void* user_data);
-    }  // namespace grpc_core
+// Only intended to be called from cython
+std::shared_ptr<PrivateKeySigner> BuildPrivateKeySigner(SignWrapperForPy sign,
+                                                        void* user_data);
+}  // namespace grpc_core
 
 #endif  // GRPC_PRIVATE_KEY_SIGNER_PY_WRAPPER_H

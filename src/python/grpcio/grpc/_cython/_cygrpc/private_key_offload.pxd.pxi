@@ -14,6 +14,7 @@
 # distutils: language=c++
 
 from libcpp.string cimport string
+from libcpp.memory cimport shared_ptr
 
 cdef extern from "absl/status/status.h" namespace "absl":
     cdef enum AbslStatusCode "absl::StatusCode":
@@ -22,14 +23,19 @@ cdef extern from "absl/status/status.h" namespace "absl":
         kInvalidArgument "absl::StatusCode::kInvalidArgument"
 
     cdef cppclass Status:
-        Status(AbslStatusCode, string_view)
+        Status(AbslStatusCode, string)
+        Status()
+
+    # Status InternalError(const string& message)
 
 cdef extern from "absl/status/statusor.h" namespace "absl":
     cdef cppclass StatusOr[T]:
+        StatusOr()
         StatusOr(const T&)
-        StatusOr(Status)
+        StatusOr(const Status&)
         bint ok()
-        T value()
+        const T& operator*() const
+        Status status()
 
 cdef extern from "absl/strings/string_view.h" namespace "absl":
     cdef cppclass string_view:
@@ -64,12 +70,7 @@ cpdef enum SignatureAlgorithm:
     RSA_PSS_RSAE_SHA512 = <int>CSignatureAlgorithm.kRsaPssRsaeSha512
     
 
-cdef extern from "src/core/tsi/private_key_signer_py_wrapper.h" namespace "grpc_core":
-    ctypedef void (*OnSignCompletePyWrapper)(const StatusOr[string], void*) noexcept
-    ctypedef void (*SignPyWrapper)(string_view, CSignatureAlgorithm, OnSignCompletePyWrapper, void*, void*) noexcept
-    PrivateKeySigner* BuildPrivateKeySigner(SignPyWrapper, void*)
 
-cdef class PyPrivateKeySigner:
-    cdef PrivateKeySigner* c_signer
-    cdef object _py_callable
-    cdef PrivateKeySigner* c_ptr(self)
+cdef extern from "src/core/tsi/private_key_signer_py_wrapper.h" namespace "grpc_core":
+    ctypedef StatusOr[string](*SignWrapperForPy)(string_view, CSignatureAlgorithm, void*) noexcept
+    shared_ptr[PrivateKeySigner] BuildPrivateKeySigner(SignWrapperForPy, void*)

@@ -18,34 +18,52 @@
 
 #include "src/core/tsi/private_key_signer_py_wrapper.h"
 
+// #include <Python.h>
 #include <grpc/support/log.h>
 
+#include "grpc/private_key_signer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {
 
+// This struct is used to pass the C++ move-only AnyInvocable through
+// the C-style void* pointer API.
+// struct CompletionContext {
+//   OnSignComplete on_complete;
+// };
+
+// TODO(get this working) - mixing async and non-async stuff I think
 std::variant<absl::StatusOr<std::string>, std::shared_ptr<AsyncSigningHandle>>
 PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
                                 SignatureAlgorithm signature_algorithm,
                                 OnSignComplete on_sign_complete) {
-  // TODO(gregorycooke) do impl with new type
-  auto on_sign_complete_cpp_callback =
-      [](const absl::StatusOr<std::string> result, void* completion_data) {
-        grpc_core::ExecCtx exec_ctx;
-        auto* on_sign_complete_ptr =
-            static_cast<OnSignComplete*>(completion_data);
-        (*on_sign_complete_ptr)(result);
-        delete on_sign_complete_ptr;
-      };
-
-  // We have to manage the lifetime
-  auto* on_sign_complete_heap =
-      new OnSignComplete(std::move(on_sign_complete));
-
-  sign_py_wrapper_(data_to_sign, signature_algorithm,
-                   on_sign_complete_cpp_callback, on_sign_complete_heap,
-                   sign_user_data_);
-  return absl::UnimplementedError("TODO impl");
+  // We have a fn, sign_py_wrapper_ of type SignWrapperForPy to call
+  // Wrap it with the C++ APIs
+  // auto* context = new CompletionContext{
+  //     .on_complete = std::move(on_sign_complete),
+  // };
+  auto event_engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+  event_engine->Run([self = shared_from_this(),
+                     data_to_sign = std::string(data_to_sign),
+                     signature_algorithm,
+                     on_complete = std::move(on_sign_complete)]() mutable {
+    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                 gpr_time_from_millis(3000, GPR_TIMESPAN)));
+    // Make sure it's safe to call into Python
+    // PyGILState_STATE gstate;
+    // gstate = PyGILState_Ensure();
+    // Make the call into cython that will call the python callable
+    std::cout << "In event engine\n";
+    auto signed_data = self->sign_py_wrapper_(data_to_sign, signature_algorithm,
+                                              self->sign_user_data_);
+    // We're done needing Python
+    // PyGILState_Release(gstate);
+    std::cout << "calling on_complete\n";
+    on_complete(signed_data);
+  });
+  // Some more involved handle with event engine?
+  std::cout << "returning from Sign with async handle\n";
+  return std::make_shared<grpc_core::AsyncSigningHandle>();
 }
 
 void PrivateKeySignerPyWrapper::Cancel(
@@ -53,9 +71,10 @@ void PrivateKeySignerPyWrapper::Cancel(
                                               bubble up to Python? */
 }
 
-PrivateKeySigner* BuildPrivateKeySigner(SignPyWrapper sign_py_wrapper,
-                                        void* user_data) {
-  return new PrivateKeySignerPyWrapper(sign_py_wrapper, user_data);
+std::shared_ptr<PrivateKeySigner> BuildPrivateKeySigner(
+    SignWrapperForPy sign_py_wrapper, void* user_data) {
+  return std::make_shared<PrivateKeySignerPyWrapper>(sign_py_wrapper,
+                                                     user_data);
 }
 
 }  // namespace grpc_core

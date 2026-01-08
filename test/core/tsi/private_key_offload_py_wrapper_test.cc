@@ -18,31 +18,37 @@
 
 // TODO(gregorycooke gtcooke94)
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
 #include <grpc/private_key_signer.h>
 
+#include <memory>
 #include <string>
-#include <utility>
 
-#include "openssl/bio.h"
-#include "openssl/crypto.h"
-#include "openssl/evp.h"
-#include "openssl/pem.h"
-#include "openssl/ssl.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/private_key_signer_py_wrapper.h"
-#include "src/core/util/load_file.h"
+#include "src/core/tsi/ssl_transport_security.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "test/core/tsi/transport_security_test_lib.h"
 #include "gtest/gtest.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/synchronization/notification.h"
+#include "absl/types/optional.h"
+
+extern "C" {
+#include <openssl/bio.h>
+#include <openssl/crypto.h>
+#include <openssl/evp.h>
+#include <openssl/pem.h>
+#include <openssl/ssl.h>
+}
 
 namespace grpc_core {
 namespace testing {
 namespace {
+
+// TODO(gtcooke94) - this test structure doesn't work as is with async right now
+
+constexpr absl::string_view kTestCredsRelativePath = "src/core/tsi/test_creds/";
 
 bssl::UniquePtr<EVP_PKEY> LoadPrivateKeyFromString(
     absl::string_view private_pem) {
@@ -52,204 +58,284 @@ bssl::UniquePtr<EVP_PKEY> LoadPrivateKeyFromString(
       PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, nullptr));
 }
 
-bssl::UniquePtr<EVP_PKEY> LoadPublicKeyFromString(
-    absl::string_view public_pem) {
-  bssl::UniquePtr<BIO> bio(
-      BIO_new_mem_buf(public_pem.data(), public_pem.size()));
-  bssl::UniquePtr<X509> x509(
-      PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr));
-  if (!x509) return nullptr;
-  return bssl::UniquePtr<EVP_PKEY>(X509_get_pubkey(x509.get()));
-}
+// TODO(gregorycooke) use the private_key_offload_test.cc as templates for these
+// wrapper tests
 
-bool GetBoringSslAlgorithm(
-    PrivateKeySigner::SignatureAlgorithm signature_algorithm, const EVP_MD** md,
-    int* padding) {
+uint16_t GetBoringSslAlgorithm(
+    PrivateKeySigner::SignatureAlgorithm signature_algorithm) {
   switch (signature_algorithm) {
     case PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha256:
-      *md = EVP_sha256();
-      *padding = RSA_PKCS1_PADDING;
-      return true;
+      return SSL_SIGN_RSA_PKCS1_SHA256;
     case PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha384:
-      *md = EVP_sha384();
-      *padding = RSA_PKCS1_PADDING;
-      return true;
+      return SSL_SIGN_RSA_PKCS1_SHA384;
     case PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha512:
-      *md = EVP_sha512();
-      *padding = RSA_PKCS1_PADDING;
-      return true;
+      return SSL_SIGN_RSA_PKCS1_SHA512;
     case PrivateKeySigner::SignatureAlgorithm::kEcdsaSecp256r1Sha256:
-      *md = EVP_sha256();
-      *padding = 0;
-      return true;
+      return SSL_SIGN_ECDSA_SECP256R1_SHA256;
     case PrivateKeySigner::SignatureAlgorithm::kEcdsaSecp384r1Sha384:
-      *md = EVP_sha384();
-      *padding = 0;
-      return true;
+      return SSL_SIGN_ECDSA_SECP384R1_SHA384;
     case PrivateKeySigner::SignatureAlgorithm::kEcdsaSecp521r1Sha512:
-      *md = EVP_sha512();
-      *padding = 0;
-      return true;
+      return SSL_SIGN_ECDSA_SECP521R1_SHA512;
     case PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha256:
-      *md = EVP_sha256();
-      *padding = RSA_PKCS1_PSS_PADDING;
-      return true;
+      return SSL_SIGN_RSA_PSS_RSAE_SHA256;
     case PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha384:
-      *md = EVP_sha384();
-      *padding = RSA_PKCS1_PSS_PADDING;
-      return true;
+      return SSL_SIGN_RSA_PSS_RSAE_SHA384;
     case PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha512:
-      *md = EVP_sha512();
-      *padding = RSA_PKCS1_PSS_PADDING;
-      return true;
-    default:
-      return false;
+      return SSL_SIGN_RSA_PSS_RSAE_SHA512;
   }
+  return -1;
 }
 
-struct SignerData {
-  bssl::UniquePtr<EVP_PKEY> pkey;
-};
-
-void SignPyWrapperImpl(
+absl::StatusOr<std::string> SignPyWrapperImplErrorTemp(
     absl::string_view data_to_sign,
     grpc_core::PrivateKeySigner::SignatureAlgorithm signature_algorithm,
-    OnSignCompletePyWrapper on_sign_complete_py_wrapper, void* completion_data,
     void* user_data) {
-  SignerData* signer_data = static_cast<SignerData*>(user_data);
-  const EVP_MD* md = nullptr;
-  int padding = 0;
-  if (!GetBoringSslAlgorithm(signature_algorithm, &md, &padding)) {
-    on_sign_complete_py_wrapper(
-        absl::InternalError("Unsupported signature algorithm"), completion_data);
-    return;
-  }
-  bssl::ScopedEVP_MD_CTX ctx;
-  EVP_PKEY_CTX* pctx = nullptr;
-  if (!EVP_DigestSignInit(ctx.get(), &pctx, md, nullptr,
-                          signer_data->pkey.get())) {
-    on_sign_complete_py_wrapper(absl::InternalError("EVP_DigestSignInit failed"),
-                                completion_data);
-    return;
-  }
-  if (padding == RSA_PKCS1_PADDING) {
-    if (!EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PADDING)) {
-      on_sign_complete_py_wrapper(
-          absl::InternalError("EVP_PKEY_CTX_set_rsa_padding failed"),
-          completion_data);
-      return;
-    }
-  } else if (padding == RSA_PKCS1_PSS_PADDING) {
-    if (!EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PSS_PADDING) ||
-        !EVP_PKEY_CTX_set_rsa_pss_saltlen(pctx, -1)) {
-      on_sign_complete_py_wrapper(
-          absl::InternalError("EVP_PKEY_CTX_set_rsa_padding failed"),
-          completion_data);
-      return;
-    }
-  }
-  size_t sig_len = 0;
-  if (!EVP_DigestSignUpdate(ctx.get(), data_to_sign.data(),
-                          data_to_sign.size()) ||
-      !EVP_DigestSignFinal(ctx.get(), nullptr, &sig_len)) {
-    on_sign_complete_py_wrapper(absl::InternalError("EVP_DigestSignFinal failed"),
-                                completion_data);
-    return;
-  }
-  std::string sig;
-  sig.resize(sig_len);
-  if (!EVP_DigestSignFinal(ctx.get(), reinterpret_cast<uint8_t*>(sig.data()),
-                           &sig_len)) {
-    on_sign_complete_py_wrapper(absl::InternalError("EVP_DigestSignFinal failed"),
-                                completion_data);
-    return;
-  }
-  sig.resize(sig_len);
-  on_sign_complete_py_wrapper(std::move(sig), completion_data);
+  std::cout << "In sign py wrapper impl\n";
+  // gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+  //                              gpr_time_from_seconds(2, GPR_TIMESPAN)));
+  return absl::InternalError("Intentional Failure for testing.");
 }
 
-absl::Status Verify(EVP_PKEY* pkey, PrivateKeySigner::SignatureAlgorithm alg,
-                    absl::string_view data, absl::string_view sig) {
-  const EVP_MD* md = nullptr;
-  int padding = 0;
-  if (!GetBoringSslAlgorithm(alg, &md, &padding)) {
-    return absl::InternalError("Unsupported signature algorithm");
-  }
-  bssl::ScopedEVP_MD_CTX ctx;
-  EVP_PKEY_CTX* pctx = nullptr;
-  if (!EVP_DigestVerifyInit(ctx.get(), &pctx, md, nullptr, pkey)) {
-    return absl::InternalError("EVP_DigestVerifyInit failed");
-  }
-  if (padding == RSA_PKCS1_PADDING) {
-    if (!EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PADDING)) {
-      return absl::InternalError("EVP_PKEY_CTX_set_rsa_padding failed");
-    }
-  } else if (padding == RSA_PKCS1_PSS_PADDING) {
-    if (!EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PSS_PADDING) ||
-        !EVP_PKEY_CTX_set_rsa_pss_saltlen(pctx, -1)) {
-      return absl::InternalError("EVP_PKEY_CTX_set_rsa_padding failed");
-    }
-  }
-  if (!EVP_DigestVerifyUpdate(ctx.get(), data.data(), data.size())) {
-    return absl::InternalError("EVP_DigestVerifyUpdate failed");
-  }
-  if (EVP_DigestVerifyFinal(ctx.get(), reinterpret_cast<const uint8_t*>(sig.data()),
-                          sig.size())) {
-    return absl::OkStatus();
-  }
-  return absl::InternalError("Signature verification failed");
-}
+// Provide a fake SignPyWrapperImpl, normally this will come from the cython
+// layer
+// void SignPyWrapperImpl(
+//     absl::string_view data_to_sign,
+//     grpc_core::PrivateKeySigner::SignatureAlgorithm signature_algorithm,
+//     OnSignCompletePyWrapper on_sign_complete_py_wrapper, void*
+//     completion_data, void* user_data) {
+//   SignerData* signer_data = static_cast<SignerData*>(user_data);
+//   const EVP_MD* md = nullptr;
+//   int padding = 0;
+//   if (!GetBoringSslAlgorithm(signature_algorithm, &md, &padding)) {
+//     on_sign_complete_py_wrapper(
+//         absl::InternalError("Unsupported signature algorithm"),
+//         completion_data);
+//     return;
+//   }
+//   bssl::ScopedEVP_MD_CTX ctx;
+//   EVP_PKEY_CTX* pctx = nullptr;
+//   if (!EVP_DigestSignInit(ctx.get(), &pctx, md, nullptr,
+//                           signer_data->pkey.get())) {
+//     on_sign_complete_py_wrapper(absl::InternalError("EVP_DigestSignInit
+//     failed"),
+//                                 completion_data);
+//     return;
+//   }
+//   if (padding == RSA_PKCS1_PADDING) {
+//     if (!EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PADDING)) {
+//       on_sign_complete_py_wrapper(
+//           absl::InternalError("EVP_PKEY_CTX_set_rsa_padding failed"),
+//           completion_data);
+//       return;
+//     }
+//   } else if (padding == RSA_PKCS1_PSS_PADDING) {
+//     if (!EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PSS_PADDING) ||
+//         !EVP_PKEY_CTX_set_rsa_pss_saltlen(pctx, -1)) {
+//       on_sign_complete_py_wrapper(
+//           absl::InternalError("EVP_PKEY_CTX_set_rsa_padding failed"),
+//           completion_data);
+//       return;
+//     }
+//   }
+//   size_t sig_len = 0;
+//   if (!EVP_DigestSignUpdate(ctx.get(), data_to_sign.data(),
+//                           data_to_sign.size()) ||
+//       !EVP_DigestSignFinal(ctx.get(), nullptr, &sig_len)) {
+//     on_sign_complete_py_wrapper(absl::InternalError("EVP_DigestSignFinal
+//     failed"),
+//                                 completion_data);
+//     return;
+//   }
+//   std::string sig;
+//   sig.resize(sig_len);
+//   if (!EVP_DigestSignFinal(ctx.get(),
+//   reinterpret_cast<uint8_t*>(sig.data()),
+//                            &sig_len)) {
+//     on_sign_complete_py_wrapper(absl::InternalError("EVP_DigestSignFinal
+//     failed"),
+//                                 completion_data);
+//     return;
+//   }
+//   sig.resize(sig_len);
+//   on_sign_complete_py_wrapper(std::move(sig), completion_data);
+// }
 
-struct TestVector {
-  std::string name;
-  std::string key_path;
-  std::string cert_path;
-  PrivateKeySigner::SignatureAlgorithm alg;
+enum class OffloadParty {
+  kClient,
+  kServer,
+  kNone,
 };
 
-class PyWrapperPrivateKeySignerTest
-    : public ::testing::TestWithParam<TestVector> {};
+class PrivateKeyOffloadTest : public ::testing::TestWithParam<tsi_tls_version> {
+ protected:
+  class SslOffloadTsiTestFixture {
+   public:
+    explicit SslOffloadTsiTestFixture(OffloadParty offload_party,
+                                      std::shared_ptr<PrivateKeySigner> signer)
+        : offload_party_(offload_party), signer_(std::move(signer)) {
+      tsi_test_fixture_init(&base_);
+      base_.test_unused_bytes = true;
+      base_.vtable = &kVtable;
+      ca_cert_ =
+          GetFileContents(absl::StrCat(kTestCredsRelativePath, "ca.pem"));
+      server_key_ =
+          GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.key"));
+      server_cert_ =
+          GetFileContents(absl::StrCat(kTestCredsRelativePath, "server1.pem"));
+      client_key_ =
+          GetFileContents(absl::StrCat(kTestCredsRelativePath, "client.key"));
+      client_cert_ =
+          GetFileContents(absl::StrCat(kTestCredsRelativePath, "client.pem"));
+      if (signer_ == nullptr) {
+        // This is where we actually make it
+        if (offload_party_ == OffloadParty::kClient) {
+          // signer_ =
+          // std::make_shared<BoringSslPrivateKeySigner>(client_key_);
+        } else if (offload_party_ == OffloadParty::kServer) {
+          signer_ = BuildPrivateKeySigner(SignPyWrapperImplErrorTemp, nullptr);
+          // signer_ =
+          // std::make_shared<BoringSslPrivateKeySigner>(server_key_);
+        }
+      }
+      server_pem_key_cert_pairs_.emplace_back(server_key_, server_cert_);
+      client_pem_key_cert_pairs_.emplace_back(client_key_, client_cert_);
+      server_pem_key_cert_pairs_with_signer_.emplace_back(signer_,
+                                                          server_cert_);
+      client_pem_key_cert_pairs_with_signer_.emplace_back(signer_,
+                                                          client_cert_);
+    }
 
-TEST_P(PyWrapperPrivateKeySignerTest, SignAndVerify) {
-  const TestVector& param = GetParam();
-  auto key_slice = LoadFile(param.key_path, 0);
-  ASSERT_TRUE(key_slice.ok()) << key_slice.status();
-  std::string key_str(key_slice->as_string_view());
-  bssl::UniquePtr<EVP_PKEY> key = LoadPrivateKeyFromString(key_str);
-  ASSERT_NE(key, nullptr);
+    void Run(bool expect_success, bool expect_success_on_client) {
+      expect_success_ = expect_success;
+      expect_success_on_client_ = expect_success_on_client;
+      tsi_test_do_handshake(&base_);
+      tsi_test_fixture_destroy(&base_);
+    }
 
-  auto cert_slice = LoadFile(param.cert_path, 0);
-  ASSERT_TRUE(cert_slice.ok());
-  std::string cert_str(cert_slice->as_string_view());
-  bssl::UniquePtr<EVP_PKEY> pub_key = LoadPublicKeyFromString(cert_str);
-  ASSERT_NE(pub_key, nullptr);
+    ~SslOffloadTsiTestFixture() {
+      tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory_);
+      tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
+    }
 
-  SignerData signer_data;
-  signer_data.pkey = std::move(key);
+   private:
+    static void SetupHandshakers(tsi_test_fixture* fixture) {
+      auto* self = reinterpret_cast<SslOffloadTsiTestFixture*>(fixture);
+      self->SetupHandshakers();
+    }
 
-  std::unique_ptr<PrivateKeySigner> signer(
-      BuildPrivateKeySigner(SignPyWrapperImpl, &signer_data));
+    void SetupHandshakers() {
+      // Create client handshaker factory.
+      tsi_ssl_client_handshaker_options client_options;
+      client_options.root_cert_info = std::make_shared<RootCertInfo>(ca_cert_);
+      client_options.min_tls_version = GetParam();
+      client_options.max_tls_version = GetParam();
+      if (offload_party_ == OffloadParty::kClient) {
+        client_options.pem_key_cert_pair =
+            &client_pem_key_cert_pairs_with_signer_[0];
+      } else {
+        client_options.pem_key_cert_pair = &client_pem_key_cert_pairs_[0];
+      }
+      ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
+                    &client_options, &client_handshaker_factory_),
+                TSI_OK);
 
-  absl::StatusOr<std::string> result;
-  absl::Notification notification;
-  signer->Sign("Hello World!", param.alg,
-               [&](absl::StatusOr<std::string> sign_result) {
-                 result = std::move(sign_result);
-                 notification.Notify();
-               });
-  notification.WaitForNotification();
-  ASSERT_TRUE(result.ok());
-  EXPECT_TRUE(Verify(pub_key.get(), param.alg, "Hello World!", *result).ok());
+      // Create server handshaker factory.
+      tsi_ssl_server_handshaker_options server_options;
+      server_options.root_cert_info = std::make_shared<RootCertInfo>(ca_cert_);
+      server_options.client_certificate_request =
+          TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY;
+      server_options.min_tls_version = GetParam();
+      server_options.max_tls_version = GetParam();
+      if (offload_party_ == OffloadParty::kServer) {
+        server_options.pem_key_cert_pairs =
+            server_pem_key_cert_pairs_with_signer_;
+      } else {
+        server_options.pem_key_cert_pairs = server_pem_key_cert_pairs_;
+      }
+      ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
+                    &server_options, &server_handshaker_factory_),
+                TSI_OK);
+
+      // Create handshakers.
+      ASSERT_EQ(tsi_ssl_client_handshaker_factory_create_handshaker(
+                    client_handshaker_factory_, nullptr, 0, 0, std::nullopt,
+                    &base_.client_handshaker),
+                TSI_OK);
+      ASSERT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
+                    server_handshaker_factory_, 0, 0, &base_.server_handshaker),
+                TSI_OK);
+    }
+
+    static void CheckHandshakerPeers(tsi_test_fixture* fixture) {
+      auto* self = reinterpret_cast<SslOffloadTsiTestFixture*>(fixture);
+      self->CheckHandshakerPeers();
+    }
+
+    void CheckHandshakerPeers() {
+      if (expect_success_) {
+        tsi_peer peer;
+        EXPECT_EQ(
+            tsi_handshaker_result_extract_peer(base_.client_result, &peer),
+            TSI_OK);
+        tsi_peer_destruct(&peer);
+        EXPECT_EQ(
+            tsi_handshaker_result_extract_peer(base_.server_result, &peer),
+            TSI_OK);
+        tsi_peer_destruct(&peer);
+      } else {
+        EXPECT_EQ(base_.client_result != nullptr, expect_success_on_client_);
+        EXPECT_EQ(base_.server_result, nullptr);
+      }
+    }
+
+    static void Destruct(tsi_test_fixture* fixture) {
+      delete reinterpret_cast<SslOffloadTsiTestFixture*>(fixture);
+    }
+
+    static struct tsi_test_fixture_vtable kVtable;
+
+    tsi_test_fixture base_;
+    tsi_ssl_server_handshaker_factory* server_handshaker_factory_ = nullptr;
+    tsi_ssl_client_handshaker_factory* client_handshaker_factory_ = nullptr;
+    std::string ca_cert_;
+    std::string server_key_;
+    std::string server_cert_;
+    std::string client_key_;
+    std::string client_cert_;
+    std::vector<tsi_ssl_pem_key_cert_pair> server_pem_key_cert_pairs_;
+    std::vector<tsi_ssl_pem_key_cert_pair> client_pem_key_cert_pairs_;
+    std::vector<tsi_ssl_pem_key_cert_pair>
+        server_pem_key_cert_pairs_with_signer_;
+    std::vector<tsi_ssl_pem_key_cert_pair>
+        client_pem_key_cert_pairs_with_signer_;
+    OffloadParty offload_party_;
+    std::shared_ptr<PrivateKeySigner> signer_;
+    bool expect_success_ = false;
+    bool expect_success_on_client_ = false;
+  };
+};
+
+struct tsi_test_fixture_vtable
+    PrivateKeyOffloadTest::SslOffloadTsiTestFixture::kVtable = {
+        &PrivateKeyOffloadTest::SslOffloadTsiTestFixture::SetupHandshakers,
+        &PrivateKeyOffloadTest::SslOffloadTsiTestFixture::CheckHandshakerPeers,
+        &PrivateKeyOffloadTest::SslOffloadTsiTestFixture::Destruct};
+
+TEST_P(PrivateKeyOffloadTest, Greg) {
+  auto* fixture = new SslOffloadTsiTestFixture(OffloadParty::kServer, nullptr);
+  fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false);
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    PyWrapperPrivateKeySignerTest, PyWrapperPrivateKeySignerTest,
-    ::testing::Values(TestVector{
-        "RsaPkcs1Sha256", "test/core/tsi/test_creds/spiffe_end2end/ca.key",
-        "test/core/tsi/test_creds/spiffe_end2end/ca.pem",
-        PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha256}),
-    [](const ::testing::TestParamInfo<PyWrapperPrivateKeySignerTest::ParamType>&
-           info) { return info.param.name; });
+std::string TestNameSuffix(
+    const ::testing::TestParamInfo<tsi_tls_version>& version) {
+  if (version.param == tsi_tls_version::TSI_TLS1_2) return "TLS_1_2";
+  return "TLS_1_3";
+}
+
+INSTANTIATE_TEST_SUITE_P(PrivateKeyOffloadTest, PrivateKeyOffloadTest,
+                         ::testing::Values(tsi_tls_version::TSI_TLS1_2,
+                                           tsi_tls_version::TSI_TLS1_3),
+                         TestNameSuffix);
 
 }  // namespace
 }  // namespace testing
@@ -257,6 +343,9 @@ INSTANTIATE_TEST_SUITE_P(
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
+  grpc_init();
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  int ret = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return ret;
 }

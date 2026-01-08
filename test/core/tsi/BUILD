@@ -293,7 +293,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "private_key_offload_py_wrapper_test",
-    srcs = ["private_key_offload_test.cc"],
+    srcs = ["private_key_offload_py_wrapper_test.cc"],
     data = [
         "//src/core/tsi/test_creds:ca.pem",
         "//src/core/tsi/test_creds:client.key",
@@ -319,6 +319,7 @@ grpc_cc_test(
         "//:tsi_base",
         "//:tsi_ssl_credentials",
         "//src/core:default_event_engine",
+        "//src/core:private_key_signer_py_wrapper",
         "//test/core/test_util:grpc_test_util",
     ],
 )
