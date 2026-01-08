@@ -361,8 +361,10 @@ void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
     ctx->status = TlsPrivateKeyOffloadContext::kSignatureCompleted;
     return;
   }
+  LOG(ERROR) << "TlsOffloadSignDoneCallback";
   ctx->status = TlsPrivateKeyOffloadContext::kSignatureCompleted;
   if (!ctx->signed_bytes.ok()) {
+    LOG(ERROR) << "Notify";
     // Notify the TSI layer to re-enter the handshake.
     // This call is thread-safe as per TSI requirements for the callback.
     if (ctx->notify_cb) {
@@ -494,12 +496,23 @@ static void verified_root_cert_free(void* /*parent*/, void* ptr,
   X509_free(static_cast<X509*>(ptr));
 }
 
-static void private_key_offloading_context_free(void* /*parent*/, void* ptr,
+static void private_key_offloading_context_free(void* parent, void* ptr,
                                                 CRYPTO_EX_DATA* /*ad*/,
                                                 int /*index*/, long /*argl*/,
                                                 void* /*argp*/) {
   TlsPrivateKeyOffloadContext* ctx =
       static_cast<TlsPrivateKeyOffloadContext*>(ptr);
+  if (ctx == nullptr) {
+    return;
+  }
+  if (ctx->status == TlsPrivateKeyOffloadContext::kInProgressAsync &&
+      ctx->signing_handle != nullptr) {
+    SSL* ssl = static_cast<SSL*>(parent);
+    grpc_core::PrivateKeySigner* signer = GetPrivateKeySigner(ssl);
+    if (signer != nullptr) {
+      signer->Cancel(ctx->signing_handle);
+    }
+  }
   delete ctx;
 }
 
@@ -2242,7 +2255,8 @@ static tsi_result ssl_handshaker_next(
     size_t* bytes_to_send_size, tsi_handshaker_result** handshaker_result,
     tsi_handshaker_on_next_done_cb cb, void* user_data, std::string* error) {
   tsi_ssl_handshaker* impl = reinterpret_cast<tsi_ssl_handshaker*>(self);
-  TlsPrivateKeyOffloadContext* offload_context = GetTlsPrivateKeyOffloadContext(impl->ssl);
+  TlsPrivateKeyOffloadContext* offload_context =
+      GetTlsPrivateKeyOffloadContext(impl->ssl);
   // If this is a re-entry from an async private key operation, use the saved
   // state.
   if (offload_context != nullptr &&
@@ -2390,6 +2404,19 @@ static tsi_result ssl_handshaker_next(
   return status;
 }
 
+static void ssl_handshaker_shutdown(tsi_handshaker* self) {
+  tsi_ssl_handshaker* impl = reinterpret_cast<tsi_ssl_handshaker*>(self);
+  TlsPrivateKeyOffloadContext* offload_context =
+      GetTlsPrivateKeyOffloadContext(impl->ssl);
+  grpc_core::PrivateKeySigner* sign_function = GetPrivateKeySigner(impl->ssl);
+  if (offload_context != nullptr && sign_function != nullptr &&
+      offload_context->signing_handle != nullptr &&
+      offload_context->status ==
+          TlsPrivateKeyOffloadContext::kInProgressAsync) {
+    sign_function->Cancel(std::move(offload_context->signing_handle));
+  }
+}
+
 static const tsi_handshaker_vtable handshaker_vtable = {
     nullptr,  // get_bytes_to_send_to_peer -- deprecated
     nullptr,  // process_bytes_from_peer   -- deprecated
@@ -2398,7 +2425,7 @@ static const tsi_handshaker_vtable handshaker_vtable = {
     nullptr,  // create_frame_protector    -- deprecated
     ssl_handshaker_destroy,
     ssl_handshaker_next,
-    nullptr,  // shutdown
+    ssl_handshaker_shutdown,  // shutdown
 };
 
 // --- tsi_ssl_handshaker_factory common methods. ---
