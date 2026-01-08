@@ -90,7 +90,6 @@ absl::StatusOr<std::string> SignPyWrapperImplErrorTemp(
     absl::string_view data_to_sign,
     grpc_core::PrivateKeySigner::SignatureAlgorithm signature_algorithm,
     void* user_data) {
-  std::cout << "In sign py wrapper impl\n";
   // gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
   //                              gpr_time_from_seconds(2, GPR_TIMESPAN)));
   return absl::InternalError("Intentional Failure for testing.");

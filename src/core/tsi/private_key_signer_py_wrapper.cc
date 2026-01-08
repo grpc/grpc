@@ -53,16 +53,13 @@ PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
     // PyGILState_STATE gstate;
     // gstate = PyGILState_Ensure();
     // Make the call into cython that will call the python callable
-    std::cout << "In event engine\n";
     auto signed_data = self->sign_py_wrapper_(data_to_sign, signature_algorithm,
                                               self->sign_user_data_);
     // We're done needing Python
     // PyGILState_Release(gstate);
-    std::cout << "calling on_complete\n";
     on_complete(signed_data);
   });
   // Some more involved handle with event engine?
-  std::cout << "returning from Sign with async handle\n";
   return std::make_shared<grpc_core::AsyncSigningHandle>();
 }
 

@@ -1734,6 +1734,7 @@ CustomPrivateKeySign = Callable[
 ]
 
 
+# TODO(gtcooke94) work here
 def ssl_channel_credentials_with_custom_signer(
     *,
     private_key_sign_fn: CustomPrivateKeySign,

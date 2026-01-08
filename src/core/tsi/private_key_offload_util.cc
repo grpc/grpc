@@ -64,26 +64,21 @@ absl::StatusOr<PrivateKeySigner::SignatureAlgorithm> ToSignatureAlgorithmClass(
 #if defined(OPENSSL_IS_BORINGSSL)
 void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
                                 absl::StatusOr<std::string> signed_data) {
-  std::cout << "In TlsOffloadSignDoneCallback\n";
   ctx->signed_bytes = std::move(signed_data);
   if (ctx->status != TlsPrivateKeyOffloadContext::kInProgressAsync) {
-    std::cout << "greg1\n";
     ctx->status = TlsPrivateKeyOffloadContext::kSignatureCompleted;
     return;
   }
   ctx->status = TlsPrivateKeyOffloadContext::kSignatureCompleted;
   if (!ctx->signed_bytes.ok()) {
-    std::cout << "greg2\n";
     // Notify the TSI layer to re-enter the handshake.
     // This call is thread-safe as per TSI requirements for the callback.
     if (ctx->notify_cb) {
-      std::cout << "call notify_cb\n";
       ctx->notify_cb(TSI_INTERNAL_ERROR, ctx->notify_user_data, nullptr, 0,
                      ctx->handshaker_result);
     }
     return;
   }
-  std::cout << "greg3\n";
   const uint8_t* bytes_to_send = nullptr;
   size_t bytes_to_send_size = 0;
   // Once the signed bytes are obtained, wrap an empty callback to
@@ -91,11 +86,9 @@ void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
   tsi_result result = tsi_handshaker_next(
       ctx->handshaker, nullptr, 0, &bytes_to_send, &bytes_to_send_size,
       &ctx->handshaker_result, ctx->notify_cb, ctx->notify_user_data);
-  std::cout << "greg4\n";
   if (result != TSI_ASYNC) {
     // Notify the TSI layer to re-enter the handshake. This call is
     // thread-safe as per TSI requirements for the callback.
-    std::cout << "greg5\n";
     if (ctx->notify_cb) {
       ctx->notify_cb(result, ctx->notify_user_data, bytes_to_send,
                      bytes_to_send_size, ctx->handshaker_result);
@@ -142,13 +135,11 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
   // Handle asynchronous return.
   if (auto* handle =
           std::get_if<std::shared_ptr<AsyncSigningHandle>>(&result)) {
-    std::cout << "Greg10\n";
     ctx->signing_handle = std::move(*handle);
     ctx->status = TlsPrivateKeyOffloadContext::kInProgressAsync;
     return ssl_private_key_retry;
   }
   // Should never be reached.
-  std::cout << "Greg11\n";
   return ssl_private_key_failure;
 }
 
