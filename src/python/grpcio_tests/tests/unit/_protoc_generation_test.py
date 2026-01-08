@@ -15,11 +15,11 @@
 
 import logging
 import os
+from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import unittest
-from pathlib import Path
 
 _DATA_DIR = os.path.join(os.path.dirname(__file__), "data", "service")
 _PROTO_FILE = os.path.join(_DATA_DIR, "simple.proto")
