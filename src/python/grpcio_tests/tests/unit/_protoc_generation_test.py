@@ -31,7 +31,7 @@ class ProtocGenerationTest(unittest.TestCase):
             cmd = [
                 sys.executable,
                 "-m",
-                "grpcio_tools.protoc",
+                "grpc_tools.protoc",
                 "-I{}".format(_DATA_DIR),
                 "--python_out={}".format(tmp_dir),
                 "--grpc_python_out={}".format(tmp_dir),
