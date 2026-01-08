@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package tests.unit.data;
+
+message SimpleRequest {
+  string request_data = 1;
+}
+
+message SimpleResponse {
+  string response_data = 1;
+}
+
+service SimpleService {
+  rpc SimpleRpc(SimpleRequest) returns (SimpleResponse);
+}
