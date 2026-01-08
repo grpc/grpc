@@ -47,8 +47,6 @@ load("@rules_python//python:pip.bzl", "pip_parse")
 pip_parse(
     name = "grpc_python_dependencies",
     requirements_lock = "@com_github_grpc_grpc//:requirements.bazel.lock",
-    extra_pip_args = ["--index-url=https://pypi.org/simple"],
-    python_interpreter = "/usr/local/google/home/asheshvidyut/.pyenv/versions/3.11.13/bin/python3",
 )
 
 load("@grpc_python_dependencies//:requirements.bzl", "install_deps")
