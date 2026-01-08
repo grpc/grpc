@@ -40,6 +40,7 @@
 absl-py
 certifi
 chardet
+cython
 gevent~=25.8
 google-auth
 googleapis-common-protos
