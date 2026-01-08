@@ -23,6 +23,7 @@ import unittest
 _DATA_DIR = os.path.join(os.path.dirname(__file__), "data", "service")
 _PROTO_FILE = os.path.join(_DATA_DIR, "simple.proto")
 
+
 class ProtocGenerationTest(unittest.TestCase):
 
     def test_protoc_generation(self):
@@ -37,10 +38,10 @@ class ProtocGenerationTest(unittest.TestCase):
                 "--grpc_python_out={}".format(tmp_dir),
                 os.path.basename(_PROTO_FILE),
             ]
-            
+
             env = os.environ.copy()
             if "PYTHONPATH" not in env:
-                 env["PYTHONPATH"] = os.pathsep.join(sys.path)
+                env["PYTHONPATH"] = os.pathsep.join(sys.path)
 
             subprocess.check_call(cmd, env=env)
 
@@ -49,11 +50,12 @@ class ProtocGenerationTest(unittest.TestCase):
             try:
                 import simple_pb2
                 import simple_pb2_grpc
-                
+
                 self.assertTrue(hasattr(simple_pb2, "SimpleRequest"))
                 self.assertTrue(hasattr(simple_pb2_grpc, "SimpleServiceStub"))
             finally:
                 sys.path.pop(0)
+
 
 if __name__ == "__main__":
     logging.basicConfig()
