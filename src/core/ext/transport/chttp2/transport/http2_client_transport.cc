@@ -310,9 +310,6 @@ Http2Status Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
   // the function returns a non-ok status?
   ping_manager_->ReceivedDataFrame();
 
-  // Lookup stream
-  GRPC_HTTP2_CLIENT_DLOG
-      << "Http2ClientTransport ProcessHttp2DataFrame LookupStream";
   RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
 
   ValueOrHttp2Status<chttp2::FlowControlAction> flow_control_action =
@@ -483,6 +480,7 @@ Http2Status Http2ClientTransport::ProcessMetadata(
       } else {
         GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessMetadata "
                                   "SpawnPushServerInitialMetadata";
+        metadata->Set(PeerString(), incoming_headers_.peer_string());
         stream->did_receive_initial_metadata = true;
         call.SpawnPushServerInitialMetadata(std::move(metadata));
       }
@@ -764,8 +762,7 @@ Http2Status Http2ClientTransport::ProcessHttp2ContinuationFrame(
 
 Http2Status Http2ClientTransport::ProcessHttp2SecurityFrame(
     Http2SecurityFrame frame) {
-  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessHttp2SecurityFrame "
-                         << frame.payload.Length();
+  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessHttp2SecurityFrame ";
   if (settings_->IsSecurityFrameExpected()) {
     security_frame_handler_->ProcessPayload(std::move(frame.payload));
   }
@@ -1463,6 +1460,7 @@ Http2ClientTransport::Http2ClientTransport(
       next_stream_id_(/*Initial Stream ID*/ 1),
       should_reset_ping_clock_(false),
       is_first_write_(true),
+      incoming_headers_(IncomingMetadataTracker::GetPeerString(endpoint_)),
       max_write_size_(kMaxWriteSize),
       ping_manager_(std::nullopt),
       keepalive_manager_(std::nullopt),

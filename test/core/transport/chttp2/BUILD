@@ -789,6 +789,7 @@ grpc_cc_test(
         "//src/core:grpc_check",
         "//src/core:http2_status",
         "//src/core:incoming_metadata_tracker",
+        "//src/core:slice",
         "//test/core/transport/util:mock_promise_endpoint",
     ],
 )

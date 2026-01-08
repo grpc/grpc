@@ -76,6 +76,12 @@ struct CloseStreamArgs {
 
 class Http2ReadContext {
  public:
+  Http2ReadContext() = default;
+  Http2ReadContext(const Http2ReadContext&) = delete;
+  Http2ReadContext& operator=(const Http2ReadContext&) = delete;
+  Http2ReadContext(Http2ReadContext&&) = delete;
+  Http2ReadContext& operator=(Http2ReadContext&&) = delete;
+
   // Signals that the read loop should pause. If it's already paused, this is a
   // no-op.
   void SetPauseReadLoop() {
