@@ -979,11 +979,14 @@ class CallOpSet : public CallOpSetInterface,
       if (err == GRPC_CALL_ERROR_INVALID_METADATA) {
         grpc_call_cancel_with_status(call_.call(), GRPC_STATUS_INTERNAL,
                                      "Invalid metadata", nullptr);
+        // Set RPC status as internal error
         for (size_t i = 0; i < nops; ++i) {
           if (ops[i].op == GRPC_OP_RECV_STATUS_ON_CLIENT) {
             *ops[i].data.recv_status_on_client.status = GRPC_STATUS_INTERNAL;
           }
         }
+        // The following call_start_batch is internally-generated so no need for an
+        // explanatory log on failure.
         ABSL_CHECK(grpc_call_start_batch(call_.call(), nullptr, 0, core_cq_tag(),
                                   nullptr) == GRPC_CALL_OK);
         return;
