@@ -324,7 +324,10 @@ grpc_cc_test(
         "absl/memory",
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    tags = [
+        "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
+    ],
     deps = [
         ":interceptors_util",
         ":test_service_impl",
@@ -335,6 +338,7 @@ grpc_cc_test(
         "//:grpc++_codegen_proto",
         "//:iomgr",
         "//src/core:env",
+        "//src/core:experiments",
         "//src/core:grpc_check",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
