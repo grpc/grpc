@@ -266,6 +266,13 @@
   owner: ctiller@google.com
   test_tags: []
   allow_in_fuzzing_config: false # experiment currently crashes if enabled
+- name: promise_filter_send_cancel_metadata
+  description: Enables sending all trailing metadata fields from server side promise-based filters
+    upon stream cancellation.
+  expiry: 2026/04/01
+  owner: akshitpatel@google.com
+  test_tags: ["core_end2end_test"]
+  allow_in_fuzzing_config: true
 - name: retry_in_callv3
   description: Support retries with call-v3
   expiry: 2026/02/01
