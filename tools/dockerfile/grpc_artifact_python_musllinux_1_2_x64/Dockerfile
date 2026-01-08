@@ -59,10 +59,10 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
 
 #===================================
 # Install Python build requirements
-RUN /opt/python/cp39-cp39/bin/pip install --upgrade 'cython==3.2.3' && \
-  /opt/python/cp310-cp310/bin/pip install --upgrade 'cython==3.2.3' && \
-  /opt/python/cp311-cp311/bin/pip install --upgrade 'cython==3.2.3' && \
-  /opt/python/cp312-cp312/bin/pip install --upgrade 'cython==3.2.3' && \
-  /opt/python/cp313-cp313/bin/pip install --upgrade 'cython==3.2.3' && \
-  /opt/python/cp314-cp314/bin/pip install --upgrade 'cython==3.2.3'
+RUN /opt/python/cp39-cp39/bin/pip install --upgrade 'cython==3.1.1' && \
+  /opt/python/cp310-cp310/bin/pip install --upgrade 'cython==3.1.1' && \
+  /opt/python/cp311-cp311/bin/pip install --upgrade 'cython==3.1.1' && \
+  /opt/python/cp312-cp312/bin/pip install --upgrade 'cython==3.1.1' && \
+  /opt/python/cp313-cp313/bin/pip install --upgrade 'cython==3.1.1' && \
+  /opt/python/cp314-cp314/bin/pip install --upgrade 'cython==3.1.1'
 

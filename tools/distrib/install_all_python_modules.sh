@@ -29,7 +29,7 @@ function maybe_run_command () {
   fi
 }
 
-python3 -m pip install --upgrade "cython==3.2.3";
+python3 -m pip install --upgrade "cython==3.1.1";
 python3 -m pip install .;
 
 # Build and install grpcio_tools
