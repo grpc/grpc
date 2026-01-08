@@ -19,6 +19,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from pathlib import Path
 
 _DATA_DIR = os.path.join(os.path.dirname(__file__), "data", "service")
 _PROTO_FILE = os.path.join(_DATA_DIR, "simple.proto")
@@ -36,7 +37,7 @@ class ProtocGenerationTest(unittest.TestCase):
                 "-I{}".format(_DATA_DIR),
                 "--python_out={}".format(tmp_dir),
                 "--grpc_python_out={}".format(tmp_dir),
-                os.path.basename(_PROTO_FILE),
+                Path(_PROTO_FILE).name,
             ]
 
             env = os.environ.copy()
