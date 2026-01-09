@@ -167,7 +167,9 @@ class FileWatcherCertificateProvider final
       ABSL_GUARDED_BY(mu_) = nullptr;
   // Stores each cert_name we get from the distributor callback and its watcher
   // information.
-  std::map<std::string, WatcherInfo> watcher_info_ ABSL_GUARDED_BY(mu_);
+  std::map<std::string, WatcherInfo> root_watcher_info_ ABSL_GUARDED_BY(mu_);
+  std::map<std::string, WatcherInfo> identity_watcher_info_
+      ABSL_GUARDED_BY(mu_);
 };
 
 // Implements a provider that uses in-memory data that can be modified in a
@@ -216,7 +218,9 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
       ABSL_GUARDED_BY(mu_);
   // Stores each cert_name we get from the distributor callback and its watcher
   // information.
-  std::map<std::string, WatcherInfo> watcher_info_ ABSL_GUARDED_BY(mu_);
+  std::map<std::string, WatcherInfo> root_watcher_info_ ABSL_GUARDED_BY(mu_);
+  std::map<std::string, WatcherInfo> identity_watcher_info_
+      ABSL_GUARDED_BY(mu_);
 };
 
 //  Checks if the private key matches the certificate's public key.

@@ -268,8 +268,6 @@ static int g_ssl_ex_verified_root_cert_index = -1;
 static int g_ssl_ex_private_key_offloading_context_index = -1;
 static int g_ssl_ctx_ex_private_key_function_index = -1;
 
-#if defined(OPENSSL_IS_BORINGSSL)
-
 absl::StatusOr<grpc_core::PrivateKeySigner::SignatureAlgorithm>
 ToSignatureAlgorithmClass(uint16_t algorithm) {
 #if defined(OPENSSL_IS_BORINGSSL)
@@ -354,6 +352,7 @@ grpc_core::PrivateKeySigner* GetPrivateKeySigner(SSL* ssl) {
       SSL_CTX_get_ex_data(ssl_ctx, g_ssl_ctx_ex_private_key_function_index));
 }
 
+#if defined(OPENSSL_IS_BORINGSSL)
 void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
                                 absl::StatusOr<std::string> signed_data) {
   ctx->signed_bytes = std::move(signed_data);
