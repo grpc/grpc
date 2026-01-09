@@ -71,6 +71,15 @@ absl::StatusOr<StringMatcher> GetStringMatcher(absl::string_view value) {
 
 absl::StatusOr<HeaderMatcher> GetHeaderMatcher(absl::string_view name,
                                                absl::string_view value) {
+  // IMPORTANT: Treat "*" as a *presence* match for headers (header must exist),
+  // not a non-empty-string match. In HTTP/2, a header can be present with an
+  // empty value; RBAC policies commonly rely on presence semantics.
+  //
+  // Using ".+" here allows bypassing deny/allow rules by sending an explicitly
+  // empty header value (e.g., "x-foo:").
+  if (value == "*") {
+    return HeaderMatcher::Create(name, HeaderMatcher::Type::kSafeRegex, ".*");
+  }
   StringMatcher::Type type;
   absl::string_view matcher = GetMatcherType(value, &type);
   return HeaderMatcher::Create(name, static_cast<HeaderMatcher::Type>(type),
