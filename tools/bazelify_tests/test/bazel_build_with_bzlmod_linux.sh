@@ -34,7 +34,7 @@ tools/bazel \
 # Test if a few basic tests can pass.
 # This is a temporary sanity check covering essential features,
 # to be replaced by a comprehensive test suite once the bzlmod migration is finished.
-# TODO(weizheyuan): Replace this with //test/core/util:all once we fixed fuzztest.
+# TODO(weizheyuan): Test //test/core/util:all once we fixed fuzztest.
 tools/bazel \
     --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
     test \
