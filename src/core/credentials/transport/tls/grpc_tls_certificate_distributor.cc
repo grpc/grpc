@@ -184,7 +184,6 @@ void grpc_tls_certificate_distributor::WatchTlsCertificates(
     // Nothing to watch.
     return;
   }
-  // GRPC_CHECK(root_cert_name.has_value() || identity_cert_name.has_value());
   TlsCertificatesWatcherInterface* watcher_ptr = watcher.get();
   GRPC_CHECK_NE(watcher_ptr, nullptr);
   // Update watchers_ and certificate_info_map_.
