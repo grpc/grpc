@@ -187,8 +187,6 @@ XdsCredentials::create_security_connector(
       }
       tls_credentials_options->set_verify_server_cert(true);
       auto hostname = args->GetOwnedString(GRPC_ARG_ADDRESS_NAME);
-      GRPC_TRACE_LOG(client_channel_call, INFO)
-          << "hostname=" << hostname.value_or("nullopt");
       if (xds_certificate_provider->auto_host_sni() && hostname.has_value()) {
         std::string host;
         std::string port;
