@@ -582,6 +582,7 @@ grpc_cc_test(
     shard_count = 30,
     tags = [
         "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
         "no_test_ios",
     ],
     deps = [
@@ -623,6 +624,7 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         ":end2end_test_utils",

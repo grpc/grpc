@@ -36,6 +36,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
 #include "gtest/gtest.h"
@@ -298,11 +299,7 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
 
   void ResetStub() {
     ChannelArguments args;
-    if (grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()) {
-      // TODO(tjagtap) [PH2][P2] Consider removing when bug in
-      // retry_interceptor.cc is fixed.
-      args.SetInt(GRPC_ARG_ENABLE_RETRIES, 0);
-    }
+    ApplyCommonChannelArguments(args);
     std::shared_ptr<Channel> channel =
         inproc_ ? server_->InProcessChannel(ChannelArguments())
                 : grpc::CreateCustomChannel(server_address_.str(),

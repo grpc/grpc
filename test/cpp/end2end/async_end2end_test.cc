@@ -43,6 +43,7 @@
 #include "test/core/test_util/build.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
 #include "absl/log/log.h"
@@ -347,6 +348,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
 
   void ResetStub() {
     ChannelArguments args;
+    ApplyCommonChannelArguments(args);
     auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
         GetParam().credentials_type, &args);
     std::shared_ptr<Channel> channel =

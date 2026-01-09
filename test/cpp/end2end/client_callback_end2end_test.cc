@@ -41,6 +41,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/interceptors_util.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
@@ -128,11 +129,7 @@ class ClientCallbackEnd2endTest
       std::unique_ptr<experimental::ClientInterceptorFactoryInterface>
           interceptor = nullptr) {
     ChannelArguments args;
-    if (grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()) {
-      // TODO(tjagtap) [PH2][P2] Consider removing when bug in
-      // retry_interceptor.cc is fixed.
-      args.SetInt(GRPC_ARG_ENABLE_RETRIES, 0);
-    }
+    ApplyCommonChannelArguments(args);
     auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
         GetParam().credentials_type, &args);
     auto interceptors = CreatePhonyClientInterceptors();
