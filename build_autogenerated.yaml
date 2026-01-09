@@ -6280,7 +6280,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/cpp/end2end/end2end_test_utils.h
   src:
   - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
@@ -9168,6 +9169,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/interceptors_util.h
   - test/cpp/end2end/test_service_impl.h
   src:
@@ -11949,6 +11951,7 @@ targets:
   run: false
   language: c++
   headers:
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/interceptors_util.h
   - test/cpp/end2end/test_service_impl.h
   src:
@@ -14222,7 +14225,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/cpp/end2end/end2end_test_utils.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
@@ -15364,6 +15368,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
@@ -22050,6 +22055,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
@@ -23847,7 +23853,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/cpp/end2end/end2end_test_utils.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
