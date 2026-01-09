@@ -556,18 +556,12 @@ absl::Status InMemoryCertificateProvider::ValidateCredentials() const {
 
 void InMemoryCertificateProvider::UpdateRoot(
     std::shared_ptr<RootCertInfo> root_certificates) {
-  Update(root_certificates,
-         pem_key_cert_pairs_.empty()
-             ? std::optional<PemKeyCertPairList>(pem_key_cert_pairs_)
-             : std::nullopt);
+  Update(root_certificates, std::nullopt);
 }
 
 void InMemoryCertificateProvider::UpdateIdentity(
     const PemKeyCertPairList& pem_key_cert_pairs) {
-  Update(root_certificates_.ok()
-             ? std::optional<std::shared_ptr<RootCertInfo>>(*root_certificates_)
-             : std::nullopt,
-         pem_key_cert_pairs);
+  Update(std::nullopt, pem_key_cert_pairs);
 }
 
 UniqueTypeName InMemoryCertificateProvider::type() const {
