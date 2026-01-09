@@ -17,12 +17,39 @@
 #include <grpc/support/port_platform.h>
 
 #include <cstddef>
+#include <cstdint>
 #include <string>
 
 #include "src/core/lib/slice/slice.h"
+#include "absl/functional/function_ref.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
+
+namespace {
+class KeyValueEmitEncoder {
+ public:
+  explicit KeyValueEmitEncoder(
+      absl::FunctionRef<void(absl::string_view,
+                             MetadataSizesAnnotation::ValueType)>
+          f)
+      : f_(f) {}
+
+  void Encode(const Slice& key, const Slice& value) {
+    f_(key.as_string_view(), static_cast<int64_t>(value.size()));
+  }
+
+  template <typename Key, typename Value>
+  void Encode(Key, const Value& value) {
+    f_(Key::key(), static_cast<int64_t>(EncodedSizeOfKey(Key(), value)));
+  }
+
+ private:
+  absl::FunctionRef<void(absl::string_view, MetadataSizesAnnotation::ValueType)>
+      f_;
+};
+}  // namespace
 
 class MetadataSizesAnnotation::MetadataSizeEncoder {
  public:
@@ -68,6 +95,14 @@ std::string MetadataSizesAnnotation::ToString() const {
   MetadataSizeEncoder encoder(metadata_annotation, soft_limit_, hard_limit_);
   metadata_buffer_->Encode(&encoder);
   return metadata_annotation;
+}
+
+void MetadataSizesAnnotation::ForEachKeyValue(
+    absl::FunctionRef<void(absl::string_view, ValueType)> f) const {
+  f("soft_limit", static_cast<int64_t>(soft_limit_));
+  f("hard_limit", static_cast<int64_t>(hard_limit_));
+  KeyValueEmitEncoder encoder(f);
+  metadata_buffer_->Encode(&encoder);
 }
 
 }  // namespace grpc_core
