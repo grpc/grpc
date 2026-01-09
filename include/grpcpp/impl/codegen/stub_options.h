@@ -21,8 +21,6 @@
 
 // IWYU pragma: private
 
-
-
 /// TODO(chengyuc): Remove this file after solving compatibility.
 #include <grpcpp/support/stub_options.h>
 

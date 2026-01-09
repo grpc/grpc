@@ -22,8 +22,6 @@
 // IWYU pragma: private, include <grpc/compression.h>
 // IWYU pragma: friend "src/.*"
 
-
-
 #include <grpc/support/port_platform.h>
 
 /// TODO(chengyuc): Remove this file after solving compatibility.

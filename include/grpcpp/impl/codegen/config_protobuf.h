@@ -21,8 +21,6 @@
 
 // IWYU pragma: private
 
-
-
 // #define GRPC_OPEN_SOURCE_PROTO
 
 #define GRPC_PROTOBUF_CORD_SUPPORT_ENABLED

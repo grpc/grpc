@@ -21,8 +21,6 @@
 
 // IWYU pragma: private
 
-
-
 #include <grpcpp/impl/call_op_set_interface.h>
 
 #endif  // GRPCPP_IMPL_CODEGEN_CALL_OP_SET_INTERFACE_H

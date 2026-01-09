@@ -21,8 +21,6 @@
 
 // IWYU pragma: private, include <grpcpp/support/status.h>
 
-
-
 /// TODO(chengyuc): Remove this file after solving compatibility.
 #include <grpcpp/support/status_code_enum.h>
 
