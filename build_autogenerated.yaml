@@ -25102,11 +25102,11 @@ targets:
   - grpc_test_util
   - gtest
   - sockaddr_utils
-  uses_polling: false
   platforms:
   - linux
   - posix
   - mac
+  uses_polling: false
 - name: unique_ptr_with_bitset_test
   gtest: true
   build: test
