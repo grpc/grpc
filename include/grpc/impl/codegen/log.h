@@ -21,8 +21,6 @@
 
 // IWYU pragma: private
 
-
-
 #include <grpc/impl/codegen/port_platform.h>
 
 /// TODO(chengyuc): Remove this file after solving compatibility.
