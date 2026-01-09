@@ -49,7 +49,7 @@ tools/bazel \
     --ignore_dev_dependency=false \
     -- \
     //test/... \
-    -//test/cpp/ext/... \ # excluded because @google_cloud_cpp is broken
+    -//test/cpp/ext/... \
     -//test/cpp/interop/...
 
 # Test if public targets are buildable with openssl and without dev
