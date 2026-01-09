@@ -80,7 +80,7 @@ class BuildPackageProtos(setuptools.Command):
     ]
 
     def initialize_options(self):
-        self.strict_mode = True
+        self.strict_mode = False
 
     def finalize_options(self):
         pass
