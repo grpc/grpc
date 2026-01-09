@@ -30,6 +30,7 @@
 #include <memory>
 #include <thread>
 
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
@@ -130,8 +131,13 @@ class RawEnd2EndTest : public ::testing::Test {
 
   void ResetStub() {
     ChannelArguments args;
-    std::shared_ptr<Channel> channel = grpc::CreateChannel(
-        server_address_.str(), grpc::InsecureChannelCredentials());
+    if (grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()) {
+      // TODO(tjagtap) [PH2][P2] Consider removing when bug in
+      // retry_interceptor.cc is fixed.
+      args.SetInt(GRPC_ARG_ENABLE_RETRIES, 0);
+    }
+    std::shared_ptr<Channel> channel = grpc::CreateCustomChannel(
+        server_address_.str(), grpc::InsecureChannelCredentials(), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
 

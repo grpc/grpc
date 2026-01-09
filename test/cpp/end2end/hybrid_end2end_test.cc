@@ -28,6 +28,7 @@
 #include <memory>
 #include <thread>
 
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
@@ -296,10 +297,16 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
   }
 
   void ResetStub() {
+    ChannelArguments args;
+    if (grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()) {
+      // TODO(tjagtap) [PH2][P2] Consider removing when bug in
+      // retry_interceptor.cc is fixed.
+      args.SetInt(GRPC_ARG_ENABLE_RETRIES, 0);
+    }
     std::shared_ptr<Channel> channel =
         inproc_ ? server_->InProcessChannel(ChannelArguments())
-                : grpc::CreateChannel(server_address_.str(),
-                                      InsecureChannelCredentials());
+                : grpc::CreateCustomChannel(server_address_.str(),
+                                            InsecureChannelCredentials(), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
 

@@ -32,6 +32,7 @@
 #include <mutex>
 #include <thread>
 
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -144,8 +145,14 @@ class End2endTest : public ::testing::Test {
   void TearDown() override { server_->Shutdown(); }
 
   void ResetStub() {
-    std::shared_ptr<Channel> channel = grpc::CreateChannel(
-        server_address_.str(), InsecureChannelCredentials());
+    ChannelArguments args;
+    if (grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()) {
+      // TODO(tjagtap) [PH2][P2] Consider removing when bug in
+      // retry_interceptor.cc is fixed.
+      args.SetInt(GRPC_ARG_ENABLE_RETRIES, 0);
+    }
+    std::shared_ptr<Channel> channel = grpc::CreateCustomChannel(
+        server_address_.str(), InsecureChannelCredentials(), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
 
@@ -162,6 +169,7 @@ static void Drainer(ClientReaderWriter<EchoRequest, EchoResponse>* reader) {
   }
 }
 
+// TODO(tjagtap) [PH2][P1][CPPE2E] Passes for CHTTP2. Fails 2/100 times for PH2
 TEST_F(End2endTest, StreamingThroughput) {
   ResetStub();
   grpc::ClientContext context;

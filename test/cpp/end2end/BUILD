@@ -641,7 +641,10 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    tags = [
+        "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
+    ],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -650,6 +653,7 @@ grpc_cc_test(
         "//:grpc++_base",
         "//:iomgr",
         "//src/core:env",
+        "//src/core:experiments",
         "//src/core:grpc_check",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
@@ -666,7 +670,10 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    tags = [
+        "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
+    ],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -675,6 +682,7 @@ grpc_cc_test(
         "//:grpc++_base",
         "//:grpc_base",
         "//src/core:env",
+        "//src/core:experiments",
         "//src/core:grpc_check",
         "//src/core:iomgr_port",
         "//src/proto/grpc/testing:echo_cc_grpc",
@@ -1192,6 +1200,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//src/core:experiments",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_cc_grpc",
