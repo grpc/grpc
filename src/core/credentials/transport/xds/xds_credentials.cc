@@ -32,6 +32,7 @@
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/host_port.h"
 #include "src/core/util/useful.h"
 #include "src/core/xds/grpc/xds_certificate_provider.h"
 
@@ -186,8 +187,13 @@ XdsCredentials::create_security_connector(
       }
       tls_credentials_options->set_verify_server_cert(true);
       auto hostname = args->GetOwnedString(GRPC_ARG_ADDRESS_NAME);
+      GRPC_TRACE_LOG(client_channel_call, INFO)
+          << "hostname=" << hostname.value_or("nullopt");
       if (xds_certificate_provider->auto_host_sni() && hostname.has_value()) {
-        tls_credentials_options->set_sni_override(hostname);
+        std::string host;
+        std::string port;
+        grpc_core::SplitHostPort(*hostname, &host, &port);
+        tls_credentials_options->set_sni_override(host);
       } else if (!xds_certificate_provider->sni().empty()) {
         tls_credentials_options->set_sni_override(
             xds_certificate_provider->sni());
