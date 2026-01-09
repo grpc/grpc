@@ -20,6 +20,7 @@
 #define GRPC_TEST_CPP_END2END_END2END_TEST_UTILS_H
 
 #include <grpc/grpc.h>
+#include <grpcpp/support/channel_arguments.h>
 
 #include "src/core/lib/experiments/experiments.h"
 #include "absl/log/globals.h"
@@ -55,6 +56,14 @@ inline void EnableLoggingForPH2Tests() {
     grpc_tracer_set_enabled("call_state", 1);
     grpc_tracer_set_enabled("promise_primitives", 1);
     absl::SetGlobalVLogLevel(2);
+  }
+}
+
+inline void ApplyCommonChannelArguments(ChannelArguments& args) {
+  if (grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()) {
+    // TODO(tjagtap) [PH2][P2] Consider removing when bug in
+    // retry_interceptor.cc is fixed.
+    args.SetInt(GRPC_ARG_ENABLE_RETRIES, 0);
   }
 }
 
