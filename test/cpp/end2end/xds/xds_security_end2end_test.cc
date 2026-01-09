@@ -872,16 +872,14 @@ class XdsSniSecurityTest : public XdsEnd2endTest {
       auto* transport_socket = cluster->mutable_transport_socket();
       transport_socket->set_name("envoy.transport_sockets.tls");
       UpstreamTlsContext upstream_tls_context;
-      if (!root_instance_name.empty()) {
-        upstream_tls_context.mutable_common_tls_context()
-            ->mutable_validation_context()
-            ->mutable_ca_certificate_provider_instance()
-            ->set_instance_name(std::string(root_instance_name));
-        upstream_tls_context.mutable_common_tls_context()
-            ->mutable_validation_context()
-            ->mutable_ca_certificate_provider_instance()
-            ->set_certificate_name(std::string(root_certificate_name));
-      }
+      upstream_tls_context.mutable_common_tls_context()
+          ->mutable_validation_context()
+          ->mutable_ca_certificate_provider_instance()
+          ->set_instance_name(std::string(root_instance_name));
+      upstream_tls_context.mutable_common_tls_context()
+          ->mutable_validation_context()
+          ->mutable_ca_certificate_provider_instance()
+          ->set_certificate_name(std::string(root_certificate_name));
       if (!san_matchers.empty()) {
         auto* validation_context =
             upstream_tls_context.mutable_common_tls_context()
@@ -921,11 +919,8 @@ TEST_P(XdsSniSecurityTest, LegacySniBehavior) {
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, kDefaultEdsServiceName));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   auto cluster = default_cluster_;
-  cluster.mutable_eds_cluster_config()->set_service_name(
-      kDefaultEdsServiceName);
   StringMatcher san_matcher;
   // Expect the default channel target (server.example.com)
   san_matcher.set_exact(kServerName);
@@ -944,11 +939,8 @@ TEST_P(XdsSniSecurityTest, NoSniGetsFirstCertificate) {
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, kDefaultEdsServiceName));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   auto cluster = default_cluster_;
-  cluster.mutable_eds_cluster_config()->set_service_name(
-      kDefaultEdsServiceName);
   StringMatcher san_matcher;
   // Expect that the server sends the first configured certificate
   san_matcher.set_exact("foo");
@@ -970,11 +962,8 @@ TEST_P(XdsSniSecurityTest, FixedSni) {
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, kDefaultEdsServiceName));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   auto cluster = default_cluster_;
-  cluster.mutable_eds_cluster_config()->set_service_name(
-      kDefaultEdsServiceName);
   StringMatcher san_matcher;
   // Expect the SAN to match the configured fixed SNI
   san_matcher.set_exact("foo");
@@ -993,11 +982,8 @@ TEST_P(XdsSniSecurityTest, AutoHostSniNoOpWhenEndpointHasNoHostname) {
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, kDefaultEdsServiceName));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   auto cluster = default_cluster_;
-  cluster.mutable_eds_cluster_config()->set_service_name(
-      kDefaultEdsServiceName);
   StringMatcher san_matcher;
   // Expect the SAN to match the configured SNI even with auto_host_sni enabled
   // because the endpoint hostname is unset
@@ -1019,11 +1005,8 @@ TEST_P(XdsSniSecurityTest, EdsAutoHostSni) {
        {CreateEndpoint(0, ::envoy::config::core::v3::HealthStatus::UNKNOWN, 1,
                        {}, "bar")}},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, kDefaultEdsServiceName));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   auto cluster = default_cluster_;
-  cluster.mutable_eds_cluster_config()->set_service_name(
-      kDefaultEdsServiceName);
   StringMatcher san_matcher;
   // Expect the SAN to match the endpoint hostname, not the configured SNI,
   // with auto_host_sni enabled
@@ -1077,11 +1060,8 @@ TEST_P(XdsSniSecurityTest, AutoSniSanValidation) {
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, kDefaultEdsServiceName));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   auto cluster = default_cluster_;
-  cluster.mutable_eds_cluster_config()->set_service_name(
-      kDefaultEdsServiceName);
   StringMatcher san_matcher;
   // The SAN matcher should not apply, because auto_sni_san_validation should
   // override it
@@ -1103,11 +1083,8 @@ TEST_P(XdsSniSecurityTest, AutoSniSanValidationWithAutoHostSni) {
        {CreateEndpoint(0, ::envoy::config::core::v3::HealthStatus::UNKNOWN, 1,
                        {}, "foo")}},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, kDefaultEdsServiceName));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   auto cluster = default_cluster_;
-  cluster.mutable_eds_cluster_config()->set_service_name(
-      kDefaultEdsServiceName);
   StringMatcher san_matcher;
   // The SAN matcher should not apply, because auto_sni_san_validation should
   // override it
@@ -1127,11 +1104,8 @@ TEST_P(XdsSniSecurityTest, SanValidationFailure) {
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1)},
   });
-  balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, kDefaultEdsServiceName));
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   auto cluster = default_cluster_;
-  cluster.mutable_eds_cluster_config()->set_service_name(
-      kDefaultEdsServiceName);
   StringMatcher san_matcher;
   // We actually expect the server to send the foo certificate, so this should
   // fail to match.
