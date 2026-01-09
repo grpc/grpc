@@ -190,7 +190,7 @@ XdsCredentials::create_security_connector(
       if (xds_certificate_provider->auto_host_sni() && hostname.has_value()) {
         std::string host;
         std::string port;
-        grpc_core::SplitHostPort(*hostname, &host, &port);
+        SplitHostPort(*hostname, &host, &port);
         tls_credentials_options->set_sni_override(host);
       } else if (!xds_certificate_provider->sni().empty()) {
         tls_credentials_options->set_sni_override(
