@@ -86,6 +86,7 @@ html_theme_options = {
     "navbar_center": [],
     "header_links_before_dropdown": 15,
     "secondary_sidebar_items": ["page-toc", "edit-this-page"],
+    "show_toc_level": 2,
 }
 
 html_theme_options["analytics"] = {

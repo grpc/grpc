@@ -1,9 +1,17 @@
-{# Displays the TOC-subtree for pages nested under the currently active top-level TOCtree element. #}
-{# Overriding default sidebar-nav-bs.html with startdepth=0 to show all aux package pages in the sidebar #}
-{# Note: `startdepth=0` is the only custom change, rest of the definition is taken from https://github.com/pydata/pydata-sphinx-theme/blob/a892bfad42c83db158fcc3d658c6677d532094bf/src/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/sidebar-nav-bs.html #}
+{# Displays the TOC-subtree for pages nested under the currently active #}
+{# top-level TOCtree element. #}
+{# Overriding default sidebar-nav-bs.html with startdepth=0 to show all aux #}
+{# package pages in the sidebar #}
+{# Note: `startdepth=0` is the only custom change, rest of the definition is #}
+{# taken from
+https://github.com/pydata/pydata-sphinx-theme/blob/a892bfad42c83db158fcc3d658c6677d532094bf/src/pydata_sphinx_theme/theme/pydata_sphinx_theme/components/sidebar-nav-bs.html
+#}
 
-{% set show_nav_level = meta['html_theme.show_nav_level'] if (meta is defined and meta is not none and
-'html_theme.show_nav_level' in meta) else theme_show_nav_level %}
+{%- if meta is defined and meta is not none and 'html_theme.show_nav_level' in meta -%}
+{%- set show_nav_level = meta['html_theme.show_nav_level'] -%}
+{%- else -%}
+{%- set show_nav_level = theme_show_nav_level -%}
+{%- endif -%}
 <nav class="bd-docs-nav bd-links" aria-label="{{ _('Section Navigation') }}">
   <p class="bd-links__title" role="heading" aria-level="1">{{ _("Section Navigation") }}</p>
   <div class="bd-toc-item navbar-nav">
