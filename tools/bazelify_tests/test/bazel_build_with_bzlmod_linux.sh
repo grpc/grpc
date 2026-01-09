@@ -19,6 +19,7 @@ set -ex
 tools/bazel \
     --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
     build \
+    --ignore_dev_dependency=false \
     -- \
     :all \
     -:grpcpp_csm_observability  # Needs google_cloud_cpp to be added to BCR
