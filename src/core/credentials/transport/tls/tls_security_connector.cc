@@ -294,44 +294,24 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
   auto root_watcher_ptr = std::make_unique<TlsChannelCertificateWatcher>(this);
   root_certificate_watcher_ = root_watcher_ptr.get();
   identity_certificate_watcher_ = identity_watcher_ptr.get();
-  // Register the watcher with the distributor.
-  std::optional<std::string> watched_root_cert_name;
-  if (options_->root_certificate_distributor() != nullptr) {
-    watched_root_cert_name = options_->root_cert_name();
-  }
-  std::optional<std::string> watched_identity_cert_name;
-  if (options_->identity_certificate_distributor() != nullptr) {
-    watched_identity_cert_name = options_->identity_cert_name();
-  }
   // We will use the root certs stored in system default locations if not
   // watching root certs on the client side. We will handle this case
   // differently here, because "watching a default roots without the identity
   // certs" is a valid case(and hence we will need to call
   // OnCertificatesChanged), but it requires nothing from the provider, and
   // hence no need to register the watcher.
-  bool use_default_roots = options_->root_certificate_distributor() == nullptr;
-  if (use_default_roots &&
-      options_->identity_certificate_distributor() == nullptr) {
-    root_watcher_ptr->OnCertificatesChanged(nullptr, std::nullopt);
-    identity_watcher_ptr->OnCertificatesChanged(nullptr, std::nullopt);
+  if (options_->root_certificate_distributor()) {
+    options_->root_certificate_distributor()->WatchTlsCertificates(
+        std::move(root_watcher_ptr), options_->root_cert_name(), std::nullopt);
   } else {
-    if (!use_default_roots) {
-      if (watched_root_cert_name.has_value()) {
-        options_->root_certificate_distributor()->WatchTlsCertificates(
-            std::move(root_watcher_ptr), watched_root_cert_name, std::nullopt);
-      } else {
-        root_watcher_ptr->OnCertificatesChanged(nullptr, std::nullopt);
-      }
-    }
-    if (options_->identity_certificate_distributor() != nullptr) {
-      if (watched_identity_cert_name.has_value()) {
-        options_->identity_certificate_distributor()->WatchTlsCertificates(
-            std::move(identity_watcher_ptr), std::nullopt,
-            watched_identity_cert_name);
-      } else {
-        identity_watcher_ptr->OnCertificatesChanged(nullptr, std::nullopt);
-      }
-    }
+    root_watcher_ptr->OnCertificatesChanged(nullptr, std::nullopt);
+  }
+  if (options_->identity_certificate_distributor() != nullptr) {
+    options_->identity_certificate_distributor()->WatchTlsCertificates(
+        std::move(identity_watcher_ptr), std::nullopt,
+        options_->identity_cert_name());
+  } else {
+    identity_watcher_ptr->OnCertificatesChanged(nullptr, std::nullopt);
   }
 }
 
@@ -603,20 +583,14 @@ TlsServerSecurityConnector::TlsServerSecurityConnector(
   root_certificate_watcher_ = root_watcher_ptr.get();
   identity_certificate_watcher_ = identity_watcher_ptr.get();
   // Register the watcher with the distributor.
-  std::optional<std::string> watched_root_cert_name;
   if (options_->root_certificate_distributor() != nullptr) {
-    watched_root_cert_name = options_->root_cert_name();
+    options_->root_certificate_distributor()->WatchTlsCertificates(
+        std::move(root_watcher_ptr), options_->root_cert_name(), std::nullopt);
   }
-  std::optional<std::string> watched_identity_cert_name;
   if (options_->identity_certificate_distributor() != nullptr) {
-    watched_identity_cert_name = options_->identity_cert_name();
-  }
-  options_->root_certificate_distributor()->WatchTlsCertificates(
-      std::move(root_watcher_ptr), watched_root_cert_name, std::nullopt);
-  if (watched_identity_cert_name.has_value()) {
     options_->identity_certificate_distributor()->WatchTlsCertificates(
         std::move(identity_watcher_ptr), std::nullopt,
-        watched_identity_cert_name);
+        options_->identity_cert_name());
   }
 }
 
