@@ -442,7 +442,7 @@ InMemoryCertificateProvider::InMemoryCertificateProvider()
         root_certificates_.ok() && *root_certificates_ != nullptr) {
       roots = *root_certificates_;
     }
-    identity_info.root_being_watched = root_being_watched;
+    root_info.root_being_watched = root_being_watched;
     if (!identity_info.identity_being_watched && identity_being_watched &&
         !pem_key_cert_pairs_.empty()) {
       pem_key_cert_pairs = pem_key_cert_pairs_;
