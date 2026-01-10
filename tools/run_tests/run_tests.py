@@ -36,10 +36,8 @@ import sys
 import tempfile
 import time
 import traceback
+import urllib
 import uuid
-
-import six
-from six.moves import urllib
 
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
@@ -1090,7 +1088,7 @@ class CSharpLanguage(object):
             else:
                 raise Exception('Illegal runtime "%s" was specified.')
 
-            for assembly in six.iterkeys(tests_by_assembly):
+            for assembly in tests_by_assembly.keys():
                 assembly_file = "src/csharp/%s/%s/%s%s" % (
                     assembly,
                     assembly_subdir,
