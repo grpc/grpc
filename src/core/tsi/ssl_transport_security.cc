@@ -335,12 +335,18 @@ struct TlsPrivateKeyOffloadContext {
 };
 
 TlsPrivateKeyOffloadContext* GetTlsPrivateKeyOffloadContext(SSL* ssl) {
+  if (!ssl) {
+    return nullptr;
+  }
   GRPC_CHECK_NE(g_ssl_ex_private_key_offloading_context_index, -1);
   return static_cast<TlsPrivateKeyOffloadContext*>(
       SSL_get_ex_data(ssl, g_ssl_ex_private_key_offloading_context_index));
 }
 
 grpc_core::PrivateKeySigner* GetPrivateKeySigner(SSL* ssl) {
+  if (!ssl) {
+    return nullptr;
+  }
   SSL_CTX* ssl_ctx = SSL_get_SSL_CTX(ssl);
   if (ssl_ctx == nullptr) {
     LOG(ERROR) << "Unexpected error obtaining SSL_CTX object from SSL: ";
