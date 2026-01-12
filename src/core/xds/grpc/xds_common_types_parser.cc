@@ -34,6 +34,7 @@
 #include "google/protobuf/wrappers.upb.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/util/down_cast.h"
 #include "src/core/util/env.h"
 #include "src/core/util/json/json_reader.h"
@@ -591,13 +592,19 @@ std::optional<XdsExtension> ExtractXdsExtension(
 namespace {
 
 absl::string_view GetHeaderValue(upb_StringView upb_value,
-                                 absl::string_view field_name,
+                                 absl::string_view field_name, bool validate,
                                  ValidationErrors* errors) {
   absl::string_view value = UpbStringToAbsl(upb_value);
   if (!value.empty()) {
     ValidationErrors::ScopedField field(errors, field_name);
     if (value.size() > 16384) errors->AddError("longer than 16384 bytes");
-    // FIXME: validate that it's a valid HTTP/2 header value
+    if (validate) {
+      ValidateMetadataResult result =
+          ValidateNonBinaryHeaderValueIsLegal(value);
+      if (result != ValidateMetadataResult::kOk) {
+        errors->AddError(ValidateMetadataResultToString(result));
+      }
+    }
   }
   return value;
 }
@@ -611,18 +618,21 @@ std::pair<std::string, std::string> ParseHeader(
   {
     ValidationErrors::ScopedField field(errors, ".key");
     if (key.size() > 16384) errors->AddError("longer than 16384 bytes");
-    // FIXME: validate that it's a valid HTTP/2 header name
+    ValidateMetadataResult result = ValidateHeaderKeyIsLegal(key);
+    if (result != ValidateMetadataResult::kOk) {
+      errors->AddError(ValidateMetadataResultToString(result));
+    }
   }
   // value or raw_value
   absl::string_view value;
   if (absl::EndsWith(key, "-bin")) {
     value =
         GetHeaderValue(envoy_config_core_v3_HeaderValue_raw_value(header_value),
-                       ".raw_value", errors);
+                       ".raw_value", /*validate=*/false, errors);
     if (value.empty()) {
       value =
           GetHeaderValue(envoy_config_core_v3_HeaderValue_value(header_value),
-                         ".value", errors);
+                         ".value", /*validate=*/true, errors);
       if (value.empty()) {
         errors->AddError("either value or raw_value must be set");
       }
@@ -630,7 +640,7 @@ std::pair<std::string, std::string> ParseHeader(
   } else {
     // Key does not end in "-bin".
     value = GetHeaderValue(envoy_config_core_v3_HeaderValue_value(header_value),
-                           ".value", errors);
+                           ".value", /*validate=*/true, errors);
     if (value.empty()) {
       ValidationErrors::ScopedField field(errors, ".value");
       errors->AddError("field not set");
@@ -669,14 +679,13 @@ XdsGrpcService ParseXdsGrpcService(
     xds_grpc_service.initial_metadata.push_back(
         ParseHeader(initial_metadata[i], errors));
   }
-  // grpc_service
-  ValidationErrors::ScopedField field(errors, ".grpc_service");
+  // google_grpc
+  ValidationErrors::ScopedField field(errors, ".google_grpc");
   auto* google_grpc =
       envoy_config_core_v3_GrpcService_google_grpc(grpc_service);
   if (google_grpc == nullptr) {
     errors->AddError("field not set");
   } else {
-    ValidationErrors::ScopedField field(errors, ".google_grpc");
     // target_uri
     std::string target_uri = UpbStringToStdString(
         envoy_config_core_v3_GrpcService_GoogleGrpc_target_uri(google_grpc));
@@ -732,23 +741,19 @@ XdsGrpcService ParseXdsGrpcService(
         const auto* const* call_creds_plugin =
             envoy_config_core_v3_GrpcService_GoogleGrpc_call_credentials_plugin(
                 google_grpc, &size);
-        if (size == 0) {
-          errors->AddError("field not set");
-        } else {
-          const auto& registry = CoreConfiguration::Get().call_creds_registry();
-          for (size_t i = 0; i < size; ++i) {
-            ValidationErrors::ScopedField field(errors,
-                                                absl::StrCat("[", i, "]"));
-            absl::string_view type = UpbStringToAbsl(
-                google_protobuf_Any_type_url(call_creds_plugin[i]));
-            if (!StripTypePrefix(type, errors)) continue;
-            if (!registry.IsProtoSupported(type)) continue;
-            ValidationErrors::ScopedField field2(errors, ".value");
-            absl::string_view serialized_config = UpbStringToAbsl(
-                google_protobuf_Any_value(call_creds_plugin[i]));
-            call_creds_configs.push_back(
-                registry.ParseProto(type, serialized_config, errors));
-          }
+        const auto& registry = CoreConfiguration::Get().call_creds_registry();
+        for (size_t i = 0; i < size; ++i) {
+          ValidationErrors::ScopedField field(errors,
+                                              absl::StrCat("[", i, "]"));
+          absl::string_view type = UpbStringToAbsl(
+              google_protobuf_Any_type_url(call_creds_plugin[i]));
+          if (!StripTypePrefix(type, errors)) continue;
+          if (!registry.IsProtoSupported(type)) continue;
+          ValidationErrors::ScopedField field2(errors, ".value");
+          absl::string_view serialized_config =
+              UpbStringToAbsl(google_protobuf_Any_value(call_creds_plugin[i]));
+          call_creds_configs.push_back(
+              registry.ParseProto(type, serialized_config, errors));
         }
       }
     } else {

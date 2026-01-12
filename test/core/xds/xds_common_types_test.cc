@@ -36,6 +36,7 @@
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "re2/re2.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/json/json_writer.h"
@@ -993,10 +994,6 @@ TEST_F(ParseXdsGrpcServiceTest,
       "    }\n"
       "  },\n");
   GrpcService grpc_service;
-  grpc_service.mutable_timeout()->set_seconds(5);
-  auto* header_value = grpc_service.add_initial_metadata();
-  header_value->set_key("foo");
-  header_value->set_value("bar");
   auto* google_grpc = grpc_service.mutable_google_grpc();
   google_grpc->set_target_uri("dns:server.example.com");
   // Creds specified in proto will be ignored because xDS server is not trusted.
@@ -1009,9 +1006,6 @@ TEST_F(ParseXdsGrpcServiceTest,
   google_grpc->add_call_credentials_plugin()->PackFrom(call_creds);
   auto xds_grpc_service = Parse(grpc_service);
   ASSERT_TRUE(xds_grpc_service.ok()) << xds_grpc_service.status();
-  EXPECT_EQ(xds_grpc_service->timeout, Duration::Seconds(5));
-  EXPECT_THAT(xds_grpc_service->initial_metadata,
-              ::testing::ElementsAre(::testing::Pair("foo", "bar")));
   ASSERT_NE(xds_grpc_service->server_target, nullptr);
   EXPECT_EQ(xds_grpc_service->server_target->server_uri(),
             "dns:server.example.com");
@@ -1026,31 +1020,19 @@ TEST_F(ParseXdsGrpcServiceTest,
 TEST_F(ParseXdsGrpcServiceTest,
        NonTrustedXdsServerAndServiceNotPresentInBootstrap) {
   GrpcService grpc_service;
-  grpc_service.mutable_timeout()->set_seconds(5);
-  auto* header_value = grpc_service.add_initial_metadata();
-  header_value->set_key("foo");
-  header_value->set_value("bar");
   auto* google_grpc = grpc_service.mutable_google_grpc();
   google_grpc->set_target_uri("dns:server.example.com");
   auto xds_grpc_service = Parse(grpc_service);
   EXPECT_EQ(xds_grpc_service.status(),
             absl::InvalidArgumentError(
-                "validation failed: [field:grpc_service.google_grpc.target_uri "
+                "validation failed: [field:google_grpc.target_uri "
                 "error:service not present in \"allowed_grpc_services\" in "
                 "bootstrap config]"));
 }
 
-// Don't need to test all credential types or fields here, since those
-// are covered in the channel creds registry and call creds registry
-// tests.  Here we are just verifying that we properly plumb through
-// both channel creds and call creds.
-TEST_F(ParseXdsGrpcServiceTest, TrustedXdsServer) {
+TEST_F(ParseXdsGrpcServiceTest, TrustedXdsServerWithCredentials) {
   xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
   GrpcService grpc_service;
-  grpc_service.mutable_timeout()->set_seconds(5);
-  auto* header_value = grpc_service.add_initial_metadata();
-  header_value->set_key("foo");
-  header_value->set_value("bar");
   auto* google_grpc = grpc_service.mutable_google_grpc();
   google_grpc->set_target_uri("dns:server.example.com");
   // Unsupported channel creds type, should be ignored.
@@ -1073,9 +1055,6 @@ TEST_F(ParseXdsGrpcServiceTest, TrustedXdsServer) {
   google_grpc->add_call_credentials_plugin()->PackFrom(call_creds);
   auto xds_grpc_service = Parse(grpc_service);
   ASSERT_TRUE(xds_grpc_service.ok()) << xds_grpc_service.status();
-  EXPECT_EQ(xds_grpc_service->timeout, Duration::Seconds(5));
-  EXPECT_THAT(xds_grpc_service->initial_metadata,
-              ::testing::ElementsAre(::testing::Pair("foo", "bar")));
   ASSERT_NE(xds_grpc_service->server_target, nullptr);
   EXPECT_EQ(xds_grpc_service->server_target->server_uri(),
             "dns:server.example.com");
@@ -1092,6 +1071,206 @@ TEST_F(ParseXdsGrpcServiceTest, TrustedXdsServer) {
                                 "envoy.extensions.grpc_service.call_credentials"
                                 ".access_token.v3.AccessTokenCredentials",
                                 "{token=\"bar\"}")));
+  // Unset fields have default values.
+  EXPECT_EQ(xds_grpc_service->timeout, Duration::Zero());
+  EXPECT_THAT(xds_grpc_service->initial_metadata, ::testing::ElementsAre());
+}
+
+TEST_F(ParseXdsGrpcServiceTest, TrustedXdsServerWithChannelCredsUnset) {
+  xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
+  GrpcService grpc_service;
+  auto* google_grpc = grpc_service.mutable_google_grpc();
+  google_grpc->set_target_uri("dns:server.example.com");
+  auto xds_grpc_service = Parse(grpc_service);
+  EXPECT_EQ(
+      xds_grpc_service.status(),
+      absl::InvalidArgumentError("validation failed: ["
+                                 "field:google_grpc.channel_credentials_plugin "
+                                 "error:field not set]"));
+}
+
+TEST_F(ParseXdsGrpcServiceTest, TrustedXdsServerWithNoSupportedChannelCreds) {
+  xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
+  GrpcService grpc_service;
+  auto* google_grpc = grpc_service.mutable_google_grpc();
+  google_grpc->set_target_uri("dns:server.example.com");
+  google_grpc->add_channel_credentials_plugin()->PackFrom(GrpcService());
+  auto xds_grpc_service = Parse(grpc_service);
+  EXPECT_EQ(xds_grpc_service.status(),
+            absl::InvalidArgumentError(
+                "validation failed: ["
+                "field:google_grpc.channel_credentials_plugin "
+                "error:no supported channel credentials type found]"));
+}
+
+TEST_F(ParseXdsGrpcServiceTest, Timeout) {
+  xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
+  GrpcService grpc_service;
+  grpc_service.mutable_timeout()->set_seconds(5);
+  auto* google_grpc = grpc_service.mutable_google_grpc();
+  google_grpc->set_target_uri("dns:server.example.com");
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      envoy::extensions::grpc_service::channel_credentials::insecure::v3::
+          InsecureCredentials());
+  auto xds_grpc_service = Parse(grpc_service);
+  ASSERT_TRUE(xds_grpc_service.ok()) << xds_grpc_service.status();
+  EXPECT_EQ(xds_grpc_service->timeout, Duration::Seconds(5));
+}
+
+TEST_F(ParseXdsGrpcServiceTest, InvalidTimeout) {
+  xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
+  GrpcService grpc_service;
+  grpc_service.mutable_timeout()->set_seconds(0);
+  auto* google_grpc = grpc_service.mutable_google_grpc();
+  google_grpc->set_target_uri("dns:server.example.com");
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      envoy::extensions::grpc_service::channel_credentials::insecure::v3::
+          InsecureCredentials());
+  auto xds_grpc_service = Parse(grpc_service);
+  EXPECT_EQ(xds_grpc_service.status(),
+            absl::InvalidArgumentError(
+                "validation failed: ["
+                "field:timeout error:duration must be positive]"));
+}
+
+TEST_F(ParseXdsGrpcServiceTest, BasicHeader) {
+  xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
+  GrpcService grpc_service;
+  auto* header_value = grpc_service.add_initial_metadata();
+  header_value->set_key("foo");
+  header_value->set_value("bar");
+  auto* google_grpc = grpc_service.mutable_google_grpc();
+  google_grpc->set_target_uri("dns:server.example.com");
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      envoy::extensions::grpc_service::channel_credentials::google_default::v3::
+          GoogleDefaultCredentials());
+  auto xds_grpc_service = Parse(grpc_service);
+  ASSERT_TRUE(xds_grpc_service.ok()) << xds_grpc_service.status();
+  EXPECT_THAT(xds_grpc_service->initial_metadata,
+              ::testing::ElementsAre(::testing::Pair("foo", "bar")));
+}
+
+TEST_F(ParseXdsGrpcServiceTest, InvalidHeaderKeyAndValue) {
+  xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
+  GrpcService grpc_service;
+  auto* header_value = grpc_service.add_initial_metadata();
+  header_value->set_key("Foo");
+  header_value->set_value("\x1f");
+  auto* google_grpc = grpc_service.mutable_google_grpc();
+  google_grpc->set_target_uri("dns:server.example.com");
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      envoy::extensions::grpc_service::channel_credentials::insecure::v3::
+          InsecureCredentials());
+  auto xds_grpc_service = Parse(grpc_service);
+  EXPECT_EQ(xds_grpc_service.status(),
+            absl::InvalidArgumentError("validation failed: ["
+                                       "field:initial_metadata[0].key "
+                                       "error:Illegal header key; "
+                                       "field:initial_metadata[0].value "
+                                       "error:Illegal header value]"));
+}
+
+TEST_F(ParseXdsGrpcServiceTest, RawHeaderValueForBinaryHeader) {
+  xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
+  GrpcService grpc_service;
+  auto* header_value = grpc_service.add_initial_metadata();
+  header_value->set_key("foo-bin");
+  header_value->set_raw_value("\x1f");
+  auto* google_grpc = grpc_service.mutable_google_grpc();
+  google_grpc->set_target_uri("dns:server.example.com");
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      envoy::extensions::grpc_service::channel_credentials::google_default::v3::
+          GoogleDefaultCredentials());
+  auto xds_grpc_service = Parse(grpc_service);
+  ASSERT_TRUE(xds_grpc_service.ok()) << xds_grpc_service.status();
+  EXPECT_THAT(xds_grpc_service->initial_metadata,
+              ::testing::ElementsAre(::testing::Pair("foo-bin", "\x1f")));
+  ASSERT_NE(xds_grpc_service->server_target, nullptr);
+  EXPECT_EQ(xds_grpc_service->server_target->server_uri(),
+            "dns:server.example.com");
+}
+
+TEST_F(ParseXdsGrpcServiceTest, RawHeaderValueForNonBinaryHeader) {
+  xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
+  GrpcService grpc_service;
+  auto* header_value = grpc_service.add_initial_metadata();
+  header_value->set_key("foo");
+  header_value->set_raw_value("\x1f");
+  auto* google_grpc = grpc_service.mutable_google_grpc();
+  google_grpc->set_target_uri("dns:server.example.com");
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      envoy::extensions::grpc_service::channel_credentials::google_default::v3::
+          GoogleDefaultCredentials());
+  auto xds_grpc_service = Parse(grpc_service);
+  EXPECT_EQ(xds_grpc_service.status(),
+            absl::InvalidArgumentError("validation failed: ["
+                                       "field:initial_metadata[0].value "
+                                       "error:field not set]"));
+}
+
+TEST_F(ParseXdsGrpcServiceTest, NoHeaderValueSetForBinaryHeader) {
+  xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
+  GrpcService grpc_service;
+  auto* header_value = grpc_service.add_initial_metadata();
+  header_value->set_key("foo-bin");
+  auto* google_grpc = grpc_service.mutable_google_grpc();
+  google_grpc->set_target_uri("dns:server.example.com");
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      envoy::extensions::grpc_service::channel_credentials::google_default::v3::
+          GoogleDefaultCredentials());
+  auto xds_grpc_service = Parse(grpc_service);
+  EXPECT_EQ(xds_grpc_service.status(),
+            absl::InvalidArgumentError(
+                "validation failed: ["
+                "field:initial_metadata[0] "
+                "error:either value or raw_value must be set]"));
+}
+
+TEST_F(ParseXdsGrpcServiceTest, NoHeaderValueSetForNonBinaryHeader) {
+  xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
+  GrpcService grpc_service;
+  auto* header_value = grpc_service.add_initial_metadata();
+  header_value->set_key("foo");
+  auto* google_grpc = grpc_service.mutable_google_grpc();
+  google_grpc->set_target_uri("dns:server.example.com");
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      envoy::extensions::grpc_service::channel_credentials::google_default::v3::
+          GoogleDefaultCredentials());
+  auto xds_grpc_service = Parse(grpc_service);
+  EXPECT_EQ(xds_grpc_service.status(),
+            absl::InvalidArgumentError("validation failed: ["
+                                       "field:initial_metadata[0].value "
+                                       "error:field not set]"));
+}
+
+TEST_F(ParseXdsGrpcServiceTest, GoogleGrpcNotSet) {
+  xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
+  auto xds_grpc_service = Parse(GrpcService());
+  EXPECT_EQ(
+      xds_grpc_service.status(),
+      absl::InvalidArgumentError("validation failed: ["
+                                 "field:google_grpc error:field not set]"));
+}
+
+TEST_F(ParseXdsGrpcServiceTest, InvalidTargetUri) {
+  // Avoid using the default DNS URI prefix.
+  CoreConfiguration::WithSubstituteBuilder builder(
+      [](CoreConfiguration::Builder* builder) {
+        BuildCoreConfiguration(builder);
+        builder->resolver_registry()->SetDefaultPrefix("");
+      });
+  xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
+  GrpcService grpc_service;
+  auto* google_grpc = grpc_service.mutable_google_grpc();
+  google_grpc->set_target_uri("/");
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      envoy::extensions::grpc_service::channel_credentials::insecure::v3::
+          InsecureCredentials());
+  auto xds_grpc_service = Parse(grpc_service);
+  EXPECT_EQ(xds_grpc_service.status(),
+            absl::InvalidArgumentError(
+                "validation failed: ["
+                "field:google_grpc.target_uri error:invalid target URI]"));
 }
 
 }  // namespace
