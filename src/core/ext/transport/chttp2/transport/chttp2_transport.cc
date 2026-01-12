@@ -347,6 +347,17 @@ std::string HttpAnnotation::ToString() const {
   return s;
 }
 
+void HttpAnnotation::ForEachKeyValue(
+    absl::FunctionRef<void(absl::string_view, ValueType)> f) const {
+  f("type", static_cast<int64_t>(type_));
+  f("time_sec", static_cast<int64_t>(time_.tv_sec));
+  f("time_nsec", static_cast<int64_t>(time_.tv_nsec));
+  if (write_stats_.has_value()) {
+    f("target_write_size",
+      static_cast<int64_t>(write_stats_->target_write_size));
+  }
+}
+
 }  // namespace grpc_core
 
 //
@@ -692,6 +703,8 @@ grpc_chttp2_transport::grpc_chttp2_transport(
       memory_owner(channel_args.GetObject<grpc_core::ResourceQuota>()
                        ->memory_quota()
                        ->CreateMemoryOwner()),
+      stream_quota(
+          channel_args.GetObject<grpc_core::ResourceQuota>()->stream_quota()),
       self_reservation(
           memory_owner.MakeReservation(sizeof(grpc_chttp2_transport))),
       // TODO(ctiller): clean this up so we don't need to RefAsSubclass
@@ -722,10 +735,13 @@ grpc_chttp2_transport::grpc_chttp2_transport(
     auto epte = QueryExtension<TcpTraceExtension>(
         grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
             ep.get()));
-    if (epte != nullptr) {
+    auto stats_plugin_group = channel_args.GetObjectRef<
+        grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>();
+    if (epte != nullptr && stats_plugin_group != nullptr) {
+      epte->EnableTcpTelemetry(stats_plugin_group->GetCollectionScope(),
+                               /*is_control_endpoint=*/false);
       epte->SetTcpTracer(std::make_shared<grpc_core::DefaultTcpTracer>(
-          channel_args.GetObjectRef<
-              grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>()));
+          std::move(stats_plugin_group)));
     }
   }
 
@@ -908,16 +924,7 @@ static void close_transport_locked(grpc_chttp2_transport* t,
     grpc_core::MutexLock lock(&t->ep_destroy_mu);
     t->ep.reset();
   }
-  if (t->notify_on_receive_settings != nullptr) {
-    if (t->interested_parties_until_recv_settings != nullptr) {
-      grpc_endpoint_delete_from_pollset_set(
-          t->ep.get(), t->interested_parties_until_recv_settings);
-      t->interested_parties_until_recv_settings = nullptr;
-    }
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, t->notify_on_receive_settings,
-                            error);
-    t->notify_on_receive_settings = nullptr;
-  }
+  t->MaybeNotifyOnReceiveSettingsLocked(error);
   if (t->notify_on_close != nullptr) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, t->notify_on_close, error);
     t->notify_on_close = nullptr;
@@ -1399,7 +1406,7 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
         t->keepalive_time.millis() > max_keepalive_time_millis
             ? INT_MAX
             : t->keepalive_time.millis() * KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
-    if (!grpc_core::IsTransportStateWatcherEnabled()) {
+    if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
       status.SetPayload(grpc_core::kKeepaliveThrottlingKey,
                         absl::Cord(std::to_string(throttled_keepalive_time)));
     }
@@ -3513,7 +3520,8 @@ grpc_core::Transport* grpc_create_chttp2_transport(
 
 void grpc_chttp2_transport_start_reading(
     grpc_core::Transport* transport, grpc_slice_buffer* read_buffer,
-    grpc_closure* notify_on_receive_settings,
+    absl::AnyInvocable<void(absl::StatusOr<uint32_t>)>
+        notify_on_receive_settings,
     grpc_pollset_set* interested_parties_until_recv_settings,
     grpc_closure* notify_on_close) {
   auto t = reinterpret_cast<grpc_chttp2_transport*>(transport)->Ref();
@@ -3522,28 +3530,22 @@ void grpc_chttp2_transport_start_reading(
   }
   auto* tp = t.get();
   tp->combiner->Run(
-      grpc_core::NewClosure([t = std::move(t), notify_on_receive_settings,
+      grpc_core::NewClosure([t = std::move(t),
+                             notify_on_receive_settings =
+                                 std::move(notify_on_receive_settings),
                              interested_parties_until_recv_settings,
                              notify_on_close](grpc_error_handle) mutable {
+        t->interested_parties_until_recv_settings =
+            interested_parties_until_recv_settings;
+        t->notify_on_receive_settings = std::move(notify_on_receive_settings);
         if (!t->closed_with_error.ok()) {
-          if (notify_on_receive_settings != nullptr) {
-            if (t->ep != nullptr &&
-                interested_parties_until_recv_settings != nullptr) {
-              grpc_endpoint_delete_from_pollset_set(
-                  t->ep.get(), interested_parties_until_recv_settings);
-            }
-            grpc_core::ExecCtx::Run(DEBUG_LOCATION, notify_on_receive_settings,
-                                    t->closed_with_error);
-          }
+          t->MaybeNotifyOnReceiveSettingsLocked(t->closed_with_error);
           if (notify_on_close != nullptr) {
             grpc_core::ExecCtx::Run(DEBUG_LOCATION, notify_on_close,
                                     t->closed_with_error);
           }
           return;
         }
-        t->interested_parties_until_recv_settings =
-            interested_parties_until_recv_settings;
-        t->notify_on_receive_settings = notify_on_receive_settings;
         t->notify_on_close = notify_on_close;
         read_action_locked(std::move(t), absl::OkStatus());
       }),
@@ -3665,4 +3667,20 @@ void grpc_chttp2_transport::
         std::make_unique<MaxConcurrentStreamsUpdateOnDone>(std::move(t)));
     watcher.reset();  // Before ExecCtx goes out of scope.
   });
+}
+
+void grpc_chttp2_transport::MaybeNotifyOnReceiveSettingsLocked(
+    absl::StatusOr<uint32_t> max_concurrent_streams) {
+  if (notify_on_receive_settings == nullptr) return;
+  if (ep != nullptr && interested_parties_until_recv_settings != nullptr) {
+    grpc_endpoint_delete_from_pollset_set(
+        ep.get(), interested_parties_until_recv_settings);
+    interested_parties_until_recv_settings = nullptr;
+  }
+  event_engine->Run(
+      [notify_on_receive_settings = std::move(notify_on_receive_settings),
+       max_concurrent_streams]() mutable {
+        grpc_core::ExecCtx exec_ctx;
+        std::move(notify_on_receive_settings)(max_concurrent_streams);
+      });
 }

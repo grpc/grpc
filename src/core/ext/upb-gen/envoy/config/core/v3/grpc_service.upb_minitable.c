@@ -93,29 +93,33 @@ const upb_MiniTable envoy__config__core__v3__GrpcService__EnvoyGrpc_msg_init = {
 };
 
 const upb_MiniTable* envoy__config__core__v3__GrpcService__EnvoyGrpc_msg_init_ptr = &envoy__config__core__v3__GrpcService__EnvoyGrpc_msg_init;
-static const upb_MiniTableSubInternal envoy_config_core_v3_GrpcService_GoogleGrpc__submsgs[5] = {
+static const upb_MiniTableSubInternal envoy_config_core_v3_GrpcService_GoogleGrpc__submsgs[7] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelCredentials_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService__GoogleGrpc__CallCredentials_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelArgs_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
 };
 
-static const upb_MiniTableField envoy_config_core_v3_GrpcService_GoogleGrpc__fields[8] = {
-  {1, UPB_SIZE(32, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+static const upb_MiniTableField envoy_config_core_v3_GrpcService_GoogleGrpc__fields[10] = {
+  {1, UPB_SIZE(40, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(12, 64), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(16, 72), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {4, UPB_SIZE(40, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {5, 48, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(48, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(56, 48), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {6, UPB_SIZE(20, 80), 65, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {7, UPB_SIZE(24, 88), 66, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {8, UPB_SIZE(28, 96), 67, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {9, UPB_SIZE(32, 104), 0, 5, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {10, UPB_SIZE(36, 112), 0, 6, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__config__core__v3__GrpcService__GoogleGrpc_msg_init = {
   &envoy_config_core_v3_GrpcService_GoogleGrpc__submsgs[0],
   &envoy_config_core_v3_GrpcService_GoogleGrpc__fields[0],
-  UPB_SIZE(56, 104), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(64, 120), 10, kUpb_ExtMode_NonExtendable, 10, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.GrpcService.GoogleGrpc",
 #endif
@@ -126,6 +130,14 @@ const upb_MiniTable envoy__config__core__v3__GrpcService__GoogleGrpc_msg_init = 
     {0x004800003f01001a, &upb_prm_1bt_max64b},
     {0x002000003f000022, &upb_pss_1bt},
     {0x003000003f00002a, &upb_pss_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x006800003f05004a, &upb_prm_1bt_maxmaxb},
+    {0x007000003f060052, &upb_prm_1bt_maxmaxb},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })

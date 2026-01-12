@@ -2671,7 +2671,7 @@ TEST_P(XdsRbacTestWithActionPermutations,
   audit_logger->mutable_typed_config()->set_type_url("/test_logger");
   TypedStruct typed_struct;
   typed_struct.set_type_url("/test_logger");
-  typed_struct.mutable_value()->mutable_fields();
+  typed_struct.mutable_value();
   audit_logger->mutable_typed_config()->PackFrom(typed_struct);
   SetServerRbacPolicy(rbac);
   StartBackend(0);
@@ -2703,7 +2703,7 @@ TEST_P(XdsRbacTestWithActionPermutations,
   audit_logger->mutable_typed_config()->set_type_url("/test_logger");
   TypedStruct typed_struct;
   typed_struct.set_type_url("/test_logger");
-  typed_struct.mutable_value()->mutable_fields();
+  typed_struct.mutable_value();
   audit_logger->mutable_typed_config()->PackFrom(typed_struct);
   RBAC rbac;
   rules = rbac.mutable_rules();
@@ -2749,7 +2749,7 @@ TEST_P(XdsRbacTestWithActionPermutations, MultipleRbacPoliciesWithAuditOnDeny) {
   audit_logger->mutable_typed_config()->set_type_url("/test_logger");
   TypedStruct typed_struct;
   typed_struct.set_type_url("/test_logger");
-  typed_struct.mutable_value()->mutable_fields();
+  typed_struct.mutable_value();
   audit_logger->mutable_typed_config()->PackFrom(typed_struct);
   RBAC rbac;
   rules = rbac.mutable_rules();
@@ -2797,7 +2797,7 @@ TEST_P(XdsRbacTestWithActionPermutations,
   audit_logger->mutable_typed_config()->set_type_url("/test_logger");
   TypedStruct typed_struct;
   typed_struct.set_type_url("/test_logger");
-  typed_struct.mutable_value()->mutable_fields();
+  typed_struct.mutable_value();
   audit_logger->mutable_typed_config()->PackFrom(typed_struct);
   RBAC rbac;
   rules = rbac.mutable_rules();
@@ -2895,7 +2895,7 @@ TEST_P(XdsRbacTestWithActionAndAuditConditionPermutations,
   audit_logger->mutable_typed_config()->set_type_url("/test_logger");
   TypedStruct typed_struct;
   typed_struct.set_type_url("/test_logger");
-  typed_struct.mutable_value()->mutable_fields();
+  typed_struct.mutable_value();
   audit_logger->mutable_typed_config()->PackFrom(typed_struct);
   SetServerRbacPolicy(rbac);
   StartBackend(0);
@@ -2927,7 +2927,7 @@ TEST_P(XdsRbacTestWithActionAndAuditConditionPermutations, MultipleLoggers) {
   test_logger->mutable_typed_config()->set_type_url("/test_logger");
   TypedStruct typed_struct;
   typed_struct.set_type_url("/test_logger");
-  typed_struct.mutable_value()->mutable_fields();
+  typed_struct.mutable_value();
   test_logger->mutable_typed_config()->PackFrom(typed_struct);
   SetServerRbacPolicy(rbac);
   StartBackend(0);
@@ -2973,10 +2973,6 @@ int main(int argc, char** argv) {
       "call,channel,client_channel,client_channel_call,client_channel_lb_call,"
       "handshaker";
   grpc_core::ConfigVars::SetOverrides(overrides);
-#if TARGET_OS_IPHONE
-  // Workaround Apple CFStream bug
-  grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
   grpc::testing::FakeCertificateProvider::CertDataMapWrapper cert_data_map_1;
   grpc::testing::g_fake1_cert_data_map = &cert_data_map_1;
   grpc::testing::FakeCertificateProvider::CertDataMapWrapper cert_data_map_2;

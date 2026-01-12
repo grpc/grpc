@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 51.0.0
+PROJECT_NUMBER         = 52.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -905,6 +905,7 @@ src/core/call/call_spine.cc \
 src/core/call/call_spine.h \
 src/core/call/call_state.cc \
 src/core/call/call_state.h \
+src/core/call/channelz_context.h \
 src/core/call/client_call.cc \
 src/core/call/client_call.h \
 src/core/call/custom_metadata.h \
@@ -1255,6 +1256,7 @@ src/core/ext/transport/chttp2/transport/ping_promise.cc \
 src/core/ext/transport/chttp2/transport/ping_promise.h \
 src/core/ext/transport/chttp2/transport/ping_rate_policy.cc \
 src/core/ext/transport/chttp2/transport/ping_rate_policy.h \
+src/core/ext/transport/chttp2/transport/security_frame.h \
 src/core/ext/transport/chttp2/transport/stream.h \
 src/core/ext/transport/chttp2/transport/stream_data_queue.h \
 src/core/ext/transport/chttp2/transport/stream_lists.cc \
@@ -1332,6 +1334,9 @@ src/core/ext/upb-gen/envoy/config/cluster/v3/outlier_detection.upb_minitable.h \
 src/core/ext/upb-gen/envoy/config/common/matcher/v3/matcher.upb.h \
 src/core/ext/upb-gen/envoy/config/common/matcher/v3/matcher.upb_minitable.c \
 src/core/ext/upb-gen/envoy/config/common/matcher/v3/matcher.upb_minitable.h \
+src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb.h \
+src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb_minitable.c \
+src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb_minitable.h \
 src/core/ext/upb-gen/envoy/config/core/v3/address.upb.h \
 src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.c \
 src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.h \
@@ -1341,6 +1346,9 @@ src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb_minitable.h \
 src/core/ext/upb-gen/envoy/config/core/v3/base.upb.h \
 src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.c \
 src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.h \
+src/core/ext/upb-gen/envoy/config/core/v3/cel.upb.h \
+src/core/ext/upb-gen/envoy/config/core/v3/cel.upb_minitable.c \
+src/core/ext/upb-gen/envoy/config/core/v3/cel.upb_minitable.h \
 src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb.h \
 src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.c \
 src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.h \
@@ -1828,12 +1836,16 @@ src/core/ext/upbdefs-gen/envoy/config/cluster/v3/outlier_detection.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/config/cluster/v3/outlier_detection.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/config/common/matcher/v3/matcher.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/config/common/matcher/v3/matcher.upbdefs.h \
+src/core/ext/upbdefs-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upbdefs.c \
+src/core/ext/upbdefs-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/address.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/address.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/backoff.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/backoff.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/base.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/base.upbdefs.h \
+src/core/ext/upbdefs-gen/envoy/config/core/v3/cel.upbdefs.c \
+src/core/ext/upbdefs-gen/envoy/config/core/v3/cel.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/config_source.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/config_source.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/event_service_config.upbdefs.c \
@@ -2124,8 +2136,8 @@ src/core/handshaker/handshaker_factory.h \
 src/core/handshaker/handshaker_registry.cc \
 src/core/handshaker/handshaker_registry.h \
 src/core/handshaker/http_connect/GEMINI.md \
-src/core/handshaker/http_connect/http_connect_handshaker.cc \
-src/core/handshaker/http_connect/http_connect_handshaker.h \
+src/core/handshaker/http_connect/http_connect_client_handshaker.cc \
+src/core/handshaker/http_connect/http_connect_client_handshaker.h \
 src/core/handshaker/http_connect/http_proxy_mapper.cc \
 src/core/handshaker/http_connect/http_proxy_mapper.h \
 src/core/handshaker/http_connect/xds_http_proxy_mapper.cc \
@@ -2497,6 +2509,8 @@ src/core/lib/resource_quota/periodic_update.cc \
 src/core/lib/resource_quota/periodic_update.h \
 src/core/lib/resource_quota/resource_quota.cc \
 src/core/lib/resource_quota/resource_quota.h \
+src/core/lib/resource_quota/stream_quota.cc \
+src/core/lib/resource_quota/stream_quota.h \
 src/core/lib/resource_quota/telemetry.h \
 src/core/lib/resource_quota/thread_quota.cc \
 src/core/lib/resource_quota/thread_quota.h \

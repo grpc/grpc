@@ -63,6 +63,7 @@
 #include "test/core/test_util/test_config.h"
 #include "gtest/gtest.h"
 #include "absl/functional/any_invocable.h"
+#include "absl/log/globals.h"
 #include "absl/memory/memory.h"
 #include "absl/meta/type_traits.h"
 #include "absl/strings/str_cat.h"
@@ -104,6 +105,36 @@
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
 #define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG "Ph2Client"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_RETRY "Ph2ClientRetry"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_FAKE_SECURITY \
+  "Ph2ClientFakeSecurityFullstack"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_INSECURE_CREDENTIALS \
+  "Ph2ClientInsecureCredentials"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_FULLSTACK_LOCAL_IPV4 \
+  "Ph2ClientFullstackLocalIpv4"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_FULLSTACK_LOCAL_IPV6 \
+  "Ph2ClientFullstackLocalIpv6"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SSL_PROXY "Ph2ClientSslProxy"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_TLS12 \
+  "Ph2ClientSimpleSslWithOauth2FullstackTls12"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SIMPLE_SSL_WITH_OAUTH2_FULLSTACK_TLS13 \
+  "Ph2ClientSimpleSslWithOauth2FullstackTls13"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SIMPLE_SSL_FULLSTACK_TLS12 \
+  "Ph2ClientSimpleSslFullstackTls12"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SIMPLE_SSL_FULLSTACK_TLS13 \
+  "Ph2ClientSimpleSslFullstackTls13"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SSL_CRED_RELOAD_TLS12 \
+  "Ph2ClientSslCredReloadTls12"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SSL_CRED_RELOAD_TLS13 \
+  "Ph2ClientSslCredReloadTls13"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_CERT_WATCHER_PROVIDER_ASYNC_VERIFIER_TLS13 \
+  "Ph2ClientCertWatcherProviderAsyncVerifierTls13"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_CERT_WATCHER_PROVIDER_SYNC_VERIFIER_TLS12 \
+  "Ph2ClientCertWatcherProviderSyncVerifierTls12"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_SIMPLE_SSL_FULLSTACK \
+  "Ph2ClientSimpleSslFullstack"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG_STATIC_PROVIDER_ASYNC_VERIFIER_TLS13 \
+  "Ph2ClientStaticProviderAsyncVerifierTls13"
 
 namespace grpc_core {
 
@@ -721,6 +752,27 @@ inline auto MaybeAddNullConfig(
   return configs;
 }
 
+// TODO(akshitpatel) : [PH2][P3] : Remove once all the PH2 E2E tests are fixed.
+inline void EnableLoggingForPH2Tests() {
+  if (IsPromiseBasedHttp2ClientTransportEnabled()) {
+    grpc_tracer_set_enabled("http2_ph2_transport", true);
+    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
+    absl::SetGlobalVLogLevel(2);
+  }
+}
+
+// TODO(akshitpatel) : [PH2][P3] : Remove once all the PH2 E2E tests are fixed.
+inline void DisableLoggingForPH2Tests() {
+  if (IsPromiseBasedHttp2ClientTransportEnabled()) {
+    absl::SetGlobalVLogLevel(-1);
+    grpc_tracer_set_enabled("http2_ph2_transport", false);
+  }
+}
+
+inline bool IsPromiseBasedTransportEnabled() {
+  return IsPromiseBasedHttp2ClientTransportEnabled();
+}
+
 }  // namespace grpc_core
 
 // If this test fixture is being run under minstack, skip the test.
@@ -736,15 +788,32 @@ inline auto MaybeAddNullConfig(
     GTEST_SKIP() << "Disabled for initial v3 testing";         \
   }
 
+inline bool IsTokenInList(absl::string_view list, absl::string_view token) {
+  if (list.empty()) return false;
+  size_t start = 0;
+  while (start < list.size()) {
+    size_t end = list.find('|', start);
+    if (end == std::string::npos) {
+      end = list.size();
+    }
+
+    if (list.substr(start, end - start) == token) {
+      return true;
+    }
+    start = end + 1;
+  }
+  return false;
+}
+
 inline bool IsTestEnabledInConfig(absl::string_view include_suite,
                                   absl::string_view include_test,
                                   absl::string_view exclude_test,
                                   absl::string_view suite,
                                   absl::string_view test) {
   return (absl::StrContains((include_suite), "*") ||
-          absl::StrContains((include_suite), suite) ||
-          absl::StrContains(include_test, absl::StrCat(suite, ".", test))) &&
-         !absl::StrContains(exclude_test, absl::StrCat(suite, ".", test));
+          IsTokenInList((include_suite), suite) ||
+          IsTokenInList(include_test, absl::StrCat(suite, ".", test))) &&
+         !IsTokenInList(exclude_test, absl::StrCat(suite, ".", test));
 }
 
 #define SKIP_IF_DISABLED_IN_CONFIG(include_suite, include_test, exclude_test,  \

@@ -14,7 +14,6 @@
 
 #include "server_call_tracer.h"
 
-#include <grpc/support/port_platform.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -35,6 +34,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/grpc_check.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -91,6 +91,13 @@ bool KeyInLabels(std::string key, const std::vector<Label>& labels) {
 //
 
 void PythonOpenCensusServerCallTracer::RecordSendInitialMetadata(
+    grpc_metadata_batch* send_initial_metadata) {
+  GRPC_CHECK(
+      !grpc_core::IsCallTracerSendInitialMetadataIsAnAnnotationEnabled());
+  MutateSendInitialMetadata(send_initial_metadata);
+}
+
+void PythonOpenCensusServerCallTracer::MutateSendInitialMetadata(
     grpc_metadata_batch* send_initial_metadata) {
   // Only add labels if exchange is needed (Client send metadata with keys in
   // MetadataExchangeKeyNames).
@@ -251,6 +258,12 @@ void PythonOpenCensusServerCallTracer::RecordAnnotation(
   }
 
   switch (annotation.type()) {
+    case grpc_core::CallTracerAnnotationInterface::AnnotationType::
+        kSendInitialMetadata:
+      // Python OpenCensus does not have any immutable tracing for send initial
+      // metadata. All work for send initial metadata is mutation, which is
+      // handled in MutateSendInitialMetadata.
+      break;
     // Annotations are expensive to create. We should only create it if the
     // call is being sampled by default.
     default:

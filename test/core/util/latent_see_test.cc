@@ -30,8 +30,6 @@
 #include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
 
-using testing::IsEmpty;
-
 inline constexpr absl::string_view kHeaderTraceFalse =
     grpc_core::TypeName<grpc_core::H2HeaderTrace<false>>();
 inline constexpr absl::string_view kHeaderTraceTrue =
@@ -160,8 +158,20 @@ void WaitForCollector() {
   absl::SleepFor(absl::Seconds(1));
 }
 
+bool IsCollectionStartMark(const Json& json) {
+  if (json.type() != Json::Type::kObject) return false;
+  const auto obj = json.object();
+  auto name = obj.find("name");
+  if (name == obj.end()) return false;
+  if (name->second.type() != Json::Type::kString) return false;
+  return name->second.string() == "LatentseeCollectionStart";
+}
+
 TEST(LatentSeeTest, EmptyCollectionWorks) {
-  EXPECT_THAT(RunAndReportJson([]() {}), IsEmpty());
+  // Empty collection should still produce a mark for the actual start time.
+  auto elems = RunAndReportJson([]() {});
+  ASSERT_EQ(elems.size(), 1);
+  EXPECT_TRUE(IsCollectionStartMark(elems[0]));
 }
 
 TEST(LatentSeeTest, ScopeWorks) {
@@ -171,9 +181,10 @@ TEST(LatentSeeTest, ScopeWorks) {
     absl::SleepFor(absl::Milliseconds(5));
   });
 
-  ASSERT_EQ(elems.size(), 1);
-  ASSERT_EQ(elems[0].type(), Json::Type::kObject);
-  auto obj = elems[0].object();
+  ASSERT_EQ(elems.size(), 2);
+  EXPECT_TRUE(IsCollectionStartMark(elems[0]));
+  ASSERT_EQ(elems[1].type(), Json::Type::kObject);
+  auto obj = elems[1].object();
   EXPECT_THAT(obj, HasStringFieldWithValue("name", "foo"));
   EXPECT_THAT(obj, HasStringFieldWithValue("ph", "X"));
   EXPECT_THAT(obj, HasNumberFieldWithValue("tid", 1));
@@ -190,9 +201,9 @@ TEST(LatentSeeTest, MarkWorks) {
     WaitForCollector();
     GRPC_LATENT_SEE_ALWAYS_ON_MARK("bar");
   });
-  ASSERT_EQ(elems.size(), 1);
-  ASSERT_EQ(elems[0].type(), Json::Type::kObject);
-  auto obj = elems[0].object();
+  ASSERT_EQ(elems.size(), 2);
+  EXPECT_TRUE(IsCollectionStartMark(elems[0]));
+  auto obj = elems[1].object();
   EXPECT_THAT(obj, HasStringFieldWithValue("name", "bar"));
   EXPECT_THAT(obj, HasStringFieldWithValue("ph", "i"));
   EXPECT_THAT(obj, HasNumberFieldWithValue("tid", 1));
@@ -215,19 +226,20 @@ TEST(LatentSeeTest, ExtraEventMarkWorks) {
     GRPC_LATENT_SEE_ALWAYS_ON_MARK_EXTRA_EVENT(ResultType,
                                                h2_read_trace_producer());
   });
-  ASSERT_EQ(elems.size(), 3);
-  ASSERT_EQ(elems[0].type(), Json::Type::kObject);
-  auto obj_0 = elems[0].object();
+  ASSERT_EQ(elems.size(), 4);
+  EXPECT_TRUE(IsCollectionStartMark(elems[0]));
+  ASSERT_EQ(elems[1].type(), Json::Type::kObject);
+  auto obj_0 = elems[1].object();
   EXPECT_THAT(obj_0, HasStringFieldWithValue("name", "bar"));
   EXPECT_THAT(obj_0, HasStringFieldWithValue("ph", "i"));
   EXPECT_THAT(obj_0, HasNumberFieldWithValue("tid", 1));
   EXPECT_THAT(obj_0, HasNumberFieldWithValue("pid", 0));
   EXPECT_THAT(obj_0, HasNumberField("ts"));
 
-  ASSERT_EQ(elems[1].type(), Json::Type::kObject);
   ASSERT_EQ(elems[2].type(), Json::Type::kObject);
-  auto obj_1 = elems[1].object();
-  auto obj_2 = elems[2].object();
+  ASSERT_EQ(elems[3].type(), Json::Type::kObject);
+  auto obj_1 = elems[2].object();
+  auto obj_2 = elems[3].object();
   // obj_1
   EXPECT_THAT(obj_1, HasStringFieldWithValue("name", kHeaderTraceFalse));
   EXPECT_THAT(obj_1, HasStringFieldWithValue("ph", "i"));
@@ -266,10 +278,11 @@ TEST(LatentSeeTest, FlowWorks) {
       latent_see::Flush();
     }).join();
   });
-  ASSERT_EQ(elems.size(), 2);
-  ASSERT_EQ(elems[0].type(), Json::Type::kObject);
-  auto obj1 = elems[0].object();
-  auto obj2 = elems[1].object();
+  ASSERT_EQ(elems.size(), 3);
+  EXPECT_TRUE(IsCollectionStartMark(elems[0]));
+  ASSERT_EQ(elems[1].type(), Json::Type::kObject);
+  auto obj1 = elems[1].object();
+  auto obj2 = elems[2].object();
   // Test phrasing ensures that the end (ph:f) gets reported
   // before the start (ph:s)
   EXPECT_THAT(obj1, HasStringFieldWithValue("name", "foo"));
@@ -299,7 +312,8 @@ TEST(LatentSeeTest, FlowWorksAppenderStartsLate) {
         }).join();
       },
       /*wait_for_start=*/&wait_for_start);
-  ASSERT_EQ(elems.size(), 2);
+  ASSERT_EQ(elems.size(), 3);
+  EXPECT_TRUE(IsCollectionStartMark(elems[0]));
 }
 
 }  // namespace

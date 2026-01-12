@@ -185,7 +185,8 @@ void DoRpc(const std::string& server_addr,
     EXPECT_EQ(result.error_code(), failure_code);
 // The expected failure message only matches when building against BoringSSL or
 // OpenSSL < 3.0.
-#if GTEST_USES_POSIX_RE && OPENSSL_VERSION_NUMBER < 0x30000000L
+#if GTEST_USES_POSIX_RE && OPENSSL_VERSION_NUMBER < 0x30000000L && \
+    defined(OPENSSL_IS_BORINGSSL)
     EXPECT_THAT(result.error_message(),
                 ::testing::MatchesRegex(failure_message_regex));
 #endif
