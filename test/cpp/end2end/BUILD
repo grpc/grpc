@@ -200,11 +200,13 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
         "no_test_android",  # android_cc_test doesn't work with data dependency.
         "no_test_ios",
         "no_windows",
     ],
     deps = [
+        ":end2end_test_utils",
         ":test_service_impl",
         "//:gpr",
         "//:grpc",
@@ -747,8 +749,12 @@ grpc_cc_test(
         "gtest",
         "absl/log",
     ],
-    tags = ["cpp_end2end_test"],
+    tags = [
+        "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
+    ],
     deps = [
+        ":end2end_test_utils",
         "//:gpr",
         "//:grpc",
         "//:grpc++",

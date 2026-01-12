@@ -67,6 +67,10 @@ inline void ApplyCommonChannelArguments(ChannelArguments& args) {
   }
 }
 
+#define SKIP_TEST_FOR_PH2(message)                            \
+  if (grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()) \
+    GTEST_SKIP() << (message);
+
 }  // namespace testing
 }  // namespace grpc
 

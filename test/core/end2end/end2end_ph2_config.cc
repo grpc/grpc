@@ -119,7 +119,10 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|Http2SingleHopTests.ServerMaxConcurrentStreams"          \
   "|Http2Tests.GracefulServerShutdown"                       \
   "|Http2Tests.MaxAgeForciblyClose"                          \
-  "|Http2Tests.MaxAgeGracefullyClose"
+  "|Http2Tests.MaxAgeGracefullyClose"                        \
+  "|Http2Tests.ServerStreaming"                              \
+  "|Http2Tests.ServerStreamingEmptyStream"                   \
+  "|Http2Tests.ServerStreaming10Messages"
 
 #define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE     \
   "|CoreEnd2endTests|CoreDeadlineTests|CoreLargeSendTests|" \
