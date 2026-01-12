@@ -114,13 +114,6 @@ using StreamWritabilityUpdate =
 // http2 rollout is completed.
 
 template <typename Factory>
-void Http2ClientTransport::SpawnInfallible(RefCountedPtr<Party> party,
-                                           absl::string_view name,
-                                           Factory&& factory) {
-  party->Spawn(name, std::forward<Factory>(factory), [](Empty) {});
-}
-
-template <typename Factory>
 void Http2ClientTransport::SpawnInfallibleTransportParty(absl::string_view name,
                                                          Factory&& factory) {
   SpawnInfallible(general_party_, name, std::forward<Factory>(factory));
@@ -137,6 +130,14 @@ void Http2ClientTransport::SpawnGuardedTransportParty(absl::string_view name,
               /*stream_id=*/std::nullopt, ToHttpOkOrConnError(status));
         }
       });
+}
+
+template <typename Factory, typename OnDone>
+void Http2ClientTransport::SpawnWithOnDoneTransportParty(absl::string_view name,
+                                                         Factory&& factory,
+                                                         OnDone&& on_done) {
+  general_party_->Spawn(name, std::forward<Factory>(factory),
+                        std::forward<OnDone>(on_done));
 }
 
 template <typename Promise>
@@ -1433,9 +1434,9 @@ void Http2ClientTransport::MaybeSpawnWaitForSettingsTimeout() {
   if (settings_->ShouldSpawnWaitForSettingsTimeout()) {
     GRPC_HTTP2_CLIENT_DLOG
         << "Http2ClientTransport::MaybeSpawnWaitForSettingsTimeout Spawning";
-    general_party_->Spawn("WaitForSettingsTimeout",
-                          settings_->WaitForSettingsTimeout(),
-                          WaitForSettingsTimeoutOnDone());
+    SpawnWithOnDoneTransportParty("WaitForSettingsTimeout",
+                                  settings_->WaitForSettingsTimeout(),
+                                  WaitForSettingsTimeoutOnDone());
   }
 }
 

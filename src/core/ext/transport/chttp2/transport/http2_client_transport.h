@@ -149,7 +149,7 @@ class Http2ClientTransport final : public ClientTransport,
 
   template <typename Factory>
   void TestOnlySpawnPromise(absl::string_view name, Factory&& factory) {
-    general_party_->Spawn(name, std::forward<Factory>(factory), [](Empty) {});
+    SpawnInfallible(general_party_, name, std::forward<Factory>(factory));
   }
   int64_t TestOnlyTransportFlowControlWindow();
   int64_t TestOnlyGetStreamFlowControlWindow(const uint32_t stream_id);
@@ -299,7 +299,10 @@ class Http2ClientTransport final : public ClientTransport,
   // Spawns an infallible promise on the given party.
   template <typename Factory>
   void SpawnInfallible(RefCountedPtr<Party> party, absl::string_view name,
-                       Factory&& factory);
+                       Factory&& factory) {
+    party->Spawn(name, std::forward<Factory>(factory),
+                 [self = RefAsSubclass<Http2ClientTransport>()](Empty) {});
+  }
 
   // Spawns an infallible promise on the transport party.
   template <typename Factory>
@@ -310,6 +313,10 @@ class Http2ClientTransport final : public ClientTransport,
   // status.
   template <typename Factory>
   void SpawnGuardedTransportParty(absl::string_view name, Factory&& factory);
+
+  template <typename Factory, typename OnDone>
+  void SpawnWithOnDoneTransportParty(absl::string_view name, Factory&& factory,
+                                     OnDone&& on_done);
 
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){
       "http2_client", GRPC_CHANNEL_READY};
