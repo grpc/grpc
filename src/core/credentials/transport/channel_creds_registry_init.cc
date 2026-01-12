@@ -20,7 +20,6 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include <map>
@@ -29,6 +28,7 @@
 #include <utility>
 
 #include "envoy/extensions/grpc_service/channel_credentials/tls/v3/tls_credentials.upb.h"
+#include "envoy/extensions/grpc_service/channel_credentials/xds/v3/xds_credentials.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/call/call_credentials.h"
@@ -56,10 +56,7 @@ class GoogleDefaultChannelCredsFactory : public ChannelCredsFactory<> {
       ValidationErrors* /*errors*/) const override {
     return MakeRefCounted<Config>();
   }
-  absl::string_view proto_type() const override {
-    return "envoy.extensions.grpc_service.channel_credentials.google_default"
-           ".v3.GoogleDefaultCredentials";
-  }
+  absl::string_view proto_type() const override { return ProtoType(); }
   RefCountedPtr<const ChannelCredsConfig> ParseProto(
       absl::string_view /*serialized_config*/,
       const CertificateProviderStoreInterface::PluginDefinitionMap&
@@ -79,11 +76,17 @@ class GoogleDefaultChannelCredsFactory : public ChannelCredsFactory<> {
   class Config : public ChannelCredsConfig {
    public:
     absl::string_view type() const override { return Type(); }
+    absl::string_view proto_type() const override { return ProtoType(); }
     bool Equals(const ChannelCredsConfig&) const override { return true; }
     std::string ToString() const override { return "{}"; }
   };
 
   static absl::string_view Type() { return "google_default"; }
+
+  static absl::string_view ProtoType() {
+    return "envoy.extensions.grpc_service.channel_credentials.google_default"
+           ".v3.GoogleDefaultCredentials";
+  }
 };
 
 class TlsChannelCredsFactory : public ChannelCredsFactory<> {
@@ -96,10 +99,7 @@ class TlsChannelCredsFactory : public ChannelCredsFactory<> {
     return LoadFromJson<RefCountedPtr<TlsConfig>>(config, args, errors);
   }
 
-  absl::string_view proto_type() const override {
-    return "envoy.extensions.grpc_service.channel_credentials.tls"
-           ".v3.TlsCredentials";
-  }
+  absl::string_view proto_type() const override { return ProtoType(); }
 
   RefCountedPtr<const ChannelCredsConfig> ParseProto(
       absl::string_view serialized_config,
@@ -200,8 +200,10 @@ class TlsChannelCredsFactory : public ChannelCredsFactory<> {
 
     absl::string_view type() const override { return Type(); }
 
+    absl::string_view proto_type() const override { return ProtoType(); }
+
     bool Equals(const ChannelCredsConfig& other) const override {
-      auto& o = static_cast<const TlsConfig&>(other);
+      auto& o = DownCast<const TlsConfig&>(other);
       return certificate_file_ == o.certificate_file_ &&
              private_key_file_ == o.private_key_file_ &&
              ca_certificate_file_ == o.ca_certificate_file_ &&
@@ -332,6 +334,11 @@ class TlsChannelCredsFactory : public ChannelCredsFactory<> {
   };
 
   static absl::string_view Type() { return "tls"; }
+
+  static absl::string_view ProtoType() {
+    return "envoy.extensions.grpc_service.channel_credentials.tls"
+           ".v3.TlsCredentials";
+  }
 };
 
 constexpr Duration TlsChannelCredsFactory::TlsConfig::kDefaultRefreshInterval;
@@ -344,10 +351,7 @@ class InsecureChannelCredsFactory : public ChannelCredsFactory<> {
       ValidationErrors* /*errors*/) const override {
     return MakeRefCounted<Config>();
   }
-  absl::string_view proto_type() const override {
-    return "envoy.extensions.grpc_service.channel_credentials.insecure"
-           ".v3.InsecureCredentials";
-  }
+  absl::string_view proto_type() const override { return ProtoType(); }
   RefCountedPtr<const ChannelCredsConfig> ParseProto(
       absl::string_view /*serialized_config*/,
       const CertificateProviderStoreInterface::PluginDefinitionMap&
@@ -367,11 +371,127 @@ class InsecureChannelCredsFactory : public ChannelCredsFactory<> {
   class Config : public ChannelCredsConfig {
    public:
     absl::string_view type() const override { return Type(); }
+    absl::string_view proto_type() const override { return ProtoType(); }
     bool Equals(const ChannelCredsConfig&) const override { return true; }
     std::string ToString() const override { return "{}"; }
   };
 
   static absl::string_view Type() { return "insecure"; }
+
+  static absl::string_view ProtoType() {
+    return "envoy.extensions.grpc_service.channel_credentials.insecure"
+           ".v3.InsecureCredentials";
+  }
+};
+
+class XdsChannelCredsFactory : public ChannelCredsFactory<> {
+ public:
+  absl::string_view type() const override { return ""; }
+
+  RefCountedPtr<const ChannelCredsConfig> ParseConfig(
+      const Json& /*config*/, const JsonArgs& /*args*/,
+      ValidationErrors* /*errors*/) const override {
+    return nullptr;
+  }
+
+  absl::string_view proto_type() const override { return ProtoType(); }
+
+  RefCountedPtr<const ChannelCredsConfig> ParseProto(
+      absl::string_view serialized_config,
+      const CertificateProviderStoreInterface::PluginDefinitionMap&
+          certificate_provider_definitions,
+      ValidationErrors* errors) const override {
+    return Config::ParseProto(
+        serialized_config, certificate_provider_definitions, errors);
+  }
+
+  RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
+      RefCountedPtr<const ChannelCredsConfig> config,
+      const CertificateProviderStoreInterface& certificate_provider_store)
+      const override {
+    auto fallback_creds =
+        CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
+            DownCast<const Config&>(*config).fallback_credentials(),
+            certificate_provider_store);
+    return RefCountedPtr<grpc_channel_credentials>(
+        grpc_xds_credentials_create(fallback_creds.get()));
+  }
+
+ private:
+  class Config : public ChannelCredsConfig {
+   public:
+    absl::string_view type() const override { return ""; }
+
+    absl::string_view proto_type() const override { return ProtoType(); }
+
+    bool Equals(const ChannelCredsConfig& other) const override {
+      auto& o = DownCast<const Config&>(other);
+      if (fallback_credentials_ == nullptr) {
+        return o.fallback_credentials_ == nullptr;
+      } else if (o.fallback_credentials_ == nullptr) {
+        return false;
+      }
+      return *fallback_credentials_ == *o.fallback_credentials_;
+    }
+
+    std::string ToString() const override {
+      return absl::StrCat(
+          "{fallback_creds=",
+          fallback_credentials_ == nullptr
+              ? "<null>"
+              : absl::StrCat("{type=", fallback_credentials_->type(),
+                             ", config=", fallback_credentials_->ToString(),
+                             "}"),
+          "}");
+    }
+
+    RefCountedPtr<const ChannelCredsConfig> fallback_credentials() const {
+      return fallback_credentials_;
+    }
+
+    static RefCountedPtr<const Config> ParseProto(
+        absl::string_view serialized_proto,
+        const CertificateProviderStoreInterface::PluginDefinitionMap&
+            certificate_provider_definitions,
+        ValidationErrors* errors) {
+      upb::Arena arena;
+      const auto* proto =
+          envoy_extensions_grpc_service_channel_credentials_xds_v3_XdsCredentials_parse(
+              serialized_proto.data(), serialized_proto.size(), arena.ptr());
+      if (proto == nullptr) {
+        errors->AddError("could not parse channel credentials config");
+        return nullptr;
+      }
+      auto config = MakeRefCounted<Config>();
+      ValidationErrors::ScopedField field(errors, ".fallback_credentials");
+      const auto* fallback_creds_proto =
+          envoy_extensions_grpc_service_channel_credentials_xds_v3_XdsCredentials_fallback_credentials(
+              proto);
+      if (fallback_creds_proto == nullptr) {
+        errors->AddError("field not set");
+      } else {
+        absl::string_view type = absl::StripPrefix(
+            UpbStringToAbsl(google_protobuf_Any_type_url(fallback_creds_proto)),
+            "type.googleapis.com/");
+        ValidationErrors::ScopedField field(errors, ".value");
+        config->fallback_credentials_ =
+            CoreConfiguration::Get().channel_creds_registry().ParseProto(
+                type,
+                UpbStringToAbsl(
+                    google_protobuf_Any_value(fallback_creds_proto)),
+                certificate_provider_definitions, errors);
+      }
+      return config;
+    }
+
+   private:
+    RefCountedPtr<const ChannelCredsConfig> fallback_credentials_;
+  };
+
+  static absl::string_view ProtoType() {
+    return "envoy.extensions.grpc_service.channel_credentials.xds.v3"
+           ".XdsCredentials";
+  }
 };
 
 class FakeChannelCredsFactory : public ChannelCredsFactory<> {
@@ -402,6 +522,7 @@ class FakeChannelCredsFactory : public ChannelCredsFactory<> {
   class Config : public ChannelCredsConfig {
    public:
     absl::string_view type() const override { return Type(); }
+    absl::string_view proto_type() const override { return ""; }
     bool Equals(const ChannelCredsConfig&) const override { return true; }
     std::string ToString() const override { return "{}"; }
   };
@@ -416,6 +537,8 @@ void RegisterChannelDefaultCreds(CoreConfiguration::Builder* builder) {
       std::make_unique<TlsChannelCredsFactory>());
   builder->channel_creds_registry()->RegisterChannelCredsFactory(
       std::make_unique<InsecureChannelCredsFactory>());
+  builder->channel_creds_registry()->RegisterChannelCredsFactory(
+      std::make_unique<XdsChannelCredsFactory>());
   builder->channel_creds_registry()->RegisterChannelCredsFactory(
       std::make_unique<FakeChannelCredsFactory>());
 }

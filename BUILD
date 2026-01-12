@@ -5376,6 +5376,11 @@ grpc_upb_proto_library(
 )
 
 grpc_upb_proto_library(
+    name = "envoy_extensions_grpc_service_channel_credentials_xds_upb",
+    deps = ["@envoy_api//envoy/extensions/grpc_service/channel_credentials/xds/v3:pkg"],
+)
+
+grpc_upb_proto_library(
     name = "envoy_extensions_transport_sockets_tls_upb",
     deps = ["@envoy_api//envoy/extensions/transport_sockets/tls/v3:pkg"],
 )

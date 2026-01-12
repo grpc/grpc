@@ -40,6 +40,13 @@ class ChannelCredsConfig : public RefCounted<ChannelCredsConfig> {
  public:
   virtual absl::string_view type() const = 0;
 
+  virtual absl::string_view proto_type() const = 0;
+
+  bool operator==(const ChannelCredsConfig& other) const {
+    if (type() != other.type()) return false;
+    return Equals(other);
+  }
+
   virtual bool Equals(const ChannelCredsConfig& other) const = 0;
 
   virtual std::string ToString() const = 0;
@@ -150,8 +157,11 @@ class ChannelCredsRegistry {
       const CertificateProviderStoreInterface& certificate_provider_store)
       const {
     if (config == nullptr) return nullptr;
-    const auto it = name_map_.find(config->type());
-    if (it == name_map_.cend()) return nullptr;
+    auto it = name_map_.find(config->type());
+    if (it == name_map_.cend()) {
+      it = proto_map_.find(config->proto_type());
+      if (it == proto_map_.cend()) return nullptr;
+    }
     return it->second->CreateChannelCreds(std::move(config),
                                           certificate_provider_store);
   }
