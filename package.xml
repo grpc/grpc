@@ -1325,8 +1325,8 @@
     <file baseinstalldir="/" name="src/core/handshaker/handshaker_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/handshaker_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/handshaker_registry.h" role="src" />
-    <file baseinstalldir="/" name="src/core/handshaker/http_connect/http_connect_handshaker.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/handshaker/http_connect/http_connect_handshaker.h" role="src" />
+    <file baseinstalldir="/" name="src/core/handshaker/http_connect/http_connect_client_handshaker.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/handshaker/http_connect/http_connect_client_handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/http_connect/http_proxy_mapper.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/http_connect/http_proxy_mapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/http_connect/xds_http_proxy_mapper.cc" role="src" />

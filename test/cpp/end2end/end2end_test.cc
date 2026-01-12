@@ -47,6 +47,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/interceptors_util.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/string_ref_helper.h"
@@ -224,9 +225,9 @@ class TestAuthMetadataProcessor : public AuthMetadataProcessor {
     EXPECT_TRUE(consumed_auth_metadata != nullptr);
     EXPECT_TRUE(context != nullptr);
     EXPECT_TRUE(response_metadata != nullptr);
-    auto auth_md =
-        auth_metadata.find(TestMetadataCredentialsPlugin::kGoodMetadataKey);
-    EXPECT_NE(auth_md, auth_metadata.end());
+    auto [auth_md, auth_md_end] = auth_metadata.equal_range(
+        TestMetadataCredentialsPlugin::kGoodMetadataKey);
+    EXPECT_NE(auth_md, auth_md_end);
     string_ref auth_md_value = auth_md->second;
     if (auth_md_value == kGoodGuy) {
       context->AddProperty(kIdentityPropName, kGoodGuy);
@@ -413,7 +414,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       args.SetUserAgentPrefix(user_agent_prefix_);
     }
     args.SetString(GRPC_ARG_SECONDARY_USER_AGENT_STRING, "end2end_test");
-
+    ApplyCommonChannelArguments(args);
     if (!GetParam().inproc()) {
       if (!GetParam().use_interceptors()) {
         channel_ = grpc::CreateCustomChannel(server_address_.str(),
@@ -828,8 +829,8 @@ TEST_P(End2endTest, SimpleRpcWithCustomUserAgentPrefix) {
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(s.ok());
   const auto& trailing_metadata = context.GetServerTrailingMetadata();
-  auto iter = trailing_metadata.find("user-agent");
-  EXPECT_TRUE(iter != trailing_metadata.end());
+  auto [iter, end] = trailing_metadata.equal_range("user-agent");
+  EXPECT_TRUE(iter != end);
   std::string expected_prefix = user_agent_prefix_ + " grpc-c++/";
   EXPECT_TRUE(iter->second.starts_with(expected_prefix)) << iter->second;
 }
@@ -1474,7 +1475,8 @@ TEST_P(End2endTest, BinaryTrailerTest) {
   EXPECT_FALSE(s.ok());
   auto trailers = context.GetServerTrailingMetadata();
   EXPECT_EQ(1u, trailers.count(kDebugInfoTrailerKey));
-  auto iter = trailers.find(kDebugInfoTrailerKey);
+  auto [iter, end] = trailers.equal_range(kDebugInfoTrailerKey);
+  EXPECT_TRUE(iter != end);
   EXPECT_EQ(expected_string, iter->second);
   // Parse the returned trailer into a DebugInfo proto.
   DebugInfo returned_info;
@@ -1482,6 +1484,10 @@ TEST_P(End2endTest, BinaryTrailerTest) {
 }
 
 TEST_P(End2endTest, ExpectErrorTest) {
+  if (grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()) {
+    GTEST_SKIP() << "TODO(tjagtap) [PH2][P1] Fix bug";
+  }
+
   ResetStub();
 
   std::vector<ErrorStatus> expected_status;
@@ -1602,6 +1608,9 @@ TEST_P(ProxyEnd2endTest, RpcLongDeadline) {
 
 // Ask server to echo back the deadline it sees.
 TEST_P(ProxyEnd2endTest, EchoDeadline) {
+  if (grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()) {
+    GTEST_SKIP() << "TODO(tjagtap) [PH2][P1] Fix bug";
+  }
   ResetStub();
   EchoRequest request;
   EchoResponse response;

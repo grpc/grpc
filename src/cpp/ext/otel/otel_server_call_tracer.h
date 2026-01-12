@@ -56,6 +56,8 @@ class OpenTelemetryPluginImpl::ServerCallTracerInterface
   // arguments.
   void RecordSendInitialMetadata(
       grpc_metadata_batch* send_initial_metadata) override;
+  void MutateSendInitialMetadata(
+      grpc_metadata_batch* send_initial_metadata) override;
 
   void RecordSendTrailingMetadata(
       grpc_metadata_batch* /*send_trailing_metadata*/) override;
@@ -87,9 +89,7 @@ class OpenTelemetryPluginImpl::ServerCallTracerInterface
 
   void RecordAnnotation(absl::string_view annotation) override;
 
-  void RecordAnnotation(const Annotation& /*annotation*/) override {
-    // Not implemented
-  }
+  void RecordAnnotation(const Annotation& annotation) override;
 
   void RecordAnnotation(absl::string_view annotation, absl::Time time);
 

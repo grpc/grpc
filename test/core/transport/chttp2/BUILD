@@ -462,6 +462,7 @@ grpc_cc_test(
         "//:ref_counted_ptr",
         "//src/core:arena",
         "//src/core:event_engine_memory_allocator",
+        "//src/core:grpc_check",
         "//src/core:memory_quota",
         "//src/core:resource_quota",
         "//test/core/test_util:grpc_test_util",
@@ -789,6 +790,8 @@ grpc_cc_test(
         "//src/core:grpc_check",
         "//src/core:http2_status",
         "//src/core:incoming_metadata_tracker",
+        "//src/core:slice",
+        "//test/core/transport/util:mock_promise_endpoint",
     ],
 )
 

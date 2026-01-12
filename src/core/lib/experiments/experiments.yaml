@@ -41,12 +41,22 @@
 
 # This file only defines the experiments. Refer to rollouts.yaml for the rollout
 # state of each experiment.
+- name: buffer_list_deletion_prep
+  description: Gate the removal of old TCP timestamp collection mechanism.
+  expiry: 2026/02/01
+  owner: ctiller@google.com
+  test_tags: [core_end2end_test]
 - name: call_tracer_in_transport
   description: Transport directly passes byte counts to CallTracer.
   expiry: 2026/02/01
   owner: roth@google.com
   test_tags: []
   allow_in_fuzzing_config: false
+- name: call_tracer_send_initial_metadata_is_an_annotation
+  description: Use the new annotation-based CallTracer API.
+  expiry: 2026/06/01
+  owner: ctiller@google.com
+  test_tags: []
 - name: channelz_use_v2_for_v1_api
   description: Use the v2 channelz API for the v1 channelz API.
   expiry: 2026/02/01
@@ -261,11 +271,23 @@
   owner: ctiller@google.com
   test_tags: []
   allow_in_fuzzing_config: false # experiment currently crashes if enabled
+- name: promise_filter_send_cancel_metadata
+  description: Enables sending all trailing metadata fields from server side promise-based filters
+    upon stream cancellation.
+  expiry: 2026/04/01
+  owner: akshitpatel@google.com
+  test_tags: ["core_end2end_test"]
+  allow_in_fuzzing_config: true
 - name: retry_in_callv3
   description: Support retries with call-v3
   expiry: 2026/02/01
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
+- name: return_preexisting_errors
+  description: Return errors that exist before the start of the call in RunHandler.
+  expiry: 2026/06/30
+  owner: aananthv@google.com
+  test_tags: []
 - name: rr_wrr_connect_from_random_index
   description:
     RR and WRR LB policies start connecting from a random index in the
@@ -315,6 +337,11 @@
   expiry: 2026/02/01
   owner: akshitpatel@google.com
   test_tags: ["promise_test"]
+- name: subchannel_connection_scaling
+  description: Subchannel connection scaling support.
+  expiry: 2026/02/01
+  owner: roth@google.com
+  test_tags: ["cpp_lb_end2end_test", "chttp2_keepalive_tests"]
 - name: subchannel_wrapper_cleanup_on_orphan
   description:
     Fixes the subchannel wrapper to drop any non-cancelled watchers when
@@ -349,11 +376,6 @@
   expiry: 2026/05/01
   owner: snohria@google.com
   test_tags: [resource_quota_test]
-- name: transport_state_watcher
-  description: New state watcher API between transport and subchannel.
-  expiry: 2026/02/01
-  owner: roth@google.com
-  test_tags: ["cpp_lb_end2end_test", "chttp2_keepalive_tests"]
 - name: tsi_frame_protector_without_locks
   description: Do not hold locks while using the tsi_frame_protector.
   expiry: 2026/02/01
