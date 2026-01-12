@@ -24,6 +24,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <grpcpp/support/channel_arguments.h>
 #include <sys/time.h>
 
 #include <thread>
@@ -34,6 +35,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/subprocess.h"
 #include "gtest/gtest.h"
@@ -140,8 +142,10 @@ class TimeChangeTest : public ::testing::Test {
     }));
     GRPC_CHECK(server_);
     // connect to server and make sure it's reachable.
-    auto channel =
-        grpc::CreateChannel(server_address_, InsecureChannelCredentials());
+    ChannelArguments args;
+    ApplyCommonChannelArguments(args);
+    auto channel = grpc::CreateCustomChannel(
+        server_address_, InsecureChannelCredentials(), args);
     GRPC_CHECK(channel);
     EXPECT_TRUE(channel->WaitForConnected(
         grpc_timeout_milliseconds_to_deadline(30000)));
@@ -150,8 +154,10 @@ class TimeChangeTest : public ::testing::Test {
   static void TearDownTestSuite() { server_.reset(); }
 
   void SetUp() override {
-    channel_ =
-        grpc::CreateChannel(server_address_, InsecureChannelCredentials());
+    ChannelArguments args;
+    ApplyCommonChannelArguments(args);
+    channel_ = grpc::CreateCustomChannel(server_address_,
+                                         InsecureChannelCredentials(), args);
     GRPC_CHECK(channel_);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }

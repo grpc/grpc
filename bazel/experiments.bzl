@@ -55,6 +55,7 @@ EXPERIMENT_ENABLES = {
     "promise_based_inproc_transport": "promise_based_inproc_transport",
     "promise_filter_send_cancel_metadata": "promise_filter_send_cancel_metadata",
     "retry_in_callv3": "retry_in_callv3",
+    "return_preexisting_errors": "return_preexisting_errors",
     "rr_wrr_connect_from_random_index": "rr_wrr_connect_from_random_index",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "secure_endpoint_offload_large_reads": "event_engine_client,event_engine_listener,event_engine_secure_endpoint,secure_endpoint_offload_large_reads",

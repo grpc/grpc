@@ -175,6 +175,9 @@ const char* const additional_constraints_promise_filter_send_cancel_metadata =
     "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
+const char* const description_return_preexisting_errors =
+    "Return errors that exist before the start of the call in RunHandler.";
+const char* const additional_constraints_return_preexisting_errors = "{}";
 const char* const description_rr_wrr_connect_from_random_index =
     "RR and WRR LB policies start connecting from a random index in the "
     "address list.";
@@ -363,6 +366,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
+    {"return_preexisting_errors", description_return_preexisting_errors,
+     additional_constraints_return_preexisting_errors, nullptr, 0, false, true},
     {"rr_wrr_connect_from_random_index",
      description_rr_wrr_connect_from_random_index,
      additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, false,
@@ -574,6 +579,9 @@ const char* const additional_constraints_promise_filter_send_cancel_metadata =
     "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
+const char* const description_return_preexisting_errors =
+    "Return errors that exist before the start of the call in RunHandler.";
+const char* const additional_constraints_return_preexisting_errors = "{}";
 const char* const description_rr_wrr_connect_from_random_index =
     "RR and WRR LB policies start connecting from a random index in the "
     "address list.";
@@ -762,6 +770,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
+    {"return_preexisting_errors", description_return_preexisting_errors,
+     additional_constraints_return_preexisting_errors, nullptr, 0, false, true},
     {"rr_wrr_connect_from_random_index",
      description_rr_wrr_connect_from_random_index,
      additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, false,
@@ -973,6 +983,9 @@ const char* const additional_constraints_promise_filter_send_cancel_metadata =
     "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
+const char* const description_return_preexisting_errors =
+    "Return errors that exist before the start of the call in RunHandler.";
+const char* const additional_constraints_return_preexisting_errors = "{}";
 const char* const description_rr_wrr_connect_from_random_index =
     "RR and WRR LB policies start connecting from a random index in the "
     "address list.";
@@ -1161,6 +1174,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
+    {"return_preexisting_errors", description_return_preexisting_errors,
+     additional_constraints_return_preexisting_errors, nullptr, 0, false, true},
     {"rr_wrr_connect_from_random_index",
      description_rr_wrr_connect_from_random_index,
      additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, false,
