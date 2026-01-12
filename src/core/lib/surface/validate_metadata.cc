@@ -42,7 +42,7 @@ class LegalHeaderKeyBits : public BitSet<256> {
 };
 constexpr LegalHeaderKeyBits g_legal_header_key_bits;
 
-class LegalHeaderNonBinValueBits : public grpc_core::BitSet<256> {
+class LegalHeaderNonBinValueBits : public BitSet<256> {
  public:
   constexpr LegalHeaderNonBinValueBits() {
     for (int i = 32; i <= 126; i++) {
