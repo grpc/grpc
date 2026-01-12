@@ -39,8 +39,8 @@ class TestCallCredsFactory : public CallCredsFactory<> {
   }
   absl::string_view proto_type() const override { return ProtoType(); }
   RefCountedPtr<const CallCredsConfig> ParseProto(
-      absl::string_view /*serialized_proto*/, ValidationErrors* /*errors*/)
-      const override {
+      absl::string_view /*serialized_proto*/,
+      ValidationErrors* /*errors*/) const override {
     return MakeRefCounted<Config>();
   }
   RefCountedPtr<grpc_call_credentials> CreateCallCreds(
@@ -91,7 +91,7 @@ class CallCredsRegistryTest : public ::testing::Test {
   // type is the string identifying the type in the registry.
   // credential_type is the resulting type of the actual channel creds object.
   void TestProto(absl::string_view proto_type,
-                 absl::string_view serialized_proto, 
+                 absl::string_view serialized_proto,
                  absl::string_view expected_config,
                  UniqueTypeName expected_credential_type) {
     auto& registry = CoreConfiguration::Get().call_creds_registry();
@@ -129,8 +129,8 @@ TEST_F(CallCredsRegistryTest, JwtTokenFileCredsMissingRequiredField) {
 }
 
 TEST_F(CallCredsRegistryTest, AccessTokenCreds) {
-  envoy::extensions::grpc_service::call_credentials::access_token::v3::AccessTokenCredentials
-      proto;
+  envoy::extensions::grpc_service::call_credentials::access_token::v3::
+      AccessTokenCredentials proto;
   proto.set_token("foo");
   TestProto(
       "envoy.extensions.grpc_service.call_credentials.access_token.v3"
@@ -140,8 +140,8 @@ TEST_F(CallCredsRegistryTest, AccessTokenCreds) {
 }
 
 TEST_F(CallCredsRegistryTest, AccessTokenCredsTokenNotSet) {
-  envoy::extensions::grpc_service::call_credentials::access_token::v3::AccessTokenCredentials
-      proto;
+  envoy::extensions::grpc_service::call_credentials::access_token::v3::
+      AccessTokenCredentials proto;
   ValidationErrors errors;
   auto config = CoreConfiguration::Get().call_creds_registry().ParseProto(
       "envoy.extensions.grpc_service.call_credentials.access_token.v3"
@@ -184,8 +184,8 @@ TEST_F(CallCredsRegistryTest, Register) {
   ASSERT_NE(creds, nullptr);
   EXPECT_EQ(creds->type(), grpc_md_only_test_credentials::Type());
   // Parse config from proto.
-  EXPECT_TRUE(
-      CoreConfiguration::Get().call_creds_registry().IsProtoSupported("io.grpc.TestCreds"));
+  EXPECT_TRUE(CoreConfiguration::Get().call_creds_registry().IsProtoSupported(
+      "io.grpc.TestCreds"));
   config = CoreConfiguration::Get().call_creds_registry().ParseProto(
       "io.grpc.TestCreds", "", &errors);
   ASSERT_TRUE(errors.ok()) << errors.message("unexpected errors");

@@ -54,14 +54,14 @@ class TestChannelCredsFactory : public ChannelCredsFactory<> {
   RefCountedPtr<const ChannelCredsConfig> ParseProto(
       absl::string_view /*serialized_proto*/,
       const CertificateProviderStoreInterface::PluginDefinitionMap&
-          /*certificate_provider_definitions*/,
+      /*certificate_provider_definitions*/,
       ValidationErrors* /*errors*/) const override {
     return MakeRefCounted<Config>();
   }
   RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
       RefCountedPtr<const ChannelCredsConfig> /*config*/,
       const CertificateProviderStoreInterface&
-          /*certificate_provider_store*/) const override {
+      /*certificate_provider_store*/) const override {
     return RefCountedPtr<grpc_channel_credentials>(
         grpc_fake_transport_security_credentials_create());
   }
@@ -162,10 +162,11 @@ class ChannelCredsRegistryTest : public ::testing::Test {
     }
   }
 
-  void AddFileWatcherProvider(
-      const std::string& instance_name, const std::string& certificate_file,
-      const std::string& private_key_file,
-      const std::string& ca_certificate_file, Duration refresh_interval) {
+  void AddFileWatcherProvider(const std::string& instance_name,
+                              const std::string& certificate_file,
+                              const std::string& private_key_file,
+                              const std::string& ca_certificate_file,
+                              Duration refresh_interval) {
     Json::Object json_obj;
     if (!certificate_file.empty()) {
       json_obj["certificate_file"] = Json::FromString(certificate_file);
@@ -204,7 +205,9 @@ TEST_F(ChannelCredsRegistryTest, GoogleDefaultCredsProto) {
   TestCredsProto(
       "envoy.extensions.grpc_service.channel_credentials.google_default"
       ".v3.GoogleDefaultCredentials",
-      envoy::extensions::grpc_service::channel_credentials::google_default::v3::GoogleDefaultCredentials().SerializeAsString(),
+      envoy::extensions::grpc_service::channel_credentials::google_default::v3::
+          GoogleDefaultCredentials()
+              .SerializeAsString(),
       "{}", std::nullopt);
 }
 
@@ -216,7 +219,9 @@ TEST_F(ChannelCredsRegistryTest, InsecureCredsProto) {
   TestCredsProto(
       "envoy.extensions.grpc_service.channel_credentials.insecure"
       ".v3.InsecureCredentials",
-      envoy::extensions::grpc_service::channel_credentials::insecure::v3::InsecureCredentials().SerializeAsString(),
+      envoy::extensions::grpc_service::channel_credentials::insecure::v3::
+          InsecureCredentials()
+              .SerializeAsString(),
       "{}", InsecureCredentials::Type());
 }
 
@@ -235,13 +240,12 @@ TEST_F(ChannelCredsRegistryTest, TlsCredsFullConfig) {
       {"ca_certificate_file", Json::FromString("/path/to/ca_cert_file")},
       {"refresh_interval", Json::FromString("1s")},
   });
-  TestCredsConfig(
-      "tls",
-      "{certificate_file=/path/to/cert_file,"
-      "private_key_file=/path/to/private_key_file,"
-      "ca_certificate_file=/path/to/ca_cert_file,"
-      "refresh_interval=1000ms}",
-      TlsCredentials::Type(), json);
+  TestCredsConfig("tls",
+                  "{certificate_file=/path/to/cert_file,"
+                  "private_key_file=/path/to/private_key_file,"
+                  "ca_certificate_file=/path/to/ca_cert_file,"
+                  "refresh_interval=1000ms}",
+                  TlsCredentials::Type(), json);
 }
 
 TEST_F(ChannelCredsRegistryTest, TlsCredsConfigInvalid) {
@@ -363,13 +367,13 @@ TEST_F(ChannelCredsRegistryTest, XdsCredsProto) {
   envoy::extensions::grpc_service::channel_credentials::xds::v3::XdsCredentials
       xds_creds_proto;
   xds_creds_proto.mutable_fallback_credentials()->PackFrom(
-      envoy::extensions::grpc_service::channel_credentials::insecure::v3::InsecureCredentials());
+      envoy::extensions::grpc_service::channel_credentials::insecure::v3::
+          InsecureCredentials());
   // Test parsing.
   TestCredsProto(
       "envoy.extensions.grpc_service.channel_credentials.xds.v3.XdsCredentials",
       xds_creds_proto.SerializeAsString(),
-      "{fallback_creds={type=insecure, config={}}}",
-      XdsCredentials::Type());
+      "{fallback_creds={type=insecure, config={}}}", XdsCredentials::Type());
 }
 
 TEST_F(ChannelCredsRegistryTest, XdsCredsProtoMissingField) {
@@ -418,7 +422,8 @@ TEST_F(ChannelCredsRegistryTest, Register) {
   EXPECT_EQ(creds->type(), grpc_fake_channel_credentials::Type());
   // Check parsing from proto.
   EXPECT_TRUE(
-      CoreConfiguration::Get().channel_creds_registry().IsProtoSupported("io.grpc.TestCreds"));
+      CoreConfiguration::Get().channel_creds_registry().IsProtoSupported(
+          "io.grpc.TestCreds"));
   config = CoreConfiguration::Get().channel_creds_registry().ParseProto(
       "io.grpc.TestCreds", "", {}, &errors);
   ASSERT_TRUE(errors.ok()) << errors.message("unexpected errors");

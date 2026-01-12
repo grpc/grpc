@@ -401,8 +401,8 @@ class XdsChannelCredsFactory : public ChannelCredsFactory<> {
       const CertificateProviderStoreInterface::PluginDefinitionMap&
           certificate_provider_definitions,
       ValidationErrors* errors) const override {
-    return Config::ParseProto(
-        serialized_config, certificate_provider_definitions, errors);
+    return Config::ParseProto(serialized_config,
+                              certificate_provider_definitions, errors);
   }
 
   RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
