@@ -205,6 +205,7 @@ grpc_cc_test(
         "no_windows",
     ],
     deps = [
+        ":end2end_test_utils",
         ":test_service_impl",
         "//:gpr",
         "//:grpc",
@@ -749,6 +750,7 @@ grpc_cc_test(
     ],
     tags = ["cpp_end2end_test"],
     deps = [
+        ":end2end_test_utils",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
