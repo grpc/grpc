@@ -27,7 +27,6 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
-#include <string>
 #include <utility>
 #include <vector>
 
@@ -51,40 +50,30 @@
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
 #include "src/core/ext/transport/chttp2/transport/writable_streams.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
-#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
-#include "src/core/lib/promise/race.h"
-#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
-#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/util/check_class_size.h"
 #include "src/core/util/debug_location.h"
-#include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
-#include "absl/container/flat_hash_set.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/span.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -343,6 +332,7 @@ class Http2ClientTransport final : public ClientTransport,
 
   auto EndpointReadSlice(const size_t num_bytes);
   auto EndpointRead(const size_t num_bytes);
+  auto EndpointWrite(SliceBuffer&& output_buf);
 
   // HTTP2 Settings
   auto WaitForSettingsTimeoutOnDone();
@@ -369,25 +359,7 @@ class Http2ClientTransport final : public ClientTransport,
   bool should_reset_ping_clock_;
   bool is_first_write_;
   IncomingMetadataTracker incoming_headers_;
-
-  // The target number of bytes to write in a single write cycle. We may not
-  // always honour this max_write_size. We MAY overshoot it at most once per
-  // write cycle.
-  size_t max_write_size_;
-  // The number of bytes remaining to be written in the current write cycle.
-  size_t write_bytes_remaining_;
-
-  // The max_write_size will be decided dynamically based on the available
-  // bandwidth on the wire. We aim to keep the time spent in the write loop to
-  // about 100ms.
-  void SetMaxWriteSize(const size_t max_write_size) {
-    GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport SetMaxWriteSize "
-                           << " max_write_size changed: " << max_write_size_
-                           << " -> " << max_write_size;
-    max_write_size_ = max_write_size;
-  }
-
-  size_t GetMaxWriteSize() const { return max_write_size_; }
+  WriteContext write_context_;
 
   auto SerializeAndWrite(std::vector<Http2Frame>&& frames);
   // Tracks the max allowed stream id. Currently this is only set on receiving a
@@ -497,7 +469,7 @@ class Http2ClientTransport final : public ClientTransport,
 
   bool SetOnDone(CallHandler call_handler, RefCountedPtr<Stream> stream);
   absl::StatusOr<std::vector<Http2Frame>> DequeueStreamFrames(
-      RefCountedPtr<Stream> stream);
+      RefCountedPtr<Stream> stream, WriteContext::WriteQuota& write_quota);
 
   /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
   /// the peer
