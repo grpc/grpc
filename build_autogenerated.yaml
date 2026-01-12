@@ -28311,6 +28311,9 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
+  - third_party/envoy-api/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.proto
+  - third_party/envoy-api/envoy/extensions/grpc_service/channel_credentials/google_default/v3/google_default_credentials.proto
+  - third_party/envoy-api/envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/cert.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/common.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/secret.proto

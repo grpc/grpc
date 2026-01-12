@@ -40626,6 +40626,18 @@ add_executable(xds_common_types_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/udp_socket_config.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/udp_socket_config.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/udp_socket_config.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/channel_credentials/google_default/v3/google_default_credentials.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/channel_credentials/google_default/v3/google_default_credentials.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/channel_credentials/google_default/v3/google_default_credentials.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/channel_credentials/google_default/v3/google_default_credentials.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/cert.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/cert.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/cert.pb.h

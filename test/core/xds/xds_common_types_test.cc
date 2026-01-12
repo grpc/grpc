@@ -26,6 +26,9 @@
 #include <vector>
 
 #include "envoy/config/core/v3/grpc_service.pb.h"
+#include "envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.pb.h"
+#include "envoy/extensions/grpc_service/channel_credentials/google_default/v3/google_default_credentials.pb.h"
+#include "envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.pb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.pb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/type/matcher/v3/regex.pb.h"
@@ -73,17 +76,22 @@ class XdsCommonTypesTest : public ::testing::Test {
   XdsCommonTypesTest() : xds_client_(MakeXdsClient()) {}
 
   static RefCountedPtr<XdsClient> MakeXdsClient(
-      absl::string_view extra_bootstrap_text = "") {
+      absl::string_view extra_bootstrap_text = "",
+      bool trusted_xds_server = false) {
     auto bootstrap = GrpcXdsBootstrap::Create(
         absl::StrCat("{\n"
                      "  \"xds_servers\": [\n"
                      "    {\n"
-                     "      \"server_uri\": \"xds.example.com\",\n"
+                     "      \"server_uri\": \"xds.example.com\",\n",
+                     trusted_xds_server ? "      \"server_features\": "
+                                          "[\"trusted_xds_server\"],\n"
+                                        : "",
                      "      \"channel_creds\": [\n"
                      "        {\"type\": \"google_default\"}\n"
                      "      ]\n"
                      "    }\n"
-                     "  ],\n"
+                     "  ],\n",
+                     extra_bootstrap_text,
                      "  \"certificate_providers\": {\n"
                      "    \"provider1\": {\n"
                      "      \"plugin_name\": \"file_watcher\",\n"
@@ -92,8 +100,8 @@ class XdsCommonTypesTest : public ::testing::Test {
                      "        \"private_key_file\": \"/path/to/key\"\n"
                      "      }\n"
                      "    }\n"
-                     "  }",
-                     extra_bootstrap_text, "\n}"));
+                     "  }\n",
+                     "}"));
     if (!bootstrap.ok()) {
       Crash(absl::StrFormat("Error parsing bootstrap: %s",
                             bootstrap.status().ToString().c_str()));
@@ -934,8 +942,10 @@ TEST_F(ExtractXdsExtensionTest, TypedStructWithInvalidProtobufStruct) {
 // ParseXdsGrpcService() tests
 //
 
-MATCHER_P2(EqCredsConfig, type, config, "equals creds config") {
+MATCHER_P3(EqCredsConfig, type, proto_type, config, "equals creds config") {
   bool ok = ::testing::ExplainMatchResult(type, arg->type(), result_listener);
+  ok &= ::testing::ExplainMatchResult(proto_type, arg->proto_type(),
+                                      result_listener);
   ok &= ::testing::ExplainMatchResult(config, arg->ToString(), result_listener);
   return ok;
 }
@@ -967,36 +977,21 @@ class ParseXdsGrpcServiceTest : public XdsCommonTypesTest {
     }
     return xds_grpc_service;
   }
-
-  void AddAllowedGrpcServicesToBootstrap(
-      std::vector<absl::string_view> target_uris) {
-    std::vector<absl::string_view> parts;
-    parts.emplace_back(
-        ",\n"
-        "  \"allowed_grpc_services\": {\n");
-    for (size_t i = 0; i < target_uris.size(); ++i) {
-      parts.emplace_back("    \"");
-      parts.emplace_back(target_uris[i]);
-      parts.emplace_back(
-          "\": {\n"
-          "      \"channel_creds\": [{\"type\": \"insecure\"}],\n"
-          "      \"call_creds\": ["
-          "         {\"type\": \"jwt_token_file\","
-          "          \"config\": {\"jwt_token_file\": \"/path/to/file\"}}"
-          "      ]"
-          "    }");
-      if (i < target_uris.size() - 1) parts.emplace_back(",");
-      parts.emplace_back("\n");
-    }
-    parts.emplace_back("  }");
-    xds_client_ = MakeXdsClient(absl::StrJoin(parts, ""));
-  }
 };
 
 TEST_F(ParseXdsGrpcServiceTest,
        NonTrustedXdsServerAndServicePresentInBootstrap) {
   ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT");
-  AddAllowedGrpcServicesToBootstrap({"dns:server.example.com"});
+  xds_client_ = MakeXdsClient(
+      "  \"allowed_grpc_services\": {\n"
+      "    \"dns:server.example.com\": {\n"
+      "      \"channel_creds\": [{\"type\": \"insecure\"}],\n"
+      "      \"call_creds\": [\n"
+      "         {\"type\": \"jwt_token_file\",\n"
+      "          \"config\": {\"jwt_token_file\": \"/path/to/file\"}}\n"
+      "      ]\n"
+      "    }\n"
+      "  },\n");
   GrpcService grpc_service;
   grpc_service.mutable_timeout()->set_seconds(5);
   auto* header_value = grpc_service.add_initial_metadata();
@@ -1004,6 +999,14 @@ TEST_F(ParseXdsGrpcServiceTest,
   header_value->set_value("bar");
   auto* google_grpc = grpc_service.mutable_google_grpc();
   google_grpc->set_target_uri("dns:server.example.com");
+  // Creds specified in proto will be ignored because xDS server is not trusted.
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      envoy::extensions::grpc_service::channel_credentials::google_default::v3::
+          GoogleDefaultCredentials());
+  envoy::extensions::grpc_service::call_credentials::access_token::v3::
+      AccessTokenCredentials call_creds;
+  call_creds.set_token("foo");
+  google_grpc->add_call_credentials_plugin()->PackFrom(call_creds);
   auto xds_grpc_service = Parse(grpc_service);
   ASSERT_TRUE(xds_grpc_service.ok()) << xds_grpc_service.status();
   EXPECT_EQ(xds_grpc_service->timeout, Duration::Seconds(5));
@@ -1016,8 +1019,8 @@ TEST_F(ParseXdsGrpcServiceTest,
   EXPECT_EQ(xds_grpc_service->server_target->channel_creds_config()->type(),
             "insecure");
   EXPECT_THAT(xds_grpc_service->server_target->call_creds_configs(),
-              ::testing::ElementsAre(
-                  EqCredsConfig("jwt_token_file", "{path=\"/path/to/file\"}")));
+              ::testing::ElementsAre(EqCredsConfig(
+                  "jwt_token_file", "", "{path=\"/path/to/file\"}")));
 }
 
 TEST_F(ParseXdsGrpcServiceTest,
@@ -1032,12 +1035,64 @@ TEST_F(ParseXdsGrpcServiceTest,
   auto xds_grpc_service = Parse(grpc_service);
   EXPECT_EQ(xds_grpc_service.status(),
             absl::InvalidArgumentError(
-                "validation failed: [field:grpc_service.target_uri "
+                "validation failed: [field:grpc_service.google_grpc.target_uri "
                 "error:service not present in \"allowed_grpc_services\" in "
                 "bootstrap config]"));
 }
 
-// FIXME: add tests for trusted_xds_server
+// Don't need to test all credential types or fields here, since those
+// are covered in the channel creds registry and call creds registry
+// tests.  Here we are just verifying that we properly plumb through
+// both channel creds and call creds.
+TEST_F(ParseXdsGrpcServiceTest, TrustedXdsServer) {
+  xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
+  GrpcService grpc_service;
+  grpc_service.mutable_timeout()->set_seconds(5);
+  auto* header_value = grpc_service.add_initial_metadata();
+  header_value->set_key("foo");
+  header_value->set_value("bar");
+  auto* google_grpc = grpc_service.mutable_google_grpc();
+  google_grpc->set_target_uri("dns:server.example.com");
+  // Unsupported channel creds type, should be ignored.
+  google_grpc->add_channel_credentials_plugin()->PackFrom(GrpcService());
+  // Two supported channel creds types, should use the first one.
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      envoy::extensions::grpc_service::channel_credentials::google_default::v3::
+          GoogleDefaultCredentials());
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      envoy::extensions::grpc_service::channel_credentials::insecure::v3::
+          InsecureCredentials());
+  // Unsupported call creds type, should be ignored.
+  google_grpc->add_call_credentials_plugin()->PackFrom(GrpcService());
+  // Two supported call creds types, should use both.
+  envoy::extensions::grpc_service::call_credentials::access_token::v3::
+      AccessTokenCredentials call_creds;
+  call_creds.set_token("foo");
+  google_grpc->add_call_credentials_plugin()->PackFrom(call_creds);
+  call_creds.set_token("bar");
+  google_grpc->add_call_credentials_plugin()->PackFrom(call_creds);
+  auto xds_grpc_service = Parse(grpc_service);
+  ASSERT_TRUE(xds_grpc_service.ok()) << xds_grpc_service.status();
+  EXPECT_EQ(xds_grpc_service->timeout, Duration::Seconds(5));
+  EXPECT_THAT(xds_grpc_service->initial_metadata,
+              ::testing::ElementsAre(::testing::Pair("foo", "bar")));
+  ASSERT_NE(xds_grpc_service->server_target, nullptr);
+  EXPECT_EQ(xds_grpc_service->server_target->server_uri(),
+            "dns:server.example.com");
+  ASSERT_NE(xds_grpc_service->server_target->channel_creds_config(), nullptr);
+  EXPECT_EQ(xds_grpc_service->server_target->channel_creds_config()->type(),
+            "google_default");
+  EXPECT_THAT(xds_grpc_service->server_target->call_creds_configs(),
+              ::testing::ElementsAre(
+                  EqCredsConfig("",
+                                "envoy.extensions.grpc_service.call_credentials"
+                                ".access_token.v3.AccessTokenCredentials",
+                                "{token=\"foo\"}"),
+                  EqCredsConfig("",
+                                "envoy.extensions.grpc_service.call_credentials"
+                                ".access_token.v3.AccessTokenCredentials",
+                                "{token=\"bar\"}")));
+}
 
 }  // namespace
 }  // namespace testing
