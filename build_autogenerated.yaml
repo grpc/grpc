@@ -3924,7 +3924,6 @@ libs:
   - include/grpc++/impl/codegen/async_unary_call.h
   - include/grpc++/impl/codegen/byte_buffer.h
   - include/grpc++/impl/codegen/call.h
-  - include/grpc++/impl/codegen/call_hook.h
   - include/grpc++/impl/codegen/channel_interface.h
   - include/grpc++/impl/codegen/client_context.h
   - include/grpc++/impl/codegen/client_unary_call.h
@@ -3996,7 +3995,6 @@ libs:
   - include/grpcpp/grpcpp.h
   - include/grpcpp/health_check_service_interface.h
   - include/grpcpp/impl/call.h
-  - include/grpcpp/impl/call_hook.h
   - include/grpcpp/impl/call_op_set.h
   - include/grpcpp/impl/call_op_set_interface.h
   - include/grpcpp/impl/channel_argument_option.h
@@ -4007,7 +4005,6 @@ libs:
   - include/grpcpp/impl/codegen/async_unary_call.h
   - include/grpcpp/impl/codegen/byte_buffer.h
   - include/grpcpp/impl/codegen/call.h
-  - include/grpcpp/impl/codegen/call_hook.h
   - include/grpcpp/impl/codegen/call_op_set.h
   - include/grpcpp/impl/codegen/call_op_set_interface.h
   - include/grpcpp/impl/codegen/callback_common.h
@@ -4307,7 +4304,6 @@ libs:
   - include/grpc++/impl/codegen/async_unary_call.h
   - include/grpc++/impl/codegen/byte_buffer.h
   - include/grpc++/impl/codegen/call.h
-  - include/grpc++/impl/codegen/call_hook.h
   - include/grpc++/impl/codegen/channel_interface.h
   - include/grpc++/impl/codegen/client_context.h
   - include/grpc++/impl/codegen/client_unary_call.h
@@ -4379,7 +4375,6 @@ libs:
   - include/grpcpp/grpcpp.h
   - include/grpcpp/health_check_service_interface.h
   - include/grpcpp/impl/call.h
-  - include/grpcpp/impl/call_hook.h
   - include/grpcpp/impl/call_op_set.h
   - include/grpcpp/impl/call_op_set_interface.h
   - include/grpcpp/impl/channel_argument_option.h
@@ -4390,7 +4385,6 @@ libs:
   - include/grpcpp/impl/codegen/async_unary_call.h
   - include/grpcpp/impl/codegen/byte_buffer.h
   - include/grpcpp/impl/codegen/call.h
-  - include/grpcpp/impl/codegen/call_hook.h
   - include/grpcpp/impl/codegen/call_op_set.h
   - include/grpcpp/impl/codegen/call_op_set_interface.h
   - include/grpcpp/impl/codegen/callback_common.h
@@ -6286,7 +6280,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/cpp/end2end/end2end_test_utils.h
   src:
   - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
@@ -9174,6 +9169,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/interceptors_util.h
   - test/cpp/end2end/test_service_impl.h
   src:
@@ -11955,6 +11951,7 @@ targets:
   run: false
   language: c++
   headers:
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/interceptors_util.h
   - test/cpp/end2end/test_service_impl.h
   src:
@@ -14228,7 +14225,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/cpp/end2end/end2end_test_utils.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
@@ -15370,6 +15368,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
@@ -19005,7 +19004,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/cpp/end2end/end2end_test_utils.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
@@ -22056,6 +22056,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
@@ -23853,7 +23854,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/cpp/end2end/end2end_test_utils.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto

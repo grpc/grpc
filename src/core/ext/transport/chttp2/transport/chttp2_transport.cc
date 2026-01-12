@@ -347,6 +347,17 @@ std::string HttpAnnotation::ToString() const {
   return s;
 }
 
+void HttpAnnotation::ForEachKeyValue(
+    absl::FunctionRef<void(absl::string_view, ValueType)> f) const {
+  f("type", static_cast<int64_t>(type_));
+  f("time_sec", static_cast<int64_t>(time_.tv_sec));
+  f("time_nsec", static_cast<int64_t>(time_.tv_nsec));
+  if (write_stats_.has_value()) {
+    f("target_write_size",
+      static_cast<int64_t>(write_stats_->target_write_size));
+  }
+}
+
 }  // namespace grpc_core
 
 //

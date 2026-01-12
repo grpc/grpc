@@ -29,6 +29,12 @@ const char* const additional_constraints_buffer_list_deletion_prep = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const
+    description_call_tracer_send_initial_metadata_is_an_annotation =
+        "Use the new annotation-based CallTracer API.";
+const char* const
+    additional_constraints_call_tracer_send_initial_metadata_is_an_annotation =
+        "{}";
 const char* const description_channelz_use_v2_for_v1_api =
     "Use the v2 channelz API for the v1 channelz API.";
 const char* const additional_constraints_channelz_use_v2_for_v1_api = "{}";
@@ -162,8 +168,16 @@ const char* const additional_constraints_promise_based_http2_server_transport =
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_promise_filter_send_cancel_metadata =
+    "Enables sending all trailing metadata fields from server side "
+    "promise-based filters upon stream cancellation.";
+const char* const additional_constraints_promise_filter_send_cancel_metadata =
+    "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
+const char* const description_return_preexisting_errors =
+    "Return errors that exist before the start of the call in RunHandler.";
+const char* const additional_constraints_return_preexisting_errors = "{}";
 const char* const description_rr_wrr_connect_from_random_index =
     "RR and WRR LB policies start connecting from a random index in the "
     "address list.";
@@ -241,6 +255,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_buffer_list_deletion_prep, nullptr, 0, false, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
+    {"call_tracer_send_initial_metadata_is_an_annotation",
+     description_call_tracer_send_initial_metadata_is_an_annotation,
+     additional_constraints_call_tracer_send_initial_metadata_is_an_annotation,
+     nullptr, 0, false, true},
     {"channelz_use_v2_for_v1_api", description_channelz_use_v2_for_v1_api,
      additional_constraints_channelz_use_v2_for_v1_api, nullptr, 0, false,
      true},
@@ -342,8 +360,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"promise_filter_send_cancel_metadata",
+     description_promise_filter_send_cancel_metadata,
+     additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
+     false, true},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
+    {"return_preexisting_errors", description_return_preexisting_errors,
+     additional_constraints_return_preexisting_errors, nullptr, 0, false, true},
     {"rr_wrr_connect_from_random_index",
      description_rr_wrr_connect_from_random_index,
      additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, false,
@@ -409,6 +433,12 @@ const char* const additional_constraints_buffer_list_deletion_prep = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const
+    description_call_tracer_send_initial_metadata_is_an_annotation =
+        "Use the new annotation-based CallTracer API.";
+const char* const
+    additional_constraints_call_tracer_send_initial_metadata_is_an_annotation =
+        "{}";
 const char* const description_channelz_use_v2_for_v1_api =
     "Use the v2 channelz API for the v1 channelz API.";
 const char* const additional_constraints_channelz_use_v2_for_v1_api = "{}";
@@ -542,8 +572,16 @@ const char* const additional_constraints_promise_based_http2_server_transport =
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_promise_filter_send_cancel_metadata =
+    "Enables sending all trailing metadata fields from server side "
+    "promise-based filters upon stream cancellation.";
+const char* const additional_constraints_promise_filter_send_cancel_metadata =
+    "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
+const char* const description_return_preexisting_errors =
+    "Return errors that exist before the start of the call in RunHandler.";
+const char* const additional_constraints_return_preexisting_errors = "{}";
 const char* const description_rr_wrr_connect_from_random_index =
     "RR and WRR LB policies start connecting from a random index in the "
     "address list.";
@@ -621,6 +659,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_buffer_list_deletion_prep, nullptr, 0, false, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
+    {"call_tracer_send_initial_metadata_is_an_annotation",
+     description_call_tracer_send_initial_metadata_is_an_annotation,
+     additional_constraints_call_tracer_send_initial_metadata_is_an_annotation,
+     nullptr, 0, false, true},
     {"channelz_use_v2_for_v1_api", description_channelz_use_v2_for_v1_api,
      additional_constraints_channelz_use_v2_for_v1_api, nullptr, 0, false,
      true},
@@ -722,8 +764,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"promise_filter_send_cancel_metadata",
+     description_promise_filter_send_cancel_metadata,
+     additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
+     false, true},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
+    {"return_preexisting_errors", description_return_preexisting_errors,
+     additional_constraints_return_preexisting_errors, nullptr, 0, false, true},
     {"rr_wrr_connect_from_random_index",
      description_rr_wrr_connect_from_random_index,
      additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, false,
@@ -789,6 +837,12 @@ const char* const additional_constraints_buffer_list_deletion_prep = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const
+    description_call_tracer_send_initial_metadata_is_an_annotation =
+        "Use the new annotation-based CallTracer API.";
+const char* const
+    additional_constraints_call_tracer_send_initial_metadata_is_an_annotation =
+        "{}";
 const char* const description_channelz_use_v2_for_v1_api =
     "Use the v2 channelz API for the v1 channelz API.";
 const char* const additional_constraints_channelz_use_v2_for_v1_api = "{}";
@@ -922,8 +976,16 @@ const char* const additional_constraints_promise_based_http2_server_transport =
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_promise_filter_send_cancel_metadata =
+    "Enables sending all trailing metadata fields from server side "
+    "promise-based filters upon stream cancellation.";
+const char* const additional_constraints_promise_filter_send_cancel_metadata =
+    "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
+const char* const description_return_preexisting_errors =
+    "Return errors that exist before the start of the call in RunHandler.";
+const char* const additional_constraints_return_preexisting_errors = "{}";
 const char* const description_rr_wrr_connect_from_random_index =
     "RR and WRR LB policies start connecting from a random index in the "
     "address list.";
@@ -1001,6 +1063,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_buffer_list_deletion_prep, nullptr, 0, false, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
+    {"call_tracer_send_initial_metadata_is_an_annotation",
+     description_call_tracer_send_initial_metadata_is_an_annotation,
+     additional_constraints_call_tracer_send_initial_metadata_is_an_annotation,
+     nullptr, 0, false, true},
     {"channelz_use_v2_for_v1_api", description_channelz_use_v2_for_v1_api,
      additional_constraints_channelz_use_v2_for_v1_api, nullptr, 0, false,
      true},
@@ -1102,8 +1168,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"promise_filter_send_cancel_metadata",
+     description_promise_filter_send_cancel_metadata,
+     additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
+     false, true},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
+    {"return_preexisting_errors", description_return_preexisting_errors,
+     additional_constraints_return_preexisting_errors, nullptr, 0, false, true},
     {"rr_wrr_connect_from_random_index",
      description_rr_wrr_connect_from_random_index,
      additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, false,

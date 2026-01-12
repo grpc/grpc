@@ -38,6 +38,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
 #include "gtest/gtest.h"
 #include "absl/log/log.h"
@@ -98,8 +99,10 @@ class GenericEnd2endTest : public ::testing::Test {
   void TearDown() override { ShutDownServerAndCQs(); }
 
   void ResetStub() {
-    std::shared_ptr<Channel> channel = grpc::CreateChannel(
-        server_address_.str(), InsecureChannelCredentials());
+    ChannelArguments args;
+    ApplyCommonChannelArguments(args);
+    std::shared_ptr<Channel> channel = grpc::CreateCustomChannel(
+        server_address_.str(), InsecureChannelCredentials(), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
     generic_stub_ = std::make_unique<GenericStub>(channel);
   }
