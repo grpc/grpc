@@ -437,12 +437,17 @@ Poller::WorkResult Epoll1Poller::Work(
     if (pending_events.empty()) {
       return Poller::WorkResult::kKicked;
     }
-  }
-  // Run the provided callback.
-  schedule_poll_again();
-  // Process all pending events inline.
-  for (auto& it : pending_events) {
-    it->ExecutePendingActions();
+    // Hold the lock while processing pending events to prevent handles from
+    // being orphaned and deleted while we iterate over them. This prevents
+    // use-after-free crashes when another thread calls OrphanHandle() during
+    // event processing. The schedule_poll_again callback is safe to call under
+    // the lock as it only sets a flag.
+    // Run the provided callback.
+    schedule_poll_again();
+    // Process all pending events inline.
+    for (auto& it : pending_events) {
+      it->ExecutePendingActions();
+    }
   }
   return was_kicked_ext ? Poller::WorkResult::kKicked : Poller::WorkResult::kOk;
 }
