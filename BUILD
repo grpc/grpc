@@ -5371,6 +5371,11 @@ grpc_upb_proto_reflection_library(
 )
 
 grpc_upb_proto_library(
+    name = "envoy_extensions_grpc_service_call_credentials_access_token_upb",
+    deps = ["@envoy_api//envoy/extensions/grpc_service/call_credentials/access_token/v3:pkg"],
+)
+
+grpc_upb_proto_library(
     name = "envoy_extensions_grpc_service_channel_credentials_tls_upb",
     deps = ["@envoy_api//envoy/extensions/grpc_service/channel_credentials/tls/v3:pkg"],
 )

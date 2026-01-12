@@ -37,6 +37,8 @@ class CallCredsConfig : public RefCounted<CallCredsConfig> {
  public:
   virtual absl::string_view type() const = 0;
 
+  virtual absl::string_view proto_type() const = 0;
+
   virtual bool Equals(const CallCredsConfig& other) const = 0;
 
   virtual std::string ToString() const = 0;
@@ -131,8 +133,11 @@ class CallCredsRegistry {
   RefCountedPtr<T> CreateCallCreds(
       RefCountedPtr<const CallCredsConfig> config) const {
     if (config == nullptr) return nullptr;
-    const auto it = name_map_.find(config->type());
-    if (it == name_map_.cend()) return nullptr;
+    auto it = name_map_.find(config->type());
+    if (it == name_map_.cend()) {
+      it = proto_map_.find(config->proto_type());
+      if (it == proto_map_.cend()) return nullptr;
+    }
     return it->second->CreateCallCreds(std::move(config));
   }
 

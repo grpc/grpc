@@ -1029,6 +1029,9 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
+  third_party/envoy-api/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.proto envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/envoy-api/envoy/extensions/grpc_service/channel_credentials/google_default/v3/google_default_credentials.proto envoy/extensions/grpc_service/channel_credentials/google_default/v3/google_default_credentials.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
@@ -2472,6 +2475,7 @@ add_library(grpc
   src/core/ext/upb-gen/envoy/extensions/filters/http/router/v3/router.upb_minitable.c
   src/core/ext/upb-gen/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upb_minitable.c
   src/core/ext/upb-gen/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb_minitable.c
+  src/core/ext/upb-gen/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.upb_minitable.c
   src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/tls/v3/tls_credentials.upb_minitable.c
   src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/xds/v3/xds_credentials.upb_minitable.c
   src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb_minitable.c
@@ -9621,6 +9625,50 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(call_creds_registry_test
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/httpbody.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/httpbody.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/httpbody.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/httpbody.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/migrate.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/migrate.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/migrate.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/migrate.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/security.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/security.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/security.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/security.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/sensitive.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/sensitive.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/sensitive.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/sensitive.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/status.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/status.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/status.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/status.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/versioning.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/versioning.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/versioning.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/versioning.grpc.pb.h
   test/core/credentials/call/call_creds_registry_test.cc
   test/core/test_util/test_call_creds.cc
 )
@@ -9656,6 +9704,7 @@ target_include_directories(call_creds_registry_test
 target_link_libraries(call_creds_registry_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
 

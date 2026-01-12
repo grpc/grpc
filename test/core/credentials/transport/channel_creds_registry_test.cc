@@ -26,7 +26,6 @@
 #include "envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.pb.h"
 #include "envoy/extensions/grpc_service/channel_credentials/tls/v3/tls_credentials.pb.h"
 #include "envoy/extensions/grpc_service/channel_credentials/xds/v3/xds_credentials.pb.h"
-#include "google/protobuf/any.pb.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/composite/composite_channel_credentials.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
