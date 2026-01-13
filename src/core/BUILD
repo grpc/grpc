@@ -5994,6 +5994,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     deps = [
         "channel_args",
+        "env",
         "grpc_check",
         "grpc_lb_xds_channel_args",
         "grpc_matchers",
