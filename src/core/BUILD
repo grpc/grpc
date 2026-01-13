@@ -1117,6 +1117,8 @@ grpc_cc_library(
         "promise_like",
         "//:gpr",
         "//:grpc_trace",
+        "//:promise_upb",
+        "//:promise_upbdefs",
     ],
 )
 
