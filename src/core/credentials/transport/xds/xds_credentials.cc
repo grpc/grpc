@@ -145,9 +145,11 @@ XdsCredentials::create_security_connector(
     if (watch_root || use_system_root_certs || watch_identity) {
       auto tls_credentials_options =
           MakeRefCounted<grpc_tls_credentials_options>();
-      if (watch_root || watch_identity) {
+      if (watch_root) {
         tls_credentials_options->set_root_certificate_provider(
             xds_certificate_provider);
+      }
+      if (watch_identity) {
         tls_credentials_options->set_identity_certificate_provider(
             xds_certificate_provider);
       }
@@ -184,11 +186,11 @@ XdsServerCredentials::create_security_connector(const ChannelArgs& args) {
       xds_certificate_provider->ProvidesIdentityCerts()) {
     auto tls_credentials_options =
         MakeRefCounted<grpc_tls_credentials_options>();
-    tls_credentials_options->set_root_certificate_provider(
-        xds_certificate_provider);
     tls_credentials_options->set_identity_certificate_provider(
         xds_certificate_provider);
     if (xds_certificate_provider->ProvidesRootCerts()) {
+      tls_credentials_options->set_root_certificate_provider(
+          xds_certificate_provider);
       tls_credentials_options->set_cert_request_type(
           xds_certificate_provider->require_client_certificate()
               ? GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY

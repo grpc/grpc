@@ -106,7 +106,6 @@ void grpc_tls_certificate_distributor::SetErrorForCert(
     std::optional<grpc_error_handle> root_cert_error,
     std::optional<grpc_error_handle> identity_cert_error) {
   GRPC_CHECK(root_cert_error.has_value() || identity_cert_error.has_value());
-
   grpc_core::MutexLock lock(&mu_);
   CertificateInfo& cert_info = certificate_info_map_[cert_name];
   if (root_cert_error.has_value()) {
@@ -155,7 +154,6 @@ void grpc_tls_certificate_distributor::SetErrorForCert(
 
 void grpc_tls_certificate_distributor::SetError(grpc_error_handle error) {
   GRPC_CHECK(!error.ok());
-
   grpc_core::MutexLock lock(&mu_);
   for (const auto& watcher : watchers_) {
     const auto watcher_ptr = watcher.first;

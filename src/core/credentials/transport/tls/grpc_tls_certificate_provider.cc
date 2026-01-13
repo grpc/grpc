@@ -176,24 +176,20 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     MutexLock lock(&mu_);
     absl::StatusOr<std::shared_ptr<RootCertInfo>> roots = nullptr;
     std::optional<PemKeyCertPairList> pem_key_cert_pairs;
-    FileWatcherCertificateProvider::WatcherInfo& root_info =
-        root_watcher_info_[cert_name];
-    FileWatcherCertificateProvider::WatcherInfo& identity_info =
-        identity_watcher_info_[cert_name];
-    if (!root_info.root_being_watched && root_being_watched &&
+    FileWatcherCertificateProvider::WatcherInfo& info =
+        watcher_info_[cert_name];
+    if (!info.root_being_watched && root_being_watched &&
         root_cert_info_.ok() && *root_cert_info_ != nullptr) {
       roots = root_cert_info_;
     }
-    root_info.root_being_watched = root_being_watched;
-    if (!identity_info.identity_being_watched && identity_being_watched &&
+    info.root_being_watched = root_being_watched;
+    if (!info.identity_being_watched && identity_being_watched &&
         !pem_key_cert_pairs_.empty()) {
       pem_key_cert_pairs = pem_key_cert_pairs_;
     }
-    identity_info.identity_being_watched = identity_being_watched;
-    if (!root_info.root_being_watched) {
-      root_watcher_info_.erase(cert_name);
-    } if (!identity_info.identity_being_watched) {
-      identity_watcher_info_.erase(cert_name);
+    info.identity_being_watched = identity_being_watched;
+    if (!info.root_being_watched && !info.identity_being_watched) {
+      watcher_info_.erase(cert_name);
     }
     ExecCtx exec_ctx;
     if ((roots.ok() && *roots != nullptr) || pem_key_cert_pairs.has_value()) {
@@ -296,13 +292,7 @@ void FileWatcherCertificateProvider::ForceUpdate() {
         GRPC_ERROR_CREATE("Unable to get latest root certificates.");
     grpc_error_handle identity_cert_error =
         GRPC_ERROR_CREATE("Unable to get latest identity certificates.");
-    std::map<std::string, WatcherInfo> all_watchers;
-    all_watchers.insert(identity_watcher_info_.begin(),
-                        identity_watcher_info_.end());
-    for (const auto& p : root_watcher_info_) {
-      all_watchers[p.first].root_being_watched = p.second.root_being_watched;
-    }
-    for (const auto& p : all_watchers) {
+    for (const auto& p : watcher_info_) {
       const std::string& cert_name = p.first;
       const WatcherInfo& info = p.second;
       std::shared_ptr<RootCertInfo> root_to_report;
@@ -434,33 +424,29 @@ InMemoryCertificateProvider::InMemoryCertificateProvider()
                                               bool root_being_watched,
                                               bool identity_being_watched) {
     MutexLock lock(&mu_);
-    absl::StatusOr<std::shared_ptr<RootCertInfo>> roots = nullptr;
+    std::shared_ptr<RootCertInfo> roots = nullptr;
     std::optional<PemKeyCertPairList> pem_key_cert_pairs;
-    WatcherInfo& root_info = root_watcher_info_[cert_name];
-    WatcherInfo& identity_info = identity_watcher_info_[cert_name];
-    if (!root_info.root_being_watched && root_being_watched &&
+    WatcherInfo& info = watcher_info_[cert_name];
+    if (!info.root_being_watched && root_being_watched &&
         root_certificates_.ok() && *root_certificates_ != nullptr) {
-      roots = *root_certificates_;
+      roots = root_certificates_.ok() ? *root_certificates_ : nullptr;
     }
-    root_info.root_being_watched = root_being_watched;
-    if (!identity_info.identity_being_watched && identity_being_watched &&
+    info.root_being_watched = root_being_watched;
+    if (!info.identity_being_watched && identity_being_watched &&
         !pem_key_cert_pairs_.empty()) {
       pem_key_cert_pairs = pem_key_cert_pairs_;
     }
-    identity_info.identity_being_watched = identity_being_watched;
-    if (!root_info.root_being_watched &&
-        !identity_info.identity_being_watched) {
-      root_watcher_info_.erase(cert_name);
-      identity_watcher_info_.erase(cert_name);
+    info.identity_being_watched = identity_being_watched;
+    if (!info.root_being_watched && !info.identity_being_watched) {
+      watcher_info_.erase(cert_name);
     }
     ExecCtx exec_ctx;
-    if ((roots.ok() && *roots != nullptr) || pem_key_cert_pairs.has_value()) {
-      distributor_->SetKeyMaterials(cert_name, roots.ok() ? *roots : nullptr,
-                                    pem_key_cert_pairs);
+    if (roots != nullptr || pem_key_cert_pairs.has_value()) {
+      distributor_->SetKeyMaterials(cert_name, roots, pem_key_cert_pairs);
     }
     grpc_error_handle root_cert_error;
     grpc_error_handle identity_cert_error;
-    if (root_being_watched && (!roots.ok() || *roots == nullptr)) {
+    if (root_being_watched && roots == nullptr) {
       root_cert_error =
           GRPC_ERROR_CREATE("Unable to get latest root certificates.");
     }
@@ -496,13 +482,7 @@ void InMemoryCertificateProvider::Update(
         GRPC_ERROR_CREATE("Unable to get latest root certificates.");
     grpc_error_handle identity_cert_error =
         GRPC_ERROR_CREATE("Unable to get latest identity certificates.");
-    std::map<std::string, WatcherInfo> all_watchers;
-    all_watchers.insert(identity_watcher_info_.begin(),
-                        identity_watcher_info_.end());
-    for (const auto& p : root_watcher_info_) {
-      all_watchers[p.first].root_being_watched = p.second.root_being_watched;
-    }
-    for (const auto& p : all_watchers) {
+    for (const auto& p : watcher_info_) {
       const std::string& cert_name = p.first;
       const WatcherInfo& info = p.second;
       std::shared_ptr<RootCertInfo> root_to_report;

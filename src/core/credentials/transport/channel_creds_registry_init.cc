@@ -93,8 +93,12 @@ class TlsChannelCredsFactory : public ChannelCredsFactory<> {
           config->private_key_file(), config->certificate_file(),
           config->ca_certificate_file(), /*spiffe_bundle_map_file=*/"",
           config->refresh_interval().millis() / GPR_MS_PER_SEC);
-      options->set_root_certificate_provider(provider->Ref());
-      options->set_identity_certificate_provider(provider->Ref());
+      if (!config->ca_certificate_file().empty()) {
+        options->set_root_certificate_provider(provider);
+      }
+      if (!config->certificate_file().empty()) {
+        options->set_identity_certificate_provider(provider);
+      }
     }
     options->set_certificate_verifier(
         MakeRefCounted<HostNameCertificateVerifier>());
