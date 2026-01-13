@@ -100,8 +100,8 @@ class AccessTokenCallCredsFactory : public CallCredsFactory<> {
   absl::string_view type() const override { return ""; }
 
   RefCountedPtr<const CallCredsConfig> ParseConfig(
-      const Json& config, const JsonArgs& args,
-      ValidationErrors* errors) const override {
+      const Json& /*config*/, const JsonArgs& /*args*/,
+      ValidationErrors* /*errors*/) const override {
     return nullptr;
   }
 
