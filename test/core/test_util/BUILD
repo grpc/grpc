@@ -677,7 +677,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["grpc:no-internal-poller"],
+    tags = ["grpc:no-internal-poller", "bazel_only"],
     deps = [
         ":test_timeout",
         "//:grpc",
