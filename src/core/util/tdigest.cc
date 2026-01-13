@@ -107,9 +107,6 @@ double TDigest::CentroidToQuantile(double centroid) const {
   return (sin(centroid * kPi / compression_ - kPi / 2) + 1) / 2;
 }
 
-// TODO(ysseung): Maybe try bi-directional merge to lower 1p error rate. Error
-// rates are consistently higher at 1p. This is likely due to greedy merge from
-// left. But we care 99p more and this may be just fine.
 void TDigest::DoMerge() {
   if (unmerged_ == 0) {
     return;

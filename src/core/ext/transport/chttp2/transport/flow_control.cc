@@ -99,6 +99,26 @@ std::ostream& operator<<(std::ostream& out, const FlowControlAction& action) {
   return out << action.DebugString();
 }
 
+std::string FlowControlAction::ImmediateUpdateReasons() const {
+  std::string result;
+  if (send_stream_update_ == Urgency::UPDATE_IMMEDIATELY) {
+    absl::StrAppend(&result, "send_stream_update,");
+  }
+  if (send_transport_update_ == Urgency::UPDATE_IMMEDIATELY) {
+    absl::StrAppend(&result, "send_transport_update,");
+  }
+  if (send_initial_window_update_ == Urgency::UPDATE_IMMEDIATELY) {
+    absl::StrAppend(&result, "send_initial_window_update,");
+  }
+  if (send_max_frame_size_update_ == Urgency::UPDATE_IMMEDIATELY) {
+    absl::StrAppend(&result, "send_max_frame_size_update,");
+  }
+  if (preferred_rx_crypto_frame_size_update_ == Urgency::UPDATE_IMMEDIATELY) {
+    absl::StrAppend(&result, "preferred_rx_crypto_frame_size_update,");
+  }
+  return result;
+}
+
 TransportFlowControl::TransportFlowControl(absl::string_view name,
                                            bool enable_bdp_probe,
                                            MemoryOwner* memory_owner)
@@ -382,6 +402,18 @@ FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
     action.set_send_stream_update(urgency);
   }
   return action;
+}
+
+void StreamFlowControl::IncomingUpdateContext::HackIncrementPendingSize(
+    int64_t pending_size) {
+  GRPC_CHECK_GE(pending_size, 0);
+  if (sfc_->pending_size_.has_value()) {
+    int64_t final_size = Clamp(sfc_->pending_size_.value() + pending_size,
+                               int64_t{0}, kMaxWindowUpdateSize);
+    *sfc_->pending_size_ = final_size;
+  } else {
+    sfc_->pending_size_ = pending_size;
+  }
 }
 
 void StreamFlowControl::IncomingUpdateContext::SetPendingSize(

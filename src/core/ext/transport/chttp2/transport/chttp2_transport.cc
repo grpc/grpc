@@ -347,6 +347,17 @@ std::string HttpAnnotation::ToString() const {
   return s;
 }
 
+void HttpAnnotation::ForEachKeyValue(
+    absl::FunctionRef<void(absl::string_view, ValueType)> f) const {
+  f("type", static_cast<int64_t>(type_));
+  f("time_sec", static_cast<int64_t>(time_.tv_sec));
+  f("time_nsec", static_cast<int64_t>(time_.tv_nsec));
+  if (write_stats_.has_value()) {
+    f("target_write_size",
+      static_cast<int64_t>(write_stats_->target_write_size));
+  }
+}
+
 }  // namespace grpc_core
 
 //
@@ -692,6 +703,8 @@ grpc_chttp2_transport::grpc_chttp2_transport(
       memory_owner(channel_args.GetObject<grpc_core::ResourceQuota>()
                        ->memory_quota()
                        ->CreateMemoryOwner()),
+      stream_quota(
+          channel_args.GetObject<grpc_core::ResourceQuota>()->stream_quota()),
       self_reservation(
           memory_owner.MakeReservation(sizeof(grpc_chttp2_transport))),
       // TODO(ctiller): clean this up so we don't need to RefAsSubclass
@@ -722,10 +735,13 @@ grpc_chttp2_transport::grpc_chttp2_transport(
     auto epte = QueryExtension<TcpTraceExtension>(
         grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
             ep.get()));
-    if (epte != nullptr) {
+    auto stats_plugin_group = channel_args.GetObjectRef<
+        grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>();
+    if (epte != nullptr && stats_plugin_group != nullptr) {
+      epte->EnableTcpTelemetry(stats_plugin_group->GetCollectionScope(),
+                               /*is_control_endpoint=*/false);
       epte->SetTcpTracer(std::make_shared<grpc_core::DefaultTcpTracer>(
-          channel_args.GetObjectRef<
-              grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>()));
+          std::move(stats_plugin_group)));
     }
   }
 
@@ -1390,7 +1406,7 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
         t->keepalive_time.millis() > max_keepalive_time_millis
             ? INT_MAX
             : t->keepalive_time.millis() * KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
-    if (!grpc_core::IsTransportStateWatcherEnabled()) {
+    if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
       status.SetPayload(grpc_core::kKeepaliveThrottlingKey,
                         absl::Cord(std::to_string(throttled_keepalive_time)));
     }
