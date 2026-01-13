@@ -37,6 +37,7 @@
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/functional/function_ref.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
@@ -404,6 +405,14 @@ class TransportFlowControl final {
     return stats;
   }
 
+  void AddStreamToWindowUpdateList(const uint32_t stream_id) {
+    window_update_list_.insert(stream_id);
+  }
+  absl::flat_hash_set<uint32_t> DrainWindowUpdateList() {
+    return std::exchange(window_update_list_, {});
+  }
+  size_t window_update_list_size() const { return window_update_list_.size(); }
+
  private:
   friend class StreamFlowControl;
 
@@ -461,6 +470,7 @@ class TransportFlowControl final {
   int64_t announced_window_ = kDefaultWindow;
   uint32_t acked_init_window_ = kDefaultWindow;
   uint32_t sent_init_window_ = kDefaultWindow;
+  absl::flat_hash_set<uint32_t> window_update_list_;
 };
 
 // Implementation of flow control that abides to HTTP/2 spec and attempts
