@@ -142,7 +142,8 @@ def _quit_on_signal(signum, _frame):
     print("Received SIGNAL %d. Quitting with exit code 0" % signum)
     twisted.internet.reactor.stop()
     sys.stdout.flush()
-    sys.exit(0)
+    # Exit immediately, graceful shutdown with daemon threads is complicated.
+    os._exit(0)
 
 
 def flush_stdout_loop():
