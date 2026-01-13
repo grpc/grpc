@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-bazel_dep(name = "fuzztest", version = "20241028.0", dev_dependency = True, repo_name = "com_google_fuzztest")  # mistmached 2023-05-16
+bazel_dep(name = "fuzztest", version = "20250805.0", dev_dependency = True, repo_name = "com_google_fuzztest")  # mistmached 2023-05-16
 
 # This package is not directly used by grpc, but requested by fuzztest.
 #
