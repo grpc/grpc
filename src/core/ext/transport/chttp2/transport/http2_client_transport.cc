@@ -1107,8 +1107,8 @@ auto Http2ClientTransport::ProcessAndWriteControlFrames() {
       apply_status == http2::Http2ErrorCode::kNoError) {
     EnforceLatestIncomingSettings();
     settings_->MaybeGetSettingsAndSettingsAckFrames(flow_control_, output_buf);
-    ping_manager_->MaybeGetSerializedPingFrames(output_buf,
-                                                NextAllowedPingInterval());
+    MaybeSpawnDelayedPing(ping_manager_->MaybeGetSerializedPingFrames(
+        output_buf, NextAllowedPingInterval()));
     MaybeGetWindowUpdateFrames(output_buf);
     security_frame_handler_->MaybeAppendSecurityFrame(output_buf);
   }
@@ -1139,7 +1139,7 @@ void Http2ClientTransport::NotifyControlFramesWriteDone() {
   // All notifications are expected to be synchronous.
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport NotifyControlFramesWriteDone";
   reader_state_.ResumeReadLoopIfPaused();
-  ping_manager_->NotifyPingSent();
+  MaybeSpawnPingTimeout(ping_manager_->NotifyPingSent());
   goaway_manager_.NotifyGoawaySent();
   MaybeSpawnWaitForSettingsTimeout();
 }
@@ -2225,6 +2225,31 @@ int64_t Http2ClientTransport::TestOnlyGetStreamFlowControlWindow(
     return -1;
   }
   return stream->flow_control.remote_window_delta();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Http2ClientTransport - Ping Helpers
+
+void Http2ClientTransport::MaybeSpawnPingTimeout(
+    std::optional<uint64_t> opaque_data) {
+  if (opaque_data.has_value()) {
+    SpawnGuardedTransportParty(
+        "PingTimeout", [self = RefAsSubclass<Http2ClientTransport>(),
+                        opaque_data = *opaque_data]() {
+          return self->ping_manager_->TimeoutPromise(opaque_data);
+        });
+  }
+}
+void Http2ClientTransport::MaybeSpawnDelayedPing(
+    std::optional<Duration> delayed_ping_wait) {
+  if (delayed_ping_wait.has_value()) {
+    SpawnGuardedTransportParty(
+        "DelayedPing", [self = RefAsSubclass<Http2ClientTransport>(),
+                        wait = *delayed_ping_wait]() {
+          GRPC_HTTP2_PING_LOG << "Scheduling delayed ping after wait=" << wait;
+          return self->ping_manager_->DelayedPingPromise(wait);
+        });
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

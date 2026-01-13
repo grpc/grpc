@@ -10694,6 +10694,8 @@ grpc_cc_library(
     external_deps = [
         "absl/log",
         "absl/status",
+        "absl/functional:any_invocable",
+        "absl/types:span",
     ],
     deps = [
         "1999",
@@ -10707,6 +10709,7 @@ grpc_cc_library(
         "ping_abuse_policy",
         "ping_callbacks",
         "ping_rate_policy",
+        "poll",
         "race",
         "shared_bit_gen",
         "sleep",
