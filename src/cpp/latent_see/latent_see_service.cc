@@ -14,23 +14,41 @@
 
 #include "src/cpp/latent_see/latent_see_service.h"
 
+#include <cstddef>
+
+#include "src/core/channelz/property_list.h"
 #include "src/core/util/latent_see.h"
+#include "src/proto/grpc/channelz/v2/property_list.upb.h"
+#include "upb/mem/arena.hpp"
+#include "absl/strings/string_view.h"
 
 namespace grpc {
 
 namespace {
+
+using grpc_core::channelz::PropertyList;
 
 class StreamingOutput final : public grpc_core::latent_see::Output {
  public:
   explicit StreamingOutput(ServerWriter<channelz::v2::LatentSeeTrace>* response)
       : response_(response) {}
 
-  void Mark(absl::string_view name, int64_t tid, int64_t timestamp) override {
+  void Mark(absl::string_view name, int64_t tid, int64_t timestamp,
+            PropertyList property_list) override {
     channelz::v2::LatentSeeTrace trace;
     trace.set_name(name);
     trace.set_tid(tid);
     trace.set_timestamp_ns(timestamp);
-    trace.mutable_mark();
+    if (!property_list.empty()) {
+      upb::Arena arena;
+      auto* upb_proto = grpc_channelz_v2_PropertyList_new(arena.ptr());
+      property_list.FillUpbProto(upb_proto, arena.ptr());
+      size_t length;
+      auto* bytes = grpc_channelz_v2_PropertyList_serialize(
+          upb_proto, arena.ptr(), &length);
+      trace.mutable_mark()->mutable_properties()->ParseFromString(
+          absl::string_view(bytes, length));
+    }
     response_->Write(trace);
   }
   void FlowBegin(absl::string_view name, int64_t tid, int64_t timestamp,

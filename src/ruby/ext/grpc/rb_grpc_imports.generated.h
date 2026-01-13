@@ -28,6 +28,7 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
 #include <grpc/credentials.h>
+#include <grpc/credentials_cpp.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
 #include <grpc/grpc_security.h>
@@ -298,6 +299,9 @@ extern grpc_tls_credentials_options_set_check_call_host_type grpc_tls_credential
 typedef void(*grpc_tls_credentials_options_set_tls_session_key_log_file_path_type)(grpc_tls_credentials_options* options, const char* path);
 extern grpc_tls_credentials_options_set_tls_session_key_log_file_path_type grpc_tls_credentials_options_set_tls_session_key_log_file_path_import;
 #define grpc_tls_credentials_options_set_tls_session_key_log_file_path grpc_tls_credentials_options_set_tls_session_key_log_file_path_import
+typedef void(*grpc_tls_credentials_options_set_sni_override_type)(grpc_tls_credentials_options* options, std::optional<std::string> sni_override);
+extern grpc_tls_credentials_options_set_sni_override_type grpc_tls_credentials_options_set_sni_override_import;
+#define grpc_tls_credentials_options_set_sni_override grpc_tls_credentials_options_set_sni_override_import
 typedef void(*grpc_metadata_array_init_type)(grpc_metadata_array* array);
 extern grpc_metadata_array_init_type grpc_metadata_array_init_import;
 #define grpc_metadata_array_init grpc_metadata_array_init_import
@@ -505,6 +509,9 @@ extern grpc_resource_quota_resize_type grpc_resource_quota_resize_import;
 typedef void(*grpc_resource_quota_set_max_threads_type)(grpc_resource_quota* resource_quota, int new_max_threads);
 extern grpc_resource_quota_set_max_threads_type grpc_resource_quota_set_max_threads_import;
 #define grpc_resource_quota_set_max_threads grpc_resource_quota_set_max_threads_import
+typedef void(*grpc_resource_quota_set_max_outstanding_streams_type)(grpc_resource_quota* resource_quota, int new_max_outstanding_streams);
+extern grpc_resource_quota_set_max_outstanding_streams_type grpc_resource_quota_set_max_outstanding_streams_import;
+#define grpc_resource_quota_set_max_outstanding_streams grpc_resource_quota_set_max_outstanding_streams_import
 typedef grpc_slice(*grpc_dump_xds_configs_type)(void);
 extern grpc_dump_xds_configs_type grpc_dump_xds_configs_import;
 #define grpc_dump_xds_configs grpc_dump_xds_configs_import

@@ -84,7 +84,7 @@ echo -n "Using ${VENV_DIR} venv with Python interpreter: "
 # using on older Python versions.
 if [[ "${GRPC_GENERATE_PROJECTS_SKIP_XDS_PROTOS:-0}" != "1" ]]; then
   # Keep grpcio-tools version in sync with XDS_PROTOS_GENCODE_GRPC_VERSION
-  # in tools/distrib/python/xds_protos/setup.py.
+  # in py_xds_protos/setup.py.
   #
   # Explanation: since PR #40518, xds-protos grpc gencode contains a poison pill
   # that enforces grpcio runtime version to be equal or greater
@@ -96,7 +96,7 @@ if [[ "${GRPC_GENERATE_PROJECTS_SKIP_XDS_PROTOS:-0}" != "1" ]]; then
   "${VENV_PIP}" list
 
   echo "[gRPC Python] Generating xds-protos"
-  "${VENV_PYTHON}" tools/distrib/python/xds_protos/build.py
+  "${VENV_PYTHON}" py_xds_protos/build_xds_protos.py
 fi
 
 echo "[gRPC Python] Making other grpcio auxilary packages"

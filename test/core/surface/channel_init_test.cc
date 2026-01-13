@@ -54,8 +54,9 @@ auto RemoveFilterNamed(std::string name) {
   return [name](ChannelStackBuilder& builder) {
     auto* stk = builder.mutable_stack();
     stk->erase(std::remove_if(stk->begin(), stk->end(),
-                              [name](const grpc_channel_filter* filter) {
-                                return filter->name.name() == name;
+                              [name](const FilterAndConfig& filter_and_config) {
+                                return filter_and_config.filter->name.name() ==
+                                       name;
                               }),
                stk->end());
   };
@@ -67,8 +68,8 @@ std::vector<std::string> GetFilterNames(const ChannelInit& init,
   ChannelStackBuilderImpl b("test", type, args);
   if (!init.CreateStack(&b)) return {};
   std::vector<std::string> names;
-  for (auto f : b.stack()) {
-    names.push_back(std::string(f->name.name()));
+  for (auto& [filter, _] : b.stack()) {
+    names.push_back(std::string(filter->name.name()));
   }
   EXPECT_NE(names, std::vector<std::string>());
   return names;
@@ -224,7 +225,7 @@ TEST(ChannelInitTest, CanPostProcessFilters) {
       ChannelInit::PostProcessorSlot::kXdsChannelStackModifier,
       [&called_post_processor](ChannelStackBuilder& b) {
         ++called_post_processor;
-        b.mutable_stack()->push_back(FilterNamed("bar"));
+        b.mutable_stack()->push_back({FilterNamed("bar"), nullptr});
       });
   auto init = b.Build();
   EXPECT_EQ(called_post_processor, 0);
@@ -242,7 +243,7 @@ TEST(ChannelInitTest, OrderingConstraintsAreSatisfied) {
             std::vector<std::string>({"c", "b", "a", "terminator"}));
 }
 
-TEST(ChannelInitTest, AmbiguousTopCrashes) {
+TEST(ChannelInitDeathTest, AmbiguousTopCrashes) {
   ChannelInit::Builder b;
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("c")).FloatToTop();
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("b")).FloatToTop();
@@ -261,7 +262,7 @@ TEST(ChannelInitTest, ExplicitOrderingBetweenTopResolvesAmbiguity) {
             std::vector<std::string>({"c", "b", "terminator"}));
 }
 
-TEST(ChannelInitTest, AmbiguousBottomCrashes) {
+TEST(ChannelInitDeathTest, AmbiguousBottomCrashes) {
   ChannelInit::Builder b;
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("c")).SinkToBottom();
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("b")).SinkToBottom();
@@ -403,6 +404,9 @@ class TestFilter1 {
     static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnServerToClientMessage;
     static const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList().Set("filter_id", 1);
+    }
   };
 
  private:

@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/bad_connection")
+grpc_package(
+    name = "test/core/bad_connection",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_binary(
     name = "close_fd_test",

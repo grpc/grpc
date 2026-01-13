@@ -22,3 +22,6 @@ test --test_env=GRPC_VERBOSITY=debug
 
 # print output for tests that fail (default is "summary")
 build --test_output=errors
+
+# Custom checks
+test --config=postmortem

@@ -31,7 +31,7 @@
 #include "src/core/util/grpc_check.h"
 #include "absl/log/log.h"
 
-/// -- Wrapper APIs declared in grpc_security.h -- *
+/// -- Wrapper APIs declared in credentials.h -- *
 
 grpc_tls_credentials_options* grpc_tls_credentials_options_create() {
   grpc_core::ExecCtx exec_ctx;
@@ -157,4 +157,11 @@ void grpc_tls_credentials_options_set_root_certificate_provider(
   grpc_core::ExecCtx exec_ctx;
   options->set_root_certificate_provider(
       provider->Ref(DEBUG_LOCATION, "set_root_certificate_provider"));
+}
+
+GRPCAPI void grpc_tls_credentials_options_set_sni_override(
+    grpc_tls_credentials_options* options,
+    std::optional<std::string> sni_override) {
+  GRPC_CHECK_NE(options, nullptr);
+  options->set_sni_override(sni_override);
 }

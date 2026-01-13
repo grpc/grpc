@@ -19,14 +19,21 @@
 #include <ostream>
 #include <sstream>
 #include <thread>
+#include <type_traits>
 
+#include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
+#include "src/core/util/function_signature.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/notification.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/functional/function_ref.h"
+#include "absl/strings/string_view.h"
 
-using testing::IsEmpty;
+inline constexpr absl::string_view kHeaderTraceFalse =
+    grpc_core::TypeName<grpc_core::H2HeaderTrace<false>>();
+inline constexpr absl::string_view kHeaderTraceTrue =
+    grpc_core::TypeName<grpc_core::H2HeaderTrace<true>>();
 
 MATCHER_P2(HasStringFieldWithValue, field, value, "") {
   auto f = arg.find(field);
@@ -73,6 +80,24 @@ MATCHER_P2(HasNumberFieldWithValue, field, value, "") {
   }
   if (f->second.string() != absl::StrCat(value)) {
     *result_listener << "field " << field << " is " << f->second.string();
+    return false;
+  }
+  return true;
+}
+
+MATCHER_P2(HasBooleanFieldWithValue, field, value, "") {
+  auto f = arg.find(field);
+  if (f == arg.end()) {
+    *result_listener << "does not have field " << field;
+    return false;
+  }
+  if (f->second.type() != grpc_core::Json::Type::kBoolean) {
+    *result_listener << "field " << field << " is a "
+                     << absl::StrCat(f->second.type());
+    return false;
+  }
+  if (f->second.boolean() != value) {
+    *result_listener << "field " << field << " is " << f->second.boolean();
     return false;
   }
   return true;
@@ -133,8 +158,20 @@ void WaitForCollector() {
   absl::SleepFor(absl::Seconds(1));
 }
 
+bool IsCollectionStartMark(const Json& json) {
+  if (json.type() != Json::Type::kObject) return false;
+  const auto obj = json.object();
+  auto name = obj.find("name");
+  if (name == obj.end()) return false;
+  if (name->second.type() != Json::Type::kString) return false;
+  return name->second.string() == "LatentseeCollectionStart";
+}
+
 TEST(LatentSeeTest, EmptyCollectionWorks) {
-  EXPECT_THAT(RunAndReportJson([]() {}), IsEmpty());
+  // Empty collection should still produce a mark for the actual start time.
+  auto elems = RunAndReportJson([]() {});
+  ASSERT_EQ(elems.size(), 1);
+  EXPECT_TRUE(IsCollectionStartMark(elems[0]));
 }
 
 TEST(LatentSeeTest, ScopeWorks) {
@@ -144,9 +181,10 @@ TEST(LatentSeeTest, ScopeWorks) {
     absl::SleepFor(absl::Milliseconds(5));
   });
 
-  ASSERT_EQ(elems.size(), 1);
-  ASSERT_EQ(elems[0].type(), Json::Type::kObject);
-  auto obj = elems[0].object();
+  ASSERT_EQ(elems.size(), 2);
+  EXPECT_TRUE(IsCollectionStartMark(elems[0]));
+  ASSERT_EQ(elems[1].type(), Json::Type::kObject);
+  auto obj = elems[1].object();
   EXPECT_THAT(obj, HasStringFieldWithValue("name", "foo"));
   EXPECT_THAT(obj, HasStringFieldWithValue("ph", "X"));
   EXPECT_THAT(obj, HasNumberFieldWithValue("tid", 1));
@@ -163,14 +201,72 @@ TEST(LatentSeeTest, MarkWorks) {
     WaitForCollector();
     GRPC_LATENT_SEE_ALWAYS_ON_MARK("bar");
   });
-  ASSERT_EQ(elems.size(), 1);
-  ASSERT_EQ(elems[0].type(), Json::Type::kObject);
-  auto obj = elems[0].object();
+  ASSERT_EQ(elems.size(), 2);
+  EXPECT_TRUE(IsCollectionStartMark(elems[0]));
+  auto obj = elems[1].object();
   EXPECT_THAT(obj, HasStringFieldWithValue("name", "bar"));
   EXPECT_THAT(obj, HasStringFieldWithValue("ph", "i"));
   EXPECT_THAT(obj, HasNumberFieldWithValue("tid", 1));
   EXPECT_THAT(obj, HasNumberFieldWithValue("pid", 0));
   EXPECT_THAT(obj, HasNumberField("ts"));
+}
+
+TEST(LatentSeeTest, ExtraEventMarkWorks) {
+  auto elems = RunAndReportJson([&]() {
+    WaitForCollector();
+    // Mix set of mark and extra event marks.
+    GRPC_LATENT_SEE_ALWAYS_ON_MARK("bar");
+    H2HeaderTrace<false> trace = {1, false, false, false, 1024};
+    auto h2_read_trace_producer = []() {
+      H2HeaderTrace<true> trace = {2, false, false, true, 4096};
+      return trace;
+    };
+    using ResultType = std::result_of<decltype(h2_read_trace_producer)()>::type;
+    GRPC_LATENT_SEE_ALWAYS_ON_MARK_EXTRA_EVENT(H2HeaderTrace<false>, trace);
+    GRPC_LATENT_SEE_ALWAYS_ON_MARK_EXTRA_EVENT(ResultType,
+                                               h2_read_trace_producer());
+  });
+  ASSERT_EQ(elems.size(), 4);
+  EXPECT_TRUE(IsCollectionStartMark(elems[0]));
+  ASSERT_EQ(elems[1].type(), Json::Type::kObject);
+  auto obj_0 = elems[1].object();
+  EXPECT_THAT(obj_0, HasStringFieldWithValue("name", "bar"));
+  EXPECT_THAT(obj_0, HasStringFieldWithValue("ph", "i"));
+  EXPECT_THAT(obj_0, HasNumberFieldWithValue("tid", 1));
+  EXPECT_THAT(obj_0, HasNumberFieldWithValue("pid", 0));
+  EXPECT_THAT(obj_0, HasNumberField("ts"));
+
+  ASSERT_EQ(elems[2].type(), Json::Type::kObject);
+  ASSERT_EQ(elems[3].type(), Json::Type::kObject);
+  auto obj_1 = elems[2].object();
+  auto obj_2 = elems[3].object();
+  // obj_1
+  EXPECT_THAT(obj_1, HasStringFieldWithValue("name", kHeaderTraceFalse));
+  EXPECT_THAT(obj_1, HasStringFieldWithValue("ph", "i"));
+  EXPECT_THAT(obj_1, HasNumberFieldWithValue("tid", 1));
+  EXPECT_THAT(obj_1, HasNumberFieldWithValue("pid", 0));
+  EXPECT_THAT(obj_1, HasNumberField("ts"));
+  ASSERT_EQ(obj_1.find("args")->second.type(), Json::Type::kObject);
+  auto args_1 = obj_1.find("args")->second.object();
+  EXPECT_THAT(args_1, HasNumberFieldWithValue("stream_id", 1));
+  EXPECT_THAT(args_1, HasBooleanFieldWithValue("end_headers", false));
+  EXPECT_THAT(args_1, HasStringFieldWithValue("frame_type", "HEADERS"));
+  EXPECT_THAT(args_1, HasBooleanFieldWithValue("read", false));
+  EXPECT_THAT(args_1, HasNumberFieldWithValue("payload_length", 1024));
+
+  // obj2
+  EXPECT_THAT(obj_2, HasStringFieldWithValue("name", kHeaderTraceTrue));
+  EXPECT_THAT(obj_2, HasStringFieldWithValue("ph", "i"));
+  EXPECT_THAT(obj_2, HasNumberFieldWithValue("tid", 1));
+  EXPECT_THAT(obj_2, HasNumberFieldWithValue("pid", 0));
+  EXPECT_THAT(obj_2, HasNumberField("ts"));
+  ASSERT_EQ(obj_2.find("args")->second.type(), Json::Type::kObject);
+  auto args_2 = obj_2.find("args")->second.object();
+  EXPECT_THAT(args_2, HasNumberFieldWithValue("stream_id", 2));
+  EXPECT_THAT(args_2, HasBooleanFieldWithValue("end_headers", false));
+  EXPECT_THAT(args_2, HasStringFieldWithValue("frame_type", "CONTINUATION"));
+  EXPECT_THAT(args_2, HasBooleanFieldWithValue("read", true));
+  EXPECT_THAT(args_2, HasNumberFieldWithValue("payload_length", 4096));
 }
 
 TEST(LatentSeeTest, FlowWorks) {
@@ -182,10 +278,11 @@ TEST(LatentSeeTest, FlowWorks) {
       latent_see::Flush();
     }).join();
   });
-  ASSERT_EQ(elems.size(), 2);
-  ASSERT_EQ(elems[0].type(), Json::Type::kObject);
-  auto obj1 = elems[0].object();
-  auto obj2 = elems[1].object();
+  ASSERT_EQ(elems.size(), 3);
+  EXPECT_TRUE(IsCollectionStartMark(elems[0]));
+  ASSERT_EQ(elems[1].type(), Json::Type::kObject);
+  auto obj1 = elems[1].object();
+  auto obj2 = elems[2].object();
   // Test phrasing ensures that the end (ph:f) gets reported
   // before the start (ph:s)
   EXPECT_THAT(obj1, HasStringFieldWithValue("name", "foo"));
@@ -215,7 +312,8 @@ TEST(LatentSeeTest, FlowWorksAppenderStartsLate) {
         }).join();
       },
       /*wait_for_start=*/&wait_for_start);
-  ASSERT_EQ(elems.size(), 2);
+  ASSERT_EQ(elems.size(), 3);
+  EXPECT_TRUE(IsCollectionStartMark(elems[0]));
 }
 
 }  // namespace

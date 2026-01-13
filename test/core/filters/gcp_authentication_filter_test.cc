@@ -116,7 +116,8 @@ TEST_F(GcpAuthenticationFilterTest, CreateSucceeds) {
                                       kFilterInstanceName, nullptr);
   auto blackboard = MakeBlackboard(kFilterInstanceName);
   auto filter = GcpAuthenticationFilter::Create(
-      channel_args, ChannelFilter::Args(/*instance_id=*/0, blackboard.get()));
+      channel_args, ChannelFilter::Args(/*instance_id=*/0, /*config=*/nullptr,
+                                        blackboard.get()));
   EXPECT_TRUE(filter.ok()) << filter.status();
 }
 

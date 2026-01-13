@@ -63,11 +63,12 @@ void XdsChannelStackModifier::ModifyChannelStack(ChannelStackBuilder& builder) {
   for (auto it = builder.mutable_stack()->begin();
        it != builder.mutable_stack()->end(); ++it) {
     for (absl::string_view predicate_name : {"server", "census_server"}) {
-      if (predicate_name == (*it)->name.name()) insert_before = it + 1;
+      if (predicate_name == it->filter->name.name()) insert_before = it + 1;
     }
   }
   for (const grpc_channel_filter* filter : filters_) {
-    insert_before = builder.mutable_stack()->insert(insert_before, filter);
+    insert_before =
+        builder.mutable_stack()->insert(insert_before, {filter, nullptr});
     ++insert_before;
   }
 }

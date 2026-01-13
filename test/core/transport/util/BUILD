@@ -18,6 +18,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/core/transport/util",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "tests",
 )
 
@@ -33,6 +37,7 @@ grpc_cc_library(
         "gtest",
     ],
     deps = [
+        "//:debug_location",
         "//:event_engine_base_hdrs",
         "//:grpc",
         "//src/core:event_engine_tcp_socket_utils",

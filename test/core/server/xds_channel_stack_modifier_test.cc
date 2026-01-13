@@ -83,6 +83,8 @@ class FakeTransport final : public Transport {
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op*) override {}
+  void StartWatch(RefCountedPtr<StateWatcher>) override {}
+  void StopWatch(RefCountedPtr<StateWatcher>) override {}
   void Orphan() override {}
   RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
     return nullptr;
@@ -119,8 +121,8 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertion) {
     ASSERT_TRUE(CoreConfiguration::Get().channel_init().CreateStack(&builder));
   }
   std::vector<std::string> filters;
-  for (const auto& entry : *builder.mutable_stack()) {
-    filters.push_back(std::string(entry->name.name()));
+  for (const auto& [filter, _] : *builder.mutable_stack()) {
+    filters.push_back(std::string(filter->name.name()));
   }
   filters.resize(3);
   EXPECT_EQ(filters, std::vector<std::string>(

@@ -62,12 +62,7 @@ class TestServiceImpl : public grpc::testing::EchoTestService::Service {
 template <class Service>
 class CommonStressTest {
  public:
-  CommonStressTest() : kMaxMessageSize_(8192) {
-#if TARGET_OS_IPHONE
-    // Workaround Apple CFStream bug
-    grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
-  }
+  CommonStressTest() : kMaxMessageSize_(8192) {}
   virtual ~CommonStressTest() {}
   virtual void SetUp() = 0;
   virtual void TearDown() = 0;
