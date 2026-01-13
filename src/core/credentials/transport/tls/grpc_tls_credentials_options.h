@@ -106,7 +106,7 @@ struct grpc_tls_credentials_options
       (crl_provider_ == other.crl_provider_) &&
       send_client_ca_list_ == other.send_client_ca_list_ &&
       (identity_certificate_provider_ == other.identity_certificate_provider_ || (identity_certificate_provider_ != nullptr && other.identity_certificate_provider_ != nullptr && identity_certificate_provider_->Compare(other.identity_certificate_provider_.get()) == 0)) &&
-      (root_certificate_provider_ == other.root_certificate_provider_ || (root_certificate_provider_ != nullptr && other.root_certificate_provider_ != nullptr && root_certificate_provider_->Compare(other.root_certificate_provider_.get()) == 0));
+      (root_certificate_provider_ == other.root_certificate_provider_ || (root_certificate_provider_ != nullptr && other.root_certificate_provider_ != nullptr && root_certificate_provider_->Compare(other.root_certificate_provider_.get()) == 0)) &&
       sni_override_ == other.sni_override_;
   }
 
@@ -124,7 +124,7 @@ struct grpc_tls_credentials_options
       crl_provider_(other.crl_provider_),
       send_client_ca_list_(other.send_client_ca_list_),
       identity_certificate_provider_(other.identity_certificate_provider_),
-      root_certificate_provider_(other.root_certificate_provider_)  {}
+      root_certificate_provider_(other.root_certificate_provider_),
       sni_override_(other.sni_override_)  {}
 
  private:
