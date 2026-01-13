@@ -1,3 +1,11 @@
+# GRPC Python setup requirements
+# The requirements listed below are used to generated API reference documentation.
+# This file is currently not generated. It is a copy of an old requirements.
+# bazel.lock file as of https://github.com/grpc/grpc/pull/38616 with
+# manually updated versions.
+# TODO(ssreenithi): create a separate requirements.docs.txt file with only
+# required packages for docgen and regenerate this file. Tech debt from:
+# https://github.com/grpc/grpc/pull/38616
 absl-py==2.1.0
 cachetools==5.5.1
 certifi==2025.1.31
