@@ -1,15 +1,5 @@
-/* Ensure long function/method signatures wrap on mobile */
-dt.sig {
-  white-space: normal !important;
-  overflow-wrap: break-word !important;
-  word-break: break-all !important;
-  /* Force break for very long identifiers */
-}
-
-/* Optional: Add a bit of indentation for wrapped lines to keep them readable */
-dt.sig-object {
-  padding-left: 1em;
-  text-indent: -1em;
+html[data-theme="dark"] {
+  --pst-color-target: color-mix(in srgb, var(--pst-color-surface), purple 10%)
 }
 
 /* Sidebar Widths */
@@ -19,6 +9,23 @@ dt.sig-object {
 
 .bd-sidebar-secondary {
   width: 30%;
+}
+
+@media (max-width: 960px) {
+
+  /* Ensure long function/method signatures wrap on mobile */
+  dt.sig {
+    white-space: normal !important;
+    overflow-wrap: break-word !important;
+    word-break: break-all !important;
+    /* Force break for very long identifiers */
+  }
+
+  /* Add a bit of indentation for wrapped lines to keep them readable */
+  dt.sig-object {
+    padding-left: 1em;
+    text-indent: -1em;
+  }
 }
 
 /* Mobile Sidebar Widths */
