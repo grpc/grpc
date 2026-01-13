@@ -379,7 +379,8 @@ TEST_P(ChannelzChannelTest, BasicDataSource) {
       ASSERT_EQ(item.type(), Json::Type::kObject);
       const Json::Object& item_obj = item.object();
       auto it_name = item_obj.find("name");
-      if (it_name != item_obj.end() && it_name->second.type() == Json::Type::kString &&
+      if (it_name != item_obj.end() &&
+          it_name->second.type() == Json::Type::kString &&
           it_name->second.string() == "testData") {
         found = true;
         auto it_value = item_obj.find("value");
@@ -407,7 +408,8 @@ TEST_P(ChannelzChannelTest, BasicDataSource) {
         ASSERT_EQ(item.type(), Json::Type::kObject);
         const Json::Object& item_obj = item.object();
         auto it_name = item_obj.find("name");
-        if (it_name != item_obj.end() && it_name->second.type() == Json::Type::kString) {
+        if (it_name != item_obj.end() &&
+            it_name->second.type() == Json::Type::kString) {
           EXPECT_NE(it_name->second.string(), "testData");
         }
       }
