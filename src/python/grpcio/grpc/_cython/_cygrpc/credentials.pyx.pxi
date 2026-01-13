@@ -218,10 +218,12 @@ cdef class SSLChannelCredentials(ChannelCredentials):
         c_tls_certificate_provider, c_pem_root_certificates)
       grpc_tls_certificate_provider_in_memory_set_identity_certificate(
         c_tls_certificate_provider, c_tls_identity_pairs)
-      grpc_tls_credentials_options_set_root_certificate_provider(
-          c_tls_credentials_options, c_tls_certificate_provider)
-      grpc_tls_credentials_options_set_identity_certificate_provider(
-          c_tls_credentials_options, c_tls_certificate_provider)
+      if c_pem_root_certificates != NULL:
+        grpc_tls_credentials_options_set_root_certificate_provider(
+            c_tls_credentials_options, c_tls_certificate_provider)
+      if c_tls_identity_pairs != NULL:
+        grpc_tls_credentials_options_set_identity_certificate_provider(
+            c_tls_credentials_options, c_tls_certificate_provider)
       grpc_tls_certificate_provider_release(c_tls_certificate_provider)
 
     with nogil:
