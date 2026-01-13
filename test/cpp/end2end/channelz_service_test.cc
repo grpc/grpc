@@ -47,6 +47,7 @@
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_credentials_provider.h"
 #include "gmock/gmock.h"
@@ -249,6 +250,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
       // channelz enabled since these channels (proxy outbound to backends)
       // are the ones that our test will actually be validating.
       ChannelArguments args;
+      ApplyCommonChannelArguments(args);
       args.SetInt(GRPC_ARG_ENABLE_CHANNELZ, 1);
       args.SetInt(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 1024);
       std::shared_ptr<Channel> channel_to_backend = grpc::CreateCustomChannel(
@@ -262,6 +264,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
     string target =
         absl::StrCat("dns:", grpc_core::LocalIp(), ":", proxy_port_);
     ChannelArguments args;
+    ApplyCommonChannelArguments(args);
     // disable channelz. We only want to focus on proxy to backend outbound.
     args.SetInt(GRPC_ARG_ENABLE_CHANNELZ, 0);
     channelz_channel_ = grpc::CreateCustomChannel(
@@ -274,6 +277,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
     string target =
         absl::StrCat("dns:", grpc_core::LocalIp(), ":", proxy_port_);
     ChannelArguments args;
+    ApplyCommonChannelArguments(args);
     // disable channelz. We only want to focus on proxy to backend outbound.
     args.SetInt(GRPC_ARG_ENABLE_CHANNELZ, 0);
     // This ensures that gRPC will not do connection sharing.
