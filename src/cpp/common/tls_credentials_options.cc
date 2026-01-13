@@ -62,6 +62,10 @@ void TlsCredentialsOptions::set_root_certificate_provider(
 void TlsCredentialsOptions::set_identity_certificate_provider(
     std::shared_ptr<CertificateProviderInterface> certificate_provider) {
   identity_certificate_provider_ = certificate_provider;
+  if (root_certificate_provider_ != nullptr) {
+    grpc_tls_credentials_options_set_root_certificate_provider(
+        c_credentials_options_, root_certificate_provider_->c_provider());
+  }
 }
 
 void TlsCredentialsOptions::set_crl_provider(
@@ -72,7 +76,8 @@ void TlsCredentialsOptions::set_crl_provider(
 
 void TlsCredentialsOptions::watch_root_certs() {
   GRPC_CHECK_NE(root_certificate_provider_, nullptr);
-  set_root_certificate_provider(root_certificate_provider_);
+  grpc_tls_credentials_options_set_root_certificate_provider(
+      c_credentials_options_, root_certificate_provider_->c_provider());
 }
 
 void TlsCredentialsOptions::set_root_cert_name(
@@ -83,7 +88,8 @@ void TlsCredentialsOptions::set_root_cert_name(
 
 void TlsCredentialsOptions::watch_identity_key_cert_pairs() {
   GRPC_CHECK_NE(identity_certificate_provider_, nullptr);
-  set_identity_certificate_provider(identity_certificate_provider_);
+  grpc_tls_credentials_options_set_identity_certificate_provider(
+      c_credentials_options_, root_certificate_provider_->c_provider());
 }
 
 void TlsCredentialsOptions::set_identity_cert_name(
