@@ -156,14 +156,16 @@ std::string BaseCallData::LogTag() const {
 }
 
 void BaseCallData::AddData(channelz::DataSink sink) {
-  auto add = [sink, this](grpc_error_handle) mutable {
-    sink.AddData(elem_->filter->name.name(), ChannelzProperties());
-    GRPC_CALL_COMBINER_STOP(call_combiner(), "channelz_add_data");
-    GRPC_CALL_STACK_UNREF(call_stack_, "channelz_add_data");
-  };
-  GRPC_CALL_STACK_REF(call_stack_, "channelz_add_data");
-  GRPC_CALL_COMBINER_START(call_combiner_, NewClosure(std::move(add)),
-                           absl::OkStatus(), "channelz_add_data");
+  EnsureRunInExecCtx([this, sink = std::move(sink)]() mutable {
+    auto add = [sink, this](grpc_error_handle) mutable {
+      sink.AddData(elem_->filter->name.name(), ChannelzProperties());
+      GRPC_CALL_COMBINER_STOP(call_combiner(), "channelz_add_data");
+      GRPC_CALL_STACK_UNREF(call_stack_, "channelz_add_data");
+    };
+    GRPC_CALL_STACK_REF(call_stack_, "channelz_add_data");
+    GRPC_CALL_COMBINER_START(call_combiner_, NewClosure(std::move(add)),
+                             absl::OkStatus(), "channelz_add_data");
+  });
 }
 
 channelz::PropertyList BaseCallData::ChannelzProperties() const {
@@ -1305,6 +1307,7 @@ ClientCallData::ClientCallData(grpc_call_element* elem,
   if (server_initial_metadata_pipe() != nullptr) {
     recv_initial_metadata_ = arena()->New<RecvInitialMetadata>();
   }
+  SourceConstructed();
 }
 
 ClientCallData::~ClientCallData() {
@@ -1995,6 +1998,7 @@ ServerCallData::ServerCallData(grpc_call_element* elem,
   GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_,
                     RecvTrailingMetadataReadyCallback, this,
                     grpc_schedule_on_exec_ctx);
+  SourceConstructed();
 }
 
 ServerCallData::~ServerCallData() {

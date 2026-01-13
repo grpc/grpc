@@ -20,6 +20,8 @@
 
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/slice_buffer.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -31,6 +33,7 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/test_util/parse_hexstring.h"
 #include "test/core/test_util/slice_splitter.h"
@@ -157,7 +160,12 @@ class FakeCallTracer final : public CallTracerInterface {
   void RecordOutgoingBytes(
       const TransportByteSize& transport_byte_size) override {}
   void RecordSendInitialMetadata(
-      grpc_metadata_batch* send_initial_metadata) override {}
+      grpc_metadata_batch* send_initial_metadata) override {
+    GRPC_CHECK(!IsCallTracerSendInitialMetadataIsAnAnnotationEnabled());
+    MutateSendInitialMetadata(send_initial_metadata);
+  }
+  void MutateSendInitialMetadata(
+      grpc_metadata_batch* /*send_initial_metadata*/) override {}
   void RecordSendTrailingMetadata(
       grpc_metadata_batch* send_trailing_metadata) override {}
   void RecordSendMessage(const Message& send_message) override {}

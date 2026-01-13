@@ -21,7 +21,7 @@
 
 #include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/endpoint_info/endpoint_info_handshaker.h"
-#include "src/core/handshaker/http_connect/http_connect_handshaker.h"
+#include "src/core/handshaker/http_connect/http_connect_client_handshaker.h"
 #include "src/core/handshaker/tcp_connect/tcp_connect_handshaker.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/lame_client.h"
@@ -98,7 +98,7 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   // We want TCP connect handshaker to be registered last so that it is added
   // to the start of the handshaker list.
   RegisterEndpointInfoHandshaker(builder);
-  RegisterHttpConnectHandshaker(builder);
+  RegisterHttpConnectClientHandshaker(builder);
   RegisterTCPConnectHandshaker(builder);
   RegisterChttp2Transport(builder);
 #ifndef GRPC_MINIMAL_LB_POLICY
