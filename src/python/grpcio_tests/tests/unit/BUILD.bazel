@@ -155,20 +155,3 @@ internal_py_grpc_test(
         "//tools/distrib/python/grpcio_tools:grpc_tools",
     ],
 )
-
-internal_py_grpc_test(
-    name = "_protoc_generation_test",
-    size = "small",
-    srcs = ["_protoc_generation_test.py"],
-    data = [
-        "data/service/simple.proto",
-    ],
-    imports = ["../../"],
-    main = "_protoc_generation_test.py",
-    deps = [
-        ":test_common",
-        "//src/python/grpcio/grpc:grpcio",
-        "//src/python/grpcio_tests/tests/testing",
-        "//tools/distrib/python/grpcio_tools:grpc_tools",
-    ],
-)
