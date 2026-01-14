@@ -92,7 +92,7 @@ class EventEngineEndpointWrapper {
 
   // Returns a managed grpc_endpoint object. It retains ownership of the
   // object.
-  grpc_endpoint* GetGrpcEndpoint() { return &eeep_->base; }
+  grpc_endpoint* GetGrpcEndpoint() { return &eeep_.base; }
 
   // Read using the underlying EventEngine endpoint object.
   bool Read(grpc_closure* read_cb, grpc_slice_buffer* pending_read_buffer,
@@ -101,10 +101,10 @@ class EventEngineEndpointWrapper {
     pending_read_cb_ = read_cb;
     pending_read_buffer_ = pending_read_buffer;
     // TODO(vigneshbabu): Use SliceBufferCast<> here.
-    grpc_core::Construct(reinterpret_cast<SliceBuffer*>(&eeep_->read_buffer),
+    grpc_core::Construct(reinterpret_cast<SliceBuffer*>(&eeep_.read_buffer),
                          SliceBuffer::TakeCSliceBuffer(*pending_read_buffer_));
     SliceBuffer* read_buffer =
-        reinterpret_cast<SliceBuffer*>(&eeep_->read_buffer);
+        reinterpret_cast<SliceBuffer*>(&eeep_.read_buffer);
     read_buffer->Clear();
     return endpoint_->Read(
         [this](absl::Status status) { FinishPendingRead(status); }, read_buffer,
@@ -112,13 +112,13 @@ class EventEngineEndpointWrapper {
   }
 
   void FinishPendingRead(absl::Status status) {
-    auto* read_buffer = reinterpret_cast<SliceBuffer*>(&eeep_->read_buffer);
+    auto* read_buffer = reinterpret_cast<SliceBuffer*>(&eeep_.read_buffer);
     grpc_slice_buffer_move_into(read_buffer->c_slice_buffer(),
                                 pending_read_buffer_);
     read_buffer->~SliceBuffer();
     if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
       size_t i;
-      LOG(INFO) << "TCP: " << eeep_->wrapper << " READ error=" << status;
+      LOG(INFO) << "TCP: " << eeep_.wrapper << " READ error=" << status;
       if (ABSL_VLOG_IS_ON(2)) {
         for (i = 0; i < pending_read_buffer_->count; i++) {
           char* dump = grpc_dump_slice(pending_read_buffer_->slices[i],
@@ -158,10 +158,10 @@ class EventEngineEndpointWrapper {
       }
     }
     // TODO(vigneshbabu): Use SliceBufferCast<> here.
-    grpc_core::Construct(reinterpret_cast<SliceBuffer*>(&eeep_->write_buffer),
+    grpc_core::Construct(reinterpret_cast<SliceBuffer*>(&eeep_.write_buffer),
                          SliceBuffer::TakeCSliceBuffer(*slices));
     SliceBuffer* write_buffer =
-        reinterpret_cast<SliceBuffer*>(&eeep_->write_buffer);
+        reinterpret_cast<SliceBuffer*>(&eeep_.write_buffer);
     pending_write_cb_ = write_cb;
     return endpoint_->Write(
         [this](absl::Status status) { FinishPendingWrite(status); },
@@ -169,7 +169,7 @@ class EventEngineEndpointWrapper {
   }
 
   void FinishPendingWrite(absl::Status status) {
-    auto* write_buffer = reinterpret_cast<SliceBuffer*>(&eeep_->write_buffer);
+    auto* write_buffer = reinterpret_cast<SliceBuffer*>(&eeep_.write_buffer);
     write_buffer->~SliceBuffer();
     GRPC_TRACE_LOG(tcp, INFO)
         << "TCP: " << this << " WRITE (peer=" << PeerAddress()
@@ -272,7 +272,7 @@ class EventEngineEndpointWrapper {
     Unref();
   }
   std::unique_ptr<EventEngine::Endpoint> endpoint_;
-  std::unique_ptr<grpc_event_engine_endpoint> eeep_;
+  grpc_event_engine_endpoint eeep_;
   std::atomic<int64_t> refs_{1};
   std::atomic<int64_t> shutdown_ref_{1};
   absl::AnyInvocable<void(absl::StatusOr<int>)> on_release_fd_;
@@ -394,10 +394,9 @@ grpc_endpoint_vtable grpc_event_engine_endpoint_vtable = {
 
 EventEngineEndpointWrapper::EventEngineEndpointWrapper(
     std::unique_ptr<EventEngine::Endpoint> endpoint)
-    : endpoint_(std::move(endpoint)),
-      eeep_(std::make_unique<grpc_event_engine_endpoint>()) {
-  eeep_->base.vtable = &grpc_event_engine_endpoint_vtable;
-  eeep_->wrapper = this;
+    : endpoint_(std::move(endpoint)) {
+  eeep_.base.vtable = &grpc_event_engine_endpoint_vtable;
+  eeep_.wrapper = this;
   auto* supports_fd =
       QueryExtension<EndpointSupportsFdExtension>(endpoint_.get());
   if (supports_fd != nullptr) {
@@ -406,7 +405,7 @@ EventEngineEndpointWrapper::EventEngineEndpointWrapper(
     fd_ = -1;
   }
   GRPC_TRACE_LOG(event_engine, INFO)
-      << "EventEngine::Endpoint " << eeep_->wrapper << " Create";
+      << "EventEngine::Endpoint " << eeep_.wrapper << " Create";
 }
 
 }  // namespace
