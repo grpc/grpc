@@ -59,14 +59,14 @@ struct grpc_tls_credentials_options
   // Returns the CRL Provider
   std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider() const { return crl_provider_; }
   bool send_client_ca_list() const { return send_client_ca_list_; }
-  // Returns the distributor from identity_certificate_provider_ if it is set, nullptr otherwise.
-  grpc_tls_certificate_distributor* identity_certificate_distributor() {
-    if (identity_certificate_provider_ != nullptr) { return identity_certificate_provider_->distributor().get(); }
+  // Returns the distributor from identity_credentials_provider_ if it is set, nullptr otherwise.
+  grpc_tls_certificate_distributor* identity_credentials_distributor() {
+    if (identity_credentials_provider_ != nullptr) { return identity_credentials_provider_->distributor().get(); }
     return nullptr;
   }
-  // Returns the distributor from root_certificate_provider_ if it is set, nullptr otherwise.
-  grpc_tls_certificate_distributor* root_certificate_distributor() {
-    if (root_certificate_provider_ != nullptr) { return root_certificate_provider_->distributor().get(); }
+  // Returns the distributor from root_certificates_provider_ if it is set, nullptr otherwise.
+  grpc_tls_certificate_distributor* root_certificates_distributor() {
+    if (root_certificates_provider_ != nullptr) { return root_certificates_provider_->distributor().get(); }
     return nullptr;
   }
   const std::optional<std::string>& sni_override() const { return sni_override_; }
@@ -87,8 +87,8 @@ struct grpc_tls_credentials_options
   void set_crl_directory(std::string crl_directory) { crl_directory_ = std::move(crl_directory); }
   void set_crl_provider(std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider) { crl_provider_ = std::move(crl_provider); }
   void set_send_client_ca_list(bool send_client_ca_list) { send_client_ca_list_ = send_client_ca_list; }
-  void set_identity_certificate_provider(grpc_core::RefCountedPtr<grpc_tls_certificate_provider> identity_certificate_provider) { identity_certificate_provider_ = std::move(identity_certificate_provider); }
-  void set_root_certificate_provider(grpc_core::RefCountedPtr<grpc_tls_certificate_provider> root_certificate_provider) { root_certificate_provider_ = std::move(root_certificate_provider); }
+  void set_identity_credentials_provider(grpc_core::RefCountedPtr<grpc_tls_certificate_provider> identity_credentials_provider) { identity_credentials_provider_ = std::move(identity_credentials_provider); }
+  void set_root_certificates_provider(grpc_core::RefCountedPtr<grpc_tls_certificate_provider> root_certificates_provider) { root_certificates_provider_ = std::move(root_certificates_provider); }
   // If set to nullopt, do not override. If set to empty string, disable sending SNI. Otherwise, override SNI
   void set_sni_override(std::optional<std::string> sni_override) { sni_override_ = std::move(sni_override); }
 
@@ -105,8 +105,8 @@ struct grpc_tls_credentials_options
       crl_directory_ == other.crl_directory_ &&
       (crl_provider_ == other.crl_provider_) &&
       send_client_ca_list_ == other.send_client_ca_list_ &&
-      (identity_certificate_provider_ == other.identity_certificate_provider_ || (identity_certificate_provider_ != nullptr && other.identity_certificate_provider_ != nullptr && identity_certificate_provider_->Compare(other.identity_certificate_provider_.get()) == 0)) &&
-      (root_certificate_provider_ == other.root_certificate_provider_ || (root_certificate_provider_ != nullptr && other.root_certificate_provider_ != nullptr && root_certificate_provider_->Compare(other.root_certificate_provider_.get()) == 0)) &&
+      (identity_credentials_provider_ == other.identity_credentials_provider_ || (identity_credentials_provider_ != nullptr && other.identity_credentials_provider_ != nullptr && identity_credentials_provider_->Compare(other.identity_credentials_provider_.get()) == 0)) &&
+      (root_certificates_provider_ == other.root_certificates_provider_ || (root_certificates_provider_ != nullptr && other.root_certificates_provider_ != nullptr && root_certificates_provider_->Compare(other.root_certificates_provider_.get()) == 0)) &&
       sni_override_ == other.sni_override_;
   }
 
@@ -123,8 +123,8 @@ struct grpc_tls_credentials_options
       crl_directory_(other.crl_directory_),
       crl_provider_(other.crl_provider_),
       send_client_ca_list_(other.send_client_ca_list_),
-      identity_certificate_provider_(other.identity_certificate_provider_),
-      root_certificate_provider_(other.root_certificate_provider_),
+      identity_credentials_provider_(other.identity_credentials_provider_),
+      root_certificates_provider_(other.root_certificates_provider_),
       sni_override_(other.sni_override_)  {}
 
  private:
@@ -140,8 +140,8 @@ struct grpc_tls_credentials_options
   std::string crl_directory_;
   std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider_;
   bool send_client_ca_list_ = false;
-  grpc_core::RefCountedPtr<grpc_tls_certificate_provider> identity_certificate_provider_;
-  grpc_core::RefCountedPtr<grpc_tls_certificate_provider> root_certificate_provider_;
+  grpc_core::RefCountedPtr<grpc_tls_certificate_provider> identity_credentials_provider_;
+  grpc_core::RefCountedPtr<grpc_tls_certificate_provider> root_certificates_provider_;
   std::optional<std::string> sni_override_;
 };
 

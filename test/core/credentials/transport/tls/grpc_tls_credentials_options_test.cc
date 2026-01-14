@@ -47,8 +47,10 @@ RefCountedPtr<grpc_tls_certificate_provider> CreateTestingCertificateProvider(
     const std::string& root_cert_info,
     const PemKeyCertPairList& pem_key_cert_pairs) {
   auto provider = MakeRefCounted<InMemoryCertificateProvider>();
-  provider->UpdateRoot(std::make_shared<RootCertInfo>(root_cert_info));
-  provider->UpdateIdentity(pem_key_cert_pairs);
+  EXPECT_TRUE(
+      provider->UpdateRoot(std::make_shared<RootCertInfo>(root_cert_info))
+          .ok());
+  EXPECT_TRUE(provider->UpdateIdentityKeyCertPair(pem_key_cert_pairs).ok());
   return provider;
 }
 }  // namespace
