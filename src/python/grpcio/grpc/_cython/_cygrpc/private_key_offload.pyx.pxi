@@ -51,7 +51,9 @@ cdef shared_ptr[PrivateKeySigner] build_private_key_signer(py_user_func):
   py_private_key_signer = BuildPrivateKeySigner(async_modify_wrapper, <void*>py_user_func)
   return py_private_key_signer
 
-# TODO this will actually be some kind of ssl_option setter
-# def TODO_API(inp, py_user_func):
+# cdef void grpc_tls_identity_pairs_add_pair_with_signer(
+#     grpc_tls_identity_pairs* pairs,
+#     shared_ptr[PrivateKeySigner] private_key_signer,
+#     const char* cert_chain)
 
 

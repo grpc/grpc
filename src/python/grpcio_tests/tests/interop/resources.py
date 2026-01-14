@@ -34,6 +34,11 @@ def certificate_chain():
     return pkgutil.get_data(__name__, _CERTIFICATE_CHAIN_RESOURCE_PATH)
 
 
+def private_key_signer():
+    # GREG TODO
+    pass
+
+
 def parse_bool(value):
     if value == "true":
         return True

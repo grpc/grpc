@@ -11330,7 +11330,7 @@ grpc_cc_library(
         "ssl_transport_security_utils",
         "//:grpc_base",
         "//:tsi_base",
-        ":private_key_offload_util"
+        # ":private_key_offload_util"
     ],
 )
 

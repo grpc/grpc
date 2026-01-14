@@ -58,6 +58,12 @@ cdef extern from "grpc/private_key_signer.h" namespace "grpc_core":
         kRsaPssRsaeSha384,
         kRsaPssRsaeSha512
 
+cdef extern from "grpc/private_key_signer.h":
+    cdef void grpc_tls_identity_pairs_add_pair_with_signer(
+        grpc_tls_identity_pairs* pairs,
+        shared_ptr[PrivateKeySigner] private_key_signer,
+        const char* cert_chain)
+
 cpdef enum SignatureAlgorithm:
     RSA_PKCS1_SHA256 = <int>CSignatureAlgorithm.kRsaPkcs1Sha256
     RSA_PKCS1_SHA384 = <int>CSignatureAlgorithm.kRsaPkcs1Sha384

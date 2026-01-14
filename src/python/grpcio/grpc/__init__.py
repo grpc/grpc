@@ -1722,15 +1722,15 @@ def ssl_channel_credentials(
         )
     )
 
-PrivateKeySignDoneCallback = Callable[[Optional[bytes], bool], None]
+# PrivateKeySignDoneCallback = Callable[[Optional[bytes], bool], None]
 # Note: SignatureAlgorithm corresponds to C-core's enum class SignatureAlgorithm.
 CustomPrivateKeySign = Callable[
     [
         bytes,
         _cygrpc.SignatureAlgorithm,
-        PrivateKeySignDoneCallback,
+        # PrivateKeySignDoneCallback,
     ],
-    None,
+    bytes,
 ]
 
 

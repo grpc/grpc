@@ -62,5 +62,11 @@ class SecureIntraopTest(_intraop_test_case.IntraopTestCase, unittest.TestCase):
         self.server.stop(None)
 
 
+class SecureInteropWithPrivateKeyOffloadingTest(
+    _intraop_test_case.IntraopTestCase, unittest.TestCase
+):
+    pass
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

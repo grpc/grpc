@@ -194,24 +194,31 @@ cdef class SSLChannelCredentials(ChannelCredentials):
     self._pem_root_certificates = pem_root_certificates
     self._private_key = private_key
     self._certificate_chain = certificate_chain
+    # Python Callable
     self._private_key_signer = private_key_signer
 
   cdef grpc_channel_credentials *c(self) except *:
     cdef const char *c_pem_root_certificates
     cdef const char *c_private_key
     cdef const char *c_cert_chain
+    cdef shared_ptr[PrivateKeySigner] c_private_key_signer
     cdef grpc_tls_credentials_options* c_tls_credentials_options
     cdef grpc_tls_identity_pairs* c_tls_identity_pairs = NULL
     cdef grpc_tls_certificate_provider* c_tls_certificate_provider
 
     c_tls_credentials_options = grpc_tls_credentials_options_create()
     c_pem_root_certificates = self._pem_root_certificates or <const char*>NULL
+    
 
     if self._private_key or self._certificate_chain or self._private_key_signer:
       c_tls_identity_pairs = grpc_tls_identity_pairs_create()
-      c_private_key = self._private_key or self._private_key_signer or <const char*>NULL
+      c_private_key = self._private_key or <const char*>NULL
       c_cert_chain = self._certificate_chain or <const char*>NULL
-      grpc_tls_identity_pairs_add_pair(c_tls_identity_pairs, c_private_key, c_cert_chain)
+      if self._private_key_signer:
+        c_private_key_signer = build_private_key_signer(self._private_key_signer)
+        grpc_tls_identity_pairs_add_pair_with_signer(c_tls_identity_pairs, c_private_key_signer, c_cert_chain)
+      else:
+        grpc_tls_identity_pairs_add_pair(c_tls_identity_pairs, c_private_key, c_cert_chain)
 
     if c_pem_root_certificates != NULL or c_tls_identity_pairs != NULL:
       c_tls_certificate_provider = grpc_tls_certificate_provider_in_memory_create()
