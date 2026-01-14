@@ -18,6 +18,9 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/cpp/end2end/xds",
+    features = [
+        "parse_headers",
+    ],
     visibility = "public",
 )  # Allows external users to implement end2end tests.
 
@@ -39,15 +42,15 @@ grpc_cc_library(
         "//:parse_address",
         "//src/core:grpc_check",
         "//src/core:sync",
-        "//src/proto/grpc/testing/xds/v3:ads_cc_grpc",
-        "//src/proto/grpc/testing/xds/v3:discovery_cc_proto",
-        "//src/proto/grpc/testing/xds/v3:lrs_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/end2end:counted_service",
         "@envoy_api//envoy/config/cluster/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/endpoint/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/listener/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/route/v3:pkg_cc_proto",
+        "@envoy_api//envoy/service/discovery/v3:pkg_cc_grpc",
+        "@envoy_api//envoy/service/discovery/v3:pkg_cc_proto",
+        "@envoy_api//envoy/service/load_stats/v3:pkg_cc_grpc",
     ],
 )
 
@@ -70,7 +73,6 @@ grpc_cc_library(
         "//:xds_client",
         "//src/core:env",
         "//src/core:grpc_xds_client",
-        "//src/proto/grpc/testing/xds/v3:discovery_cc_proto",
         "//test/core/test_util:grpc_test_util_base",
         "@envoy_api//envoy/config/cluster/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/endpoint/v3:pkg_cc_proto",
@@ -78,6 +80,7 @@ grpc_cc_library(
         "@envoy_api//envoy/config/route/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/router/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg_cc_proto",
+        "@envoy_api//envoy/service/discovery/v3:pkg_cc_proto",
     ],
 )
 
@@ -118,9 +121,6 @@ grpc_cc_library(
         "//src/proto/grpc/testing:echo_cc_proto",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_cc_grpc",
-        "//src/proto/grpc/testing/xds/v3:ads_cc_grpc",
-        "//src/proto/grpc/testing/xds/v3:discovery_cc_proto",
-        "//src/proto/grpc/testing/xds/v3:lrs_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
         "//test/cpp/end2end:counted_service",
@@ -136,6 +136,9 @@ grpc_cc_library(
         "@envoy_api//envoy/extensions/filters/http/rbac/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/router/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg_cc_proto",
+        "@envoy_api//envoy/service/discovery/v3:pkg_cc_grpc",
+        "@envoy_api//envoy/service/discovery/v3:pkg_cc_proto",
+        "@envoy_api//envoy/service/load_stats/v3:pkg_cc_grpc",
     ],
 )
 
@@ -151,6 +154,12 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:client.pem",
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
+        "//src/core/tsi/test_creds:sni1.key",
+        "//src/core/tsi/test_creds:sni1.pem",
+        "//src/core/tsi/test_creds:sni2.key",
+        "//src/core/tsi/test_creds:sni2.pem",
+        "//src/core/tsi/test_creds:sni3.key",
+        "//src/core/tsi/test_creds:sni3.pem",
     ],
     external_deps = [
         "absl/log:check",
@@ -180,12 +189,14 @@ grpc_cc_test(
         "//:grpc++_xds_server",
         "//:grpc_base",
         "//:grpc_http_filters",
+        "//:grpc_resolver_fake",
         "//:ref_counted_ptr",
         "//src/core:certificate_provider_registry",
         "//src/core:env",
         "//src/core:grpc_audit_logging",
         "//src/core:grpc_check",
         "//src/core:grpc_fake_credentials",
+        "//src/core:grpc_lb_xds_channel_args",
         "//src/core:grpc_tls_credentials",
         "//src/core:sync",
         "//src/proto/grpc/testing:echo_cc_grpc",
@@ -443,6 +454,8 @@ grpc_cc_test(
         "@envoy_api//envoy/config/listener/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/route/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg_cc_proto",
+        "@envoy_api//envoy/service/status/v3:pkg_cc_grpc",
+        "@envoy_api//envoy/service/status/v3:pkg_cc_proto",
     ],
 )
 

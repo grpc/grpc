@@ -14,20 +14,31 @@
 
 #include "test/cpp/sleuth/tool_options.h"
 
-#include "src/core/ext/transport/chaotic_good/chaotic_good.h"
-#include "test/cpp/sleuth/tool_credentials.h"
-#include "absl/flags/flag.h"
+#include <optional>
+#include <string>
 
-ABSL_FLAG(std::string, channelz_protocol, "h2", "Channelz protocol to use");
+#include "src/core/ext/transport/chaotic_good/chaotic_good.h"
+#include "test/cpp/sleuth/client.h"
+#include "test/cpp/sleuth/tool_credentials.h"
+#include "absl/flags/declare.h"
+#include "absl/flags/flag.h"
+#include "absl/strings/string_view.h"
+
+ABSL_DECLARE_FLAG(std::string, channel_creds_type);
 
 namespace grpc_sleuth {
 
-Client::Options ToolClientOptions() {
+Client::Options ToolClientOptions(
+    absl::string_view protocol,
+    std::optional<std::string> channel_creds_type_opt) {
   // Ensure chaotic good is linked in.
   grpc_core::chaotic_good::WireFormatPreferences();
+  if (channel_creds_type_opt.has_value()) {
+    absl::SetFlag(&FLAGS_channel_creds_type, *channel_creds_type_opt);
+  }
   return Client::Options{
       ToolCredentials(),
-      absl::GetFlag(FLAGS_channelz_protocol),
+      std::string(protocol),
   };
 }
 

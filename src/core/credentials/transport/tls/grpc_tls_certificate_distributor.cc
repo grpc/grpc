@@ -106,7 +106,6 @@ void grpc_tls_certificate_distributor::SetErrorForCert(
     std::optional<grpc_error_handle> root_cert_error,
     std::optional<grpc_error_handle> identity_cert_error) {
   GRPC_CHECK(root_cert_error.has_value() || identity_cert_error.has_value());
-
   grpc_core::MutexLock lock(&mu_);
   CertificateInfo& cert_info = certificate_info_map_[cert_name];
   if (root_cert_error.has_value()) {
@@ -155,7 +154,6 @@ void grpc_tls_certificate_distributor::SetErrorForCert(
 
 void grpc_tls_certificate_distributor::SetError(grpc_error_handle error) {
   GRPC_CHECK(!error.ok());
-
   grpc_core::MutexLock lock(&mu_);
   for (const auto& watcher : watchers_) {
     const auto watcher_ptr = watcher.first;
@@ -180,7 +178,10 @@ void grpc_tls_certificate_distributor::WatchTlsCertificates(
   bool already_watching_identity_for_root_cert = false;
   bool start_watching_identity_cert = false;
   bool already_watching_root_for_identity_cert = false;
-  GRPC_CHECK(root_cert_name.has_value() || identity_cert_name.has_value());
+  if (!root_cert_name.has_value() && !identity_cert_name.has_value()) {
+    // Nothing to watch.
+    return;
+  }
   TlsCertificatesWatcherInterface* watcher_ptr = watcher.get();
   GRPC_CHECK_NE(watcher_ptr, nullptr);
   // Update watchers_ and certificate_info_map_.
@@ -201,6 +202,9 @@ void grpc_tls_certificate_distributor::WatchTlsCertificates(
       start_watching_root_cert = cert_info.root_cert_watchers.empty();
       already_watching_identity_for_root_cert =
           !cert_info.identity_cert_watchers.empty();
+      if (cert_info.AreRootsEmpty()) {
+        LOG(INFO) << "hit";
+      }
       cert_info.root_cert_watchers.insert(watcher_ptr);
       root_error = cert_info.root_cert_error;
       // Empty credentials will be treated as no updates.
@@ -241,16 +245,22 @@ void grpc_tls_certificate_distributor::WatchTlsCertificates(
     if (watch_status_callback_ != nullptr) {
       if (root_cert_name == identity_cert_name &&
           (start_watching_root_cert || start_watching_identity_cert)) {
+        LOG(INFO) << "anasalazar";
         watch_status_callback_(*root_cert_name, start_watching_root_cert,
                                start_watching_identity_cert);
+        LOG(INFO) << "anasalazar";
       } else {
         if (start_watching_root_cert) {
+          LOG(INFO) << "anasalazar";
           watch_status_callback_(*root_cert_name, true,
                                  already_watching_identity_for_root_cert);
+          LOG(INFO) << "anasalazar";
         }
         if (start_watching_identity_cert) {
+          LOG(INFO) << "anasalazar";
           watch_status_callback_(*identity_cert_name,
                                  already_watching_root_for_identity_cert, true);
+          LOG(INFO) << "anasalazar";
         }
       }
     }
@@ -314,9 +324,11 @@ void grpc_tls_certificate_distributor::CancelTlsCertificatesWatch(
                                  already_watching_identity_for_root_cert);
         }
         if (stop_watching_identity_cert) {
+          LOG(INFO) << "anasalazar";
           watch_status_callback_(*identity_cert_name,
                                  already_watching_root_for_identity_cert,
                                  false);
+          LOG(INFO) << "anasalazar";
         }
       }
     }

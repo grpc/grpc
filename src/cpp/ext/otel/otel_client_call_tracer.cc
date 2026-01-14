@@ -19,6 +19,7 @@
 #include "src/cpp/ext/otel/otel_client_call_tracer.h"
 
 #include <grpc/status.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 #include <stdint.h>
@@ -173,6 +174,15 @@ void OpenTelemetryPluginImpl::ClientCallTracerInterface::CallAttemptTracer<
 template <typename UnrefBehavior>
 void OpenTelemetryPluginImpl::ClientCallTracerInterface::CallAttemptTracer<
     UnrefBehavior>::RecordSendInitialMetadata(grpc_metadata_batch*
+                                                  send_initial_metadata) {
+  GRPC_CHECK(
+      !grpc_core::IsCallTracerSendInitialMetadataIsAnAnnotationEnabled());
+  MutateSendInitialMetadata(send_initial_metadata);
+}
+
+template <typename UnrefBehavior>
+void OpenTelemetryPluginImpl::ClientCallTracerInterface::CallAttemptTracer<
+    UnrefBehavior>::MutateSendInitialMetadata(grpc_metadata_batch*
                                                   send_initial_metadata) {
   parent_->scope_config_->active_plugin_options_view().ForEach(
       [&](const InternalOpenTelemetryPluginOption& plugin_option,
@@ -364,8 +374,15 @@ void OpenTelemetryPluginImpl::ClientCallTracerInterface::CallAttemptTracer<
 
 template <typename UnrefBehavior>
 void OpenTelemetryPluginImpl::ClientCallTracerInterface::CallAttemptTracer<
-    UnrefBehavior>::RecordAnnotation(const Annotation& /*annotation*/) {
-  // Not implemented
+    UnrefBehavior>::RecordAnnotation(const Annotation& annotation) {
+  if (annotation.type() == grpc_core::CallTracerAnnotationInterface::
+                               AnnotationType::kSendInitialMetadata) {
+    // Otel does not have any immutable tracing for send initial metadata.
+    // All Otel work for send initial metadata is mutation, which is handled in
+    // MutateSendInitialMetadata.
+    return;
+  }
+  RecordAnnotation(annotation.ToString());
 }
 
 template <typename UnrefBehavior>

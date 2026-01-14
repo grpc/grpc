@@ -42,10 +42,10 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-#include "third_party/yamlcpp/include/yaml-cpp/node/emit.h"
-#include "third_party/yamlcpp/include/yaml-cpp/node/node.h"
-#include "third_party/yamlcpp/include/yaml-cpp/node/parse.h"
-#include "third_party/yamlcpp/include/yaml-cpp/yaml.h"  // IWYU pragma: keep
+#include "include/yaml-cpp/node/emit.h"
+#include "include/yaml-cpp/node/node.h"
+#include "include/yaml-cpp/node/parse.h"
+#include "include/yaml-cpp/yaml.h"  // IWYU pragma: keep
 
 namespace grpc_core {
 

@@ -154,19 +154,21 @@ def have_ruby_abi_version()
   # See also discussion for Ruby 3.4 in https://github.com/grpc/grpc/pull/38338 and https://github.com/grpc/grpc/pull/38487
   return false if RUBY_PATCHLEVEL >= 0
 
-  m = /(\d+)\.(\d+)/.match(RUBY_VERSION)
-  if m.nil?
-    puts "Failed to parse ruby version: #{RUBY_VERSION}. Assuming ruby_abi_version symbol is NOT present."
-    return false
+  min_version = Gem::Version.new('3.2')
+
+  begin
+    current_version = Gem::Version.new(RUBY_VERSION)
+    if current_version >= min_version
+      puts "Ruby version #{RUBY_VERSION} >= 3.2. Assuming ruby_abi_version symbol is present."
+      true
+    else
+      puts "Ruby version #{RUBY_VERSION} < 3.2. Assuming ruby_abi_version symbol is NOT present."
+      false
+    end
+  rescue ArgumentError
+    puts "Failed to parse ruby version  #{RUBY_VERSION}. Assuming ruby_abi_version symbol is NOT present."
+    false
   end
-  major = m[1].to_i
-  minor = m[2].to_i
-  if major >= 3 and minor >= 2
-    puts "Ruby version #{RUBY_VERSION} >= 3.2. Assuming ruby_abi_version symbol is present."
-    return true
-  end
-  puts "Ruby version #{RUBY_VERSION} < 3.2. Assuming ruby_abi_version symbol is NOT present."
-  false
 end
 
 def ext_export_filename()

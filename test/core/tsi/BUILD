@@ -18,6 +18,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/core/tsi",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "public",
 )
 
@@ -132,6 +136,7 @@ grpc_cc_test(
         "absl/log:log",
         "absl/strings",
         "gtest",
+        "libcrypto",
     ],
     shard_count = 5,
     tags = [
@@ -143,6 +148,9 @@ grpc_cc_test(
         ":transport_security_test_lib",
         "//:gpr",
         "//:grpc",
+        "//:tsi_base",
+        "//:tsi_ssl_credentials",
+        "//test/core/test_util:build",
         "//test/core/test_util:grpc_test_util",
     ],
 )

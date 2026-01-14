@@ -144,6 +144,7 @@ LANG_RELEASE_MATRIX = {
             ("v1.73.0", ReleaseInfo()),
             ("v1.74.0", ReleaseInfo()),
             ("v1.75.1", ReleaseInfo()),
+            ("v1.76.0", ReleaseInfo()),
         ]
     ),
     "go": OrderedDict(
@@ -891,6 +892,15 @@ LANG_RELEASE_MATRIX = {
                     runtimes=["python"], testcases_file="python__master"
                 ),
             ),
+            # Python images can't be anymore built without #40959 temporary fix,
+            # or #40833 proper pyproject migration.
+            # TODO(sreenithi): update this once v1.76.1 is out.
+            # (
+            #     "v1.76.0",
+            #     ReleaseInfo(
+            #         runtimes=["python"], testcases_file="python__master"
+            #     ),
+            # ),
         ]
     ),
     "node": OrderedDict(
@@ -999,6 +1009,7 @@ LANG_RELEASE_MATRIX = {
             ("v1.73.0", ReleaseInfo()),
             ("v1.74.0", ReleaseInfo()),
             ("v1.75.1", ReleaseInfo()),
+            ("v1.76.0", ReleaseInfo()),
         ]
     ),
     "php": OrderedDict(
@@ -1070,6 +1081,7 @@ LANG_RELEASE_MATRIX = {
             ("v1.73.0", ReleaseInfo()),
             ("v1.74.0", ReleaseInfo()),
             ("v1.75.1", ReleaseInfo()),
+            ("v1.76.0", ReleaseInfo()),
         ]
     ),
     "csharp": OrderedDict(

@@ -23,8 +23,8 @@
 #include <grpc/support/time.h>
 
 #include <memory>
-#include <optional>
 #include <string>
+#include <variant>
 
 #include "src/core/call/message.h"
 #include "src/core/call/metadata_batch.h"
@@ -32,10 +32,10 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/call_final_info.h"
 #include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/ref_counted_string.h"
+#include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
@@ -70,15 +70,20 @@ class CallTracerAnnotationInterface {
   enum class AnnotationType {
     kMetadataSizes,
     kHttpTransport,
+    kSendInitialMetadata,
     kDoNotUse_MustBeLast,
   };
 
   // Base class to define a new type of annotation.
   class Annotation {
    public:
+    using ValueType = std::variant<bool, int64_t, double, absl::string_view>;
+
     explicit Annotation(AnnotationType type) : type_(type) {}
     AnnotationType type() const { return type_; }
     virtual std::string ToString() const = 0;
+    virtual void ForEachKeyValue(
+        absl::FunctionRef<void(absl::string_view, ValueType)>) const = 0;
     virtual ~Annotation() = default;
 
    private:
@@ -100,6 +105,22 @@ class CallTracerAnnotationInterface {
   virtual bool IsDelegatingTracer() { return false; }
 };
 
+class SendInitialMetadataAnnotation final
+    : public CallTracerAnnotationInterface::Annotation {
+ public:
+  explicit SendInitialMetadataAnnotation(grpc_metadata_batch* metadata)
+      : Annotation(CallTracerAnnotationInterface::AnnotationType::
+                       kSendInitialMetadata),
+        metadata_(metadata) {}
+  const grpc_metadata_batch* metadata() const { return metadata_; }
+  std::string ToString() const override;
+  void ForEachKeyValue(
+      absl::FunctionRef<void(absl::string_view, ValueType)> f) const override;
+
+ private:
+  const grpc_metadata_batch* metadata_;
+};
+
 // The base class for CallAttemptTracer and ServerCallTracer.
 // TODO(yashykt): What's a better name for this?
 class CallTracerInterface : public CallTracerAnnotationInterface {
@@ -108,6 +129,8 @@ class CallTracerInterface : public CallTracerAnnotationInterface {
   // Please refer to `grpc_transport_stream_op_batch_payload` for details on
   // arguments.
   virtual void RecordSendInitialMetadata(
+      grpc_metadata_batch* send_initial_metadata) = 0;
+  virtual void MutateSendInitialMetadata(
       grpc_metadata_batch* send_initial_metadata) = 0;
   virtual void RecordSendTrailingMetadata(
       grpc_metadata_batch* send_trailing_metadata) = 0;
@@ -282,9 +305,7 @@ class CallTracer : public CallSpan {
   explicit CallTracer(CallTracerInterface* interface)
       : CallSpan(interface), interface_(interface) {}
 
-  void RecordSendInitialMetadata(grpc_metadata_batch* send_initial_metadata) {
-    interface_->RecordSendInitialMetadata(send_initial_metadata);
-  }
+  void RecordSendInitialMetadata(grpc_metadata_batch* send_initial_metadata);
   void RecordSendTrailingMetadata(grpc_metadata_batch* send_trailing_metadata) {
     interface_->RecordSendTrailingMetadata(send_trailing_metadata);
   }

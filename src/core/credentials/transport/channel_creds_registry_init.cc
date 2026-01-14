@@ -23,6 +23,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
+#include <cstddef>
 #include <map>
 #include <memory>
 #include <string>
@@ -93,8 +94,10 @@ class TlsChannelCredsFactory : public ChannelCredsFactory<> {
           config->private_key_file(), config->certificate_file(),
           config->ca_certificate_file(), /*spiffe_bundle_map_file=*/"",
           config->refresh_interval().millis() / GPR_MS_PER_SEC);
-      options->set_root_certificate_provider(provider->Ref());
-      options->set_identity_certificate_provider(provider->Ref());
+      options->set_root_certificate_provider(
+          config->ca_certificate_file().empty() ? nullptr : provider);
+      options->set_identity_certificate_provider(
+          config->certificate_file().empty() ? nullptr : provider);
     }
     options->set_certificate_verifier(
         MakeRefCounted<HostNameCertificateVerifier>());

@@ -424,12 +424,12 @@ InMemoryCertificateProvider::InMemoryCertificateProvider()
                                               bool root_being_watched,
                                               bool identity_being_watched) {
     MutexLock lock(&mu_);
-    absl::StatusOr<std::shared_ptr<RootCertInfo>> roots = nullptr;
+    std::shared_ptr<RootCertInfo> roots = nullptr;
     std::optional<PemKeyCertPairList> pem_key_cert_pairs;
     WatcherInfo& info = watcher_info_[cert_name];
     if (!info.root_being_watched && root_being_watched &&
         root_certificates_.ok() && *root_certificates_ != nullptr) {
-      roots = *root_certificates_;
+      roots = root_certificates_.ok() ? *root_certificates_ : nullptr;
     }
     info.root_being_watched = root_being_watched;
     if (!info.identity_being_watched && identity_being_watched &&
@@ -441,13 +441,12 @@ InMemoryCertificateProvider::InMemoryCertificateProvider()
       watcher_info_.erase(cert_name);
     }
     ExecCtx exec_ctx;
-    if ((roots.ok() && *roots != nullptr) || pem_key_cert_pairs.has_value()) {
-      distributor_->SetKeyMaterials(cert_name, roots.ok() ? *roots : nullptr,
-                                    pem_key_cert_pairs);
+    if (roots != nullptr || pem_key_cert_pairs.has_value()) {
+      distributor_->SetKeyMaterials(cert_name, roots, pem_key_cert_pairs);
     }
     grpc_error_handle root_cert_error;
     grpc_error_handle identity_cert_error;
-    if (root_being_watched && (!roots.ok() || *roots == nullptr)) {
+    if (root_being_watched && roots == nullptr) {
       root_cert_error =
           GRPC_ERROR_CREATE("Unable to get latest root certificates.");
     }

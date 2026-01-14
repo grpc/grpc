@@ -21,6 +21,7 @@
 
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security_constants.h>
+#include <grpc/private_key_signer.h>
 #include <grpc/support/port_platform.h>
 #include <openssl/x509.h>
 
@@ -28,7 +29,6 @@
 #include <string>
 
 #include "src/core/credentials/transport/tls/spiffe_utils.h"
-#include "src/core/tsi/private_key_offload_util.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl_transport_security_utils.h"
 #include "src/core/tsi/transport_security_interface.h"
