@@ -28,7 +28,6 @@ cdef StatusOr[string] async_modify_wrapper(string_view inp, CSignatureAlgorithm 
   cdef PyGILState_STATE gstate
   gstate = PyGILState_Ensure()
   try:
-    # TODO: what's going on with completion_data
     py_result = py_user_func(inp.data().decode('utf-8'), algorithm)
     if isinstance(py_result, str):
       cpp_string = py_result.encode('utf-8')
