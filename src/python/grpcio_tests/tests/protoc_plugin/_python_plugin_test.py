@@ -17,13 +17,13 @@ import contextlib
 import errno
 import itertools
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
 import tempfile
 import threading
 import unittest
-from pathlib import Path
 
 import grpc
 import grpc.experimental
