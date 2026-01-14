@@ -60,8 +60,9 @@ namespace grpc_core {
 inline bool IsBufferListDeletionPrepEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_SEND_INITIAL_METADATA_IS_AN_ANNOTATION
 inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
-  return false;
+  return true;
 }
 inline bool IsChannelzUseV2ForV1ApiEnabled() { return false; }
 inline bool IsChannelzUseV2ForV1ServiceEnabled() { return false; }
@@ -132,8 +133,9 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsBufferListDeletionPrepEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_SEND_INITIAL_METADATA_IS_AN_ANNOTATION
 inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
-  return false;
+  return true;
 }
 inline bool IsChannelzUseV2ForV1ApiEnabled() { return false; }
 inline bool IsChannelzUseV2ForV1ServiceEnabled() { return false; }
@@ -204,8 +206,9 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsBufferListDeletionPrepEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_SEND_INITIAL_METADATA_IS_AN_ANNOTATION
 inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
-  return false;
+  return true;
 }
 inline bool IsChannelzUseV2ForV1ApiEnabled() { return false; }
 inline bool IsChannelzUseV2ForV1ServiceEnabled() { return false; }
