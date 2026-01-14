@@ -202,6 +202,15 @@
    limitations under the License.
 
 -----------------------------------------------------------
+Following applies to:
+./src/objective-c/!ProtoCompiler-gRPCCppPlugin.podspec
+./src/objective-c/!ProtoCompiler-gRPCPlugin.podspec
+./src/objective-c/!ProtoCompiler.podspec
+./src/objective-c/BoringSSL-GRPC.podspec
+./templates/src/objective-c/!ProtoCompiler-gRPCCppPlugin.podspec.inja
+./templates/src/objective-c/!ProtoCompiler-gRPCPlugin.podspec.inja
+./templates/src/objective-c/!ProtoCompiler.podspec.inja
+./templates/src/objective-c/BoringSSL-GRPC.podspec.template
 
 BSD 3-Clause License
 
@@ -234,6 +243,8 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
 
 -----------------------------------------------------------
+Following applies to:
+./etc/roots.pem
 
 Mozilla Public License Version 2.0
 ==================================
