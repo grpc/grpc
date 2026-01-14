@@ -695,8 +695,10 @@ grpc_tls_certificate_provider_in_memory_create();
  *
  * root_certificate can be nullptr, indicating the corresponding credential data
  * is not needed. This function will make a copy of |root_cert|.
+ *
+ * Returns true if the root certificate was successfully updated.
  */
-GRPCAPI void grpc_tls_certificate_provider_in_memory_set_root_certificate(
+GRPCAPI bool grpc_tls_certificate_provider_in_memory_set_root_certificate(
     grpc_tls_certificate_provider* provider, const char* root_cert);
 
 /**
@@ -708,8 +710,10 @@ GRPCAPI void grpc_tls_certificate_provider_in_memory_set_root_certificate(
  * pem_key_cert_pairs can be nullptr, indicating the
  * corresponding credential data is not needed.
  * The ownership of |pem_key_cert_pairs| is transferred.
+ *
+ * Returns true if the identity certificate was successfully updated.
  */
-GRPCAPI void grpc_tls_certificate_provider_in_memory_set_identity_certificate(
+GRPCAPI bool grpc_tls_certificate_provider_in_memory_set_identity_certificate(
     grpc_tls_certificate_provider* provider,
     grpc_tls_identity_pairs* pem_key_cert_pairs);
 

@@ -147,9 +147,8 @@ class GRPCXX_DLL FileWatcherCertificateProvider final
   grpc_tls_certificate_provider* c_provider_ = nullptr;
 };
 
-// A CertificateProviderInterface implementation that will load credential
-// data from in memory location. This provider allows to update the identity and
-// the root certificates independently.
+// "A CertificateProviderInterface implementation that stores credentials
+// in-memory and allows the user to update credentials on-demand.
 class GRPCXX_DLL InMemoryCertificateProvider
     : public CertificateProviderInterface {
  public:
@@ -161,8 +160,10 @@ class GRPCXX_DLL InMemoryCertificateProvider
 
   // TODO(anasalazar): Expose some API for callers to pass in a SPIFFE bundle
   // map for the root cert.
-  void UpdateRoot(const std::string& root_certificate);
-  void UpdateIdentity(
+  // Users should verify the status retuned to confirm that the update was
+  // successful.
+  absl::Status UpdateRoot(const std::string& root_certificate);
+  absl::Status UpdateIdentityKeyCertPair(
       const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs);
 
   // Returns an OK status if the following conditions hold:

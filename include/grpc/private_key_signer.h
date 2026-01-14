@@ -31,16 +31,16 @@
 
 namespace grpc_core {
 
-// A base class for a handle for an async signing operation.
-// Implementations that support async signing will need to define
-// their own concrete implementations.
-class AsyncSigningHandle {
- public:
-  virtual ~AsyncSigningHandle() = default;
-};
-
 class PrivateKeySigner {
  public:
+  // A base class for a handle for an async signing operation.
+  // Implementations that support async signing will need to define
+  // their own concrete implementations.
+  class AsyncSigningHandle {
+   public:
+    virtual ~AsyncSigningHandle() = default;
+  };
+
   // Enum class representing TLS signature algorithm identifiers from BoringSSL.
   // The values correspond to the SSL_SIGN_* macros in <openssl/ssl.h>.
   enum class SignatureAlgorithm {

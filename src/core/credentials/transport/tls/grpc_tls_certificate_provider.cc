@@ -78,7 +78,7 @@ absl::Status ValidateRootCertificates(const RootCertInfo* root_cert_info) {
 }
 
 absl::Status ValidatePemKeyCertPair(absl::string_view cert_chain,
-                                    PrivateKey private_key) {
+                                    const PrivateKey& private_key) {
   if (cert_chain.empty() && IsPrivateKeyEmpty(private_key)) {
     return absl::OkStatus();
   }
@@ -94,7 +94,8 @@ absl::Status ValidatePemKeyCertPair(absl::string_view cert_chain,
   for (X509* x509 : *parsed_certs) {
     X509_free(x509);
   }
-  std::string* private_key_string = std::get_if<std::string>(&private_key);
+  const std::string* private_key_string =
+      std::get_if<std::string>(&private_key);
   if (private_key_string == nullptr) return absl::OkStatus();
   // Check that the private key consists of valid PEM blocks.
   absl::StatusOr<EVP_PKEY*> parsed_private_key =
@@ -424,12 +425,12 @@ InMemoryCertificateProvider::InMemoryCertificateProvider()
                                               bool root_being_watched,
                                               bool identity_being_watched) {
     MutexLock lock(&mu_);
-    std::shared_ptr<RootCertInfo> roots = nullptr;
+    std::shared_ptr<RootCertInfo> roots;
     std::optional<PemKeyCertPairList> pem_key_cert_pairs;
     WatcherInfo& info = watcher_info_[cert_name];
     if (!info.root_being_watched && root_being_watched &&
         root_certificates_.ok() && *root_certificates_ != nullptr) {
-      roots = root_certificates_.ok() ? *root_certificates_ : nullptr;
+      roots = *root_certificates_;
     }
     info.root_being_watched = root_being_watched;
     if (!info.identity_being_watched && identity_being_watched &&
@@ -461,7 +462,7 @@ InMemoryCertificateProvider::InMemoryCertificateProvider()
   });
 }
 
-void InMemoryCertificateProvider::Update(
+absl::Status InMemoryCertificateProvider::Update(
     std::optional<std::shared_ptr<RootCertInfo>> root_cert_info,
     std::optional<const PemKeyCertPairList> pem_key_cert_pairs) {
   MutexLock lock(&mu_);
@@ -513,6 +514,7 @@ void InMemoryCertificateProvider::Update(
       }
     }
   }
+  return absl::OkStatus();
 }
 
 absl::Status InMemoryCertificateProvider::ValidateCredentials() const {
@@ -534,14 +536,14 @@ absl::Status InMemoryCertificateProvider::ValidateCredentials() const {
   return absl::OkStatus();
 }
 
-void InMemoryCertificateProvider::UpdateRoot(
+absl::Status InMemoryCertificateProvider::UpdateRoot(
     std::shared_ptr<RootCertInfo> root_certificates) {
-  Update(root_certificates, std::nullopt);
+  return Update(root_certificates, std::nullopt);
 }
 
-void InMemoryCertificateProvider::UpdateIdentity(
+absl::Status InMemoryCertificateProvider::UpdateIdentityKeyCertPair(
     const PemKeyCertPairList& pem_key_cert_pairs) {
-  Update(std::nullopt, pem_key_cert_pairs);
+  return Update(std::nullopt, pem_key_cert_pairs);
 }
 
 UniqueTypeName InMemoryCertificateProvider::type() const {
@@ -573,14 +575,16 @@ grpc_tls_certificate_provider_in_memory_create() {
   return new grpc_core::InMemoryCertificateProvider();
 }
 
-void grpc_tls_certificate_provider_in_memory_set_root_certificate(
+bool grpc_tls_certificate_provider_in_memory_set_root_certificate(
     grpc_tls_certificate_provider* provider, const char* root_cert) {
   auto in_memory_provider =
       grpc_core::DownCast<grpc_core::InMemoryCertificateProvider*>(provider);
-  in_memory_provider->UpdateRoot(std::make_shared<RootCertInfo>(root_cert));
+  return in_memory_provider
+      ->UpdateRoot(std::make_shared<RootCertInfo>(root_cert))
+      .ok();
 }
 
-void grpc_tls_certificate_provider_in_memory_set_identity_certificate(
+bool grpc_tls_certificate_provider_in_memory_set_identity_certificate(
     grpc_tls_certificate_provider* provider,
     grpc_tls_identity_pairs* pem_key_cert_pairs) {
   grpc_core::PemKeyCertPairList identity_pairs_core;
@@ -590,7 +594,8 @@ void grpc_tls_certificate_provider_in_memory_set_identity_certificate(
   }
   auto in_memory_provider =
       grpc_core::DownCast<grpc_core::InMemoryCertificateProvider*>(provider);
-  in_memory_provider->UpdateIdentity(identity_pairs_core);
+  return in_memory_provider->UpdateIdentityKeyCertPair(identity_pairs_core)
+      .ok();
 }
 
 void grpc_tls_certificate_provider_release(

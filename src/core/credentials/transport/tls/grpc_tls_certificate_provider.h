@@ -189,8 +189,12 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
   UniqueTypeName type() const override;
   absl::Status ValidateCredentials() const;
 
-  void UpdateRoot(std::shared_ptr<RootCertInfo> root_certificates);
-  void UpdateIdentity(const PemKeyCertPairList& pem_key_cert_pairs);
+  // Update the certificate information for this provider.
+  // Users should verify the status retuned to confirm that the update was
+  // successful.
+  absl::Status UpdateRoot(std::shared_ptr<RootCertInfo> root_certificates);
+  absl::Status UpdateIdentityKeyCertPair(
+      const PemKeyCertPairList& pem_key_cert_pairs);
 
  private:
   struct WatcherInfo {
@@ -202,8 +206,9 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
     return QsortCompare(static_cast<const grpc_tls_certificate_provider*>(this),
                         other);
   }
-  void Update(std::optional<std::shared_ptr<RootCertInfo>> root_cert_info,
-              std::optional<const PemKeyCertPairList> pem_key_cert_pairs);
+  absl::Status Update(
+      std::optional<std::shared_ptr<RootCertInfo>> root_cert_info,
+      std::optional<const PemKeyCertPairList> pem_key_cert_pairs);
 
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
 

@@ -98,14 +98,17 @@ InMemoryCertificateProvider::~InMemoryCertificateProvider() {
   grpc_tls_certificate_provider_release(c_provider_);
 };
 
-void InMemoryCertificateProvider::UpdateRoot(
+absl::Status InMemoryCertificateProvider::UpdateRoot(
     const std::string& root_certificate) {
   GRPC_CHECK(!root_certificate.empty());
-  grpc_tls_certificate_provider_in_memory_set_root_certificate(
-      c_provider_, root_certificate.c_str());
+  return grpc_tls_certificate_provider_in_memory_set_root_certificate(
+             c_provider_, root_certificate.c_str())
+             ? absl::OkStatus()
+             : absl::InternalError("Unable to update root certificate");
+  ;
 }
 
-void InMemoryCertificateProvider::UpdateIdentity(
+absl::Status InMemoryCertificateProvider::UpdateIdentityKeyCertPair(
     const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs) {
   GRPC_CHECK(!identity_key_cert_pairs.empty());
   grpc_tls_identity_pairs* pairs_core = grpc_tls_identity_pairs_create();
@@ -122,8 +125,10 @@ void InMemoryCertificateProvider::UpdateIdentity(
               pairs_core, key_signer, pair.certificate_chain.c_str());
         });
   }
-  grpc_tls_certificate_provider_in_memory_set_identity_certificate(c_provider_,
-                                                                   pairs_core);
+  return grpc_tls_certificate_provider_in_memory_set_identity_certificate(
+             c_provider_, pairs_core)
+             ? absl::OkStatus()
+             : absl::InternalError("Unable to update identity certificate");
 }
 
 absl::Status InMemoryCertificateProvider::ValidateCredentials() const {
