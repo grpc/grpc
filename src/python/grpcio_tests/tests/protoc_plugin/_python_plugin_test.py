@@ -745,7 +745,7 @@ class ModuleMainTest(unittest.TestCase):
                 "-I{}".format(os.path.dirname(_PROTO_FILE)),
                 "--python_out={}".format(tmp_dir),
                 "--grpc_python_out={}".format(tmp_dir),
-                Path.new(_PROTO_FILE),
+                _PROTO_FILE,
             ]
 
             env = os.environ.copy()
