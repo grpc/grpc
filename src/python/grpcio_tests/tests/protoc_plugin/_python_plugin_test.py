@@ -41,7 +41,7 @@ SERVICER_IDENTIFIER = "TestServiceServicer"
 ADD_SERVICER_TO_SERVER_IDENTIFIER = "add_TestServiceServicer_to_server"
 
 _DATA_DIR = os.path.dirname(__file__)
-_PROTO_FILE = os.path.join(_DATA_DIR, "service", "simple.proto")
+_PROTO_FILE = os.path.join(_DATA_DIR, "protos", "service", "simple.proto")
 
 
 class _ServicerMethods(object):
@@ -742,7 +742,7 @@ class ModuleMainTest(unittest.TestCase):
                 sys.executable,
                 "-m",
                 "grpc_tools.protoc",
-                "-I{}".format(_DATA_DIR),
+                "-I{}".format(os.path.dirname(_PROTO_FILE)),
                 "--python_out={}".format(tmp_dir),
                 "--grpc_python_out={}".format(tmp_dir),
                 Path.new(_PROTO_FILE),
