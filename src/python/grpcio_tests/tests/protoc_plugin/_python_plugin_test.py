@@ -766,7 +766,5 @@ class ModuleMainTest(unittest.TestCase):
                 sys.path.pop(0)
 
 
-
-
 if __name__ == "__main__":
     unittest.main(verbosity=2)
