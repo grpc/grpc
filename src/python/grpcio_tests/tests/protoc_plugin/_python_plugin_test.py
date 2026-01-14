@@ -726,12 +726,9 @@ class ModuleMainTest(unittest.TestCase):
             proc.wait()
             for stream in streams:
                 stream.seek(0)
-                print("check")
-                data = stream.read()
-                print(data)
-                self.assertEqual(0, len(data))
+                self.assertEqual(0, len(stream.read()))
             self.assertEqual(0, proc.returncode)
-        finally:  # pylint: disable=broad-except
+        finally:
             shutil.rmtree(work_dir)
 
 
