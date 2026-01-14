@@ -157,7 +157,7 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
 
     // Called to create a subchannel.  Subclasses may override.
     virtual RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        const grpc_resolved_address& address,
+        const std::string& address,
         const ChannelArgs& per_address_args, const ChannelArgs& args);
 
     RefCountedPtr<EndpointList> endpoint_list_;

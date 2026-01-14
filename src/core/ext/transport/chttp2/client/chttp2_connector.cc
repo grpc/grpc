@@ -131,15 +131,9 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
   // TCP connect handshaker.
   ChannelArgs channel_args = args_.channel_args;
   if (endpoint == nullptr) {
-    absl::StatusOr<std::string> address = grpc_sockaddr_to_uri(args.address);
-    if (!address.ok()) {
-      grpc_error_handle error = GRPC_ERROR_CREATE(address.status().ToString());
-      NullThenSchedClosure(DEBUG_LOCATION, &notify_, error);
-      return;
-    }
     channel_args =
         channel_args
-            .Set(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS, address.value())
+            .Set(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS, *args.address)
             .Set(GRPC_ARG_TCP_HANDSHAKER_BIND_ENDPOINT_TO_POLLSET, 1);
   }
   handshake_mgr_ = MakeRefCounted<HandshakeManager>();

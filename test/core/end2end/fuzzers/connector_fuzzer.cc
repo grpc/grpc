@@ -122,10 +122,9 @@ class ConnectorFuzzer {
   }
 
   void Run() {
-    grpc_resolved_address addr;
-    CHECK(grpc_parse_uri(URI::Parse("ipv4:127.0.0.1:1234").value(), &addr));
+    const std::string addr = "ipv4:127.0.0.1:1234";
     CHECK_OK(
-        listener_->Bind(URIToResolvedAddress("ipv4:127.0.0.1:1234").value()));
+        listener_->Bind(URIToResolvedAddress(addr).value()));
     CHECK_OK(listener_->Start());
     OrphanablePtr<grpc_endpoint> endpoint(
         mock_endpoint_controller_->TakeCEndpoint());

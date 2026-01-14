@@ -35,8 +35,8 @@ class XdsHttpProxyMapper final : public ProxyMapperInterface {
     return std::nullopt;
   }
 
-  std::optional<grpc_resolved_address> MapAddress(
-      const grpc_resolved_address& address, ChannelArgs* args) override;
+  std::optional<std::string> MapAddress(
+      const std::string& address, ChannelArgs* args) override;
 };
 
 void RegisterXdsHttpProxyMapper(CoreConfiguration::Builder* builder);

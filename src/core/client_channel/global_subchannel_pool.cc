@@ -81,8 +81,7 @@ RefCountedPtr<Subchannel> GlobalSubchannelPool::FindSubchannel(
 }
 
 size_t GlobalSubchannelPool::ShardIndex(const SubchannelKey& key) {
-  absl::string_view addr(key.address().addr, key.address().len);
-  return absl::HashOf(addr) % kShards;
+  return absl::HashOf(key.address()) % kShards;
 }
 
 GlobalSubchannelPool::GlobalSubchannelPool() = default;

@@ -853,12 +853,8 @@ class XdsSniSecurityTest : public XdsEnd2endTest {
       const std::vector<int>& ports) {
     grpc_core::EndpointAddressesList addresses;
     for (int port : ports) {
-      absl::StatusOr<grpc_core::URI> lb_uri =
-          grpc_core::URI::Parse(grpc_core::LocalIpUri(port));
-      GRPC_CHECK_OK(lb_uri);
-      grpc_resolved_address address;
-      GRPC_CHECK(grpc_parse_uri(*lb_uri, &address));
-      addresses.emplace_back(address, grpc_core::ChannelArgs());
+      addresses.emplace_back(grpc_core::LocalIpUri(port),
+                             grpc_core::ChannelArgs());
     }
     return addresses;
   }

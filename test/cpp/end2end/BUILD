@@ -859,6 +859,7 @@ grpc_cc_test(
         "//src/core:grpc_fake_credentials",
         "//src/core:grpc_service_config",
         "//src/core:notification",
+        "//src/core:resolved_address",
         "//src/core:time",
         "//src/proto/grpc/health/v1:health_cc_grpc",
         "//src/proto/grpc/testing:echo_cc_grpc",

@@ -35,7 +35,7 @@ class ClientChannelFactory {
 
   // Creates a subchannel with the specified args.
   virtual RefCountedPtr<Subchannel> CreateSubchannel(
-      const grpc_resolved_address& address, const ChannelArgs& args) = 0;
+      const std::string& address, const ChannelArgs& args) = 0;
 
   static absl::string_view ChannelArgName();
 };

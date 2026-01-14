@@ -38,7 +38,7 @@ class Subchannel;
 // A key that can uniquely identify a subchannel.
 class SubchannelKey final {
  public:
-  SubchannelKey(const grpc_resolved_address& address, const ChannelArgs& args);
+  SubchannelKey(std::string address, const ChannelArgs& args);
 
   SubchannelKey(const SubchannelKey& other) = default;
   SubchannelKey& operator=(const SubchannelKey& other) = default;
@@ -57,14 +57,14 @@ class SubchannelKey final {
 
   int Compare(const SubchannelKey& other) const;
 
-  const grpc_resolved_address& address() const { return address_; }
+  const std::string& address() const { return address_; }
   const ChannelArgs& args() const { return args_; }
 
   // Human-readable string suitable for logging.
   std::string ToString() const;
 
  private:
-  grpc_resolved_address address_;
+  std::string address_;
   ChannelArgs args_;
 };
 

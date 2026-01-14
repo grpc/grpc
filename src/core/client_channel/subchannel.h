@@ -140,7 +140,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // Creates a subchannel.
   static RefCountedPtr<Subchannel> Create(
       OrphanablePtr<SubchannelConnector> connector,
-      const grpc_resolved_address& address, const ChannelArgs& args);
+      const std::string& address, const ChannelArgs& args);
 
   // Throttles keepalive time to \a new_keepalive_time iff \a new_keepalive_time
   // is larger than the subchannel's current keepalive time. The updated value
@@ -232,7 +232,7 @@ class OldSubchannel final : public Subchannel {
   // Creates a subchannel.
   static RefCountedPtr<Subchannel> Create(
       OrphanablePtr<SubchannelConnector> connector,
-      const grpc_resolved_address& address, const ChannelArgs& args);
+      const std::string& address, const ChannelArgs& args);
 
   // The ctor and dtor are not intended to use directly.
   OldSubchannel(SubchannelKey key, OrphanablePtr<SubchannelConnector> connector,
@@ -251,10 +251,7 @@ class OldSubchannel final : public Subchannel {
 
   const ChannelArgs& args() const override { return args_; }
 
-  std::string address() const override {
-    return grpc_sockaddr_to_uri(&key_.address())
-        .value_or("<unknown address type>");
-  }
+  std::string address() const override { return key_.address(); }
 
   // Starts watching the subchannel's connectivity state.
   // The first callback to the watcher will be delivered ~immediately.
@@ -390,7 +387,7 @@ class OldSubchannel final : public Subchannel {
   const bool created_from_endpoint_;
   // Actual address to connect to.  May be different than the address in
   // key_ if overridden by proxy mapper.
-  grpc_resolved_address address_for_connect_;
+  std::string address_for_connect_;
   // Channel args.
   ChannelArgs args_;
   // pollset_set tracking who's interested in a connection being setup.
@@ -447,7 +444,7 @@ class NewSubchannel final : public Subchannel {
   // Creates a subchannel.
   static RefCountedPtr<Subchannel> Create(
       OrphanablePtr<SubchannelConnector> connector,
-      const grpc_resolved_address& address, const ChannelArgs& args);
+      const std::string& address, const ChannelArgs& args);
 
   // The ctor and dtor are not intended to use directly.
   NewSubchannel(SubchannelKey key, OrphanablePtr<SubchannelConnector> connector,
@@ -466,10 +463,7 @@ class NewSubchannel final : public Subchannel {
 
   const ChannelArgs& args() const override { return args_; }
 
-  std::string address() const override {
-    return grpc_sockaddr_to_uri(&key_.address())
-        .value_or("<unknown address type>");
-  }
+  std::string address() const override { return key_.address(); }
 
   // Starts watching the subchannel's connectivity state.
   // The first callback to the watcher will be delivered ~immediately.
@@ -603,7 +597,7 @@ class NewSubchannel final : public Subchannel {
   const bool created_from_endpoint_;
   // Actual address to connect to.  May be different than the address in
   // key_ if overridden by proxy mapper.
-  grpc_resolved_address address_for_connect_;
+  std::string address_for_connect_;
   // Channel args.
   ChannelArgs args_;
   // pollset_set tracking who's interested in a connection being setup.

@@ -27,7 +27,7 @@ namespace endpoint_transport_client_channel_factory_detail {
 class GenericClientChannelFactory : public ClientChannelFactory {
  public:
   RefCountedPtr<Subchannel> CreateSubchannel(
-      const grpc_resolved_address& address, const ChannelArgs& args) override;
+      const std::string& address, const ChannelArgs& args) override;
 
  private:
   virtual OrphanablePtr<SubchannelConnector> MakeConnector() = 0;
