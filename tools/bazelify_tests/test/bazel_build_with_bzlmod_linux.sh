@@ -44,6 +44,13 @@ tools/bazel \
     //test/core/util:directory_reader_test \
     //test/cpp/common:all
 
+tools/bazel \
+    --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
+    build \
+    --ignore_dev_dependency=false \
+    -- \
+    //test/...
+
 # Test if public targets are buildable with openssl and without dev
 # dependencies.
 tools/bazel \
