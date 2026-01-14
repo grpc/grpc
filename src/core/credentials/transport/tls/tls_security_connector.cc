@@ -342,10 +342,20 @@ void TlsChannelSecurityConnector::add_handshakers(
   tsi_handshaker* tsi_hs = nullptr;
   if (client_handshaker_factory_ != nullptr) {
     // Instantiate TSI handshaker.
+    const char* server_name_indication;
+    if (options_->sni_override().has_value()) {
+      if (options_->sni_override()->empty()) {
+        server_name_indication = nullptr;
+      } else {
+        server_name_indication = options_->sni_override()->c_str();
+      }
+    } else {
+      server_name_indication = overridden_target_name_.empty()
+                                   ? target_name_.c_str()
+                                   : overridden_target_name_.c_str();
+    }
     tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
-        client_handshaker_factory_,
-        overridden_target_name_.empty() ? target_name_.c_str()
-                                        : overridden_target_name_.c_str(),
+        client_handshaker_factory_, server_name_indication,
         /*network_bio_buf_size=*/0,
         /*ssl_bio_buf_size=*/0,
         args.GetOwnedString(GRPC_ARG_TRANSPORT_PROTOCOLS), &tsi_hs);

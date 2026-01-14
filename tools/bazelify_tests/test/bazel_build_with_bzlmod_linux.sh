@@ -48,7 +48,9 @@ tools/bazel \
     build \
     --ignore_dev_dependency=false \
     -- \
-    //test/...
+    //test/... \
+    -//test/cpp/ext/... \
+    -//test/cpp/interop/...
 
 # Test if public targets are buildable with openssl and without dev
 # dependencies.
