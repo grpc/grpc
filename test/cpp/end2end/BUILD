@@ -1162,6 +1162,7 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         ":end2end_test_utils",
