@@ -401,8 +401,11 @@ grpc_cc_test(
         "absl/memory",
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    tags = [
+        "cpp_end2end_test",
+    ],
     deps = [
+        ":end2end_test_utils",
         ":interceptors_util",
         ":test_service_impl",
         "//:gpr",
@@ -484,6 +487,7 @@ grpc_cc_test(
         "channelz_test",
     ],
     deps = [
+        ":end2end_test_utils",
         ":test_service_impl",
         "//:gpr",
         "//:grpc",
@@ -533,6 +537,7 @@ grpc_cc_test(
         "no_test_ios",
     ],
     deps = [
+        ":end2end_test_utils",
         ":test_service_impl",
         "//:gpr",
         "//:grpc",
@@ -563,8 +568,11 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    tags = [
+        "cpp_end2end_test",
+    ],
     deps = [
+        ":end2end_test_utils",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
@@ -819,6 +827,7 @@ grpc_cc_test(
     ],  # TODO(jtattermusch): fix test on windows
     deps = [
         ":connection_attempt_injector",
+        ":end2end_test_utils",
         ":test_service_impl",
         "//:backoff",
         "//:config_vars",
@@ -990,6 +999,7 @@ grpc_cc_test(
     ],  # TODO(jtattermusch): fix test on windows
     deps = [
         ":counted_service",
+        ":end2end_test_utils",
         ":test_service_impl",
         "//:config_vars",
         "//:debug_location",
@@ -1039,6 +1049,7 @@ grpc_cc_test(
         "grpc:no-internal-poller",
     ],
     deps = [
+        ":end2end_test_utils",
         ":test_service_impl",
         "//:gpr",
         "//:grpc",
@@ -1152,6 +1163,7 @@ grpc_cc_test(
         "cpp_end2end_test",
     ],
     deps = [
+        ":end2end_test_utils",
         ":interceptors_util",
         ":test_service_impl",
         "//:gpr",
@@ -1181,6 +1193,7 @@ grpc_cc_test(
         "no_windows",
     ],
     deps = [
+        ":end2end_test_utils",
         "//:config_vars",
         "//:gpr",
         "//:grpc",
@@ -1525,10 +1538,16 @@ grpc_cc_test(
         "absl/time",
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    tags = [
+        "cpp_end2end_test",
+    ],
     deps = [
+        ":end2end_test_utils",
+        "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//:grpc++_public_hdrs",
+        "//:grpc_public_hdrs",
         "//:grpcpp_backend_metric_recorder",
         "//:grpcpp_call_metric_recorder",
         "//:grpcpp_orca_service",
