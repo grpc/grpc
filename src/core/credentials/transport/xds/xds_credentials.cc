@@ -24,7 +24,6 @@
 
 #include <optional>
 
-#include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
 #include "src/core/credentials/transport/tls/tls_credentials.h"
 #include "src/core/credentials/transport/tls/tls_utils.h"
@@ -176,11 +175,11 @@ XdsCredentials::create_security_connector(
       auto tls_credentials_options =
           MakeRefCounted<grpc_tls_credentials_options>();
       if (watch_root) {
-        tls_credentials_options->set_root_certificate_provider(
+        tls_credentials_options->set_root_certificates_provider(
             xds_certificate_provider);
       }
       if (watch_identity) {
-        tls_credentials_options->set_identity_certificate_provider(
+        tls_credentials_options->set_identity_credentials_provider(
             xds_certificate_provider);
       }
       tls_credentials_options->set_verify_server_cert(true);
@@ -231,10 +230,10 @@ XdsServerCredentials::create_security_connector(const ChannelArgs& args) {
       xds_certificate_provider->ProvidesIdentityCerts()) {
     auto tls_credentials_options =
         MakeRefCounted<grpc_tls_credentials_options>();
-    tls_credentials_options->set_identity_certificate_provider(
+    tls_credentials_options->set_identity_credentials_provider(
         xds_certificate_provider);
     if (xds_certificate_provider->ProvidesRootCerts()) {
-      tls_credentials_options->set_root_certificate_provider(
+      tls_credentials_options->set_root_certificates_provider(
           xds_certificate_provider);
       tls_credentials_options->set_cert_request_type(
           xds_certificate_provider->require_client_certificate()

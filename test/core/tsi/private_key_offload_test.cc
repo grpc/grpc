@@ -27,7 +27,6 @@
 #include "test/core/tsi/transport_security_test_lib.h"
 #include "gtest/gtest.h"
 #include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
 
 extern "C" {
 #include <openssl/bio.h>

@@ -23,14 +23,12 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
-#include <cstddef>
 #include <map>
 #include <memory>
 #include <string>
 #include <utility>
 
 #include "src/core/config/core_configuration.h"
-#include "src/core/credentials/call/call_credentials.h"
 #include "src/core/credentials/transport/channel_creds_registry.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/credentials/transport/google_default/google_default_credentials.h"  // IWYU pragma: keep
@@ -94,9 +92,9 @@ class TlsChannelCredsFactory : public ChannelCredsFactory<> {
           config->private_key_file(), config->certificate_file(),
           config->ca_certificate_file(), /*spiffe_bundle_map_file=*/"",
           config->refresh_interval().millis() / GPR_MS_PER_SEC);
-      options->set_root_certificate_provider(
+      options->set_root_certificates_provider(
           config->ca_certificate_file().empty() ? nullptr : provider);
-      options->set_identity_certificate_provider(
+      options->set_identity_credentials_provider(
           config->certificate_file().empty() ? nullptr : provider);
     }
     options->set_certificate_verifier(
