@@ -8640,6 +8640,7 @@ targets:
   language: c++
   headers:
   - test/core/event_engine/event_engine_test_utils.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/testing/echo.proto
@@ -8829,6 +8830,7 @@ targets:
   language: c++
   headers:
   - test/core/event_engine/event_engine_test_utils.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/testing/echo.proto
@@ -9247,6 +9249,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/interceptors_util.h
   - test/cpp/end2end/test_service_impl.h
   src:
@@ -9274,6 +9277,7 @@ targets:
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_lb_policies.h
   - test/cpp/end2end/connection_attempt_injector.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   - third_party/protoc-gen-validate/validate/validate.h
   src:
@@ -14674,6 +14678,7 @@ targets:
   headers:
   - test/core/test_util/test_call_creds.h
   - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/lb/v1/load_balancer.proto
@@ -19337,6 +19342,7 @@ targets:
   language: c++
   headers:
   - src/cpp/server/orca/orca_service.h
+  - test/cpp/end2end/end2end_test_utils.h
   src:
   - src/proto/grpc/testing/xds/v3/orca_service.proto
   - third_party/googleapis/google/api/annotations.proto
@@ -21409,6 +21415,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/util/proto_reflection_descriptor_database.h
   src:
@@ -22995,7 +23002,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/cpp/end2end/end2end_test_utils.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
@@ -23014,6 +23022,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/interceptors_util.h
   - test/cpp/end2end/test_service_impl.h
   src:
