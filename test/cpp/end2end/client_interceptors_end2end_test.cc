@@ -1032,6 +1032,7 @@ class ClientInterceptorsStreamingEnd2endTest : public ::testing::Test {
 
 TEST_F(ClientInterceptorsStreamingEnd2endTest, ClientStreamingTest) {
   ChannelArguments args;
+  ApplyCommonChannelArguments(args);
   PhonyInterceptor::Reset();
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
@@ -1124,6 +1125,7 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest,
 
 TEST_F(ClientInterceptorsStreamingEnd2endTest, BidiStreamingHijackingTest) {
   ChannelArguments args;
+  ApplyCommonChannelArguments(args);
   PhonyInterceptor::Reset();
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
@@ -1136,6 +1138,7 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest, BidiStreamingHijackingTest) {
 
 TEST_F(ClientInterceptorsStreamingEnd2endTest, BidiStreamingTest) {
   ChannelArguments args;
+  ApplyCommonChannelArguments(args);
   PhonyInterceptor::Reset();
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
