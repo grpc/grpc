@@ -17,6 +17,10 @@ set -ex
 
 cd "$(dirname "$0")/../../.."
 
+if [ -f generate_artifacts.sh ]; then
+  ./generate_artifacts.sh
+fi
+
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
 export PYTHON=${PYTHON:-python}
 export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
