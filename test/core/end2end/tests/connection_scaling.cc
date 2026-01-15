@@ -182,8 +182,8 @@ CORE_END2END_TEST(Http2SingleHopTests, HonorsMaxConnectionsPerSubchannel) {
   // be sent on the first connection.
   c1.Cancel();
   Expect(102, AnyStatus{});  // First RPC sees status.
-  Expect(901, true);  // Client sees 5th RPC start.
-  Expect(1001, true);  // Server sees 5th RPC.
+  Expect(901, true);         // Client sees 5th RPC start.
+  Expect(1001, true);        // Server sees 5th RPC.
   Step();
   // The 5th RPC should be sent on the first connection.
   EXPECT_EQ(s5.GetPeer(), s1.GetPeer());
