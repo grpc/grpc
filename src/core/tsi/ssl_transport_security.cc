@@ -507,6 +507,8 @@ void PrivateKeyOffloadingContextFree(void* parent, void* ptr,
     grpc_core::PrivateKeySigner* signer = GetPrivateKeySigner(ssl);
     if (signer != nullptr) {
       signer->Cancel(ctx->signing_handle);
+      TlsOffloadSignDoneCallback(
+          ctx, absl::CancelledError("Asynchronous Key Signature cancelled."));
     }
   }
   delete ctx;
@@ -2412,6 +2414,9 @@ static void ssl_handshaker_shutdown(tsi_handshaker* self) {
       offload_context->status ==
           TlsPrivateKeyOffloadContext::kInProgressAsync) {
     sign_function->Cancel(std::move(offload_context->signing_handle));
+    TlsOffloadSignDoneCallback(
+        offload_context,
+        absl::CancelledError("Asynchronous Key Signature cancelled."));
   }
 }
 
