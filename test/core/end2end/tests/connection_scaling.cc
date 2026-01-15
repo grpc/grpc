@@ -90,7 +90,11 @@ CORE_END2END_TEST(Http2SingleHopTests, SubchannelConnectionScaling) {
   auto s4 = RequestCall(801);
   Expect(801, true);
   Step();
-  EXPECT_NE(s1.GetPeer(), s4.GetPeer());
+  // TODO(roth): Due to https://github.com/grpc/grpc/issues/35006, if
+  // the peer is a UDS, it will essentially always be a constant string.
+  // We should either fix that issue or maybe change this test to use
+  // channelz instead.
+  if (s1.GetPeer() != "unix:") EXPECT_NE(s1.GetPeer(), s4.GetPeer());
   // Clean up.
   c1.Cancel();
   c2.Cancel();
@@ -166,7 +170,11 @@ CORE_END2END_TEST(Http2SingleHopTests, HonorsMaxConnectionsPerSubchannel) {
   // Third and fourth RPCs should be on the same connection, which is
   // different from the connection of the first two.
   EXPECT_EQ(s3.GetPeer(), s4.GetPeer());
-  EXPECT_NE(s1.GetPeer(), s3.GetPeer());
+  // TODO(roth): Due to https://github.com/grpc/grpc/issues/35006, if
+  // the peer is a UDS, it will essentially always be a constant string.
+  // We should either fix that issue or maybe change this test to use
+  // channelz instead.
+  if (s1.GetPeer() != "unix:") EXPECT_NE(s1.GetPeer(), s3.GetPeer());
   // Start a 5th RPC, which will be queued.
   auto c5 = NewClientCall("/epsilon").Timeout(Duration::Seconds(1000)).Create();
   c5.NewBatch(901).SendInitialMetadata({});
