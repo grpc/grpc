@@ -17,6 +17,11 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/private_key_signer.h>
+#include <openssl/digest.h>
+#include <openssl/ec.h>
+#include <openssl/evp.h>
+#include <openssl/rsa.h>
+#include <openssl/ssl.h>
 
 #include <memory>
 #include <string>
@@ -27,14 +32,6 @@
 #include "test/core/tsi/transport_security_test_lib.h"
 #include "gtest/gtest.h"
 #include "absl/strings/str_cat.h"
-
-extern "C" {
-#include <openssl/bio.h>
-#include <openssl/crypto.h>
-#include <openssl/evp.h>
-#include <openssl/pem.h>
-#include <openssl/ssl.h>
-}
 
 namespace grpc_core {
 namespace testing {

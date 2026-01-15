@@ -74,7 +74,8 @@ class GRPCXX_DLL StaticDataCertificateProvider
   // Returns an OK status if the following conditions hold:
   // - the root certificates consist of one or more valid PEM blocks, and
   // - every identity key-cert pair has a certificate chain that consists of
-  //   valid PEM blocks and has a private key is a valid PEM block.
+  //   valid PEM blocks and has a private key that is either a valid PEM block
+  //   or a non-null PrivateKeySigner instance.
   absl::Status ValidateCredentials() const;
 
  private:
@@ -139,8 +140,8 @@ class GRPCXX_DLL FileWatcherCertificateProvider final
   // - the currently-loaded root certificates, if any, consist of one or more
   //   valid PEM blocks, and
   // - every currently-loaded identity key-cert pair, if any, has a certificate
-  //   chain that consists of valid PEM blocks and has a private key is a valid
-  //   PEM block.
+  //   chain that consists of valid PEM blocks and has a private key that is
+  //   either a valid PEM block or a non-null PrivateKeySigner instance.
   absl::Status ValidateCredentials() const;
 
  private:
@@ -169,7 +170,8 @@ class GRPCXX_DLL InMemoryCertificateProvider
   // Returns an OK status if the following conditions hold:
   // - the root certificates consist of one or more valid PEM blocks, and
   // - every identity key-cert pair has a certificate chain that consists of
-  //   valid PEM blocks and has a private key is a valid PEM block.
+  //   valid PEM blocks and has a private key that is either a valid PEM block
+  //   or a non-null PrivateKeySigner instance.
   absl::Status ValidateCredentials() const;
 
  private:
