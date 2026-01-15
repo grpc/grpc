@@ -116,6 +116,7 @@ grpc_cc_test(
         "//src/core:wait_for_single_owner",
         "//src/proto/grpc/channelz/v2:channelz_upb_proto",
         "//src/proto/grpc/channelz/v2:channelz_upbdefs_proto",
+        "//src/proto/grpc/channelz/v2:property_list_upb_proto",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:channel_trace_proto_helper",

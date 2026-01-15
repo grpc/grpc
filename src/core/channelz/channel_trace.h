@@ -32,7 +32,6 @@
 #include <type_traits>
 
 #include "src/core/lib/debug/trace_flags.h"
-#include "src/core/util/json/json.h"
 #include "src/core/util/memory_usage.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
@@ -276,10 +275,6 @@ class ChannelTrace {
     return NewNode(
         detail::RendererFromConcatenation(std::forward<Args>(args)...));
   }
-
-  // Creates and returns the raw Json object, so a parent channelz
-  // object may incorporate the json before rendering.
-  Json RenderJson() const;
 
   void ForEachTraceEvent(
       absl::FunctionRef<void(gpr_timespec, std::string)> callback) const

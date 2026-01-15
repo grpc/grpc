@@ -159,7 +159,9 @@ CORE_END2END_TEST(RetryTests, RetryStreaming) {
   EXPECT_FALSE(client_close.was_cancelled());
   EXPECT_NE(channelz_channel, nullptr);
   // TODO(roth): consider using a regex check here.
-  std::string json = channelz_channel->RenderJsonString();
+  char* json_str = grpc_channelz_get_channel(channelz_channel->uuid());
+  std::string json(json_str);
+  gpr_free(json_str);
   EXPECT_THAT(json, HasSubstr("\"trace\""));
   EXPECT_THAT(json, HasSubstr("\"description\":\"Channel created\""));
   EXPECT_THAT(json, HasSubstr("\"severity\":\"CT_INFO\""));

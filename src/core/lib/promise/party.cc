@@ -190,18 +190,6 @@ void Party::SpawnSerializer::Destroy() {
 
 Party::~Party() {}
 
-void Party::ToJson(absl::AnyInvocable<void(Json::Object)> f) {
-  Spawn(
-      "get-json",
-      [f = std::move(f), self = Ref()]() mutable {
-        return [f = std::move(f), self]() mutable {
-          f(self->ChannelzPropertiesLocked().TakeJsonObject());
-          return absl::OkStatus();
-        };
-      },
-      [](absl::Status) {});
-}
-
 void Party::ExportToChannelz(
     std::string name, channelz::DataSink sink,
     absl::AnyInvocable<channelz::PropertyList()> export_context) {

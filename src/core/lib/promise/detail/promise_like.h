@@ -25,8 +25,6 @@
 #include "src/core/util/function_signature.h"
 #include "src/core/util/upb_utils.h"
 #include "src/proto/grpc/channelz/v2/promise.upb.h"
-#include "src/proto/grpc/channelz/v2/promise.upbdefs.h"
-#include "upb/reflection/def.hpp"
 #include "absl/meta/type_traits.h"
 
 // A Promise is a callable object that returns Poll<T> for some T.
@@ -138,18 +136,6 @@ class PromisePropertyValue final : public OtherPropertyValue {
     google_protobuf_Any_set_type_url(
         any,
         StdStringToUpbString("type.googleapis.com/grpc.channelz.v2.Promise"));
-  }
-
-  Json::Object TakeJsonObject() override {
-    upb::DefPool def_pool;
-    auto* def = grpc_channelz_v2_Promise_getmsgdef(def_pool.ptr());
-    size_t length =
-        upb_TextEncode(reinterpret_cast<upb_Message*>(promise_proto_), def,
-                       def_pool.ptr(), 0, nullptr, 0);
-    auto str = std::make_unique<char[]>(length);
-    upb_TextEncode(reinterpret_cast<upb_Message*>(promise_proto_), def,
-                   def_pool.ptr(), 0, str.get(), length);
-    return {{"promise", Json::FromString(std::string(str.get()))}};
   }
 
  private:

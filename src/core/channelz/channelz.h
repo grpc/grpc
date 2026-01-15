@@ -38,7 +38,6 @@
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/dual_ref_counted.h"
-#include "src/core/util/json/json.h"
 #include "src/core/util/per_cpu.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -233,12 +232,8 @@ class BaseNode : public DualRefCounted<BaseNode> {
     return QsortCompare(a, b);
   }
 
-  // All children must implement this function.
-  virtual Json RenderJson() = 0;
-
-  // Renders the json and returns allocated string that must be freed by the
-  // caller.
-  std::string RenderJsonString();
+  // Renders the entity as a textproto string.
+  std::string RenderTextProto();
 
   EntityType type() const { return type_; }
   intptr_t uuid() {
@@ -253,7 +248,6 @@ class BaseNode : public DualRefCounted<BaseNode> {
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine,
       ZTrace::Callback callback);
-  Json::Object AdditionalInfo();
 
   const ChannelTrace& trace() const { return trace_; }
   template <typename... Args>
@@ -268,7 +262,6 @@ class BaseNode : public DualRefCounted<BaseNode> {
   std::string SerializeEntityToString(absl::Duration timeout);
 
  protected:
-  void PopulateJsonFromDataSources(Json::Object& json);
   // V2: Add any node-specific data to the sink.
   // This is information that used to be provided by overloaded RenderJson
   // methods.
@@ -326,12 +319,10 @@ class DataSinkImplementation {
   class Data {
    public:
     virtual ~Data() = default;
-    virtual Json::Object ToJson() = 0;
     virtual void FillProto(google_protobuf_Any* any, upb_Arena* arena) = 0;
   };
 
   void AddData(absl::string_view name, std::unique_ptr<Data> data);
-  Json::Object Finalize(bool timed_out);
   void Finalize(bool timed_out, grpc_channelz_v2_Entity* entity,
                 upb_Arena* arena);
 
@@ -362,12 +353,10 @@ class DataSink {
       : impl_(impl), notification_(std::move(notification)) {}
 
   template <typename T>
-  std::void_t<decltype(std::declval<T>().TakeJsonObject())> AddData(
-      absl::string_view name, T value) {
+  void AddData(absl::string_view name, T value) {
     class DataImpl final : public DataSinkImplementation::Data {
      public:
       explicit DataImpl(T value) : value_(std::move(value)) {}
-      Json::Object ToJson() override { return value_.TakeJsonObject(); }
       void FillProto(google_protobuf_Any* any, upb_Arena* arena) override {
         value_.FillAny(any, arena);
       }
@@ -375,7 +364,8 @@ class DataSink {
      private:
       T value_;
     };
-    AddData(name, std::make_unique<DataImpl>(std::move(value)));
+    AddData(name, std::unique_ptr<DataSinkImplementation::Data>(
+                      std::make_unique<DataImpl>(std::move(value))));
   }
 
  private:
@@ -434,7 +424,6 @@ struct CallCounts {
         gpr_cycle_counter_to_time(last_call_started_cycle));
   }
 
-  void PopulateJson(Json::Object& json) const;
   PropertyList ToPropertyList() const;
 };
 
@@ -518,8 +507,6 @@ class ChannelNode final : public BaseNode {
   static const char* GetChannelConnectivityStateChangeString(
       grpc_connectivity_state state);
 
-  Json RenderJson() override;
-
   // proxy methods to composed classes.
   void SetChannelArgs(const ChannelArgs& channel_args) {
     ChannelArgs to_destroy;
@@ -544,7 +531,6 @@ class ChannelNode final : public BaseNode {
   }
 
  private:
-  void PopulateChildRefs(Json::Object* json);
   void AddNodeSpecificData(DataSink sink) override;
 
   std::string target_;
@@ -576,8 +562,6 @@ class SubchannelNode final : public BaseNode {
 
   // Sets the subchannel's connectivity state without health checking.
   void UpdateConnectivityState(grpc_connectivity_state state);
-
-  Json RenderJson() override;
 
   // proxy methods to composed classes.
   void SetChannelArgs(const ChannelArgs& channel_args) {
@@ -628,8 +612,6 @@ class ServerNode final : public BaseNode {
     }
     BaseNode::Orphaned();
   }
-
-  Json RenderJson() override;
 
   std::string RenderServerSockets(intptr_t start_socket_id,
                                   intptr_t max_results);
@@ -683,15 +665,13 @@ class SocketNode final : public BaseNode {
       std::string local_certificate;
       std::string remote_certificate;
 
-      Json RenderJson();
       PropertyList ToPropertyList() const;
     };
     enum class ModelType { kUnset = 0, kTls = 1, kOther = 2 };
     ModelType type = ModelType::kUnset;
     std::optional<Tls> tls;
-    std::optional<Json> other;
+    std::optional<std::string> other;
 
-    Json RenderJson();
     PropertyList ToPropertyList() const;
 
     static absl::string_view ChannelArgName() {
@@ -706,8 +686,6 @@ class SocketNode final : public BaseNode {
   SocketNode(std::string local, std::string remote, std::string name,
              RefCountedPtr<Security> security);
   ~SocketNode() override {}
-
-  Json RenderJson() override;
 
   void RecordStreamStartedFromLocal();
   void RecordStreamStartedFromRemote();
@@ -792,8 +770,6 @@ class ListenSocketNode final : public BaseNode {
   ListenSocketNode(std::string local_addr, std::string name);
   ~ListenSocketNode() override {}
 
-  Json RenderJson() override;
-
  private:
   void AddNodeSpecificData(DataSink sink) override;
 
@@ -805,8 +781,6 @@ class CallNode final : public BaseNode {
   explicit CallNode() : BaseNode(EntityType::kCall, 0, std::string()) {
     NodeConstructed();
   }
-
-  Json RenderJson() override;
 };
 
 class ResourceQuotaNode final : public BaseNode {
@@ -815,8 +789,6 @@ class ResourceQuotaNode final : public BaseNode {
       : BaseNode(EntityType::kResourceQuota, 0, std::move(name)) {
     NodeConstructed();
   }
-
-  Json RenderJson() override { return Json::FromString("ResourceQuota"); }
 };
 
 class MetricsDomainNode final : public BaseNode {
@@ -825,8 +797,6 @@ class MetricsDomainNode final : public BaseNode {
       : BaseNode(EntityType::kMetricsDomain, 0, std::move(name)) {
     NodeConstructed();
   }
-
-  Json RenderJson() override { return Json::FromString("MetricsDomain"); }
 };
 
 class MetricsDomainStorageNode final : public BaseNode {
@@ -834,10 +804,6 @@ class MetricsDomainStorageNode final : public BaseNode {
   explicit MetricsDomainStorageNode(std::string name)
       : BaseNode(EntityType::kMetricsDomainStorage, 0, std::move(name)) {
     NodeConstructed();
-  }
-
-  Json RenderJson() override {
-    return Json::FromString("MetricsDomainStorage");
   }
 };
 

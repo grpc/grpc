@@ -288,6 +288,8 @@ grpc_cc_library(
         "absl/strings:str_format",
         "absl/container:flat_hash_map",
         "absl/time",
+        "@com_google_protobuf//upb/json",
+        "@com_google_protobuf//upb/reflection",
     ],
     visibility = ["//bazel:latent_see"],
     deps = [
@@ -298,6 +300,8 @@ grpc_cc_library(
         "notification",
         "sync",
         "//:backoff",
+        "//:channelz_property_list_upb",
+        "//:channelz_property_list_upbdefs",
         "//:gpr",
     ],
 )

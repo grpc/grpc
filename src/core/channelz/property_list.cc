@@ -35,34 +35,6 @@ size_t GetIndex(std::vector<std::string>& vec, absl::string_view value) {
   }
 }
 
-Json ToJson(const PropertyValue& value) {
-  return Match(
-      value,
-      [](absl::string_view v) { return Json::FromString(std::string(v)); },
-      [](const std::string& v) { return Json::FromString(v); },
-      [](int64_t v) { return Json::FromNumber(v); },
-      [](uint64_t v) { return Json::FromNumber(v); },
-      [](double v) { return Json::FromNumber(v); },
-      [](bool v) { return Json::FromBool(v); },
-      [](Duration v) { return Json::FromString(v.ToJsonString()); },
-      [](Timestamp v) {
-        return Json::FromString(
-            gpr_format_timespec(v.as_timespec(GPR_CLOCK_REALTIME)));
-      },
-      [](absl::Time v) {
-        gpr_timespec ts;
-        ts.clock_type = GPR_CLOCK_REALTIME;
-        auto osts = absl::ToTimespec(v);
-        ts.tv_sec = osts.tv_sec;
-        ts.tv_nsec = osts.tv_nsec;
-        return Json::FromString(gpr_format_timespec(ts));
-      },
-      [](absl::Status v) { return Json::FromString(v.ToString()); },
-      [](std::shared_ptr<OtherPropertyValue> v) {
-        return Json::FromObject(v->TakeJsonObject());
-      });
-}
-
 void FillUpbValue(const PropertyValue& value,
                   grpc_channelz_v2_PropertyValue* proto, upb_Arena* arena) {
   Match(
@@ -148,14 +120,6 @@ PropertyList& PropertyList::Merge(PropertyList other) {
   return *this;
 }
 
-Json::Object PropertyList::TakeJsonObject() {
-  Json::Object json;
-  for (auto& [key, value] : property_list_) {
-    json.emplace(std::string(key), ToJson(value));
-  }
-  return json;
-}
-
 void PropertyList::FillUpbProto(grpc_channelz_v2_PropertyList* proto,
                                 upb_Arena* arena) {
   auto* elements = grpc_channelz_v2_PropertyList_resize_properties(
@@ -182,34 +146,6 @@ void PropertyList::FillAny(google_protobuf_Any* any, upb_Arena* arena) {
   google_protobuf_Any_set_type_url(
       any, StdStringToUpbString(
                "type.googleapis.com/grpc.channelz.v2.PropertyList"));
-}
-
-Json::Object PropertyGrid::TakeJsonObject() {
-  Json::Object json;
-  Json::Array columns;
-  for (auto& c : columns_) {
-    columns.emplace_back(Json::FromString(std::string(c)));
-  }
-  json.emplace("columns", Json::FromArray(std::move(columns)));
-  Json::Array rows;
-  for (size_t r = 0; r < rows_.size(); ++r) {
-    Json::Object row;
-    row.emplace("name", Json::FromString(std::string(rows_[r])));
-    Json::Array cells;
-    cells.reserve(columns_.size());
-    for (size_t c = 0; c < columns_.size(); ++c) {
-      auto it = grid_.find(std::pair(c, r));
-      if (it != grid_.end()) {
-        cells.emplace_back(ToJson(it->second));
-      } else {
-        cells.emplace_back(Json());
-      }
-    }
-    row.emplace("cells", Json::FromArray(std::move(cells)));
-    rows.emplace_back(Json::FromObject(std::move(row)));
-  }
-  json.emplace("rows", Json::FromArray(std::move(rows)));
-  return json;
 }
 
 void PropertyGrid::FillUpbProto(grpc_channelz_v2_PropertyGrid* proto,
@@ -282,31 +218,6 @@ PropertyGrid& PropertyGrid::SetRow(absl::string_view row, PropertyList values) {
                   std::move(value));
   }
   return *this;
-}
-
-Json::Object PropertyTable::TakeJsonObject() {
-  Json::Object json;
-  Json::Array columns;
-  for (auto& c : columns_) {
-    columns.emplace_back(Json::FromString(std::string(c)));
-  }
-  json.emplace("columns", Json::FromArray(std::move(columns)));
-  Json::Array rows;
-  for (size_t r = 0; r < num_rows_; ++r) {
-    Json::Array cells;
-    cells.reserve(columns_.size());
-    for (size_t c = 0; c < columns_.size(); ++c) {
-      auto it = grid_.find(std::pair(c, r));
-      if (it != grid_.end()) {
-        cells.emplace_back(ToJson(it->second));
-      } else {
-        cells.emplace_back(Json());
-      }
-    }
-    rows.emplace_back(Json::FromArray(std::move(cells)));
-  }
-  json.emplace("rows", Json::FromArray(std::move(rows)));
-  return json;
 }
 
 void PropertyTable::SetInternal(absl::string_view column, size_t row,

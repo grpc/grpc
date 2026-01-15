@@ -21,18 +21,17 @@
 #include <vector>
 
 #include "google/protobuf/any.upb.h"
-#include "src/core/util/json/json.h"
 #include "src/core/util/string.h"
 #include "src/core/util/time.h"
 #include "src/core/util/upb_utils.h"
 #include "src/proto/grpc/channelz/v2/channelz.upb.h"
 #include "src/proto/grpc/channelz/v2/property_list.upb.h"
-#include "upb/mem/arena.h"
-#include "upb/text/encode.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
+#include "upb/mem/arena.h"
+#include "upb/text/encode.h"
 
 namespace grpc_core::channelz {
 
@@ -40,7 +39,6 @@ class OtherPropertyValue {
  public:
   virtual ~OtherPropertyValue() = default;
   virtual void FillAny(google_protobuf_Any* any, upb_Arena* arena) = 0;
-  virtual Json::Object TakeJsonObject() = 0;
 };
 
 using PropertyValue =
@@ -141,8 +139,6 @@ class PropertyList final : public OtherPropertyValue {
 
   bool empty() const { return property_list_.empty(); }
 
-  // TODO(ctiller): remove soon, switch to just FillUpbProto.
-  Json::Object TakeJsonObject() override;
   void FillUpbProto(grpc_channelz_v2_PropertyList* proto, upb_Arena* arena);
   void FillAny(google_protobuf_Any* any, upb_Arena* arena) override;
 
@@ -169,7 +165,6 @@ class PropertyGrid final : public OtherPropertyValue {
   PropertyGrid& SetColumn(absl::string_view column, PropertyList values);
   PropertyGrid& SetRow(absl::string_view row, PropertyList values);
 
-  Json::Object TakeJsonObject() override;
   void FillUpbProto(grpc_channelz_v2_PropertyGrid* proto, upb_Arena* arena);
   void FillAny(google_protobuf_Any* any, upb_Arena* arena) override;
 
@@ -197,7 +192,6 @@ class PropertyTable final : public OtherPropertyValue {
     return SetRow(num_rows_, std::move(values));
   }
 
-  Json::Object TakeJsonObject() override;
   void FillUpbProto(grpc_channelz_v2_PropertyTable* proto, upb_Arena* arena);
   void FillAny(google_protobuf_Any* any, upb_Arena* arena) override;
 

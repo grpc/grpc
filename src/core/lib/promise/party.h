@@ -388,11 +388,6 @@ class Party : public Activity, private Wakeable {
     return serializer;
   }
 
-  // Convert the party to a JSON object for visualization.
-  // This is an async operation because the party cannot be locked
-  // synchronously.
-  void ToJson(absl::AnyInvocable<void(Json::Object)>);
-
   // Export the party to channelz.
   // The final argument is called whilst the party is locked, and so can be used
   // to export contextual data alongside the party.
