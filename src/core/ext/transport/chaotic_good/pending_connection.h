@@ -17,6 +17,7 @@
 
 #include <string>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/util/dual_ref_counted.h"
@@ -50,7 +51,8 @@ class PendingConnection {
 class ServerConnectionFactory : public DualRefCounted<ServerConnectionFactory> {
  public:
   using DualRefCounted::DualRefCounted;
-  virtual PendingConnection RequestDataConnection() = 0;
+  virtual PendingConnection RequestDataConnection(
+      const ChannelArgs& handshake_result_args) = 0;
 };
 
 class ClientConnectionFactory : public DualRefCounted<ClientConnectionFactory> {
