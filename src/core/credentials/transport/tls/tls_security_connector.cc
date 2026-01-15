@@ -39,6 +39,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/transport/auth_context.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
@@ -293,11 +294,11 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
   auto root_watcher_ptr = std::make_unique<TlsChannelCertificateWatcher>(this);
   root_certificate_watcher_ = root_watcher_ptr.get();
   identity_certificate_watcher_ = identity_watcher_ptr.get();
-  std::optional<std::string> watched_root_cert_name;
-  bool watch_root_certs = options_->root_certificates_distributor() != nullptr;
+  bool watch_root_cert = options_->root_certificates_distributor() != nullptr;
   bool watch_identity_cert =
       options_->identity_credentials_distributor() != nullptr;
-  if (watch_root_certs) {
+  std::optional<std::string> watched_root_cert_name;
+  if (watch_root_cert) {
     watched_root_cert_name = options_->root_cert_name();
   }
   std::optional<std::string> watched_identity_cert_name;
@@ -310,11 +311,11 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
   // certs" is a valid case(and hence we will need to call
   // OnCertificatesChanged), but it requires nothing from the provider, and
   // hence no need to register the watcher.
-  if (!watch_identity_cert && !watch_identity_cert) {
+  if (!watch_root_cert && !watch_identity_cert) {
     root_certificate_watcher_->OnCertificatesChanged(nullptr, std::nullopt);
     identity_certificate_watcher_->OnCertificatesChanged(nullptr, std::nullopt);
   } else {
-    if (watch_root_certs) {
+    if (watch_root_cert) {
       options_->root_certificates_distributor()->WatchTlsCertificates(
           std::move(root_watcher_ptr), watched_root_cert_name,
           watched_identity_cert_name);
@@ -604,11 +605,11 @@ TlsServerSecurityConnector::TlsServerSecurityConnector(
       std::make_unique<TlsServerCertificateWatcher>(this);
   root_certificate_watcher_ = root_watcher_ptr.get();
   identity_certificate_watcher_ = identity_watcher_ptr.get();
-  bool watch_root_certs = options_->root_certificates_distributor() != nullptr;
+  bool watch_root_cert = options_->root_certificates_distributor() != nullptr;
   bool watch_identity_cert =
       options_->identity_credentials_distributor() != nullptr;
   std::optional<std::string> watched_root_cert_name;
-  if (watch_root_certs) {
+  if (watch_root_cert) {
     watched_root_cert_name = options_->root_cert_name();
   }
   std::optional<std::string> watched_identity_cert_name;
@@ -616,8 +617,7 @@ TlsServerSecurityConnector::TlsServerSecurityConnector(
     watched_identity_cert_name = options_->identity_cert_name();
   }
   // Register the watcher with the distributor.
-  // Server side won't use default system roots at any time.
-  if (watch_root_certs) {
+  if (watch_root_cert) {
     options_->root_certificates_distributor()->WatchTlsCertificates(
         std::move(root_watcher_ptr), watched_root_cert_name,
         watched_identity_cert_name);
