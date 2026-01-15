@@ -19,7 +19,6 @@
 #include "src/core/channelz/channel_trace.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/json.h>
 #include <grpc/support/port_platform.h>
 
 #include <atomic>
@@ -36,8 +35,8 @@
 #include "src/core/util/time.h"
 #include "src/core/util/upb_utils.h"
 #include "src/proto/grpc/channelz/v2/channelz.upb.h"
-#include "upb/base/string_view.h"
 #include "absl/strings/str_cat.h"
+#include "upb/base/string_view.h"
 
 namespace grpc_core {
 namespace channelz {
@@ -45,30 +44,6 @@ namespace channelz {
 //
 // ChannelTrace
 //
-
-Json ChannelTrace::RenderJson() const {
-  if (max_memory_ == 0) return Json();
-  Json::Array array;
-  MutexLock lock(&mu_);
-  ForEachTraceEventLocked([&array](gpr_timespec timestamp, std::string line) {
-    Json::Object object = {
-        {"severity", Json::FromString("CT_INFO")},
-        {"timestamp", Json::FromString(gpr_format_timespec(timestamp))},
-        {"description", Json::FromString(std::move(line))},
-    };
-    array.push_back(Json::FromObject(std::move(object)));
-  });
-  Json::Object object;
-  object["creationTimestamp"] = Json::FromString(creation_timestamp());
-  if (num_events_logged_ > 0) {
-    object["numEventsLogged"] =
-        Json::FromString(absl::StrCat(num_events_logged_));
-  }
-  if (!array.empty()) {
-    object["events"] = Json::FromArray(std::move(array));
-  }
-  return Json::FromObject(std::move(object));
-}
 
 std::string ChannelTrace::creation_timestamp() const {
   return gpr_format_timespec(time_created_.as_timespec(GPR_CLOCK_REALTIME));

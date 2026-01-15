@@ -57,16 +57,6 @@
   expiry: 2026/06/01
   owner: ctiller@google.com
   test_tags: []
-- name: channelz_use_v2_for_v1_api
-  description: Use the v2 channelz API for the v1 channelz API.
-  expiry: 2026/02/01
-  owner: ctiller@google.com
-  test_tags: [channelz_test]
-- name: channelz_use_v2_for_v1_service
-  description: Use the v2 channelz service for the v1 channelz service.
-  expiry: 2026/02/01
-  owner: ctiller@google.com
-  test_tags: [channelz_test]
 - name: chaotic_good_connect_deadline
   description: Use the deadline from the connect args in chaotic good connector
   expiry: 2026/02/01

@@ -53,13 +53,14 @@
 #include "src/core/util/wait_for_single_owner.h"
 #include "src/proto/grpc/channelz/v2/channelz.upb.h"
 #include "src/proto/grpc/channelz/v2/channelz.upbdefs.h"
+#include "src/proto/grpc/channelz/v2/property_list.upb.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/channel_trace_proto_helper.h"
-#include "upb/mem/arena.hpp"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "upb/mem/arena.hpp"
 
 using grpc_event_engine::experimental::GetDefaultEventEngine;
 
@@ -255,26 +256,28 @@ void ValidateCounters(const std::string& json_str,
 
 void ValidateChannel(ChannelNode* channel,
                      const ValidateChannelDataArgs& args) {
-  std::string json_str = channel->RenderJsonString();
-  grpc::testing::ValidateChannelProtoJsonTranslation(
-      v2tov1::StripAdditionalInfoFromJson(json_str).c_str());
-  ValidateCounters(json_str, args);
   // also check that the core API formats this the correct way
   char* core_api_json_str = grpc_channelz_get_channel(channel->uuid());
   grpc::testing::ValidateGetChannelResponseProtoJsonTranslation(
       core_api_json_str);
+  auto json = JsonParse(core_api_json_str);
+  ASSERT_TRUE(json.ok()) << json.status();
+  auto it = json->object().find("channel");
+  ASSERT_NE(it, json->object().end());
+  ValidateCounters(JsonDump(it->second), args);
   gpr_free(core_api_json_str);
 }
 
 void ValidateServer(ServerNode* server, const ValidateChannelDataArgs& args) {
-  std::string json_str = server->RenderJsonString();
-  grpc::testing::ValidateServerProtoJsonTranslation(
-      v2tov1::StripAdditionalInfoFromJson(json_str).c_str());
-  ValidateCounters(json_str, args);
   // also check that the core API formats this the correct way
   char* core_api_json_str = grpc_channelz_get_server(server->uuid());
   grpc::testing::ValidateGetServerResponseProtoJsonTranslation(
       core_api_json_str);
+  auto json = JsonParse(core_api_json_str);
+  ASSERT_TRUE(json.ok()) << json.status();
+  auto it = json->object().find("server");
+  ASSERT_NE(it, json->object().end());
+  ValidateCounters(JsonDump(it->second), args);
   gpr_free(core_api_json_str);
 }
 
@@ -365,36 +368,34 @@ TEST_P(ChannelzChannelTest, BasicDataSource) {
   ChannelFixture channel(GetParam());
   ChannelNode* channelz_channel =
       grpc_channel_get_channelz_node(channel.channel());
+  // Helper to find data
+  auto find_test_data = [](grpc_channelz_v2_Entity* entity) -> bool {
+    size_t size;
+    const grpc_channelz_v2_Data* const* data =
+        grpc_channelz_v2_Entity_data(entity, &size);
+    for (size_t i = 0; i < size; ++i) {
+      if (UpbStringToStdString(grpc_channelz_v2_Data_name(data[i])) ==
+          "testData") {
+        return true;
+      }
+    }
+    return false;
+  };
   {
     TestDataSource data_source(channelz_channel->Ref());
-    Json json = channelz_channel->RenderJson();
-    ASSERT_EQ(json.type(), Json::Type::kObject);
-    const Json::Object& object = json.object();
-    auto it_additional_info = object.find("additionalInfo");
-    ASSERT_NE(it_additional_info, object.end());
-    ASSERT_EQ(it_additional_info->second.type(), Json::Type::kObject);
-    const Json::Object& additional_info = it_additional_info->second.object();
-    auto it_test_data = additional_info.find("testData");
-    ASSERT_NE(it_test_data, additional_info.end());
-    ASSERT_EQ(it_test_data->second.type(), Json::Type::kObject);
-    const Json::Object& test_data = it_test_data->second.object();
-    auto it = test_data.find("test");
-    ASSERT_NE(it, test_data.end());
-    ASSERT_EQ(it->second.type(), Json::Type::kString);
-    EXPECT_EQ(it->second.string(), "yes");
+    upb_Arena* arena = upb_Arena_New();
+    grpc_channelz_v2_Entity* entity = grpc_channelz_v2_Entity_new(arena);
+    channelz_channel->SerializeEntity(entity, arena, absl::Milliseconds(100));
+    EXPECT_TRUE(find_test_data(entity));
+    upb_Arena_Free(arena);
   }
   // Render again without the data source
   {
-    Json json = channelz_channel->RenderJson();
-    ASSERT_EQ(json.type(), Json::Type::kObject);
-    const Json::Object& object = json.object();
-    auto it = object.find("additionalInfo");
-    if (it != object.end()) {
-      ASSERT_EQ(it->second.type(), Json::Type::kObject);
-      const Json::Object& additional_info = it->second.object();
-      auto it_test_data = additional_info.find("testData");
-      EXPECT_EQ(it_test_data, additional_info.end());
-    }
+    upb_Arena* arena = upb_Arena_New();
+    grpc_channelz_v2_Entity* entity = grpc_channelz_v2_Entity_new(arena);
+    channelz_channel->SerializeEntity(entity, arena, absl::Milliseconds(100));
+    EXPECT_FALSE(find_test_data(entity));
+    upb_Arena_Free(arena);
   }
 }
 

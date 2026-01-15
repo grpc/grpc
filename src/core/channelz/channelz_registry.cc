@@ -61,8 +61,8 @@ ChannelzRegistry::InternalGetAllEntities() {
 
 void ChannelzRegistry::InternalLogAllEntities() {
   for (const auto& p : InternalGetAllEntities()) {
-    std::string json = p->RenderJsonString();
-    LOG(INFO) << json;
+    std::string text = p->RenderTextProto();
+    LOG(INFO) << text;
   }
 }
 

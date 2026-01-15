@@ -81,7 +81,9 @@ CORE_END2END_TEST(CoreEnd2endTests, Channelz) {
       Server::FromC(server())->channelz_node();
   ASSERT_NE(channelz_server, nullptr);
 
-  std::string json = channelz_channel->RenderJsonString();
+  char* json_str = grpc_channelz_get_channel(channelz_channel->uuid());
+  std::string json(json_str);
+  gpr_free(json_str);
   // nothing is present yet
   EXPECT_THAT(json, Not(HasSubstr("\"callsStarted\"")));
   EXPECT_THAT(json, Not(HasSubstr("\"callsFailed\"")));
@@ -90,14 +92,18 @@ CORE_END2END_TEST(CoreEnd2endTests, Channelz) {
   // one successful request
   RunOneRequest(*this, true);
 
-  json = channelz_channel->RenderJsonString();
+  json_str = grpc_channelz_get_channel(channelz_channel->uuid());
+  json = json_str;
+  gpr_free(json_str);
   EXPECT_THAT(json, HasSubstr("\"callsStarted\":\"1\""));
   EXPECT_THAT(json, HasSubstr("\"callsSucceeded\":\"1\""));
 
   // one failed request
   RunOneRequest(*this, false);
 
-  json = channelz_channel->RenderJsonString();
+  json_str = grpc_channelz_get_channel(channelz_channel->uuid());
+  json = json_str;
+  gpr_free(json_str);
   EXPECT_THAT(json, HasSubstr("\"callsStarted\":\"2\""));
   EXPECT_THAT(json, HasSubstr("\"callsFailed\":\"1\""));
   EXPECT_THAT(json, HasSubstr("\"callsSucceeded\":\"1\""));
@@ -106,7 +112,9 @@ CORE_END2END_TEST(CoreEnd2endTests, Channelz) {
   EXPECT_THAT(json, Not(HasSubstr("\"description\":\"Channel created\"")));
   EXPECT_THAT(json, Not(HasSubstr("\"severity\":\"CT_INFO\"")));
 
-  json = channelz_server->RenderJsonString();
+  json_str = grpc_channelz_get_server(channelz_server->uuid());
+  json = json_str;
+  gpr_free(json_str);
   EXPECT_THAT(json, HasSubstr("\"callsStarted\":\"2\""));
   EXPECT_THAT(json, HasSubstr("\"callsFailed\":\"1\""));
   EXPECT_THAT(json, HasSubstr("\"callsSucceeded\":\"1\""));
@@ -115,7 +123,9 @@ CORE_END2END_TEST(CoreEnd2endTests, Channelz) {
   EXPECT_THAT(json, Not(HasSubstr("\"description\":\"Channel created\"")));
   EXPECT_THAT(json, Not(HasSubstr("\"severity\":\"CT_INFO\"")));
 
-  json = channelz_server->RenderServerSockets(0, 100);
+  json_str = grpc_channelz_get_server_sockets(channelz_server->uuid(), 0, 100);
+  json = json_str;
+  gpr_free(json_str);
   EXPECT_THAT(json, HasSubstr("\"end\":true"));
 }
 
@@ -140,12 +150,16 @@ CORE_END2END_TEST(CoreEnd2endTests, ChannelzWithChannelTrace) {
 
   RunOneRequest(*this, true);
 
-  std::string json = channelz_channel->RenderJsonString();
+  char* json_str = grpc_channelz_get_channel(channelz_channel->uuid());
+  std::string json(json_str);
+  gpr_free(json_str);
   EXPECT_THAT(json, HasSubstr("\"trace\""));
   EXPECT_THAT(json, HasSubstr("\"description\":\"Channel created\""));
   EXPECT_THAT(json, HasSubstr("\"severity\":\"CT_INFO\""));
 
-  json = channelz_server->RenderJsonString();
+  json_str = grpc_channelz_get_server(channelz_server->uuid());
+  json = json_str;
+  gpr_free(json_str);
   EXPECT_THAT(json, HasSubstr("\"trace\""));
   EXPECT_THAT(json, HasSubstr("\"description\":\"Server created\""));
   EXPECT_THAT(json, HasSubstr("\"severity\":\"CT_INFO\""));

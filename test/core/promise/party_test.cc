@@ -1197,19 +1197,6 @@ TEST_F(PartyTest, SpawnSerializerSerializes) {
   thd.join();
 }
 
-TEST_F(PartyTest, SimpleJson) {
-  auto party = MakeParty();
-  Notification notification;
-  party->ToJson([&](Json::Object json) {
-    LOG(INFO) << "json: " << JsonDump(Json::FromObject(json));
-    int refs;
-    ASSERT_TRUE(absl::SimpleAtoi(json["ref_count"].string(), &refs));
-    EXPECT_GE(refs, 1);
-    notification.Notify();
-  });
-  notification.WaitForNotification();
-}
-
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

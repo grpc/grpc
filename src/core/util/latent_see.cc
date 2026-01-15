@@ -27,8 +27,12 @@
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/sync.h"
+#include "src/proto/grpc/channelz/v2/property_list.upb.h"
+#include "src/proto/grpc/channelz/v2/property_list.upbdefs.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
+#include "upb/json/encode.h"
+#include "upb/reflection/def.hpp"
 
 namespace grpc_core::latent_see {
 
@@ -44,11 +48,22 @@ std::string JsonOutput::MicrosString(int64_t nanos) {
 
 void JsonOutput::Mark(absl::string_view name, int64_t tid, int64_t timestamp,
                       channelz::PropertyList property_list) {
-  auto properties_json = Json::FromObject(property_list.TakeJsonObject());
+  upb::DefPool def_pool;
+  upb_Arena* arena = upb_Arena_New();
+  auto* proto = grpc_channelz_v2_PropertyList_new(arena);
+  property_list.FillUpbProto(proto, arena);
+  auto* def = grpc_channelz_v2_PropertyList_getmsgdef(def_pool.ptr());
+  size_t size = upb_JsonEncode(reinterpret_cast<const upb_Message*>(proto), def,
+                               def_pool.ptr(), 0, nullptr, 0, nullptr);
+  std::vector<char> json_buf(size + 1);
+  upb_JsonEncode(reinterpret_cast<const upb_Message*>(proto), def,
+                 def_pool.ptr(), 0, json_buf.data(), size + 1, nullptr);
+  upb_Arena_Free(arena);
   out_ << absl::StrCat(sep_, "{\"name\":\"", name,
                        "\",\"ph\":\"i\",\"ts\":", MicrosString(timestamp),
                        ",\"pid\":0,\"tid\":", tid,
-                       ",\"args\":", JsonDump(properties_json), "}");
+                       ",\"args\":", absl::string_view(json_buf.data(), size),
+                       "}");
   sep_ = ",\n";
 }
 

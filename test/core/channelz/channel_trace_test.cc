@@ -29,159 +29,43 @@
 #include <string>
 #include <thread>
 
-#include "src/core/util/json/json.h"
-#include "src/core/util/json/json_writer.h"
 #include "src/core/util/upb_utils.h"
 #include "src/proto/grpc/channelz/v2/channelz.upb.h"
 #include "test/core/test_util/test_config.h"
-#include "test/cpp/util/channel_trace_proto_helper.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/synchronization/notification.h"
 
 namespace grpc_core {
-
-template <typename Sink>
-void AbslStringify(Sink& sink, const Json& json) {
-  sink.Append(JsonDump(json));
-}
-
-std::ostream& operator<<(std::ostream& os, const Json& json) {
-  return os << JsonDump(json);
-}
-
 namespace channelz {
 namespace testing {
 
-namespace {
-
-MATCHER_P(IsJsonString, expected, "is JSON string") {
-  if (!::testing::ExplainMatchResult(Json::Type::kString, arg.type(),
-                                     result_listener)) {
-    return false;
-  }
-  return ::testing::ExplainMatchResult(expected, arg.string(), result_listener);
-}
-
-MATCHER_P(IsJsonStringNumber, expected, "is JSON string containing number") {
-  if (!::testing::ExplainMatchResult(Json::Type::kString, arg.type(),
-                                     result_listener)) {
-    return false;
-  }
-  int actual;
-  if (!absl::SimpleAtoi(arg.string(), &actual)) {
-    *result_listener << "JSON string \"" << arg.string()
-                     << " does not contain numeric value";
-    return false;
-  }
-  return ::testing::ExplainMatchResult(expected, actual, result_listener);
-}
-
-MATCHER_P(IsJsonObject, matcher, "is JSON object") {
-  if (!::testing::ExplainMatchResult(Json::Type::kObject, arg.type(),
-                                     result_listener)) {
-    return false;
-  }
-  return ::testing::ExplainMatchResult(matcher, arg.object(), result_listener);
-}
-
-MATCHER_P(IsJsonArray, matcher, "is JSON array") {
-  if (!::testing::ExplainMatchResult(Json::Type::kArray, arg.type(),
-                                     result_listener)) {
-    return false;
-  }
-  return ::testing::ExplainMatchResult(matcher, arg.array(), result_listener);
-}
-
-MATCHER_P2(IsTraceEvent, description, severity, "is trace event") {
-  return ::testing::ExplainMatchResult(
-      IsJsonObject(::testing::ElementsAre(
-          ::testing::Pair("description", IsJsonString(description)),
-          ::testing::Pair("severity", IsJsonString(severity)),
-          ::testing::Pair("timestamp", IsJsonString(::testing::_)))),
-      arg, result_listener);
-}
-
-MATCHER_P2(IsTraceEventWithChannelRef, description, channel_ref,
-           "is trace event with channel ref") {
-  return ::testing::ExplainMatchResult(
-      IsJsonObject(::testing::ElementsAre(
-          ::testing::Pair("description", IsJsonString(description)),
-          ::testing::Pair("severity", IsJsonString("CT_INFO")),
-          ::testing::Pair("timestamp", IsJsonString(::testing::_)))),
-      arg, result_listener);
-}
-
-MATCHER_P3(IsTraceEventWithSubchannelRef, description, severity, subchannel_ref,
-           "is trace event with subchannel ref") {
-  return ::testing::ExplainMatchResult(
-      IsJsonObject(::testing::ElementsAre(
-          ::testing::Pair("description", IsJsonString(description)),
-          ::testing::Pair("severity", IsJsonString("CT_INFO")),
-          ::testing::Pair("timestamp", IsJsonString(::testing::_)))),
-      arg, result_listener);
-}
-
-MATCHER_P(IsEmptyChannelTrace, num_events_logged_expected,
-          "is empty channel trace") {
-  return ::testing::ExplainMatchResult(
-      IsJsonObject(::testing::ElementsAre(
-          ::testing::Pair("creationTimestamp", IsJsonString(::testing::_)),
-          ::testing::Pair("numEventsLogged",
-                          IsJsonStringNumber(num_events_logged_expected)))),
-      arg, result_listener);
-}
-
-MATCHER_P2(IsChannelTraceWithEvents, num_events_logged_expected, events_matcher,
-           "is channel trace") {
-  return ::testing::ExplainMatchResult(
-      IsJsonObject(::testing::ElementsAre(
-          ::testing::Pair("creationTimestamp", IsJsonString(::testing::_)),
-          ::testing::Pair("events", IsJsonArray(events_matcher)),
-          ::testing::Pair("numEventsLogged",
-                          IsJsonStringNumber(num_events_logged_expected)))),
-      arg, result_listener);
-}
-
-void ValidateJsonProtoTranslation(const Json& json) {
-  std::string json_str = JsonDump(json);
-  grpc::testing::ValidateChannelTraceProtoJsonTranslation(json_str);
-}
-
-}  // anonymous namespace
-
 const int kEventListMemoryLimit = 1024 * 1024;
 
-// Tests basic ChannelTrace functionality like construction, adding trace, and
-// lookups by uuid.
-TEST(ChannelTracerTest, BasicTest) {
-  ChannelTrace tracer(kEventListMemoryLimit);
-  tracer.NewNode("one").Commit();
-  tracer.NewNode("two").Commit();
-  tracer.NewNode("three").Commit();
-  tracer.NewNode("four").Commit();
-  Json json = tracer.RenderJson();
-  ValidateJsonProtoTranslation(json);
-  EXPECT_THAT(json,
-              IsChannelTraceWithEvents(
-                  4, ::testing::ElementsAre(IsTraceEvent("one", "CT_INFO"),
-                                            IsTraceEvent("two", "CT_INFO"),
-                                            IsTraceEvent("three", "CT_INFO"),
-                                            IsTraceEvent("four", "CT_INFO"))))
-      << JsonDump(json);
-  tracer.NewNode("five").Commit();
-  tracer.NewNode("six").Commit();
-  json = tracer.RenderJson();
-  ValidateJsonProtoTranslation(json);
-  EXPECT_THAT(
-      json,
-      IsChannelTraceWithEvents(
-          6,
-          ::testing::ElementsAre(
-              IsTraceEvent("one", "CT_INFO"), IsTraceEvent("two", "CT_INFO"),
-              IsTraceEvent("three", "CT_INFO"), IsTraceEvent("four", "CT_INFO"),
-              IsTraceEvent("five", "CT_INFO"), IsTraceEvent("six", "CT_INFO"))))
-      << JsonDump(json);
+std::vector<const grpc_channelz_v2_TraceEvent*> GetTraceEvents(
+    grpc_channelz_v2_Entity* entity) {
+  size_t size;
+  const grpc_channelz_v2_TraceEvent* const* trace =
+      grpc_channelz_v2_Entity_trace(entity, &size);
+  std::vector<const grpc_channelz_v2_TraceEvent*> events;
+  for (size_t i = 0; i < size; ++i) {
+    events.push_back(trace[i]);
+  }
+  return events;
+}
+
+MATCHER_P(IsTraceEvent, description, "is trace event") {
+  if (arg == nullptr) {
+    *result_listener << "is null";
+    return false;
+  }
+  std::string actual_desc =
+      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(arg));
+  if (actual_desc != description) {
+    *result_listener << "description is \"" << actual_desc << "\"";
+    return false;
+  }
+  return true;
 }
 
 TEST(ChannelTracerTest, BasicProtoTest) {
@@ -190,52 +74,29 @@ TEST(ChannelTracerTest, BasicProtoTest) {
   tracer.NewNode("two").Commit();
   tracer.NewNode("three").Commit();
   tracer.NewNode("four").Commit();
-  upb_Arena* arena = upb_Arena_New();
-  grpc_channelz_v2_Entity* entity = grpc_channelz_v2_Entity_new(arena);
-  tracer.Render(entity, arena);
-  size_t size;
-  const grpc_channelz_v2_TraceEvent* const* trace =
-      grpc_channelz_v2_Entity_trace(entity, &size);
-  ASSERT_EQ(size, 4);
-  EXPECT_EQ(
-      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[0])),
-      "one");
-  EXPECT_EQ(
-      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[1])),
-      "two");
-  EXPECT_EQ(
-      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[2])),
-      "three");
-  EXPECT_EQ(
-      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[3])),
-      "four");
-  upb_Arena_Free(arena);
+  {
+    upb_Arena* arena = upb_Arena_New();
+    grpc_channelz_v2_Entity* entity = grpc_channelz_v2_Entity_new(arena);
+    tracer.Render(entity, arena);
+    EXPECT_THAT(
+        GetTraceEvents(entity),
+        ::testing::ElementsAre(IsTraceEvent("one"), IsTraceEvent("two"),
+                               IsTraceEvent("three"), IsTraceEvent("four")));
+    upb_Arena_Free(arena);
+  }
   tracer.NewNode("five").Commit();
   tracer.NewNode("six").Commit();
-  arena = upb_Arena_New();
-  entity = grpc_channelz_v2_Entity_new(arena);
-  tracer.Render(entity, arena);
-  trace = grpc_channelz_v2_Entity_trace(entity, &size);
-  ASSERT_EQ(size, 6);
-  EXPECT_EQ(
-      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[0])),
-      "one");
-  EXPECT_EQ(
-      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[1])),
-      "two");
-  EXPECT_EQ(
-      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[2])),
-      "three");
-  EXPECT_EQ(
-      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[3])),
-      "four");
-  EXPECT_EQ(
-      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[4])),
-      "five");
-  EXPECT_EQ(
-      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[5])),
-      "six");
-  upb_Arena_Free(arena);
+  {
+    upb_Arena* arena = upb_Arena_New();
+    grpc_channelz_v2_Entity* entity = grpc_channelz_v2_Entity_new(arena);
+    tracer.Render(entity, arena);
+    EXPECT_THAT(
+        GetTraceEvents(entity),
+        ::testing::ElementsAre(IsTraceEvent("one"), IsTraceEvent("two"),
+                               IsTraceEvent("three"), IsTraceEvent("four"),
+                               IsTraceEvent("five"), IsTraceEvent("six")));
+    upb_Arena_Free(arena);
+  }
 }
 
 TEST(ChannelTracerTest, StreamingOutputTest) {
@@ -244,97 +105,29 @@ TEST(ChannelTracerTest, StreamingOutputTest) {
   GRPC_CHANNELZ_LOG(tracer) << "two";
   GRPC_CHANNELZ_LOG(tracer) << "three";
   GRPC_CHANNELZ_LOG(tracer) << "four";
-  Json json = tracer.RenderJson();
-  ValidateJsonProtoTranslation(json);
-  EXPECT_THAT(json,
-              IsChannelTraceWithEvents(
-                  4, ::testing::ElementsAre(IsTraceEvent("one", "CT_INFO"),
-                                            IsTraceEvent("two", "CT_INFO"),
-                                            IsTraceEvent("three", "CT_INFO"),
-                                            IsTraceEvent("four", "CT_INFO"))))
-      << JsonDump(json);
-  tracer.NewNode("five").Commit();
-  tracer.NewNode("six").Commit();
-  json = tracer.RenderJson();
-  ValidateJsonProtoTranslation(json);
-  EXPECT_THAT(
-      json,
-      IsChannelTraceWithEvents(
-          6,
-          ::testing::ElementsAre(
-              IsTraceEvent("one", "CT_INFO"), IsTraceEvent("two", "CT_INFO"),
-              IsTraceEvent("three", "CT_INFO"), IsTraceEvent("four", "CT_INFO"),
-              IsTraceEvent("five", "CT_INFO"), IsTraceEvent("six", "CT_INFO"))))
-      << JsonDump(json);
-}
-
-TEST(ChannelTracerTest, StreamingOutputProtoTest) {
-  ChannelTrace tracer(kEventListMemoryLimit);
-  GRPC_CHANNELZ_LOG(tracer) << "one";
-  GRPC_CHANNELZ_LOG(tracer) << "two";
-  GRPC_CHANNELZ_LOG(tracer) << "three";
-  GRPC_CHANNELZ_LOG(tracer) << "four";
-  upb_Arena* arena = upb_Arena_New();
-  grpc_channelz_v2_Entity* entity = grpc_channelz_v2_Entity_new(arena);
-  tracer.Render(entity, arena);
-  size_t size;
-  const grpc_channelz_v2_TraceEvent* const* trace =
-      grpc_channelz_v2_Entity_trace(entity, &size);
-  ASSERT_EQ(size, 4);
-  EXPECT_EQ(
-      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[0])),
-      "one");
-  EXPECT_EQ(
-      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[1])),
-      "two");
-  EXPECT_EQ(
-      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[2])),
-      "three");
-  EXPECT_EQ(
-      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[3])),
-      "four");
-  upb_Arena_Free(arena);
+  {
+    upb_Arena* arena = upb_Arena_New();
+    grpc_channelz_v2_Entity* entity = grpc_channelz_v2_Entity_new(arena);
+    tracer.Render(entity, arena);
+    EXPECT_THAT(
+        GetTraceEvents(entity),
+        ::testing::ElementsAre(IsTraceEvent("one"), IsTraceEvent("two"),
+                               IsTraceEvent("three"), IsTraceEvent("four")));
+    upb_Arena_Free(arena);
+  }
   GRPC_CHANNELZ_LOG(tracer) << "five";
   GRPC_CHANNELZ_LOG(tracer) << "six";
-  arena = upb_Arena_New();
-  entity = grpc_channelz_v2_Entity_new(arena);
-  tracer.Render(entity, arena);
-  trace = grpc_channelz_v2_Entity_trace(entity, &size);
-  ASSERT_EQ(size, 6);
-  EXPECT_EQ(
-      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[0])),
-      "one");
-  EXPECT_EQ(
-      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[1])),
-      "two");
-  EXPECT_EQ(
-      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[2])),
-      "three");
-  EXPECT_EQ(
-      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[3])),
-      "four");
-  EXPECT_EQ(
-      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[4])),
-      "five");
-  EXPECT_EQ(
-      UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[5])),
-      "six");
-  upb_Arena_Free(arena);
-}
-
-TEST(ChannelTracerTest, TestSmallMemoryLimit) {
-  // Doesn't make sense in practice, but serves a testing purpose for the
-  // channel tracing bookkeeping. All tracing events added should get
-  // immediately garbage collected.
-  const int kSmallMemoryLimit = 1;
-  ChannelTrace tracer(kSmallMemoryLimit);
-  const size_t kNumEvents = 4;
-  for (size_t i = 0; i < kNumEvents; ++i) {
-    tracer.NewNode("trace").Commit();
+  {
+    upb_Arena* arena = upb_Arena_New();
+    grpc_channelz_v2_Entity* entity = grpc_channelz_v2_Entity_new(arena);
+    tracer.Render(entity, arena);
+    EXPECT_THAT(
+        GetTraceEvents(entity),
+        ::testing::ElementsAre(IsTraceEvent("one"), IsTraceEvent("two"),
+                               IsTraceEvent("three"), IsTraceEvent("four"),
+                               IsTraceEvent("five"), IsTraceEvent("six")));
+    upb_Arena_Free(arena);
   }
-  Json json = tracer.RenderJson();
-  ValidateJsonProtoTranslation(json);
-  EXPECT_THAT(json, IsEmptyChannelTrace(4)) << JsonDump(json);
 }
 
 TEST(ChannelTracerTest, TestSmallMemoryLimitProto) {
@@ -375,7 +168,6 @@ TEST(ChannelTracerTest, ThreadSafety) {
   }
   for (size_t i = 0; i < 10; ++i) {
     absl::SleepFor(absl::Milliseconds(1));
-    tracer.RenderJson();
     upb_Arena* arena = upb_Arena_New();
     grpc_channelz_v2_Entity* entity = grpc_channelz_v2_Entity_new(arena);
     tracer.Render(entity, arena);

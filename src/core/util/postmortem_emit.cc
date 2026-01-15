@@ -36,7 +36,7 @@ void RunPostMortem(std::ostream& out) {
   for (const auto& node : channelz::ChannelzRegistry::GetAllEntities()) {
     out << "  🔴 [" << node->uuid() << ":"
         << channelz::BaseNode::EntityTypeString(node->type())
-        << "]: " << node->RenderJsonString() << "\n";
+        << "]: " << node->RenderTextProto() << "\n";
   }
 }
 
