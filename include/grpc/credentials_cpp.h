@@ -32,7 +32,7 @@
  * indicates that SNI should not be overridden. An empty string value indicates
  * that SNI should not be sent at all.
  */
-GRPCAPI void grpc_tls_credentials_options_set_sni_override(
+void grpc_tls_credentials_options_set_sni_override(
     grpc_tls_credentials_options* options,
     std::optional<std::string> sni_override);
 
