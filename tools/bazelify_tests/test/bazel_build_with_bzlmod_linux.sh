@@ -43,14 +43,16 @@ tools/bazel \
     //test/core/util:all \
     //test/cpp/common:all
 
-tools/bazel \
-    --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
-    build \
-    --ignore_dev_dependency=false \
-    -- \
-    //test/... \
-    -//test/cpp/ext/... \
-    -//test/cpp/interop/...
+# TODO(weizheyuan): Re-enable this in a way that won't cause the PR CI
+# to always time out.
+#tools/bazel \
+#    --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
+#    build \
+#    --ignore_dev_dependency=false \
+#    -- \
+#    //test/... \
+#    -//test/cpp/ext/... \
+#    -//test/cpp/interop/...
 
 # Test if public targets are buildable with openssl and without dev
 # dependencies.
