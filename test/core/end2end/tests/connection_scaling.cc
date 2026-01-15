@@ -38,9 +38,7 @@ CORE_END2END_TEST(Http2SingleHopTests, SubchannelConnectionScaling) {
   }
   testing::ScopedExperimentalEnvVar env(
       "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
-  constexpr int kMaxConcurrentStreams = 3;
-  InitServer(DefaultServerArgs().Set(GRPC_ARG_MAX_CONCURRENT_STREAMS,
-                                     kMaxConcurrentStreams));
+  InitServer(DefaultServerArgs().Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 3));
   constexpr char kServiceConfig[] =
       "{\n"
       "  \"connectionScaling\": {\n"
@@ -113,9 +111,7 @@ CORE_END2END_TEST(Http2SingleHopTests, HonorsMaxConnectionsPerSubchannel) {
   }
   testing::ScopedExperimentalEnvVar env(
       "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
-  constexpr int kMaxConcurrentStreams = 2;
-  InitServer(DefaultServerArgs().Set(GRPC_ARG_MAX_CONCURRENT_STREAMS,
-                                     kMaxConcurrentStreams));
+  InitServer(DefaultServerArgs().Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 2));
   constexpr char kServiceConfig[] =
       "{\n"
       "  \"connectionScaling\": {\n"
