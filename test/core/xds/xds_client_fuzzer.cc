@@ -640,6 +640,113 @@ static const char* kBasicEndpoint = R"pb(
   }
 )pb";
 
+static const char* kBasicSocketListener = R"pb(
+  bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
+  actions {
+    start_watch {
+      resource_type { listener {} }
+      resource_name: "server.example.com"
+    }
+  }
+  actions {
+    read_message_from_client {
+      stream_id { ads {} }
+      ok: true
+    }
+  }
+  actions {
+    send_message_to_client {
+      stream_id { ads {} }
+      response {
+        version_info: "1"
+        nonce: "A"
+        type_url: "type.googleapis.com/envoy.config.listener.v3.Listener"
+        resources {
+          [type.googleapis.com/envoy.config.listener.v3.Listener] {
+            name: "path/to/resource?udpa.resource.listening_address=127.0.0.1:8080"
+            reuse_port: true
+            address {
+              socket_address {
+                address: "127.0.0.1"
+                port_value: 8080
+              }
+            }
+            filter_chains {
+              filters {
+                name: "envoy.http_connection_manager"
+                typed_config {
+                  [type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager] {
+                    stat_prefix: "endpoint_config_selector-1"
+                    route_config {
+                      name: "inbound|endpoint_config_selector-1-8080"
+                      virtual_hosts {
+                        name: "inbound|endpoint_config_selector-1-8080"
+                        domains: "*"
+                        routes {
+                          match {
+                            prefix: "/"
+                          }
+                          non_forwarding_action {}
+                          decorator {
+                            operation: "endpoint_config_selector-1/*"
+                          }
+                        }
+                      }
+                    }
+                    http_filters {
+                      name: "envoy.filters.http.router"
+                      typed_config {
+                        [type.googleapis.com/envoy.extensions.filters.http.router.v3.Router] {
+                        }
+                      }
+                    }
+                    forward_client_cert_details: APPEND_FORWARD
+                    set_current_client_cert_details {
+                      subject {
+                        value: true
+                      }
+                      dns: true
+                      uri: true
+                    }
+                    upgrade_configs {
+                      upgrade_type: "websocket"
+                    }
+                  }
+                }
+              }
+              transport_socket {
+                name: "envoy.transport_sockets.tls"
+                typed_config {
+                  [type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext] {
+                    common_tls_context {
+                      combined_validation_context {
+                        default_validation_context {
+                        }
+                        validation_context_certificate_provider_instance {
+                          instance_name: "gcp_id_2"
+                          certificate_name: "ROOTCA"
+                        }
+                      }
+                      tls_certificate_certificate_provider_instance {
+                        instance_name: "gcp_id_1"
+                        certificate_name: "DEFAULT"
+                      }
+                    }
+                    require_client_certificate {
+                      value: true
+                    }
+                  }
+                }
+              }
+            }
+            traffic_direction: INBOUND
+          }
+        }
+      }
+    }
+  }
+)pb";
+
 auto ParseTestProto(const std::string& proto) {
   xds_client_fuzzer::Msg msg;
   CHECK(google::protobuf::TextFormat::ParseFromString(proto, &msg));
@@ -654,9 +761,9 @@ void Fuzz(const xds_client_fuzzer::Msg& message) {
 }
 FUZZ_TEST(XdsClientFuzzer, Fuzz)
     .WithDomains(::fuzztest::Arbitrary<xds_client_fuzzer::Msg>().WithSeeds(
-        {ParseTestProto(kBasicCluster), ParseTestProto(kBasicEndpoint),
-         ParseTestProto(kBasicApiListener),
-         ParseTestProto(kBasicRouteConfig)}));
+        {ParseTestProto(kBasicApiListener), ParseTestProto(kBasicRouteConfig),
+         ParseTestProto(kBasicCluster), ParseTestProto(kBasicEndpoint),
+         ParseTestProto(kBasicSocketListener)}));
 
 TEST(XdsClientFuzzer, XdsServersEmpty) {
   Fuzz(ParseTestProto(R"pb(
