@@ -671,7 +671,15 @@ class NewSubchannel final : public Subchannel {
       ABSL_GUARDED_BY(mu_);
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 
-  // Entries will be null for calls that have been cancelled.
+  // A queue of calls waiting to be dispatched to a connection.
+  // If a call is cancelled while in the queue, its entry will be reset
+  // to null, so we ignore null values when draining the queue.
+  //
+  // Note that each queued call holds a C++ reference to its entry in the
+  // queue, which it will set to null if it gets cancelled.  Therefore,
+  // this data structure must guarantee that references to entries are not
+  // invalidated as entries are added or removed from the queue (i.e.,
+  // std::vector<> would not work).
   std::deque<QueuedCall*> queued_calls_ ABSL_GUARDED_BY(mu_);
 };
 

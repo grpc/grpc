@@ -1087,7 +1087,8 @@ class NewSubchannel::ConnectedSubchannel
 
   // Returns true if there is quota for another RPC to start on this
   // connection.
-  bool SetMaxConcurrentStreams(uint32_t max_concurrent_streams) {
+  GRPC_MUST_USE_RESULT bool SetMaxConcurrentStreams(
+      uint32_t max_concurrent_streams) {
     uint64_t prev_stream_counts =
         stream_counts_.load(std::memory_order_acquire);
     uint32_t rpcs_in_flight;
@@ -1474,7 +1475,14 @@ class NewSubchannel::QueuedCall final : public Subchannel::Call {
   Mutex mu_ ABSL_ACQUIRED_AFTER(NewSubchannel::mu_);
   BufferedCall buffered_call_ ABSL_GUARDED_BY(&mu_);
   RefCountedPtr<Call> subchannel_call_ ABSL_GUARDED_BY(&mu_);
+
+  // The queue holds a raw pointer to this QueuedCall object, and this
+  // is a reference to that pointer.  If the call gets cancelled while
+  // in the queue, we set this pointer to null.  The queuing code knows to
+  // ignore null pointers when draining the queue, which ensures that we
+  // don't try to dequeue this call after it's been cancelled.
   QueuedCall*& queue_entry_;
+
   Canceller* canceller_ ABSL_GUARDED_BY(&NewSubchannel::mu_);
 
   std::atomic<bool> is_retriable_{false};
@@ -1483,6 +1491,14 @@ class NewSubchannel::QueuedCall final : public Subchannel::Call {
   grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
 };
 
+// Handles call combiner cancellation.  We don't yield the call combiner
+// when queuing the call, which means that if the call gets cancelled
+// while we're queued, the surface will be unable to immediately start the
+// cancel_stream batch to let us know about the cancellation.  Instead,
+// this object registers itself with the call combiner to be called if
+// the call is cancelled.  In that case, it removes the call from the
+// queue and fails any pending batches, thus immediately releasing the
+// call combiner and allowing the cancellation to proceed.
 class NewSubchannel::QueuedCall::Canceller final {
  public:
   explicit Canceller(RefCountedPtr<QueuedCall> call) : call_(std::move(call)) {
