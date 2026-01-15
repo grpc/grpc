@@ -14168,6 +14168,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/end2end/tests/channelz.cc
     test/core/end2end/tests/client_streaming.cc
     test/core/end2end/tests/compressed_payload.cc
+    test/core/end2end/tests/connection_scaling.cc
     test/core/end2end/tests/connectivity.cc
     test/core/end2end/tests/default_host.cc
     test/core/end2end/tests/disappearing_server.cc
@@ -14566,6 +14567,7 @@ add_executable(end2end_http2_security_test
   test/core/end2end/tests/channelz.cc
   test/core/end2end/tests/client_streaming.cc
   test/core/end2end/tests/compressed_payload.cc
+  test/core/end2end/tests/connection_scaling.cc
   test/core/end2end/tests/connectivity.cc
   test/core/end2end/tests/default_host.cc
   test/core/end2end/tests/disappearing_server.cc
@@ -14757,6 +14759,7 @@ add_executable(end2end_http2_test
   test/core/end2end/tests/channelz.cc
   test/core/end2end/tests/client_streaming.cc
   test/core/end2end/tests/compressed_payload.cc
+  test/core/end2end/tests/connection_scaling.cc
   test/core/end2end/tests/connectivity.cc
   test/core/end2end/tests/default_host.cc
   test/core/end2end/tests/disappearing_server.cc
@@ -15051,6 +15054,7 @@ add_executable(end2end_inproc_test
   test/core/end2end/tests/channelz.cc
   test/core/end2end/tests/client_streaming.cc
   test/core/end2end/tests/compressed_payload.cc
+  test/core/end2end/tests/connection_scaling.cc
   test/core/end2end/tests/connectivity.cc
   test/core/end2end/tests/default_host.cc
   test/core/end2end/tests/disappearing_server.cc
@@ -15345,6 +15349,7 @@ add_executable(end2end_ph2_test
   test/core/end2end/tests/channelz.cc
   test/core/end2end/tests/client_streaming.cc
   test/core/end2end/tests/compressed_payload.cc
+  test/core/end2end/tests/connection_scaling.cc
   test/core/end2end/tests/connectivity.cc
   test/core/end2end/tests/default_host.cc
   test/core/end2end/tests/disappearing_server.cc
@@ -15639,6 +15644,7 @@ add_executable(end2end_posix_test
   test/core/end2end/tests/channelz.cc
   test/core/end2end/tests/client_streaming.cc
   test/core/end2end/tests/compressed_payload.cc
+  test/core/end2end/tests/connection_scaling.cc
   test/core/end2end/tests/connectivity.cc
   test/core/end2end/tests/default_host.cc
   test/core/end2end/tests/disappearing_server.cc

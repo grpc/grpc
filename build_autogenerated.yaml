@@ -9976,6 +9976,7 @@ targets:
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
+  - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -10106,6 +10107,7 @@ targets:
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
+  - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -10158,6 +10160,7 @@ targets:
   - test/core/end2end/tests/channelz.cc
   - test/core/end2end/tests/client_streaming.cc
   - test/core/end2end/tests/compressed_payload.cc
+  - test/core/end2end/tests/connection_scaling.cc
   - test/core/end2end/tests/connectivity.cc
   - test/core/end2end/tests/default_host.cc
   - test/core/end2end/tests/disappearing_server.cc
@@ -10324,6 +10327,7 @@ targets:
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
+  - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -10450,6 +10454,7 @@ targets:
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
+  - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -10576,6 +10581,7 @@ targets:
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
+  - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -10628,6 +10634,7 @@ targets:
   - test/core/end2end/tests/channelz.cc
   - test/core/end2end/tests/client_streaming.cc
   - test/core/end2end/tests/compressed_payload.cc
+  - test/core/end2end/tests/connection_scaling.cc
   - test/core/end2end/tests/connectivity.cc
   - test/core/end2end/tests/default_host.cc
   - test/core/end2end/tests/disappearing_server.cc
@@ -10790,6 +10797,7 @@ targets:
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
+  - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -10842,6 +10850,7 @@ targets:
   - test/core/end2end/tests/channelz.cc
   - test/core/end2end/tests/client_streaming.cc
   - test/core/end2end/tests/compressed_payload.cc
+  - test/core/end2end/tests/connection_scaling.cc
   - test/core/end2end/tests/connectivity.cc
   - test/core/end2end/tests/default_host.cc
   - test/core/end2end/tests/disappearing_server.cc
@@ -11004,6 +11013,7 @@ targets:
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
+  - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -11130,6 +11140,7 @@ targets:
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
+  - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -11182,6 +11193,7 @@ targets:
   - test/core/end2end/tests/channelz.cc
   - test/core/end2end/tests/client_streaming.cc
   - test/core/end2end/tests/compressed_payload.cc
+  - test/core/end2end/tests/connection_scaling.cc
   - test/core/end2end/tests/connectivity.cc
   - test/core/end2end/tests/default_host.cc
   - test/core/end2end/tests/disappearing_server.cc
@@ -11344,6 +11356,7 @@ targets:
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
+  - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -11470,6 +11483,7 @@ targets:
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
+  - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -11522,6 +11536,7 @@ targets:
   - test/core/end2end/tests/channelz.cc
   - test/core/end2end/tests/client_streaming.cc
   - test/core/end2end/tests/compressed_payload.cc
+  - test/core/end2end/tests/connection_scaling.cc
   - test/core/end2end/tests/connectivity.cc
   - test/core/end2end/tests/default_host.cc
   - test/core/end2end/tests/disappearing_server.cc
@@ -11684,6 +11699,7 @@ targets:
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
+  - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -11810,6 +11826,7 @@ targets:
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
+  - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -11862,6 +11879,7 @@ targets:
   - test/core/end2end/tests/channelz.cc
   - test/core/end2end/tests/client_streaming.cc
   - test/core/end2end/tests/compressed_payload.cc
+  - test/core/end2end/tests/connection_scaling.cc
   - test/core/end2end/tests/connectivity.cc
   - test/core/end2end/tests/default_host.cc
   - test/core/end2end/tests/disappearing_server.cc

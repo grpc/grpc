@@ -107,6 +107,7 @@ EXPERIMENTS = {
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
+                "subchannel_connection_scaling",
             ],
             "cpp_end2end_test": [
                 "error_flatten",
@@ -219,6 +220,7 @@ EXPERIMENTS = {
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
+                "subchannel_connection_scaling",
             ],
             "cpp_end2end_test": [
                 "error_flatten",
@@ -331,6 +333,7 @@ EXPERIMENTS = {
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
+                "subchannel_connection_scaling",
             ],
             "cpp_end2end_test": [
                 "error_flatten",
