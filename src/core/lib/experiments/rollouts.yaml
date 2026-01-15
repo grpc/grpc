@@ -42,6 +42,8 @@
 
 - name: call_tracer_in_transport
   default: true
+- name: call_tracer_send_initial_metadata_is_an_annotation
+  default: true
 - name: chaotic_good_connect_deadline
   default: true
 - name: chaotic_good_framing_layer
