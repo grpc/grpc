@@ -305,11 +305,24 @@ class TestPrivateKeySignerAsync final
 class AsyncSigningHandleReturnsError
     : public grpc_core::PrivateKeySigner::AsyncSigningHandle {
  public:
-  explicit AsyncSigningHandleReturnsError() {}
+  explicit AsyncSigningHandleReturnsError(
+      grpc::experimental::PrivateKeySigner::OnSignComplete on_sign_complete)
+      : on_sign_complete_(std::move(on_sign_complete)) {}
   ~AsyncSigningHandleReturnsError() override {
+    if (on_sign_complete_ != nullptr) {
+      grpc_core::ExecCtx exec_ctx;
+      auto event_engine =
+          grpc_event_engine::experimental::GetDefaultEventEngine();
+      event_engine->Run(
+          [on_sign_complete = std::move(on_sign_complete_)]() mutable {
+            on_sign_complete(
+                absl::StatusOr<std::string>(absl::CancelledError("Cancelled")));
+          });
+    }
   }
 
  private:
+  grpc::experimental::PrivateKeySigner::OnSignComplete on_sign_complete_;
 };
 
 class TestPrivateKeySignerAsyncCancelled final
@@ -324,7 +337,8 @@ class TestPrivateKeySignerAsyncCancelled final
   Sign(absl::string_view /*data_to_sign*/,
        SignatureAlgorithm /*signature_algorithm*/,
        OnSignComplete on_sign_complete) override {
-    return std::make_shared<AsyncSigningHandleReturnsError>();
+    return std::make_shared<AsyncSigningHandleReturnsError>(
+        std::move(on_sign_complete));
   }
 
   void Cancel(std::shared_ptr<
