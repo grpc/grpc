@@ -3934,7 +3934,7 @@ TEST_F(ConnectionScalingTest, QueuedRpcsFailAtMaxConnectionsIfConfigured) {
        i < (kMaxConcurrentStreams * 2) + 2; ++i) {
     auto& rpc = rpcs[i];
     Status status = rpc->GetStatus();
-    EXPECT_EQ(status.error_code(), GRPC_STATUS_UNAVAILABLE);
+    EXPECT_EQ(status.error_code(), GRPC_STATUS_RESOURCE_EXHAUSTED);
     EXPECT_THAT(
         status.error_message(),
         ::testing::MatchesRegex("(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "

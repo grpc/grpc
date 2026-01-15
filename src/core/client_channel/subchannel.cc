@@ -2407,8 +2407,8 @@ void NewSubchannel::MaybeFailAllQueuedRpcsLocked() {
   if (fail_instead_of_queuing &&
       connections_.size() == watcher_list_.GetMaxConnectionsPerSubchannel()) {
     FailAllQueuedRpcsLocked(
-        absl::UnavailableError("subchannel at max number of connections, "
-                               "but no quota to send RPC"));
+        absl::ResourceExhaustedError("subchannel at max number of connections, "
+                                     "but no quota to send RPC"));
   }
 }
 
