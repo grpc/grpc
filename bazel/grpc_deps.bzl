@@ -362,11 +362,11 @@ def grpc_deps():
     if "dev_cel" not in native.existing_rules():
         http_archive(
             name = "dev_cel",
-            sha256 = "5cba6b0029e727d1f4d8fd134de4e747cecc0bc293d026017d7edc48058d09f7",
-            strip_prefix = "cel-spec-0.24.0",
+            sha256 = "d6cb6b4ed272500d16546c672a65a7452b241462a200dda3f62a7de413883344",
+            strip_prefix = "cel-spec-9f069b3ee58b02d6f6736c5ebd6587075c1a1b22",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/cel-spec/archive/refs/tags/v0.24.0.tar.gz",
-                "https://github.com/google/cel-spec/archive/refs/tags/v0.24.0.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/cel-spec/archive/9f069b3ee58b02d6f6736c5ebd6587075c1a1b22.tar.gz",
+                "https://github.com/google/cel-spec/archive/9f069b3ee58b02d6f6736c5ebd6587075c1a1b22.tar.gz",
             ],
         )
 
