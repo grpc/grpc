@@ -175,6 +175,7 @@ def main():
     compile_protos(VALIDATE_ROOT, "validate")
     compile_protos(OPENCENSUS_PROTO_ROOT)
     compile_protos(OPENTELEMETRY_PROTO_ROOT)
+    compile_protos(CEL_PROTO_ROOT)
 
     # Generate __init__.py files for all modules
     create_init_file(WORK_DIR)
@@ -186,6 +187,7 @@ def main():
         "validate",
         "xds",
         "opentelemetry",
+        "cel",
     ]:
         for root, _, _ in os.walk(os.path.join(WORK_DIR, proto_root_module)):
             package_path = os.path.relpath(root, WORK_DIR)
