@@ -63,20 +63,19 @@ const upb_MiniTable envoy__config__core__v3__EnvoyInternalAddress_msg_init = {
 };
 
 const upb_MiniTable* envoy__config__core__v3__EnvoyInternalAddress_msg_init_ptr = &envoy__config__core__v3__EnvoyInternalAddress_msg_init;
-static const upb_MiniTableField envoy_config_core_v3_SocketAddress__fields[7] = {
+static const upb_MiniTableField envoy_config_core_v3_SocketAddress__fields[6] = {
   {1, 12, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(20, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(44, 72), -17, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
-  {4, UPB_SIZE(44, 72), -17, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(36, 56), -17, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(36, 56), -17, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {5, UPB_SIZE(28, 40), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {6, 8, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-  {7, UPB_SIZE(36, 56), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__config__core__v3__SocketAddress_msg_init = {
   NULL,
   &envoy_config_core_v3_SocketAddress__fields[0],
-  UPB_SIZE(56, 88), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(48, 72), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.SocketAddress",
 #endif
@@ -84,11 +83,11 @@ const upb_MiniTable envoy__config__core__v3__SocketAddress_msg_init = {
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000c00003f000008, &upb_psv4_1bt},
     {0x001800003f000012, &upb_pss_1bt},
-    {0x0048001003000018, &upb_pov4_1bt},
-    {0x0048001004000022, &upb_pos_1bt},
+    {0x0038001003000018, &upb_pov4_1bt},
+    {0x0038001004000022, &upb_pos_1bt},
     {0x002800003f00002a, &upb_pss_1bt},
     {0x000800003f000030, &upb_psb1_1bt},
-    {0x003800003f00003a, &upb_pss_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 

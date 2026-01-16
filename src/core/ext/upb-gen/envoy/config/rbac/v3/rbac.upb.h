@@ -14,7 +14,6 @@
 #include "envoy/config/rbac/v3/rbac.upb_minitable.h"
 
 #include "envoy/config/core/v3/address.upb_minitable.h"
-#include "envoy/config/core/v3/cel.upb_minitable.h"
 #include "envoy/config/core/v3/extension.upb_minitable.h"
 #include "envoy/config/route/v3/route_components.upb_minitable.h"
 #include "envoy/type/matcher/v3/filter_state.upb_minitable.h"
@@ -48,7 +47,6 @@ typedef struct envoy_config_rbac_v3_Principal { upb_Message UPB_PRIVATE(base); }
 typedef struct envoy_config_rbac_v3_Principal_Set { upb_Message UPB_PRIVATE(base); } envoy_config_rbac_v3_Principal_Set;
 typedef struct envoy_config_rbac_v3_Principal_Authenticated { upb_Message UPB_PRIVATE(base); } envoy_config_rbac_v3_Principal_Authenticated;
 typedef struct envoy_config_rbac_v3_Action { upb_Message UPB_PRIVATE(base); } envoy_config_rbac_v3_Action;
-struct envoy_config_core_v3_CelExpressionConfig;
 struct envoy_config_core_v3_CidrRange;
 struct envoy_config_core_v3_TypedExtensionConfig;
 struct envoy_config_route_v3_HeaderMatcher;
@@ -573,23 +571,6 @@ UPB_INLINE bool envoy_config_rbac_v3_Policy_has_checked_condition(const envoy_co
   const upb_MiniTableField field = {4, UPB_SIZE(24, 40), 65, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
-UPB_INLINE void envoy_config_rbac_v3_Policy_clear_cel_config(envoy_config_rbac_v3_Policy* msg) {
-  const upb_MiniTableField field = {5, UPB_SIZE(28, 48), 66, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
-}
-UPB_INLINE const struct envoy_config_core_v3_CelExpressionConfig* envoy_config_rbac_v3_Policy_cel_config(const envoy_config_rbac_v3_Policy* msg) {
-  const struct envoy_config_core_v3_CelExpressionConfig* default_val = NULL;
-  const struct envoy_config_core_v3_CelExpressionConfig* ret;
-  const upb_MiniTableField field = {5, UPB_SIZE(28, 48), 66, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__CelExpressionConfig_msg_init);
-  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
-                                    &default_val, &ret);
-  return ret;
-}
-UPB_INLINE bool envoy_config_rbac_v3_Policy_has_cel_config(const envoy_config_rbac_v3_Policy* msg) {
-  const upb_MiniTableField field = {5, UPB_SIZE(28, 48), 66, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
-}
 
 UPB_INLINE envoy_config_rbac_v3_Permission** envoy_config_rbac_v3_Policy_mutable_permissions(envoy_config_rbac_v3_Policy* msg, size_t* size) {
   upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -678,19 +659,6 @@ UPB_INLINE struct google_api_expr_v1alpha1_CheckedExpr* envoy_config_rbac_v3_Pol
   if (sub == NULL) {
     sub = (struct google_api_expr_v1alpha1_CheckedExpr*)_upb_Message_New(&google__api__expr__v1alpha1__CheckedExpr_msg_init, arena);
     if (sub) envoy_config_rbac_v3_Policy_set_checked_condition(msg, sub);
-  }
-  return sub;
-}
-UPB_INLINE void envoy_config_rbac_v3_Policy_set_cel_config(envoy_config_rbac_v3_Policy *msg, struct envoy_config_core_v3_CelExpressionConfig* value) {
-  const upb_MiniTableField field = {5, UPB_SIZE(28, 48), 66, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__CelExpressionConfig_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
-}
-UPB_INLINE struct envoy_config_core_v3_CelExpressionConfig* envoy_config_rbac_v3_Policy_mutable_cel_config(envoy_config_rbac_v3_Policy* msg, upb_Arena* arena) {
-  struct envoy_config_core_v3_CelExpressionConfig* sub = (struct envoy_config_core_v3_CelExpressionConfig*)envoy_config_rbac_v3_Policy_cel_config(msg);
-  if (sub == NULL) {
-    sub = (struct envoy_config_core_v3_CelExpressionConfig*)_upb_Message_New(&envoy__config__core__v3__CelExpressionConfig_msg_init, arena);
-    if (sub) envoy_config_rbac_v3_Policy_set_cel_config(msg, sub);
   }
   return sub;
 }
@@ -1398,7 +1366,6 @@ typedef enum {
   envoy_config_rbac_v3_Principal_identifier_filter_state = 12,
   envoy_config_rbac_v3_Principal_identifier_not_id = 8,
   envoy_config_rbac_v3_Principal_identifier_sourced_metadata = 13,
-  envoy_config_rbac_v3_Principal_identifier_custom = 14,
   envoy_config_rbac_v3_Principal_identifier_NOT_SET = 0
 } envoy_config_rbac_v3_Principal_identifier_oneofcases;
 UPB_INLINE envoy_config_rbac_v3_Principal_identifier_oneofcases envoy_config_rbac_v3_Principal_identifier_case(const envoy_config_rbac_v3_Principal* msg) {
@@ -1630,23 +1597,6 @@ UPB_INLINE bool envoy_config_rbac_v3_Principal_has_sourced_metadata(const envoy_
   const upb_MiniTableField field = {13, UPB_SIZE(12, 16), -9, 11, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
-UPB_INLINE void envoy_config_rbac_v3_Principal_clear_custom(envoy_config_rbac_v3_Principal* msg) {
-  const upb_MiniTableField field = {14, UPB_SIZE(12, 16), -9, 12, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
-}
-UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_rbac_v3_Principal_custom(const envoy_config_rbac_v3_Principal* msg) {
-  const struct envoy_config_core_v3_TypedExtensionConfig* default_val = NULL;
-  const struct envoy_config_core_v3_TypedExtensionConfig* ret;
-  const upb_MiniTableField field = {14, UPB_SIZE(12, 16), -9, 12, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__TypedExtensionConfig_msg_init);
-  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
-                                    &default_val, &ret);
-  return ret;
-}
-UPB_INLINE bool envoy_config_rbac_v3_Principal_has_custom(const envoy_config_rbac_v3_Principal* msg) {
-  const upb_MiniTableField field = {14, UPB_SIZE(12, 16), -9, 12, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
-}
 
 UPB_INLINE void envoy_config_rbac_v3_Principal_set_and_ids(envoy_config_rbac_v3_Principal *msg, envoy_config_rbac_v3_Principal_Set* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -1805,19 +1755,6 @@ UPB_INLINE struct envoy_config_rbac_v3_SourcedMetadata* envoy_config_rbac_v3_Pri
   if (sub == NULL) {
     sub = (struct envoy_config_rbac_v3_SourcedMetadata*)_upb_Message_New(&envoy__config__rbac__v3__SourcedMetadata_msg_init, arena);
     if (sub) envoy_config_rbac_v3_Principal_set_sourced_metadata(msg, sub);
-  }
-  return sub;
-}
-UPB_INLINE void envoy_config_rbac_v3_Principal_set_custom(envoy_config_rbac_v3_Principal *msg, struct envoy_config_core_v3_TypedExtensionConfig* value) {
-  const upb_MiniTableField field = {14, UPB_SIZE(12, 16), -9, 12, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__TypedExtensionConfig_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
-}
-UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_rbac_v3_Principal_mutable_custom(envoy_config_rbac_v3_Principal* msg, upb_Arena* arena) {
-  struct envoy_config_core_v3_TypedExtensionConfig* sub = (struct envoy_config_core_v3_TypedExtensionConfig*)envoy_config_rbac_v3_Principal_custom(msg);
-  if (sub == NULL) {
-    sub = (struct envoy_config_core_v3_TypedExtensionConfig*)_upb_Message_New(&envoy__config__core__v3__TypedExtensionConfig_msg_init, arena);
-    if (sub) envoy_config_rbac_v3_Principal_set_custom(msg, sub);
   }
   return sub;
 }

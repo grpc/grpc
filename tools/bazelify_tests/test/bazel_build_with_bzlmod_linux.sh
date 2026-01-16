@@ -37,22 +37,23 @@ tools/bazel \
 tools/bazel \
     --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
     test \
-    --ignore_dev_dependency=false \
     -- \
     //test/core/config:all \
-    //test/core/util:all \
     //test/cpp/common:all
 
+# Use --nobuild flag to trigger bazel dependency analysis but skip C++
+# compilation.
 # TODO(weizheyuan): Re-enable this in a way that won't cause the PR CI
 # to always time out.
-#tools/bazel \
-#    --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
-#    build \
-#    --ignore_dev_dependency=false \
-#    -- \
-#    //test/... \
-#    -//test/cpp/ext/... \
-#    -//test/cpp/interop/...
+tools/bazel \
+    --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
+    build \
+    --nobuild \
+    --ignore_dev_dependency=false \
+    -- \
+    //test/... \
+    -//test/cpp/ext/... \
+    -//test/cpp/interop/...
 
 # Test if public targets are buildable with openssl and without dev
 # dependencies.
