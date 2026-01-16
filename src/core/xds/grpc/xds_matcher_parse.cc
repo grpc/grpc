@@ -40,8 +40,8 @@ std::unique_ptr<XdsMatcher> ParseXdsMatcherRecursive(
     const XdsResourceType::DecodeContext& context,
     const xds_type_matcher_v3_Matcher* matcher,
     const XdsMatcherActionRegistry& action_registry,
-    const UniqueTypeName& matcher_context, bool allow_keep_matching,
-    int depth, ValidationErrors* errors);
+    const UniqueTypeName& matcher_context, bool allow_keep_matching, int depth,
+    ValidationErrors* errors);
 
 // Function to parse "xds_core_v3_TypedExtensionConfig" to generate
 // XdsMatcher::Input<T>
@@ -87,8 +87,8 @@ XdsMatcher::OnMatch ParseOnMatch(
     const XdsResourceType::DecodeContext& context,
     const xds_type_matcher_v3_Matcher_OnMatch* on_match,
     const XdsMatcherActionRegistry& action_registry,
-    const UniqueTypeName& matcher_context, bool allow_keep_matching,
-    int depth, ValidationErrors* errors) {
+    const UniqueTypeName& matcher_context, bool allow_keep_matching, int depth,
+    ValidationErrors* errors) {
   if (on_match == nullptr) {
     errors->AddError("field not present");
     return XdsMatcher::OnMatch(std::unique_ptr<XdsMatcher::Action>(nullptr),
@@ -96,7 +96,7 @@ XdsMatcher::OnMatch ParseOnMatch(
   }
   // TODO(bpawan): b/431645620 Parse keep matching once we move to latest xds
   // protos
-// FIXME
+  // FIXME
   bool keep_matching = false;
   // Action is a variant which can have Action or a Nested Matcher
   if (const auto* action_proto =
@@ -125,8 +125,8 @@ absl::flat_hash_map<std::string, XdsMatcher::OnMatch> ParseMatchMap(
     const XdsResourceType::DecodeContext& context,
     const xds_type_matcher_v3_Matcher_MatcherTree_MatchMap* match_map,
     const XdsMatcherActionRegistry& action_registry,
-    const UniqueTypeName& matcher_context, bool allow_keep_matching,
-    int depth, ValidationErrors* errors) {
+    const UniqueTypeName& matcher_context, bool allow_keep_matching, int depth,
+    ValidationErrors* errors) {
   absl::flat_hash_map<std::string, XdsMatcher::OnMatch> result;
   if (xds_type_matcher_v3_Matcher_MatcherTree_MatchMap_map_size(match_map) ==
       0) {
@@ -139,9 +139,9 @@ absl::flat_hash_map<std::string, XdsMatcher::OnMatch> ParseMatchMap(
   while (xds_type_matcher_v3_Matcher_MatcherTree_MatchMap_map_next(
       match_map, &upb_key, &value, &iter)) {
     ValidationErrors::ScopedField field(errors, ".on_match");
-    auto on_match = ParseOnMatch(
-        context, value, action_registry, matcher_context,
-        allow_keep_matching, depth, errors);
+    auto on_match =
+        ParseOnMatch(context, value, action_registry, matcher_context,
+                     allow_keep_matching, depth, errors);
     result.emplace(UpbStringToStdString(upb_key), std::move(on_match));
   }
   return result;
@@ -161,9 +161,8 @@ std::unique_ptr<XdsMatcherList::Predicate> ParseSinglePredicate(
     const auto* value_match_proto =
         xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate_value_match(
             single_predicate);
-    input_string_matcher =
-        std::make_unique<XdsMatcherList::StringInputMatcher>(
-            StringMatcherParse(context, value_match_proto, errors));
+    input_string_matcher = std::make_unique<XdsMatcherList::StringInputMatcher>(
+        StringMatcherParse(context, value_match_proto, errors));
   }
   std::unique_ptr<XdsMatcher::InputValue<absl::string_view>> input_string_value;
   {
@@ -254,8 +253,8 @@ std::vector<XdsMatcherList::FieldMatcher> ParseFieldMatcherList(
     const XdsResourceType::DecodeContext& context,
     const xds_type_matcher_v3_Matcher_MatcherList* matcher_list,
     const XdsMatcherActionRegistry& action_registry,
-    const UniqueTypeName& matcher_context, bool allow_keep_matching,
-    int depth, ValidationErrors* errors) {
+    const UniqueTypeName& matcher_context, bool allow_keep_matching, int depth,
+    ValidationErrors* errors) {
   std::vector<XdsMatcherList::FieldMatcher> field_matcher_list;
   size_t matcher_list_size;
   auto field_matchers = xds_type_matcher_v3_Matcher_MatcherList_matchers(
@@ -291,8 +290,8 @@ std::unique_ptr<XdsMatcher> ParseXdsMatcherRecursive(
     const XdsResourceType::DecodeContext& context,
     const xds_type_matcher_v3_Matcher* matcher,
     const XdsMatcherActionRegistry& action_registry,
-    const UniqueTypeName& matcher_context, bool allow_keep_matching,
-    int depth, ValidationErrors* errors) {
+    const UniqueTypeName& matcher_context, bool allow_keep_matching, int depth,
+    ValidationErrors* errors) {
   if (depth == 16) {
     errors->AddError("matcher tree exceeds max recursion depth");
     return nullptr;
@@ -362,9 +361,9 @@ std::unique_ptr<XdsMatcher> ParseXdsMatcher(
     const XdsMatcherActionRegistry& action_registry,
     const UniqueTypeName& matcher_context, bool allow_keep_matching,
     ValidationErrors* errors) {
-  return ParseXdsMatcherRecursive(
-      context, matcher, action_registry, matcher_context,
-      allow_keep_matching, /*depth=*/0, errors);
+  return ParseXdsMatcherRecursive(context, matcher, action_registry,
+                                  matcher_context, allow_keep_matching,
+                                  /*depth=*/0, errors);
 }
 
 }  // namespace grpc_core
