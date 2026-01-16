@@ -22,13 +22,12 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
-from envoy.config.core.v3 import config_source_pb2 as envoy_dot_config_dot_core_dot_v3_dot_config__source__pb2
 from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from udpa.annotations import versioning_pb2 as udpa_dot_annotations_dot_versioning__pb2
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n4envoy/extensions/clusters/aggregate/v3/cluster.proto\x12&envoy.extensions.clusters.aggregate.v3\x1a(envoy/config/core/v3/config_source.proto\x1a\x1dudpa/annotations/status.proto\x1a!udpa/annotations/versioning.proto\x1a\x17validate/validate.proto\"h\n\rClusterConfig\x12\x1a\n\x08\x63lusters\x18\x01 \x03(\tB\x08\xfa\x42\x05\x92\x01\x02\x08\x01:;\x9a\xc5\x88\x1e\x36\n4envoy.config.cluster.aggregate.v2alpha.ClusterConfig\"\x7f\n\x18\x41ggregateClusterResource\x12\x43\n\rconfig_source\x18\x01 \x01(\x0b\x32\".envoy.config.core.v3.ConfigSourceB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x12\x1e\n\rresource_name\x18\x02 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x42\xa9\x01\n4io.envoyproxy.envoy.extensions.clusters.aggregate.v3B\x0c\x43lusterProtoP\x01ZYgithub.com/envoyproxy/go-control-plane/envoy/extensions/clusters/aggregate/v3;aggregatev3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n4envoy/extensions/clusters/aggregate/v3/cluster.proto\x12&envoy.extensions.clusters.aggregate.v3\x1a\x1dudpa/annotations/status.proto\x1a!udpa/annotations/versioning.proto\x1a\x17validate/validate.proto\"h\n\rClusterConfig\x12\x1a\n\x08\x63lusters\x18\x01 \x03(\tB\x08\xfa\x42\x05\x92\x01\x02\x08\x01:;\x9a\xc5\x88\x1e\x36\n4envoy.config.cluster.aggregate.v2alpha.ClusterConfigB\xa9\x01\n4io.envoyproxy.envoy.extensions.clusters.aggregate.v3B\x0c\x43lusterProtoP\x01ZYgithub.com/envoyproxy/go-control-plane/envoy/extensions/clusters/aggregate/v3;aggregatev3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -40,12 +39,6 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_CLUSTERCONFIG'].fields_by_name['clusters']._serialized_options = b'\372B\005\222\001\002\010\001'
   _globals['_CLUSTERCONFIG']._loaded_options = None
   _globals['_CLUSTERCONFIG']._serialized_options = b'\232\305\210\0366\n4envoy.config.cluster.aggregate.v2alpha.ClusterConfig'
-  _globals['_AGGREGATECLUSTERRESOURCE'].fields_by_name['config_source']._loaded_options = None
-  _globals['_AGGREGATECLUSTERRESOURCE'].fields_by_name['config_source']._serialized_options = b'\372B\005\212\001\002\020\001'
-  _globals['_AGGREGATECLUSTERRESOURCE'].fields_by_name['resource_name']._loaded_options = None
-  _globals['_AGGREGATECLUSTERRESOURCE'].fields_by_name['resource_name']._serialized_options = b'\372B\004r\002\020\001'
-  _globals['_CLUSTERCONFIG']._serialized_start=229
-  _globals['_CLUSTERCONFIG']._serialized_end=333
-  _globals['_AGGREGATECLUSTERRESOURCE']._serialized_start=335
-  _globals['_AGGREGATECLUSTERRESOURCE']._serialized_end=462
+  _globals['_CLUSTERCONFIG']._serialized_start=187
+  _globals['_CLUSTERCONFIG']._serialized_end=291
 # @@protoc_insertion_point(module_scope)

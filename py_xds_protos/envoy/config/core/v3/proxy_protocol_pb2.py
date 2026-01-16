@@ -22,12 +22,11 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
-from envoy.config.core.v3 import substitution_format_string_pb2 as envoy_dot_config_dot_core_dot_v3_dot_substitution__format__string__pb2
 from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n)envoy/config/core/v3/proxy_protocol.proto\x12\x14\x65nvoy.config.core.v3\x1a\x35\x65nvoy/config/core/v3/substitution_format_string.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xcc\x01\n\x1cProxyProtocolPassThroughTLVs\x12X\n\nmatch_type\x18\x01 \x01(\x0e\x32\x44.envoy.config.core.v3.ProxyProtocolPassThroughTLVs.PassTLVsMatchType\x12\x1f\n\x08tlv_type\x18\x02 \x03(\rB\r\xfa\x42\n\x92\x01\x07\"\x05*\x03\x10\x80\x02\"1\n\x11PassTLVsMatchType\x12\x0f\n\x0bINCLUDE_ALL\x10\x00\x12\x0b\n\x07INCLUDE\x10\x01\"x\n\x08TlvEntry\x12\x16\n\x04type\x18\x01 \x01(\rB\x08\xfa\x42\x05*\x03\x10\x80\x02\x12\r\n\x05value\x18\x02 \x01(\x0c\x12\x45\n\rformat_string\x18\x03 \x01(\x0b\x32..envoy.config.core.v3.SubstitutionFormatString\"\xf7\x01\n\x13ProxyProtocolConfig\x12\x42\n\x07version\x18\x01 \x01(\x0e\x32\x31.envoy.config.core.v3.ProxyProtocolConfig.Version\x12M\n\x11pass_through_tlvs\x18\x02 \x01(\x0b\x32\x32.envoy.config.core.v3.ProxyProtocolPassThroughTLVs\x12\x32\n\nadded_tlvs\x18\x03 \x03(\x0b\x32\x1e.envoy.config.core.v3.TlvEntry\"\x19\n\x07Version\x12\x06\n\x02V1\x10\x00\x12\x06\n\x02V2\x10\x01\"C\n\rPerHostConfig\x12\x32\n\nadded_tlvs\x18\x01 \x03(\x0b\x32\x1e.envoy.config.core.v3.TlvEntryB\x86\x01\n\"io.envoyproxy.envoy.config.core.v3B\x12ProxyProtocolProtoP\x01ZBgithub.com/envoyproxy/go-control-plane/envoy/config/core/v3;corev3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n)envoy/config/core/v3/proxy_protocol.proto\x12\x14\x65nvoy.config.core.v3\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xcc\x01\n\x1cProxyProtocolPassThroughTLVs\x12X\n\nmatch_type\x18\x01 \x01(\x0e\x32\x44.envoy.config.core.v3.ProxyProtocolPassThroughTLVs.PassTLVsMatchType\x12\x1f\n\x08tlv_type\x18\x02 \x03(\rB\r\xfa\x42\n\x92\x01\x07\"\x05*\x03\x10\x80\x02\"1\n\x11PassTLVsMatchType\x12\x0f\n\x0bINCLUDE_ALL\x10\x00\x12\x0b\n\x07INCLUDE\x10\x01\"\xc3\x01\n\x13ProxyProtocolConfig\x12\x42\n\x07version\x18\x01 \x01(\x0e\x32\x31.envoy.config.core.v3.ProxyProtocolConfig.Version\x12M\n\x11pass_through_tlvs\x18\x02 \x01(\x0b\x32\x32.envoy.config.core.v3.ProxyProtocolPassThroughTLVs\"\x19\n\x07Version\x12\x06\n\x02V1\x10\x00\x12\x06\n\x02V2\x10\x01\x42\x86\x01\n\"io.envoyproxy.envoy.config.core.v3B\x12ProxyProtocolProtoP\x01ZBgithub.com/envoyproxy/go-control-plane/envoy/config/core/v3;corev3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -37,18 +36,12 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._serialized_options = b'\n\"io.envoyproxy.envoy.config.core.v3B\022ProxyProtocolProtoP\001ZBgithub.com/envoyproxy/go-control-plane/envoy/config/core/v3;corev3\272\200\310\321\006\002\020\002'
   _globals['_PROXYPROTOCOLPASSTHROUGHTLVS'].fields_by_name['tlv_type']._loaded_options = None
   _globals['_PROXYPROTOCOLPASSTHROUGHTLVS'].fields_by_name['tlv_type']._serialized_options = b'\372B\n\222\001\007\"\005*\003\020\200\002'
-  _globals['_TLVENTRY'].fields_by_name['type']._loaded_options = None
-  _globals['_TLVENTRY'].fields_by_name['type']._serialized_options = b'\372B\005*\003\020\200\002'
-  _globals['_PROXYPROTOCOLPASSTHROUGHTLVS']._serialized_start=179
-  _globals['_PROXYPROTOCOLPASSTHROUGHTLVS']._serialized_end=383
-  _globals['_PROXYPROTOCOLPASSTHROUGHTLVS_PASSTLVSMATCHTYPE']._serialized_start=334
-  _globals['_PROXYPROTOCOLPASSTHROUGHTLVS_PASSTLVSMATCHTYPE']._serialized_end=383
-  _globals['_TLVENTRY']._serialized_start=385
-  _globals['_TLVENTRY']._serialized_end=505
-  _globals['_PROXYPROTOCOLCONFIG']._serialized_start=508
-  _globals['_PROXYPROTOCOLCONFIG']._serialized_end=755
-  _globals['_PROXYPROTOCOLCONFIG_VERSION']._serialized_start=730
-  _globals['_PROXYPROTOCOLCONFIG_VERSION']._serialized_end=755
-  _globals['_PERHOSTCONFIG']._serialized_start=757
-  _globals['_PERHOSTCONFIG']._serialized_end=824
+  _globals['_PROXYPROTOCOLPASSTHROUGHTLVS']._serialized_start=124
+  _globals['_PROXYPROTOCOLPASSTHROUGHTLVS']._serialized_end=328
+  _globals['_PROXYPROTOCOLPASSTHROUGHTLVS_PASSTLVSMATCHTYPE']._serialized_start=279
+  _globals['_PROXYPROTOCOLPASSTHROUGHTLVS_PASSTLVSMATCHTYPE']._serialized_end=328
+  _globals['_PROXYPROTOCOLCONFIG']._serialized_start=331
+  _globals['_PROXYPROTOCOLCONFIG']._serialized_end=526
+  _globals['_PROXYPROTOCOLCONFIG_VERSION']._serialized_start=501
+  _globals['_PROXYPROTOCOLCONFIG_VERSION']._serialized_end=526
 # @@protoc_insertion_point(module_scope)

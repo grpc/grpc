@@ -22,12 +22,11 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
-from envoy.annotations import deprecation_pb2 as envoy_dot_annotations_dot_deprecation__pb2
 from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n7envoy/extensions/geoip_providers/common/v3/common.proto\x12*envoy.extensions.geoip_providers.common.v3\x1a#envoy/annotations/deprecation.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\x89\x07\n\x19\x43ommonGeoipProviderConfig\x12\x86\x01\n\x12geo_headers_to_add\x18\x01 \x01(\x0b\x32].envoy.extensions.geoip_providers.common.v3.CommonGeoipProviderConfig.GeolocationHeadersToAddB\x0b\x18\x01\x92\xc7\x86\xd8\x04\x03\x33.0\x12r\n\x0egeo_field_keys\x18\x03 \x01(\x0b\x32Z.envoy.extensions.geoip_providers.common.v3.CommonGeoipProviderConfig.GeolocationFieldKeys\x1a\x93\x03\n\x17GeolocationHeadersToAdd\x12\x1c\n\x07\x63ountry\x18\x01 \x01(\tB\x0b\xfa\x42\x08r\x06\xc0\x01\x01\xd0\x01\x01\x12\x19\n\x04\x63ity\x18\x02 \x01(\tB\x0b\xfa\x42\x08r\x06\xc0\x01\x01\xd0\x01\x01\x12\x1b\n\x06region\x18\x03 \x01(\tB\x0b\xfa\x42\x08r\x06\xc0\x01\x01\xd0\x01\x01\x12\x18\n\x03\x61sn\x18\x04 \x01(\tB\x0b\xfa\x42\x08r\x06\xc0\x01\x01\xd0\x01\x01\x12\'\n\x07is_anon\x18\x05 \x01(\tB\x16\x18\x01\xfa\x42\x08r\x06\xc0\x01\x01\xd0\x01\x01\x92\xc7\x86\xd8\x04\x03\x33.0\x12\x19\n\x04\x61non\x18\x0c \x01(\tB\x0b\xfa\x42\x08r\x06\xc0\x01\x01\xd0\x01\x01\x12\x1d\n\x08\x61non_vpn\x18\x06 \x01(\tB\x0b\xfa\x42\x08r\x06\xc0\x01\x01\xd0\x01\x01\x12!\n\x0c\x61non_hosting\x18\x07 \x01(\tB\x0b\xfa\x42\x08r\x06\xc0\x01\x01\xd0\x01\x01\x12\x1d\n\x08\x61non_tor\x18\x08 \x01(\tB\x0b\xfa\x42\x08r\x06\xc0\x01\x01\xd0\x01\x01\x12\x1f\n\nanon_proxy\x18\t \x01(\tB\x0b\xfa\x42\x08r\x06\xc0\x01\x01\xd0\x01\x01\x12\x18\n\x03isp\x18\n \x01(\tB\x0b\xfa\x42\x08r\x06\xc0\x01\x01\xd0\x01\x01\x12(\n\x13\x61pple_private_relay\x18\x0b \x01(\tB\x0b\xfa\x42\x08r\x06\xc0\x01\x01\xd0\x01\x01\x1a\xd8\x01\n\x14GeolocationFieldKeys\x12\x0f\n\x07\x63ountry\x18\x01 \x01(\t\x12\x0c\n\x04\x63ity\x18\x02 \x01(\t\x12\x0e\n\x06region\x18\x03 \x01(\t\x12\x0b\n\x03\x61sn\x18\x04 \x01(\t\x12\x0c\n\x04\x61non\x18\x05 \x01(\t\x12\x10\n\x08\x61non_vpn\x18\x06 \x01(\t\x12\x14\n\x0c\x61non_hosting\x18\x07 \x01(\t\x12\x10\n\x08\x61non_tor\x18\x08 \x01(\t\x12\x12\n\nanon_proxy\x18\t \x01(\t\x12\x0b\n\x03isp\x18\n \x01(\t\x12\x1b\n\x13\x61pple_private_relay\x18\x0b \x01(\tB\xad\x01\n8io.envoyproxy.envoy.extensions.geoip_providers.common.v3B\x0b\x43ommonProtoP\x01ZZgithub.com/envoyproxy/go-control-plane/envoy/extensions/geoip_providers/common/v3;commonv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n7envoy/extensions/geoip_providers/common/v3/common.proto\x12*envoy.extensions.geoip_providers.common.v3\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xcd\x03\n\x19\x43ommonGeoipProviderConfig\x12\x83\x01\n\x12geo_headers_to_add\x18\x01 \x01(\x0b\x32].envoy.extensions.geoip_providers.common.v3.CommonGeoipProviderConfig.GeolocationHeadersToAddB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x1a\xa9\x02\n\x17GeolocationHeadersToAdd\x12\x1c\n\x07\x63ountry\x18\x01 \x01(\tB\x0b\xfa\x42\x08r\x06\xc0\x01\x01\xd0\x01\x01\x12\x19\n\x04\x63ity\x18\x02 \x01(\tB\x0b\xfa\x42\x08r\x06\xc0\x01\x01\xd0\x01\x01\x12\x1b\n\x06region\x18\x03 \x01(\tB\x0b\xfa\x42\x08r\x06\xc0\x01\x01\xd0\x01\x01\x12\x18\n\x03\x61sn\x18\x04 \x01(\tB\x0b\xfa\x42\x08r\x06\xc0\x01\x01\xd0\x01\x01\x12\x1c\n\x07is_anon\x18\x05 \x01(\tB\x0b\xfa\x42\x08r\x06\xc0\x01\x01\xd0\x01\x01\x12\x1d\n\x08\x61non_vpn\x18\x06 \x01(\tB\x0b\xfa\x42\x08r\x06\xc0\x01\x01\xd0\x01\x01\x12!\n\x0c\x61non_hosting\x18\x07 \x01(\tB\x0b\xfa\x42\x08r\x06\xc0\x01\x01\xd0\x01\x01\x12\x1d\n\x08\x61non_tor\x18\x08 \x01(\tB\x0b\xfa\x42\x08r\x06\xc0\x01\x01\xd0\x01\x01\x12\x1f\n\nanon_proxy\x18\t \x01(\tB\x0b\xfa\x42\x08r\x06\xc0\x01\x01\xd0\x01\x01\x42\xad\x01\n8io.envoyproxy.envoy.extensions.geoip_providers.common.v3B\x0b\x43ommonProtoP\x01ZZgithub.com/envoyproxy/go-control-plane/envoy/extensions/geoip_providers/common/v3;commonv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -44,9 +43,7 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_COMMONGEOIPPROVIDERCONFIG_GEOLOCATIONHEADERSTOADD'].fields_by_name['asn']._loaded_options = None
   _globals['_COMMONGEOIPPROVIDERCONFIG_GEOLOCATIONHEADERSTOADD'].fields_by_name['asn']._serialized_options = b'\372B\010r\006\300\001\001\320\001\001'
   _globals['_COMMONGEOIPPROVIDERCONFIG_GEOLOCATIONHEADERSTOADD'].fields_by_name['is_anon']._loaded_options = None
-  _globals['_COMMONGEOIPPROVIDERCONFIG_GEOLOCATIONHEADERSTOADD'].fields_by_name['is_anon']._serialized_options = b'\030\001\372B\010r\006\300\001\001\320\001\001\222\307\206\330\004\0033.0'
-  _globals['_COMMONGEOIPPROVIDERCONFIG_GEOLOCATIONHEADERSTOADD'].fields_by_name['anon']._loaded_options = None
-  _globals['_COMMONGEOIPPROVIDERCONFIG_GEOLOCATIONHEADERSTOADD'].fields_by_name['anon']._serialized_options = b'\372B\010r\006\300\001\001\320\001\001'
+  _globals['_COMMONGEOIPPROVIDERCONFIG_GEOLOCATIONHEADERSTOADD'].fields_by_name['is_anon']._serialized_options = b'\372B\010r\006\300\001\001\320\001\001'
   _globals['_COMMONGEOIPPROVIDERCONFIG_GEOLOCATIONHEADERSTOADD'].fields_by_name['anon_vpn']._loaded_options = None
   _globals['_COMMONGEOIPPROVIDERCONFIG_GEOLOCATIONHEADERSTOADD'].fields_by_name['anon_vpn']._serialized_options = b'\372B\010r\006\300\001\001\320\001\001'
   _globals['_COMMONGEOIPPROVIDERCONFIG_GEOLOCATIONHEADERSTOADD'].fields_by_name['anon_hosting']._loaded_options = None
@@ -55,16 +52,10 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_COMMONGEOIPPROVIDERCONFIG_GEOLOCATIONHEADERSTOADD'].fields_by_name['anon_tor']._serialized_options = b'\372B\010r\006\300\001\001\320\001\001'
   _globals['_COMMONGEOIPPROVIDERCONFIG_GEOLOCATIONHEADERSTOADD'].fields_by_name['anon_proxy']._loaded_options = None
   _globals['_COMMONGEOIPPROVIDERCONFIG_GEOLOCATIONHEADERSTOADD'].fields_by_name['anon_proxy']._serialized_options = b'\372B\010r\006\300\001\001\320\001\001'
-  _globals['_COMMONGEOIPPROVIDERCONFIG_GEOLOCATIONHEADERSTOADD'].fields_by_name['isp']._loaded_options = None
-  _globals['_COMMONGEOIPPROVIDERCONFIG_GEOLOCATIONHEADERSTOADD'].fields_by_name['isp']._serialized_options = b'\372B\010r\006\300\001\001\320\001\001'
-  _globals['_COMMONGEOIPPROVIDERCONFIG_GEOLOCATIONHEADERSTOADD'].fields_by_name['apple_private_relay']._loaded_options = None
-  _globals['_COMMONGEOIPPROVIDERCONFIG_GEOLOCATIONHEADERSTOADD'].fields_by_name['apple_private_relay']._serialized_options = b'\372B\010r\006\300\001\001\320\001\001'
   _globals['_COMMONGEOIPPROVIDERCONFIG'].fields_by_name['geo_headers_to_add']._loaded_options = None
-  _globals['_COMMONGEOIPPROVIDERCONFIG'].fields_by_name['geo_headers_to_add']._serialized_options = b'\030\001\222\307\206\330\004\0033.0'
-  _globals['_COMMONGEOIPPROVIDERCONFIG']._serialized_start=197
-  _globals['_COMMONGEOIPPROVIDERCONFIG']._serialized_end=1102
-  _globals['_COMMONGEOIPPROVIDERCONFIG_GEOLOCATIONHEADERSTOADD']._serialized_start=480
-  _globals['_COMMONGEOIPPROVIDERCONFIG_GEOLOCATIONHEADERSTOADD']._serialized_end=883
-  _globals['_COMMONGEOIPPROVIDERCONFIG_GEOLOCATIONFIELDKEYS']._serialized_start=886
-  _globals['_COMMONGEOIPPROVIDERCONFIG_GEOLOCATIONFIELDKEYS']._serialized_end=1102
+  _globals['_COMMONGEOIPPROVIDERCONFIG'].fields_by_name['geo_headers_to_add']._serialized_options = b'\372B\005\212\001\002\020\001'
+  _globals['_COMMONGEOIPPROVIDERCONFIG']._serialized_start=160
+  _globals['_COMMONGEOIPPROVIDERCONFIG']._serialized_end=621
+  _globals['_COMMONGEOIPPROVIDERCONFIG_GEOLOCATIONHEADERSTOADD']._serialized_start=324
+  _globals['_COMMONGEOIPPROVIDERCONFIG_GEOLOCATIONHEADERSTOADD']._serialized_end=621
 # @@protoc_insertion_point(module_scope)

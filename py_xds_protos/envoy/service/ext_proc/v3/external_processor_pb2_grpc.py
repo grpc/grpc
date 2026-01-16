@@ -32,24 +32,21 @@ class ExternalProcessorStub(object):
     as part of a filter chain.
     The overall external processing protocol works like this:
 
-    1. The data plane sends to the service information about the HTTP request.
-    2. The service sends back a ProcessingResponse message that directs
-    the data plane to either stop processing, continue without it, or send
-    it the next chunk of the message body.
-    3. If so requested, the data plane sends the server the message body in
-    chunks, or the entire body at once. In either case, the server may send
-    back a ProcessingResponse for each message it receives, or wait for
-    a certain amount of body chunks received before streaming back the
-    ProcessingResponse messages.
-    4. If so requested, the data plane sends the server the HTTP trailers,
+    1. Envoy sends to the service information about the HTTP request.
+    2. The service sends back a ProcessingResponse message that directs Envoy
+    to either stop processing, continue without it, or send it the
+    next chunk of the message body.
+    3. If so requested, Envoy sends the server chunks of the message body,
+    or the entire body at once. In either case, the server sends back
+    a ProcessingResponse after each message it receives.
+    4. If so requested, Envoy sends the server the HTTP trailers,
     and the server sends back a ProcessingResponse.
     5. At this point, request processing is done, and we pick up again
-    at step 1 when the data plane receives a response from the upstream
-    server.
+    at step 1 when Envoy receives a response from the upstream server.
     6. At any point above, if the server closes the gRPC stream cleanly,
-    then the data plane proceeds without consulting the server.
+    then Envoy proceeds without consulting the server.
     7. At any point above, if the server closes the gRPC stream with an error,
-    then the data plane returns a 500 error to the client, unless the filter
+    then Envoy returns a 500 error to the client, unless the filter
     was configured to ignore errors.
 
     In other words, the process is a request/response conversation, but
@@ -77,24 +74,21 @@ class ExternalProcessorServicer(object):
     as part of a filter chain.
     The overall external processing protocol works like this:
 
-    1. The data plane sends to the service information about the HTTP request.
-    2. The service sends back a ProcessingResponse message that directs
-    the data plane to either stop processing, continue without it, or send
-    it the next chunk of the message body.
-    3. If so requested, the data plane sends the server the message body in
-    chunks, or the entire body at once. In either case, the server may send
-    back a ProcessingResponse for each message it receives, or wait for
-    a certain amount of body chunks received before streaming back the
-    ProcessingResponse messages.
-    4. If so requested, the data plane sends the server the HTTP trailers,
+    1. Envoy sends to the service information about the HTTP request.
+    2. The service sends back a ProcessingResponse message that directs Envoy
+    to either stop processing, continue without it, or send it the
+    next chunk of the message body.
+    3. If so requested, Envoy sends the server chunks of the message body,
+    or the entire body at once. In either case, the server sends back
+    a ProcessingResponse after each message it receives.
+    4. If so requested, Envoy sends the server the HTTP trailers,
     and the server sends back a ProcessingResponse.
     5. At this point, request processing is done, and we pick up again
-    at step 1 when the data plane receives a response from the upstream
-    server.
+    at step 1 when Envoy receives a response from the upstream server.
     6. At any point above, if the server closes the gRPC stream cleanly,
-    then the data plane proceeds without consulting the server.
+    then Envoy proceeds without consulting the server.
     7. At any point above, if the server closes the gRPC stream with an error,
-    then the data plane returns a 500 error to the client, unless the filter
+    then Envoy returns a 500 error to the client, unless the filter
     was configured to ignore errors.
 
     In other words, the process is a request/response conversation, but
@@ -103,7 +97,7 @@ class ExternalProcessorServicer(object):
     """
 
     def Process(self, request_iterator, context):
-        """This begins the bidirectional stream that the data plane will use to
+        """This begins the bidirectional stream that Envoy will use to
         give the server control over what the filter does. The actual
         protocol is described by the ProcessingRequest and ProcessingResponse
         messages below.
@@ -135,24 +129,21 @@ class ExternalProcessor(object):
     as part of a filter chain.
     The overall external processing protocol works like this:
 
-    1. The data plane sends to the service information about the HTTP request.
-    2. The service sends back a ProcessingResponse message that directs
-    the data plane to either stop processing, continue without it, or send
-    it the next chunk of the message body.
-    3. If so requested, the data plane sends the server the message body in
-    chunks, or the entire body at once. In either case, the server may send
-    back a ProcessingResponse for each message it receives, or wait for
-    a certain amount of body chunks received before streaming back the
-    ProcessingResponse messages.
-    4. If so requested, the data plane sends the server the HTTP trailers,
+    1. Envoy sends to the service information about the HTTP request.
+    2. The service sends back a ProcessingResponse message that directs Envoy
+    to either stop processing, continue without it, or send it the
+    next chunk of the message body.
+    3. If so requested, Envoy sends the server chunks of the message body,
+    or the entire body at once. In either case, the server sends back
+    a ProcessingResponse after each message it receives.
+    4. If so requested, Envoy sends the server the HTTP trailers,
     and the server sends back a ProcessingResponse.
     5. At this point, request processing is done, and we pick up again
-    at step 1 when the data plane receives a response from the upstream
-    server.
+    at step 1 when Envoy receives a response from the upstream server.
     6. At any point above, if the server closes the gRPC stream cleanly,
-    then the data plane proceeds without consulting the server.
+    then Envoy proceeds without consulting the server.
     7. At any point above, if the server closes the gRPC stream with an error,
-    then the data plane returns a 500 error to the client, unless the filter
+    then Envoy returns a 500 error to the client, unless the filter
     was configured to ignore errors.
 
     In other words, the process is a request/response conversation, but

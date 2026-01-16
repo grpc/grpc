@@ -28,7 +28,7 @@ from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n2envoy/extensions/filters/http/geoip/v3/geoip.proto\x12&envoy.extensions.filters.http.geoip.v3\x1a$envoy/config/core/v3/extension.proto\x1a\x1fxds/annotations/v3/status.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xdb\x02\n\x05Geoip\x12K\n\nxff_config\x18\x01 \x01(\x0b\x32\x37.envoy.extensions.filters.http.geoip.v3.Geoip.XffConfig\x12^\n\x14\x63ustom_header_config\x18\x04 \x01(\x0b\x32@.envoy.extensions.filters.http.geoip.v3.Geoip.CustomHeaderConfig\x12\x46\n\x08provider\x18\x03 \x01(\x0b\x32*.envoy.config.core.v3.TypedExtensionConfigB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x1a)\n\tXffConfig\x12\x1c\n\x14xff_num_trusted_hops\x18\x01 \x01(\r\x1a\x32\n\x12\x43ustomHeaderConfig\x12\x1c\n\x0bheader_name\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x42\xab\x01\n4io.envoyproxy.envoy.extensions.filters.http.geoip.v3B\nGeoipProtoP\x01ZUgithub.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/geoip/v3;geoipv3\xba\x80\xc8\xd1\x06\x02\x10\x02\xd2\xc6\xa4\xe1\x06\x02\x08\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n2envoy/extensions/filters/http/geoip/v3/geoip.proto\x12&envoy.extensions.filters.http.geoip.v3\x1a$envoy/config/core/v3/extension.proto\x1a\x1fxds/annotations/v3/status.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xc7\x01\n\x05Geoip\x12K\n\nxff_config\x18\x01 \x01(\x0b\x32\x37.envoy.extensions.filters.http.geoip.v3.Geoip.XffConfig\x12\x46\n\x08provider\x18\x03 \x01(\x0b\x32*.envoy.config.core.v3.TypedExtensionConfigB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x1a)\n\tXffConfig\x12\x1c\n\x14xff_num_trusted_hops\x18\x01 \x01(\rB\xab\x01\n4io.envoyproxy.envoy.extensions.filters.http.geoip.v3B\nGeoipProtoP\x01ZUgithub.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/geoip/v3;geoipv3\xba\x80\xc8\xd1\x06\x02\x10\x02\xd2\xc6\xa4\xe1\x06\x02\x08\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -36,14 +36,10 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'envoy.extensions.filters.ht
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'\n4io.envoyproxy.envoy.extensions.filters.http.geoip.v3B\nGeoipProtoP\001ZUgithub.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/geoip/v3;geoipv3\272\200\310\321\006\002\020\002\322\306\244\341\006\002\010\001'
-  _globals['_GEOIP_CUSTOMHEADERCONFIG'].fields_by_name['header_name']._loaded_options = None
-  _globals['_GEOIP_CUSTOMHEADERCONFIG'].fields_by_name['header_name']._serialized_options = b'\372B\004r\002\020\001'
   _globals['_GEOIP'].fields_by_name['provider']._loaded_options = None
   _globals['_GEOIP'].fields_by_name['provider']._serialized_options = b'\372B\005\212\001\002\020\001'
   _globals['_GEOIP']._serialized_start=222
-  _globals['_GEOIP']._serialized_end=569
-  _globals['_GEOIP_XFFCONFIG']._serialized_start=476
-  _globals['_GEOIP_XFFCONFIG']._serialized_end=517
-  _globals['_GEOIP_CUSTOMHEADERCONFIG']._serialized_start=519
-  _globals['_GEOIP_CUSTOMHEADERCONFIG']._serialized_end=569
+  _globals['_GEOIP']._serialized_end=421
+  _globals['_GEOIP_XFFCONFIG']._serialized_start=380
+  _globals['_GEOIP_XFFCONFIG']._serialized_end=421
 # @@protoc_insertion_point(module_scope)

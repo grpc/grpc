@@ -30,7 +30,7 @@ from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n:envoy/extensions/filters/http/composite/v3/composite.proto\x12*envoy.extensions.filters.http.composite.v3\x1a\x1f\x65nvoy/config/core/v3/base.proto\x1a(envoy/config/core/v3/config_source.proto\x1a$envoy/config/core/v3/extension.proto\x1a\x1eudpa/annotations/migrate.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\x0b\n\tComposite\"\\\n\x18\x46ilterChainConfiguration\x12@\n\x0ctyped_config\x18\x01 \x03(\x0b\x32*.envoy.config.core.v3.TypedExtensionConfig\"m\n\rDynamicConfig\x12\x15\n\x04name\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x45\n\x10\x63onfig_discovery\x18\x02 \x01(\x0b\x32+.envoy.config.core.v3.ExtensionConfigSource\"\xf8\x02\n\x13\x45xecuteFilterAction\x12U\n\x0ctyped_config\x18\x01 \x01(\x0b\x32*.envoy.config.core.v3.TypedExtensionConfigB\x13\xf2\x98\xfe\x8f\x05\r\x12\x0b\x63onfig_type\x12\x66\n\x0e\x64ynamic_config\x18\x02 \x01(\x0b\x32\x39.envoy.extensions.filters.http.composite.v3.DynamicConfigB\x13\xf2\x98\xfe\x8f\x05\r\x12\x0b\x63onfig_type\x12Z\n\x0c\x66ilter_chain\x18\x04 \x01(\x0b\x32\x44.envoy.extensions.filters.http.composite.v3.FilterChainConfiguration\x12\x46\n\x0esample_percent\x18\x03 \x01(\x0b\x32..envoy.config.core.v3.RuntimeFractionalPercentB\xb3\x01\n8io.envoyproxy.envoy.extensions.filters.http.composite.v3B\x0e\x43ompositeProtoP\x01Z]github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/composite/v3;compositev3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n:envoy/extensions/filters/http/composite/v3/composite.proto\x12*envoy.extensions.filters.http.composite.v3\x1a\x1f\x65nvoy/config/core/v3/base.proto\x1a(envoy/config/core/v3/config_source.proto\x1a$envoy/config/core/v3/extension.proto\x1a\x1eudpa/annotations/migrate.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\x0b\n\tComposite\"m\n\rDynamicConfig\x12\x15\n\x04name\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x45\n\x10\x63onfig_discovery\x18\x02 \x01(\x0b\x32+.envoy.config.core.v3.ExtensionConfigSource\"\x9c\x02\n\x13\x45xecuteFilterAction\x12U\n\x0ctyped_config\x18\x01 \x01(\x0b\x32*.envoy.config.core.v3.TypedExtensionConfigB\x13\xf2\x98\xfe\x8f\x05\r\x12\x0b\x63onfig_type\x12\x66\n\x0e\x64ynamic_config\x18\x02 \x01(\x0b\x32\x39.envoy.extensions.filters.http.composite.v3.DynamicConfigB\x13\xf2\x98\xfe\x8f\x05\r\x12\x0b\x63onfig_type\x12\x46\n\x0esample_percent\x18\x03 \x01(\x0b\x32..envoy.config.core.v3.RuntimeFractionalPercentB\xb3\x01\n8io.envoyproxy.envoy.extensions.filters.http.composite.v3B\x0e\x43ompositeProtoP\x01Z]github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/composite/v3;compositev3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -46,10 +46,8 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_EXECUTEFILTERACTION'].fields_by_name['dynamic_config']._serialized_options = b'\362\230\376\217\005\r\022\013config_type'
   _globals['_COMPOSITE']._serialized_start=307
   _globals['_COMPOSITE']._serialized_end=318
-  _globals['_FILTERCHAINCONFIGURATION']._serialized_start=320
-  _globals['_FILTERCHAINCONFIGURATION']._serialized_end=412
-  _globals['_DYNAMICCONFIG']._serialized_start=414
-  _globals['_DYNAMICCONFIG']._serialized_end=523
-  _globals['_EXECUTEFILTERACTION']._serialized_start=526
-  _globals['_EXECUTEFILTERACTION']._serialized_end=902
+  _globals['_DYNAMICCONFIG']._serialized_start=320
+  _globals['_DYNAMICCONFIG']._serialized_end=429
+  _globals['_EXECUTEFILTERACTION']._serialized_start=432
+  _globals['_EXECUTEFILTERACTION']._serialized_end=716
 # @@protoc_insertion_point(module_scope)

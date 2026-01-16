@@ -23,13 +23,12 @@ _sym_db = _symbol_database.Default()
 
 
 from envoy.config.core.v3 import base_pb2 as envoy_dot_config_dot_core_dot_v3_dot_base__pb2
-from google.protobuf import duration_pb2 as google_dot_protobuf_dot_duration__pb2
 from udpa.annotations import sensitive_pb2 as udpa_dot_annotations_dot_sensitive__pb2
 from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n8envoy/extensions/common/aws/v3/credential_provider.proto\x12\x1e\x65nvoy.extensions.common.aws.v3\x1a\x1f\x65nvoy/config/core/v3/base.proto\x1a\x1egoogle/protobuf/duration.proto\x1a udpa/annotations/sensitive.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xef\x07\n\x15\x41wsCredentialProvider\x12{\n&assume_role_with_web_identity_provider\x18\x01 \x01(\x0b\x32K.envoy.extensions.common.aws.v3.AssumeRoleWithWebIdentityCredentialProvider\x12S\n\x11inline_credential\x18\x02 \x01(\x0b\x32\x38.envoy.extensions.common.aws.v3.InlineCredentialProvider\x12\x64\n\x19\x63redentials_file_provider\x18\x03 \x01(\x0b\x32\x41.envoy.extensions.common.aws.v3.CredentialsFileCredentialProvider\x12(\n custom_credential_provider_chain\x18\x04 \x01(\x08\x12r\n&iam_roles_anywhere_credential_provider\x18\x05 \x01(\x0b\x32\x42.envoy.extensions.common.aws.v3.IAMRolesAnywhereCredentialProvider\x12\\\n\x1a\x63onfig_credential_provider\x18\x06 \x01(\x0b\x32\x38.envoy.extensions.common.aws.v3.ConfigCredentialProvider\x12\x62\n\x1d\x63ontainer_credential_provider\x18\x07 \x01(\x0b\x32;.envoy.extensions.common.aws.v3.ContainerCredentialProvider\x12\x66\n\x1f\x65nvironment_credential_provider\x18\x08 \x01(\x0b\x32=.envoy.extensions.common.aws.v3.EnvironmentCredentialProvider\x12o\n$instance_profile_credential_provider\x18\t \x01(\x0b\x32\x41.envoy.extensions.common.aws.v3.InstanceProfileCredentialProvider\x12\x65\n\x1f\x61ssume_role_credential_provider\x18\n \x01(\x0b\x32<.envoy.extensions.common.aws.v3.AssumeRoleCredentialProvider\"\x83\x01\n\x18InlineCredentialProvider\x12\x1e\n\raccess_key_id\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12(\n\x11secret_access_key\x18\x02 \x01(\tB\r\xfa\x42\x04r\x02\x10\x01\xb8\xb7\x8b\xa4\x02\x01\x12\x1d\n\rsession_token\x18\x03 \x01(\tB\x06\xb8\xb7\x8b\xa4\x02\x01\"\xb5\x01\n+AssumeRoleWithWebIdentityCredentialProvider\x12P\n\x1eweb_identity_token_data_source\x18\x01 \x01(\x0b\x32 .envoy.config.core.v3.DataSourceB\x06\xb8\xb7\x8b\xa4\x02\x01\x12\x19\n\x08role_arn\x18\x02 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x19\n\x11role_session_name\x18\x03 \x01(\t\"\x7f\n!CredentialsFileCredentialProvider\x12I\n\x17\x63redentials_data_source\x18\x01 \x01(\x0b\x32 .envoy.config.core.v3.DataSourceB\x06\xb8\xb7\x8b\xa4\x02\x01\x12\x0f\n\x07profile\x18\x02 \x01(\t\"\xa8\x03\n\"IAMRolesAnywhereCredentialProvider\x12\x19\n\x08role_arn\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12?\n\x0b\x63\x65rtificate\x18\x02 \x01(\x0b\x32 .envoy.config.core.v3.DataSourceB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x12;\n\x11\x63\x65rtificate_chain\x18\x03 \x01(\x0b\x32 .envoy.config.core.v3.DataSource\x12\x45\n\x0bprivate_key\x18\x04 \x01(\x0b\x32 .envoy.config.core.v3.DataSourceB\x0e\xfa\x42\x05\x8a\x01\x02\x10\x01\xb8\xb7\x8b\xa4\x02\x01\x12!\n\x10trust_anchor_arn\x18\x05 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x1c\n\x0bprofile_arn\x18\x06 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x19\n\x11role_session_name\x18\x07 \x01(\t\x12\x46\n\x10session_duration\x18\x08 \x01(\x0b\x32\x19.google.protobuf.DurationB\x11\xfa\x42\x0e\xaa\x01\x0b\"\x04\x08\xc0\xd1\x02\x32\x03\x08\x84\x07\"\x1a\n\x18\x43onfigCredentialProvider\"\x1d\n\x1b\x43ontainerCredentialProvider\"\x1f\n\x1d\x45nvironmentCredentialProvider\"#\n!InstanceProfileCredentialProvider\"\x85\x02\n\x1c\x41ssumeRoleCredentialProvider\x12\x19\n\x08role_arn\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x19\n\x11role_session_name\x18\x02 \x01(\t\x12\x13\n\x0b\x65xternal_id\x18\x03 \x01(\t\x12\x46\n\x10session_duration\x18\x04 \x01(\x0b\x32\x19.google.protobuf.DurationB\x11\xfa\x42\x0e\xaa\x01\x0b\"\x04\x08\xc0\xd1\x02\x32\x03\x08\x84\x07\x12R\n\x13\x63redential_provider\x18\x05 \x01(\x0b\x32\x35.envoy.extensions.common.aws.v3.AwsCredentialProviderB\x9e\x01\n,io.envoyproxy.envoy.extensions.common.aws.v3B\x17\x43redentialProviderProtoP\x01ZKgithub.com/envoyproxy/go-control-plane/envoy/extensions/common/aws/v3;awsv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n8envoy/extensions/common/aws/v3/credential_provider.proto\x12\x1e\x65nvoy.extensions.common.aws.v3\x1a\x1f\x65nvoy/config/core/v3/base.proto\x1a udpa/annotations/sensitive.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xf9\x02\n\x15\x41wsCredentialProvider\x12{\n&assume_role_with_web_identity_provider\x18\x01 \x01(\x0b\x32K.envoy.extensions.common.aws.v3.AssumeRoleWithWebIdentityCredentialProvider\x12S\n\x11inline_credential\x18\x02 \x01(\x0b\x32\x38.envoy.extensions.common.aws.v3.InlineCredentialProvider\x12\x64\n\x19\x63redentials_file_provider\x18\x03 \x01(\x0b\x32\x41.envoy.extensions.common.aws.v3.CredentialsFileCredentialProvider\x12(\n custom_credential_provider_chain\x18\x04 \x01(\x08\"\x83\x01\n\x18InlineCredentialProvider\x12\x1e\n\raccess_key_id\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12(\n\x11secret_access_key\x18\x02 \x01(\tB\r\xfa\x42\x04r\x02\x10\x01\xb8\xb7\x8b\xa4\x02\x01\x12\x1d\n\rsession_token\x18\x03 \x01(\tB\x06\xb8\xb7\x8b\xa4\x02\x01\"\xb5\x01\n+AssumeRoleWithWebIdentityCredentialProvider\x12P\n\x1eweb_identity_token_data_source\x18\x01 \x01(\x0b\x32 .envoy.config.core.v3.DataSourceB\x06\xb8\xb7\x8b\xa4\x02\x01\x12\x19\n\x08role_arn\x18\x02 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x19\n\x11role_session_name\x18\x03 \x01(\t\"\x7f\n!CredentialsFileCredentialProvider\x12I\n\x17\x63redentials_data_source\x18\x01 \x01(\x0b\x32 .envoy.config.core.v3.DataSourceB\x06\xb8\xb7\x8b\xa4\x02\x01\x12\x0f\n\x07profile\x18\x02 \x01(\tB\x9e\x01\n,io.envoyproxy.envoy.extensions.common.aws.v3B\x17\x43redentialProviderProtoP\x01ZKgithub.com/envoyproxy/go-control-plane/envoy/extensions/common/aws/v3;awsv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -49,40 +48,12 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_ASSUMEROLEWITHWEBIDENTITYCREDENTIALPROVIDER'].fields_by_name['role_arn']._serialized_options = b'\372B\004r\002\020\001'
   _globals['_CREDENTIALSFILECREDENTIALPROVIDER'].fields_by_name['credentials_data_source']._loaded_options = None
   _globals['_CREDENTIALSFILECREDENTIALPROVIDER'].fields_by_name['credentials_data_source']._serialized_options = b'\270\267\213\244\002\001'
-  _globals['_IAMROLESANYWHERECREDENTIALPROVIDER'].fields_by_name['role_arn']._loaded_options = None
-  _globals['_IAMROLESANYWHERECREDENTIALPROVIDER'].fields_by_name['role_arn']._serialized_options = b'\372B\004r\002\020\001'
-  _globals['_IAMROLESANYWHERECREDENTIALPROVIDER'].fields_by_name['certificate']._loaded_options = None
-  _globals['_IAMROLESANYWHERECREDENTIALPROVIDER'].fields_by_name['certificate']._serialized_options = b'\372B\005\212\001\002\020\001'
-  _globals['_IAMROLESANYWHERECREDENTIALPROVIDER'].fields_by_name['private_key']._loaded_options = None
-  _globals['_IAMROLESANYWHERECREDENTIALPROVIDER'].fields_by_name['private_key']._serialized_options = b'\372B\005\212\001\002\020\001\270\267\213\244\002\001'
-  _globals['_IAMROLESANYWHERECREDENTIALPROVIDER'].fields_by_name['trust_anchor_arn']._loaded_options = None
-  _globals['_IAMROLESANYWHERECREDENTIALPROVIDER'].fields_by_name['trust_anchor_arn']._serialized_options = b'\372B\004r\002\020\001'
-  _globals['_IAMROLESANYWHERECREDENTIALPROVIDER'].fields_by_name['profile_arn']._loaded_options = None
-  _globals['_IAMROLESANYWHERECREDENTIALPROVIDER'].fields_by_name['profile_arn']._serialized_options = b'\372B\004r\002\020\001'
-  _globals['_IAMROLESANYWHERECREDENTIALPROVIDER'].fields_by_name['session_duration']._loaded_options = None
-  _globals['_IAMROLESANYWHERECREDENTIALPROVIDER'].fields_by_name['session_duration']._serialized_options = b'\372B\016\252\001\013\"\004\010\300\321\0022\003\010\204\007'
-  _globals['_ASSUMEROLECREDENTIALPROVIDER'].fields_by_name['role_arn']._loaded_options = None
-  _globals['_ASSUMEROLECREDENTIALPROVIDER'].fields_by_name['role_arn']._serialized_options = b'\372B\004r\002\020\001'
-  _globals['_ASSUMEROLECREDENTIALPROVIDER'].fields_by_name['session_duration']._loaded_options = None
-  _globals['_ASSUMEROLECREDENTIALPROVIDER'].fields_by_name['session_duration']._serialized_options = b'\372B\016\252\001\013\"\004\010\300\321\0022\003\010\204\007'
-  _globals['_AWSCREDENTIALPROVIDER']._serialized_start=248
-  _globals['_AWSCREDENTIALPROVIDER']._serialized_end=1255
-  _globals['_INLINECREDENTIALPROVIDER']._serialized_start=1258
-  _globals['_INLINECREDENTIALPROVIDER']._serialized_end=1389
-  _globals['_ASSUMEROLEWITHWEBIDENTITYCREDENTIALPROVIDER']._serialized_start=1392
-  _globals['_ASSUMEROLEWITHWEBIDENTITYCREDENTIALPROVIDER']._serialized_end=1573
-  _globals['_CREDENTIALSFILECREDENTIALPROVIDER']._serialized_start=1575
-  _globals['_CREDENTIALSFILECREDENTIALPROVIDER']._serialized_end=1702
-  _globals['_IAMROLESANYWHERECREDENTIALPROVIDER']._serialized_start=1705
-  _globals['_IAMROLESANYWHERECREDENTIALPROVIDER']._serialized_end=2129
-  _globals['_CONFIGCREDENTIALPROVIDER']._serialized_start=2131
-  _globals['_CONFIGCREDENTIALPROVIDER']._serialized_end=2157
-  _globals['_CONTAINERCREDENTIALPROVIDER']._serialized_start=2159
-  _globals['_CONTAINERCREDENTIALPROVIDER']._serialized_end=2188
-  _globals['_ENVIRONMENTCREDENTIALPROVIDER']._serialized_start=2190
-  _globals['_ENVIRONMENTCREDENTIALPROVIDER']._serialized_end=2221
-  _globals['_INSTANCEPROFILECREDENTIALPROVIDER']._serialized_start=2223
-  _globals['_INSTANCEPROFILECREDENTIALPROVIDER']._serialized_end=2258
-  _globals['_ASSUMEROLECREDENTIALPROVIDER']._serialized_start=2261
-  _globals['_ASSUMEROLECREDENTIALPROVIDER']._serialized_end=2522
+  _globals['_AWSCREDENTIALPROVIDER']._serialized_start=216
+  _globals['_AWSCREDENTIALPROVIDER']._serialized_end=593
+  _globals['_INLINECREDENTIALPROVIDER']._serialized_start=596
+  _globals['_INLINECREDENTIALPROVIDER']._serialized_end=727
+  _globals['_ASSUMEROLEWITHWEBIDENTITYCREDENTIALPROVIDER']._serialized_start=730
+  _globals['_ASSUMEROLEWITHWEBIDENTITYCREDENTIALPROVIDER']._serialized_end=911
+  _globals['_CREDENTIALSFILECREDENTIALPROVIDER']._serialized_start=913
+  _globals['_CREDENTIALSFILECREDENTIALPROVIDER']._serialized_end=1040
 # @@protoc_insertion_point(module_scope)

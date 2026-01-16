@@ -31,7 +31,7 @@ from udpa.annotations import versioning_pb2 as udpa_dot_annotations_dot_versioni
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n6envoy/extensions/transport_sockets/tls/v3/secret.proto\x12)envoy.extensions.transport_sockets.tls.v3\x1a\x1f\x65nvoy/config/core/v3/base.proto\x1a(envoy/config/core/v3/config_source.proto\x1a\x36\x65nvoy/extensions/transport_sockets/tls/v3/common.proto\x1a udpa/annotations/sensitive.proto\x1a\x1dudpa/annotations/status.proto\x1a!udpa/annotations/versioning.proto\x1a\x17validate/validate.proto\"\xa3\x02\n\rGenericSecret\x12\x38\n\x06secret\x18\x01 \x01(\x0b\x32 .envoy.config.core.v3.DataSourceB\x06\xb8\xb7\x8b\xa4\x02\x01\x12^\n\x07secrets\x18\x02 \x03(\x0b\x32\x45.envoy.extensions.transport_sockets.tls.v3.GenericSecret.SecretsEntryB\x06\xb8\xb7\x8b\xa4\x02\x01\x1aP\n\x0cSecretsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12/\n\x05value\x18\x02 \x01(\x0b\x32 .envoy.config.core.v3.DataSource:\x02\x38\x01:&\x9a\xc5\x88\x1e!\n\x1f\x65nvoy.api.v2.auth.GenericSecret\"\x8a\x01\n\x0fSdsSecretConfig\x12\x15\n\x04name\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x36\n\nsds_config\x18\x02 \x01(\x0b\x32\".envoy.config.core.v3.ConfigSource:(\x9a\xc5\x88\x1e#\n!envoy.api.v2.auth.SdsSecretConfig\"\xb0\x03\n\x06Secret\x12\x0c\n\x04name\x18\x01 \x01(\t\x12T\n\x0ftls_certificate\x18\x02 \x01(\x0b\x32\x39.envoy.extensions.transport_sockets.tls.v3.TlsCertificateH\x00\x12^\n\x13session_ticket_keys\x18\x03 \x01(\x0b\x32?.envoy.extensions.transport_sockets.tls.v3.TlsSessionTicketKeysH\x00\x12\x65\n\x12validation_context\x18\x04 \x01(\x0b\x32G.envoy.extensions.transport_sockets.tls.v3.CertificateValidationContextH\x00\x12R\n\x0egeneric_secret\x18\x05 \x01(\x0b\x32\x38.envoy.extensions.transport_sockets.tls.v3.GenericSecretH\x00:\x1f\x9a\xc5\x88\x1e\x1a\n\x18\x65nvoy.api.v2.auth.SecretB\x06\n\x04typeB\xa8\x01\n7io.envoyproxy.envoy.extensions.transport_sockets.tls.v3B\x0bSecretProtoP\x01ZVgithub.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3;tlsv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n6envoy/extensions/transport_sockets/tls/v3/secret.proto\x12)envoy.extensions.transport_sockets.tls.v3\x1a\x1f\x65nvoy/config/core/v3/base.proto\x1a(envoy/config/core/v3/config_source.proto\x1a\x36\x65nvoy/extensions/transport_sockets/tls/v3/common.proto\x1a udpa/annotations/sensitive.proto\x1a\x1dudpa/annotations/status.proto\x1a!udpa/annotations/versioning.proto\x1a\x17validate/validate.proto\"q\n\rGenericSecret\x12\x38\n\x06secret\x18\x01 \x01(\x0b\x32 .envoy.config.core.v3.DataSourceB\x06\xb8\xb7\x8b\xa4\x02\x01:&\x9a\xc5\x88\x1e!\n\x1f\x65nvoy.api.v2.auth.GenericSecret\"\x8a\x01\n\x0fSdsSecretConfig\x12\x15\n\x04name\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x36\n\nsds_config\x18\x02 \x01(\x0b\x32\".envoy.config.core.v3.ConfigSource:(\x9a\xc5\x88\x1e#\n!envoy.api.v2.auth.SdsSecretConfig\"\xb0\x03\n\x06Secret\x12\x0c\n\x04name\x18\x01 \x01(\t\x12T\n\x0ftls_certificate\x18\x02 \x01(\x0b\x32\x39.envoy.extensions.transport_sockets.tls.v3.TlsCertificateH\x00\x12^\n\x13session_ticket_keys\x18\x03 \x01(\x0b\x32?.envoy.extensions.transport_sockets.tls.v3.TlsSessionTicketKeysH\x00\x12\x65\n\x12validation_context\x18\x04 \x01(\x0b\x32G.envoy.extensions.transport_sockets.tls.v3.CertificateValidationContextH\x00\x12R\n\x0egeneric_secret\x18\x05 \x01(\x0b\x32\x38.envoy.extensions.transport_sockets.tls.v3.GenericSecretH\x00:\x1f\x9a\xc5\x88\x1e\x1a\n\x18\x65nvoy.api.v2.auth.SecretB\x06\n\x04typeB\xa8\x01\n7io.envoyproxy.envoy.extensions.transport_sockets.tls.v3B\x0bSecretProtoP\x01ZVgithub.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3;tlsv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -39,12 +39,8 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'envoy.extensions.transport_
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'\n7io.envoyproxy.envoy.extensions.transport_sockets.tls.v3B\013SecretProtoP\001ZVgithub.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tls/v3;tlsv3\272\200\310\321\006\002\020\002'
-  _globals['_GENERICSECRET_SECRETSENTRY']._loaded_options = None
-  _globals['_GENERICSECRET_SECRETSENTRY']._serialized_options = b'8\001'
   _globals['_GENERICSECRET'].fields_by_name['secret']._loaded_options = None
   _globals['_GENERICSECRET'].fields_by_name['secret']._serialized_options = b'\270\267\213\244\002\001'
-  _globals['_GENERICSECRET'].fields_by_name['secrets']._loaded_options = None
-  _globals['_GENERICSECRET'].fields_by_name['secrets']._serialized_options = b'\270\267\213\244\002\001'
   _globals['_GENERICSECRET']._loaded_options = None
   _globals['_GENERICSECRET']._serialized_options = b'\232\305\210\036!\n\037envoy.api.v2.auth.GenericSecret'
   _globals['_SDSSECRETCONFIG'].fields_by_name['name']._loaded_options = None
@@ -53,12 +49,10 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_SDSSECRETCONFIG']._serialized_options = b'\232\305\210\036#\n!envoy.api.v2.auth.SdsSecretConfig'
   _globals['_SECRET']._loaded_options = None
   _globals['_SECRET']._serialized_options = b'\232\305\210\036\032\n\030envoy.api.v2.auth.Secret'
-  _globals['_GENERICSECRET']._serialized_start=358
-  _globals['_GENERICSECRET']._serialized_end=649
-  _globals['_GENERICSECRET_SECRETSENTRY']._serialized_start=529
-  _globals['_GENERICSECRET_SECRETSENTRY']._serialized_end=609
-  _globals['_SDSSECRETCONFIG']._serialized_start=652
-  _globals['_SDSSECRETCONFIG']._serialized_end=790
-  _globals['_SECRET']._serialized_start=793
-  _globals['_SECRET']._serialized_end=1225
+  _globals['_GENERICSECRET']._serialized_start=357
+  _globals['_GENERICSECRET']._serialized_end=470
+  _globals['_SDSSECRETCONFIG']._serialized_start=473
+  _globals['_SDSSECRETCONFIG']._serialized_end=611
+  _globals['_SECRET']._serialized_start=614
+  _globals['_SECRET']._serialized_end=1046
 # @@protoc_insertion_point(module_scope)

@@ -30,7 +30,7 @@ from udpa.annotations import versioning_pb2 as udpa_dot_annotations_dot_versioni
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n-envoy/config/metrics/v3/metrics_service.proto\x12\x17\x65nvoy.config.metrics.v3\x1a(envoy/config/core/v3/config_source.proto\x1a\'envoy/config/core/v3/grpc_service.proto\x1a\x1egoogle/protobuf/wrappers.proto\x1a\x1dudpa/annotations/status.proto\x1a!udpa/annotations/versioning.proto\x1a\x17validate/validate.proto\"\xa5\x03\n\x14MetricsServiceConfig\x12\x41\n\x0cgrpc_service\x18\x01 \x01(\x0b\x32!.envoy.config.core.v3.GrpcServiceB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x12I\n\x15transport_api_version\x18\x03 \x01(\x0e\x32 .envoy.config.core.v3.ApiVersionB\x08\xfa\x42\x05\x82\x01\x02\x10\x01\x12=\n\x19report_counters_as_deltas\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.BoolValue\x12\x1b\n\x13\x65mit_tags_as_labels\x18\x04 \x01(\x08\x12Q\n\x13histogram_emit_mode\x18\x05 \x01(\x0e\x32*.envoy.config.metrics.v3.HistogramEmitModeB\x08\xfa\x42\x05\x82\x01\x02\x10\x01\x12\x1b\n\nbatch_size\x18\x06 \x01(\rB\x07\xfa\x42\x04*\x02(\x00:3\x9a\xc5\x88\x1e.\n,envoy.config.metrics.v2.MetricsServiceConfig*J\n\x11HistogramEmitMode\x12\x19\n\x15SUMMARY_AND_HISTOGRAM\x10\x00\x12\x0b\n\x07SUMMARY\x10\x01\x12\r\n\tHISTOGRAM\x10\x02\x42\x90\x01\n%io.envoyproxy.envoy.config.metrics.v3B\x13MetricsServiceProtoP\x01ZHgithub.com/envoyproxy/go-control-plane/envoy/config/metrics/v3;metricsv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n-envoy/config/metrics/v3/metrics_service.proto\x12\x17\x65nvoy.config.metrics.v3\x1a(envoy/config/core/v3/config_source.proto\x1a\'envoy/config/core/v3/grpc_service.proto\x1a\x1egoogle/protobuf/wrappers.proto\x1a\x1dudpa/annotations/status.proto\x1a!udpa/annotations/versioning.proto\x1a\x17validate/validate.proto\"\x88\x03\n\x14MetricsServiceConfig\x12\x41\n\x0cgrpc_service\x18\x01 \x01(\x0b\x32!.envoy.config.core.v3.GrpcServiceB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x12I\n\x15transport_api_version\x18\x03 \x01(\x0e\x32 .envoy.config.core.v3.ApiVersionB\x08\xfa\x42\x05\x82\x01\x02\x10\x01\x12=\n\x19report_counters_as_deltas\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.BoolValue\x12\x1b\n\x13\x65mit_tags_as_labels\x18\x04 \x01(\x08\x12Q\n\x13histogram_emit_mode\x18\x05 \x01(\x0e\x32*.envoy.config.metrics.v3.HistogramEmitModeB\x08\xfa\x42\x05\x82\x01\x02\x10\x01:3\x9a\xc5\x88\x1e.\n,envoy.config.metrics.v2.MetricsServiceConfig*J\n\x11HistogramEmitMode\x12\x19\n\x15SUMMARY_AND_HISTOGRAM\x10\x00\x12\x0b\n\x07SUMMARY\x10\x01\x12\r\n\tHISTOGRAM\x10\x02\x42\x90\x01\n%io.envoyproxy.envoy.config.metrics.v3B\x13MetricsServiceProtoP\x01ZHgithub.com/envoyproxy/go-control-plane/envoy/config/metrics/v3;metricsv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -44,12 +44,10 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_METRICSSERVICECONFIG'].fields_by_name['transport_api_version']._serialized_options = b'\372B\005\202\001\002\020\001'
   _globals['_METRICSSERVICECONFIG'].fields_by_name['histogram_emit_mode']._loaded_options = None
   _globals['_METRICSSERVICECONFIG'].fields_by_name['histogram_emit_mode']._serialized_options = b'\372B\005\202\001\002\020\001'
-  _globals['_METRICSSERVICECONFIG'].fields_by_name['batch_size']._loaded_options = None
-  _globals['_METRICSSERVICECONFIG'].fields_by_name['batch_size']._serialized_options = b'\372B\004*\002(\000'
   _globals['_METRICSSERVICECONFIG']._loaded_options = None
   _globals['_METRICSSERVICECONFIG']._serialized_options = b'\232\305\210\036.\n,envoy.config.metrics.v2.MetricsServiceConfig'
-  _globals['_HISTOGRAMEMITMODE']._serialized_start=704
-  _globals['_HISTOGRAMEMITMODE']._serialized_end=778
+  _globals['_HISTOGRAMEMITMODE']._serialized_start=675
+  _globals['_HISTOGRAMEMITMODE']._serialized_end=749
   _globals['_METRICSSERVICECONFIG']._serialized_start=281
-  _globals['_METRICSSERVICECONFIG']._serialized_end=702
+  _globals['_METRICSSERVICECONFIG']._serialized_end=673
 # @@protoc_insertion_point(module_scope)

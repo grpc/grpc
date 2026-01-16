@@ -29,7 +29,7 @@ from udpa.annotations import versioning_pb2 as udpa_dot_annotations_dot_versioni
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n3envoy/extensions/transport_sockets/tap/v3/tap.proto\x12)envoy.extensions.transport_sockets.tap.v3\x1a\x1f\x65nvoy/config/core/v3/base.proto\x1a+envoy/extensions/common/tap/v3/common.proto\x1a\x1dudpa/annotations/status.proto\x1a!udpa/annotations/versioning.proto\x1a\x17validate/validate.proto\"\xb5\x02\n\x03Tap\x12V\n\rcommon_config\x18\x01 \x01(\x0b\x32\x35.envoy.extensions.common.tap.v3.CommonExtensionConfigB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x12I\n\x10transport_socket\x18\x02 \x01(\x0b\x32%.envoy.config.core.v3.TransportSocketB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x12U\n\x11socket_tap_config\x18\x03 \x01(\x0b\x32:.envoy.extensions.transport_sockets.tap.v3.SocketTapConfig:4\x9a\xc5\x88\x1e/\n-envoy.config.transport_socket.tap.v2alpha.Tap\"I\n\x0fSocketTapConfig\x12 \n\x18set_connection_per_event\x18\x01 \x01(\x08\x12\x14\n\x0cstats_prefix\x18\x02 \x01(\tB\xa5\x01\n7io.envoyproxy.envoy.extensions.transport_sockets.tap.v3B\x08TapProtoP\x01ZVgithub.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tap/v3;tapv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n3envoy/extensions/transport_sockets/tap/v3/tap.proto\x12)envoy.extensions.transport_sockets.tap.v3\x1a\x1f\x65nvoy/config/core/v3/base.proto\x1a+envoy/extensions/common/tap/v3/common.proto\x1a\x1dudpa/annotations/status.proto\x1a!udpa/annotations/versioning.proto\x1a\x17validate/validate.proto\"\xde\x01\n\x03Tap\x12V\n\rcommon_config\x18\x01 \x01(\x0b\x32\x35.envoy.extensions.common.tap.v3.CommonExtensionConfigB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x12I\n\x10transport_socket\x18\x02 \x01(\x0b\x32%.envoy.config.core.v3.TransportSocketB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01:4\x9a\xc5\x88\x1e/\n-envoy.config.transport_socket.tap.v2alpha.TapB\xa5\x01\n7io.envoyproxy.envoy.extensions.transport_sockets.tap.v3B\x08TapProtoP\x01ZVgithub.com/envoyproxy/go-control-plane/envoy/extensions/transport_sockets/tap/v3;tapv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -44,7 +44,5 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_TAP']._loaded_options = None
   _globals['_TAP']._serialized_options = b'\232\305\210\036/\n-envoy.config.transport_socket.tap.v2alpha.Tap'
   _globals['_TAP']._serialized_start=268
-  _globals['_TAP']._serialized_end=577
-  _globals['_SOCKETTAPCONFIG']._serialized_start=579
-  _globals['_SOCKETTAPCONFIG']._serialized_end=652
+  _globals['_TAP']._serialized_end=490
 # @@protoc_insertion_point(module_scope)
