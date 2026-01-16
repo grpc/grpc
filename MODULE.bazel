@@ -98,8 +98,36 @@ http_archive(
     url = "https://github.com/python/typing_extensions/archive/4.12.2.tar.gz",
 )
 
-# Provide repo @com_google_fuzztest.
-include("//bazel:com_google_fuzztest.MODULE.bazel")
+# --- Provide repo @com_google_fuzztest.
+bazel_dep(name = "fuzztest", version = "20250805.0", dev_dependency = True, repo_name = "com_google_fuzztest")  # mistmached 2023-05-16
 
-# Provides repo @grpc_custom_exec_properties.
-include("//bazel:grpc_custom_exec_properties.MODULE.bazel")
+# This package is not directly used by grpc, but requested by fuzztest.
+#
+# The reason for version bump is because bazel resolve this package to riegeli@0.0.0-20240606-973b6f0,
+# which is incompatible with the version of abseil-cpp we use.
+#
+# See also https://bazel.build/external/module#version-selection.
+bazel_dep(name = "riegeli", version = "0.0.0-20250706-c4d1f27", dev_dependency = True)
+
+# --- Provide repo @grpc_custom_exec_properties.
+#http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+http_archive(
+    name = "bazel_toolchains",
+    integrity = "sha256-F57AL4Cehqv1Y1bYiYyL10Bp8b18VgRAUMLNPXnQ4CQ=",
+    strip_prefix = "bazel-toolchains-4.1.0",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/releases/download/4.1.0/bazel-toolchains-4.1.0.tar.gz",
+        "https://github.com/bazelbuild/bazel-toolchains/releases/download/4.1.0/bazel-toolchains-4.1.0.tar.gz",
+    ],
+)
+
+exec_properties = use_extension("//bazel:extensions.bzl", "exec_properties")
+exec_properties.custom_exec_properties(
+    name = "grpc_custom_exec_properties",
+    constant = "LARGE_MACHINE",
+    rbe_exec_properties_dict = {
+        "os": "ubuntu",
+        "machine_size": "large",
+    },
+)
+use_repo(exec_properties, "grpc_custom_exec_properties")
