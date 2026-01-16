@@ -64,6 +64,8 @@
   default: false
 - name: event_engine_listener
   default: true
+- name: event_engine_poller_for_python
+  default: true
 - name: event_engine_secure_endpoint
   default: true
 - name: fail_recv_metadata_on_deadline_exceeded
