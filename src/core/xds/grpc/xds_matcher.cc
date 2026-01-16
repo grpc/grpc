@@ -256,10 +256,6 @@ bool XdsMatcherPrefixMap::FindMatches(const MatchContext& context,
   auto input = input_->GetValue(context);
   std::vector<const OnMatch*> on_match_results;
   root_.ForEachPrefixMatch(input.value_or(""), [&](const OnMatch& on_match) {
-    if (!on_match.keep_matching) {
-      // Don't need previous entries if we can use this one.
-      on_match_results.clear();
-    }
     on_match_results.push_back(&on_match);
   });
   for (auto it = on_match_results.rbegin(); it != on_match_results.rend();
