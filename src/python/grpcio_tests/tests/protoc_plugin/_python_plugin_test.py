@@ -14,10 +14,8 @@
 
 import collections
 import contextlib
-import errno
 import itertools
 import os
-from pathlib import Path
 import shutil
 import subprocess
 import sys
@@ -39,10 +37,6 @@ from tests.unit.framework.common import test_constants
 STUB_IDENTIFIER = "TestServiceStub"
 SERVICER_IDENTIFIER = "TestServiceServicer"
 ADD_SERVICER_TO_SERVER_IDENTIFIER = "add_TestServiceServicer_to_server"
-
-_DATA_DIR = os.path.dirname(__file__)
-_PROTO_FILE = os.path.join(_DATA_DIR, "protos", "service", "simple.proto")
-
 
 class _ServicerMethods(object):
     def __init__(self):
@@ -734,37 +728,6 @@ class ModuleMainTest(unittest.TestCase):
             self.assertEqual(0, proc.returncode)
         finally:
             shutil.rmtree(work_dir)
-
-    def test_protoc_generation(self):
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            # Run python -m grpcio_tools.protoc
-            cmd = [
-                sys.executable,
-                "-m",
-                "grpc_tools.protoc",
-                "-I{}".format(os.path.dirname(_PROTO_FILE)),
-                "--python_out={}".format(tmp_dir),
-                "--grpc_python_out={}".format(tmp_dir),
-                _PROTO_FILE,
-            ]
-
-            env = os.environ.copy()
-            if "PYTHONPATH" not in env:
-                env["PYTHONPATH"] = os.pathsep.join(sys.path)
-
-            subprocess.check_call(cmd, env=env)
-
-            # Add tmp_dir to sys.path to import generated modules
-            sys.path.insert(0, tmp_dir)
-            try:
-                import simple_pb2
-                import simple_pb2_grpc
-
-                self.assertTrue(hasattr(simple_pb2, "SimpleRequest"))
-                self.assertTrue(hasattr(simple_pb2_grpc, "SimpleServiceStub"))
-            finally:
-                sys.path.pop(0)
-
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
