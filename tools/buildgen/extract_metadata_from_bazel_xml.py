@@ -610,6 +610,7 @@ def _expand_upb_proto_library_rules(bazel_rules):
         ("@com_google_googleapis//", ""),
         ("@com_github_cncf_xds//", ""),
         ("@com_envoyproxy_protoc_gen_validate//", ""),
+        ("@dev_cel//", "proto/"),
         ("@envoy_api//", ""),
         ("@opencensus_proto//", ""),
     ]

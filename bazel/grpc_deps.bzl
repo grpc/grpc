@@ -351,11 +351,22 @@ def grpc_deps():
     if "com_github_cncf_xds" not in native.existing_rules():
         http_archive(
             name = "com_github_cncf_xds",
-            sha256 = "dc305e20c9fa80822322271b50aa2ffa917bf4fd3973bcec52bfc28dc32c5927",
-            strip_prefix = "xds-3a472e524827f72d1ad621c4983dd5af54c46776",
+            sha256 = "49535f3c3370004309da50194c09bbfc528d4702424dd46e7d56a278a3dfc15d",
+            strip_prefix = "xds-ee656c7534f5d7dc23d44dd611689568f72017a6",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/3a472e524827f72d1ad621c4983dd5af54c46776.tar.gz",
-                "https://github.com/cncf/xds/archive/3a472e524827f72d1ad621c4983dd5af54c46776.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/ee656c7534f5d7dc23d44dd611689568f72017a6.tar.gz",
+                "https://github.com/cncf/xds/archive/ee656c7534f5d7dc23d44dd611689568f72017a6.tar.gz",
+            ],
+        )
+
+    if "dev_cel" not in native.existing_rules():
+        http_archive(
+            name = "dev_cel",
+            sha256 = "5cba6b0029e727d1f4d8fd134de4e747cecc0bc293d026017d7edc48058d09f7",
+            strip_prefix = "cel-spec-0.24.0",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/cel-spec/archive/refs/tags/v0.24.0.tar.gz",
+                "https://github.com/google/cel-spec/archive/refs/tags/v0.24.0.tar.gz",
             ],
         )
 
