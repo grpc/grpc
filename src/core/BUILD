@@ -175,6 +175,14 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "pipelining_heuristic_selector",
+    hdrs = ["handshaker/security/pipelining_heuristic_selector.h"],
+    deps = [
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_extensions",
     hdrs = [
         "lib/event_engine/extensions/blocking_dns.h",

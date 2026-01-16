@@ -2399,6 +2399,7 @@ grpc_cc_library(
         "//src/core:latent_see",
         "//src/core:memory_quota",
         "//src/core:metadata_batch",
+        "//src/core:pipelining_heuristic_selector",
         "//src/core:poll",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
