@@ -908,6 +908,7 @@ libs:
   - src/core/handshaker/http_connect/xds_http_proxy_mapper.h
   - src/core/handshaker/proxy_mapper.h
   - src/core/handshaker/proxy_mapper_registry.h
+  - src/core/handshaker/security/pipelining_heuristic_selector.h
   - src/core/handshaker/security/secure_endpoint.h
   - src/core/handshaker/security/security_handshaker.h
   - src/core/handshaker/tcp_connect/tcp_connect_handshaker.h
@@ -2638,6 +2639,7 @@ libs:
   - src/core/handshaker/http_connect/http_proxy_mapper.h
   - src/core/handshaker/proxy_mapper.h
   - src/core/handshaker/proxy_mapper_registry.h
+  - src/core/handshaker/security/pipelining_heuristic_selector.h
   - src/core/handshaker/security/secure_endpoint.h
   - src/core/handshaker/security/security_handshaker.h
   - src/core/handshaker/tcp_connect/tcp_connect_handshaker.h
@@ -4720,6 +4722,7 @@ libs:
   - src/core/handshaker/handshaker_registry.h
   - src/core/handshaker/proxy_mapper.h
   - src/core/handshaker/proxy_mapper_registry.h
+  - src/core/handshaker/security/pipelining_heuristic_selector.h
   - src/core/handshaker/security/secure_endpoint.h
   - src/core/handshaker/security/security_handshaker.h
   - src/core/lib/address_utils/parse_address.h
