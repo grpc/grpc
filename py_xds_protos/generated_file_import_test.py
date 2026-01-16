@@ -704,9 +704,6 @@ from google.api.apikeys.v2 import apikeys_pb2
 from google.api.apikeys.v2 import resources_pb2
 from google.api.cloudquotas.v1 import cloudquotas_pb2
 from google.api.cloudquotas.v1 import resources_pb2
-from google.api.cloudquotas.v1beta import cloudquotas_pb2
-from google.api.cloudquotas.v1beta import quota_adjuster_settings_pb2
-from google.api.cloudquotas.v1beta import resources_pb2
 from google.api.expr.conformance.v1alpha1 import conformance_service_pb2
 from google.api.expr.v1alpha1 import checked_pb2
 from google.api.expr.v1alpha1 import eval_pb2
