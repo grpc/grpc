@@ -70,6 +70,7 @@
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/test_lb_policies.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/credentials.h"
 #include "xds/data/orca/v3/orca_load_report.pb.h"
@@ -313,6 +314,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
       const FakeResolverResponseGeneratorWrapper& response_generator,
       ChannelArguments args = ChannelArguments(),
       std::shared_ptr<ChannelCredentials> channel_creds = nullptr) {
+    ApplyCommonChannelArguments(args);
     if (!lb_policy_name.empty()) {
       args.SetLoadBalancingPolicyName(lb_policy_name);
     }  // else, default to pick first

@@ -57,6 +57,7 @@
 #include "test/core/test_util/test_call_creds.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/counted_service.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/credentials.h"
 #include "test/cpp/util/test_config.h"
@@ -560,6 +561,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpclb_channel_args = grpclb_channel_args.Set(
         GRPC_ARG_PRIMARY_USER_AGENT_STRING, kGrpclbSpecificUserAgentString);
     ChannelArguments args;
+    ApplyCommonChannelArguments(args);
     if (fallback_timeout_ms > 0) {
       args.SetGrpclbFallbackTimeout(fallback_timeout_ms *
                                     grpc_test_slowdown_factor());

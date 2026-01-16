@@ -26,6 +26,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <grpcpp/support/channel_arguments.h>
 
 #include <memory>
 #include <vector>
@@ -37,6 +38,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/util/proto_reflection_descriptor_database.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -60,7 +62,10 @@ class ProtoServerReflectionTest : public ::testing::Test {
 
   void ResetStub() {
     string target = "dns:localhost:" + to_string(port_);
-    channel_ = grpc::CreateChannel(target, InsecureChannelCredentials());
+    ChannelArguments args;
+    ApplyCommonChannelArguments(args);
+    channel_ =
+        grpc::CreateCustomChannel(target, InsecureChannelCredentials(), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
     desc_db_ = std::make_unique<ProtoReflectionDescriptorDatabase>(channel_);
     desc_pool_ = std::make_unique<protobuf::DescriptorPool>(desc_db_.get());

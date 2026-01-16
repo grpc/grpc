@@ -20,12 +20,8 @@ extern "C" {
 
 extern const upb_MiniTable envoy__config__core__v3__ProxyProtocolPassThroughTLVs_msg_init;
 extern const upb_MiniTable* envoy__config__core__v3__ProxyProtocolPassThroughTLVs_msg_init_ptr;
-extern const upb_MiniTable envoy__config__core__v3__TlvEntry_msg_init;
-extern const upb_MiniTable* envoy__config__core__v3__TlvEntry_msg_init_ptr;
 extern const upb_MiniTable envoy__config__core__v3__ProxyProtocolConfig_msg_init;
 extern const upb_MiniTable* envoy__config__core__v3__ProxyProtocolConfig_msg_init_ptr;
-extern const upb_MiniTable envoy__config__core__v3__PerHostConfig_msg_init;
-extern const upb_MiniTable* envoy__config__core__v3__PerHostConfig_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_config_core_v3_proxy_protocol_proto_upb_file_layout;
 

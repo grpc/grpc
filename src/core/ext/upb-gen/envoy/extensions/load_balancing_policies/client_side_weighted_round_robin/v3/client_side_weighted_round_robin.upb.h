@@ -13,7 +13,6 @@
 
 #include "envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb_minitable.h"
 
-#include "envoy/extensions/load_balancing_policies/common/v3/common.upb_minitable.h"
 #include "google/protobuf/duration.upb_minitable.h"
 #include "google/protobuf/wrappers.upb_minitable.h"
 #include "udpa/annotations/status.upb_minitable.h"
@@ -27,7 +26,6 @@ extern "C" {
 #endif
 
 typedef struct envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin { upb_Message UPB_PRIVATE(base); } envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin;
-struct envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig;
 struct google_protobuf_BoolValue;
 struct google_protobuf_Duration;
 struct google_protobuf_FloatValue;
@@ -204,23 +202,6 @@ UPB_INLINE upb_Array* _envoy_extensions_load_balancing_policies_client_side_weig
   }
   return arr;
 }
-UPB_INLINE void envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_clear_slow_start_config(envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin* msg) {
-  const upb_MiniTableField field = {8, UPB_SIZE(40, 72), 70, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
-}
-UPB_INLINE const struct envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_slow_start_config(const envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin* msg) {
-  const struct envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* default_val = NULL;
-  const struct envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* ret;
-  const upb_MiniTableField field = {8, UPB_SIZE(40, 72), 70, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__load_0balancing_0policies__common__v3__SlowStartConfig_msg_init);
-  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
-                                    &default_val, &ret);
-  return ret;
-}
-UPB_INLINE bool envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_has_slow_start_config(const envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin* msg) {
-  const upb_MiniTableField field = {8, UPB_SIZE(40, 72), 70, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
-}
 
 UPB_INLINE void envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_set_enable_oob_load_report(envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin *msg, struct google_protobuf_BoolValue* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -327,19 +308,6 @@ UPB_INLINE bool envoy_extensions_load_balancing_policies_client_side_weighted_ro
   UPB_PRIVATE(_upb_Array_Set)
   (arr, arr->UPB_PRIVATE(size) - 1, &val, sizeof(val));
   return true;
-}
-UPB_INLINE void envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_set_slow_start_config(envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin *msg, struct envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* value) {
-  const upb_MiniTableField field = {8, UPB_SIZE(40, 72), 70, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__load_0balancing_0policies__common__v3__SlowStartConfig_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
-}
-UPB_INLINE struct envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_mutable_slow_start_config(envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin* msg, upb_Arena* arena) {
-  struct envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* sub = (struct envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig*)envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_slow_start_config(msg);
-  if (sub == NULL) {
-    sub = (struct envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig*)_upb_Message_New(&envoy__extensions__load_0balancing_0policies__common__v3__SlowStartConfig_msg_init, arena);
-    if (sub) envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_v3_ClientSideWeightedRoundRobin_set_slow_start_config(msg, sub);
-  }
-  return sub;
 }
 
 #ifdef __cplusplus

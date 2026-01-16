@@ -129,21 +129,19 @@ const upb_MiniTable envoy__config__metrics__v3__TagSpecifier_msg_init = {
 };
 
 const upb_MiniTable* envoy__config__metrics__v3__TagSpecifier_msg_init_ptr = &envoy__config__metrics__v3__TagSpecifier_msg_init;
-static const upb_MiniTableSubInternal envoy_config_metrics_v3_HistogramBucketSettings__submsgs[2] = {
+static const upb_MiniTableSubInternal envoy_config_metrics_v3_HistogramBucketSettings__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__StringMatcher_msg_init_ptr},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
 };
 
-static const upb_MiniTableField envoy_config_metrics_v3_HistogramBucketSettings__fields[3] = {
+static const upb_MiniTableField envoy_config_metrics_v3_HistogramBucketSettings__fields[2] = {
   {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(16, 24), 0, kUpb_NoSub, 1, (int)kUpb_FieldMode_Array | (int)kUpb_LabelFlags_IsPacked | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(20, 32), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__config__metrics__v3__HistogramBucketSettings_msg_init = {
   &envoy_config_metrics_v3_HistogramBucketSettings__submsgs[0],
   &envoy_config_metrics_v3_HistogramBucketSettings__fields[0],
-  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.metrics.v3.HistogramBucketSettings",
 #endif

@@ -42,11 +42,6 @@ UPB_INLINE const upb_MessageDef *envoy_extensions_upstreams_http_v3_HttpProtocol
   return upb_DefPool_FindMessageByName(s, "envoy.extensions.upstreams.http.v3.HttpProtocolOptions.AutoHttpConfig");
 }
 
-UPB_INLINE const upb_MessageDef *envoy_extensions_upstreams_http_v3_HttpProtocolOptions_OutlierDetection_getmsgdef(upb_DefPool *s) {
-  _upb_DefPool_LoadDefInit(s, &envoy_extensions_upstreams_http_v3_http_protocol_options_proto_upbdefinit);
-  return upb_DefPool_FindMessageByName(s, "envoy.extensions.upstreams.http.v3.HttpProtocolOptions.OutlierDetection");
-}
-
 
 #ifdef __cplusplus
 }  /* extern "C" */

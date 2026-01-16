@@ -1077,6 +1077,7 @@ CallState::PollServerTrailingMetadataAvailable() {
     case ServerToClientPullState::kProcessingServerToClientMessage:
     case ServerToClientPullState::kProcessingServerInitialMetadataReading:
     case ServerToClientPullState::kUnstartedReading:
+      server_trailing_metadata_waiter_.pending();
       return server_to_client_pull_waiter_.pending();
     case ServerToClientPullState::kStartedReading:
     case ServerToClientPullState::kReading:
@@ -1095,6 +1096,7 @@ CallState::PollServerTrailingMetadataAvailable() {
         case ServerToClientPushState::
             kPushedServerInitialMetadataAndPushedMessage:
         case ServerToClientPushState::kPushedMessage:
+          server_trailing_metadata_waiter_.pending();
           server_to_client_push_waiter_.pending();
           return server_to_client_pull_waiter_.pending();
       }
