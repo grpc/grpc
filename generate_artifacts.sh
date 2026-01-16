@@ -1,4 +1,5 @@
-# Copyright 2020 The gRPC Authors
+#!/bin/bash
+# Copyright 2024 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,16 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:11
+set -ex
 
-# gRPC C++ dependencies based on https://github.com/grpc/grpc/blob/master/BUILDING.md
-RUN apt-get update && apt-get install -y build-essential autoconf cmake libtool pkg-config curl unzip zip zlib1g-dev && apt-get clean
+# Change to the root of the repository
+cd "$(dirname "$0")"
 
-# C++ distribtests are setup in a way that requires git
-RUN apt-get update && apt-get install -y git && apt-get clean
-
-RUN git config --global --add safe.directory /var/local/jenkins/grpc
-RUN git config --global protocol.file.allow always
-
-
-CMD ["bash"]
+# Generate upb files
+tools/codegen/core/gen_upb_api.sh

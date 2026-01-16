@@ -51,6 +51,7 @@ RUN apt-get update && apt-get install -y \
   unzip \
   wget \
   zip \
+  zlib1g-dev \
   && apt-get clean
 
 #=================
