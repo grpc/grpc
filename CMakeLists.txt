@@ -406,6 +406,25 @@ if(gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
   include(cmake/opentelemetry-cpp.cmake)
 endif()
 
+# Setup external proto library at third_party/cel-spec/proto with 2 download URLs
+if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cel-spec/proto AND gRPC_DOWNLOAD_ARCHIVES)
+  # Download the archive via HTTP, validate the checksum, and extract to third_party/cel-spec/proto.
+  download_archive(
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cel-spec/proto
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/cel-spec/archive/9f069b3ee58b02d6f6736c5ebd6587075c1a1b22.tar.gz
+    d6cb6b4ed272500d16546c672a65a7452b241462a200dda3f62a7de413883344
+    cel-spec-9f069b3ee58b02d6f6736c5ebd6587075c1a1b22
+  )
+endif()
+if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cel-spec/proto AND gRPC_DOWNLOAD_ARCHIVES)
+  # Download the archive via HTTP, validate the checksum, and extract to third_party/cel-spec/proto.
+  download_archive(
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cel-spec/proto
+    https://github.com/google/cel-spec/archive/9f069b3ee58b02d6f6736c5ebd6587075c1a1b22.tar.gz
+    d6cb6b4ed272500d16546c672a65a7452b241462a200dda3f62a7de413883344
+    cel-spec-9f069b3ee58b02d6f6736c5ebd6587075c1a1b22
+  )
+endif()
 # Setup external proto library at third_party/envoy-api with 2 download URLs
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
@@ -802,6 +821,12 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
   test/core/tsi/alts/fake_handshaker/transport_security_common.proto test/core/tsi/alts/fake_handshaker/transport_security_common.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
+  third_party/cel-spec/proto/proto/cel/expr/checked.proto proto/cel/expr/checked.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
+  third_party/cel-spec/proto/proto/cel/expr/syntax.proto proto/cel/expr/syntax.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/envoy-api/envoy/admin/v3/certs.proto envoy/admin/v3/certs.proto
@@ -6920,6 +6945,14 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(admin_services_end2end_test
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.pb.h
@@ -27203,6 +27236,14 @@ add_executable(pre_stop_hook_server_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.pb.h
@@ -37287,6 +37328,14 @@ add_executable(xds_audit_logger_registry_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -37777,6 +37826,14 @@ add_executable(xds_client_test
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.pb.h
@@ -38380,6 +38437,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -38903,6 +38968,14 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(xds_cluster_resource_type_test
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -39447,6 +39520,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -39977,6 +40058,14 @@ add_executable(xds_common_types_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -40428,6 +40517,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -41081,6 +41178,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.pb.h
@@ -41712,6 +41817,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -42573,6 +42686,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -43111,6 +43232,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -43657,6 +43786,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -44199,6 +44336,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -44729,6 +44874,14 @@ add_executable(xds_http_filters_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -45214,6 +45367,14 @@ add_executable(xds_lb_policy_registry_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -45659,6 +45820,14 @@ add_executable(xds_listener_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -46168,6 +46337,14 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(xds_matcher_parse_test
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -46955,6 +47132,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -47501,6 +47686,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -48138,6 +48331,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -48685,6 +48886,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -49236,6 +49445,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -49766,6 +49983,14 @@ add_executable(xds_route_config_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -50188,6 +50413,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -50734,6 +50967,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -51298,6 +51539,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -51857,6 +52106,14 @@ add_executable(xds_stats_watcher_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.pb.h
@@ -52448,6 +52705,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h

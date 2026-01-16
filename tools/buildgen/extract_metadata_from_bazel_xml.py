@@ -96,6 +96,10 @@ EXTERNAL_PROTO_LIBRARIES = {
         destination="third_party/opencensus-proto/src",
         proto_prefix="third_party/opencensus-proto/src/",
     ),
+    "dev_cel": ExternalProtoLibrary(
+        destination="third_party/cel-spec/proto",
+        proto_prefix="third_party/cel-spec/proto/",
+    ),
 }
 
 # We want to get a list of source files for some external libraries
