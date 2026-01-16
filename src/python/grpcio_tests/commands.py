@@ -92,7 +92,7 @@ class BuildPackageProtos(setuptools.Command):
         from grpc_tools import command
 
         # find and build all protos in the current package
-        command.build_package_protos(PYTHON_REL_PATH, strict_mode=True)
+        command.build_package_protos(PYTHON_REL_PATH)
 
 
 class TestLite(setuptools.Command):
