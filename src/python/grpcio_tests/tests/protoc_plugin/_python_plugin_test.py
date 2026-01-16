@@ -38,6 +38,7 @@ STUB_IDENTIFIER = "TestServiceStub"
 SERVICER_IDENTIFIER = "TestServiceServicer"
 ADD_SERVICER_TO_SERVER_IDENTIFIER = "add_TestServiceServicer_to_server"
 
+
 class _ServicerMethods(object):
     def __init__(self):
         self._condition = threading.Condition()
@@ -728,6 +729,7 @@ class ModuleMainTest(unittest.TestCase):
             self.assertEqual(0, proc.returncode)
         finally:
             shutil.rmtree(work_dir)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
