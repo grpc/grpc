@@ -20,8 +20,6 @@ extern "C" {
 
 extern const upb_MiniTable envoy__extensions__clusters__aggregate__v3__ClusterConfig_msg_init;
 extern const upb_MiniTable* envoy__extensions__clusters__aggregate__v3__ClusterConfig_msg_init_ptr;
-extern const upb_MiniTable envoy__extensions__clusters__aggregate__v3__AggregateClusterResource_msg_init;
-extern const upb_MiniTable* envoy__extensions__clusters__aggregate__v3__AggregateClusterResource_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_extensions_clusters_aggregate_v3_cluster_proto_upb_file_layout;
 

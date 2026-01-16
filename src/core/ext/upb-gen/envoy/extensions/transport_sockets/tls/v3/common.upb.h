@@ -63,10 +63,6 @@ typedef enum {
 } envoy_extensions_transport_sockets_tls_v3_SubjectAltNameMatcher_SanType;
 
 typedef enum {
-  envoy_extensions_transport_sockets_tls_v3_TlsParameters_FIPS_202205 = 0
-} envoy_extensions_transport_sockets_tls_v3_TlsParameters_CompliancePolicy;
-
-typedef enum {
   envoy_extensions_transport_sockets_tls_v3_TlsParameters_TLS_AUTO = 0,
   envoy_extensions_transport_sockets_tls_v3_TlsParameters_TLSv1_0 = 1,
   envoy_extensions_transport_sockets_tls_v3_TlsParameters_TLSv1_1 = 2,
@@ -232,38 +228,6 @@ UPB_INLINE upb_Array* _envoy_extensions_transport_sockets_tls_v3_TlsParameters_s
   }
   return arr;
 }
-UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_TlsParameters_clear_compliance_policies(envoy_extensions_transport_sockets_tls_v3_TlsParameters* msg) {
-  const upb_MiniTableField field = {6, UPB_SIZE(28, 40), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Array | (int)kUpb_LabelFlags_IsPacked | (int)kUpb_LabelFlags_IsAlternate | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
-}
-UPB_INLINE int32_t const* envoy_extensions_transport_sockets_tls_v3_TlsParameters_compliance_policies(const envoy_extensions_transport_sockets_tls_v3_TlsParameters* msg, size_t* size) {
-  const upb_MiniTableField field = {6, UPB_SIZE(28, 40), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Array | (int)kUpb_LabelFlags_IsPacked | (int)kUpb_LabelFlags_IsAlternate | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
-  if (arr) {
-    if (size) *size = arr->UPB_PRIVATE(size);
-    return (int32_t const*)upb_Array_DataPtr(arr);
-  } else {
-    if (size) *size = 0;
-    return NULL;
-  }
-}
-UPB_INLINE const upb_Array* _envoy_extensions_transport_sockets_tls_v3_TlsParameters_compliance_policies_upb_array(const envoy_extensions_transport_sockets_tls_v3_TlsParameters* msg, size_t* size) {
-  const upb_MiniTableField field = {6, UPB_SIZE(28, 40), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Array | (int)kUpb_LabelFlags_IsPacked | (int)kUpb_LabelFlags_IsAlternate | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
-  if (size) {
-    *size = arr ? arr->UPB_PRIVATE(size) : 0;
-  }
-  return arr;
-}
-UPB_INLINE upb_Array* _envoy_extensions_transport_sockets_tls_v3_TlsParameters_compliance_policies_mutable_upb_array(envoy_extensions_transport_sockets_tls_v3_TlsParameters* msg, size_t* size, upb_Arena* arena) {
-  const upb_MiniTableField field = {6, UPB_SIZE(28, 40), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Array | (int)kUpb_LabelFlags_IsPacked | (int)kUpb_LabelFlags_IsAlternate | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
-                                                       &field, arena);
-  if (size) {
-    *size = arr ? arr->UPB_PRIVATE(size) : 0;
-  }
-  return arr;
-}
 
 UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_TlsParameters_set_tls_minimum_protocol_version(envoy_extensions_transport_sockets_tls_v3_TlsParameters *msg, int32_t value) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
@@ -347,34 +311,6 @@ UPB_INLINE upb_StringView* envoy_extensions_transport_sockets_tls_v3_TlsParamete
 }
 UPB_INLINE bool envoy_extensions_transport_sockets_tls_v3_TlsParameters_add_signature_algorithms(envoy_extensions_transport_sockets_tls_v3_TlsParameters* msg, upb_StringView val, upb_Arena* arena) {
   upb_MiniTableField field = {5, UPB_SIZE(24, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  upb_Array* arr = upb_Message_GetOrCreateMutableArray(
-      UPB_UPCAST(msg), &field, arena);
-  if (!arr || !UPB_PRIVATE(_upb_Array_ResizeUninitialized)(
-                  arr, arr->UPB_PRIVATE(size) + 1, arena)) {
-    return false;
-  }
-  UPB_PRIVATE(_upb_Array_Set)
-  (arr, arr->UPB_PRIVATE(size) - 1, &val, sizeof(val));
-  return true;
-}
-UPB_INLINE int32_t* envoy_extensions_transport_sockets_tls_v3_TlsParameters_mutable_compliance_policies(envoy_extensions_transport_sockets_tls_v3_TlsParameters* msg, size_t* size) {
-  upb_MiniTableField field = {6, UPB_SIZE(28, 40), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Array | (int)kUpb_LabelFlags_IsPacked | (int)kUpb_LabelFlags_IsAlternate | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
-  if (arr) {
-    if (size) *size = arr->UPB_PRIVATE(size);
-    return (int32_t*)upb_Array_MutableDataPtr(arr);
-  } else {
-    if (size) *size = 0;
-    return NULL;
-  }
-}
-UPB_INLINE int32_t* envoy_extensions_transport_sockets_tls_v3_TlsParameters_resize_compliance_policies(envoy_extensions_transport_sockets_tls_v3_TlsParameters* msg, size_t size, upb_Arena* arena) {
-  upb_MiniTableField field = {6, UPB_SIZE(28, 40), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Array | (int)kUpb_LabelFlags_IsPacked | (int)kUpb_LabelFlags_IsAlternate | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return (int32_t*)upb_Message_ResizeArrayUninitialized(UPB_UPCAST(msg),
-                                                   &field, size, arena);
-}
-UPB_INLINE bool envoy_extensions_transport_sockets_tls_v3_TlsParameters_add_compliance_policies(envoy_extensions_transport_sockets_tls_v3_TlsParameters* msg, int32_t val, upb_Arena* arena) {
-  upb_MiniTableField field = {6, UPB_SIZE(28, 40), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Array | (int)kUpb_LabelFlags_IsPacked | (int)kUpb_LabelFlags_IsAlternate | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
   if (!arr || !UPB_PRIVATE(_upb_Array_ResizeUninitialized)(

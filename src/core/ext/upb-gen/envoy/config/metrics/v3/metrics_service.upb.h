@@ -145,18 +145,6 @@ UPB_INLINE int32_t envoy_config_metrics_v3_MetricsServiceConfig_histogram_emit_m
                                     &default_val, &ret);
   return ret;
 }
-UPB_INLINE void envoy_config_metrics_v3_MetricsServiceConfig_clear_batch_size(envoy_config_metrics_v3_MetricsServiceConfig* msg) {
-  const upb_MiniTableField field = {6, UPB_SIZE(28, 20), 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
-}
-UPB_INLINE uint32_t envoy_config_metrics_v3_MetricsServiceConfig_batch_size(const envoy_config_metrics_v3_MetricsServiceConfig* msg) {
-  uint32_t default_val = (uint32_t)0u;
-  uint32_t ret;
-  const upb_MiniTableField field = {6, UPB_SIZE(28, 20), 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
-                                    &default_val, &ret);
-  return ret;
-}
 
 UPB_INLINE void envoy_config_metrics_v3_MetricsServiceConfig_set_grpc_service(envoy_config_metrics_v3_MetricsServiceConfig *msg, struct envoy_config_core_v3_GrpcService* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 24), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -194,10 +182,6 @@ UPB_INLINE void envoy_config_metrics_v3_MetricsServiceConfig_set_emit_tags_as_la
 }
 UPB_INLINE void envoy_config_metrics_v3_MetricsServiceConfig_set_histogram_emit_mode(envoy_config_metrics_v3_MetricsServiceConfig *msg, int32_t value) {
   const upb_MiniTableField field = {5, UPB_SIZE(24, 16), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
-}
-UPB_INLINE void envoy_config_metrics_v3_MetricsServiceConfig_set_batch_size(envoy_config_metrics_v3_MetricsServiceConfig *msg, uint32_t value) {
-  const upb_MiniTableField field = {6, UPB_SIZE(28, 20), 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
