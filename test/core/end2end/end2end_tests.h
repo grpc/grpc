@@ -416,6 +416,10 @@ class CoreEnd2endTest {
     // Return some initial metadata.
     std::optional<std::string> GetInitialMetadata(absl::string_view key) const;
 
+    // Return repeated initial metadata.
+    std::optional<std::vector<std::string>> GetRepeatedInitialMetadata(
+        absl::string_view key) const;
+
     // Return the peer address.
     std::optional<std::string> GetPeer() { return impl_->call.GetPeer(); }
 

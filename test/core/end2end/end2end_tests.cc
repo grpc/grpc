@@ -30,6 +30,7 @@
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/postmortem_emit.h"
+#include "test/core/call/batch_builder.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 
@@ -200,6 +201,12 @@ CoreEnd2endTest::IncomingCall::IncomingCall(CoreEnd2endTest& test, void* method,
 std::optional<std::string> CoreEnd2endTest::IncomingCall::GetInitialMetadata(
     absl::string_view key) const {
   return FindInMetadataArray(impl_->request_metadata, key);
+}
+
+std::optional<std::vector<std::string>>
+CoreEnd2endTest::IncomingCall::GetRepeatedInitialMetadata(
+    absl::string_view key) const {
+  return FindRepeatedInMetadataArray(impl_->request_metadata, key);
 }
 
 void CoreEnd2endTest::ForceInitialized() {

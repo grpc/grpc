@@ -104,6 +104,9 @@ class PublishToAppEncoder {
       if constexpr (std::is_same<W3CTraceParentMetadata, Which>::value) {
         Append(Which::key(), value);
       }
+      if constexpr (std::is_same<W3CTraceStateMetadata, Which>::value) {
+        Append(Which::key(), value);
+      }
       if constexpr (std::is_same<XForwardedForMetadata, Which>::value) {
         Append(Which::key(), value);
       }
