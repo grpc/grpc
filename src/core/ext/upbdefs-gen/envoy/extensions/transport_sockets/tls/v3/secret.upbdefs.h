@@ -27,11 +27,6 @@ UPB_INLINE const upb_MessageDef *envoy_extensions_transport_sockets_tls_v3_Gener
   return upb_DefPool_FindMessageByName(s, "envoy.extensions.transport_sockets.tls.v3.GenericSecret");
 }
 
-UPB_INLINE const upb_MessageDef *envoy_extensions_transport_sockets_tls_v3_GenericSecret_SecretsEntry_getmsgdef(upb_DefPool *s) {
-  _upb_DefPool_LoadDefInit(s, &envoy_extensions_transport_sockets_tls_v3_secret_proto_upbdefinit);
-  return upb_DefPool_FindMessageByName(s, "envoy.extensions.transport_sockets.tls.v3.GenericSecret.SecretsEntry");
-}
-
 UPB_INLINE const upb_MessageDef *envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_extensions_transport_sockets_tls_v3_secret_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.extensions.transport_sockets.tls.v3.SdsSecretConfig");

@@ -312,23 +312,6 @@ UPB_INLINE bool envoy_config_listener_v3_QuicProtocolOptions_reject_new_connecti
                                     &default_val, &ret);
   return ret;
 }
-UPB_INLINE void envoy_config_listener_v3_QuicProtocolOptions_clear_max_sessions_per_event_loop(envoy_config_listener_v3_QuicProtocolOptions* msg) {
-  const upb_MiniTableField field = {14, UPB_SIZE(60, 112), 75, 12, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
-}
-UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_listener_v3_QuicProtocolOptions_max_sessions_per_event_loop(const envoy_config_listener_v3_QuicProtocolOptions* msg) {
-  const struct google_protobuf_UInt32Value* default_val = NULL;
-  const struct google_protobuf_UInt32Value* ret;
-  const upb_MiniTableField field = {14, UPB_SIZE(60, 112), 75, 12, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt32Value_msg_init);
-  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
-                                    &default_val, &ret);
-  return ret;
-}
-UPB_INLINE bool envoy_config_listener_v3_QuicProtocolOptions_has_max_sessions_per_event_loop(const envoy_config_listener_v3_QuicProtocolOptions* msg) {
-  const upb_MiniTableField field = {14, UPB_SIZE(60, 112), 75, 12, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
-}
 
 UPB_INLINE void envoy_config_listener_v3_QuicProtocolOptions_set_quic_protocol_options(envoy_config_listener_v3_QuicProtocolOptions *msg, struct envoy_config_core_v3_QuicProtocolOptions* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -508,19 +491,6 @@ UPB_INLINE struct envoy_config_core_v3_SocketCmsgHeaders* envoy_config_listener_
 UPB_INLINE void envoy_config_listener_v3_QuicProtocolOptions_set_reject_new_connections(envoy_config_listener_v3_QuicProtocolOptions *msg, bool value) {
   const upb_MiniTableField field = {13, 10, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
-}
-UPB_INLINE void envoy_config_listener_v3_QuicProtocolOptions_set_max_sessions_per_event_loop(envoy_config_listener_v3_QuicProtocolOptions *msg, struct google_protobuf_UInt32Value* value) {
-  const upb_MiniTableField field = {14, UPB_SIZE(60, 112), 75, 12, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt32Value_msg_init);
-  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
-}
-UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_listener_v3_QuicProtocolOptions_mutable_max_sessions_per_event_loop(envoy_config_listener_v3_QuicProtocolOptions* msg, upb_Arena* arena) {
-  struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_config_listener_v3_QuicProtocolOptions_max_sessions_per_event_loop(msg);
-  if (sub == NULL) {
-    sub = (struct google_protobuf_UInt32Value*)_upb_Message_New(&google__protobuf__UInt32Value_msg_init, arena);
-    if (sub) envoy_config_listener_v3_QuicProtocolOptions_set_max_sessions_per_event_loop(msg, sub);
-  }
-  return sub;
 }
 
 #ifdef __cplusplus
