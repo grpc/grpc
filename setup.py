@@ -452,6 +452,8 @@ else:
     DEFINE_MACROS += (
         ("HAVE_CONFIG_H", 1),
         ("GRPC_ENABLE_FORK_SUPPORT", 1),
+        # This should only be changed along with src/python/grpcio/grpc/_cython/_cygrpc/fork_posix.pyx.pxi
+        ("GRPC_ENABLE_FORK_SUPPORT_DEFAULT", "false"),
     )
 
 # Fix for multiprocessing support on Apple devices.
