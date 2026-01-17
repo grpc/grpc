@@ -25,7 +25,7 @@ module(
 bazel_dep(name = "abseil-cpp", version = "20250512.1", repo_name = "com_google_absl")
 bazel_dep(name = "apple_support", version = "1.17.1", repo_name = "build_bazel_apple_support")
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
-bazel_dep(name = "boringssl", version = "0.20241024.0")  # mistmatched 20241211
+bazel_dep(name = "boringssl", version = "0.20241024.0")  # mismatched 20241211
 bazel_dep(name = "c-ares", version = "1.19.1", repo_name = "com_github_cares_cares")
 bazel_dep(name = "envoy_api", version = "0.0.0-20251216-6ef568c")
 bazel_dep(name = "googleapis", version = "0.0.0-20251003-2193a2bf", repo_name = "com_google_googleapis")
@@ -112,7 +112,6 @@ bazel_dep(name = "fuzztest", version = "20250805.0", dev_dependency = True, repo
 bazel_dep(name = "riegeli", version = "0.0.0-20250706-c4d1f27", dev_dependency = True)
 
 # --- Provide repo @grpc_custom_exec_properties.
-#http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 http_archive(
     name = "bazel_toolchains",
     integrity = "sha256-F57AL4Cehqv1Y1bYiYyL10Bp8b18VgRAUMLNPXnQ4CQ=",
