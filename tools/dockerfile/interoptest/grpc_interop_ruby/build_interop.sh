@@ -27,7 +27,7 @@ ${name}')
 cp -r /var/local/jenkins/service_account $HOME || true
 
 cd /var/local/git/grpc
-rvm --default use ruby-3.1.3
+rvm --default use ruby-3.2.10
 
 # build Ruby interop client and server
 (cd src/ruby && gem install bundler && bundle && bundle exec rake compile)
