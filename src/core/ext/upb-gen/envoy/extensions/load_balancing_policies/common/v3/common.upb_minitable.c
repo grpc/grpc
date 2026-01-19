@@ -10,9 +10,11 @@
 #include "upb/generated_code_support.h"
 #include "envoy/extensions/load_balancing_policies/common/v3/common.upb_minitable.h"
 #include "envoy/config/core/v3/base.upb_minitable.h"
+#include "envoy/config/route/v3/route_components.upb_minitable.h"
 #include "envoy/type/v3/percent.upb_minitable.h"
 #include "google/protobuf/duration.upb_minitable.h"
 #include "google/protobuf/wrappers.upb_minitable.h"
+#include "envoy/annotations/deprecation.upb_minitable.h"
 #include "udpa/annotations/status.upb_minitable.h"
 #include "validate/validate.upb_minitable.h"
 
@@ -46,21 +48,25 @@ const upb_MiniTable envoy__extensions__load_0balancing_0policies__common__v3__Lo
 };
 
 const upb_MiniTable* envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig_msg_init_ptr = &envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig_msg_init;
-static const upb_MiniTableSubInternal envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig__submsgs[2] = {
+static const upb_MiniTableSubInternal envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig__submsgs[3] = {
   {.UPB_PRIVATE(submsg) = &envoy__type__v3__Percent_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__UInt64Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__ZoneAwareLbConfig__ForceLocalZone_msg_init_ptr},
 };
 
-static const upb_MiniTableField envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig__fields[3] = {
+static const upb_MiniTableField envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig__fields[6] = {
   {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {3, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {4, 10, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(20, 32), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(24, 12), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__ZoneAwareLbConfig_msg_init = {
   &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig__submsgs[0],
   &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig__fields[0],
-  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(32, 40), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.load_balancing_policies.common.v3.LocalityLbConfig.ZoneAwareLbConfig",
 #endif
@@ -69,10 +75,32 @@ const upb_MiniTable envoy__extensions__load_0balancing_0policies__common__v3__Lo
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000900003f000018, &upb_psb1_1bt},
+    {0x000a00003f000020, &upb_psb1_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000c00003f000030, &upb_psv4_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
 const upb_MiniTable* envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__ZoneAwareLbConfig_msg_init_ptr = &envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__ZoneAwareLbConfig_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_ForceLocalZone__submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+};
+
+static const upb_MiniTableField envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_ForceLocalZone__fields[1] = {
+  {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+};
+
+const upb_MiniTable envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__ZoneAwareLbConfig__ForceLocalZone_msg_init = {
+  &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_ForceLocalZone__submsgs[0],
+  &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_ForceLocalZone__fields[0],
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.load_balancing_policies.common.v3.LocalityLbConfig.ZoneAwareLbConfig.ForceLocalZone",
+#endif
+};
+
+const upb_MiniTable* envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__ZoneAwareLbConfig__ForceLocalZone_msg_init_ptr = &envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__ZoneAwareLbConfig__ForceLocalZone_msg_init;
 const upb_MiniTable envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__LocalityWeightedLbConfig_msg_init = {
   NULL,
   NULL,
@@ -105,32 +133,37 @@ const upb_MiniTable envoy__extensions__load_0balancing_0policies__common__v3__Sl
 };
 
 const upb_MiniTable* envoy__extensions__load_0balancing_0policies__common__v3__SlowStartConfig_msg_init_ptr = &envoy__extensions__load_0balancing_0policies__common__v3__SlowStartConfig_msg_init;
-static const upb_MiniTableSubInternal envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig__submsgs[1] = {
+static const upb_MiniTableSubInternal envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig__submsgs[2] = {
   {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__route__v3__RouteAction__HashPolicy_msg_init_ptr},
 };
 
-static const upb_MiniTableField envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig__fields[2] = {
+static const upb_MiniTableField envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig__fields[3] = {
   {1, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(16, 24), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__extensions__load_0balancing_0policies__common__v3__ConsistentHashingLbConfig_msg_init = {
   &envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig__submsgs[0],
   &envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig__fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.load_balancing_policies.common.v3.ConsistentHashingLbConfig",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000900003f000008, &upb_psb1_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x001800003f01001a, &upb_prm_1bt_maxmaxb},
   })
 };
 
 const upb_MiniTable* envoy__extensions__load_0balancing_0policies__common__v3__ConsistentHashingLbConfig_msg_init_ptr = &envoy__extensions__load_0balancing_0policies__common__v3__ConsistentHashingLbConfig_msg_init;
-static const upb_MiniTable *messages_layout[5] = {
+static const upb_MiniTable *messages_layout[6] = {
   &envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig_msg_init,
   &envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__ZoneAwareLbConfig_msg_init,
+  &envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__ZoneAwareLbConfig__ForceLocalZone_msg_init,
   &envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__LocalityWeightedLbConfig_msg_init,
   &envoy__extensions__load_0balancing_0policies__common__v3__SlowStartConfig_msg_init,
   &envoy__extensions__load_0balancing_0policies__common__v3__ConsistentHashingLbConfig_msg_init,
@@ -140,7 +173,7 @@ const upb_MiniTableFile envoy_extensions_load_balancing_policies_common_v3_commo
   messages_layout,
   NULL,
   NULL,
-  5,
+  6,
   0,
   0,
 };
