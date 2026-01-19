@@ -263,6 +263,10 @@ if(MSVC)
   set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /wd4503")
   # Tell MSVC to build grpc using utf-8
   set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /utf-8")
+  # Enable Control Flow Guard for security hardening
+  set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /guard:cf")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /guard:cf")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /guard:cf")
 endif()
 if (MINGW)
   add_definitions(-D_WIN32_WINNT=0x600)
