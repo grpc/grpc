@@ -16,20 +16,14 @@
 
 import os
 import sys
-
-# Add all packages to sys.path
 PYTHON_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), '..',
                              '..', '..', 'src', 'python')
-ALL_PACKAGES = [
-    'grpcio', 'grpcio_admin', 'grpcio_channelz', 'grpcio_csds',
-    'grpcio_health_checking', 'grpcio_observability',
-    'grpcio_reflection', 'grpcio_status', 'grpcio_testing'
-]
-for pkg in ALL_PACKAGES:
-    # Use .append() instead of insert(0) to let Sphinx find the compiled
-    # Cython extensions from site-packages correctly
-    sys.path.append(os.path.join(PYTHON_FOLDER, pkg))
-
+sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio'))
+sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_channelz'))
+sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_health_checking'))
+sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_reflection'))
+sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_status'))
+sys.path.insert(0, os.path.join(PYTHON_FOLDER, 'grpcio_testing'))
 
 # -- Project information -----------------------------------------------------
 
@@ -80,27 +74,16 @@ autodoc_typehints = 'description'
 
 # -- HTML Configuration -------------------------------------------------
 
-html_theme = 'pydata_sphinx_theme'
-html_title = f"gRPC Python Docs v{version}"
+html_theme = 'alabaster'
 html_theme_options = {
-    "navbar_center": [],
-    "header_links_before_dropdown": 15,
-    "secondary_sidebar_items": ["page-toc", "edit-this-page"],
-    "show_toc_level": 2,
+    'fixed_sidebar': True,
+    'page_width': 'auto',
+    'show_related': True,
+    'analytics_id': 'UA-60127042-1',
+    'description': grpc_version.VERSION,
+    'show_powered_by': False,
 }
-
-html_theme_options["analytics"] = {
-    "google_analytics_id": "UA-60127042-1",
-}
-
-html_sidebars = {
-    "**": ["sidebar-nav-bs"]
-}
-
 html_static_path = ["_static"]
-html_css_files = [
-    "custom.css"
-]
 
 # -- Options for manual page output ------------------------------------------
 
