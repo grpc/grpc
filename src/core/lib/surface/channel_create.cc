@@ -21,6 +21,7 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/call/status_util.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel.h"
 #include "src/core/client_channel/direct_channel.h"
@@ -221,7 +222,13 @@ grpc_channel* grpc_lame_client_channel_create(const char* target,
       << "grpc_lame_client_channel_create(target=" << target
       << ", error_code=" << (int)error_code
       << ", error_message=" << error_message << ")";
-  if (error_code == GRPC_STATUS_OK) error_code = GRPC_STATUS_UNKNOWN;
+
+  if (!grpc_status_code_from_int(static_cast<int>(error_code), &error_code)) {
+    GRPC_TRACE_LOG(api, WARNING)
+        << "error_code=" << (int)error_code
+        << ": input error code is out of valid range, converting to UNKNOWN";
+  }
+
   grpc_core::ChannelArgs args =
       grpc_core::CoreConfiguration::Get()
           .channel_args_preconditioning()

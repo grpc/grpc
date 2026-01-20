@@ -446,7 +446,7 @@ struct GrpcStatusMetadata {
       on_error("negative value", value);
       return GRPC_STATUS_UNKNOWN;
     }
-    if (wire_value >= GRPC_STATUS__DO_NOT_USE) {
+    if (wire_value > 16) {
       on_error("out of range", value);
       return GRPC_STATUS_UNKNOWN;
     }
