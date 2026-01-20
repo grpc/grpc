@@ -45,8 +45,8 @@ tools/bazel \
 
 # Use --nobuild flag to trigger bazel dependency analysis but skip C++
 # compilation.
-# TODO(weizheyuan): Re-enable this in a way that won't cause the PR CI
-# to always time out.
+# TODO(weizheyuan): Re-enable the full build (by removing --nobuild)
+# once it no longer causes CI timeouts.
 tools/bazel \
     --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
     build \
