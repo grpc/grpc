@@ -34,7 +34,7 @@
 //     `GetStorage`+`Increment` will be filtered according to these labels.
 //     Scopes can be hierarchical.
 //     On destruction, metrics collected in this scope are aggregated into the
-//     parent scope.
+//     parent scopes.
 //
 // *   **Storage:** An object holding the current values for all instruments
 //     within a domain, for a *specific combination* of filtered label values.
@@ -114,7 +114,7 @@
 //   };
 //
 // To increment the counter:
-//   auto scope = GetGlobalCollectionScope({}); // Or some other scope
+//   auto scope = CreateCollectionScope({}, {}); // Or some other scope
 //   auto storage = MyDomain::GetStorage(scope, "label_val1", "label_val2");
 //   storage->Increment(MyDomain::kMyCounter);
 //
@@ -139,6 +139,35 @@
 //     includes gauges is not meaningful, as summing up current values from
 //     different sources makes no sense. The `MetricsSink` will receive
 //     individual gauge readings for each label set matching the filter.
+//
+// ## Collection Scope Hierarchy
+//
+// Collection scopes form a DAG. The typical layout is to have a collection of
+// root scopes, a trunk scope ("the global scope"), and a set of leaf scopes:
+//
+// ┌────────┐     ┌────────┐
+// │ Root 1 │     │ Root 2 │     ...
+// └───┬────┘     └───┬────┘
+//     │              │
+//     └──────────────┤
+//                    │
+//             ┌──────▼───────┐
+//             │ Global Scope │
+//             └──────┬───────┘
+//                    │
+//     ┌──────────────┤
+//     │              │
+// ┌───▼────┐     ┌───▼────┐
+// │ Leaf 1 │     │ Leaf 2 │     ...
+// └────────┘     └────────┘
+//
+// The root scopes correspond to global stats plugins in the higher level
+// system. The leaf scopes correspond to per-channel stats plugins. The global
+// (trunk) scope is not associated with any stats plugin, but allows
+// non-channel-related metrics to be aggregated into the global stats plugins.
+//
+// When creating a storage instance systems should use the most specific scope
+// (lowest in the tree) that matches the current context.
 
 #ifndef GRPC_SRC_CORE_TELEMETRY_INSTRUMENT_H
 #define GRPC_SRC_CORE_TELEMETRY_INSTRUMENT_H
@@ -147,13 +176,14 @@
 #include <grpc/support/port_platform.h>
 
 #include <algorithm>
-#include <array>
 #include <atomic>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -162,8 +192,9 @@
 #include "src/core/telemetry/histogram.h"
 #include "src/core/util/avl.h"
 #include "src/core/util/dual_ref_counted.h"
-#include "src/core/util/match.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/per_cpu.h"
+#include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/single_set_ptr.h"
 #include "src/core/util/sync.h"
@@ -171,6 +202,9 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/container/node_hash_map.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/functional/function_ref.h"
+#include "absl/hash/hash.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -179,6 +213,7 @@
 namespace grpc_core {
 
 class InstrumentTest;
+class GlobalCollectionScopeManager;
 
 static constexpr absl::string_view kOmittedLabel = "<omitted>";
 
@@ -192,13 +227,14 @@ class CollectionScope;
 class InstrumentMetadata {
  public:
   struct CounterShape {};
+  struct UpDownCounterShape {};
   struct DoubleGaugeShape {};
   struct IntGaugeShape {};
   struct UintGaugeShape {};
   using HistogramShape = HistogramBuckets;
 
-  using Shape = std::variant<CounterShape, HistogramShape, DoubleGaugeShape,
-                             IntGaugeShape, UintGaugeShape>;
+  using Shape = std::variant<CounterShape, UpDownCounterShape, HistogramShape,
+                             DoubleGaugeShape, IntGaugeShape, UintGaugeShape>;
 
   // A description of a metric.
   struct Description {
@@ -241,7 +277,7 @@ void RegisterHistogramCollectionHook(HistogramCollectionHook hook);
 // metrics collected in this scope are aggregated into the parent scope.
 class CollectionScope : public RefCounted<CollectionScope> {
  public:
-  CollectionScope(RefCountedPtr<CollectionScope> parent,
+  CollectionScope(std::vector<RefCountedPtr<CollectionScope>> parents,
                   absl::Span<const std::string> labels,
                   size_t child_shards_count, size_t storage_shards_count);
   ~CollectionScope() override;
@@ -251,10 +287,16 @@ class CollectionScope : public RefCounted<CollectionScope> {
   void ForEachUniqueStorage(
       absl::FunctionRef<void(instrument_detail::DomainStorage*)> cb);
 
+  bool ObservesLabel(absl::string_view label) const {
+    return labels_of_interest_.contains(label);
+  }
+
+  bool IsRoot() const { return parents_.empty(); }
+
  private:
+  friend class GlobalCollectionScopeManager;
   friend class MetricsQuery;
   friend class instrument_detail::QueryableDomain;
-  friend struct GlobalScopeHolder;
 
   struct StorageShard {
     mutable Mutex mu;
@@ -269,7 +311,11 @@ class CollectionScope : public RefCounted<CollectionScope> {
     absl::flat_hash_set<CollectionScope*> children ABSL_GUARDED_BY(mu);
   };
 
-  RefCountedPtr<CollectionScope> parent_;
+  ChildShard& child_shard(CollectionScope* child) {
+    return child_shards_[absl::HashOf(child) % child_shards_.size()];
+  }
+
+  std::vector<RefCountedPtr<CollectionScope>> parents_;
   absl::flat_hash_set<std::string> labels_of_interest_;
   std::vector<ChildShard> child_shards_;
   std::vector<StorageShard> storage_shards_;
@@ -277,6 +323,8 @@ class CollectionScope : public RefCounted<CollectionScope> {
   void ForEachUniqueStorage(
       absl::FunctionRef<void(instrument_detail::DomainStorage*)> cb,
       absl::flat_hash_set<instrument_detail::DomainStorage*>& visited);
+
+  void TestOnlyReset();
 };
 
 namespace instrument_detail {
@@ -290,28 +338,28 @@ class GaugeStorage {
   explicit GaugeStorage(QueryableDomain* domain);
 
   void SetDouble(uint64_t offset, double value) {
-    DCHECK_LT(offset, double_gauges_.size());
+    GRPC_DCHECK_LT(offset, double_gauges_.size());
     double_gauges_[offset] = value;
   }
   void SetInt(uint64_t offset, int64_t value) {
-    DCHECK_LT(offset, int_gauges_.size());
+    GRPC_DCHECK_LT(offset, int_gauges_.size());
     int_gauges_[offset] = value;
   }
   void SetUint(uint64_t offset, uint64_t value) {
-    DCHECK_LT(offset, uint_gauges_.size());
+    GRPC_DCHECK_LT(offset, uint_gauges_.size());
     uint_gauges_[offset] = value;
   }
 
   std::optional<double> GetDouble(uint64_t offset) const {
-    DCHECK_LT(offset, double_gauges_.size());
+    GRPC_DCHECK_LT(offset, double_gauges_.size());
     return double_gauges_[offset];
   }
   std::optional<int64_t> GetInt(uint64_t offset) const {
-    DCHECK_LT(offset, int_gauges_.size());
+    GRPC_DCHECK_LT(offset, int_gauges_.size());
     return int_gauges_[offset];
   }
   std::optional<uint64_t> GetUint(uint64_t offset) const {
-    DCHECK_LT(offset, uint_gauges_.size());
+    GRPC_DCHECK_LT(offset, uint_gauges_.size());
     return uint_gauges_[offset];
   }
 
@@ -440,6 +488,9 @@ class QueryableDomain {
   const InstrumentMetadata::Description* AllocateCounter(
       absl::string_view name, absl::string_view description,
       absl::string_view unit);
+  const InstrumentMetadata::Description* AllocateUpDownCounter(
+      absl::string_view name, absl::string_view description,
+      absl::string_view unit);
   const InstrumentMetadata::Description* AllocateHistogram(
       absl::string_view name, absl::string_view description,
       absl::string_view unit, HistogramBuckets bounds);
@@ -529,11 +580,14 @@ struct Counter {
 };
 
 // An InstrumentHandle is a handle to a single metric in an
-// InstrumentDomainImpl. kType is used in using statements to disambiguate
-// between different InstrumentHandle specializations. Backed, Label... are
-// per InstrumentDomainImpl.
+// instrument domain. It has a Shape (how the metric behaves).
 template <typename Shape, typename Domain>
 class InstrumentHandle {
+ public:
+  absl::string_view name() const { return description_->name; }
+  absl::string_view description() const { return description_->description; }
+  absl::string_view unit() const { return description_->unit; }
+
  private:
   friend Domain;
 
@@ -555,7 +609,7 @@ template <typename T>
 using StdString = std::string;
 
 template <typename T>
-using ConstCharPtr = const char*;
+using AbslStringView = absl::string_view;
 
 }  // namespace instrument_detail
 
@@ -569,7 +623,14 @@ class LowContentionBackend final {
   void Add(size_t index, uint64_t amount) {
     counters_[index].fetch_add(amount, std::memory_order_relaxed);
   }
+  void Subtract(size_t index, uint64_t amount) {
+    uint64_t old_value =
+        counters_[index].fetch_sub(amount, std::memory_order_relaxed);
+    // Every decrement should have a corresponding increment.
+    GRPC_DCHECK(old_value >= amount);
+  }
   void Increment(size_t index) { Add(index, 1); }
+  void Decrement(size_t index) { Subtract(index, 1); }
 
   uint64_t Sum(size_t index);
 
@@ -588,12 +649,18 @@ class HighContentionBackend final {
   void Add(size_t index, uint64_t amount) {
     counters_.this_cpu()[index].fetch_add(amount, std::memory_order_relaxed);
   }
+  void Subtract(size_t index, uint64_t amount) {
+    counters_.this_cpu()[index].fetch_sub(amount, std::memory_order_relaxed);
+  }
   void Increment(size_t index) { Add(index, 1); }
+  void Decrement(size_t index) { Subtract(index, 1); }
 
   uint64_t Sum(size_t index);
 
  private:
-  PerCpu<std::unique_ptr<std::atomic<uint64_t>[]>> counters_{
+  // Since Increments and Decrements can happen on different CPUs, we need to
+  // use a int64_t counter. The sum should still be a uint64_t.
+  PerCpu<std::unique_ptr<std::atomic<int64_t>[]>> counters_{
       PerCpuOptions().SetMaxShards(16)};
 };
 
@@ -603,16 +670,24 @@ class MetricsSink {
  public:
   // Called once per label per metric, with the value of that metric for that
   // label.
-  virtual void Counter(absl::Span<const std::string> label,
+  virtual void Counter(absl::Span<const std::string> label_keys,
+                       absl::Span<const std::string> label_values,
                        absl::string_view name, uint64_t value) = 0;
-  virtual void Histogram(absl::Span<const std::string> label,
+  virtual void UpDownCounter(absl::Span<const std::string> label_keys,
+                             absl::Span<const std::string> label_values,
+                             absl::string_view name, uint64_t value) = 0;
+  virtual void Histogram(absl::Span<const std::string> label_keys,
+                         absl::Span<const std::string> label_values,
                          absl::string_view name, HistogramBuckets bounds,
                          absl::Span<const uint64_t> counts) = 0;
-  virtual void DoubleGauge(absl::Span<const std::string> labels,
+  virtual void DoubleGauge(absl::Span<const std::string> label_keys,
+                           absl::Span<const std::string> label_values,
                            absl::string_view name, double value) = 0;
-  virtual void IntGauge(absl::Span<const std::string> labels,
+  virtual void IntGauge(absl::Span<const std::string> label_keys,
+                        absl::Span<const std::string> label_values,
                         absl::string_view name, int64_t value) = 0;
-  virtual void UintGauge(absl::Span<const std::string> labels,
+  virtual void UintGauge(absl::Span<const std::string> label_keys,
+                         absl::Span<const std::string> label_values,
                          absl::string_view name, uint64_t value) = 0;
 
  protected:
@@ -634,22 +709,22 @@ class MetricsQuery {
   // remaining dimensions, etc.
   MetricsQuery& CollapseLabels(absl::Span<const std::string> labels);
   // Only include metrics that are in `metrics`.
-  MetricsQuery& OnlyMetrics(absl::Span<const std::string> metrics);
+  MetricsQuery& OnlyMetrics(std::vector<std::string> metrics);
 
   // Returns the metrics that are selected by this query.
   std::optional<absl::Span<const std::string>> selected_metrics() const {
     return only_metrics_;
   }
 
+  // Runs the query, outputting the results to `sink`.
+  void Run(RefCountedPtr<CollectionScope> scope, MetricsSink& sink) const;
+
+ private:
   // Adapts `sink` by including the filtering requested, and then calls `fn`
   // with the filtering sink. This is mainly an implementation detail.
   void Apply(absl::Span<const std::string> label_names,
              absl::FunctionRef<void(MetricsSink&)> fn, MetricsSink& sink) const;
 
-  // Runs the query, outputting the results to `sink`.
-  void Run(RefCountedPtr<CollectionScope> scope, MetricsSink& sink) const;
-
- private:
   void ApplyLabelChecks(absl::Span<const std::string> label_names,
                         absl::FunctionRef<void(MetricsSink&)> fn,
                         MetricsSink& sink) const;
@@ -687,6 +762,8 @@ class InstrumentDomainImpl final : public QueryableDomain {
  public:
   using Self = InstrumentDomainImpl<Backend, N, Tag>;
   using CounterHandle = InstrumentHandle<Counter, Self>;
+  using UpDownCounterHandle =
+      InstrumentHandle<InstrumentMetadata::UpDownCounterShape, Self>;
   using DoubleGaugeHandle =
       InstrumentHandle<InstrumentMetadata::DoubleGaugeShape, Self>;
   using IntGaugeHandle =
@@ -727,16 +804,16 @@ class InstrumentDomainImpl final : public QueryableDomain {
    protected:
     explicit GaugeProvider(RefCountedPtr<Storage> storage)
         : storage_(std::move(storage)) {
-      DCHECK(storage_ != nullptr);
+      GRPC_DCHECK(storage_ != nullptr);
     }
-    ~GaugeProvider() { DCHECK(storage_ == nullptr); }
+    ~GaugeProvider() { GRPC_DCHECK(storage_ == nullptr); }
 
     void ProviderConstructed() {
-      DCHECK(storage_ != nullptr);
+      GRPC_DCHECK(storage_ != nullptr);
       storage_->RegisterGaugeProvider(this);
     }
     void ProviderDestructing() {
-      DCHECK(storage_ != nullptr);
+      GRPC_DCHECK(storage_ != nullptr);
       storage_->UnregisterGaugeProvider(this);
       storage_.reset();
     }
@@ -753,12 +830,23 @@ class InstrumentDomainImpl final : public QueryableDomain {
 
     // Increments the counter specified by `handle` by 1 for this storages
     // labels.
-    void Increment(CounterHandle handle) {
-      DCHECK_EQ(handle.instrument_domain_, domain());
-      backend_.Add(handle.offset_, 1);
+    void Increment(CounterHandle handle, uint64_t amount = 1) {
+      GRPC_DCHECK_EQ(handle.instrument_domain_, domain());
+      backend_.Add(handle.offset_, amount);
     }
+
+    void Increment(UpDownCounterHandle handle, uint64_t amount = 1) {
+      GRPC_DCHECK_EQ(handle.instrument_domain_, domain());
+      backend_.Add(handle.offset_, amount);
+    }
+
+    void Decrement(UpDownCounterHandle handle, uint64_t amount = 1) {
+      GRPC_DCHECK_EQ(handle.instrument_domain_, domain());
+      backend_.Subtract(handle.offset_, amount);
+    }
+
     void Add(DomainStorage* other) override {
-      DCHECK_EQ(domain(), other->domain());
+      GRPC_DCHECK_EQ(domain(), other->domain());
       for (size_t i = 0; i < domain()->allocated_counter_slots(); ++i) {
         uint64_t amount = other->SumCounter(i);
         if (amount == 0) continue;
@@ -768,7 +856,7 @@ class InstrumentDomainImpl final : public QueryableDomain {
 
     template <typename Shape>
     void Increment(const HistogramHandle<Shape>& handle, int64_t value) {
-      DCHECK_EQ(handle.instrument_domain_, domain());
+      GRPC_DCHECK_EQ(handle.instrument_domain_, domain());
       CallHistogramCollectionHooks(handle.description_, label(), value);
       backend_.Add(handle.offset_ + handle.shape_->BucketFor(value), 1);
     }
@@ -814,7 +902,7 @@ class InstrumentDomainImpl final : public QueryableDomain {
       std::string name, std::vector<std::string> label_names,
       size_t map_shards = std::min(16u, gpr_cpu_num_cores()))
       : QueryableDomain(std::move(name), std::move(label_names), map_shards) {
-    CHECK_EQ(this->label_names().size(), N);
+    GRPC_CHECK_EQ(this->label_names().size(), N);
     Constructed();
   }
 
@@ -828,6 +916,14 @@ class InstrumentDomainImpl final : public QueryableDomain {
                                 absl::string_view unit) {
     return CounterHandle{this, AllocateCounter(name, description, unit),
                          Counter{}};
+  }
+
+  UpDownCounterHandle RegisterUpDownCounter(absl::string_view name,
+                                            absl::string_view description,
+                                            absl::string_view unit) {
+    return UpDownCounterHandle{this,
+                               AllocateUpDownCounter(name, description, unit),
+                               InstrumentMetadata::UpDownCounterShape{}};
   }
 
   template <typename Shape, typename... Args>
@@ -922,13 +1018,19 @@ class InstrumentDomain {
  protected:
   template <typename... Label>
   static constexpr auto Labels(Label... labels) {
-    return std::tuple<instrument_detail::ConstCharPtr<Label>...>{labels...};
+    return std::tuple<instrument_detail::AbslStringView<Label>...>{labels...};
   }
 
   static auto RegisterCounter(absl::string_view name,
                               absl::string_view description,
                               absl::string_view unit) {
     return Domain()->RegisterCounter(name, description, unit);
+  }
+
+  static auto RegisterUpDownCounter(absl::string_view name,
+                                    absl::string_view description,
+                                    absl::string_view unit) {
+    return Domain()->RegisterUpDownCounter(name, description, unit);
   }
 
   template <typename Shape, typename... Args>
@@ -988,16 +1090,15 @@ void TestOnlyResetInstruments();
 // `child_shards_count` and `storage_shards_count` are performance tuning
 // parameters for sharding internal data structures.
 RefCountedPtr<CollectionScope> CreateCollectionScope(
-    RefCountedPtr<CollectionScope> parent, absl::Span<const std::string> labels,
-    size_t child_shards_count = 1, size_t storage_shards_count = 1);
-// Gets the global collection scope.
-// The global collection scope is a root scope that can be used for metrics
-// that do not belong to a specific sub-scope.
-// The labels of interest for the global scope are the union of all labels
-// passed to this function *until* the first storage is created in the global
-// scope, at which point the labels become fixed.
-RefCountedPtr<CollectionScope> GetGlobalCollectionScope(
-    absl::Span<const std::string> labels);
+    std::vector<RefCountedPtr<CollectionScope>> parents,
+    absl::Span<const std::string> labels, size_t child_shards_count = 1,
+    size_t storage_shards_count = 1);
+
+RefCountedPtr<CollectionScope> CreateRootCollectionScope(
+    absl::Span<const std::string> labels, size_t child_shards_count = 1,
+    size_t storage_shards_count = 1);
+
+RefCountedPtr<CollectionScope> GlobalCollectionScope();
 
 }  // namespace grpc_core
 

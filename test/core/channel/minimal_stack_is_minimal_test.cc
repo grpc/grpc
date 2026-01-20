@@ -72,6 +72,8 @@ class FakeTransport final : public grpc_core::Transport {
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op*) override {}
+  void StartWatch(grpc_core::RefCountedPtr<StateWatcher>) override {}
+  void StopWatch(grpc_core::RefCountedPtr<StateWatcher>) override {}
   void Orphan() override {}
   grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> GetSocketNode()
       const override {
@@ -102,8 +104,8 @@ std::vector<std::string> MakeStack(const char* transport_name,
   }
 
   std::vector<std::string> parts;
-  for (const auto& entry : *builder.mutable_stack()) {
-    parts.push_back(std::string(entry->name.name()));
+  for (const auto& [filter, _] : *builder.mutable_stack()) {
+    parts.push_back(std::string(filter->name.name()));
   }
 
   return parts;

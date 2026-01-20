@@ -54,6 +54,10 @@ class ClientChannelGlobalParsedConfig final
     return health_check_config_.service_name;
   }
 
+  uint32_t max_connections_per_subchannel() const {
+    return connection_scaling_.max_connections_per_subchannel;
+  }
+
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
   void JsonPostLoad(const Json& json, const JsonArgs&,
                     ValidationErrors* errors);
@@ -65,9 +69,16 @@ class ClientChannelGlobalParsedConfig final
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
   };
 
+  struct ConnectionScaling {
+    uint32_t max_connections_per_subchannel = 0;
+
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+  };
+
   RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config_;
   std::string parsed_deprecated_lb_policy_;
   HealthCheckConfig health_check_config_;
+  ConnectionScaling connection_scaling_;
 };
 
 class ClientChannelMethodParsedConfig final

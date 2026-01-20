@@ -40,7 +40,7 @@ def _generate_objc_impl(ctx):
     protos = [
         f
         for src in ctx.attr.deps
-        for f in src[ProtoInfo].transitive_imports.to_list()
+        for f in src[ProtoInfo].transitive_sources.to_list()
     ]
 
     target_package = _join_directories([ctx.label.workspace_root, ctx.label.package])

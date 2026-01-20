@@ -1713,8 +1713,7 @@
     "ci_platforms": [
       "linux",
       "mac",
-      "posix",
-      "windows"
+      "posix"
     ],
     "cpu_cost": 1.0,
     "exclude_configs": [],
@@ -1726,8 +1725,7 @@
     "platforms": [
       "linux",
       "mac",
-      "posix",
-      "windows"
+      "posix"
     ],
     "uses_polling": true
   },
@@ -2069,8 +2067,7 @@
     "ci_platforms": [
       "linux",
       "mac",
-      "posix",
-      "windows"
+      "posix"
     ],
     "cpu_cost": 1.0,
     "exclude_configs": [],
@@ -2082,8 +2079,7 @@
     "platforms": [
       "linux",
       "mac",
-      "posix",
-      "windows"
+      "posix"
     ],
     "uses_polling": true
   },
@@ -4535,6 +4531,30 @@
     "ci_platforms": [
       "linux",
       "mac",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
+    "name": "http2_security_frame_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": false
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
       "posix"
     ],
     "cpu_cost": 1.0,
@@ -4802,12 +4822,34 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "info_tool_test",
+    "name": "incoming_metadata_tracker_test",
     "platforms": [
       "linux",
       "mac",
       "posix",
       "windows"
+    ],
+    "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
+    "name": "info_tool_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix"
     ],
     "uses_polling": true
   },
@@ -5367,8 +5409,7 @@
     "ci_platforms": [
       "linux",
       "mac",
-      "posix",
-      "windows"
+      "posix"
     ],
     "cpu_cost": 1.0,
     "exclude_configs": [],
@@ -5380,8 +5421,7 @@
     "platforms": [
       "linux",
       "mac",
-      "posix",
-      "windows"
+      "posix"
     ],
     "uses_polling": true
   },
@@ -8889,6 +8929,30 @@
     "ci_platforms": [
       "linux",
       "mac",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
+    "name": "stream_quota_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": false
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
       "posix"
     ],
     "cpu_cost": 1.0,
@@ -9558,6 +9622,30 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
+    "name": "test_timeout_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
     "name": "thd_test",
     "platforms": [
       "linux",
@@ -9857,8 +9945,7 @@
     "ci_platforms": [
       "linux",
       "mac",
-      "posix",
-      "windows"
+      "posix"
     ],
     "cpu_cost": 1.0,
     "exclude_configs": [],
@@ -9870,8 +9957,7 @@
     "platforms": [
       "linux",
       "mac",
-      "posix",
-      "windows"
+      "posix"
     ],
     "uses_polling": true
   },
@@ -10231,7 +10317,7 @@
       "posix",
       "windows"
     ],
-    "uses_polling": true
+    "uses_polling": false
   },
   {
     "args": [],

@@ -335,6 +335,9 @@ class XdsResolver final : public Resolver {
       static inline const NoInterceptor OnClientToServerHalfClose;
       static inline const NoInterceptor OnServerToClientMessage;
       static inline const NoInterceptor OnFinalize;
+      channelz::PropertyList ChannelzProperties() {
+        return channelz::PropertyList();
+      }
     };
   };
 
@@ -788,7 +791,7 @@ void XdsResolver::XdsConfigSelector::AddFilters(
     filter->UpdateBlackboard(hcm.http_filters[i].config, old_blackboard,
                              new_blackboard);
   }
-  builder.Add<ClusterSelectionFilter>();
+  builder.Add<ClusterSelectionFilter>(nullptr);
 }
 
 std::vector<const grpc_channel_filter*>

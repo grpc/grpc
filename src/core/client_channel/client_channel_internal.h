@@ -41,6 +41,10 @@
 #define GRPC_ARG_HEALTH_CHECK_SERVICE_NAME \
   "grpc.internal.health_check_service_name"
 
+// Max number of connections per subchannel.
+#define GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL \
+  "grpc.internal.max_connections_per_subchannel"
+
 namespace grpc_core {
 
 // Internal type for LB call state interface.  Provides an interface for
