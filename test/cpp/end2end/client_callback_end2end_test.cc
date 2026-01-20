@@ -29,16 +29,19 @@
 #include <algorithm>
 #include <condition_variable>
 #include <functional>
+#include <memory>
 #include <mutex>
 #include <sstream>
 #include <thread>
 
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/interceptors_util.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
@@ -126,6 +129,7 @@ class ClientCallbackEnd2endTest
       std::unique_ptr<experimental::ClientInterceptorFactoryInterface>
           interceptor = nullptr) {
     ChannelArguments args;
+    ApplyCommonChannelArguments(args);
     auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
         GetParam().credentials_type, &args);
     auto interceptors = CreatePhonyClientInterceptors();

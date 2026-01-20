@@ -17,14 +17,16 @@
 //
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
 
+#include <cstdint>
+#include <optional>
 #include <utility>
 
 #include "src/core/config/core_configuration.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
-#include "src/core/util/notification.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "test/core/call/yodel/yodel_test.h"
@@ -98,21 +100,52 @@ class PingManagerTest : public YodelTest {
   RefCountedPtr<Party> party_;
 };
 
+void MaybeSpawnDelayedPing(PingManager& ping_system,
+                           std::optional<Duration> wait) {
+  if (wait.has_value()) {
+    GetContext<Party>()->Spawn(
+        "DelayedPing",
+        [&ping_system, wait = *wait]() {
+          return ping_system.DelayedPingPromise(wait);
+        },
+        [](auto) {});
+  }
+}
+
+void MaybeSpawnTimeout(PingManager& ping_system,
+                       std::optional<uint64_t> opaque_data) {
+  if (opaque_data.has_value()) {
+    GetContext<Party>()->Spawn(
+        "PingTimeout",
+        [&ping_system, opaque_data = *opaque_data]() {
+          return ping_system.TimeoutPromise(opaque_data);
+        },
+        [](auto) {});
+  }
+}
+
 void MaybeSendPing(PingManager& ping_system,
                    Duration next_allowed_ping_interval) {
   SliceBuffer output_buf;
-  ping_system.MaybeGetSerializedPingFrames(output_buf,
-                                           next_allowed_ping_interval);
-  ping_system.NotifyPingSent();
+  std::optional<Duration> delayed_ping_wait =
+      ping_system.MaybeGetSerializedPingFrames(output_buf,
+                                               next_allowed_ping_interval);
+  MaybeSpawnDelayedPing(ping_system, delayed_ping_wait);
+  MaybeSpawnTimeout(ping_system, ping_system.NotifyPingSent());
 }
 
 std::optional<uint64_t> MaybeSendPingAndReturnID(
-    PingManager& ping_system, Duration next_allowed_ping_interval) {
+    PingManager& ping_system, Duration next_allowed_ping_interval,
+    bool trigger_ping_timeout = true) {
   SliceBuffer output_buf;
-  std::optional<uint64_t> opaque_data =
-      ping_system.TestOnlyMaybeGetSerializedPingFrames(
-          output_buf, next_allowed_ping_interval);
-  ping_system.NotifyPingSent();
+  std::optional<Duration> delayed_ping_wait =
+      ping_system.MaybeGetSerializedPingFrames(output_buf,
+                                               next_allowed_ping_interval);
+  MaybeSpawnDelayedPing(ping_system, delayed_ping_wait);
+  std::optional<uint64_t> opaque_data = ping_system.NotifyPingSent();
+  if (trigger_ping_timeout) {
+    MaybeSpawnTimeout(ping_system, opaque_data);
+  }
   return opaque_data;
 }
 }  // namespace
@@ -669,16 +702,15 @@ PING_MANAGER_TEST(TestPingManagerPingTimeoutAfterAck) {
 
   GetParty()->Spawn(
       "PingManager",
-      [&ping_system, &output_buf] {
-        return TrySeq([&ping_system, &output_buf]() {
-          auto recv_opaque_data =
-              ping_system.TestOnlyMaybeGetSerializedPingFrames(
-                  output_buf,
-                  /*next_allowed_ping_interval=*/kShortInterval);
+      [&ping_system] {
+        return TrySeq([&ping_system]() {
+          auto recv_opaque_data = MaybeSendPingAndReturnID(
+              ping_system, /*next_allowed_ping_interval=*/kShortInterval,
+              /*trigger_ping_timeout=*/false);
           EXPECT_TRUE(recv_opaque_data.has_value());
           uint64_t opaque_data = recv_opaque_data.value();
           EXPECT_TRUE(ping_system.AckPing(opaque_data));
-          ping_system.NotifyPingSent();
+          MaybeSpawnTimeout(ping_system, recv_opaque_data);
           return absl::OkStatus();
         });
       },

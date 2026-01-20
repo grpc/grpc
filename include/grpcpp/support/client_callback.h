@@ -108,7 +108,7 @@ class CallbackUnaryCallImpl {
     ops->ClientSendClose();
     ops->ClientRecvStatus(context, tag->status_ptr());
     ops->set_core_cq_tag(tag);
-    call.PerformOps(ops);
+    ops->FillOps(&call);
   }
 };
 
@@ -487,21 +487,21 @@ class ClientCallbackReaderWriterImpl
                                      context_->initial_metadata_flags());
     }
 
-    call_.PerformOps(&start_ops_);
+    start_ops_.FillOps(&call_);
 
     {
       grpc::internal::MutexLock lock(&start_mu_);
 
       if (backlog_.read_ops) {
-        call_.PerformOps(&read_ops_);
+        read_ops_.FillOps(&call_);
       }
       if (backlog_.write_ops) {
-        call_.PerformOps(&write_ops_);
+        write_ops_.FillOps(&call_);
       }
       if (backlog_.writes_done_ops) {
-        call_.PerformOps(&writes_done_ops_);
+        writes_done_ops_.FillOps(&call_);
       }
-      call_.PerformOps(&finish_ops_);
+      finish_ops_.FillOps(&call_);
       // The last thing in this critical section is to set started_ so that it
       // can be used lock-free as well.
       started_.store(true, std::memory_order_release);
@@ -522,7 +522,7 @@ class ClientCallbackReaderWriterImpl
         return;
       }
     }
-    call_.PerformOps(&read_ops_);
+    read_ops_.FillOps(&call_);
   }
 
   void Write(const Request* msg, grpc::WriteOptions options)
@@ -550,7 +550,7 @@ class ClientCallbackReaderWriterImpl
         return;
       }
     }
-    call_.PerformOps(&write_ops_);
+    write_ops_.FillOps(&call_);
   }
   void WritesDone() ABSL_LOCKS_EXCLUDED(start_mu_) override {
     writes_done_ops_.ClientSendClose();
@@ -575,7 +575,7 @@ class ClientCallbackReaderWriterImpl
         return;
       }
     }
-    call_.PerformOps(&writes_done_ops_);
+    writes_done_ops_.FillOps(&call_);
   }
 
   void AddHold(int holds) override {
@@ -758,7 +758,7 @@ class ClientCallbackReaderImpl : public ClientCallbackReader<Response> {
                                    context_->initial_metadata_flags());
     start_ops_.RecvInitialMetadata(context_);
     start_ops_.set_core_cq_tag(&start_tag_);
-    call_.PerformOps(&start_ops_);
+    start_ops_.FillOps(&call_);
 
     // Also set up the read tag so it doesn't have to be set up each time
     read_tag_.Set(
@@ -773,7 +773,7 @@ class ClientCallbackReaderImpl : public ClientCallbackReader<Response> {
     {
       grpc::internal::MutexLock lock(&start_mu_);
       if (backlog_.read_ops) {
-        call_.PerformOps(&read_ops_);
+        read_ops_.FillOps(&call_);
       }
       started_.store(true, std::memory_order_release);
     }
@@ -784,7 +784,7 @@ class ClientCallbackReaderImpl : public ClientCallbackReader<Response> {
         &finish_ops_, /*can_inline=*/false);
     finish_ops_.ClientRecvStatus(context_, &finish_status_);
     finish_ops_.set_core_cq_tag(&finish_tag_);
-    call_.PerformOps(&finish_ops_);
+    finish_ops_.FillOps(&call_);
   }
 
   void Read(Response* msg) override {
@@ -797,7 +797,7 @@ class ClientCallbackReaderImpl : public ClientCallbackReader<Response> {
         return;
       }
     }
-    call_.PerformOps(&read_ops_);
+    read_ops_.FillOps(&call_);
   }
 
   void AddHold(int holds) override {
@@ -914,18 +914,18 @@ class ClientCallbackWriterImpl : public ClientCallbackWriter<Request> {
       start_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
                                      context_->initial_metadata_flags());
     }
-    call_.PerformOps(&start_ops_);
+    start_ops_.FillOps(&call_);
 
     {
       grpc::internal::MutexLock lock(&start_mu_);
 
       if (backlog_.write_ops) {
-        call_.PerformOps(&write_ops_);
+        write_ops_.FillOps(&call_);
       }
       if (backlog_.writes_done_ops) {
-        call_.PerformOps(&writes_done_ops_);
+        writes_done_ops_.FillOps(&call_);
       }
-      call_.PerformOps(&finish_ops_);
+      finish_ops_.FillOps(&call_);
       // The last thing in this critical section is to set started_ so that it
       // can be used lock-free as well.
       started_.store(true, std::memory_order_release);
@@ -962,7 +962,7 @@ class ClientCallbackWriterImpl : public ClientCallbackWriter<Request> {
         return;
       }
     }
-    call_.PerformOps(&write_ops_);
+    write_ops_.FillOps(&call_);
   }
 
   void WritesDone() ABSL_LOCKS_EXCLUDED(start_mu_) override {
@@ -990,7 +990,7 @@ class ClientCallbackWriterImpl : public ClientCallbackWriter<Request> {
         return;
       }
     }
-    call_.PerformOps(&writes_done_ops_);
+    writes_done_ops_.FillOps(&call_);
   }
 
   void AddHold(int holds) override {
@@ -1158,14 +1158,14 @@ class ClientCallbackUnaryImpl final : public ClientCallbackUnary {
                                    context_->initial_metadata_flags());
     start_ops_.RecvInitialMetadata(context_);
     start_ops_.set_core_cq_tag(&start_tag_);
-    call_.PerformOps(&start_ops_);
+    start_ops_.FillOps(&call_);
 
     finish_tag_.Set(
         call_.call(), [this](bool /*ok*/) { MaybeFinish(); }, &finish_ops_,
         /*can_inline=*/false);
     finish_ops_.ClientRecvStatus(context_, &finish_status_);
     finish_ops_.set_core_cq_tag(&finish_tag_);
-    call_.PerformOps(&finish_ops_);
+    finish_ops_.FillOps(&call_);
   }
 
  private:

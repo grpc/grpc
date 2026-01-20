@@ -562,6 +562,7 @@ grpc_cc_library(
         "get_grpc_test_runfile_dir.h",
     ],
     external_deps = [
+        "absl/strings",
     ],
     deps = [
         "//src/core:env",

@@ -53,6 +53,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/compression.h )
   s.files += %w( include/grpc/create_channel_from_endpoint.h )
   s.files += %w( include/grpc/credentials.h )
+  s.files += %w( include/grpc/credentials_cpp.h )
   s.files += %w( include/grpc/event_engine/endpoint_config.h )
   s.files += %w( include/grpc/event_engine/event_engine.h )
   s.files += %w( include/grpc/event_engine/extensible.h )
