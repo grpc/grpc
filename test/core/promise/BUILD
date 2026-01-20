@@ -273,7 +273,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "join_test",
     srcs = ["join_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "@com_google_protobuf//upb/mem",
+    ],
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
@@ -282,6 +285,7 @@ grpc_cc_test(
         "//src/core:join",
         "//src/core:poll",
         "//src/core:status_flag",
+        "//src/proto/grpc/channelz/v2:promise_upb_proto",
     ],
 )
 
@@ -291,6 +295,7 @@ grpc_cc_test(
     external_deps = [
         "absl/utility",
         "gtest",
+        "@com_google_protobuf//upb/mem",
     ],
     tags = ["promise_test"],
     uses_event_engine = False,
@@ -298,7 +303,6 @@ grpc_cc_test(
     deps = [
         "//src/core:try_join",
         "//src/proto/grpc/channelz/v2:promise_upb_proto",
-        "@com_google_protobuf//upb/mem",
     ],
 )
 
@@ -308,6 +312,7 @@ grpc_cc_test(
     external_deps = [
         "absl/utility",
         "gtest",
+        "@com_google_protobuf//upb/mem",
     ],
     tags = ["promise_test"],
     uses_event_engine = False,
@@ -316,7 +321,6 @@ grpc_cc_test(
         "//:promise",
         "//src/core:all_ok",
         "//src/proto/grpc/channelz/v2:promise_upb_proto",
-        "@com_google_protobuf//upb/mem",
     ],
 )
 

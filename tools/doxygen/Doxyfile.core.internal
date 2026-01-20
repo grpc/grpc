@@ -1119,6 +1119,9 @@ src/core/credentials/transport/transport_credentials.cc \
 src/core/credentials/transport/transport_credentials.h \
 src/core/credentials/transport/xds/xds_credentials.cc \
 src/core/credentials/transport/xds/xds_credentials.h \
+src/core/ext/.venv-bazel-py313/lib/python3.13/site-packages/idna-3.10.dist-info/LICENSE.md \
+src/core/ext/.venv-bazel-py313/lib/python3.13/site-packages/opentelemetry/sdk/metrics/_internal/exponential_histogram/mapping/ieee_754.md \
+src/core/ext/.venv-bazel-py313/lib/python3.13/site-packages/pip-25.2.dist-info/licenses/src/pip/_vendor/idna/LICENSE.md \
 src/core/ext/README.md \
 src/core/ext/filters/backend_metrics/GEMINI.md \
 src/core/ext/filters/backend_metrics/backend_metric_filter.cc \
