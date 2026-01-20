@@ -74,7 +74,9 @@ class SecureInteropWithPrivateKeyOffloadingTest(
         port = self.server.add_secure_port(
             "[::]:0",
             grpc.ssl_server_credentials(
-                [(resources.private_key(), resources.certificate_chain())]
+                [(resources.private_key(), resources.certificate_chain())],
+                resources.test_root_certificates(),
+                require_client_auth=True,
             ),
         )
         self.server.start()
