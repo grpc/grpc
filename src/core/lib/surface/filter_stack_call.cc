@@ -38,6 +38,7 @@
 #include <utility>
 
 #include "src/core/call/metadata_batch.h"
+#include "src/core/call/status_util.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
@@ -915,14 +916,15 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
           goto done_with_error;
         }
 
+        grpc_status_code clamped_status = grpc_status_code_clamp_to_valid(
+            op->data.send_status_from_server.status);
+
         grpc_error_handle status_error =
-            op->data.send_status_from_server.status == GRPC_STATUS_OK
+            clamped_status == GRPC_STATUS_OK
                 ? absl::OkStatus()
-                : grpc_error_set_int(
-                      GRPC_ERROR_CREATE("Server returned error"),
-                      StatusIntProperty::kRpcStatus,
-                      static_cast<intptr_t>(
-                          op->data.send_status_from_server.status));
+                : grpc_error_set_int(GRPC_ERROR_CREATE("Server returned error"),
+                                     StatusIntProperty::kRpcStatus,
+                                     static_cast<intptr_t>(clamped_status));
         if (op->data.send_status_from_server.status_details != nullptr) {
           send_trailing_metadata_.Set(
               GrpcMessageMetadata(),
@@ -938,8 +940,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
 
         status_error_.set(status_error);
 
-        send_trailing_metadata_.Set(GrpcStatusMetadata(),
-                                    op->data.send_status_from_server.status);
+        send_trailing_metadata_.Set(GrpcStatusMetadata(), clamped_status);
 
         // Ignore any te metadata key value pairs specified.
         send_trailing_metadata_.Remove(TeMetadata());
