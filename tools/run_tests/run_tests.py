@@ -194,7 +194,7 @@ def _check_arch(arch, supported_archs):
 
 
 def _is_use_docker_child():
-    """Returns True if running running as a --use_docker child."""
+    """Returns True if running as a --use_docker child."""
     return True if os.getenv("DOCKER_RUN_SCRIPT_COMMAND") else False
 
 
@@ -694,7 +694,7 @@ class PythonLanguage(object):
                     self.config.job_spec(
                         [
                             python_config.python_path,
-                            "tools/distrib/python/xds_protos/generated_file_import_test.py",
+                            "py_xds_protos/generated_file_import_test.py",
                         ],
                         timeout_seconds=60,
                         environ=_FORCE_ENVIRON_FOR_WRAPPERS,
@@ -1535,7 +1535,7 @@ def _build_and_run(
                 )
             )
         )
-        # When running on travis, we want out test runs to be as similar as possible
+        # When running on travis, we want our test runs to be as similar as possible
         # for reproducibility purposes.
         if args.travis and args.max_time <= 0:
             massaged_one_run = sorted(one_run, key=lambda x: x.cpu_cost)

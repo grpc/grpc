@@ -23,6 +23,7 @@
 #include <limits.h>
 #include <stdint.h>
 
+#include <algorithm>
 #include <iosfwd>
 #include <optional>
 #include <string>
@@ -36,8 +37,11 @@
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/functional/function_ref.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -53,10 +57,17 @@ static constexpr const uint32_t kMaxInitialWindowSize = (1u << 30);
 static constexpr const int64_t kMaxWindowDelta = (1u << 20);
 static constexpr const int kDefaultPreferredRxCryptoFrameSize = INT_MAX;
 
+// TODO(tjagtap) [PH2][P2][BDP] Remove this static sleep when the BDP code is
+// done. This needs to be dynamic.
+constexpr Duration kFlowControlPeriodicUpdateTimer = Duration::Seconds(8);
+
 class TransportFlowControl;
 class StreamFlowControl;
 
 enum class StallEdge { kNoChange, kStalled, kUnstalled };
+
+#define GRPC_HTTP2_FLOW_CONTROL_DLOG \
+  DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
 
 // Encapsulates a collections of actions the transport needs to take with
 // regard to flow control. Each action comes with urgencies that tell the
@@ -94,6 +105,8 @@ class GRPC_MUST_USE_RESULT FlowControlAction {
            preferred_rx_crypto_frame_size_update_ ==
                Urgency::UPDATE_IMMEDIATELY;
   }
+
+  std::string ImmediateUpdateReasons() const;
 
   // Returns the value of SETTINGS_INITIAL_WINDOW_SIZE that we will send to the
   // peer.
@@ -223,6 +236,8 @@ class TransportFlowControl final {
 
     IncomingUpdateContext(const IncomingUpdateContext&) = delete;
     IncomingUpdateContext& operator=(const IncomingUpdateContext&) = delete;
+    IncomingUpdateContext(IncomingUpdateContext&&) = delete;
+    IncomingUpdateContext& operator=(IncomingUpdateContext&&) = delete;
 
     // Reads the flow control data and returns an actionable struct that will
     // tell the transport exactly what it needs to do.
@@ -269,12 +284,16 @@ class TransportFlowControl final {
    public:
     explicit OutgoingUpdateContext(TransportFlowControl* tfc) : tfc_(tfc) {}
 
+    OutgoingUpdateContext(const OutgoingUpdateContext&) = delete;
+    OutgoingUpdateContext& operator=(const OutgoingUpdateContext&) = delete;
+    OutgoingUpdateContext(OutgoingUpdateContext&&) = delete;
+    OutgoingUpdateContext& operator=(OutgoingUpdateContext&&) = delete;
+
     // Call this function when a transport-level WINDOW_UPDATE frame is received
     // from peer to increase remote window.
     void RecvUpdate(uint32_t size) { tfc_->remote_window_ += size; }
 
     // Finish the update and check whether we became stalled or unstalled.
-    // TODO(tjagtap) [PH2][P1] Plumb with PH2 flow control.
     StallEdge Finish() {
       bool is_stalled = tfc_->remote_window_ <= 0;
       if (is_stalled != was_stalled_) {
@@ -295,7 +314,7 @@ class TransportFlowControl final {
   // Call periodically (at a low-ish rate, 100ms - 10s makes sense)
   // to perform more complex flow control calculations and return an action
   // to let the transport change its parameters.
-  // TODO(tjagtap) [PH2][P1] Plumb with PH2 flow control.
+  // TODO(tjagtap) [PH2][P2] Plumb with PH2 flow control.
   FlowControlAction PeriodicUpdate();
 
   int64_t test_only_target_window() const { return target_window(); }
@@ -386,6 +405,14 @@ class TransportFlowControl final {
     return stats;
   }
 
+  void AddStreamToWindowUpdateList(const uint32_t stream_id) {
+    window_update_list_.insert(stream_id);
+  }
+  absl::flat_hash_set<uint32_t> DrainWindowUpdateList() {
+    return std::exchange(window_update_list_, {});
+  }
+  size_t window_update_list_size() const { return window_update_list_.size(); }
+
  private:
   friend class StreamFlowControl;
 
@@ -443,6 +470,7 @@ class TransportFlowControl final {
   int64_t announced_window_ = kDefaultWindow;
   uint32_t acked_init_window_ = kDefaultWindow;
   uint32_t sent_init_window_ = kDefaultWindow;
+  absl::flat_hash_set<uint32_t> window_update_list_;
 };
 
 // Implementation of flow control that abides to HTTP/2 spec and attempts
@@ -461,6 +489,11 @@ class StreamFlowControl final {
    public:
     explicit IncomingUpdateContext(StreamFlowControl* sfc)
         : tfc_upd_(sfc->tfc_), sfc_(sfc) {}
+
+    IncomingUpdateContext(const IncomingUpdateContext&) = delete;
+    IncomingUpdateContext& operator=(const IncomingUpdateContext&) = delete;
+    IncomingUpdateContext(IncomingUpdateContext&&) = delete;
+    IncomingUpdateContext& operator=(IncomingUpdateContext&&) = delete;
 
     FlowControlAction MakeAction() {
       return sfc_->UpdateAction(tfc_upd_.MakeAction());
@@ -481,7 +514,7 @@ class StreamFlowControl final {
     // `min_progress_size` bytes to make progress on reading the current stream.
     // An example usage of this would be, say we receive the first 1000 bytes of
     // a 2000 byte gRPC message, we can call SetMinProgressSize(1000)
-    // TODO(tjagtap) [PH2][P1] Plumb with PH2 flow control.
+    // TODO(tjagtap) [PH2][P2] Plumb with PH2 flow control.
     void SetMinProgressSize(int64_t min_progress_size) {
       sfc_->min_progress_size_ = min_progress_size;
     }
@@ -492,6 +525,14 @@ class StreamFlowControl final {
     // whether to send a WINDOW_UPDATE to the peer.
     // TODO(tjagtap) [PH2][P1] Plumb with PH2 flow control.
     void SetPendingSize(int64_t pending_size);
+
+    // This is a hack in place till SetPendingSize is fully plumbed. This hack
+    // function just pretends that the application needs more bytes. Since we
+    // dont actually know how many bytes the application needs, we just want to
+    // refill the used up tokens. The only way to refill used up tokens is to
+    // call this function for each DATA frame.
+    // TODO(tjagtap) [PH2][P1] Remove hack after SetPendingSize is plumbed.
+    void HackIncrementPendingSize(int64_t pending_size);
 
    private:
     TransportFlowControl::IncomingUpdateContext tfc_upd_;
@@ -504,6 +545,11 @@ class StreamFlowControl final {
    public:
     explicit OutgoingUpdateContext(StreamFlowControl* sfc)
         : tfc_upd_(sfc->tfc_), sfc_(sfc) {}
+
+    OutgoingUpdateContext(const OutgoingUpdateContext&) = delete;
+    OutgoingUpdateContext& operator=(const OutgoingUpdateContext&) = delete;
+    OutgoingUpdateContext(OutgoingUpdateContext&&) = delete;
+    OutgoingUpdateContext& operator=(OutgoingUpdateContext&&) = delete;
 
     // Call this when a WINDOW_UPDATE frame is received from peer for this
     // stream, to increase send window.
@@ -561,6 +607,25 @@ class StreamFlowControl final {
     stats.announced_window_delta = announced_window_delta_;
     stats.pending_size = pending_size_;
     return stats;
+  }
+
+  void ReportIfStalled(bool is_client, uint32_t stream_id,
+                       const Http2Settings& peer_settings) const {
+    if (remote_window_delta() + peer_settings.initial_window_size() <= 0 ||
+        tfc_->remote_window_ == 0) {
+      GRPC_HTTP2_FLOW_CONTROL_DLOG
+          << "PH2 " << (is_client ? "CLIENT" : "SERVER")
+          << " Flow Control Stalled :"
+          << " Settings { peer initial window size="
+          << peer_settings.initial_window_size()
+          << "}, Transport {remote_window=" << tfc_->remote_window()
+          << ", transport announced_window=" << tfc_->announced_window()
+          << "}, Stream {stream_id=" << stream_id
+          << ", remote_window_delta=" << remote_window_delta()
+          << ", remote_window_delta() + peer_settings.initial_window_size() ="
+          << (remote_window_delta() + peer_settings.initial_window_size())
+          << " }";
+    }
   }
 
  private:

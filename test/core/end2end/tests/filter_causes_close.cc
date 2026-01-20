@@ -69,6 +69,9 @@ class TestFilter : public ImplementChannelFilter<TestFilter> {
     static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnServerToClientMessage;
     static const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList();
+    }
   };
 };
 

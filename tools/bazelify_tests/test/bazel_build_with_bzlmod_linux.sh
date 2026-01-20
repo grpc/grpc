@@ -17,20 +17,16 @@ set -ex
 
 # Test if public targets are buildable without dev dependencies.
 tools/bazel \
+    --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
     build \
-    --enable_bzlmod=true \
-    --enable_workspace=false \
-    --ignore_dev_dependency \
     -- \
     :all \
     -:grpcpp_csm_observability  # Needs google_cloud_cpp to be added to BCR
 
 # Test if examples are buildable without dev dependencies.
 tools/bazel \
+    --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
     build \
-    --enable_bzlmod=true \
-    --enable_workspace=false \
-    --ignore_dev_dependency \
     -- \
     //examples/cpp/... \
     -//examples/cpp/csm/...  # Needs grpcpp_csm_observability
@@ -39,20 +35,28 @@ tools/bazel \
 # This is a temporary sanity check covering essential features,
 # to be replaced by a comprehensive test suite once the bzlmod migration is finished.
 tools/bazel \
+    --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
     test \
-    --enable_bzlmod=true \
-    --enable_workspace=false \
+    --ignore_dev_dependency=false \
     -- \
     //test/core/config:all \
+    //test/core/util:all \
     //test/cpp/common:all
+
+tools/bazel \
+    --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
+    build \
+    --ignore_dev_dependency=false \
+    -- \
+    //test/... \
+    -//test/cpp/ext/... \
+    -//test/cpp/interop/...
 
 # Test if public targets are buildable with openssl and without dev
 # dependencies.
 tools/bazel \
+    --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
     build \
-    --enable_bzlmod=true \
-    --enable_workspace=false \
-    --ignore_dev_dependency \
     --define=//third_party:grpc_use_openssl=true \
     -- \
     :all \

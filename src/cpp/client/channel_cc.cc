@@ -16,6 +16,7 @@
 //
 //
 
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/slice.h>
@@ -65,6 +66,11 @@ Channel::~Channel() {
       CompletionQueue::ReleaseCallbackAlternativeCQ(callback_cq);
     }
   }
+}
+
+grpc_event_engine::experimental::MemoryAllocator* Channel::memory_allocator()
+    const {
+  return grpc_core::Channel::FromC(c_channel_)->memory_allocator();
 }
 
 namespace {
@@ -157,7 +163,7 @@ grpc::internal::Call Channel::CreateCallInternal(
       interceptor_creators_, interceptor_pos);
   context->set_call(c_call, shared_from_this());
 
-  return grpc::internal::Call(c_call, this, cq, info);
+  return grpc::internal::Call(c_call, cq, info);
 }
 
 grpc::internal::Call Channel::CreateCall(
@@ -166,11 +172,8 @@ grpc::internal::Call Channel::CreateCall(
   return CreateCallInternal(method, context, cq, 0);
 }
 
-void Channel::PerformOpsOnCall(grpc::internal::CallOpSetInterface* ops,
-                               grpc::internal::Call* call) {
-  ops->FillOps(
-      call);  // Make a copy of call. It's fine since Call just has pointers
-}
+void Channel::PerformOpsOnCall(grpc::internal::CallOpSetInterface*,
+                               grpc::internal::Call*) {}
 
 void* Channel::RegisterMethod(const char* method) {
   return grpc_channel_register_call(

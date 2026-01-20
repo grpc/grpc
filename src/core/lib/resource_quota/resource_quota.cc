@@ -21,6 +21,7 @@
 
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/stream_quota.h"
 #include "src/core/lib/resource_quota/thread_quota.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -32,7 +33,8 @@ ResourceQuota::ResourceQuota(std::string name)
     : channelz_node_(
           MakeRefCounted<channelz::ResourceQuotaNode>(std::move(name))),
       memory_quota_(MakeMemoryQuota(channelz_node_)),
-      thread_quota_(MakeRefCounted<ThreadQuota>()) {}
+      thread_quota_(MakeRefCounted<ThreadQuota>()),
+      stream_quota_(MakeRefCounted<StreamQuota>()) {}
 
 ResourceQuota::~ResourceQuota() = default;
 

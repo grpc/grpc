@@ -19,14 +19,35 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_STREAM_DATA_QUEUE_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_STREAM_DATA_QUEUE_H
 
-#include <algorithm>
-#include <queue>
+#include <grpc/support/port_platform.h>
 
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <limits>
+#include <optional>
+#include <queue>
+#include <string>
+#include <utility>
+#include <variant>
+#include <vector>
+
+#include "src/core/call/message.h"
+#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/header_assembler.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/sync.h"
 #include "absl/log/log.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -51,7 +72,7 @@ class SimpleQueue {
   // with tokens = 0. Enqueues with tokens = 0 are primarily for sending
   // metadata as flow control does not apply to them. This function is NOT
   // thread safe.
-  Poll<absl::StatusOr<bool>> Enqueue(T& data, const uint32_t tokens) {
+  Poll<bool> Enqueue(T& data, const uint32_t tokens) {
     return PollEnqueue(data, tokens);
   }
 
@@ -82,8 +103,13 @@ class SimpleQueue {
   // Clears the queue. This function is NOT thread safe.
   void Clear() { std::queue<Entry>().swap(queue_); }
 
+  inline std::optional<uint32_t> GetNextEntryTokens() const {
+    return queue_.empty() ? std::nullopt
+                          : std::make_optional(queue_.front().tokens);
+  }
+
  private:
-  Poll<absl::StatusOr<bool>> PollEnqueue(T& data, const uint32_t tokens) {
+  Poll<bool> PollEnqueue(T& data, const uint32_t tokens) {
     GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueueing data. Data tokens: " << tokens;
     const uint32_t max_tokens_consumed_threshold =
         max_tokens_ >= tokens ? max_tokens_ - tokens : 0;
@@ -94,7 +120,7 @@ class SimpleQueue {
       GRPC_STREAM_DATA_QUEUE_DEBUG
           << "Enqueue successful. Data tokens: " << tokens
           << " Current tokens consumed: " << tokens_consumed_;
-      return /*became_non_empty*/ (queue_.size() == 1);
+      return /*became_non_empty=*/(queue_.size() == 1);
     }
 
     GRPC_STREAM_DATA_QUEUE_DEBUG
@@ -107,6 +133,11 @@ class SimpleQueue {
 
   inline absl::StatusOr<bool> ImmediateEnqueueInternal(T data,
                                                        const uint32_t tokens) {
+    GRPC_DCHECK_LE(tokens_consumed_,
+                   std::numeric_limits<uint32_t>::max() - tokens);
+    if (tokens_consumed_ > std::numeric_limits<uint32_t>::max() - tokens) {
+      return absl::InternalError("Tokens consumed overflowed.");
+    }
     tokens_consumed_ += tokens;
     queue_.emplace(Entry{std::move(data), tokens});
     GRPC_STREAM_DATA_QUEUE_DEBUG
@@ -171,15 +202,12 @@ class SimpleQueue {
 template <typename MetadataHandle>
 class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
  public:
-  explicit StreamDataQueue(const bool is_client, const uint32_t queue_size,
-                           bool allow_true_binary_metadata)
+  explicit StreamDataQueue(const bool is_client, const uint32_t queue_size)
       : stream_id_(0),
         is_client_(is_client),
         queue_(queue_size),
-        initial_metadata_disassembler_(/*is_trailing_metadata=*/false,
-                                       allow_true_binary_metadata),
-        trailing_metadata_disassembler_(/*is_trailing_metadata=*/true,
-                                        allow_true_binary_metadata) {};
+        initial_metadata_disassembler_(/*is_trailing_metadata=*/false),
+        trailing_metadata_disassembler_(/*is_trailing_metadata=*/true) {};
   ~StreamDataQueue() = default;
 
   StreamDataQueue(StreamDataQueue&& rhs) = delete;
@@ -187,12 +215,15 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   StreamDataQueue(const StreamDataQueue&) = delete;
   StreamDataQueue& operator=(const StreamDataQueue&) = delete;
 
-  void SetStreamId(const uint32_t stream_id) {
+  void SetStreamId(const uint32_t stream_id,
+                   const bool allow_true_binary_metadata_peer) {
     GRPC_DCHECK_EQ(stream_id_, 0u);
     GRPC_DCHECK_NE(stream_id, 0u);
     stream_id_ = stream_id;
-    initial_metadata_disassembler_.SetStreamId(stream_id);
-    trailing_metadata_disassembler_.SetStreamId(stream_id);
+    initial_metadata_disassembler_.Initialize(stream_id,
+                                              allow_true_binary_metadata_peer);
+    trailing_metadata_disassembler_.Initialize(stream_id,
+                                               allow_true_binary_metadata_peer);
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -212,7 +243,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   //    end_stream set. If the stream needs to be half closed, the client should
   //    enqueue a half close message.
 
-  struct EnqueueResult {
+  struct StreamWritabilityUpdate {
     bool became_writable;
     WritableStreamPriority priority;
   };
@@ -222,7 +253,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // 2. This MUST be called before any messages are enqueued.
   // 3. MUST not be called after trailing metadata is enqueued.
   // 4. This function is thread safe.
-  absl::StatusOr<EnqueueResult> EnqueueInitialMetadata(
+  absl::StatusOr<StreamWritabilityUpdate> EnqueueInitialMetadata(
       MetadataHandle&& metadata) {
     MutexLock lock(&mu_);
     GRPC_DCHECK(!is_initial_metadata_queued_);
@@ -235,11 +266,11 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
         QueueEntry{InitialMetadataType{std::move(metadata)}}, /*tokens=*/0);
     if (GPR_UNLIKELY(!result.ok())) {
       GRPC_STREAM_DATA_QUEUE_DEBUG
-          << "Immediate enqueueing initial metadata for stream " << stream_id_
-          << " failed with status: " << result.status();
+          << "Immediate enqueueing initial metadata failed with status: "
+          << result.status();
       return result.status();
     }
-    return UpdateWritableStateLocked(
+    return UpdateWritableStateAndPriorityEnqueueLocked(
         /*became_non_empty*/ result.value(), WritableStreamPriority::kDefault);
   }
 
@@ -247,7 +278,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // 1. MUST be called at most once.
   // 2. MUST be called only for a server.
   // 3. This function is thread safe.
-  absl::StatusOr<EnqueueResult> EnqueueTrailingMetadata(
+  absl::StatusOr<StreamWritabilityUpdate> EnqueueTrailingMetadata(
       MetadataHandle&& metadata) {
     MutexLock lock(&mu_);
     GRPC_DCHECK(metadata != nullptr);
@@ -255,10 +286,9 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     GRPC_DCHECK(!is_trailing_metadata_or_half_close_queued_);
 
     if (GPR_UNLIKELY(IsEnqueueClosed())) {
-      GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueue closed for stream "
-                                   << stream_id_;
-      return EnqueueResult{/*became_writable=*/false,
-                           WritableStreamPriority::kStreamClosed};
+      GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueue closed.";
+      return StreamWritabilityUpdate{/*became_writable=*/false,
+                                     WritableStreamPriority::kStreamClosed};
     }
 
     is_trailing_metadata_or_half_close_queued_ = true;
@@ -266,11 +296,11 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
         QueueEntry{TrailingMetadataType{std::move(metadata)}}, /*tokens=*/0);
     if (GPR_UNLIKELY(!result.ok())) {
       GRPC_STREAM_DATA_QUEUE_DEBUG
-          << "Immediate enqueueing trailing metadata for stream " << stream_id_
-          << " failed with status: " << result.status();
+          << "Immediate enqueueing trailing metadata failed with status: "
+          << result.status();
       return result.status();
     }
-    return UpdateWritableStateLocked(
+    return UpdateWritableStateAndPriorityEnqueueLocked(
         /*became_non_empty*/ result.value(),
         WritableStreamPriority::kStreamClosed);
   }
@@ -291,26 +321,22 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     const uint32_t tokens =
         message->payload()->Length() + kGrpcHeaderSizeInBytes;
     return [self = this->Ref(), entry = QueueEntry{std::move(message)},
-            tokens]() mutable -> Poll<absl::StatusOr<EnqueueResult>> {
+            tokens]() mutable -> Poll<absl::StatusOr<StreamWritabilityUpdate>> {
       MutexLock lock(&self->mu_);
       if (GPR_UNLIKELY(self->IsEnqueueClosed())) {
-        GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueue closed for stream "
-                                     << self->stream_id_;
-        return EnqueueResult{/*became_writable=*/false,
-                             WritableStreamPriority::kStreamClosed};
+        GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueue closed";
+        return StreamWritabilityUpdate{/*became_writable=*/false,
+                                       WritableStreamPriority::kStreamClosed};
       }
-      Poll<absl::StatusOr<bool>> result = self->queue_.Enqueue(entry, tokens);
+      Poll<bool> result = self->queue_.Enqueue(entry, tokens);
       if (result.ready()) {
         GRPC_STREAM_DATA_QUEUE_DEBUG
-            << "Enqueued message for stream " << self->stream_id_
-            << " with status: " << result.value().status();
-        // TODO(akshitpatel) : [PH2][P2] : Add check for flow control tokens.
-        if (GPR_LIKELY(result.value().ok())) {
-          return self->UpdateWritableStateLocked(
-              /*became_non_empty*/ result.value().value(),
-              WritableStreamPriority::kDefault);
-        }
-        return result.value().status();
+            << "Enqueued message with tokens: " << tokens
+            << "became_non_empty: " << result.value();
+
+        return self->UpdateWritableStateAndPriorityEnqueueLocked(
+            /*became_non_empty=*/result.value(),
+            WritableStreamPriority::kDefault);
       }
       return Pending{};
     };
@@ -320,7 +346,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // 1. MUST be called at most once.
   // 2. MUST be called only for a client.
   // 3. This function is thread safe.
-  absl::StatusOr<EnqueueResult> EnqueueHalfClosed() {
+  absl::StatusOr<StreamWritabilityUpdate> EnqueueHalfClosed() {
     MutexLock lock(&mu_);
     GRPC_DCHECK(is_initial_metadata_queued_);
     GRPC_DCHECK(is_client_);
@@ -328,11 +354,11 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     if (GPR_UNLIKELY(IsEnqueueClosed() ||
                      is_trailing_metadata_or_half_close_queued_)) {
       GRPC_STREAM_DATA_QUEUE_DEBUG
-          << "Enqueue closed or trailing metadata/half close queued for stream "
-          << stream_id_ << " is_trailing_metadata_or_half_close_queued_ = "
+          << "Enqueue closed or trailing metadata/half close queued "
+          << " is_trailing_metadata_or_half_close_queued_ = "
           << is_trailing_metadata_or_half_close_queued_;
-      return EnqueueResult{/*became_writable=*/false,
-                           WritableStreamPriority::kStreamClosed};
+      return StreamWritabilityUpdate{/*became_writable=*/false,
+                                     WritableStreamPriority::kStreamClosed};
     }
 
     is_trailing_metadata_or_half_close_queued_ = true;
@@ -340,11 +366,11 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
         queue_.ImmediateEnqueue(QueueEntry{HalfClosed{}}, /*tokens=*/0);
     if (GPR_UNLIKELY(!result.ok())) {
       GRPC_STREAM_DATA_QUEUE_DEBUG
-          << "Immediate enqueueing half closed for stream " << stream_id_
-          << " failed with status: " << result.status();
+          << "Immediate enqueueing half closed failed with status: "
+          << result.status();
       return result.status();
     }
-    return UpdateWritableStateLocked(
+    return UpdateWritableStateAndPriorityEnqueueLocked(
         /*became_non_empty*/ result.value(),
         WritableStreamPriority::kStreamClosed);
   }
@@ -352,22 +378,21 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // Enqueue Reset Stream.
   // 1. MUST be called at most once.
   // 3. This function is thread safe.
-  absl::StatusOr<EnqueueResult> EnqueueResetStream(const uint32_t error_code) {
+  absl::StatusOr<StreamWritabilityUpdate> EnqueueResetStream(
+      const uint32_t error_code) {
     MutexLock lock(&mu_);
     GRPC_DCHECK(is_initial_metadata_queued_);
 
     // This can happen when the transport tries to close the stream and the
     // stream is cancelled from the call stack.
     if (GPR_UNLIKELY(IsEnqueueClosed())) {
-      GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueue closed for stream "
-                                   << stream_id_;
-      return EnqueueResult{/*became_writable=*/false,
-                           WritableStreamPriority::kStreamClosed};
+      GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueue closed";
+      return StreamWritabilityUpdate{/*became_writable=*/false,
+                                     WritableStreamPriority::kStreamClosed};
     }
 
     GRPC_STREAM_DATA_QUEUE_DEBUG
-        << "Immediate enqueueing reset stream for stream " << stream_id_
-        << " with error code: " << error_code;
+        << "Immediate enqueueing reset stream with error code: " << error_code;
     reset_stream_state_ = RstStreamState::kQueued;
     reset_stream_error_code_ = error_code;
 
@@ -375,7 +400,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     // enqueueing reset stream to the queue. In this case, if the queue is
     // empty, enqueuing reset stream to StreamDataQueue will make the stream
     // writable.
-    return UpdateWritableStateLocked(
+    return UpdateWritableStateAndPriorityEnqueueLocked(
         /*became_non_empty*/ queue_.IsEmpty(),
         WritableStreamPriority::kStreamClosed);
   }
@@ -435,12 +460,12 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // This function is thread safe.
   DequeueResult DequeueFrames(const uint32_t max_fc_tokens,
                               const uint32_t max_frame_length,
+                              const uint32_t stream_fc_tokens,
                               HPackCompressor& encoder,
                               const bool can_send_reset_stream) {
     MutexLock lock(&mu_);
     GRPC_STREAM_DATA_QUEUE_DEBUG
-        << "Dequeueing frames for stream " << stream_id_
-        << " Max fc tokens: " << max_fc_tokens
+        << "Dequeueing frames. Max fc tokens: " << max_fc_tokens
         << " Max frame length: " << max_frame_length
         << " Message disassembler buffered length: "
         << message_disassembler_.GetBufferedLength()
@@ -474,17 +499,35 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
       std::visit(handle_dequeue, std::move(*queue_entry));
     }
 
-    // TODO(akshitpatel) : [PH2][P2] : Add a check for flow control tokens.
-    is_writable_ = false;
-    GRPC_STREAM_DATA_QUEUE_DEBUG << "Stream id: " << stream_id_
-                                 << " writable state changed to "
-                                 << is_writable_;
-    return DequeueResult{handle_dequeue.GetFrames(),
-                         is_writable_,
-                         priority_,
-                         handle_dequeue.GetTotalBytesConsumed(),
-                         handle_dequeue.GetFlowControlTokensConsumed(),
-                         handle_dequeue.GetDequeueFlags()};
+    GRPC_DCHECK_GE(stream_fc_tokens,
+                   handle_dequeue.GetFlowControlTokensConsumed());
+
+    return DequeueResult{
+        handle_dequeue.GetFrames(),
+        UpdateWritableStateDequeueLocked(
+            stream_fc_tokens - handle_dequeue.GetFlowControlTokensConsumed()),
+        priority_,
+        handle_dequeue.GetTotalBytesConsumed(),
+        handle_dequeue.GetFlowControlTokensConsumed(),
+        handle_dequeue.GetDequeueFlags()};
+  }
+
+  // TODO(tjagtap) : [PH2][P1][FlowControl] : Call this while processing
+  // window update frame.
+  // Needs to be invoked when the peer sends stream flow control window update.
+  // stream_fc_tokens represents the stream flow control (delta) window +
+  // intial_window_size.
+  StreamWritabilityUpdate ReceivedFlowControlWindowUpdate(
+      const uint32_t stream_fc_tokens) {
+    MutexLock lock(&mu_);
+    GRPC_STREAM_DATA_QUEUE_DEBUG
+        << "Received flow control window update. stream_fc_tokens: "
+        << stream_fc_tokens;
+    const bool old_writable_state = is_writable_;
+    const bool new_writable_state =
+        UpdateWritableStateDequeueLocked(stream_fc_tokens);
+    return {/*became_writable=*/(!old_writable_state && new_writable_state),
+            priority_};
   }
 
   // Returns true if the queue is empty. This function is thread safe.
@@ -647,28 +690,83 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     uint8_t dequeue_flags_ = 0u;
   };
 
-  // Updates the stream priority. Also sets the writable state to true if the
-  // stream has become writable. Returns if the stream became writable and
-  // updated priority. It is expected that the caller will hold the lock on the
-  // queue when calling this function.
-  EnqueueResult UpdateWritableStateLocked(const bool became_non_empty,
-                                          const WritableStreamPriority priority)
+  // Updates the writable state and priority of the stream. MUST only be called
+  // from the enqueue functions.
+  // became_non_empty: True if the queue was empty and became non-empty as a
+  //                   result of this enqueue operation.
+  // priority: The new priority of the stream after this enqueue operation.
+  // Returns the result of the enqueue operation
+  //
+  // High level flow:
+  // Priority is simply updated to the new priority.
+  // Writable state is updated as follows:
+  // 1. If the stream was not writable before and became non-empty as a result
+  //    of this enqueue operation, then the stream is marked as writable.
+  // 2. If the stream was already writable before, it remains writable.
+  // 3. The case where the stream was not writable before and the queue already
+  //    contained data implies that the stream is blocked on stream flow control
+  //    tokens. When the transport receives stream flow control window update,
+  //    the stream is marked as writable.
+  // For enqueue operations there is no easy way to query
+  // stream_flow_control_tokens. So it is assumed that flow control tokens are
+  // always available for an enqueue operation. This can cause a stream to be
+  // marked as writable when it is not but this will correct itself in the next
+  // dequeue operation (which returns an accurate is_writable).
+  StreamWritabilityUpdate UpdateWritableStateAndPriorityEnqueueLocked(
+      const bool became_non_empty, const WritableStreamPriority priority)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    // Update priority.
     priority_ = priority;
+
+    // Update writable state.
     if (!is_writable_ && became_non_empty) {
       is_writable_ = true;
       GRPC_STREAM_DATA_QUEUE_DEBUG
-          << "UpdateWritableStateLocked for stream id: " << stream_id_
-          << " became writable with priority: "
+          << "UpdateWritableStateLocked became writable with priority: "
           << GetWritableStreamPriorityString(priority_);
-      return EnqueueResult{/*became_writable=*/true, priority_};
+      return StreamWritabilityUpdate{/*became_writable=*/true, priority_};
     }
 
     GRPC_STREAM_DATA_QUEUE_DEBUG
-        << "UpdateWritableStateLocked for stream id: " << stream_id_
-        << " with priority: " << GetWritableStreamPriorityString(priority_)
+        << "UpdateWritableStateAndPriorityEnqueueLocked with priority: "
+        << GetWritableStreamPriorityString(priority_)
         << " is_writable: " << is_writable_;
-    return EnqueueResult{/*became_writable=*/false, priority_};
+    return StreamWritabilityUpdate{/*became_writable=*/false, priority_};
+  }
+
+  // Updates the writable state of the stream. Returns true if the
+  // stream became writable.
+  // Writable state is updated as follows:
+  // 1. If the next message to dequeue is a grpc message, then the stream is
+  //    writable if and only if we have available stream flow control tokens.
+  // 2. If the next message to dequeue is not a grpc message, then the stream is
+  //    writable if and only if the queue is not empty.
+  // Unlike UpdateWritableStateAndPriorityEnqueueLocked, this function the
+  // become_writable returned by this function is `accurate` as it considers
+  // the whether the stream has bytes to write and the flow control tokens
+  // available.
+  bool UpdateWritableStateDequeueLocked(
+      const uint32_t available_stream_fc_tokens)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    // The stream is writable if the queue is not empty. If the next bytes to
+    // write are part of a gRPC message, then check if we have stream flow
+    // control tokens.
+    is_writable_ = (!queue_.IsEmpty());
+
+    // Next bytes to write are part of a gRPC message.
+    if (message_disassembler_.GetBufferedLength() > 0 ||
+        IsNextQueueEntryMessage()) {
+      is_writable_ = (available_stream_fc_tokens > 0);
+    }
+
+    GRPC_STREAM_DATA_QUEUE_DEBUG << "UpdateWritableStateLocked with priority: "
+                                 << GetWritableStreamPriorityString(priority_)
+                                 << " is_writable: " << is_writable_;
+    return is_writable_;
+  }
+
+  inline bool IsNextQueueEntryMessage() const {
+    return (!queue_.IsEmpty() && queue_.GetNextEntryTokens().value() > 0);
   }
 
   // Handles the case where a reset stream is queued.
@@ -680,8 +778,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     switch (reset_stream_state_) {
       case RstStreamState::kDequeued:
         GRPC_STREAM_DATA_QUEUE_DEBUG
-            << "Reset stream is already dequeued for stream " << stream_id_
-            << ". Returning empty frames.";
+            << "Reset stream is already dequeued. Returning empty frames.";
         GRPC_DCHECK(queue_.IsEmpty());
         is_writable_ = false;
         return DequeueResult{
@@ -691,8 +788,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
       case RstStreamState::kQueued: {
         GRPC_STREAM_DATA_QUEUE_DEBUG
             << "Reset stream is queued. Skipping all frames (if any) for "
-               "dequeuing "
-            << stream_id_;
+               "dequeuing.";
         is_writable_ = false;
         std::vector<Http2Frame> frames;
         uint8_t flags = 0u;
@@ -715,6 +811,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
       default:
         GRPC_CHECK(false) << "Invalid reset stream state: "
                           << static_cast<uint8_t>(reset_stream_state_);
+        return std::nullopt;
     }
   }
 
@@ -726,18 +823,19 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
       case RstStreamState::kDequeued:
         // This can happen when the transport tries to close the stream and the
         // stream is cancelled from the call stack.
-        GRPC_STREAM_DATA_QUEUE_DEBUG
-            << "Reset stream already queued for stream " << stream_id_;
+        GRPC_STREAM_DATA_QUEUE_DEBUG << "Reset stream already queued.";
         return true;
       default:
         GRPC_CHECK(false) << "Invalid reset stream state: "
                           << static_cast<uint8_t>(reset_stream_state_);
     }
 
-    GPR_UNREACHABLE_CODE("Invalid reset stream state");
+    GPR_UNREACHABLE_CODE(return false);
   }
 
   uint32_t stream_id_;
+
+  // This is only used for DCHECKs. Not actually used for any business logic.
   const bool is_client_;
 
   enum class RstStreamState : uint8_t {
@@ -752,6 +850,10 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
 
   // Access both during enqueue and dequeue.
   Mutex mu_;
+  // This variable tracks whether the stream is writable. 'Writable' represents
+  // that the stream has bytes to send and the stream has flow control tokens
+  // (if needed) to send them. This variable also has 1-1 correspondence with
+  // whether the stream is in the list of writable streams in the transport.
   bool is_writable_ ABSL_GUARDED_BY(mu_) = false;
   RstStreamState reset_stream_state_ ABSL_GUARDED_BY(mu_) =
       RstStreamState::kNotQueued;
