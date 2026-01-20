@@ -17,36 +17,57 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/port_platform.h>
 
 #include <cstdint>
-#include <cstdlib>
 #include <memory>
 #include <string>
-#include <tuple>
 #include <utility>
 
+#include "src/core/call/call_spine.h"
+#include "src/core/call/message.h"
+#include "src/core/call/metadata.h"
+#include "src/core/call/metadata_batch.h"
+#include "src/core/channelz/channelz.h"
+#include "src/core/ext/transport/chaotic_good/config.h"
+#include "src/core/ext/transport/chaotic_good/control_endpoint.h"
+#include "src/core/ext/transport/chaotic_good/data_endpoints.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"
-#include "src/core/lib/event_engine/event_engine_context.h"
-#include "src/core/lib/event_engine/query_extensions.h"
+#include "src/core/ext/transport/chaotic_good/tcp_frame_transport.h"
+#include "src/core/ext/transport/chaotic_good/transport_context.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/debug/trace_impl.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/promise/loop.h"
+#include "src/core/lib/promise/for_each.h"
+#include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/map.h"
-#include "src/core/lib/promise/switch.h"
+#include "src/core/lib/promise/mpsc.h"
+#include "src/core/lib/promise/party.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/latent_see.h"
+#include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 #include "absl/log/log.h"
-#include "absl/random/bit_gen_ref.h"
-#include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -247,15 +268,23 @@ void ChaoticGoodClientTransport::StreamDispatch::StopWatch(
 }
 
 ChaoticGoodClientTransport::ChaoticGoodClientTransport(
-    const ChannelArgs& args, OrphanablePtr<FrameTransport> frame_transport,
-    MessageChunker message_chunker)
-    : channelz::DataSource(frame_transport->ctx()->socket_node),
-      ctx_(frame_transport->ctx()),
+    const ChannelArgs& args, Config& config, PromiseEndpoint control_endpoint,
+    RefCountedPtr<channelz::SocketNode> socket_node)
+    : channelz::DataSource(socket_node),
+      ctx_(MakeRefCounted<TransportContext>(args, std::move(socket_node))),
       allocator_(args.GetObject<ResourceQuota>()
                      ->memory_quota()
                      ->CreateMemoryAllocator("chaotic-good")),
-      message_chunker_(message_chunker),
-      frame_transport_(std::move(frame_transport)) {
+      message_chunker_(config.MakeMessageChunker()),
+      control_endpoint_(MakeRefCounted<ControlEndpoint>(
+          std::move(control_endpoint), ctx_, ztrace_collector_)),
+      data_endpoints_(MakeRefCounted<DataEndpoints>(
+          config.TakePendingDataEndpoints(), ctx_, config.encode_alignment(),
+          config.decode_alignment(), ztrace_collector_,
+          config.tracing_enabled(), config.scheduler_config())),
+      frame_transport_(MakeOrphanable<TcpFrameTransport>(
+          config.MakeTcpFrameTransportOptions(), control_endpoint_,
+          data_endpoints_, ctx_)) {
   GRPC_CHECK(ctx_ != nullptr);
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<EventEngine>(ctx_->event_engine.get());

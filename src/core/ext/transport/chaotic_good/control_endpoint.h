@@ -19,6 +19,7 @@
 #include "src/core/ext/transport/chaotic_good/transport_context.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "absl/cleanup/cleanup.h"
@@ -31,7 +32,7 @@ namespace chaotic_good {
 // uses a separate party to flush them to the wire.
 // In doing so we get to batch up effectively all the writes from the transport
 // (since party wakeups are sticky), and then flush all the writes in one go.
-class ControlEndpoint {
+class ControlEndpoint : public RefCounted<ControlEndpoint> {
  private:
   class Buffer : public RefCounted<Buffer> {
    public:

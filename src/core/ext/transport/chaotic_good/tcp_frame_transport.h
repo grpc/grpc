@@ -15,16 +15,25 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_TCP_FRAME_TRANSPORT_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_TCP_FRAME_TRANSPORT_H
 
+#include <cstdint>
+#include <memory>
+#include <string>
+#include <utility>
 #include <vector>
 
+#include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chaotic_good/control_endpoint.h"
 #include "src/core/ext/transport/chaotic_good/data_endpoints.h"
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"
-#include "src/core/ext/transport/chaotic_good/pending_connection.h"
-#include "src/core/ext/transport/chaotic_good/tcp_frame_header.h"
 #include "src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h"
 #include "src/core/ext/transport/chaotic_good/transport_context.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/promise/inter_activity_latch.h"
+#include "src/core/lib/promise/mpsc.h"
+#include "src/core/lib/promise/party.h"
+#include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -46,8 +55,9 @@ class TcpFrameTransport final : public FrameTransport,
     bool enable_tracing = false;
   };
 
-  TcpFrameTransport(Options options, PromiseEndpoint control_endpoint,
-                    std::vector<PendingConnection> pending_data_endpoints,
+  TcpFrameTransport(Options options,
+                    RefCountedPtr<ControlEndpoint> control_endpoint,
+                    RefCountedPtr<DataEndpoints> data_endpoints,
                     TransportContextPtr ctx);
   ~TcpFrameTransport() override { SourceDestructing(); }
 
@@ -78,8 +88,8 @@ class TcpFrameTransport final : public FrameTransport,
   const TransportContextPtr ctx_;
   std::shared_ptr<TcpZTraceCollector> ztrace_collector_ =
       std::make_shared<TcpZTraceCollector>();
-  ControlEndpoint control_endpoint_;
-  DataEndpoints data_endpoints_;
+  RefCountedPtr<ControlEndpoint> control_endpoint_;
+  RefCountedPtr<DataEndpoints> data_endpoints_;
   const Options options_;
   InterActivityLatch<void> closed_;
   uint64_t next_payload_tag_ = 1;

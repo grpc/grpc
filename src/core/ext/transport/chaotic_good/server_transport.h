@@ -25,63 +25,50 @@
 
 #include <cstdint>
 #include <initializer_list>  // IWYU pragma: keep
-#include <iostream>
-#include <map>
 #include <memory>
-#include <optional>
-#include <string>
-#include <tuple>
-#include <type_traits>
 #include <utility>
 #include <variant>
 
-#include "src/core/call/metadata_batch.h"
+#include "src/core/call/call_arena_allocator.h"
+#include "src/core/call/call_destination.h"
+#include "src/core/call/call_spine.h"
+#include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chaotic_good/config.h"
+#include "src/core/ext/transport/chaotic_good/control_endpoint.h"
+#include "src/core/ext/transport/chaotic_good/data_endpoints.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
-#include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"
 #include "src/core/ext/transport/chaotic_good/message_chunker.h"
 #include "src/core/ext/transport/chaotic_good/message_reassembly.h"
-#include "src/core/ext/transport/chaotic_good/pending_connection.h"
+#include "src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h"
 #include "src/core/ext/transport/chaotic_good/transport_context.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"  // IWYU pragma: keep
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/if.h"
-#include "src/core/lib/promise/inter_activity_latch.h"
-#include "src/core/lib/promise/inter_activity_pipe.h"
-#include "src/core/lib/promise/loop.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/party.h"
-#include "src/core/lib/promise/pipe.h"
-#include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/seq.h"
-#include "src/core/lib/promise/try_join.h"
-#include "src/core/lib/promise/try_seq.h"
-#include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/random/random.h"
 #include "absl/status/status.h"
-#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace chaotic_good {
 
 class ChaoticGoodServerTransport final : public ServerTransport {
  public:
-  ChaoticGoodServerTransport(const ChannelArgs& args,
-                             OrphanablePtr<FrameTransport> frame_transport,
-                             MessageChunker message_chunker);
+  ChaoticGoodServerTransport(const ChannelArgs& args, Config& config,
+                             PromiseEndpoint endpoint,
+                             RefCountedPtr<channelz::SocketNode> socket_node);
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
   ClientTransport* client_transport() override { return nullptr; }
@@ -192,6 +179,11 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   using State = std::variant<std::unique_ptr<ConstructionParameters>,
                              RefCountedPtr<StreamDispatch>, Orphaned>;
   State state_;
+  const TransportContextPtr ctx_;
+  std::shared_ptr<TcpZTraceCollector> ztrace_collector_ =
+      std::make_shared<TcpZTraceCollector>();
+  RefCountedPtr<ControlEndpoint> control_endpoint_;
+  RefCountedPtr<DataEndpoints> data_endpoints_;
   OrphanablePtr<FrameTransport> frame_transport_;
 };
 
