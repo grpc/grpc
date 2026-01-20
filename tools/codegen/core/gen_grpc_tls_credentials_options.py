@@ -186,23 +186,23 @@ _DATA_MEMBERS = [
         test_value_2="true",
     ),
     DataMember(
-        name="identity_credentials_provider",
+        name="identity_certificate_provider",
         type="grpc_core::RefCountedPtr<grpc_tls_certificate_provider>",
         getter_comment=(
-            "Returns the distributor from identity_credentials_provider_ if it"
+            "Returns the distributor from identity_certificate_provider_ if it"
             " is set, nullptr otherwise."
         ),
-        override_getter="""grpc_tls_certificate_distributor* identity_credentials_distributor() {
-    if (identity_credentials_provider_ != nullptr) { return identity_credentials_provider_->distributor().get(); }
+        override_getter="""grpc_tls_certificate_distributor* identity_certificate_distributor() {
+    if (identity_certificate_provider_ != nullptr) { return identity_certificate_provider_->distributor().get(); }
     return nullptr;
   }""",
         setter_move_semantics=True,
         special_comparator=(
-            "(identity_credentials_provider_ =="
-            " other.identity_credentials_provider_ ||"
-            " (identity_credentials_provider_ != nullptr &&"
-            " other.identity_credentials_provider_ != nullptr &&"
-            " identity_credentials_provider_->Compare(other.identity_credentials_provider_.get())"
+            "(identity_certificate_provider_ =="
+            " other.identity_certificate_provider_ ||"
+            " (identity_certificate_provider_ != nullptr &&"
+            " other.identity_certificate_provider_ != nullptr &&"
+            " identity_certificate_provider_->Compare(other.identity_certificate_provider_.get())"
             " == 0))"
         ),
         test_name="DifferentIdentityCertificateProvider",
@@ -216,22 +216,22 @@ _DATA_MEMBERS = [
         ),
     ),
     DataMember(
-        name="root_certificates_provider",
+        name="root_certificate_provider",
         type="grpc_core::RefCountedPtr<grpc_tls_certificate_provider>",
         getter_comment=(
-            "Returns the distributor from root_certificates_provider_ if it is"
+            "Returns the distributor from root_certificate_provider_ if it is"
             " set, nullptr otherwise."
         ),
-        override_getter="""grpc_tls_certificate_distributor* root_certificates_distributor() {
-    if (root_certificates_provider_ != nullptr) { return root_certificates_provider_->distributor().get(); }
+        override_getter="""grpc_tls_certificate_distributor* root_certificate_distributor() {
+    if (root_certificate_provider_ != nullptr) { return root_certificate_provider_->distributor().get(); }
     return nullptr;
   }""",
         setter_move_semantics=True,
         special_comparator=(
-            "(root_certificates_provider_ == other.root_certificates_provider_ ||"
-            " (root_certificates_provider_ != nullptr &&"
-            " other.root_certificates_provider_ != nullptr &&"
-            " root_certificates_provider_->Compare(other.root_certificates_provider_.get())"
+            "(root_certificate_provider_ == other.root_certificate_provider_ ||"
+            " (root_certificate_provider_ != nullptr &&"
+            " other.root_certificate_provider_ != nullptr &&"
+            " root_certificate_provider_->Compare(other.root_certificate_provider_.get())"
             " == 0))"
         ),
         test_name="DifferentRootCertificateProvider",

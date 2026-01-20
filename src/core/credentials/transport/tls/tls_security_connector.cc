@@ -296,9 +296,9 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
   auto root_watcher_ptr = std::make_unique<TlsChannelCertificateWatcher>(this);
   root_certificate_watcher_ = root_watcher_ptr.get();
   identity_certificate_watcher_ = identity_watcher_ptr.get();
-  bool watch_root_cert = options_->root_certificates_distributor() != nullptr;
+  bool watch_root_cert = options_->root_certificate_distributor() != nullptr;
   bool watch_identity_cert =
-      options_->identity_credentials_distributor() != nullptr;
+      options_->identity_certificate_distributor() != nullptr;
   std::optional<std::string> watched_root_cert_name;
   if (watch_root_cert) {
     watched_root_cert_name = options_->root_cert_name();
@@ -318,12 +318,12 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
     identity_certificate_watcher_->OnCertificatesChanged(nullptr, std::nullopt);
   } else {
     if (watch_root_cert) {
-      options_->root_certificates_distributor()->WatchTlsCertificates(
+      options_->root_certificate_distributor()->WatchTlsCertificates(
           std::move(root_watcher_ptr), watched_root_cert_name,
           watched_identity_cert_name);
     }
     if (watch_identity_cert) {
-      options_->identity_credentials_distributor()->WatchTlsCertificates(
+      options_->identity_certificate_distributor()->WatchTlsCertificates(
           std::move(identity_watcher_ptr), watched_root_cert_name,
           watched_identity_cert_name);
     }
@@ -336,12 +336,12 @@ TlsChannelSecurityConnector::~TlsChannelSecurityConnector() {
   }
   // Cancel all the watchers.
   grpc_tls_certificate_distributor* root_distributor =
-      options_->root_certificates_distributor();
+      options_->root_certificate_distributor();
   if (root_distributor != nullptr) {
     root_distributor->CancelTlsCertificatesWatch(root_certificate_watcher_);
   }
   grpc_tls_certificate_distributor* identity_distributor =
-      options_->identity_credentials_distributor();
+      options_->identity_certificate_distributor();
   if (identity_distributor != nullptr) {
     identity_distributor->CancelTlsCertificatesWatch(
         identity_certificate_watcher_);
@@ -466,11 +466,11 @@ void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
     security_connector_->pem_key_cert_pair_list_ = std::move(key_cert_pairs);
   }
   const bool root_ready =
-      security_connector_->options_->root_certificates_distributor() ==
+      security_connector_->options_->root_certificate_distributor() ==
           nullptr ||
       security_connector_->root_cert_info_ != nullptr;
   const bool identity_ready =
-      security_connector_->options_->identity_credentials_distributor() ==
+      security_connector_->options_->identity_certificate_distributor() ==
           nullptr ||
       security_connector_->pem_key_cert_pair_list_.has_value();
   if (root_ready && identity_ready) {
@@ -558,7 +558,7 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
   if (pem_key_cert_pair_list_.has_value()) {
     pem_key_cert_pair = ConvertToTsiPemKeyCertPair(*pem_key_cert_pair_list_);
   }
-  bool use_default_roots = options_->root_certificates_distributor() == nullptr;
+  bool use_default_roots = options_->root_certificate_distributor() == nullptr;
   grpc_security_status status = grpc_ssl_tsi_client_handshaker_factory_init(
       pem_key_cert_pair, use_default_roots ? nullptr : root_cert_info_,
       skip_server_certificate_verification,
@@ -610,9 +610,9 @@ TlsServerSecurityConnector::TlsServerSecurityConnector(
       std::make_unique<TlsServerCertificateWatcher>(this);
   root_certificate_watcher_ = root_watcher_ptr.get();
   identity_certificate_watcher_ = identity_watcher_ptr.get();
-  bool watch_root_cert = options_->root_certificates_distributor() != nullptr;
+  bool watch_root_cert = options_->root_certificate_distributor() != nullptr;
   bool watch_identity_cert =
-      options_->identity_credentials_distributor() != nullptr;
+      options_->identity_certificate_distributor() != nullptr;
   std::optional<std::string> watched_root_cert_name;
   if (watch_root_cert) {
     watched_root_cert_name = options_->root_cert_name();
@@ -623,12 +623,12 @@ TlsServerSecurityConnector::TlsServerSecurityConnector(
   }
   // Register the watcher with the distributor.
   if (watch_root_cert) {
-    options_->root_certificates_distributor()->WatchTlsCertificates(
+    options_->root_certificate_distributor()->WatchTlsCertificates(
         std::move(root_watcher_ptr), watched_root_cert_name,
         watched_identity_cert_name);
   }
   if (watch_identity_cert) {
-    options_->identity_credentials_distributor()->WatchTlsCertificates(
+    options_->identity_certificate_distributor()->WatchTlsCertificates(
         std::move(identity_watcher_ptr), watched_root_cert_name,
         watched_identity_cert_name);
   }
@@ -637,12 +637,12 @@ TlsServerSecurityConnector::TlsServerSecurityConnector(
 TlsServerSecurityConnector::~TlsServerSecurityConnector() {
   // Cancel all the watchers.
   grpc_tls_certificate_distributor* root_distributor =
-      options_->root_certificates_distributor();
+      options_->root_certificate_distributor();
   if (root_distributor != nullptr) {
     root_distributor->CancelTlsCertificatesWatch(root_certificate_watcher_);
   }
   grpc_tls_certificate_distributor* identity_distributor =
-      options_->identity_credentials_distributor();
+      options_->identity_certificate_distributor();
   if (identity_distributor != nullptr) {
     identity_distributor->CancelTlsCertificatesWatch(
         identity_certificate_watcher_);
@@ -739,10 +739,10 @@ void TlsServerSecurityConnector::TlsServerCertificateWatcher::
     security_connector_->pem_key_cert_pair_list_ = std::move(key_cert_pairs);
   }
   bool root_being_watched =
-      security_connector_->options_->root_certificates_distributor() != nullptr;
+      security_connector_->options_->root_certificate_distributor() != nullptr;
   bool root_has_value = security_connector_->root_cert_info_ != nullptr;
   bool identity_being_watched =
-      security_connector_->options_->identity_credentials_distributor() !=
+      security_connector_->options_->identity_certificate_distributor() !=
       nullptr;
   bool identity_has_value =
       security_connector_->pem_key_cert_pair_list_.has_value();

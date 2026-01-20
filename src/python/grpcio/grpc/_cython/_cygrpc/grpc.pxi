@@ -594,8 +594,12 @@ cdef extern from "grpc/credentials.h":
   ctypedef struct grpc_tls_certificate_provider:
     # We don't care about the internals (and in fact don't know them)
     pass
+  
+  void grpc_tls_credentials_options_set_root_certificate_provider(
+    grpc_tls_credentials_options *options,
+    grpc_tls_certificate_provider *provider) nogil
 
-  void grpc_tls_credentials_options_set_certificate_provider(
+  void grpc_tls_credentials_options_set_identity_certificate_provider(
     grpc_tls_credentials_options *options,
     grpc_tls_certificate_provider *provider) nogil
 
