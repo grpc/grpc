@@ -339,6 +339,7 @@ grpc_cc_library(
         "channel_fwd",
         "channel_stack_type",
         "context",
+        "experiments",
         "latent_see",
         "map",
         "pipe",
@@ -368,6 +369,7 @@ grpc_cc_library(
     srcs = ["call/metadata_info.cc"],
     hdrs = ["call/metadata_info.h"],
     external_deps = [
+        "absl/functional:function_ref",
         "absl/strings",
     ],
     deps = [
@@ -5145,6 +5147,7 @@ grpc_cc_library(
         "load_file",
         "slice",
         "slice_refcount",
+        "status_conversion",
         "status_helper",
         "time",
         "token_fetcher_credentials",
@@ -5991,6 +5994,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     deps = [
         "channel_args",
+        "env",
         "grpc_check",
         "grpc_lb_xds_channel_args",
         "grpc_matchers",
@@ -8373,10 +8377,14 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log",
+        "absl/status:statusor",
         "absl/strings",
     ],
     deps = [
+        "event_engine_tcp_socket_utils",
         "grpc_check",
+        "grpc_promise_endpoint",
+        "slice",
         ":metadata_info",
         "//:chttp2_frame",
     ],
@@ -8679,9 +8687,9 @@ grpc_cc_library(
         "ext/transport/chttp2/transport/http2_transport.h",
     ],
     external_deps = [
-        "absl/types:span",
         "absl/log",
         "absl/status",
+        "absl/strings",
         "absl/status:statusor",
     ],
     deps = [
@@ -8707,6 +8715,7 @@ grpc_cc_library(
         "ph2_stream",
         "sync",
         "time",
+        "write_size_policy",
         ":event_engine_tcp_socket_utils",
         ":match_promise",
         ":poll",
@@ -10686,6 +10695,8 @@ grpc_cc_library(
     external_deps = [
         "absl/log",
         "absl/status",
+        "absl/functional:any_invocable",
+        "absl/types:span",
     ],
     deps = [
         "1999",
@@ -10699,6 +10710,7 @@ grpc_cc_library(
         "ping_abuse_policy",
         "ping_callbacks",
         "ping_rate_policy",
+        "poll",
         "race",
         "shared_bit_gen",
         "sleep",

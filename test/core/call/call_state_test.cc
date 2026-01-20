@@ -65,7 +65,7 @@ class MockActivity : public Activity, public Wakeable {
 
 TEST(CallStateTest, NoOp) { CallState state; }
 
-TEST(CallStateTest, StartTwiceCrashes) {
+TEST(CallStateDeathTest, StartTwiceCrashes) {
   CallState state;
   state.Start();
   EXPECT_DEATH(state.Start(), "");
@@ -82,7 +82,7 @@ TEST(CallStateTest, PullServerInitialMetadataBlocksUntilStart) {
   EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady());
 }
 
-TEST(CallStateTest, PullClientInitialMetadata) {
+TEST(CallStateDeathTest, PullClientInitialMetadata) {
   StrictMock<MockActivity> activity;
   activity.Activate();
   CallState state;

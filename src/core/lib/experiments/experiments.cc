@@ -29,6 +29,12 @@ const char* const additional_constraints_buffer_list_deletion_prep = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const
+    description_call_tracer_send_initial_metadata_is_an_annotation =
+        "Use the new annotation-based CallTracer API.";
+const char* const
+    additional_constraints_call_tracer_send_initial_metadata_is_an_annotation =
+        "{}";
 const char* const description_channelz_use_v2_for_v1_api =
     "Use the v2 channelz API for the v1 channelz API.";
 const char* const additional_constraints_channelz_use_v2_for_v1_api = "{}";
@@ -162,8 +168,16 @@ const char* const additional_constraints_promise_based_http2_server_transport =
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_promise_filter_send_cancel_metadata =
+    "Enables sending all trailing metadata fields from server side "
+    "promise-based filters upon stream cancellation.";
+const char* const additional_constraints_promise_filter_send_cancel_metadata =
+    "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
+const char* const description_return_preexisting_errors =
+    "Return errors that exist before the start of the call in RunHandler.";
+const char* const additional_constraints_return_preexisting_errors = "{}";
 const char* const description_rr_wrr_connect_from_random_index =
     "RR and WRR LB policies start connecting from a random index in the "
     "address list.";
@@ -198,6 +212,9 @@ const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
 const char* const description_sleep_use_non_owning_waker =
     "If set, the sleep promise uses a non-owning waker.";
 const char* const additional_constraints_sleep_use_non_owning_waker = "{}";
+const char* const description_subchannel_connection_scaling =
+    "Subchannel connection scaling support.";
+const char* const additional_constraints_subchannel_connection_scaling = "{}";
 const char* const description_subchannel_wrapper_cleanup_on_orphan =
     "Fixes the subchannel wrapper to drop any non-cancelled watchers when it "
     "gets orphaned.";
@@ -221,9 +238,6 @@ const char* const description_track_zero_copy_allocations_in_resource_quota =
     "payloads.";
 const char* const
     additional_constraints_track_zero_copy_allocations_in_resource_quota = "{}";
-const char* const description_transport_state_watcher =
-    "New state watcher API between transport and subchannel.";
-const char* const additional_constraints_transport_state_watcher = "{}";
 const char* const description_tsi_frame_protector_without_locks =
     "Do not hold locks while using the tsi_frame_protector.";
 const char* const additional_constraints_tsi_frame_protector_without_locks =
@@ -241,6 +255,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_buffer_list_deletion_prep, nullptr, 0, false, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
+    {"call_tracer_send_initial_metadata_is_an_annotation",
+     description_call_tracer_send_initial_metadata_is_an_annotation,
+     additional_constraints_call_tracer_send_initial_metadata_is_an_annotation,
+     nullptr, 0, true, true},
     {"channelz_use_v2_for_v1_api", description_channelz_use_v2_for_v1_api,
      additional_constraints_channelz_use_v2_for_v1_api, nullptr, 0, false,
      true},
@@ -342,8 +360,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"promise_filter_send_cancel_metadata",
+     description_promise_filter_send_cancel_metadata,
+     additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
+     false, true},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
+    {"return_preexisting_errors", description_return_preexisting_errors,
+     additional_constraints_return_preexisting_errors, nullptr, 0, false, true},
     {"rr_wrr_connect_from_random_index",
      description_rr_wrr_connect_from_random_index,
      additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, false,
@@ -370,6 +394,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"sleep_use_non_owning_waker", description_sleep_use_non_owning_waker,
      additional_constraints_sleep_use_non_owning_waker, nullptr, 0, true, true},
+    {"subchannel_connection_scaling", description_subchannel_connection_scaling,
+     additional_constraints_subchannel_connection_scaling, nullptr, 0, false,
+     true},
     {"subchannel_wrapper_cleanup_on_orphan",
      description_subchannel_wrapper_cleanup_on_orphan,
      additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
@@ -386,8 +413,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_track_zero_copy_allocations_in_resource_quota,
      additional_constraints_track_zero_copy_allocations_in_resource_quota,
      nullptr, 0, false, true},
-    {"transport_state_watcher", description_transport_state_watcher,
-     additional_constraints_transport_state_watcher, nullptr, 0, false, true},
     {"tsi_frame_protector_without_locks",
      description_tsi_frame_protector_without_locks,
      additional_constraints_tsi_frame_protector_without_locks, nullptr, 0,
@@ -408,6 +433,12 @@ const char* const additional_constraints_buffer_list_deletion_prep = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const
+    description_call_tracer_send_initial_metadata_is_an_annotation =
+        "Use the new annotation-based CallTracer API.";
+const char* const
+    additional_constraints_call_tracer_send_initial_metadata_is_an_annotation =
+        "{}";
 const char* const description_channelz_use_v2_for_v1_api =
     "Use the v2 channelz API for the v1 channelz API.";
 const char* const additional_constraints_channelz_use_v2_for_v1_api = "{}";
@@ -541,8 +572,16 @@ const char* const additional_constraints_promise_based_http2_server_transport =
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_promise_filter_send_cancel_metadata =
+    "Enables sending all trailing metadata fields from server side "
+    "promise-based filters upon stream cancellation.";
+const char* const additional_constraints_promise_filter_send_cancel_metadata =
+    "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
+const char* const description_return_preexisting_errors =
+    "Return errors that exist before the start of the call in RunHandler.";
+const char* const additional_constraints_return_preexisting_errors = "{}";
 const char* const description_rr_wrr_connect_from_random_index =
     "RR and WRR LB policies start connecting from a random index in the "
     "address list.";
@@ -577,6 +616,9 @@ const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
 const char* const description_sleep_use_non_owning_waker =
     "If set, the sleep promise uses a non-owning waker.";
 const char* const additional_constraints_sleep_use_non_owning_waker = "{}";
+const char* const description_subchannel_connection_scaling =
+    "Subchannel connection scaling support.";
+const char* const additional_constraints_subchannel_connection_scaling = "{}";
 const char* const description_subchannel_wrapper_cleanup_on_orphan =
     "Fixes the subchannel wrapper to drop any non-cancelled watchers when it "
     "gets orphaned.";
@@ -600,9 +642,6 @@ const char* const description_track_zero_copy_allocations_in_resource_quota =
     "payloads.";
 const char* const
     additional_constraints_track_zero_copy_allocations_in_resource_quota = "{}";
-const char* const description_transport_state_watcher =
-    "New state watcher API between transport and subchannel.";
-const char* const additional_constraints_transport_state_watcher = "{}";
 const char* const description_tsi_frame_protector_without_locks =
     "Do not hold locks while using the tsi_frame_protector.";
 const char* const additional_constraints_tsi_frame_protector_without_locks =
@@ -620,6 +659,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_buffer_list_deletion_prep, nullptr, 0, false, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
+    {"call_tracer_send_initial_metadata_is_an_annotation",
+     description_call_tracer_send_initial_metadata_is_an_annotation,
+     additional_constraints_call_tracer_send_initial_metadata_is_an_annotation,
+     nullptr, 0, true, true},
     {"channelz_use_v2_for_v1_api", description_channelz_use_v2_for_v1_api,
      additional_constraints_channelz_use_v2_for_v1_api, nullptr, 0, false,
      true},
@@ -721,8 +764,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"promise_filter_send_cancel_metadata",
+     description_promise_filter_send_cancel_metadata,
+     additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
+     false, true},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
+    {"return_preexisting_errors", description_return_preexisting_errors,
+     additional_constraints_return_preexisting_errors, nullptr, 0, false, true},
     {"rr_wrr_connect_from_random_index",
      description_rr_wrr_connect_from_random_index,
      additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, false,
@@ -749,6 +798,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"sleep_use_non_owning_waker", description_sleep_use_non_owning_waker,
      additional_constraints_sleep_use_non_owning_waker, nullptr, 0, true, true},
+    {"subchannel_connection_scaling", description_subchannel_connection_scaling,
+     additional_constraints_subchannel_connection_scaling, nullptr, 0, false,
+     true},
     {"subchannel_wrapper_cleanup_on_orphan",
      description_subchannel_wrapper_cleanup_on_orphan,
      additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
@@ -765,8 +817,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_track_zero_copy_allocations_in_resource_quota,
      additional_constraints_track_zero_copy_allocations_in_resource_quota,
      nullptr, 0, false, true},
-    {"transport_state_watcher", description_transport_state_watcher,
-     additional_constraints_transport_state_watcher, nullptr, 0, false, true},
     {"tsi_frame_protector_without_locks",
      description_tsi_frame_protector_without_locks,
      additional_constraints_tsi_frame_protector_without_locks, nullptr, 0,
@@ -787,6 +837,12 @@ const char* const additional_constraints_buffer_list_deletion_prep = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const
+    description_call_tracer_send_initial_metadata_is_an_annotation =
+        "Use the new annotation-based CallTracer API.";
+const char* const
+    additional_constraints_call_tracer_send_initial_metadata_is_an_annotation =
+        "{}";
 const char* const description_channelz_use_v2_for_v1_api =
     "Use the v2 channelz API for the v1 channelz API.";
 const char* const additional_constraints_channelz_use_v2_for_v1_api = "{}";
@@ -920,8 +976,16 @@ const char* const additional_constraints_promise_based_http2_server_transport =
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_promise_filter_send_cancel_metadata =
+    "Enables sending all trailing metadata fields from server side "
+    "promise-based filters upon stream cancellation.";
+const char* const additional_constraints_promise_filter_send_cancel_metadata =
+    "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
+const char* const description_return_preexisting_errors =
+    "Return errors that exist before the start of the call in RunHandler.";
+const char* const additional_constraints_return_preexisting_errors = "{}";
 const char* const description_rr_wrr_connect_from_random_index =
     "RR and WRR LB policies start connecting from a random index in the "
     "address list.";
@@ -956,6 +1020,9 @@ const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
 const char* const description_sleep_use_non_owning_waker =
     "If set, the sleep promise uses a non-owning waker.";
 const char* const additional_constraints_sleep_use_non_owning_waker = "{}";
+const char* const description_subchannel_connection_scaling =
+    "Subchannel connection scaling support.";
+const char* const additional_constraints_subchannel_connection_scaling = "{}";
 const char* const description_subchannel_wrapper_cleanup_on_orphan =
     "Fixes the subchannel wrapper to drop any non-cancelled watchers when it "
     "gets orphaned.";
@@ -979,9 +1046,6 @@ const char* const description_track_zero_copy_allocations_in_resource_quota =
     "payloads.";
 const char* const
     additional_constraints_track_zero_copy_allocations_in_resource_quota = "{}";
-const char* const description_transport_state_watcher =
-    "New state watcher API between transport and subchannel.";
-const char* const additional_constraints_transport_state_watcher = "{}";
 const char* const description_tsi_frame_protector_without_locks =
     "Do not hold locks while using the tsi_frame_protector.";
 const char* const additional_constraints_tsi_frame_protector_without_locks =
@@ -999,6 +1063,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_buffer_list_deletion_prep, nullptr, 0, false, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
+    {"call_tracer_send_initial_metadata_is_an_annotation",
+     description_call_tracer_send_initial_metadata_is_an_annotation,
+     additional_constraints_call_tracer_send_initial_metadata_is_an_annotation,
+     nullptr, 0, true, true},
     {"channelz_use_v2_for_v1_api", description_channelz_use_v2_for_v1_api,
      additional_constraints_channelz_use_v2_for_v1_api, nullptr, 0, false,
      true},
@@ -1100,8 +1168,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"promise_filter_send_cancel_metadata",
+     description_promise_filter_send_cancel_metadata,
+     additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
+     false, true},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
+    {"return_preexisting_errors", description_return_preexisting_errors,
+     additional_constraints_return_preexisting_errors, nullptr, 0, false, true},
     {"rr_wrr_connect_from_random_index",
      description_rr_wrr_connect_from_random_index,
      additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, false,
@@ -1128,6 +1202,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"sleep_use_non_owning_waker", description_sleep_use_non_owning_waker,
      additional_constraints_sleep_use_non_owning_waker, nullptr, 0, true, true},
+    {"subchannel_connection_scaling", description_subchannel_connection_scaling,
+     additional_constraints_subchannel_connection_scaling, nullptr, 0, false,
+     true},
     {"subchannel_wrapper_cleanup_on_orphan",
      description_subchannel_wrapper_cleanup_on_orphan,
      additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
@@ -1144,8 +1221,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_track_zero_copy_allocations_in_resource_quota,
      additional_constraints_track_zero_copy_allocations_in_resource_quota,
      nullptr, 0, false, true},
-    {"transport_state_watcher", description_transport_state_watcher,
-     additional_constraints_transport_state_watcher, nullptr, 0, false, true},
     {"tsi_frame_protector_without_locks",
      description_tsi_frame_protector_without_locks,
      additional_constraints_tsi_frame_protector_without_locks, nullptr, 0,
