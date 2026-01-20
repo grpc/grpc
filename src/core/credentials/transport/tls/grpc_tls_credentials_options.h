@@ -52,20 +52,23 @@ struct grpc_tls_credentials_options
     return certificate_verifier_.get();
   }
   bool check_call_host() const { return check_call_host_; }
-  // Returns the distributor from certificate_provider_ if it is set, nullptr otherwise.
-  grpc_tls_certificate_distributor* certificate_distributor() {
-    if (certificate_provider_ != nullptr) { return certificate_provider_->distributor().get(); }
-    return nullptr;
-  }
-  bool watch_root_cert() const { return watch_root_cert_; }
   const std::string& root_cert_name() const { return root_cert_name_; }
-  bool watch_identity_pair() const { return watch_identity_pair_; }
   const std::string& identity_cert_name() const { return identity_cert_name_; }
   const std::string& tls_session_key_log_file_path() const { return tls_session_key_log_file_path_; }
   const std::string& crl_directory() const { return crl_directory_; }
   // Returns the CRL Provider
   std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider() const { return crl_provider_; }
   bool send_client_ca_list() const { return send_client_ca_list_; }
+  // Returns the distributor from identity_credentials_provider_ if it is set, nullptr otherwise.
+  grpc_tls_certificate_distributor* identity_credentials_distributor() {
+    if (identity_credentials_provider_ != nullptr) { return identity_credentials_provider_->distributor().get(); }
+    return nullptr;
+  }
+  // Returns the distributor from root_certificates_provider_ if it is set, nullptr otherwise.
+  grpc_tls_certificate_distributor* root_certificates_distributor() {
+    if (root_certificates_provider_ != nullptr) { return root_certificates_provider_->distributor().get(); }
+    return nullptr;
+  }
   const std::optional<std::string>& sni_override() const { return sni_override_; }
 
   // Setters for member fields.
@@ -75,13 +78,8 @@ struct grpc_tls_credentials_options
   void set_max_tls_version(grpc_tls_version max_tls_version) { max_tls_version_ = max_tls_version; }
   void set_certificate_verifier(grpc_core::RefCountedPtr<grpc_tls_certificate_verifier> certificate_verifier) { certificate_verifier_ = std::move(certificate_verifier); }
   void set_check_call_host(bool check_call_host) { check_call_host_ = check_call_host; }
-  void set_certificate_provider(grpc_core::RefCountedPtr<grpc_tls_certificate_provider> certificate_provider) { certificate_provider_ = std::move(certificate_provider); }
-  // If need to watch the updates of root certificates with name |root_cert_name|. The default value is false. If used in tls_credentials, it should always be set to true unless the root certificates are not needed.
-  void set_watch_root_cert(bool watch_root_cert) { watch_root_cert_ = watch_root_cert; }
   // Sets the name of root certificates being watched, if |set_watch_root_cert| is called. If not set, an empty string will be used as the name.
   void set_root_cert_name(std::string root_cert_name) { root_cert_name_ = std::move(root_cert_name); }
-  // If need to watch the updates of identity certificates with name |identity_cert_name|. The default value is false. If used in tls_credentials, it should always be set to true unless the identity key-cert pairs are not needed.
-  void set_watch_identity_pair(bool watch_identity_pair) { watch_identity_pair_ = watch_identity_pair; }
   // Sets the name of identity key-cert pairs being watched, if |set_watch_identity_pair| is called. If not set, an empty string will be used as the name.
   void set_identity_cert_name(std::string identity_cert_name) { identity_cert_name_ = std::move(identity_cert_name); }
   void set_tls_session_key_log_file_path(std::string tls_session_key_log_file_path) { tls_session_key_log_file_path_ = std::move(tls_session_key_log_file_path); }
@@ -89,6 +87,8 @@ struct grpc_tls_credentials_options
   void set_crl_directory(std::string crl_directory) { crl_directory_ = std::move(crl_directory); }
   void set_crl_provider(std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider) { crl_provider_ = std::move(crl_provider); }
   void set_send_client_ca_list(bool send_client_ca_list) { send_client_ca_list_ = send_client_ca_list; }
+  void set_identity_credentials_provider(grpc_core::RefCountedPtr<grpc_tls_certificate_provider> identity_credentials_provider) { identity_credentials_provider_ = std::move(identity_credentials_provider); }
+  void set_root_certificates_provider(grpc_core::RefCountedPtr<grpc_tls_certificate_provider> root_certificates_provider) { root_certificates_provider_ = std::move(root_certificates_provider); }
   // If set to nullopt, do not override. If set to empty string, disable sending SNI. Otherwise, override SNI
   void set_sni_override(std::optional<std::string> sni_override) { sni_override_ = std::move(sni_override); }
 
@@ -99,15 +99,14 @@ struct grpc_tls_credentials_options
       max_tls_version_ == other.max_tls_version_ &&
       (certificate_verifier_ == other.certificate_verifier_ || (certificate_verifier_ != nullptr && other.certificate_verifier_ != nullptr && certificate_verifier_->Compare(other.certificate_verifier_.get()) == 0)) &&
       check_call_host_ == other.check_call_host_ &&
-      (certificate_provider_ == other.certificate_provider_ || (certificate_provider_ != nullptr && other.certificate_provider_ != nullptr && certificate_provider_->Compare(other.certificate_provider_.get()) == 0)) &&
-      watch_root_cert_ == other.watch_root_cert_ &&
       root_cert_name_ == other.root_cert_name_ &&
-      watch_identity_pair_ == other.watch_identity_pair_ &&
       identity_cert_name_ == other.identity_cert_name_ &&
       tls_session_key_log_file_path_ == other.tls_session_key_log_file_path_ &&
       crl_directory_ == other.crl_directory_ &&
       (crl_provider_ == other.crl_provider_) &&
       send_client_ca_list_ == other.send_client_ca_list_ &&
+      (identity_credentials_provider_ == other.identity_credentials_provider_ || (identity_credentials_provider_ != nullptr && other.identity_credentials_provider_ != nullptr && identity_credentials_provider_->Compare(other.identity_credentials_provider_.get()) == 0)) &&
+      (root_certificates_provider_ == other.root_certificates_provider_ || (root_certificates_provider_ != nullptr && other.root_certificates_provider_ != nullptr && root_certificates_provider_->Compare(other.root_certificates_provider_.get()) == 0)) &&
       sni_override_ == other.sni_override_;
   }
 
@@ -118,15 +117,14 @@ struct grpc_tls_credentials_options
       max_tls_version_(other.max_tls_version_),
       certificate_verifier_(other.certificate_verifier_),
       check_call_host_(other.check_call_host_),
-      certificate_provider_(other.certificate_provider_),
-      watch_root_cert_(other.watch_root_cert_),
       root_cert_name_(other.root_cert_name_),
-      watch_identity_pair_(other.watch_identity_pair_),
       identity_cert_name_(other.identity_cert_name_),
       tls_session_key_log_file_path_(other.tls_session_key_log_file_path_),
       crl_directory_(other.crl_directory_),
       crl_provider_(other.crl_provider_),
       send_client_ca_list_(other.send_client_ca_list_),
+      identity_credentials_provider_(other.identity_credentials_provider_),
+      root_certificates_provider_(other.root_certificates_provider_),
       sni_override_(other.sni_override_)  {}
 
  private:
@@ -136,15 +134,14 @@ struct grpc_tls_credentials_options
   grpc_tls_version max_tls_version_ = grpc_tls_version::TLS1_3;
   grpc_core::RefCountedPtr<grpc_tls_certificate_verifier> certificate_verifier_;
   bool check_call_host_ = true;
-  grpc_core::RefCountedPtr<grpc_tls_certificate_provider> certificate_provider_;
-  bool watch_root_cert_ = false;
   std::string root_cert_name_;
-  bool watch_identity_pair_ = false;
   std::string identity_cert_name_;
   std::string tls_session_key_log_file_path_;
   std::string crl_directory_;
   std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider_;
   bool send_client_ca_list_ = false;
+  grpc_core::RefCountedPtr<grpc_tls_certificate_provider> identity_credentials_provider_;
+  grpc_core::RefCountedPtr<grpc_tls_certificate_provider> root_certificates_provider_;
   std::optional<std::string> sni_override_;
 };
 

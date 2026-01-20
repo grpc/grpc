@@ -107,9 +107,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   auto provider = MakeRefCounted<StaticDataCertificateProvider>(
       root_cert_, MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
-  options->set_certificate_provider(std::move(provider));
-  options->set_watch_root_cert(true);
-  options->set_watch_identity_pair(true);
+  options->set_root_certificates_provider(provider);
+  options->set_identity_credentials_provider(provider);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
   ChannelArgs new_args;
@@ -128,8 +127,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   auto provider = MakeRefCounted<StaticDataCertificateProvider>(
       root_cert_, PemKeyCertPairList());
-  options->set_certificate_provider(std::move(provider));
-  options->set_watch_root_cert(true);
+  options->set_root_certificates_provider(provider);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
   ChannelArgs new_args;
@@ -148,8 +146,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   auto provider = MakeRefCounted<StaticDataCertificateProvider>(
       "", MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
-  options->set_certificate_provider(std::move(provider));
-  options->set_watch_root_cert(true);
+  options->set_root_certificates_provider(provider);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
   ChannelArgs new_args;
@@ -166,8 +163,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   auto provider = MakeRefCounted<StaticDataCertificateProvider>(
       "", MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
-  options->set_certificate_provider(std::move(provider));
-  options->set_watch_identity_pair(true);
+  options->set_identity_credentials_provider(provider);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
   ChannelArgs new_args;
@@ -184,9 +180,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   auto provider = MakeRefCounted<StaticDataCertificateProvider>(
       root_cert_, MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
-  options->set_certificate_provider(std::move(provider));
-  options->set_watch_root_cert(true);
-  options->set_watch_identity_pair(true);
+  options->set_root_certificates_provider(provider);
+  options->set_identity_credentials_provider(provider);
   options->set_cert_request_type(
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
@@ -205,8 +200,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   auto provider = MakeRefCounted<StaticDataCertificateProvider>(
       "", MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
-  options->set_certificate_provider(std::move(provider));
-  options->set_watch_identity_pair(true);
+  options->set_identity_credentials_provider(provider);
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
   ASSERT_NE(credentials, nullptr);
@@ -224,8 +218,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   auto provider = MakeRefCounted<StaticDataCertificateProvider>(
       root_cert_, PemKeyCertPairList());
-  options->set_certificate_provider(std::move(provider));
-  options->set_watch_identity_pair(true);
+  options->set_identity_credentials_provider(provider);
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
   ASSERT_NE(credentials, nullptr);
@@ -246,9 +239,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   auto provider = MakeRefCounted<FileWatcherCertificateProvider>(
       SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH,
       /*spiffe_bundle_map_file=*/"", 1);
-  options->set_certificate_provider(std::move(provider));
-  options->set_watch_root_cert(true);
-  options->set_watch_identity_pair(true);
+  options->set_root_certificates_provider(provider);
+  options->set_identity_credentials_provider(provider);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
   ChannelArgs new_args;
@@ -267,8 +259,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   auto provider = MakeRefCounted<FileWatcherCertificateProvider>(
       "", "", CA_CERT_PATH, /*spiffe_bundle_map_file=*/"", 1);
-  options->set_certificate_provider(std::move(provider));
-  options->set_watch_root_cert(true);
+  options->set_root_certificates_provider(provider);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
   ChannelArgs new_args;
@@ -287,8 +278,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   auto provider = MakeRefCounted<FileWatcherCertificateProvider>(
       SERVER_KEY_PATH, SERVER_CERT_PATH, "", /*spiffe_bundle_map_file=*/"", 1);
-  options->set_certificate_provider(std::move(provider));
-  options->set_watch_root_cert(true);
+  options->set_root_certificates_provider(provider);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
   ChannelArgs new_args;
@@ -305,8 +295,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   auto provider = MakeRefCounted<FileWatcherCertificateProvider>(
       "", "", INVALID_PATH, /*spiffe_bundle_map_file=*/"", 1);
-  options->set_certificate_provider(std::move(provider));
-  options->set_watch_root_cert(true);
+  options->set_root_certificates_provider(provider);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
   ChannelArgs new_args;
@@ -324,9 +313,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   auto provider = MakeRefCounted<FileWatcherCertificateProvider>(
       SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH,
       /*spiffe_bundle_map_file=*/"", 1);
-  options->set_certificate_provider(std::move(provider));
-  options->set_watch_root_cert(true);
-  options->set_watch_identity_pair(true);
+  options->set_root_certificates_provider(provider);
+  options->set_identity_credentials_provider(provider);
   options->set_cert_request_type(
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
@@ -345,8 +333,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   auto provider = MakeRefCounted<FileWatcherCertificateProvider>(
       SERVER_KEY_PATH, SERVER_CERT_PATH, "", /*spiffe_bundle_map_file=*/"", 1);
-  options->set_certificate_provider(std::move(provider));
-  options->set_watch_identity_pair(true);
+  options->set_identity_credentials_provider(provider);
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
   ASSERT_NE(credentials, nullptr);
@@ -364,8 +351,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   auto provider = MakeRefCounted<FileWatcherCertificateProvider>(
       "", "", CA_CERT_PATH, /*spiffe_bundle_map_file=*/"", 1);
-  options->set_certificate_provider(std::move(provider));
-  options->set_watch_identity_pair(true);
+  options->set_identity_credentials_provider(provider);
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
   ASSERT_NE(credentials, nullptr);
@@ -381,8 +367,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   auto provider = MakeRefCounted<FileWatcherCertificateProvider>(
       INVALID_PATH, INVALID_PATH, "", /*spiffe_bundle_map_file=*/"", 1);
-  options->set_certificate_provider(std::move(provider));
-  options->set_watch_identity_pair(true);
+  options->set_identity_credentials_provider(provider);
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
   ASSERT_NE(credentials, nullptr);
@@ -409,9 +394,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   auto provider = MakeRefCounted<FileWatcherCertificateProvider>(
       tmp_identity_key.name(), tmp_identity_cert.name(), tmp_root_cert.name(),
       /*spiffe_bundle_map_file=*/"", 1);
-  options->set_certificate_provider(std::move(provider));
-  options->set_watch_root_cert(true);
-  options->set_watch_identity_pair(true);
+  options->set_root_certificates_provider(provider);
+  options->set_identity_credentials_provider(provider);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
   ChannelArgs new_args;
@@ -459,9 +443,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   auto provider = MakeRefCounted<FileWatcherCertificateProvider>(
       tmp_identity_key->name(), tmp_identity_cert->name(),
       tmp_root_cert->name(), /*spiffe_bundle_map_file=*/"", 1);
-  options->set_certificate_provider(std::move(provider));
-  options->set_watch_root_cert(true);
-  options->set_watch_identity_pair(true);
+  options->set_root_certificates_provider(provider);
+  options->set_identity_credentials_provider(provider);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
   ChannelArgs new_args;
@@ -533,8 +516,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest, ServerOptionsWithExternalVerifier) {
   // On server side we have to set the provider providing identity certs.
   auto provider = MakeRefCounted<StaticDataCertificateProvider>(
       root_cert_, PemKeyCertPairList());
-  options->set_certificate_provider(std::move(provider));
-  options->set_watch_identity_pair(true);
+  options->set_identity_credentials_provider(provider);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
   ASSERT_NE(credentials, nullptr);
   auto connector = credentials->create_security_connector(ChannelArgs());
@@ -572,8 +554,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   // On server side we have to set the provider providing identity certs.
   auto provider = MakeRefCounted<StaticDataCertificateProvider>(
       root_cert_, PemKeyCertPairList());
-  options->set_certificate_provider(std::move(provider));
-  options->set_watch_identity_pair(true);
+  options->set_identity_credentials_provider(provider);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
   ASSERT_NE(credentials, nullptr);
   auto connector = credentials->create_security_connector(ChannelArgs());
@@ -603,9 +584,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest, CrlProviderWithServerCredentials) {
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   auto provider = MakeRefCounted<StaticDataCertificateProvider>(
       root_cert_, MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
-  options->set_certificate_provider(std::move(provider));
-  options->set_watch_root_cert(true);
-  options->set_watch_identity_pair(true);
+  options->set_root_certificates_provider(provider);
+  options->set_identity_credentials_provider(provider);
   options->set_cert_request_type(
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   auto crl_provider = experimental::CreateStaticCrlProvider({});
