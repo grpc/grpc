@@ -1470,9 +1470,16 @@ class NewSubchannel::QueuedCall final : public Subchannel::Call {
   RefCount ref_count_;
   WeakRefCountedPtr<NewSubchannel> subchannel_;
   CreateCallArgs args_;
+
+  // Note that unlike in the resolver and LB code, the subchannel code
+  // adds the call to the queue before adding batches to buffered_call_,
+  // so it's possible that the subchannel will get quota for the call
+  // and try to resume it before buffered_call_ contains any batches.
+  // In that case, we will not be holding the call combiner here, so we
+  // need a mutex for synchronization.
+  Mutex mu_ ABSL_ACQUIRED_AFTER(NewSubchannel::mu_);
   grpc_closure* after_call_stack_destroy_ ABSL_GUARDED_BY(&mu_) = nullptr;
   grpc_error_handle cancel_error_ ABSL_GUARDED_BY(&mu_);
-  Mutex mu_ ABSL_ACQUIRED_AFTER(NewSubchannel::mu_);
   BufferedCall buffered_call_ ABSL_GUARDED_BY(&mu_);
   RefCountedPtr<Call> subchannel_call_ ABSL_GUARDED_BY(&mu_);
 
@@ -1645,15 +1652,22 @@ void NewSubchannel::QueuedCall::ResumeOnConnectionLocked(
     subchannel_call_->SetAfterCallStackDestroy(after_call_stack_destroy_);
     after_call_stack_destroy_ = nullptr;
   }
+  // It's possible that the subchannel will get quota for the call
+  // and try to resume it before buffered_call_ contains any batches.
+  // In that case, we will not be holding the call combiner here, so we
+  // must not yeild it.  That's why we use
+  // YieldCallCombinerIfPendingBatchesFound here.
   if (!error.ok()) {
     buffered_call_.Fail(error,
                         BufferedCall::YieldCallCombinerIfPendingBatchesFound);
   } else {
-    buffered_call_.Resume([subchannel_call = subchannel_call_](
-                              grpc_transport_stream_op_batch* batch) {
-      // This will release the call combiner.
-      subchannel_call->StartTransportStreamOpBatch(batch);
-    });
+    buffered_call_.Resume(
+        [subchannel_call =
+             subchannel_call_](grpc_transport_stream_op_batch* batch) {
+          // This will release the call combiner.
+          subchannel_call->StartTransportStreamOpBatch(batch);
+        },
+        BufferedCall::YieldCallCombinerIfPendingBatchesFound);
   }
 }
 
