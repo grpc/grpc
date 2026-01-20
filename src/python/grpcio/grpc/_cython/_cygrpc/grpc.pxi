@@ -617,16 +617,6 @@ cdef extern from "grpc/credentials.h":
   grpc_tls_certificate_provider *grpc_tls_certificate_provider_static_data_create(
     const char *root_certificate, grpc_tls_identity_pairs *pem_key_cert_pairs) nogil
 
-  void grpc_tls_credentials_options_set_certificate_provider(
-    grpc_tls_credentials_options *options,
-    grpc_tls_certificate_provider *provider) nogil
-
-  void grpc_tls_credentials_options_watch_root_certs(
-    grpc_tls_credentials_options *options) nogil
-
-  void grpc_tls_credentials_options_watch_identity_key_cert_pairs(
-    grpc_tls_credentials_options *options) nogil
-
   void grpc_tls_certificate_provider_release(
     grpc_tls_certificate_provider *provider) nogil
 
