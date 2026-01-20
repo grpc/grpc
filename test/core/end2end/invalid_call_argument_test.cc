@@ -240,10 +240,6 @@ static void test_too_many_metadata() {
              grpc_call_start_batch(g_state.call, g_state.ops,
                                    (size_t)(op - g_state.ops),
                                    grpc_core::CqVerifier::tag(1), nullptr));
-  // We must drain the completion queue tag. Since the call was cancelled,
-  // the operation completes (with a failure status internally).
-  // g_state.cqv->Expect(grpc_core::CqVerifier::tag(1), true);
-  // g_state.cqv->Verify();
   // Verification: The call status should be INTERNAL because we cancelled it
   // due to invalid metadata.
   GRPC_CHECK(g_state.status == GRPC_STATUS_INTERNAL);
@@ -545,10 +541,6 @@ static void test_too_many_trailing_metadata() {
              grpc_call_start_batch(g_state.server_call, g_state.ops,
                                    (size_t)(op - g_state.ops),
                                    grpc_core::CqVerifier::tag(2), nullptr));
-  // Tag 2: The server's "send status" operation completes (because we manually
-  // posted it after cancellation).
-  // g_state.cqv->Expect(grpc_core::CqVerifier::tag(2), true);
-  // g_state.cqv->Verify();
   cleanup_test();
 }
 
@@ -654,10 +646,6 @@ static void test_invalid_initial_metadata_reserved_key() {
              grpc_call_start_batch(g_state.call, g_state.ops,
                                    (size_t)(op - g_state.ops),
                                    grpc_core::CqVerifier::tag(1), nullptr));
-  // We must drain the completion queue tag. Since the call was cancelled,
-  // the operation completes (with a failure status internally).
-  // g_state.cqv->Expect(grpc_core::CqVerifier::tag(1), true);
-  // g_state.cqv->Verify();
   // Verification: The call status should be INTERNAL because we cancelled it
   // due to invalid metadata.
   GRPC_CHECK(g_state.status == GRPC_STATUS_INTERNAL);
