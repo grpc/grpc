@@ -1,6 +1,5 @@
 //
-//
-// Copyright 2018 gRPC authors.
+// Copyright 2026 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,9 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-//
-
-#include <grpc/support/port_platform.h>
 
 #include "src/core/client_channel/subchannel_stream_limiter.h"
 
@@ -39,6 +35,10 @@ uint32_t GetRpcsInFlight(uint64_t stream_counts) {
 }
 
 }  // namespace
+
+SubchannelStreamLimiter::SubchannelStreamLimiter(
+    uint32_t max_concurrent_streams)
+    : stream_counts_(MakeStreamCounts(max_concurrent_streams, 0)) {}
 
 bool SubchannelStreamLimiter::SetMaxConcurrentStreams(
     uint32_t max_concurrent_streams) {

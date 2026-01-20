@@ -1114,9 +1114,8 @@ class NewSubchannel::ConnectedSubchannel
             GRPC_TRACE_FLAG_ENABLED(subchannel_refcount) ? "ConnectedSubchannel"
                                                          : nullptr),
         subchannel_(std::move(subchannel)),
-        args_(args) {
-    stream_limiter_.SetMaxConcurrentStreams(max_concurrent_streams);
-  }
+        args_(args),
+        stream_limiter_(max_concurrent_streams) {}
 
  private:
   WeakRefCountedPtr<NewSubchannel> subchannel_;

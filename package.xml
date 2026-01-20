@@ -209,6 +209,8 @@
     <file baseinstalldir="/" name="src/core/client_channel/subchannel_pool_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/subchannel_stream_client.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/subchannel_stream_client.h" role="src" />
+    <file baseinstalldir="/" name="src/core/client_channel/subchannel_stream_limiter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/client_channel/subchannel_stream_limiter.h" role="src" />
     <file baseinstalldir="/" name="src/core/config/config_vars.cc" role="src" />
     <file baseinstalldir="/" name="src/core/config/config_vars.h" role="src" />
     <file baseinstalldir="/" name="src/core/config/config_vars_non_generated.cc" role="src" />
