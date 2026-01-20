@@ -30,6 +30,14 @@
 namespace grpc_core {
 namespace {
 
+// TODO(roth): There are a bunch of other test cases covered in the C++
+// e2e tests that should be covered here as well (or maybe instead).
+// However, those test cases require more explicit control over
+// connection establishment, and we don't currently have a good way to
+// handle that in core e2e tests.  Once the EventEngine migration is
+// finished, we should be able to do this by injecting a custom EE impl
+// that allows us to intercept connection attempts.
+
 CORE_END2END_TEST(Http2SingleHopTests, SubchannelConnectionScaling) {
   SKIP_IF_MINSTACK();
   if (!IsSubchannelConnectionScalingEnabled()) {
