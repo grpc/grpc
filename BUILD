@@ -3991,6 +3991,7 @@ grpc_cc_library(
         "//src/core:client_channel/retry_filter_legacy_call_data.cc",
         "//src/core:client_channel/subchannel.cc",
         "//src/core:client_channel/subchannel_stream_client.cc",
+        "//src/core:client_channel/subchannel_stream_limiter.cc",
     ],
     hdrs = [
         "//src/core:client_channel/buffered_call.h",
@@ -4006,6 +4007,7 @@ grpc_cc_library(
         "//src/core:client_channel/subchannel.h",
         "//src/core:client_channel/subchannel_interface_internal.h",
         "//src/core:client_channel/subchannel_stream_client.h",
+        "//src/core:client_channel/subchannel_stream_limiter.h",
     ],
     external_deps = [
         "absl/base:core_headers",
