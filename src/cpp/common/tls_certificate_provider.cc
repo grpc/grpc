@@ -102,17 +102,8 @@ absl::Status InMemoryCertificateProvider::UpdateIdentityKeyCertPair(
   GRPC_CHECK(!identity_key_cert_pairs.empty());
   grpc_tls_identity_pairs* pairs_core = grpc_tls_identity_pairs_create();
   for (const IdentityKeyCertPair& pair : identity_key_cert_pairs) {
-    grpc_core::Match(
-        pair.private_key,
-        [&](const std::string& pem_root_certs) {
-          grpc_tls_identity_pairs_add_pair(pairs_core, pem_root_certs.c_str(),
-                                           pair.certificate_chain.c_str());
-        },
-        [&](const std::shared_ptr<grpc::experimental::PrivateKeySigner>&
-                key_signer) {
-          grpc_tls_identity_pairs_add_pair_with_signer(
-              pairs_core, key_signer, pair.certificate_chain.c_str());
-        });
+    grpc_tls_identity_pairs_add_pair(pairs_core, pair.private_key.c_str(),
+                                     pair.certificate_chain.c_str());
   }
   return grpc_tls_certificate_provider_in_memory_set_identity_certificate(
              c_provider_, pairs_core)
