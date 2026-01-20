@@ -38,5 +38,5 @@ $GIT_ROOT/tools/bazel \
     "@grpc//:grpcpp_admin" \
     "@grpc//:grpcpp_channelz" \
     "@grpc//:grpcpp_csds" \
-    "@grpc//:grpcpp_orca_service"
-    #"@grpc//examples/protos/..."
+    "@grpc//:grpcpp_orca_service" \
+    "@grpc//examples/protos/..."
