@@ -1816,10 +1816,10 @@ NewSubchannel::NewSubchannel(SubchannelKey key,
                              OrphanablePtr<SubchannelConnector> connector,
                              const ChannelArgs& args)
     : key_(std::move(key)),
-      created_from_endpoint_(args.Contains(GRPC_ARG_SUBCHANNEL_ENDPOINT)),
       args_(args),
       pollset_set_(grpc_pollset_set_create()),
       connector_(std::move(connector)),
+      connectivity_state_(args.Contains(GRPC_ARG_SUBCHANNEL_ENDPOINT)),
       watcher_list_(this),
       work_serializer_(args_.GetObjectRef<EventEngine>()),
       backoff_(ParseArgsForBackoffValues(args_, &min_connect_timeout_)),
@@ -1885,7 +1885,7 @@ RefCountedPtr<Subchannel> NewSubchannel::Create(
     return c;
   }
   c = MakeRefCounted<NewSubchannel>(std::move(key), std::move(connector), args);
-  if (c->created_from_endpoint_) {
+  if (c->connectivity_state_.created_from_endpoint()) {
     // We don't interact with the subchannel pool in this case.
     // Instead, we unconditionally return the newly created subchannel.
     // Before returning, we explicitly trigger a connection attempt
@@ -1933,7 +1933,8 @@ void NewSubchannel::WatchConnectivityState(
     grpc_pollset_set_add_pollset_set(pollset_set_, interested_parties);
   }
   work_serializer_.Run(
-      [watcher, state = state_, status = ConnectivityStatusToReportLocked()]() {
+      [watcher, state = connectivity_state_.state(),
+       status = connectivity_state_.status()]() {
         watcher->OnConnectivityStateChange(state, status);
       },
       DEBUG_LOCATION);
@@ -1958,7 +1959,7 @@ void NewSubchannel::RequestConnection() {
       << "subchannel " << this << " " << key_.ToString()
       << ": RequestConnection()";
   MutexLock lock(&mu_);
-  if (state_ == GRPC_CHANNEL_IDLE) {
+  if (connectivity_state_.state() == GRPC_CHANNEL_IDLE) {
     StartConnectingLocked();
   }
 }
@@ -2026,60 +2027,30 @@ absl::Status PrependAddressToStatusMessage(const SubchannelKey& key,
 
 }  // namespace
 
-void NewSubchannel::SetLastFailureLocked(const absl::Status& status) {
-  // Augment status message to include IP address.
-  last_failure_status_ = PrependAddressToStatusMessage(key_, status);
-}
-
-grpc_connectivity_state NewSubchannel::ComputeConnectivityStateLocked() const {
-  // If we have at least one connection, report READY.
-  if (!connections_.empty()) return GRPC_CHANNEL_READY;
-  // If we were created from an endpoint and the connection is closed,
-  // we have no way to create a new connection, so we report
-  // TRANSIENT_FAILURE, and we'll never leave that state.
-  if (created_from_endpoint_) return GRPC_CHANNEL_TRANSIENT_FAILURE;
-  // If there's a connection attempt in flight, report CONNECTING.
-  if (connection_attempt_in_flight_) return GRPC_CHANNEL_CONNECTING;
-  // If we're in backoff delay, report TRANSIENT_FAILURE.
-  if (retry_timer_handle_.has_value()) {
-    return GRPC_CHANNEL_TRANSIENT_FAILURE;
-  }
-  // Otherwise, report IDLE.
-  return GRPC_CHANNEL_IDLE;
-}
-
-absl::Status NewSubchannel::ConnectivityStatusToReportLocked() const {
-  // Report status in TRANSIENT_FAILURE state.
-  if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) return last_failure_status_;
-  return absl::OkStatus();
-}
-
 void NewSubchannel::MaybeUpdateConnectivityStateLocked() {
-  // Determine what state we are in.
-  grpc_connectivity_state new_state = ComputeConnectivityStateLocked();
-  // If we're already in that state, no need to report a change.
-  if (new_state == state_) return;
-  state_ = new_state;
-  absl::Status status = ConnectivityStatusToReportLocked();
-  GRPC_TRACE_LOG(subchannel, INFO)
-      << "subchannel " << this << " " << key_.ToString()
-      << ": reporting connectivity state " << ConnectivityStateName(new_state)
-      << ", status: " << status;
-  // Update channelz.
-  if (channelz_node_ != nullptr) {
-    channelz_node_->UpdateConnectivityState(new_state);
-    if (status.ok()) {
-      GRPC_CHANNELZ_LOG(channelz_node_)
-          << "Subchannel connectivity state changed to "
-          << ConnectivityStateName(new_state);
-    } else {
-      GRPC_CHANNELZ_LOG(channelz_node_)
-          << "Subchannel connectivity state changed to "
-          << ConnectivityStateName(new_state) << ": " << status;
+  if (connectivity_state_.CheckUpdate()) {
+    grpc_connectivity_state new_state = connectivity_state_.state();
+    absl::Status status = connectivity_state_.status();
+    GRPC_TRACE_LOG(subchannel, INFO)
+        << "subchannel " << this << " " << key_.ToString()
+        << ": reporting connectivity state " << ConnectivityStateName(new_state)
+        << ", status: " << status;
+    // Update channelz.
+    if (channelz_node_ != nullptr) {
+      channelz_node_->UpdateConnectivityState(new_state);
+      if (status.ok()) {
+        GRPC_CHANNELZ_LOG(channelz_node_)
+            << "Subchannel connectivity state changed to "
+            << ConnectivityStateName(new_state);
+      } else {
+        GRPC_CHANNELZ_LOG(channelz_node_)
+            << "Subchannel connectivity state changed to "
+            << ConnectivityStateName(new_state) << ": " << status;
+      }
     }
+    // Notify watchers.
+    watcher_list_.NotifyLocked(new_state, status);
   }
-  // Notify watchers.
-  watcher_list_.NotifyLocked(new_state, status);
 }
 
 bool NewSubchannel::RemoveConnectionLocked(
@@ -2090,6 +2061,7 @@ bool NewSubchannel::RemoveConnectionLocked(
           << "subchannel " << this << " " << key_.ToString()
           << ": removing connection " << connected_subchannel;
       connections_.erase(it);
+      connectivity_state_.SetHasActiveConnections(!connections_.empty());
       return true;
     }
   }
@@ -2103,6 +2075,7 @@ void NewSubchannel::OnRetryTimer() {
 
 void NewSubchannel::OnRetryTimerLocked() {
   retry_timer_handle_.reset();
+  connectivity_state_.SetHasRetryTimer(false);
   if (shutdown_) return;
   GRPC_TRACE_LOG(subchannel, INFO)
       << "subchannel " << this << " " << key_.ToString()
@@ -2117,7 +2090,8 @@ void NewSubchannel::StartConnectingLocked() {
   const Timestamp min_deadline = now + min_connect_timeout_;
   next_attempt_time_ = now + backoff_.NextAttemptDelay();
   // Change connectivity state if needed.
-  connection_attempt_in_flight_ = true;
+  // Change connectivity state if needed.
+  connectivity_state_.SetConnectionAttemptInFlight(true);
   MaybeUpdateConnectivityStateLocked();
   // Start connection attempt.
   SubchannelConnector::Args args;
@@ -2140,7 +2114,7 @@ void NewSubchannel::OnConnectingFinished(void* arg, grpc_error_handle error) {
 }
 
 void NewSubchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
-  connection_attempt_in_flight_ = false;
+  connectivity_state_.SetConnectionAttemptInFlight(false);
   if (shutdown_) {
     connecting_result_.Reset();
     return;
@@ -2156,12 +2130,13 @@ void NewSubchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
     GRPC_TRACE_LOG(subchannel, INFO)
         << "subchannel " << this << " " << key_.ToString()
         << ": connect failed (" << StatusToString(error) << ")"
-        << (created_from_endpoint_
+        << ": connect failed (" << StatusToString(error) << ")"
+        << (connectivity_state_.created_from_endpoint()
                 ? ", no retry will be attempted (created from endpoint); "
                   "remaining in TRANSIENT_FAILURE"
                 : ", backing off for " +
                       std::to_string(time_until_next_attempt.millis()) + " ms");
-    if (!created_from_endpoint_) {
+    if (!connectivity_state_.created_from_endpoint()) {
       retry_timer_handle_ = event_engine_->RunAfter(
           time_until_next_attempt,
           [self = WeakRef(DEBUG_LOCATION, "RetryTimer")
@@ -2178,8 +2153,10 @@ void NewSubchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
               self.reset();
             }
           });
+
+      connectivity_state_.SetHasRetryTimer(true);
     }
-    SetLastFailureLocked(grpc_error_to_absl_status(error));
+    connectivity_state_.SetLastFailureStatus(grpc_error_to_absl_status(error));
     MaybeUpdateConnectivityStateLocked();
   }
 }
@@ -2265,6 +2242,7 @@ bool NewSubchannel::PublishTransportLocked() {
   transport->StartWatch(
       MakeRefCounted<ConnectionStateWatcher>(connected_subchannel->WeakRef()));
   connections_.push_back(std::move(connected_subchannel));
+  connectivity_state_.SetHasActiveConnections(true);
   RetryQueuedRpcsLocked();
   MaybeUpdateConnectivityStateLocked();
   return true;

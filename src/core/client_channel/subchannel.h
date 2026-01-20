@@ -29,6 +29,7 @@
 #include "src/core/call/metadata_batch.h"
 #include "src/core/client_channel/connector.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
+#include "src/core/client_channel/subchannel_connectivity_state.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -584,12 +585,6 @@ class NewSubchannel final : public Subchannel {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   // Updates the subchannel's connectivity state.
-  void SetLastFailureLocked(const absl::Status& status)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  grpc_connectivity_state ComputeConnectivityStateLocked() const
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  absl::Status ConnectivityStatusToReportLocked() const
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   void MaybeUpdateConnectivityStateLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   // Returns true if the connection was removed.
@@ -613,9 +608,7 @@ class NewSubchannel final : public Subchannel {
   RefCountedPtr<SubchannelPoolInterface> subchannel_pool_;
   // Subchannel key that identifies this subchannel in the subchannel pool.
   const SubchannelKey key_;
-  // boolean value that identifies this subchannel is created from event engine
-  // endpoint.
-  const bool created_from_endpoint_;
+
   // Actual address to connect to.  May be different than the address in
   // key_ if overridden by proxy mapper.
   grpc_resolved_address address_for_connect_;
@@ -636,7 +629,7 @@ class NewSubchannel final : public Subchannel {
   // Protects the other members.
   Mutex mu_;
 
-  bool connection_attempt_in_flight_ ABSL_GUARDED_BY(mu_) = false;
+
   bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
 
   // Connectivity state tracking.
@@ -646,8 +639,8 @@ class NewSubchannel final : public Subchannel {
   // - CONNECTING: connection attempt in progress
   // - READY: connection attempt succeeded, connected_subchannel_ created
   // - TRANSIENT_FAILURE: connection attempt failed, retry timer pending
-  grpc_connectivity_state state_ ABSL_GUARDED_BY(mu_) = GRPC_CHANNEL_IDLE;
-  absl::Status last_failure_status_ ABSL_GUARDED_BY(mu_);
+  // Connectivity state.
+  SubchannelConnectivityState connectivity_state_ ABSL_GUARDED_BY(mu_);
   // The list of connectivity state watchers.
   ConnectivityStateWatcherList watcher_list_ ABSL_GUARDED_BY(mu_);
   // Used for sending connectivity state notifications.
@@ -662,6 +655,7 @@ class NewSubchannel final : public Subchannel {
   Timestamp next_attempt_time_ ABSL_GUARDED_BY(mu_);
   std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       retry_timer_handle_ ABSL_GUARDED_BY(mu_);
+  bool connection_attempt_in_flight_ ABSL_GUARDED_BY(mu_) = false;
 
   // Keepalive time period
   Duration keepalive_time_ ABSL_GUARDED_BY(mu_);
