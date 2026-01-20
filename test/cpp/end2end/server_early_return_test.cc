@@ -27,11 +27,13 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <grpcpp/support/channel_arguments.h>
 
 #include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/util/string_ref_helper.h"
 #include "gtest/gtest.h"
 
@@ -121,8 +123,10 @@ class ServerEarlyReturnTest : public ::testing::Test {
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
 
-    channel_ = grpc::CreateChannel(server_address_.str(),
-                                   InsecureChannelCredentials());
+    ChannelArguments args;
+    ApplyCommonChannelArguments(args);
+    channel_ = grpc::CreateCustomChannel(server_address_.str(),
+                                         InsecureChannelCredentials(), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 

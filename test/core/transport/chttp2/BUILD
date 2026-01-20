@@ -1246,6 +1246,7 @@ grpc_fuzz_test(
         "//:config",
         "//:ref_counted_ptr",
         "//src/core:1999",
+        "//src/core:context",
         "//src/core:map",
         "//src/core:notification",
         "//src/core:ping_promise",

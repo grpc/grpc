@@ -387,6 +387,9 @@ class Http2ClientTransport final : public ClientTransport,
   bool test_only_ack_pings_;
   std::optional<PingManager> ping_manager_;
   std::optional<KeepaliveManager> keepalive_manager_;
+  void MaybeSpawnPingTimeout(std::optional<uint64_t> opaque_data);
+  void MaybeSpawnDelayedPing(std::optional<Duration> delayed_ping_wait);
+  void MaybeSpawnKeepaliveLoop();
 
   // Flags
   bool keepalive_permit_without_calls_;

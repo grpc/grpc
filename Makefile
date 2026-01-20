@@ -1817,6 +1817,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/compression.h \
     include/grpc/create_channel_from_endpoint.h \
     include/grpc/credentials.h \
+    include/grpc/credentials_cpp.h \
     include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \
     include/grpc/event_engine/extensible.h \

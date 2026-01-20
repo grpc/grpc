@@ -148,6 +148,7 @@ libs:
   - include/grpc/compression.h
   - include/grpc/create_channel_from_endpoint.h
   - include/grpc/credentials.h
+  - include/grpc/credentials_cpp.h
   - include/grpc/event_engine/endpoint_config.h
   - include/grpc/event_engine/event_engine.h
   - include/grpc/event_engine/extensible.h
@@ -2362,6 +2363,7 @@ libs:
   - include/grpc/compression.h
   - include/grpc/create_channel_from_endpoint.h
   - include/grpc/credentials.h
+  - include/grpc/credentials_cpp.h
   - include/grpc/event_engine/endpoint_config.h
   - include/grpc/event_engine/event_engine.h
   - include/grpc/event_engine/extensible.h
@@ -4561,6 +4563,7 @@ libs:
   - include/grpc/compression.h
   - include/grpc/create_channel_from_endpoint.h
   - include/grpc/credentials.h
+  - include/grpc/credentials_cpp.h
   - include/grpc/event_engine/endpoint_config.h
   - include/grpc/event_engine/event_engine.h
   - include/grpc/event_engine/extensible.h
@@ -8632,6 +8635,7 @@ targets:
   language: c++
   headers:
   - test/core/event_engine/event_engine_test_utils.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/testing/echo.proto
@@ -8821,6 +8825,7 @@ targets:
   language: c++
   headers:
   - test/core/event_engine/event_engine_test_utils.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/testing/echo.proto
@@ -9239,6 +9244,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/interceptors_util.h
   - test/cpp/end2end/test_service_impl.h
   src:
@@ -9266,6 +9272,7 @@ targets:
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_lb_policies.h
   - test/cpp/end2end/connection_attempt_injector.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   - third_party/protoc-gen-validate/validate/validate.h
   src:
@@ -14666,6 +14673,7 @@ targets:
   headers:
   - test/core/test_util/test_call_creds.h
   - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/lb/v1/load_balancer.proto
@@ -19329,6 +19337,7 @@ targets:
   language: c++
   headers:
   - src/cpp/server/orca/orca_service.h
+  - test/cpp/end2end/end2end_test_utils.h
   src:
   - src/proto/grpc/testing/xds/v3/orca_service.proto
   - third_party/googleapis/google/api/annotations.proto
@@ -21389,6 +21398,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/util/proto_reflection_descriptor_database.h
   src:
@@ -22975,7 +22985,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/cpp/end2end/end2end_test_utils.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
@@ -22994,6 +23005,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/interceptors_util.h
   - test/cpp/end2end/test_service_impl.h
   src:
@@ -31960,12 +31972,12 @@ external_proto_libraries:
   - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/6ef568cf4a67362849911d1d2a546fd9f35db2ff.tar.gz
   - https://github.com/envoyproxy/data-plane-api/archive/6ef568cf4a67362849911d1d2a546fd9f35db2ff.tar.gz
 - destination: third_party/googleapis
-  hash: 0513f0f40af63bd05dc789cacc334ab6cec27cc89db596557cb2dfe8919463e4
+  hash: 3de3a199400eea7a766091aeb96c4b84c86266ad1f933f9933bbb7c359e727fe
   proto_prefix: third_party/googleapis/
-  strip_prefix: googleapis-fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0
+  strip_prefix: googleapis-2193a2bfcecb92b92aad7a4d81baa428cafd7dfd
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/googleapis/archive/fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0.tar.gz
-  - https://github.com/googleapis/googleapis/archive/fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0.tar.gz
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/googleapis/archive/2193a2bfcecb92b92aad7a4d81baa428cafd7dfd.tar.gz
+  - https://github.com/googleapis/googleapis/archive/2193a2bfcecb92b92aad7a4d81baa428cafd7dfd.tar.gz
 - destination: third_party/opencensus-proto/src
   hash: b7e13f0b4259e80c3070b583c2f39e53153085a6918718b1c710caf7037572b0
   proto_prefix: third_party/opencensus-proto/src/

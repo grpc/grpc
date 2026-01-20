@@ -26,6 +26,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <grpcpp/support/channel_arguments.h>
 
 #include <cinttypes>
 #include <memory>
@@ -1372,6 +1373,9 @@ TEST_P(AsyncEnd2endTest, ServerCheckDone) {
 
 TEST_P(AsyncEnd2endTest, UnimplementedRpc) {
   ChannelArguments args;
+  if (!(GetParam().inproc)) {
+    ApplyCommonChannelArguments(args);
+  }
   const auto& channel_creds = GetCredentialsProvider()->GetChannelCredentials(
       GetParam().credentials_type, &args);
   std::shared_ptr<Channel> channel =

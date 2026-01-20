@@ -430,18 +430,18 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis AND gRPC_DOWNL
   # Download the archive via HTTP, validate the checksum, and extract to third_party/googleapis.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/googleapis/archive/fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0.tar.gz
-    0513f0f40af63bd05dc789cacc334ab6cec27cc89db596557cb2dfe8919463e4
-    googleapis-fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/googleapis/archive/2193a2bfcecb92b92aad7a4d81baa428cafd7dfd.tar.gz
+    3de3a199400eea7a766091aeb96c4b84c86266ad1f933f9933bbb7c359e727fe
+    googleapis-2193a2bfcecb92b92aad7a4d81baa428cafd7dfd
   )
 endif()
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/googleapis.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis
-    https://github.com/googleapis/googleapis/archive/fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0.tar.gz
-    0513f0f40af63bd05dc789cacc334ab6cec27cc89db596557cb2dfe8919463e4
-    googleapis-fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0
+    https://github.com/googleapis/googleapis/archive/2193a2bfcecb92b92aad7a4d81baa428cafd7dfd.tar.gz
+    3de3a199400eea7a766091aeb96c4b84c86266ad1f933f9933bbb7c359e727fe
+    googleapis-2193a2bfcecb92b92aad7a4d81baa428cafd7dfd
   )
 endif()
 # Setup external proto library at third_party/opencensus-proto/src with 2 download URLs
@@ -3185,6 +3185,7 @@ foreach(_hdr
   include/grpc/compression.h
   include/grpc/create_channel_from_endpoint.h
   include/grpc/credentials.h
+  include/grpc/credentials_cpp.h
   include/grpc/event_engine/endpoint_config.h
   include/grpc/event_engine/event_engine.h
   include/grpc/event_engine/extensible.h
@@ -3919,6 +3920,7 @@ foreach(_hdr
   include/grpc/compression.h
   include/grpc/create_channel_from_endpoint.h
   include/grpc/credentials.h
+  include/grpc/credentials_cpp.h
   include/grpc/event_engine/endpoint_config.h
   include/grpc/event_engine/event_engine.h
   include/grpc/event_engine/extensible.h
@@ -6254,6 +6256,7 @@ foreach(_hdr
   include/grpc/compression.h
   include/grpc/create_channel_from_endpoint.h
   include/grpc/credentials.h
+  include/grpc/credentials_cpp.h
   include/grpc/event_engine/endpoint_config.h
   include/grpc/event_engine/event_engine.h
   include/grpc/event_engine/extensible.h
