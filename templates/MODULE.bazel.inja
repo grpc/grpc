@@ -39,7 +39,7 @@ bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opente
 bazel_dep(name = "platforms", version = "0.0.11")
 bazel_dep(name = "protobuf", version = "31.1", repo_name = "com_google_protobuf")
 bazel_dep(name = "protoc-gen-validate", version = "1.2.1.bcr.1", repo_name = "com_envoyproxy_protoc_gen_validate")  # Not needed directly
-bazel_dep(name = "re2", version = "2024-07-02.bcr.1", repo_name = "com_googlesource_code_re2")  # mistmached 2022-04-01
+bazel_dep(name = "re2", version = "2024-07-02.bcr.1", repo_name = "com_googlesource_code_re2")  # mismached 2022-04-01
 bazel_dep(name = "rules_apple", version = "3.16.0", repo_name = "build_bazel_rules_apple")
 bazel_dep(name = "rules_cc", version = "0.1.1")
 bazel_dep(name = "rules_proto", version = "7.0.2")
@@ -101,7 +101,7 @@ http_archive(
 )
 
 # --- Provide repo @com_google_fuzztest.
-bazel_dep(name = "fuzztest", version = "20250805.0", dev_dependency = True, repo_name = "com_google_fuzztest")  # mistmached 2023-05-16
+bazel_dep(name = "fuzztest", version = "20250805.0", dev_dependency = True, repo_name = "com_google_fuzztest")  # mismached 2023-05-16
 
 # This package is not directly used by grpc, but requested by fuzztest.
 #
@@ -133,3 +133,9 @@ exec_properties.custom_exec_properties(
 )
 use_repo(exec_properties, "grpc_custom_exec_properties")
 
+# --- Python headers
+# TODO(weizheyuan): Maybe replace this with python header exposed by rules_python.
+# See also https://github.com/grpc/grpc/issues/24665
+python_configure = use_repo_rule("//third_party/py:python_configure.bzl", "python_configure")
+
+python_configure(name = "local_config_python")
