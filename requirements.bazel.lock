@@ -121,3 +121,5 @@ setuptools==77.0.1
     #   incremental
     #   zope-event
     #   zope-interface
+
+cryptography

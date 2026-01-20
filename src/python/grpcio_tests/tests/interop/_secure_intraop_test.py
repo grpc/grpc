@@ -65,7 +65,38 @@ class SecureIntraopTest(_intraop_test_case.IntraopTestCase, unittest.TestCase):
 class SecureInteropWithPrivateKeyOffloadingTest(
     _intraop_test_case.IntraopTestCase, unittest.TestCase
 ):
-    pass
+
+    def setUp(self):
+        self.server = test_common.test_server()
+        test_pb2_grpc.add_TestServiceServicer_to_server(
+            service.TestService(), self.server
+        )
+        port = self.server.add_secure_port(
+            "[::]:0",
+            grpc.ssl_server_credentials(
+                [(resources.private_key(), resources.certificate_chain())]
+            ),
+        )
+        self.server.start()
+        self.stub = test_pb2_grpc.TestServiceStub(
+            grpc.secure_channel(
+                "localhost:{}".format(port),
+                grpc.ssl_channel_credentials_with_custom_signer(
+                    private_key_sign_fn=resources.client_private_key_signer,
+                    root_certificates=resources.test_root_certificates(),
+                    certificate_chain=resources.client_certificate_chain(),
+                ),
+                (
+                    (
+                        "grpc.ssl_target_name_override",
+                        _SERVER_HOST_OVERRIDE,
+                    ),
+                ),
+            )
+        )
+
+    def tearDown(self):
+        self.server.stop(None)
 
 
 if __name__ == "__main__":

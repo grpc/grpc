@@ -2335,6 +2335,7 @@ __all__ = (
     "server",
     "services",
     "ssl_channel_credentials",
+    "ssl_channel_credentials_with_custom_signer",
     "ssl_server_certificate_configuration",
     "ssl_server_credentials",
     "stream_stream_rpc_method_handler",
