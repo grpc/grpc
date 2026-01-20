@@ -16,7 +16,7 @@
 
 #include "src/core/client_channel/subchannel_stream_limiter.h"
 
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace {
