@@ -81,8 +81,9 @@ class InvalidMetadataTest(unittest.TestCase):
         with self.assertRaises(grpc.RpcError) as exception_context:
             self._unary_unary(request, metadata=metadata)
 
-        self.assertEqual(grpc.StatusCode.INTERNAL,
-                         exception_context.exception.code())
+        self.assertEqual(
+            grpc.StatusCode.INTERNAL, exception_context.exception.code()
+        )
 
     def testUnaryRequestBlockingUnaryResponseWithCall(self):
         request = b"\x07\x08"
@@ -90,8 +91,9 @@ class InvalidMetadataTest(unittest.TestCase):
         with self.assertRaises(grpc.RpcError) as exception_context:
             self._unary_unary.with_call(request, metadata=metadata)
 
-        self.assertEqual(grpc.StatusCode.INTERNAL,
-                         exception_context.exception.code())
+        self.assertEqual(
+            grpc.StatusCode.INTERNAL, exception_context.exception.code()
+        )
 
     def testUnaryRequestFutureUnaryResponse(self):
         request = b"\x07\x08"
@@ -100,8 +102,9 @@ class InvalidMetadataTest(unittest.TestCase):
 
         with self.assertRaises(grpc.RpcError) as exception_context:
             response_future.result()
-        self.assertEqual(grpc.StatusCode.INTERNAL,
-                         exception_context.exception.code())
+        self.assertEqual(
+            grpc.StatusCode.INTERNAL, exception_context.exception.code()
+        )
 
     def testUnaryRequestStreamResponse(self):
         request = b"\x37\x58"
@@ -110,8 +113,9 @@ class InvalidMetadataTest(unittest.TestCase):
 
         with self.assertRaises(grpc.RpcError) as exception_context:
             list(response_iterator)
-        self.assertEqual(grpc.StatusCode.INTERNAL,
-                         exception_context.exception.code())
+        self.assertEqual(
+            grpc.StatusCode.INTERNAL, exception_context.exception.code()
+        )
 
     def testStreamRequestBlockingUnaryResponse(self):
         request_iterator = (
@@ -121,8 +125,9 @@ class InvalidMetadataTest(unittest.TestCase):
         with self.assertRaises(grpc.RpcError) as exception_context:
             self._stream_unary(request_iterator, metadata=metadata)
 
-        self.assertEqual(grpc.StatusCode.INTERNAL,
-                         exception_context.exception.code())
+        self.assertEqual(
+            grpc.StatusCode.INTERNAL, exception_context.exception.code()
+        )
 
     def testStreamRequestBlockingUnaryResponseWithCall(self):
         request_iterator = (
@@ -133,34 +138,39 @@ class InvalidMetadataTest(unittest.TestCase):
         with self.assertRaises(grpc.RpcError) as exception_context:
             multi_callable.with_call(request_iterator, metadata=metadata)
 
-        self.assertEqual(grpc.StatusCode.INTERNAL,
-                         exception_context.exception.code())
+        self.assertEqual(
+            grpc.StatusCode.INTERNAL, exception_context.exception.code()
+        )
 
     def testStreamRequestFutureUnaryResponse(self):
         request_iterator = (
             b"\x07\x08" for _ in range(test_constants.STREAM_LENGTH)
         )
         metadata = (("InVaLiD", "StreamRequestFutureUnaryResponse"),)
-        response_future = self._stream_unary.future(request_iterator,
-                                                    metadata=metadata)
+        response_future = self._stream_unary.future(
+            request_iterator, metadata=metadata
+        )
 
         with self.assertRaises(grpc.RpcError) as exception_context:
             response_future.result()
-        self.assertEqual(grpc.StatusCode.INTERNAL,
-                         exception_context.exception.code())
+        self.assertEqual(
+            grpc.StatusCode.INTERNAL, exception_context.exception.code()
+        )
 
     def testStreamRequestStreamResponse(self):
         request_iterator = (
             b"\x07\x08" for _ in range(test_constants.STREAM_LENGTH)
         )
         metadata = (("InVaLiD", "StreamRequestStreamResponse"),)
-        response_iterator = self._stream_stream(request_iterator,
-                                                metadata=metadata)
+        response_iterator = self._stream_stream(
+            request_iterator, metadata=metadata
+        )
 
         with self.assertRaises(grpc.RpcError) as exception_context:
             list(response_iterator)
-        self.assertEqual(grpc.StatusCode.INTERNAL,
-                         exception_context.exception.code())
+        self.assertEqual(
+            grpc.StatusCode.INTERNAL, exception_context.exception.code()
+        )
 
     def testInvalidMetadata(self):
         self.assertRaises(TypeError, self._unary_unary, b"", metadata=42)
