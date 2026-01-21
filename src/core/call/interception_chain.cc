@@ -40,14 +40,15 @@ CallInitiator HijackedCall::MakeCall() {
 
 CallInitiator HijackedCall::MakeCallWithMetadata(
     ClientMetadataHandle metadata) {
-  auto call = MakeCallPair(std::move(metadata), call_handler_.arena()->Ref());
+  auto call =
+      call_handler_.MakeChildCall(std::move(metadata), arena_allocator_);
   destination_->StartCall(std::move(call.handler));
   return std::move(call.initiator);
 }
 
 CallInitiator Interceptor::MakeChildCall(ClientMetadataHandle metadata,
-                                         RefCountedPtr<Arena> arena) {
-  auto call = MakeCallPair(std::move(metadata), arena);
+                                         CallHandler& parent_call) {
+  auto call = parent_call.MakeChildCall(std::move(metadata), arena_allocator_);
   wrapped_destination_->StartCall(std::move(call.handler));
   return std::move(call.initiator);
 }
@@ -108,6 +109,8 @@ void InterceptionChainBuilder::AddInterceptor(
     return;
   }
   (*interceptor)->filter_stack_ = MakeFilterStack();
+  (*interceptor)->arena_allocator_ = MakeRefCounted<CallArenaAllocator>(
+      memory_quota_->CreateMemoryAllocator("interceptor"), 256);
   if (top_interceptor_ == nullptr) {
     top_interceptor_ = std::move(*interceptor);
   } else {

@@ -39,7 +39,7 @@ absl::StatusOr<RefCountedPtr<DirectChannel>> DirectChannel::Create(
   if (event_engine == nullptr) {
     return absl::InvalidArgumentError("EventEngine not set in ChannelArgs");
   }
-  InterceptionChainBuilder builder(args);
+  InterceptionChainBuilder builder(args, nullptr);
   CoreConfiguration::Get().channel_init().AddToInterceptionChainBuilder(
       GRPC_CLIENT_DIRECT_CHANNEL, builder);
   auto interception_chain = builder.Build(transport_call_destination);

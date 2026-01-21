@@ -27,6 +27,35 @@
 #include "absl/log/log.h"
 
 namespace grpc_core {
+
+struct InterceptorTestForwardContext {
+  explicit InterceptorTestForwardContext(int x) : p(std::make_unique<int>(x)) {}
+  std::unique_ptr<int> p;
+};
+
+template <>
+struct ArenaContextType<InterceptorTestForwardContext> {
+  static constexpr ArenaContextPropagation kPropagation =
+      ArenaContextPropagation::kForward;
+  static void Destroy(InterceptorTestForwardContext* p) {
+    p->~InterceptorTestForwardContext();
+  }
+};
+
+struct InterceptorTestReverseContext {
+  explicit InterceptorTestReverseContext(int x) : p(std::make_unique<int>(x)) {}
+  std::unique_ptr<int> p;
+};
+
+template <>
+struct ArenaContextType<InterceptorTestReverseContext> {
+  static constexpr ArenaContextPropagation kPropagation =
+      ArenaContextPropagation::kForwardAndReverse;
+  static void Destroy(InterceptorTestReverseContext* p) {
+    p->~InterceptorTestReverseContext();
+  }
+};
+
 namespace {
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -193,8 +222,7 @@ class TestHijackingInterceptor final : public Interceptor {
         "hijack", [this, unstarted_call_handler]() mutable {
           return Map(Hijack(std::move(unstarted_call_handler)),
                      [](ValueOrFailure<HijackedCall> hijacked_call) {
-                       ForwardCall(
-                           hijacked_call.value().original_call_handler(),
+                       hijacked_call.value().original_call_handler().ForwardTo(
                            hijacked_call.value().MakeCall());
                      });
         });
@@ -268,6 +296,8 @@ class InterceptionChainTest : public ::testing::Test {
    private:
     ClientMetadataHandle metadata_;
   };
+
+ protected:
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
       grpc_event_engine::experimental::GetDefaultEventEngine();
   RefCountedPtr<Destination> destination_ = MakeRefCounted<Destination>();
@@ -278,11 +308,18 @@ class InterceptionChainTest : public ::testing::Test {
           1024);
 };
 
+ChannelArgs DefaultChannelArgs() {
+  return CoreConfiguration::Get()
+      .channel_args_preconditioning()
+      .PreconditionChannelArgs(nullptr);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Tests begin
 
 TEST_F(InterceptionChainTest, Empty) {
-  auto r = InterceptionChainBuilder(ChannelArgs()).Build(destination());
+  auto r = InterceptionChainBuilder(DefaultChannelArgs(), nullptr)
+               .Build(destination());
   ASSERT_TRUE(r.ok()) << r.status();
   auto finished_call = RunCall(r.value().get());
   EXPECT_EQ(finished_call.server_metadata->get(GrpcStatusMetadata()),
@@ -294,7 +331,7 @@ TEST_F(InterceptionChainTest, Empty) {
 }
 
 TEST_F(InterceptionChainTest, PassThrough) {
-  auto r = InterceptionChainBuilder(ChannelArgs())
+  auto r = InterceptionChainBuilder(ChannelArgs(), nullptr)
                .Add<TestPassThroughInterceptor<1>>(nullptr)
                .Build(destination());
   ASSERT_TRUE(r.ok()) << r.status();
@@ -308,7 +345,7 @@ TEST_F(InterceptionChainTest, PassThrough) {
 }
 
 TEST_F(InterceptionChainTest, Consumed) {
-  auto r = InterceptionChainBuilder(ChannelArgs())
+  auto r = InterceptionChainBuilder(ChannelArgs(), nullptr)
                .Add<TestConsumingInterceptor<1>>(nullptr)
                .Build(destination());
   ASSERT_TRUE(r.ok()) << r.status();
@@ -322,7 +359,7 @@ TEST_F(InterceptionChainTest, Consumed) {
 }
 
 TEST_F(InterceptionChainTest, Hijacked) {
-  auto r = InterceptionChainBuilder(ChannelArgs())
+  auto r = InterceptionChainBuilder(ChannelArgs(), nullptr)
                .Add<TestHijackingInterceptor<1>>(nullptr)
                .Build(destination());
   ASSERT_TRUE(r.ok()) << r.status();
@@ -336,7 +373,7 @@ TEST_F(InterceptionChainTest, Hijacked) {
 }
 
 TEST_F(InterceptionChainTest, FiltersThenHijacked) {
-  auto r = InterceptionChainBuilder(ChannelArgs())
+  auto r = InterceptionChainBuilder(ChannelArgs(), nullptr)
                .Add<TestFilter<1>>(nullptr)
                .Add<TestHijackingInterceptor<2>>(nullptr)
                .Build(destination());
@@ -355,7 +392,7 @@ TEST_F(InterceptionChainTest, FiltersThenHijacked) {
 }
 
 TEST_F(InterceptionChainTest, FailsToInstantiateInterceptor) {
-  auto r = InterceptionChainBuilder(ChannelArgs())
+  auto r = InterceptionChainBuilder(ChannelArgs(), nullptr)
                .Add<TestFailingInterceptor<1>>(nullptr)
                .Build(destination());
   EXPECT_FALSE(r.ok());
@@ -364,7 +401,7 @@ TEST_F(InterceptionChainTest, FailsToInstantiateInterceptor) {
 }
 
 TEST_F(InterceptionChainTest, FailsToInstantiateInterceptor2) {
-  auto r = InterceptionChainBuilder(ChannelArgs())
+  auto r = InterceptionChainBuilder(ChannelArgs(), nullptr)
                .Add<TestFilter<1>>(nullptr)
                .Add<TestFailingInterceptor<2>>(nullptr)
                .Build(destination());
@@ -374,7 +411,7 @@ TEST_F(InterceptionChainTest, FailsToInstantiateInterceptor2) {
 }
 
 TEST_F(InterceptionChainTest, FailsToInstantiateFilter) {
-  auto r = InterceptionChainBuilder(ChannelArgs())
+  auto r = InterceptionChainBuilder(ChannelArgs(), nullptr)
                .Add<FailsToInstantiateFilter<1>>(nullptr)
                .Build(destination());
   EXPECT_FALSE(r.ok());
@@ -383,7 +420,7 @@ TEST_F(InterceptionChainTest, FailsToInstantiateFilter) {
 }
 
 TEST_F(InterceptionChainTest, FailsToInstantiateFilter2) {
-  auto r = InterceptionChainBuilder(ChannelArgs())
+  auto r = InterceptionChainBuilder(ChannelArgs(), nullptr)
                .Add<TestFilter<1>>(nullptr)
                .Add<FailsToInstantiateFilter<2>>(nullptr)
                .Build(destination());
@@ -394,7 +431,7 @@ TEST_F(InterceptionChainTest, FailsToInstantiateFilter2) {
 
 TEST_F(InterceptionChainTest, CreationOrderCorrect) {
   CreationLog log;
-  auto r = InterceptionChainBuilder(ChannelArgs().SetObject(&log))
+  auto r = InterceptionChainBuilder(ChannelArgs().SetObject(&log), nullptr)
                .Add<TestFilter<1>>(nullptr)
                .Add<TestFilter<2>>(nullptr)
                .Add<TestFilter<3>>(nullptr)
@@ -416,7 +453,7 @@ TEST_F(InterceptionChainTest, CreationOrderCorrect) {
 TEST_F(InterceptionChainTest, AddOnServerTrailingMetadataForEachInterceptor) {
   CreationLog log;
   auto r =
-      InterceptionChainBuilder(ChannelArgs())
+      InterceptionChainBuilder(DefaultChannelArgs(), nullptr)
           .AddOnServerTrailingMetadata([](ServerMetadata& md) {
             md.Set(
                 GrpcMessageMetadata(),
@@ -445,13 +482,85 @@ TEST_F(InterceptionChainTest, AddOnServerTrailingMetadataForEachInterceptor) {
   EXPECT_NE(finished_call.client_metadata, nullptr);
 }
 
+class TestContextPropagationInterceptor final : public Interceptor {
+ public:
+  void InterceptCall(UnstartedCallHandler unstarted_call_handler) override {
+    unstarted_call_handler.SpawnInfallible(
+        "hijack", [this, unstarted_call_handler]() mutable {
+          return Map(
+              Hijack(std::move(unstarted_call_handler)),
+              [](ValueOrFailure<HijackedCall> hijacked_call) {
+                auto& call = hijacked_call.value();
+                // Verify forward propagation
+                EXPECT_EQ(*call.original_call_handler()
+                               .arena()
+                               ->GetContext<InterceptorTestForwardContext>()
+                               ->p,
+                          42);
+                EXPECT_EQ(*call.original_call_handler()
+                               .arena()
+                               ->GetContext<InterceptorTestReverseContext>()
+                               ->p,
+                          100);
+
+                // Modify reverse context
+                call.original_call_handler()
+                    .arena()
+                    ->GetContext<InterceptorTestReverseContext>()
+                    ->p = std::make_unique<int>(200);
+
+                call.original_call_handler().ForwardTo(call.MakeCall());
+              });
+        });
+  }
+  void Orphaned() override {}
+  static absl::StatusOr<RefCountedPtr<TestContextPropagationInterceptor>>
+  Create(const ChannelArgs& channel_args, ChannelFilter::Args filter_args) {
+    return MakeRefCounted<TestContextPropagationInterceptor>();
+  }
+};
+
+TEST_F(InterceptionChainTest, ContextPropagation) {
+  auto r = InterceptionChainBuilder(ChannelArgs(), nullptr)
+               .Add<TestContextPropagationInterceptor>(nullptr)
+               .Build(destination());
+  ASSERT_TRUE(r.ok()) << r.status();
+
+  // Custom RunCall to set up context
+  auto arena = call_arena_allocator_->MakeArena();
+  arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+      event_engine_.get());
+  arena->SetContext(arena->New<InterceptorTestForwardContext>(42));
+  arena->SetContext(arena->New<InterceptorTestReverseContext>(100));
+
+  auto call = MakeCallPair(Arena::MakePooledForOverwrite<ClientMetadata>(),
+                           std::move(arena));
+  Poll<ServerMetadataHandle> trailing_md;
+  auto destination = r.value();
+  call.initiator.SpawnInfallible(
+      "run_call", [destination, &call, &trailing_md]() mutable {
+        destination->StartCall(std::move(call.handler));
+        return Map(call.initiator.PullServerTrailingMetadata(),
+                   [&trailing_md](ServerMetadataHandle md) {
+                     trailing_md = std::move(md);
+                   });
+      });
+  EXPECT_THAT(trailing_md, IsReady());
+
+  // Verify reverse propagation
+  EXPECT_EQ(
+      *call.initiator.arena()->GetContext<InterceptorTestReverseContext>()->p,
+      200);
+  EXPECT_EQ(
+      *call.initiator.arena()->GetContext<InterceptorTestForwardContext>()->p,
+      42);
+}
+
 }  // namespace
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_tracer_init();
-  gpr_log_verbosity_init();
   grpc_init();
   auto r = RUN_ALL_TESTS();
   grpc_shutdown();
