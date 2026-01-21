@@ -784,6 +784,8 @@ _LANGUAGES_WITH_HTTP2_CLIENTS_FOR_HTTP2_SERVER_TEST_CASES = [
 
 _LANGUAGES_FOR_ALTS_TEST_CASES = ["java", "go", "c++", "python"]
 
+_LANGUAGES_FOR_MCS_TEST_CASE = ["java", "go", "c++", "python"]
+
 _SERVERS_FOR_ALTS_TEST_CASES = ["java", "go", "c++", "python"]
 
 _TRANSPORT_SECURITY_OPTIONS = ["tls", "alts", "insecure"]
@@ -1072,6 +1074,10 @@ def cloud_to_cloud_jobspec(
         interop_only_options += [
             '--service_config_json=\'{"loadBalancingConfig":[{"test_backend_metrics_load_balancer":{}}]}\''
         ]
+    else if test_case == 'mcs':
+        interop_only_options += [
+            '--service_config_json=\'{"loadBalancingConfig:[{"connection_scaling":{"max_connections_per_subchannel": 2}}]"}\''
+        ]
 
     common_options = [
         "--test_case=%s" % client_test_case,
@@ -1133,7 +1139,7 @@ def cloud_to_cloud_jobspec(
 
 
 def server_jobspec(
-    language, docker_image, transport_security="tls", manual_cmd_log=None
+    language, docker_image, transport_security="tls", manual_cmd_log=None, use_mcs=False
 ):
     """Create jobspec for running a server"""
     container_name = dockerjob.random_name(
@@ -1145,13 +1151,15 @@ def server_jobspec(
     elif transport_security == "alts":
         server_cmd += ["--use_tls=false", "--use_alts=true"]
     elif transport_security == "insecure":
-        server_cmd += ["--use_tls=false"]
+        server_cmd += ["--use_tls=false"]        
     else:
         print(
             "Invalid transport security option %s in server_jobspec."
             % transport_security
         )
         sys.exit(1)
+    if use_mcs:
+        server_cmd += ["--use_mcs=true"]
     cmdline = bash_cmdline(language.server_cmd(server_cmd))
     environ = language.global_env()
     docker_args = ["--name=%s" % container_name]
@@ -1431,6 +1439,14 @@ argp.add_argument(
     nargs="?",
     help="Upload test results to a specified BQ table.",
 )
+argp.add_argument(
+    "--mcs",
+    default=False,
+    action="store_const",
+    const=True,
+    help="Enable MCS testing",
+)
+
 args = argp.parse_args()
 
 servers = set(
@@ -1799,6 +1815,38 @@ try:
                     )
                     jobs.append(test_job)
 
+    if args.mcs:
+        languages_for_mcs = set(
+            _LANGUAGES[l]
+            for l in _LANGUAGES_WITH_HTTP2_CLIENTS_FOR_HTTP2_SERVER_TEST_CASES
+            if "all" in args.language or l in args.language
+        )
+        if len(languages_for_mcs) > 0:          
+            mcs_server_jobspec = server_jobspec(
+                'java',
+                docker_images.get('java'),
+                args.transport_security,
+                manual_cmd_log=server_manual_cmd_log,
+                use_mcs=True,
+            )
+            mcs_server_job = dockerjob.DockerJob(mcs_server_jobspec)
+            jobs.append(mcs_server_job)
+        
+            for language in languages_for_mcs:
+                test_job = cloud_to_cloud_jobspec(
+                    language,
+                    'mcs',
+                    'java',
+                    'localhost',
+                    mcs_server_job.mapped_port(_DEFAULT_SERVER_PORT),
+                    docker_image=docker_images.get(str(language)),
+                    transport_security=args.transport_security,
+                    manual_cmd_log=client_manual_cmd_log,
+                )
+                jobs.append(test_job)
+        else:
+            print('MCS tests will be skipped since noen of the supported client languages for MCS testcases was specified')
+        
     if not jobs:
         print("No jobs to run.")
         for image in six.itervalues(docker_images):
