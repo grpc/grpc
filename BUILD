@@ -5106,6 +5106,7 @@ grpc_cc_library(
         "//src/core:json",
         "//src/core:match",
         "//src/core:memory_quota",
+        "//src/core:metadata",
         "//src/core:metadata_batch",
         "//src/core:metadata_info",
         "//src/core:notification",

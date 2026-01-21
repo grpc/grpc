@@ -44,6 +44,7 @@
 #include <variant>
 #include <vector>
 
+#include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/call/metadata_info.h"
 #include "src/core/channelz/property_list.h"
@@ -169,8 +170,9 @@ static void read_action_locked(grpc_core::RefCountedPtr<grpc_chttp2_transport>,
 static void continue_read_action_locked(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t);
 
-static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
-                           grpc_error_handle error, bool tarpit);
+static void close_from_api(
+    grpc_chttp2_transport* t, grpc_chttp2_stream* s, grpc_error_handle error,
+    bool tarpit, grpc_core::ServerMetadataHandle send_trailing_metadata);
 
 // Start new streams that have been created if we can
 static void maybe_start_some_streams(grpc_chttp2_transport* t);
@@ -1842,8 +1844,10 @@ static void perform_stream_op_locked(void* stream_op,
   }
 
   if (op->cancel_stream) {
-    grpc_chttp2_cancel_stream(t, s, op_payload->cancel_stream.cancel_error,
-                              op_payload->cancel_stream.tarpit);
+    grpc_chttp2_cancel_stream(
+        t, s, op_payload->cancel_stream.cancel_error,
+        op_payload->cancel_stream.tarpit,
+        std::move(op_payload->cancel_stream.send_trailing_metadata));
   }
 
   if (op->send_initial_metadata) {
@@ -2456,12 +2460,15 @@ void MaybeTarpit(grpc_chttp2_transport* t, bool tarpit, F fn) {
 }  // namespace
 }  // namespace grpc_core
 
-void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
-                               grpc_error_handle due_to_error, bool tarpit) {
+void grpc_chttp2_cancel_stream(
+    grpc_chttp2_transport* t, grpc_chttp2_stream* s,
+    grpc_error_handle due_to_error, bool tarpit,
+    grpc_core::ServerMetadataHandle send_trailing_metadata) {
   if (!t->is_client && !s->sent_trailing_metadata &&
       grpc_error_has_clear_grpc_status(due_to_error) &&
       !(s->read_closed && s->write_closed)) {
-    close_from_api(t, s, due_to_error, tarpit);
+    close_from_api(t, s, due_to_error, tarpit,
+                   std::move(send_trailing_metadata));
     return;
   }
 
@@ -2650,8 +2657,10 @@ grpc_chttp2_transport::RemovedStreamHandle grpc_chttp2_mark_stream_closed(
   return rsh;
 }
 
-static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
-                           grpc_error_handle error, bool tarpit) {
+static void close_from_api(
+    grpc_chttp2_transport* t, grpc_chttp2_stream* s, grpc_error_handle error,
+    bool tarpit,
+    GRPC_UNUSED grpc_core::ServerMetadataHandle send_trailing_metadata) {
   grpc_status_code grpc_status;
   std::string message;
   grpc_error_get_status(error, s->deadline, &grpc_status, &message, nullptr,
