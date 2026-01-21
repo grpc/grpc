@@ -23,6 +23,7 @@ from tests.interop import _intraop_test_case
 from tests.interop import resources
 from tests.interop import service
 from tests.unit import test_common
+from absl import logging
 
 _SERVER_HOST_OVERRIDE = "foo.test.google.fr"
 
@@ -67,6 +68,7 @@ class SecureInteropWithPrivateKeyOffloadingTest(
 ):
 
     def setUp(self):
+        print("GREG: setUp", flush=True)
         self.server = test_common.test_server()
         test_pb2_grpc.add_TestServiceServicer_to_server(
             service.TestService(), self.server

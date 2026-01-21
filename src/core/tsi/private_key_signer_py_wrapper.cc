@@ -42,21 +42,29 @@ PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
   // auto* context = new CompletionContext{
   //     .on_complete = std::move(on_sign_complete),
   // };
+  LOG(WARNING) << "GREG: Sign\n";
   auto event_engine = grpc_event_engine::experimental::GetDefaultEventEngine();
   event_engine->Run([self = shared_from_this(),
                      data_to_sign = std::string(data_to_sign),
                      signature_algorithm,
                      on_complete = std::move(on_sign_complete)]() mutable {
-    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                 gpr_time_from_millis(3000, GPR_TIMESPAN)));
+    // gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+    //                              gpr_time_from_millis(3000, GPR_TIMESPAN)));
     // Make sure it's safe to call into Python
     // PyGILState_STATE gstate;
     // gstate = PyGILState_Ensure();
     // Make the call into cython that will call the python callable
+    LOG(WARNING) << "GREG: Making call into cython from C++\n";
+    LOG(WARNING) << absl::StrFormat("GREG: sign_py_wrapper_ is nullptr: %v",
+                                    self->sign_py_wrapper_ == nullptr);
+    LOG(WARNING) << absl::StrFormat("GREG: sign_user_data_ is nullptr: %v",
+                                    self->sign_user_data_ == nullptr);
+    // auto temp = self->sign_py_wrapper_("abc", signature_algorithm, nullptr);
     auto signed_data = self->sign_py_wrapper_(data_to_sign, signature_algorithm,
                                               self->sign_user_data_);
     // We're done needing Python
     // PyGILState_Release(gstate);
+    LOG(WARNING) << "GREG: Calling on_complete\n";
     on_complete(signed_data);
   });
   // Some more involved handle with event engine?
@@ -70,6 +78,7 @@ void PrivateKeySignerPyWrapper::Cancel(
 
 std::shared_ptr<PrivateKeySigner> BuildPrivateKeySigner(
     SignWrapperForPy sign_py_wrapper, void* user_data) {
+  LOG(WARNING) << "GREG: BuildPrivateKeySigner\n";
   return std::make_shared<PrivateKeySignerPyWrapper>(sign_py_wrapper,
                                                      user_data);
 }
