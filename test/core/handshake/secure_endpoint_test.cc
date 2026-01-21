@@ -310,10 +310,8 @@ static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
 
 TEST(SecureEndpointTest, MainTest) {
 #ifndef GPR_WINDOWS
-  if (grpc_core::IsEventEngineSecureEndpointEnabled()) {
-    GTEST_SKIP() << "Skipping test on non-Windows platforms for "
-                    "EventEngineSecureEndpoint";
-  }
+  GTEST_SKIP() << "Skipping test on non-Windows platforms for "
+                  "EventEngineSecureEndpoint";
 #endif
   grpc_closure destroyed;
   grpc_init();
