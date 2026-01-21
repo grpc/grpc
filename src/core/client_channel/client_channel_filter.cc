@@ -300,7 +300,7 @@ class DynamicTerminationFilter::CallData final {
                       const grpc_call_final_info* /*final_info*/,
                       grpc_closure* then_schedule_closure) {
     auto* calld = static_cast<CallData*>(elem->call_data);
-    RefCountedPtr<SubchannelCall> subchannel_call;
+    RefCountedPtr<Subchannel::Call> subchannel_call;
     if (GPR_LIKELY(calld->lb_call_ != nullptr)) {
       subchannel_call = calld->lb_call_->subchannel_call();
     }
@@ -411,15 +411,19 @@ class ClientChannelFilter::SubchannelWrapper final
     : public SubchannelInterface {
  public:
   SubchannelWrapper(ClientChannelFilter* chand,
-                    RefCountedPtr<Subchannel> subchannel)
+                    RefCountedPtr<Subchannel> subchannel,
+                    uint32_t max_connections_per_subchannel)
       : SubchannelInterface(GRPC_TRACE_FLAG_ENABLED(client_channel)
                                 ? "SubchannelWrapper"
                                 : nullptr),
         chand_(chand),
-        subchannel_(std::move(subchannel)) {
+        subchannel_(std::move(subchannel)),
+        max_connections_per_subchannel_(max_connections_per_subchannel) {
     GRPC_TRACE_LOG(client_channel, INFO)
         << "chand=" << chand << ": creating subchannel wrapper " << this
-        << " for subchannel " << subchannel_.get();
+        << " for subchannel " << subchannel_.get()
+        << ", max_connections_per_subchannel="
+        << max_connections_per_subchannel;
     GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "SubchannelWrapper");
 #ifndef NDEBUG
     GRPC_DCHECK(chand_->work_serializer_->RunningInWorkSerializer());
@@ -500,8 +504,13 @@ class ClientChannelFilter::SubchannelWrapper final
     watcher_map_.erase(it);
   }
 
-  RefCountedPtr<ConnectedSubchannel> connected_subchannel() const {
-    return subchannel_->connected_subchannel();
+  absl::Status Ping(grpc_closure* on_initiate, grpc_closure* on_ack) {
+    return subchannel_->Ping(on_initiate, on_ack);
+  }
+
+  RefCountedPtr<Subchannel::Call> CreateCall(Subchannel::CreateCallArgs args,
+                                             grpc_error_handle* error) {
+    return subchannel_->CreateCall(args, error);
   }
 
   void RequestConnection() override { subchannel_->RequestConnection(); }
@@ -563,6 +572,23 @@ class ClientChannelFilter::SubchannelWrapper final
           });
     }
 
+    void OnKeepaliveUpdate(Duration new_keepalive_time) override {
+      GRPC_TRACE_LOG(client_channel, INFO)
+          << "chand=" << parent_->chand_
+          << ": keepalive update for subchannel wrapper " << parent_.get()
+          << "hopping into work_serializer";
+      auto self = RefAsSubclass<WatcherWrapper>();
+      parent_->chand_->work_serializer_->Run(
+          [self, new_keepalive_time]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+              *self->parent_->chand_->work_serializer_) {
+            self->ApplyKeepaliveThrottlingInWorkSerializer(new_keepalive_time);
+          });
+    }
+
+    uint32_t max_connections_per_subchannel() const override {
+      return parent_->max_connections_per_subchannel_;
+    }
+
     grpc_pollset_set* interested_parties() override {
       return watcher_->interested_parties();
     }
@@ -578,28 +604,33 @@ class ClientChannelFilter::SubchannelWrapper final
           << parent_.get() << " subchannel " << parent_->subchannel_.get()
           << " watcher=" << watcher_.get()
           << " state=" << ConnectivityStateName(state) << " status=" << status;
-      auto keepalive_throttling = status.GetPayload(kKeepaliveThrottlingKey);
-      if (keepalive_throttling.has_value()) {
-        int new_keepalive_time = -1;
-        if (absl::SimpleAtoi(std::string(keepalive_throttling.value()),
-                             &new_keepalive_time)) {
-          if (new_keepalive_time > parent_->chand_->keepalive_time_) {
-            parent_->chand_->keepalive_time_ = new_keepalive_time;
-            GRPC_TRACE_LOG(client_channel, INFO)
-                << "chand=" << parent_->chand_
-                << ": throttling keepalive time to "
-                << parent_->chand_->keepalive_time_;
-            // Propagate the new keepalive time to all subchannels. This is so
-            // that new transports created by any subchannel (and not just the
-            // subchannel that received the GOAWAY), use the new keepalive time.
-            for (auto& [subchannel, _] : parent_->chand_->subchannel_map_) {
-              subchannel->ThrottleKeepaliveTime(new_keepalive_time);
+      if (!IsSubchannelConnectionScalingEnabled()) {
+        auto keepalive_throttling = status.GetPayload(kKeepaliveThrottlingKey);
+        if (keepalive_throttling.has_value()) {
+          int new_keepalive_time_ms = -1;
+          if (absl::SimpleAtoi(std::string(keepalive_throttling.value()),
+                               &new_keepalive_time_ms)) {
+            Duration new_keepalive_time =
+                Duration::Milliseconds(new_keepalive_time_ms);
+            if (new_keepalive_time > parent_->chand_->keepalive_time_) {
+              parent_->chand_->keepalive_time_ = new_keepalive_time;
+              GRPC_TRACE_LOG(client_channel, INFO)
+                  << "chand=" << parent_->chand_
+                  << ": throttling keepalive time to "
+                  << parent_->chand_->keepalive_time_;
+              // Propagate the new keepalive time to all subchannels. This is
+              // so that new transports created by any subchannel (and not
+              // just the subchannel that received the GOAWAY), use the new
+              // keepalive time.
+              for (auto& [subchannel, _] : parent_->chand_->subchannel_map_) {
+                subchannel->ThrottleKeepaliveTime(new_keepalive_time);
+              }
             }
+          } else {
+            LOG(ERROR) << "chand=" << parent_->chand_
+                       << ": Illegal keepalive throttling value "
+                       << std::string(keepalive_throttling.value());
           }
-        } else {
-          LOG(ERROR) << "chand=" << parent_->chand_
-                     << ": Illegal keepalive throttling value "
-                     << std::string(keepalive_throttling.value());
         }
       }
       // Propagate status only in state TF.
@@ -609,6 +640,23 @@ class ClientChannelFilter::SubchannelWrapper final
       watcher_->OnConnectivityStateChange(
           state,
           state == GRPC_CHANNEL_TRANSIENT_FAILURE ? status : absl::OkStatus());
+    }
+
+    void ApplyKeepaliveThrottlingInWorkSerializer(Duration new_keepalive_time)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(*parent_->chand_->work_serializer_) {
+      if (new_keepalive_time > parent_->chand_->keepalive_time_) {
+        parent_->chand_->keepalive_time_ = new_keepalive_time;
+        GRPC_TRACE_LOG(client_channel, INFO)
+            << "chand=" << parent_->chand_ << ": throttling keepalive time to "
+            << parent_->chand_->keepalive_time_;
+        // Propagate the new keepalive time to all subchannels. This is so
+        // that new transports created by any subchannel (and not just the
+        // subchannel that received the GOAWAY), use the new keepalive time.
+        for (auto& [subchannel, _] : parent_->chand_->subchannel_map_) {
+          if (parent_->subchannel_ == subchannel) continue;
+          subchannel->ThrottleKeepaliveTime(new_keepalive_time);
+        }
+      }
     }
 
     std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
@@ -636,6 +684,7 @@ class ClientChannelFilter::SubchannelWrapper final
 
   ClientChannelFilter* chand_;
   RefCountedPtr<Subchannel> subchannel_;
+  const uint32_t max_connections_per_subchannel_;
   // Maps from the address of the watcher passed to us by the LB policy
   // to the address of the WrapperWatcher that we passed to the underlying
   // subchannel.  This is needed so that when the LB policy calls
@@ -847,6 +896,17 @@ class ClientChannelFilter::ClientChannelControlHelper final
       const ChannelArgs& args) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
     if (chand_->resolver_ == nullptr) return nullptr;  // Shutting down.
+    // Determine max_connections_per_subchannel.
+    const uint32_t cap =
+        args.GetInt(GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL_CAP).value_or(10);
+    uint32_t max_connections_per_subchannel =
+        args.GetInt(GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL)
+            .value_or(
+                per_address_args.GetInt(GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL)
+                    .value_or(1));
+    max_connections_per_subchannel =
+        std::min(max_connections_per_subchannel, cap);
+    // Modify args for subchannel.
     ChannelArgs subchannel_args = Subchannel::MakeSubchannelArgs(
         args, per_address_args, chand_->subchannel_pool_,
         chand_->default_authority_);
@@ -858,7 +918,8 @@ class ClientChannelFilter::ClientChannelControlHelper final
     // Make sure the subchannel has updated keepalive time.
     subchannel->ThrottleKeepaliveTime(chand_->keepalive_time_);
     // Create and return wrapper for the subchannel.
-    return MakeRefCounted<SubchannelWrapper>(chand_, std::move(subchannel));
+    return MakeRefCounted<SubchannelWrapper>(chand_, std::move(subchannel),
+                                             max_connections_per_subchannel);
   }
 
   void UpdateState(grpc_connectivity_state state, const absl::Status& status,
@@ -1016,9 +1077,7 @@ ClientChannelFilter::ClientChannelFilter(grpc_channel_element_args* args,
   // Set initial keepalive time.
   auto keepalive_arg = channel_args_.GetInt(GRPC_ARG_KEEPALIVE_TIME_MS);
   if (keepalive_arg.has_value()) {
-    keepalive_time_ = Clamp(*keepalive_arg, 1, INT_MAX);
-  } else {
-    keepalive_time_ = -1;  // unset
+    keepalive_time_ = Duration::Milliseconds(Clamp(*keepalive_arg, 1, INT_MAX));
   }
   // Set default authority.
   std::optional<std::string> default_authority =
@@ -1206,6 +1265,12 @@ void ClientChannelFilter::OnResolverResultChangedLocked(
         static_cast<const internal::ClientChannelGlobalParsedConfig*>(
             service_config->GetGlobalParsedConfig(
                 service_config_parser_index_));
+    // Set max_connections_per_subchannel from service config.
+    if (parsed_service_config->max_connections_per_subchannel() != 0) {
+      result.args = result.args.Set(
+          GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL,
+          parsed_service_config->max_connections_per_subchannel());
+    }
     // Choose LB policy config.
     RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config =
         ChooseLbPolicy(result, parsed_service_config);
@@ -1544,17 +1609,11 @@ grpc_error_handle ClientChannelFilter::DoPingLocked(grpc_transport_op* op) {
       // Complete pick.
       [op](LoadBalancingPolicy::PickResult::Complete* complete_pick)
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(
-              *ClientChannelFilter::work_serializer_) {
-            SubchannelWrapper* subchannel = static_cast<SubchannelWrapper*>(
-                complete_pick->subchannel.get());
-            RefCountedPtr<ConnectedSubchannel> connected_subchannel =
-                subchannel->connected_subchannel();
-            if (connected_subchannel == nullptr) {
-              return GRPC_ERROR_CREATE("LB pick for ping not connected");
-            }
-            connected_subchannel->Ping(op->send_ping.on_initiate,
-                                       op->send_ping.on_ack);
-            return absl::OkStatus();
+              *ClientChannelFilter::work_serializer_) -> grpc_error_handle {
+            SubchannelWrapper* subchannel =
+                DownCast<SubchannelWrapper*>(complete_pick->subchannel.get());
+            return subchannel->Ping(op->send_ping.on_initiate,
+                                    op->send_ping.on_ack);
           },
       // Queue pick.
       [](LoadBalancingPolicy::PickResult::Queue* /*queue_pick*/) {
@@ -2401,7 +2460,7 @@ ClientChannelFilter::LoadBalancedCall::PickSubchannel(bool was_queued) {
 
 bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
     LoadBalancingPolicy::SubchannelPicker* picker, grpc_error_handle* error) {
-  GRPC_CHECK(connected_subchannel_ == nullptr);
+  GRPC_CHECK(subchannel_call_ == nullptr);
   // Perform LB pick.
   LoadBalancingPolicy::PickArgs pick_args;
   Slice* path = send_initial_metadata()->get_pointer(HttpPathMetadata());
@@ -2415,7 +2474,7 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
   return HandlePickResult<bool>(
       &result,
       // CompletePick
-      [this](LoadBalancingPolicy::PickResult::Complete* complete_pick) {
+      [this, &error](LoadBalancingPolicy::PickResult::Complete* complete_pick) {
         GRPC_TRACE_LOG(client_channel_lb_call, INFO)
             << "chand=" << chand_ << " lb_call=" << this
             << ": LB pick succeeded: subchannel="
@@ -2425,12 +2484,24 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
         // holding the data plane mutex.
         SubchannelWrapper* subchannel =
             static_cast<SubchannelWrapper*>(complete_pick->subchannel.get());
-        connected_subchannel_ = subchannel->connected_subchannel();
+        Subchannel::CreateCallArgs call_args = {
+            pollent_, /*start_time=*/0, arena_->GetContext<Call>()->deadline(),
+            // TODO(roth): When we implement hedging support, we will probably
+            // need to use a separate call arena for each subchannel call.
+            arena_, call_combiner_};
+        subchannel_call_ = subchannel->CreateCall(call_args, error);
+        if (subchannel_call_ != nullptr &&
+            on_call_destruction_complete_ != nullptr) {
+          subchannel_call_->SetAfterCallStackDestroy(
+              on_call_destruction_complete_);
+          on_call_destruction_complete_ = nullptr;
+        }
+        if (!error->ok()) return true;
         // If the subchannel has no connected subchannel (e.g., if the
         // subchannel has moved out of state READY but the LB policy hasn't
         // yet seen that change and given us a new picker), then just
         // queue the pick.  We'll try again as soon as we get a new picker.
-        if (connected_subchannel_ == nullptr) {
+        if (subchannel_call_ == nullptr) {
           GRPC_TRACE_LOG(client_channel_lb_call, INFO)
               << "chand=" << chand_ << " lb_call=" << this
               << ": subchannel returned by LB picker "
@@ -2439,9 +2510,6 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
         }
         lb_subchannel_call_tracker_ =
             std::move(complete_pick->subchannel_call_tracker);
-        if (lb_subchannel_call_tracker_ != nullptr) {
-          lb_subchannel_call_tracker_->Start();
-        }
         // Handle metadata mutations.
         MetadataMutationHandler::Apply(complete_pick->metadata_mutations,
                                        send_initial_metadata());
@@ -2669,7 +2737,7 @@ void ClientChannelFilter::LoadBalancedCall::TryPick(bool was_queued) {
       buffered_call_.Fail(*result, BufferedCall::YieldCallCombiner);
       return;
     }
-    CreateSubchannelCall();
+    StartSubchannelCall();
   }
 }
 
@@ -2702,32 +2770,15 @@ void ClientChannelFilter::LoadBalancedCall::RetryPickLocked() {
                absl::OkStatus());
 }
 
-void ClientChannelFilter::LoadBalancedCall::CreateSubchannelCall() {
-  SubchannelCall::Args call_args = {
-      connected_subchannel_->Ref(), pollent_, /*start_time=*/0,
-      arena_->GetContext<Call>()->deadline(),
-      // TODO(roth): When we implement hedging support, we will probably
-      // need to use a separate call arena for each subchannel call.
-      arena_, call_combiner_};
-  grpc_error_handle error;
-  subchannel_call_ = SubchannelCall::Create(std::move(call_args), &error);
+void ClientChannelFilter::LoadBalancedCall::StartSubchannelCall() {
   GRPC_TRACE_LOG(client_channel_lb_call, INFO)
       << "chand=" << chand_ << " lb_call=" << this
-      << ": create subchannel_call=" << subchannel_call_.get()
-      << ": error=" << StatusToString(error);
-  if (on_call_destruction_complete_ != nullptr) {
-    subchannel_call_->SetAfterCallStackDestroy(on_call_destruction_complete_);
-    on_call_destruction_complete_ = nullptr;
-  }
-  if (GPR_UNLIKELY(!error.ok())) {
-    buffered_call_.Fail(error, BufferedCall::YieldCallCombiner);
-  } else {
-    buffered_call_.Resume([subchannel_call = subchannel_call_](
-                              grpc_transport_stream_op_batch* batch) {
-      // Note: This will release the call combiner.
-      subchannel_call->StartTransportStreamOpBatch(batch);
-    });
-  }
+      << ": starting subchannel_call=" << subchannel_call_.get();
+  buffered_call_.Resume([subchannel_call = subchannel_call_](
+                            grpc_transport_stream_op_batch* batch) {
+    // Note: This will release the call combiner.
+    subchannel_call->StartTransportStreamOpBatch(batch);
+  });
 }
 
 }  // namespace grpc_core

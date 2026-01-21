@@ -17,9 +17,12 @@
 """Dictionary of tags to experiments so we know when to test different experiments."""
 
 EXPERIMENT_ENABLES = {
+    "buffer_list_deletion_prep": "buffer_list_deletion_prep",
     "call_tracer_in_transport": "call_tracer_in_transport",
+    "call_tracer_send_initial_metadata_is_an_annotation": "call_tracer_send_initial_metadata_is_an_annotation",
     "channelz_use_v2_for_v1_api": "channelz_use_v2_for_v1_api",
     "channelz_use_v2_for_v1_service": "channelz_use_v2_for_v1_service",
+    "chaotic_good_connect_deadline": "chaotic_good_connect_deadline",
     "chaotic_good_framing_layer": "chaotic_good_framing_layer",
     "chttp2_bound_write_size": "chttp2_bound_write_size",
     "error_flatten": "error_flatten",
@@ -38,29 +41,34 @@ EXPERIMENT_ENABLES = {
     "graceful_external_connection_failure": "graceful_external_connection_failure",
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
-    "max_age_filter_float_to_top": "max_age_filter_float_to_top",
     "max_inflight_pings_strict_limit": "max_inflight_pings_strict_limit",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
     "otel_export_telemetry_domains": "otel_export_telemetry_domains",
     "pick_first_ignore_empty_updates": "pick_first_ignore_empty_updates",
+    "pick_first_ready_to_connecting": "pick_first_ready_to_connecting",
     "pipelined_read_secure_endpoint": "event_engine_client,event_engine_listener,event_engine_secure_endpoint,pipelined_read_secure_endpoint",
     "pollset_alternative": "event_engine_client,event_engine_listener,pollset_alternative",
     "prioritize_finished_requests": "prioritize_finished_requests",
     "promise_based_http2_client_transport": "promise_based_http2_client_transport",
     "promise_based_http2_server_transport": "promise_based_http2_server_transport",
     "promise_based_inproc_transport": "promise_based_inproc_transport",
+    "promise_filter_send_cancel_metadata": "promise_filter_send_cancel_metadata",
     "retry_in_callv3": "retry_in_callv3",
+    "return_preexisting_errors": "return_preexisting_errors",
     "rr_wrr_connect_from_random_index": "rr_wrr_connect_from_random_index",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "secure_endpoint_offload_large_reads": "event_engine_client,event_engine_listener,event_engine_secure_endpoint,secure_endpoint_offload_large_reads",
     "secure_endpoint_offload_large_writes": "event_engine_client,event_engine_listener,event_engine_secure_endpoint,secure_endpoint_offload_large_writes",
+    "skip_clear_peer_on_cancellation": "skip_clear_peer_on_cancellation",
     "sleep_promise_exec_ctx_removal": "sleep_promise_exec_ctx_removal",
     "sleep_use_non_owning_waker": "sleep_use_non_owning_waker",
+    "subchannel_connection_scaling": "subchannel_connection_scaling",
     "subchannel_wrapper_cleanup_on_orphan": "subchannel_wrapper_cleanup_on_orphan",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
     "track_writes_in_resource_quota": "track_writes_in_resource_quota",
+    "track_zero_copy_allocations_in_resource_quota": "track_zero_copy_allocations_in_resource_quota",
     "tsi_frame_protector_without_locks": "tsi_frame_protector_without_locks",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
 }
@@ -86,7 +94,11 @@ EXPERIMENTS = {
                 "channelz_use_v2_for_v1_api",
                 "channelz_use_v2_for_v1_service",
             ],
+            "chttp2_keepalive_tests": [
+                "subchannel_connection_scaling",
+            ],
             "core_end2end_test": [
+                "buffer_list_deletion_prep",
                 "chttp2_bound_write_size",
                 "error_flatten",
                 "event_engine_fork",
@@ -95,6 +107,7 @@ EXPERIMENTS = {
                 "pipelined_read_secure_endpoint",
                 "pollset_alternative",
                 "promise_based_http2_client_transport",
+                "promise_filter_send_cancel_metadata",
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
@@ -103,8 +116,13 @@ EXPERIMENTS = {
                 "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
             ],
+            "cpp_end2end_test_client_ph2": [
+                "promise_based_http2_client_transport",
+            ],
             "cpp_lb_end2end_test": [
+                "pick_first_ready_to_connecting",
                 "rr_wrr_connect_from_random_index",
+                "subchannel_connection_scaling",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -122,6 +140,7 @@ EXPERIMENTS = {
                 "tcp_rcv_lowat",
             ],
             "lb_unit_test": [
+                "pick_first_ready_to_connecting",
                 "rr_wrr_connect_from_random_index",
             ],
             "minimal_stack_test": [
@@ -132,11 +151,11 @@ EXPERIMENTS = {
             ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
-                "sleep_use_non_owning_waker",
             ],
             "resource_quota_test": [
                 "free_large_allocator",
                 "track_writes_in_resource_quota",
+                "track_zero_copy_allocations_in_resource_quota",
                 "unconstrained_max_quota_buffer_size",
             ],
             "secure_endpoint_test": [
@@ -152,6 +171,7 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "core_end2end_test": [
+                "chaotic_good_connect_deadline",
                 "chaotic_good_framing_layer",
                 "event_engine_client",
                 "event_engine_dns_non_client_channel",
@@ -167,6 +187,9 @@ EXPERIMENTS = {
             ],
             "posix_endpoint_test": [
                 "event_engine_secure_endpoint",
+            ],
+            "promise_test": [
+                "sleep_use_non_owning_waker",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
@@ -184,7 +207,11 @@ EXPERIMENTS = {
                 "channelz_use_v2_for_v1_api",
                 "channelz_use_v2_for_v1_service",
             ],
+            "chttp2_keepalive_tests": [
+                "subchannel_connection_scaling",
+            ],
             "core_end2end_test": [
+                "buffer_list_deletion_prep",
                 "chttp2_bound_write_size",
                 "error_flatten",
                 "event_engine_fork",
@@ -193,6 +220,7 @@ EXPERIMENTS = {
                 "pipelined_read_secure_endpoint",
                 "pollset_alternative",
                 "promise_based_http2_client_transport",
+                "promise_filter_send_cancel_metadata",
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
@@ -201,8 +229,13 @@ EXPERIMENTS = {
                 "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
             ],
+            "cpp_end2end_test_client_ph2": [
+                "promise_based_http2_client_transport",
+            ],
             "cpp_lb_end2end_test": [
+                "pick_first_ready_to_connecting",
                 "rr_wrr_connect_from_random_index",
+                "subchannel_connection_scaling",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -220,6 +253,7 @@ EXPERIMENTS = {
                 "tcp_rcv_lowat",
             ],
             "lb_unit_test": [
+                "pick_first_ready_to_connecting",
                 "rr_wrr_connect_from_random_index",
             ],
             "minimal_stack_test": [
@@ -230,11 +264,11 @@ EXPERIMENTS = {
             ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
-                "sleep_use_non_owning_waker",
             ],
             "resource_quota_test": [
                 "free_large_allocator",
                 "track_writes_in_resource_quota",
+                "track_zero_copy_allocations_in_resource_quota",
                 "unconstrained_max_quota_buffer_size",
             ],
             "secure_endpoint_test": [
@@ -250,6 +284,7 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "core_end2end_test": [
+                "chaotic_good_connect_deadline",
                 "chaotic_good_framing_layer",
                 "event_engine_client",
                 "event_engine_dns_non_client_channel",
@@ -265,6 +300,9 @@ EXPERIMENTS = {
             ],
             "posix_endpoint_test": [
                 "event_engine_secure_endpoint",
+            ],
+            "promise_test": [
+                "sleep_use_non_owning_waker",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
@@ -282,7 +320,11 @@ EXPERIMENTS = {
                 "channelz_use_v2_for_v1_api",
                 "channelz_use_v2_for_v1_service",
             ],
+            "chttp2_keepalive_tests": [
+                "subchannel_connection_scaling",
+            ],
             "core_end2end_test": [
+                "buffer_list_deletion_prep",
                 "chttp2_bound_write_size",
                 "error_flatten",
                 "event_engine_fork",
@@ -291,6 +333,7 @@ EXPERIMENTS = {
                 "pipelined_read_secure_endpoint",
                 "pollset_alternative",
                 "promise_based_http2_client_transport",
+                "promise_filter_send_cancel_metadata",
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
@@ -299,8 +342,13 @@ EXPERIMENTS = {
                 "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
             ],
+            "cpp_end2end_test_client_ph2": [
+                "promise_based_http2_client_transport",
+            ],
             "cpp_lb_end2end_test": [
+                "pick_first_ready_to_connecting",
                 "rr_wrr_connect_from_random_index",
+                "subchannel_connection_scaling",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -318,6 +366,7 @@ EXPERIMENTS = {
                 "tcp_rcv_lowat",
             ],
             "lb_unit_test": [
+                "pick_first_ready_to_connecting",
                 "rr_wrr_connect_from_random_index",
             ],
             "minimal_stack_test": [
@@ -328,11 +377,11 @@ EXPERIMENTS = {
             ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
-                "sleep_use_non_owning_waker",
             ],
             "resource_quota_test": [
                 "free_large_allocator",
                 "track_writes_in_resource_quota",
+                "track_zero_copy_allocations_in_resource_quota",
                 "unconstrained_max_quota_buffer_size",
             ],
             "secure_endpoint_test": [
@@ -348,6 +397,7 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "core_end2end_test": [
+                "chaotic_good_connect_deadline",
                 "chaotic_good_framing_layer",
                 "event_engine_client",
                 "event_engine_dns_non_client_channel",
@@ -363,6 +413,9 @@ EXPERIMENTS = {
             ],
             "posix_endpoint_test": [
                 "event_engine_secure_endpoint",
+            ],
+            "promise_test": [
+                "sleep_use_non_owning_waker",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",

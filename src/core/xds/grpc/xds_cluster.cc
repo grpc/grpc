@@ -25,6 +25,22 @@
 
 namespace grpc_core {
 
+std::string XdsClusterResource::UpstreamTlsContext::ToString() const {
+  std::vector<std::string> contents;
+  if (!common_tls_context.Empty()) {
+    contents.push_back(
+        absl::StrCat("common_tls_context=", common_tls_context.ToString()));
+  }
+  contents.push_back(absl::StrCat("sni=", sni));
+  if (auto_host_sni) {
+    contents.push_back("auto_host_sni=true");
+  }
+  if (auto_sni_san_validation) {
+    contents.push_back("auto_sni_san_validation=true");
+  }
+  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
+}
+
 std::string XdsClusterResource::ToString() const {
   std::vector<std::string> contents;
   Match(
@@ -58,10 +74,8 @@ std::string XdsClusterResource::ToString() const {
                      lrs_backend_metric_propagation->AsString()));
   }
   if (use_http_connect) contents.push_back("use_http_connect=true");
-  if (!common_tls_context.Empty()) {
-    contents.push_back(
-        absl::StrCat("common_tls_context=", common_tls_context.ToString()));
-  }
+  contents.push_back(
+      absl::StrCat("upstream_tls_context=", upstream_tls_context.ToString()));
   if (connection_idle_timeout != Duration::Zero()) {
     contents.push_back(absl::StrCat("connection_idle_timeout=",
                                     connection_idle_timeout.ToString()));

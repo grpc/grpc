@@ -692,7 +692,7 @@ class PythonLanguage(object):
                     self.config.job_spec(
                         [
                             python_config.python_path,
-                            "tools/distrib/python/xds_protos/generated_file_import_test.py",
+                            "py_xds_protos/generated_file_import_test.py",
                         ],
                         timeout_seconds=60,
                         environ=_FORCE_ENVIRON_FOR_WRAPPERS,

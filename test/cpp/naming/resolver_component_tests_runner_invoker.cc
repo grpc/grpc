@@ -16,6 +16,10 @@
 #include <signal.h>
 #include <string.h>
 
+#include <optional>
+
+#include "absl/strings/str_cat.h"
+
 #ifndef GPR_WINDOWS
 #include <unistd.h>
 #endif  // GPR_WINDOWS
@@ -57,12 +61,13 @@ ABSL_FLAG(
 ABSL_FLAG(std::string, test_bin_name, "",
           "Name, without the preceding path, of the test binary");
 
-ABSL_FLAG(std::string, grpc_test_directory_relative_to_test_srcdir,
-          "/com_github_grpc_grpc",
+ABSL_FLAG(std::optional<std::string>,
+          grpc_test_directory_relative_to_test_srcdir, std::nullopt,
           "This flag only applies if runner_under_bazel is true. This "
           "flag is ignored if runner_under_bazel is false. "
           "Directory of the <repo-root>/test directory relative to bazel's "
-          "TEST_SRCDIR environment variable");
+          "TEST_SRCDIR environment variable. TEST_WORKSPACE environment "
+          "variable value will be used if this flag is unset");
 
 ABSL_FLAG(std::string, extra_args, "",
           "Comma-separated list of opaque command args to plumb through to "
@@ -90,6 +95,19 @@ int InvokeResolverComponentTestsRunner(
   return test_driver->Join();
 }
 
+std::string GetTestDirectory(const std::optional<std::string>& test_directory) {
+  if (test_directory.has_value()) {
+    return *test_directory;
+  }
+  std::optional<std::string> test_workspace_env_var =
+      grpc_core::GetEnv("TEST_WORKSPACE");
+  if (test_workspace_env_var.has_value()) {
+    return absl::StrCat("/", *test_workspace_env_var);
+  }
+  // Original default value
+  return "/com_github_grpc_grpc";
+}
+
 }  // namespace testing
 
 }  // namespace grpc
@@ -102,16 +120,14 @@ int main(int argc, char** argv) {
   std::string my_bin = argv[0];
   int result = 0;
   if (absl::GetFlag(FLAGS_running_under_bazel)) {
-    GRPC_CHECK(!absl::GetFlag(FLAGS_grpc_test_directory_relative_to_test_srcdir)
-                    .empty());
+    std::string test_directory = grpc::testing::GetTestDirectory(
+        absl::GetFlag(FLAGS_grpc_test_directory_relative_to_test_srcdir));
     // Use bazel's TEST_SRCDIR environment variable to locate the "test data"
     // binaries.
     auto test_srcdir = grpc_core::GetEnv("TEST_SRCDIR");
 #ifndef GPR_WINDOWS
     std::string const bin_dir =
-        test_srcdir.value() +
-        absl::GetFlag(FLAGS_grpc_test_directory_relative_to_test_srcdir) +
-        std::string("/test/cpp/naming");
+        test_srcdir.value() + test_directory + std::string("/test/cpp/naming");
     // Invoke bazel's executable links to the .sh and .py scripts (don't use
     // the .sh and .py suffixes) to make
     // sure that we're using bazel's test environment.
@@ -131,23 +147,25 @@ int main(int argc, char** argv) {
 #endif  // GRPC_PORT_ISOLATED_RUNTIME
     result = grpc::testing::InvokeResolverComponentTestsRunner(
         grpc::testing::NormalizeFilePath(
-            test_srcdir.value() + "/com_github_grpc_grpc/test/cpp/naming/"
-                                  "resolver_component_tests_runner.exe"),
+            absl::StrCat(test_srcdir.value(), test_directory,
+                         "/test/cpp/naming/"
+                         "resolver_component_tests_runner.exe")),
+        grpc::testing::NormalizeFilePath(absl::StrCat(
+            test_srcdir.value(), test_directory,
+            "/test/cpp/naming/" + absl::GetFlag(FLAGS_test_bin_name) + ".exe")),
         grpc::testing::NormalizeFilePath(
-            test_srcdir.value() + "/com_github_grpc_grpc/test/cpp/naming/" +
-            absl::GetFlag(FLAGS_test_bin_name) + ".exe"),
+            absl::StrCat(test_srcdir.value(), test_directory,
+                         "/test/cpp/naming/utils/dns_server.exe")),
         grpc::testing::NormalizeFilePath(
-            test_srcdir.value() +
-            "/com_github_grpc_grpc/test/cpp/naming/utils/dns_server.exe"),
+            absl::StrCat(test_srcdir.value(), test_directory,
+                         "/test/cpp/naming/"
+                         "resolver_test_record_groups.yaml")),
         grpc::testing::NormalizeFilePath(
-            test_srcdir.value() + "/com_github_grpc_grpc/test/cpp/naming/"
-                                  "resolver_test_record_groups.yaml"),
+            absl::StrCat(test_srcdir.value(), test_directory,
+                         "/test/cpp/naming/utils/dns_resolver.exe")),
         grpc::testing::NormalizeFilePath(
-            test_srcdir.value() +
-            "/com_github_grpc_grpc/test/cpp/naming/utils/dns_resolver.exe"),
-        grpc::testing::NormalizeFilePath(
-            test_srcdir.value() +
-            "/com_github_grpc_grpc/test/cpp/naming/utils/tcp_connect.exe"));
+            absl::StrCat(test_srcdir.value(), test_directory,
+                         "/test/cpp/naming/utils/tcp_connect.exe")));
 #endif  // GPR_WINDOWS
   } else {
 #ifdef GPR_WINDOWS

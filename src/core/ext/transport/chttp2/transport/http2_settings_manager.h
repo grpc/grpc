@@ -32,6 +32,8 @@
 
 namespace grpc_core {
 
+// TODO(tjagtap) [PH2][P1][Settings] : Add new DCHECKs to PH2-Only functions in
+// this class.
 class Http2SettingsManager {
  public:
   // Only local and peer settings can be edited by the transport.
@@ -52,7 +54,7 @@ class Http2SettingsManager {
         .SetColumn("acked", acked_.ChannelzProperties());
   }
 
-  // Returns nullopt if we don't need to send a SETTINGS frame to the peer.
+  // Returns std::nullopt if we don't need to send a SETTINGS frame to the peer.
   // Returns Http2SettingsFrame if we need to send a SETTINGS frame to the
   // peer. Transport MUST send a frame returned by this function to the peer.
   // This function is not idempotent.
@@ -60,7 +62,7 @@ class Http2SettingsManager {
 
   // To be called from a promise based HTTP2 transport only
   http2::Http2ErrorCode ApplyIncomingSettings(
-      std::vector<Http2SettingsFrame::Setting>& settings) {
+      const std::vector<Http2SettingsFrame::Setting>& settings) {
     for (const auto& setting : settings) {
       http2::Http2ErrorCode error1 =
           count_updates_.IsUpdatePermitted(setting.id, setting.value, peer_);
@@ -78,13 +80,6 @@ class Http2SettingsManager {
   // Call when we receive an ACK from our peer.
   // This function is not idempotent.
   GRPC_MUST_USE_RESULT bool AckLastSend();
-
-  GRPC_MUST_USE_RESULT bool IsPreviousSettingsPromiseResolved() const {
-    return did_previous_settings_promise_resolve_;
-  }
-  void SetPreviousSettingsPromiseResolved(const bool value) {
-    did_previous_settings_promise_resolve_ = value;
-  }
 
  private:
   struct CountUpdates {
@@ -141,8 +136,6 @@ class Http2SettingsManager {
   Http2Settings local_;
   Http2Settings sent_;
   Http2Settings acked_;
-
-  bool did_previous_settings_promise_resolve_ = true;
 };
 
 }  // namespace grpc_core

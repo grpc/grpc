@@ -24,6 +24,7 @@
 
 #include <cstdint>
 #include <optional>
+#include <utility>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
@@ -31,9 +32,6 @@
 namespace grpc_core {
 
 std::optional<Http2SettingsFrame> Http2SettingsManager::MaybeSendUpdate() {
-  if (!IsPreviousSettingsPromiseResolved()) {
-    return std::nullopt;
-  }
   switch (update_state_) {
     case UpdateState::kSending:
       return std::nullopt;

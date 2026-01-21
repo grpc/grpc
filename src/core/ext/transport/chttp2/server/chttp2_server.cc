@@ -207,16 +207,14 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
 }
 
 void NewChttp2ServerListener::ActiveConnection::HandshakingState::
-    OnReceiveSettings(void* arg, grpc_error_handle /* error */) {
-  HandshakingState* self = static_cast<HandshakingState*>(arg);
-  self->connection_->work_serializer_.Run(
-      [self] {
+    OnReceiveSettings() {
+  connection_->work_serializer_.Run(
+      [self = Ref()] {
         if (self->timer_handle_.has_value()) {
           self->connection_->listener_state_->event_engine()->Cancel(
               *self->timer_handle_);
           self->timer_handle_.reset();
         }
-        self->Unref();
       },
       DEBUG_LOCATION);
 }
@@ -240,15 +238,15 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
       // handshake deadline.
       connection_->state_ =
           DownCast<grpc_chttp2_transport*>(transport.get())->Ref();
-      Ref().release();  // Held by OnReceiveSettings().
-      GRPC_CLOSURE_INIT(&on_receive_settings_, OnReceiveSettings, this,
-                        grpc_schedule_on_exec_ctx);
       grpc_closure* on_close = &connection_->on_close_;
       // Refs held by OnClose()
       connection_->Ref().release();
       grpc_chttp2_transport_start_reading(
           transport.get(), (*result)->read_buffer.c_slice_buffer(),
-          &on_receive_settings_, nullptr, on_close);
+          [self = Ref()](absl::StatusOr<uint32_t>) {
+            self->OnReceiveSettings();
+          },
+          nullptr, on_close);
       timer_handle_ = connection_->listener_state_->event_engine()->RunAfter(
           deadline_ - Timestamp::Now(), [self = Ref()]() mutable {
             // HandshakingState deletion might require an active ExecCtx.

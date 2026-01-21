@@ -23,6 +23,7 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/call/metadata.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error.h"
@@ -84,7 +85,13 @@ BaseCallData::BaseCallData(
     grpc_call_element* elem, const grpc_call_element_args* args, uint8_t flags,
     absl::FunctionRef<Interceptor*()> make_send_interceptor,
     absl::FunctionRef<Interceptor*()> make_recv_interceptor)
-    : call_stack_(args->call_stack),
+    : channelz::DataSource([args]() -> RefCountedPtr<channelz::BaseNode> {
+        channelz::CallNode* call_node =
+            args->arena->GetContext<channelz::CallNode>();
+        if (call_node == nullptr) return nullptr;
+        return call_node->Ref();
+      }()),
+      call_stack_(args->call_stack),
       elem_(elem),
       arena_(args->arena),
       call_combiner_(args->call_combiner),
@@ -147,6 +154,37 @@ std::string BaseCallData::LogTag() const {
   return absl::StrCat(
       ClientOrServerString(), "[", elem_->filter->name, ":0x",
       absl::Hex(reinterpret_cast<uintptr_t>(elem_), absl::kZeroPad8), "]");
+}
+
+void BaseCallData::AddData(channelz::DataSink sink) {
+  EnsureRunInExecCtx([this, sink = std::move(sink)]() mutable {
+    auto add = [sink, this](grpc_error_handle) mutable {
+      sink.AddData(elem_->filter->name.name(), ChannelzProperties());
+      GRPC_CALL_COMBINER_STOP(call_combiner(), "channelz_add_data");
+      GRPC_CALL_STACK_UNREF(call_stack_, "channelz_add_data");
+    };
+    GRPC_CALL_STACK_REF(call_stack_, "channelz_add_data");
+    GRPC_CALL_COMBINER_START(call_combiner_, NewClosure(std::move(add)),
+                             absl::OkStatus(), "channelz_add_data");
+  });
+}
+
+channelz::PropertyList BaseCallData::ChannelzProperties() const {
+  channelz::PropertyList properties;
+  properties.Set("deadline", deadline_);
+  if (send_message_ != nullptr) {
+    properties.Set("promise_based_send_message",
+                   send_message_->ChannelzProperties());
+  }
+  if (receive_message_ != nullptr) {
+    properties.Set("promise_based_receive_message",
+                   receive_message_->ChannelzProperties());
+  }
+  if (server_initial_metadata_pipe_ != nullptr) {
+    properties.Set("server_initial_metadata_pipe",
+                   server_initial_metadata_pipe_->sender.ChannelzProperties());
+  }
+  return properties;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1270,9 +1308,11 @@ ClientCallData::ClientCallData(grpc_call_element* elem,
   if (server_initial_metadata_pipe() != nullptr) {
     recv_initial_metadata_ = arena()->New<RecvInitialMetadata>();
   }
+  SourceConstructed();
 }
 
 ClientCallData::~ClientCallData() {
+  SourceDestructing();
   ScopedActivity scoped_activity(this);
   GRPC_CHECK_EQ(poll_ctx_, nullptr);
   if (recv_initial_metadata_ != nullptr) {
@@ -1803,6 +1843,13 @@ void ClientCallData::OnWakeup() {
   WakeInsideCombiner(&flusher);
 }
 
+channelz::PropertyList ClientCallData::ChannelzProperties() const {
+  return BaseCallData::ChannelzProperties()
+      .Set("promise", PromiseProperty(&promise_))
+      .Set("send_initial_state", StateString(send_initial_state_))
+      .Set("recv_trailing_state", StateString(recv_trailing_state_));
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // ServerCallData
 
@@ -1952,9 +1999,11 @@ ServerCallData::ServerCallData(grpc_call_element* elem,
   GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_,
                     RecvTrailingMetadataReadyCallback, this,
                     grpc_schedule_on_exec_ctx);
+  SourceConstructed();
 }
 
 ServerCallData::~ServerCallData() {
+  SourceDestructing();
   GRPC_TRACE_LOG(channel, INFO)
       << LogTag() << " ~ServerCallData " << DebugString();
   if (send_initial_metadata_ != nullptr) {
@@ -1992,6 +2041,7 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
                !batch->recv_trailing_metadata);
     PollContext poll_ctx(this, &flusher);
     Completed(batch->payload->cancel_stream.cancel_error,
+              std::move(batch->payload->cancel_stream.send_trailing_metadata),
               batch->payload->cancel_stream.tarpit, &flusher);
     if (is_last()) {
       batch.CompleteWith(&flusher);
@@ -2111,8 +2161,9 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
 }
 
 // Handle cancellation.
-void ServerCallData::Completed(grpc_error_handle error,
-                               bool tarpit_cancellation, Flusher* flusher) {
+void ServerCallData::Completed(
+    grpc_error_handle error, GRPC_UNUSED ServerMetadataHandle trailing_metadata,
+    bool tarpit_cancellation, Flusher* flusher) {
   GRPC_TRACE_VLOG(channel, 2)
       << LogTag() << "ServerCallData::Completed: send_trailing_state="
       << StateString(send_trailing_state_) << " send_initial_state="
@@ -2271,8 +2322,8 @@ void ServerCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
       << " md=" << recv_trailing_metadata_->DebugString();
   Flusher flusher(this);
   PollContext poll_ctx(this, &flusher);
-  Completed(error, recv_trailing_metadata_->get(GrpcTarPit()).has_value(),
-            &flusher);
+  Completed(error, /*trailing_metadata=*/nullptr,
+            recv_trailing_metadata_->get(GrpcTarPit()).has_value(), &flusher);
   flusher.AddClosure(original_recv_trailing_metadata_ready_, std::move(error),
                      "continue recv trailing");
 }
@@ -2479,8 +2530,8 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
           break;
         case SendTrailingState::kInitial: {
           GRPC_CHECK(*md->get_pointer(GrpcStatusMetadata()) != GRPC_STATUS_OK);
-          Completed(StatusFromMetadata(*md), md->get(GrpcTarPit()).has_value(),
-                    flusher);
+          Completed(StatusFromMetadata(*md), /*trailing_metadata=*/nullptr,
+                    md->get(GrpcTarPit()).has_value(), flusher);
         } break;
         case SendTrailingState::kCancelled:
           // Nothing to do.
@@ -2501,6 +2552,13 @@ void ServerCallData::OnWakeup() {
   Flusher flusher(this);
   ScopedContext context(this);
   WakeInsideCombiner(&flusher);
+}
+
+channelz::PropertyList ServerCallData::ChannelzProperties() const {
+  return BaseCallData::ChannelzProperties()
+      .Set("promise", PromiseProperty(&promise_))
+      .Set("recv_initial_state", StateString(recv_initial_state_))
+      .Set("send_trailing_state", StateString(send_trailing_state_));
 }
 
 }  // namespace promise_filter_detail
