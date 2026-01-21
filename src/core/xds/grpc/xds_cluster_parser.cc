@@ -77,6 +77,15 @@ bool XdsHttpConnectEnabled() {
 
 namespace {
 
+// TODO(mlumish): Remove this once the feature passes interop tests.
+bool XdsSniEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_SNI");
+  if (!value.has_value()) return true;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
+
 constexpr absl::string_view kUpstreamTlsContextType =
     "envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext";
 
@@ -102,19 +111,21 @@ XdsClusterResource::UpstreamTlsContext UpstreamTlsContextParse(
     errors->AddError("can't decode UpstreamTlsContext");
     return {};
   }
-  upstream_tls_context.sni = UpbStringToStdString(
-      envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_sni(
-          upstream_tls_context_proto));
-  if (upstream_tls_context.sni.length() > 255) {
-    ValidationErrors::ScopedField field(errors, ".sni");
-    errors->AddError("must be shorter than 255 characters");
+  if (XdsSniEnabled()) {
+    upstream_tls_context.sni = UpbStringToStdString(
+        envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_sni(
+            upstream_tls_context_proto));
+    if (upstream_tls_context.sni.length() > 255) {
+      ValidationErrors::ScopedField field(errors, ".sni");
+      errors->AddError("must be shorter than 255 characters");
+    }
+    upstream_tls_context.auto_host_sni =
+        envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_auto_host_sni(
+            upstream_tls_context_proto);
+    upstream_tls_context.auto_sni_san_validation =
+        envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_auto_sni_san_validation(
+            upstream_tls_context_proto);
   }
-  upstream_tls_context.auto_host_sni =
-      envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_auto_host_sni(
-          upstream_tls_context_proto);
-  upstream_tls_context.auto_sni_san_validation =
-      envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_auto_sni_san_validation(
-          upstream_tls_context_proto);
   ValidationErrors::ScopedField field3(errors, ".common_tls_context");
   const auto* common_tls_context_proto =
       envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_common_tls_context(
