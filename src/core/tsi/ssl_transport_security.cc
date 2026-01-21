@@ -366,10 +366,11 @@ void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
     ctx->status = TlsPrivateKeyOffloadContext::kSignatureCompleted;
     return;
   }
-  LOG(ERROR) << "TlsOffloadSignDoneCallback";
+  LOG(ERROR) << "GREG: TlsOffloadSignDoneCallback";
   ctx->status = TlsPrivateKeyOffloadContext::kSignatureCompleted;
   if (!ctx->signed_bytes.ok()) {
-    LOG(ERROR) << "Notify";
+    LOG(ERROR) << "GREG: Callback Erroring with " << ctx->signed_bytes.status()
+               << "\n";
     // Notify the TSI layer to re-enter the handshake.
     // This call is thread-safe as per TSI requirements for the callback.
     if (ctx->notify_cb) {

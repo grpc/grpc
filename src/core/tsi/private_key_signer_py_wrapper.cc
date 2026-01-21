@@ -60,6 +60,7 @@ PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
     LOG(WARNING) << absl::StrFormat("GREG: sign_user_data_ is nullptr: %v",
                                     self->sign_user_data_ == nullptr);
     // auto temp = self->sign_py_wrapper_("abc", signature_algorithm, nullptr);
+    LOG(WARNING) << absl::StrFormat("GREG: data_to_sign %v", data_to_sign);
     auto signed_data = self->sign_py_wrapper_(data_to_sign, signature_algorithm,
                                               self->sign_user_data_);
     // We're done needing Python

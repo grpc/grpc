@@ -13,6 +13,8 @@
 # limitations under the License.
 from cython.operator cimport dereference
 from cpython.pystate cimport PyGILState_STATE, PyGILState_Ensure, PyGILState_Release
+from cpython.bytes cimport PyBytes_FromStringAndSize
+
 import faulthandler
 
 faulthandler.enable()
@@ -23,6 +25,11 @@ cdef Status MakeInternalError(string message):
 
 cdef StatusOr[string] async_sign_wrapper(string_view inp, CSignatureAlgorithm algorithm, void* user_data) noexcept nogil:
   # Get the original python function the user passes
+  cdef string cpp_string
+  cdef const char* data
+  cdef size_t size
+  # cdef bytes py_bytes
+  # Create a Python bytes object from the C data and size
   with gil:
     print("GREG: async_sign_wrapper() starting", flush=True)
     print("GREG user data is NULL: ", user_data == NULL, flush=True)
@@ -32,16 +39,26 @@ cdef StatusOr[string] async_sign_wrapper(string_view inp, CSignatureAlgorithm al
     # Call the user's Python function
     py_result = None
     try:
-      py_result = py_user_func(inp.data().decode('utf-8'), algorithm)
-      if isinstance(py_result, str):
-        cpp_string = py_result.encode('utf-8')
-        return StatusOr[string](<string>cpp_string)
+      data = inp.data()
+      size = inp.length()
+      py_bytes = PyBytes_FromStringAndSize(data, size)
+      # print("GREG: input", inp)
+      # print("GREG: bytes passed in: ", <bytes> inp.data(), flush=True)
+      print("GREG: py_bytes: ", py_bytes, flush=True)
+    
+      py_result = py_user_func(py_bytes, algorithm)
+      if isinstance(py_result, bytes):
+        cpp_string = py_result
+        print("GREG: returning signature", flush=True)
+        return StatusOr[string](cpp_string)
       elif isinstance(py_result, Exception):
         # If python returns an exception, convert to absl::Status
         cpp_string = str(py_result).encode('utf-8')
+        print("GREG: returning exception", flush=True)
         return StatusOr[string](MakeInternalError(cpp_string))
       else:
         cpp_string = f"Invalid result type: {type(py_result)}".encode('utf-8')
+        print("GREG: returning exception invalid result", flush=True)
         return StatusOr[string](MakeInternalError(cpp_string))
 
     except Exception as e:
