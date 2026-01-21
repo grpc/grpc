@@ -17,8 +17,14 @@
 
 #include <grpcpp/support/server_callback.h>
 
+#include "src/core/lib/experiments/experiments.h"
+
 namespace grpc {
 namespace internal {
+
+bool ReturnPreexistingErrors() {
+  return grpc_core::IsReturnPreexistingErrorsEnabled();
+}
 
 void ServerCallbackCall::ScheduleOnDone(bool inline_ondone) {
   if (inline_ondone) {
