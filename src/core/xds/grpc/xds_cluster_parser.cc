@@ -77,7 +77,7 @@ bool XdsHttpConnectEnabled() {
 
 namespace {
 
-// TODO(mlumish): Remove this once the feature passes interop tests.
+// TODO(mlumish): Remove this after the 1.81 release.
 bool XdsSniEnabled() {
   auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_SNI");
   if (!value.has_value()) return true;
