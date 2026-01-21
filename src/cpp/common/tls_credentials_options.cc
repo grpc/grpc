@@ -135,7 +135,8 @@ void TlsChannelCredentialsOptions::set_verify_server_certs(
                                                       verify_server_certs);
 }
 
-void TlsChannelCredentialsOptions::set_sni_override(std::optional<std::string> sni_override) {
+void TlsChannelCredentialsOptions::set_sni_override(
+    std::optional<std::string> sni_override) {
   grpc_tls_credentials_options* options = mutable_c_credentials_options();
   GRPC_CHECK_NE(options, nullptr);
   grpc_tls_credentials_options_set_sni_override(options, sni_override);
