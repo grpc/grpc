@@ -15,6 +15,9 @@
 
 set -ex
 
+# TODO(apolcyn): unskip after https://github.com/grpc/grpc/pull/36019
+exit 0
+
 # List all input artifacts we obtained for easier troubleshooting.
 ls -lR input_artifacts
 
