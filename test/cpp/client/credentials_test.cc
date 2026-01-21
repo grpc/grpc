@@ -319,7 +319,7 @@ TEST(CredentialsTest, TlsChannelCredentialsWithDefaultRootsAndDefaultVerifier) {
   GRPC_CHECK_NE(channel_credentials.get(), nullptr);
 }
 
-TEST(Credentialstest, TlsChannelCredentialsWithDefaultRootsAndEmptySni) {
+TEST(CredentialsTest, TlsChannelCredentialsWithDefaultRootsAndEmptySni) {
   grpc::experimental::TlsChannelCredentialsOptions options;
   options.set_sni_override("");
   auto channel_credentials = grpc::experimental::TlsCredentials(options);
