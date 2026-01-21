@@ -1074,10 +1074,6 @@ def cloud_to_cloud_jobspec(
         interop_only_options += [
             '--service_config_json=\'{"loadBalancingConfig":[{"test_backend_metrics_load_balancer":{}}]}\''
         ]
-    else if test_case == 'mcs':
-        interop_only_options += [
-            '--service_config_json=\'{"loadBalancingConfig:[{"connection_scaling":{"max_connections_per_subchannel": 2}}]"}\''
-        ]
 
     common_options = [
         "--test_case=%s" % client_test_case,
@@ -1151,7 +1147,7 @@ def server_jobspec(
     elif transport_security == "alts":
         server_cmd += ["--use_tls=false", "--use_alts=true"]
     elif transport_security == "insecure":
-        server_cmd += ["--use_tls=false"]        
+        server_cmd += ["--use_tls=false"]
     else:
         print(
             "Invalid transport security option %s in server_jobspec."
@@ -1836,7 +1832,7 @@ try:
                 test_job = cloud_to_cloud_jobspec(
                     language,
                     'mcs',
-                    'java',
+                    'java-mcs',
                     'localhost',
                     mcs_server_job.mapped_port(_DEFAULT_SERVER_PORT),
                     docker_image=docker_images.get(str(language)),
