@@ -471,3 +471,26 @@ void grpc_ssl_server_credentials_options_destroy(
   grpc_ssl_server_certificate_config_destroy(o->certificate_config);
   gpr_free(o);
 }
+
+namespace {
+
+std::string GetLeafCert(const grpc_auth_context* ctx) {
+  if (ctx == nullptr) return "";
+  grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
+      ctx, GRPC_X509_PEM_CERT_PROPERTY_NAME);
+  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
+  if (prop == nullptr) return "";
+  return std::string(prop->value, prop->value_length);
+}
+
+}  // namespace
+
+bool SslLeafHashComparator(const grpc_auth_context* ctx1,
+                           const grpc_auth_context* ctx2) {
+  std::string cert1 = GetLeafCert(ctx1);
+  std::string cert2 = GetLeafCert(ctx2);
+  // If either cert is empty, we consider them not matching (or not
+  // authenticated). This is a safe default for now.
+  if (cert1.empty() || cert2.empty()) return false;
+  return cert1 == cert2;
+}
