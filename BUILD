@@ -2516,6 +2516,7 @@ grpc_cc_library(
     name = "grpc_core_credentials_header",
     hdrs = [
         "include/grpc/credentials.h",
+        "include/grpc/credentials_cpp.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -5105,6 +5106,7 @@ grpc_cc_library(
         "//src/core:json",
         "//src/core:match",
         "//src/core:memory_quota",
+        "//src/core:metadata",
         "//src/core:metadata_batch",
         "//src/core:metadata_info",
         "//src/core:notification",
