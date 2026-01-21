@@ -40,6 +40,11 @@ upb_MiniTableExtension_Number(const struct upb_MiniTableExtension* e) {
   return e->UPB_PRIVATE(field).UPB_ONLYBITS(number);
 }
 
+UPB_API_INLINE const struct upb_MiniTable* upb_MiniTableExtension_Extendee(
+    const struct upb_MiniTableExtension* e) {
+  return e->UPB_PRIVATE(extendee);
+}
+
 UPB_API_INLINE const struct upb_MiniTable* upb_MiniTableExtension_GetSubMessage(
     const struct upb_MiniTableExtension* e) {
   if (upb_MiniTableExtension_CType(e) != kUpb_CType_Message) {
@@ -74,6 +79,11 @@ UPB_API_INLINE bool upb_MiniTableExtension_SetSubEnum(
   }
   e->UPB_PRIVATE(sub).UPB_PRIVATE(subenum) = en;
   return true;
+}
+
+UPB_API_INLINE const upb_MiniTableField* upb_MiniTableExtension_ToField(
+    const struct upb_MiniTableExtension* e) {
+  return &e->UPB_PRIVATE(field);
 }
 
 UPB_INLINE upb_FieldRep UPB_PRIVATE(_upb_MiniTableExtension_GetRep)(
