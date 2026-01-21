@@ -248,6 +248,40 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "fd_conservation_posix_test",
+    srcs = ["fd_conservation_posix_test.cc"],
+    external_deps = [
+        "absl/status:statusor",
+        "absl/strings",
+        "gtest",
+    ],
+    tags = [
+        "no_windows",
+    ],
+    uses_event_engine = True,
+    uses_polling = True,
+    deps = [
+        "//:channel_arg_names",
+        "//:config_vars",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_security_base",
+        "//:ref_counted_ptr",
+        "//src/core:channel_args",
+        "//src/core:channel_args_endpoint_config",
+        "//src/core:dual_ref_counted",
+        "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:grpc_check",
+        "//src/core:notification",
+        "//src/core:posix_event_engine",
+        "//src/core:resource_quota",
+        "//src/core:wait_for_single_owner",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "posix_endpoint_test",
     srcs = ["posix_endpoint_test.cc"],
     external_deps = [
