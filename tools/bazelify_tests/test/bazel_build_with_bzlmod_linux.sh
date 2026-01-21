@@ -19,7 +19,6 @@ set -ex
 tools/bazel \
     --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
     build \
-    --ignore_dev_dependency=false \
     -- \
     :all \
     -:grpcpp_csm_observability  # Needs google_cloud_cpp to be added to BCR
@@ -37,8 +36,7 @@ tools/bazel \
 # to be replaced by a comprehensive test suite once the bzlmod migration is finished.
 tools/bazel \
     --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
-    test \
-    --ignore_dev_dependency=false \
+    build \
     -- \
     //test/core/config:all \
     //test/core/util:all \
@@ -47,7 +45,6 @@ tools/bazel \
 tools/bazel \
     --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
     build \
-    --ignore_dev_dependency=false \
     -- \
     //test/... \
     -//test/cpp/ext/... \

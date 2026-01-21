@@ -49,8 +49,7 @@ bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
 # Development dependencies
 # ========================
 bazel_dep(name = "google_benchmark", version = "1.9.0", dev_dependency = True, repo_name = "com_github_google_benchmark")
-
-bazel_dep(dev_dependency, name = "rules_shell", version = "0.4.0")
+bazel_dep(name = "rules_shell", version = "0.4.0", dev_dependency = True)
 
 # Python dependencies
 # ===================
