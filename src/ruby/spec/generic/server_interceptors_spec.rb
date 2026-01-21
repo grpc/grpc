@@ -190,18 +190,30 @@ describe 'Server Interceptors' do
       ]
     end
 
-    it 'each should be called', server: true do
+    it 'each should be called in order', server: true do
+      call_order = []
       expect(interceptor).to receive(:request_response)
-        .once.and_call_original
+        .once.and_wrap_original do |m, *args|
+          m.call(*args)
+          call_order << interceptor
+        end
       expect(interceptor2).to receive(:request_response)
-        .once.and_call_original
+        .once.and_wrap_original do |m, *args|
+          m.call(*args)
+          call_order << interceptor2
+        end
       expect(interceptor3).to receive(:request_response)
-        .once.and_call_original
+        .once.and_wrap_original do |m, *args|
+          m.call(*args)
+          call_order << interceptor3
+        end
 
       run_services_on_server(@server, services: [service]) do
         stub = build_insecure_stub(EchoStub)
         expect(stub.an_rpc(request)).to be_a(EchoMsg)
       end
+
+      expect(call_order).to eq interceptors
     end
   end
 
