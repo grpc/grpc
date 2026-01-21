@@ -19,7 +19,7 @@ load(
     "py_grpc_library",
 )
 load("@com_google_protobuf//bazel:py_proto_library.bzl", "py_proto_library")
-load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
 load("//:python_rules_test.bzl", "python_rules_test_suite")
 
