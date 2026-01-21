@@ -1,0 +1,16 @@
+# go/google3metadata
+# proto-file: devtools/metadata/metadata.proto
+# proto-message: MetaData
+
+presubmit {
+  path_expression: "//depot/google3/third_party/grpc/..."
+  check_file_operation: {
+    failure_status: ERROR
+    failure_message: "The gRPC repo is locked. Please see go/grpc-arborist#tree-closures for more details."
+    base {
+      id: "LockGrpcRepo"
+      disable_tags: "REASON_FOR_BYPASSING_THE_GRPC_REPO_LOCK"
+    }
+    # By default, this matches all actions and operations
+  }
+}
