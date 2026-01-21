@@ -1504,7 +1504,7 @@ Http2ClientTransport::Http2ClientTransport(
       KeepAliveInterfaceImpl::Make(this),
       ((args.keepalive_timeout < args.ping_timeout) ? args.keepalive_timeout
                                                     : Duration::Infinity()),
-      args.keepalive_time, general_party_.get());
+      args.keepalive_time);
 
   GRPC_DCHECK(ping_manager_.has_value());
   GRPC_DCHECK(keepalive_manager_.has_value());
@@ -1514,6 +1514,7 @@ Http2ClientTransport::Http2ClientTransport(
 
 void Http2ClientTransport::SpawnTransportLoops() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::SpawnTransportLoops Begin";
+  MaybeSpawnKeepaliveLoop();
   SpawnGuardedTransportParty(
       "FlowControlPeriodicUpdateLoop",
       UntilTransportClosed(FlowControlPeriodicUpdateLoop()));
@@ -2248,6 +2249,15 @@ void Http2ClientTransport::MaybeSpawnDelayedPing(
                         wait = *delayed_ping_wait]() {
           GRPC_HTTP2_PING_LOG << "Scheduling delayed ping after wait=" << wait;
           return self->ping_manager_->DelayedPingPromise(wait);
+        });
+  }
+}
+
+void Http2ClientTransport::MaybeSpawnKeepaliveLoop() {
+  if (keepalive_manager_->IsKeepAliveLoopNeeded()) {
+    SpawnGuardedTransportParty(
+        "KeepaliveLoop", [self = RefAsSubclass<Http2ClientTransport>()]() {
+          return self->keepalive_manager_->KeepaliveLoop();
         });
   }
 }
