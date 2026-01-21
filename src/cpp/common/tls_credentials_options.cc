@@ -17,6 +17,7 @@
 //
 
 #include <grpc/credentials.h>
+#include <grpc/credentials_cpp.h>
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
@@ -132,6 +133,12 @@ void TlsChannelCredentialsOptions::set_verify_server_certs(
   GRPC_CHECK_NE(options, nullptr);
   grpc_tls_credentials_options_set_verify_server_cert(options,
                                                       verify_server_certs);
+}
+
+void TlsChannelCredentialsOptions::set_sni_override(std::optional<std::string> sni_override) {
+  grpc_tls_credentials_options* options = mutable_c_credentials_options();
+  GRPC_CHECK_NE(options, nullptr);
+  grpc_tls_credentials_options_set_sni_override(options, sni_override);
 }
 
 void TlsServerCredentialsOptions::set_cert_request_type(

@@ -319,6 +319,20 @@ TEST(CredentialsTest, TlsChannelCredentialsWithDefaultRootsAndDefaultVerifier) {
   GRPC_CHECK_NE(channel_credentials.get(), nullptr);
 }
 
+TEST(Credentialstest, TlsChannelCredentialsWithDefaultRootsAndEmptySni) {
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  options.set_sni_override("");
+  auto channel_credentials = grpc::experimental::TlsCredentials(options);
+  GRPC_CHECK_NE(channel_credentials.get(), nullptr);
+}
+
+TEST(CredentialsTest, TlsChannelCredentialsWithDefaultRootsAndSni) {
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  options.set_sni_override("test");
+  auto channel_credentials = grpc::experimental::TlsCredentials(options);
+  GRPC_CHECK_NE(channel_credentials.get(), nullptr);
+}
+
 TEST(
     CredentialsTest,
     TlsChannelCredentialsWithStaticDataCertificateProviderLoadingRootAndIdentity) {

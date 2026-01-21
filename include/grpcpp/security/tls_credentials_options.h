@@ -157,6 +157,12 @@ class TlsChannelCredentialsOptions final : public TlsCredentialsOptions {
   // The default is true.
   void set_verify_server_certs(bool verify_server_certs);
 
+  // Overrides the SNI that the client sends in the TLS handshake. nullopt
+  // indicates that SNI should not be overridden. An empty string value indicates
+  // that SNI should not be sent at all.
+  // The default is nullopt.
+  void set_sni_override(std::optional<std::string> sni_override);
+
  private:
 };
 
