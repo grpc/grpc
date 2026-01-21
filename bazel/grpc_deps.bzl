@@ -55,6 +55,20 @@ def grpc_deps():
             ],
         )
 
+    if "com_google_absl" not in native.existing_rules():
+        http_archive(
+            name = "com_google_absl",
+            sha256 = "9b7a064305e9fd94d124ffa6cc358592eb42b5da588fb4e07d09254aa40086db",
+            strip_prefix = "abseil-cpp-20250512.1",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/archive/refs/tags/20250512.1.tar.gz",
+                "https://github.com/abseil/abseil-cpp/archive/refs/tags/20250512.1.tar.gz",
+            ],
+            repo_mapping = {
+                "@googletest": "@com_google_googletest",
+            },
+        )
+
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
@@ -147,20 +161,6 @@ def grpc_deps():
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/c-ares/c-ares/archive/d3a507e920e7af18a5efb7f9f1d8044ed4750013.tar.gz",
                 "https://github.com/c-ares/c-ares/archive/d3a507e920e7af18a5efb7f9f1d8044ed4750013.tar.gz",
             ],
-        )
-
-    if "com_google_absl" not in native.existing_rules():
-        http_archive(
-            name = "com_google_absl",
-            sha256 = "9b7a064305e9fd94d124ffa6cc358592eb42b5da588fb4e07d09254aa40086db",
-            strip_prefix = "abseil-cpp-20250512.1",
-            urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/archive/refs/tags/20250512.1.tar.gz",
-                "https://github.com/abseil/abseil-cpp/archive/refs/tags/20250512.1.tar.gz",
-            ],
-            repo_mapping = {
-                "@googletest": "@com_google_googletest",
-            },
         )
 
     if "bazel_toolchains" not in native.existing_rules():
@@ -423,14 +423,30 @@ def grpc_test_only_deps():
         )
 
 def grpc_module_deps():
+    if "com_github_nlohmann_json" not in native.existing_rules():
+        http_archive(
+            name = "com_github_nlohmann_json",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/nlohmann/json/archive/v3.11.3.tar.gz",
+                "https://github.com/nlohmann/json/archive/v3.11.3.tar.gz",
+            ],
+            sha256 = "0d8ef5af7f9794e3263480193c491549b2ba6cc74bb018906202ada498a79406",
+            strip_prefix = "json-3.11.3",
+        )
+
     if "google_cloud_cpp" not in native.existing_rules():
         http_archive(
             name = "google_cloud_cpp",
-            sha256 = "81ea28cf9e5bb032d356b0187409f30b1035f8ea5b530675ea248c8a6c0070aa",
-            strip_prefix = "google-cloud-cpp-2.35.0",
+            sha256 = "ad99fb2fb0e04239a882c53589cb157b72e0e3ddb6e916cb5a9480e902d0aeec",
+            strip_prefix = "google-cloud-cpp-3.0.0-rc1",
+            repo_mapping = {
+                "@opentelemetry-cpp": "@io_opentelemetry_cpp",
+                "@grpc": "@com_github_grpc_grpc",
+                "@nlohmann_json": "@com_github_nlohmann_json",
+            },
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.35.0.tar.gz",
-                "https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.35.0.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/google-cloud-cpp/archive/refs/tags/v3.0.0-rc1.tar.gz",
+                "https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v3.0.0-rc1.tar.gz",
             ],
         )
 
