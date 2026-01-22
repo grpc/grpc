@@ -1,5 +1,5 @@
 PHP_ARG_ENABLE(grpc, whether to enable grpc support,
-[  --enable-grpc           Enable grpc support])
+[  --enable-grpc[=DIR]       Enable grpc support])
 
 PHP_ARG_ENABLE(coverage, whether to include code coverage symbols,
 [  --enable-coverage       Enable coverage support], no, no)
@@ -16,7 +16,9 @@ if test "$PHP_GRPC" != "no"; then
   dnl Write more examples of tests here...
 
   dnl # --with-grpc -> check with-path
-  SEARCH_PATH="/usr/local /usr"     # you might want to change this
+
+  PKG_CHECK_VAR([PKG_CONFIG_GRPC_PATH], [grpc], [prefix])
+  SEARCH_PATH="/usr/local /usr $PHP_GRPC $PKG_CONFIG_GRPC_PATH"     # you might want to change this
   SEARCH_FOR="include/grpc/grpc.h"  # you most likely want to change this
   if test -r $PHP_GRPC/$SEARCH_FOR; then # path given as parameter
     GRPC_DIR=$PHP_GRPC
