@@ -3,7 +3,8 @@
  *     envoy/config/endpoint/v3/endpoint.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -19,10 +20,11 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_config_endpoint_v3_ClusterLoadAssignment_submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__LocalityLbEndpoints_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__ClusterLoadAssignment__Policy_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__ClusterLoadAssignment__NamedEndpointsEntry_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_config_endpoint_v3_ClusterLoadAssignment__submsgs[3] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__LocalityLbEndpoints_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__ClusterLoadAssignment__Policy_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__ClusterLoadAssignment__NamedEndpointsEntry_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_endpoint_v3_ClusterLoadAssignment__fields[4] = {
@@ -33,7 +35,7 @@ static const upb_MiniTableField envoy_config_endpoint_v3_ClusterLoadAssignment__
 };
 
 const upb_MiniTable envoy__config__endpoint__v3__ClusterLoadAssignment_msg_init = {
-  &envoy_config_endpoint_v3_ClusterLoadAssignment_submsgs[0],
+  &envoy_config_endpoint_v3_ClusterLoadAssignment__submsgs[0],
   &envoy_config_endpoint_v3_ClusterLoadAssignment__fields[0],
   UPB_SIZE(32, 56), 4, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -47,23 +49,24 @@ const upb_MiniTable envoy__config__endpoint__v3__ClusterLoadAssignment_msg_init 
   })
 };
 
-static const upb_MiniTableSub envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__ClusterLoadAssignment__Policy__DropOverload_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init},
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
+const upb_MiniTable* envoy__config__endpoint__v3__ClusterLoadAssignment_msg_init_ptr = &envoy__config__endpoint__v3__ClusterLoadAssignment_msg_init;
+static const upb_MiniTableSubInternal envoy_config_endpoint_v3_ClusterLoadAssignment_Policy__submsgs[3] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__ClusterLoadAssignment__Policy__DropOverload_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__UInt32Value_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_endpoint_v3_ClusterLoadAssignment_Policy__fields[4] = {
   {2, UPB_SIZE(12, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(16, 24), 64, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {4, UPB_SIZE(20, 32), 65, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {6, UPB_SIZE(24, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {6, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__config__endpoint__v3__ClusterLoadAssignment__Policy_msg_init = {
-  &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_submsgs[0],
+  &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy__submsgs[0],
   &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy__fields[0],
-  UPB_SIZE(32, 40), 4, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(24, 40), 4, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.endpoint.v3.ClusterLoadAssignment.Policy",
 #endif
@@ -79,8 +82,9 @@ const upb_MiniTable envoy__config__endpoint__v3__ClusterLoadAssignment__Policy_m
   })
 };
 
-static const upb_MiniTableSub envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__type__v3__FractionalPercent_msg_init},
+const upb_MiniTable* envoy__config__endpoint__v3__ClusterLoadAssignment__Policy_msg_init_ptr = &envoy__config__endpoint__v3__ClusterLoadAssignment__Policy_msg_init;
+static const upb_MiniTableSubInternal envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload__submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__type__v3__FractionalPercent_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload__fields[2] = {
@@ -89,7 +93,7 @@ static const upb_MiniTableField envoy_config_endpoint_v3_ClusterLoadAssignment_P
 };
 
 const upb_MiniTable envoy__config__endpoint__v3__ClusterLoadAssignment__Policy__DropOverload_msg_init = {
-  &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_submsgs[0],
+  &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload__submsgs[0],
   &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -101,8 +105,9 @@ const upb_MiniTable envoy__config__endpoint__v3__ClusterLoadAssignment__Policy__
   })
 };
 
-static const upb_MiniTableSub envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__Endpoint_msg_init},
+const upb_MiniTable* envoy__config__endpoint__v3__ClusterLoadAssignment__Policy__DropOverload_msg_init_ptr = &envoy__config__endpoint__v3__ClusterLoadAssignment__Policy__DropOverload_msg_init;
+static const upb_MiniTableSubInternal envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry__submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__endpoint__v3__Endpoint_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry__fields[2] = {
@@ -111,7 +116,7 @@ static const upb_MiniTableField envoy_config_endpoint_v3_ClusterLoadAssignment_N
 };
 
 const upb_MiniTable envoy__config__endpoint__v3__ClusterLoadAssignment__NamedEndpointsEntry_msg_init = {
-  &envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry_submsgs[0],
+  &envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry__submsgs[0],
   &envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry__fields[0],
   48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -123,6 +128,7 @@ const upb_MiniTable envoy__config__endpoint__v3__ClusterLoadAssignment__NamedEnd
   })
 };
 
+const upb_MiniTable* envoy__config__endpoint__v3__ClusterLoadAssignment__NamedEndpointsEntry_msg_init_ptr = &envoy__config__endpoint__v3__ClusterLoadAssignment__NamedEndpointsEntry_msg_init;
 static const upb_MiniTable *messages_layout[4] = {
   &envoy__config__endpoint__v3__ClusterLoadAssignment_msg_init,
   &envoy__config__endpoint__v3__ClusterLoadAssignment__Policy_msg_init,

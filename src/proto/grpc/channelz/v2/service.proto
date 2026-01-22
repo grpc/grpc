@@ -1,0 +1,101 @@
+// Copyright 2025 The gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+///////////////////////////////////////////////////////////////////////////////
+// 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨
+//
+// This protocol is under active development, and will change in backwards
+// incompatible ways in the future.
+//
+// DO NOT take a dependency on this without contacting the gRPC authors
+// (who will advise against taking such a dependency in as strong a fashion
+// as they are able)
+//
+// 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨
+///////////////////////////////////////////////////////////////////////////////
+
+package grpc.channelz.v2;
+
+import "src/proto/grpc/channelz/v2/channelz.proto";
+
+service Channelz {
+  // Gets all entities of a given kind, optionally with a given parent.
+  rpc QueryEntities(QueryEntitiesRequest) returns (QueryEntitiesResponse);
+  // Gets information for a specific entity.
+  rpc GetEntity(GetEntityRequest) returns (GetEntityResponse);
+  // Query a named trace from an entity.
+  // These query live information from the system, and run for as long
+  // as the query time is made for.
+  rpc QueryTrace(QueryTraceRequest) returns (stream QueryTraceResponse);
+}
+
+message QueryEntitiesRequest {
+  // The kind of entities to query.
+  // If this is set to empty then all kinds will be queried.
+  string kind = 1;
+  // Filter the entities so that only children of this parent are returned.
+  // If this is 0 then no parent filter is applied.
+  int64 parent = 2;
+  // The first entity to return.
+  // If this is 0 then the first entity will be returned.
+  int64 start_entity_id = 3;
+}
+
+message QueryEntitiesResponse {
+  // List of entities that match the query.
+  repeated Entity entities = 1;
+  // If set, indicates that the list of entities is the final list.
+  // Requesting more will only return more if they are created after this RPC
+  // completes.
+  bool end = 2;
+}
+
+message GetEntityRequest {
+  // The identifier of the entity to get.
+  int64 id = 1;
+}
+
+message GetEntityResponse {
+  // The Entity that corresponds to the requested id.  This field
+  // should be set.
+  Entity entity = 1;
+}
+
+message QueryTraceRequest {
+  message QueryArgValue {
+    oneof value {
+      int64 int_value = 1;
+      string string_value = 2;
+      bool bool_value = 3;
+    }
+  }
+  // The identifier of the entity to query.
+  int64 id = 1;
+  // The name of the trace to query.
+  string name = 2;
+  // Implementation defined query arguments.
+  map<string, QueryArgValue> args = 4;
+}
+
+message QueryTraceResponse {
+  // The events in the trace.
+  // If multiple events occurred between the last message in the stream being
+  // sent and this one being sent, this can contain more than one event.
+  repeated TraceEvent events = 1;
+  // Number of events matched by the trace.
+  // This may be higher than the number returned if memory limits were exceeded.
+  int64 num_events_matched = 2;
+}

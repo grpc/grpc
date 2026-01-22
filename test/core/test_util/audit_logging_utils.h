@@ -17,16 +17,16 @@
 #ifndef GRPC_TEST_CORE_TEST_UTIL_AUDIT_LOGGING_UTILS_H
 #define GRPC_TEST_CORE_TEST_UTIL_AUDIT_LOGGING_UTILS_H
 
+#include <grpc/grpc_audit_logging.h>
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/grpc_audit_logging.h>
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 namespace testing {

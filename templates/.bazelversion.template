@@ -1,4 +1,0 @@
-%YAML 1.2
---- |
-  ${primary_bazel_version}
-

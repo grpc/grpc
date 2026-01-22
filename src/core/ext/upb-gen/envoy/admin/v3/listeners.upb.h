@@ -3,10 +3,11 @@
  *     envoy/admin/v3/listeners.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_ADMIN_V3_LISTENERS_PROTO_UPB_H_
-#define ENVOY_ADMIN_V3_LISTENERS_PROTO_UPB_H_
+#ifndef ENVOY_ADMIN_V3_LISTENERS_PROTO_UPB_H__UPB_H_
+#define ENVOY_ADMIN_V3_LISTENERS_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -71,6 +72,7 @@ UPB_INLINE void envoy_admin_v3_Listeners_clear_listener_statuses(envoy_admin_v3_
 }
 UPB_INLINE const envoy_admin_v3_ListenerStatus* const* envoy_admin_v3_Listeners_listener_statuses(const envoy_admin_v3_Listeners* msg, size_t* size) {
   const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__admin__v3__ListenerStatus_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -82,6 +84,7 @@ UPB_INLINE const envoy_admin_v3_ListenerStatus* const* envoy_admin_v3_Listeners_
 }
 UPB_INLINE const upb_Array* _envoy_admin_v3_Listeners_listener_statuses_upb_array(const envoy_admin_v3_Listeners* msg, size_t* size) {
   const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__admin__v3__ListenerStatus_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
     *size = arr ? arr->UPB_PRIVATE(size) : 0;
@@ -90,6 +93,7 @@ UPB_INLINE const upb_Array* _envoy_admin_v3_Listeners_listener_statuses_upb_arra
 }
 UPB_INLINE upb_Array* _envoy_admin_v3_Listeners_listener_statuses_mutable_upb_array(envoy_admin_v3_Listeners* msg, size_t* size, upb_Arena* arena) {
   const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__admin__v3__ListenerStatus_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
   if (size) {
@@ -100,6 +104,7 @@ UPB_INLINE upb_Array* _envoy_admin_v3_Listeners_listener_statuses_mutable_upb_ar
 
 UPB_INLINE envoy_admin_v3_ListenerStatus** envoy_admin_v3_Listeners_mutable_listener_statuses(envoy_admin_v3_Listeners* msg, size_t* size) {
   upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__admin__v3__ListenerStatus_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -116,6 +121,7 @@ UPB_INLINE envoy_admin_v3_ListenerStatus** envoy_admin_v3_Listeners_resize_liste
 }
 UPB_INLINE struct envoy_admin_v3_ListenerStatus* envoy_admin_v3_Listeners_add_listener_statuses(envoy_admin_v3_Listeners* msg, upb_Arena* arena) {
   upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__admin__v3__ListenerStatus_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
   if (!arr || !UPB_PRIVATE(_upb_Array_ResizeUninitialized)(
@@ -185,6 +191,7 @@ UPB_INLINE const struct envoy_config_core_v3_Address* envoy_admin_v3_ListenerSta
   const struct envoy_config_core_v3_Address* default_val = NULL;
   const struct envoy_config_core_v3_Address* ret;
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__Address_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -199,6 +206,7 @@ UPB_INLINE void envoy_admin_v3_ListenerStatus_clear_additional_local_addresses(e
 }
 UPB_INLINE const struct envoy_config_core_v3_Address* const* envoy_admin_v3_ListenerStatus_additional_local_addresses(const envoy_admin_v3_ListenerStatus* msg, size_t* size) {
   const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__Address_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -210,6 +218,7 @@ UPB_INLINE const struct envoy_config_core_v3_Address* const* envoy_admin_v3_List
 }
 UPB_INLINE const upb_Array* _envoy_admin_v3_ListenerStatus_additional_local_addresses_upb_array(const envoy_admin_v3_ListenerStatus* msg, size_t* size) {
   const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__Address_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
     *size = arr ? arr->UPB_PRIVATE(size) : 0;
@@ -218,6 +227,7 @@ UPB_INLINE const upb_Array* _envoy_admin_v3_ListenerStatus_additional_local_addr
 }
 UPB_INLINE upb_Array* _envoy_admin_v3_ListenerStatus_additional_local_addresses_mutable_upb_array(envoy_admin_v3_ListenerStatus* msg, size_t* size, upb_Arena* arena) {
   const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__Address_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
   if (size) {
@@ -232,6 +242,7 @@ UPB_INLINE void envoy_admin_v3_ListenerStatus_set_name(envoy_admin_v3_ListenerSt
 }
 UPB_INLINE void envoy_admin_v3_ListenerStatus_set_local_address(envoy_admin_v3_ListenerStatus *msg, struct envoy_config_core_v3_Address* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__Address_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_Address* envoy_admin_v3_ListenerStatus_mutable_local_address(envoy_admin_v3_ListenerStatus* msg, upb_Arena* arena) {
@@ -244,6 +255,7 @@ UPB_INLINE struct envoy_config_core_v3_Address* envoy_admin_v3_ListenerStatus_mu
 }
 UPB_INLINE struct envoy_config_core_v3_Address** envoy_admin_v3_ListenerStatus_mutable_additional_local_addresses(envoy_admin_v3_ListenerStatus* msg, size_t* size) {
   upb_MiniTableField field = {3, UPB_SIZE(16, 40), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__Address_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -260,6 +272,7 @@ UPB_INLINE struct envoy_config_core_v3_Address** envoy_admin_v3_ListenerStatus_r
 }
 UPB_INLINE struct envoy_config_core_v3_Address* envoy_admin_v3_ListenerStatus_add_additional_local_addresses(envoy_admin_v3_ListenerStatus* msg, upb_Arena* arena) {
   upb_MiniTableField field = {3, UPB_SIZE(16, 40), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__Address_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
   if (!arr || !UPB_PRIVATE(_upb_Array_ResizeUninitialized)(
@@ -279,4 +292,4 @@ UPB_INLINE struct envoy_config_core_v3_Address* envoy_admin_v3_ListenerStatus_ad
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_ADMIN_V3_LISTENERS_PROTO_UPB_H_ */
+#endif  /* ENVOY_ADMIN_V3_LISTENERS_PROTO_UPB_H__UPB_H_ */

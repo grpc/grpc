@@ -3,10 +3,11 @@
  *     xds/service/orca/v3/orca.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_SERVICE_ORCA_V3_ORCA_PROTO_UPB_H_
-#define XDS_SERVICE_ORCA_V3_ORCA_PROTO_UPB_H_
+#ifndef XDS_SERVICE_ORCA_V3_ORCA_PROTO_UPB_H__UPB_H_
+#define XDS_SERVICE_ORCA_V3_ORCA_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -71,6 +72,7 @@ UPB_INLINE const struct google_protobuf_Duration* xds_service_orca_v3_OrcaLoadRe
   const struct google_protobuf_Duration* default_val = NULL;
   const struct google_protobuf_Duration* ret;
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Duration_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -114,6 +116,7 @@ UPB_INLINE upb_Array* _xds_service_orca_v3_OrcaLoadReportRequest_request_cost_na
 
 UPB_INLINE void xds_service_orca_v3_OrcaLoadReportRequest_set_report_interval(xds_service_orca_v3_OrcaLoadReportRequest *msg, struct google_protobuf_Duration* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Duration_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* xds_service_orca_v3_OrcaLoadReportRequest_mutable_report_interval(xds_service_orca_v3_OrcaLoadReportRequest* msg, upb_Arena* arena) {
@@ -159,4 +162,4 @@ UPB_INLINE bool xds_service_orca_v3_OrcaLoadReportRequest_add_request_cost_names
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_SERVICE_ORCA_V3_ORCA_PROTO_UPB_H_ */
+#endif  /* XDS_SERVICE_ORCA_V3_ORCA_PROTO_UPB_H__UPB_H_ */

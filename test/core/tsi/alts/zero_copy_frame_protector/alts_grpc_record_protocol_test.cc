@@ -18,19 +18,17 @@
 
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol.h"
 
-#include <memory>
-
-#include <gtest/gtest.h>
-
-#include "absl/types/span.h"
-
 #include <grpc/support/alloc.h>
+
+#include <memory>
 
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
+#include "gtest/gtest.h"
+#include "absl/types/span.h"
 
 constexpr size_t kMaxSliceLength = 256;
 constexpr size_t kMaxSlices = 10;

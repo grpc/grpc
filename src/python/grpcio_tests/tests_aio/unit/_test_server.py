@@ -102,7 +102,7 @@ class TestServiceServicer(test_pb2_grpc.TestServiceServicer):
             else:
                 yield messages_pb2.StreamingOutputCallResponse()
 
-    # Next methods are extra ones that are registred programatically
+    # Next methods are extra ones that are registered programmatically
     # when the sever is instantiated. They are not being provided by
     # the proto file.
     async def UnaryCallWithSleep(self, unused_request, unused_context):
@@ -144,7 +144,7 @@ class TestServiceServicer(test_pb2_grpc.TestServiceServicer):
 
 
 def _create_extra_generic_handler(servicer: TestServiceServicer):
-    # Add programatically extra methods not provided by the proto file
+    # Add programmatically extra methods not provided by the proto file
     # that are used during the tests
     rpc_method_handlers = {
         "UnaryCallWithSleep": grpc.unary_unary_rpc_method_handler(

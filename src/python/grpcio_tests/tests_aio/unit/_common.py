@@ -13,7 +13,8 @@
 # limitations under the License.
 
 import asyncio
-from typing import AsyncIterable
+import logging
+from typing import AsyncIterable, Union
 
 import grpc
 from grpc.aio._metadata import Metadata
@@ -25,6 +26,18 @@ from grpc.experimental import aio
 from tests.unit.framework.common import test_constants
 
 ADHOC_METHOD = "/test/AdHoc"
+
+
+def setup_absl_like_logging(level=logging.DEBUG):
+    logging.basicConfig(
+        level=level,
+        style="{",
+        format=(
+            "{levelname[0]}{asctime}.{msecs:03.0f} {thread} "
+            "{filename}:{lineno}] {message}"
+        ),
+        datefmt="%m%d %H:%M:%S",
+    )
 
 
 def seen_metadata(expected: Metadata, actual: Metadata):
@@ -47,11 +60,11 @@ async def block_until_certain_state(
         state = channel.get_state()
 
 
-def inject_callbacks(call: aio.Call):
+def inject_callbacks(call: Union[aio.Call, aio.ServicerContext]):
     first_callback_ran = asyncio.Event()
 
     def first_callback(call):
-        # Validate that all resopnses have been received
+        # Validate that all responses have been received
         # and the call is an end state.
         assert call.done()
         first_callback_ran.set()

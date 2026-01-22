@@ -3,7 +3,8 @@
  *     envoy/annotations/resource.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -13,6 +14,7 @@
 // Must be last.
 #include "upb/port/def.inc"
 
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
 static const upb_MiniTableField envoy_annotations_ResourceAnnotation__fields[1] = {
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
@@ -30,16 +32,18 @@ const upb_MiniTable envoy__annotations__ResourceAnnotation_msg_init = {
   })
 };
 
-static const upb_MiniTable *messages_layout[1] = {
-  &envoy__annotations__ResourceAnnotation_msg_init,
-};
-
+const upb_MiniTable* envoy__annotations__ResourceAnnotation_msg_init_ptr = &envoy__annotations__ResourceAnnotation_msg_init;
+UPB_LINKARR_APPEND(upb_AllExts)
 const upb_MiniTableExtension envoy_annotations_resource_ext = {
-  {265073217, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {265073217, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   &google__protobuf__ServiceOptions_msg_init,
   {.UPB_PRIVATE(submsg) = &envoy__annotations__ResourceAnnotation_msg_init},
 
 };
+static const upb_MiniTable *messages_layout[1] = {
+  &envoy__annotations__ResourceAnnotation_msg_init,
+};
+
 
 static const upb_MiniTableExtension *extensions_layout[1] = {
   &envoy_annotations_resource_ext,

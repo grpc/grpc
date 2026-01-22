@@ -14,17 +14,34 @@
 // limitations under the License.
 //
 
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <stdlib.h>
 
 #include <algorithm>
 #include <atomic>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
+#include "src/core/config/core_configuration.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/load_balancing/endpoint_list.h"
+#include "src/core/load_balancing/lb_policy.h"
+#include "src/core/load_balancing/lb_policy_factory.h"
+#include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/shared_bit_gen.h"
+#include "src/core/util/work_serializer.h"
 #include "absl/log/log.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
@@ -32,24 +49,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/work_serializer.h"
-#include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/load_balancing/endpoint_list.h"
-#include "src/core/load_balancing/lb_policy.h"
-#include "src/core/load_balancing/lb_policy_factory.h"
-#include "src/core/resolver/endpoint_addresses.h"
-#include "src/core/util/json/json.h"
 
 namespace grpc_core {
 
@@ -71,9 +70,9 @@ class RoundRobin final : public LoadBalancingPolicy {
    public:
     RoundRobinEndpointList(RefCountedPtr<RoundRobin> round_robin,
                            EndpointAddressesIterator* endpoints,
-                           const ChannelArgs& args,
+                           const ChannelArgs& args, std::string resolution_note,
                            std::vector<std::string>* errors)
-        : EndpointList(std::move(round_robin),
+        : EndpointList(std::move(round_robin), std::move(resolution_note),
                        GRPC_TRACE_FLAG_ENABLED(round_robin)
                            ? "RoundRobinEndpointList"
                            : nullptr) {
@@ -104,7 +103,7 @@ class RoundRobin final : public LoadBalancingPolicy {
 
      private:
       // Called when the child policy reports a connectivity state update.
-      void OnStateUpdate(absl::optional<grpc_connectivity_state> old_state,
+      void OnStateUpdate(std::optional<grpc_connectivity_state> old_state,
                          grpc_connectivity_state new_state,
                          const absl::Status& status) override;
     };
@@ -117,7 +116,7 @@ class RoundRobin final : public LoadBalancingPolicy {
     // Updates the counters of children in each state when a
     // child transitions from old_state to new_state.
     void UpdateStateCountersLocked(
-        absl::optional<grpc_connectivity_state> old_state,
+        std::optional<grpc_connectivity_state> old_state,
         grpc_connectivity_state new_state);
 
     // Ensures that the right child list is used and then updates
@@ -168,8 +167,6 @@ class RoundRobin final : public LoadBalancingPolicy {
   OrphanablePtr<RoundRobinEndpointList> latest_pending_endpoint_list_;
 
   bool shutdown_ = false;
-
-  absl::BitGen bit_gen_;
 };
 
 //
@@ -182,7 +179,7 @@ RoundRobin::Picker::Picker(
     : parent_(parent), pickers_(std::move(pickers)) {
   // For discussion on why we generate a random starting index for
   // the picker, see https://github.com/grpc/grpc-go/issues/2580.
-  size_t index = absl::Uniform<size_t>(parent->bit_gen_, 0, pickers_.size());
+  size_t index = absl::Uniform<size_t>(SharedBitGen(), 0, pickers_.size());
   last_picked_index_.store(index, std::memory_order_relaxed);
   GRPC_TRACE_LOG(round_robin, INFO)
       << "[RR " << parent_ << " picker " << this
@@ -211,8 +208,8 @@ RoundRobin::RoundRobin(Args args) : LoadBalancingPolicy(std::move(args)) {
 RoundRobin::~RoundRobin() {
   GRPC_TRACE_LOG(round_robin, INFO)
       << "[RR " << this << "] Destroying Round Robin policy";
-  CHECK(endpoint_list_ == nullptr);
-  CHECK(latest_pending_endpoint_list_ == nullptr);
+  GRPC_CHECK(endpoint_list_ == nullptr);
+  GRPC_CHECK(latest_pending_endpoint_list_ == nullptr);
 }
 
 void RoundRobin::ShutdownLocked() {
@@ -251,7 +248,7 @@ absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
   std::vector<std::string> errors;
   latest_pending_endpoint_list_ = MakeOrphanable<RoundRobinEndpointList>(
       RefAsSubclass<RoundRobin>(DEBUG_LOCATION, "RoundRobinEndpointList"),
-      addresses, args.args, &errors);
+      addresses, args.args, std::move(args.resolution_note), &errors);
   // If the new list is empty, immediately promote it to
   // endpoint_list_ and report TRANSIENT_FAILURE.
   if (latest_pending_endpoint_list_->size() == 0) {
@@ -260,13 +257,10 @@ absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
                 << endpoint_list_.get();
     }
     endpoint_list_ = std::move(latest_pending_endpoint_list_);
-    absl::Status status =
-        args.addresses.ok() ? absl::UnavailableError(absl::StrCat(
-                                  "empty address list: ", args.resolution_note))
-                            : args.addresses.status();
-    channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, status,
-        MakeRefCounted<TransientFailurePicker>(status));
+    absl::Status status = args.addresses.ok()
+                              ? absl::UnavailableError("empty address list")
+                              : args.addresses.status();
+    endpoint_list_->ReportTransientFailure(status);
     return status;
   }
   // Otherwise, if this is the initial update, immediately promote it to
@@ -286,7 +280,7 @@ absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
 //
 
 void RoundRobin::RoundRobinEndpointList::RoundRobinEndpoint::OnStateUpdate(
-    absl::optional<grpc_connectivity_state> old_state,
+    std::optional<grpc_connectivity_state> old_state,
     grpc_connectivity_state new_state, const absl::Status& status) {
   auto* rr_endpoint_list = endpoint_list<RoundRobinEndpointList>();
   auto* round_robin = policy<RoundRobin>();
@@ -316,25 +310,25 @@ void RoundRobin::RoundRobinEndpointList::RoundRobinEndpoint::OnStateUpdate(
 //
 
 void RoundRobin::RoundRobinEndpointList::UpdateStateCountersLocked(
-    absl::optional<grpc_connectivity_state> old_state,
+    std::optional<grpc_connectivity_state> old_state,
     grpc_connectivity_state new_state) {
   // We treat IDLE the same as CONNECTING, since it will immediately
   // transition into that state anyway.
   if (old_state.has_value()) {
-    CHECK(*old_state != GRPC_CHANNEL_SHUTDOWN);
+    GRPC_CHECK(*old_state != GRPC_CHANNEL_SHUTDOWN);
     if (*old_state == GRPC_CHANNEL_READY) {
-      CHECK_GT(num_ready_, 0u);
+      GRPC_CHECK_GT(num_ready_, 0u);
       --num_ready_;
     } else if (*old_state == GRPC_CHANNEL_CONNECTING ||
                *old_state == GRPC_CHANNEL_IDLE) {
-      CHECK_GT(num_connecting_, 0u);
+      GRPC_CHECK_GT(num_connecting_, 0u);
       --num_connecting_;
     } else if (*old_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-      CHECK_GT(num_transient_failure_, 0u);
+      GRPC_CHECK_GT(num_transient_failure_, 0u);
       --num_transient_failure_;
     }
   }
-  CHECK(new_state != GRPC_CHANNEL_SHUTDOWN);
+  GRPC_CHECK(new_state != GRPC_CHANNEL_SHUTDOWN);
   if (new_state == GRPC_CHANNEL_READY) {
     ++num_ready_;
   } else if (new_state == GRPC_CHANNEL_CONNECTING ||
@@ -361,14 +355,10 @@ void RoundRobin::RoundRobinEndpointList::
        (num_ready_ > 0 && AllEndpointsSeenInitialState()) ||
        num_transient_failure_ == size())) {
     if (GRPC_TRACE_FLAG_ENABLED(round_robin)) {
-      const std::string old_counters_string =
-          round_robin->endpoint_list_ != nullptr
-              ? round_robin->endpoint_list_->CountersString()
-              : "";
       LOG(INFO) << "[RR " << round_robin << "] swapping out child list "
                 << round_robin->endpoint_list_.get() << " ("
-                << old_counters_string << ") in favor of " << this << " ("
-                << CountersString() << ")";
+                << round_robin->endpoint_list_->CountersString()
+                << ") in favor of " << this << " (" << CountersString() << ")";
     }
     round_robin->endpoint_list_ =
         std::move(round_robin->latest_pending_endpoint_list_);
@@ -390,7 +380,7 @@ void RoundRobin::RoundRobinEndpointList::
         pickers.push_back(endpoint->picker());
       }
     }
-    CHECK(!pickers.empty());
+    GRPC_CHECK(!pickers.empty());
     round_robin->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_READY, absl::OkStatus(),
         MakeRefCounted<Picker>(round_robin, std::move(pickers)));
@@ -399,7 +389,7 @@ void RoundRobin::RoundRobinEndpointList::
         << "[RR " << round_robin << "] reporting CONNECTING with child list "
         << this;
     round_robin->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_CONNECTING, absl::Status(),
+        GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
         MakeRefCounted<QueuePicker>(nullptr));
   } else if (num_transient_failure_ == size()) {
     GRPC_TRACE_LOG(round_robin, INFO)
@@ -411,9 +401,7 @@ void RoundRobin::RoundRobinEndpointList::
           absl::StrCat("connections to all backends failing; last error: ",
                        status_for_tf.message()));
     }
-    round_robin->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, last_failure_,
-        MakeRefCounted<TransientFailurePicker>(last_failure_));
+    ReportTransientFailure(last_failure_);
   }
 }
 

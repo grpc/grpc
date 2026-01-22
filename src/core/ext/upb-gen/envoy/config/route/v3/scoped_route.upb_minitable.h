@@ -3,10 +3,11 @@
  *     envoy/config/route/v3/scoped_route.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_ROUTE_V3_SCOPED_ROUTE_PROTO_UPB_MINITABLE_H_
-#define ENVOY_CONFIG_ROUTE_V3_SCOPED_ROUTE_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_CONFIG_ROUTE_V3_SCOPED_ROUTE_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_CONFIG_ROUTE_V3_SCOPED_ROUTE_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -18,8 +19,11 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__config__route__v3__ScopedRouteConfiguration_msg_init;
+extern const upb_MiniTable* envoy__config__route__v3__ScopedRouteConfiguration_msg_init_ptr;
 extern const upb_MiniTable envoy__config__route__v3__ScopedRouteConfiguration__Key_msg_init;
+extern const upb_MiniTable* envoy__config__route__v3__ScopedRouteConfiguration__Key_msg_init_ptr;
 extern const upb_MiniTable envoy__config__route__v3__ScopedRouteConfiguration__Key__Fragment_msg_init;
+extern const upb_MiniTable* envoy__config__route__v3__ScopedRouteConfiguration__Key__Fragment_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_config_route_v3_scoped_route_proto_upb_file_layout;
 
@@ -29,4 +33,4 @@ extern const upb_MiniTableFile envoy_config_route_v3_scoped_route_proto_upb_file
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_ROUTE_V3_SCOPED_ROUTE_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_CONFIG_ROUTE_V3_SCOPED_ROUTE_PROTO_UPB_H__UPB_MINITABLE_H_ */

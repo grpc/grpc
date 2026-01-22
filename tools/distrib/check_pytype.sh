@@ -1,5 +1,5 @@
-#! /bin/bash -ex
-# Copyright 2019 The gRPC Authors
+#!/usr/bin/env bash
+# Copyright 2025 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,7 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-JOBS=$(nproc) || JOBS=4
-# TODO(xuanwn): update pytype version
-python3 -m pip install pytype==2019.11.27
-python3 -m pytype --keep-going -j "$JOBS" --strict-import --config "setup.cfg"
+set -eux
+
+VIRTUALENV=".venv-ci-pytype"
+python3.11 -m virtualenv "${VIRTUALENV}"
+source "${VIRTUALENV}/bin/activate"
+python -VV
+
+pip install pytype==2024.10.11
+pip list
+
+pytype --output=~/.cache/pytype --config=grpc-style-config.toml

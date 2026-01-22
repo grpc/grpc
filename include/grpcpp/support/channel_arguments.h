@@ -19,13 +19,13 @@
 #ifndef GRPCPP_SUPPORT_CHANNEL_ARGUMENTS_H
 #define GRPCPP_SUPPORT_CHANNEL_ARGUMENTS_H
 
-#include <list>
-#include <vector>
-
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpcpp/resource_quota.h>
 #include <grpcpp/support/config.h>
+
+#include <list>
+#include <vector>
 
 namespace grpc {
 class ChannelCredentials;
@@ -84,8 +84,10 @@ class ChannelArguments {
   void SetMaxSendMessageSize(int size);
 
   /// Set LB policy name.
-  /// Note that if the name resolver returns only balancer addresses, the
-  /// grpclb LB policy will be used, regardless of what is specified here.
+  /// Note that this API implicitly provides an empty config for the
+  /// specified LB policy, so it cannot be used for any policy with
+  /// required configuration parameters.  For those cases, set the LB
+  /// policy via the service config instead.
   void SetLoadBalancingPolicyName(const std::string& lb_policy_name);
 
   /// Set service config in JSON form.

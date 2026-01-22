@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.16)
 
 set(PROTOBUF_PROTOC_EXECUTABLE "/usr/local/bin/protoc" CACHE STRING "Protoc binary on host")
 set(gRPC_CPP_PLUGIN_EXECUTABLE "/usr/local/bin/grpc_cpp_plugin" CACHE STRING "gRPC CPP plugin binary on host")
@@ -13,6 +13,8 @@ add_subdirectory(${GRPC_SRC_DIR} ${GRPC_BUILD_DIR})
 #include_directories(${GRPC_SRC_DIR}/include)
 include_directories(${GRPC_SRC_DIR})
 include_directories(${_gRPC_ABSL_INCLUDE_DIR})
+include_directories(${_gRPC_UPB_INCLUDE_DIR})
+include_directories(${_gRPC_UPB_GRPC_GENERATED_DIR})
 
 set(GRPC_PROTO_GENS_DIR ${CMAKE_BINARY_DIR}/gens)
 file(MAKE_DIRECTORY ${GRPC_PROTO_GENS_DIR})
@@ -63,9 +65,7 @@ set(PROTO_BASE_DIR ${GRPC_SRC_DIR}/examples/protos)
 
 android_protobuf_grpc_generate_cpp(
   MESSAGES_PROTO_SRCS MESSAGES_PROTO_HDRS
-  ${GRPC_SRC_DIR}
-  ${GRPC_SRC_DIR}/src/proto/grpc/testing/messages.proto
-  ${GRPC_SRC_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.proto)
+  ${GRPC_SRC_DIR} ${GRPC_SRC_DIR}/src/proto/grpc/testing/messages.proto)
 
 add_library(messages_proto_lib
   SHARED ${MESSAGES_PROTO_SRCS} ${MESSAGES_PROTO_HDRS})
@@ -125,3 +125,9 @@ target_link_libraries(grpc-interop
   test_proto_lib
   android
   ${log-lib})
+
+target_include_directories(grpc-interop
+  PRIVATE
+    "${GRPC_SRC_DIR}/src/core/ext/upb-gen"
+    "${GRPC_SRC_DIR}/src/core/ext/upbdefs-gen"
+    "${GRPC_SRC_DIR}/third_party/upb")

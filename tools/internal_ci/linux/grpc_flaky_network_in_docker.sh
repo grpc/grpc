@@ -18,7 +18,7 @@
 set -ex
 
 # iptables is used to drop traffic between client and server
-apt-get install -y iptables iproute2
+apt-get update && apt-get install -y iptables iproute2
 
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_flaky_network_test
 bazel_flaky_network_test/bazel_wrapper test --test_output=all --test_timeout=1200 //test/cpp/end2end:flaky_network_test --test_env=GRPC_TRACE=http --test_env=GRPC_VERBOSITY=DEBUG

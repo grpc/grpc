@@ -19,17 +19,16 @@
 #ifndef GRPC_SRC_CORE_RESOLVER_ENDPOINT_ADDRESSES_H
 #define GRPC_SRC_CORE_RESOLVER_ENDPOINT_ADDRESSES_H
 
+#include <grpc/support/port_platform.h>
+
 #include <set>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "absl/functional/function_ref.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "absl/functional/function_ref.h"
 
 // A channel arg key prefix used for args that are intended to be used
 // only internally to resolvers and LB policies and should not be part
@@ -42,6 +41,9 @@
 
 // Name associated with individual address, if available (e.g., DNS name).
 #define GRPC_ARG_ADDRESS_NAME "grpc.address_name"
+
+// Backend service name associated with the addresses.
+#define GRPC_ARG_BACKEND_SERVICE "grpc.internal.backend_service"
 
 namespace grpc_core {
 

@@ -15,13 +15,13 @@
 #ifndef GRPC_TEST_CORE_TEST_UTIL_PASSTHROUGH_ENDPOINT_H
 #define GRPC_TEST_CORE_TEST_UTIL_PASSTHROUGH_ENDPOINT_H
 
-#include <memory>
-
 #include <grpc/event_engine/event_engine.h>
+
+#include <memory>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/util/ref_counted.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -43,10 +43,14 @@ class PassthroughEndpoint final : public EventEngine::Endpoint {
   ~PassthroughEndpoint() override;
 
   bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
-            const ReadArgs* args) override;
+            ReadArgs args) override;
 
   bool Write(absl::AnyInvocable<void(absl::Status)> on_write,
-             SliceBuffer* buffer, const WriteArgs* args) override;
+             SliceBuffer* buffer, WriteArgs args) override;
+
+  std::shared_ptr<TelemetryInfo> GetTelemetryInfo() const override {
+    return nullptr;
+  }
 
   const EventEngine::ResolvedAddress& GetPeerAddress() const override {
     return recv_middle_->address;

@@ -109,18 +109,10 @@ tail${i}:
     Destruct(&${"prior."*(n-1-i)}next_factory);
 % endfor
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
-    Construct(&${"prior."*(n-1)}current_promise,
-            other.${"prior."*(n-1)}current_promise);
-% for i in range(0,n-1):
-    Construct(&${"prior."*(n-1-i)}next_factory,
-              other.${"prior."*(n-1-i)}next_factory);
-% endfor
-  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept = delete;
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
+    GRPC_DCHECK(state == State::kState0);
     Construct(&${"prior."*(n-1)}current_promise,
               std::move(other.${"prior."*(n-1)}current_promise));
 % for i in range(0,n-1):
@@ -129,15 +121,33 @@ tail${i}:
 % endfor
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) = delete;
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind, grpc_channelz_v2_Promise* promise_proto, upb_Arena* arena) const {
+    auto* seq_promise = grpc_channelz_v2_Promise_mutable_seq_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Seq_set_kind(seq_promise, kind);
+    auto** steps = grpc_channelz_v2_Promise_Seq_resize_steps(seq_promise, ${n}, arena);
+    for (int i = 0; i < ${n}; i++) {
+        steps[i] = grpc_channelz_v2_Promise_SeqStep_new(arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(steps[0], StdStringToUpbString(TypeName<P>()));
+    if (state == State::kState0) {
+        PromiseAsProto(${"prior."*(n-1)}current_promise, grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(steps[0], arena), arena);
+    }
+% for i in range(1,n):
+    grpc_channelz_v2_Promise_SeqStep_set_factory(steps[${i}], StdStringToUpbString(TypeName<F${i-1}>()));
+    if (state == State::kState${i}) {
+      PromiseAsProto(${"prior."*(n-1-i)}current_promise, grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(steps[${i}], arena), arena);
+    }
+% endfor
+  }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
 % for i in range(0,n-1):
       case State::kState${i}: {
-        GRPC_TRACE_VLOG(promise_primitives, 2).AtLocation(whence.file(), whence.line())
+        GRPC_TRACE_LOG(promise_primitives, INFO).AtLocation(whence.file(), whence.line())
                 << "seq[" << this << "]: begin poll step ${i+1}/${n}";
         auto result = ${"prior."*(n-1-i)}current_promise();
         PromiseResult${i}* p = result.value_if_ready();
-        GRPC_TRACE_VLOG(promise_primitives, 2).AtLocation(whence.file(), whence.line())
+        GRPC_TRACE_LOG(promise_primitives, INFO).AtLocation(whence.file(), whence.line())
                 << "seq[" << this << "]: poll step ${i+1}/${n} gets "
                 << (p != nullptr
                     ? (PromiseResultTraits${i}::IsOk(*p)
@@ -154,14 +164,14 @@ tail${i}:
         Construct(&${"prior."*(n-2-i)}current_promise, std::move(next_promise));
         state = State::kState${i+1};
       }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
 % endfor
       default:
       case State::kState${n-1}: {
-        GRPC_TRACE_VLOG(promise_primitives, 2).AtLocation(whence.file(), whence.line())
+        GRPC_TRACE_LOG(promise_primitives, INFO).AtLocation(whence.file(), whence.line())
                 << "seq[" << this << "]: begin poll step ${n}/${n}";
         auto result = current_promise();
-        GRPC_TRACE_VLOG(promise_primitives, 2).AtLocation(whence.file(), whence.line())
+        GRPC_TRACE_LOG(promise_primitives, INFO).AtLocation(whence.file(), whence.line())
                 << "seq[" << this << "]: poll step ${n}/${n} gets "
                 << (result.ready()? "ready" : "pending");
         auto* p = result.value_if_ready();
@@ -185,17 +195,17 @@ front_matter = """
 
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/base/attributes.h"
 #include "absl/strings/str_cat.h"
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/construct_destruct.h"
-#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/util/construct_destruct.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/promise.h"
 
 // A sequence under some traits for some set of callables P, Fs.
 // P should be a promise-like object that yields a value.
@@ -274,7 +284,13 @@ with open(sys.argv[0]) as my_source:
 
 copyright = [line[2:].rstrip() for line in copyright]
 
-with open("src/core/lib/promise/detail/seq_state.h", "w") as f:
+output_file = (
+    "/".join(sys.argv[0].split("/")[:-4])
+    + "/src/core/lib/promise/detail/seq_state.h"
+)
+print(output_file)
+
+with open(output_file, "w") as f:
     put_banner([f], copyright)
     print(front_matter, file=f)
     for n in range(2, 14):

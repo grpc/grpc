@@ -18,29 +18,17 @@
 
 #include "src/cpp/ext/gcp/environment_autodetect.h"
 
-#include <memory>
-#include <utility>
-
-#include "absl/container/flat_hash_map.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/types/optional.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 #include <grpcpp/impl/grpc_library.h>
 
+#include <memory>
+#include <optional>
+#include <utility>
+
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/load_file.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -48,7 +36,18 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/env.h"
 #include "src/core/util/gcp_metadata_query.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/load_file.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/time.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc {
 namespace internal {
@@ -135,15 +134,18 @@ class EnvironmentAutoDetectHelper
         project_id_(std::move(project_id)),
         on_done_(std::move(on_done)),
         event_engine_(std::move(event_engine)) {
-    grpc_core::ExecCtx exec_ctx;
-    // TODO(yashykt): The pollset stuff should go away once the HTTP library is
-    // ported over to use EventEngine.
-    pollset_ = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
-    grpc_pollset_init(pollset_, &mu_poll_);
-    pollent_ = grpc_polling_entity_create_from_pollset(pollset_);
-    // TODO(yashykt): Note that using EventEngine::Run is not fork-safe. If we
-    // want to make this fork-safe, we might need some re-work here.
-    event_engine_->Run([this] { PollLoop(); });
+    // The pollset_alternative experiment does not need pollsets
+    if (!grpc_event_engine::experimental::UsePollsetAlternative()) {
+      grpc_core::ExecCtx exec_ctx;
+      // TODO(yashykt): The pollset stuff should go away once the HTTP library
+      // is ported over to use EventEngine.
+      pollset_ = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+      grpc_pollset_init(pollset_, &mu_poll_);
+      pollent_ = grpc_polling_entity_create_from_pollset(pollset_);
+      // TODO(yashykt): Note that using EventEngine::Run is not fork-safe. If we
+      // want to make this fork-safe, we might need some re-work here.
+      event_engine_->Run([this] { PollLoop(); });
+    }
     AutoDetect();
   }
 
@@ -242,7 +244,7 @@ class EnvironmentAutoDetectHelper
 
   void FetchMetadataServerAttributesAsynchronouslyLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    CHECK(!attributes_to_fetch_.empty());
+    GRPC_CHECK(!attributes_to_fetch_.empty());
     for (auto& element : attributes_to_fetch_) {
       queries_.push_back(grpc_core::MakeOrphanable<grpc_core::GcpMetadataQuery>(
           element.first, &pollent_,
@@ -253,7 +255,7 @@ class EnvironmentAutoDetectHelper
                 << (result.ok() ? result.value()
                                 : grpc_core::StatusToString(result.status()))
                 << "\"";
-            absl::optional<EnvironmentAutoDetect::ResourceType> resource;
+            std::optional<EnvironmentAutoDetect::ResourceType> resource;
             {
               grpc_core::MutexLock lock(&mu_);
               auto it = attributes_to_fetch_.find(attribute);
@@ -283,9 +285,11 @@ class EnvironmentAutoDetectHelper
               }
             }
             if (resource.has_value()) {
-              gpr_mu_lock(mu_poll_);
-              notify_poller_ = true;
-              gpr_mu_unlock(mu_poll_);
+              if (!grpc_event_engine::experimental::UsePollsetAlternative()) {
+                gpr_mu_lock(mu_poll_);
+                notify_poller_ = true;
+                gpr_mu_unlock(mu_poll_);
+              }
               auto on_done = std::move(on_done_);
               Unref();
               on_done(std::move(resource).value());
@@ -320,8 +324,8 @@ EnvironmentAutoDetect* g_autodetect = nullptr;
 }  // namespace
 
 void EnvironmentAutoDetect::Create(std::string project_id) {
-  CHECK_EQ(g_autodetect, nullptr);
-  CHECK(!project_id.empty());
+  GRPC_CHECK_EQ(g_autodetect, nullptr);
+  GRPC_CHECK(!project_id.empty());
 
   g_autodetect = new EnvironmentAutoDetect(project_id);
 }
@@ -330,7 +334,7 @@ EnvironmentAutoDetect& EnvironmentAutoDetect::Get() { return *g_autodetect; }
 
 EnvironmentAutoDetect::EnvironmentAutoDetect(std::string project_id)
     : project_id_(std::move(project_id)) {
-  CHECK(!project_id_.empty());
+  GRPC_CHECK(!project_id_.empty());
 }
 
 void EnvironmentAutoDetect::NotifyOnDone(absl::AnyInvocable<void()> callback) {

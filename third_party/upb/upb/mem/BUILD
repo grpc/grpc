@@ -7,6 +7,8 @@
 
 load("//upb/bazel:build_defs.bzl", "UPB_DEFAULT_COPTS")
 
+package(default_applicable_licenses = ["//:license"])
+
 cc_library(
     name = "mem",
     srcs = [
@@ -44,16 +46,18 @@ cc_test(
     deps = [
         ":mem",
         "//upb:port",
-        "@com_google_absl//absl/random",
-        "@com_google_absl//absl/random:distributions",
-        "@com_google_absl//absl/synchronization",
-        "@com_google_absl//absl/time",
-        "@com_google_googletest//:gtest",
-        "@com_google_googletest//:gtest_main",
+        "@abseil-cpp//absl/base:core_headers",
+        "@abseil-cpp//absl/cleanup",
+        "@abseil-cpp//absl/container:flat_hash_map",
+        "@abseil-cpp//absl/random",
+        "@abseil-cpp//absl/random:distributions",
+        "@abseil-cpp//absl/synchronization",
+        "@abseil-cpp//absl/time",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 
-# begin:github_only
 filegroup(
     name = "source_files",
     srcs = glob(
@@ -68,9 +72,7 @@ filegroup(
         "//upb/cmake:__pkg__",
     ],
 )
-# end:github_only
 
-# begin:github_only
 filegroup(
     name = "test_srcs",
     srcs = glob(
@@ -80,4 +82,3 @@ filegroup(
     ),
     visibility = ["//upb:__pkg__"],
 )
-# end:github_only

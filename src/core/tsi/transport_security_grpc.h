@@ -24,6 +24,9 @@
 
 #include "src/core/tsi/transport_security.h"
 
+typedef grpc_slice (*tsi_zero_copy_grpc_protector_allocator_cb)(
+    size_t size, void* user_data);
+
 // This method creates a tsi_zero_copy_grpc_protector object. It return TSI_OK
 // assuming there is no fatal error.
 // The caller is responsible for destroying the protector.
@@ -37,8 +40,9 @@ tsi_result tsi_handshaker_result_create_zero_copy_grpc_protector(
 // - unprotected_slices is the unprotected data to be protected.
 // - protected_slices is the protected output frames. One or more frames
 //   may be produced in this protect function.
-// - This method returns TSI_OK in case of success or a specific error code in
+// - Returns TSI_OK in case of success or a specific error code in
 //   case of failure.
+// - Can be called concurrently with tsi_zero_copy_grpc_protector_unprotect.
 tsi_result tsi_zero_copy_grpc_protector_protect(
     tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* unprotected_slices,
     grpc_slice_buffer* protected_slices);
@@ -46,11 +50,12 @@ tsi_result tsi_zero_copy_grpc_protector_protect(
 // Outputs unprotected bytes.
 // - protected_slices is the bytes of protected frames.
 // - unprotected_slices is the unprotected output data.
-// - if min_progress_size is not null, it returns the size of the last
+// - If min_progress_size is not null, it returns the size of the last
 //   incomplete frame which could not be fully unprotected.
-// - This method returns TSI_OK in case of success. Success includes cases where
+// - Returns TSI_OK in case of success. Success includes cases where
 //   there is not enough data to output in which case unprotected_slices has 0
 //   bytes.
+// - Can be called concurrently with tsi_zero_copy_grpc_protector_protect.
 tsi_result tsi_zero_copy_grpc_protector_unprotect(
     tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* protected_slices,
     grpc_slice_buffer* unprotected_slices, int* min_progress_size);
@@ -62,7 +67,29 @@ void tsi_zero_copy_grpc_protector_destroy(tsi_zero_copy_grpc_protector* self);
 tsi_result tsi_zero_copy_grpc_protector_max_frame_size(
     tsi_zero_copy_grpc_protector* self, size_t* max_frame_size);
 
+// A stateless methods that reads the frame size of the input slice buffer. Does
+// NOT consume any of the protected_slices and does NOT modify the `self` input
+// argument in any way.
+// - protected_slices is the bytes of protected frames.
+// - frame_size is the output frame size.
+// - Returns true in case of success.
+// - Returns false in the case the frame size cannot be read
+bool tsi_zero_copy_grpc_protector_read_frame_size(
+    tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* protected_slices,
+    uint32_t* frame_size);
+
+// Sets the allocator callback for the tsi_zero_copy_grpc_protector object.
+// The allocator callback is used to allocate memory for the protected and
+// unprotected slices.
+// - alloc_cb is the allocator callback.
+// - user_data is the user data to be passed to the allocator callback.
+void tsi_zero_copy_grpc_protector_set_allocator(
+    tsi_zero_copy_grpc_protector* self,
+    tsi_zero_copy_grpc_protector_allocator_cb alloc_cb, void* user_data);
+
 // Base for tsi_zero_copy_grpc_protector implementations.
+// Implementations must guarantee that protect and unprotect can be called
+// concurrently.
 struct tsi_zero_copy_grpc_protector_vtable {
   tsi_result (*protect)(tsi_zero_copy_grpc_protector* self,
                         grpc_slice_buffer* unprotected_slices,
@@ -74,7 +101,14 @@ struct tsi_zero_copy_grpc_protector_vtable {
   void (*destroy)(tsi_zero_copy_grpc_protector* self);
   tsi_result (*max_frame_size)(tsi_zero_copy_grpc_protector* self,
                                size_t* max_frame_size);
+  bool (*read_frame_size)(tsi_zero_copy_grpc_protector* self,
+                          grpc_slice_buffer* protected_slices,
+                          uint32_t* frame_size);
+  void (*set_allocator)(tsi_zero_copy_grpc_protector* self,
+                        tsi_zero_copy_grpc_protector_allocator_cb alloc_cb,
+                        void* user_data);
 };
+
 struct tsi_zero_copy_grpc_protector {
   const tsi_zero_copy_grpc_protector_vtable* vtable;
 };

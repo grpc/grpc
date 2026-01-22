@@ -26,7 +26,9 @@ cc_library(
     deps = [
         "//:grpc++",
         "//:grpc++_reflection",
+        "//:grpc++_xds_server",
         "//examples/protos:helloworld_cc_grpc",
+        "@com_google_absl//absl/log:initialize",
         "@io_opentelemetry_cpp//sdk/src/metrics",
     ],
 )
@@ -41,6 +43,7 @@ cc_binary(
         "//:grpcpp_otel_plugin",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/log:initialize",
         "@io_opentelemetry_cpp//exporters/prometheus:prometheus_exporter",
         "@io_opentelemetry_cpp//sdk/src/metrics",
     ],
@@ -56,6 +59,7 @@ cc_binary(
         "//:grpcpp_otel_plugin",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/log:initialize",
         "@com_google_absl//absl/strings:str_format",
         "@io_opentelemetry_cpp//exporters/prometheus:prometheus_exporter",
         "@io_opentelemetry_cpp//sdk/src/metrics",

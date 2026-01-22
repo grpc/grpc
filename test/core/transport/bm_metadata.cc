@@ -18,7 +18,7 @@
 
 #include <benchmark/benchmark.h>
 
-#include "src/core/lib/transport/metadata.h"
+#include "src/core/call/metadata.h"
 
 namespace grpc_core {
 namespace {

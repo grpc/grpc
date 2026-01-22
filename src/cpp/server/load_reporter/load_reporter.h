@@ -19,6 +19,8 @@
 #ifndef GRPC_SRC_CPP_SERVER_LOAD_REPORTER_LOAD_REPORTER_H
 #define GRPC_SRC_CPP_SERVER_LOAD_REPORTER_LOAD_REPORTER_H
 
+#include <google/protobuf/repeated_ptr_field.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <atomic>
@@ -31,14 +33,9 @@
 #include <utility>
 #include <vector>
 
-#include <google/protobuf/repeated_ptr_field.h>
-
 #include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/sync.h"
 #include "src/cpp/server/load_reporter/load_data_store.h"
 #include "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"
 

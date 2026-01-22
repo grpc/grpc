@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 load("//bazel:grpc_build_system.bzl", "grpc_py_binary")
 
 package(
     default_visibility = ["//visibility:public"],
     features = [
-        "-layering_check",
-        "-parse_headers",
+        "layering_check",
+        "parse_headers",
     ],
 )
 
@@ -28,21 +29,19 @@ grpc_py_binary(
     name = "dns_server",
     testonly = True,
     srcs = ["dns_server.py"],
-    external_deps = [
-        "twisted",
-        "yaml",
-    ],
     python_version = "PY3",
+    deps = [
+        requirement("twisted"),
+        requirement("pyyaml"),
+    ],
 )
 
 grpc_py_binary(
     name = "dns_resolver",
     testonly = True,
     srcs = ["dns_resolver.py"],
-    external_deps = [
-        "twisted",
-    ],
     python_version = "PY3",
+    deps = [requirement("twisted")],
 )
 
 grpc_py_binary(

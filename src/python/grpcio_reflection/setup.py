@@ -18,14 +18,12 @@ import sys
 
 import setuptools
 
-_PACKAGE_PATH = os.path.realpath(os.path.dirname(__file__))
-_README_PATH = os.path.join(_PACKAGE_PATH, "README.rst")
+# Manually insert the source directory into the Python path for local module
+# imports to succeed
+sys.path.insert(0, os.path.abspath("."))
 
-# Ensure we're in the proper directory whether or not we're being used by pip.
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
-# Break import-style to ensure we can actually find our local modules.
 import grpc_version
+import python_version
 
 
 class _NoOpCommand(setuptools.Command):
@@ -48,20 +46,14 @@ CLASSIFIERS = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "License :: OSI Approved :: Apache Software License",
+] + [
+    f"Programming Language :: Python :: {x}"
+    for x in python_version.SUPPORTED_PYTHON_VERSIONS
 ]
 
-PACKAGE_DIRECTORIES = {
-    "": ".",
-}
 
 INSTALL_REQUIRES = (
-    "protobuf>=5.26.1,<6.0dev",
+    "protobuf>=6.31.1,<7.0.0",
     "grpcio>={version}".format(version=grpc_version.VERSION),
 )
 
@@ -85,20 +77,11 @@ except ImportError:
         "build_package_protos": _NoOpCommand,
     }
 
-setuptools.setup(
-    name="grpcio-reflection",
-    version=grpc_version.VERSION,
-    license="Apache License 2.0",
-    description="Standard Protobuf Reflection Service for gRPC",
-    long_description=open(_README_PATH, "r").read(),
-    author="The gRPC Authors",
-    author_email="grpc-io@googlegroups.com",
-    classifiers=CLASSIFIERS,
-    url="https://grpc.io",
-    package_dir=PACKAGE_DIRECTORIES,
-    packages=setuptools.find_packages("."),
-    python_requires=">=3.8",
-    install_requires=INSTALL_REQUIRES,
-    setup_requires=SETUP_REQUIRES,
-    cmdclass=COMMAND_CLASS,
-)
+if __name__ == "__main__":
+    setuptools.setup(
+        classifiers=CLASSIFIERS,
+        python_requires=f">={python_version.MIN_PYTHON_VERSION}",
+        install_requires=INSTALL_REQUIRES,
+        setup_requires=SETUP_REQUIRES,
+        cmdclass=COMMAND_CLASS,
+    )

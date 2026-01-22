@@ -3,14 +3,16 @@
  *     google/protobuf/empty.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef GOOGLE_PROTOBUF_EMPTY_PROTO_UPB_H_
-#define GOOGLE_PROTOBUF_EMPTY_PROTO_UPB_H_
+#ifndef GOOGLE_PROTOBUF_EMPTY_PROTO_UPB_H__UPB_H_
+#define GOOGLE_PROTOBUF_EMPTY_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
 #include "google/protobuf/empty.upb_minitable.h"
+
 
 // Must be last.
 #include "upb/port/def.inc"
@@ -67,4 +69,4 @@ UPB_INLINE char* google_protobuf_Empty_serialize_ex(const google_protobuf_Empty*
 
 #include "upb/port/undef.inc"
 
-#endif  /* GOOGLE_PROTOBUF_EMPTY_PROTO_UPB_H_ */
+#endif  /* GOOGLE_PROTOBUF_EMPTY_PROTO_UPB_H__UPB_H_ */

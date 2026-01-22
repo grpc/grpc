@@ -63,7 +63,7 @@ PassthroughEndpoint::~PassthroughEndpoint() {
 }
 
 bool PassthroughEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
-                               SliceBuffer* buffer, const ReadArgs*) {
+                               SliceBuffer* buffer, ReadArgs) {
   CallbackHelper callback_helper(event_engine_.get(), allow_inline_callbacks_);
   grpc_core::MutexLock lock(&recv_middle_->mu);
   if (recv_middle_->closed) {
@@ -87,7 +87,7 @@ bool PassthroughEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
 }
 
 bool PassthroughEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_write,
-                                SliceBuffer* buffer, const WriteArgs*) {
+                                SliceBuffer* buffer, WriteArgs) {
   CallbackHelper callback_helper(event_engine_.get(), allow_inline_callbacks_);
   grpc_core::MutexLock lock(&send_middle_->mu);
   if (send_middle_->closed) {

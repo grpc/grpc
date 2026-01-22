@@ -13,6 +13,13 @@ When prompted for certificate information, everything is default except the
 common name which is set to badserver.test.google.com.
 
 
+Malformed credentials (malformed.*):
+=====================================
+
+These are invalid PEM blocks. They can be built by generating a valid
+PEM-encoded certificate or private key and deleting a random character in the
+body of the PEM-encoding.
+
 Valid test credentials:
 =======================
 
@@ -97,6 +104,12 @@ common name which is set to *.test.google.com.
 $ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in server1.csr \
   -out server1.pem -extensions req_ext -extfile server1-openssl.cnf -days 3650
 
+sni1 and sni2 are issued by CA, each having exactly one subject alternative
+name:
+--------------------------------------------------------------------------
+
+$ generate_sni.sh
+
 multi-domain is a self-signed certificate having multiple subject alternative
 names:
 ----------------------------------------------------------------------------
@@ -161,3 +174,5 @@ since they are only used in grpc core tests:
 multi-domain.*
 client1.*
 client2.*
+sni1.*
+sni2.*

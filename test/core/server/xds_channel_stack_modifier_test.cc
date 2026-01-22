@@ -18,17 +18,15 @@
 
 #include "src/core/server/xds_channel_stack_modifier.h"
 
+#include <grpc/grpc.h>
+
 #include <algorithm>
 #include <string>
 
-#include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
@@ -36,6 +34,7 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace testing {
@@ -84,13 +83,19 @@ class FakeTransport final : public Transport {
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op*) override {}
+  void StartWatch(RefCountedPtr<StateWatcher>) override {}
+  void StopWatch(RefCountedPtr<StateWatcher>) override {}
   void Orphan() override {}
+  RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
+    return nullptr;
+  }
 };
 }  // namespace
 
 // Test filters insertion
 TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertion) {
-  CoreConfiguration::Reset();
+  CoreConfiguration::
+      ResetEverythingIncludingPersistentBuildersAbsolutelyNotRecommended();
   grpc_init();
   // Add 2 test filters to XdsChannelStackModifier
   const grpc_channel_filter test_filter_1 = {
@@ -116,8 +121,8 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertion) {
     ASSERT_TRUE(CoreConfiguration::Get().channel_init().CreateStack(&builder));
   }
   std::vector<std::string> filters;
-  for (const auto& entry : *builder.mutable_stack()) {
-    filters.push_back(std::string(entry->name.name()));
+  for (const auto& [filter, _] : *builder.mutable_stack()) {
+    filters.push_back(std::string(filter->name.name()));
   }
   filters.resize(3);
   EXPECT_EQ(filters, std::vector<std::string>(

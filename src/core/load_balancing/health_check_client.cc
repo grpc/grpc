@@ -14,31 +14,21 @@
 // limitations under the License.
 //
 
-#include <stdint.h>
-#include <string.h>
-
-#include <map>
-#include <memory>
-#include <set>
-#include <string>
-#include <type_traits>
-#include <utility>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "upb/base/string_view.h"
-#include "upb/mem/arena.hpp"
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/port_platform.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <map>
+#include <memory>
+#include <optional>
+#include <set>
+#include <string>
+#include <type_traits>
+#include <utility>
 
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/client_channel/client_channel_internal.h"
@@ -47,11 +37,6 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -61,34 +46,22 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/load_balancing/health_check_client_internal.h"
 #include "src/core/load_balancing/subchannel_interface.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/work_serializer.h"
 #include "src/proto/grpc/health/v1/health.upb.h"
+#include "upb/base/string_view.h"
+#include "upb/mem/arena.hpp"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
-
-namespace {
-
-// A fire-and-forget class to asynchronously drain a WorkSerializer queue.
-class AsyncWorkSerializerDrainer final {
- public:
-  explicit AsyncWorkSerializerDrainer(
-      std::shared_ptr<WorkSerializer> work_serializer)
-      : work_serializer_(std::move(work_serializer)) {
-    GRPC_CLOSURE_INIT(&closure_, RunInExecCtx, this, nullptr);
-    ExecCtx::Run(DEBUG_LOCATION, &closure_, absl::OkStatus());
-  }
-
- private:
-  static void RunInExecCtx(void* arg, grpc_error_handle) {
-    auto* self = static_cast<AsyncWorkSerializerDrainer*>(arg);
-    self->work_serializer_->DrainQueue();
-    delete self;
-  }
-
-  std::shared_ptr<WorkSerializer> work_serializer_;
-  grpc_closure closure_;
-};
-
-}  // namespace
 
 //
 // HealthProducer::HealthChecker
@@ -131,7 +104,7 @@ void HealthProducer::HealthChecker::OnConnectivityStateChangeLocked(
       state_ = GRPC_CHANNEL_CONNECTING;
       status_ = absl::OkStatus();
     } else {
-      CHECK(state_ == GRPC_CHANNEL_CONNECTING);
+      GRPC_CHECK(state_ == GRPC_CHANNEL_CONNECTING);
     }
     // Start the health watch stream.
     StartHealthStreamLocked();
@@ -149,15 +122,12 @@ void HealthProducer::HealthChecker::NotifyWatchersLocked(
   GRPC_TRACE_LOG(health_check_client, INFO)
       << "HealthProducer " << producer_.get() << " HealthChecker " << this
       << ": reporting state " << ConnectivityStateName(state) << " to watchers";
-  work_serializer_->Schedule(
-      [self = Ref(), state, status = std::move(status)]() {
-        MutexLock lock(&self->producer_->mu_);
-        for (HealthWatcher* watcher : self->watchers_) {
-          watcher->Notify(state, status);
-        }
-      },
-      DEBUG_LOCATION);
-  new AsyncWorkSerializerDrainer(work_serializer_);
+  work_serializer_->Run([self = Ref(), state, status = std::move(status)]() {
+    MutexLock lock(&self->producer_->mu_);
+    for (HealthWatcher* watcher : self->watchers_) {
+      watcher->Notify(state, status);
+    }
+  });
 }
 
 void HealthProducer::HealthChecker::OnHealthWatchStatusChange(
@@ -166,13 +136,11 @@ void HealthProducer::HealthChecker::OnHealthWatchStatusChange(
   // Prepend the subchannel's address to the status if needed.
   absl::Status use_status;
   if (!status.ok()) {
-    std::string address_str =
-        grpc_sockaddr_to_uri(&producer_->subchannel_->address())
-            .value_or("<unknown address type>");
     use_status = absl::Status(
-        status.code(), absl::StrCat(address_str, ": ", status.message()));
+        status.code(), absl::StrCat(producer_->subchannel_->address(), ": ",
+                                    status.message()));
   }
-  work_serializer_->Schedule(
+  work_serializer_->Run(
       [self = Ref(), state, status = std::move(use_status)]() mutable {
         MutexLock lock(&self->producer_->mu_);
         if (self->stream_client_ != nullptr) {
@@ -182,9 +150,7 @@ void HealthProducer::HealthChecker::OnHealthWatchStatusChange(
             watcher->Notify(state, self->status_);
           }
         }
-      },
-      DEBUG_LOCATION);
-  new AsyncWorkSerializerDrainer(work_serializer_);
+      });
 }
 
 //
@@ -255,11 +221,7 @@ class HealthProducer::HealthChecker::HealthStreamEventHandler final
       LOG(ERROR) << kErrorMessage;
       auto* channelz_node =
           health_checker_->producer_->subchannel_->channelz_node();
-      if (channelz_node != nullptr) {
-        channelz_node->AddTraceEvent(
-            channelz::ChannelTrace::Error,
-            grpc_slice_from_static_string(kErrorMessage));
-      }
+      GRPC_CHANNELZ_LOG(channelz_node) << kErrorMessage;
       SetHealthStatusLocked(client, GRPC_CHANNEL_READY, kErrorMessage);
     }
   }
@@ -301,8 +263,7 @@ void HealthProducer::HealthChecker::StartHealthStreamLocked() {
       << "HealthProducer " << producer_.get() << " HealthChecker " << this
       << ": creating HealthClient for \"" << health_check_service_name_ << "\"";
   stream_client_ = MakeOrphanable<SubchannelStreamClient>(
-      producer_->connected_subchannel_, producer_->subchannel_->pollset_set(),
-      std::make_unique<HealthStreamEventHandler>(Ref()),
+      producer_->subchannel_, std::make_unique<HealthStreamEventHandler>(Ref()),
       GRPC_TRACE_FLAG_ENABLED(health_check_client) ? "HealthClient" : nullptr);
 }
 
@@ -316,12 +277,14 @@ class HealthProducer::ConnectivityWatcher final
   explicit ConnectivityWatcher(WeakRefCountedPtr<HealthProducer> producer)
       : producer_(std::move(producer)) {}
 
-  void OnConnectivityStateChange(
-      RefCountedPtr<ConnectivityStateWatcherInterface> self,
-      grpc_connectivity_state state, const absl::Status& status) override {
+  void OnConnectivityStateChange(grpc_connectivity_state state,
+                                 const absl::Status& status) override {
     producer_->OnConnectivityStateChange(state, status);
-    self.reset();
   }
+
+  void OnKeepaliveUpdate(Duration) override {}
+
+  uint32_t max_connections_per_subchannel() const override { return 1; }
 
   grpc_pollset_set* interested_parties() override {
     return producer_->interested_parties_;
@@ -335,15 +298,11 @@ class HealthProducer::ConnectivityWatcher final
 // HealthProducer
 //
 
-void HealthProducer::Start(RefCountedPtr<Subchannel> subchannel) {
+void HealthProducer::Start(WeakRefCountedPtr<Subchannel> subchannel) {
   GRPC_TRACE_LOG(health_check_client, INFO)
       << "HealthProducer " << this << ": starting with subchannel "
       << subchannel.get();
   subchannel_ = std::move(subchannel);
-  {
-    MutexLock lock(&mu_);
-    connected_subchannel_ = subchannel_->connected_subchannel();
-  }
   auto connectivity_watcher =
       MakeRefCounted<ConnectivityWatcher>(WeakRefAsSubclass<HealthProducer>());
   connectivity_watcher_ = connectivity_watcher.get();
@@ -363,7 +322,7 @@ void HealthProducer::Orphaned() {
 
 void HealthProducer::AddWatcher(
     HealthWatcher* watcher,
-    const absl::optional<std::string>& health_check_service_name) {
+    const std::optional<std::string>& health_check_service_name) {
   MutexLock lock(&mu_);
   grpc_pollset_set_add_pollset_set(interested_parties_,
                                    watcher->interested_parties());
@@ -384,7 +343,7 @@ void HealthProducer::AddWatcher(
 
 void HealthProducer::RemoveWatcher(
     HealthWatcher* watcher,
-    const absl::optional<std::string>& health_check_service_name) {
+    const std::optional<std::string>& health_check_service_name) {
   MutexLock lock(&mu_);
   grpc_pollset_set_del_pollset_set(interested_parties_,
                                    watcher->interested_parties());
@@ -407,13 +366,8 @@ void HealthProducer::OnConnectivityStateChange(grpc_connectivity_state state,
   MutexLock lock(&mu_);
   state_ = state;
   status_ = status;
-  if (state == GRPC_CHANNEL_READY) {
-    connected_subchannel_ = subchannel_->connected_subchannel();
-  } else {
-    connected_subchannel_.reset();
-  }
-  for (const auto& p : health_checkers_) {
-    p.second->OnConnectivityStateChangeLocked(state, status);
+  for (const auto& [_, health_checker] : health_checkers_) {
+    health_checker->OnConnectivityStateChangeLocked(state, status);
   }
   for (HealthWatcher* watcher : non_health_watchers_) {
     watcher->Notify(state, status);
@@ -455,7 +409,7 @@ void HealthWatcher::SetSubchannel(Subchannel* subchannel) {
   // This needs to be done outside of the lambda passed to
   // GetOrAddDataProducer() to avoid deadlocking by re-acquiring the
   // subchannel lock while already holding it.
-  if (created) producer_->Start(subchannel->Ref());
+  if (created) producer_->Start(subchannel->WeakRef());
   // Register ourself with the producer.
   producer_->AddWatcher(this, health_check_service_name_);
   GRPC_TRACE_LOG(health_check_client, INFO)
@@ -466,12 +420,10 @@ void HealthWatcher::SetSubchannel(Subchannel* subchannel) {
 }
 
 void HealthWatcher::Notify(grpc_connectivity_state state, absl::Status status) {
-  work_serializer_->Schedule(
+  work_serializer_->Run(
       [watcher = watcher_, state, status = std::move(status)]() mutable {
         watcher->OnConnectivityStateChange(state, std::move(status));
-      },
-      DEBUG_LOCATION);
-  new AsyncWorkSerializerDrainer(work_serializer_);
+      });
 }
 
 //
@@ -483,7 +435,7 @@ MakeHealthCheckWatcher(
     std::shared_ptr<WorkSerializer> work_serializer, const ChannelArgs& args,
     std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
         watcher) {
-  absl::optional<std::string> health_check_service_name;
+  std::optional<std::string> health_check_service_name;
   if (!args.GetBool(GRPC_ARG_INHIBIT_HEALTH_CHECKING).value_or(false)) {
     health_check_service_name =
         args.GetOwnedString(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME);

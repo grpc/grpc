@@ -34,9 +34,9 @@ class TestDataFramePadding(object):
         self._base_server = http2_base_server.H2ProtocolBaseServer()
         self._base_server._handlers["DataReceived"] = self.on_data_received
         self._base_server._handlers["WindowUpdated"] = self.on_window_update
-        self._base_server._handlers[
-            "RequestReceived"
-        ] = self.on_request_received
+        self._base_server._handlers["RequestReceived"] = (
+            self.on_request_received
+        )
 
         # _total_updates maps stream ids to total flow control updates received
         self._total_updates = {}

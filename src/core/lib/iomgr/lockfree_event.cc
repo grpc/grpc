@@ -18,14 +18,13 @@
 
 #include "src/core/lib/iomgr/lockfree_event.h"
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
 
 // 'state' holds the to call when the fd is readable or writable respectively.
 // It can contain one of the following values:
@@ -79,7 +78,7 @@ void LockfreeEvent::DestroyEvent() {
     if (curr & kShutdownBit) {
       internal::StatusFreeHeapPtr(curr & ~kShutdownBit);
     } else {
-      CHECK(curr == kClosureNotReady || curr == kClosureReady);
+      GRPC_CHECK(curr == kClosureNotReady || curr == kClosureReady);
     }
     // we CAS in a shutdown, no error value here. If this event is interacted
     // with post-deletion (see the note in the constructor) we want the bit

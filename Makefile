@@ -77,7 +77,7 @@ CC_asan = clang
 CXX_asan = clang++
 LD_asan = clang++
 LDXX_asan = clang++
-CPPFLAGS_asan = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+CPPFLAGS_asan = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
 LDFLAGS_asan = -fsanitize=address
 
 VALID_CONFIG_asan-noleaks = 1
@@ -86,7 +86,7 @@ CC_asan-noleaks = clang
 CXX_asan-noleaks = clang++
 LD_asan-noleaks = clang++
 LDXX_asan-noleaks = clang++
-CPPFLAGS_asan-noleaks = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+CPPFLAGS_asan-noleaks = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
 LDFLAGS_asan-noleaks = fsanitize=address
 
 VALID_CONFIG_asan-trace-cmp = 1
@@ -95,7 +95,7 @@ CC_asan-trace-cmp = clang
 CXX_asan-trace-cmp = clang++
 LD_asan-trace-cmp = clang++
 LDXX_asan-trace-cmp = clang++
-CPPFLAGS_asan-trace-cmp = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize-coverage=trace-cmp -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+CPPFLAGS_asan-trace-cmp = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize-coverage=trace-cmp -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
 LDFLAGS_asan-trace-cmp = -fsanitize=address
 
 VALID_CONFIG_c++-compat = 1
@@ -156,7 +156,7 @@ CC_msan = clang
 CXX_msan = clang++
 LD_msan = clang++
 LDXX_msan = clang++
-CPPFLAGS_msan = -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=memory -fsanitize-memory-track-origins -fsanitize-memory-use-after-dtor -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
+CPPFLAGS_msan = -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=memory -fsanitize-memory-track-origins -fsanitize-memory-use-after-dtor -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie
 LDFLAGS_msan = -stdlib=libc++ -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
 DEFINES_msan = NDEBUG
 
@@ -183,7 +183,7 @@ CC_tsan = clang
 CXX_tsan = clang++
 LD_tsan = clang++
 LDXX_tsan = clang++
-CPPFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+CPPFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
 LDFLAGS_tsan = -fsanitize=thread
 DEFINES_tsan = GRPC_TSAN
 
@@ -194,7 +194,7 @@ CXX_ubsan = clang++
 LD_ubsan = clang++
 LDXX_ubsan = clang++
 CPPFLAGS_ubsan = -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument -Wvarargs
-LDFLAGS_ubsan = -stdlib=libc++ -fsanitize=undefined,unsigned-integer-overflow
+LDFLAGS_ubsan = -stdlib=libc++ -fsanitize=undefined
 DEFINES_ubsan = NDEBUG GRPC_UBSAN
 
 
@@ -279,7 +279,7 @@ HOST_LD ?= $(LD)
 HOST_LDXX ?= $(LDXX)
 
 CFLAGS += -std=c11
-CXXFLAGS += -std=c++14
+CXXFLAGS += -std=c++17
 ifeq ($(SYSTEM),Darwin)
 CXXFLAGS += -stdlib=libc++
 LDFLAGS += -framework CoreFoundation
@@ -367,8 +367,8 @@ E = @echo
 Q = @
 endif
 
-CORE_VERSION = 43.0.0
-CPP_VERSION = 1.67.0-dev
+CORE_VERSION = 52.0.0
+CPP_VERSION = 1.79.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -404,7 +404,7 @@ SHARED_EXT_CORE = dll
 SHARED_EXT_CPP = dll
 
 SHARED_PREFIX =
-SHARED_VERSION_CORE = -43
+SHARED_VERSION_CORE = -52
 SHARED_VERSION_CPP = -1
 else ifeq ($(SYSTEM),Darwin)
 EXECUTABLE_SUFFIX =
@@ -666,10 +666,31 @@ clean:
 # deps: ['cares', 'libssl', 'z']
 # transitive_deps: ['cares', 'libssl', 'z']
 LIBGRPC_SRC = \
+    src/core/call/call_arena_allocator.cc \
+    src/core/call/call_filters.cc \
+    src/core/call/call_spine.cc \
+    src/core/call/call_state.cc \
+    src/core/call/client_call.cc \
+    src/core/call/interception_chain.cc \
+    src/core/call/message.cc \
+    src/core/call/metadata.cc \
+    src/core/call/metadata_batch.cc \
+    src/core/call/metadata_info.cc \
+    src/core/call/parsed_metadata.cc \
+    src/core/call/request_buffer.cc \
+    src/core/call/security_context.cc \
+    src/core/call/server_call.cc \
+    src/core/call/status_util.cc \
     src/core/channelz/channel_trace.cc \
     src/core/channelz/channelz.cc \
     src/core/channelz/channelz_registry.cc \
+    src/core/channelz/property_list.cc \
+    src/core/channelz/text_encode.cc \
+    src/core/channelz/v2tov1/convert.cc \
+    src/core/channelz/v2tov1/legacy_api.cc \
+    src/core/channelz/v2tov1/property_list.cc \
     src/core/client_channel/backup_poller.cc \
+    src/core/client_channel/buffered_call.cc \
     src/core/client_channel/client_channel.cc \
     src/core/client_channel/client_channel_factory.cc \
     src/core/client_channel/client_channel_filter.cc \
@@ -683,17 +704,82 @@ LIBGRPC_SRC = \
     src/core/client_channel/local_subchannel_pool.cc \
     src/core/client_channel/retry_filter.cc \
     src/core/client_channel/retry_filter_legacy_call_data.cc \
+    src/core/client_channel/retry_interceptor.cc \
     src/core/client_channel/retry_service_config.cc \
     src/core/client_channel/retry_throttle.cc \
     src/core/client_channel/subchannel.cc \
     src/core/client_channel/subchannel_pool_interface.cc \
     src/core/client_channel/subchannel_stream_client.cc \
+    src/core/config/config_vars.cc \
+    src/core/config/config_vars_non_generated.cc \
+    src/core/config/core_configuration.cc \
+    src/core/config/load_config.cc \
+    src/core/credentials/call/call_creds_registry_init.cc \
+    src/core/credentials/call/call_creds_util.cc \
+    src/core/credentials/call/composite/composite_call_credentials.cc \
+    src/core/credentials/call/external/aws_external_account_credentials.cc \
+    src/core/credentials/call/external/aws_request_signer.cc \
+    src/core/credentials/call/external/external_account_credentials.cc \
+    src/core/credentials/call/external/file_external_account_credentials.cc \
+    src/core/credentials/call/external/url_external_account_credentials.cc \
+    src/core/credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.cc \
+    src/core/credentials/call/iam/iam_credentials.cc \
+    src/core/credentials/call/json_util.cc \
+    src/core/credentials/call/jwt/json_token.cc \
+    src/core/credentials/call/jwt/jwt_credentials.cc \
+    src/core/credentials/call/jwt/jwt_verifier.cc \
+    src/core/credentials/call/jwt_token_file/jwt_token_file_call_credentials.cc \
+    src/core/credentials/call/jwt_util.cc \
+    src/core/credentials/call/oauth2/oauth2_credentials.cc \
+    src/core/credentials/call/plugin/plugin_credentials.cc \
+    src/core/credentials/call/token_fetcher/token_fetcher_credentials.cc \
+    src/core/credentials/transport/alts/alts_credentials.cc \
+    src/core/credentials/transport/alts/alts_security_connector.cc \
+    src/core/credentials/transport/alts/check_gcp_environment.cc \
+    src/core/credentials/transport/alts/check_gcp_environment_linux.cc \
+    src/core/credentials/transport/alts/check_gcp_environment_no_op.cc \
+    src/core/credentials/transport/alts/check_gcp_environment_windows.cc \
+    src/core/credentials/transport/alts/grpc_alts_credentials_client_options.cc \
+    src/core/credentials/transport/alts/grpc_alts_credentials_options.cc \
+    src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc \
+    src/core/credentials/transport/channel_creds_registry_init.cc \
+    src/core/credentials/transport/composite/composite_channel_credentials.cc \
+    src/core/credentials/transport/fake/fake_credentials.cc \
+    src/core/credentials/transport/fake/fake_security_connector.cc \
+    src/core/credentials/transport/google_default/credentials_generic.cc \
+    src/core/credentials/transport/google_default/google_default_credentials.cc \
+    src/core/credentials/transport/insecure/insecure_credentials.cc \
+    src/core/credentials/transport/insecure/insecure_security_connector.cc \
+    src/core/credentials/transport/local/local_credentials.cc \
+    src/core/credentials/transport/local/local_security_connector.cc \
+    src/core/credentials/transport/security_connector.cc \
+    src/core/credentials/transport/ssl/ssl_credentials.cc \
+    src/core/credentials/transport/ssl/ssl_security_connector.cc \
+    src/core/credentials/transport/tls/certificate_provider_registry.cc \
+    src/core/credentials/transport/tls/grpc_tls_certificate_distributor.cc \
+    src/core/credentials/transport/tls/grpc_tls_certificate_match.cc \
+    src/core/credentials/transport/tls/grpc_tls_certificate_provider.cc \
+    src/core/credentials/transport/tls/grpc_tls_certificate_verifier.cc \
+    src/core/credentials/transport/tls/grpc_tls_credentials_options.cc \
+    src/core/credentials/transport/tls/grpc_tls_crl_provider.cc \
+    src/core/credentials/transport/tls/load_system_roots_fallback.cc \
+    src/core/credentials/transport/tls/load_system_roots_supported.cc \
+    src/core/credentials/transport/tls/load_system_roots_windows.cc \
+    src/core/credentials/transport/tls/spiffe_utils.cc \
+    src/core/credentials/transport/tls/ssl_utils.cc \
+    src/core/credentials/transport/tls/tls_credentials.cc \
+    src/core/credentials/transport/tls/tls_security_connector.cc \
+    src/core/credentials/transport/tls/tls_utils.cc \
+    src/core/credentials/transport/transport_credentials.cc \
+    src/core/credentials/transport/xds/xds_credentials.cc \
     src/core/ext/filters/backend_metrics/backend_metric_filter.cc \
     src/core/ext/filters/census/grpc_context.cc \
     src/core/ext/filters/channel_idle/idle_filter_state.cc \
     src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc \
     src/core/ext/filters/fault_injection/fault_injection_filter.cc \
     src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc \
+    src/core/ext/filters/gcp_authentication/gcp_authentication_filter.cc \
+    src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.cc \
     src/core/ext/filters/http/client/http_client_filter.cc \
     src/core/ext/filters/http/client_authority_filter.cc \
     src/core/ext/filters/http/http_filters_plugin.cc \
@@ -705,10 +791,12 @@ LIBGRPC_SRC = \
     src/core/ext/filters/stateful_session/stateful_session_filter.cc \
     src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
+    src/core/ext/transport/chttp2/chttp2_plugin.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
     src/core/ext/transport/chttp2/server/chttp2_server.cc \
     src/core/ext/transport/chttp2/transport/bin_decoder.cc \
     src/core/ext/transport/chttp2/transport/bin_encoder.cc \
+    src/core/ext/transport/chttp2/transport/call_tracer_wrapper.cc \
     src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
     src/core/ext/transport/chttp2/transport/decode_huff.cc \
     src/core/ext/transport/chttp2/transport/flow_control.cc \
@@ -717,20 +805,29 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/frame_goaway.cc \
     src/core/ext/transport/chttp2/transport/frame_ping.cc \
     src/core/ext/transport/chttp2/transport/frame_rst_stream.cc \
+    src/core/ext/transport/chttp2/transport/frame_security.cc \
     src/core/ext/transport/chttp2/transport/frame_settings.cc \
     src/core/ext/transport/chttp2/transport/frame_window_update.cc \
+    src/core/ext/transport/chttp2/transport/goaway.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc \
     src/core/ext/transport/chttp2/transport/hpack_parse_result.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser_table.cc \
+    src/core/ext/transport/chttp2/transport/http2_client_transport.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
+    src/core/ext/transport/chttp2/transport/http2_settings_manager.cc \
+    src/core/ext/transport/chttp2/transport/http2_stats_collector.cc \
+    src/core/ext/transport/chttp2/transport/http2_transport.cc \
     src/core/ext/transport/chttp2/transport/huffsyms.cc \
+    src/core/ext/transport/chttp2/transport/keepalive.cc \
     src/core/ext/transport/chttp2/transport/parsing.cc \
     src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc \
     src/core/ext/transport/chttp2/transport/ping_callbacks.cc \
+    src/core/ext/transport/chttp2/transport/ping_promise.cc \
     src/core/ext/transport/chttp2/transport/ping_rate_policy.cc \
     src/core/ext/transport/chttp2/transport/stream_lists.cc \
+    src/core/ext/transport/chttp2/transport/transport_common.cc \
     src/core/ext/transport/chttp2/transport/varint.cc \
     src/core/ext/transport/chttp2/transport/write_size_policy.cc \
     src/core/ext/transport/chttp2/transport/writing.cc \
@@ -756,9 +853,11 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/envoy/config/cluster/v3/filter.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/cluster/v3/outlier_detection.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/common/matcher/v3/matcher.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/core/v3/cel.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/event_service_config.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/extension.upb_minitable.c \
@@ -770,6 +869,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/envoy/config/core/v3/protocol.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/proxy_protocol.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/core/v3/socket_cmsg_headers.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/substitution_format_string.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/udp_socket_config.upb_minitable.c \
@@ -793,7 +893,6 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/envoy/config/trace/v3/dynamic_ot.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/trace/v3/http_tracer.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/trace/v3/lightstep.upb_minitable.c \
-    src/core/ext/upb-gen/envoy/config/trace/v3/opencensus.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/trace/v3/opentelemetry.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/trace/v3/service.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/trace/v3/skywalking.upb_minitable.c \
@@ -815,6 +914,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/cert.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/common.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/secret.upb_minitable.c \
@@ -827,6 +927,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/envoy/service/status/v3/csds.upb_minitable.c \
     src/core/ext/upb-gen/envoy/type/http/v3/cookie.upb_minitable.c \
     src/core/ext/upb-gen/envoy/type/http/v3/path_transformation.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb_minitable.c \
     src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb_minitable.c \
     src/core/ext/upb-gen/envoy/type/matcher/v3/http_inputs.upb_minitable.c \
     src/core/ext/upb-gen/envoy/type/matcher/v3/metadata.upb_minitable.c \
@@ -862,7 +963,11 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c \
     src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c \
     src/core/ext/upb-gen/google/rpc/status.upb_minitable.c \
-    src/core/ext/upb-gen/opencensus/proto/trace/v1/trace_config.upb_minitable.c \
+    src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.c \
+    src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c \
+    src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c \
+    src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c \
+    src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c \
@@ -922,9 +1027,11 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-gen/envoy/config/cluster/v3/filter.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/cluster/v3/outlier_detection.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/common/matcher/v3/matcher.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/address.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/backoff.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/base.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/core/v3/cel.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/config_source.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/event_service_config.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/extension.upbdefs.c \
@@ -936,6 +1043,7 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/protocol.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/proxy_protocol.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/resolver.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/core/v3/socket_cmsg_headers.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/socket_option.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/substitution_format_string.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/udp_socket_config.upbdefs.c \
@@ -959,7 +1067,6 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-gen/envoy/config/trace/v3/dynamic_ot.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/trace/v3/http_tracer.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/trace/v3/lightstep.upbdefs.c \
-    src/core/ext/upbdefs-gen/envoy/config/trace/v3/opencensus.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/trace/v3/opentelemetry.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/trace/v3/service.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/trace/v3/skywalking.upbdefs.c \
@@ -976,6 +1083,7 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-gen/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/secret.upbdefs.c \
@@ -988,6 +1096,7 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-gen/envoy/service/status/v3/csds.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/type/http/v3/cookie.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/type/http/v3/path_transformation.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/type/matcher/v3/address.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/type/matcher/v3/filter_state.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/type/matcher/v3/http_inputs.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/type/matcher/v3/metadata.upbdefs.c \
@@ -1023,7 +1132,11 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c \
     src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c \
     src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c \
-    src/core/ext/upbdefs-gen/opencensus/proto/trace/v1/trace_config.upbdefs.c \
+    src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.c \
+    src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c \
+    src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c \
+    src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c \
+    src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c \
     src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c \
     src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.c \
     src/core/ext/upbdefs-gen/udpa/annotations/security.upbdefs.c \
@@ -1055,19 +1168,24 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-gen/xds/type/v3/cel.upbdefs.c \
     src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.c \
     src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c \
+    src/core/filter/auth/client_auth_filter.cc \
+    src/core/filter/auth/server_auth_filter.cc \
+    src/core/filter/blackboard.cc \
+    src/core/filter/fused_filters.cc \
     src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc \
     src/core/handshaker/handshaker.cc \
     src/core/handshaker/handshaker_registry.cc \
-    src/core/handshaker/http_connect/http_connect_handshaker.cc \
+    src/core/handshaker/http_connect/http_connect_client_handshaker.cc \
     src/core/handshaker/http_connect/http_proxy_mapper.cc \
+    src/core/handshaker/http_connect/xds_http_proxy_mapper.cc \
     src/core/handshaker/proxy_mapper_registry.cc \
+    src/core/handshaker/security/legacy_secure_endpoint.cc \
+    src/core/handshaker/security/pipelined_secure_endpoint.cc \
     src/core/handshaker/security/secure_endpoint.cc \
     src/core/handshaker/security/security_handshaker.cc \
     src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc \
     src/core/lib/address_utils/parse_address.cc \
     src/core/lib/address_utils/sockaddr_utils.cc \
-    src/core/lib/backoff/backoff.cc \
-    src/core/lib/backoff/random_early_detection.cc \
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_args_preconditioning.cc \
     src/core/lib/channel/channel_stack.cc \
@@ -1075,29 +1193,25 @@ LIBGRPC_SRC = \
     src/core/lib/channel/channel_stack_builder_impl.cc \
     src/core/lib/channel/connected_channel.cc \
     src/core/lib/channel/promise_based_filter.cc \
-    src/core/lib/channel/status_util.cc \
     src/core/lib/compression/compression.cc \
     src/core/lib/compression/compression_internal.cc \
     src/core/lib/compression/message_compress.cc \
-    src/core/lib/config/config_vars.cc \
-    src/core/lib/config/config_vars_non_generated.cc \
-    src/core/lib/config/core_configuration.cc \
-    src/core/lib/config/load_config.cc \
-    src/core/lib/debug/event_log.cc \
     src/core/lib/debug/trace.cc \
     src/core/lib/debug/trace_flags.cc \
     src/core/lib/event_engine/ares_resolver.cc \
     src/core/lib/event_engine/cf_engine/cf_engine.cc \
+    src/core/lib/event_engine/cf_engine/cfsocket_listener.cc \
     src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc \
     src/core/lib/event_engine/cf_engine/dns_service_resolver.cc \
     src/core/lib/event_engine/channel_args_endpoint_config.cc \
     src/core/lib/event_engine/default_event_engine.cc \
     src/core/lib/event_engine/default_event_engine_factory.cc \
+    src/core/lib/event_engine/endpoint_channel_arg_wrapper.cc \
     src/core/lib/event_engine/event_engine.cc \
-    src/core/lib/event_engine/forkable.cc \
     src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc \
     src/core/lib/event_engine/posix_engine/ev_poll_posix.cc \
     src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc \
+    src/core/lib/event_engine/posix_engine/file_descriptor_collection.cc \
     src/core/lib/event_engine/posix_engine/internal_errqueue.cc \
     src/core/lib/event_engine/posix_engine/lockfree_event.cc \
     src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc \
@@ -1105,6 +1219,10 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/posix_engine/posix_engine.cc \
     src/core/lib/event_engine/posix_engine/posix_engine_listener.cc \
     src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc \
+    src/core/lib/event_engine/posix_engine/posix_interface_posix.cc \
+    src/core/lib/event_engine/posix_engine/posix_interface_windows.cc \
+    src/core/lib/event_engine/posix_engine/posix_write_event_sink.cc \
+    src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc \
     src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc \
     src/core/lib/event_engine/posix_engine/timer.cc \
     src/core/lib/event_engine/posix_engine/timer_heap.cc \
@@ -1135,34 +1253,6 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/work_queue/basic_work_queue.cc \
     src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \
-    src/core/lib/gprpp/crash.cc \
-    src/core/lib/gprpp/dump_args.cc \
-    src/core/lib/gprpp/examine_stack.cc \
-    src/core/lib/gprpp/fork.cc \
-    src/core/lib/gprpp/glob.cc \
-    src/core/lib/gprpp/host_port.cc \
-    src/core/lib/gprpp/linux/env.cc \
-    src/core/lib/gprpp/load_file.cc \
-    src/core/lib/gprpp/mpscq.cc \
-    src/core/lib/gprpp/per_cpu.cc \
-    src/core/lib/gprpp/posix/directory_reader.cc \
-    src/core/lib/gprpp/posix/env.cc \
-    src/core/lib/gprpp/posix/stat.cc \
-    src/core/lib/gprpp/posix/thd.cc \
-    src/core/lib/gprpp/ref_counted_string.cc \
-    src/core/lib/gprpp/status_helper.cc \
-    src/core/lib/gprpp/strerror.cc \
-    src/core/lib/gprpp/tchar.cc \
-    src/core/lib/gprpp/time.cc \
-    src/core/lib/gprpp/time_averaged_stats.cc \
-    src/core/lib/gprpp/time_util.cc \
-    src/core/lib/gprpp/uuid_v4.cc \
-    src/core/lib/gprpp/validation_errors.cc \
-    src/core/lib/gprpp/windows/directory_reader.cc \
-    src/core/lib/gprpp/windows/env.cc \
-    src/core/lib/gprpp/windows/stat.cc \
-    src/core/lib/gprpp/windows/thd.cc \
-    src/core/lib/gprpp/work_serializer.cc \
     src/core/lib/iomgr/buffer_list.cc \
     src/core/lib/iomgr/call_combiner.cc \
     src/core/lib/iomgr/cfstream_handle.cc \
@@ -1183,14 +1273,8 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/event_engine_shims/endpoint.cc \
     src/core/lib/iomgr/event_engine_shims/tcp_client.cc \
     src/core/lib/iomgr/exec_ctx.cc \
-    src/core/lib/iomgr/executor.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
-    src/core/lib/iomgr/gethostname_fallback.cc \
-    src/core/lib/iomgr/gethostname_host_name_max.cc \
-    src/core/lib/iomgr/gethostname_sysconf.cc \
-    src/core/lib/iomgr/grpc_if_nametoindex_posix.cc \
-    src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc \
     src/core/lib/iomgr/internal_errqueue.cc \
     src/core/lib/iomgr/iocp_windows.cc \
     src/core/lib/iomgr/iomgr.cc \
@@ -1239,17 +1323,20 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
-    src/core/lib/matchers/matchers.cc \
     src/core/lib/promise/activity.cc \
+    src/core/lib/promise/mpsc.cc \
     src/core/lib/promise/party.cc \
     src/core/lib/promise/sleep.cc \
+    src/core/lib/promise/wait_set.cc \
     src/core/lib/resource_quota/api.cc \
     src/core/lib/resource_quota/arena.cc \
     src/core/lib/resource_quota/connection_quota.cc \
     src/core/lib/resource_quota/memory_quota.cc \
     src/core/lib/resource_quota/periodic_update.cc \
     src/core/lib/resource_quota/resource_quota.cc \
+    src/core/lib/resource_quota/stream_quota.cc \
     src/core/lib/resource_quota/thread_quota.cc \
+    src/core/lib/resource_tracker/resource_tracker.cc \
     src/core/lib/security/authorization/audit_logging.cc \
     src/core/lib/security/authorization/authorization_policy_provider_vtable.cc \
     src/core/lib/security/authorization/evaluate_args.cc \
@@ -1258,61 +1345,6 @@ LIBGRPC_SRC = \
     src/core/lib/security/authorization/matchers.cc \
     src/core/lib/security/authorization/rbac_policy.cc \
     src/core/lib/security/authorization/stdout_logger.cc \
-    src/core/lib/security/certificate_provider/certificate_provider_registry.cc \
-    src/core/lib/security/context/security_context.cc \
-    src/core/lib/security/credentials/alts/alts_credentials.cc \
-    src/core/lib/security/credentials/alts/check_gcp_environment.cc \
-    src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc \
-    src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc \
-    src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc \
-    src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc \
-    src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc \
-    src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc \
-    src/core/lib/security/credentials/call_creds_util.cc \
-    src/core/lib/security/credentials/channel_creds_registry_init.cc \
-    src/core/lib/security/credentials/composite/composite_credentials.cc \
-    src/core/lib/security/credentials/credentials.cc \
-    src/core/lib/security/credentials/external/aws_external_account_credentials.cc \
-    src/core/lib/security/credentials/external/aws_request_signer.cc \
-    src/core/lib/security/credentials/external/external_account_credentials.cc \
-    src/core/lib/security/credentials/external/file_external_account_credentials.cc \
-    src/core/lib/security/credentials/external/url_external_account_credentials.cc \
-    src/core/lib/security/credentials/fake/fake_credentials.cc \
-    src/core/lib/security/credentials/google_default/credentials_generic.cc \
-    src/core/lib/security/credentials/google_default/google_default_credentials.cc \
-    src/core/lib/security/credentials/iam/iam_credentials.cc \
-    src/core/lib/security/credentials/insecure/insecure_credentials.cc \
-    src/core/lib/security/credentials/jwt/json_token.cc \
-    src/core/lib/security/credentials/jwt/jwt_credentials.cc \
-    src/core/lib/security/credentials/jwt/jwt_verifier.cc \
-    src/core/lib/security/credentials/local/local_credentials.cc \
-    src/core/lib/security/credentials/oauth2/oauth2_credentials.cc \
-    src/core/lib/security/credentials/plugin/plugin_credentials.cc \
-    src/core/lib/security/credentials/ssl/ssl_credentials.cc \
-    src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc \
-    src/core/lib/security/credentials/tls/grpc_tls_certificate_match.cc \
-    src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc \
-    src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc \
-    src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
-    src/core/lib/security/credentials/tls/grpc_tls_crl_provider.cc \
-    src/core/lib/security/credentials/tls/tls_credentials.cc \
-    src/core/lib/security/credentials/tls/tls_utils.cc \
-    src/core/lib/security/credentials/token_fetcher/token_fetcher_credentials.cc \
-    src/core/lib/security/credentials/xds/xds_credentials.cc \
-    src/core/lib/security/security_connector/alts/alts_security_connector.cc \
-    src/core/lib/security/security_connector/fake/fake_security_connector.cc \
-    src/core/lib/security/security_connector/insecure/insecure_security_connector.cc \
-    src/core/lib/security/security_connector/load_system_roots_fallback.cc \
-    src/core/lib/security/security_connector/load_system_roots_supported.cc \
-    src/core/lib/security/security_connector/load_system_roots_windows.cc \
-    src/core/lib/security/security_connector/local/local_security_connector.cc \
-    src/core/lib/security/security_connector/security_connector.cc \
-    src/core/lib/security/security_connector/ssl/ssl_security_connector.cc \
-    src/core/lib/security/security_connector/ssl_utils.cc \
-    src/core/lib/security/security_connector/tls/tls_security_connector.cc \
-    src/core/lib/security/transport/client_auth_filter.cc \
-    src/core/lib/security/transport/server_auth_filter.cc \
-    src/core/lib/security/util/json_util.cc \
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
     src/core/lib/slice/slice_buffer.cc \
@@ -1327,9 +1359,9 @@ LIBGRPC_SRC = \
     src/core/lib/surface/channel_create.cc \
     src/core/lib/surface/channel_init.cc \
     src/core/lib/surface/channel_stack_type.cc \
-    src/core/lib/surface/client_call.cc \
     src/core/lib/surface/completion_queue.cc \
     src/core/lib/surface/completion_queue_factory.cc \
+    src/core/lib/surface/connection_context.cc \
     src/core/lib/surface/event_string.cc \
     src/core/lib/surface/filter_stack_call.cc \
     src/core/lib/surface/init.cc \
@@ -1337,28 +1369,17 @@ LIBGRPC_SRC = \
     src/core/lib/surface/lame_client.cc \
     src/core/lib/surface/legacy_channel.cc \
     src/core/lib/surface/metadata_array.cc \
-    src/core/lib/surface/server_call.cc \
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
     src/core/lib/transport/bdp_estimator.cc \
-    src/core/lib/transport/call_arena_allocator.cc \
-    src/core/lib/transport/call_filters.cc \
     src/core/lib/transport/call_final_info.cc \
-    src/core/lib/transport/call_spine.cc \
-    src/core/lib/transport/call_state.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
-    src/core/lib/transport/interception_chain.cc \
-    src/core/lib/transport/message.cc \
-    src/core/lib/transport/metadata.cc \
-    src/core/lib/transport/metadata_batch.cc \
-    src/core/lib/transport/metadata_info.cc \
-    src/core/lib/transport/parsed_metadata.cc \
+    src/core/lib/transport/promise_endpoint.cc \
     src/core/lib/transport/status_conversion.cc \
     src/core/lib/transport/timeout_encoding.cc \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
-    src/core/lib/uri/uri_parser.cc \
     src/core/load_balancing/address_filtering.cc \
     src/core/load_balancing/backend_metric_parser.cc \
     src/core/load_balancing/child_policy_handler.cc \
@@ -1386,9 +1407,9 @@ LIBGRPC_SRC = \
     src/core/load_balancing/xds/xds_cluster_manager.cc \
     src/core/load_balancing/xds/xds_override_host.cc \
     src/core/load_balancing/xds/xds_wrr_locality.cc \
+    src/core/net/socket_mutator.cc \
     src/core/plugin_registry/grpc_plugin_registry.cc \
     src/core/plugin_registry/grpc_plugin_registry_extra.cc \
-    src/core/resolver/binder/binder_resolver.cc \
     src/core/resolver/dns/c_ares/dns_resolver_ares.cc \
     src/core/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
     src/core/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc \
@@ -1409,6 +1430,7 @@ LIBGRPC_SRC = \
     src/core/resolver/xds/xds_config.cc \
     src/core/resolver/xds/xds_dependency_manager.cc \
     src/core/resolver/xds/xds_resolver.cc \
+    src/core/server/add_port.cc \
     src/core/server/server.cc \
     src/core/server/server_call_tracer_filter.cc \
     src/core/server/server_config_selector_filter.cc \
@@ -1418,10 +1440,16 @@ LIBGRPC_SRC = \
     src/core/service_config/service_config_impl.cc \
     src/core/service_config/service_config_parser.cc \
     src/core/telemetry/call_tracer.cc \
+    src/core/telemetry/context_list_entry.cc \
+    src/core/telemetry/default_tcp_tracer.cc \
     src/core/telemetry/histogram_view.cc \
+    src/core/telemetry/instrument.cc \
     src/core/telemetry/metrics.cc \
     src/core/telemetry/stats.cc \
     src/core/telemetry/stats_data.cc \
+    src/core/telemetry/tcp_tracer.cc \
+    src/core/transport/auth_context.cc \
+    src/core/transport/endpoint_transport_client_channel_factory.cc \
     src/core/tsi/alts/crypt/aes_gcm.cc \
     src/core/tsi/alts/crypt/gsec.cc \
     src/core/tsi/alts/frame_protector/alts_counter.cc \
@@ -1452,9 +1480,22 @@ LIBGRPC_SRC = \
     src/core/tsi/transport_security.cc \
     src/core/tsi/transport_security_grpc.cc \
     src/core/util/alloc.cc \
-    src/core/util/android/log.cc \
-    src/core/util/atm.cc \
+    src/core/util/backoff.cc \
+    src/core/util/crash.cc \
+    src/core/util/dump_args.cc \
+    src/core/util/event_log.cc \
+    src/core/util/examine_stack.cc \
+    src/core/util/fork.cc \
     src/core/util/gcp_metadata_query.cc \
+    src/core/util/gethostname_fallback.cc \
+    src/core/util/gethostname_host_name_max.cc \
+    src/core/util/gethostname_sysconf.cc \
+    src/core/util/glob.cc \
+    src/core/util/gpr_time.cc \
+    src/core/util/grpc_check.cc \
+    src/core/util/grpc_if_nametoindex_posix.cc \
+    src/core/util/grpc_if_nametoindex_unsupported.cc \
+    src/core/util/host_port.cc \
     src/core/util/http_client/format_request.cc \
     src/core/util/http_client/httpcli.cc \
     src/core/util/http_client/httpcli_security_connector.cc \
@@ -1466,27 +1507,51 @@ LIBGRPC_SRC = \
     src/core/util/json/json_writer.cc \
     src/core/util/latent_see.cc \
     src/core/util/linux/cpu.cc \
-    src/core/util/linux/log.cc \
+    src/core/util/linux/env.cc \
+    src/core/util/load_file.cc \
     src/core/util/log.cc \
+    src/core/util/matchers.cc \
+    src/core/util/mpscq.cc \
     src/core/util/msys/tmpfile.cc \
+    src/core/util/per_cpu.cc \
     src/core/util/posix/cpu.cc \
-    src/core/util/posix/log.cc \
+    src/core/util/posix/directory_reader.cc \
+    src/core/util/posix/env.cc \
+    src/core/util/posix/stat.cc \
     src/core/util/posix/string.cc \
     src/core/util/posix/sync.cc \
+    src/core/util/posix/thd.cc \
     src/core/util/posix/time.cc \
     src/core/util/posix/tmpfile.cc \
+    src/core/util/postmortem_emit.cc \
+    src/core/util/random_early_detection.cc \
+    src/core/util/ref_counted_string.cc \
+    src/core/util/shared_bit_gen.cc \
+    src/core/util/status_helper.cc \
+    src/core/util/strerror.cc \
     src/core/util/string.cc \
     src/core/util/sync.cc \
     src/core/util/sync_abseil.cc \
+    src/core/util/tchar.cc \
     src/core/util/time.cc \
+    src/core/util/time_averaged_stats.cc \
     src/core/util/time_precise.cc \
+    src/core/util/time_util.cc \
+    src/core/util/uri.cc \
+    src/core/util/uuid_v4.cc \
+    src/core/util/validation_errors.cc \
+    src/core/util/wait_for_single_owner.cc \
     src/core/util/windows/cpu.cc \
-    src/core/util/windows/log.cc \
+    src/core/util/windows/directory_reader.cc \
+    src/core/util/windows/env.cc \
+    src/core/util/windows/stat.cc \
     src/core/util/windows/string.cc \
     src/core/util/windows/string_util.cc \
     src/core/util/windows/sync.cc \
+    src/core/util/windows/thd.cc \
     src/core/util/windows/time.cc \
     src/core/util/windows/tmpfile.cc \
+    src/core/util/work_serializer.cc \
     src/core/xds/grpc/certificate_provider_store.cc \
     src/core/xds/grpc/file_watcher_certificate_provider_factory.cc \
     src/core/xds/grpc/xds_audit_logger_registry.cc \
@@ -1503,11 +1568,17 @@ LIBGRPC_SRC = \
     src/core/xds/grpc/xds_health_status.cc \
     src/core/xds/grpc/xds_http_fault_filter.cc \
     src/core/xds/grpc/xds_http_filter_registry.cc \
+    src/core/xds/grpc/xds_http_gcp_authn_filter.cc \
     src/core/xds/grpc/xds_http_rbac_filter.cc \
     src/core/xds/grpc/xds_http_stateful_session_filter.cc \
     src/core/xds/grpc/xds_lb_policy_registry.cc \
     src/core/xds/grpc/xds_listener.cc \
     src/core/xds/grpc/xds_listener_parser.cc \
+    src/core/xds/grpc/xds_matcher.cc \
+    src/core/xds/grpc/xds_matcher_action.cc \
+    src/core/xds/grpc/xds_matcher_context.cc \
+    src/core/xds/grpc/xds_matcher_input.cc \
+    src/core/xds/grpc/xds_matcher_parse.cc \
     src/core/xds/grpc/xds_metadata.cc \
     src/core/xds/grpc/xds_metadata_parser.cc \
     src/core/xds/grpc/xds_route_config.cc \
@@ -1515,10 +1586,11 @@ LIBGRPC_SRC = \
     src/core/xds/grpc/xds_routing.cc \
     src/core/xds/grpc/xds_server_grpc.cc \
     src/core/xds/grpc/xds_transport_grpc.cc \
+    src/core/xds/xds_client/lrs_client.cc \
     src/core/xds/xds_client/xds_api.cc \
+    src/core/xds/xds_client/xds_backend_metric_propagation.cc \
     src/core/xds/xds_client/xds_bootstrap.cc \
     src/core/xds/xds_client/xds_client.cc \
-    src/core/xds/xds_client/xds_client_stats.cc \
     third_party/abseil-cpp/absl/base/internal/cycleclock.cc \
     third_party/abseil-cpp/absl/base/internal/low_level_alloc.cc \
     third_party/abseil-cpp/absl/base/internal/raw_logging.cc \
@@ -1528,6 +1600,7 @@ LIBGRPC_SRC = \
     third_party/abseil-cpp/absl/base/internal/sysinfo.cc \
     third_party/abseil-cpp/absl/base/internal/thread_identity.cc \
     third_party/abseil-cpp/absl/base/internal/throw_delegate.cc \
+    third_party/abseil-cpp/absl/base/internal/tracing.cc \
     third_party/abseil-cpp/absl/base/internal/unscaledcycleclock.cc \
     third_party/abseil-cpp/absl/base/log_severity.cc \
     third_party/abseil-cpp/absl/container/internal/hashtablez_sampler.cc \
@@ -1542,10 +1615,14 @@ LIBGRPC_SRC = \
     third_party/abseil-cpp/absl/crc/internal/crc_non_temporal_memcpy.cc \
     third_party/abseil-cpp/absl/crc/internal/crc_x86_arm_combined.cc \
     third_party/abseil-cpp/absl/debugging/internal/address_is_readable.cc \
+    third_party/abseil-cpp/absl/debugging/internal/decode_rust_punycode.cc \
     third_party/abseil-cpp/absl/debugging/internal/demangle.cc \
+    third_party/abseil-cpp/absl/debugging/internal/demangle_rust.cc \
     third_party/abseil-cpp/absl/debugging/internal/elf_mem_image.cc \
     third_party/abseil-cpp/absl/debugging/internal/examine_stack.cc \
+    third_party/abseil-cpp/absl/debugging/internal/utf8_for_code_point.cc \
     third_party/abseil-cpp/absl/debugging/internal/vdso_support.cc \
+    third_party/abseil-cpp/absl/debugging/leak_check.cc \
     third_party/abseil-cpp/absl/debugging/stacktrace.cc \
     third_party/abseil-cpp/absl/debugging/symbolize.cc \
     third_party/abseil-cpp/absl/flags/commandlineflag.cc \
@@ -1569,14 +1646,14 @@ LIBGRPC_SRC = \
     third_party/abseil-cpp/absl/log/internal/log_sink_set.cc \
     third_party/abseil-cpp/absl/log/internal/nullguard.cc \
     third_party/abseil-cpp/absl/log/internal/proto.cc \
+    third_party/abseil-cpp/absl/log/internal/structured_proto.cc \
     third_party/abseil-cpp/absl/log/internal/vlog_config.cc \
-    third_party/abseil-cpp/absl/log/log_entry.cc \
     third_party/abseil-cpp/absl/log/log_sink.cc \
     third_party/abseil-cpp/absl/numeric/int128.cc \
     third_party/abseil-cpp/absl/profiling/internal/exponential_biased.cc \
     third_party/abseil-cpp/absl/random/discrete_distribution.cc \
     third_party/abseil-cpp/absl/random/gaussian_distribution.cc \
-    third_party/abseil-cpp/absl/random/internal/pool_urbg.cc \
+    third_party/abseil-cpp/absl/random/internal/entropy_pool.cc \
     third_party/abseil-cpp/absl/random/internal/randen.cc \
     third_party/abseil-cpp/absl/random/internal/randen_detect.cc \
     third_party/abseil-cpp/absl/random/internal/randen_hwaes.cc \
@@ -1593,7 +1670,6 @@ LIBGRPC_SRC = \
     third_party/abseil-cpp/absl/strings/charconv.cc \
     third_party/abseil-cpp/absl/strings/cord.cc \
     third_party/abseil-cpp/absl/strings/cord_analysis.cc \
-    third_party/abseil-cpp/absl/strings/cord_buffer.cc \
     third_party/abseil-cpp/absl/strings/escaping.cc \
     third_party/abseil-cpp/absl/strings/internal/charconv_bigint.cc \
     third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc \
@@ -1654,8 +1730,6 @@ LIBGRPC_SRC = \
     third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_posix.cc \
     third_party/abseil-cpp/absl/time/internal/cctz/src/zone_info_source.cc \
     third_party/abseil-cpp/absl/time/time.cc \
-    third_party/abseil-cpp/absl/types/bad_optional_access.cc \
-    third_party/abseil-cpp/absl/types/bad_variant_access.cc \
     third_party/address_sorting/address_sorting.c \
     third_party/address_sorting/address_sorting_posix.c \
     third_party/address_sorting/address_sorting_windows.c \
@@ -1695,11 +1769,12 @@ LIBGRPC_SRC = \
     third_party/upb/upb/message/array.c \
     third_party/upb/upb/message/compat.c \
     third_party/upb/upb/message/copy.c \
-    third_party/upb/upb/message/internal/compare_unknown.c \
     third_party/upb/upb/message/internal/extension.c \
+    third_party/upb/upb/message/internal/iterator.c \
     third_party/upb/upb/message/internal/message.c \
     third_party/upb/upb/message/map.c \
     third_party/upb/upb/message/map_sorter.c \
+    third_party/upb/upb/message/merge.c \
     third_party/upb/upb/message/message.c \
     third_party/upb/upb/mini_descriptor/build_enum.c \
     third_party/upb/upb/mini_descriptor/decode.c \
@@ -1727,6 +1802,7 @@ LIBGRPC_SRC = \
     third_party/upb/upb/reflection/oneof_def.c \
     third_party/upb/upb/reflection/service_def.c \
     third_party/upb/upb/text/encode.c \
+    third_party/upb/upb/text/internal/encode.c \
     third_party/upb/upb/wire/decode.c \
     third_party/upb/upb/wire/encode.c \
     third_party/upb/upb/wire/eps_copy_input_stream.c \
@@ -1739,12 +1815,15 @@ PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer_reader.h \
     include/grpc/census.h \
     include/grpc/compression.h \
+    include/grpc/create_channel_from_endpoint.h \
     include/grpc/credentials.h \
+    include/grpc/credentials_cpp.h \
     include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \
     include/grpc/event_engine/extensible.h \
     include/grpc/event_engine/internal/memory_allocator_impl.h \
     include/grpc/event_engine/internal/slice_cast.h \
+    include/grpc/event_engine/internal/write_event.h \
     include/grpc/event_engine/memory_allocator.h \
     include/grpc/event_engine/memory_request.h \
     include/grpc/event_engine/port.h \
@@ -1759,28 +1838,15 @@ PUBLIC_HEADERS_C += \
     include/grpc/grpc_security_constants.h \
     include/grpc/impl/call.h \
     include/grpc/impl/channel_arg_names.h \
-    include/grpc/impl/codegen/atm.h \
-    include/grpc/impl/codegen/atm_gcc_atomic.h \
-    include/grpc/impl/codegen/atm_gcc_sync.h \
-    include/grpc/impl/codegen/atm_windows.h \
     include/grpc/impl/codegen/byte_buffer.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
     include/grpc/impl/codegen/fork.h \
-    include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/grpc_types.h \
-    include/grpc/impl/codegen/log.h \
-    include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/slice.h \
     include/grpc/impl/codegen/status.h \
-    include/grpc/impl/codegen/sync.h \
-    include/grpc/impl/codegen/sync_abseil.h \
-    include/grpc/impl/codegen/sync_custom.h \
-    include/grpc/impl/codegen/sync_generic.h \
-    include/grpc/impl/codegen/sync_posix.h \
-    include/grpc/impl/codegen/sync_windows.h \
     include/grpc/impl/compression_types.h \
     include/grpc/impl/connectivity_state.h \
     include/grpc/impl/grpc_types.h \
@@ -1791,25 +1857,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \
     include/grpc/status.h \
-    include/grpc/support/alloc.h \
-    include/grpc/support/atm_gcc_atomic.h \
-    include/grpc/support/atm_gcc_sync.h \
-    include/grpc/support/atm_windows.h \
-    include/grpc/support/cpu.h \
-    include/grpc/support/json.h \
-    include/grpc/support/log.h \
-    include/grpc/support/log_windows.h \
-    include/grpc/support/metrics.h \
-    include/grpc/support/port_platform.h \
-    include/grpc/support/string_util.h \
-    include/grpc/support/sync.h \
-    include/grpc/support/sync_abseil.h \
-    include/grpc/support/sync_custom.h \
-    include/grpc/support/sync_generic.h \
-    include/grpc/support/sync_posix.h \
-    include/grpc/support/sync_windows.h \
-    include/grpc/support/thd_id.h \
-    include/grpc/support/time.h \
     include/grpc/support/workaround_list.h \
 
 LIBGRPC_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_SRC))))
@@ -1848,8 +1895,8 @@ $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.43 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.43
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.52 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.52
 	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -1868,241 +1915,251 @@ endif
 # deps: []
 # transitive_deps: []
 LIBBORINGSSL_SRC = \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_bitstr.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_bool.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_d2i_fp.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_dup.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_gentm.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_i2d_fp.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_int.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_mbstr.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_object.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_octet.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_strex.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_strnid.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_time.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_type.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/a_utctm.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/asn1_lib.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/asn1_par.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/asn_pack.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/f_int.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/f_string.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/posix_time.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_dec.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_enc.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_fre.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_new.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_typ.c \
-    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_utl.c \
-    third_party/boringssl-with-bazel/src/crypto/base64/base64.c \
-    third_party/boringssl-with-bazel/src/crypto/bio/bio.c \
-    third_party/boringssl-with-bazel/src/crypto/bio/bio_mem.c \
-    third_party/boringssl-with-bazel/src/crypto/bio/connect.c \
-    third_party/boringssl-with-bazel/src/crypto/bio/errno.c \
-    third_party/boringssl-with-bazel/src/crypto/bio/fd.c \
-    third_party/boringssl-with-bazel/src/crypto/bio/file.c \
-    third_party/boringssl-with-bazel/src/crypto/bio/hexdump.c \
-    third_party/boringssl-with-bazel/src/crypto/bio/pair.c \
-    third_party/boringssl-with-bazel/src/crypto/bio/printf.c \
-    third_party/boringssl-with-bazel/src/crypto/bio/socket.c \
-    third_party/boringssl-with-bazel/src/crypto/bio/socket_helper.c \
-    third_party/boringssl-with-bazel/src/crypto/blake2/blake2.c \
-    third_party/boringssl-with-bazel/src/crypto/bn_extra/bn_asn1.c \
-    third_party/boringssl-with-bazel/src/crypto/bn_extra/convert.c \
-    third_party/boringssl-with-bazel/src/crypto/buf/buf.c \
-    third_party/boringssl-with-bazel/src/crypto/bytestring/asn1_compat.c \
-    third_party/boringssl-with-bazel/src/crypto/bytestring/ber.c \
-    third_party/boringssl-with-bazel/src/crypto/bytestring/cbb.c \
-    third_party/boringssl-with-bazel/src/crypto/bytestring/cbs.c \
-    third_party/boringssl-with-bazel/src/crypto/bytestring/unicode.c \
-    third_party/boringssl-with-bazel/src/crypto/chacha/chacha.c \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/cipher_extra.c \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/derive_key.c \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_aesctrhmac.c \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_aesgcmsiv.c \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_chacha20poly1305.c \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_des.c \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_null.c \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_rc2.c \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_rc4.c \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/e_tls.c \
-    third_party/boringssl-with-bazel/src/crypto/cipher_extra/tls_cbc.c \
-    third_party/boringssl-with-bazel/src/crypto/conf/conf.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_apple.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_fuchsia.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_linux.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_openbsd.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_sysreg.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_win.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu_arm_freebsd.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu_arm_linux.c \
-    third_party/boringssl-with-bazel/src/crypto/cpu_intel.c \
-    third_party/boringssl-with-bazel/src/crypto/crypto.c \
-    third_party/boringssl-with-bazel/src/crypto/curve25519/curve25519.c \
-    third_party/boringssl-with-bazel/src/crypto/curve25519/curve25519_64_adx.c \
-    third_party/boringssl-with-bazel/src/crypto/curve25519/spake25519.c \
-    third_party/boringssl-with-bazel/src/crypto/des/des.c \
-    third_party/boringssl-with-bazel/src/crypto/dh_extra/dh_asn1.c \
-    third_party/boringssl-with-bazel/src/crypto/dh_extra/params.c \
-    third_party/boringssl-with-bazel/src/crypto/digest_extra/digest_extra.c \
-    third_party/boringssl-with-bazel/src/crypto/dilithium/dilithium.c \
-    third_party/boringssl-with-bazel/src/crypto/dsa/dsa.c \
-    third_party/boringssl-with-bazel/src/crypto/dsa/dsa_asn1.c \
-    third_party/boringssl-with-bazel/src/crypto/ec_extra/ec_asn1.c \
-    third_party/boringssl-with-bazel/src/crypto/ec_extra/ec_derive.c \
-    third_party/boringssl-with-bazel/src/crypto/ec_extra/hash_to_curve.c \
-    third_party/boringssl-with-bazel/src/crypto/ecdh_extra/ecdh_extra.c \
-    third_party/boringssl-with-bazel/src/crypto/ecdsa_extra/ecdsa_asn1.c \
-    third_party/boringssl-with-bazel/src/crypto/engine/engine.c \
-    third_party/boringssl-with-bazel/src/crypto/err/err.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/evp.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/evp_asn1.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/evp_ctx.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/p_dh.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/p_dh_asn1.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/p_dsa_asn1.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/p_ec.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/p_ec_asn1.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/p_ed25519.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/p_ed25519_asn1.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/p_hkdf.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/p_rsa.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/p_rsa_asn1.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/p_x25519.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/p_x25519_asn1.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/pbkdf.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/print.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/scrypt.c \
-    third_party/boringssl-with-bazel/src/crypto/evp/sign.c \
-    third_party/boringssl-with-bazel/src/crypto/ex_data.c \
-    third_party/boringssl-with-bazel/src/crypto/fipsmodule/bcm.c \
-    third_party/boringssl-with-bazel/src/crypto/fipsmodule/fips_shared_support.c \
-    third_party/boringssl-with-bazel/src/crypto/hpke/hpke.c \
-    third_party/boringssl-with-bazel/src/crypto/hrss/hrss.c \
-    third_party/boringssl-with-bazel/src/crypto/keccak/keccak.c \
-    third_party/boringssl-with-bazel/src/crypto/kyber/kyber.c \
-    third_party/boringssl-with-bazel/src/crypto/lhash/lhash.c \
-    third_party/boringssl-with-bazel/src/crypto/mem.c \
-    third_party/boringssl-with-bazel/src/crypto/obj/obj.c \
-    third_party/boringssl-with-bazel/src/crypto/obj/obj_xref.c \
-    third_party/boringssl-with-bazel/src/crypto/pem/pem_all.c \
-    third_party/boringssl-with-bazel/src/crypto/pem/pem_info.c \
-    third_party/boringssl-with-bazel/src/crypto/pem/pem_lib.c \
-    third_party/boringssl-with-bazel/src/crypto/pem/pem_oth.c \
-    third_party/boringssl-with-bazel/src/crypto/pem/pem_pk8.c \
-    third_party/boringssl-with-bazel/src/crypto/pem/pem_pkey.c \
-    third_party/boringssl-with-bazel/src/crypto/pem/pem_x509.c \
-    third_party/boringssl-with-bazel/src/crypto/pem/pem_xaux.c \
-    third_party/boringssl-with-bazel/src/crypto/pkcs7/pkcs7.c \
-    third_party/boringssl-with-bazel/src/crypto/pkcs7/pkcs7_x509.c \
-    third_party/boringssl-with-bazel/src/crypto/pkcs8/p5_pbev2.c \
-    third_party/boringssl-with-bazel/src/crypto/pkcs8/pkcs8.c \
-    third_party/boringssl-with-bazel/src/crypto/pkcs8/pkcs8_x509.c \
-    third_party/boringssl-with-bazel/src/crypto/poly1305/poly1305.c \
-    third_party/boringssl-with-bazel/src/crypto/poly1305/poly1305_arm.c \
-    third_party/boringssl-with-bazel/src/crypto/poly1305/poly1305_vec.c \
-    third_party/boringssl-with-bazel/src/crypto/pool/pool.c \
-    third_party/boringssl-with-bazel/src/crypto/rand_extra/deterministic.c \
-    third_party/boringssl-with-bazel/src/crypto/rand_extra/forkunsafe.c \
-    third_party/boringssl-with-bazel/src/crypto/rand_extra/getentropy.c \
-    third_party/boringssl-with-bazel/src/crypto/rand_extra/ios.c \
-    third_party/boringssl-with-bazel/src/crypto/rand_extra/passive.c \
-    third_party/boringssl-with-bazel/src/crypto/rand_extra/rand_extra.c \
-    third_party/boringssl-with-bazel/src/crypto/rand_extra/trusty.c \
-    third_party/boringssl-with-bazel/src/crypto/rand_extra/windows.c \
-    third_party/boringssl-with-bazel/src/crypto/rc4/rc4.c \
-    third_party/boringssl-with-bazel/src/crypto/refcount.c \
-    third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_asn1.c \
-    third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_crypt.c \
-    third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_print.c \
-    third_party/boringssl-with-bazel/src/crypto/siphash/siphash.c \
-    third_party/boringssl-with-bazel/src/crypto/spx/address.c \
-    third_party/boringssl-with-bazel/src/crypto/spx/fors.c \
-    third_party/boringssl-with-bazel/src/crypto/spx/merkle.c \
-    third_party/boringssl-with-bazel/src/crypto/spx/spx.c \
-    third_party/boringssl-with-bazel/src/crypto/spx/spx_util.c \
-    third_party/boringssl-with-bazel/src/crypto/spx/thash.c \
-    third_party/boringssl-with-bazel/src/crypto/spx/wots.c \
-    third_party/boringssl-with-bazel/src/crypto/stack/stack.c \
-    third_party/boringssl-with-bazel/src/crypto/thread.c \
-    third_party/boringssl-with-bazel/src/crypto/thread_none.c \
-    third_party/boringssl-with-bazel/src/crypto/thread_pthread.c \
-    third_party/boringssl-with-bazel/src/crypto/thread_win.c \
-    third_party/boringssl-with-bazel/src/crypto/trust_token/pmbtoken.c \
-    third_party/boringssl-with-bazel/src/crypto/trust_token/trust_token.c \
-    third_party/boringssl-with-bazel/src/crypto/trust_token/voprf.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/a_digest.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/a_sign.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/a_verify.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/algorithm.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/asn1_gen.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/by_dir.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/by_file.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/i2d_pr.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/name_print.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/policy.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/rsa_pss.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/t_crl.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/t_req.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/t_x509.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/t_x509a.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/v3_akey.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/v3_akeya.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/v3_alt.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/v3_bcons.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/v3_bitst.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/v3_conf.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/v3_cpols.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/v3_crld.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/v3_enum.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/v3_extku.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/v3_genn.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/v3_ia5.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/v3_info.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/v3_int.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/v3_lib.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/v3_ncons.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/v3_ocsp.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/v3_pcons.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/v3_pmaps.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/v3_prn.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/v3_purp.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/v3_skey.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/v3_utl.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509_att.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509_cmp.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509_d2.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509_def.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509_ext.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509_lu.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509_obj.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509_req.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509_set.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509_trs.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509_txt.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509_v3.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509_vfy.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509_vpm.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509cset.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509name.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509rset.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509spki.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_algor.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_all.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_attrib.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_crl.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_exten.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_name.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_pubkey.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_req.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_sig.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_spki.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_val.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_x509.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_x509a.c \
-    third_party/boringssl-with-bazel/src/gen/crypto/err_data.c \
+    third_party/boringssl-with-bazel/src/crypto/aes/aes.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_bitstr.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_bool.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_d2i_fp.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_dup.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_gentm.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_i2d_fp.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_int.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_mbstr.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_object.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_octet.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_strex.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_strnid.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_time.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_type.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/a_utctm.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/asn1_lib.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/asn1_par.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/asn_pack.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/f_int.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/f_string.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/posix_time.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_dec.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_enc.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_fre.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_new.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_typ.cc \
+    third_party/boringssl-with-bazel/src/crypto/asn1/tasn_utl.cc \
+    third_party/boringssl-with-bazel/src/crypto/base64/base64.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/bio.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/bio_mem.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/connect.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/errno.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/fd.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/file.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/hexdump.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/pair.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/printf.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/socket.cc \
+    third_party/boringssl-with-bazel/src/crypto/bio/socket_helper.cc \
+    third_party/boringssl-with-bazel/src/crypto/blake2/blake2.cc \
+    third_party/boringssl-with-bazel/src/crypto/bn/bn_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/bn/convert.cc \
+    third_party/boringssl-with-bazel/src/crypto/bn/div.cc \
+    third_party/boringssl-with-bazel/src/crypto/bn/exponentiation.cc \
+    third_party/boringssl-with-bazel/src/crypto/bn/sqrt.cc \
+    third_party/boringssl-with-bazel/src/crypto/buf/buf.cc \
+    third_party/boringssl-with-bazel/src/crypto/bytestring/asn1_compat.cc \
+    third_party/boringssl-with-bazel/src/crypto/bytestring/ber.cc \
+    third_party/boringssl-with-bazel/src/crypto/bytestring/cbb.cc \
+    third_party/boringssl-with-bazel/src/crypto/bytestring/cbs.cc \
+    third_party/boringssl-with-bazel/src/crypto/bytestring/unicode.cc \
+    third_party/boringssl-with-bazel/src/crypto/chacha/chacha.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher/derive_key.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher/e_aesctrhmac.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher/e_aeseax.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher/e_aesgcmsiv.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher/e_chacha20poly1305.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher/e_des.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher/e_null.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher/e_rc2.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher/e_rc4.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher/e_tls.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher/get_cipher.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher/tls_cbc.cc \
+    third_party/boringssl-with-bazel/src/crypto/cms/cms.cc \
+    third_party/boringssl-with-bazel/src/crypto/conf/conf.cc \
+    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_apple.cc \
+    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_fuchsia.cc \
+    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_linux.cc \
+    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_openbsd.cc \
+    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_sysreg.cc \
+    third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_win.cc \
+    third_party/boringssl-with-bazel/src/crypto/cpu_arm_freebsd.cc \
+    third_party/boringssl-with-bazel/src/crypto/cpu_arm_linux.cc \
+    third_party/boringssl-with-bazel/src/crypto/cpu_intel.cc \
+    third_party/boringssl-with-bazel/src/crypto/crypto.cc \
+    third_party/boringssl-with-bazel/src/crypto/curve25519/curve25519.cc \
+    third_party/boringssl-with-bazel/src/crypto/curve25519/curve25519_64_adx.cc \
+    third_party/boringssl-with-bazel/src/crypto/curve25519/spake25519.cc \
+    third_party/boringssl-with-bazel/src/crypto/des/des.cc \
+    third_party/boringssl-with-bazel/src/crypto/dh/dh_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/dh/params.cc \
+    third_party/boringssl-with-bazel/src/crypto/digest/digest_extra.cc \
+    third_party/boringssl-with-bazel/src/crypto/dsa/dsa.cc \
+    third_party/boringssl-with-bazel/src/crypto/dsa/dsa_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/ec/ec_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/ec/ec_derive.cc \
+    third_party/boringssl-with-bazel/src/crypto/ec/hash_to_curve.cc \
+    third_party/boringssl-with-bazel/src/crypto/ecdh/ecdh.cc \
+    third_party/boringssl-with-bazel/src/crypto/ecdsa/ecdsa_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/engine/engine.cc \
+    third_party/boringssl-with-bazel/src/crypto/err/err.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/evp.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/evp_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/evp_ctx.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_dh.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_dh_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_dsa_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_ec.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_ec_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_ed25519.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_ed25519_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_hkdf.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_rsa.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_rsa_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_x25519.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_x25519_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/pbkdf.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/print.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/scrypt.cc \
+    third_party/boringssl-with-bazel/src/crypto/evp/sign.cc \
+    third_party/boringssl-with-bazel/src/crypto/ex_data.cc \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/bcm.cc \
+    third_party/boringssl-with-bazel/src/crypto/fipsmodule/fips_shared_support.cc \
+    third_party/boringssl-with-bazel/src/crypto/fuzzer_mode.cc \
+    third_party/boringssl-with-bazel/src/crypto/hpke/hpke.cc \
+    third_party/boringssl-with-bazel/src/crypto/hrss/hrss.cc \
+    third_party/boringssl-with-bazel/src/crypto/kyber/kyber.cc \
+    third_party/boringssl-with-bazel/src/crypto/lhash/lhash.cc \
+    third_party/boringssl-with-bazel/src/crypto/md4/md4.cc \
+    third_party/boringssl-with-bazel/src/crypto/md5/md5.cc \
+    third_party/boringssl-with-bazel/src/crypto/mem.cc \
+    third_party/boringssl-with-bazel/src/crypto/mldsa/mldsa.cc \
+    third_party/boringssl-with-bazel/src/crypto/mlkem/mlkem.cc \
+    third_party/boringssl-with-bazel/src/crypto/obj/obj.cc \
+    third_party/boringssl-with-bazel/src/crypto/obj/obj_xref.cc \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_all.cc \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_info.cc \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_lib.cc \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_oth.cc \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_pk8.cc \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_pkey.cc \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_x509.cc \
+    third_party/boringssl-with-bazel/src/crypto/pem/pem_xaux.cc \
+    third_party/boringssl-with-bazel/src/crypto/pkcs7/pkcs7.cc \
+    third_party/boringssl-with-bazel/src/crypto/pkcs7/pkcs7_x509.cc \
+    third_party/boringssl-with-bazel/src/crypto/pkcs8/p5_pbev2.cc \
+    third_party/boringssl-with-bazel/src/crypto/pkcs8/pkcs8.cc \
+    third_party/boringssl-with-bazel/src/crypto/pkcs8/pkcs8_x509.cc \
+    third_party/boringssl-with-bazel/src/crypto/poly1305/poly1305.cc \
+    third_party/boringssl-with-bazel/src/crypto/poly1305/poly1305_arm.cc \
+    third_party/boringssl-with-bazel/src/crypto/poly1305/poly1305_vec.cc \
+    third_party/boringssl-with-bazel/src/crypto/pool/pool.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand/deterministic.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand/fork_detect.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand/forkunsafe.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand/getentropy.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand/ios.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand/passive.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand/rand.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand/trusty.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand/urandom.cc \
+    third_party/boringssl-with-bazel/src/crypto/rand/windows.cc \
+    third_party/boringssl-with-bazel/src/crypto/rc4/rc4.cc \
+    third_party/boringssl-with-bazel/src/crypto/refcount.cc \
+    third_party/boringssl-with-bazel/src/crypto/rsa/rsa_asn1.cc \
+    third_party/boringssl-with-bazel/src/crypto/rsa/rsa_crypt.cc \
+    third_party/boringssl-with-bazel/src/crypto/rsa/rsa_extra.cc \
+    third_party/boringssl-with-bazel/src/crypto/rsa/rsa_print.cc \
+    third_party/boringssl-with-bazel/src/crypto/sha/sha1.cc \
+    third_party/boringssl-with-bazel/src/crypto/sha/sha256.cc \
+    third_party/boringssl-with-bazel/src/crypto/sha/sha512.cc \
+    third_party/boringssl-with-bazel/src/crypto/siphash/siphash.cc \
+    third_party/boringssl-with-bazel/src/crypto/slhdsa/slhdsa.cc \
+    third_party/boringssl-with-bazel/src/crypto/spake2plus/spake2plus.cc \
+    third_party/boringssl-with-bazel/src/crypto/stack/stack.cc \
+    third_party/boringssl-with-bazel/src/crypto/thread.cc \
+    third_party/boringssl-with-bazel/src/crypto/thread_none.cc \
+    third_party/boringssl-with-bazel/src/crypto/thread_pthread.cc \
+    third_party/boringssl-with-bazel/src/crypto/thread_win.cc \
+    third_party/boringssl-with-bazel/src/crypto/trust_token/pmbtoken.cc \
+    third_party/boringssl-with-bazel/src/crypto/trust_token/trust_token.cc \
+    third_party/boringssl-with-bazel/src/crypto/trust_token/voprf.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/a_digest.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/a_sign.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/a_verify.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/algorithm.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/asn1_gen.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/by_dir.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/by_file.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/i2d_pr.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/name_print.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/policy.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/rsa_pss.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/t_crl.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/t_req.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/t_x509.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/t_x509a.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_akey.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_akeya.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_alt.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_bcons.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_bitst.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_conf.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_cpols.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_crld.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_enum.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_extku.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_genn.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_ia5.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_info.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_int.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_lib.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_ncons.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_ocsp.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_pcons.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_pmaps.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_prn.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_purp.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_skey.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_utl.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_att.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_cmp.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_d2.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_def.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_ext.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_lu.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_obj.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_req.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_set.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_trs.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_txt.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_v3.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_vfy.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509_vpm.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509cset.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509name.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509rset.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x509spki.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_algor.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_all.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_attrib.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_crl.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_exten.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_name.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_pubkey.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_req.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_sig.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_spki.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_val.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_x509.cc \
+    third_party/boringssl-with-bazel/src/crypto/x509/x_x509a.cc \
+    third_party/boringssl-with-bazel/src/gen/crypto/err_data.cc \
     third_party/boringssl-with-bazel/src/ssl/bio_ssl.cc \
     third_party/boringssl-with-bazel/src/ssl/d1_both.cc \
     third_party/boringssl-with-bazel/src/ssl/d1_lib.cc \
@@ -2171,23 +2228,15 @@ endif
 # deps: []
 # transitive_deps: []
 LIBCARES_SRC = \
-    third_party/cares/cares/src/lib/ares__addrinfo2hostent.c \
-    third_party/cares/cares/src/lib/ares__addrinfo_localhost.c \
-    third_party/cares/cares/src/lib/ares__close_sockets.c \
-    third_party/cares/cares/src/lib/ares__get_hostent.c \
-    third_party/cares/cares/src/lib/ares__parse_into_addrinfo.c \
-    third_party/cares/cares/src/lib/ares__read_line.c \
-    third_party/cares/cares/src/lib/ares__readaddrinfo.c \
-    third_party/cares/cares/src/lib/ares__sortaddrinfo.c \
-    third_party/cares/cares/src/lib/ares__timeval.c \
+    third_party/cares/cares/src/lib/ares_addrinfo2hostent.c \
+    third_party/cares/cares/src/lib/ares_addrinfo_localhost.c \
     third_party/cares/cares/src/lib/ares_android.c \
     third_party/cares/cares/src/lib/ares_cancel.c \
-    third_party/cares/cares/src/lib/ares_create_query.c \
+    third_party/cares/cares/src/lib/ares_close_sockets.c \
+    third_party/cares/cares/src/lib/ares_conn.c \
+    third_party/cares/cares/src/lib/ares_cookie.c \
     third_party/cares/cares/src/lib/ares_data.c \
     third_party/cares/cares/src/lib/ares_destroy.c \
-    third_party/cares/cares/src/lib/ares_expand_name.c \
-    third_party/cares/cares/src/lib/ares_expand_string.c \
-    third_party/cares/cares/src/lib/ares_fds.c \
     third_party/cares/cares/src/lib/ares_free_hostent.c \
     third_party/cares/cares/src/lib/ares_free_string.c \
     third_party/cares/cares/src/lib/ares_freeaddrinfo.c \
@@ -2196,47 +2245,86 @@ LIBCARES_SRC = \
     third_party/cares/cares/src/lib/ares_gethostbyaddr.c \
     third_party/cares/cares/src/lib/ares_gethostbyname.c \
     third_party/cares/cares/src/lib/ares_getnameinfo.c \
-    third_party/cares/cares/src/lib/ares_getsock.c \
+    third_party/cares/cares/src/lib/ares_hosts_file.c \
     third_party/cares/cares/src/lib/ares_init.c \
     third_party/cares/cares/src/lib/ares_library_init.c \
-    third_party/cares/cares/src/lib/ares_llist.c \
-    third_party/cares/cares/src/lib/ares_mkquery.c \
-    third_party/cares/cares/src/lib/ares_nowarn.c \
+    third_party/cares/cares/src/lib/ares_metrics.c \
     third_party/cares/cares/src/lib/ares_options.c \
-    third_party/cares/cares/src/lib/ares_parse_a_reply.c \
-    third_party/cares/cares/src/lib/ares_parse_aaaa_reply.c \
-    third_party/cares/cares/src/lib/ares_parse_caa_reply.c \
-    third_party/cares/cares/src/lib/ares_parse_mx_reply.c \
-    third_party/cares/cares/src/lib/ares_parse_naptr_reply.c \
-    third_party/cares/cares/src/lib/ares_parse_ns_reply.c \
-    third_party/cares/cares/src/lib/ares_parse_ptr_reply.c \
-    third_party/cares/cares/src/lib/ares_parse_soa_reply.c \
-    third_party/cares/cares/src/lib/ares_parse_srv_reply.c \
-    third_party/cares/cares/src/lib/ares_parse_txt_reply.c \
-    third_party/cares/cares/src/lib/ares_parse_uri_reply.c \
-    third_party/cares/cares/src/lib/ares_platform.c \
+    third_party/cares/cares/src/lib/ares_parse_into_addrinfo.c \
     third_party/cares/cares/src/lib/ares_process.c \
+    third_party/cares/cares/src/lib/ares_qcache.c \
     third_party/cares/cares/src/lib/ares_query.c \
-    third_party/cares/cares/src/lib/ares_rand.c \
     third_party/cares/cares/src/lib/ares_search.c \
     third_party/cares/cares/src/lib/ares_send.c \
-    third_party/cares/cares/src/lib/ares_strcasecmp.c \
-    third_party/cares/cares/src/lib/ares_strdup.c \
+    third_party/cares/cares/src/lib/ares_set_socket_functions.c \
+    third_party/cares/cares/src/lib/ares_socket.c \
+    third_party/cares/cares/src/lib/ares_sortaddrinfo.c \
     third_party/cares/cares/src/lib/ares_strerror.c \
-    third_party/cares/cares/src/lib/ares_strsplit.c \
+    third_party/cares/cares/src/lib/ares_sysconfig.c \
+    third_party/cares/cares/src/lib/ares_sysconfig_files.c \
+    third_party/cares/cares/src/lib/ares_sysconfig_mac.c \
+    third_party/cares/cares/src/lib/ares_sysconfig_win.c \
     third_party/cares/cares/src/lib/ares_timeout.c \
+    third_party/cares/cares/src/lib/ares_update_servers.c \
     third_party/cares/cares/src/lib/ares_version.c \
-    third_party/cares/cares/src/lib/ares_writev.c \
-    third_party/cares/cares/src/lib/bitncmp.c \
+    third_party/cares/cares/src/lib/dsa/ares_array.c \
+    third_party/cares/cares/src/lib/dsa/ares_htable.c \
+    third_party/cares/cares/src/lib/dsa/ares_htable_asvp.c \
+    third_party/cares/cares/src/lib/dsa/ares_htable_dict.c \
+    third_party/cares/cares/src/lib/dsa/ares_htable_strvp.c \
+    third_party/cares/cares/src/lib/dsa/ares_htable_szvp.c \
+    third_party/cares/cares/src/lib/dsa/ares_htable_vpstr.c \
+    third_party/cares/cares/src/lib/dsa/ares_htable_vpvp.c \
+    third_party/cares/cares/src/lib/dsa/ares_llist.c \
+    third_party/cares/cares/src/lib/dsa/ares_slist.c \
+    third_party/cares/cares/src/lib/event/ares_event_configchg.c \
+    third_party/cares/cares/src/lib/event/ares_event_epoll.c \
+    third_party/cares/cares/src/lib/event/ares_event_kqueue.c \
+    third_party/cares/cares/src/lib/event/ares_event_poll.c \
+    third_party/cares/cares/src/lib/event/ares_event_select.c \
+    third_party/cares/cares/src/lib/event/ares_event_thread.c \
+    third_party/cares/cares/src/lib/event/ares_event_wake_pipe.c \
+    third_party/cares/cares/src/lib/event/ares_event_win32.c \
     third_party/cares/cares/src/lib/inet_net_pton.c \
     third_party/cares/cares/src/lib/inet_ntop.c \
+    third_party/cares/cares/src/lib/legacy/ares_create_query.c \
+    third_party/cares/cares/src/lib/legacy/ares_expand_name.c \
+    third_party/cares/cares/src/lib/legacy/ares_expand_string.c \
+    third_party/cares/cares/src/lib/legacy/ares_fds.c \
+    third_party/cares/cares/src/lib/legacy/ares_getsock.c \
+    third_party/cares/cares/src/lib/legacy/ares_parse_a_reply.c \
+    third_party/cares/cares/src/lib/legacy/ares_parse_aaaa_reply.c \
+    third_party/cares/cares/src/lib/legacy/ares_parse_caa_reply.c \
+    third_party/cares/cares/src/lib/legacy/ares_parse_mx_reply.c \
+    third_party/cares/cares/src/lib/legacy/ares_parse_naptr_reply.c \
+    third_party/cares/cares/src/lib/legacy/ares_parse_ns_reply.c \
+    third_party/cares/cares/src/lib/legacy/ares_parse_ptr_reply.c \
+    third_party/cares/cares/src/lib/legacy/ares_parse_soa_reply.c \
+    third_party/cares/cares/src/lib/legacy/ares_parse_srv_reply.c \
+    third_party/cares/cares/src/lib/legacy/ares_parse_txt_reply.c \
+    third_party/cares/cares/src/lib/legacy/ares_parse_uri_reply.c \
+    third_party/cares/cares/src/lib/record/ares_dns_mapping.c \
+    third_party/cares/cares/src/lib/record/ares_dns_multistring.c \
+    third_party/cares/cares/src/lib/record/ares_dns_name.c \
+    third_party/cares/cares/src/lib/record/ares_dns_parse.c \
+    third_party/cares/cares/src/lib/record/ares_dns_record.c \
+    third_party/cares/cares/src/lib/record/ares_dns_write.c \
+    third_party/cares/cares/src/lib/str/ares_buf.c \
+    third_party/cares/cares/src/lib/str/ares_str.c \
+    third_party/cares/cares/src/lib/str/ares_strsplit.c \
+    third_party/cares/cares/src/lib/util/ares_iface_ips.c \
+    third_party/cares/cares/src/lib/util/ares_math.c \
+    third_party/cares/cares/src/lib/util/ares_rand.c \
+    third_party/cares/cares/src/lib/util/ares_threads.c \
+    third_party/cares/cares/src/lib/util/ares_timeval.c \
+    third_party/cares/cares/src/lib/util/ares_uri.c \
     third_party/cares/cares/src/lib/windows_port.c \
 
 
 LIBCARES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBCARES_SRC))))
 
 $(LIBCARES_OBJS): CFLAGS += -g
-$(LIBCARES_OBJS): CPPFLAGS += -Ithird_party/cares/cares/include -Ithird_party/cares -Ithird_party/cares/cares -fvisibility=hidden -D_GNU_SOURCE $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin) $(if $(subst FreeBSD,,$(SYSTEM)),,-Ithird_party/cares/config_freebsd) $(if $(subst Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux) $(if $(subst OpenBSD,,$(SYSTEM)),,-Ithird_party/cares/config_openbsd) -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX $(if $(subst MINGW32,,$(SYSTEM)),-DHAVE_CONFIG_H,)
+$(LIBCARES_OBJS): CPPFLAGS += -Ithird_party/cares/cares/include -Ithird_party/cares -Ithird_party/cares/cares -Ithird_party/cares/cares/src/lib/include -Ithird_party/cares/cares/src/lib -fvisibility=hidden -D_GNU_SOURCE $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin) $(if $(subst FreeBSD,,$(SYSTEM)),,-Ithird_party/cares/config_freebsd) $(if $(subst Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux) $(if $(subst OpenBSD,,$(SYSTEM)),,-Ithird_party/cares/config_openbsd) $(if $(subst MINGW32,,$(SYSTEM)),,-Ithird_party/cares/config_windows) -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DHAVE_CONFIG_H
 
 # static library for "cares"
 $(LIBDIR)/$(CONFIG)/libcares.a: $(LIBCARES_OBJS)

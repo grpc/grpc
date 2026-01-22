@@ -12,14 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-package(default_visibility = ["//visibility:public"])
+load("@rules_python//python:defs.bzl", "py_library")
+
+package(
+    default_visibility = ["//visibility:public"],
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 py_library(
     name = "grpc_csds",
     srcs = glob(["*.py"]),
     imports = ["../"],
     deps = [
+        "//py_xds_protos",
         "//src/python/grpcio/grpc:grpcio",
-        "//tools/distrib/python/xds_protos",
     ],
 )

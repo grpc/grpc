@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/cpp/security")
+grpc_package(
+    name = "test/cpp/security",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "tls_certificate_verifier_test",
@@ -28,6 +34,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//:grpc++_base",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:tls_test_utils",
     ],

@@ -15,11 +15,6 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_WINDOWS
-#include <gtest/gtest.h>
-
-#include "absl/status/status.h"
-#include "absl/time/time.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/log_windows.h>
 
@@ -27,9 +22,12 @@
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
-#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/util/notification.h"
 #include "test/core/event_engine/windows/create_sockpair.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/time/time.h"
 
 namespace {
 using ::grpc_event_engine::experimental::AnyInvocableClosure;

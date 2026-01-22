@@ -3,7 +3,8 @@
  *     google/protobuf/empty.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -12,6 +13,7 @@
 // Must be last.
 #include "upb/port/def.inc"
 
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
 const upb_MiniTable google__protobuf__Empty_msg_init = {
   NULL,
   NULL,
@@ -21,6 +23,7 @@ const upb_MiniTable google__protobuf__Empty_msg_init = {
 #endif
 };
 
+const upb_MiniTable* google__protobuf__Empty_msg_init_ptr = &google__protobuf__Empty_msg_init;
 static const upb_MiniTable *messages_layout[1] = {
   &google__protobuf__Empty_msg_init,
 };

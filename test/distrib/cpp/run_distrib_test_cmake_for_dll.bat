@@ -19,7 +19,7 @@ cd /d %~dp0\..\..\..
 @rem is on PATH. To avoid picking up the older version protoc.exe, we change the path to something non-existent.
 set PATH=%PATH:ProtoC=DontPickupProtoC%
 
-@rem Install into ./testinstall, but use absolute path and foward slashes
+@rem Install into ./testinstall, but use absolute path and forward slashes
 set INSTALL_DIR=%cd:\=/%/testinstall
 
 @rem Download OpenSSL-Win32 originally installed from https://slproweb.com/products/Win32OpenSSL.html
@@ -31,7 +31,7 @@ set OPENSSL_DIR=%cd:\=/%/OpenSSL-Win32
 
 @rem TODO(jtattermusch): add support for GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS env variable
 
-set VS_GENERATOR="Visual Studio 16 2019"
+set VS_GENERATOR="Visual Studio 17 2022"
 @rem TODO(jtattermusch): switch to x64 build (will require pulling a x64 build of openssl)
 set VS_ARCHITECTURE="Win32"
 
@@ -45,21 +45,21 @@ popd
 @rem Install c-ares
 mkdir third_party\cares\cares\cmake\build
 pushd third_party\cares\cares\cmake\build
-cmake -G %VS_GENERATOR% -A %VS_ARCHITECTURE% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ..\..
+cmake -G %VS_GENERATOR% -A %VS_ARCHITECTURE% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DCMAKE_CXX_STANDARD=17 ..\..
 cmake --build . --config Release --target install || goto :error
 popd
 
 @rem Install protobuf
 mkdir third_party\protobuf\cmake\build
 pushd third_party\protobuf\cmake\build
-cmake -G %VS_GENERATOR% -A %VS_ARCHITECTURE% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -Dprotobuf_ABSL_PROVIDER=package -DZLIB_ROOT=%INSTALL_DIR% -Dprotobuf_MSVC_STATIC_RUNTIME=OFF -Dprotobuf_BUILD_TESTS=OFF ..\..
+cmake -G %VS_GENERATOR% -A %VS_ARCHITECTURE% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DCMAKE_CXX_STANDARD=17 -Dprotobuf_ABSL_PROVIDER=package -DZLIB_ROOT=%INSTALL_DIR% -Dprotobuf_MSVC_STATIC_RUNTIME=OFF -Dprotobuf_BUILD_TESTS=OFF ..\..
 cmake --build . --config Release --target install || goto :error
 popd
 
 @rem Install re2
 mkdir third_party\re2\cmake\build
 pushd third_party\re2\cmake\build
-cmake -G %VS_GENERATOR% -A %VS_ARCHITECTURE% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ..\..
+cmake -G %VS_GENERATOR% -A %VS_ARCHITECTURE% -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DCMAKE_CXX_STANDARD=17 ..\..
 cmake --build . --config Release --target install || goto :error
 popd
 
@@ -97,6 +97,7 @@ cmake ^
   -A %VS_ARCHITECTURE% ^
   -DCMAKE_BUILD_TYPE=Release ^
   -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ^
+  -DCMAKE_CXX_STANDARD=17 ^
   -DOPENSSL_ROOT_DIR=%OPENSSL_DIR% ^
   -DZLIB_ROOT=%INSTALL_DIR% ^
   -DBUILD_SHARED_LIBS=ON ^

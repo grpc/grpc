@@ -16,11 +16,6 @@
 //
 //
 
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/memory/memory.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
@@ -30,12 +25,15 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/subprocess.h"
+#include "gtest/gtest.h"
+#include "absl/memory/memory.h"
 
 static std::string g_root;
 
@@ -57,7 +55,7 @@ class CrashTest : public ::testing::Test {
         g_root + "/client_crash_test_server",
         "--address=" + addr,
     }));
-    CHECK(server_);
+    GRPC_CHECK(server_);
     return grpc::testing::EchoTestService::NewStub(
         grpc::CreateChannel(addr, InsecureChannelCredentials()));
   }

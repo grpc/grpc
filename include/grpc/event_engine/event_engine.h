@@ -14,20 +14,29 @@
 #ifndef GRPC_EVENT_ENGINE_EVENT_ENGINE_H
 #define GRPC_EVENT_ENGINE_EVENT_ENGINE_H
 
-#include <vector>
-
-#include "absl/functional/any_invocable.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/extensible.h>
+#include <grpc/event_engine/internal/write_event.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/port.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/support/port_platform.h>
 
+#include <bitset>
+#include <cstddef>
+#include <initializer_list>
+#include <memory>
+#include <optional>
+#include <utility>
+#include <vector>
+
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/types/span.h"
+
 // TODO(vigneshbabu): Define the Endpoint::Write metrics collection system
+// TODO(hork): remove all references to the factory methods.
 namespace grpc_event_engine {
 namespace experimental {
 
@@ -179,13 +188,26 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
     /// EventEngine Endpoint Read API  call.
     ///
     /// Passed as argument to an Endpoint \a Read
-    struct ReadArgs {
+    class ReadArgs final {
+     public:
+      ReadArgs() = default;
+      ReadArgs(const ReadArgs&) = delete;
+      ReadArgs& operator=(const ReadArgs&) = delete;
+      ReadArgs(ReadArgs&&) = default;
+      ReadArgs& operator=(ReadArgs&&) = default;
+
       // A suggestion to the endpoint implementation to read at-least the
       // specified number of bytes over the network connection before marking
       // the endpoint read operation as complete. gRPC may use this argument
       // to minimize the number of endpoint read API calls over the lifetime
       // of a connection.
-      int64_t read_hint_bytes;
+      void set_read_hint_bytes(int64_t read_hint_bytes) {
+        read_hint_bytes_ = read_hint_bytes;
+      }
+      int64_t read_hint_bytes() const { return read_hint_bytes_; }
+
+     private:
+      int64_t read_hint_bytes_ = 1;
     };
     /// Reads data from the Endpoint.
     ///
@@ -194,9 +216,12 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
     /// on_read callback is not executed. Otherwise it returns false and the \a
     /// on_read callback executes asynchronously when the read completes. The
     /// caller must ensure that the callback has access to the buffer when it
-    /// executes. Ownership of the buffer is not transferred. Valid slices *may*
-    /// be placed into the buffer even if the callback is invoked with a non-OK
-    /// Status.
+    /// executes. Ownership of the buffer is not transferred. Either an error is
+    /// passed to the callback (like socket closed), or valid data is available
+    /// in the buffer, but never both at the same time. Implementations that
+    /// receive valid data must not throw that data away - that is, if valid
+    /// data is received on the underlying endpoint, a callback will be made
+    /// with that data available and an ok status.
     ///
     /// There can be at most one outstanding read per Endpoint at any given
     /// time. An outstanding read is one in which the \a on_read callback has
@@ -208,21 +233,172 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
     /// statuses to \a on_read. For example, callbacks might expect to receive
     /// CANCELLED on endpoint shutdown.
     virtual bool Read(absl::AnyInvocable<void(absl::Status)> on_read,
-                      SliceBuffer* buffer, const ReadArgs* args) = 0;
+                      SliceBuffer* buffer, ReadArgs args) = 0;
+    //// The set of write events that can be reported by an Endpoint.
+    using WriteEvent = ::grpc_event_engine::experimental::internal::WriteEvent;
+    /// An output WriteMetric consists of a key and a value.
+    /// The space of keys can be queried from the endpoint via the
+    /// \a AllWriteMetrics, \a GetMetricName and \a GetMetricKey APIs.
+    /// The value is an int64_t that is implementation-defined. Check with the
+    /// endpoint implementation documentation for the semantics of each metric.
+    struct WriteMetric {
+      size_t key;
+      int64_t value;
+    };
+    // It is the responsibility of the caller of WriteEventCallback to make sure
+    // that the corresponding endpoint is still valid. HINT: Do NOT offload
+    // callbacks onto the EventEngine or other threads.
+    using WriteEventCallback = absl::AnyInvocable<void(
+        WriteEvent, absl::Time, std::vector<WriteMetric>) const>;
+    // A bitmask of the events that the caller is interested in.
+    // Each bit corresponds to an entry in WriteEvent.
+    using WriteEventSet = std::bitset<static_cast<int>(WriteEvent::kCount)>;
+
+    // A set of metrics that the caller is interested in.
+    class MetricsSet {
+     public:
+      virtual ~MetricsSet() = default;
+
+      virtual bool IsSet(size_t key) const = 0;
+    };
+
+    // A sink to receive write events.
+    // The requested metrics are the keys of the metrics that the caller is
+    // interested in. The on_event callback will be called on each event
+    // requested.
+    class WriteEventSink final {
+     public:
+      WriteEventSink(std::shared_ptr<MetricsSet> requested_metrics,
+                     std::initializer_list<WriteEvent> requested_events,
+                     WriteEventCallback on_event)
+          : requested_metrics_(std::move(requested_metrics)),
+            on_event_(std::move(on_event)) {
+        for (auto event : requested_events) {
+          requested_events_mask_.set(static_cast<int>(event));
+        }
+      }
+
+      const std::shared_ptr<MetricsSet>& requested_metrics() const {
+        return requested_metrics_;
+      }
+
+      bool requested_event(WriteEvent event) const {
+        return requested_events_mask_.test(static_cast<int>(event));
+      }
+
+      WriteEventSet requested_events_mask() const {
+        return requested_events_mask_;
+      }
+
+      /// Takes the callback. Ownership is transferred. It is illegal to destroy
+      /// the endpoint before this callback is invoked.
+      WriteEventCallback TakeEventCallback() { return std::move(on_event_); }
+
+     private:
+      std::shared_ptr<MetricsSet> requested_metrics_;
+      WriteEventSet requested_events_mask_;
+      // The callback to be called on each event.
+      WriteEventCallback on_event_;
+    };
     /// A struct representing optional arguments that may be provided to an
     /// EventEngine Endpoint Write API call.
     ///
     /// Passed as argument to an Endpoint \a Write
-    struct WriteArgs {
+    class WriteArgs final {
+     public:
+      WriteArgs() = default;
+
+      ~WriteArgs();
+
+      WriteArgs(const WriteArgs&) = delete;
+      WriteArgs& operator=(const WriteArgs&) = delete;
+
+      WriteArgs(WriteArgs&& other) noexcept
+          : metrics_sink_(std::move(other.metrics_sink_)),
+            google_specific_(other.google_specific_),
+            max_frame_size_(other.max_frame_size_) {
+        other.google_specific_ = nullptr;
+      }
+
+      WriteArgs& operator=(WriteArgs&& other) noexcept {
+        if (this != &other) {
+          metrics_sink_ = std::move(other.metrics_sink_);
+          google_specific_ = other.google_specific_;
+          other.google_specific_ = nullptr;  // Nullify source
+          max_frame_size_ = other.max_frame_size_;
+        }
+        return *this;
+      }
+
+      // A sink to receive write events.
+      std::optional<WriteEventSink> TakeMetricsSink() {
+        auto sink = std::move(metrics_sink_);
+        metrics_sink_.reset();
+        return sink;
+      }
+
+      bool has_metrics_sink() const { return metrics_sink_.has_value(); }
+
+      void set_metrics_sink(WriteEventSink sink) {
+        metrics_sink_ = std::move(sink);
+      }
+
       // Represents private information that may be passed by gRPC for
       // select endpoints expected to be used only within google.
-      void* google_specific = nullptr;
+      // TODO(ctiller): Remove this method once all callers are migrated to
+      // metrics sink.
+      void* GetDeprecatedAndDiscouragedGoogleSpecificPointer() {
+        return google_specific_;
+      }
+
+      void* TakeDeprecatedAndDiscouragedGoogleSpecificPointer() {
+        return std::exchange(google_specific_, nullptr);
+      }
+
+      void SetDeprecatedAndDiscouragedGoogleSpecificPointer(void* pointer) {
+        google_specific_ = pointer;
+      }
+
       // A suggestion to the endpoint implementation to group data to be written
       // into frames of the specified max_frame_size. gRPC may use this
       // argument to dynamically control the max sizes of frames sent to a
       // receiver in response to high receiver memory pressure.
-      int64_t max_frame_size;
+      int64_t max_frame_size() const { return max_frame_size_; }
+
+      void set_max_frame_size(int64_t max_frame_size) {
+        max_frame_size_ = max_frame_size;
+      }
+
+     private:
+      std::optional<WriteEventSink> metrics_sink_;
+      void* google_specific_ = nullptr;
+      int64_t max_frame_size_ = 1024 * 1024;
     };
+
+    class TelemetryInfo {
+     public:
+      virtual ~TelemetryInfo() = default;
+
+      /// Returns the list of write metrics that the endpoint supports.
+      /// The keys are used to identify the metrics in the GetMetricName and
+      /// GetMetricKey APIs. The current value of the metric can be queried by
+      /// adding a WriteEventSink to the WriteArgs of a Write call.
+      virtual std::vector<size_t> AllWriteMetrics() const = 0;
+      /// Returns the name of the write metric with the given key.
+      /// If the key is not found, returns std::nullopt.
+      virtual std::optional<absl::string_view> GetMetricName(
+          size_t key) const = 0;
+      /// Returns the key of the write metric with the given name.
+      /// If the name is not found, returns std::nullopt.
+      virtual std::optional<size_t> GetMetricKey(
+          absl::string_view name) const = 0;
+      /// Returns a MetricsSet with all the keys from \a keys set.
+      virtual std::shared_ptr<MetricsSet> GetMetricsSet(
+          absl::Span<const size_t> keys) const = 0;
+      /// Returns a MetricsSet with all supported keys set.
+      virtual std::shared_ptr<MetricsSet> GetFullMetricsSet() const = 0;
+    };
+
     /// Writes data out on the connection.
     ///
     /// If the write succeeds immediately, it returns true and the
@@ -244,11 +420,13 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
     /// statuses to \a on_writable. For example, callbacks might expect to
     /// receive CANCELLED on endpoint shutdown.
     virtual bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
-                       SliceBuffer* data, const WriteArgs* args) = 0;
+                       SliceBuffer* data, WriteArgs args) = 0;
     /// Returns an address in the format described in DNSResolver. The returned
     /// values are expected to remain valid for the life of the Endpoint.
     virtual const ResolvedAddress& GetPeerAddress() const = 0;
     virtual const ResolvedAddress& GetLocalAddress() const = 0;
+
+    virtual std::shared_ptr<TelemetryInfo> GetTelemetryInfo() const = 0;
   };
 
   /// Called when a new connection is established.
@@ -330,7 +508,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
   /// when the object is destroyed and all pending callbacks will be called
   /// shortly. If cancellation races with request completion, implementations
   /// may choose to either cancel or satisfy the request.
-  class DNSResolver {
+  class DNSResolver : public Extensible {
    public:
     /// Optional configuration for DNSResolvers.
     struct ResolverOptions {
@@ -468,7 +646,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
   virtual bool Cancel(TaskHandle handle) = 0;
 };
 
-/// Replace gRPC's default EventEngine factory.
+/// [DEPRECATED] Replace gRPC's default EventEngine factory.
 ///
 /// Applications may call \a SetEventEngineFactory at any time to replace the
 /// default factory used within gRPC. EventEngines will be created when
@@ -477,18 +655,56 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
 /// To be certain that none of the gRPC-provided built-in EventEngines are
 /// created, applications must set a custom EventEngine factory method *before*
 /// grpc is initialized.
+// TODO(hork): delete once all known users have migrated away
 void SetEventEngineFactory(
-    absl::AnyInvocable<std::unique_ptr<EventEngine>()> factory);
+    absl::AnyInvocable<std::shared_ptr<EventEngine>()> factory);
 
-/// Reset gRPC's EventEngine factory to the built-in default.
+/// [DEPRECATED] Reset gRPC's EventEngine factory to the built-in default.
 ///
 /// Applications that have called \a SetEventEngineFactory can remove their
 /// custom factory using this method. The built-in EventEngine factories will be
 /// used going forward. This has no affect on any EventEngines that were created
 /// using the previous factories.
+//
+// TODO(hork): delete once all known users have migrated away
 void EventEngineFactoryReset();
-/// Create an EventEngine using the default factory.
-std::unique_ptr<EventEngine> CreateEventEngine();
+
+/// Create a new EventEngine instance.
+std::shared_ptr<EventEngine> CreateEventEngine();
+
+/// Set the default EventEngine instance, which will be used throughout gRPC
+///
+/// gRPC will hold a ref to this engine until either
+/// \a ShutdownDefaultEventEngine() is called or \a SetDefaultEventEngine() is
+/// called again with a different value. Passing a value of nullptr will cause
+/// gRPC to drop the ref it was holding without setting it to a new one.
+///
+/// Earlier calls to \a GetDefaultEventEngine will still hold a ref to the
+/// previous default engine instance, if any.
+void SetDefaultEventEngine(std::shared_ptr<EventEngine> engine);
+
+/// Returns the default EventEngine instance.
+///
+/// Note that if SetDefaultEventEngine() has not been called, then the default
+/// EventEngine may be created and destroyed as needed, meaning that multiple
+/// calls to GetDefaultEventEngine() over a process's lifetime may return
+/// different instances. Callers are expected to call GetDefaultEventEngine()
+/// once and hold the returned reference for as long as they need the
+/// EventEngine instance.
+std::shared_ptr<EventEngine> GetDefaultEventEngine();
+
+/// Resets gRPC to use one of the default internal EventEngines for all *new*
+/// \a GetDefaultEventEngine requests and blocks until all refs on the active
+/// default engine have been released (destroying that engine).
+///
+/// If you called \a SetDefaultEventEngine, you must call either
+/// \a ShutdownDefaultEventEngine or \a SetDefaultEventEngine(nullptr) at the
+/// end of your program. If you don't, the engine will never be destroyed.
+///
+/// If you want to reset the default engine to one of gRPC's internal versions
+/// without waiting for all references to be released on the current default
+/// engine, call \a SetDefaultEventEngine(nullptr) instead.
+void ShutdownDefaultEventEngine();
 
 bool operator==(const EventEngine::TaskHandle& lhs,
                 const EventEngine::TaskHandle& rhs);

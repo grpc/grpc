@@ -13,6 +13,8 @@
 // limitations under the License.
 //
 
+#include <grpc/event_engine/endpoint_config.h>
+#include <grpcpp/support/status.h>
 #include <unistd.h>
 
 #include <cstddef>
@@ -21,25 +23,20 @@
 #include <utility>
 #include <vector>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/strings/str_cat.h"
-
-#include <grpc/event_engine/endpoint_config.h>
-#include <grpcpp/support/status.h>
-
+#include "envoy/config/cluster/v3/cluster.pb.h"
+#include "envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.pb.h"
 #include "src/core/client_channel/backup_poller.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/fake/fake_resolver.h"
-#include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/pick_first.pb.h"
+#include "src/core/util/env.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc {
 namespace testing {
@@ -117,10 +114,6 @@ int main(int argc, char** argv) {
   grpc_core::ConfigVars::Overrides overrides;
   overrides.client_channel_backup_poll_interval_ms = 1;
   grpc_core::ConfigVars::SetOverrides(overrides);
-#if TARGET_OS_IPHONE
-  // Workaround Apple CFStream bug
-  grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
   grpc_init();
   grpc::testing::ConnectionAttemptInjector::Init();
   const auto result = RUN_ALL_TESTS();

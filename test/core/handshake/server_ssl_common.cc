@@ -18,7 +18,18 @@
 
 #include "test/core/handshake/server_ssl_common.h"
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 #include <netinet/in.h>
+#include <openssl/crypto.h>
+#include <openssl/err.h>
+#include <openssl/evp.h>
+#include <openssl/ssl.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,31 +39,17 @@
 
 #include <string>
 
-#include <openssl/crypto.h>
-#include <openssl/err.h>
-#include <openssl/evp.h>
-#include <openssl/ssl.h>
-
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/thd.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
 
@@ -132,7 +129,7 @@ void server_thread(void* arg) {
   // Start server listening on local port.
   std::string addr = absl::StrCat("127.0.0.1:", port);
   grpc_server* server = grpc_server_create(nullptr, nullptr);
-  CHECK(grpc_server_add_http2_port(server, addr.c_str(), ssl_creds));
+  GRPC_CHECK(grpc_server_add_http2_port(server, addr.c_str(), ssl_creds));
 
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
 
@@ -149,7 +146,7 @@ void server_thread(void* arg) {
   while (!gpr_event_get(&client_handshake_complete) && retries-- > 0) {
     const gpr_timespec cq_deadline = grpc_timeout_seconds_to_deadline(1);
     grpc_event ev = grpc_completion_queue_next(cq, cq_deadline, nullptr);
-    CHECK(ev.type == GRPC_QUEUE_TIMEOUT);
+    GRPC_CHECK(ev.type == GRPC_QUEUE_TIMEOUT);
   }
 
   LOG(INFO) << "Shutting down server";
@@ -158,7 +155,7 @@ void server_thread(void* arg) {
 
   const gpr_timespec cq_deadline = grpc_timeout_seconds_to_deadline(5);
   grpc_event ev = grpc_completion_queue_next(cq, cq_deadline, nullptr);
-  CHECK(ev.type == GRPC_OP_COMPLETE);
+  GRPC_CHECK(ev.type == GRPC_OP_COMPLETE);
 
   grpc_server_destroy(server);
   grpc_completion_queue_destroy(cq);
@@ -182,7 +179,7 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
   // Launch the gRPC server thread.
   bool ok;
   grpc_core::Thread thd("grpc_ssl_test", server_thread, &s, &ok);
-  CHECK(ok);
+  GRPC_CHECK(ok);
   thd.Start();
 
   // The work in server_thread will cause the SSL initialization to take place
@@ -233,7 +230,7 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
     memcpy(p, alpn_list[i], len);
     p += len;
   }
-  CHECK_EQ(SSL_CTX_set_alpn_protos(ctx, alpn_protos, alpn_protos_len), 0);
+  GRPC_CHECK_EQ(SSL_CTX_set_alpn_protos(ctx, alpn_protos, alpn_protos_len), 0);
 
   // Try and connect to server. We allow a bounded number of retries as we might
   // be racing with the server setup on its separate thread.
@@ -245,12 +242,12 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
       sleep(1);
     }
   }
-  CHECK_GT(sock, 0);
+  GRPC_CHECK_GT(sock, 0);
   LOG(INFO) << "Connected to server on port " << s.port();
 
   // Establish a SSL* and connect at SSL layer.
   SSL* ssl = SSL_new(ctx);
-  CHECK(ssl);
+  GRPC_CHECK(ssl);
   SSL_set_fd(ssl, sock);
   if (SSL_connect(ssl) <= 0) {
     ERR_print_errors_fp(stderr);

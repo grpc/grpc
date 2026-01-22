@@ -17,16 +17,14 @@
 #ifndef GRPC_SRC_CORE_SERVICE_CONFIG_SERVICE_CONFIG_H
 #define GRPC_SRC_CORE_SERVICE_CONFIG_SERVICE_CONFIG_H
 
-#include <stddef.h>
-
-#include "absl/strings/string_view.h"
-
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
+#include <stddef.h>
 
-#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/service_config/service_config_parser.h"
+#include "src/core/util/ref_counted.h"
 #include "src/core/util/useful.h"
+#include "absl/strings/string_view.h"
 
 // The main purpose of the code here is to parse the service config in
 // JSON form, which will look like this:
@@ -74,7 +72,7 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   /// lifetime of the returned object is tied to the lifetime of the
   /// ServiceConfig object.
   virtual ServiceConfigParser::ParsedConfig* GetGlobalParsedConfig(
-      size_t index) = 0;
+      size_t index) const = 0;
 
   /// Retrieves the vector of parsed configs for the method identified
   /// by \a path.  The lifetime of the returned vector and contained objects

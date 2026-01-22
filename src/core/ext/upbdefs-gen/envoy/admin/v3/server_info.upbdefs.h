@@ -3,15 +3,19 @@
  *     envoy/admin/v3/server_info.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_ADMIN_V3_SERVER_INFO_PROTO_UPBDEFS_H_
-#define ENVOY_ADMIN_V3_SERVER_INFO_PROTO_UPBDEFS_H_
+
+
+#ifndef ENVOY_ADMIN_V3_SERVER_INFO_PROTO_UPB_H__UPBDEFS_H_
+#define ENVOY_ADMIN_V3_SERVER_INFO_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
 
-#include "upb/port/def.inc" // Must be last.
+#include "upb/port/def.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -28,10 +32,11 @@ UPB_INLINE const upb_MessageDef *envoy_admin_v3_CommandLineOptions_getmsgdef(upb
   return upb_DefPool_FindMessageByName(s, "envoy.admin.v3.CommandLineOptions");
 }
 
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_ADMIN_V3_SERVER_INFO_PROTO_UPBDEFS_H_ */
+#endif  /* ENVOY_ADMIN_V3_SERVER_INFO_PROTO_UPB_H__UPBDEFS_H_ */

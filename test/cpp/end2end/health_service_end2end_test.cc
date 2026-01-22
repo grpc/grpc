@@ -16,13 +16,6 @@
 //
 //
 
-#include <memory>
-#include <mutex>
-#include <thread>
-#include <vector>
-
-#include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -33,7 +26,12 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include <memory>
+#include <mutex>
+#include <thread>
+#include <vector>
+
+#include "src/core/util/crash.h"
 #include "src/proto/grpc/health/v1/health.grpc.pb.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -41,6 +39,7 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_health_check_service_impl.h"
 #include "test/cpp/end2end/test_service_impl.h"
+#include "gtest/gtest.h"
 
 using grpc::health::v1::Health;
 using grpc::health::v1::HealthCheckRequest;

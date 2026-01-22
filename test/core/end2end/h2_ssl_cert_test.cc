@@ -16,19 +16,6 @@
 //
 //
 
-#include <stdio.h>
-#include <string.h>
-
-#include <functional>
-#include <memory>
-#include <string>
-
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/types/optional.h"
-#include "gtest/gtest.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -39,15 +26,27 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
+#include <stdio.h>
+#include <string.h>
 
+#include <functional>
+#include <memory>
+#include <optional>
+#include <string>
+
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/time.h"
 #include "src/core/util/tmpfile.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/secure_fixture.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
 
 static std::string test_server1_key_id;
 
@@ -59,7 +58,7 @@ static void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
                                  size_t /*md_count*/,
                                  grpc_process_auth_metadata_done_cb cb,
                                  void* user_data) {
-  CHECK_EQ(state, nullptr);
+  GRPC_CHECK_EQ(state, nullptr);
   cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
 }
 
@@ -140,14 +139,12 @@ class TestFixture : public SecureFixture {
 
 typedef enum { SUCCESS, FAIL } test_result;
 
-#define SSL_TEST(request_type, cert_type, result)                              \
-  {                                                                            \
-    {TEST_NAME(request_type, cert_type, result),                               \
-     FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |                              \
-         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,                                 \
-     "foo.test.google.fr", TestFixture::MakeFactory(request_type, cert_type)}, \
-        result                                                                 \
-  }
+#define SSL_TEST(request_type, cert_type, result)                             \
+  {{TEST_NAME(request_type, cert_type, result),                               \
+    FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |                              \
+        FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,                                 \
+    "foo.test.google.fr", TestFixture::MakeFactory(request_type, cert_type)}, \
+   result}
 
 // All test configurations
 struct CoreTestConfigWrapper {
@@ -198,7 +195,7 @@ static CoreTestConfigWrapper configs[] = {
 static void simple_request_body(grpc_core::CoreTestFixture* f,
                                 test_result expected_result) {
   grpc_call* c;
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(5);
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(30);
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_core::CqVerifier cqv(cq);
   grpc_op ops[6];
@@ -214,7 +211,7 @@ static void simple_request_body(grpc_core::CoreTestFixture* f,
   c = grpc_channel_create_call(client, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
                                grpc_slice_from_static_string("/foo"), &host,
                                deadline, nullptr);
-  CHECK(c);
+  GRPC_CHECK(c);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -225,21 +222,21 @@ static void simple_request_body(grpc_core::CoreTestFixture* f,
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
                                 grpc_core::CqVerifier::tag(1), nullptr);
-  CHECK_EQ(error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(error, GRPC_CALL_OK);
 
   cqv.Expect(grpc_core::CqVerifier::tag(1), expected_result == SUCCESS);
-  cqv.Verify();
+  cqv.Verify(grpc_core::Duration::Seconds(60));
 
   grpc_call_unref(c);
   grpc_channel_destroy(client);
   grpc_server_shutdown_and_notify(server, cq, nullptr);
   cqv.Expect(nullptr, true);
-  cqv.Verify();
+  cqv.Verify(grpc_core::Duration::Seconds(60));
   grpc_server_destroy(server);
   grpc_completion_queue_shutdown(cq);
-  CHECK(grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
-                                   nullptr)
-            .type == GRPC_QUEUE_SHUTDOWN);
+  GRPC_CHECK(grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                        nullptr)
+                 .type == GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(cq);
 }
 
@@ -268,6 +265,10 @@ INSTANTIATE_TEST_SUITE_P(H2SslCert, H2SslCertTest,
 }  // namespace testing
 }  // namespace grpc
 
+namespace grpc_core {
+std::vector<CoreTestConfiguration> End2endTestConfigs() { return {}; }
+}  // namespace grpc_core
+
 int main(int argc, char** argv) {
   FILE* roots_file;
   size_t roots_size = strlen(test_root_cert);
@@ -277,9 +278,9 @@ int main(int argc, char** argv) {
   // Set the SSL roots env var.
   roots_file =
       gpr_tmpfile("chttp2_simple_ssl_cert_fullstack_test", &roots_filename);
-  CHECK_NE(roots_filename, nullptr);
-  CHECK_NE(roots_file, nullptr);
-  CHECK(fwrite(test_root_cert, 1, roots_size, roots_file) == roots_size);
+  GRPC_CHECK_NE(roots_filename, nullptr);
+  GRPC_CHECK_NE(roots_file, nullptr);
+  GRPC_CHECK(fwrite(test_root_cert, 1, roots_size, roots_file) == roots_size);
   fclose(roots_file);
   grpc_core::ConfigVars::Overrides config_overrides;
   config_overrides.default_ssl_roots_file_path = roots_filename;

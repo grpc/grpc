@@ -3,7 +3,8 @@
  *     xds/core/v3/context_params.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -13,8 +14,9 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub xds_core_v3_ContextParams_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &xds__core__v3__ContextParams__ParamsEntry_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal xds_core_v3_ContextParams__submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &xds__core__v3__ContextParams__ParamsEntry_msg_init_ptr},
 };
 
 static const upb_MiniTableField xds_core_v3_ContextParams__fields[1] = {
@@ -22,7 +24,7 @@ static const upb_MiniTableField xds_core_v3_ContextParams__fields[1] = {
 };
 
 const upb_MiniTable xds__core__v3__ContextParams_msg_init = {
-  &xds_core_v3_ContextParams_submsgs[0],
+  &xds_core_v3_ContextParams__submsgs[0],
   &xds_core_v3_ContextParams__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -30,6 +32,7 @@ const upb_MiniTable xds__core__v3__ContextParams_msg_init = {
 #endif
 };
 
+const upb_MiniTable* xds__core__v3__ContextParams_msg_init_ptr = &xds__core__v3__ContextParams_msg_init;
 static const upb_MiniTableField xds_core_v3_ContextParams_ParamsEntry__fields[2] = {
   {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, 32, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
@@ -50,6 +53,7 @@ const upb_MiniTable xds__core__v3__ContextParams__ParamsEntry_msg_init = {
   })
 };
 
+const upb_MiniTable* xds__core__v3__ContextParams__ParamsEntry_msg_init_ptr = &xds__core__v3__ContextParams__ParamsEntry_msg_init;
 static const upb_MiniTable *messages_layout[2] = {
   &xds__core__v3__ContextParams_msg_init,
   &xds__core__v3__ContextParams__ParamsEntry_msg_init,

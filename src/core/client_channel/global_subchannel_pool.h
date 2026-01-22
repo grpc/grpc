@@ -23,11 +23,10 @@
 
 #include <map>
 
-#include "absl/base/thread_annotations.h"
-
 #include "src/core/client_channel/subchannel_pool_interface.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
 
 namespace grpc_core {
 
@@ -40,22 +39,28 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
 
   // Implements interface methods.
   RefCountedPtr<Subchannel> RegisterSubchannel(
-      const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) override
-      ABSL_LOCKS_EXCLUDED(mu_);
+      const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) override;
   void UnregisterSubchannel(const SubchannelKey& key,
-                            Subchannel* subchannel) override
-      ABSL_LOCKS_EXCLUDED(mu_);
-  RefCountedPtr<Subchannel> FindSubchannel(const SubchannelKey& key) override
-      ABSL_LOCKS_EXCLUDED(mu_);
+                            Subchannel* subchannel) override;
+  RefCountedPtr<Subchannel> FindSubchannel(const SubchannelKey& key) override;
 
  private:
-  GlobalSubchannelPool() {}
-  ~GlobalSubchannelPool() override {}
+  GlobalSubchannelPool();
+  ~GlobalSubchannelPool() override;
 
-  // A map from subchannel key to subchannel.
-  std::map<SubchannelKey, Subchannel*> subchannel_map_ ABSL_GUARDED_BY(mu_);
-  // To protect subchannel_map_.
-  Mutex mu_;
+  static const size_t kShards = 127;
+
+  using SubchannelMap = AVL<SubchannelKey, WeakRefCountedPtr<Subchannel>>;
+  struct LockedMap {
+    Mutex mu;
+    SubchannelMap map ABSL_GUARDED_BY(mu);
+  };
+  using ShardedMap = std::array<LockedMap, kShards>;
+
+  static size_t ShardIndex(const SubchannelKey& key);
+
+  ShardedMap write_shards_;
+  ShardedMap read_shards_;
 };
 
 }  // namespace grpc_core

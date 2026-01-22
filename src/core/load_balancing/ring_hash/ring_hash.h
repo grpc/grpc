@@ -17,16 +17,19 @@
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_RING_HASH_RING_HASH_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_RING_HASH_RING_HASH_H
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/unique_type_name.h"
-#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/service_config/service_config_call_data.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/unique_type_name.h"
+#include "src/core/util/validation_errors.h"
+
+// Optional endpoint attribute specifying the hash key.
+#define GRPC_ARG_RING_HASH_ENDPOINT_HASH_KEY \
+  GRPC_ARG_NO_SUBCHANNEL_PREFIX "hash_key"
 
 namespace grpc_core {
 
@@ -44,17 +47,6 @@ class RequestHashAttribute final
   UniqueTypeName type() const override { return TypeName(); }
 
   uint64_t request_hash_;
-};
-
-// Helper Parsing method to parse ring hash policy configs; for example, ring
-// hash size validity.
-struct RingHashConfig {
-  uint64_t min_ring_size = 1024;
-  uint64_t max_ring_size = 4096;
-
-  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-  void JsonPostLoad(const Json& json, const JsonArgs&,
-                    ValidationErrors* errors);
 };
 
 }  // namespace grpc_core

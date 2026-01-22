@@ -17,12 +17,12 @@
 
 #include <memory>
 
+#include "src/core/telemetry/instrument.h"
+#include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "absl/strings/string_view.h"
 
-#include "src/core/telemetry/tcp_tracer.h"
-
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 /** If non-zero, enable TCP tracing and stats collection. */
 #define GRPC_ARG_TCP_TRACING_ENABLED "grpc.tcp_tracing_enabled"
@@ -33,11 +33,15 @@ class TcpTraceExtension {
   static absl::string_view EndpointExtensionName() {
     return "io.grpc.event_engine.extension.tcp_trace";
   }
-  virtual std::shared_ptr<grpc_core::TcpTracerInterface>
-  InitializeAndReturnTcpTracer() = 0;
+  virtual void SetTcpTracer(
+      std::shared_ptr<grpc_core::TcpConnectionTracer> tracer) = 0;
+
+  // Enable TCP telemetry collection using the Instrumentation API.
+  virtual void EnableTcpTelemetry(
+      grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope,
+      bool is_control_endpoint) = 0;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_EXTENSIONS_TCP_TRACE_H

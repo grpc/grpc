@@ -21,15 +21,15 @@
 #include <Windows.h>
 
 #include <fstream>
+#include <memory>
 #include <string>
 #include <vector>
 
+#include "src/core/util/crash.h"
 #include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_replace.h"
 #include "absl/strings/str_split.h"
-
-#include "src/core/lib/gprpp/crash.h"
 
 namespace grpc {
 namespace testing {

@@ -14,7 +14,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpcpp/security/server_credentials.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 
 namespace grpc {
 

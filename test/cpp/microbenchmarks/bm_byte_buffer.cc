@@ -18,18 +18,16 @@
 
 // This benchmark exists to show that byte-buffer copy is size-independent
 
-#include <memory>
-
 #include <benchmark/benchmark.h>
-
-#include "absl/log/check.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/slice.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/byte_buffer.h>
 
+#include <memory>
+
+#include "src/core/util/grpc_check.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
@@ -64,12 +62,12 @@ static void BM_ByteBufferReader_Next(benchmark::State& state) {
   }
   grpc_byte_buffer* bb = grpc_raw_byte_buffer_create(slices.data(), num_slices);
   grpc_byte_buffer_reader reader;
-  CHECK(grpc_byte_buffer_reader_init(&reader, bb));
+  GRPC_CHECK(grpc_byte_buffer_reader_init(&reader, bb));
   for (auto _ : state) {
     grpc_slice* slice;
     if (GPR_UNLIKELY(!grpc_byte_buffer_reader_peek(&reader, &slice))) {
       grpc_byte_buffer_reader_destroy(&reader);
-      CHECK(grpc_byte_buffer_reader_init(&reader, bb));
+      GRPC_CHECK(grpc_byte_buffer_reader_init(&reader, bb));
       continue;
     }
   }
@@ -92,12 +90,12 @@ static void BM_ByteBufferReader_Peek(benchmark::State& state) {
   }
   grpc_byte_buffer* bb = grpc_raw_byte_buffer_create(slices.data(), num_slices);
   grpc_byte_buffer_reader reader;
-  CHECK(grpc_byte_buffer_reader_init(&reader, bb));
+  GRPC_CHECK(grpc_byte_buffer_reader_init(&reader, bb));
   for (auto _ : state) {
     grpc_slice* slice;
     if (GPR_UNLIKELY(!grpc_byte_buffer_reader_peek(&reader, &slice))) {
       grpc_byte_buffer_reader_destroy(&reader);
-      CHECK(grpc_byte_buffer_reader_init(&reader, bb));
+      GRPC_CHECK(grpc_byte_buffer_reader_init(&reader, bb));
       continue;
     }
   }

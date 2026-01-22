@@ -16,22 +16,21 @@
 //
 //
 
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
+
 #include <iostream>
 #include <memory>
 #include <sstream>
 #include <string>
 
-#include "absl/flags/flag.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
-#include <grpcpp/channel.h>
-#include <grpcpp/client_context.h>
-#include <grpcpp/create_channel.h>
-
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/util/test_config.h"
+#include "absl/flags/flag.h"
+#include "absl/log/log.h"
 
 ABSL_FLAG(std::string, address, "", "Address to connect to");
 ABSL_FLAG(std::string, mode, "", "Test mode to use");
@@ -55,16 +54,16 @@ int main(int argc, char** argv) {
       std::ostringstream msg;
       msg << "Hello " << i;
       request.set_message(msg.str());
-      CHECK(stream->Write(request));
-      CHECK(stream->Read(&response));
-      CHECK(response.message() == request.message());
+      GRPC_CHECK(stream->Write(request));
+      GRPC_CHECK(stream->Read(&response));
+      GRPC_CHECK(response.message() == request.message());
     }
   } else if (absl::GetFlag(FLAGS_mode) == "response") {
     EchoRequest request;
     request.set_message("Hello");
     auto stream = stub->ResponseStream(&context, request);
     for (;;) {
-      CHECK(stream->Read(&response));
+      GRPC_CHECK(stream->Read(&response));
     }
   } else {
     LOG(ERROR) << "invalid test mode '" << absl::GetFlag(FLAGS_mode) << "'";

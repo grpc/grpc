@@ -1,0 +1,72 @@
+# Copyright 2025 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+[build-system]
+requires = [
+    "setuptools>=77.0.1",
+    "wheel",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "grpcio-tests"
+license = "Apache-2.0"
+
+dynamic = [
+    "classifiers",
+    "dependencies",
+    "optional-dependencies",
+    "requires-python",
+    "version"
+]
+
+[project.urls]
+Homepage = "https://grpc.io"
+
+[tool.setuptools.packages]
+find = {}
+
+[tool.setuptools.dynamic]
+version = {attr = "grpc_version.VERSION"}
+
+
+[tool.setuptools.package-dir]
+"" = "."
+
+[tool.setuptools.package-data]
+"tests.interop" = [
+    "credentials/ca.pem",
+    "credentials/server1.key",
+    "credentials/server1.pem",
+]
+"tests.protoc_plugin.protos.invocation_testing" = [
+    "same.proto",
+    "compiler.proto",
+]
+"tests.protoc_plugin.protos.invocation_testing.split_messages" = [
+    "messages.proto",
+]
+"tests.protoc_plugin.protos.invocation_testing.split_services" = [
+    "services.proto",
+]
+"tests.testing.proto" = [
+    "requests.proto",
+    "services.proto",
+]
+"tests.unit" = [
+    "credentials/ca.pem",
+    "credentials/server1.key",
+    "credentials/server1.pem",
+]
+"tests" = ["tests.json"]

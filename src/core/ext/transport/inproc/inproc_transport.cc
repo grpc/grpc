@@ -14,29 +14,28 @@
 
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 
-#include <atomic>
-#include <memory>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
+#include <memory>
+
+#include "src/core/call/metadata.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/inproc/legacy_inproc_transport.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/surface/channel_create.h"
-#include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 
@@ -74,6 +73,9 @@ class InprocServerTransport final : public ServerTransport {
   ClientTransport* client_transport() override { return nullptr; }
   ServerTransport* server_transport() override { return this; }
   absl::string_view GetTransportName() const override { return "inproc"; }
+  RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
+    return nullptr;
+  }
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op* op) override {
@@ -91,6 +93,9 @@ class InprocServerTransport final : public ServerTransport {
     }
     ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
   }
+
+  void StartWatch(RefCountedPtr<StateWatcher>) override {}
+  void StopWatch(RefCountedPtr<StateWatcher>) override {}
 
   void Disconnect(absl::Status error) {
     RefCountedPtr<ConnectedState> connected_state;
@@ -213,9 +218,15 @@ class InprocClientTransport final : public ClientTransport {
   ClientTransport* client_transport() override { return this; }
   ServerTransport* server_transport() override { return nullptr; }
   absl::string_view GetTransportName() const override { return "inproc"; }
+  RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
+    return nullptr;
+  }
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op*) override { Crash("unimplemented"); }
+
+  void StartWatch(RefCountedPtr<StateWatcher>) override {}
+  void StopWatch(RefCountedPtr<StateWatcher>) override {}
 
  private:
   ~InprocClientTransport() override {
@@ -259,8 +270,7 @@ RefCountedPtr<Channel> MakeInprocChannel(Server* server,
       server->SetupTransport(server_transport.get(), nullptr,
                              server->channel_args()
                                  .Remove(GRPC_ARG_MAX_CONNECTION_IDLE_MS)
-                                 .Remove(GRPC_ARG_MAX_CONNECTION_AGE_MS),
-                             nullptr);
+                                 .Remove(GRPC_ARG_MAX_CONNECTION_AGE_MS));
   if (!error.ok()) {
     return MakeLameChannel("Failed to create server channel", std::move(error));
   }
@@ -282,8 +292,7 @@ MakeInProcessTransportPair(const ChannelArgs& server_channel_args) {
   auto server_transport =
       MakeOrphanable<InprocServerTransport>(server_channel_args);
   auto client_transport = server_transport->MakeClientTransport();
-  return std::make_pair(std::move(client_transport),
-                        std::move(server_transport));
+  return std::pair(std::move(client_transport), std::move(server_transport));
 }
 
 }  // namespace grpc_core
@@ -291,7 +300,6 @@ MakeInProcessTransportPair(const ChannelArgs& server_channel_args) {
 grpc_channel* grpc_inproc_channel_create(grpc_server* server,
                                          const grpc_channel_args* args,
                                          void* reserved) {
-  grpc_core::ApplicationCallbackExecCtx app_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   const auto channel_args = grpc_core::CoreConfiguration::Get()
                                 .channel_args_preconditioning()

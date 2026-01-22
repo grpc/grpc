@@ -24,8 +24,8 @@ import unittest
 import grpc
 from google.protobuf import duration_pb2
 from google.protobuf import timestamp_pb2
-from google.cloud import helloworld_pb2
-from google.cloud import helloworld_pb2_grpc
+from foo.bar import helloworld_pb2
+from foo.bar import helloworld_pb2_grpc
 
 # isort: on
 

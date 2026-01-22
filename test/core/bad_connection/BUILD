@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/bad_connection")
+grpc_package(
+    name = "test/core/bad_connection",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_binary(
     name = "close_fd_test",
@@ -26,14 +32,30 @@ grpc_cc_binary(
     external_deps = [
         "absl/log:check",
         "absl/log:log",
+        "absl/strings",
+        "absl/strings:str_format",
+        "absl/status:statusor",
     ],
-    language = "C++",
     tags = ["no_windows"],
     deps = [
+        "//:channel",
+        "//:channel_arg_names",
+        "//:channel_create",
+        "//:channelz",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//:grpc_base",
+        "//:grpc_transport_chttp2",
+        "//:iomgr",
+        "//:orphanable",
+        "//:ref_counted_ptr",
         "//:server",
         "//src/core:channel_args",
+        "//src/core:channel_stack_type",
+        "//src/core:error",
+        "//src/core:grpc_check",
+        "//src/core:iomgr_port",
         "//test/core/test_util:grpc_test_util",
     ],
 )

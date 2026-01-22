@@ -16,31 +16,29 @@
 //
 //
 
-#include <inttypes.h>
-
-#include <string>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
+#include <inttypes.h>
+
+#include <string>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/time_averaged_stats.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_heap.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/manual_constructor.h"
 #include "src/core/util/spinlock.h"
+#include "src/core/util/time.h"
+#include "src/core/util/time_averaged_stats.h"
 #include "src/core/util/useful.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 #define INVALID_HEAP_INDEX 0xffffffffu
 
@@ -118,7 +116,7 @@ static bool is_in_ht(grpc_timer* t) {
 }
 
 static void add_to_ht(grpc_timer* t) {
-  CHECK(!t->hash_table_next);
+  GRPC_CHECK(!t->hash_table_next);
   size_t i = grpc_core::HashPointer(t, NUM_HASH_BUCKETS);
 
   gpr_mu_lock(&g_hash_mu[i]);
@@ -407,7 +405,7 @@ static void timer_init(grpc_timer* timer, grpc_core::Timestamp deadline,
 #else
         // On 32-bit systems, gpr_atm_no_barrier_store does not work on 64-bit
         // types (like grpc_core::Timestamp). So all reads and writes to
-        // g_shared_mutables.min_timer varialbe under g_shared_mutables.mu
+        // g_shared_mutables.min_timer variable under g_shared_mutables.mu
         g_shared_mutables.min_timer = deadline;
 #endif
         grpc_kick_poller();

@@ -200,7 +200,7 @@ class StatusTest(unittest.TestCase):
             ).with_call(_REQUEST)
         rpc_error = exception_context.exception
         self.assertEqual(rpc_error.code(), grpc.StatusCode.UNKNOWN)
-        # Invalid status code exception raised during coversion
+        # Invalid status code exception raised during conversion
         self.assertIn("Invalid status code", rpc_error.details())
 
 

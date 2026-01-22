@@ -16,28 +16,6 @@
 //
 //
 
-#include <limits.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <atomic>
-#include <memory>
-#include <new>
-#include <string>
-#include <thread>
-#include <vector>
-
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/time.h"
-#include "absl/types/optional.h"
-#include "gtest/gtest.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -48,18 +26,26 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
+#include <limits.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 
+#include <atomic>
+#include <memory>
+#include <new>
+#include <optional>
+#include <string>
+#include <thread>
+#include <vector>
+
+#include "src/core/call/metadata_batch.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -69,13 +55,25 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 #include "src/core/util/useful.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/test_tcp_server.h"
+#include "gtest/gtest.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 
 namespace grpc_core {
 namespace {
@@ -95,13 +93,13 @@ class TrailingMetadataRecordingFilter {
     trailing_metadata_available_ = false;
   }
 
-  static absl::optional<GrpcStreamNetworkState::ValueType>
+  static std::optional<GrpcStreamNetworkState::ValueType>
   stream_network_state() {
     return stream_network_state_;
   }
 
   static void reset_stream_network_state() {
-    stream_network_state_ = absl::nullopt;
+    stream_network_state_ = std::nullopt;
   }
 
   static void reset_state() {
@@ -192,8 +190,7 @@ class TrailingMetadataRecordingFilter {
   }
 
   static bool trailing_metadata_available_;
-  static absl::optional<GrpcStreamNetworkState::ValueType>
-      stream_network_state_;
+  static std::optional<GrpcStreamNetworkState::ValueType> stream_network_state_;
 };
 
 grpc_channel_filter TrailingMetadataRecordingFilter::kFilterVtable = {
@@ -217,7 +214,7 @@ grpc_channel_filter TrailingMetadataRecordingFilter::kFilterVtable = {
     GRPC_UNIQUE_TYPE_NAME_HERE("zzzzzz_trailing-metadata-recording-filter"),
 };
 bool TrailingMetadataRecordingFilter::trailing_metadata_available_;
-absl::optional<GrpcStreamNetworkState::ValueType>
+std::optional<GrpcStreamNetworkState::ValueType>
     TrailingMetadataRecordingFilter::stream_network_state_;
 
 class StreamsNotSeenTest : public ::testing::Test {
@@ -267,7 +264,7 @@ class StreamsNotSeenTest : public ::testing::Test {
       state = grpc_channel_check_connectivity_state(channel_, false);
     }
     ExecCtx::Get()->Flush();
-    CHECK(
+    GRPC_CHECK(
         connect_notification_.WaitForNotificationWithTimeout(absl::Seconds(1)));
   }
 
@@ -283,7 +280,7 @@ class StreamsNotSeenTest : public ::testing::Test {
     grpc_channel_destroy(channel_);
     if (tcp_ != nullptr) grpc_endpoint_destroy(tcp_);
     ExecCtx::Get()->Flush();
-    CHECK(read_end_notification_.WaitForNotificationWithTimeout(
+    GRPC_CHECK(read_end_notification_.WaitForNotificationWithTimeout(
         absl::Seconds(5)));
     shutdown_ = true;
     server_poll_thread_->join();
@@ -346,7 +343,8 @@ class StreamsNotSeenTest : public ::testing::Test {
   void SendGoaway(uint32_t last_stream_id) {
     grpc_slice_buffer buffer;
     grpc_slice_buffer_init(&buffer);
-    grpc_chttp2_goaway_append(last_stream_id, 0, grpc_empty_slice(), &buffer);
+    grpc_chttp2_goaway_append(last_stream_id, 0, grpc_empty_slice(), &buffer,
+                              &http2_ztrace_collector_);
     WriteBuffer(&buffer);
     grpc_slice_buffer_destroy(&buffer);
   }
@@ -358,17 +356,18 @@ class StreamsNotSeenTest : public ::testing::Test {
     {
       MutexLock lock(&tcp_destroy_mu_);
       if (tcp_ != nullptr) {
-        grpc_endpoint_write(tcp_, buffer, &on_write_done_, nullptr,
-                            /*max_frame_size=*/INT_MAX);
+        grpc_endpoint_write(tcp_, buffer, &on_write_done_,
+                            grpc_event_engine::experimental::EventEngine::
+                                Endpoint::WriteArgs());
       }
     }
     ExecCtx::Get()->Flush();
-    CHECK(on_write_done_notification_.WaitForNotificationWithTimeout(
+    GRPC_CHECK(on_write_done_notification_.WaitForNotificationWithTimeout(
         absl::Seconds(5)));
   }
 
   static void OnWriteDone(void* arg, grpc_error_handle error) {
-    CHECK_OK(error);
+    GRPC_CHECK_OK(error);
     Notification* on_write_done_notification_ = static_cast<Notification*>(arg);
     on_write_done_notification_->Notify();
   }
@@ -417,7 +416,7 @@ class StreamsNotSeenTest : public ::testing::Test {
       while (!done) {
         grpc_event ev = grpc_completion_queue_next(
             cq_, grpc_timeout_milliseconds_to_deadline(10), nullptr);
-        CHECK(ev.type == GRPC_QUEUE_TIMEOUT);
+        GRPC_CHECK(ev.type == GRPC_QUEUE_TIMEOUT);
       }
     });
     {
@@ -452,6 +451,7 @@ class StreamsNotSeenTest : public ::testing::Test {
   Mutex mu_;
   CondVar read_cv_;
   std::atomic<bool> shutdown_{false};
+  Http2ZTraceCollector http2_ztrace_collector_;
 };
 
 // Client's HTTP2 transport starts a new stream, sends the request on the wire,
@@ -464,7 +464,7 @@ TEST_F(StreamsNotSeenTest, StartStreamBeforeGoaway) {
       grpc_channel_create_call(channel_, nullptr, GRPC_PROPAGATE_DEFAULTS, cq_,
                                grpc_slice_from_static_string("/foo"), nullptr,
                                grpc_timeout_seconds_to_deadline(1), nullptr);
-  CHECK(c);
+  GRPC_CHECK(c);
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -511,7 +511,7 @@ TEST_F(StreamsNotSeenTest, StartStreamBeforeGoaway) {
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), Tag(102),
                                 nullptr);
-  CHECK_EQ(error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(error, GRPC_CALL_OK);
   cqv_->Expect(Tag(102), true);
   cqv_->Verify();
   // Verify status and metadata
@@ -538,7 +538,7 @@ TEST_F(StreamsNotSeenTest, TransportDestroyed) {
       grpc_channel_create_call(channel_, nullptr, GRPC_PROPAGATE_DEFAULTS, cq_,
                                grpc_slice_from_static_string("/foo"), nullptr,
                                grpc_timeout_seconds_to_deadline(1), nullptr);
-  CHECK(c);
+  GRPC_CHECK(c);
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -584,7 +584,7 @@ TEST_F(StreamsNotSeenTest, TransportDestroyed) {
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), Tag(102),
                                 nullptr);
-  CHECK_EQ(error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(error, GRPC_CALL_OK);
   cqv_->Expect(Tag(102), true);
   cqv_->Verify();
   // Verify status and metadata
@@ -612,7 +612,7 @@ TEST_F(StreamsNotSeenTest, StartStreamAfterGoaway) {
       grpc_channel_create_call(channel_, nullptr, GRPC_PROPAGATE_DEFAULTS, cq_,
                                grpc_slice_from_static_string("/foo"), nullptr,
                                grpc_timeout_seconds_to_deadline(1), nullptr);
-  CHECK(c);
+  GRPC_CHECK(c);
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -649,7 +649,7 @@ TEST_F(StreamsNotSeenTest, StartStreamAfterGoaway) {
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), Tag(101),
                                 nullptr);
-  CHECK_EQ(error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(error, GRPC_CALL_OK);
   cqv_->Expect(Tag(101), true);
   cqv_->Verify();
   // Verify status and metadata
@@ -685,7 +685,7 @@ TEST_F(ZeroConcurrencyTest, StartStreamBeforeGoaway) {
       grpc_channel_create_call(channel_, nullptr, GRPC_PROPAGATE_DEFAULTS, cq_,
                                grpc_slice_from_static_string("/foo"), nullptr,
                                grpc_timeout_seconds_to_deadline(5), nullptr);
-  CHECK(c);
+  GRPC_CHECK(c);
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -727,7 +727,7 @@ TEST_F(ZeroConcurrencyTest, StartStreamBeforeGoaway) {
   // the transport. If that no longer holds true, we might need to drive the cq
   // for some time to make sure that the RPC reaches the HTTP2 layer.
   SendGoaway(0);
-  CHECK_EQ(error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(error, GRPC_CALL_OK);
   cqv_->Expect(Tag(101), true);
   cqv_->Verify();
   // Verify status and metadata
@@ -753,7 +753,7 @@ TEST_F(ZeroConcurrencyTest, TransportDestroyed) {
       grpc_channel_create_call(channel_, nullptr, GRPC_PROPAGATE_DEFAULTS, cq_,
                                grpc_slice_from_static_string("/foo"), nullptr,
                                grpc_timeout_seconds_to_deadline(5), nullptr);
-  CHECK(c);
+  GRPC_CHECK(c);
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -792,7 +792,7 @@ TEST_F(ZeroConcurrencyTest, TransportDestroyed) {
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), Tag(101),
                                 nullptr);
   CloseServerConnection();
-  CHECK_EQ(error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(error, GRPC_CALL_OK);
   cqv_->Expect(Tag(101), true);
   cqv_->Verify();
   // Verify status and metadata

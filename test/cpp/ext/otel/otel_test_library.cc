@@ -18,27 +18,120 @@
 
 #include "test/cpp/ext/otel/otel_test_library.h"
 
+#include <grpcpp/grpcpp.h>
+
 #include <atomic>
 #include <memory>
 
-#include "absl/functional/any_invocable.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "opentelemetry/metrics/provider.h"
 #include "opentelemetry/sdk/metrics/export/metric_producer.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "opentelemetry/sdk/metrics/metric_reader.h"
-
-#include <grpcpp/grpcpp.h>
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/notification.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/notification.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
+
+namespace {
+
+template <typename T>
+std::string ToString(T value) {
+  return absl::StrCat("\"", std::to_string(value), "\"");
+}
+
+std::string ToString(bool value) { return value ? "true" : "false"; }
+
+std::string ToString(std::string value) { return value; }
+
+template <typename T>
+std::string ToString(const std::vector<T>& value) {
+  return absl::StrCat("[",
+                      absl::StrJoin(value, ", ",
+                                    [](std::string* out, T item) {
+                                      absl::StrAppend(out, ToString(item));
+                                    }),
+                      "]");
+}
+
+std::string ToString(
+    const opentelemetry::sdk::common::OwnedAttributeValue& value) {
+  return std::visit([](const auto& value) { return ToString(value); }, value);
+}
+
+std::string ToString(
+    const opentelemetry::sdk::metrics::PointAttributes& point_attributes) {
+  return absl::StrCat(
+      "{",
+      absl::StrJoin(point_attributes.GetAttributes(), ", ",
+                    [](std::string* out, const auto& attribute) {
+                      absl::StrAppend(out, "{", ToString(attribute.first), ",",
+                                      ToString(attribute.second), "}");
+                    }),
+      "}");
+}
+
+std::string ToString(const opentelemetry::sdk::metrics::ValueType& value) {
+  return std::visit([](const auto& value) { return ToString(value); }, value);
+}
+
+struct PointTypeVisitor {
+  std::string operator()(
+      const opentelemetry::sdk::metrics::SumPointData& point) {
+    return absl::StrFormat("{value = %s, is_monotonic = %s}",
+                           ToString(point.value_),
+                           ToString(point.is_monotonic_));
+  }
+
+  std::string operator()(
+      const opentelemetry::sdk::metrics::LastValuePointData& point) {
+    return absl::StrFormat(
+        "{value = %s, is_lastvalue_valid = %s, sample_ts = %ldns}",
+        ToString(point.value_), ToString(point.is_lastvalue_valid_),
+        point.sample_ts_.time_since_epoch().count());
+  }
+
+  std::string operator()(
+      const opentelemetry::sdk::metrics::HistogramPointData& point) {
+    return absl::StrFormat(
+        "{boundaries = %s, sum = %s, min = %s, max = %s, counts = %s, count = "
+        "%ld, record_min_max = %s}",
+        ToString(point.boundaries_), ToString(point.sum_), ToString(point.min_),
+        ToString(point.max_), ToString(point.counts_), point.count_,
+        ToString(point.record_min_max_));
+  }
+
+  std::string operator()(
+      const opentelemetry::sdk::metrics::DropPointData& /*point*/) {
+    return "<DropPointData>";
+  }
+};
+
+std::string ToString(const opentelemetry::sdk::metrics::PointType& point_type) {
+  return std::visit(PointTypeVisitor(), point_type);
+}
+
+}  // namespace
+
+OPENTELEMETRY_BEGIN_NAMESPACE
+namespace sdk {
+namespace metrics {
+
+void PrintTo(const PointDataAttributes& point_data_attributes,
+             std::ostream* os) {
+  *os << "{attributes = " << ToString(point_data_attributes.attributes)
+      << ", point_data = " << ToString(point_data_attributes.point_data) << "}";
+}
+
+}  // namespace metrics
+}  // namespace sdk
+OPENTELEMETRY_END_NAMESPACE
 
 namespace grpc {
 namespace testing {
@@ -53,25 +146,25 @@ class AddLabelsFilter : public grpc_core::ChannelFilter {
 
   static absl::string_view TypeName() { return "add_service_labels_filter"; }
 
-  explicit AddLabelsFilter(
-      std::map<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
-               grpc_core::RefCountedStringValue>
-          labels_to_inject)
+  explicit AddLabelsFilter(std::map<grpc_core::ClientCallTracerInterface::
+                                        CallAttemptTracer::OptionalLabelKey,
+                                    grpc_core::RefCountedStringValue>
+                               labels_to_inject)
       : labels_to_inject_(std::move(labels_to_inject)) {}
 
   static absl::StatusOr<std::unique_ptr<AddLabelsFilter>> Create(
       const grpc_core::ChannelArgs& args, ChannelFilter::Args /*filter_args*/) {
     return absl::make_unique<AddLabelsFilter>(
-        *args.GetPointer<std::map<
-             grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
-             grpc_core::RefCountedStringValue>>(GRPC_ARG_LABELS_TO_INJECT));
+        *args.GetPointer<std::map<grpc_core::ClientCallTracerInterface::
+                                      CallAttemptTracer::OptionalLabelKey,
+                                  grpc_core::RefCountedStringValue>>(
+            GRPC_ARG_LABELS_TO_INJECT));
   }
 
   grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> MakeCallPromise(
       grpc_core::CallArgs call_args,
       grpc_core::NextPromiseFactory next_promise_factory) override {
-    using CallAttemptTracer = grpc_core::ClientCallTracer::CallAttemptTracer;
-    auto* call_tracer = grpc_core::GetContext<CallAttemptTracer>();
+    auto* call_tracer = grpc_core::GetContext<grpc_core::CallAttemptTracer>();
     EXPECT_NE(call_tracer, nullptr);
     for (const auto& pair : labels_to_inject_) {
       call_tracer->SetOptionalLabel(pair.first, pair.second);
@@ -81,7 +174,7 @@ class AddLabelsFilter : public grpc_core::ChannelFilter {
 
  private:
   const std::map<
-      grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
+      grpc_core::ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey,
       grpc_core::RefCountedStringValue>
       labels_to_inject_;
 };
@@ -137,11 +230,10 @@ OpenTelemetryPluginEnd2EndTest::MetricsCollectorThread::Stop() {
 }
 
 void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
-  grpc_core::CoreConfiguration::Reset();
   ChannelArguments channel_args;
   if (!config.labels_to_inject.empty()) {
     labels_to_inject_ = std::move(config.labels_to_inject);
-    grpc_core::CoreConfiguration::RegisterBuilder(
+    grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) mutable {
           builder->channel_init()->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
                                                   &AddLabelsFilter::kFilter);
@@ -178,11 +270,14 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
 }
 
 void OpenTelemetryPluginEnd2EndTest::TearDown() {
-  server_->Shutdown();
-  grpc_shutdown_blocking();
+  if (server_ != nullptr) {
+    server_->Shutdown();
+    grpc_shutdown_blocking();
+  }
   grpc_core::ServerCallTracerFactory::TestOnlyReset();
   grpc_core::GlobalStatsPluginRegistryTestPeer::
       ResetGlobalStatsPluginRegistry();
+  grpc_core::CoreConfiguration::Reset();
 }
 
 void OpenTelemetryPluginEnd2EndTest::ResetStub(
@@ -229,6 +324,8 @@ OpenTelemetryPluginEnd2EndTest::ReadCurrentMetricsData(
       data;
   auto deadline = absl::Now() + absl::Seconds(5);
   do {
+    // Give other threads a chance to run and potentially report metrics.
+    std::this_thread::yield();
     reader->Collect([&](opentelemetry::sdk::metrics::ResourceMetrics& rm) {
       for (const opentelemetry::sdk::metrics::ScopeMetrics& smd :
            rm.scope_metric_data_) {
@@ -263,8 +360,8 @@ OpenTelemetryPluginEnd2EndTest::BuildAndRegisterOpenTelemetryPlugin(
   grpc::internal::OpenTelemetryPluginBuilderImpl ot_builder;
   absl::Status expected_status;
   if (!options.use_meter_provider) {
-    expected_status =
-        absl::InvalidArgumentError("Need to configure a valid meter provider.");
+    expected_status = absl::InvalidArgumentError(
+        "Need to configure a valid meter provider or tracer provider.");
   }
   auto reader = ConfigureOTBuilder(std::move(options), &ot_builder);
   EXPECT_EQ(ot_builder.BuildAndRegisterGlobal(), expected_status);

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <openssl/sha.h>
+
 #include <atomic>
 #include <cstdint>
 #include <fstream>
@@ -20,13 +22,13 @@
 #include <memory>
 #include <mutex>
 #include <numeric>
+#include <optional>
 #include <queue>
 #include <set>
 #include <string>
 #include <thread>
+#include <variant>
 #include <vector>
-
-#include <openssl/sha.h>
 
 #include "absl/memory/memory.h"
 #include "absl/strings/ascii.h"
@@ -34,12 +36,9 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
 #include "absl/strings/str_split.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
-
 #include "src/core/ext/transport/chttp2/transport/huffsyms.h"
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/match.h"
+#include "src/core/util/env.h"
+#include "src/core/util/match.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 // SHA256 hash handling
@@ -233,7 +232,7 @@ struct End {
   bool operator<(End) const { return false; }
 };
 
-using MatchCase = absl::variant<Matched, Unmatched, End>;
+using MatchCase = std::variant<Matched, Unmatched, End>;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Text & numeric helper functions
@@ -431,7 +430,7 @@ class Switch : public Item {
     bool operator<(const Default&) const { return false; }
     bool operator==(const Default&) const { return true; }
   };
-  using CaseLabel = absl::variant<int, std::string, Default>;
+  using CaseLabel = std::variant<int, std::string, Default>;
   // \a cond is the condition to place at the head of the switch statement.
   // eg. "switch (cond) {".
   explicit Switch(std::string cond) : cond_(std::move(cond)) {}
@@ -509,12 +508,12 @@ class BuildCtx {
   int NewId() { return next_id_++; }
   int MaxBitsForTop() const { return max_bits_for_depth_[0]; }
 
-  absl::optional<std::string> PreviousNameForArtifact(std::string proposed_name,
-                                                      Hash hash) {
+  std::optional<std::string> PreviousNameForArtifact(std::string proposed_name,
+                                                     Hash hash) {
     auto it = arrays_.find(hash);
     if (it == arrays_.end()) {
       arrays_.emplace(hash, proposed_name);
-      return absl::nullopt;
+      return std::nullopt;
     }
     return it->second;
   }
@@ -526,7 +525,7 @@ class BuildCtx {
  private:
   void AddDoneCase(size_t n, size_t n_bits, bool all_ones_so_far, SymSet syms,
                    std::vector<uint8_t> emit, TableBuilder* table_builder,
-                   std::map<absl::optional<int>, int>* cases);
+                   std::map<std::optional<int>, int>* cases);
 
   const std::vector<int> max_bits_for_depth_;
   std::map<Hash, std::string> arrays_;
@@ -751,11 +750,14 @@ class TableBuilder {
       }
       if (slice_bits == 0) {
         global_fns->Add(absl::StrCat(
-            "static inline uint64_t GetOp", id, "(size_t i) { return ",
+            "GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static inline uint64_t GetOp",
+            id, "(size_t i) { return ",
             inner_names[0]->Index(outer_names[0]->Index("i")), "; }"));
-        global_fns->Add(absl::StrCat("static inline uint64_t GetEmit", id,
-                                     "(size_t, size_t emit) { return ",
-                                     emit_names[0]->Index("emit"), "; }"));
+        global_fns->Add(
+            absl::StrCat("GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static inline "
+                         "uint64_t GetEmit",
+                         id, "(size_t, size_t emit) { return ",
+                         emit_names[0]->Index("emit"), "; }"));
       } else {
         GenCompound(id, emit_names, "emit", "uint8_t", global_decls,
                     global_values);
@@ -764,14 +766,16 @@ class TableBuilder {
         GenCompound(id, outer_names, "outer", TypeForMax(max_outer),
                     global_decls, global_values);
         global_fns->Add(absl::StrCat(
-            "static inline uint64_t GetOp", id, "(size_t i) { return table", id,
-            "_inner_[i >> ", op_bits - slice_bits, "][table", id,
-            "_outer_[i >> ", op_bits - slice_bits, "][i & 0x",
+            "GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static inline uint64_t GetOp",
+            id, "(size_t i) { return table", id, "_inner_[i >> ",
+            op_bits - slice_bits, "][table", id, "_outer_[i >> ",
+            op_bits - slice_bits, "][i & 0x",
             absl::Hex((1 << (op_bits - slice_bits)) - 1), "]]; }"));
-        global_fns->Add(absl::StrCat("static inline uint64_t GetEmit", id,
-                                     "(size_t i, size_t emit) { return table",
-                                     id, "_emit_[i >> ", op_bits - slice_bits,
-                                     "][emit]; }"));
+        global_fns->Add(
+            absl::StrCat("GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static inline "
+                         "uint64_t GetEmit",
+                         id, "(size_t i, size_t emit) { return table", id,
+                         "_emit_[i >> ", op_bits - slice_bits, "][emit]; }"));
       }
     }
     uint64_t MaxInner() const {
@@ -837,25 +841,29 @@ class TableBuilder {
             global_values));
       }
       if (slice_bits == 0) {
-        global_fns->Add(absl::StrCat("static inline uint64_t GetOp", id,
-                                     "(size_t i) { return ",
-                                     ops_names[0]->Index("i"), "; }"));
-        global_fns->Add(absl::StrCat("static inline uint64_t GetEmit", id,
-                                     "(size_t, size_t emit) { return ",
-                                     emit_names[0]->Index("emit"), "; }"));
+        global_fns->Add(absl::StrCat(
+            "GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static inline uint64_t GetOp",
+            id, "(size_t i) { return ", ops_names[0]->Index("i"), "; }"));
+        global_fns->Add(
+            absl::StrCat("GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static inline "
+                         "uint64_t GetEmit",
+                         id, "(size_t, size_t emit) { return ",
+                         emit_names[0]->Index("emit"), "; }"));
       } else {
         GenCompound(id, emit_names, "emit", "uint8_t", global_decls,
                     global_values);
         GenCompound(id, ops_names, "ops", TypeForMax(max_op), global_decls,
                     global_values);
         global_fns->Add(absl::StrCat(
-            "static inline uint64_t GetOp", id, "(size_t i) { return table", id,
-            "_ops_[i >> ", op_bits - slice_bits, "][i & 0x",
+            "GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static inline uint64_t GetOp",
+            id, "(size_t i) { return table", id, "_ops_[i >> ",
+            op_bits - slice_bits, "][i & 0x",
             absl::Hex((1 << (op_bits - slice_bits)) - 1), "]; }"));
-        global_fns->Add(absl::StrCat("static inline uint64_t GetEmit", id,
-                                     "(size_t i, size_t emit) { return table",
-                                     id, "_emit_[i >> ", op_bits - slice_bits,
-                                     "][emit]; }"));
+        global_fns->Add(
+            absl::StrCat("GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static inline "
+                         "uint64_t GetEmit",
+                         id, "(size_t i, size_t emit) { return table", id,
+                         "_emit_[i >> ", op_bits - slice_bits, "][emit]; }"));
       }
     }
     uint64_t MaxOp() const {
@@ -1236,7 +1244,8 @@ class FunMaker {
 
  private:
   Sink* NewFun(std::string name, std::string returns) {
-    sink_->Add(absl::StrCat(returns, " ", name, "() {"));
+    sink_->Add(absl::StrCat("GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ", returns,
+                            " ", name, "() {"));
     auto fn = sink_->Add<Indent>();
     sink_->Add("}");
     return fn;
@@ -1247,8 +1256,8 @@ class FunMaker {
   std::string ReadBytes(int bytes_needed, int bytes_allowed) {
     auto fn_name =
         absl::StrCat("Read", bytes_needed, "to", bytes_allowed, "Bytes");
-    if (have_reads_.count(std::make_pair(bytes_needed, bytes_allowed)) == 0) {
-      have_reads_.insert(std::make_pair(bytes_needed, bytes_allowed));
+    if (have_reads_.count(std::pair(bytes_needed, bytes_allowed)) == 0) {
+      have_reads_.insert(std::pair(bytes_needed, bytes_allowed));
       auto fn = NewFun(fn_name, "bool");
       auto s = fn->Add<Switch>("end_ - begin_");
       for (int i = 0; i <= bytes_allowed; i++) {
@@ -1311,7 +1320,7 @@ void BuildCtx::AddDone(SymSet start_syms, int num_bits, bool all_ones_so_far,
       continue;
     }
     TableBuilder table_builder(this);
-    std::map<absl::optional<int>, int> cases;
+    std::map<std::optional<int>, int> cases;
     for (size_t n = 0; n < (1 << i); n++) {
       AddDoneCase(n, i, all_ones_so_far, maybe, {}, &table_builder, &cases);
     }
@@ -1351,8 +1360,8 @@ void BuildCtx::AddDone(SymSet start_syms, int num_bits, bool all_ones_so_far,
 void BuildCtx::AddDoneCase(size_t n, size_t n_bits, bool all_ones_so_far,
                            SymSet syms, std::vector<uint8_t> emit,
                            TableBuilder* table_builder,
-                           std::map<absl::optional<int>, int>* cases) {
-  auto add_case = [cases](absl::optional<int> which) {
+                           std::map<std::optional<int>, int>* cases) {
+  auto add_case = [cases](std::optional<int> which) {
     auto it = cases->find(which);
     if (it == cases->end()) {
       it = cases->emplace(which, cases->size()).first;
@@ -1381,7 +1390,7 @@ void BuildCtx::AddDoneCase(size_t n, size_t n_bits, bool all_ones_so_far,
       return;
     }
   }
-  table_builder->Add(add_case(absl::nullopt), {}, 0);
+  table_builder->Add(add_case(std::nullopt), {}, 0);
 }
 
 void BuildCtx::AddStep(SymSet start_syms, int num_bits, bool is_top,
@@ -1459,12 +1468,12 @@ void BuildCtx::AddStep(SymSet start_syms, int num_bits, bool is_top,
 void BuildCtx::AddMatchBody(TableBuilder* table_builder, std::string index,
                             std::string ofs, const MatchCase& match_case,
                             bool refill, int depth, Sink* out) {
-  if (absl::holds_alternative<End>(match_case)) {
+  if (std::holds_alternative<End>(match_case)) {
     out->Add("begin_ = end_;");
     out->Add("buffer_len_ = 0;");
     return;
   }
-  if (auto* p = absl::get_if<Unmatched>(&match_case)) {
+  if (auto* p = std::get_if<Unmatched>(&match_case)) {
     if (refill) {
       int max_bits = 0;
       for (auto sym : p->syms) max_bits = std::max(max_bits, sym.bits.length());
@@ -1477,7 +1486,7 @@ void BuildCtx::AddMatchBody(TableBuilder* table_builder, std::string index,
     }
     return;
   }
-  const auto& matched = absl::get<Matched>(match_case);
+  const auto& matched = std::get<Matched>(match_case);
   for (int i = 0; i < matched.emits; i++) {
     out->Add(absl::StrCat(
         "sink_(",
@@ -1707,7 +1716,7 @@ void GenMicrobenchmarks() {
 void GenSelected() {
   FileSet selected("src/core/ext/transport/chttp2/transport/decode_huff");
   selected.AddFrontMatter(2023);
-  selected.AddBuild(std::vector<int>({15, 7, 8}), true);
+  selected.AddBuild(std::vector<int>({14, 5, 11}), true);
   selected.AddTailMatter();
   WriteFile(selected.base_name + ".h", selected.header);
   WriteFile(selected.base_name + ".cc", selected.source);

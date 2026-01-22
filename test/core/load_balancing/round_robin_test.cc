@@ -14,21 +14,21 @@
 // limitations under the License.
 //
 
+#include <grpc/grpc.h>
+
 #include <array>
 #include <memory>
 
+#include "src/core/lib/experiments/experiments.h"
+#include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "test/core/load_balancing/lb_policy_test_lib.h"
+#include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
-#include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/resolver/endpoint_addresses.h"
-#include "test/core/load_balancing/lb_policy_test_lib.h"
-#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
@@ -142,6 +142,44 @@ TEST_F(RoundRobinTest, MultipleAddressesPerEndpoint) {
   EXPECT_FALSE(subchannel1_1->ConnectionRequested());
   EXPECT_FALSE(subchannel2_0->ConnectionRequested());
   EXPECT_FALSE(subchannel2_1->ConnectionRequested());
+}
+
+TEST_F(RoundRobinTest, StartsConnectingFromRandomIndex) {
+  if (!IsRrWrrConnectFromRandomIndexEnabled()) {
+    GTEST_SKIP() << "rr_wrr_connect_from_random_index experiment not enabled";
+  }
+  const std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  std::vector<absl::string_view> connect_order;
+  request_connection_callback_ = [&](absl::string_view address) {
+    connect_order.push_back(address);
+  };
+  // On each address list update, we choose a random index to start
+  // connecting from rather than using index 0.  However, the random
+  // index might happen to be 0 on any given attempt.  We try 10 times
+  // to get one that is non-zero.
+  // Note that we send the same address list on every update.  But since
+  // we never told the subchannels to actually change their state when
+  // they were asked to connect, they will continue to report IDLE, so
+  // each successive update will re-request connection attempts.
+  for (size_t i = 0; i < 10; ++i) {
+    connect_order.clear();
+    EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, nullptr), lb_policy()),
+              absl::OkStatus());
+    ASSERT_FALSE(connect_order.empty());
+    if (connect_order[0] != kAddresses[0]) {
+      EXPECT_THAT(
+          connect_order,
+          ::testing::AnyOf(::testing::ElementsAre(kAddresses[1], kAddresses[2],
+                                                  kAddresses[0]),
+                           ::testing::ElementsAre(kAddresses[2], kAddresses[0],
+                                                  kAddresses[1])));
+      // We started on an index other than 0, so we're done.
+      return;
+    }
+    EXPECT_THAT(connect_order, ::testing::ElementsAreArray(kAddresses));
+  }
+  FAIL() << "all attempts started connecting at index 0";
 }
 
 // TODO(roth): Add test cases:

@@ -16,13 +16,11 @@
 //
 //
 
-#include <gtest/gtest.h>
-
-#include "absl/memory/memory.h"
-
 #include <grpcpp/test/mock_stream.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "gtest/gtest.h"
+#include "absl/memory/memory.h"
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;

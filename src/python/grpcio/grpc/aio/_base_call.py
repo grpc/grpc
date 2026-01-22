@@ -30,7 +30,7 @@ from ._typing import EOFType
 from ._typing import RequestType
 from ._typing import ResponseType
 
-__all__ = "RpcContext", "Call", "UnaryUnaryCall", "UnaryStreamCall"
+__all__ = "Call", "RpcContext", "UnaryStreamCall", "UnaryUnaryCall"
 
 
 class RpcContext(metaclass=ABCMeta):
@@ -138,7 +138,7 @@ class Call(RpcContext, metaclass=ABCMeta):
 class UnaryUnaryCall(
     Generic[RequestType, ResponseType], Call, metaclass=ABCMeta
 ):
-    """The abstract base class of an unary-unary RPC on the client-side."""
+    """The abstract base class of a unary-unary RPC on the client-side."""
 
     @abstractmethod
     def __await__(self) -> Generator[Any, None, ResponseType]:

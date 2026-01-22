@@ -58,33 +58,6 @@
 
 // IWYU pragma: no_include <sys/socket.h>
 
-#include <inttypes.h>
-#include <string.h>
-
-#include <algorithm>
-#include <atomic>
-#include <map>
-#include <memory>
-#include <string>
-#include <type_traits>
-#include <utility>
-#include <vector>
-
-#include "absl/container/inlined_vector.h"
-#include "absl/functional/function_ref.h"
-#include "absl/log/check.h"
-#include "absl/log/globals.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
-#include "upb/mem/arena.hpp"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
@@ -93,24 +66,28 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
+#include <inttypes.h>
+#include <string.h>
 
+#include <algorithm>
+#include <atomic>
+#include <map>
+#include <memory>
+#include <optional>
+#include <string>
+#include <type_traits>
+#include <utility>
+#include <variant>
+#include <vector>
+
+#include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_filter.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -118,14 +95,12 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
-#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/load_balancing/child_policy_handler.h"
 #include "src/core/load_balancing/delegating_helper.h"
 #include "src/core/load_balancing/grpclb/client_load_reporting_filter.h"
@@ -139,11 +114,33 @@
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/resolver/resolver.h"
+#include "src/core/util/backoff.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/status_helper.h"
 #include "src/core/util/string.h"
+#include "src/core/util/time.h"
 #include "src/core/util/useful.h"
+#include "src/core/util/validation_errors.h"
+#include "src/core/util/work_serializer.h"
+#include "upb/mem/arena.hpp"
+#include "absl/container/inlined_vector.h"
+#include "absl/functional/function_ref.h"
+#include "absl/log/globals.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 #define GRPC_GRPCLB_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_GRPCLB_RECONNECT_BACKOFF_MULTIPLIER 1.6
@@ -300,7 +297,7 @@ class GrpcLb final : public LoadBalancingPolicy {
     // Created after the first serverlist is received.
     RefCountedPtr<GrpcLbClientStats> client_stats_;
     Duration client_stats_report_interval_;
-    absl::optional<EventEngine::TaskHandle> client_load_report_handle_;
+    std::optional<EventEngine::TaskHandle> client_load_report_handle_;
     bool last_client_load_report_counters_were_zero_ = false;
     bool client_load_report_is_due_ = false;
     // The closure used for the completion of sending the load report.
@@ -325,20 +322,13 @@ class GrpcLb final : public LoadBalancingPolicy {
 
    private:
     void Orphaned() override {
-      if (!IsWorkSerializerDispatchEnabled()) {
-        if (!lb_policy_->shutting_down_) {
-          lb_policy_->CacheDeletedSubchannelLocked(wrapped_subchannel());
-        }
-        return;
-      }
       lb_policy_->work_serializer()->Run(
           [self = WeakRefAsSubclass<SubchannelWrapper>()]() {
             if (!self->lb_policy_->shutting_down_) {
               self->lb_policy_->CacheDeletedSubchannelLocked(
                   self->wrapped_subchannel());
             }
-          },
-          DEBUG_LOCATION);
+          });
     }
 
     RefCountedPtr<GrpcLb> lb_policy_;
@@ -427,10 +417,9 @@ class GrpcLb final : public LoadBalancingPolicy {
     PickResult Pick(PickArgs args) override;
 
    private:
-    // A subchannel call tracker that unrefs the GrpcLbClientStats object
-    // in the case where the subchannel call is never actually started,
-    // since the client load reporting filter will not be able to do it
-    // in that case.
+    // A subchannel call tracker that holds a ref to the
+    // GrpcLbClientStats object, to ensure that it still exists when the
+    // client load reporting filter sees it and takes its own ref to it.
     class SubchannelCallTracker final : public SubchannelCallTrackerInterface {
      public:
       SubchannelCallTracker(
@@ -438,16 +427,6 @@ class GrpcLb final : public LoadBalancingPolicy {
           std::unique_ptr<SubchannelCallTrackerInterface> original_call_tracker)
           : client_stats_(std::move(client_stats)),
             original_call_tracker_(std::move(original_call_tracker)) {}
-
-      void Start() override {
-        if (original_call_tracker_ != nullptr) {
-          original_call_tracker_->Start();
-        }
-        // If we're actually starting the subchannel call, then the
-        // client load reporting filter will take ownership of the ref
-        // passed down to it via metadata.
-        client_stats_.release();
-      }
 
       void Finish(FinishArgs args) override {
         if (original_call_tracker_ != nullptr) {
@@ -572,7 +551,7 @@ class GrpcLb final : public LoadBalancingPolicy {
   const Duration lb_call_timeout_;
   // Balancer call retry state.
   BackOff lb_call_backoff_;
-  absl::optional<EventEngine::TaskHandle> lb_call_retry_timer_handle_;
+  std::optional<EventEngine::TaskHandle> lb_call_retry_timer_handle_;
 
   // The deserialized response from the balancer. May be nullptr until one
   // such response has arrived.
@@ -591,7 +570,7 @@ class GrpcLb final : public LoadBalancingPolicy {
   // we have not received a serverlist from the balancer.
   const Duration fallback_at_startup_timeout_;
   bool fallback_at_startup_checks_pending_ = false;
-  absl::optional<EventEngine::TaskHandle> lb_fallback_timer_handle_;
+  std::optional<EventEngine::TaskHandle> lb_fallback_timer_handle_;
 
   // The child policy to use for the backends.
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
@@ -603,7 +582,7 @@ class GrpcLb final : public LoadBalancingPolicy {
   std::map<Timestamp /*deletion time*/,
            std::vector<RefCountedPtr<SubchannelInterface>>>
       cached_subchannels_;
-  absl::optional<EventEngine::TaskHandle> subchannel_cache_timer_handle_;
+  std::optional<EventEngine::TaskHandle> subchannel_cache_timer_handle_;
 };
 
 //
@@ -764,7 +743,7 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
   // Forward pick to child policy.
   PickResult result = child_picker_->Pick(args);
   // If pick succeeded, add LB token to initial metadata.
-  auto* complete_pick = absl::get_if<PickResult::Complete>(&result.result);
+  auto* complete_pick = std::get_if<PickResult::Complete>(&result.result);
   if (complete_pick != nullptr) {
     const SubchannelWrapper* subchannel_wrapper =
         static_cast<SubchannelWrapper*>(complete_pick->subchannel.get());
@@ -880,8 +859,8 @@ GrpcLb::BalancerCallState::BalancerCallState(
     : InternallyRefCounted<BalancerCallState>(
           GRPC_TRACE_FLAG_ENABLED(glb) ? "BalancerCallState" : nullptr),
       grpclb_policy_(std::move(parent_grpclb_policy)) {
-  CHECK(grpclb_policy_ != nullptr);
-  CHECK(!grpclb_policy()->shutting_down_);
+  GRPC_CHECK(grpclb_policy_ != nullptr);
+  GRPC_CHECK(!grpclb_policy()->shutting_down_);
   // Init the LB call. Note that the LB call will progress every time there's
   // activity in grpclb_policy_->interested_parties(), which is comprised of
   // the polling entities from client_channel.
@@ -901,7 +880,7 @@ GrpcLb::BalancerCallState::BalancerCallState(
       /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS,
       /*cq=*/nullptr, grpclb_policy_->interested_parties(),
       Slice::FromStaticString("/grpc.lb.v1.LoadBalancer/BalanceLoad"),
-      /*authority=*/absl::nullopt, deadline, /*registered_method=*/true);
+      /*authority=*/std::nullopt, deadline, /*registered_method=*/true);
   // Init the LB call request payload.
   upb::Arena arena;
   grpc_slice request_payload_slice = GrpcLbRequestCreate(
@@ -918,7 +897,7 @@ GrpcLb::BalancerCallState::BalancerCallState(
 }
 
 GrpcLb::BalancerCallState::~BalancerCallState() {
-  CHECK_NE(lb_call_, nullptr);
+  GRPC_CHECK_NE(lb_call_, nullptr);
   grpc_call_unref(lb_call_);
   grpc_metadata_array_destroy(&lb_initial_metadata_recv_);
   grpc_metadata_array_destroy(&lb_trailing_metadata_recv_);
@@ -928,7 +907,7 @@ GrpcLb::BalancerCallState::~BalancerCallState() {
 }
 
 void GrpcLb::BalancerCallState::Orphan() {
-  CHECK_NE(lb_call_, nullptr);
+  GRPC_CHECK_NE(lb_call_, nullptr);
   // If we are here because grpclb_policy wants to cancel the call,
   // lb_on_balancer_status_received_ will complete the cancellation and clean
   // up. Otherwise, we are here because grpclb_policy has to orphan a failed
@@ -945,7 +924,7 @@ void GrpcLb::BalancerCallState::Orphan() {
 }
 
 void GrpcLb::BalancerCallState::StartQuery() {
-  CHECK_NE(lb_call_, nullptr);
+  GRPC_CHECK_NE(lb_call_, nullptr);
   GRPC_TRACE_LOG(glb, INFO)
       << "[grpclb " << grpclb_policy_.get() << "] lb_calld=" << this
       << ": Starting LB call " << lb_call_;
@@ -962,7 +941,7 @@ void GrpcLb::BalancerCallState::StartQuery() {
   op->reserved = nullptr;
   op++;
   // Op: send request message.
-  CHECK_NE(send_message_payload_, nullptr);
+  GRPC_CHECK_NE(send_message_payload_, nullptr);
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message.send_message = send_message_payload_;
   op->flags = 0;
@@ -976,7 +955,7 @@ void GrpcLb::BalancerCallState::StartQuery() {
   call_error = grpc_call_start_batch_and_execute(lb_call_, ops,
                                                  static_cast<size_t>(op - ops),
                                                  &lb_on_initial_request_sent_);
-  CHECK_EQ(call_error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(call_error, GRPC_CALL_OK);
   // Op: recv initial metadata.
   op = ops;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
@@ -999,7 +978,7 @@ void GrpcLb::BalancerCallState::StartQuery() {
   call_error = grpc_call_start_batch_and_execute(
       lb_call_, ops, static_cast<size_t>(op - ops),
       &lb_on_balancer_message_received_);
-  CHECK_EQ(call_error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(call_error, GRPC_CALL_OK);
   // Op: recv server status.
   op = ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
@@ -1016,17 +995,16 @@ void GrpcLb::BalancerCallState::StartQuery() {
   call_error = grpc_call_start_batch_and_execute(
       lb_call_, ops, static_cast<size_t>(op - ops),
       &lb_on_balancer_status_received_);
-  CHECK_EQ(call_error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(call_error, GRPC_CALL_OK);
 }
 
 void GrpcLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
   client_load_report_handle_ =
       grpclb_policy()->channel_control_helper()->GetEventEngine()->RunAfter(
           client_stats_report_interval_, [this] {
-            ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             grpclb_policy()->work_serializer()->Run(
-                [this] { MaybeSendClientLoadReportLocked(); }, DEBUG_LOCATION);
+                [this] { MaybeSendClientLoadReportLocked(); });
           });
 }
 
@@ -1048,7 +1026,7 @@ void GrpcLb::BalancerCallState::MaybeSendClientLoadReportLocked() {
 
 void GrpcLb::BalancerCallState::SendClientLoadReportLocked() {
   // Construct message payload.
-  CHECK_EQ(send_message_payload_, nullptr);
+  GRPC_CHECK_EQ(send_message_payload_, nullptr);
   // Get snapshot of stats.
   int64_t num_calls_started;
   int64_t num_calls_finished;
@@ -1091,7 +1069,7 @@ void GrpcLb::BalancerCallState::SendClientLoadReportLocked() {
   if (GPR_UNLIKELY(call_error != GRPC_CALL_OK)) {
     LOG(ERROR) << "[grpclb " << grpclb_policy_.get() << "] lb_calld=" << this
                << " call_error=" << call_error << " sending client load report";
-    CHECK_EQ(call_error, GRPC_CALL_OK);
+    GRPC_CHECK_EQ(call_error, GRPC_CALL_OK);
   }
 }
 
@@ -1099,8 +1077,7 @@ void GrpcLb::BalancerCallState::ClientLoadReportDone(void* arg,
                                                      grpc_error_handle error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   lb_calld->grpclb_policy()->work_serializer()->Run(
-      [lb_calld, error]() { lb_calld->ClientLoadReportDoneLocked(error); },
-      DEBUG_LOCATION);
+      [lb_calld, error]() { lb_calld->ClientLoadReportDoneLocked(error); });
 }
 
 void GrpcLb::BalancerCallState::ClientLoadReportDoneLocked(
@@ -1118,7 +1095,7 @@ void GrpcLb::BalancerCallState::OnInitialRequestSent(
     void* arg, grpc_error_handle /*error*/) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   lb_calld->grpclb_policy()->work_serializer()->Run(
-      [lb_calld]() { lb_calld->OnInitialRequestSentLocked(); }, DEBUG_LOCATION);
+      [lb_calld]() { lb_calld->OnInitialRequestSentLocked(); });
 }
 
 void GrpcLb::BalancerCallState::OnInitialRequestSentLocked() {
@@ -1137,8 +1114,7 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceived(
     void* arg, grpc_error_handle /*error*/) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   lb_calld->grpclb_policy()->work_serializer()->Run(
-      [lb_calld]() { lb_calld->OnBalancerMessageReceivedLocked(); },
-      DEBUG_LOCATION);
+      [lb_calld]() { lb_calld->OnBalancerMessageReceivedLocked(); });
 }
 
 void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
@@ -1187,7 +1163,7 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
         break;
       }
       case response.SERVERLIST: {
-        CHECK_NE(lb_call_, nullptr);
+        GRPC_CHECK_NE(lb_call_, nullptr);
         auto serverlist_wrapper =
             MakeRefCounted<Serverlist>(std::move(response.serverlist));
         GRPC_TRACE_LOG(glb, INFO)
@@ -1285,7 +1261,7 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
     // Reuse the "OnBalancerMessageReceivedLocked" ref taken in StartQuery().
     const grpc_call_error call_error = grpc_call_start_batch_and_execute(
         lb_call_, &op, 1, &lb_on_balancer_message_received_);
-    CHECK_EQ(call_error, GRPC_CALL_OK);
+    GRPC_CHECK_EQ(call_error, GRPC_CALL_OK);
   } else {
     Unref(DEBUG_LOCATION, "on_message_received+grpclb_shutdown");
   }
@@ -1295,13 +1271,12 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceived(
     void* arg, grpc_error_handle error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   lb_calld->grpclb_policy()->work_serializer()->Run(
-      [lb_calld, error]() { lb_calld->OnBalancerStatusReceivedLocked(error); },
-      DEBUG_LOCATION);
+      [lb_calld, error]() { lb_calld->OnBalancerStatusReceivedLocked(error); });
 }
 
 void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
     grpc_error_handle error) {
-  CHECK_NE(lb_call_, nullptr);
+  GRPC_CHECK_NE(lb_call_, nullptr);
   if (GRPC_TRACE_FLAG_ENABLED(glb)) {
     char* status_details = grpc_slice_to_c_string(lb_call_status_details_);
     LOG(INFO) << "[grpclb " << grpclb_policy() << "] lb_calld=" << this
@@ -1320,7 +1295,7 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
     // case.
     grpclb_policy()->lb_calld_.reset();
     if (grpclb_policy()->fallback_at_startup_checks_pending_) {
-      CHECK(!seen_serverlist_);
+      GRPC_CHECK(!seen_serverlist_);
       LOG(INFO) << "[grpclb " << grpclb_policy()
                 << "] Balancer call finished without receiving serverlist; "
                    "entering fallback mode";
@@ -1334,7 +1309,7 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
       // This handles the fallback-after-startup case.
       grpclb_policy()->MaybeEnterFallbackModeAfterStartup();
     }
-    CHECK(!grpclb_policy()->shutting_down_);
+    GRPC_CHECK(!grpclb_policy()->shutting_down_);
     grpclb_policy()->channel_control_helper()->RequestReresolution();
     if (seen_initial_response_) {
       // If we lose connection to the LB server, reset the backoff and restart
@@ -1488,8 +1463,8 @@ void GrpcLb::ShutdownLocked() {
   if (lb_channel_ != nullptr) {
     if (parent_channelz_node_ != nullptr) {
       channelz::ChannelNode* child_channelz_node = lb_channel_->channelz_node();
-      CHECK_NE(child_channelz_node, nullptr);
-      parent_channelz_node_->RemoveChildChannel(child_channelz_node->uuid());
+      GRPC_CHECK_NE(child_channelz_node, nullptr);
+      child_channelz_node->RemoveParent(parent_channelz_node_.get());
     }
     lb_channel_.reset();
   }
@@ -1538,7 +1513,7 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
   GRPC_TRACE_LOG(glb, INFO) << "[grpclb " << this << "] received update";
   const bool is_initial_update = lb_channel_ == nullptr;
   config_ = args.config.TakeAsSubclass<GrpcLbConfig>();
-  CHECK(config_ != nullptr);
+  GRPC_CHECK(config_ != nullptr);
   args_ = std::move(args.args);
   // Update fallback address list.
   if (!args.addresses.ok()) {
@@ -1562,12 +1537,11 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
             fallback_at_startup_timeout_,
             [self = RefAsSubclass<GrpcLb>(DEBUG_LOCATION,
                                           "on_fallback_timer")]() mutable {
-              ApplicationCallbackExecCtx callback_exec_ctx;
               ExecCtx exec_ctx;
               auto self_ptr = self.get();
-              self_ptr->work_serializer()->Run(
-                  [self = std::move(self)]() { self->OnFallbackTimerLocked(); },
-                  DEBUG_LOCATION);
+              self_ptr->work_serializer()->Run([self = std::move(self)]() {
+                self->OnFallbackTimerLocked();
+              });
             });
     // Start watching the channel's connectivity state.  If the channel
     // goes into state TRANSIENT_FAILURE before the timer fires, we go into
@@ -1612,12 +1586,12 @@ absl::Status GrpcLb::UpdateBalancerChannelLocked() {
     lb_channel_.reset(Channel::FromC(
         grpc_channel_create(uri_str.c_str(), channel_credentials.get(),
                             lb_channel_args.ToC().get())));
-    CHECK(lb_channel_ != nullptr);
+    GRPC_CHECK(lb_channel_ != nullptr);
     // Set up channelz linkage.
     channelz::ChannelNode* child_channelz_node = lb_channel_->channelz_node();
     auto parent_channelz_node = args_.GetObjectRef<channelz::ChannelNode>();
     if (child_channelz_node != nullptr && parent_channelz_node != nullptr) {
-      parent_channelz_node->AddChildChannel(child_channelz_node->uuid());
+      child_channelz_node->AddParent(parent_channelz_node.get());
       parent_channelz_node_ = std::move(parent_channelz_node);
     }
   }
@@ -1642,10 +1616,10 @@ void GrpcLb::CancelBalancerChannelConnectivityWatchLocked() {
 //
 
 void GrpcLb::StartBalancerCallLocked() {
-  CHECK(lb_channel_ != nullptr);
+  GRPC_CHECK(lb_channel_ != nullptr);
   if (shutting_down_) return;
   // Init the LB call data.
-  CHECK(lb_calld_ == nullptr);
+  GRPC_CHECK(lb_calld_ == nullptr);
   lb_calld_ = MakeOrphanable<BalancerCallState>(Ref());
   GRPC_TRACE_LOG(glb, INFO)
       << "[grpclb " << this
@@ -1655,12 +1629,12 @@ void GrpcLb::StartBalancerCallLocked() {
 }
 
 void GrpcLb::StartBalancerCallRetryTimerLocked() {
-  Duration timeout = lb_call_backoff_.NextAttemptTime() - Timestamp::Now();
+  Duration delay = lb_call_backoff_.NextAttemptDelay();
   if (GRPC_TRACE_FLAG_ENABLED(glb)) {
     LOG(INFO) << "[grpclb " << this << "] Connection to LB server lost...";
-    if (timeout > Duration::Zero()) {
+    if (delay > Duration::Zero()) {
       LOG(INFO) << "[grpclb " << this << "] ... retry_timer_active in "
-                << timeout.millis() << "ms.";
+                << delay.millis() << "ms.";
     } else {
       LOG(INFO) << "[grpclb " << this
                 << "] ... retry_timer_active immediately.";
@@ -1668,17 +1642,14 @@ void GrpcLb::StartBalancerCallRetryTimerLocked() {
   }
   lb_call_retry_timer_handle_ =
       channel_control_helper()->GetEventEngine()->RunAfter(
-          timeout,
+          delay,
           [self = RefAsSubclass<GrpcLb>(
                DEBUG_LOCATION, "on_balancer_call_retry_timer")]() mutable {
-            ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             auto self_ptr = self.get();
-            self_ptr->work_serializer()->Run(
-                [self = std::move(self)]() {
-                  self->OnBalancerCallRetryTimerLocked();
-                },
-                DEBUG_LOCATION);
+            self_ptr->work_serializer()->Run([self = std::move(self)]() {
+              self->OnBalancerCallRetryTimerLocked();
+            });
           });
 }
 
@@ -1798,7 +1769,7 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
   }
   update_args.args =
       CreateChildPolicyArgsLocked(is_backend_from_grpclb_load_balancer);
-  CHECK(update_args.args != ChannelArgs());
+  GRPC_CHECK(update_args.args != ChannelArgs());
   update_args.config = config_->child_policy();
   // Create child policy if needed.
   if (child_policy_ == nullptr) {
@@ -1827,20 +1798,18 @@ void GrpcLb::CacheDeletedSubchannelLocked(
 }
 
 void GrpcLb::StartSubchannelCacheTimerLocked() {
-  CHECK(!cached_subchannels_.empty());
+  GRPC_CHECK(!cached_subchannels_.empty());
   subchannel_cache_timer_handle_ =
       channel_control_helper()->GetEventEngine()->RunAfter(
           cached_subchannels_.begin()->first - Timestamp::Now(),
           [self = RefAsSubclass<GrpcLb>(DEBUG_LOCATION,
                                         "OnSubchannelCacheTimer")]() mutable {
-            ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             auto* self_ptr = self.get();
             self_ptr->work_serializer()->Run(
                 [self = std::move(self)]() mutable {
                   self->OnSubchannelCacheTimerLocked();
-                },
-                DEBUG_LOCATION);
+                });
           });
 }
 

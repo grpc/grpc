@@ -16,16 +16,6 @@
 //
 //
 
-#include <mutex>
-#include <thread>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/ascii.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_format.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
@@ -42,26 +32,38 @@
 #include <grpcpp/support/string_ref.h>
 #include <grpcpp/test/channel_test_peer.h>
 
+#include <mutex>
+#include <thread>
+
 #include "src/core/client_channel/backup_poller.h"
-#include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/env.h"
+#include "src/core/config/config_vars.h"
+#include "src/core/credentials/call/call_credentials.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/iomgr.h"
-#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/interceptors_util.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/ascii.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_format.h"
 
 #ifdef GRPC_POSIX_SOCKET_EV
 #include "src/core/lib/iomgr/ev_posix.h"
 #endif  // GRPC_POSIX_SOCKET_EV
 
-#include <gtest/gtest.h>
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 using std::chrono::system_clock;
 
@@ -166,7 +168,7 @@ class TestMetadataCredentialsPlugin : public MetadataCredentialsPlugin {
     EXPECT_TRUE(channel_auth_context.IsPeerAuthenticated());
     EXPECT_TRUE(metadata != nullptr);
     if (is_successful_) {
-      metadata->insert(std::make_pair(metadata_key_, metadata_value_));
+      metadata->insert(std::pair(metadata_key_, metadata_value_));
       return Status::OK;
     } else {
       return Status(StatusCode::NOT_FOUND, kTestCredsPluginErrorMsg);
@@ -223,16 +225,16 @@ class TestAuthMetadataProcessor : public AuthMetadataProcessor {
     EXPECT_TRUE(consumed_auth_metadata != nullptr);
     EXPECT_TRUE(context != nullptr);
     EXPECT_TRUE(response_metadata != nullptr);
-    auto auth_md =
-        auth_metadata.find(TestMetadataCredentialsPlugin::kGoodMetadataKey);
-    EXPECT_NE(auth_md, auth_metadata.end());
+    auto [auth_md, auth_md_end] = auth_metadata.equal_range(
+        TestMetadataCredentialsPlugin::kGoodMetadataKey);
+    EXPECT_NE(auth_md, auth_md_end);
     string_ref auth_md_value = auth_md->second;
     if (auth_md_value == kGoodGuy) {
       context->AddProperty(kIdentityPropName, kGoodGuy);
       context->SetPeerIdentityPropertyName(kIdentityPropName);
-      consumed_auth_metadata->insert(std::make_pair(
-          string(auth_md->first.data(), auth_md->first.length()),
-          string(auth_md->second.data(), auth_md->second.length())));
+      consumed_auth_metadata->insert(
+          std::pair(string(auth_md->first.data(), auth_md->first.length()),
+                    string(auth_md->second.data(), auth_md->second.length())));
       return Status::OK;
     } else {
       return Status(StatusCode::UNAUTHENTICATED,
@@ -412,7 +414,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       args.SetUserAgentPrefix(user_agent_prefix_);
     }
     args.SetString(GRPC_ARG_SECONDARY_USER_AGENT_STRING, "end2end_test");
-
+    ApplyCommonChannelArguments(args);
     if (!GetParam().inproc()) {
       if (!GetParam().use_interceptors()) {
         channel_ = grpc::CreateCustomChannel(server_address_.str(),
@@ -787,7 +789,7 @@ TEST_P(End2endServerTryCancelTest, ResponseStreamServerCancelDuring) {
   TestResponseStreamServerCancel(CANCEL_DURING_PROCESSING);
 }
 
-// Server to cancel after writing all the respones to the stream but before
+// Server to cancel after writing all the responses to the stream but before
 // returning to the client
 TEST_P(End2endServerTryCancelTest, ResponseStreamServerCancelAfter) {
   TestResponseStreamServerCancel(CANCEL_AFTER_PROCESSING);
@@ -827,8 +829,8 @@ TEST_P(End2endTest, SimpleRpcWithCustomUserAgentPrefix) {
   EXPECT_EQ(response.message(), request.message());
   EXPECT_TRUE(s.ok());
   const auto& trailing_metadata = context.GetServerTrailingMetadata();
-  auto iter = trailing_metadata.find("user-agent");
-  EXPECT_TRUE(iter != trailing_metadata.end());
+  auto [iter, end] = trailing_metadata.equal_range("user-agent");
+  EXPECT_TRUE(iter != end);
   std::string expected_prefix = user_agent_prefix_ + " grpc-c++/";
   EXPECT_TRUE(iter->second.starts_with(expected_prefix)) << iter->second;
 }
@@ -1473,7 +1475,8 @@ TEST_P(End2endTest, BinaryTrailerTest) {
   EXPECT_FALSE(s.ok());
   auto trailers = context.GetServerTrailingMetadata();
   EXPECT_EQ(1u, trailers.count(kDebugInfoTrailerKey));
-  auto iter = trailers.find(kDebugInfoTrailerKey);
+  auto [iter, end] = trailers.equal_range(kDebugInfoTrailerKey);
+  EXPECT_TRUE(iter != end);
   EXPECT_EQ(expected_string, iter->second);
   // Parse the returned trailer into a DebugInfo proto.
   DebugInfo returned_info;
@@ -1481,6 +1484,10 @@ TEST_P(End2endTest, BinaryTrailerTest) {
 }
 
 TEST_P(End2endTest, ExpectErrorTest) {
+  if (grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()) {
+    GTEST_SKIP() << "TODO(tjagtap) [PH2][P1] Fix bug";
+  }
+
   ResetStub();
 
   std::vector<ErrorStatus> expected_status;
@@ -1515,14 +1522,13 @@ TEST_P(End2endTest, ExpectErrorTest) {
     EXPECT_EQ(iter->code(), s.error_code());
     EXPECT_EQ(iter->error_message(), s.error_message());
     EXPECT_EQ(iter->binary_error_details(), s.error_details());
-    EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "created"));
-#ifndef NDEBUG
-    // grpc_core::StatusIntProperty::kFileLine is for debug only
-    EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "file"));
-    EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "line"));
-#endif
-    EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "status"));
-    EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "13"));
+    if (grpc_core::IsErrorFlattenEnabled()) {
+      EXPECT_THAT(context.debug_error_string(),
+                  ::testing::HasSubstr("INTERNAL"));
+    } else {
+      EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "status"));
+      EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "13"));
+    }
   }
 }
 
@@ -1602,6 +1608,9 @@ TEST_P(ProxyEnd2endTest, RpcLongDeadline) {
 
 // Ask server to echo back the deadline it sees.
 TEST_P(ProxyEnd2endTest, EchoDeadline) {
+  if (grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()) {
+    GTEST_SKIP() << "TODO(tjagtap) [PH2][P1] Fix bug";
+  }
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1686,7 +1695,7 @@ TEST_P(ProxyEnd2endTest, ClientCancelsRpc) {
   Status s = stub_->Echo(&context, request, &response);
   cancel_thread.join();
   EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
-  EXPECT_EQ(s.error_message(), "CANCELLED");
+  EXPECT_THAT(s.error_message(), ::testing::HasSubstr("CANCELLED"));
 }
 
 // Server cancels rpc after 1ms
@@ -1700,7 +1709,7 @@ TEST_P(ProxyEnd2endTest, ServerCancelsRpc) {
   ClientContext context;
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
-  EXPECT_TRUE(s.error_message().empty());
+  EXPECT_EQ(s.error_message(), "");
 }
 
 // Make the response larger than the flow control window.
@@ -1744,8 +1753,8 @@ TEST_P(ProxyEnd2endTest, Peer) {
 class SecureEnd2endTest : public End2endTest {
  protected:
   SecureEnd2endTest() {
-    CHECK(!GetParam().use_proxy());
-    CHECK(GetParam().credentials_type() != kInsecureCredentialsType);
+    GRPC_CHECK(!GetParam().use_proxy());
+    GRPC_CHECK(GetParam().credentials_type() != kInsecureCredentialsType);
   }
 };
 
@@ -2257,10 +2266,6 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
   overrides.client_channel_backup_poll_interval_ms =
       kClientChannelBackupPollIntervalMs;
   grpc_core::ConfigVars::SetOverrides(overrides);
-#if TARGET_OS_IPHONE
-  // Workaround Apple CFStream bug
-  grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
 
   if (test_secure) {
     credentials_types =
@@ -2277,7 +2282,7 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
   }
 
   // Test callback with inproc or if the event-engine allows it
-  CHECK(!credentials_types.empty());
+  GRPC_CHECK(!credentials_types.empty());
   for (const auto& cred : credentials_types) {
     scenarios.emplace_back(false, false, false, cred, false);
     scenarios.emplace_back(true, false, false, cred, false);

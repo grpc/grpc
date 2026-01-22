@@ -18,23 +18,6 @@
 
 #include "src/core/ext/transport/inproc/legacy_inproc_transport.h"
 
-#include <stddef.h>
-#include <stdint.h>
-
-#include <algorithm>
-#include <memory>
-#include <new>
-#include <string>
-#include <utility>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
@@ -42,15 +25,21 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
+#include <stddef.h>
+#include <stdint.h>
 
+#include <algorithm>
+#include <memory>
+#include <new>
+#include <optional>
+#include <string>
+#include <utility>
+
+#include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -63,9 +52,18 @@
 #include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/time.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace {
 struct inproc_stream;
@@ -126,6 +124,10 @@ struct inproc_transport final : public grpc_core::FilterStackTransport {
   void SetPollsetSet(grpc_stream* stream,
                      grpc_pollset_set* pollset_set) override;
   void PerformOp(grpc_transport_op* op) override;
+  grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> GetSocketNode()
+      const override {
+    return nullptr;
+  }
 
   size_t SizeOfStream() const override;
   bool HackyDisableStreamOpBatchCoalescingInConnectedChannel() const override {
@@ -136,6 +138,9 @@ struct inproc_transport final : public grpc_core::FilterStackTransport {
                        grpc_transport_stream_op_batch* op) override;
   void DestroyStream(grpc_stream* gs,
                      grpc_closure* then_schedule_closure) override;
+
+  void StartWatch(grpc_core::RefCountedPtr<StateWatcher>) override {}
+  void StopWatch(grpc_core::RefCountedPtr<StateWatcher>) override {}
 
   void Orphan() override;
 
@@ -187,16 +192,21 @@ struct inproc_stream {
 
     if (!server_data) {
       t->ref();
-      inproc_transport* st = t->other_side;
-      st->ref();
       other_side = nullptr;  // will get filled in soon
-      // Pass the client-side stream address to the server-side for a ref
-      ref("inproc_init_stream:clt");  // ref it now on behalf of server
-                                      // side to avoid destruction
-      GRPC_TRACE_LOG(inproc, INFO)
-          << "calling accept stream cb " << st->accept_stream_cb << " "
-          << st->accept_stream_data;
-      (*st->accept_stream_cb)(st->accept_stream_data, t, this);
+      inproc_transport* st = t->other_side;
+      if (st->accept_stream_cb == nullptr) {
+        cancel_stream_locked(this,
+                             absl::UnavailableError("inproc server closed"));
+      } else {
+        st->ref();
+        // Pass the client-side stream address to the server-side for a ref
+        ref("inproc_init_stream:clt");  // ref it now on behalf of server
+                                        // side to avoid destruction
+        GRPC_TRACE_LOG(inproc, INFO)
+            << "calling accept stream cb " << st->accept_stream_cb << " "
+            << st->accept_stream_data;
+        (*st->accept_stream_cb)(st->accept_stream_data, t, this);
+      }
     } else {
       // This is the server-side and is being called through accept_stream_cb
       inproc_stream* cs = const_cast<inproc_stream*>(
@@ -1261,14 +1271,14 @@ grpc_channel* grpc_legacy_inproc_channel_create(grpc_server* server,
   inproc_transports_create(&server_transport, &client_transport);
 
   // TODO(ncteisen): design and support channelz GetSocket for inproc.
-  grpc_error_handle error = core_server->SetupTransport(
-      server_transport, nullptr, server_args, nullptr);
+  grpc_error_handle error =
+      core_server->SetupTransport(server_transport, nullptr, server_args);
   grpc_channel* channel = nullptr;
   if (error.ok()) {
     auto new_channel = grpc_core::ChannelCreate(
         "inproc", client_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport);
     if (!new_channel.ok()) {
-      CHECK(!channel);
+      GRPC_CHECK(!channel);
       LOG(ERROR) << "Failed to create client channel: "
                  << grpc_core::StatusToString(error);
       intptr_t integer;
@@ -1286,7 +1296,7 @@ grpc_channel* grpc_legacy_inproc_channel_create(grpc_server* server,
       channel = new_channel->release()->c_ptr();
     }
   } else {
-    CHECK(!channel);
+    GRPC_CHECK(!channel);
     LOG(ERROR) << "Failed to create server channel: "
                << grpc_core::StatusToString(error);
     intptr_t integer;

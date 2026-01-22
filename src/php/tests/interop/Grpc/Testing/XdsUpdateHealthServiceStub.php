@@ -29,7 +29,7 @@ class XdsUpdateHealthServiceStub {
     /**
      * @param \Grpc\Testing\EmptyMessage $request client request
      * @param \Grpc\ServerContext $context server request context
-     * @return \Grpc\Testing\EmptyMessage for response data, null if if error occured
+     * @return \Grpc\Testing\EmptyMessage for response data, null if if error occurred
      *     initial metadata (if any) and status (if not ok) should be set to $context
      */
     public function SetServing(
@@ -43,7 +43,7 @@ class XdsUpdateHealthServiceStub {
     /**
      * @param \Grpc\Testing\EmptyMessage $request client request
      * @param \Grpc\ServerContext $context server request context
-     * @return \Grpc\Testing\EmptyMessage for response data, null if if error occured
+     * @return \Grpc\Testing\EmptyMessage for response data, null if if error occurred
      *     initial metadata (if any) and status (if not ok) should be set to $context
      */
     public function SetNotServing(
@@ -57,7 +57,7 @@ class XdsUpdateHealthServiceStub {
     /**
      * @param \Grpc\Testing\HookRequest $request client request
      * @param \Grpc\ServerContext $context server request context
-     * @return \Grpc\Testing\HookResponse for response data, null if if error occured
+     * @return \Grpc\Testing\HookResponse for response data, null if if error occurred
      *     initial metadata (if any) and status (if not ok) should be set to $context
      */
     public function SendHookRequest(

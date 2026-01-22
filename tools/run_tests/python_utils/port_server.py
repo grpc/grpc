@@ -15,23 +15,21 @@
 """Manage TCP ports for unit tests; started by run_tests.py"""
 
 import argparse
-import hashlib
-import os
+import errno
+from http.server import BaseHTTPRequestHandler
+from http.server import HTTPServer
 import platform
 import random
 import socket
+from socketserver import ThreadingMixIn
 import sys
 import threading
 import time
 
-from six.moves.BaseHTTPServer import BaseHTTPRequestHandler
-from six.moves.BaseHTTPServer import HTTPServer
-from six.moves.socketserver import ThreadingMixIn
-
 # increment this number whenever making a change to ensure that
 # the changes are picked up by running CI servers
 # note that all changes must be backwards compatible
-_MY_VERSION = 21
+_MY_VERSION = 22
 
 if len(sys.argv) == 2 and sys.argv[1] == "dump_version":
     print(_MY_VERSION)
@@ -55,81 +53,33 @@ pool = []
 in_use = {}
 mu = threading.Lock()
 
-# Cronet restricts the following ports to be used (see
-# https://cs.chromium.org/chromium/src/net/base/port_util.cc). When one of these
-# ports is used in a Cronet test, the test would fail (see issue #12149). These
-# ports must be excluded from pool.
-cronet_restricted_ports = [
-    1,
-    7,
-    9,
-    11,
-    13,
-    15,
-    17,
-    19,
-    20,
-    21,
-    22,
-    23,
-    25,
-    37,
-    42,
-    43,
-    53,
-    77,
-    79,
-    87,
-    95,
-    101,
-    102,
-    103,
-    104,
-    109,
-    110,
-    111,
-    113,
-    115,
-    117,
-    119,
-    123,
-    135,
-    139,
-    143,
-    179,
-    389,
-    465,
-    512,
-    513,
-    514,
-    515,
-    526,
-    530,
-    531,
-    532,
-    540,
-    556,
-    563,
-    587,
-    601,
-    636,
-    993,
-    995,
-    2049,
-    3659,
-    4045,
-    6000,
-    6665,
-    6666,
-    6667,
-    6668,
-    6669,
-    6697,
-]
+
+def can_bind_ipv6():
+    """
+    Checks if the system has IPv6 support and can bind to the IPv6 loopback address.
+    """
+    if not socket.has_ipv6:
+        # If the socket library itself has no support for IPv6, then it's moot.
+        return False
+    try:
+        # Try to bind to the IPv6 loopback address on an ephemeral port
+        with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as sock:
+            sock.bind(("::1", 0))  # 0 lets the OS pick an ephemeral port
+            return True
+    except OSError as e:
+        # EADDRNOTAVAIL: IPv6 modules/drivers are loaded but disabled.
+        # EAFNOSUPPORT: IPv6 modules/drivers are not loaded at all.
+        if e.errno in {errno.EADDRNOTAVAIL, errno.EAFNOSUPPORT}:
+            return False
+        # Other errors might indicate a different issue, re-raise or handle as needed
+        raise
+    except Exception:
+        # Catch any other unexpected errors
+        return False
 
 
 def can_connect(port):
-    # this test is only really useful on unices where SO_REUSE_PORT is available
+    # this test is only really useful on systems where SO_REUSE_PORT is available
     # so on Windows, where this test is expensive, skip it
     if platform.system() == "Windows":
         return False
@@ -157,11 +107,7 @@ def can_bind(port, proto):
 
 def refill_pool(max_timeout, req):
     """Scan for ports not marked for being in use"""
-    chk = [
-        port
-        for port in range(1025, 32766)
-        if port not in cronet_restricted_ports
-    ]
+    chk = [port for port in range(1025, 32766)]
     random.shuffle(chk)
     for i in chk:
         if len(pool) > 100:
@@ -174,7 +120,7 @@ def refill_pool(max_timeout, req):
             del in_use[i]
         if (
             can_bind(i, socket.AF_INET)
-            and can_bind(i, socket.AF_INET6)
+            and (not ipv6_available or can_bind(i, socket.AF_INET6))
             and not can_connect(i)
         ):
             req.log_message("found available port %d" % i)
@@ -272,5 +218,9 @@ class Handler(BaseHTTPRequestHandler):
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     """Handle requests in a separate thread"""
 
+
+ipv6_available = can_bind_ipv6()
+if not ipv6_available:
+    print("IPv6 not supported on this system")
 
 ThreadedHTTPServer(("", args.port), Handler).serve_forever()

@@ -19,14 +19,13 @@
 #ifndef GRPC_SRC_CORE_TSI_SSL_SESSION_CACHE_SSL_SESSION_H
 #define GRPC_SRC_CORE_TSI_SSL_SESSION_CACHE_SSL_SESSION_H
 
-#include <memory>
-
-#include <openssl/ssl.h>
-
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
+#include <openssl/ssl.h>
 
-#include "src/core/lib/gprpp/ref_counted.h"
+#include <memory>
+
+#include "src/core/util/ref_counted.h"
 
 // The main purpose of code here is to provide means to cache SSL sessions
 // in a way that they can be shared between connections.

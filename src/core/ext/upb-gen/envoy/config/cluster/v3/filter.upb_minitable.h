@@ -3,10 +3,11 @@
  *     envoy/config/cluster/v3/filter.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_CLUSTER_V3_FILTER_PROTO_UPB_MINITABLE_H_
-#define ENVOY_CONFIG_CLUSTER_V3_FILTER_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_CONFIG_CLUSTER_V3_FILTER_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_CONFIG_CLUSTER_V3_FILTER_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -18,6 +19,7 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__config__cluster__v3__Filter_msg_init;
+extern const upb_MiniTable* envoy__config__cluster__v3__Filter_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_config_cluster_v3_filter_proto_upb_file_layout;
 
@@ -27,4 +29,4 @@ extern const upb_MiniTableFile envoy_config_cluster_v3_filter_proto_upb_file_lay
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_CLUSTER_V3_FILTER_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_CONFIG_CLUSTER_V3_FILTER_PROTO_UPB_H__UPB_MINITABLE_H_ */

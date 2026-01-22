@@ -14,30 +14,23 @@
 
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 
-#include <algorithm>
-#include <ostream>
-
-#include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/match.h"
+#include <algorithm>
+#include <optional>
+#include <ostream>
 
-// How many pings do we allow to be inflight at any given time?
-// In older versions of gRPC this was implicitly 1.
-// With the multiping experiment we allow this to rise to 100 by default.
-// TODO(ctiller): consider making this public API
-#define GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS "grpc.http2.max_inflight_pings"
+#include "src/core/lib/experiments/experiments.h"
+#include "src/core/util/match.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
 namespace {
 int g_default_max_pings_without_data_sent = 2;
 constexpr Duration kThrottleIntervalWithoutDataSent = Duration::Minutes(1);
-absl::optional<int> g_default_max_inflight_pings;
+std::optional<int> g_default_max_inflight_pings;
 }  // namespace
 
 Chttp2PingRatePolicy::Chttp2PingRatePolicy(const ChannelArgs& args,
@@ -65,9 +58,16 @@ void Chttp2PingRatePolicy::SetDefaults(const ChannelArgs& args) {
 Chttp2PingRatePolicy::RequestSendPingResult
 Chttp2PingRatePolicy::RequestSendPing(Duration next_allowed_ping_interval,
                                       size_t inflight_pings) const {
-  if (max_inflight_pings_ > 0 &&
-      inflight_pings > static_cast<size_t>(max_inflight_pings_)) {
-    return TooManyRecentPings{};
+  if (max_inflight_pings_ > 0) {
+    if (!IsMaxInflightPingsStrictLimitEnabled()) {
+      if (inflight_pings > static_cast<size_t>(max_inflight_pings_)) {
+        return TooManyRecentPings{};
+      }
+    } else {
+      if (inflight_pings >= static_cast<size_t>(max_inflight_pings_)) {
+        return TooManyRecentPings{};
+      }
+    }
   }
   const Timestamp next_allowed_ping =
       last_ping_sent_time_ + next_allowed_ping_interval;
@@ -79,15 +79,11 @@ Chttp2PingRatePolicy::RequestSendPing(Duration next_allowed_ping_interval,
   // Throttle pings to 1 minute if we haven't sent any data recently
   if (max_pings_without_data_sent_ != 0 &&
       pings_before_data_sending_required_ == 0) {
-    if (IsMaxPingsWoDataThrottleEnabled()) {
-      const Timestamp next_allowed_ping =
-          last_ping_sent_time_ + kThrottleIntervalWithoutDataSent;
-      if (next_allowed_ping > now) {
-        return TooSoon{kThrottleIntervalWithoutDataSent, last_ping_sent_time_,
-                       next_allowed_ping - now};
-      }
-    } else {
-      return TooManyRecentPings{};
+    const Timestamp next_allowed_ping =
+        last_ping_sent_time_ + kThrottleIntervalWithoutDataSent;
+    if (next_allowed_ping > now) {
+      return TooSoon{kThrottleIntervalWithoutDataSent, last_ping_sent_time_,
+                     next_allowed_ping - now};
     }
   }
 

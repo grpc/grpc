@@ -3,7 +3,8 @@
  *     envoy/type/v3/hash_policy.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -15,9 +16,10 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_type_v3_HashPolicy_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__type__v3__HashPolicy__SourceIp_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__type__v3__HashPolicy__FilterState_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_type_v3_HashPolicy__submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &envoy__type__v3__HashPolicy__SourceIp_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__type__v3__HashPolicy__FilterState_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_type_v3_HashPolicy__fields[2] = {
@@ -26,7 +28,7 @@ static const upb_MiniTableField envoy_type_v3_HashPolicy__fields[2] = {
 };
 
 const upb_MiniTable envoy__type__v3__HashPolicy_msg_init = {
-  &envoy_type_v3_HashPolicy_submsgs[0],
+  &envoy_type_v3_HashPolicy__submsgs[0],
   &envoy_type_v3_HashPolicy__fields[0],
   UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -40,6 +42,7 @@ const upb_MiniTable envoy__type__v3__HashPolicy_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__type__v3__HashPolicy_msg_init_ptr = &envoy__type__v3__HashPolicy_msg_init;
 const upb_MiniTable envoy__type__v3__HashPolicy__SourceIp_msg_init = {
   NULL,
   NULL,
@@ -49,6 +52,7 @@ const upb_MiniTable envoy__type__v3__HashPolicy__SourceIp_msg_init = {
 #endif
 };
 
+const upb_MiniTable* envoy__type__v3__HashPolicy__SourceIp_msg_init_ptr = &envoy__type__v3__HashPolicy__SourceIp_msg_init;
 static const upb_MiniTableField envoy_type_v3_HashPolicy_FilterState__fields[1] = {
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
@@ -66,6 +70,7 @@ const upb_MiniTable envoy__type__v3__HashPolicy__FilterState_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__type__v3__HashPolicy__FilterState_msg_init_ptr = &envoy__type__v3__HashPolicy__FilterState_msg_init;
 static const upb_MiniTable *messages_layout[3] = {
   &envoy__type__v3__HashPolicy_msg_init,
   &envoy__type__v3__HashPolicy__SourceIp_msg_init,

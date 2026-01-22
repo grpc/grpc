@@ -18,10 +18,9 @@
 
 #include "test/cpp/end2end/interceptors_util.h"
 
-#include "absl/log/check.h"
-#include "absl/memory/memory.h"
-
+#include "src/core/util/grpc_check.h"
 #include "test/core/test_util/test_config.h"
+#include "absl/memory/memory.h"
 
 namespace grpc {
 namespace testing {
@@ -184,8 +183,8 @@ void MakeCallbackCall(const std::shared_ptr<Channel>& channel) {
 
 bool CheckMetadata(const std::multimap<grpc::string_ref, grpc::string_ref>& map,
                    const string& key, const string& value) {
-  for (const auto& pair : map) {
-    if (pair.first.starts_with(key) && pair.second.starts_with(value)) {
+  for (const auto& [k, v] : map) {
+    if (k.starts_with(key) && v.starts_with(value)) {
       return true;
     }
   }
@@ -194,8 +193,8 @@ bool CheckMetadata(const std::multimap<grpc::string_ref, grpc::string_ref>& map,
 
 bool CheckMetadata(const std::multimap<std::string, std::string>& map,
                    const string& key, const string& value) {
-  for (const auto& pair : map) {
-    if (pair.first == key && pair.second == value) {
+  for (const auto& [k, v] : map) {
+    if (k == key && v == value) {
       return true;
     }
   }

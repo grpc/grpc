@@ -3,7 +3,8 @@
  *     src/proto/grpc/health/v1/health.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -12,6 +13,7 @@
 // Must be last.
 #include "upb/port/def.inc"
 
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
 static const upb_MiniTableField grpc_health_v1_HealthCheckRequest__fields[1] = {
   {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
@@ -29,6 +31,7 @@ const upb_MiniTable grpc__health__v1__HealthCheckRequest_msg_init = {
   })
 };
 
+const upb_MiniTable* grpc__health__v1__HealthCheckRequest_msg_init_ptr = &grpc__health__v1__HealthCheckRequest_msg_init;
 static const upb_MiniTableField grpc_health_v1_HealthCheckResponse__fields[1] = {
   {1, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
 };
@@ -46,6 +49,7 @@ const upb_MiniTable grpc__health__v1__HealthCheckResponse_msg_init = {
   })
 };
 
+const upb_MiniTable* grpc__health__v1__HealthCheckResponse_msg_init_ptr = &grpc__health__v1__HealthCheckResponse_msg_init;
 static const upb_MiniTable *messages_layout[2] = {
   &grpc__health__v1__HealthCheckRequest_msg_init,
   &grpc__health__v1__HealthCheckResponse_msg_init,

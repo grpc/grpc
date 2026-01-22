@@ -18,20 +18,19 @@
 
 #include "src/cpp/ext/gcp/environment_autodetect.h"
 
+#include <grpc/grpc.h>
+
 #include <string>
 #include <thread>  // NOLINT
 #include <vector>
 
-#include "absl/strings/string_view.h"
-#include "absl/synchronization/notification.h"
+#include "src/core/util/env.h"
+#include "src/core/util/notification.h"
+#include "test/core/test_util/test_config.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/notification.h"
-#include "test/core/test_util/test_config.h"
+#include "absl/strings/string_view.h"
+#include "absl/synchronization/notification.h"
 
 namespace grpc {
 namespace testing {

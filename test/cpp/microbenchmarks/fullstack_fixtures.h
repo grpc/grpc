@@ -19,8 +19,6 @@
 #ifndef GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_FIXTURES_H
 #define GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_FIXTURES_H
 
-#include "absl/log/check.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/atm.h>
 #include <grpcpp/channel.h>
@@ -30,10 +28,9 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -42,6 +39,8 @@
 #include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/server/server.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
@@ -187,9 +186,9 @@ class EndpointPairFixture : public BaseFixture {
         grpc_endpoint_add_to_pollset(endpoints.server, pollset);
       }
 
-      CHECK(GRPC_LOG_IF_ERROR("SetupTransport", core_server->SetupTransport(
-                                                    server_transport_, nullptr,
-                                                    server_args, nullptr)));
+      GRPC_CHECK(GRPC_LOG_IF_ERROR(
+          "SetupTransport", core_server->SetupTransport(server_transport_,
+                                                        nullptr, server_args)));
       grpc_chttp2_transport_start_reading(server_transport_, nullptr, nullptr,
                                           nullptr, nullptr);
     }
@@ -211,7 +210,7 @@ class EndpointPairFixture : public BaseFixture {
       client_transport_ = grpc_create_chttp2_transport(
           c_args, grpc_core::OrphanablePtr<grpc_endpoint>(endpoints.client),
           /*is_client=*/true);
-      CHECK(client_transport_);
+      GRPC_CHECK(client_transport_);
       grpc_channel* channel =
           grpc_core::ChannelCreate("target", c_args, GRPC_CLIENT_DIRECT_CHANNEL,
                                    client_transport_)

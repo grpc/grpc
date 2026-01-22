@@ -1,3 +1,0 @@
-network_input {
-  single_read_bytes: "\x91\x4e"
-}

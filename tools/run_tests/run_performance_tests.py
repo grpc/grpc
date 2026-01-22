@@ -270,7 +270,7 @@ def prepare_remote_hosts(hosts, prepare_local=False):
 
 
 def build_on_remote_hosts(
-    hosts, languages=list(scenario_config.LANGUAGES.keys()), build_local=False
+    hosts, languages=list(scenario_config.LANGUAGES), build_local=False
 ):
     """Builds performance worker on remote hosts (and maybe also locally)."""
     build_timeout = 45 * 60
@@ -522,7 +522,7 @@ profile_output_files = []
 
 # Collect perf text reports and flamegraphs if perf_cmd was used
 # Note the base names of perf text reports are used when creating and processing
-# perf data. The scenario name uniqifies the output name in the final
+# perf data. The scenario name uniquifies the output name in the final
 # perf reports directory.
 # Also, the perf profiles need to be fetched and processed after each scenario
 # in order to avoid clobbering the output files.
@@ -560,7 +560,7 @@ def main():
     argp.add_argument(
         "-l",
         "--language",
-        choices=["all"] + sorted(scenario_config.LANGUAGES.keys()),
+        choices=["all"] + sorted(scenario_config.LANGUAGES),
         nargs="+",
         required=True,
         help="Languages to benchmark.",
@@ -688,7 +688,7 @@ def main():
     languages = set(
         scenario_config.LANGUAGES[l]
         for l in itertools.chain.from_iterable(
-            scenario_config.LANGUAGES.keys() if x == "all" else [x]
+            scenario_config.LANGUAGES if x == "all" else [x]
             for x in args.language
         )
     )
@@ -799,9 +799,9 @@ def main():
                         raise Exception(
                             "using perf buf perf report filename is unspecified"
                         )
-                    workers_and_base_names[
-                        worker.host_and_port
-                    ] = worker.perf_file_base_name
+                    workers_and_base_names[worker.host_and_port] = (
+                        worker.perf_file_base_name
+                    )
                 perf_report_failures += run_collect_perf_profile_jobs(
                     workers_and_base_names,
                     scenario.name,

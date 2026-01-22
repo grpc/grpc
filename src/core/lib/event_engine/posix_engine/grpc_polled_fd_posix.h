@@ -15,40 +15,38 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_GRPC_POLLED_FD_POSIX_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_GRPC_POLLED_FD_POSIX_H
 
-#include <memory>
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/sync.h"
+#include <memory>
+
+#include "src/core/lib/event_engine/posix_engine/file_descriptor_collection.h"
+#include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
 
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
 
 // IWYU pragma: no_include <ares_build.h>
 
+#include <ares.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/uio.h>
-#include <unistd.h>
 
 #include <string>
 #include <unordered_set>
 #include <utility>
 
-#include <ares.h>
-
+#include "src/core/lib/event_engine/grpc_polled_fd.h"
+#include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 
-#include "src/core/lib/event_engine/grpc_polled_fd.h"
-#include "src/core/lib/event_engine/posix_engine/event_poller.h"
-#include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
-#include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
-
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 class GrpcPolledFdPosix : public GrpcPolledFd {
  public:
@@ -60,7 +58,7 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
   ~GrpcPolledFdPosix() override {
     // c-ares library will close the fd. This fd may be picked up immediately by
     // another thread and should not be closed by the following OrphanHandle.
-    int phony_release_fd;
+    FileDescriptor phony_release_fd;
     handle_->OrphanHandle(/*on_done=*/nullptr, &phony_release_fd,
                           "c-ares query finished");
   }
@@ -79,8 +77,7 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
 
   bool IsFdStillReadableLocked() override {
     size_t bytes_available = 0;
-    return ioctl(handle_->WrappedFd(), FIONREAD, &bytes_available) == 0 &&
-           bytes_available > 0;
+    return ioctl(as_, FIONREAD, &bytes_available) == 0 && bytes_available > 0;
   }
 
   bool ShutdownLocked(absl::Status error) override {
@@ -91,6 +88,11 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
   ares_socket_t GetWrappedAresSocketLocked() override { return as_; }
 
   const char* GetName() const override { return name_.c_str(); }
+
+  bool IsCurrent() const override {
+    return handle_->Poller()->posix_interface().generation() ==
+           handle_->WrappedFd().generation();
+  }
 
  private:
   const std::string name_;
@@ -104,6 +106,7 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
       : poller_(poller) {}
 
   ~GrpcPolledFdFactoryPosix() override {
+    grpc_core::MutexLock lock(&mu_);
     for (auto& fd : owned_fds_) {
       close(fd);
     }
@@ -113,16 +116,23 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
 
   std::unique_ptr<GrpcPolledFd> NewGrpcPolledFdLocked(
       ares_socket_t as) override {
+    grpc_core::MutexLock lock(&mu_);
     owned_fds_.insert(as);
+    CHECK_NE(poller_, nullptr);
+    FileDescriptor fd(as, poller_->posix_interface().generation());
     return std::make_unique<GrpcPolledFdPosix>(
         as,
-        poller_->CreateHandle(as, "c-ares socket", poller_->CanTrackErrors()));
+        poller_->CreateHandle(fd, "c-ares socket", poller_->CanTrackErrors()));
   }
 
   void ConfigureAresChannelLocked(ares_channel channel) override {
     ares_set_socket_functions(channel, &kSockFuncs, this);
     ares_set_socket_configure_callback(
-        channel, &GrpcPolledFdFactoryPosix::ConfigureSocket, nullptr);
+        channel, &GrpcPolledFdFactoryPosix::ConfigureSocket, this);
+  }
+
+  std::unique_ptr<GrpcPolledFdFactory> NewEmptyInstance() const override {
+    return std::make_unique<GrpcPolledFdFactoryPosix>(poller_);
   }
 
  private:
@@ -155,6 +165,7 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
   static int Close(ares_socket_t as, void* user_data) {
     GrpcPolledFdFactoryPosix* self =
         static_cast<GrpcPolledFdFactoryPosix*>(user_data);
+    grpc_core::MutexLock lock(&self->mu_);
     if (self->owned_fds_.find(as) == self->owned_fds_.end()) {
       // c-ares owns this fd, grpc has never seen it
       return close(as);
@@ -170,17 +181,13 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
   ///   - non-blocking
   ///   - cloexec flag
   ///   - disable nagle
-  static int ConfigureSocket(ares_socket_t fd, int type, void* /*user_data*/) {
-    // clang-format off
-#define RETURN_IF_ERROR(expr) if (!(expr).ok()) { return -1; }
-    // clang-format on
-    PosixSocketWrapper sock(fd);
-    RETURN_IF_ERROR(sock.SetSocketNonBlocking(1));
-    RETURN_IF_ERROR(sock.SetSocketCloexec(1));
-    if (type == SOCK_STREAM) {
-      RETURN_IF_ERROR(sock.SetSocketLowLatency(1));
-    }
-    return 0;
+  static int ConfigureSocket(ares_socket_t as, int type,
+                             void* polled_fd_factory) {
+    auto& posix_interface =
+        static_cast<GrpcPolledFdFactoryPosix*>(polled_fd_factory)
+            ->poller_->posix_interface();
+    return posix_interface.ConfigureSocket({as, posix_interface.generation()},
+                                           type);
   }
 
   const struct ares_socket_functions kSockFuncs = {
@@ -192,13 +199,13 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
   };
 
   PosixEventPoller* poller_;
+  grpc_core::Mutex mu_;
   // fds that are used/owned by grpc - we (grpc) will close them rather than
   // c-ares
-  std::unordered_set<ares_socket_t> owned_fds_;
+  std::unordered_set<ares_socket_t> owned_fds_ ABSL_GUARDED_BY(mu_);
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_GRPC_POLLED_FD_POSIX_H

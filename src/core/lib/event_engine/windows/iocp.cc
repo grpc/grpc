@@ -15,29 +15,27 @@
 
 #ifdef GPR_WINDOWS
 
-#include <chrono>
-
-#include "absl/log/check.h"
-#include "absl/strings/str_format.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log_windows.h>
+
+#include <chrono>
 
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/strings/str_format.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 IOCP::IOCP(ThreadPool* thread_pool) noexcept
     : thread_pool_(thread_pool),
       iocp_handle_(CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr,
                                           (ULONG_PTR) nullptr, 0)) {
-  CHECK(iocp_handle_);
+  GRPC_CHECK(iocp_handle_);
   WSASocketFlagsInit();
 }
 
@@ -54,7 +52,7 @@ std::unique_ptr<WinSocket> IOCP::Watch(SOCKET socket) {
         GRPC_WSA_ERROR(WSAGetLastError(), "Unable to add socket to iocp")
             .ToString());
   }
-  CHECK(ret == iocp_handle_);
+  GRPC_CHECK(ret == iocp_handle_);
   return wrapped_socket;
 }
 
@@ -65,7 +63,7 @@ void IOCP::Shutdown() {
   while (outstanding_kicks_.load() > 0) {
     Work(std::chrono::hours(42), []() {});
   }
-  CHECK(CloseHandle(iocp_handle_));
+  GRPC_CHECK(CloseHandle(iocp_handle_));
 }
 
 Poller::WorkResult IOCP::Work(EventEngine::Duration timeout,
@@ -83,8 +81,8 @@ Poller::WorkResult IOCP::Work(EventEngine::Duration timeout,
         << "IOCP::" << this << " deadline exceeded";
     return Poller::WorkResult::kDeadlineExceeded;
   }
-  CHECK(completion_key);
-  CHECK(overlapped);
+  GRPC_CHECK(completion_key);
+  GRPC_CHECK(overlapped);
   if (overlapped == &kick_overlap_) {
     GRPC_TRACE_LOG(event_engine_poller, INFO) << "IOCP::" << this << " kicked";
     outstanding_kicks_.fetch_sub(1);
@@ -103,7 +101,7 @@ Poller::WorkResult IOCP::Work(EventEngine::Duration timeout,
   // about to register for notification of an overlapped event.
   auto* socket = reinterpret_cast<WinSocket*>(completion_key);
   WinSocket::OpState* info = socket->GetOpInfoForOverlapped(overlapped);
-  CHECK_NE(info, nullptr);
+  GRPC_CHECK_NE(info, nullptr);
   info->GetOverlappedResult();
   info->SetReady();
   schedule_poll_again();
@@ -112,9 +110,9 @@ Poller::WorkResult IOCP::Work(EventEngine::Duration timeout,
 
 void IOCP::Kick() {
   outstanding_kicks_.fetch_add(1);
-  CHECK(PostQueuedCompletionStatus(iocp_handle_, 0,
-                                   reinterpret_cast<ULONG_PTR>(&kick_token_),
-                                   &kick_overlap_));
+  GRPC_CHECK(PostQueuedCompletionStatus(
+      iocp_handle_, 0, reinterpret_cast<ULONG_PTR>(&kick_token_),
+      &kick_overlap_));
 }
 
 DWORD IOCP::GetDefaultSocketFlags() {
@@ -138,7 +136,6 @@ DWORD IOCP::WSASocketFlagsInit() {
   return wsa_socket_flags;
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GPR_WINDOWS

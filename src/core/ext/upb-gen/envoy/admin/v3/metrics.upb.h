@@ -3,10 +3,11 @@
  *     envoy/admin/v3/metrics.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_ADMIN_V3_METRICS_PROTO_UPB_H_
-#define ENVOY_ADMIN_V3_METRICS_PROTO_UPB_H_
+#ifndef ENVOY_ADMIN_V3_METRICS_PROTO_UPB_H__UPB_H_
+#define ENVOY_ADMIN_V3_METRICS_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -80,25 +81,25 @@ UPB_INLINE int32_t envoy_admin_v3_SimpleMetric_type(const envoy_admin_v3_SimpleM
   return ret;
 }
 UPB_INLINE void envoy_admin_v3_SimpleMetric_clear_value(envoy_admin_v3_SimpleMetric* msg) {
-  const upb_MiniTableField field = {2, 16, 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 32), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE uint64_t envoy_admin_v3_SimpleMetric_value(const envoy_admin_v3_SimpleMetric* msg) {
   uint64_t default_val = (uint64_t)0ull;
   uint64_t ret;
-  const upb_MiniTableField field = {2, 16, 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 32), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE void envoy_admin_v3_SimpleMetric_clear_name(envoy_admin_v3_SimpleMetric* msg) {
-  const upb_MiniTableField field = {3, 24, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE upb_StringView envoy_admin_v3_SimpleMetric_name(const envoy_admin_v3_SimpleMetric* msg) {
   upb_StringView default_val = upb_StringView_FromString("");
   upb_StringView ret;
-  const upb_MiniTableField field = {3, 24, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -109,11 +110,11 @@ UPB_INLINE void envoy_admin_v3_SimpleMetric_set_type(envoy_admin_v3_SimpleMetric
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_SimpleMetric_set_value(envoy_admin_v3_SimpleMetric *msg, uint64_t value) {
-  const upb_MiniTableField field = {2, 16, 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(24, 32), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_SimpleMetric_set_name(envoy_admin_v3_SimpleMetric *msg, upb_StringView value) {
-  const upb_MiniTableField field = {3, 24, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
@@ -123,4 +124,4 @@ UPB_INLINE void envoy_admin_v3_SimpleMetric_set_name(envoy_admin_v3_SimpleMetric
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_ADMIN_V3_METRICS_PROTO_UPB_H_ */
+#endif  /* ENVOY_ADMIN_V3_METRICS_PROTO_UPB_H__UPB_H_ */

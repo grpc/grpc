@@ -3,10 +3,11 @@
  *     envoy/config/core/v3/grpc_method_list.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_CORE_V3_GRPC_METHOD_LIST_PROTO_UPB_H_
-#define ENVOY_CONFIG_CORE_V3_GRPC_METHOD_LIST_PROTO_UPB_H_
+#ifndef ENVOY_CONFIG_CORE_V3_GRPC_METHOD_LIST_PROTO_UPB_H__UPB_H_
+#define ENVOY_CONFIG_CORE_V3_GRPC_METHOD_LIST_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -70,6 +71,7 @@ UPB_INLINE void envoy_config_core_v3_GrpcMethodList_clear_services(envoy_config_
 }
 UPB_INLINE const envoy_config_core_v3_GrpcMethodList_Service* const* envoy_config_core_v3_GrpcMethodList_services(const envoy_config_core_v3_GrpcMethodList* msg, size_t* size) {
   const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__GrpcMethodList__Service_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -81,6 +83,7 @@ UPB_INLINE const envoy_config_core_v3_GrpcMethodList_Service* const* envoy_confi
 }
 UPB_INLINE const upb_Array* _envoy_config_core_v3_GrpcMethodList_services_upb_array(const envoy_config_core_v3_GrpcMethodList* msg, size_t* size) {
   const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__GrpcMethodList__Service_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
     *size = arr ? arr->UPB_PRIVATE(size) : 0;
@@ -89,6 +92,7 @@ UPB_INLINE const upb_Array* _envoy_config_core_v3_GrpcMethodList_services_upb_ar
 }
 UPB_INLINE upb_Array* _envoy_config_core_v3_GrpcMethodList_services_mutable_upb_array(envoy_config_core_v3_GrpcMethodList* msg, size_t* size, upb_Arena* arena) {
   const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__GrpcMethodList__Service_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
   if (size) {
@@ -99,6 +103,7 @@ UPB_INLINE upb_Array* _envoy_config_core_v3_GrpcMethodList_services_mutable_upb_
 
 UPB_INLINE envoy_config_core_v3_GrpcMethodList_Service** envoy_config_core_v3_GrpcMethodList_mutable_services(envoy_config_core_v3_GrpcMethodList* msg, size_t* size) {
   upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__GrpcMethodList__Service_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -115,6 +120,7 @@ UPB_INLINE envoy_config_core_v3_GrpcMethodList_Service** envoy_config_core_v3_Gr
 }
 UPB_INLINE struct envoy_config_core_v3_GrpcMethodList_Service* envoy_config_core_v3_GrpcMethodList_add_services(envoy_config_core_v3_GrpcMethodList* msg, upb_Arena* arena) {
   upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__GrpcMethodList__Service_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
   if (!arr || !UPB_PRIVATE(_upb_Array_ResizeUninitialized)(
@@ -248,4 +254,4 @@ UPB_INLINE bool envoy_config_core_v3_GrpcMethodList_Service_add_method_names(env
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_CORE_V3_GRPC_METHOD_LIST_PROTO_UPB_H_ */
+#endif  /* ENVOY_CONFIG_CORE_V3_GRPC_METHOD_LIST_PROTO_UPB_H__UPB_H_ */

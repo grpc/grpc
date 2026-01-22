@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpcpp/grpcpp.h>
+
 #include <condition_variable>
 #include <iostream>
 #include <memory>
@@ -20,14 +22,12 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/initialize.h"
 #include "absl/strings/str_format.h"
-
-#include <grpcpp/grpcpp.h>
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
 #include "google/rpc/error_details.pb.h"
-
 #include "src/proto/grpc/status/status.pb.h"
 #else
 #include "error_details.pb.h"
@@ -123,6 +123,7 @@ class GreeterClient {
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
   // Instantiate the client. It requires a channel, out of which the actual RPCs
   // are created. This channel models a connection to an endpoint specified by
   // the argument "--target=" which is the only expected argument.

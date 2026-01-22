@@ -60,6 +60,7 @@ def _build(output_dir):
         [
             "cmake",
             "-DgRPC_BUILD_TESTS=OFF",
+            "-DCMAKE_CXX_STANDARD=17",
             "-DBUILD_SHARED_LIBS=ON",
             "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
             '-DCMAKE_C_FLAGS="-gsplit-dwarf"',
@@ -109,7 +110,9 @@ subprocess.check_call(
     ["cmake", "-G", "Unix Makefiles", "../third_party/bloaty"],
     cwd="bloaty-build",
 )
-subprocess.check_call("make -j%d" % args.jobs, shell=True, cwd="bloaty-build")
+subprocess.check_call(
+    "make -j%d bloaty" % args.jobs, shell=True, cwd="bloaty-build"
+)
 
 text = ""
 diff_size = 0

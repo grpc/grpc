@@ -14,24 +14,24 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_WINDOWS
+#include <grpc/event_engine/event_engine.h>
 #include <inttypes.h>
 #include <string.h>
 #include <sys/types.h>
 
 #include <string>
+#include <vector>
 
+#include "src/core/lib/event_engine/windows/native_windows_dns_resolver.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/status_helper.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
-#include <grpc/event_engine/event_engine.h>
-
-#include "src/core/lib/event_engine/windows/native_windows_dns_resolver.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/iomgr/error.h"
-
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 namespace {
 absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
@@ -42,7 +42,7 @@ LookupHostnameBlocking(absl::string_view name, absl::string_view default_port) {
   std::string port;
   grpc_core::SplitHostPort(name, &host, &port);
   if (host.empty()) {
-    return absl::InvalidArgumentError(absl::StrCat("Unparseable name: ", name));
+    return absl::InvalidArgumentError(absl::StrCat("Unparsable name: ", name));
   }
   if (port.empty()) {
     if (default_port.empty()) {
@@ -109,7 +109,6 @@ void NativeWindowsDNSResolver::LookupTXT(
   });
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GPR_WINDOWS

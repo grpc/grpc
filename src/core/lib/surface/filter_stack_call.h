@@ -15,21 +15,6 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_FILTER_STACK_CALL_H
 #define GRPC_SRC_CORE_LIB_SURFACE_FILTER_STACK_CALL_H
 
-#include <inttypes.h>
-#include <limits.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <atomic>
-#include <cstdint>
-#include <string>
-#include <vector>
-
-#include "absl/log/check.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
 #include <grpc/event_engine/event_engine.h>
@@ -43,10 +28,18 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
+#include <inttypes.h>
+#include <limits.h>
+#include <stdlib.h>
+#include <string.h>
 
+#include <atomic>
+#include <cstdint>
+#include <string>
+#include <vector>
+
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/context.h"
@@ -55,11 +48,16 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server_interface.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/alloc.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -112,7 +110,7 @@ class FilterStackCall final : public Call {
 
   bool is_trailers_only() const override {
     bool result = is_trailers_only_;
-    DCHECK(!result || recv_initial_metadata_.TransportSize() == 0);
+    GRPC_DCHECK(!result || recv_initial_metadata_.TransportSize() == 0);
     return result;
   }
 
@@ -133,7 +131,7 @@ class FilterStackCall final : public Call {
 
   static size_t InitialSizeEstimate() {
     return sizeof(FilterStackCall) +
-           sizeof(BatchControl) * kMaxConcurrentBatches;
+           (sizeof(BatchControl) * kMaxConcurrentBatches);
   }
 
   char* GetPeer() final;
@@ -186,7 +184,6 @@ class FilterStackCall final : public Call {
   }
   struct BatchControl {
     FilterStackCall* call_ = nullptr;
-    CallTracerAnnotationInterface* call_tracer_ = nullptr;
     grpc_transport_stream_op_batch op_;
     // Share memory for cq_completion and notify_tag as they are never needed
     // simultaneously. Each byte used in this data structure count as six bytes
@@ -221,7 +218,7 @@ class FilterStackCall final : public Call {
           << "BATCH:" << this << " COMPLETE:" << PendingOpString(mask)
           << " REMAINING:" << PendingOpString(r & ~mask)
           << " (tag:" << completion_data_.notify_tag.tag << ")";
-      CHECK_NE((r & mask), 0);
+      GRPC_CHECK_NE((r & mask), 0);
       return r == mask;
     }
 
@@ -302,7 +299,7 @@ class FilterStackCall final : public Call {
   grpc_call_final_info final_info_;
 
   SliceBuffer send_slice_buffer_;
-  absl::optional<SliceBuffer> receiving_slice_buffer_;
+  std::optional<SliceBuffer> receiving_slice_buffer_;
   uint32_t receiving_stream_flags_;
   uint32_t test_only_last_message_flags_ = 0;
   // Compression algorithm for *incoming* data

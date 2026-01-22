@@ -19,9 +19,6 @@
 #ifndef GRPCPP_SECURITY_TLS_CREDENTIALS_OPTIONS_H
 #define GRPCPP_SECURITY_TLS_CREDENTIALS_OPTIONS_H
 
-#include <memory>
-#include <vector>
-
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
@@ -29,6 +26,9 @@
 #include <grpcpp/security/tls_certificate_verifier.h>
 #include <grpcpp/security/tls_crl_provider.h>
 #include <grpcpp/support/config.h>
+
+#include <memory>
+#include <vector>
 
 namespace grpc {
 namespace experimental {
@@ -156,6 +156,11 @@ class TlsChannelCredentialsOptions final : public TlsCredentialsOptions {
   // Sets the decision of whether to do a crypto check on the server certs.
   // The default is true.
   void set_verify_server_certs(bool verify_server_certs);
+
+  // Overrides the SNI that the client sends in the TLS handshake. nullopt
+  // indicates that SNI should not be overridden. An empty string value
+  // indicates that SNI should not be sent at all. The default is nullopt.
+  void set_sni_override(std::optional<std::string> sni_override);
 
  private:
 };

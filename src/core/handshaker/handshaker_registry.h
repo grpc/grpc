@@ -19,10 +19,10 @@
 #ifndef GRPC_SRC_CORE_HANDSHAKER_HANDSHAKER_REGISTRY_H
 #define GRPC_SRC_CORE_HANDSHAKER_HANDSHAKER_REGISTRY_H
 
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 #include <vector>
-
-#include <grpc/support/port_platform.h>
 
 #include "src/core/handshaker/handshaker_factory.h"
 #include "src/core/lib/channel/channel_args.h"

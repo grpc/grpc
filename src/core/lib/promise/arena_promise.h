@@ -15,6 +15,7 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_ARENA_PROMISE_H
 #define GRPC_SRC_CORE_LIB_PROMISE_ARENA_PROMISE_H
 
+#include <grpc/support/port_platform.h>
 #include <stdlib.h>
 
 #include <cstddef>
@@ -22,14 +23,11 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/meta/type_traits.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/util/construct_destruct.h"
+#include "absl/meta/type_traits.h"
 
 namespace grpc_core {
 
@@ -47,13 +45,25 @@ T*& ArgAsPtr(ArgType* arg) {
 }
 
 template <typename T>
+T const* const& ArgAsPtr(ArgType const* arg) {
+  static_assert(sizeof(ArgType) >= sizeof(T**),
+                "Must have ArgType of at least one pointer size");
+  return *reinterpret_cast<T const* const*>(arg);
+}
+
+template <typename T>
 struct Vtable {
   // Poll the promise, once.
   Poll<T> (*poll_once)(ArgType* arg);
+  // Move the promise to another memory location.
+  void (*move)(ArgType* dst, ArgType* src);
   // Destroy the underlying callable object if there is one.
   // Since we don't delete (the arena owns the memory) but we may need to call a
   // destructor, we expose this for when the ArenaPromise object is destroyed.
   void (*destroy)(ArgType* arg);
+  // Get the proto representation of the promise.
+  void (*to_proto)(const ArgType* arg, grpc_channelz_v2_Promise* promise_proto,
+                   upb_Arena* arena);
 };
 
 template <typename T>
@@ -75,11 +85,16 @@ struct Null {
     GPR_UNREACHABLE_CODE(return Pending{});
   }
 
+  static void Move(ArgType*, ArgType*) {}
   static void Destroy(ArgType*) {}
+  static void ToProto(const ArgType*, grpc_channelz_v2_Promise* p, upb_Arena*) {
+    grpc_channelz_v2_Promise_set_unknown_promise(
+        p, StdStringToUpbString(TypeName<T>()));
+  }
 };
 
 template <typename T>
-const Vtable<T> Null<T>::vtable = {PollOnce, Destroy};
+const Vtable<T> Null<T>::vtable = {PollOnce, Move, Destroy, ToProto};
 
 // Implementation of ImplInterface for a callable object.
 template <typename T, typename Callable>
@@ -90,11 +105,22 @@ struct AllocatedCallable {
     return poll_cast<T>((*ArgAsPtr<Callable>(arg))());
   }
 
+  static void Move(ArgType* dst, ArgType* src) {
+    ArgAsPtr<Callable>(dst) = ArgAsPtr<Callable>(src);
+  }
+
   static void Destroy(ArgType* arg) { Destruct(ArgAsPtr<Callable>(arg)); }
+
+  static void ToProto(const ArgType* arg,
+                      grpc_channelz_v2_Promise* promise_proto,
+                      upb_Arena* arena) {
+    PromiseAsProto(*ArgAsPtr<Callable>(arg), promise_proto, arena);
+  }
 };
 
 template <typename T, typename Callable>
-const Vtable<T> AllocatedCallable<T, Callable>::vtable = {PollOnce, Destroy};
+const Vtable<T> AllocatedCallable<T, Callable>::vtable = {PollOnce, Move,
+                                                          Destroy, ToProto};
 
 // Implementation of ImplInterface for a small callable object (one that fits
 // within the ArgType arg)
@@ -106,13 +132,25 @@ struct Inlined {
     return poll_cast<T>((*reinterpret_cast<Callable*>(arg))());
   }
 
+  static void Move(ArgType* dst, ArgType* src) {
+    new (dst) Callable(reinterpret_cast<Callable&&>(*src));
+  }
+
   static void Destroy(ArgType* arg) {
     Destruct(reinterpret_cast<Callable*>(arg));
+  }
+
+  static void ToProto(const ArgType* arg,
+                      grpc_channelz_v2_Promise* promise_proto,
+                      upb_Arena* arena) {
+    PromiseAsProto(*reinterpret_cast<Callable const*>(arg), promise_proto,
+                   arena);
   }
 };
 
 template <typename T, typename Callable>
-const Vtable<T> Inlined<T, Callable>::vtable = {PollOnce, Destroy};
+const Vtable<T> Inlined<T, Callable>::vtable = {PollOnce, Move, Destroy,
+                                                ToProto};
 
 // If a callable object is empty we can substitute any instance of that callable
 // for the one we call (for how could we tell the difference)?
@@ -128,11 +166,18 @@ struct SharedCallable {
   static Poll<T> PollOnce(ArgType* arg) {
     return (*reinterpret_cast<Callable*>(arg))();
   }
+
+  static void ToProto(const ArgType* arg,
+                      grpc_channelz_v2_Promise* promise_proto,
+                      upb_Arena* arena) {
+    PromiseAsProto(*reinterpret_cast<const Callable*>(arg), promise_proto,
+                   arena);
+  }
 };
 
 template <typename T, typename Callable>
-const Vtable<T> SharedCallable<T, Callable>::vtable = {PollOnce,
-                                                       Null<T>::Destroy};
+const Vtable<T> SharedCallable<T, Callable>::vtable = {
+    PollOnce, Null<T>::Move, Null<T>::Destroy, ToProto};
 
 // Redirector type: given a callable type, expose a Make() function that creates
 // the appropriate underlying implementation.
@@ -201,13 +246,17 @@ class ArenaPromise {
   ArenaPromise(const ArenaPromise&) = delete;
   ArenaPromise& operator=(const ArenaPromise&) = delete;
   // ArenaPromise is movable.
-  ArenaPromise(ArenaPromise&& other) noexcept
-      : vtable_and_arg_(other.vtable_and_arg_) {
+  ArenaPromise(ArenaPromise&& other) noexcept {
+    vtable_and_arg_.vtable = other.vtable_and_arg_.vtable;
+    vtable_and_arg_.vtable->move(&vtable_and_arg_.arg,
+                                 &other.vtable_and_arg_.arg);
     other.vtable_and_arg_.vtable = &arena_promise_detail::Null<T>::vtable;
   }
   ArenaPromise& operator=(ArenaPromise&& other) noexcept {
     vtable_and_arg_.vtable->destroy(&vtable_and_arg_.arg);
-    vtable_and_arg_ = other.vtable_and_arg_;
+    vtable_and_arg_.vtable = other.vtable_and_arg_.vtable;
+    vtable_and_arg_.vtable->move(&vtable_and_arg_.arg,
+                                 &other.vtable_and_arg_.arg);
     other.vtable_and_arg_.vtable = &arena_promise_detail::Null<T>::vtable;
     return *this;
   }
@@ -222,6 +271,12 @@ class ArenaPromise {
 
   bool has_value() const {
     return vtable_and_arg_.vtable != &arena_promise_detail::Null<T>::vtable;
+  }
+
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    vtable_and_arg_.vtable->to_proto(&vtable_and_arg_.arg, promise_proto,
+                                     arena);
   }
 
  private:

@@ -16,7 +16,7 @@
 
 #include <grpcpp/security/credentials.h>
 
-#include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/credentials/transport/fake/fake_credentials.h"
 
 namespace grpc {
 namespace testing {

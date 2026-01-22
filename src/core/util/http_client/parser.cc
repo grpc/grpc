@@ -16,19 +16,17 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/util/http_client/parser.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <algorithm>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
-
-#include <grpc/support/alloc.h>
 
 static char* buf2str(void* buffer, size_t length) {
   char* out = static_cast<char*>(gpr_malloc(length + 1));
@@ -177,7 +175,7 @@ static grpc_error_handle add_header(grpc_http_parser* parser) {
   grpc_http_header hdr = {nullptr, nullptr};
   grpc_error_handle error;
 
-  CHECK(cur != end);
+  GRPC_CHECK(cur != end);
 
   if (*cur == ' ' || *cur == '\t') {
     error = GRPC_ERROR_CREATE("Continued header lines not supported yet");
@@ -191,14 +189,14 @@ static grpc_error_handle add_header(grpc_http_parser* parser) {
     error = GRPC_ERROR_CREATE("Didn't find ':' in header string");
     goto done;
   }
-  CHECK(cur >= beg);
+  GRPC_CHECK(cur >= beg);
   hdr.key = buf2str(beg, static_cast<size_t>(cur - beg));
   cur++;  // skip :
 
   while (cur != end && (*cur == ' ' || *cur == '\t')) {
     cur++;
   }
-  CHECK((size_t)(end - cur) >= parser->cur_line_end_length);
+  GRPC_CHECK((size_t)(end - cur) >= parser->cur_line_end_length);
   size = static_cast<size_t>(end - cur) - parser->cur_line_end_length;
   if ((size != 0) && (cur[size - 1] == '\r')) {
     size--;

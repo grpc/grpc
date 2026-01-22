@@ -12,17 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/util/json/json_object_loader.h"
+
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
 
 #include <utility>
 
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
-
-#include <grpc/support/json.h>
 
 namespace grpc_core {
 namespace json_detail {
@@ -160,11 +159,11 @@ void LoadMap::LoadInto(const Json& json, const JsonArgs& args, void* dst,
     return;
   }
   const LoaderInterface* element_loader = ElementLoader();
-  for (const auto& pair : json.object()) {
+  for (const auto& [key, value] : json.object()) {
     ValidationErrors::ScopedField field(errors,
-                                        absl::StrCat("[\"", pair.first, "\"]"));
-    void* element = Insert(pair.first, dst);
-    element_loader->LoadInto(pair.second, args, element, errors);
+                                        absl::StrCat("[\"", key, "\"]"));
+    void* element = Insert(key, dst);
+    element_loader->LoadInto(value, args, element, errors);
   }
 }
 

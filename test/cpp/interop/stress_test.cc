@@ -16,6 +16,9 @@
 // is % allowed in string
 //
 
+#include <grpc/support/time.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/grpcpp.h>
 #include <limits.h>
 
 #include <memory>
@@ -24,16 +27,8 @@
 #include <utility>
 #include <vector>
 
-#include "absl/flags/flag.h"
-#include "absl/log/check.h"
-#include "absl/log/globals.h"
-#include "absl/log/log.h"
-
-#include <grpc/support/time.h>
-#include <grpcpp/create_channel.h>
-#include <grpcpp/grpcpp.h>
-
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/testing/metrics.grpc.pb.h"
 #include "src/proto/grpc/testing/metrics.pb.h"
 #include "test/cpp/interop/interop_client.h"
@@ -41,6 +36,9 @@
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/metrics_server.h"
 #include "test/cpp/util/test_config.h"
+#include "absl/flags/flag.h"
+#include "absl/log/globals.h"
+#include "absl/log/log.h"
 
 ABSL_FLAG(int32_t, metrics_port, 8081, "The metrics server port.");
 
@@ -188,7 +186,7 @@ bool ParseTestCasesString(const std::string& test_cases,
       break;
     }
 
-    tests.emplace_back(std::make_pair(test_case, weight));
+    tests.emplace_back(std::pair(test_case, weight));
   }
 
   return is_success;
@@ -230,14 +228,14 @@ void LogParameterInfo(const std::vector<std::string>& addresses,
 
 void SetLogLevels() {
   absl_vlog_level = absl::GetFlag(FLAGS_absl_vlog_level);
-  CHECK_LE(-1, absl_vlog_level);
-  CHECK_LE(absl_vlog_level, (INT_MAX - 1));
+  GRPC_CHECK_LE(-1, absl_vlog_level);
+  GRPC_CHECK_LE(absl_vlog_level, (INT_MAX - 1));
   absl::SetVLogLevel("*grpc*/*", absl_vlog_level);
 
   absl_min_log_level = static_cast<absl::LogSeverityAtLeast>(
       absl::GetFlag(FLAGS_absl_min_log_level));
-  CHECK_LE(absl::LogSeverityAtLeast::kInfo, absl_min_log_level);
-  CHECK_LE(absl_min_log_level, absl::LogSeverityAtLeast::kInfinity);
+  GRPC_CHECK_LE(absl::LogSeverityAtLeast::kInfo, absl_min_log_level);
+  GRPC_CHECK_LE(absl_min_log_level, absl::LogSeverityAtLeast::kInfinity);
   absl::SetMinLogLevel(absl_min_log_level);
 }
 
@@ -326,7 +324,7 @@ int main(int argc, char** argv) {
             metrics_service.CreateQpsGauge(buffer, &is_already_created)));
 
         // The QpsGauge should not have been already created
-        CHECK(!is_already_created);
+        GRPC_CHECK(!is_already_created);
       }
     }
   }

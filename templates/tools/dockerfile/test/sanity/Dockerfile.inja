@@ -1,0 +1,51 @@
+# Copyright 2015 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+FROM silkeh/clang:19-bookworm
+
+{% include "../../apt_get_basic.include" %}
+
+RUN apt update && apt install -y python3 python3-pip && apt clean
+
+RUN python3 -m pip install --break-system-packages --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
+
+{% include "../../run_tests_addons.include" %}
+
+#========================
+# Sanity test dependencies
+
+# autoconf automake libtool curl shellcheck: main dependencies
+# jq git: prerequisites for the clang-tidy script
+# libgtest-dev: otherwise clang-tidy will report missing <gtest/gtest.h> header
+RUN apt install -y \
+    autoconf \
+    automake \
+    curl \
+    git\
+    jq \
+    libgtest-dev \
+    libtool \
+    python3-lxml \
+    python3-mako \
+    python3-simplejson \
+    python3-venv \
+    python3-virtualenv \
+    shellcheck \
+    && apt clean
+
+{% include "../../bazel.include" %}
+{% include "../../buildifier.include" %}
+
+# Define the default command.
+CMD ["bash"]

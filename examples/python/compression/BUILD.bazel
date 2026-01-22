@@ -12,9 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
+
 py_binary(
     name = "server",
     srcs = ["server.py"],
+    imports = ["../../protos"],
     python_version = "PY3",
     srcs_version = "PY2AND3",
     deps = [
@@ -27,6 +30,7 @@ py_binary(
 py_binary(
     name = "client",
     srcs = ["client.py"],
+    imports = ["../../protos"],
     python_version = "PY3",
     srcs_version = "PY2AND3",
     deps = [

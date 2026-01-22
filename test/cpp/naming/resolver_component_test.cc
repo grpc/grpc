@@ -18,41 +18,26 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#include <string.h>
-
-#include <string>
-#include <thread>
-#include <vector>
-
-#include <gmock/gmock.h>
-
-#include "absl/flags/flag.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-
 #include <grpc/grpc.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+#include <string.h>
+
+#include <string>
+#include <thread>
+#include <vector>
 
 #include "src/core/client_channel/client_channel_filter.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/work_serializer.h"
-#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/socket_utils.h"
@@ -61,13 +46,24 @@
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_registry.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/orphanable.h"
 #include "src/core/util/string.h"
+#include "src/core/util/work_serializer.h"
 #include "test/core/test_util/fake_udp_and_tcp_server.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/socket_use_after_close_detector.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_config.h"
+#include "gmock/gmock.h"
+#include "absl/flags/flag.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 using std::vector;
@@ -210,7 +206,7 @@ void ArgsInit(ArgsStruct* args) {
 void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
 void ArgsFinish(ArgsStruct* args) {
-  CHECK(gpr_event_wait(&args->ev, TestDeadline()));
+  GRPC_CHECK(gpr_event_wait(&args->ev, TestDeadline()));
   grpc_pollset_set_del_pollset(args->pollset_set, args->pollset);
   grpc_pollset_set_destroy(args->pollset_set);
   grpc_closure DoNothing_cb;
@@ -243,7 +239,7 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
         gpr_time_sub(deadline, gpr_now(GPR_CLOCK_REALTIME));
     VLOG(2) << "done=" << args->done << ", time_left=" << time_left.tv_sec
             << "." << absl::StrFormat("%09d", time_left.tv_nsec);
-    CHECK_GE(gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)), 0);
+    GRPC_CHECK_GE(gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)), 0);
     grpc_pollset_worker* worker = nullptr;
     grpc_core::ExecCtx exec_ctx;
     if (grpc_core::IsEventEngineDnsEnabled()) {
@@ -282,7 +278,7 @@ void CheckServiceConfigResultLocked(const char* service_config_json,
 
 void CheckLBPolicyResultLocked(const grpc_core::ChannelArgs channel_args,
                                ArgsStruct* args) {
-  absl::optional<absl::string_view> lb_policy_arg =
+  std::optional<absl::string_view> lb_policy_arg =
       channel_args.GetString(GRPC_ARG_LB_POLICY_NAME);
   if (!args->expected_lb_policy.empty()) {
     EXPECT_TRUE(lb_policy_arg.has_value());
@@ -305,7 +301,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
   void ReportResult(grpc_core::Resolver::Result result) override {
     CheckResult(result);
     grpc_core::MutexLockForGprMu lock(args_->mu);
-    CHECK(!args_->done);
+    GRPC_CHECK(!args_->done);
     args_->done = true;
     GRPC_LOG_IF_ERROR("pollset_kick",
                       grpc_pollset_kick(args_->pollset, nullptr));
@@ -363,7 +359,7 @@ class CheckingResultHandler : public ResultHandler {
                     "Have "
                  << absl::GetFlag(FLAGS_do_ordered_address_comparison)
                  << ", want True or False";
-      CHECK(0);
+      GRPC_CHECK(0);
     }
     if (!result.service_config.ok()) {
       CheckServiceConfigResultLocked(nullptr, result.service_config.status(),
@@ -406,7 +402,7 @@ void InjectBrokenNameServerList(ares_channel* channel) {
   memset(dns_server_addrs, 0, sizeof(dns_server_addrs));
   std::string unused_host;
   std::string local_dns_server_port;
-  CHECK(grpc_core::SplitHostPort(
+  GRPC_CHECK(grpc_core::SplitHostPort(
       absl::GetFlag(FLAGS_local_dns_server_address).c_str(), &unused_host,
       &local_dns_server_port));
   VLOG(2) << "Injecting broken nameserver list. Bad server address:|[::1]:"
@@ -428,7 +424,8 @@ void InjectBrokenNameServerList(ares_channel* channel) {
   dns_server_addrs[1].tcp_port = atoi(local_dns_server_port.c_str());
   dns_server_addrs[1].udp_port = atoi(local_dns_server_port.c_str());
   dns_server_addrs[1].next = nullptr;
-  CHECK(ares_set_servers_ports(*channel, dns_server_addrs) == ARES_SUCCESS);
+  GRPC_CHECK(ares_set_servers_ports(*channel, dns_server_addrs) ==
+             ARES_SUCCESS);
 }
 
 void StartResolvingLocked(grpc_core::Resolver* r) { r->StartLocked(); }
@@ -508,8 +505,7 @@ void RunResolvesRelevantRecordsTest(
           whole_uri.c_str(), resolver_args, args.pollset_set, args.lock,
           CreateResultHandler(&args));
   auto* resolver_ptr = resolver.get();
-  args.lock->Run([resolver_ptr]() { StartResolvingLocked(resolver_ptr); },
-                 DEBUG_LOCATION);
+  args.lock->Run([resolver_ptr]() { StartResolvingLocked(resolver_ptr); });
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone(&args);
   ArgsFinish(&args);

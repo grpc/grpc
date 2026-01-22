@@ -18,26 +18,34 @@
 
 #include "src/core/xds/grpc/file_watcher_certificate_provider_factory.h"
 
+#include <grpc/support/time.h>
+
 #include <algorithm>
 #include <map>
 #include <memory>
 #include <vector>
 
+#include "src/core/config/core_configuration.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
+#include "src/core/util/down_cast.h"
+#include "src/core/util/env.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
 namespace grpc_core {
 
 namespace {
 
 constexpr absl::string_view kFileWatcherPlugin = "file_watcher";
+
+bool SpiffeBundleMapEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_MTLS_SPIFFE");
+  if (!value.has_value()) return false;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
 
 }  // namespace
 
@@ -56,13 +64,17 @@ std::string FileWatcherCertificateProviderFactory::Config::ToString() const {
     parts.push_back(
         absl::StrFormat("certificate_file=\"%s\", ", identity_cert_file_));
   }
-  if (!identity_cert_file_.empty()) {
+  if (!private_key_file_.empty()) {
     parts.push_back(
         absl::StrFormat("private_key_file=\"%s\", ", private_key_file_));
   }
-  if (!identity_cert_file_.empty()) {
+  if (!root_cert_file_.empty()) {
     parts.push_back(
         absl::StrFormat("ca_certificate_file=\"%s\", ", root_cert_file_));
+  }
+  if (!spiffe_bundle_map_file_.empty()) {
+    parts.push_back(absl::StrFormat("spiffe_bundle_map_file=\"%s\", ",
+                                    spiffe_bundle_map_file_));
   }
   parts.push_back(
       absl::StrFormat("refresh_interval=%ldms}", refresh_interval_.millis()));
@@ -76,6 +88,8 @@ FileWatcherCertificateProviderFactory::Config::JsonLoader(const JsonArgs&) {
           .OptionalField("certificate_file", &Config::identity_cert_file_)
           .OptionalField("private_key_file", &Config::private_key_file_)
           .OptionalField("ca_certificate_file", &Config::root_cert_file_)
+          .OptionalField("spiffe_bundle_map_file",
+                         &Config::spiffe_bundle_map_file_)
           .OptionalField("refresh_interval", &Config::refresh_interval_)
           .Finish();
   return loader;
@@ -89,11 +103,22 @@ void FileWatcherCertificateProviderFactory::Config::JsonPostLoad(
         "fields \"certificate_file\" and \"private_key_file\" must be both set "
         "or both unset");
   }
-  if ((json.object().find("certificate_file") == json.object().end()) &&
-      (json.object().find("ca_certificate_file") == json.object().end())) {
-    errors->AddError(
-        "at least one of \"certificate_file\" and \"ca_certificate_file\" must "
-        "be specified");
+  if (SpiffeBundleMapEnabled()) {
+    if (json.object().find("certificate_file") == json.object().end() &&
+        json.object().find("ca_certificate_file") == json.object().end() &&
+        json.object().find("spiffe_bundle_map_file") == json.object().end()) {
+      errors->AddError(
+          "at least one of \"certificate_file\", \"ca_certificate_file\", and "
+          "\"spiffe_bundle_map_file\" must be specified");
+    }
+  } else {
+    spiffe_bundle_map_file_ = "";
+    if ((json.object().find("certificate_file") == json.object().end()) &&
+        (json.object().find("ca_certificate_file") == json.object().end())) {
+      errors->AddError(
+          "at least one of \"certificate_file\" and \"ca_certificate_file\" "
+          "must be specified");
+    }
   }
 }
 
@@ -120,11 +145,12 @@ FileWatcherCertificateProviderFactory::CreateCertificateProvider(
     return nullptr;
   }
   auto* file_watcher_config =
-      static_cast<FileWatcherCertificateProviderFactory::Config*>(config.get());
+      DownCast<FileWatcherCertificateProviderFactory::Config*>(config.get());
   return MakeRefCounted<FileWatcherCertificateProvider>(
       file_watcher_config->private_key_file(),
       file_watcher_config->identity_cert_file(),
       file_watcher_config->root_cert_file(),
+      file_watcher_config->spiffe_bundle_map_file(),
       file_watcher_config->refresh_interval().millis() / GPR_MS_PER_SEC);
 }
 

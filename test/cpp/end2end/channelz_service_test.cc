@@ -16,12 +16,6 @@
 //
 //
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/memory/memory.h"
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
@@ -35,21 +29,30 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
+#include <memory>
+
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
+#include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
-#include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/wait_for_single_owner.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/channelz/channelz.grpc.pb.h"
+#include "src/proto/grpc/channelz/channelz.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/memory/memory.h"
 
 using grpc::channelz::v1::Address;
 using grpc::channelz::v1::GetChannelRequest;
@@ -88,6 +91,7 @@ class Proxy : public grpc::testing::EchoTestService::Service {
 
   void AddChannelToBackend(const std::shared_ptr<Channel>& channel) {
     stubs_.push_back(grpc::testing::EchoTestService::NewStub(channel));
+    channels_.push_back(channel);
   }
 
   Status Echo(ServerContext* server_context, const EchoRequest* request,
@@ -95,7 +99,7 @@ class Proxy : public grpc::testing::EchoTestService::Service {
     std::unique_ptr<ClientContext> client_context =
         ClientContext::FromServerContext(*server_context);
     size_t idx = request->param().backend_channel_idx();
-    CHECK_LT(idx, stubs_.size());
+    GRPC_CHECK_LT(idx, stubs_.size());
     return stubs_[idx]->Echo(client_context.get(), *request, response);
   }
 
@@ -119,8 +123,14 @@ class Proxy : public grpc::testing::EchoTestService::Service {
     return stream_to_backend->Finish();
   }
 
+  std::shared_ptr<Channel> channel(int i) {
+    if (i < 0 || i >= channels_.size()) return nullptr;
+    return channels_[i];
+  }
+
  private:
   std::vector<std::unique_ptr<grpc::testing::EchoTestService::Stub>> stubs_;
+  std::vector<std::shared_ptr<Channel>> channels_;
 };
 
 enum class CredentialsType {
@@ -179,12 +189,7 @@ std::string RemoveWhitespaces(std::string input) {
 class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
  public:
   ChannelzServerTest() {}
-  static void SetUpTestSuite() {
-#if TARGET_OS_IPHONE
-    // Workaround Apple CFStream bug
-    grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
-  }
+  static void SetUpTestSuite() {}
   void SetUp() override {
     grpc_init();
 
@@ -214,13 +219,14 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
     grpc_shutdown();
     proxy_server_.reset();
     echo_stub_.reset();
+    channelz_channel_.reset();
     channelz_stub_.reset();
     backends_.clear();
     proxy_service_.reset();
     // Ensure all pending callbacks are handled before finishing the test
-    // to ensure hygene between test cases.
+    // to ensure hygiene between test cases.
     // (requires any grpc-object-holding values be cleared out first).
-    grpc_event_engine::experimental::WaitForSingleOwner(
+    grpc_core::WaitForSingleOwner(
         grpc_event_engine::experimental::GetDefaultEventEngine());
   }
 
@@ -244,6 +250,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
       // channelz enabled since these channels (proxy outbound to backends)
       // are the ones that our test will actually be validating.
       ChannelArguments args;
+      ApplyCommonChannelArguments(args);
       args.SetInt(GRPC_ARG_ENABLE_CHANNELZ, 1);
       args.SetInt(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 1024);
       std::shared_ptr<Channel> channel_to_backend = grpc::CreateCustomChannel(
@@ -257,18 +264,20 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
     string target =
         absl::StrCat("dns:", grpc_core::LocalIp(), ":", proxy_port_);
     ChannelArguments args;
+    ApplyCommonChannelArguments(args);
     // disable channelz. We only want to focus on proxy to backend outbound.
     args.SetInt(GRPC_ARG_ENABLE_CHANNELZ, 0);
-    std::shared_ptr<Channel> channel = grpc::CreateCustomChannel(
+    channelz_channel_ = grpc::CreateCustomChannel(
         target, GetChannelCredentials(GetParam(), &args), args);
-    channelz_stub_ = grpc::channelz::v1::Channelz::NewStub(channel);
-    echo_stub_ = grpc::testing::EchoTestService::NewStub(channel);
+    channelz_stub_ = grpc::channelz::v1::Channelz::NewStub(channelz_channel_);
+    echo_stub_ = grpc::testing::EchoTestService::NewStub(channelz_channel_);
   }
 
   std::unique_ptr<grpc::testing::EchoTestService::Stub> NewEchoStub() {
     string target =
         absl::StrCat("dns:", grpc_core::LocalIp(), ":", proxy_port_);
     ChannelArguments args;
+    ApplyCommonChannelArguments(args);
     // disable channelz. We only want to focus on proxy to backend outbound.
     args.SetInt(GRPC_ARG_ENABLE_CHANNELZ, 0);
     // This ensures that gRPC will not do connection sharing.
@@ -344,6 +353,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
     std::unique_ptr<TestServiceImpl> service;
   };
 
+  std::shared_ptr<Channel> channelz_channel_;
   std::unique_ptr<grpc::channelz::v1::Channelz::Stub> channelz_stub_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> echo_stub_;
 
@@ -366,6 +376,22 @@ TEST_P(ChannelzServerTest, BasicTest) {
   Status s = channelz_stub_->GetTopChannels(&context, request, &response);
   EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(response.channel_size(), 1);
+}
+
+TEST_P(ChannelzServerTest, NamedChannelTest) {
+  ResetStubs();
+  ConfigureProxy(1);
+  // Channel created without channelz
+  EXPECT_EQ(experimental::ChannelGetChannelzUuid(channelz_channel_.get()), 0);
+  int64_t proxy_uuid =
+      experimental::ChannelGetChannelzUuid(proxy_service_->channel(0).get());
+  ASSERT_NE(proxy_uuid, 0);
+  GetChannelRequest request;
+  GetChannelResponse response;
+  request.set_channel_id(proxy_uuid);
+  ClientContext context;
+  Status s = channelz_stub_->GetChannel(&context, request, &response);
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
 }
 
 TEST_P(ChannelzServerTest, HighStartId) {
@@ -445,75 +471,6 @@ TEST_P(ChannelzServerTest, ManyChannels) {
   Status s = channelz_stub_->GetTopChannels(&context, request, &response);
   EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(response.channel_size(), kNumChannels);
-}
-
-TEST_P(ChannelzServerTest, ManyRequestsManyChannels) {
-  ResetStubs();
-  const int kNumChannels = 4;
-  ConfigureProxy(kNumChannels);
-  const int kNumSuccess = 10;
-  const int kNumFailed = 11;
-  for (int i = 0; i < kNumSuccess; ++i) {
-    SendSuccessfulEcho(0);
-    SendSuccessfulEcho(2);
-  }
-  for (int i = 0; i < kNumFailed; ++i) {
-    SendFailedEcho(1);
-    SendFailedEcho(2);
-  }
-
-  // the first channel saw only successes
-  {
-    GetChannelRequest request;
-    GetChannelResponse response;
-    request.set_channel_id(GetChannelId(0));
-    ClientContext context;
-    Status s = channelz_stub_->GetChannel(&context, request, &response);
-    EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
-    EXPECT_EQ(response.channel().data().calls_started(), kNumSuccess);
-    EXPECT_EQ(response.channel().data().calls_succeeded(), kNumSuccess);
-    EXPECT_EQ(response.channel().data().calls_failed(), 0);
-  }
-
-  // the second channel saw only failures
-  {
-    GetChannelRequest request;
-    GetChannelResponse response;
-    request.set_channel_id(GetChannelId(1));
-    ClientContext context;
-    Status s = channelz_stub_->GetChannel(&context, request, &response);
-    EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
-    EXPECT_EQ(response.channel().data().calls_started(), kNumFailed);
-    EXPECT_EQ(response.channel().data().calls_succeeded(), 0);
-    EXPECT_EQ(response.channel().data().calls_failed(), kNumFailed);
-  }
-
-  // the third channel saw both
-  {
-    GetChannelRequest request;
-    GetChannelResponse response;
-    request.set_channel_id(GetChannelId(2));
-    ClientContext context;
-    Status s = channelz_stub_->GetChannel(&context, request, &response);
-    EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
-    EXPECT_EQ(response.channel().data().calls_started(),
-              kNumSuccess + kNumFailed);
-    EXPECT_EQ(response.channel().data().calls_succeeded(), kNumSuccess);
-    EXPECT_EQ(response.channel().data().calls_failed(), kNumFailed);
-  }
-
-  // the fourth channel saw nothing
-  {
-    GetChannelRequest request;
-    GetChannelResponse response;
-    request.set_channel_id(GetChannelId(3));
-    ClientContext context;
-    Status s = channelz_stub_->GetChannel(&context, request, &response);
-    EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
-    EXPECT_EQ(response.channel().data().calls_started(), 0);
-    EXPECT_EQ(response.channel().data().calls_succeeded(), 0);
-    EXPECT_EQ(response.channel().data().calls_failed(), 0);
-  }
 }
 
 TEST_P(ChannelzServerTest, ManySubchannels) {

@@ -16,26 +16,25 @@
 //
 //
 
-#include <memory>
-
-#include "absl/types/optional.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
+#include <memory>
+#include <optional>
+
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace {
 
 bool SimpleRequestBody(CoreEnd2endTest& test) {
   auto c = test.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingMetadata server_initial_metadata;
   IncomingStatusOnClient server_status;
   c.NewBatch(1)
@@ -65,8 +64,8 @@ bool SimpleRequestBody(CoreEnd2endTest& test) {
   }
   EXPECT_FALSE(finished_client);
   EXPECT_TRUE(saw_request_at_server);
-  EXPECT_NE(s.GetPeer(), absl::nullopt);
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(s.GetPeer(), std::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
@@ -82,7 +81,7 @@ bool SimpleRequestBody(CoreEnd2endTest& test) {
   return true;
 }
 
-CORE_END2END_TEST(RetryHttp2Test, MaxConnectionIdle) {
+CORE_END2END_TEST(RetryHttp2Tests, MaxConnectionIdle) {
   const auto kMaxConnectionIdle = Duration::Seconds(2);
   const auto kMaxConnectionAge = Duration::Seconds(10);
   InitClient(
@@ -91,12 +90,12 @@ CORE_END2END_TEST(RetryHttp2Test, MaxConnectionIdle) {
                Duration::Seconds(1).millis())
           .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, Duration::Seconds(1).millis())
           .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS,
-               g_is_fuzzing_core_e2e_tests ? Duration::Minutes(5).millis()
-                                           : Duration::Seconds(5).millis())
+               fuzzing() ? Duration::Minutes(5).millis()
+                         : Duration::Seconds(5).millis())
           // Avoid transparent retries for this test.
           .Set(GRPC_ARG_ENABLE_RETRIES, false));
   InitServer(
-      ChannelArgs()
+      DefaultServerArgs()
           .Set(GRPC_ARG_MAX_CONNECTION_IDLE_MS, kMaxConnectionIdle.millis())
           .Set(GRPC_ARG_MAX_CONNECTION_AGE_MS, kMaxConnectionAge.millis()));
   // check that we're still in idle, and start connecting

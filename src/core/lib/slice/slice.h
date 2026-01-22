@@ -15,24 +15,22 @@
 #ifndef GRPC_SRC_CORE_LIB_SLICE_SLICE_H
 #define GRPC_SRC_CORE_LIB_SLICE_SLICE_H
 
+#include <grpc/event_engine/internal/slice_cast.h>
+#include <grpc/event_engine/slice.h>
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <cstdint>
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/strings/string_view.h"
-
-#include <grpc/event_engine/internal/slice_cast.h>
-#include <grpc/event_engine/slice.h>
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/util/string.h"
+#include "absl/log/check.h"
+#include "absl/strings/string_view.h"
 
 // Herein lies grpc_core::Slice and its team of thin wrappers around grpc_slice.
 // They aim to keep you safe by providing strong guarantees around lifetime and
@@ -296,6 +294,11 @@ class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND MutableSlice
     return MutableSlice(NoCheck{}, grpc_slice_split_head(c_slice_ptr(), n));
   }
 
+  MutableSlice TakeFirstNoInline(size_t n) {
+    return MutableSlice(NoCheck{},
+                        grpc_slice_split_head_no_inline(c_slice_ptr(), n));
+  }
+
   // Iterator access to the underlying bytes
   uint8_t* begin() { return mutable_data(); }
   uint8_t* end() { return mutable_data() + size(); }
@@ -433,6 +436,12 @@ class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND Slice
 
   static Slice FromExternalString(absl::string_view str) {
     return FromStaticString(str);
+  }
+
+  static Slice ZeroContentsWithLength(size_t length) {
+    grpc_slice backing = grpc_slice_malloc(length);
+    memset(GRPC_SLICE_START_PTR(backing), 0, length);
+    return Slice(backing);
   }
 };
 

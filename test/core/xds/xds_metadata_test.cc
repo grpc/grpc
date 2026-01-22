@@ -16,32 +16,30 @@
 
 #include "src/core/xds/grpc/xds_metadata.h"
 
-#include <string>
-#include <utility>
-
 #include <google/protobuf/any.pb.h>
 #include <google/protobuf/struct.pb.h>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
+#include <string>
+#include <utility>
 
+#include "envoy/config/core/v3/base.pb.h"
+#include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.pb.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_metadata_parser.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
-#include "src/proto/grpc/testing/xds/v3/base.pb.h"
-#include "src/proto/grpc/testing/xds/v3/gcp_authn.pb.h"
-#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 
 using envoy::config::core::v3::Metadata;
 using envoy::extensions::filters::http::gcp_authn::v3::Audience;
@@ -54,9 +52,9 @@ class XdsMetadataTest : public ::testing::Test {
  protected:
   XdsMetadataTest()
       : xds_client_(MakeXdsClient()),
-        decode_context_{
-            xds_client_.get(), *xds_client_->bootstrap().servers().front(),
-            &xds_unittest_trace, upb_def_pool_.ptr(), upb_arena_.ptr()} {}
+        decode_context_{xds_client_.get(),
+                        *xds_client_->bootstrap().servers().front(),
+                        upb_def_pool_.ptr(), upb_arena_.ptr()} {}
 
   static RefCountedPtr<XdsClient> MakeXdsClient() {
     auto bootstrap = GrpcXdsBootstrap::Create(
@@ -166,8 +164,6 @@ TEST_F(XdsMetadataTest, UntypedMetadata) {
 }
 
 TEST_F(XdsMetadataTest, TypedMetadataTakesPrecendenceOverUntyped) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_XDS_GCP_AUTHENTICATION_FILTER");
   Metadata metadata_proto;
   auto& filter_map = *metadata_proto.mutable_filter_metadata();
   auto& label_map = *filter_map["filter_key"].mutable_fields();
@@ -188,8 +184,6 @@ TEST_F(XdsMetadataTest, TypedMetadataTakesPrecendenceOverUntyped) {
 }
 
 TEST_F(XdsMetadataTest, AudienceMetadata) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_XDS_GCP_AUTHENTICATION_FILTER");
   Audience audience_proto;
   audience_proto.set_url("foo");
   Metadata metadata_proto;
@@ -207,8 +201,6 @@ TEST_F(XdsMetadataTest, AudienceMetadata) {
 }
 
 TEST_F(XdsMetadataTest, AudienceMetadataUnparseable) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_XDS_GCP_AUTHENTICATION_FILTER");
   Metadata metadata_proto;
   auto& filter_map = *metadata_proto.mutable_typed_filter_metadata();
   auto& entry = filter_map["filter_key"];
@@ -226,8 +218,6 @@ TEST_F(XdsMetadataTest, AudienceMetadataUnparseable) {
 }
 
 TEST_F(XdsMetadataTest, AudienceMetadataMissingUrl) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_XDS_GCP_AUTHENTICATION_FILTER");
   Metadata metadata_proto;
   auto& filter_map = *metadata_proto.mutable_typed_filter_metadata();
   filter_map["filter_key"].PackFrom(Audience());
@@ -240,18 +230,6 @@ TEST_F(XdsMetadataTest, AudienceMetadataMissingUrl) {
             "envoy.extensions.filters.http.gcp_authn.v3.Audience].url "
             "error:must be non-empty]")
       << metadata_map.status();
-}
-
-TEST_F(XdsMetadataTest, AudienceIgnoredIfNotEnabled) {
-  Audience audience_proto;
-  audience_proto.set_url("foo");
-  Metadata metadata_proto;
-  auto& filter_map = *metadata_proto.mutable_typed_filter_metadata();
-  filter_map["filter_key"].PackFrom(audience_proto);
-  // Decode.
-  auto metadata_map = Decode(std::move(metadata_proto));
-  ASSERT_TRUE(metadata_map.ok()) << metadata_map.status();
-  EXPECT_EQ(metadata_map->size(), 0);
 }
 
 TEST_F(XdsMetadataTest, MetadataUnset) {

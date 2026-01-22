@@ -20,8 +20,7 @@
 #include <array>
 #include <cstddef>
 #include <iterator>
-
-#include "absl/types/optional.h"
+#include <optional>
 
 namespace grpc_core {
 
@@ -64,7 +63,7 @@ class RingBuffer {
 
     T operator*() { return buffer_->data_[head_]; }
 
-    RingBufferIterator() : buffer_(nullptr), head_(0), size_(0){};
+    RingBufferIterator() : buffer_(nullptr), head_(0), size_(0) {};
     RingBufferIterator(const RingBufferIterator& other) = default;
     explicit RingBufferIterator(const RingBuffer<T, kCapacity>* buffer)
         : buffer_(buffer), head_(buffer->head_), size_(buffer->size_) {
@@ -93,9 +92,9 @@ class RingBuffer {
   }
 
   // Returns the data of the first element in the buffer and removes it from
-  // the buffer. If the buffer is empty, returns absl::nullopt.
-  absl::optional<T> PopIfNotEmpty() {
-    if (!size_) return absl::nullopt;
+  // the buffer. If the buffer is empty, returns std::nullopt.
+  std::optional<T> PopIfNotEmpty() {
+    if (!size_) return std::nullopt;
     T data = std::move(data_[head_]);
     --size_;
     head_ = (head_ + 1) % kCapacity;

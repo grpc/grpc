@@ -16,12 +16,12 @@
 //
 //
 
-#include <memory>
-
 #include <grpc/status.h>
 
-#include "src/core/lib/gprpp/time.h"
+#include <memory>
+
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -62,19 +62,19 @@ void PingPongStreaming(CoreEnd2endTest& test, int num_messages) {
   test.Step();
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, PingPongStreaming1) {
+CORE_END2END_TEST(CoreEnd2endTests, PingPongStreaming1) {
   PingPongStreaming(*this, 1);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, PingPongStreaming3) {
+CORE_END2END_TEST(CoreEnd2endTests, PingPongStreaming3) {
   PingPongStreaming(*this, 3);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, PingPongStreaming10) {
+CORE_END2END_TEST(CoreEnd2endTests, PingPongStreaming10) {
   PingPongStreaming(*this, 10);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, PingPongStreaming30) {
+CORE_END2END_TEST(CoreEnd2endTests, PingPongStreaming30) {
   PingPongStreaming(*this, 30);
 }
 }  // namespace grpc_core

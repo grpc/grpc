@@ -15,6 +15,11 @@
 #ifndef GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_MEMORY_QUOTA_H
 #define GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_MEMORY_QUOTA_H
 
+#include <grpc/event_engine/internal/memory_allocator_impl.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/memory_request.h>
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <array>
@@ -22,31 +27,30 @@
 #include <cstddef>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/container/flat_hash_set.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/event_engine/memory_request.h>
-#include <grpc/support/port_platform.h>
-
+#include "src/core/channelz/channelz.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/periodic_update.h"
+#include "src/core/lib/resource_quota/telemetry.h"
+#include "src/core/telemetry/instrument.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 #include "src/core/util/useful.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/log/log.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -114,9 +118,7 @@ class ReclamationSweep {
   // Explicit finish for users that wish to write it.
   // Just destroying the object is enough, but sometimes the additional
   // explicitness is warranted.
-  void Finish() {
-    [](ReclamationSweep) {}(std::move(*this));
-  }
+  void Finish();
 
  private:
   std::shared_ptr<BasicMemoryQuota> memory_quota_;
@@ -137,7 +139,7 @@ class ReclaimerQueue {
     explicit Handle(F reclaimer, std::shared_ptr<State> state)
         : sweep_(new SweepFn<F>(std::move(reclaimer), std::move(state))) {}
     ~Handle() override {
-      DCHECK_EQ(sweep_.load(std::memory_order_relaxed), nullptr);
+      GRPC_DCHECK_EQ(sweep_.load(std::memory_order_relaxed), nullptr);
     }
 
     Handle(const Handle&) = delete;
@@ -153,7 +155,7 @@ class ReclaimerQueue {
 
     class Sweep {
      public:
-      virtual void RunAndDelete(absl::optional<ReclamationSweep> sweep) = 0;
+      virtual void RunAndDelete(std::optional<ReclamationSweep> sweep) = 0;
 
      protected:
       explicit Sweep(std::shared_ptr<State> state) : state_(std::move(state)) {}
@@ -169,7 +171,7 @@ class ReclaimerQueue {
      public:
       explicit SweepFn(F&& f, std::shared_ptr<State> state)
           : Sweep(std::move(state)), f_(std::move(f)) {}
-      void RunAndDelete(absl::optional<ReclamationSweep> sweep) override {
+      void RunAndDelete(std::optional<ReclamationSweep> sweep) override {
         if (!sweep.has_value()) MarkCancelled();
         f_(std::move(sweep));
         delete this;
@@ -237,11 +239,12 @@ class PressureController {
   double Update(double error);
   // Textual representation of the controller.
   std::string DebugString() const;
+  channelz::PropertyList ChannelzProperties() const;
 
  private:
   // How many update periods have we reached the same decision in a row?
   // Too many and we should start expanding the search space since we're not
-  // being agressive enough.
+  // being aggressive enough.
   uint8_t ticks_same_ = 0;
   // Maximum number of ticks with the same value until we start expanding the
   // control space.
@@ -268,11 +271,18 @@ class PressureTracker {
  public:
   double AddSampleAndGetControlValue(double sample);
 
+  channelz::PropertyList ChannelzProperties();
+
  private:
   std::atomic<double> max_this_round_{0.0};
   std::atomic<double> report_{0.0};
   PeriodicUpdate update_{Duration::Seconds(1)};
   PressureController controller_{100, 3};
+
+  const double target_memory_pressure_ =
+      ConfigVars::Get().ExperimentalTargetMemoryPressure();
+  const double memory_pressure_threshold_ =
+      ConfigVars::Get().ExperimentalMemoryPressureThreshold();
 };
 }  // namespace memory_quota_detail
 
@@ -283,7 +293,9 @@ static constexpr size_t kBigAllocatorThreshold = 0.5 * 1024 * 1024;
 static constexpr size_t kSmallAllocatorThreshold = 0.1 * 1024 * 1024;
 
 class BasicMemoryQuota final
-    : public std::enable_shared_from_this<BasicMemoryQuota> {
+    : public std::enable_shared_from_this<BasicMemoryQuota>,
+      public channelz::DataSource,
+      public GaugeProvider<ResourceQuotaDomain> {
  public:
   // Data about current memory pressure.
   struct PressureInfo {
@@ -296,7 +308,10 @@ class BasicMemoryQuota final
     size_t max_recommended_allocation_size = 0;
   };
 
-  explicit BasicMemoryQuota(std::string name);
+  explicit BasicMemoryQuota(
+      RefCountedPtr<channelz::ResourceQuotaNode> channelz_node,
+      InstrumentStorageRefPtr<ResourceQuotaDomain> telemetry_storage);
+  ~BasicMemoryQuota();
 
   // Start the reclamation activity.
   void Start();
@@ -328,7 +343,15 @@ class BasicMemoryQuota final
   ReclaimerQueue* reclaimer_queue(size_t i) { return &reclaimers_[i]; }
 
   // The name of this quota
-  absl::string_view name() const { return name_; }
+  absl::string_view name() const { return channelz_node()->name(); }
+
+  void AddData(channelz::DataSink sink) override;
+
+  void PopulateGaugeData(GaugeSink<ResourceQuotaDomain>& sink) override;
+
+  InstrumentStorage<ResourceQuotaDomain>* telemetry_storage() const {
+    return telemetry_storage_.get();
+  }
 
  private:
   friend class ReclamationSweep;
@@ -382,8 +405,7 @@ class BasicMemoryQuota final
   std::atomic<uint64_t> reclamation_counter_{0};
   // Memory pressure smoothing
   memory_quota_detail::PressureTracker pressure_tracker_;
-  // The name of this quota - used for debugging/tracing/etc..
-  std::string name_;
+  const InstrumentStorageRefPtr<ResourceQuotaDomain> telemetry_storage_;
 };
 
 // MemoryAllocatorImpl grants the owner the ability to allocate memory from an
@@ -437,7 +459,7 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   template <typename F>
   void PostReclaimer(ReclamationPass pass, F fn) {
     MutexLock lock(&reclaimer_mu_);
-    CHECK(!shutdown_);
+    GRPC_CHECK(!shutdown_);
     InsertReclaimer(static_cast<size_t>(pass), std::move(fn));
   }
 
@@ -457,11 +479,17 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
     return chosen_shard_idx_.fetch_add(1, std::memory_order_relaxed);
   }
 
+  void FillChannelzProperties(channelz::PropertyList& list);
+
+  InstrumentStorage<ResourceQuotaDomain>* telemetry_storage() const {
+    return memory_quota_->telemetry_storage();
+  }
+
  private:
   static constexpr size_t kMaxQuotaBufferSize = 1024 * 1024;
 
   // Primitive reservation function.
-  GRPC_MUST_USE_RESULT absl::optional<size_t> TryReserve(MemoryRequest request);
+  GRPC_MUST_USE_RESULT std::optional<size_t> TryReserve(MemoryRequest request);
   // This function may be invoked during a memory release operation.
   // It will try to return half of our free pool to the quota.
   void MaybeDonateBack();
@@ -532,6 +560,25 @@ class MemoryOwner final : public MemoryAllocator {
   // Is this object valid (ie has not been moved out of or reset)
   bool is_valid() const { return impl() != nullptr; }
 
+  static double memory_pressure_high_threshold_reject_new_streams() {
+    return 0.99;
+  }
+
+  static double memory_pressure_high_threshold_reject_new_connections() {
+    return 0.99;
+  }
+
+  // Return true if the controlled memory pressure is high enough to reject new
+  // streams.
+  bool RejectNewStreamsUnderHighMemoryPressure() const {
+    return GetPressureInfo().pressure_control_value >
+           memory_pressure_high_threshold_reject_new_streams();
+  }
+
+  InstrumentStorage<ResourceQuotaDomain>* telemetry_storage() const {
+    return impl()->telemetry_storage();
+  }
+
  private:
   const GrpcMemoryAllocatorImpl* impl() const {
     return static_cast<const GrpcMemoryAllocatorImpl*>(get_internal_impl_ptr());
@@ -546,8 +593,11 @@ class MemoryOwner final : public MemoryAllocator {
 class MemoryQuota final
     : public grpc_event_engine::experimental::MemoryAllocatorFactory {
  public:
-  explicit MemoryQuota(std::string name)
-      : memory_quota_(std::make_shared<BasicMemoryQuota>(std::move(name))) {
+  explicit MemoryQuota(RefCountedPtr<channelz::ResourceQuotaNode> channelz_node)
+      : memory_quota_(std::make_shared<BasicMemoryQuota>(
+            std::move(channelz_node),
+            ResourceQuotaDomain::GetStorage(GlobalCollectionScope(),
+                                            channelz_node->name()))) {
     memory_quota_->Start();
   }
   ~MemoryQuota() override {
@@ -565,11 +615,11 @@ class MemoryQuota final
   // Resize the quota to new_size.
   void SetSize(size_t new_size) { memory_quota_->SetSize(new_size); }
 
-  // Return true if the controlled memory pressure is high.
-  bool IsMemoryPressureHigh() const {
-    static constexpr double kMemoryPressureHighThreshold = 0.99;
+  // Return true if the controlled memory pressure is high enough to reject new
+  // connections.
+  bool RejectNewConnectionsUnderHighMemoryPressure() const {
     return memory_quota_->GetPressureInfo().pressure_control_value >
-           kMemoryPressureHighThreshold;
+           MemoryOwner::memory_pressure_high_threshold_reject_new_connections();
   }
 
  private:
@@ -578,11 +628,14 @@ class MemoryQuota final
 };
 
 using MemoryQuotaRefPtr = std::shared_ptr<MemoryQuota>;
-inline MemoryQuotaRefPtr MakeMemoryQuota(std::string name) {
-  return std::make_shared<MemoryQuota>(std::move(name));
+inline MemoryQuotaRefPtr MakeMemoryQuota(
+    RefCountedPtr<channelz::ResourceQuotaNode> channelz_node) {
+  return std::make_shared<MemoryQuota>(std::move(channelz_node));
 }
 
 std::vector<std::shared_ptr<BasicMemoryQuota>> AllMemoryQuotas();
+
+double ContainerMemoryPressure();
 
 }  // namespace grpc_core
 

@@ -19,10 +19,10 @@
 #ifndef GRPC_TEST_CORE_TEST_UTIL_MOCK_ENDPOINT_H
 #define GRPC_TEST_CORE_TEST_UTIL_MOCK_ENDPOINT_H
 
-#include <memory>
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/slice.h>
+
+#include <memory>
 
 #include "src/core/lib/iomgr/endpoint.h"
 
@@ -31,7 +31,7 @@ namespace experimental {
 
 // Internal controller object for mock endpoint operations.
 //
-// This helps avoid shared ownership issus. The endpoint itself may destroyed
+// This helps avoid shared ownership issues. The endpoint itself may destroyed
 // while a fuzzer is still attempting to use it (e.g., the transport is closed,
 // and a fuzzer still wants to schedule reads).
 class MockEndpointController
@@ -78,11 +78,15 @@ class MockEndpoint : public EventEngine::Endpoint {
 
   // ---- overrides ----
   bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
-            const ReadArgs* args) override;
+            ReadArgs args) override;
   bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
-             SliceBuffer* data, const WriteArgs* args) override;
+             SliceBuffer* data, WriteArgs args) override;
   const EventEngine::ResolvedAddress& GetPeerAddress() const override;
   const EventEngine::ResolvedAddress& GetLocalAddress() const override;
+
+  std::shared_ptr<TelemetryInfo> GetTelemetryInfo() const override {
+    return nullptr;
+  }
 
  private:
   std::shared_ptr<MockEndpointController> endpoint_control_;

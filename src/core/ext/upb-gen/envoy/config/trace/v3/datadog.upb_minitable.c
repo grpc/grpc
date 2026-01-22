@@ -3,7 +3,8 @@
  *     envoy/config/trace/v3/datadog.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -17,8 +18,9 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_config_trace_v3_DatadogRemoteConfig_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_config_trace_v3_DatadogRemoteConfig__submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_trace_v3_DatadogRemoteConfig__fields[1] = {
@@ -26,7 +28,7 @@ static const upb_MiniTableField envoy_config_trace_v3_DatadogRemoteConfig__field
 };
 
 const upb_MiniTable envoy__config__trace__v3__DatadogRemoteConfig_msg_init = {
-  &envoy_config_trace_v3_DatadogRemoteConfig_submsgs[0],
+  &envoy_config_trace_v3_DatadogRemoteConfig__submsgs[0],
   &envoy_config_trace_v3_DatadogRemoteConfig__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -34,8 +36,9 @@ const upb_MiniTable envoy__config__trace__v3__DatadogRemoteConfig_msg_init = {
 #endif
 };
 
-static const upb_MiniTableSub envoy_config_trace_v3_DatadogConfig_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__trace__v3__DatadogRemoteConfig_msg_init},
+const upb_MiniTable* envoy__config__trace__v3__DatadogRemoteConfig_msg_init_ptr = &envoy__config__trace__v3__DatadogRemoteConfig_msg_init;
+static const upb_MiniTableSubInternal envoy_config_trace_v3_DatadogConfig__submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__trace__v3__DatadogRemoteConfig_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_trace_v3_DatadogConfig__fields[4] = {
@@ -46,7 +49,7 @@ static const upb_MiniTableField envoy_config_trace_v3_DatadogConfig__fields[4] =
 };
 
 const upb_MiniTable envoy__config__trace__v3__DatadogConfig_msg_init = {
-  &envoy_config_trace_v3_DatadogConfig_submsgs[0],
+  &envoy_config_trace_v3_DatadogConfig__submsgs[0],
   &envoy_config_trace_v3_DatadogConfig__fields[0],
   UPB_SIZE(40, 72), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -60,6 +63,7 @@ const upb_MiniTable envoy__config__trace__v3__DatadogConfig_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__config__trace__v3__DatadogConfig_msg_init_ptr = &envoy__config__trace__v3__DatadogConfig_msg_init;
 static const upb_MiniTable *messages_layout[2] = {
   &envoy__config__trace__v3__DatadogRemoteConfig_msg_init,
   &envoy__config__trace__v3__DatadogConfig_msg_init,

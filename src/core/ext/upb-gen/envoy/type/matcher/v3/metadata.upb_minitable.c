@@ -3,7 +3,8 @@
  *     envoy/type/matcher/v3/metadata.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -16,20 +17,21 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_type_matcher_v3_MetadataMatcher_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__MetadataMatcher__PathSegment_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__ValueMatcher_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_type_matcher_v3_MetadataMatcher__submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__MetadataMatcher__PathSegment_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__ValueMatcher_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_type_matcher_v3_MetadataMatcher__fields[4] = {
-  {1, UPB_SIZE(24, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {1, UPB_SIZE(20, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(12, 32), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(16, 40), 64, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {4, UPB_SIZE(20, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {4, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__type__matcher__v3__MetadataMatcher_msg_init = {
-  &envoy_type_matcher_v3_MetadataMatcher_submsgs[0],
+  &envoy_type_matcher_v3_MetadataMatcher__submsgs[0],
   &envoy_type_matcher_v3_MetadataMatcher__fields[0],
   UPB_SIZE(32, 48), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -47,6 +49,7 @@ const upb_MiniTable envoy__type__matcher__v3__MetadataMatcher_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__type__matcher__v3__MetadataMatcher_msg_init_ptr = &envoy__type__matcher__v3__MetadataMatcher_msg_init;
 static const upb_MiniTableField envoy_type_matcher_v3_MetadataMatcher_PathSegment__fields[1] = {
   {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
@@ -64,6 +67,7 @@ const upb_MiniTable envoy__type__matcher__v3__MetadataMatcher__PathSegment_msg_i
   })
 };
 
+const upb_MiniTable* envoy__type__matcher__v3__MetadataMatcher__PathSegment_msg_init_ptr = &envoy__type__matcher__v3__MetadataMatcher__PathSegment_msg_init;
 static const upb_MiniTable *messages_layout[2] = {
   &envoy__type__matcher__v3__MetadataMatcher_msg_init,
   &envoy__type__matcher__v3__MetadataMatcher__PathSegment_msg_init,

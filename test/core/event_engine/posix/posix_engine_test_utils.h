@@ -15,26 +15,27 @@
 #ifndef GRPC_TEST_CORE_EVENT_ENGINE_POSIX_POSIX_ENGINE_TEST_UTILS_H
 #define GRPC_TEST_CORE_EVENT_ENGINE_POSIX_POSIX_ENGINE_TEST_UTILS_H
 
-#include <utility>
-
-#include "absl/functional/any_invocable.h"
-
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#include <utility>
+
+#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
+#include "absl/functional/any_invocable.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-class TestScheduler : public Scheduler {
+class TestThreadPool final : public ThreadPool {
  public:
-  explicit TestScheduler(grpc_event_engine::experimental::EventEngine* engine)
+  TestThreadPool() = default;
+  explicit TestThreadPool(grpc_event_engine::experimental::EventEngine* engine)
       : engine_(engine) {}
-  TestScheduler() : engine_(nullptr){};
+
   void ChangeCurrentEventEngine(
       grpc_event_engine::experimental::EventEngine* engine) {
     engine_ = engine;
   }
+
   void Run(experimental::EventEngine::Closure* closure) override {
     if (engine_ != nullptr) {
       engine_->Run(closure);
@@ -51,8 +52,15 @@ class TestScheduler : public Scheduler {
     }
   }
 
+  void Quiesce() override {}
+
+#if GRPC_ENABLE_FORK_SUPPORT
+  void PrepareFork() override {}
+  void PostFork() override {}
+#endif  // GRPC_ENABLE_FORK_SUPPORT
+
  private:
-  grpc_event_engine::experimental::EventEngine* engine_;
+  grpc_event_engine::experimental::EventEngine* engine_ = nullptr;
 };
 
 // Creates a client socket and blocks until it connects to the specified

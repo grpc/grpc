@@ -15,23 +15,6 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_CALL_UTILS_H
 #define GRPC_SRC_CORE_LIB_SURFACE_CALL_UTILS_H
 
-#include <inttypes.h>
-#include <limits.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <algorithm>
-#include <atomic>
-#include <cstdint>
-#include <string>
-#include <type_traits>
-#include <utility>
-
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
 #include <grpc/event_engine/event_engine.h>
@@ -45,18 +28,40 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
+#include <inttypes.h>
+#include <limits.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include <algorithm>
+#include <atomic>
+#include <cstdint>
+#include <cstring>
+#include <string>
+#include <type_traits>
+#include <utility>
+#include <variant>
+
+#include "src/core/call/message.h"
+#include "src/core/call/metadata.h"
+#include "src/core/call/metadata_batch.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/cancel_callback.h"
+#include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/surface/completion_queue.h"
-#include "src/core/lib/transport/message.h"
-#include "src/core/lib/transport/metadata.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/upb_utils.h"
+#include "src/proto/grpc/channelz/v2/promise.upb.h"
+#include "upb/mem/arena.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -95,6 +100,18 @@ class PublishToAppEncoder {
 
   void Encode(LbTokenMetadata, const Slice& slice) {
     Append(LbTokenMetadata::key(), slice);
+  }
+
+  void Encode(W3CTraceParentMetadata, const Slice& slice) {
+    Append(W3CTraceParentMetadata::key(), slice);
+  }
+
+  void Encode(XForwardedForMetadata, const Slice& slice) {
+    Append(XForwardedForMetadata::key(), slice);
+  }
+
+  void Encode(XForwardedHostMetadata, const Slice& slice) {
+    Append(XForwardedHostMetadata::key(), slice);
   }
 
  private:
@@ -195,14 +212,18 @@ class OpHandlerImpl {
   Poll<StatusFlag> operator()() {
     switch (state_) {
       case State::kDismissed:
+        GRPC_TRACE_LOG(call, INFO)
+            << Activity::current()->DebugTag() << "Dismissed " << OpName();
         return Success{};
       case State::kPromiseFactory: {
+        GRPC_TRACE_LOG(call, INFO)
+            << Activity::current()->DebugTag() << "Construct " << OpName();
         auto promise = promise_factory_.Make();
         Destruct(&promise_factory_);
         Construct(&promise_, std::move(promise));
         state_ = State::kPromise;
       }
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case State::kPromise: {
         GRPC_TRACE_LOG(call, INFO)
             << Activity::current()->DebugTag() << "BeginPoll " << OpName();
@@ -232,6 +253,32 @@ class OpHandlerImpl {
     PromiseFactory promise_factory_;
     Promise promise_;
   };
+
+ public:
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* custom_promise =
+        grpc_channelz_v2_Promise_mutable_custom_promise(promise_proto, arena);
+    std::string type = absl::StrCat("OpHandlerImpl<", OpName(), ">");
+    grpc_channelz_v2_Promise_Custom_set_type(
+        custom_promise, CopyStdStringToUpbString(type, arena));
+    channelz::PropertyList properties;
+    switch (state_) {
+      case State::kDismissed:
+        properties.Set("state", "dismissed");
+        break;
+      case State::kPromiseFactory:
+        properties.Set("state", "promise_factory");
+        break;
+      case State::kPromise:
+        properties.Set("state", "promise");
+        properties.Set("promise", PromiseProperty(&promise_));
+        break;
+    }
+    properties.FillUpbProto(grpc_channelz_v2_Promise_Custom_mutable_properties(
+                                custom_promise, arena),
+                            arena);
+  }
 };
 
 template <grpc_op_type op_type, typename PromiseFactory>
@@ -271,6 +318,8 @@ class BatchOpIndex {
     return idxs_[op_type] == 255 ? nullptr : &ops_[idxs_[op_type]];
   }
 
+  bool has_op(grpc_op_type op_type) const { return idxs_[op_type] != 255; }
+
  private:
   const grpc_op* const ops_;
   std::array<uint8_t, 8> idxs_{255, 255, 255, 255, 255, 255, 255, 255};
@@ -281,25 +330,6 @@ class BatchOpIndex {
 // to Empty{}
 class WaitForCqEndOp {
  public:
-  WaitForCqEndOp(bool is_closure, void* tag, grpc_error_handle error,
-                 grpc_completion_queue* cq)
-      : state_{NotStarted{is_closure, tag, std::move(error), cq}} {}
-
-  Poll<Empty> operator()();
-
-  WaitForCqEndOp(const WaitForCqEndOp&) = delete;
-  WaitForCqEndOp& operator=(const WaitForCqEndOp&) = delete;
-  WaitForCqEndOp(WaitForCqEndOp&& other) noexcept
-      : state_(std::move(absl::get<NotStarted>(other.state_))) {
-    other.state_.emplace<Invalid>();
-  }
-  WaitForCqEndOp& operator=(WaitForCqEndOp&& other) noexcept {
-    state_ = std::move(absl::get<NotStarted>(other.state_));
-    other.state_.emplace<Invalid>();
-    return *this;
-  }
-
- private:
   struct NotStarted {
     bool is_closure;
     void* tag;
@@ -313,11 +343,56 @@ class WaitForCqEndOp {
     std::atomic<bool> done{false};
   };
   struct Invalid {};
-  using State = absl::variant<NotStarted, Started, Invalid>;
+  using State = std::variant<NotStarted, Started, Invalid>;
 
+  WaitForCqEndOp(bool is_closure, void* tag, grpc_error_handle error,
+                 grpc_completion_queue* cq)
+      : state_{NotStarted{is_closure, tag, std::move(error), cq}} {}
+
+  Poll<Empty> operator()();
+
+  WaitForCqEndOp(const WaitForCqEndOp&) = delete;
+  WaitForCqEndOp& operator=(const WaitForCqEndOp&) = delete;
+  WaitForCqEndOp(WaitForCqEndOp&& other) noexcept
+      : state_(std::move(std::get<NotStarted>(other.state_))) {
+    other.state_.emplace<Invalid>();
+  }
+  WaitForCqEndOp& operator=(WaitForCqEndOp&& other) noexcept {
+    state_ = std::move(std::get<NotStarted>(other.state_));
+    other.state_.emplace<Invalid>();
+    return *this;
+  }
+
+ private:
   static std::string StateString(const State& state);
 
   State state_{Invalid{}};
+
+ public:
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* custom_promise =
+        grpc_channelz_v2_Promise_mutable_custom_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Custom_set_type(
+        custom_promise, CopyStdStringToUpbString("WaitForCqEndOp", arena));
+    channelz::PropertyList properties;
+    std::visit(
+        [&properties](const auto& s) {
+          using T = std::decay_t<decltype(s)>;
+          if constexpr (std::is_same_v<T, NotStarted>) {
+            properties.Set("state", "not_started");
+          } else if constexpr (std::is_same_v<T, Started>) {
+            properties.Set("state", "started");
+            properties.Set("done", s.done.load(std::memory_order_relaxed));
+          } else if constexpr (std::is_same_v<T, Invalid>) {
+            properties.Set("state", "invalid");
+          }
+        },
+        state_);
+    properties.FillUpbProto(grpc_channelz_v2_Promise_Custom_mutable_properties(
+                                custom_promise, arena),
+                            arena);
+  }
 };
 
 template <typename FalliblePart, typename FinalPart>
@@ -398,6 +473,12 @@ class PollBatchLogger {
 
   void* tag_;
   F f_;
+
+ public:
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    PromiseAsProto(f_, promise_proto, arena);
+  }
 };
 
 template <typename F>
@@ -420,19 +501,55 @@ class MessageReceiver {
 
   template <typename Puller>
   auto MakeBatchOp(const grpc_op& op, Puller* puller) {
-    CHECK_EQ(recv_message_, nullptr);
+    GRPC_CHECK_EQ(recv_message_, nullptr);
     recv_message_ = op.data.recv_message.recv_message;
     return [this, puller]() mutable {
       return Map(puller->PullMessage(),
-                 [this](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+                 [this](typename Puller::NextMessage msg) {
                    return FinishRecvMessage(std::move(msg));
                  });
     };
   }
 
  private:
-  StatusFlag FinishRecvMessage(
-      ValueOrFailure<absl::optional<MessageHandle>> result);
+  template <typename NextMessage>
+  StatusFlag FinishRecvMessage(NextMessage result) {
+    if (!result.ok()) {
+      GRPC_TRACE_LOG(call, INFO)
+          << Activity::current()->DebugTag()
+          << "[call] RecvMessage: outstanding_recv "
+             "finishes: received end-of-stream with error";
+      *recv_message_ = nullptr;
+      recv_message_ = nullptr;
+      return Failure{};
+    }
+    if (!result.has_value()) {
+      GRPC_TRACE_LOG(call, INFO) << Activity::current()->DebugTag()
+                                 << "[call] RecvMessage: outstanding_recv "
+                                    "finishes: received end-of-stream";
+      *recv_message_ = nullptr;
+      recv_message_ = nullptr;
+      return Success{};
+    }
+    MessageHandle message = result.TakeValue();
+    test_only_last_message_flags_ = message->flags();
+    if ((message->flags() & GRPC_WRITE_INTERNAL_COMPRESS) &&
+        (incoming_compression_algorithm_ != GRPC_COMPRESS_NONE)) {
+      *recv_message_ = grpc_raw_compressed_byte_buffer_create(
+          nullptr, 0, incoming_compression_algorithm_);
+    } else {
+      *recv_message_ = grpc_raw_byte_buffer_create(nullptr, 0);
+    }
+    grpc_slice_buffer_move_into(message->payload()->c_slice_buffer(),
+                                &(*recv_message_)->data.raw.slice_buffer);
+    GRPC_TRACE_LOG(call, INFO)
+        << Activity::current()->DebugTag()
+        << "[call] RecvMessage: outstanding_recv "
+           "finishes: received "
+        << (*recv_message_)->data.raw.slice_buffer.length << " byte message";
+    recv_message_ = nullptr;
+    return Success{};
+  }
 
   grpc_byte_buffer** recv_message_ = nullptr;
   uint32_t test_only_last_message_flags_ = 0;

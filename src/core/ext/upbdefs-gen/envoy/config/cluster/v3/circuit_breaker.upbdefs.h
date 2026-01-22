@@ -3,15 +3,19 @@
  *     envoy/config/cluster/v3/circuit_breaker.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_CLUSTER_V3_CIRCUIT_BREAKER_PROTO_UPBDEFS_H_
-#define ENVOY_CONFIG_CLUSTER_V3_CIRCUIT_BREAKER_PROTO_UPBDEFS_H_
+
+
+#ifndef ENVOY_CONFIG_CLUSTER_V3_CIRCUIT_BREAKER_PROTO_UPB_H__UPBDEFS_H_
+#define ENVOY_CONFIG_CLUSTER_V3_CIRCUIT_BREAKER_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
 
-#include "upb/port/def.inc" // Must be last.
+#include "upb/port/def.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -33,10 +37,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_CircuitBreakers_Thresho
   return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.CircuitBreakers.Thresholds.RetryBudget");
 }
 
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_CLUSTER_V3_CIRCUIT_BREAKER_PROTO_UPBDEFS_H_ */
+#endif  /* ENVOY_CONFIG_CLUSTER_V3_CIRCUIT_BREAKER_PROTO_UPB_H__UPBDEFS_H_ */

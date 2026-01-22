@@ -3,10 +3,11 @@
  *     udpa/annotations/status.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef UDPA_ANNOTATIONS_STATUS_PROTO_UPB_MINITABLE_H_
-#define UDPA_ANNOTATIONS_STATUS_PROTO_UPB_MINITABLE_H_
+#ifndef UDPA_ANNOTATIONS_STATUS_PROTO_UPB_H__UPB_MINITABLE_H_
+#define UDPA_ANNOTATIONS_STATUS_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -18,6 +19,7 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable udpa__annotations__StatusAnnotation_msg_init;
+extern const upb_MiniTable* udpa__annotations__StatusAnnotation_msg_init_ptr;
 extern const upb_MiniTableExtension udpa_annotations_file_status_ext;
 
 extern const upb_MiniTableFile udpa_annotations_status_proto_upb_file_layout;
@@ -28,4 +30,4 @@ extern const upb_MiniTableFile udpa_annotations_status_proto_upb_file_layout;
 
 #include "upb/port/undef.inc"
 
-#endif  /* UDPA_ANNOTATIONS_STATUS_PROTO_UPB_MINITABLE_H_ */
+#endif  /* UDPA_ANNOTATIONS_STATUS_PROTO_UPB_H__UPB_MINITABLE_H_ */

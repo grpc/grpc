@@ -9,11 +9,13 @@ for general contribution guidelines.
 
 ## Maintainers (in alphabetical order)
 <!-- go/keep-sorted start case=no -->
+
 - [a11r](https://github.com/a11r), Google LLC
+- [ac-patel](https://github.com/ac-patel), Google LLC
 - [apolcyn](https://github.com/apolcyn), Google LLC
 - [arjunroy](https://github.com/arjunroy), Google LLC
+- [asheshvidyut](https://github.com/asheshvidyut), Google LLC
 - [ctiller](https://github.com/ctiller), Google LLC
-- [daniel-j-born](https://github.com/daniel-j-born), Google LLC
 - [dfawley](https://github.com/dfawley), Google LLC
 - [dklempner](https://github.com/dklempner), Google LLC
 - [drfloob](https://github.com/drfloob), Google LLC
@@ -21,18 +23,17 @@ for general contribution guidelines.
 - [gnossen](https://github.com/gnossen), Google LLC
 - [guantaol](https://github.com/guantaol), Google LLC
 - [hcaseyal](https://github.com/hcaseyal), Google LLC
-- [jtattermusch](https://github.com/jtattermusch), Google LLC
 - [kevinnilson](https://github.com/kevinnilson), Google LLC
-- [LittleCVR](https://github.com/littlecvr), Google LLC
 - [markdroth](https://github.com/markdroth), Google LLC
 - [matthewstevenson88](https://github.com/matthewstevenson88), Google LLC
 - [murgatroid99](https://github.com/murgatroid99), Google LLC
 - [nanahpang](https://github.com/nanahpang), Google LLC
+- [pawbhard](https://github.com/pawbhard), Google LLC
 - [pfreixes](https://github.com/pfreixes), Skyscanner Ltd
 - [ran-su](https://github.com/ran-su), Google LLC
-- [sanjaypujare](https://github.com/sanjaypujare), Google LLC
-- [sastryvp](https://github.com/sastryvp), Google LLC
+- [rishesh007](https://github.com/rishesh007), Google LLC
 - [sergiitk](https://github.com/sergiitk), Google LLC
+- [siddharthnohria](https://github.com/siddharthnohria), Google LLC
 - [soheilhy](https://github.com/soheilhy), Google LLC
 - [stanley-cheung](https://github.com/stanley-cheung), Google LLC
 - [thisisnotapril](https://github.com/thisisnotapril), Google LLC
@@ -60,11 +61,13 @@ for general contribution guidelines.
 - [jiangtaoli2016](https://github.com/jiangtaoli2016), Google LLC
 - [jkolhe](https://github.com/jkolhe), Google LLC
 - [jpalmerLinuxFoundation](https://github.com/jpalmerLinuxFoundation), Linux Foundation
+- [jtattermusch](https://github.com/jtattermusch), Google LLC
 - [justinburke](https://github.com/justinburke), Google LLC
 - [karthikravis](https://github.com/karthikravis), Google LLC
 - [kpayson64](https://github.com/kpayson64), Google LLC
 - [kumaralokgithub](https://github.com/kumaralokgithub), Google LLC
 - [lidizheng](https://github.com/lidizheng), Google LLC
+- [LittleCVR](https://github.com/littlecvr), Google LLC
 - [lyuxuan](https://github.com/lyuxuan), Google LLC
 - [matt-kwong](https://github.com/matt-kwong), Google LLC
 - [medinandres](https://github.com/medinandres), Google LLC
@@ -79,6 +82,8 @@ for general contribution guidelines.
 - [pmarks-net](https://github.com/pmarks-net), Google LLC
 - [qixuanl1](https://github.com/qixuanl1), Google LLC
 - [rmstar](https://github.com/rmstar), Google LLC
+- [sanjaypujare](https://github.com/sanjaypujare), Google LLC
+- [sastryvp](https://github.com/sastryvp), Google LLC
 - [sheenaqotj](https://github.com/sheenaqotj), Google LLC
 - [slash-lib](https://github.com/slash-lib), Google LLC
 - [soltanmm](https://github.com/soltanmm), Google LLC

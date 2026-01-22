@@ -18,19 +18,6 @@
 
 #include "src/cpp/client/secure_credentials.h"
 
-#include <string.h>
-
-#include <map>
-#include <memory>
-#include <utility>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_join.h"
-#include "absl/types/optional.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
@@ -45,15 +32,27 @@
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/status.h>
+#include <string.h>
 
+#include <map>
+#include <memory>
+#include <optional>
+#include <utility>
+
+#include "src/core/credentials/call/json_util.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/load_file.h"
-#include "src/core/lib/security/util/json_util.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
+#include "src/core/util/load_file.h"
 #include "src/cpp/common/secure_auth_context.h"
 #include "src/cpp/server/thread_pool_interface.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_join.h"
 
 namespace grpc {
 
@@ -84,10 +83,14 @@ std::shared_ptr<WrappedChannelCredentials> WrapChannelCredentials(
 
 }  // namespace
 
-std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials() {
+std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials(
+    const GoogleDefaultCredentialsOptions& options) {
   grpc::internal::GrpcLibrary init;  // To call grpc_init().
+  grpc_google_default_credentials_options alts_options = {};
+  alts_options.create_hard_bound_credentials =
+      options.use_alts_call_credentials;
   return WrapChannelCredentials(
-      grpc_google_default_credentials_create(nullptr));
+      grpc_google_default_credentials_create(nullptr, &alts_options));
 }
 
 std::shared_ptr<CallCredentials> ExternalAccountCredentials(
@@ -350,7 +353,6 @@ class MetadataCredentialsPluginWrapper final : private internal::GrpcLibrary {
   static void Destroy(void* wrapper) {
     if (wrapper == nullptr) return;
     grpc_event_engine::experimental::GetDefaultEventEngine()->Run([wrapper] {
-      grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
       grpc_core::ExecCtx exec_ctx;
       delete static_cast<MetadataCredentialsPluginWrapper*>(wrapper);
     });
@@ -362,7 +364,7 @@ class MetadataCredentialsPluginWrapper final : private internal::GrpcLibrary {
       grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
       size_t* num_creds_md, grpc_status_code* status,
       const char** error_details) {
-    CHECK(wrapper);
+    GRPC_CHECK(wrapper);
     MetadataCredentialsPluginWrapper* w =
         static_cast<MetadataCredentialsPluginWrapper*>(wrapper);
     if (!w->plugin_) {
@@ -393,7 +395,7 @@ class MetadataCredentialsPluginWrapper final : private internal::GrpcLibrary {
   }
 
   static char* DebugString(void* wrapper) {
-    CHECK(wrapper);
+    GRPC_CHECK(wrapper);
     MetadataCredentialsPluginWrapper* w =
         static_cast<MetadataCredentialsPluginWrapper*>(wrapper);
     return gpr_strdup(w->plugin_->DebugString().c_str());

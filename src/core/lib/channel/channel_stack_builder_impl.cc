@@ -18,6 +18,8 @@
 
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <algorithm>
@@ -27,19 +29,10 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/container/flat_hash_map.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/no_destruct.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/activity.h"
@@ -47,26 +40,27 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
 absl::StatusOr<RefCountedPtr<grpc_channel_stack>>
 ChannelStackBuilderImpl::Build() {
-  std::vector<const grpc_channel_filter*> stack;
-
-  for (const auto* filter : this->stack()) {
-    stack.push_back(filter);
-  }
+  std::vector<FilterAndConfig> stack = this->stack();
 
   // calculate the size of the channel stack
-  size_t channel_stack_size =
-      grpc_channel_stack_size(stack.data(), stack.size());
+  size_t channel_stack_size = grpc_channel_stack_size(stack);
 
   // allocate memory
   auto* channel_stack =
       static_cast<grpc_channel_stack*>(gpr_zalloc(channel_stack_size));
+  channel_stack->type = this->channel_stack_type();
 
   // and initialize it
   grpc_error_handle error = grpc_channel_stack_init(
@@ -76,8 +70,7 @@ ChannelStackBuilderImpl::Build() {
         grpc_channel_stack_destroy(stk);
         gpr_free(stk);
       },
-      channel_stack, stack.data(), stack.size(), channel_args(), name(),
-      channel_stack);
+      channel_stack, stack, channel_args(), name(), channel_stack, blackboard_);
 
   if (!error.ok()) {
     grpc_channel_stack_destroy(channel_stack);

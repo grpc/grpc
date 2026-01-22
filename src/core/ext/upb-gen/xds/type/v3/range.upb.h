@@ -3,14 +3,16 @@
  *     xds/type/v3/range.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_TYPE_V3_RANGE_PROTO_UPB_H_
-#define XDS_TYPE_V3_RANGE_PROTO_UPB_H_
+#ifndef XDS_TYPE_V3_RANGE_PROTO_UPB_H__UPB_H_
+#define XDS_TYPE_V3_RANGE_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
 #include "xds/type/v3/range.upb_minitable.h"
+
 
 // Must be last.
 #include "upb/port/def.inc"
@@ -241,4 +243,4 @@ UPB_INLINE void xds_type_v3_DoubleRange_set_end(xds_type_v3_DoubleRange *msg, do
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_TYPE_V3_RANGE_PROTO_UPB_H_ */
+#endif  /* XDS_TYPE_V3_RANGE_PROTO_UPB_H__UPB_H_ */

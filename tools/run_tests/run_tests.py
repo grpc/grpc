@@ -17,7 +17,6 @@
 import argparse
 import ast
 import collections
-import glob
 import itertools
 import json
 import logging
@@ -28,19 +27,14 @@ import platform
 import random
 import re
 import shlex
-import socket
 import subprocess
 import sys
-import tempfile
 import time
-import traceback
-import uuid
-import urllib.request
+import urllib
 
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
 import python_utils.start_port_server as start_port_server
-import python_utils.watch_dirs as watch_dirs
 
 try:
     from python_utils.upload_test_results import upload_results_to_bq
@@ -108,7 +102,7 @@ def _print_debug_info_epilogue(dockerfile_dir=None):
 
 
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
-class Config(object):
+class Config:
     def __init__(
         self,
         config,
@@ -162,6 +156,14 @@ class Config(object):
             timeout_retries=1 if flaky or args.allow_flakes else 0,
         )
 
+    def __repr__(self):
+        return (
+            f"<Config build_config={self.build_config}"
+            f" environ={self.environ} tool_prefix={self.tool_prefix}"
+            f" timeout_multiplier={self.timeout_multiplier}"
+            f" iomgr_platform={self.iomgr_platform}>"
+        )
+
 
 def get_c_tests(travis, test_lang):
     out = []
@@ -190,7 +192,7 @@ def _check_arch(arch, supported_archs):
 
 
 def _is_use_docker_child():
-    """Returns True if running running as a --use_docker child."""
+    """Returns True if running as a --use_docker child."""
     return True if os.getenv("DOCKER_RUN_SCRIPT_COMMAND") else False
 
 
@@ -279,9 +281,7 @@ class CLanguage(object):
                 [
                     "default",
                     "cmake",
-                    "cmake_ninja_vs2019",
                     "cmake_ninja_vs2022",
-                    "cmake_vs2019",
                     "cmake_vs2022",
                 ],
             )
@@ -289,19 +289,13 @@ class CLanguage(object):
 
             activate_vs_tools = ""
             if (
-                self.args.compiler == "cmake_ninja_vs2019"
+                self.args.compiler == "cmake_ninja_vs2022"
                 or self.args.compiler == "cmake"
                 or self.args.compiler == "default"
             ):
                 # cmake + ninja build is the default because it is faster and supports boringssl assembly optimizations
-                # the compiler used is exactly the same as for cmake_vs2017
-                cmake_generator = "Ninja"
-                activate_vs_tools = "2019"
-            elif self.args.compiler == "cmake_ninja_vs2022":
                 cmake_generator = "Ninja"
                 activate_vs_tools = "2022"
-            elif self.args.compiler == "cmake_vs2019":
-                cmake_generator = "Visual Studio 16 2019"
             elif self.args.compiler == "cmake_vs2022":
                 cmake_generator = "Visual Studio 17 2022"
             else:
@@ -310,7 +304,7 @@ class CLanguage(object):
 
             self._cmake_configure_extra_args = list(
                 self.args.cmake_configure_extra_args
-            )
+            ) + ["-DCMAKE_CXX_STANDARD=17"]
             self._cmake_generator_windows = cmake_generator
             # required to pass as cmake "-A" configuration for VS builds (but not for Ninja)
             self._cmake_architecture_windows = (
@@ -525,15 +519,15 @@ class CLanguage(object):
         environ = {"GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX": self.lang_suffix}
         if self.platform == "windows":
             environ["GRPC_CMAKE_GENERATOR"] = self._cmake_generator_windows
-            environ[
-                "GRPC_CMAKE_ARCHITECTURE"
-            ] = self._cmake_architecture_windows
-            environ[
-                "GRPC_BUILD_ACTIVATE_VS_TOOLS"
-            ] = self._activate_vs_tools_windows
-            environ[
-                "GRPC_BUILD_VS_TOOLS_ARCHITECTURE"
-            ] = self._vs_tools_architecture_windows
+            environ["GRPC_CMAKE_ARCHITECTURE"] = (
+                self._cmake_architecture_windows
+            )
+            environ["GRPC_BUILD_ACTIVATE_VS_TOOLS"] = (
+                self._activate_vs_tools_windows
+            )
+            environ["GRPC_BUILD_VS_TOOLS_ARCHITECTURE"] = (
+                self._vs_tools_architecture_windows
+            )
         elif self.platform == "linux":
             environ["GRPC_RUNTESTS_ARCHITECTURE"] = self.args.arch
         return environ
@@ -564,22 +558,17 @@ class CLanguage(object):
             _check_compiler(compiler, ["default", "cmake"])
 
         if compiler == "default" or compiler == "cmake":
-            # This is to address Apple clang defaults C++98.
-            cmake_args = (
-                ["-DCMAKE_CXX_STANDARD=14"]
-                if platform_string() == "mac"
-                else []
-            )
-            return ("debian11", cmake_args)
+            return ("debian11", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc8":
-            return ("gcc_8", [])
+            return ("gcc_8", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc10.2":
-            return ("debian11", [])
+            return ("debian11", ["-DCMAKE_CXX_STANDARD=17"])
         elif compiler == "gcc10.2_openssl102":
             return (
                 "debian11_openssl102",
                 [
                     "-DgRPC_SSL_PROVIDER=package",
+                    "-DCMAKE_CXX_STANDARD=17",
                 ],
             )
         elif compiler == "gcc10.2_openssl111":
@@ -587,23 +576,37 @@ class CLanguage(object):
                 "debian11_openssl111",
                 [
                     "-DgRPC_SSL_PROVIDER=package",
+                    "-DCMAKE_CXX_STANDARD=17",
                 ],
             )
-        elif compiler == "gcc12":
-            return ("gcc_12", ["-DCMAKE_CXX_STANDARD=20"])
         elif compiler == "gcc12_openssl309":
             return (
                 "debian12_openssl309",
                 [
                     "-DgRPC_SSL_PROVIDER=package",
+                    "-DCMAKE_CXX_STANDARD=17",
                 ],
             )
+        elif compiler == "gcc14":
+            return ("gcc_14", ["-DCMAKE_CXX_STANDARD=20"])
         elif compiler == "gcc_musl":
-            return ("alpine", [])
-        elif compiler == "clang6":
-            return ("clang_6", self._clang_cmake_configure_extra_args())
-        elif compiler == "clang17":
-            return ("clang_17", self._clang_cmake_configure_extra_args())
+            return ("alpine", ["-DCMAKE_CXX_STANDARD=17"])
+        elif compiler == "clang11":
+            return (
+                "clang_11",
+                self._clang_cmake_configure_extra_args()
+                + [
+                    "-DCMAKE_CXX_STANDARD=17",
+                ],
+            )
+        elif compiler == "clang19":
+            return (
+                "clang_19",
+                self._clang_cmake_configure_extra_args()
+                + [
+                    "-DCMAKE_CXX_STANDARD=17",
+                ],
+            )
         else:
             raise Exception("Compiler %s not supported." % compiler)
 
@@ -617,7 +620,7 @@ class CLanguage(object):
         return self.lang_suffix
 
 
-class Php7Language(object):
+class Php8Language(object):
     def configure(self, config, args):
         self.config = config
         self.args = args
@@ -645,12 +648,12 @@ class Php7Language(object):
         return [["tools/run_tests/helper_scripts/post_tests_php.sh"]]
 
     def dockerfile_dir(self):
-        return "tools/dockerfile/test/php7_debian11_%s" % _docker_arch_suffix(
+        return "tools/dockerfile/test/php8_debian12_%s" % _docker_arch_suffix(
             self.args.arch
         )
 
     def __str__(self):
-        return "php7"
+        return "php8"
 
 
 class PythonConfig(
@@ -689,7 +692,7 @@ class PythonLanguage(object):
                     self.config.job_spec(
                         [
                             python_config.python_path,
-                            "tools/distrib/python/xds_protos/generated_file_import_test.py",
+                            "py_xds_protos/generated_file_import_test.py",
                         ],
                         timeout_seconds=60,
                         environ=_FORCE_ENVIRON_FOR_WRAPPERS,
@@ -715,7 +718,7 @@ class PythonLanguage(object):
                         self.config.job_spec(
                             python_config.run
                             + [self._TEST_COMMAND[io_platform]],
-                            timeout_seconds=8 * 60,
+                            timeout_seconds=10 * 60,
                             environ=dict(
                                 GRPC_PYTHON_TESTRUNNER_FILTER=str(test_case),
                                 **environment,
@@ -805,13 +808,6 @@ class PythonLanguage(object):
 
         # TODO: Supported version range should be defined by a single
         # source of truth.
-        python38_config = _python_config_generator(
-            name="py38",
-            major="3",
-            minor="8",
-            bits=bits,
-            config_vars=config_vars,
-        )
         python39_config = _python_config_generator(
             name="py39",
             major="3",
@@ -840,6 +836,20 @@ class PythonLanguage(object):
             bits=bits,
             config_vars=config_vars,
         )
+        python313_config = _python_config_generator(
+            name="py313",
+            major="3",
+            minor="13",
+            bits=bits,
+            config_vars=config_vars,
+        )
+        python314_config = _python_config_generator(
+            name="py314",
+            major="3",
+            minor="14",
+            bits=bits,
+            config_vars=config_vars,
+        )
         pypy27_config = _pypy_config_generator(
             name="pypy", major="2", config_vars=config_vars
         )
@@ -849,12 +859,12 @@ class PythonLanguage(object):
 
         if args.compiler == "default":
             if os.name == "nt":
-                return (python38_config,)
+                return (python39_config,)
             elif os.uname()[0] == "Darwin":
                 # NOTE(rbellevi): Testing takes significantly longer on
                 # MacOS, so we restrict the number of interpreter versions
                 # tested.
-                return (python38_config,)
+                return (python39_config,)
             elif platform.machine() == "aarch64":
                 # Currently the python_debian11_default_arm64 docker image
                 # only has python3.9 installed (and that seems sufficient
@@ -863,11 +873,10 @@ class PythonLanguage(object):
             else:
                 # Default set tested on master. Test oldest and newest.
                 return (
-                    python38_config,
+                    python39_config,
                     python312_config,
+                    python314_config,
                 )
-        elif args.compiler == "python3.8":
-            return (python38_config,)
         elif args.compiler == "python3.9":
             return (python39_config,)
         elif args.compiler == "python3.10":
@@ -876,19 +885,24 @@ class PythonLanguage(object):
             return (python311_config,)
         elif args.compiler == "python3.12":
             return (python312_config,)
+        elif args.compiler == "python3.13":
+            return (python313_config,)
+        elif args.compiler == "python3.14":
+            return (python314_config,)
         elif args.compiler == "pypy":
             return (pypy27_config,)
         elif args.compiler == "pypy3":
             return (pypy32_config,)
         elif args.compiler == "python_alpine":
-            return (python310_config,)
+            return (python311_config,)
         elif args.compiler == "all_the_cpythons":
             return (
-                python38_config,
                 python39_config,
                 python310_config,
                 python311_config,
                 python312_config,
+                python313_config,
+                python314_config,
             )
         else:
             raise Exception("Compiler %s not supported." % args.compiler)
@@ -904,26 +918,60 @@ class RubyLanguage(object):
         _check_compiler(self.args.compiler, ["default"])
 
     def test_specs(self):
-        tests = [
-            self.config.job_spec(
-                ["tools/run_tests/helper_scripts/run_ruby.sh"],
-                timeout_seconds=10 * 60,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS,
+        tests = []
+        for test in [
+            "src/ruby/spec/google_rpc_status_utils_spec.rb",
+            "src/ruby/spec/client_server_spec.rb",
+            "src/ruby/spec/errors_spec.rb",
+            "src/ruby/spec/pb/codegen/package_option_spec.rb",
+            "src/ruby/spec/pb/health/checker_spec.rb",
+            "src/ruby/spec/pb/duplicate/codegen_spec.rb",
+            "src/ruby/spec/server_spec.rb",
+            "src/ruby/spec/error_sanity_spec.rb",
+            "src/ruby/spec/channel_spec.rb",
+            "src/ruby/spec/user_agent_spec.rb",
+            "src/ruby/spec/call_credentials_spec.rb",
+            "src/ruby/spec/channel_credentials_spec.rb",
+            "src/ruby/spec/channel_connection_spec.rb",
+            "src/ruby/spec/compression_options_spec.rb",
+            "src/ruby/spec/time_consts_spec.rb",
+            "src/ruby/spec/server_credentials_spec.rb",
+            "src/ruby/spec/generic/server_interceptors_spec.rb",
+            "src/ruby/spec/generic/rpc_server_pool_spec.rb",
+            "src/ruby/spec/generic/client_stub_spec.rb",
+            "src/ruby/spec/generic/active_call_spec.rb",
+            "src/ruby/spec/generic/rpc_server_spec.rb",
+            "src/ruby/spec/generic/service_spec.rb",
+            "src/ruby/spec/generic/client_interceptors_spec.rb",
+            "src/ruby/spec/generic/rpc_desc_spec.rb",
+            "src/ruby/spec/generic/interceptor_registry_spec.rb",
+            "src/ruby/spec/debug_message_spec.rb",
+            "src/ruby/spec/logconfig_spec.rb",
+            "src/ruby/spec/call_spec.rb",
+            "src/ruby/spec/client_auth_spec.rb",
+        ]:
+            tests.append(
+                self.config.job_spec(
+                    ["bundle", "exec", "rspec", test],
+                    shortname=test,
+                    timeout_seconds=20 * 60,
+                    environ=_FORCE_ENVIRON_FOR_WRAPPERS,
+                )
             )
-        ]
         # TODO(apolcyn): re-enable the following tests after
         # https://bugs.ruby-lang.org/issues/15499 is fixed:
         # They previously worked on ruby 2.5 but needed to be disabled
         # after dropping support for ruby 2.5:
-        #   - src/ruby/end2end/channel_state_test.rb
         #   - src/ruby/end2end/sig_int_during_channel_watch_test.rb
         # TODO(apolcyn): the following test is skipped because it sometimes
         # hits "Bus Error" crashes while requiring the grpc/ruby C-extension.
         # This crashes have been unreproducible outside of CI. Also see
         # b/266212253.
         #   - src/ruby/end2end/grpc_class_init_test.rb
+        #   - src/ruby/end2end/load_grpc_with_gc_stress_test.rb
         for test in [
             "src/ruby/end2end/fork_test.rb",
+            "src/ruby/end2end/connectivity_watch_interrupted_test.rb",
             "src/ruby/end2end/simple_fork_test.rb",
             "src/ruby/end2end/prefork_without_using_grpc_test.rb",
             "src/ruby/end2end/prefork_postfork_loop_test.rb",
@@ -933,8 +981,8 @@ class RubyLanguage(object):
             "src/ruby/end2end/channel_closing_test.rb",
             "src/ruby/end2end/killed_client_thread_test.rb",
             "src/ruby/end2end/forking_client_test.rb",
+            "src/ruby/end2end/fork_test_repro_35489.rb",
             "src/ruby/end2end/multiple_killed_watching_threads_test.rb",
-            "src/ruby/end2end/load_grpc_with_gc_stress_test.rb",
             "src/ruby/end2end/client_memory_usage_test.rb",
             "src/ruby/end2end/package_with_underscore_test.rb",
             "src/ruby/end2end/graceful_sig_handling_test.rb",
@@ -942,23 +990,24 @@ class RubyLanguage(object):
             "src/ruby/end2end/errors_load_before_grpc_lib_test.rb",
             "src/ruby/end2end/logger_load_before_grpc_lib_test.rb",
             "src/ruby/end2end/status_codes_load_before_grpc_lib_test.rb",
+            "src/ruby/end2end/shell_out_from_server_test.rb",
             "src/ruby/end2end/call_credentials_timeout_test.rb",
             "src/ruby/end2end/call_credentials_returning_bad_metadata_doesnt_kill_background_thread_test.rb",
         ]:
-            if test in [
-                "src/ruby/end2end/fork_test.rb",
-                "src/ruby/end2end/simple_fork_test.rb",
-                "src/ruby/end2end/secure_fork_test.rb",
-                "src/ruby/end2end/bad_usage_fork_test.rb",
-                "src/ruby/end2end/prefork_without_using_grpc_test.rb",
-                "src/ruby/end2end/prefork_postfork_loop_test.rb",
-                "src/ruby/end2end/fork_test_repro_35489.rb",
-            ]:
-                # Skip fork tests in general until https://github.com/grpc/grpc/issues/34442
-                # is fixed. Otherwise we see too many flakes.
-                # After that's fixed, we should continue to skip on mac
-                # indefinitely, and on "dbg" builds until the Event Engine
-                # migration completes.
+            if (
+                test
+                in [
+                    "src/ruby/end2end/fork_test.rb",
+                    "src/ruby/end2end/simple_fork_test.rb",
+                    "src/ruby/end2end/secure_fork_test.rb",
+                    "src/ruby/end2end/bad_usage_fork_test.rb",
+                    "src/ruby/end2end/prefork_without_using_grpc_test.rb",
+                    "src/ruby/end2end/prefork_postfork_loop_test.rb",
+                    "src/ruby/end2end/fork_test_repro_35489.rb",
+                ]
+                and platform_string() == "mac"
+            ):
+                # Fork support only present on linux
                 continue
             tests.append(
                 self.config.job_spec(
@@ -1039,7 +1088,7 @@ class CSharpLanguage(object):
             else:
                 raise Exception('Illegal runtime "%s" was specified.')
 
-            for assembly in tests_by_assembly.keys():
+            for assembly in tests_by_assembly:
                 assembly_file = "src/csharp/%s/%s/%s%s" % (
                     assembly,
                     assembly_subdir,
@@ -1109,7 +1158,7 @@ class ObjCLanguage(object):
         out.append(
             self.config.job_spec(
                 ["src/objective-c/tests/build_one_example.sh"],
-                timeout_seconds=20 * 60,
+                timeout_seconds=60 * 60,
                 shortname="ios-buildtest-example-sample",
                 cpu_cost=1e6,
                 environ={
@@ -1122,7 +1171,7 @@ class ObjCLanguage(object):
         out.append(
             self.config.job_spec(
                 ["src/objective-c/tests/build_one_example.sh"],
-                timeout_seconds=20 * 60,
+                timeout_seconds=60 * 60,
                 shortname="ios-buildtest-example-switftsample",
                 cpu_cost=1e6,
                 environ={
@@ -1134,7 +1183,7 @@ class ObjCLanguage(object):
         out.append(
             self.config.job_spec(
                 ["src/objective-c/tests/build_one_example.sh"],
-                timeout_seconds=20 * 60,
+                timeout_seconds=60 * 60,
                 shortname="ios-buildtest-example-switft-use-frameworks",
                 cpu_cost=1e6,
                 environ={
@@ -1143,6 +1192,20 @@ class ObjCLanguage(object):
                 },
             )
         )
+
+        # TODO: re-enable after abseil fixes
+        # out.append(
+        #     self.config.job_spec(
+        #         ["src/objective-c/tests/build_one_example.sh"],
+        #         timeout_seconds=120 * 60,
+        #         shortname="ios-buildtest-example-switft-package",
+        #         cpu_cost=1e6,
+        #         environ={
+        #             "SCHEME": "gRPC-Package",
+        #             "EXAMPLE_PATH": ".",
+        #         },
+        #     )
+        # )
 
         # Disabled due to #20258
         # TODO (mxyan): Reenable this test when #20258 is resolved.
@@ -1160,15 +1223,16 @@ class ObjCLanguage(object):
 
         # TODO(jtattermusch): move the test out of the test/core/iomgr/CFStreamTests directory?
         # How does one add the cfstream dependency in bazel?
-        out.append(
-            self.config.job_spec(
-                ["test/core/iomgr/ios/CFStreamTests/build_and_run_tests.sh"],
-                timeout_seconds=60 * 60,
-                shortname="ios-test-cfstream-tests",
-                cpu_cost=1e6,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS,
-            )
-        )
+        # Disabled due to flakiness and being replaced with event engine
+        # out.append(
+        #     self.config.job_spec(
+        #         ["test/core/iomgr/ios/CFStreamTests/build_and_run_tests.sh"],
+        #         timeout_seconds=60 * 60,
+        #         shortname="ios-test-cfstream-tests",
+        #         cpu_cost=1e6,
+        #         environ=_FORCE_ENVIRON_FOR_WRAPPERS,
+        #     )
+        # )
         return sorted(out)
 
     def pre_build_steps(self):
@@ -1217,7 +1281,7 @@ class Sanity(object):
             return [
                 self.config.job_spec(
                     cmd["script"].split(),
-                    timeout_seconds=45 * 60,
+                    timeout_seconds=90 * 60,
                     environ=environ,
                     cpu_cost=cmd.get("cpu_cost", 1),
                 )
@@ -1253,7 +1317,7 @@ with open("tools/run_tests/generated/configs.json") as f:
 _LANGUAGES = {
     "c++": CLanguage("cxx", "c++"),
     "c": CLanguage("c", "c"),
-    "php7": Php7Language(),
+    "php8": Php8Language(),
     "python": PythonLanguage(),
     "ruby": RubyLanguage(),
     "csharp": CSharpLanguage(),
@@ -1469,7 +1533,7 @@ def _build_and_run(
                 )
             )
         )
-        # When running on travis, we want out test runs to be as similar as possible
+        # When running on travis, we want our test runs to be as similar as possible
         # for reproducibility purposes.
         if args.travis and args.max_time <= 0:
             massaged_one_run = sorted(one_run, key=lambda x: x.cpu_cost)
@@ -1665,27 +1729,25 @@ argp.add_argument(
         "gcc10.2",
         "gcc10.2_openssl102",
         "gcc10.2_openssl111",
-        "gcc12",
         "gcc12_openssl309",
+        "gcc14",
         "gcc_musl",
-        "clang6",
-        "clang17",
+        "clang11",
+        "clang19",
         # TODO: Automatically populate from supported version
-        "python3.7",
-        "python3.8",
         "python3.9",
         "python3.10",
         "python3.11",
         "python3.12",
+        "python3.13",
+        "python3.14",
         "pypy",
         "pypy3",
         "python_alpine",
         "all_the_cpythons",
         "coreclr",
         "cmake",
-        "cmake_ninja_vs2019",
         "cmake_ninja_vs2022",
-        "cmake_vs2019",
         "cmake_vs2022",
         "mono",
     ],

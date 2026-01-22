@@ -16,22 +16,19 @@
 //
 //
 
-#include <string.h>
-
-#include <memory>
-
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
+#include <string.h>
 
-#include "absl/types/span.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
+#include <memory>
 
 #include "src/core/tsi/alts/crypt/gsec.h"
+#include "absl/types/span.h"
 
 constexpr size_t kKdfKeyLen = 32;
 constexpr size_t kKdfCounterLen = 6;

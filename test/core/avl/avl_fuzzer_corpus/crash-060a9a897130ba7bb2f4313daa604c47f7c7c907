@@ -1,9 +1,0 @@
-actions {
-  del {
-  }
-}
-compares {
-  left {
-    key: 50397184
-  }
-}

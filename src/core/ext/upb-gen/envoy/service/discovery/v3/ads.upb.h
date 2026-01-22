@@ -3,10 +3,11 @@
  *     envoy/service/discovery/v3/ads.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_SERVICE_DISCOVERY_V3_ADS_PROTO_UPB_H_
-#define ENVOY_SERVICE_DISCOVERY_V3_ADS_PROTO_UPB_H_
+#ifndef ENVOY_SERVICE_DISCOVERY_V3_ADS_PROTO_UPB_H__UPB_H_
+#define ENVOY_SERVICE_DISCOVERY_V3_ADS_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -71,4 +72,4 @@ UPB_INLINE char* envoy_service_discovery_v3_AdsDummy_serialize_ex(const envoy_se
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_SERVICE_DISCOVERY_V3_ADS_PROTO_UPB_H_ */
+#endif  /* ENVOY_SERVICE_DISCOVERY_V3_ADS_PROTO_UPB_H__UPB_H_ */

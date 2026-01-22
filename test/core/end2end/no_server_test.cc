@@ -16,16 +16,6 @@
 //
 //
 
-#include <string.h>
-
-#include <utility>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/time/time.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -33,16 +23,24 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/time.h>
+#include <string.h>
+
+#include <utility>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/service_config/service_config.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/test_config.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/time/time.h"
 
 void run_test(bool wait_for_ready) {
   LOG(INFO) << "TEST: wait_for_ready=" << wait_for_ready;
@@ -57,10 +55,10 @@ void run_test(bool wait_for_ready) {
           grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
   auto args = grpc_core::ChannelArgs().SetObject(response_generator).ToC();
 
-  // create a call, channel to a non existant server
+  // create a call, channel to a non existent server
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   grpc_channel* chan =
-      grpc_channel_create("fake:nonexistant", creds, args.get());
+      grpc_channel_create("fake:nonexistent", creds, args.get());
   grpc_channel_credentials_release(creds);
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(2);
   grpc_call* call = grpc_channel_create_call(
@@ -86,9 +84,9 @@ void run_test(bool wait_for_ready) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK_EQ(GRPC_CALL_OK,
-           grpc_call_start_batch(call, ops, (size_t)(op - ops),
-                                 grpc_core::CqVerifier::tag(1), nullptr));
+  GRPC_CHECK_EQ(GRPC_CALL_OK,
+                grpc_call_start_batch(call, ops, (size_t)(op - ops),
+                                      grpc_core::CqVerifier::tag(1), nullptr));
 
   {
     response_generator->WaitForResolverSet(
@@ -106,9 +104,9 @@ void run_test(bool wait_for_ready) {
 
   LOG(INFO) << "call status: " << status;
   if (wait_for_ready) {
-    CHECK_EQ(status, GRPC_STATUS_DEADLINE_EXCEEDED);
+    GRPC_CHECK_EQ(status, GRPC_STATUS_DEADLINE_EXCEEDED);
   } else {
-    CHECK_EQ(status, GRPC_STATUS_UNAVAILABLE);
+    GRPC_CHECK_EQ(status, GRPC_STATUS_UNAVAILABLE);
   }
 
   grpc_slice_unref(details);

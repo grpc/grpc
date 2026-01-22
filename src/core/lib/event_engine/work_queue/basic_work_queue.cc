@@ -13,15 +13,14 @@
 // limitations under the License.
 #include "src/core/lib/event_engine/work_queue/basic_work_queue.h"
 
-#include <utility>
-
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/common_closures.h"
-#include "src/core/lib/gprpp/sync.h"
+#include <utility>
 
-namespace grpc_event_engine {
-namespace experimental {
+#include "src/core/lib/event_engine/common_closures.h"
+#include "src/core/util/sync.h"
+
+namespace grpc_event_engine::experimental {
 
 BasicWorkQueue::BasicWorkQueue(void* owner) : owner_(owner) {}
 
@@ -61,5 +60,4 @@ void BasicWorkQueue::Add(absl::AnyInvocable<void()> invocable) {
   q_.push_back(SelfDeletingClosure::Create(std::move(invocable)));
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

@@ -14,32 +14,33 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_WAKEUP_FD_EVENTFD_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_WAKEUP_FD_EVENTFD_H
 
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 
+#include "src/core/lib/event_engine/posix_engine/posix_interface.h"
+#include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
-
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 class EventFdWakeupFd : public WakeupFd {
  public:
-  EventFdWakeupFd() : WakeupFd() {}
+  explicit EventFdWakeupFd(EventEnginePosixInterface* posix_interface)
+      : WakeupFd(), posix_interface_(posix_interface) {}
   ~EventFdWakeupFd() override;
   absl::Status ConsumeWakeup() override;
   absl::Status Wakeup() override;
-  static absl::StatusOr<std::unique_ptr<WakeupFd>> CreateEventFdWakeupFd();
+  static absl::StatusOr<std::unique_ptr<WakeupFd>> CreateEventFdWakeupFd(
+      EventEnginePosixInterface* posix_interface);
   static bool IsSupported();
 
  private:
   absl::Status Init();
+  EventEnginePosixInterface* posix_interface_;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_WAKEUP_FD_EVENTFD_H

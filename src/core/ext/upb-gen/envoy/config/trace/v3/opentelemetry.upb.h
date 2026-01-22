@@ -3,10 +3,11 @@
  *     envoy/config/trace/v3/opentelemetry.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_TRACE_V3_OPENTELEMETRY_PROTO_UPB_H_
-#define ENVOY_CONFIG_TRACE_V3_OPENTELEMETRY_PROTO_UPB_H_
+#ifndef ENVOY_CONFIG_TRACE_V3_OPENTELEMETRY_PROTO_UPB_H__UPB_H_
+#define ENVOY_CONFIG_TRACE_V3_OPENTELEMETRY_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -15,6 +16,7 @@
 #include "envoy/config/core/v3/extension.upb_minitable.h"
 #include "envoy/config/core/v3/grpc_service.upb_minitable.h"
 #include "envoy/config/core/v3/http_service.upb_minitable.h"
+#include "google/protobuf/wrappers.upb_minitable.h"
 #include "udpa/annotations/migrate.upb_minitable.h"
 #include "udpa/annotations/status.upb_minitable.h"
 
@@ -29,6 +31,7 @@ typedef struct envoy_config_trace_v3_OpenTelemetryConfig { upb_Message UPB_PRIVA
 struct envoy_config_core_v3_GrpcService;
 struct envoy_config_core_v3_HttpService;
 struct envoy_config_core_v3_TypedExtensionConfig;
+struct google_protobuf_UInt32Value;
 
 
 
@@ -69,29 +72,30 @@ UPB_INLINE char* envoy_config_trace_v3_OpenTelemetryConfig_serialize_ex(const en
   return ptr;
 }
 UPB_INLINE void envoy_config_trace_v3_OpenTelemetryConfig_clear_grpc_service(envoy_config_trace_v3_OpenTelemetryConfig* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE const struct envoy_config_core_v3_GrpcService* envoy_config_trace_v3_OpenTelemetryConfig_grpc_service(const envoy_config_trace_v3_OpenTelemetryConfig* msg) {
   const struct envoy_config_core_v3_GrpcService* default_val = NULL;
   const struct envoy_config_core_v3_GrpcService* ret;
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__GrpcService_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_trace_v3_OpenTelemetryConfig_has_grpc_service(const envoy_config_trace_v3_OpenTelemetryConfig* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_config_trace_v3_OpenTelemetryConfig_clear_service_name(envoy_config_trace_v3_OpenTelemetryConfig* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(28, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(32, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE upb_StringView envoy_config_trace_v3_OpenTelemetryConfig_service_name(const envoy_config_trace_v3_OpenTelemetryConfig* msg) {
   upb_StringView default_val = upb_StringView_FromString("");
   upb_StringView ret;
-  const upb_MiniTableField field = {2, UPB_SIZE(28, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(32, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -104,6 +108,7 @@ UPB_INLINE const struct envoy_config_core_v3_HttpService* envoy_config_trace_v3_
   const struct envoy_config_core_v3_HttpService* default_val = NULL;
   const struct envoy_config_core_v3_HttpService* ret;
   const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__HttpService_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -118,6 +123,7 @@ UPB_INLINE void envoy_config_trace_v3_OpenTelemetryConfig_clear_resource_detecto
 }
 UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* const* envoy_config_trace_v3_OpenTelemetryConfig_resource_detectors(const envoy_config_trace_v3_OpenTelemetryConfig* msg, size_t* size) {
   const upb_MiniTableField field = {4, UPB_SIZE(20, 48), 0, 2, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__TypedExtensionConfig_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -129,6 +135,7 @@ UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* const* envoy_
 }
 UPB_INLINE const upb_Array* _envoy_config_trace_v3_OpenTelemetryConfig_resource_detectors_upb_array(const envoy_config_trace_v3_OpenTelemetryConfig* msg, size_t* size) {
   const upb_MiniTableField field = {4, UPB_SIZE(20, 48), 0, 2, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__TypedExtensionConfig_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
     *size = arr ? arr->UPB_PRIVATE(size) : 0;
@@ -137,6 +144,7 @@ UPB_INLINE const upb_Array* _envoy_config_trace_v3_OpenTelemetryConfig_resource_
 }
 UPB_INLINE upb_Array* _envoy_config_trace_v3_OpenTelemetryConfig_resource_detectors_mutable_upb_array(envoy_config_trace_v3_OpenTelemetryConfig* msg, size_t* size, upb_Arena* arena) {
   const upb_MiniTableField field = {4, UPB_SIZE(20, 48), 0, 2, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__TypedExtensionConfig_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
   if (size) {
@@ -152,6 +160,7 @@ UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_
   const struct envoy_config_core_v3_TypedExtensionConfig* default_val = NULL;
   const struct envoy_config_core_v3_TypedExtensionConfig* ret;
   const upb_MiniTableField field = {5, UPB_SIZE(24, 56), 66, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__TypedExtensionConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -160,9 +169,27 @@ UPB_INLINE bool envoy_config_trace_v3_OpenTelemetryConfig_has_sampler(const envo
   const upb_MiniTableField field = {5, UPB_SIZE(24, 56), 66, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_config_trace_v3_OpenTelemetryConfig_clear_max_cache_size(envoy_config_trace_v3_OpenTelemetryConfig* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(28, 64), 67, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_trace_v3_OpenTelemetryConfig_max_cache_size(const envoy_config_trace_v3_OpenTelemetryConfig* msg) {
+  const struct google_protobuf_UInt32Value* default_val = NULL;
+  const struct google_protobuf_UInt32Value* ret;
+  const upb_MiniTableField field = {6, UPB_SIZE(28, 64), 67, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt32Value_msg_init);
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool envoy_config_trace_v3_OpenTelemetryConfig_has_max_cache_size(const envoy_config_trace_v3_OpenTelemetryConfig* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(28, 64), 67, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
+}
 
 UPB_INLINE void envoy_config_trace_v3_OpenTelemetryConfig_set_grpc_service(envoy_config_trace_v3_OpenTelemetryConfig *msg, struct envoy_config_core_v3_GrpcService* value) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__GrpcService_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_GrpcService* envoy_config_trace_v3_OpenTelemetryConfig_mutable_grpc_service(envoy_config_trace_v3_OpenTelemetryConfig* msg, upb_Arena* arena) {
@@ -174,11 +201,12 @@ UPB_INLINE struct envoy_config_core_v3_GrpcService* envoy_config_trace_v3_OpenTe
   return sub;
 }
 UPB_INLINE void envoy_config_trace_v3_OpenTelemetryConfig_set_service_name(envoy_config_trace_v3_OpenTelemetryConfig *msg, upb_StringView value) {
-  const upb_MiniTableField field = {2, UPB_SIZE(28, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, UPB_SIZE(32, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_config_trace_v3_OpenTelemetryConfig_set_http_service(envoy_config_trace_v3_OpenTelemetryConfig *msg, struct envoy_config_core_v3_HttpService* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__HttpService_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_HttpService* envoy_config_trace_v3_OpenTelemetryConfig_mutable_http_service(envoy_config_trace_v3_OpenTelemetryConfig* msg, upb_Arena* arena) {
@@ -191,6 +219,7 @@ UPB_INLINE struct envoy_config_core_v3_HttpService* envoy_config_trace_v3_OpenTe
 }
 UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig** envoy_config_trace_v3_OpenTelemetryConfig_mutable_resource_detectors(envoy_config_trace_v3_OpenTelemetryConfig* msg, size_t* size) {
   upb_MiniTableField field = {4, UPB_SIZE(20, 48), 0, 2, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__TypedExtensionConfig_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -207,6 +236,7 @@ UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig** envoy_config_trace
 }
 UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_trace_v3_OpenTelemetryConfig_add_resource_detectors(envoy_config_trace_v3_OpenTelemetryConfig* msg, upb_Arena* arena) {
   upb_MiniTableField field = {4, UPB_SIZE(20, 48), 0, 2, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__TypedExtensionConfig_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
   if (!arr || !UPB_PRIVATE(_upb_Array_ResizeUninitialized)(
@@ -221,6 +251,7 @@ UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_trace_
 }
 UPB_INLINE void envoy_config_trace_v3_OpenTelemetryConfig_set_sampler(envoy_config_trace_v3_OpenTelemetryConfig *msg, struct envoy_config_core_v3_TypedExtensionConfig* value) {
   const upb_MiniTableField field = {5, UPB_SIZE(24, 56), 66, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__TypedExtensionConfig_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_trace_v3_OpenTelemetryConfig_mutable_sampler(envoy_config_trace_v3_OpenTelemetryConfig* msg, upb_Arena* arena) {
@@ -231,6 +262,19 @@ UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_trace_
   }
   return sub;
 }
+UPB_INLINE void envoy_config_trace_v3_OpenTelemetryConfig_set_max_cache_size(envoy_config_trace_v3_OpenTelemetryConfig *msg, struct google_protobuf_UInt32Value* value) {
+  const upb_MiniTableField field = {6, UPB_SIZE(28, 64), 67, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt32Value_msg_init);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+}
+UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_trace_v3_OpenTelemetryConfig_mutable_max_cache_size(envoy_config_trace_v3_OpenTelemetryConfig* msg, upb_Arena* arena) {
+  struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_config_trace_v3_OpenTelemetryConfig_max_cache_size(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_UInt32Value*)_upb_Message_New(&google__protobuf__UInt32Value_msg_init, arena);
+    if (sub) envoy_config_trace_v3_OpenTelemetryConfig_set_max_cache_size(msg, sub);
+  }
+  return sub;
+}
 
 #ifdef __cplusplus
 }  /* extern "C" */
@@ -238,4 +282,4 @@ UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_trace_
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_TRACE_V3_OPENTELEMETRY_PROTO_UPB_H_ */
+#endif  /* ENVOY_CONFIG_TRACE_V3_OPENTELEMETRY_PROTO_UPB_H__UPB_H_ */

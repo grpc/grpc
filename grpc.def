@@ -152,6 +152,7 @@ EXPORTS
     grpc_resource_quota_unref
     grpc_resource_quota_resize
     grpc_resource_quota_set_max_threads
+    grpc_resource_quota_set_max_outstanding_streams
     grpc_dump_xds_configs
     grpc_resource_quota_arg_vtable
     grpc_channelz_get_top_channels
@@ -230,7 +231,9 @@ EXPORTS
     gpr_free_aligned
     gpr_cpu_num_cores
     gpr_cpu_current_cpu
-    gpr_log
+    grpc_absl_log
+    grpc_absl_log_int
+    grpc_absl_log_str
     gpr_log_verbosity_init
     gpr_format_message
     gpr_strdup

@@ -17,13 +17,13 @@
 #ifndef GRPC_TEST_CPP_UTIL_TLS_TEST_UTILS_H
 #define GRPC_TEST_CPP_UTIL_TLS_TEST_UTILS_H
 
-#include <deque>
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/security/server_credentials.h>
 
-#include "src/core/lib/gprpp/thd.h"
+#include <deque>
+
+#include "src/core/util/thd.h"
 
 namespace grpc {
 namespace testing {

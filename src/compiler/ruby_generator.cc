@@ -50,7 +50,7 @@ void PrintMethod(const MethodDescriptor* method, Printer* out) {
   }
   std::map<std::string, std::string> method_vars = ListToDict({
       "mth.name",
-      method->name(),
+      std::string(method->name()),
       "input.type",
       input_type,
       "output.type",
@@ -70,7 +70,7 @@ void PrintService(const ServiceDescriptor* service, Printer* out) {
   // Begin the service module
   std::map<std::string, std::string> module_vars = ListToDict({
       "module.name",
-      Modularize(service->name()),
+      Modularize(std::string(service->name())),
   });
   out->Print(module_vars, "module $module.name$\n");
   out->Indent();
@@ -86,7 +86,7 @@ void PrintService(const ServiceDescriptor* service, Printer* out) {
   out->Print("self.marshal_class_method = :encode\n");
   out->Print("self.unmarshal_class_method = :decode\n");
   std::map<std::string, std::string> pkg_vars =
-      ListToDict({"service_full_name", service->full_name()});
+      ListToDict({"service_full_name", std::string(service->full_name())});
   out->Print(pkg_vars, "self.service_name = '$service_full_name$'\n");
   out->Print("\n");
   for (int i = 0; i < service->method_count(); ++i) {
@@ -191,7 +191,7 @@ std::string GetServices(const FileDescriptor* file) {
     // Write out a file header.
     std::map<std::string, std::string> header_comment_vars = ListToDict({
         "file.name",
-        file->name(),
+        std::string(file->name()),
         "file.package",
         package_name,
     });

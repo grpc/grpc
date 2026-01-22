@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2021 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+set -eux
 
 ACTION=${1:---overwrite-in-place}
 [[ $ACTION == '--overwrite-in-place' ]] || [[ $ACTION == '--diff' ]]
@@ -33,10 +33,12 @@ DIRS=(
     'setup.py'
 )
 
-VIRTUALENV=isort_virtual_environment
+VIRTUALENV=".venv-ci-isort"
+python3 -m virtualenv "${VIRTUALENV}"
+source "${VIRTUALENV}/bin/activate"
+python -VV
 
-python3 -m virtualenv $VIRTUALENV
-PYTHON=${VIRTUALENV}/bin/python
-"$PYTHON" -m pip install isort==5.9.2
+pip install isort==6.0.1
+pip list
 
-$PYTHON -m isort $ACTION --settings-path=black.toml --dont-follow-links "${DIRS[@]}"
+isort $ACTION --settings-path=grpc-style-config.toml "${DIRS[@]}"

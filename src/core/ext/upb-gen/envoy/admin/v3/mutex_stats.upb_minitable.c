@@ -3,7 +3,8 @@
  *     envoy/admin/v3/mutex_stats.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -14,6 +15,7 @@
 // Must be last.
 #include "upb/port/def.inc"
 
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
 static const upb_MiniTableField envoy_admin_v3_MutexStats__fields[3] = {
   {1, 8, 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   {2, 16, 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
@@ -35,6 +37,7 @@ const upb_MiniTable envoy__admin__v3__MutexStats_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__admin__v3__MutexStats_msg_init_ptr = &envoy__admin__v3__MutexStats_msg_init;
 static const upb_MiniTable *messages_layout[1] = {
   &envoy__admin__v3__MutexStats_msg_init,
 };

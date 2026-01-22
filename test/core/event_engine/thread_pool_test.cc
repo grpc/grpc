@@ -13,6 +13,9 @@
 // limitations under the License.
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/thd_id.h>
+
 #include <atomic>
 #include <chrono>
 #include <cmath>
@@ -23,19 +26,15 @@
 #include <tuple>
 #include <vector>
 
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
-#include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/thd_id.h>
-
 #include "src/core/lib/event_engine/thread_pool/thread_count.h"
 #include "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h"
-#include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/thd.h"
+#include "src/core/util/time.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -66,6 +65,8 @@ TYPED_TEST(ThreadPoolTest, CanDestroyInsideClosure) {
   n.WaitForNotification();
 }
 
+#if GRPC_ENABLE_FORK_SUPPORT
+
 TYPED_TEST(ThreadPoolTest, CanSurviveFork) {
   TypeParam p(8);
   grpc_core::Notification inner_closure_ran;
@@ -78,7 +79,7 @@ TYPED_TEST(ThreadPoolTest, CanSurviveFork) {
   });
   // simulate a fork and watch the child process
   p.PrepareFork();
-  p.PostforkChild();
+  p.PostFork();
   inner_closure_ran.WaitForNotification();
   grpc_core::Notification n2;
   p.Run([&n2] { n2.Notify(); });
@@ -96,7 +97,7 @@ TYPED_TEST(ThreadPoolTest, ForkStressTest) {
   // This test exercises a subset of the fork logic, the pieces we can control
   // without an actual OS fork.
   constexpr int expected_runcount = 1000;
-  constexpr absl::Duration fork_freqency{absl::Milliseconds(50)};
+  constexpr absl::Duration fork_frequency{absl::Milliseconds(50)};
   constexpr int num_closures_between_forks{100};
   TypeParam pool(8);
   std::atomic<int> runcount{0};
@@ -122,14 +123,14 @@ TYPED_TEST(ThreadPoolTest, ForkStressTest) {
   // simulate multiple forks at a fixed frequency
   int curr_runcount = 0;
   while (curr_runcount < expected_runcount) {
-    absl::SleepFor(fork_freqency);
+    absl::SleepFor(fork_frequency);
     curr_runcount = runcount.load(std::memory_order_relaxed);
     int curr_forkcount = fork_count.load(std::memory_order_relaxed);
     if (curr_forkcount * num_closures_between_forks > curr_runcount) {
       continue;
     }
     pool.PrepareFork();
-    pool.PostforkChild();
+    pool.PostFork();
     fork_count.fetch_add(1);
   }
   ASSERT_GE(fork_count.load(), expected_runcount / num_closures_between_forks);
@@ -152,8 +153,7 @@ TYPED_TEST(ThreadPoolTest, StartQuiesceRaceStressTest) {
         "t1",
         [](void* arg) {
           ThdState* state = static_cast<ThdState*>(arg);
-          state->i % 2 == 0 ? state->pool->Quiesce()
-                            : state->pool->PostforkParent();
+          state->i % 2 == 0 ? state->pool->Quiesce() : state->pool->PostFork();
         },
         &state, nullptr,
         grpc_core::Thread::Options().set_tracked(false).set_joinable(true));
@@ -161,8 +161,7 @@ TYPED_TEST(ThreadPoolTest, StartQuiesceRaceStressTest) {
         "t2",
         [](void* arg) {
           ThdState* state = static_cast<ThdState*>(arg);
-          state->i % 2 == 1 ? state->pool->Quiesce()
-                            : state->pool->PostforkParent();
+          state->i % 2 == 1 ? state->pool->Quiesce() : state->pool->PostFork();
         },
         &state, nullptr,
         grpc_core::Thread::Options().set_tracked(false).set_joinable(true));
@@ -172,6 +171,8 @@ TYPED_TEST(ThreadPoolTest, StartQuiesceRaceStressTest) {
     t2.Join();
   }
 }
+
+#endif  // GRPC_ENABLE_FORK_SUPPORT
 
 void ScheduleSelf(ThreadPool* p) {
   p->Run([p] { ScheduleSelf(p); });

@@ -3,7 +3,8 @@
  *     xds/core/v3/resource_locator.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -15,9 +16,10 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub xds_core_v3_ResourceLocator_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &xds__core__v3__ContextParams_msg_init},
-  {.UPB_PRIVATE(submsg) = &xds__core__v3__ResourceLocator__Directive_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal xds_core_v3_ResourceLocator__submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &xds__core__v3__ContextParams_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &xds__core__v3__ResourceLocator__Directive_msg_init_ptr},
 };
 
 static const upb_MiniTableField xds_core_v3_ResourceLocator__fields[6] = {
@@ -25,12 +27,12 @@ static const upb_MiniTableField xds_core_v3_ResourceLocator__fields[6] = {
   {2, UPB_SIZE(24, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {3, 32, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {4, UPB_SIZE(40, 48), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {5, UPB_SIZE(20, 72), -13, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {6, UPB_SIZE(16, 64), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(20, 72), UPB_SIZE(-17, -13), 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(12, 64), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable xds__core__v3__ResourceLocator_msg_init = {
-  &xds_core_v3_ResourceLocator_submsgs[0],
+  &xds_core_v3_ResourceLocator__submsgs[0],
   &xds_core_v3_ResourceLocator__fields[0],
   UPB_SIZE(48, 80), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -48,8 +50,9 @@ const upb_MiniTable xds__core__v3__ResourceLocator_msg_init = {
   })
 };
 
-static const upb_MiniTableSub xds_core_v3_ResourceLocator_Directive_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &xds__core__v3__ResourceLocator_msg_init},
+const upb_MiniTable* xds__core__v3__ResourceLocator_msg_init_ptr = &xds__core__v3__ResourceLocator_msg_init;
+static const upb_MiniTableSubInternal xds_core_v3_ResourceLocator_Directive__submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &xds__core__v3__ResourceLocator_msg_init_ptr},
 };
 
 static const upb_MiniTableField xds_core_v3_ResourceLocator_Directive__fields[2] = {
@@ -58,7 +61,7 @@ static const upb_MiniTableField xds_core_v3_ResourceLocator_Directive__fields[2]
 };
 
 const upb_MiniTable xds__core__v3__ResourceLocator__Directive_msg_init = {
-  &xds_core_v3_ResourceLocator_Directive_submsgs[0],
+  &xds_core_v3_ResourceLocator_Directive__submsgs[0],
   &xds_core_v3_ResourceLocator_Directive__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -72,6 +75,7 @@ const upb_MiniTable xds__core__v3__ResourceLocator__Directive_msg_init = {
   })
 };
 
+const upb_MiniTable* xds__core__v3__ResourceLocator__Directive_msg_init_ptr = &xds__core__v3__ResourceLocator__Directive_msg_init;
 static const upb_MiniTable *messages_layout[2] = {
   &xds__core__v3__ResourceLocator_msg_init,
   &xds__core__v3__ResourceLocator__Directive_msg_init,

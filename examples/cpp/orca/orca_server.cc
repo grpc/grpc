@@ -15,21 +15,22 @@
  * limitations under the License.
  *
  */
-#include <cstddef>
-#include <iostream>
-#include <memory>
-#include <string>
-
-#include "absl/flags/flag.h"
-#include "absl/flags/parse.h"
-#include "absl/strings/str_format.h"
-#include "examples/protos/helloworld.grpc.pb.h"
-
 #include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/ext/orca_service.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/support/status.h>
+
+#include <cstddef>
+#include <iostream>
+#include <memory>
+#include <string>
+
+#include "examples/protos/helloworld.grpc.pb.h"
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
+#include "absl/log/initialize.h"
+#include "absl/strings/str_format.h"
 
 using grpc::CallbackServerContext;
 using grpc::Server;
@@ -96,6 +97,7 @@ void RunServer(uint16_t port) {
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
   RunServer(absl::GetFlag(FLAGS_port));
   return 0;
 }

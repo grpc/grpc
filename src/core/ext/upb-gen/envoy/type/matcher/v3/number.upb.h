@@ -3,10 +3,11 @@
  *     envoy/type/matcher/v3/number.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_TYPE_MATCHER_V3_NUMBER_PROTO_UPB_H_
-#define ENVOY_TYPE_MATCHER_V3_NUMBER_PROTO_UPB_H_
+#ifndef ENVOY_TYPE_MATCHER_V3_NUMBER_PROTO_UPB_H__UPB_H_
+#define ENVOY_TYPE_MATCHER_V3_NUMBER_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -75,6 +76,10 @@ UPB_INLINE envoy_type_matcher_v3_DoubleMatcher_match_pattern_oneofcases envoy_ty
   return (envoy_type_matcher_v3_DoubleMatcher_match_pattern_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_type_matcher_v3_DoubleMatcher_clear_match_pattern(envoy_type_matcher_v3_DoubleMatcher* msg) {
+  const upb_MiniTableField field = {1, 16, -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__type__matcher__v3__DoubleMatcher_msg_init, &field);
+}
 UPB_INLINE void envoy_type_matcher_v3_DoubleMatcher_clear_range(envoy_type_matcher_v3_DoubleMatcher* msg) {
   const upb_MiniTableField field = {1, 16, -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
@@ -83,6 +88,7 @@ UPB_INLINE const struct envoy_type_v3_DoubleRange* envoy_type_matcher_v3_DoubleM
   const struct envoy_type_v3_DoubleRange* default_val = NULL;
   const struct envoy_type_v3_DoubleRange* ret;
   const upb_MiniTableField field = {1, 16, -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__v3__DoubleRange_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -110,6 +116,7 @@ UPB_INLINE bool envoy_type_matcher_v3_DoubleMatcher_has_exact(const envoy_type_m
 
 UPB_INLINE void envoy_type_matcher_v3_DoubleMatcher_set_range(envoy_type_matcher_v3_DoubleMatcher *msg, struct envoy_type_v3_DoubleRange* value) {
   const upb_MiniTableField field = {1, 16, -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__v3__DoubleRange_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_v3_DoubleRange* envoy_type_matcher_v3_DoubleMatcher_mutable_range(envoy_type_matcher_v3_DoubleMatcher* msg, upb_Arena* arena) {
@@ -131,4 +138,4 @@ UPB_INLINE void envoy_type_matcher_v3_DoubleMatcher_set_exact(envoy_type_matcher
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_TYPE_MATCHER_V3_NUMBER_PROTO_UPB_H_ */
+#endif  /* ENVOY_TYPE_MATCHER_V3_NUMBER_PROTO_UPB_H__UPB_H_ */

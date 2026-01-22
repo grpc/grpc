@@ -67,10 +67,11 @@ WORKER_POOL_32CORE=workers-c2-30core-ci
 # Prefix for log URLs in cnsviewer.
 LOG_URL_PREFIX="http://cnsviewer/placer/prod/home/kokoro-dedicated/build_artifacts/${KOKORO_BUILD_ARTIFACTS_SUBDIR}/github/grpc/"
 
-# This is to ensure we can push and pull images from Artifact Registry. We do
-# not necessarily need it to run load tests, but will need it when we employ
-# pre-built images in the optimization.
-gcloud auth configure-docker "${PREBUILT_IMAGE_PREFIX%%/*}"
+# This is to ensure we can push and pull images from GCR and Artifact Registry.
+# We do not necessarily need it to run load tests, but will need it when we
+# employ pre-built images in the optimization.
+gcloud auth configure-docker --quiet
+gcloud auth configure-docker "${PREBUILT_IMAGE_PREFIX%%/*}" --quiet
 
 # Connect to benchmarks-prod2 cluster.
 gcloud config set project grpc-testing

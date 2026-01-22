@@ -60,7 +60,7 @@ module GRPC
     # Minimally, a stub is created with the just the host of the gRPC service
     # it wishes to access, e.g.,
     #
-    #   my_stub = ClientStub.new(example.host.com:50505,
+    #   my_stub = ClientStub.new("example.host.com:50505",
     #                            :this_channel_is_insecure)
     #
     # If a channel_override argument is passed, it will be used as the
@@ -72,7 +72,7 @@ module GRPC
     #
     # - :channel_override
     # when present, this must be a pre-created GRPC::Core::Channel.  If it's
-    # present the host and arbitrary keyword arg areignored, and the RPC
+    # present the host and arbitrary keyword args are ignored, and the RPC
     # connection uses this channel.
     #
     # - :timeout
@@ -118,11 +118,11 @@ module GRPC
     #
     # * it does not return until a response is received.
     #
-    # * the requests is sent only when GRPC core's flow control allows it to
+    # * the request is sent only when GRPC core's flow control allows it to
     #   be sent.
     #
     # == Errors ==
-    # An RuntimeError is raised if
+    # A RuntimeError is raised if
     #
     # * the server responds with a non-OK status
     #

@@ -16,6 +16,12 @@
 
 #include "src/core/load_balancing/oob_backend_metric.h"
 
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <string.h>
 
 #include <algorithm>
@@ -23,31 +29,11 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "google/protobuf/duration.upb.h"
-#include "upb/mem/arena.hpp"
-#include "xds/service/orca/v3/orca.upb.h"
-
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_stream_client.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -56,6 +42,18 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/load_balancing/backend_metric_parser.h"
 #include "src/core/load_balancing/oob_backend_metric_internal.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/memory.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
+#include "upb/mem/arena.hpp"
+#include "xds/service/orca/v3/orca.upb.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -74,12 +72,14 @@ class OrcaProducer::ConnectivityWatcher final
     grpc_pollset_set_destroy(interested_parties_);
   }
 
-  void OnConnectivityStateChange(
-      RefCountedPtr<ConnectivityStateWatcherInterface> self,
-      grpc_connectivity_state state, const absl::Status&) override {
+  void OnConnectivityStateChange(grpc_connectivity_state state,
+                                 const absl::Status&) override {
     producer_->OnConnectivityStateChange(state);
-    self.reset();
   }
+
+  void OnKeepaliveUpdate(Duration) override {}
+
+  uint32_t max_connections_per_subchannel() const override { return 1; }
 
   grpc_pollset_set* interested_parties() override {
     return interested_parties_;
@@ -149,11 +149,7 @@ class OrcaProducer::OrcaStreamEventHandler final
           "Orca stream returned UNIMPLEMENTED; disabling";
       LOG(ERROR) << kErrorMessage;
       auto* channelz_node = producer_->subchannel_->channelz_node();
-      if (channelz_node != nullptr) {
-        channelz_node->AddTraceEvent(
-            channelz::ChannelTrace::Error,
-            grpc_slice_from_static_string(kErrorMessage));
-      }
+      GRPC_CHANNELZ_LOG(channelz_node) << kErrorMessage;
     }
   }
 
@@ -209,9 +205,8 @@ class OrcaProducer::OrcaStreamEventHandler final
 // OrcaProducer
 //
 
-void OrcaProducer::Start(RefCountedPtr<Subchannel> subchannel) {
+void OrcaProducer::Start(WeakRefCountedPtr<Subchannel> subchannel) {
   subchannel_ = std::move(subchannel);
-  connected_subchannel_ = subchannel_->connected_subchannel();
   auto connectivity_watcher =
       MakeRefCounted<ConnectivityWatcher>(WeakRefAsSubclass<OrcaProducer>());
   connectivity_watcher_ = connectivity_watcher.get();
@@ -223,7 +218,7 @@ void OrcaProducer::Orphaned() {
     MutexLock lock(&mu_);
     stream_client_.reset();
   }
-  CHECK(subchannel_ != nullptr);  // Should not be called before Start().
+  GRPC_CHECK(subchannel_ != nullptr);  // Should not be called before Start().
   subchannel_->CancelConnectivityStateWatch(connectivity_watcher_);
   subchannel_->RemoveDataProducer(this);
 }
@@ -264,9 +259,8 @@ Duration OrcaProducer::GetMinIntervalLocked() const {
 }
 
 void OrcaProducer::MaybeStartStreamLocked() {
-  if (connected_subchannel_ == nullptr) return;
   stream_client_ = MakeOrphanable<SubchannelStreamClient>(
-      connected_subchannel_, subchannel_->pollset_set(),
+      subchannel_,
       std::make_unique<OrcaStreamEventHandler>(
           WeakRefAsSubclass<OrcaProducer>(), report_interval_),
       GRPC_TRACE_FLAG_ENABLED(orca_client) ? "OrcaClient" : nullptr);
@@ -285,10 +279,8 @@ void OrcaProducer::NotifyWatchers(
 void OrcaProducer::OnConnectivityStateChange(grpc_connectivity_state state) {
   MutexLock lock(&mu_);
   if (state == GRPC_CHANNEL_READY) {
-    connected_subchannel_ = subchannel_->connected_subchannel();
     if (!watchers_.empty()) MaybeStartStreamLocked();
   } else {
-    connected_subchannel_.reset();
     stream_client_.reset();
   }
 }
@@ -321,7 +313,7 @@ void OrcaWatcher::SetSubchannel(Subchannel* subchannel) {
   // This needs to be done outside of the lambda passed to
   // GetOrAddDataProducer() to avoid deadlocking by re-acquiring the
   // subchannel lock while already holding it.
-  if (created) producer_->Start(subchannel->Ref());
+  if (created) producer_->Start(subchannel->WeakRef());
   // Register ourself with the producer.
   producer_->AddWatcher(this);
 }

@@ -14,7 +14,13 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
-grpc_package(name = "test/core/message_size")
+grpc_package(
+    name = "test/core/message_size",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 licenses(["notice"])
 
@@ -23,12 +29,19 @@ grpc_cc_test(
     srcs = ["message_size_service_config_test.cc"],
     external_deps = [
         "gtest",
+        "absl/status",
+        "absl/status:statusor",
     ],
-    language = "C++",
     deps = [
+        "//:config",
         "//:gpr",
         "//:grpc",
+        "//:grpc_service_config_impl",
+        "//:ref_counted_ptr",
         "//src/core:channel_args",
+        "//src/core:grpc_message_size_filter",
+        "//src/core:grpc_service_config",
+        "//src/core:service_config_parser",
         "//test/core/test_util:grpc_test_util",
     ],
 )

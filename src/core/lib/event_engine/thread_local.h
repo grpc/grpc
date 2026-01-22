@@ -15,8 +15,7 @@
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_LOCAL_H
 #include <grpc/support/port_platform.h>
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 /// A lightweight facility to allow gpr's fork handlers and
 /// EventEngine::Forkables to coordinate.
@@ -26,7 +25,6 @@ class ThreadLocal {
   static bool IsEventEngineThread();
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_LOCAL_H

@@ -3,10 +3,11 @@
  *     envoy/config/listener/v3/api_listener.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_LISTENER_V3_API_LISTENER_PROTO_UPB_H_
-#define ENVOY_CONFIG_LISTENER_V3_API_LISTENER_PROTO_UPB_H_
+#ifndef ENVOY_CONFIG_LISTENER_V3_API_LISTENER_PROTO_UPB_H__UPB_H_
+#define ENVOY_CONFIG_LISTENER_V3_API_LISTENER_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -72,6 +73,7 @@ UPB_INLINE const struct google_protobuf_Any* envoy_config_listener_v3_ApiListene
   const struct google_protobuf_Any* default_val = NULL;
   const struct google_protobuf_Any* ret;
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Any_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -83,6 +85,7 @@ UPB_INLINE bool envoy_config_listener_v3_ApiListener_has_api_listener(const envo
 
 UPB_INLINE void envoy_config_listener_v3_ApiListener_set_api_listener(envoy_config_listener_v3_ApiListener *msg, struct google_protobuf_Any* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Any_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Any* envoy_config_listener_v3_ApiListener_mutable_api_listener(envoy_config_listener_v3_ApiListener* msg, upb_Arena* arena) {
@@ -100,4 +103,4 @@ UPB_INLINE struct google_protobuf_Any* envoy_config_listener_v3_ApiListener_muta
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_LISTENER_V3_API_LISTENER_PROTO_UPB_H_ */
+#endif  /* ENVOY_CONFIG_LISTENER_V3_API_LISTENER_PROTO_UPB_H__UPB_H_ */

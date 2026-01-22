@@ -22,48 +22,45 @@
     !defined(GPR_CUSTOM_SYNC)
 
 #include <errno.h>
-#include <time.h>
-
-#include "absl/log/check.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+#include <time.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/grpc_check.h"
 
 void gpr_mu_init(gpr_mu* mu) {
 #ifdef GRPC_ASAN_ENABLED
-  CHECK_EQ(pthread_mutex_init(&mu->mutex, nullptr), 0);
+  GRPC_CHECK_EQ(pthread_mutex_init(&mu->mutex, nullptr), 0);
   mu->leak_checker = static_cast<int*>(malloc(sizeof(*mu->leak_checker)));
-  CHECK_NE(mu->leak_checker, nullptr);
+  GRPC_CHECK_NE(mu->leak_checker, nullptr);
 #else
-  CHECK_EQ(pthread_mutex_init(mu, nullptr), 0);
+  GRPC_CHECK_EQ(pthread_mutex_init(mu, nullptr), 0);
 #endif
 }
 
 void gpr_mu_destroy(gpr_mu* mu) {
 #ifdef GRPC_ASAN_ENABLED
-  CHECK_EQ(pthread_mutex_destroy(&mu->mutex), 0);
+  GRPC_CHECK_EQ(pthread_mutex_destroy(&mu->mutex), 0);
   free(mu->leak_checker);
 #else
-  CHECK_EQ(pthread_mutex_destroy(mu), 0);
+  GRPC_CHECK_EQ(pthread_mutex_destroy(mu), 0);
 #endif
 }
 
 void gpr_mu_lock(gpr_mu* mu) {
 #ifdef GRPC_ASAN_ENABLED
-  CHECK_EQ(pthread_mutex_lock(&mu->mutex), 0);
+  GRPC_CHECK_EQ(pthread_mutex_lock(&mu->mutex), 0);
 #else
-  CHECK_EQ(pthread_mutex_lock(mu), 0);
+  GRPC_CHECK_EQ(pthread_mutex_lock(mu), 0);
 #endif
 }
 
 void gpr_mu_unlock(gpr_mu* mu) {
 #ifdef GRPC_ASAN_ENABLED
-  CHECK_EQ(pthread_mutex_unlock(&mu->mutex), 0);
+  GRPC_CHECK_EQ(pthread_mutex_unlock(&mu->mutex), 0);
 #else
-  CHECK_EQ(pthread_mutex_unlock(mu), 0);
+  GRPC_CHECK_EQ(pthread_mutex_unlock(mu), 0);
 #endif
 }
 
@@ -74,7 +71,7 @@ int gpr_mu_trylock(gpr_mu* mu) {
 #else
   err = pthread_mutex_trylock(mu);
 #endif
-  CHECK(err == 0 || err == EBUSY);
+  GRPC_CHECK(err == 0 || err == EBUSY);
   return err == 0;
 }
 
@@ -82,26 +79,26 @@ int gpr_mu_trylock(gpr_mu* mu) {
 
 void gpr_cv_init(gpr_cv* cv) {
   pthread_condattr_t attr;
-  CHECK_EQ(pthread_condattr_init(&attr), 0);
+  GRPC_CHECK_EQ(pthread_condattr_init(&attr), 0);
 #if GPR_LINUX
-  CHECK_EQ(pthread_condattr_setclock(&attr, CLOCK_MONOTONIC), 0);
+  GRPC_CHECK_EQ(pthread_condattr_setclock(&attr, CLOCK_MONOTONIC), 0);
 #endif  // GPR_LINUX
 
 #ifdef GRPC_ASAN_ENABLED
-  CHECK_EQ(pthread_cond_init(&cv->cond_var, &attr), 0);
+  GRPC_CHECK_EQ(pthread_cond_init(&cv->cond_var, &attr), 0);
   cv->leak_checker = static_cast<int*>(malloc(sizeof(*cv->leak_checker)));
-  CHECK_NE(cv->leak_checker, nullptr);
+  GRPC_CHECK_NE(cv->leak_checker, nullptr);
 #else
-  CHECK_EQ(pthread_cond_init(cv, &attr), 0);
+  GRPC_CHECK_EQ(pthread_cond_init(cv, &attr), 0);
 #endif
 }
 
 void gpr_cv_destroy(gpr_cv* cv) {
 #ifdef GRPC_ASAN_ENABLED
-  CHECK_EQ(pthread_cond_destroy(&cv->cond_var), 0);
+  GRPC_CHECK_EQ(pthread_cond_destroy(&cv->cond_var), 0);
   free(cv->leak_checker);
 #else
-  CHECK_EQ(pthread_cond_destroy(cv), 0);
+  GRPC_CHECK_EQ(pthread_cond_destroy(cv), 0);
 #endif
 }
 
@@ -130,30 +127,30 @@ int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline) {
     err = pthread_cond_timedwait(cv, mu, &abs_deadline_ts);
 #endif
   }
-  CHECK(err == 0 || err == ETIMEDOUT || err == EAGAIN);
+  GRPC_CHECK(err == 0 || err == ETIMEDOUT || err == EAGAIN);
   return err == ETIMEDOUT;
 }
 
 void gpr_cv_signal(gpr_cv* cv) {
 #ifdef GRPC_ASAN_ENABLED
-  CHECK_EQ(pthread_cond_signal(&cv->cond_var), 0);
+  GRPC_CHECK_EQ(pthread_cond_signal(&cv->cond_var), 0);
 #else
-  CHECK_EQ(pthread_cond_signal(cv), 0);
+  GRPC_CHECK_EQ(pthread_cond_signal(cv), 0);
 #endif
 }
 
 void gpr_cv_broadcast(gpr_cv* cv) {
 #ifdef GRPC_ASAN_ENABLED
-  CHECK_EQ(pthread_cond_broadcast(&cv->cond_var), 0);
+  GRPC_CHECK_EQ(pthread_cond_broadcast(&cv->cond_var), 0);
 #else
-  CHECK_EQ(pthread_cond_broadcast(cv), 0);
+  GRPC_CHECK_EQ(pthread_cond_broadcast(cv), 0);
 #endif
 }
 
 //----------------------------------------
 
 void gpr_once_init(gpr_once* once, void (*init_function)(void)) {
-  CHECK_EQ(pthread_once(once, init_function), 0);
+  GRPC_CHECK_EQ(pthread_once(once, init_function), 0);
 }
 
 #endif  // defined(GPR_POSIX_SYNC) && !defined(GPR_ABSEIL_SYNC) &&

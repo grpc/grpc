@@ -27,7 +27,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 
 namespace grpc {
@@ -91,7 +91,7 @@ class RandomAsciiMetadata {
     std::string s;
     s.reserve(length + 1);
     for (int i = 0; i < length; i++) {
-      s += static_cast<char>(rand() % 26 + 'a');
+      s += static_cast<char>((rand() % 26) + 'a');
     }
     return s;
   }

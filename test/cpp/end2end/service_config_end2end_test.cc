@@ -16,22 +16,6 @@
 //
 //
 
-#include <algorithm>
-#include <memory>
-#include <mutex>
-#include <random>
-#include <set>
-#include <string>
-#include <thread>
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/str_cat.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
@@ -45,21 +29,30 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/validate_service_config.h>
 
+#include <algorithm>
+#include <memory>
+#include <mutex>
+#include <random>
+#include <set>
+#include <string>
+#include <thread>
+
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/client_channel/global_subchannel_pool.h"
+#include "src/core/config/config_vars.h"
+#include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/lib/address_utils/parse_address.h"
-#include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/tcp_client.h"
-#include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/service_config/service_config_impl.h"
+#include "src/core/util/backoff.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
@@ -67,6 +60,11 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/credentials.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc {
 namespace testing {
@@ -175,9 +173,9 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     for (const int& port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri =
           grpc_core::URI::Parse(grpc_core::LocalIpUri(port));
-      CHECK_OK(lb_uri);
+      GRPC_CHECK_OK(lb_uri);
       grpc_resolved_address address;
-      CHECK(grpc_parse_uri(*lb_uri, &address));
+      GRPC_CHECK(grpc_parse_uri(*lb_uri, &address));
       result.addresses->emplace_back(address, grpc_core::ChannelArgs());
     }
     return result;

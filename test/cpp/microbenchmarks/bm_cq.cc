@@ -20,16 +20,14 @@
 // working
 
 #include <benchmark/benchmark.h>
-
-#include "absl/log/check.h"
-
 #include <grpc/grpc.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/grpc_library.h>
 
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/completion_queue.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
@@ -86,7 +84,7 @@ static void BM_Pass1Cpp(benchmark::State& state) {
     grpc_cq_completion completion;
     PhonyTag phony_tag;
     grpc_core::ExecCtx exec_ctx;
-    CHECK(grpc_cq_begin_op(c_cq, &phony_tag));
+    GRPC_CHECK(grpc_cq_begin_op(c_cq, &phony_tag));
     grpc_cq_end_op(c_cq, &phony_tag, absl::OkStatus(),
                    DoneWithCompletionOnStack, nullptr, &completion);
 
@@ -104,7 +102,7 @@ static void BM_Pass1Core(benchmark::State& state) {
   for (auto _ : state) {
     grpc_cq_completion completion;
     grpc_core::ExecCtx exec_ctx;
-    CHECK(grpc_cq_begin_op(cq, nullptr));
+    GRPC_CHECK(grpc_cq_begin_op(cq, nullptr));
     grpc_cq_end_op(cq, nullptr, absl::OkStatus(), DoneWithCompletionOnStack,
                    nullptr, &completion);
 
@@ -121,7 +119,7 @@ static void BM_Pluck1Core(benchmark::State& state) {
   for (auto _ : state) {
     grpc_cq_completion completion;
     grpc_core::ExecCtx exec_ctx;
-    CHECK(grpc_cq_begin_op(cq, nullptr));
+    GRPC_CHECK(grpc_cq_begin_op(cq, nullptr));
     grpc_cq_end_op(cq, nullptr, absl::OkStatus(), DoneWithCompletionOnStack,
                    nullptr, &completion);
 
@@ -161,7 +159,7 @@ class TagCallback : public grpc_completion_queue_functor {
   ~TagCallback() {}
   static void Run(grpc_completion_queue_functor* cb, int ok) {
     gpr_mu_lock(&mu);
-    CHECK(static_cast<bool>(ok));
+    GRPC_CHECK(static_cast<bool>(ok));
     *static_cast<TagCallback*>(cb)->iter_ += 1;
     gpr_cv_signal(&cv);
     gpr_mu_unlock(&mu);
@@ -214,10 +212,9 @@ static void BM_Callback_CQ_Pass1Core(benchmark::State& state) {
   grpc_completion_queue* cc = grpc_completion_queue_create(
       grpc_completion_queue_factory_lookup(&attr), &attr, nullptr);
   for (auto _ : state) {
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     grpc_cq_completion completion;
-    CHECK(grpc_cq_begin_op(cc, &tag_cb));
+    GRPC_CHECK(grpc_cq_begin_op(cc, &tag_cb));
     grpc_cq_end_op(cc, &tag_cb, absl::OkStatus(), DoneWithCompletionOnStack,
                    nullptr, &completion);
   }
@@ -238,8 +235,8 @@ static void BM_Callback_CQ_Pass1Core(benchmark::State& state) {
   }
   gpr_mu_unlock(&shutdown_mu);
 
-  CHECK(got_shutdown);
-  CHECK(iteration == static_cast<int>(state.iterations()));
+  GRPC_CHECK(got_shutdown);
+  GRPC_CHECK(iteration == static_cast<int>(state.iterations()));
   gpr_cv_destroy(&cv);
   gpr_mu_destroy(&mu);
   gpr_cv_destroy(&shutdown_cv);
@@ -257,10 +254,9 @@ static void BM_Callback_CQ_Pass1CoreHeapCompletion(benchmark::State& state) {
   grpc_completion_queue* cc =
       grpc_completion_queue_create_for_callback(&shutdown_cb, nullptr);
   for (auto _ : state) {
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     grpc_cq_completion* completion = new grpc_cq_completion;
-    CHECK(grpc_cq_begin_op(cc, &tag_cb));
+    GRPC_CHECK(grpc_cq_begin_op(cc, &tag_cb));
     grpc_cq_end_op(cc, &tag_cb, absl::OkStatus(), DoneWithCompletionOnHeap,
                    nullptr, completion);
   }
@@ -281,8 +277,8 @@ static void BM_Callback_CQ_Pass1CoreHeapCompletion(benchmark::State& state) {
   }
   gpr_mu_unlock(&shutdown_mu);
 
-  CHECK(got_shutdown);
-  CHECK(iteration == static_cast<int>(state.iterations()));
+  GRPC_CHECK(got_shutdown);
+  GRPC_CHECK(iteration == static_cast<int>(state.iterations()));
   gpr_cv_destroy(&cv);
   gpr_mu_destroy(&mu);
   gpr_cv_destroy(&shutdown_cv);

@@ -3,10 +3,11 @@
  *     envoy/config/core/v3/resolver.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_CORE_V3_RESOLVER_PROTO_UPB_H_
-#define ENVOY_CONFIG_CORE_V3_RESOLVER_PROTO_UPB_H_
+#ifndef ENVOY_CONFIG_CORE_V3_RESOLVER_PROTO_UPB_H__UPB_H_
+#define ENVOY_CONFIG_CORE_V3_RESOLVER_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -141,6 +142,7 @@ UPB_INLINE void envoy_config_core_v3_DnsResolutionConfig_clear_resolvers(envoy_c
 }
 UPB_INLINE const struct envoy_config_core_v3_Address* const* envoy_config_core_v3_DnsResolutionConfig_resolvers(const envoy_config_core_v3_DnsResolutionConfig* msg, size_t* size) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__Address_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -152,6 +154,7 @@ UPB_INLINE const struct envoy_config_core_v3_Address* const* envoy_config_core_v
 }
 UPB_INLINE const upb_Array* _envoy_config_core_v3_DnsResolutionConfig_resolvers_upb_array(const envoy_config_core_v3_DnsResolutionConfig* msg, size_t* size) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__Address_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
     *size = arr ? arr->UPB_PRIVATE(size) : 0;
@@ -160,6 +163,7 @@ UPB_INLINE const upb_Array* _envoy_config_core_v3_DnsResolutionConfig_resolvers_
 }
 UPB_INLINE upb_Array* _envoy_config_core_v3_DnsResolutionConfig_resolvers_mutable_upb_array(envoy_config_core_v3_DnsResolutionConfig* msg, size_t* size, upb_Arena* arena) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__Address_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
   if (size) {
@@ -175,6 +179,7 @@ UPB_INLINE const envoy_config_core_v3_DnsResolverOptions* envoy_config_core_v3_D
   const envoy_config_core_v3_DnsResolverOptions* default_val = NULL;
   const envoy_config_core_v3_DnsResolverOptions* ret;
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 64, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__DnsResolverOptions_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -186,6 +191,7 @@ UPB_INLINE bool envoy_config_core_v3_DnsResolutionConfig_has_dns_resolver_option
 
 UPB_INLINE struct envoy_config_core_v3_Address** envoy_config_core_v3_DnsResolutionConfig_mutable_resolvers(envoy_config_core_v3_DnsResolutionConfig* msg, size_t* size) {
   upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__Address_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -202,6 +208,7 @@ UPB_INLINE struct envoy_config_core_v3_Address** envoy_config_core_v3_DnsResolut
 }
 UPB_INLINE struct envoy_config_core_v3_Address* envoy_config_core_v3_DnsResolutionConfig_add_resolvers(envoy_config_core_v3_DnsResolutionConfig* msg, upb_Arena* arena) {
   upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__Address_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
   if (!arr || !UPB_PRIVATE(_upb_Array_ResizeUninitialized)(
@@ -216,6 +223,7 @@ UPB_INLINE struct envoy_config_core_v3_Address* envoy_config_core_v3_DnsResoluti
 }
 UPB_INLINE void envoy_config_core_v3_DnsResolutionConfig_set_dns_resolver_options(envoy_config_core_v3_DnsResolutionConfig *msg, envoy_config_core_v3_DnsResolverOptions* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 64, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__DnsResolverOptions_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_DnsResolverOptions* envoy_config_core_v3_DnsResolutionConfig_mutable_dns_resolver_options(envoy_config_core_v3_DnsResolutionConfig* msg, upb_Arena* arena) {
@@ -233,4 +241,4 @@ UPB_INLINE struct envoy_config_core_v3_DnsResolverOptions* envoy_config_core_v3_
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_CORE_V3_RESOLVER_PROTO_UPB_H_ */
+#endif  /* ENVOY_CONFIG_CORE_V3_RESOLVER_PROTO_UPB_H__UPB_H_ */

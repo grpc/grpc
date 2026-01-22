@@ -18,21 +18,28 @@
 
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h"
 
-#include "absl/log/log.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h"
+#include "src/core/util/crash.h"
+#include "absl/log/log.h"
 
 // Privacy-integrity alts_grpc_record_protocol object uses the same struct
 // defined in alts_grpc_record_protocol_common.h.
 
 // --- alts_grpc_record_protocol methods implementation. ---
+
+static grpc_slice allocate_slice(alts_grpc_record_protocol* rp, size_t size) {
+  if (rp->alloc_cb != nullptr) {
+    return rp->alloc_cb(size, rp->alloc_user_data);
+  } else {
+    return GRPC_SLICE_MALLOC(size);
+  }
+}
 
 static tsi_result alts_grpc_privacy_integrity_protect(
     alts_grpc_record_protocol* rp, grpc_slice_buffer* unprotected_slices,
@@ -49,7 +56,7 @@ static tsi_result alts_grpc_privacy_integrity_protect(
   size_t protected_frame_size =
       unprotected_slices->length + rp->header_length +
       alts_iovec_record_protocol_get_tag_length(rp->iovec_rp);
-  grpc_slice protected_slice = GRPC_SLICE_MALLOC(protected_frame_size);
+  grpc_slice protected_slice = allocate_slice(rp, protected_frame_size);
   iovec_t protected_iovec = {GRPC_SLICE_START_PTR(protected_slice),
                              GRPC_SLICE_LENGTH(protected_slice)};
   // Calls alts_iovec_record_protocol protect.
@@ -89,7 +96,7 @@ static tsi_result alts_grpc_privacy_integrity_unprotect(
   }
   size_t unprotected_frame_size =
       protected_slices->length - rp->header_length - rp->tag_length;
-  grpc_slice unprotected_slice = GRPC_SLICE_MALLOC(unprotected_frame_size);
+  grpc_slice unprotected_slice = allocate_slice(rp, unprotected_frame_size);
   iovec_t unprotected_iovec = {GRPC_SLICE_START_PTR(unprotected_slice),
                                GRPC_SLICE_LENGTH(unprotected_slice)};
   // Strips frame header from protected slices.

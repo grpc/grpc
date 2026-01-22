@@ -18,21 +18,20 @@
 
 #include "src/cpp/ext/filters/census/server_call_tracer.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <grpcpp/opencensus.h>
 #include <stdint.h>
 #include <string.h>
 
 #include <atomic>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
-#include "absl/types/optional.h"
 #include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
 #include "opencensus/tags/tag_map.h"
@@ -40,23 +39,24 @@
 #include "opencensus/trace/span_context.h"
 #include "opencensus/trace/span_id.h"
 #include "opencensus/trace/trace_id.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/port_platform.h>
-#include <grpcpp/opencensus.h>
-
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/grpc_check.h"
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/measures.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 namespace grpc {
 namespace internal {
@@ -94,7 +94,7 @@ void FilterInitialMetadata(grpc_metadata_batch* b,
 
 // OpenCensusServerCallTracer implementation
 
-class OpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
+class OpenCensusServerCallTracer : public grpc_core::ServerCallTracerInterface {
  public:
   // Maximum size of server stats that are sent on the wire.
   static constexpr uint32_t kMaxServerStatsLen = 16;
@@ -115,35 +115,42 @@ class OpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
   // Please refer to `grpc_transport_stream_op_batch_payload` for details on
   // arguments.
   void RecordSendInitialMetadata(
+      grpc_metadata_batch* send_initial_metadata) override {
+    GRPC_CHECK(
+        !grpc_core::IsCallTracerSendInitialMetadataIsAnAnnotationEnabled());
+    MutateSendInitialMetadata(send_initial_metadata);
+  }
+  void MutateSendInitialMetadata(
       grpc_metadata_batch* /*send_initial_metadata*/) override {}
 
   void RecordSendTrailingMetadata(
       grpc_metadata_batch* send_trailing_metadata) override;
 
-  void RecordSendMessage(const grpc_core::SliceBuffer& send_message) override {
-    RecordAnnotation(
-        absl::StrFormat("Send message: %ld bytes", send_message.Length()));
+  void RecordSendMessage(const grpc_core::Message& send_message) override {
+    RecordAnnotation(absl::StrFormat("Send message: %ld bytes",
+                                     send_message.payload()->Length()));
     ++sent_message_count_;
   }
   void RecordSendCompressedMessage(
-      const grpc_core::SliceBuffer& send_compressed_message) override {
-    RecordAnnotation(absl::StrFormat("Send compressed message: %ld bytes",
-                                     send_compressed_message.Length()));
+      const grpc_core::Message& send_compressed_message) override {
+    RecordAnnotation(
+        absl::StrFormat("Send compressed message: %ld bytes",
+                        send_compressed_message.payload()->Length()));
   }
 
   void RecordReceivedInitialMetadata(
       grpc_metadata_batch* recv_initial_metadata) override;
 
-  void RecordReceivedMessage(
-      const grpc_core::SliceBuffer& recv_message) override {
-    RecordAnnotation(
-        absl::StrFormat("Received message: %ld bytes", recv_message.Length()));
+  void RecordReceivedMessage(const grpc_core::Message& recv_message) override {
+    RecordAnnotation(absl::StrFormat("Received message: %ld bytes",
+                                     recv_message.payload()->Length()));
     ++recv_message_count_;
   }
   void RecordReceivedDecompressedMessage(
-      const grpc_core::SliceBuffer& recv_decompressed_message) override {
-    RecordAnnotation(absl::StrFormat("Received decompressed message: %ld bytes",
-                                     recv_decompressed_message.Length()));
+      const grpc_core::Message& recv_decompressed_message) override {
+    RecordAnnotation(
+        absl::StrFormat("Received decompressed message: %ld bytes",
+                        recv_decompressed_message.payload()->Length()));
   }
 
   void RecordReceivedTrailingMetadata(
@@ -168,6 +175,13 @@ class OpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
   }
 
   void RecordAnnotation(const Annotation& annotation) override {
+    if (annotation.type() == grpc_core::CallTracerAnnotationInterface::
+                                 AnnotationType::kSendInitialMetadata) {
+      // Census does not have any immutable tracing for send initial metadata.
+      // All Census work for send initial metadata is mutation, which is handled
+      // in MutateSendInitialMetadata.
+      return;
+    }
     if (!context_.Span().IsRecording()) {
       return;
     }
@@ -182,7 +196,7 @@ class OpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
         break;
     }
   }
-  std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override {
+  std::shared_ptr<grpc_core::TcpCallTracer> StartNewTcpTrace() override {
     return nullptr;
   }
 
@@ -196,7 +210,7 @@ class OpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
   absl::Duration elapsed_time_;
   uint64_t recv_message_count_;
   uint64_t sent_message_count_;
-  // Buffer needed for grpc_slice to reference it when adding metatdata to
+  // Buffer needed for grpc_slice to reference it when adding metadata to
   // response.
   char stats_buf_[kMaxServerStatsLen];
   // TODO(roth, ctiller): Won't need atomic here once chttp2 is migrated
@@ -294,7 +308,7 @@ void OpenCensusServerCallTracer::RecordOutgoingBytes(
 // OpenCensusServerCallTracerFactory
 //
 
-grpc_core::ServerCallTracer*
+grpc_core::ServerCallTracerInterface*
 OpenCensusServerCallTracerFactory::CreateNewServerCallTracer(
     grpc_core::Arena* arena, const grpc_core::ChannelArgs& /*args*/) {
   return arena->ManagedNew<OpenCensusServerCallTracer>();

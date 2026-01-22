@@ -132,7 +132,7 @@ def client_started_rpcs(labels: Mapping[str, str]) -> view_module.View:
         "grpc.io/client/started_rpcs",
         "The count of RPCs ever received at the server, including RPCs"
         + " that have not completed.",
-        [TagKey(key) for key in labels.keys()] + [client_method_tag_key()],
+        [TagKey(key) for key in labels] + [client_method_tag_key()],
         _measures.CLIENT_STARTED_RPCS_MEASURE,
         aggregation.CountAggregation(),
     )
@@ -144,7 +144,7 @@ def client_completed_rpcs(labels: Mapping[str, str]) -> view_module.View:
         "grpc.io/client/completed_rpcs",
         "The total count of RPCs completed, for example, when a response"
         + " is sent by the server.",
-        [TagKey(key) for key in labels.keys()]
+        [TagKey(key) for key in labels]
         + [client_method_tag_key(), client_status_tag_key()],
         _measures.CLIENT_COMPLETED_RPCS_MEASURE,
         aggregation.CountAggregation(),
@@ -157,7 +157,7 @@ def client_roundtrip_latency(labels: Mapping[str, str]) -> view_module.View:
         "grpc.io/client/roundtrip_latency",
         "End-to-end time taken to complete an RPC attempt including the time"
         + " it takes to pick a subchannel.",
-        [TagKey(key) for key in labels.keys()] + [client_method_tag_key()],
+        [TagKey(key) for key in labels] + [client_method_tag_key()],
         _measures.CLIENT_ROUNDTRIP_LATENCY_MEASURE,
         millis_distribution_aggregation(),
     )
@@ -169,7 +169,7 @@ def client_api_latency(labels: Mapping[str, str]) -> view_module.View:
         "grpc.io/client/api_latency",
         "The total time taken by the gRPC library to complete an RPC from"
         + " the application's perspective.",
-        [TagKey(key) for key in labels.keys()]
+        [TagKey(key) for key in labels]
         + [client_method_tag_key(), client_status_tag_key()],
         _measures.CLIENT_API_LATENCY_MEASURE,
         millis_distribution_aggregation(),
@@ -178,13 +178,13 @@ def client_api_latency(labels: Mapping[str, str]) -> view_module.View:
 
 
 def client_sent_compressed_message_bytes_per_rpc(
-    labels: Mapping[str, str]
+    labels: Mapping[str, str],
 ) -> view_module.View:
     view = view_module.View(
         "grpc.io/client/sent_compressed_message_bytes_per_rpc",
         "The total bytes (compressed, not encrypted) sent across all"
         + " request messages per RPC attempt.",
-        [TagKey(key) for key in labels.keys()]
+        [TagKey(key) for key in labels]
         + [client_method_tag_key(), client_status_tag_key()],
         _measures.CLIENT_SEND_BYTES_PER_RPC_MEASURE,
         bytes_distribution_aggregation(),
@@ -193,13 +193,13 @@ def client_sent_compressed_message_bytes_per_rpc(
 
 
 def client_received_compressed_message_bytes_per_rpc(
-    labels: Mapping[str, str]
+    labels: Mapping[str, str],
 ) -> view_module.View:
     view = view_module.View(
         "grpc.io/client/received_compressed_message_bytes_per_rpc",
         "The total bytes (compressed, not encrypted) received across"
         + " all response messages per RPC attempt.",
-        [TagKey(key) for key in labels.keys()]
+        [TagKey(key) for key in labels]
         + [client_method_tag_key(), client_status_tag_key()],
         _measures.CLIENT_RECEIVED_BYTES_PER_RPC_MEASURE,
         bytes_distribution_aggregation(),
@@ -213,7 +213,7 @@ def server_started_rpcs(labels: Mapping[str, str]) -> view_module.View:
         "grpc.io/server/started_rpcs",
         "The count of RPCs ever received at the server, including RPCs"
         + " that have not completed.",
-        [TagKey(key) for key in labels.keys()] + [server_method_tag_key()],
+        [TagKey(key) for key in labels] + [server_method_tag_key()],
         _measures.SERVER_STARTED_RPCS_MEASURE,
         aggregation.CountAggregation(),
     )
@@ -225,7 +225,7 @@ def server_completed_rpcs(labels: Mapping[str, str]) -> view_module.View:
         "grpc.io/server/completed_rpcs",
         "The total count of RPCs completed, for example, when a response"
         + " is sent by the server.",
-        [TagKey(key) for key in labels.keys()]
+        [TagKey(key) for key in labels]
         + [server_method_tag_key(), server_status_tag_key()],
         _measures.SERVER_COMPLETED_RPCS_MEASURE,
         aggregation.CountAggregation(),
@@ -234,13 +234,13 @@ def server_completed_rpcs(labels: Mapping[str, str]) -> view_module.View:
 
 
 def server_sent_compressed_message_bytes_per_rpc(
-    labels: Mapping[str, str]
+    labels: Mapping[str, str],
 ) -> view_module.View:
     view = view_module.View(
         "grpc.io/server/sent_compressed_message_bytes_per_rpc",
         "The total bytes (compressed not encrypted) sent across all response"
         + " messages per RPC.",
-        [TagKey(key) for key in labels.keys()]
+        [TagKey(key) for key in labels]
         + [server_method_tag_key(), server_status_tag_key()],
         _measures.SERVER_SENT_BYTES_PER_RPC_MEASURE,
         bytes_distribution_aggregation(),
@@ -249,13 +249,13 @@ def server_sent_compressed_message_bytes_per_rpc(
 
 
 def server_received_compressed_message_bytes_per_rpc(
-    labels: Mapping[str, str]
+    labels: Mapping[str, str],
 ) -> view_module.View:
     view = view_module.View(
         "grpc.io/server/received_compressed_message_bytes_per_rpc",
         "The total bytes (compressed not encrypted) received across all"
         + " request messages per RPC.",
-        [TagKey(key) for key in labels.keys()]
+        [TagKey(key) for key in labels]
         + [server_method_tag_key(), server_status_tag_key()],
         _measures.SERVER_RECEIVED_BYTES_PER_RPC_MEASURE,
         bytes_distribution_aggregation(),
@@ -267,8 +267,8 @@ def server_server_latency(labels: Mapping[str, str]) -> view_module.View:
     view = view_module.View(
         "grpc.io/server/server_latency",
         "The total time taken by an RPC from server transport's"
-        + " (HTTP2 / inproc / cronet) perspective.",
-        [TagKey(key) for key in labels.keys()]
+        + " (HTTP2 / inproc) perspective.",
+        [TagKey(key) for key in labels]
         + [server_method_tag_key(), server_status_tag_key()],
         _measures.SERVER_SERVER_LATENCY_MEASURE,
         millis_distribution_aggregation(),

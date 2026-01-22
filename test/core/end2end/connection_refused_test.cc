@@ -16,13 +16,6 @@
 //
 //
 
-#include <string.h>
-
-#include <string>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -31,13 +24,18 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/time.h>
+#include <string.h>
+
+#include <string>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/host_port.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "absl/log/log.h"
 
 static void run_test(bool wait_for_ready, bool use_service_config) {
   grpc_channel* chan;
@@ -62,7 +60,7 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   // if using service config, create channel args
   grpc_channel_args* args = nullptr;
   if (use_service_config) {
-    CHECK(wait_for_ready);
+    GRPC_CHECK(wait_for_ready);
     grpc_arg arg;
     arg.type = GRPC_ARG_STRING;
     arg.key = const_cast<char*>(GRPC_ARG_SERVICE_CONFIG);
@@ -85,8 +83,9 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   chan = grpc_channel_create(addr.c_str(), creds, args);
   grpc_channel_credentials_release(creds);
-  grpc_slice host = grpc_slice_from_static_string("nonexistant");
-  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(2);
+  grpc_slice host = grpc_slice_from_static_string("nonexistent");
+  gpr_timespec deadline =
+      grpc_timeout_seconds_to_deadline(wait_for_ready ? 2 : 600);
   call =
       grpc_channel_create_call(chan, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
                                grpc_slice_from_static_string("/service/method"),
@@ -108,17 +107,17 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK_EQ(GRPC_CALL_OK,
-           grpc_call_start_batch(call, ops, (size_t)(op - ops),
-                                 grpc_core::CqVerifier::tag(1), nullptr));
+  GRPC_CHECK_EQ(GRPC_CALL_OK,
+                grpc_call_start_batch(call, ops, (size_t)(op - ops),
+                                      grpc_core::CqVerifier::tag(1), nullptr));
   // verify that all tags get completed
   cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
   if (wait_for_ready) {
-    CHECK_EQ(status, GRPC_STATUS_DEADLINE_EXCEEDED);
+    GRPC_CHECK_EQ(status, GRPC_STATUS_DEADLINE_EXCEEDED);
   } else {
-    CHECK_EQ(status, GRPC_STATUS_UNAVAILABLE);
+    GRPC_CHECK_EQ(status, GRPC_STATUS_UNAVAILABLE);
   }
 
   grpc_completion_queue_shutdown(cq);

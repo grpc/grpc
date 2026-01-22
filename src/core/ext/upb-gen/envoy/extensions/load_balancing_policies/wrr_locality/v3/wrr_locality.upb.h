@@ -3,10 +3,11 @@
  *     envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_WRR_LOCALITY_V3_WRR_LOCALITY_PROTO_UPB_H_
-#define ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_WRR_LOCALITY_V3_WRR_LOCALITY_PROTO_UPB_H_
+#ifndef ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_WRR_LOCALITY_V3_WRR_LOCALITY_PROTO_UPB_H__UPB_H_
+#define ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_WRR_LOCALITY_V3_WRR_LOCALITY_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -72,6 +73,7 @@ UPB_INLINE const struct envoy_config_cluster_v3_LoadBalancingPolicy* envoy_exten
   const struct envoy_config_cluster_v3_LoadBalancingPolicy* default_val = NULL;
   const struct envoy_config_cluster_v3_LoadBalancingPolicy* ret;
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__LoadBalancingPolicy_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -83,6 +85,7 @@ UPB_INLINE bool envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLoca
 
 UPB_INLINE void envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality_set_endpoint_picking_policy(envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality *msg, struct envoy_config_cluster_v3_LoadBalancingPolicy* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__cluster__v3__LoadBalancingPolicy_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_cluster_v3_LoadBalancingPolicy* envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality_mutable_endpoint_picking_policy(envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality* msg, upb_Arena* arena) {
@@ -100,4 +103,4 @@ UPB_INLINE struct envoy_config_cluster_v3_LoadBalancingPolicy* envoy_extensions_
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_WRR_LOCALITY_V3_WRR_LOCALITY_PROTO_UPB_H_ */
+#endif  /* ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_WRR_LOCALITY_V3_WRR_LOCALITY_PROTO_UPB_H__UPB_H_ */

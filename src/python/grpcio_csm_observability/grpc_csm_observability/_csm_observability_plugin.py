@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
 import os
 import re
 from typing import AnyStr, Callable, Dict, Iterable, List, Optional, Union
@@ -79,6 +78,7 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
             "CSM_CANONICAL_SERVICE_NAME", UNKNOWN_VALUE
         )
         workload_name_value = os.getenv("CSM_WORKLOAD_NAME", UNKNOWN_VALUE)
+        mesh_id = os.getenv("CSM_MESH_ID", UNKNOWN_VALUE)
 
         gcp_resource = GoogleCloudResourceDetector().detect()
         resource_type_value = get_resource_type(gcp_resource)
@@ -91,7 +91,7 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
         # ResourceAttributes.CLOUD_AVAILABILITY_ZONE are called
         # "zones" on Google Cloud.
         location_value = get_str_value_from_resource("cloud.zone", gcp_resource)
-        if UNKNOWN_VALUE == location_value:
+        if location_value == UNKNOWN_VALUE:
             location_value = get_str_value_from_resource(
                 ResourceAttributes.CLOUD_REGION, gcp_resource
             )
@@ -130,10 +130,10 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
         serialized_str = serialized_struct.SerializeToString()
 
         self._exchange_labels = {"XEnvoyPeerMetadata": serialized_str}
-        self._additional_exchange_labels[
-            "csm.workload_canonical_service"
-        ] = canonical_service_value
-        self._additional_exchange_labels["csm.mesh_id"] = get_mesh_id()
+        self._additional_exchange_labels["csm.workload_canonical_service"] = (
+            canonical_service_value
+        )
+        self._additional_exchange_labels["csm.mesh_id"] = mesh_id
 
     def get_labels_for_exchange(self) -> Dict[str, AnyStr]:
         return self._exchange_labels
@@ -143,14 +143,13 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
     ) -> Dict[str, str]:
         if include_exchange_labels:
             return self._additional_exchange_labels
-        else:
-            return {}
+        return {}
 
     @staticmethod
     def deserialize_labels(labels: Dict[str, AnyStr]) -> Dict[str, AnyStr]:
         deserialized_labels = {}
         for key, value in labels.items():
-            if "XEnvoyPeerMetadata" == key:
+            if key == "XEnvoyPeerMetadata":
                 pb_struct = struct_pb2.Struct()
                 pb_struct.ParseFromString(value)
 
@@ -182,7 +181,7 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
             # If CSM label injector is enabled on server side but client didn't send
             # XEnvoyPeerMetadata, we'll record remote label as unknown.
             else:
-                for _, remote_key in METADATA_EXCHANGE_KEY_FIXED_MAP.items():
+                for remote_key in METADATA_EXCHANGE_KEY_FIXED_MAP.values():
                     deserialized_labels[remote_key] = UNKNOWN_VALUE
                 deserialized_labels[key] = value
 
@@ -207,7 +206,7 @@ class CsmOpenTelemetryPluginOption(OpenTelemetryPluginOption):
           target: Required. The target for the RPC.
 
         Returns:
-          True if this this plugin option is active on the channel, false otherwise.
+          True if this plugin option is active on the channel, false otherwise.
         """
         # CSM channels should have an "xds" scheme
         if not target.startswith("xds:"):
@@ -217,13 +216,12 @@ class CsmOpenTelemetryPluginOption(OpenTelemetryPluginOption):
         match = re.search(authority_pattern, target)
         if match:
             return TRAFFIC_DIRECTOR_AUTHORITY in match.group(1)
-        else:
-            # Return True if the authority doesn't exist
-            return True
+        # Return True if the authority doesn't exist
+        return True
 
     @staticmethod
     def is_active_on_server(
-        xds: bool,  # pylint: disable=unused-argument
+        xds: bool,  # pylint: disable=unused-argument #noqa: ARG004
     ) -> bool:
         """Determines whether this plugin option is active on a given server.
 
@@ -237,7 +235,7 @@ class CsmOpenTelemetryPluginOption(OpenTelemetryPluginOption):
           xds: Required. if this server is build for xds.
 
         Returns:
-          True if this this plugin option is active on the server, false otherwise.
+          True if this plugin option is active on the server, false otherwise.
         """
         return True
 
@@ -259,10 +257,11 @@ class CsmOpenTelemetryPlugin(OpenTelemetryPlugin):
     def __init__(
         self,
         *,
-        plugin_options: Iterable[OpenTelemetryPluginOption] = [],
+        plugin_options: Optional[Iterable[OpenTelemetryPluginOption]] = None,
         meter_provider: Optional[MeterProvider] = None,
         generic_method_attribute_filter: Optional[Callable[[str], bool]] = None,
     ):
+        plugin_options = plugin_options or []
         new_options = list(plugin_options) + [CsmOpenTelemetryPluginOption()]
         super().__init__(
             plugin_options=new_options,
@@ -298,46 +297,6 @@ def get_resource_type(gcp_resource: Resource) -> str:
     )
     if gcp_resource_type == "gke_container":
         return TYPE_GKE
-    elif gcp_resource_type == "gce_instance":
+    if gcp_resource_type == "gce_instance":
         return TYPE_GCE
-    else:
-        return gcp_resource_type
-
-
-# Returns the mesh ID by reading and parsing the bootstrap file. Returns "unknown"
-# if for some reason, mesh ID could not be figured out.
-def get_mesh_id() -> str:
-    config_contents = get_bootstrap_config_contents()
-
-    try:
-        config_json = json.loads(config_contents)
-        # The expected format of the Node ID is -
-        # projects/[GCP Project number]/networks/mesh:[Mesh ID]/nodes/[UUID]
-        node_id_parts = config_json.get("node", {}).get("id", "").split("/")
-        if len(node_id_parts) == 6 and node_id_parts[3].startswith(
-            MESH_ID_PREFIX
-        ):
-            return node_id_parts[3][len(MESH_ID_PREFIX) :]
-    except json.decoder.JSONDecodeError:
-        return UNKNOWN_VALUE
-
-    return UNKNOWN_VALUE
-
-
-def get_bootstrap_config_contents() -> str:
-    """Get the contents of the bootstrap config from environment variable or file.
-
-    Returns:
-        The content from environment variable. Or empty str if no config was found.
-    """
-    contents_str = ""
-    for source in ("GRPC_XDS_BOOTSTRAP", "GRPC_XDS_BOOTSTRAP_CONFIG"):
-        config = os.getenv(source)
-        if config:
-            if os.path.isfile(config):  # Prioritize file over raw config
-                with open(config, "r") as f:
-                    contents_str = f.read()
-            else:
-                contents_str = config
-
-    return contents_str
+    return gcp_resource_type

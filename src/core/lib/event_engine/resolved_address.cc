@@ -14,25 +14,22 @@
 
 #include "src/core/lib/iomgr/resolved_address.h"
 
-#include <string.h>
-
-#include "absl/log/check.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
+#include <string.h>
 
 #include "src/core/lib/event_engine/resolved_address_internal.h"
+#include "src/core/util/grpc_check.h"
 
 // IWYU pragma: no_include <sys/socket.h>
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 EventEngine::ResolvedAddress::ResolvedAddress(const sockaddr* address,
                                               socklen_t size)
     : size_(size) {
-  DCHECK_GE(size, 0u);
-  CHECK(static_cast<size_t>(size) <= sizeof(address_));
+  GRPC_DCHECK_GE(size, 0u);
+  GRPC_CHECK(static_cast<size_t>(size) <= sizeof(address_));
   memcpy(&address_, address, size);
 }
 
@@ -50,6 +47,9 @@ EventEngine::ResolvedAddress CreateResolvedAddress(
 
 grpc_resolved_address CreateGRPCResolvedAddress(
     const EventEngine::ResolvedAddress& ra) {
+  static_assert(
+      GRPC_MAX_SOCKADDR_SIZE == EventEngine::ResolvedAddress::MAX_SIZE_BYTES,
+      "size should match");
   grpc_resolved_address grpc_addr;
   memset(&grpc_addr, 0, sizeof(grpc_resolved_address));
   memcpy(grpc_addr.addr, ra.address(), ra.size());
@@ -57,5 +57,4 @@ grpc_resolved_address CreateGRPCResolvedAddress(
   return grpc_addr;
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

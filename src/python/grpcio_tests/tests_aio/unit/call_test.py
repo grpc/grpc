@@ -411,7 +411,7 @@ class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
 
         Certain classes of error only appear for very specific interleavings of
         coroutines. Rather than inserting semi-private asyncio.Events throughout
-        the implementation on which to coordinate and explicilty waiting on those
+        the implementation on which to coordinate and explicitly waiting on those
         in tests, we instead search for bugs over the space of interleavings by
         stochastically varying the durations of certain events within the test.
         """
@@ -814,10 +814,15 @@ class TestStreamStreamCall(_MulticallableTestMixin, AioTestBase):
 
     async def test_cancel_after_done_writing(self):
         call = self._stub.FullDuplexCall()
+        request_with_delay = messages_pb2.StreamingOutputCallRequest()
+        request_with_delay.response_parameters.append(
+            messages_pb2.ResponseParameters(interval_us=10000)
+        )
+        await call.write(request_with_delay)
+        await call.write(request_with_delay)
         await call.done_writing()
 
         # Cancels the RPC
-        self.assertFalse(call.done())
         self.assertFalse(call.cancelled())
         self.assertTrue(call.cancel())
         self.assertTrue(call.cancelled())

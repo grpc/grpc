@@ -16,31 +16,24 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
-#include <string.h>
-
-#include <string>
-
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
+#include <string.h>
 
+#include <optional>
+#include <string>
+
+#include "src/core/credentials/transport/security_connector.h"
+#include "src/core/credentials/transport/tls/ssl_utils.h"
+#include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/security/security_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -48,11 +41,15 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/promise.h"
-#include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/security_connector/security_connector.h"
-#include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/unique_type_name.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -80,7 +77,9 @@ class grpc_httpcli_ssl_channel_security_connector final
   tsi_result InitHandshakerFactory(const char* pem_root_certs,
                                    const tsi_ssl_root_certs_store* root_store) {
     tsi_ssl_client_handshaker_options options;
-    options.pem_root_certs = pem_root_certs;
+    if (pem_root_certs != nullptr) {
+      options.root_cert_info = std::make_shared<RootCertInfo>(pem_root_certs);
+    }
     options.root_store = root_store;
     return tsi_create_ssl_client_handshaker_factory_with_options(
         &options, &handshaker_factory_);
@@ -93,7 +92,8 @@ class grpc_httpcli_ssl_channel_security_connector final
     if (handshaker_factory_ != nullptr) {
       tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
           handshaker_factory_, secure_peer_name_, /*network_bio_buf_size=*/0,
-          /*ssl_bio_buf_size=*/0, &handshaker);
+          /*ssl_bio_buf_size=*/0,
+          args.GetOwnedString(GRPC_ARG_TRANSPORT_PROTOCOLS), &handshaker);
       if (result != TSI_OK) {
         LOG(ERROR) << "Handshaker creation failed with error "
                    << tsi_result_to_string(result);
@@ -176,7 +176,7 @@ class HttpRequestSSLCredentials : public grpc_channel_credentials {
       LOG(ERROR) << "Could not get default pem root certs.";
       return nullptr;
     }
-    absl::optional<std::string> target_string =
+    std::optional<std::string> target_string =
         args->GetOwnedString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)
             .value_or(target);
     return httpcli_ssl_channel_security_connector_create(

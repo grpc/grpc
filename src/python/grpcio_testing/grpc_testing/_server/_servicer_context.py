@@ -29,10 +29,8 @@ class ServicerContext(grpc.ServicerContext):
         if self._rpc.is_active():
             if self._deadline is None:
                 return None
-            else:
-                return max(0.0, self._deadline - self._time.time())
-        else:
-            return 0.0
+            return max(0.0, self._deadline - self._time.time())
+        return 0.0
 
     def cancel(self):
         self._rpc.application_cancel()
@@ -63,9 +61,8 @@ class ServicerContext(grpc.ServicerContext):
             _common.fuss_with_metadata(initial_metadata)
         )
         if not initial_metadata_sent:
-            raise ValueError(
-                "ServicerContext.send_initial_metadata called too late!"
-            )
+            error_msg = "ServicerContext.send_initial_metadata called too late!"
+            raise ValueError(error_msg)
 
     def disable_next_message_compression(self):
         raise NotImplementedError()
@@ -78,7 +75,7 @@ class ServicerContext(grpc.ServicerContext):
     def abort(self, code, details):
         with self._rpc._condition:
             self._rpc._abort(code, details)
-        raise Exception()
+        raise Exception()  # noqa: TRY002
 
     def abort_with_status(self, status):
         raise NotImplementedError()

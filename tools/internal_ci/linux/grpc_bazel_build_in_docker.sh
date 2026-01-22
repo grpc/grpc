@@ -15,8 +15,6 @@
 
 # Build all basic targets using the strict warning option which leverages the
 # clang compiler to check if sources can pass a set of warning options.
-# For now //examples/android/binder/ are excluded because it needs Android
-# SDK/NDK to be installed to build
 
 set -ex
 

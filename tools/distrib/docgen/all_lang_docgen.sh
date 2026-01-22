@@ -83,7 +83,7 @@ docker run --rm -it \
     -v "$(pwd)":/work \
     -w /work \
     --user "$(id -u):$(id -g)" \
-    python:3.8 tools/distrib/docgen/_generate_python_doc.sh
+    python:3.9 tools/distrib/docgen/_generate_python_doc.sh
 mv doc/build "${PAGES_PATH}/python"
 
 # At this point, document generation is finished.

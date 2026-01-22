@@ -15,10 +15,10 @@
 // limitations under the License.
 //
 //
-#include <memory>
-
 #include <grpc/grpc.h>
 #include <grpcpp/security/auth_context.h>
+
+#include <memory>
 
 namespace grpc {
 

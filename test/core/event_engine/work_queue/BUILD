@@ -12,21 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
-load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library", "grpc_package")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 licenses(["notice"])
 
 grpc_package(
     name = "test/core/event_engine/work_queue",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "tests",
 )
 
 grpc_cc_test(
     name = "basic_work_queue_test",
     srcs = ["basic_work_queue_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/functional:any_invocable",
+    ],
     deps = [
+        "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr_platform",
         "//src/core:common_event_engine_closures",
@@ -35,19 +43,33 @@ grpc_cc_test(
     ],
 )
 
+grpc_internal_proto_library(
+    name = "work_queue_fuzzer_proto",
+    srcs = ["work_queue_fuzzer.proto"],
+)
+
+grpc_cc_proto_library(
+    name = "work_queue_fuzzer_cc_proto",
+    deps = ["work_queue_fuzzer_proto"],
+)
+
 # TODO(hork): the same fuzzer configuration should work trivially for all
 # WorkQueue implementations. Generalize it when another implementation is
 # written.
-grpc_proto_fuzzer(
+grpc_fuzz_test(
     name = "basic_work_queue_fuzzer",
     srcs = ["basic_work_queue_fuzzer.cc"],
-    corpus = "corpora",
-    language = "C++",
-    proto = "work_queue_fuzzer.proto",
-    tags = ["no_windows"],
-    uses_event_engine = False,
-    uses_polling = False,
+    external_deps = [
+        "absl/functional:any_invocable",
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
+    ],
     deps = [
+        "work_queue_fuzzer_cc_proto",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//src/core:common_event_engine_closures",
         "//src/core:event_engine_basic_work_queue",
         "//test/core/test_util:grpc_test_util",
     ],

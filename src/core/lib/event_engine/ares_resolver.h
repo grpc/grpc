@@ -14,40 +14,61 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_ARES_RESOLVER_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_ARES_RESOLVER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <utility>
 
 #include "absl/status/status.h"
 
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/debug/trace.h"
-
 #if GRPC_ARES == 1
+
+#include <grpc/event_engine/event_engine.h>
+// ares.h is not self-contained w.r.t. windows headers so pull in
+// event_engine.h first
+#include <ares.h>
 
 #include <list>
 #include <memory>
 
-#include <ares.h>
-
+#include "src/core/lib/event_engine/grpc_polled_fd.h"
+#include "src/core/lib/event_engine/ref_counted_dns_resolver_interface.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/sync.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
 
-#include <grpc/event_engine/event_engine.h>
-
-#include "src/core/lib/event_engine/grpc_polled_fd.h"
-#include "src/core/lib/event_engine/ref_counted_dns_resolver_interface.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/sync.h"
-
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 class AresResolver : public RefCountedDNSResolverInterface {
  public:
+#ifdef GRPC_ENABLE_FORK_SUPPORT
+  // Handle to trigger reinitialization of this AresResolver instance after a
+  // fork(). Avoids global resolver management and POSIX-specific dependencies
+  // within AresResolver.
+  class ReinitHandle {
+   public:
+    static std::shared_ptr<ReinitHandle> New(AresResolver* resolver) {
+      return std::shared_ptr<ReinitHandle>(new ReinitHandle(resolver));
+    }
+
+    ReinitHandle(ReinitHandle&& other) = delete;
+    ReinitHandle(const ReinitHandle& other) = delete;
+    void OnResolverGone();
+    // Clears resources (such as CARES handles) held by the associated resolver.
+    void Reset(const absl::Status& status);
+    // Reinitializes the associated resolver after Reset.
+    void Restart();
+
+   private:
+    explicit ReinitHandle(AresResolver* resolver);
+
+    grpc_core::Mutex mutex_;
+    AresResolver* resolver_ ABSL_GUARDED_BY(&mutex_);
+  };
+#endif  // GRPC_ENABLE_FORK_SUPPORT
+
   static absl::StatusOr<grpc_core::OrphanablePtr<AresResolver>>
   CreateAresResolver(absl::string_view dns_server,
                      std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
@@ -55,7 +76,8 @@ class AresResolver : public RefCountedDNSResolverInterface {
 
   // Do not instantiate directly -- use CreateAresResolver() instead.
   AresResolver(std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
-               std::shared_ptr<EventEngine> event_engine, ares_channel channel);
+               std::shared_ptr<EventEngine> event_engine, ares_channel channel,
+               absl::string_view dns_server);
   ~AresResolver() override;
   void Orphan() override ABSL_LOCKS_EXCLUDED(mutex_);
 
@@ -66,6 +88,9 @@ class AresResolver : public RefCountedDNSResolverInterface {
                  absl::string_view name) ABSL_LOCKS_EXCLUDED(mutex_) override;
   void LookupTXT(EventEngine::DNSResolver::LookupTXTCallback callback,
                  absl::string_view name) ABSL_LOCKS_EXCLUDED(mutex_) override;
+#ifdef GRPC_ENABLE_FORK_SUPPORT
+  std::weak_ptr<ReinitHandle> GetReinitHandle();
+#endif  // GRPC_ENABLE_FORK_SUPPORT
 
  private:
   // A FdNode saves (not owns) a live socket/fd which c-ares creates, and owns a
@@ -92,9 +117,9 @@ class AresResolver : public RefCountedDNSResolverInterface {
   using FdNodeList = std::list<std::unique_ptr<FdNode>>;
 
   using CallbackType =
-      absl::variant<EventEngine::DNSResolver::LookupHostnameCallback,
-                    EventEngine::DNSResolver::LookupSRVCallback,
-                    EventEngine::DNSResolver::LookupTXTCallback>;
+      std::variant<EventEngine::DNSResolver::LookupHostnameCallback,
+                   EventEngine::DNSResolver::LookupSRVCallback,
+                   EventEngine::DNSResolver::LookupTXTCallback>;
 
   void CheckSocketsLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
   void MaybeStartTimerLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
@@ -115,6 +140,17 @@ class AresResolver : public RefCountedDNSResolverInterface {
   static void OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
                               unsigned char* buf,
                               int len) ABSL_NO_THREAD_SAFETY_ANALYSIS;
+#ifdef GRPC_ENABLE_FORK_SUPPORT
+  // Is executed on fork before the poller is restarted. Cleans up the resources
+  // from the previous generation.
+  void Reset(const absl::Status& reason);
+  // Is executed on fork after the poller is restarted. Makes the resolver
+  // usable once more.
+  void Restart();
+#endif  // GRPC_ENABLE_FORK_SUPPORT
+  void ShutdownLocked(const absl::Status& shutdown_status,
+                      absl::string_view reason)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   grpc_core::Mutex mutex_;
   bool shutting_down_ ABSL_GUARDED_BY(mutex_) = false;
@@ -122,14 +158,19 @@ class AresResolver : public RefCountedDNSResolverInterface {
   FdNodeList fd_node_list_ ABSL_GUARDED_BY(mutex_);
   int id_ ABSL_GUARDED_BY(mutex_) = 0;
   absl::flat_hash_map<int, CallbackType> callback_map_ ABSL_GUARDED_BY(mutex_);
-  absl::optional<EventEngine::TaskHandle> ares_backup_poll_alarm_handle_
+  std::optional<EventEngine::TaskHandle> ares_backup_poll_alarm_handle_
       ABSL_GUARDED_BY(mutex_);
   std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory_;
+#ifdef GRPC_ENABLE_FORK_SUPPORT
+  std::string dns_server_;
+  grpc_core::Mutex reinit_handle_mu_;
+  std::shared_ptr<ReinitHandle> reinit_handle_
+      ABSL_GUARDED_BY(reinit_handle_mu_);
+#endif  // GRPC_ENABLE_FORK_SUPPORT
   std::shared_ptr<EventEngine> event_engine_;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 // Exposed in this header for C-core tests only
 extern void (*event_engine_grpc_ares_test_only_inject_config)(

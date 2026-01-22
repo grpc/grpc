@@ -16,15 +16,17 @@
 //
 //
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "src/core/ext/transport/chttp2/transport/stream_lists.h"
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/bitset.h"
+#include "src/core/lib/experiments/experiments.h"
+#include "src/core/util/bitset.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
 
 static const char* stream_list_id_string(grpc_chttp2_stream_list_id id) {
   switch (id) {
@@ -57,7 +59,7 @@ static bool stream_list_pop(grpc_chttp2_transport* t,
   grpc_chttp2_stream* s = t->lists[id].head;
   if (s) {
     grpc_chttp2_stream* new_head = s->links[id].next;
-    CHECK(s->included.is_set(id));
+    GRPC_CHECK(s->included.is_set(id));
     if (new_head) {
       t->lists[id].head = new_head;
       new_head->links[id].prev = nullptr;
@@ -77,12 +79,12 @@ static bool stream_list_pop(grpc_chttp2_transport* t,
 
 static void stream_list_remove(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                                grpc_chttp2_stream_list_id id) {
-  CHECK(s->included.is_set(id));
+  GRPC_CHECK(s->included.is_set(id));
   s->included.clear(id);
   if (s->links[id].prev) {
     s->links[id].prev->links[id].next = s->links[id].next;
   } else {
-    CHECK(t->lists[id].head == s);
+    GRPC_CHECK(t->lists[id].head == s);
     t->lists[id].head = s->links[id].next;
   }
   if (s->links[id].next) {
@@ -110,7 +112,7 @@ static void stream_list_add_tail(grpc_chttp2_transport* t,
                                  grpc_chttp2_stream* s,
                                  grpc_chttp2_stream_list_id id) {
   grpc_chttp2_stream* old_tail;
-  CHECK(!s->included.is_set(id));
+  GRPC_CHECK(!s->included.is_set(id));
   old_tail = t->lists[id].tail;
   s->links[id].next = nullptr;
   s->links[id].prev = old_tail;
@@ -126,6 +128,26 @@ static void stream_list_add_tail(grpc_chttp2_transport* t,
       << "]: add to " << stream_list_id_string(id);
 }
 
+static void stream_list_add_head(grpc_chttp2_transport* t,
+                                 grpc_chttp2_stream* s,
+                                 grpc_chttp2_stream_list_id id) {
+  grpc_chttp2_stream* old_head;
+  GRPC_CHECK(!s->included.is_set(id));
+  old_head = t->lists[id].head;
+  s->links[id].next = old_head;
+  s->links[id].prev = nullptr;
+  if (old_head) {
+    old_head->links[id].prev = s;
+  } else {
+    t->lists[id].tail = s;
+  }
+  t->lists[id].head = s;
+  s->included.set(id);
+  GRPC_TRACE_LOG(http2_stream_state, INFO)
+      << t << "[" << s->id << "][" << (t->is_client ? "cli" : "svr")
+      << "]: add to " << stream_list_id_string(id);
+}
+
 static bool stream_list_add(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                             grpc_chttp2_stream_list_id id) {
   if (s->included.is_set(id)) {
@@ -135,11 +157,24 @@ static bool stream_list_add(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   return true;
 }
 
+static bool stream_list_prepend(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
+                                grpc_chttp2_stream_list_id id) {
+  if (s->included.is_set(id)) {
+    return false;
+  }
+  stream_list_add_head(t, s, id);
+  return true;
+}
+
 // wrappers for specializations
 
 bool grpc_chttp2_list_add_writable_stream(grpc_chttp2_transport* t,
                                           grpc_chttp2_stream* s) {
-  CHECK_NE(s->id, 0u);
+  GRPC_CHECK_NE(s->id, 0u);
+  if (grpc_core::IsPrioritizeFinishedRequestsEnabled() &&
+      s->send_trailing_metadata != nullptr) {
+    return stream_list_prepend(t, s, GRPC_CHTTP2_LIST_WRITABLE);
+  }
   return stream_list_add(t, s, GRPC_CHTTP2_LIST_WRITABLE);
 }
 
@@ -184,7 +219,12 @@ void grpc_chttp2_list_remove_waiting_for_concurrency(grpc_chttp2_transport* t,
 
 void grpc_chttp2_list_add_stalled_by_transport(grpc_chttp2_transport* t,
                                                grpc_chttp2_stream* s) {
-  stream_list_add(t, s, GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT);
+  if (grpc_core::IsPrioritizeFinishedRequestsEnabled() &&
+      s->send_trailing_metadata != nullptr) {
+    stream_list_prepend(t, s, GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT);
+  } else {
+    stream_list_add(t, s, GRPC_CHTTP2_LIST_STALLED_BY_TRANSPORT);
+  }
 }
 
 bool grpc_chttp2_list_pop_stalled_by_transport(grpc_chttp2_transport* t,

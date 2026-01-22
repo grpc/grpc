@@ -231,6 +231,7 @@ UPB_FORCEINLINE
 void* fastdecode_getfield(upb_Decoder* d, const char* ptr, upb_Message* msg,
                           uint64_t* data, uint64_t* hasbits,
                           fastdecode_arr* farr, int valbytes, upb_card card) {
+  UPB_ASSERT(!upb_Message_IsFrozen(msg));
   switch (card) {
     case CARD_s: {
       uint8_t hasbit_index = *data >> 24;
@@ -606,6 +607,7 @@ UPB_NOINLINE
 static const char* fastdecode_verifyutf8(upb_Decoder* d, const char* ptr,
                                          upb_Message* msg, intptr_t table,
                                          uint64_t hasbits, uint64_t data) {
+  UPB_ASSERT(!upb_Message_IsFrozen(msg));
   upb_StringView* dst = (upb_StringView*)data;
   if (!_upb_Decoder_VerifyUtf8Inline(dst->data, dst->size)) {
     _upb_FastDecoder_ErrorJmp(d, kUpb_DecodeStatus_BadUtf8);
@@ -651,6 +653,7 @@ UPB_NOINLINE
 static const char* fastdecode_longstring_noutf8(
     struct upb_Decoder* d, const char* ptr, upb_Message* msg, intptr_t table,
     uint64_t hasbits, uint64_t data) {
+  UPB_ASSERT(!upb_Message_IsFrozen(msg));
   upb_StringView* dst = (upb_StringView*)data;
   FASTDECODE_LONGSTRING(d, ptr, msg, table, hasbits, dst, false);
 }
@@ -911,8 +914,8 @@ const char* fastdecode_tosubmsg(upb_EpsCopyInputStream* e, const char* ptr,
   upb_Message** dst;                                                      \
   uint32_t submsg_idx = (data >> 16) & 0xff;                              \
   const upb_MiniTable* tablep = decode_totablep(table);                   \
-  const upb_MiniTable* subtablep = upb_MiniTableSub_Message(              \
-      *UPB_PRIVATE(_upb_MiniTable_GetSubByIndex)(tablep, submsg_idx));    \
+  const upb_MiniTable* subtablep =                                        \
+      UPB_PRIVATE(_upb_MiniTable_GetSubTableByIndex)(tablep, submsg_idx); \
   fastdecode_submsgdata submsg = {decode_totable(subtablep)};             \
   fastdecode_arr farr;                                                    \
                                                                           \

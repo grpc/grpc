@@ -18,6 +18,7 @@
 
 #include "src/core/xds/grpc/xds_routing.h"
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -25,17 +26,14 @@
 #include <cctype>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/matchers.h"
+#include "src/core/xds/grpc/xds_http_filter.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/matchers/matchers.h"
-#include "src/core/xds/grpc/xds_http_filter.h"
 
 namespace grpc_core {
 
@@ -94,7 +92,7 @@ MatchType DomainPatternMatchType(absl::string_view domain_pattern) {
 
 }  // namespace
 
-absl::optional<size_t> XdsRouting::FindVirtualHostForDomain(
+std::optional<size_t> XdsRouting::FindVirtualHostForDomain(
     const VirtualHostListIterator& vhost_iterator, absl::string_view domain) {
   // Find the best matched virtual host.
   // The search order for 4 groups of domain patterns:
@@ -105,7 +103,7 @@ absl::optional<size_t> XdsRouting::FindVirtualHostForDomain(
   // Within each group, longest match wins.
   // If the same best matched domain pattern appears in multiple virtual
   // hosts, the first matched virtual host wins.
-  absl::optional<size_t> target_index;
+  std::optional<size_t> target_index;
   MatchType best_match_type = INVALID_MATCH;
   size_t longest_match = 0;
   // Check each domain pattern in each virtual host to determine the best
@@ -117,7 +115,7 @@ absl::optional<size_t> XdsRouting::FindVirtualHostForDomain(
       // than current match.
       const MatchType match_type = DomainPatternMatchType(domain_pattern);
       // This should be caught by RouteConfigParse().
-      CHECK(match_type != INVALID_MATCH);
+      GRPC_CHECK(match_type != INVALID_MATCH);
       if (match_type > best_match_type) continue;
       if (match_type == best_match_type &&
           domain_pattern.size() <= longest_match) {
@@ -158,7 +156,7 @@ bool UnderFraction(const uint32_t fraction_per_million) {
 
 }  // namespace
 
-absl::optional<size_t> XdsRouting::GetRouteForRequest(
+std::optional<size_t> XdsRouting::GetRouteForRequest(
     const RouteListIterator& route_list_iterator, absl::string_view path,
     grpc_metadata_batch* initial_metadata) {
   for (size_t i = 0; i < route_list_iterator.Size(); ++i) {
@@ -171,21 +169,21 @@ absl::optional<size_t> XdsRouting::GetRouteForRequest(
       return i;
     }
   }
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 bool XdsRouting::IsValidDomainPattern(absl::string_view domain_pattern) {
   return DomainPatternMatchType(domain_pattern) != INVALID_MATCH;
 }
 
-absl::optional<absl::string_view> XdsRouting::GetHeaderValue(
+std::optional<absl::string_view> XdsRouting::GetHeaderValue(
     grpc_metadata_batch* initial_metadata, absl::string_view header_name,
     std::string* concatenated_value) {
   // Note: If we ever allow binary headers here, we still need to
   // special-case ignore "grpc-tags-bin" and "grpc-trace-bin", since
   // they are not visible to the LB policy in grpc-go.
   if (absl::EndsWith(header_name, "-bin")) {
-    return absl::nullopt;
+    return std::nullopt;
   } else if (header_name == "content-type") {
     return "application/grpc";
   }
@@ -215,10 +213,50 @@ const XdsHttpFilterImpl::FilterConfig* FindFilterConfigOverride(
   return nullptr;
 }
 
+absl::StatusOr<XdsRouting::GeneratePerHttpFilterConfigsResult>
+GeneratePerHTTPFilterConfigs(
+    const XdsHttpFilterRegistry& http_filter_registry,
+    const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
+        http_filters,
+    const ChannelArgs& args,
+    absl::FunctionRef<absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>(
+        const XdsHttpFilterImpl&,
+        const XdsListenerResource::HttpConnectionManager::HttpFilter&)>
+        generate_service_config) {
+  XdsRouting::GeneratePerHttpFilterConfigsResult result;
+  result.args = args;
+  for (const auto& http_filter : http_filters) {
+    // Find filter.  This is guaranteed to succeed, because it's checked
+    // at config validation time in the listener parsing code.
+    const XdsHttpFilterImpl* filter_impl =
+        http_filter_registry.GetFilterForType(
+            http_filter.config.config_proto_type_name);
+    GRPC_CHECK_NE(filter_impl, nullptr);
+    // If there is not actually any C-core filter associated with this
+    // xDS filter, then it won't need any config, so skip it.
+    if (filter_impl->channel_filter() == nullptr) continue;
+    // Allow filter to add channel args that may affect service config
+    // parsing.
+    result.args = filter_impl->ModifyChannelArgs(result.args);
+    // Generate service config for filter.
+    auto service_config_field =
+        generate_service_config(*filter_impl, http_filter);
+    if (!service_config_field.ok()) {
+      return absl::FailedPreconditionError(absl::StrCat(
+          "failed to generate service config for HTTP filter ",
+          http_filter.name, ": ", service_config_field.status().ToString()));
+    }
+    if (service_config_field->service_config_field_name.empty()) continue;
+    result.per_filter_configs[service_config_field->service_config_field_name]
+        .push_back(service_config_field->element);
+  }
+  return result;
+}
+
 }  // namespace
 
 absl::StatusOr<XdsRouting::GeneratePerHttpFilterConfigsResult>
-XdsRouting::GeneratePerHTTPFilterConfigs(
+XdsRouting::GeneratePerHTTPFilterConfigsForMethodConfig(
     const XdsHttpFilterRegistry& http_filter_registry,
     const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
         http_filters,
@@ -227,37 +265,33 @@ XdsRouting::GeneratePerHTTPFilterConfigs(
     const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
         cluster_weight,
     const ChannelArgs& args) {
-  GeneratePerHttpFilterConfigsResult result;
-  result.args = args;
-  for (const auto& http_filter : http_filters) {
-    // Find filter.  This is guaranteed to succeed, because it's checked
-    // at config validation time in the XdsApi code.
-    const XdsHttpFilterImpl* filter_impl =
-        http_filter_registry.GetFilterForType(
-            http_filter.config.config_proto_type_name);
-    CHECK_NE(filter_impl, nullptr);
-    // If there is not actually any C-core filter associated with this
-    // xDS filter, then it won't need any config, so skip it.
-    if (filter_impl->channel_filter() == nullptr) continue;
-    // Allow filter to add channel args that may affect service config
-    // parsing.
-    result.args = filter_impl->ModifyChannelArgs(result.args);
-    // Find config override, if any.
-    const XdsHttpFilterImpl::FilterConfig* config_override =
-        FindFilterConfigOverride(http_filter.name, vhost, route,
-                                 cluster_weight);
-    // Generate service config for filter.
-    auto method_config_field =
-        filter_impl->GenerateServiceConfig(http_filter.config, config_override);
-    if (!method_config_field.ok()) {
-      return absl::FailedPreconditionError(absl::StrCat(
-          "failed to generate method config for HTTP filter ", http_filter.name,
-          ": ", method_config_field.status().ToString()));
-    }
-    result.per_filter_configs[method_config_field->service_config_field_name]
-        .push_back(method_config_field->element);
-  }
-  return result;
+  return GeneratePerHTTPFilterConfigs(
+      http_filter_registry, http_filters, args,
+      [&](const XdsHttpFilterImpl& filter_impl,
+          const XdsListenerResource::HttpConnectionManager::HttpFilter&
+              http_filter) {
+        const XdsHttpFilterImpl::FilterConfig* config_override =
+            FindFilterConfigOverride(http_filter.name, vhost, route,
+                                     cluster_weight);
+        // Generate service config for filter.
+        return filter_impl.GenerateMethodConfig(http_filter.config,
+                                                config_override);
+      });
+}
+
+absl::StatusOr<XdsRouting::GeneratePerHttpFilterConfigsResult>
+XdsRouting::GeneratePerHTTPFilterConfigsForServiceConfig(
+    const XdsHttpFilterRegistry& http_filter_registry,
+    const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
+        http_filters,
+    const ChannelArgs& args) {
+  return GeneratePerHTTPFilterConfigs(
+      http_filter_registry, http_filters, args,
+      [&](const XdsHttpFilterImpl& filter_impl,
+          const XdsListenerResource::HttpConnectionManager::HttpFilter&
+              http_filter) {
+        return filter_impl.GenerateServiceConfig(http_filter.config);
+      });
 }
 
 }  // namespace grpc_core

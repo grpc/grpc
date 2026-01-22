@@ -18,13 +18,12 @@
 
 #include "src/core/server/server_config_selector.h"
 
-#include "absl/status/status.h"
-#include "gtest/gtest.h"
-
 #include <grpc/grpc.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace testing {

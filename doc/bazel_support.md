@@ -43,7 +43,7 @@ However individual releases may have a broader
 compatibility range. The currently supported versions are captured by the
 following list:
 
-- [`7.3.1`](https://github.com/bazelbuild/bazel/releases/tag/7.3.1)
-- [`6.5.0`](https://github.com/bazelbuild/bazel/releases/tag/6.5.0)
+- [`8.0.1`](https://github.com/bazelbuild/bazel/releases/tag/8.0.1)
+- [`7.4.1`](https://github.com/bazelbuild/bazel/releases/tag/7.4.1)
 
 NOTE: gRPC doesn't support bzlmod yet.

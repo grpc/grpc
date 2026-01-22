@@ -18,23 +18,21 @@
 
 #include "test/core/iomgr/endpoint_tests.h"
 
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/time.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <sys/types.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/time.h>
-
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/time.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"
+#include "absl/log/log.h"
 
 //
 // General test notes:
@@ -63,7 +61,7 @@ size_t count_slices(grpc_slice* slices, size_t nslices, int* current_data) {
   for (i = 0; i < nslices; ++i) {
     buf = GRPC_SLICE_START_PTR(slices[i]);
     for (j = 0; j < GRPC_SLICE_LENGTH(slices[i]); ++j) {
-      CHECK(buf[j] == *current_data);
+      GRPC_CHECK(buf[j] == *current_data);
       *current_data = (*current_data + 1) % 256;
     }
     num_bytes += GRPC_SLICE_LENGTH(slices[i]);
@@ -82,7 +80,7 @@ static void end_test(grpc_endpoint_test_config config) { config.clean_up(); }
 
 static grpc_slice* allocate_blocks(size_t num_bytes, size_t slice_size,
                                    size_t* num_blocks, uint8_t* current_data) {
-  size_t nslices = num_bytes / slice_size + (num_bytes % slice_size ? 1 : 0);
+  size_t nslices = (num_bytes / slice_size) + (num_bytes % slice_size ? 1 : 0);
   grpc_slice* slices =
       static_cast<grpc_slice*>(gpr_malloc(sizeof(grpc_slice) * nslices));
   size_t num_bytes_left = num_bytes;
@@ -101,7 +99,7 @@ static grpc_slice* allocate_blocks(size_t num_bytes, size_t slice_size,
       (*current_data)++;
     }
   }
-  CHECK_EQ(num_bytes_left, 0u);
+  GRPC_CHECK_EQ(num_bytes_left, 0u);
   return slices;
 }
 
@@ -166,9 +164,10 @@ static void write_scheduler(void* data, grpc_error_handle error) {
   if (error.ok() && state->current_write_size != 0) {
     grpc_core::MutexLock lock(&state->ep_mu);
     if (state->write_ep != nullptr) {
+      grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args;
+      args.set_max_frame_size(state->max_write_frame_size);
       grpc_endpoint_write(state->write_ep, &state->outgoing, &state->done_write,
-                          nullptr,
-                          /*max_frame_size=*/state->max_write_frame_size);
+                          std::move(args));
       return;
     }
   }
@@ -276,9 +275,9 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   gpr_mu_lock(g_mu);
   while (!state.read_done || !state.write_done) {
     grpc_pollset_worker* worker = nullptr;
-    CHECK(grpc_core::Timestamp::Now() < deadline);
-    CHECK(GRPC_LOG_IF_ERROR("pollset_work",
-                            grpc_pollset_work(g_pollset, &worker, deadline)));
+    GRPC_CHECK(grpc_core::Timestamp::Now() < deadline);
+    GRPC_CHECK(GRPC_LOG_IF_ERROR(
+        "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
   }
   gpr_mu_unlock(g_mu);
   grpc_core::ExecCtx::Get()->Flush();
@@ -295,7 +294,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
 static void inc_on_failure(void* arg, grpc_error_handle error) {
   gpr_mu_lock(g_mu);
   *static_cast<int*>(arg) += (!error.ok());
-  CHECK(GRPC_LOG_IF_ERROR("kick", grpc_pollset_kick(g_pollset, nullptr)));
+  GRPC_CHECK(GRPC_LOG_IF_ERROR("kick", grpc_pollset_kick(g_pollset, nullptr)));
   gpr_mu_unlock(g_mu);
 }
 
@@ -307,13 +306,13 @@ static void wait_for_fail_count(int* fail_count, int want_fail_count) {
   while (grpc_core::Timestamp::Now() < deadline &&
          *fail_count < want_fail_count) {
     grpc_pollset_worker* worker = nullptr;
-    CHECK(GRPC_LOG_IF_ERROR("pollset_work",
-                            grpc_pollset_work(g_pollset, &worker, deadline)));
+    GRPC_CHECK(GRPC_LOG_IF_ERROR(
+        "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
     gpr_mu_unlock(g_mu);
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(g_mu);
   }
-  CHECK(*fail_count == want_fail_count);
+  GRPC_CHECK(*fail_count == want_fail_count);
   gpr_mu_unlock(g_mu);
 }
 

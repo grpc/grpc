@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/impl/channel_arg_names.h>
+
 #include <algorithm>
 #include <chrono>
 #include <memory>
@@ -22,28 +26,23 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/notification.h"
+#include "test/core/event_engine/event_engine_test_utils.h"
+#include "test/core/event_engine/test_suite/event_engine_test_framework.h"
+#include "test/core/test_util/port.h"
+#include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/impl/channel_arg_names.h>
-
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
-#include "src/core/lib/resource_quota/resource_quota.h"
-#include "test/core/event_engine/event_engine_test_utils.h"
-#include "test/core/event_engine/test_suite/event_engine_test_framework.h"
-#include "test/core/test_util/port.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -76,7 +75,9 @@ TEST_F(EventEngineServerTest, CannotBindAfterStarted) {
   auto listener = engine->CreateListener(
       [](std::unique_ptr<Endpoint>, grpc_core::MemoryAllocator) {},
       [](absl::Status) {}, config,
-      std::make_unique<grpc_core::MemoryQuota>("foo"));
+      std::make_unique<grpc_core::MemoryQuota>(
+          grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+              "bar")));
   // Bind an initial port to ensure normal listener startup
   auto resolved_addr = URIToResolvedAddress(absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die())));
@@ -100,11 +101,12 @@ TEST_F(EventEngineServerTest, ServerConnectExchangeBidiDataTransferTest) {
   grpc_core::ExecCtx ctx;
   std::shared_ptr<EventEngine> oracle_ee(this->NewOracleEventEngine());
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
-  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
+  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>(
+      grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>("bar"));
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto resolved_addr = URIToResolvedAddress(target_addr);
-  CHECK_OK(resolved_addr);
+  GRPC_CHECK_OK(resolved_addr);
   std::unique_ptr<EventEngine::Endpoint> client_endpoint;
   std::unique_ptr<EventEngine::Endpoint> server_endpoint;
   grpc_core::Notification client_signal;
@@ -127,7 +129,10 @@ TEST_F(EventEngineServerTest, ServerConnectExchangeBidiDataTransferTest) {
       [](absl::Status status) {
         ASSERT_TRUE(status.ok()) << status.ToString();
       },
-      config, std::make_unique<grpc_core::MemoryQuota>("foo"));
+      config,
+      std::make_unique<grpc_core::MemoryQuota>(
+          grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+              "foo")));
 
   ASSERT_TRUE(listener->Bind(*resolved_addr).ok());
   ASSERT_TRUE(listener->Start().ok());
@@ -174,7 +179,8 @@ TEST_F(EventEngineServerTest,
   static constexpr int kNumConnections = 10;        // M
   std::shared_ptr<EventEngine> oracle_ee(this->NewOracleEventEngine());
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
-  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
+  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>(
+      grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>("bar"));
   std::unique_ptr<EventEngine::Endpoint> server_endpoint;
   // Notifications can only be fired once, so they are newed every loop
   grpc_core::Notification* server_signal = new grpc_core::Notification();
@@ -198,7 +204,10 @@ TEST_F(EventEngineServerTest,
       [](absl::Status status) {
         ASSERT_TRUE(status.ok()) << status.ToString();
       },
-      config, std::make_unique<grpc_core::MemoryQuota>("foo"));
+      config,
+      std::make_unique<grpc_core::MemoryQuota>(
+          grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+              "foo")));
 
   target_addrs.reserve(kNumListenerAddresses);
   for (int i = 0; i < kNumListenerAddresses; i++) {
@@ -236,8 +245,8 @@ TEST_F(EventEngineServerTest,
     server_signal->WaitForNotification();
     ASSERT_NE(client_endpoint.get(), nullptr);
     ASSERT_NE(server_endpoint.get(), nullptr);
-    connections.push_back(std::make_tuple(std::move(client_endpoint),
-                                          std::move(server_endpoint)));
+    connections.push_back(
+        std::tuple(std::move(client_endpoint), std::move(server_endpoint)));
     delete server_signal;
     server_signal = new grpc_core::Notification();
   }

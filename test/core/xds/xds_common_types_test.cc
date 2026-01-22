@@ -16,49 +16,46 @@
 
 #include "src/core/xds/grpc/xds_common_types.h"
 
+#include <google/protobuf/struct.pb.h>
+#include <google/protobuf/wrappers.pb.h>
+#include <grpc/grpc.h>
+
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include <google/protobuf/struct.pb.h>
-#include <google/protobuf/wrappers.pb.h>
-
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
+#include "envoy/extensions/transport_sockets/tls/v3/tls.pb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
-#include "gmock/gmock.h"
+#include "envoy/type/matcher/v3/regex.pb.h"
+#include "envoy/type/matcher/v3/string.pb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
-#include "gtest/gtest.h"
 #include "re2/re2.h"
-#include "upb/mem/arena.hpp"
-#include "upb/reflection/def.hpp"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/lib/matchers/matchers.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/matchers.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 #include "src/core/util/upb_utils.h"
+#include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
-#include "src/proto/grpc/testing/xds/v3/regex.pb.h"
-#include "src/proto/grpc/testing/xds/v3/string.pb.h"
-#include "src/proto/grpc/testing/xds/v3/tls.pb.h"
-#include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
-#include "src/proto/grpc/testing/xds/v3/udpa_typed_struct.pb.h"
-#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/config_grpc_cli.h"
+#include "udpa/type/v1/typed_struct.pb.h"
+#include "upb/mem/arena.hpp"
+#include "upb/reflection/def.hpp"
+#include "xds/type/v3/typed_struct.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 
 using CommonTlsContextProto =
     envoy::extensions::transport_sockets::tls::v3::CommonTlsContext;
@@ -72,9 +69,9 @@ class XdsCommonTypesTest : public ::testing::Test {
  protected:
   XdsCommonTypesTest()
       : xds_client_(MakeXdsClient()),
-        decode_context_{
-            xds_client_.get(), *xds_client_->bootstrap().servers().front(),
-            &xds_unittest_trace, upb_def_pool_.ptr(), upb_arena_.ptr()} {}
+        decode_context_{xds_client_.get(),
+                        *xds_client_->bootstrap().servers().front(),
+                        upb_def_pool_.ptr(), upb_arena_.ptr()} {}
 
   static RefCountedPtr<XdsClient> MakeXdsClient() {
     auto bootstrap = GrpcXdsBootstrap::Create(
@@ -215,7 +212,7 @@ TEST_F(CommonTlsConfigTest, NoCaCerts) {
   // Run test.
   auto common_tls_context = Parse(upb_proto);
   ASSERT_TRUE(common_tls_context.ok()) << common_tls_context.status();
-  EXPECT_TRUE(absl::holds_alternative<absl::monostate>(
+  EXPECT_TRUE(std::holds_alternative<std::monostate>(
       common_tls_context->certificate_validation_context.ca_certs));
   EXPECT_THAT(common_tls_context->certificate_validation_context
                   .match_subject_alt_names,
@@ -240,7 +237,7 @@ TEST_F(CommonTlsConfigTest, CaCertProviderInCombinedValidationContext) {
   auto common_tls_context = Parse(upb_proto);
   ASSERT_TRUE(common_tls_context.ok()) << common_tls_context.status();
   auto* ca_cert_provider =
-      absl::get_if<CommonTlsContext::CertificateProviderPluginInstance>(
+      std::get_if<CommonTlsContext::CertificateProviderPluginInstance>(
           &common_tls_context->certificate_validation_context.ca_certs);
   ASSERT_NE(ca_cert_provider, nullptr);
   EXPECT_EQ(ca_cert_provider->instance_name, "provider1");
@@ -266,7 +263,7 @@ TEST_F(CommonTlsConfigTest, CaCertProviderInValidationContext) {
   auto common_tls_context = Parse(upb_proto);
   ASSERT_TRUE(common_tls_context.ok()) << common_tls_context.status();
   auto* ca_cert_provider =
-      absl::get_if<CommonTlsContext::CertificateProviderPluginInstance>(
+      std::get_if<CommonTlsContext::CertificateProviderPluginInstance>(
           &common_tls_context->certificate_validation_context.ca_certs);
   ASSERT_NE(ca_cert_provider, nullptr);
   EXPECT_EQ(ca_cert_provider->instance_name, "provider1");
@@ -279,7 +276,6 @@ TEST_F(CommonTlsConfigTest, CaCertProviderInValidationContext) {
 }
 
 TEST_F(CommonTlsConfigTest, SystemRootCerts) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_SYSTEM_ROOT_CERTS");
   // Construct proto.
   CommonTlsContextProto common_tls_context_proto;
   common_tls_context_proto.mutable_validation_context()
@@ -290,7 +286,7 @@ TEST_F(CommonTlsConfigTest, SystemRootCerts) {
   // Run test.
   auto common_tls_context = Parse(upb_proto);
   ASSERT_TRUE(common_tls_context.ok()) << common_tls_context.status();
-  EXPECT_TRUE(absl::holds_alternative<
+  EXPECT_TRUE(std::holds_alternative<
               CommonTlsContext::CertificateValidationContext::SystemRootCerts>(
       common_tls_context->certificate_validation_context.ca_certs));
   EXPECT_THAT(common_tls_context->certificate_validation_context
@@ -301,7 +297,6 @@ TEST_F(CommonTlsConfigTest, SystemRootCerts) {
 }
 
 TEST_F(CommonTlsConfigTest, CaCertProviderTakesPrecedenceOverSystemRootCerts) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_SYSTEM_ROOT_CERTS");
   // Construct proto.
   CommonTlsContextProto common_tls_context_proto;
   auto* cert_provider = common_tls_context_proto.mutable_validation_context()
@@ -317,31 +312,11 @@ TEST_F(CommonTlsConfigTest, CaCertProviderTakesPrecedenceOverSystemRootCerts) {
   auto common_tls_context = Parse(upb_proto);
   ASSERT_TRUE(common_tls_context.ok()) << common_tls_context.status();
   auto* ca_cert_provider =
-      absl::get_if<CommonTlsContext::CertificateProviderPluginInstance>(
+      std::get_if<CommonTlsContext::CertificateProviderPluginInstance>(
           &common_tls_context->certificate_validation_context.ca_certs);
   ASSERT_NE(ca_cert_provider, nullptr);
   EXPECT_EQ(ca_cert_provider->instance_name, "provider1");
   EXPECT_EQ(ca_cert_provider->certificate_name, "cert_name");
-  EXPECT_THAT(common_tls_context->certificate_validation_context
-                  .match_subject_alt_names,
-              ::testing::ElementsAre());
-  EXPECT_TRUE(common_tls_context->tls_certificate_provider_instance.Empty())
-      << common_tls_context->tls_certificate_provider_instance.ToString();
-}
-
-TEST_F(CommonTlsConfigTest, SystemRootCertsIgnoredWithoutEnvVar) {
-  // Construct proto.
-  CommonTlsContextProto common_tls_context_proto;
-  common_tls_context_proto.mutable_validation_context()
-      ->mutable_system_root_certs();
-  // Convert to upb.
-  const auto* upb_proto = ConvertToUpb(common_tls_context_proto);
-  ASSERT_NE(upb_proto, nullptr);
-  // Run test.
-  auto common_tls_context = Parse(upb_proto);
-  ASSERT_TRUE(common_tls_context.ok()) << common_tls_context.status();
-  EXPECT_TRUE(absl::holds_alternative<absl::monostate>(
-      common_tls_context->certificate_validation_context.ca_certs));
   EXPECT_THAT(common_tls_context->certificate_validation_context
                   .match_subject_alt_names,
               ::testing::ElementsAre());
@@ -514,7 +489,7 @@ TEST_F(CommonTlsConfigTest, MatchSubjectAltNames) {
   EXPECT_EQ(match_subject_alt_names[4].type(), StringMatcher::Type::kSafeRegex);
   EXPECT_EQ(match_subject_alt_names[4].regex_matcher()->pattern(), "regex");
   EXPECT_TRUE(match_subject_alt_names[4].case_sensitive());
-  EXPECT_TRUE(absl::holds_alternative<absl::monostate>(
+  EXPECT_TRUE(std::holds_alternative<std::monostate>(
       common_tls_context->certificate_validation_context.ca_certs));
   EXPECT_TRUE(common_tls_context->tls_certificate_provider_instance.Empty())
       << common_tls_context->tls_certificate_provider_instance.ToString();
@@ -559,7 +534,7 @@ TEST_F(CommonTlsConfigTest, MatchSubjectAltNamesCaseInsensitive) {
   EXPECT_EQ(match_subject_alt_names[3].type(), StringMatcher::Type::kContains);
   EXPECT_EQ(match_subject_alt_names[3].string_matcher(), "contains");
   EXPECT_FALSE(match_subject_alt_names[3].case_sensitive());
-  EXPECT_TRUE(absl::holds_alternative<absl::monostate>(
+  EXPECT_TRUE(std::holds_alternative<std::monostate>(
       common_tls_context->certificate_validation_context.ca_certs));
   EXPECT_TRUE(common_tls_context->tls_certificate_provider_instance.Empty())
       << common_tls_context->tls_certificate_provider_instance.ToString();
@@ -585,7 +560,7 @@ TEST_F(CommonTlsConfigTest, MatchSubjectAltNamesInvalid) {
             "field:validation_context.match_subject_alt_names[0].ignore_case "
             "error:not supported for regex matcher; "
             "field:validation_context.match_subject_alt_names[1] "
-            "error:invalid StringMatcher specified]")
+            "error:invalid string matcher]")
       << common_tls_context.status();
 }
 
@@ -639,8 +614,8 @@ TEST_F(ExtractXdsExtensionTest, Basic) {
                                             "unexpected errors");
   ASSERT_TRUE(extension.has_value());
   EXPECT_EQ(extension->type, "MyType");
-  ASSERT_TRUE(absl::holds_alternative<absl::string_view>(extension->value));
-  EXPECT_EQ(absl::get<absl::string_view>(extension->value), kValue);
+  ASSERT_TRUE(std::holds_alternative<absl::string_view>(extension->value));
+  EXPECT_EQ(std::get<absl::string_view>(extension->value), kValue);
 }
 
 TEST_F(ExtractXdsExtensionTest, TypedStruct) {
@@ -661,8 +636,8 @@ TEST_F(ExtractXdsExtensionTest, TypedStruct) {
                                             "unexpected errors");
   ASSERT_TRUE(extension.has_value());
   EXPECT_EQ(extension->type, "MyType");
-  ASSERT_TRUE(absl::holds_alternative<Json>(extension->value));
-  EXPECT_EQ(JsonDump(absl::get<Json>(extension->value)), "{\"foo\":\"bar\"}");
+  ASSERT_TRUE(std::holds_alternative<Json>(extension->value));
+  EXPECT_EQ(JsonDump(std::get<Json>(extension->value)), "{\"foo\":\"bar\"}");
 }
 
 TEST_F(ExtractXdsExtensionTest, UdpaTypedStruct) {
@@ -683,8 +658,8 @@ TEST_F(ExtractXdsExtensionTest, UdpaTypedStruct) {
                                             "unexpected errors");
   ASSERT_TRUE(extension.has_value());
   EXPECT_EQ(extension->type, "MyType");
-  ASSERT_TRUE(absl::holds_alternative<Json>(extension->value));
-  EXPECT_EQ(JsonDump(absl::get<Json>(extension->value)), "{\"foo\":\"bar\"}");
+  ASSERT_TRUE(std::holds_alternative<Json>(extension->value));
+  EXPECT_EQ(JsonDump(std::get<Json>(extension->value)), "{\"foo\":\"bar\"}");
 }
 
 TEST_F(ExtractXdsExtensionTest, TypedStructWithoutValue) {
@@ -703,8 +678,8 @@ TEST_F(ExtractXdsExtensionTest, TypedStructWithoutValue) {
                                             "unexpected errors");
   ASSERT_TRUE(extension.has_value());
   EXPECT_EQ(extension->type, "MyType");
-  ASSERT_TRUE(absl::holds_alternative<Json>(extension->value));
-  EXPECT_EQ(JsonDump(absl::get<Json>(extension->value)), "{}");
+  ASSERT_TRUE(std::holds_alternative<Json>(extension->value));
+  EXPECT_EQ(JsonDump(std::get<Json>(extension->value)), "{}");
 }
 
 TEST_F(ExtractXdsExtensionTest, TypedStructJsonConversion) {
@@ -761,8 +736,8 @@ TEST_F(ExtractXdsExtensionTest, TypedStructJsonConversion) {
                                             "unexpected errors");
   ASSERT_TRUE(extension.has_value());
   EXPECT_EQ(extension->type, "envoy.ExtensionType");
-  ASSERT_TRUE(absl::holds_alternative<Json>(extension->value));
-  EXPECT_EQ(JsonDump(absl::get<Json>(extension->value)),
+  ASSERT_TRUE(std::holds_alternative<Json>(extension->value));
+  EXPECT_EQ(JsonDump(std::get<Json>(extension->value)),
             "{"
             "\"key\":null,"
             "\"list\":[null,234],"

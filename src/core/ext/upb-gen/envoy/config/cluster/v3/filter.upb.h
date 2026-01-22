@@ -3,10 +3,11 @@
  *     envoy/config/cluster/v3/filter.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_CLUSTER_V3_FILTER_PROTO_UPB_H_
-#define ENVOY_CONFIG_CLUSTER_V3_FILTER_PROTO_UPB_H_
+#ifndef ENVOY_CONFIG_CLUSTER_V3_FILTER_PROTO_UPB_H__UPB_H_
+#define ENVOY_CONFIG_CLUSTER_V3_FILTER_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -87,6 +88,7 @@ UPB_INLINE const struct google_protobuf_Any* envoy_config_cluster_v3_Filter_type
   const struct google_protobuf_Any* default_val = NULL;
   const struct google_protobuf_Any* ret;
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Any_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -103,6 +105,7 @@ UPB_INLINE const struct envoy_config_core_v3_ExtensionConfigSource* envoy_config
   const struct envoy_config_core_v3_ExtensionConfigSource* default_val = NULL;
   const struct envoy_config_core_v3_ExtensionConfigSource* ret;
   const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__ExtensionConfigSource_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -118,6 +121,7 @@ UPB_INLINE void envoy_config_cluster_v3_Filter_set_name(envoy_config_cluster_v3_
 }
 UPB_INLINE void envoy_config_cluster_v3_Filter_set_typed_config(envoy_config_cluster_v3_Filter *msg, struct google_protobuf_Any* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Any_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Any* envoy_config_cluster_v3_Filter_mutable_typed_config(envoy_config_cluster_v3_Filter* msg, upb_Arena* arena) {
@@ -130,6 +134,7 @@ UPB_INLINE struct google_protobuf_Any* envoy_config_cluster_v3_Filter_mutable_ty
 }
 UPB_INLINE void envoy_config_cluster_v3_Filter_set_config_discovery(envoy_config_cluster_v3_Filter *msg, struct envoy_config_core_v3_ExtensionConfigSource* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(16, 40), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__ExtensionConfigSource_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_ExtensionConfigSource* envoy_config_cluster_v3_Filter_mutable_config_discovery(envoy_config_cluster_v3_Filter* msg, upb_Arena* arena) {
@@ -147,4 +152,4 @@ UPB_INLINE struct envoy_config_core_v3_ExtensionConfigSource* envoy_config_clust
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_CLUSTER_V3_FILTER_PROTO_UPB_H_ */
+#endif  /* ENVOY_CONFIG_CLUSTER_V3_FILTER_PROTO_UPB_H__UPB_H_ */

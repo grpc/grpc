@@ -18,31 +18,26 @@
 
 #include "src/core/load_balancing/grpclb/client_load_reporting_filter.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <functional>
 #include <memory>
+#include <optional>
 #include <type_traits>
 #include <utility>
 
-#include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
-
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/load_balancing/grpclb/grpclb_client_stats.h"
+#include "src/core/util/latent_see.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
-
-const NoInterceptor ClientLoadReportingFilter::Call::OnServerToClientMessage;
-const NoInterceptor ClientLoadReportingFilter::Call::OnClientToServerMessage;
-const NoInterceptor ClientLoadReportingFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor ClientLoadReportingFilter::Call::OnFinalize;
 
 const grpc_channel_filter ClientLoadReportingFilter::kFilter =
     MakePromiseBasedFilter<ClientLoadReportingFilter, FilterEndpoint::kClient,
@@ -55,21 +50,29 @@ ClientLoadReportingFilter::Create(const ChannelArgs&, ChannelFilter::Args) {
 
 void ClientLoadReportingFilter::Call::OnClientInitialMetadata(
     ClientMetadata& client_initial_metadata) {
-  // Handle client initial metadata.
-  // Grab client stats object from metadata.
-  auto client_stats_md =
+  GRPC_LATENT_SEE_SCOPE(
+      "ClientLoadReportingFilter::Call::OnClientInitialMetadata");
+  // Grab client stats object from metadata.  The metadata encodes only
+  // a raw pointer, but the LB policy will have returned a subchannel call
+  // tracker that is holding a ref to it, to ensure that it's alive here
+  // for us to take our own ref.
+  std::optional<GrpcLbClientStats*> client_stats_md =
       client_initial_metadata.Take(GrpcLbClientStatsMetadata());
-  if (client_stats_md.has_value()) {
-    client_stats_.reset(*client_stats_md);
+  if (client_stats_md.has_value() && *client_stats_md != nullptr) {
+    client_stats_ = (*client_stats_md)->Ref();
   }
 }
 
 void ClientLoadReportingFilter::Call::OnServerInitialMetadata(ServerMetadata&) {
+  GRPC_LATENT_SEE_SCOPE(
+      "ClientLoadReportingFilter::Call::OnServerInitialMetadata");
   saw_initial_metadata_ = true;
 }
 
 void ClientLoadReportingFilter::Call::OnServerTrailingMetadata(
     ServerMetadata& server_trailing_metadata) {
+  GRPC_LATENT_SEE_SCOPE(
+      "ClientLoadReportingFilter::Call::OnServerTrailingMetadata");
   if (client_stats_ != nullptr) {
     client_stats_->AddCallFinished(
         server_trailing_metadata.get(GrpcStreamNetworkState()) ==

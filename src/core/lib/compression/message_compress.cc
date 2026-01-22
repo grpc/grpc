@@ -18,19 +18,16 @@
 
 #include "src/core/lib/compression/message_compress.h"
 
-#include <string.h>
-
-#include <zconf.h>
-#include <zlib.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
+#include <string.h>
+#include <zconf.h>
+#include <zlib.h>
 
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
 
 #define OUTPUT_BLOCK_SIZE 1024
 
@@ -43,20 +40,20 @@ static int zlib_body(z_stream* zs, grpc_slice_buffer* input,
   grpc_slice outbuf = GRPC_SLICE_MALLOC(OUTPUT_BLOCK_SIZE);
   const uInt uint_max = ~uInt{0};
 
-  CHECK(GRPC_SLICE_LENGTH(outbuf) <= uint_max);
+  GRPC_CHECK(GRPC_SLICE_LENGTH(outbuf) <= uint_max);
   zs->avail_out = static_cast<uInt> GRPC_SLICE_LENGTH(outbuf);
   zs->next_out = GRPC_SLICE_START_PTR(outbuf);
   flush = Z_NO_FLUSH;
   for (i = 0; i < input->count; i++) {
     if (i == input->count - 1) flush = Z_FINISH;
-    CHECK(GRPC_SLICE_LENGTH(input->slices[i]) <= uint_max);
+    GRPC_CHECK(GRPC_SLICE_LENGTH(input->slices[i]) <= uint_max);
     zs->avail_in = static_cast<uInt> GRPC_SLICE_LENGTH(input->slices[i]);
     zs->next_in = GRPC_SLICE_START_PTR(input->slices[i]);
     do {
       if (zs->avail_out == 0) {
         grpc_slice_buffer_add_indexed(output, outbuf);
         outbuf = GRPC_SLICE_MALLOC(OUTPUT_BLOCK_SIZE);
-        CHECK(GRPC_SLICE_LENGTH(outbuf) <= uint_max);
+        GRPC_CHECK(GRPC_SLICE_LENGTH(outbuf) <= uint_max);
         zs->avail_out = static_cast<uInt> GRPC_SLICE_LENGTH(outbuf);
         zs->next_out = GRPC_SLICE_START_PTR(outbuf);
       }
@@ -76,7 +73,7 @@ static int zlib_body(z_stream* zs, grpc_slice_buffer* input,
     goto error;
   }
 
-  CHECK(outbuf.refcount);
+  GRPC_CHECK(outbuf.refcount);
   outbuf.data.refcounted.length -= zs->avail_out;
   grpc_slice_buffer_add_indexed(output, outbuf);
 
@@ -106,7 +103,7 @@ static int zlib_compress(grpc_slice_buffer* input, grpc_slice_buffer* output,
   zs.zfree = zfree_gpr;
   r = deflateInit2(&zs, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 15 | (gzip ? 16 : 0),
                    8, Z_DEFAULT_STRATEGY);
-  CHECK(r == Z_OK);
+  GRPC_CHECK(r == Z_OK);
   r = zlib_body(&zs, input, output, deflate) && output->length < input->length;
   if (!r) {
     for (i = count_before; i < output->count; i++) {
@@ -130,7 +127,7 @@ static int zlib_decompress(grpc_slice_buffer* input, grpc_slice_buffer* output,
   zs.zalloc = zalloc_gpr;
   zs.zfree = zfree_gpr;
   r = inflateInit2(&zs, 15 | (gzip ? 16 : 0));
-  CHECK(r == Z_OK);
+  GRPC_CHECK(r == Z_OK);
   r = zlib_body(&zs, input, output, inflate);
   if (!r) {
     for (i = count_before; i < output->count; i++) {

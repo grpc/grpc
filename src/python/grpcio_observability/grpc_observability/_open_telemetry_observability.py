@@ -80,7 +80,7 @@ class _OpenTelemetryPlugin:
 
     def __init__(self, plugin: OpenTelemetryPlugin):
         self._plugin = plugin
-        self._metric_to_recorder = dict()
+        self._metric_to_recorder = {}
         self.identifier = str(id(self))
         self._enabled_client_plugin_options = None
         self._enabled_server_plugin_options = None
@@ -95,7 +95,7 @@ class _OpenTelemetryPlugin:
 
     def _should_record(self, stats_data: StatsData) -> bool:
         # Decide if this plugin should record the stats_data.
-        return stats_data.name in self._metric_to_recorder.keys()
+        return stats_data.name in self._metric_to_recorder
 
     def _record_stats_data(self, stats_data: StatsData) -> None:
         recorder = self._metric_to_recorder[stats_data.name]
@@ -142,14 +142,13 @@ class _OpenTelemetryPlugin:
         elif isinstance(recorder, Histogram):
             recorder.record(value, attributes=decoded_labels)
 
-    def maybe_record_stats_data(self, stats_data: List[StatsData]) -> None:
+    def maybe_record_stats_data(self, stats_data: StatsData) -> None:
         # Records stats data to MeterProvider.
         if self._should_record(stats_data):
             self._record_stats_data(stats_data)
 
     def get_client_exchange_labels(self) -> Dict[str, AnyStr]:
         """Get labels used for client side Metadata Exchange."""
-
         labels_for_exchange = {}
         for plugin_option in self._enabled_client_plugin_options:
             if hasattr(plugin_option, "get_label_injector") and hasattr(
@@ -251,26 +250,11 @@ class _OpenTelemetryPlugin:
                     unit=metric.unit,
                     description=metric.description,
                 )
-            elif metric == _open_telemetry_measures.CLIENT_ATTEMPT_DURATION:
-                recorder = meter.create_histogram(
-                    name=metric.name,
-                    unit=metric.unit,
-                    description=metric.description,
-                )
-            elif metric == _open_telemetry_measures.CLIENT_RPC_DURATION:
-                recorder = meter.create_histogram(
-                    name=metric.name,
-                    unit=metric.unit,
-                    description=metric.description,
-                )
-            elif metric == _open_telemetry_measures.CLIENT_ATTEMPT_SEND_BYTES:
-                recorder = meter.create_histogram(
-                    name=metric.name,
-                    unit=metric.unit,
-                    description=metric.description,
-                )
-            elif (
-                metric == _open_telemetry_measures.CLIENT_ATTEMPT_RECEIVED_BYTES
+            elif metric in (
+                _open_telemetry_measures.CLIENT_ATTEMPT_DURATION,
+                _open_telemetry_measures.CLIENT_RPC_DURATION,
+                _open_telemetry_measures.CLIENT_ATTEMPT_SEND_BYTES,
+                _open_telemetry_measures.CLIENT_ATTEMPT_RECEIVED_BYTES,
             ):
                 recorder = meter.create_histogram(
                     name=metric.name,
@@ -283,19 +267,11 @@ class _OpenTelemetryPlugin:
                     unit=metric.unit,
                     description=metric.description,
                 )
-            elif metric == _open_telemetry_measures.SERVER_RPC_DURATION:
-                recorder = meter.create_histogram(
-                    name=metric.name,
-                    unit=metric.unit,
-                    description=metric.description,
-                )
-            elif metric == _open_telemetry_measures.SERVER_RPC_SEND_BYTES:
-                recorder = meter.create_histogram(
-                    name=metric.name,
-                    unit=metric.unit,
-                    description=metric.description,
-                )
-            elif metric == _open_telemetry_measures.SERVER_RPC_RECEIVED_BYTES:
+            elif metric in (
+                _open_telemetry_measures.SERVER_RPC_DURATION,
+                _open_telemetry_measures.SERVER_RPC_SEND_BYTES,
+                _open_telemetry_measures.SERVER_RPC_RECEIVED_BYTES,
+            ):
                 recorder = meter.create_histogram(
                     name=metric.name,
                     unit=metric.unit,
@@ -359,18 +335,18 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
 
     _exporter: "grpc_observability.Exporter"
     _plugins: List[_OpenTelemetryPlugin]
-    _registered_method: Set[bytes]
+    _registered_methods: Set[bytes]
     _client_option_activated: bool
     _server_option_activated: bool
 
     def __init__(
         self,
         *,
-        plugins: Optional[Iterable[_OpenTelemetryPlugin]],
+        plugins: Iterable[_OpenTelemetryPlugin],
     ):
         self._exporter = _OpenTelemetryExporterDelegator(plugins)
         self._registered_methods = set()
-        self._plugins = plugins
+        self._plugins = list(plugins)
         self._client_option_activated = False
         self._server_option_activated = False
 
@@ -379,11 +355,12 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
             _cyobservability.activate_stats()
             self.set_stats(True)
         except Exception as e:  # pylint: disable=broad-except
-            raise ValueError(f"Activate observability metrics failed with: {e}")
+            error_msg = f"Activate observability metrics failed with: {e}"
+            raise ValueError(error_msg)
 
         try:
             _cyobservability.cyobservability_init(self._exporter)
-        # TODO(xuanwn): Use specific exceptons
+        # TODO(xuanwn): Use specific exceptions
         except Exception as e:  # pylint: disable=broad-except
             _LOGGER.exception("Initiate observability failed with: %s", e)
 
@@ -490,10 +467,9 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
             self._server_option_activated = True
 
     def _get_identifier(self) -> str:
-        plugin_identifiers = []
-        for _plugin in self._plugins:
-            plugin_identifiers.append(_plugin.identifier)
-        return PLUGIN_IDENTIFIER_SEP.join(plugin_identifiers)
+        return PLUGIN_IDENTIFIER_SEP.join(
+            _plugin.identifier for _plugin in self._plugins
+        )
 
     def get_enabled_optional_labels(self) -> List[OptionalLabelType]:
         return []
@@ -502,24 +478,21 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
 def _start_open_telemetry_observability(
     otel_o11y: OpenTelemetryObservability,
 ) -> None:
-    global _OPEN_TELEMETRY_OBSERVABILITY  # pylint: disable=global-statement
+    global _OPEN_TELEMETRY_OBSERVABILITY  # pylint: disable=global-statement # noqa: PLW0603
     with _observability_lock:
         if _OPEN_TELEMETRY_OBSERVABILITY is None:
             _OPEN_TELEMETRY_OBSERVABILITY = otel_o11y
             _OPEN_TELEMETRY_OBSERVABILITY.observability_init()
         else:
-            raise RuntimeError(
-                "gPRC Python observability was already initialized!"
-            )
+            error_msg = "gPRC Python observability was already initialized!"
+            raise RuntimeError(error_msg)
 
 
 def _end_open_telemetry_observability() -> None:
-    global _OPEN_TELEMETRY_OBSERVABILITY  # pylint: disable=global-statement
+    global _OPEN_TELEMETRY_OBSERVABILITY  # pylint: disable=global-statement # noqa: PLW0603
     with _observability_lock:
         if not _OPEN_TELEMETRY_OBSERVABILITY:
-            raise RuntimeError(
-                "Trying to end gPRC Python observability without initialize first!"
-            )
-        else:
-            _OPEN_TELEMETRY_OBSERVABILITY.observability_deinit()
-            _OPEN_TELEMETRY_OBSERVABILITY = None
+            error_msg = "Trying to end gPRC Python observability without initialize first!"
+            raise RuntimeError(error_msg)
+        _OPEN_TELEMETRY_OBSERVABILITY.observability_deinit()
+        _OPEN_TELEMETRY_OBSERVABILITY = None

@@ -3,15 +3,19 @@
  *     validate/validate.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef VALIDATE_VALIDATE_PROTO_UPBDEFS_H_
-#define VALIDATE_VALIDATE_PROTO_UPBDEFS_H_
+
+
+#ifndef VALIDATE_VALIDATE_PROTO_UPB_H__UPBDEFS_H_
+#define VALIDATE_VALIDATE_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
 
-#include "upb/port/def.inc" // Must be last.
+#include "upb/port/def.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -133,10 +137,11 @@ UPB_INLINE const upb_MessageDef *validate_TimestampRules_getmsgdef(upb_DefPool *
   return upb_DefPool_FindMessageByName(s, "validate.TimestampRules");
 }
 
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
 
 #include "upb/port/undef.inc"
 
-#endif  /* VALIDATE_VALIDATE_PROTO_UPBDEFS_H_ */
+#endif  /* VALIDATE_VALIDATE_PROTO_UPB_H__UPBDEFS_H_ */

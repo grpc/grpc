@@ -12,18 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_proto_library", "grpc_internal_proto_library", "grpc_package")
 
 licenses(["notice"])
 
 grpc_package(
     name = "status",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "public",
 )
 
-grpc_proto_library(
+grpc_internal_proto_library(
     name = "status_proto",
     srcs = ["status.proto"],
-    has_services = False,
-    well_known_protos = True,
+    deps = [
+        "@com_google_protobuf//:any_proto",
+    ],
+)
+
+grpc_cc_proto_library(
+    name = "status_cc_proto",
+    deps = ["status_proto"],
 )

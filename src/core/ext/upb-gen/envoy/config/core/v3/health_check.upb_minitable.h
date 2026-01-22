@@ -3,10 +3,11 @@
  *     envoy/config/core/v3/health_check.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_CORE_V3_HEALTH_CHECK_PROTO_UPB_MINITABLE_H_
-#define ENVOY_CONFIG_CORE_V3_HEALTH_CHECK_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_CONFIG_CORE_V3_HEALTH_CHECK_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_CONFIG_CORE_V3_HEALTH_CHECK_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -18,14 +19,23 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__config__core__v3__HealthStatusSet_msg_init;
+extern const upb_MiniTable* envoy__config__core__v3__HealthStatusSet_msg_init_ptr;
 extern const upb_MiniTable envoy__config__core__v3__HealthCheck_msg_init;
+extern const upb_MiniTable* envoy__config__core__v3__HealthCheck_msg_init_ptr;
 extern const upb_MiniTable envoy__config__core__v3__HealthCheck__Payload_msg_init;
+extern const upb_MiniTable* envoy__config__core__v3__HealthCheck__Payload_msg_init_ptr;
 extern const upb_MiniTable envoy__config__core__v3__HealthCheck__HttpHealthCheck_msg_init;
+extern const upb_MiniTable* envoy__config__core__v3__HealthCheck__HttpHealthCheck_msg_init_ptr;
 extern const upb_MiniTable envoy__config__core__v3__HealthCheck__TcpHealthCheck_msg_init;
+extern const upb_MiniTable* envoy__config__core__v3__HealthCheck__TcpHealthCheck_msg_init_ptr;
 extern const upb_MiniTable envoy__config__core__v3__HealthCheck__RedisHealthCheck_msg_init;
+extern const upb_MiniTable* envoy__config__core__v3__HealthCheck__RedisHealthCheck_msg_init_ptr;
 extern const upb_MiniTable envoy__config__core__v3__HealthCheck__GrpcHealthCheck_msg_init;
+extern const upb_MiniTable* envoy__config__core__v3__HealthCheck__GrpcHealthCheck_msg_init_ptr;
 extern const upb_MiniTable envoy__config__core__v3__HealthCheck__CustomHealthCheck_msg_init;
+extern const upb_MiniTable* envoy__config__core__v3__HealthCheck__CustomHealthCheck_msg_init_ptr;
 extern const upb_MiniTable envoy__config__core__v3__HealthCheck__TlsOptions_msg_init;
+extern const upb_MiniTable* envoy__config__core__v3__HealthCheck__TlsOptions_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_config_core_v3_health_check_proto_upb_file_layout;
 
@@ -35,4 +45,4 @@ extern const upb_MiniTableFile envoy_config_core_v3_health_check_proto_upb_file_
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_CORE_V3_HEALTH_CHECK_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_CONFIG_CORE_V3_HEALTH_CHECK_PROTO_UPB_H__UPB_MINITABLE_H_ */

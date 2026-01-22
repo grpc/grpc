@@ -3,10 +3,11 @@
  *     envoy/config/core/v3/http_service.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_CORE_V3_HTTP_SERVICE_PROTO_UPB_H_
-#define ENVOY_CONFIG_CORE_V3_HTTP_SERVICE_PROTO_UPB_H_
+#ifndef ENVOY_CONFIG_CORE_V3_HTTP_SERVICE_PROTO_UPB_H__UPB_H_
+#define ENVOY_CONFIG_CORE_V3_HTTP_SERVICE_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -74,6 +75,7 @@ UPB_INLINE const struct envoy_config_core_v3_HttpUri* envoy_config_core_v3_HttpS
   const struct envoy_config_core_v3_HttpUri* default_val = NULL;
   const struct envoy_config_core_v3_HttpUri* ret;
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__HttpUri_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -88,6 +90,7 @@ UPB_INLINE void envoy_config_core_v3_HttpService_clear_request_headers_to_add(en
 }
 UPB_INLINE const struct envoy_config_core_v3_HeaderValueOption* const* envoy_config_core_v3_HttpService_request_headers_to_add(const envoy_config_core_v3_HttpService* msg, size_t* size) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__HeaderValueOption_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -99,6 +102,7 @@ UPB_INLINE const struct envoy_config_core_v3_HeaderValueOption* const* envoy_con
 }
 UPB_INLINE const upb_Array* _envoy_config_core_v3_HttpService_request_headers_to_add_upb_array(const envoy_config_core_v3_HttpService* msg, size_t* size) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__HeaderValueOption_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
     *size = arr ? arr->UPB_PRIVATE(size) : 0;
@@ -107,6 +111,7 @@ UPB_INLINE const upb_Array* _envoy_config_core_v3_HttpService_request_headers_to
 }
 UPB_INLINE upb_Array* _envoy_config_core_v3_HttpService_request_headers_to_add_mutable_upb_array(envoy_config_core_v3_HttpService* msg, size_t* size, upb_Arena* arena) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__HeaderValueOption_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
   if (size) {
@@ -117,6 +122,7 @@ UPB_INLINE upb_Array* _envoy_config_core_v3_HttpService_request_headers_to_add_m
 
 UPB_INLINE void envoy_config_core_v3_HttpService_set_http_uri(envoy_config_core_v3_HttpService *msg, struct envoy_config_core_v3_HttpUri* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__HttpUri_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_HttpUri* envoy_config_core_v3_HttpService_mutable_http_uri(envoy_config_core_v3_HttpService* msg, upb_Arena* arena) {
@@ -129,6 +135,7 @@ UPB_INLINE struct envoy_config_core_v3_HttpUri* envoy_config_core_v3_HttpService
 }
 UPB_INLINE struct envoy_config_core_v3_HeaderValueOption** envoy_config_core_v3_HttpService_mutable_request_headers_to_add(envoy_config_core_v3_HttpService* msg, size_t* size) {
   upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__HeaderValueOption_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -145,6 +152,7 @@ UPB_INLINE struct envoy_config_core_v3_HeaderValueOption** envoy_config_core_v3_
 }
 UPB_INLINE struct envoy_config_core_v3_HeaderValueOption* envoy_config_core_v3_HttpService_add_request_headers_to_add(envoy_config_core_v3_HttpService* msg, upb_Arena* arena) {
   upb_MiniTableField field = {2, UPB_SIZE(16, 24), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__HeaderValueOption_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
   if (!arr || !UPB_PRIVATE(_upb_Array_ResizeUninitialized)(
@@ -164,4 +172,4 @@ UPB_INLINE struct envoy_config_core_v3_HeaderValueOption* envoy_config_core_v3_H
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_CORE_V3_HTTP_SERVICE_PROTO_UPB_H_ */
+#endif  /* ENVOY_CONFIG_CORE_V3_HTTP_SERVICE_PROTO_UPB_H__UPB_H_ */

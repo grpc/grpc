@@ -3,7 +3,8 @@
  *     envoy/config/cluster/v3/filter.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -17,9 +18,10 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_config_cluster_v3_Filter_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ExtensionConfigSource_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_config_cluster_v3_Filter__submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__ExtensionConfigSource_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_cluster_v3_Filter__fields[3] = {
@@ -29,7 +31,7 @@ static const upb_MiniTableField envoy_config_cluster_v3_Filter__fields[3] = {
 };
 
 const upb_MiniTable envoy__config__cluster__v3__Filter_msg_init = {
-  &envoy_config_cluster_v3_Filter_submsgs[0],
+  &envoy_config_cluster_v3_Filter__submsgs[0],
   &envoy_config_cluster_v3_Filter__fields[0],
   UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -41,6 +43,7 @@ const upb_MiniTable envoy__config__cluster__v3__Filter_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__config__cluster__v3__Filter_msg_init_ptr = &envoy__config__cluster__v3__Filter_msg_init;
 static const upb_MiniTable *messages_layout[1] = {
   &envoy__config__cluster__v3__Filter_msg_init,
 };

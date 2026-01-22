@@ -14,13 +14,12 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POLLER_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POLLER_H
 
-#include "absl/functional/function_ref.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
-namespace grpc_event_engine {
-namespace experimental {
+#include "absl/functional/function_ref.h"
+
+namespace grpc_event_engine::experimental {
 
 // A generic cross-platform "poller" concept.
 // Concrete implementations will likely manage a set of sockets/file
@@ -55,7 +54,6 @@ class Poller {
   virtual void Kick() = 0;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POLLER_H

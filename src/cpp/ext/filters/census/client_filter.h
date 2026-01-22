@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CPP_EXT_FILTERS_CENSUS_CLIENT_FILTER_H
 #define GRPC_SRC_CPP_EXT_FILTERS_CENSUS_CLIENT_FILTER_H
 
-#include "absl/status/statusor.h"
-
 #include <grpc/support/port_platform.h>
 #include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/interceptor.h>
@@ -30,6 +28,7 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/transport.h"
+#include "absl/status/statusor.h"
 
 namespace grpc {
 namespace internal {

@@ -16,17 +16,16 @@
 //
 //
 
-#include <memory>
-
-#include "absl/types/optional.h"
-#include "gtest/gtest.h"
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
+#include <memory>
+#include <optional>
+
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace {
@@ -35,8 +34,8 @@ namespace {
 // - 2 retries allowed for ABORTED status
 // - first attempt gets ABORTED
 // - second attempt gets ABORTED but server push back disables retrying
-CORE_END2END_TEST(RetryTest, RetryServerPushbackDisabled) {
-  InitServer(ChannelArgs());
+CORE_END2END_TEST(RetryTests, RetryServerPushbackDisabled) {
+  InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       "{\n"
@@ -55,7 +54,7 @@ CORE_END2END_TEST(RetryTest, RetryServerPushbackDisabled) {
       "}"));
   auto c =
       NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingMetadata server_initial_metadata;
   IncomingMessage server_message;
   IncomingStatusOnClient server_status;
@@ -66,11 +65,11 @@ CORE_END2END_TEST(RetryTest, RetryServerPushbackDisabled) {
       .SendCloseFromClient()
       .RecvInitialMetadata(server_initial_metadata)
       .RecvStatusOnClient(server_status);
-  absl::optional<IncomingCall> s = RequestCall(101);
+  std::optional<IncomingCall> s = RequestCall(101);
   Expect(101, true);
   Step();
-  EXPECT_NE(s->GetPeer(), absl::nullopt);
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(s->GetPeer(), std::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingCloseOnServer client_close;
   s->NewBatch(102)
       .SendInitialMetadata({})
@@ -82,8 +81,8 @@ CORE_END2END_TEST(RetryTest, RetryServerPushbackDisabled) {
   s.emplace(RequestCall(201));
   Expect(201, true);
   Step();
-  EXPECT_NE(s->GetPeer(), absl::nullopt);
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(s->GetPeer(), std::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingCloseOnServer client_close2;
   s->NewBatch(202)
       .SendInitialMetadata({})

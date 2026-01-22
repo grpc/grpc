@@ -16,14 +16,6 @@
 //
 //
 
-#include <cinttypes>
-#include <memory>
-#include <thread>
-
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
@@ -34,15 +26,23 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/env.h"
+#include <cinttypes>
+#include <memory>
+#include <thread>
+
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
 #include "test/cpp/util/string_ref_helper.h"
+#include "gtest/gtest.h"
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
@@ -78,7 +78,7 @@ class Verifier {
   // Verify keeps calling Next until all currently set
   // expected tags are complete
   void Verify(CompletionQueue* cq) {
-    CHECK(!expectations_.empty());
+    GRPC_CHECK(!expectations_.empty());
     while (!expectations_.empty()) {
       Next(cq, false);
     }
@@ -132,8 +132,9 @@ class RawEnd2EndTest : public ::testing::Test {
 
   void ResetStub() {
     ChannelArguments args;
-    std::shared_ptr<Channel> channel = grpc::CreateChannel(
-        server_address_.str(), grpc::InsecureChannelCredentials());
+    ApplyCommonChannelArguments(args);
+    std::shared_ptr<Channel> channel = grpc::CreateCustomChannel(
+        server_address_.str(), grpc::InsecureChannelCredentials(), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
 

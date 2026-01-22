@@ -32,7 +32,7 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/slice.h>
 
-#include "src/core/lib/gprpp/thd.h"
+#include "src/core/util/thd.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 
@@ -146,10 +146,8 @@ int byte_buffer_eq_string(ByteBuffer* bb, const char* str) {
   bool ignored_ok;
   cli_cq_.Shutdown();
   srv_cq_->Shutdown();
-  while (cli_cq_.Next(&ignored_tag, &ignored_ok))
-    ;
-  while (srv_cq_->Next(&ignored_tag, &ignored_ok))
-    ;
+  while (cli_cq_.Next(&ignored_tag, &ignored_ok));
+  while (srv_cq_->Next(&ignored_tag, &ignored_ok));
   [super tearDown];
 }
 

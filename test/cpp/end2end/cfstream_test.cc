@@ -16,17 +16,6 @@
 //
 //
 
-#include <algorithm>
-#include <memory>
-#include <mutex>
-#include <random>
-#include <thread>
-
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
@@ -39,15 +28,24 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
-#include "src/core/lib/backoff/backoff.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/env.h"
+#include <algorithm>
+#include <memory>
+#include <mutex>
+#include <random>
+#include <thread>
+
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/backoff.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 #ifdef GRPC_CFSTREAM
 using grpc::ClientAsyncResponseReader;
@@ -190,7 +188,7 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
     } else if (ret == grpc::CompletionQueue::SHUTDOWN) {
       return false;
     } else {
-      CHECK(ret == grpc::CompletionQueue::TIMEOUT);
+      GRPC_CHECK(ret == grpc::CompletionQueue::TIMEOUT);
       // This can happen if we hit the Apple CFStream bug which results in the
       // read stream freezing. We are ignoring hangs and timeouts, but these
       // tests are still useful as they can catch memory memory corruptions,
@@ -314,7 +312,7 @@ std::vector<TestScenario> CreateTestScenarios() {
 INSTANTIATE_TEST_SUITE_P(CFStreamTest, CFStreamTest,
                          ::testing::ValuesIn(CreateTestScenarios()));
 
-// gRPC should automatically detech network flaps (without enabling keepalives)
+// gRPC should automatically detect network flaps (without enabling keepalives)
 //  when CFStream is enabled
 TEST_P(CFStreamTest, NetworkTransition) {
   auto channel = BuildChannel();
@@ -377,7 +375,7 @@ TEST_P(CFStreamTest, NetworkFlapRpcsInFlight) {
 
     while (CQNext(&got_tag, &ok)) {
       ++total_completions;
-      CHECK(ok);
+      GRPC_CHECK(ok);
       AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
       if (!call->status.ok()) {
         VLOG(2) << "RPC failed with error: " << call->status.error_message();
@@ -423,7 +421,7 @@ TEST_P(CFStreamTest, ConcurrentRpc) {
 
     while (CQNext(&got_tag, &ok)) {
       ++total_completions;
-      CHECK(ok);
+      GRPC_CHECK(ok);
       AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
       if (!call->status.ok()) {
         VLOG(2) << "RPC failed with error: " << call->status.error_message();

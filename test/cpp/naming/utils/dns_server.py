@@ -44,6 +44,10 @@ _SERVER_HEALTH_CHECK_RECORD_NAME = (  # missing end '.' for twisted syntax
 )
 _SERVER_HEALTH_CHECK_RECORD_DATA = "123.123.123.123"
 
+_shutdown_event = threading.Event()
+_thread_sleep_lock = threading.Lock()
+_SLEEP_TIME = 1.0
+
 
 class NoFileAuthority(authority.FileAuthority):
     def __init__(self, soa, records):
@@ -140,6 +144,14 @@ def start_local_dns_server(args):
 
 def _quit_on_signal(signum, _frame):
     print("Received SIGNAL %d. Quitting with exit code 0" % signum)
+    # Allow the flush thread to exit gracefully.
+    # This prevents a data race when the flush thread is sleeping and the main
+    # thread calls sys.exit(). See b/474047558.
+    _shutdown_event.set()
+    # Instead of just sleeping for _SLEEP_TIME, to exit faster we use a lock
+    # to signal from the flush thread that it's ready to exit.
+    _thread_sleep_lock.acquire(timeout=_SLEEP_TIME + 0.1)
+
     twisted.internet.reactor.stop()
     sys.stdout.flush()
     sys.exit(0)
@@ -147,14 +159,20 @@ def _quit_on_signal(signum, _frame):
 
 def flush_stdout_loop():
     num_timeouts_so_far = 0
-    sleep_time = 1
     # Prevent zombies. Tests that use this server are short-lived.
     max_timeouts = 60 * 10
     while num_timeouts_so_far < max_timeouts:
+        if _shutdown_event.is_set():
+            # Allow the flush thread to exit gracefully to prevent data races
+            # with the main thread during shutdown.
+            print("Shutting down the stdout flush thread.", flush=True)
+            return
+
         sys.stdout.flush()
-        time.sleep(sleep_time)
+        with _thread_sleep_lock:
+            time.sleep(_SLEEP_TIME)
         num_timeouts_so_far += 1
-    print("Process timeout reached, or cancelled. Exitting 0.")
+    print("Process timeout reached, or cancelled. Exiting 0.")
     os.kill(os.getpid(), signal.SIGTERM)
 
 

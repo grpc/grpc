@@ -38,4 +38,7 @@ message AltsContext {
 
   // The RPC protocol versions supported by the peer.
   RpcProtocolVersions peer_rpc_versions = 6;
+
+  // Additional attributes of the peer.
+  map<string, string> peer_attributes = 7;
 }

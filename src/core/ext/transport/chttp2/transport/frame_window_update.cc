@@ -18,17 +18,20 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame_window_update.h"
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
-#include "absl/log/check.h"
+#include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
+#include "src/core/ext/transport/chttp2/transport/flow_control.h"
+#include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
+#include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/ext/transport/chttp2/transport/stream_lists.h"
+#include "src/core/telemetry/stats.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/time.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/ext/transport/chttp2/transport/flow_control.h"
-#include "src/core/ext/transport/chttp2/transport/internal.h"
 
 grpc_slice grpc_chttp2_window_update_create(
     uint32_t id, uint32_t window_delta,
@@ -40,7 +43,7 @@ grpc_slice grpc_chttp2_window_update_create(
   }
   uint8_t* p = GRPC_SLICE_START_PTR(slice);
 
-  CHECK(window_delta);
+  GRPC_CHECK(window_delta);
 
   *p++ = 0;
   *p++ = 0;
@@ -97,13 +100,23 @@ grpc_error_handle grpc_chttp2_window_update_parser_parse(
       return GRPC_ERROR_CREATE(
           absl::StrCat("invalid window update bytes: ", p->amount));
     }
-    CHECK(is_last);
+    GRPC_CHECK(is_last);
+
+    t->http2_ztrace_collector.Append(grpc_core::H2WindowUpdateTrace<true>{
+        t->incoming_stream_id, received_update});
 
     if (t->incoming_stream_id != 0) {
       if (s != nullptr) {
+        grpc_core::Timestamp now = grpc_core::Timestamp::Now();
+        if (s->last_window_update_time != grpc_core::Timestamp::InfPast()) {
+          t->http2_stats->IncrementHttp2StreamWindowUpdatePeriod(
+              (now - s->last_window_update_time).millis());
+        }
+        s->last_window_update_time = now;
         grpc_core::chttp2::StreamFlowControl::OutgoingUpdateContext(
             &s->flow_control)
             .RecvUpdate(received_update);
+        t->http2_stats->IncrementHttp2StreamRemoteWindowUpdate(received_update);
         if (grpc_chttp2_list_remove_stalled_by_stream(t, s)) {
           grpc_chttp2_mark_stream_writable(t, s);
           grpc_chttp2_initiate_write(
@@ -113,6 +126,14 @@ grpc_error_handle grpc_chttp2_window_update_parser_parse(
     } else {
       grpc_core::chttp2::TransportFlowControl::OutgoingUpdateContext upd(
           &t->flow_control);
+      grpc_core::Timestamp now = grpc_core::Timestamp::Now();
+      if (t->last_window_update_time != grpc_core::Timestamp::InfPast()) {
+        t->http2_stats->IncrementHttp2TransportWindowUpdatePeriod(
+            (now - t->last_window_update_time).millis());
+      }
+      t->last_window_update_time = now;
+      t->http2_stats->IncrementHttp2TransportRemoteWindowUpdate(
+          received_update);
       upd.RecvUpdate(received_update);
       if (upd.Finish() == grpc_core::chttp2::StallEdge::kUnstalled) {
         grpc_chttp2_initiate_write(

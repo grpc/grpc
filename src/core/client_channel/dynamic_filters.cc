@@ -14,27 +14,25 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/dynamic_filters.h"
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <new>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/statusor.h"
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/util/alloc.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/status_helper.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
 
 // Conversion between call and call stack.
 #define CALL_TO_CALL_STACK(call)                                     \
@@ -57,7 +55,6 @@ DynamicFilters::Call::Call(Args args, grpc_error_handle* error)
   const grpc_call_element_args call_args = {
       call_stack,         // call_stack
       nullptr,            // server_transport_data
-      args.path,          // path
       args.start_time,    // start_time
       args.deadline,      // deadline
       args.arena,         // arena
@@ -83,8 +80,8 @@ void DynamicFilters::Call::StartTransportStreamOpBatch(
 }
 
 void DynamicFilters::Call::SetAfterCallStackDestroy(grpc_closure* closure) {
-  CHECK_EQ(after_call_stack_destroy_, nullptr);
-  CHECK_NE(closure, nullptr);
+  GRPC_CHECK_EQ(after_call_stack_destroy_, nullptr);
+  GRPC_CHECK_NE(closure, nullptr);
   after_call_stack_destroy_ = closure;
 }
 
@@ -139,8 +136,10 @@ void DynamicFilters::Call::IncrementRefCount(const DebugLocation& /*location*/,
 namespace {
 
 absl::StatusOr<RefCountedPtr<grpc_channel_stack>> CreateChannelStack(
-    const ChannelArgs& args, std::vector<const grpc_channel_filter*> filters) {
+    const ChannelArgs& args, std::vector<const grpc_channel_filter*> filters,
+    const Blackboard* blackboard) {
   ChannelStackBuilderImpl builder("DynamicFilters", GRPC_CLIENT_DYNAMIC, args);
+  builder.SetBlackboard(blackboard);
   for (auto filter : filters) {
     builder.AppendFilter(filter);
   }
@@ -150,15 +149,16 @@ absl::StatusOr<RefCountedPtr<grpc_channel_stack>> CreateChannelStack(
 }  // namespace
 
 RefCountedPtr<DynamicFilters> DynamicFilters::Create(
-    const ChannelArgs& args, std::vector<const grpc_channel_filter*> filters) {
+    const ChannelArgs& args, std::vector<const grpc_channel_filter*> filters,
+    const Blackboard* blackboard) {
   // Attempt to create channel stack from requested filters.
-  auto p = CreateChannelStack(args, std::move(filters));
+  auto p = CreateChannelStack(args, std::move(filters), blackboard);
   if (!p.ok()) {
     // Channel stack creation failed with requested filters.
     // Create with lame filter instead.
     auto error = p.status();
     p = CreateChannelStack(args.Set(MakeLameClientErrorArg(&error)),
-                           {&LameClientFilter::kFilter});
+                           {&LameClientFilter::kFilter}, nullptr);
   }
   return MakeRefCounted<DynamicFilters>(std::move(p.value()));
 }

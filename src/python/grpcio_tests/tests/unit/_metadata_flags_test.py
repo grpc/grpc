@@ -234,7 +234,7 @@ class MetadataFlagsTest(unittest.TestCase):
         # To test the wait mechanism, Python thread is required to make
         #   client set up first without handling them case by case.
         # Also, Python thread don't pass the unhandled exceptions to
-        #   main thread. So, it need another method to store the
+        #   main thread. So, it needs another method to store the
         #   exceptions and raise them again in main thread.
         unhandled_exceptions = queue.Queue()
 

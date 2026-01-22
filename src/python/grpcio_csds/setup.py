@@ -18,46 +18,25 @@ import sys
 
 import setuptools
 
-_PACKAGE_PATH = os.path.realpath(os.path.dirname(__file__))
-_README_PATH = os.path.join(_PACKAGE_PATH, "README.rst")
+# Manually insert the source directory into the Python path for local module
+# imports to succeed
+sys.path.insert(0, os.path.abspath("."))
 
-# Ensure we're in the proper directory whether or not we're being used by pip.
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
-# Break import-style to ensure we can actually find our local modules.
 import grpc_version
-
-CLASSIFIERS = [
-    "Development Status :: 5 - Production/Stable",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: Apache Software License",
-]
-
-PACKAGE_DIRECTORIES = {
-    "": ".",
-}
+import python_version
 
 INSTALL_REQUIRES = (
-    "protobuf>=5.26.1,<6.0dev",
+    "protobuf>=6.31.1,<7.0.0",
     f"xds-protos=={grpc_version.VERSION}",
     f"grpcio>={grpc_version.VERSION}",
 )
 SETUP_REQUIRES = INSTALL_REQUIRES
 
-setuptools.setup(
-    name="grpcio-csds",
-    version=grpc_version.VERSION,
-    license="Apache License 2.0",
-    description="xDS configuration dump library",
-    long_description=open(_README_PATH, "r").read(),
-    author="The gRPC Authors",
-    author_email="grpc-io@googlegroups.com",
-    classifiers=CLASSIFIERS,
-    url="https://grpc.io",
-    package_dir=PACKAGE_DIRECTORIES,
-    packages=setuptools.find_packages("."),
-    python_requires=">=3.8",
-    install_requires=INSTALL_REQUIRES,
-    setup_requires=SETUP_REQUIRES,
-)
+PYTHON_REQUIRES = f">={python_version.MIN_PYTHON_VERSION}"
+
+if __name__ == "__main__":
+    setuptools.setup(
+        python_requires=f">={python_version.MIN_PYTHON_VERSION}",
+        install_requires=INSTALL_REQUIRES,
+        setup_requires=SETUP_REQUIRES,
+    )

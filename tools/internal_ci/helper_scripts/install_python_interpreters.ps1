@@ -1,5 +1,5 @@
 #!/usr/bin/env powershell
-# Install Python 3.8 for x64 and x86 in order to build wheels on Windows.
+# Install Python 3.9 for x64 and x86 in order to build wheels on Windows.
 
 Set-StrictMode -Version 2
 $ErrorActionPreference = 'Stop'
@@ -65,37 +65,21 @@ function Install-Python {
     Write-Host "Python $PythonVersion installed by $PythonInstaller at $PythonInstallPath."
 }
 
-# Python 3.8
-$Python38x86Config = @{
-    PythonVersion = "3.8.10"
-    PythonInstaller = "python-3.8.10"
-    PythonInstallPath = "C:\Python38_32bit"
-    PythonInstallerHash = "b355cfc84b681ace8908ae50908e8761"
-}
-Install-Python @Python38x86Config
-
-$Python38x64Config = @{
-    PythonVersion = "3.8.10"
-    PythonInstaller = "python-3.8.10-amd64"
-    PythonInstallPath = "C:\Python38"
-    PythonInstallerHash = "62cf1a12a5276b0259e8761d4cf4fe42"
-}
-Install-Python @Python38x64Config
-
 # Python 3.9
 $Python39x86Config = @{
-    PythonVersion = "3.9.11"
-    PythonInstaller = "python-3.9.11"
+    PythonVersion = "3.9.13"
+    PythonInstaller = "python-3.9.13"
     PythonInstallPath = "C:\Python39_32bit"
-    PythonInstallerHash = "4210652b14a030517046cdf111c09c1e"
+    PythonInstallerHash = "46c35b0a2a4325c275b2ed3187b08ac4"
 }
 Install-Python @Python39x86Config
 
 $Python39x64Config = @{
-    PythonVersion = "3.9.11"
-    PythonInstaller = "python-3.9.11-amd64"
+    # Keep the version in sync with the one installed by choco in prepare_build_windows.bat.
+    PythonVersion = "3.9.13"
+    PythonInstaller = "python-3.9.13-amd64"
     PythonInstallPath = "C:\Python39"
-    PythonInstallerHash = "fef52176a572efd48b7148f006b25801"
+    PythonInstallerHash = "e7062b85c3624af82079794729618eca"
 }
 Install-Python @Python39x64Config
 
@@ -149,3 +133,37 @@ $Python312x64Config = @{
     PythonInstallerHash = "ea1993b5227fa4c8f45a06f5fbdd23b3"
 }
 Install-Python @Python312x64Config
+
+# Python 3.13
+$Python313x86Config = @{
+    PythonVersion = "3.13.0"
+    PythonInstaller = "python-3.13.0rc2"
+    PythonInstallPath = "C:\Python313_32bit"
+    PythonInstallerHash = "647f429b5584d9ee2dd02fdc9c61a38e"
+}
+Install-Python @Python313x86Config
+
+$Python313x64Config = @{
+    PythonVersion = "3.13.0"
+    PythonInstaller = "python-3.13.0rc2-amd64"
+    PythonInstallPath = "C:\Python313"
+    PythonInstallerHash = "0af5ad8734962267323ef45f384de3aa"
+}
+Install-Python @Python313x64Config
+
+# Python 3.14
+$Python314x86Config = @{
+    PythonVersion = "3.14.0"
+    PythonInstaller = "python-3.14.0rc1"
+    PythonInstallPath = "C:\Python314_32bit"
+    PythonInstallerHash = "bad58261535240afd04f6e98510321df"
+}
+Install-Python @Python314x86Config
+
+$Python314x64Config = @{
+    PythonVersion = "3.14.0"
+    PythonInstaller = "python-3.14.0rc1-amd64"
+    PythonInstallPath = "C:\Python314"
+    PythonInstallerHash = "b674030fe04f2d5c4c1385237998a10c"
+}
+Install-Python @Python314x64Config

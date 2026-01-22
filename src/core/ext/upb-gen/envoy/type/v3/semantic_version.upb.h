@@ -3,10 +3,11 @@
  *     envoy/type/v3/semantic_version.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_TYPE_V3_SEMANTIC_VERSION_PROTO_UPB_H_
-#define ENVOY_TYPE_V3_SEMANTIC_VERSION_PROTO_UPB_H_
+#ifndef ENVOY_TYPE_V3_SEMANTIC_VERSION_PROTO_UPB_H__UPB_H_
+#define ENVOY_TYPE_V3_SEMANTIC_VERSION_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -118,4 +119,4 @@ UPB_INLINE void envoy_type_v3_SemanticVersion_set_patch(envoy_type_v3_SemanticVe
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_TYPE_V3_SEMANTIC_VERSION_PROTO_UPB_H_ */
+#endif  /* ENVOY_TYPE_V3_SEMANTIC_VERSION_PROTO_UPB_H__UPB_H_ */

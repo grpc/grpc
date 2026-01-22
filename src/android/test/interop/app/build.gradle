@@ -20,7 +20,7 @@ android {
                 def grpc_cpp_plugin = project.hasProperty('grpc_cpp_plugin') ?
                         project.property('grpc_cpp_plugin') : '/usr/local/bin/grpc_cpp_plugin'
 
-                cppFlags "-std=c++14 -frtti -fexceptions"
+                cppFlags "-std=c++17 -frtti -fexceptions"
                 arguments '-DANDROID_STL=c++_shared'
                 arguments '-DRUN_HAVE_POSIX_REGEX=0'
                 arguments '-DRUN_HAVE_STD_REGEX=0'

@@ -18,9 +18,7 @@
 
 #include "src/core/lib/surface/init.h"
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/log.h"
-
+#include <address_sorting/address_sorting.h>
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -30,23 +28,26 @@
 #include <grpc/support/time.h>
 
 #include "src/core/client_channel/backup_poller.h"
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
+#include "src/core/credentials/transport/security_connector.h"
+#include "src/core/filter/auth/auth_filters.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/fork.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/security/authorization/grpc_server_authz_filter.h"
-#include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/security_connector/security_connector.h"
-#include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/init_internally.h"
+#include "src/core/util/fork.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/thd.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 // Remnants of the old plugin system
 void grpc_resolver_dns_ares_init(void);
@@ -71,10 +72,10 @@ static bool g_shutting_down ABSL_GUARDED_BY(g_init_mu) = false;
 namespace grpc_core {
 void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
   builder->channel_init()
-      ->RegisterV2Filter<ClientAuthFilter>(GRPC_CLIENT_SUBCHANNEL)
+      ->RegisterFilter<ClientAuthFilter>(GRPC_CLIENT_SUBCHANNEL)
       .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
   builder->channel_init()
-      ->RegisterV2Filter<ClientAuthFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
+      ->RegisterFilter<ClientAuthFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
       .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
   builder->channel_init()
       ->RegisterFilter<ServerAuthFilter>(GRPC_SERVER_CHANNEL)
@@ -114,6 +115,7 @@ void grpc_init(void) {
     }
     grpc_iomgr_init();
     if (grpc_core::IsEventEngineDnsEnabled()) {
+      address_sorting_init();
       auto status = AresInit();
       if (!status.ok()) {
         VLOG(2) << "AresInit failed: " << status.message();
@@ -137,6 +139,7 @@ void grpc_shutdown_internal_locked(void)
     grpc_iomgr_shutdown_background_closure();
     grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
     if (grpc_core::IsEventEngineDnsEnabled()) {
+      address_sorting_shutdown();
       AresShutdown();
     } else {
       grpc_resolver_dns_ares_shutdown();
@@ -164,23 +167,18 @@ void grpc_shutdown(void) {
   grpc_core::MutexLock lock(g_init_mu);
 
   if (--g_initializations == 0) {
-    grpc_core::ApplicationCallbackExecCtx* acec =
-        grpc_core::ApplicationCallbackExecCtx::Get();
     if (!grpc_iomgr_is_any_background_poller_thread() &&
         !grpc_event_engine::experimental::TimerManager::
             IsTimerManagerThread() &&
-        (acec == nullptr ||
-         (acec->Flags() & GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD) ==
-             0) &&
         grpc_core::ExecCtx::Get() == nullptr) {
-      // just run clean-up when this is called on non-executor thread.
+      // just run clean-up when this is called on non-EventEngine thread.
       VLOG(2) << "grpc_shutdown starts clean-up now";
       g_shutting_down = true;
       grpc_shutdown_internal_locked();
       VLOG(2) << "grpc_shutdown done";
     } else {
       // spawn a detached thread to do the actual clean up in case we are
-      // currently in an executor thread.
+      // currently in an EventEngine thread.
       VLOG(2) << "grpc_shutdown spawns clean-up thread";
       g_initializations++;
       g_shutting_down = true;
@@ -215,4 +213,22 @@ void grpc_maybe_wait_for_async_shutdown(void) {
   while (g_shutting_down) {
     g_shutting_down_cv->Wait(g_init_mu);
   }
+}
+
+bool grpc_wait_for_shutdown_with_timeout(absl::Duration timeout) {
+  GRPC_TRACE_LOG(api, INFO) << "grpc_wait_for_shutdown_with_timeout()";
+  const auto started = absl::Now();
+  const auto deadline = started + timeout;
+  gpr_once_init(&g_basic_init, do_basic_init);
+  grpc_core::MutexLock lock(g_init_mu);
+  while (g_initializations != 0) {
+    if (g_shutting_down_cv->WaitWithDeadline(g_init_mu, deadline)) {
+      GRPC_TRACE_LOG(api, ERROR)
+          << "grpc_wait_for_shutdown_with_timeout() timed out.";
+      return false;
+    }
+  }
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_wait_for_shutdown_with_timeout() took " << absl::Now() - started;
+  return true;
 }

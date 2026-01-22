@@ -17,11 +17,11 @@
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_BACKEND_METRIC_DATA_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_BACKEND_METRIC_DATA_H
 
+#include <grpc/support/port_platform.h>
+
 #include <map>
 
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

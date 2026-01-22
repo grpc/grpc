@@ -12,23 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang:1.10
+FROM golang:1.19
 
 RUN apt-get update && apt-get install -y \
   dnsutils \
   git \
   vim \
   curl \
-  python-pip \
-  python-yaml \
+  python3 \
+  python3-pip \
+  python3-yaml \
   make && apt-get clean
 
 RUN ln -s /usr/local/go/bin/go /usr/local/bin
 
 # Install Python packages from PyPI
-RUN pip install --upgrade pip==19.3.1
-RUN pip install virtualenv
-RUN pip install futures==3.1.1 enum34==1.1.10 protobuf==3.5.2.post1 six==1.16.0 twisted==19.10.0
+RUN python3 -m pip install --break-system-packages virtualenv
+RUN python3 -m pip install --break-system-packages futures enum34 protobuf six twisted
 
 # Define the default command.
 CMD ["bash"]

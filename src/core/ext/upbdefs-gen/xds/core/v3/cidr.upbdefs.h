@@ -3,15 +3,19 @@
  *     xds/core/v3/cidr.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_CORE_V3_CIDR_PROTO_UPBDEFS_H_
-#define XDS_CORE_V3_CIDR_PROTO_UPBDEFS_H_
+
+
+#ifndef XDS_CORE_V3_CIDR_PROTO_UPB_H__UPBDEFS_H_
+#define XDS_CORE_V3_CIDR_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
 
-#include "upb/port/def.inc" // Must be last.
+#include "upb/port/def.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -23,10 +27,11 @@ UPB_INLINE const upb_MessageDef *xds_core_v3_CidrRange_getmsgdef(upb_DefPool *s)
   return upb_DefPool_FindMessageByName(s, "xds.core.v3.CidrRange");
 }
 
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_CORE_V3_CIDR_PROTO_UPBDEFS_H_ */
+#endif  /* XDS_CORE_V3_CIDR_PROTO_UPB_H__UPBDEFS_H_ */

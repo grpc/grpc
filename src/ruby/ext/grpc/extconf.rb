@@ -29,7 +29,7 @@ grpc_root = File.expand_path(File.join(File.dirname(__FILE__), '../../../..'))
 
 grpc_config = ENV['GRPC_CONFIG'] || 'opt'
 
-ENV['MACOSX_DEPLOYMENT_TARGET'] = '10.10'
+ENV['MACOSX_DEPLOYMENT_TARGET'] = '11.0'
 
 def debug_symbols_output_dir
   d = ENV['GRPC_RUBY_DEBUG_SYMBOLS_OUTPUT_DIR']
@@ -114,6 +114,8 @@ env_append 'CPPFLAGS', '-DGRPC_XDS_USER_AGENT_NAME_SUFFIX="\"RUBY\""'
 require_relative '../../lib/grpc/version'
 env_append 'CPPFLAGS', '-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX="\"' + GRPC::VERSION + '\""'
 env_append 'CPPFLAGS', '-DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1'
+env_append 'CPPFLAGS', '-DGRPC_ENABLE_FORK_SUPPORT=1'
+env_append 'CPPFLAGS', '-DGRPC_ENABLE_FORK_SUPPORT_DEFAULT=false'
 
 output_dir = File.expand_path(RbConfig::CONFIG['topdir'])
 grpc_lib_dir = File.join(output_dir, 'libs', grpc_config)
@@ -149,21 +151,24 @@ $CFLAGS << ' -g'
 def have_ruby_abi_version()
   return true if RUBY_ENGINE == 'truffleruby'
   # ruby_abi_version is only available in development versions: https://github.com/ruby/ruby/pull/6231
+  # See also discussion for Ruby 3.4 in https://github.com/grpc/grpc/pull/38338 and https://github.com/grpc/grpc/pull/38487
   return false if RUBY_PATCHLEVEL >= 0
 
-  m = /(\d+)\.(\d+)/.match(RUBY_VERSION)
-  if m.nil?
-    puts "Failed to parse ruby version: #{RUBY_VERSION}. Assuming ruby_abi_version symbol is NOT present."
-    return false
+  min_version = Gem::Version.new('3.2')
+
+  begin
+    current_version = Gem::Version.new(RUBY_VERSION)
+    if current_version >= min_version
+      puts "Ruby version #{RUBY_VERSION} >= 3.2. Assuming ruby_abi_version symbol is present."
+      true
+    else
+      puts "Ruby version #{RUBY_VERSION} < 3.2. Assuming ruby_abi_version symbol is NOT present."
+      false
+    end
+  rescue ArgumentError
+    puts "Failed to parse ruby version  #{RUBY_VERSION}. Assuming ruby_abi_version symbol is NOT present."
+    false
   end
-  major = m[1].to_i
-  minor = m[2].to_i
-  if major >= 3 and minor >= 2
-    puts "Ruby version #{RUBY_VERSION} >= 3.2. Assuming ruby_abi_version symbol is present."
-    return true
-  end
-  puts "Ruby version #{RUBY_VERSION} < 3.2. Assuming ruby_abi_version symbol is NOT present."
-  false
 end
 
 def ext_export_filename()
@@ -230,7 +235,7 @@ File.rename('Makefile.new', 'Makefile')
 
 if grpc_config == 'opt'
   File.open('Makefile.new', 'w') do |o|
-    o.puts 'hijack: all strip'
+    o.puts 'hijack: all strip remove_unused_artifacts'
     o.puts
     o.write(File.read('Makefile'))
     o.puts

@@ -17,31 +17,28 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_BOOTSTRAP_GRPC_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_BOOTSTRAP_GRPC_H
 
+#include <grpc/support/port_platform.h>
+
 #include <map>
 #include <memory>
-#include <set>
+#include <optional>
 #include <string>
 #include <vector>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/lib/security/credentials/channel_creds_registry.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/certificate_provider_store.h"
 #include "src/core/xds/grpc/xds_audit_logger_registry.h"
 #include "src/core/xds/grpc/xds_cluster_specifier_plugin.h"
 #include "src/core/xds/grpc/xds_http_filter_registry.h"
 #include "src/core/xds/grpc/xds_lb_policy_registry.h"
+#include "src/core/xds/grpc/xds_matcher_input.h"
 #include "src/core/xds/grpc/xds_server_grpc.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -88,17 +85,20 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
       return servers;
     }
 
+    bool FallbackOnReachabilityOnly() const override {
+      return fallback_on_reachability_only_;
+    }
+
     const std::string& client_listener_resource_name_template() const {
       return client_listener_resource_name_template_;
     }
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-    void JsonPostLoad(const Json& json, const JsonArgs& args,
-                      ValidationErrors* errors);
 
    private:
     std::vector<GrpcXdsServer> servers_;
     std::string client_listener_resource_name_template_;
+    bool fallback_on_reachability_only_;
   };
 
   // Creates bootstrap object from json_string.
@@ -148,6 +148,10 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
   const XdsAuditLoggerRegistry& audit_logger_registry() const {
     return audit_logger_registry_;
   }
+  const XdsMatcherInputRegistry<absl::string_view>&
+  matcher_string_input_registry() const {
+    return matcher_string_input_registry_;
+  }
 
   // Exposed for testing purposes only.
   const std::map<std::string, GrpcAuthority>& authorities() const {
@@ -156,7 +160,7 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
 
  private:
   std::vector<GrpcXdsServer> servers_;
-  absl::optional<GrpcNode> node_;
+  std::optional<GrpcNode> node_;
   std::string client_default_listener_resource_name_template_;
   std::string server_listener_resource_name_template_;
   std::map<std::string, GrpcAuthority> authorities_;
@@ -165,6 +169,7 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
   XdsClusterSpecifierPluginRegistry cluster_specifier_plugin_registry_;
   XdsLbPolicyRegistry lb_policy_registry_;
   XdsAuditLoggerRegistry audit_logger_registry_;
+  XdsMatcherInputRegistry<absl::string_view> matcher_string_input_registry_;
 };
 
 }  // namespace grpc_core

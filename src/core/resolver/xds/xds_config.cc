@@ -21,10 +21,9 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/util/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-
-#include "src/core/lib/gprpp/match.h"
 
 namespace grpc_core {
 
@@ -42,10 +41,10 @@ XdsConfig::ClusterConfig::ClusterConfig(
 
 XdsConfig::ClusterConfig::ClusterConfig(
     std::shared_ptr<const XdsClusterResource> cluster,
-    std::vector<absl::string_view> leaf_clusters)
+    std::vector<absl::string_view> leaf_clusters, std::string resolution_note)
     : cluster(std::move(cluster)),
       children(absl::in_place_type_t<AggregateConfig>(),
-               std::move(leaf_clusters)) {}
+               std::move(leaf_clusters), std::move(resolution_note)) {}
 
 //
 // XdsConfig
@@ -57,18 +56,18 @@ std::string XdsConfig::ToString() const {
       "}\n  route_config: {", route_config->ToString(),
       "}\n  virtual_host: {", virtual_host->ToString(),
       "}\n  clusters: {\n"};
-  for (const auto& p : clusters) {
-    parts.push_back(absl::StrCat("    \"", p.first, "\": "));
-    if (!p.second.ok()) {
-      parts.push_back(p.second.status().ToString());
+  for (const auto& [name, cluster_config] : clusters) {
+    parts.push_back(absl::StrCat("    \"", name, "\": "));
+    if (!cluster_config.ok()) {
+      parts.push_back(cluster_config.status().ToString());
       parts.push_back("\n");
     } else {
       parts.push_back(
           absl::StrCat("      {\n"
                        "        cluster: {",
-                       p.second->cluster->ToString(), "}\n"));
+                       cluster_config->cluster->ToString(), "}\n"));
       Match(
-          p.second->children,
+          cluster_config->children,
           [&](const ClusterConfig::EndpointConfig& endpoint_config) {
             parts.push_back(
                 absl::StrCat("        endpoints: {",
@@ -82,7 +81,10 @@ std::string XdsConfig::ToString() const {
           [&](const ClusterConfig::AggregateConfig& aggregate_config) {
             parts.push_back(absl::StrCat(
                 "        leaf_clusters: [",
-                absl::StrJoin(aggregate_config.leaf_clusters, ", "), "]\n"));
+                absl::StrJoin(aggregate_config.leaf_clusters, ", "),
+                "],\n"
+                "        resolution_note: \"",
+                aggregate_config.resolution_note, "\"\n"));
           });
       parts.push_back(
           "      }\n"

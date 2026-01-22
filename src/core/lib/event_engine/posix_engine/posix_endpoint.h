@@ -19,37 +19,33 @@
 
 // IWYU pragma: no_include <bits/types/struct_iovec.h>
 
-#include <atomic>
-#include <cstdint>
-#include <memory>
-#include <new>
-#include <utility>
-
-#include "absl/base/thread_annotations.h"
-#include "absl/container/flat_hash_map.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/hash/hash.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/support/alloc.h>
 
-#include "src/core/lib/event_engine/extensions/supports_fd.h"
+#include <atomic>
+#include <cstdint>
+#include <memory>
+#include <utility>
+
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/posix_engine/traced_buffer_list.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
@@ -64,8 +60,7 @@ typedef size_t msg_iovlen_type;
 
 #endif  //  GRPC_POSIX_SOCKET_TCP
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
@@ -131,7 +126,7 @@ class TcpZerocopySendRecord {
   //  sendmsg() failed or when tcp_write() is done.
   bool Unref() {
     const intptr_t prior = ref_.fetch_sub(1, std::memory_order_acq_rel);
-    DCHECK_GT(prior, 0);
+    GRPC_DCHECK_GT(prior, 0);
     if (prior == 1) {
       AllSendsComplete();
       return true;
@@ -146,9 +141,9 @@ class TcpZerocopySendRecord {
   };
 
   void DebugAssertEmpty() {
-    DCHECK_EQ(buf_.Count(), 0u);
-    DCHECK_EQ(buf_.Length(), 0u);
-    DCHECK_EQ(ref_.load(std::memory_order_relaxed), 0);
+    GRPC_DCHECK_EQ(buf_.Count(), 0u);
+    GRPC_DCHECK_EQ(buf_.Length(), 0u);
+    GRPC_DCHECK_EQ(ref_.load(std::memory_order_relaxed), 0);
   }
 
   // When all sendmsg() calls associated with this tcp_write() have been
@@ -156,7 +151,7 @@ class TcpZerocopySendRecord {
   // for each sendmsg()) and all reference counts have been dropped, drop our
   // reference to the underlying data since we no longer need it.
   void AllSendsComplete() {
-    DCHECK_EQ(ref_.load(std::memory_order_relaxed), 0);
+    GRPC_DCHECK_EQ(ref_.load(std::memory_order_relaxed), 0);
     buf_.Clear();
   }
 
@@ -237,7 +232,7 @@ class TcpZerocopySendCtx {
     --last_send_;
     if (ReleaseSendRecord(last_send_)->Unref()) {
       // We should still be holding the ref taken by tcp_write().
-      DCHECK(0);
+      GRPC_DCHECK(0);
     }
   }
 
@@ -275,7 +270,7 @@ class TcpZerocopySendCtx {
   // same time.
   void PutSendRecord(TcpZerocopySendRecord* record) {
     grpc_core::MutexLock lock(&mu_);
-    DCHECK(record >= send_records_ && record < send_records_ + max_sends_);
+    GRPC_DCHECK(record >= send_records_ && record < send_records_ + max_sends_);
     PutSendRecordLocked(record);
   }
 
@@ -332,7 +327,7 @@ class TcpZerocopySendCtx {
       zcopy_enobuf_state_ = OptMemState::kCheck;
       return false;
     }
-    DCHECK(zcopy_enobuf_state_ != OptMemState::kCheck);
+    GRPC_DCHECK(zcopy_enobuf_state_ != OptMemState::kCheck);
     if (zcopy_enobuf_state_ == OptMemState::kFull) {
       // A previous sendmsg attempt was blocked by ENOBUFS. Return true to
       // mark the fd as writable so the next write attempt could be made.
@@ -423,7 +418,7 @@ class TcpZerocopySendCtx {
   TcpZerocopySendRecord* ReleaseSendRecordLocked(uint32_t seq)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     auto iter = ctx_lookup_.find(seq);
-    DCHECK(iter != ctx_lookup_.end());
+    GRPC_DCHECK(iter != ctx_lookup_.end());
     TcpZerocopySendRecord* record = iter->second;
     ctx_lookup_.erase(iter);
     return record;
@@ -443,7 +438,7 @@ class TcpZerocopySendCtx {
 
   void PutSendRecordLocked(TcpZerocopySendRecord* record)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    DCHECK(free_send_records_size_ < max_sends_);
+    GRPC_DCHECK(free_send_records_size_ < max_sends_);
     free_send_records_[free_send_records_size_] = record;
     free_send_records_size_++;
   }
@@ -475,13 +470,11 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   bool Read(
       absl::AnyInvocable<void(absl::Status)> on_read,
       grpc_event_engine::experimental::SliceBuffer* buffer,
-      const grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs*
-          args);
+      grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs args);
   bool Write(
       absl::AnyInvocable<void(absl::Status)> on_writable,
       grpc_event_engine::experimental::SliceBuffer* data,
-      const grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs*
-          args);
+      grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args);
   const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
   GetPeerAddress() const {
     return peer_address_;
@@ -491,7 +484,7 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
     return local_address_;
   }
 
-  int GetWrappedFd() { return fd_; }
+  FileDescriptor GetWrappedFd() { return handle_->WrappedFd(); }
 
   bool CanTrackErrors() const { return poller_->CanTrackErrors(); }
 
@@ -522,7 +515,7 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   void UnrefMaybePutZerocopySendRecord(TcpZerocopySendRecord* record);
   void ZerocopyDisableAndWaitForRemaining();
   bool WriteWithTimestamps(struct msghdr* msg, size_t sending_length,
-                           ssize_t* sent_length, int* saved_errno,
+                           PosixErrorOr<int64_t>* sent_length, int* saved_errno,
                            int additional_flags);
   absl::Status TcpAnnotateError(absl::Status src_error) const;
 #ifdef GRPC_LINUX_ERRQUEUE
@@ -533,16 +526,13 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   struct cmsghdr* ProcessTimestamp(msghdr* msg, struct cmsghdr* cmsg);
 #endif  // GRPC_LINUX_ERRQUEUE
   grpc_core::Mutex read_mu_;
-  PosixSocketWrapper sock_;
-  int fd_;
   bool is_first_read_ = true;
   bool has_posted_reclaimer_ ABSL_GUARDED_BY(read_mu_) = false;
   double target_length_;
   int min_read_chunk_size_;
   int max_read_chunk_size_;
-  int set_rcvlowat_ = 0;
+  int64_t set_rcvlowat_ = 0;
   double bytes_read_this_round_ = 0;
-  std::atomic<int> ref_count_{1};
 
   // garbage after the last read.
   grpc_event_engine::experimental::SliceBuffer last_read_buffer_;
@@ -574,7 +564,9 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   grpc_core::MemoryOwner memory_owner_;
   grpc_core::MemoryAllocator::Reservation self_reservation_;
 
-  void* outgoing_buffer_arg_ = nullptr;
+  std::optional<
+      grpc_event_engine::experimental::EventEngine::Endpoint::WriteEventSink>
+      outgoing_buffer_write_event_sink_;
 
   absl::AnyInvocable<void(absl::StatusOr<int>)> on_release_fd_ = nullptr;
 
@@ -612,21 +604,22 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
       : impl_(new PosixEndpointImpl(handle, on_shutdown, std::move(engine),
                                     std::move(allocator), options)) {}
 
-  bool Read(
-      absl::AnyInvocable<void(absl::Status)> on_read,
-      grpc_event_engine::experimental::SliceBuffer* buffer,
-      const grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs*
-          args) override {
-    return impl_->Read(std::move(on_read), buffer, args);
+  bool Read(absl::AnyInvocable<void(absl::Status)> on_read,
+            grpc_event_engine::experimental::SliceBuffer* buffer,
+            grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs
+                args) override {
+    return impl_->Read(std::move(on_read), buffer, std::move(args));
   }
 
-  bool Write(
-      absl::AnyInvocable<void(absl::Status)> on_writable,
-      grpc_event_engine::experimental::SliceBuffer* data,
-      const grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs*
-          args) override {
-    return impl_->Write(std::move(on_writable), data, args);
+  bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+             grpc_event_engine::experimental::SliceBuffer* data,
+             grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs
+                 args) override {
+    return impl_->Write(std::move(on_writable), data, std::move(args));
   }
+
+  std::shared_ptr<EventEngine::Endpoint::TelemetryInfo> GetTelemetryInfo()
+      const override;
 
   const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
   GetPeerAddress() const override {
@@ -637,7 +630,7 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
     return impl_->GetLocalAddress();
   }
 
-  int GetWrappedFd() override { return impl_->GetWrappedFd(); }
+  int GetWrappedFd() override { return impl_->GetWrappedFd().fd(); }
 
   bool CanTrackErrors() override { return impl_->CanTrackErrors(); }
 
@@ -667,17 +660,18 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
  public:
   PosixEndpoint() = default;
 
-  bool Read(absl::AnyInvocable<void(absl::Status)> /*on_read*/,
-            grpc_event_engine::experimental::SliceBuffer* /*buffer*/,
-            const grpc_event_engine::experimental::EventEngine::Endpoint::
-                ReadArgs* /*args*/) override {
+  bool Read(
+      absl::AnyInvocable<void(absl::Status)> /*on_read*/,
+      grpc_event_engine::experimental::SliceBuffer* /*buffer*/,
+      grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs /*args*/)
+      override {
     grpc_core::Crash("PosixEndpoint::Read not supported on this platform");
   }
 
   bool Write(absl::AnyInvocable<void(absl::Status)> /*on_writable*/,
              grpc_event_engine::experimental::SliceBuffer* /*data*/,
-             const grpc_event_engine::experimental::EventEngine::Endpoint::
-                 WriteArgs* /*args*/) override {
+             grpc_event_engine::experimental::EventEngine::Endpoint::
+                 WriteArgs /*args*/) override {
     grpc_core::Crash("PosixEndpoint::Write not supported on this platform");
   }
 
@@ -722,7 +716,6 @@ std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     grpc_event_engine::experimental::MemoryAllocator&& allocator,
     const PosixTcpOptions& options);
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_POSIX_ENDPOINT_H

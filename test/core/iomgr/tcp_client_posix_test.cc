@@ -16,40 +16,37 @@
 //
 //
 
-#include <gtest/gtest.h>
-
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/time.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_TCP_CLIENT
 
 #include <errno.h>
 #include <fcntl.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/time.h>
 #include <netinet/in.h>
 #include <poll.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "absl/log/log.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/resource_quota/api.h"
+#include "src/core/util/crash.h"
+#include "absl/log/log.h"
 
 static grpc_pollset_set* g_pollset_set;
 static gpr_mu* g_mu;
@@ -189,7 +186,7 @@ void test_fails(void) {
         break;
       case GRPC_TIMERS_NOT_CHECKED:
         polling_deadline = grpc_core::Timestamp::ProcessEpoch();
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case GRPC_TIMERS_CHECKED_AND_EMPTY:
         ASSERT_TRUE(GRPC_LOG_IF_ERROR(
             "pollset_work",
@@ -341,7 +338,7 @@ void test_fails_bad_addr_no_leak(void) {
         break;
       case GRPC_TIMERS_NOT_CHECKED:
         polling_deadline = grpc_core::Timestamp::ProcessEpoch();
-        ABSL_FALLTHROUGH_INTENDED;
+        [[fallthrough]];
       case GRPC_TIMERS_CHECKED_AND_EMPTY:
         ASSERT_TRUE(GRPC_LOG_IF_ERROR(
             "pollset_work",

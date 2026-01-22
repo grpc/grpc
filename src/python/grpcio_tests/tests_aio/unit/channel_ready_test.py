@@ -52,6 +52,7 @@ class TestChannelReady(AioTestBase):
             self._channel, grpc.ChannelConnectivity.TRANSIENT_FAILURE
         )
 
+        server = None
         try:
             # Start the server
             _, server = await start_test_server(port=self._port)
@@ -59,8 +60,12 @@ class TestChannelReady(AioTestBase):
             # The RPC should recover itself
             await channel_ready_task
         finally:
-            await server.stop(None)
+            if server:
+                await server.stop(None)
 
+    @unittest.skip(
+        "skipping due to flake: https://github.com/grpc/grpc/issues/37949"
+    )
     async def test_channel_ready_blocked(self):
         with self.assertRaises(asyncio.TimeoutError):
             await asyncio.wait_for(

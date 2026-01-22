@@ -90,29 +90,7 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 #=================
 # PHP7 dependencies
 
-# PHP specific dependencies
-RUN apt-get update && apt-get install -y \
-  libbison-dev \
-  libcurl4-openssl-dev \
-  libgmp-dev \
-  libgmp3-dev \
-  libssl-dev \
-  libxml2-dev \
-  re2c \
-  zlib1g-dev \
-  && apt-get clean
-
-# Compile PHP7 from source
-RUN git clone https://github.com/php/php-src /var/local/git/php-src
-RUN cd /var/local/git/php-src \
-  && git checkout PHP-7.2.34 \
-  && ./buildconf --force \
-  && ./configure \
-  --with-gmp \
-  --with-openssl \
-  --with-zlib \
-  && make -j$(nproc) \
-  && make install
+RUN apt-get update && apt-get install -y php7.4-dev php-pear && apt-get clean
 
 # Install composer
 RUN curl -sS https://getcomposer.org/installer | php
@@ -129,14 +107,14 @@ RUN apt-get update && apt-get install -y cmake && apt-get clean
 
 # Install ccache from source since ccache 3.x packaged with most linux distributions
 # does not support Redis backend for caching.
-RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.7.5/ccache-4.7.5.tar.gz \
+RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.11.3/ccache-4.11.3.tar.gz \
     && tar -zxf ccache.tar.gz \
-    && cd ccache-4.7.5 \
+    && cd ccache-4.11.3 \
     && mkdir build && cd build \
     && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON .. \
     && make -j4 && make install \
     && cd ../.. \
-    && rm -rf ccache-4.7.5 ccache.tar.gz
+    && rm -rf ccache-4.11.3 ccache.tar.gz
 
 
 RUN mkdir /var/local/jenkins

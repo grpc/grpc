@@ -15,6 +15,7 @@
 from __future__ import absolute_import
 
 import collections
+import datetime
 import io
 import itertools
 import traceback
@@ -290,13 +291,27 @@ class TerminalResult(CoverageResult):
         """
         super(TerminalResult, self).__init__(id_map=id_map)
         self.out = out
+        self.start_time = None
 
     def startTestRun(self):
         """See unittest.TestResult.startTestRun."""
         super(TerminalResult, self).startTestRun()
         self.out.write(
-            _Colors.HEADER + "Testing gRPC Python...\n" + _Colors.END
+            _Colors.HEADER
+            + " [{}]Testing gRPC Python...\n".format(datetime.datetime.now())
+            + _Colors.END
         )
+
+    def startTest(self, test):
+        """See unittest.TestResult.startTest."""
+        super(TerminalResult, self).startTest(test)
+        self.start_time = datetime.datetime.now()
+        self.out.write(
+            _Colors.INFO
+            + " [{}]START         {}\n".format(self.start_time, test.id())
+            + _Colors.END
+        )
+        self.out.flush()
 
     def stopTestRun(self):
         """See unittest.TestResult.stopTestRun."""
@@ -307,24 +322,42 @@ class TerminalResult(CoverageResult):
     def addError(self, test, err):
         """See unittest.TestResult.addError."""
         super(TerminalResult, self).addError(test, err)
+        end_time = datetime.datetime.now()
+        duration = end_time - self.start_time
         self.out.write(
-            _Colors.FAIL + "ERROR         {}\n".format(test.id()) + _Colors.END
+            _Colors.FAIL
+            + " [{}]ERROR         {}[Duration: {}]\n".format(
+                datetime.datetime.now(), test.id(), duration
+            )
+            + _Colors.END
         )
         self.out.flush()
 
     def addFailure(self, test, err):
         """See unittest.TestResult.addFailure."""
         super(TerminalResult, self).addFailure(test, err)
+        end_time = datetime.datetime.now()
+        duration = end_time - self.start_time
         self.out.write(
-            _Colors.FAIL + "FAILURE       {}\n".format(test.id()) + _Colors.END
+            _Colors.FAIL
+            + " [{}]FAILURE       {}[Duration: {}]\n".format(
+                datetime.datetime.now(), test.id(), duration
+            )
+            + _Colors.END
         )
         self.out.flush()
 
     def addSuccess(self, test):
         """See unittest.TestResult.addSuccess."""
         super(TerminalResult, self).addSuccess(test)
+        end_time = datetime.datetime.now()
+        duration = end_time - self.start_time
         self.out.write(
-            _Colors.OK + "SUCCESS       {}\n".format(test.id()) + _Colors.END
+            _Colors.OK
+            + " [{}]SUCCESS       {}[Duration: {}]\n".format(
+                end_time, test.id(), duration
+            )
+            + _Colors.END
         )
         self.out.flush()
 

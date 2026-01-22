@@ -3,7 +3,8 @@
  *     envoy/type/matcher/v3/number.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -16,8 +17,9 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_type_matcher_v3_DoubleMatcher_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__type__v3__DoubleRange_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_type_matcher_v3_DoubleMatcher__submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__type__v3__DoubleRange_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_type_matcher_v3_DoubleMatcher__fields[2] = {
@@ -26,7 +28,7 @@ static const upb_MiniTableField envoy_type_matcher_v3_DoubleMatcher__fields[2] =
 };
 
 const upb_MiniTable envoy__type__matcher__v3__DoubleMatcher_msg_init = {
-  &envoy_type_matcher_v3_DoubleMatcher_submsgs[0],
+  &envoy_type_matcher_v3_DoubleMatcher__submsgs[0],
   &envoy_type_matcher_v3_DoubleMatcher__fields[0],
   24, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -40,6 +42,7 @@ const upb_MiniTable envoy__type__matcher__v3__DoubleMatcher_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__type__matcher__v3__DoubleMatcher_msg_init_ptr = &envoy__type__matcher__v3__DoubleMatcher_msg_init;
 static const upb_MiniTable *messages_layout[1] = {
   &envoy__type__matcher__v3__DoubleMatcher_msg_init,
 };

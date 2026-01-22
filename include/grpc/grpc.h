@@ -19,8 +19,6 @@
 #ifndef GRPC_GRPC_H
 #define GRPC_GRPC_H
 
-#include <stddef.h>
-
 #include <grpc/byte_buffer.h>
 #include <grpc/impl/connectivity_state.h>  // IWYU pragma: export
 #include <grpc/impl/grpc_types.h>          // IWYU pragma: export
@@ -29,6 +27,7 @@
 #include <grpc/status.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -529,6 +528,10 @@ GRPCAPI void grpc_resource_quota_resize(grpc_resource_quota* resource_quota,
 /** Update the size of the maximum number of threads allowed */
 GRPCAPI void grpc_resource_quota_set_max_threads(
     grpc_resource_quota* resource_quota, int new_max_threads);
+
+/** Update the size of the maximum number of streams allowed */
+GRPCAPI void grpc_resource_quota_set_max_outstanding_streams(
+    grpc_resource_quota* resource_quota, int new_max_outstanding_streams);
 
 /** EXPERIMENTAL.  Dumps xDS configs as a serialized ClientConfig proto.
     The full name of the proto is envoy.service.status.v3.ClientConfig. */

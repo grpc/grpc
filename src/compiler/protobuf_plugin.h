@@ -39,7 +39,7 @@ class ProtoBufMethod : public grpc_generator::Method {
   ProtoBufMethod(const grpc::protobuf::MethodDescriptor* method)
       : method_(method) {}
 
-  std::string name() const { return method_->name(); }
+  std::string name() const { return std::string(method_->name()); }
 
   std::string input_type_name() const {
     return grpc_cpp_generator::ClassName(method_->input_type(), true);
@@ -49,10 +49,10 @@ class ProtoBufMethod : public grpc_generator::Method {
   }
 
   std::string get_input_type_name() const {
-    return method_->input_type()->file()->name();
+    return std::string(method_->input_type()->file()->name());
   }
   std::string get_output_type_name() const {
-    return method_->output_type()->file()->name();
+    return std::string(method_->output_type()->file()->name());
   }
 
   // TODO(https://github.com/grpc/grpc/issues/18800): Clean this up.
@@ -107,7 +107,8 @@ class ProtoBufService : public grpc_generator::Service {
   ProtoBufService(const grpc::protobuf::ServiceDescriptor* service)
       : service_(service) {}
 
-  std::string name() const { return service_->name(); }
+  std::string name() const { return std::string(service_->name()); }
+  bool is_deprecated() const { return service_->options().deprecated(); }
 
   int method_count() const { return service_->method_count(); }
   std::unique_ptr<const grpc_generator::Method> method(int i) const {
@@ -155,12 +156,12 @@ class ProtoBufFile : public grpc_generator::File {
  public:
   ProtoBufFile(const grpc::protobuf::FileDescriptor* file) : file_(file) {}
 
-  std::string filename() const { return file_->name(); }
+  std::string filename() const { return std::string(file_->name()); }
   std::string filename_without_ext() const {
     return grpc_generator::StripProto(filename());
   }
 
-  std::string package() const { return file_->package(); }
+  std::string package() const { return std::string(file_->package()); }
   std::vector<std::string> package_parts() const {
     return grpc_generator::tokenize(package(), ".");
   }
@@ -194,7 +195,7 @@ class ProtoBufFile : public grpc_generator::File {
     vector<std::string> proto_names;
     for (int i = 0; i < file_->dependency_count(); ++i) {
       const auto& dep = *file_->dependency(i);
-      proto_names.push_back(dep.name());
+      proto_names.emplace_back(dep.name());
     }
     return proto_names;
   }

@@ -16,16 +16,15 @@
 //
 //
 
-#include <algorithm>
-#include <vector>
-
-#include "absl/strings/string_view.h"
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/status_helper.h"
+#include <algorithm>
+#include <vector>
+
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/util/status_helper.h"
+#include "absl/strings/string_view.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
 // IWYU pragma: no_include <arpa/nameser.h>
@@ -37,32 +36,20 @@
 
 #if GRPC_ARES == 1
 
+#include <address_sorting/address_sorting.h>
+#include <ares.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/sync.h>
 #include <string.h>
 #include <sys/types.h>  // IWYU pragma: keep
 
 #include <string>
 #include <utility>
 
-#include <address_sorting/address_sorting.h>
-#include <ares.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
-
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/nameser.h"  // IWYU pragma: keep
@@ -70,7 +57,16 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/host_port.h"
 #include "src/core/util/string.h"
+#include "src/core/util/time.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 using grpc_core::EndpointAddresses;
 using grpc_core::EndpointAddressesList;
@@ -219,7 +215,7 @@ static void grpc_ares_ev_driver_unref(grpc_ares_ev_driver* ev_driver)
     GRPC_TRACE_VLOG(cares_resolver, 2)
         << "(c-ares resolver) request:" << ev_driver->request
         << " destroy ev_driver " << ev_driver;
-    CHECK_EQ(ev_driver->fds, nullptr);
+    GRPC_CHECK_EQ(ev_driver->fds, nullptr);
     ares_destroy(ev_driver->channel);
     grpc_ares_complete_request_locked(ev_driver->request);
     delete ev_driver;
@@ -231,9 +227,9 @@ static void fd_node_destroy_locked(fd_node* fdn)
   GRPC_TRACE_VLOG(cares_resolver, 2)
       << "(c-ares resolver) request:" << fdn->ev_driver->request
       << " delete fd: " << fdn->grpc_polled_fd->GetName();
-  CHECK(!fdn->readable_registered);
-  CHECK(!fdn->writable_registered);
-  CHECK(fdn->already_shutdown);
+  GRPC_CHECK(!fdn->readable_registered);
+  GRPC_CHECK(!fdn->writable_registered);
+  GRPC_CHECK(fdn->already_shutdown);
   delete fdn->grpc_polled_fd;
   delete fdn;
 }
@@ -373,7 +369,7 @@ static void on_ares_backup_poll_alarm(void* arg, grpc_error_handle error) {
 static void on_readable(void* arg, grpc_error_handle error) {
   fd_node* fdn = static_cast<fd_node*>(arg);
   grpc_core::MutexLock lock(&fdn->ev_driver->request->mu);
-  CHECK(fdn->readable_registered);
+  GRPC_CHECK(fdn->readable_registered);
   grpc_ares_ev_driver* ev_driver = fdn->ev_driver;
   const ares_socket_t as = fdn->grpc_polled_fd->GetWrappedAresSocketLocked();
   fdn->readable_registered = false;
@@ -388,7 +384,7 @@ static void on_readable(void* arg, grpc_error_handle error) {
     // this ev_driver will be cancelled by the following ares_cancel() and the
     // on_done callbacks will be invoked with a status of ARES_ECANCELLED. The
     // remaining file descriptors in this ev_driver will be cleaned up in the
-    // follwing grpc_ares_notify_on_event_locked().
+    // following grpc_ares_notify_on_event_locked().
     ares_cancel(ev_driver->channel);
   }
   grpc_ares_notify_on_event_locked(ev_driver);
@@ -398,7 +394,7 @@ static void on_readable(void* arg, grpc_error_handle error) {
 static void on_writable(void* arg, grpc_error_handle error) {
   fd_node* fdn = static_cast<fd_node*>(arg);
   grpc_core::MutexLock lock(&fdn->ev_driver->request->mu);
-  CHECK(fdn->writable_registered);
+  GRPC_CHECK(fdn->writable_registered);
   grpc_ares_ev_driver* ev_driver = fdn->ev_driver;
   const ares_socket_t as = fdn->grpc_polled_fd->GetWrappedAresSocketLocked();
   fdn->writable_registered = false;
@@ -413,7 +409,7 @@ static void on_writable(void* arg, grpc_error_handle error) {
     // this ev_driver will be cancelled by the following ares_cancel() and the
     // on_done callbacks will be invoked with a status of ARES_ECANCELLED. The
     // remaining file descriptors in this ev_driver will be cleaned up in the
-    // follwing grpc_ares_notify_on_event_locked().
+    // following grpc_ares_notify_on_event_locked().
     ares_cancel(ev_driver->channel);
   }
   grpc_ares_notify_on_event_locked(ev_driver);
@@ -488,14 +484,17 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver)
       }
     }
   }
-  // Any remaining fds in ev_driver->fds were not returned by ares_getsock() and
-  // are therefore no longer in use, so they can be shut down and removed from
-  // the list.
+  // We may be shutting down to completion of all requests, or due to a timeout
+  // or explicit caller-triggered cancellation. In any of these cases, shut
+  // down and destroy any remaining fds.
   while (ev_driver->fds != nullptr) {
     fd_node* cur = ev_driver->fds;
     ev_driver->fds = ev_driver->fds->next;
-    fd_node_shutdown_locked(cur, "c-ares fd shutdown");
-    if (!cur->readable_registered && !cur->writable_registered) {
+    if (ev_driver->shutting_down) {
+      fd_node_shutdown_locked(cur, "grpc_ares_notify_on_event_locked");
+    }
+    if (cur->already_shutdown && !cur->readable_registered &&
+        !cur->writable_registered) {
       fd_node_destroy_locked(cur);
     } else {
       cur->next = new_list;
@@ -910,7 +909,7 @@ grpc_error_handle grpc_dns_lookup_ares_continued(
   grpc_core::SplitHostPort(name, host, port);
   if (host->empty()) {
     error =
-        GRPC_ERROR_CREATE(absl::StrCat("unparseable host:port \"", name, "\""));
+        GRPC_ERROR_CREATE(absl::StrCat("unparsable host:port \"", name, "\""));
     return error;
   } else if (check_port && port->empty()) {
     if (default_port == nullptr || strlen(default_port) == 0) {
@@ -950,7 +949,7 @@ static bool inner_resolve_as_ip_literal_locked(
                                false /* log errors */) ||
       grpc_parse_ipv6_hostport(hostport->c_str(), &addr,
                                false /* log errors */)) {
-    CHECK(*addrs == nullptr);
+    GRPC_CHECK(*addrs == nullptr);
     *addrs = std::make_unique<EndpointAddressesList>();
     (*addrs)->emplace_back(addr, grpc_core::ChannelArgs());
     return true;
@@ -1004,7 +1003,7 @@ static bool inner_maybe_resolve_localhost_manually_locked(
     *port = default_port;
   }
   if (gpr_stricmp(host->c_str(), "localhost") == 0) {
-    CHECK(*addrs == nullptr);
+    GRPC_CHECK(*addrs == nullptr);
     *addrs = std::make_unique<grpc_core::EndpointAddressesList>();
     uint16_t numeric_port = grpc_strhtons(port->c_str());
     grpc_resolved_address address;
@@ -1203,7 +1202,7 @@ grpc_ares_request* (*grpc_dns_lookup_txt_ares)(
     int query_timeout_ms) = grpc_dns_lookup_txt_ares_impl;
 
 static void grpc_cancel_ares_request_impl(grpc_ares_request* r) {
-  CHECK_NE(r, nullptr);
+  GRPC_CHECK_NE(r, nullptr);
   grpc_core::MutexLock lock(&r->mu);
   GRPC_TRACE_VLOG(cares_resolver, 2)
       << "(c-ares resolver) request:" << r

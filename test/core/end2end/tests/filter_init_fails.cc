@@ -16,30 +16,29 @@
 //
 //
 
-#include <memory>
-#include <utility>
-
-#include "absl/status/status.h"
-#include "absl/types/optional.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-
 #include <grpc/status.h>
 
+#include <memory>
+#include <optional>
+#include <utility>
+
+#include "src/core/call/metadata_batch.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 using ::testing::AnyOf;
 
@@ -83,22 +82,22 @@ const grpc_channel_filter test_filter = {
     // However, we can't add it at the very end, because either the
     // client_channel filter or connected_channel filter must be the
     // last one.
-    // Filter ordering code falls back to lexical ordering in the absense of
+    // Filter ordering code falls back to lexical ordering in the absence of
     // other dependencies, so name this appropriately.
     GRPC_UNIQUE_TYPE_NAME_HERE("zzzzzz_filter_init_fails")};
 
 void RegisterFilter(grpc_channel_stack_type type) {
-  CoreConfiguration::RegisterBuilder(
+  CoreConfiguration::RegisterEphemeralBuilder(
       [type](CoreConfiguration::Builder* builder) {
         builder->channel_init()->RegisterFilter(type, &test_filter);
       });
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, DISABLED_ServerFilterChannelInitFails) {
+CORE_END2END_TEST(CoreEnd2endTests, DISABLED_ServerFilterChannelInitFails) {
   SKIP_IF_V3();
   RegisterFilter(GRPC_SERVER_CHANNEL);
   InitClient(ChannelArgs());
-  InitServer(ChannelArgs().Set("channel_init_fails", true));
+  InitServer(DefaultServerArgs().Set("channel_init_fails", true));
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   IncomingStatusOnClient server_status;
   IncomingMetadata server_initial_metadata;
@@ -119,7 +118,7 @@ CORE_END2END_TEST(CoreEnd2endTest, DISABLED_ServerFilterChannelInitFails) {
   ShutdownAndDestroyServer();
 };
 
-CORE_END2END_TEST(CoreEnd2endTest, ServerFilterCallInitFails) {
+CORE_END2END_TEST(CoreEnd2endTests, ServerFilterCallInitFails) {
   SKIP_IF_FUZZING();
   SKIP_IF_V3();
 
@@ -136,15 +135,15 @@ CORE_END2END_TEST(CoreEnd2endTest, ServerFilterCallInitFails) {
   Expect(1, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_PERMISSION_DENIED);
-  EXPECT_EQ(server_status.message(), "access denied");
+  EXPECT_THAT(server_status.message(), ::testing::HasSubstr("access denied"));
   ShutdownAndDestroyServer();
 };
 
-CORE_END2END_TEST(CoreEnd2endTest, DISABLED_ClientFilterChannelInitFails) {
+CORE_END2END_TEST(CoreEnd2endTests, DISABLED_ClientFilterChannelInitFails) {
   SKIP_IF_V3();
   RegisterFilter(GRPC_CLIENT_CHANNEL);
   RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL);
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set("channel_init_fails", true));
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   IncomingStatusOnClient server_status;
@@ -160,10 +159,9 @@ CORE_END2END_TEST(CoreEnd2endTest, DISABLED_ClientFilterChannelInitFails) {
   EXPECT_EQ(server_status.status(), GRPC_STATUS_INVALID_ARGUMENT);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, ClientFilterCallInitFails) {
+CORE_END2END_TEST(CoreEnd2endTests, ClientFilterCallInitFails) {
   SKIP_IF_V3();
   SKIP_IF_FUZZING();
-
   RegisterFilter(GRPC_CLIENT_CHANNEL);
   RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL);
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
@@ -179,14 +177,14 @@ CORE_END2END_TEST(CoreEnd2endTest, ClientFilterCallInitFails) {
   Expect(1, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_PERMISSION_DENIED);
-  EXPECT_EQ(server_status.message(), "access denied");
+  EXPECT_THAT(server_status.message(), ::testing::HasSubstr("access denied"));
 }
 
-CORE_END2END_TEST(CoreClientChannelTest,
+CORE_END2END_TEST(CoreClientChannelTests,
                   DISABLED_SubchannelFilterChannelInitFails) {
   SKIP_IF_V3();
   RegisterFilter(GRPC_CLIENT_SUBCHANNEL);
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set("channel_init_fails", true));
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   IncomingStatusOnClient server_status;
@@ -219,7 +217,7 @@ CORE_END2END_TEST(CoreClientChannelTest,
   EXPECT_EQ(server_status2.status(), GRPC_STATUS_UNAVAILABLE);
 }
 
-CORE_END2END_TEST(CoreClientChannelTest, SubchannelFilterCallInitFails) {
+CORE_END2END_TEST(CoreClientChannelTests, SubchannelFilterCallInitFails) {
   SKIP_IF_V3();
   RegisterFilter(GRPC_CLIENT_SUBCHANNEL);
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
@@ -235,7 +233,7 @@ CORE_END2END_TEST(CoreClientChannelTest, SubchannelFilterCallInitFails) {
   Expect(1, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_PERMISSION_DENIED);
-  EXPECT_EQ(server_status.message(), "access denied");
+  EXPECT_THAT(server_status.message(), ::testing::HasSubstr("access denied"));
   // Create a new call.  (The first call uses a different code path in
   // client_channel.c than subsequent calls on the same channel, and we need to
   // test both.)
@@ -252,7 +250,7 @@ CORE_END2END_TEST(CoreClientChannelTest, SubchannelFilterCallInitFails) {
   Expect(2, true);
   Step();
   EXPECT_EQ(server_status2.status(), GRPC_STATUS_PERMISSION_DENIED);
-  EXPECT_EQ(server_status2.message(), "access denied");
+  EXPECT_THAT(server_status2.message(), ::testing::HasSubstr("access denied"));
 }
 
 }  // namespace

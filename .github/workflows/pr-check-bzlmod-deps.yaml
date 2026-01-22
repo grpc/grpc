@@ -1,0 +1,30 @@
+name: Run check_bzl_deps
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'MODULE.bazel'
+      - 'bazel/**'
+      - 'third_party/**'
+      - 'tools/run_tests/sanity/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - name: Install Python dependencies
+        run: python -m pip install requests
+      - name: Run check_bzl_deps on PR
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python tools/run_tests/sanity/check_bzl_deps.py
+      - name: Run check_bazel_workspace on PR
+        run: python tools/run_tests/sanity/check_bazel_workspace.py

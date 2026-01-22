@@ -14,25 +14,22 @@
 // limitations under the License.
 //
 
+#include <google/protobuf/text_format.h>
+#include <grpc/grpc.h>
+
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <utility>
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/time.h"
-#include "absl/types/optional.h"
-
-#include <grpc/grpc.h>
-
-#include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "envoy/service/discovery/v3/discovery.pb.h"
+#include "fuzztest/fuzztest.h"
+#include "src/core/lib/iomgr/timer_manager.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/wait_for_single_owner.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_cluster.h"
 #include "src/core/xds/grpc/xds_cluster_parser.h"
@@ -44,32 +41,54 @@
 #include "src/core/xds/grpc/xds_route_config_parser.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client.h"
-#include "src/libfuzzer/libfuzzer_macro.h"
-#include "src/proto/grpc/testing/xds/v3/discovery.pb.h"
+#include "test/core/event_engine/event_engine_test_utils.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/xds/xds_client_fuzzer.pb.h"
 #include "test/core/xds/xds_client_test_peer.h"
 #include "test/core/xds/xds_transport_fake.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
+
+using grpc_event_engine::experimental::FuzzingEventEngine;
 
 namespace grpc_core {
 
 class Fuzzer {
  public:
-  explicit Fuzzer(absl::string_view bootstrap_json) {
+  Fuzzer(absl::string_view bootstrap_json,
+         const fuzzing_event_engine::Actions& fuzzing_ee_actions) {
+    event_engine_ = std::make_shared<FuzzingEventEngine>(
+        FuzzingEventEngine::Options(), fuzzing_ee_actions);
+    grpc_timer_manager_set_start_threaded(false);
+    grpc_init();
     auto bootstrap = GrpcXdsBootstrap::Create(bootstrap_json);
     if (!bootstrap.ok()) {
       LOG(ERROR) << "error creating bootstrap: " << bootstrap.status();
       // Leave xds_client_ unset, so Act() will be a no-op.
       return;
     }
-    auto transport_factory = MakeOrphanable<FakeXdsTransportFactory>(
-        []() { Crash("Multiple concurrent reads"); });
-    transport_factory->SetAutoCompleteMessagesFromClient(false);
-    transport_factory->SetAbortOnUndrainedMessages(false);
-    transport_factory_ = transport_factory.get();
+    transport_factory_ = MakeRefCounted<FakeXdsTransportFactory>(
+        []() { Crash("Multiple concurrent reads"); }, event_engine_);
+    transport_factory_->SetAutoCompleteMessagesFromClient(false);
+    transport_factory_->SetAbortOnUndrainedMessages(false);
     xds_client_ = MakeRefCounted<XdsClient>(
-        std::move(*bootstrap), std::move(transport_factory),
-        grpc_event_engine::experimental::GetDefaultEventEngine(),
+        std::move(*bootstrap), transport_factory_, event_engine_,
         /*metrics_reporter=*/nullptr, "foo agent", "foo version");
+  }
+
+  ~Fuzzer() {
+    transport_factory_.reset();
+    xds_client_.reset();
+    event_engine_->FuzzingDone();
+    event_engine_->TickUntilIdle();
+    event_engine_->UnsetGlobalHooks();
+    WaitForSingleOwner(std::move(event_engine_));
+    grpc_shutdown_blocking();
   }
 
   void Act(const xds_client_fuzzer::Action& action) {
@@ -172,27 +191,23 @@ class Fuzzer {
         : resource_name_(std::move(resource_name)) {}
 
     void OnResourceChanged(
-        std::shared_ptr<const typename ResourceType::ResourceType> resource,
+        absl::StatusOr<
+            std::shared_ptr<const typename ResourceType::ResourceType>>
+            resource,
         RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
         override {
       LOG(INFO) << "==> OnResourceChanged(" << ResourceType::Get()->type_url()
-                << " " << resource_name_ << "): " << resource->ToString();
+                << " " << resource_name_ << "): "
+                << (resource.ok() ? (*resource)->ToString()
+                                  : resource.status().ToString());
     }
 
-    void OnError(
+    void OnAmbientError(
         absl::Status status,
         RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
         override {
-      LOG(INFO) << "==> OnError(" << ResourceType::Get()->type_url() << " "
-                << resource_name_ << "): " << status;
-    }
-
-    void OnResourceDoesNotExist(
-        RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
-        override {
-      LOG(INFO) << "==> OnResourceDoesNotExist("
-                << ResourceType::Get()->type_url() << " " << resource_name_
-                << ")";
+      LOG(INFO) << "==> OnAmbientError(" << ResourceType::Get()->type_url()
+                << " " << resource_name_ << "): " << status;
     }
 
    private:
@@ -251,11 +266,12 @@ class Fuzzer {
 
   void TriggerConnectionFailure(const std::string& authority,
                                 absl::Status status) {
+    if (status.ok()) return;
     LOG(INFO) << "### TriggerConnectionFailure(" << authority
               << "): " << status;
     const auto* xds_server = GetServer(authority);
     if (xds_server == nullptr) return;
-    transport_factory_->TriggerConnectionFailure(*xds_server,
+    transport_factory_->TriggerConnectionFailure(*xds_server->target(),
                                                  std::move(status));
   }
 
@@ -277,8 +293,7 @@ class Fuzzer {
     if (xds_server == nullptr) return nullptr;
     const char* method = StreamIdMethod(stream_id);
     if (method == nullptr) return nullptr;
-    return transport_factory_->WaitForStream(*xds_server, method,
-                                             absl::ZeroDuration());
+    return transport_factory_->WaitForStream(*xds_server->target(), method);
   }
 
   static std::string StreamIdString(
@@ -294,7 +309,7 @@ class Fuzzer {
     auto stream = GetStream(stream_id);
     if (stream == nullptr) return;
     LOG(INFO) << "    stream=" << stream.get();
-    auto message = stream->WaitForMessageFromClient(absl::ZeroDuration());
+    auto message = stream->WaitForMessageFromClient();
     if (message.has_value()) {
       LOG(INFO) << "    completing send_message";
       stream->CompleteSendMessageFromClient(ok);
@@ -321,8 +336,9 @@ class Fuzzer {
     stream->MaybeSendStatusToClient(std::move(status));
   }
 
+  std::shared_ptr<FuzzingEventEngine> event_engine_;
   RefCountedPtr<XdsClient> xds_client_;
-  FakeXdsTransportFactory* transport_factory_;
+  RefCountedPtr<FakeXdsTransportFactory> transport_factory_;
 
   // Maps of currently active watchers for each resource type, keyed by
   // resource name.
@@ -332,15 +348,486 @@ class Fuzzer {
   std::map<std::string, std::set<EndpointWatcher*>> endpoint_watchers_;
 };
 
-}  // namespace grpc_core
+static const char* kBasicApiListener = R"pb(
+  bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
+  actions {
+    start_watch {
+      resource_type { listener {} }
+      resource_name: "server.example.com"
+    }
+  }
+  actions {
+    read_message_from_client {
+      stream_id { ads {} }
+      ok: true
+    }
+  }
+  actions {
+    send_message_to_client {
+      stream_id { ads {} }
+      response {
+        version_info: "1"
+        nonce: "A"
+        type_url: "type.googleapis.com/envoy.config.listener.v3.Listener"
+        resources {
+          [type.googleapis.com/envoy.config.listener.v3.Listener] {
+            name: "service.example.com"
+            api_listener {
+              api_listener {
+                [type.googleapis.com/envoy.extensions.filters.network
+                     .http_connection_manager.v3.HttpConnectionManager] {
+                  stat_prefix: "trafficdirector"
+                  rds {
+                    config_source {
+                      ads {}
+                      resource_api_version: V3
+                    }
+                    route_config_name: "URL_MAP/12347_arcus-um-good-1_0_service.example.com"
+                  }
+                  http_filters {
+                    name: "envoy.filters.http.fault"
+                    typed_config {
+                      [type.googleapis.com/
+                       envoy.extensions.filters.http.fault.v3.HTTPFault] {}
+                    }
+                  }
+                  http_filters {
+                    name: "envoy.filters.http.router"
+                    typed_config {
+                      [type.googleapis.com/envoy.extensions.filters.http.router
+                           .v3.Router] { suppress_envoy_headers: true }
+                    }
+                  }
+                  upgrade_configs { upgrade_type: "websocket" }
+                  normalize_path { value: true }
+                  merge_slashes: true
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+)pb";
 
-bool squelch = true;
+static const char* kBasicRouteConfig = R"pb(
+  bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
+  actions {
+    start_watch {
+      resource_type { route_config {} }
+      resource_name: "route_config1"
+    }
+  }
+  actions {
+    read_message_from_client {
+      stream_id { ads {} }
+      ok: true
+    }
+  }
+  actions {
+    send_message_to_client {
+      stream_id { ads {} }
+      response {
+        version_info: "1"
+        nonce: "A"
+        type_url: "type.googleapis.com/envoy.config.route.v3.RouteConfiguration"
+        resources {
+          [type.googleapis.com/envoy.config.route.v3.RouteConfiguration] {
+            name: "URL_MAP/12347_arcus-um-good-1"
+            virtual_hosts {
+              name: "host_3402712176314620860"
+              domains: "service.example.com"
+              routes {
+                match { prefix: "/greeter/" }
+                route {
+                  weighted_clusters {
+                    clusters {
+                      name: "cloud-internal-istio:cloud_mp_1234_3456"
+                      weight { value: 40 }
+                    }
+                    clusters {
+                      name: "cloud-internal-istio:cloud_mp_1234_3456"
+                      weight { value: 60 }
+                    }
+                    total_weight { value: 100 }
+                  }
+                  timeout { seconds: 30 }
+                }
+                name: "URL_MAP/12347_arcus-um-good-1-route-0"
+              }
+              routes {
+                match { prefix: "" }
+                route {
+                  cluster: "cloud-internal-istio:cloud_mp_1234_3456"
+                  timeout { seconds: 30 }
+                  retry_policy {
+                    retry_on: "gateway-error"
+                    num_retries { value: 1 }
+                    per_try_timeout { seconds: 30 }
+                  }
+                }
+                name: "URL_MAP/12347_arcus-um-good-1-route-1"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+)pb";
 
-DEFINE_PROTO_FUZZER(const xds_client_fuzzer::Msg& message) {
-  grpc_init();
-  grpc_core::Fuzzer fuzzer(message.bootstrap());
+static const char* kBasicCluster = R"pb(
+  bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
+  actions {
+    start_watch {
+      resource_type { cluster {} }
+      resource_name: "cluster1"
+    }
+  }
+  actions {
+    read_message_from_client {
+      stream_id { ads {} }
+      ok: true
+    }
+  }
+  actions {
+    send_message_to_client {
+      stream_id { ads {} }
+      response {
+        version_info: "1"
+        nonce: "A"
+        type_url: "type.googleapis.com/envoy.config.cluster.v3.Cluster"
+        resources {
+          [type.googleapis.com/envoy.config.cluster.v3.Cluster] {
+            name: "cloud-internal-istio:cloud_mp_1234_3456"
+            type: EDS
+            eds_cluster_config {
+              eds_config {
+                ads {}
+                initial_fetch_timeout { seconds: 15 }
+                resource_api_version: V3
+              }
+            }
+            connect_timeout { seconds: 30 }
+            circuit_breakers {
+              thresholds {
+                max_connections { value: 2147483647 }
+                max_pending_requests { value: 2147483647 }
+                max_requests { value: 2147483647 }
+                max_retries { value: 2147483647 }
+              }
+            }
+            http2_protocol_options { max_concurrent_streams { value: 100 } }
+            metadata {
+              filter_metadata {
+                key: "com.google.trafficdirector"
+                value {
+                  fields {
+                    key: "backend_service_name"
+                    value { string_value: "bs-good3" }
+                  }
+                  fields {
+                    key: "backend_service_project_number"
+                    value { number_value: 1234 }
+                  }
+                }
+              }
+            }
+            common_lb_config {
+              healthy_panic_threshold { value: 1 }
+              locality_weighted_lb_config {}
+            }
+            alt_stat_name: "/projects/1234/global/backendServices/bs-good3"
+            lrs_server { self {} }
+          }
+        }
+      }
+    }
+  }
+)pb";
+
+static const char* kBasicEndpoint = R"pb(
+  bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
+  actions {
+    start_watch {
+      resource_type { endpoint {} }
+      resource_name: "endpoint1"
+    }
+  }
+  actions {
+    read_message_from_client {
+      stream_id { ads {} }
+      ok: true
+    }
+  }
+  actions {
+    send_message_to_client {
+      stream_id { ads {} }
+      response {
+        version_info: "1"
+        nonce: "A"
+        type_url: "type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment"
+        resources {
+          [type.googleapis.com/envoy.config.endpoint.v3.ClusterLoadAssignment] {
+            cluster_name: "endpoint1"
+            endpoints {
+              locality { region: "region1" zone: "zone1" sub_zone: "sub_zone1" }
+              load_balancing_weight { value: 1 }
+              lb_endpoints {
+                load_balancing_weight { value: 1 }
+                endpoint {
+                  address {
+                    socket_address { address: "127.0.0.1" port_value: 443 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+)pb";
+
+static const char* kBasicSocketListener = R"pb(
+  bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
+  actions {
+    start_watch {
+      resource_type { listener {} }
+      resource_name: "server.example.com"
+    }
+  }
+  actions {
+    read_message_from_client {
+      stream_id { ads {} }
+      ok: true
+    }
+  }
+  actions {
+    send_message_to_client {
+      stream_id { ads {} }
+      response {
+        version_info: "1"
+        nonce: "A"
+        type_url: "type.googleapis.com/envoy.config.listener.v3.Listener"
+        resources {
+          [type.googleapis.com/envoy.config.listener.v3.Listener] {
+            name: "path/to/resource?udpa.resource.listening_address=127.0.0.1:8080"
+            reuse_port: true
+            address { socket_address { address: "127.0.0.1" port_value: 8080 } }
+            filter_chains {
+              filters {
+                name: "envoy.http_connection_manager"
+                typed_config {
+                  [type.googleapis.com/envoy.extensions.filters.network
+                       .http_connection_manager.v3.HttpConnectionManager] {
+                    stat_prefix: "endpoint_config_selector-1"
+                    route_config {
+                      name: "inbound|endpoint_config_selector-1-8080"
+                      virtual_hosts {
+                        name: "inbound|endpoint_config_selector-1-8080"
+                        domains: "*"
+                        routes {
+                          match { prefix: "/" }
+                          non_forwarding_action {}
+                          decorator {
+                            operation: "endpoint_config_selector-1/*"
+                          }
+                        }
+                      }
+                    }
+                    http_filters {
+                      name: "envoy.filters.http.router"
+                      typed_config {
+                        [type.googleapis.com/
+                         envoy.extensions.filters.http.router.v3.Router] {}
+                      }
+                    }
+                    forward_client_cert_details: APPEND_FORWARD
+                    set_current_client_cert_details {
+                      subject { value: true }
+                      dns: true
+                      uri: true
+                    }
+                    upgrade_configs { upgrade_type: "websocket" }
+                  }
+                }
+              }
+              transport_socket {
+                name: "envoy.transport_sockets.tls"
+                typed_config {
+                  [type.googleapis.com/envoy.extensions.transport_sockets.tls.v3
+                       .DownstreamTlsContext] {
+                    common_tls_context {
+                      combined_validation_context {
+                        default_validation_context {}
+                        validation_context_certificate_provider_instance {
+                          instance_name: "gcp_id_2"
+                          certificate_name: "ROOTCA"
+                        }
+                      }
+                      tls_certificate_certificate_provider_instance {
+                        instance_name: "gcp_id_1"
+                        certificate_name: "DEFAULT"
+                      }
+                    }
+                    require_client_certificate { value: true }
+                  }
+                }
+              }
+            }
+            traffic_direction: INBOUND
+          }
+        }
+      }
+    }
+  }
+)pb";
+
+auto ParseTestProto(const std::string& proto) {
+  xds_client_fuzzer::Msg msg;
+  CHECK(google::protobuf::TextFormat::ParseFromString(proto, &msg));
+  return msg;
+}
+
+void Fuzz(const xds_client_fuzzer::Msg& message) {
+  Fuzzer fuzzer(message.bootstrap(), message.fuzzing_event_engine_actions());
   for (int i = 0; i < message.actions_size(); i++) {
     fuzzer.Act(message.actions(i));
   }
-  grpc_shutdown();
 }
+FUZZ_TEST(XdsClientFuzzer, Fuzz)
+    .WithDomains(::fuzztest::Arbitrary<xds_client_fuzzer::Msg>().WithSeeds(
+        {ParseTestProto(kBasicApiListener), ParseTestProto(kBasicRouteConfig),
+         ParseTestProto(kBasicCluster), ParseTestProto(kBasicEndpoint),
+         ParseTestProto(kBasicSocketListener)}));
+
+TEST(XdsClientFuzzer, XdsServersEmpty) {
+  Fuzz(ParseTestProto(R"pb(
+    bootstrap: "{\"xds_servers\": []}"
+    actions {
+      start_watch {
+        resource_type { listener {} }
+        resource_name: "\003"
+      }
+    }
+  )pb"));
+}
+
+TEST(XdsClientFuzzer, ResourceWrapperEmpty) {
+  Fuzz(ParseTestProto(R"pb(
+    bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
+    actions { start_watch { resource_type { cluster {} } } }
+    actions {
+      send_message_to_client {
+        stream_id { ads {} }
+        response {
+          version_info: "envoy.config.cluster.v3.Cluster"
+          resources { type_url: "envoy.service.discovery.v3.Resource" }
+          canary: true
+          type_url: "envoy.config.cluster.v3.Cluster"
+          nonce: "envoy.config.cluster.v3.Cluster"
+        }
+      }
+    }
+  )pb"));
+}
+
+TEST(XdsClientFuzzer, RlsMissingTypedExtensionConfig) {
+  Fuzz(ParseTestProto(R"pb(
+    bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:-257\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
+    actions { start_watch { resource_type { route_config {} } } }
+    actions {
+      send_message_to_client {
+        stream_id { ads {} }
+        response {
+          version_info: "grpc.lookup.v1.RouteLookup"
+          resources {
+            type_url: "envoy.config.route.v3.RouteConfiguration"
+            value: "\010\001b\000"
+          }
+          type_url: "envoy.config.route.v3.RouteConfiguration"
+          nonce: "/@\001\000\\\000\000x141183468234106731687303715884105729"
+        }
+      }
+    }
+  )pb"));
+}
+
+TEST(XdsClientFuzzer, SendMessageToClientBeforeStreamCreated) {
+  Fuzz(ParseTestProto(R"pb(
+    bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
+    actions { send_message_to_client { stream_id { ads {} } } }
+  )pb"));
+}
+
+TEST(XdsClientFuzzer, IgnoresConnectionFailuresWithOkStatus) {
+  Fuzz(ParseTestProto(R"pb(
+    bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com\320\272443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
+    actions {
+      start_watch {
+        resource_type { cluster {} }
+        resource_name: "*"
+      }
+    }
+    actions {}
+    actions { trigger_connection_failure {} }
+    actions {}
+    fuzzing_event_engine_actions { connections { write_size: 2147483647 } }
+  )pb"));
+}
+
+TEST(XdsClientFuzzer, UnsubscribeWhileAdsCallInBackoff) {
+  Fuzz(ParseTestProto(R"pb(
+    bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
+    actions {
+      start_watch {
+        resource_type { listener {} }
+        resource_name: "server.example.com"
+      }
+    }
+    actions { send_status_to_client { stream_id { ads {} } } }
+    actions {
+      stop_watch {
+        resource_type { listener {} }
+        resource_name: "server.example.com"
+      }
+    }
+    actions {
+      send_message_to_client {
+        stream_id { ads {} }
+        response {
+          version_info: "1"
+          nonce: "A"
+          type_url: "type.googleapis.com/envoy.config.listener.v3.Listener"
+          resources {
+            [type.googleapis.com/envoy.config.listener.v3.Listener] {
+              name: "server.example.com"
+              api_listener {
+                api_listener {
+                  [type.googleapis.com/envoy.extensions.filters.network
+                       .http_connection_manager.v3.HttpConnectionManager] {
+                    http_filters {
+                      name: "router"
+                      typed_config {
+                        [type.googleapis.com/
+                         envoy.extensions.filters.http.router.v3.Router] {}
+                      }
+                    }
+                    rds {
+                      route_config_name: "route_config"
+                      config_source { self {} }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  )pb"));
+}
+
+}  // namespace grpc_core

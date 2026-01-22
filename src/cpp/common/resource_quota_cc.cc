@@ -16,12 +16,11 @@
 //
 //
 
+#include <grpc/grpc.h>
+#include <grpcpp/resource_quota.h>
 #include <stddef.h>
 
 #include <string>
-
-#include <grpc/grpc.h>
-#include <grpcpp/resource_quota.h>
 
 namespace grpc {
 
@@ -41,4 +40,12 @@ ResourceQuota& ResourceQuota::SetMaxThreads(int new_max_threads) {
   grpc_resource_quota_set_max_threads(impl_, new_max_threads);
   return *this;
 }
+
+ResourceQuota& ResourceQuota::SetMaxOutstandingStreams(
+    int new_max_outstanding_streams) {
+  grpc_resource_quota_set_max_outstanding_streams(impl_,
+                                                  new_max_outstanding_streams);
+  return *this;
+}
+
 }  // namespace grpc

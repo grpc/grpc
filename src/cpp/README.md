@@ -18,7 +18,7 @@ Therefore, gRPC supports several major build systems, which should satisfy most 
   them.
   .
 
-* Best Effort: We do not have continous integration tests for these, but we are
+* Best Effort: We do not have continuous integration tests for these, but we are
   fairly confident that gRPC C++ would work on them. We will make our best
   effort to support them, and we welcome patches for such platforms, but we
   might need to declare bankruptcy on some issues.
@@ -28,30 +28,43 @@ Therefore, gRPC supports several major build systems, which should satisfy most 
   these platforms may go unnoticed, and the community is responsible for all
   maintenance. Unmaintained code for these platforms may be deleted.
 
-| Operating System | Architectures | Versions | Support Level |
-|------------------|---------------|----------|---------------|
-| Linux - Debian, Ubuntu, CentOS | x86, x64      | clang 7+, GCC 7.3+     | Officially Supported |
-| Windows 10+                    | x86, x64      | Visual Studio 2019+    | Officially Supported |
-| MacOS                          | x64, ARM64    | XCode 12+              | Officially Supported |
-| Linux - Others                 | x86, x64      | clang 7+, GCC 7.3+     | Best Effort          |
-| Linux                          | ARM64         |                        | Best Effort          |
-| iOS                            |               |                        | Best Effort          |
-| Android                        |               |                        | Best Effort          |
-| AIX                            |               |                        | Community Supported  |
-| Asylo                          |               |                        | Community Supported  |
-| FreeBSD                        |               |                        | Community Supported  |
-| Fuchsia                        |               |                        | Community Supported  |
-| NaCL                           |               |                        | Community Supported  |
-| NetBSD                         |               |                        | Community Supported  |
-| OpenBSD                        |               |                        | Community Supported  |
-| Solaris                        |               |                        | Community Supported  |
+| Operating System               | Architectures | Support Level        |
+|--------------------------------|---------------|----------------------|
+| Linux - Debian, Ubuntu, CentOS | x86, x64      | Officially Supported |
+| Windows 10+                    | x86, x64      | Officially Supported |
+| MacOS                          | x64, ARM64    | Officially Supported |
+| Linux - Others                 | x86, x64      | Best Effort          |
+| Linux                          | ARM64         | Best Effort          |
+| iOS                            |               | Best Effort          |
+| Android                        |               | Best Effort          |
+| AIX                            |               | Community Supported  |
+| Asylo                          |               | Community Supported  |
+| FreeBSD                        |               | Community Supported  |
+| Fuchsia                        |               | Community Supported  |
+| NaCL                           |               | Community Supported  |
+| NetBSD                         |               | Community Supported  |
+| OpenBSD                        |               | Community Supported  |
+| Solaris                        |               | Community Supported  |
 
 ## Bazel
 
-Bazel is the primary build system used by the core gRPC development team. Bazel
-provides fast builds and it easily handles dependencies that support bazel.
+Bazel is the gRPC core development team's main build system.
+It offers speedy builds and effortlessly manages dependencies that already support Bazel.
 
-To add gRPC as a dependency in bazel:
+To add gRPC as a Bazel dependency:
+
+1. Find your desired gRPC version on the
+   [Bazel Central Registry](https://registry.bazel.build/modules/grpc).
+2. Then, use [bazel_dep](https://bazel.build/rules/lib/globals/module#bazel_dep)
+   to add the gRPC dependency to your `MODULE.bazel` file.
+
+```
+bazel_dep(name = "grpc", version = "1.72.0")
+```
+
+## Projects using legacy Bazel WORKSPACE file
+
+To add gRPC as a dependency for projects that are built using legacy Bazel WORKSPACE files:
 1. determine commit SHA for the grpc release you want to use
 2. Use the [http_archive](https://docs.bazel.build/versions/master/repo/http.html#http_archive) bazel rule to include gRPC source
   ```
@@ -76,6 +89,17 @@ other platforms (no promises!). `cmake` has good support for crosscompiling and
 can be used for targeting the Android platform.
 
 To build gRPC C++ from source, follow the [BUILDING guide](../../BUILDING.md).
+
+To ensure all libraries in your CMake project compile with the same C++ version
+(e.g., C++17), explicitly specify the standard:
+
+```cmake
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+```
+
+This configuration enforces the use of C++17 for all targets and avoids potential
+inconsistencies or errors due to different C++ versions being used.
 
 ### find_package
 
@@ -107,7 +131,7 @@ also sets up an `add_subdirectory()` rule for you. This causes gRPC to be
 built as part of your project.
 
 ```cmake
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.16)
 project(my_project)
 
 include(FetchContent)

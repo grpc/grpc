@@ -16,15 +16,14 @@
 
 #include <memory>
 
-#include "absl/log/check.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/sync.h"
 #include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/utility/utility.h"
-
-#include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 
 // defined in tcp_client.cc
 extern grpc_tcp_client_vtable* grpc_tcp_client_impl;
@@ -91,9 +90,9 @@ bool ConnectionAttemptInjector::TcpConnectCancel(
 ConnectionAttemptInjector::ConnectionAttemptInjector() {
   // Fail if ConnectionAttemptInjector::Init() was not called after
   // grpc_init() to inject the vtable.
-  CHECK(grpc_tcp_client_impl == &kDelayedConnectVTable);
+  GRPC_CHECK(grpc_tcp_client_impl == &kDelayedConnectVTable);
   grpc_core::MutexLock lock(g_mu);
-  CHECK_EQ(g_injector, nullptr);
+  GRPC_CHECK_EQ(g_injector, nullptr);
   g_injector = this;
 }
 
@@ -170,18 +169,18 @@ ConnectionAttemptInjector::QueuedAttempt::QueuedAttempt(
 }
 
 ConnectionAttemptInjector::QueuedAttempt::~QueuedAttempt() {
-  CHECK_EQ(closure_, nullptr);
+  GRPC_CHECK_EQ(closure_, nullptr);
 }
 
 void ConnectionAttemptInjector::QueuedAttempt::Resume() {
-  CHECK_NE(closure_, nullptr);
+  GRPC_CHECK_NE(closure_, nullptr);
   g_original_vtable->connect(closure_, endpoint_, interested_parties_, config_,
                              &address_, deadline_);
   closure_ = nullptr;
 }
 
 void ConnectionAttemptInjector::QueuedAttempt::Fail(grpc_error_handle error) {
-  CHECK_NE(closure_, nullptr);
+  GRPC_CHECK_NE(closure_, nullptr);
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure_, error);
   closure_ = nullptr;
 }
@@ -199,7 +198,6 @@ ConnectionAttemptInjector::InjectedDelay::InjectedDelay(
   duration = std::min(duration, deadline - now);
   grpc_event_engine::experimental::GetDefaultEventEngine()->RunAfter(
       duration, [this] {
-        grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
         grpc_core::ExecCtx exec_ctx;
         TimerCallback();
       });

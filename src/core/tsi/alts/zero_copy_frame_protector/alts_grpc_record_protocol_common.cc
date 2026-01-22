@@ -18,26 +18,24 @@
 
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h"
 
-#include <string.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
+#include <string.h>
 
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/useful.h"
+#include "absl/log/log.h"
 
 const size_t kInitialIovecBufferSize = 8;
 
 // Makes sure iovec_buf in alts_grpc_record_protocol is large enough.
 static void ensure_iovec_buf_size(alts_grpc_record_protocol* rp,
                                   const grpc_slice_buffer* sb) {
-  CHECK(rp != nullptr);
-  CHECK_NE(sb, nullptr);
+  GRPC_CHECK(rp != nullptr);
+  GRPC_CHECK_NE(sb, nullptr);
   if (sb->count <= rp->iovec_buf_length) {
     return;
   }
@@ -52,8 +50,8 @@ static void ensure_iovec_buf_size(alts_grpc_record_protocol* rp,
 
 void alts_grpc_record_protocol_convert_slice_buffer_to_iovec(
     alts_grpc_record_protocol* rp, const grpc_slice_buffer* sb) {
-  CHECK(rp != nullptr);
-  CHECK_NE(sb, nullptr);
+  GRPC_CHECK(rp != nullptr);
+  GRPC_CHECK_NE(sb, nullptr);
   ensure_iovec_buf_size(rp, sb);
   for (size_t i = 0; i < sb->count; i++) {
     rp->iovec_buf[i].iov_base = GRPC_SLICE_START_PTR(sb->slices[i]);
@@ -63,8 +61,8 @@ void alts_grpc_record_protocol_convert_slice_buffer_to_iovec(
 
 void alts_grpc_record_protocol_copy_slice_buffer(const grpc_slice_buffer* src,
                                                  unsigned char* dst) {
-  CHECK(src != nullptr);
-  CHECK_NE(dst, nullptr);
+  GRPC_CHECK(src != nullptr);
+  GRPC_CHECK_NE(dst, nullptr);
   for (size_t i = 0; i < src->count; i++) {
     size_t slice_length = GRPC_SLICE_LENGTH(src->slices[i]);
     memcpy(dst, GRPC_SLICE_START_PTR(src->slices[i]), slice_length);
@@ -174,4 +172,12 @@ size_t alts_grpc_record_protocol_max_unprotected_data_size(
   }
   return alts_iovec_record_protocol_max_unprotected_data_size(
       self->iovec_rp, max_protected_frame_size);
+}
+
+void alts_grpc_record_protocol_set_allocation_callback(
+    alts_grpc_record_protocol* self,
+    tsi_zero_copy_grpc_protector_allocator_cb allocator_cb, void* user_data) {
+  if (self == nullptr) return;
+  self->alloc_cb = allocator_cb;
+  self->alloc_user_data = user_data;
 }

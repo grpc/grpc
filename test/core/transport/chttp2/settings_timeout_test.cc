@@ -16,21 +16,6 @@
 //
 //
 
-#include <inttypes.h>
-
-#include <functional>
-#include <memory>
-#include <string>
-#include <thread>
-#include <vector>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "gtest/gtest.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -41,12 +26,20 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+#include <inttypes.h>
 
+#include <functional>
+#include <memory>
+#include <string>
+#include <thread>
+#include <vector>
+
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/event_engine/resolved_address_internal.h"
+#include "src/core/lib/event_engine/shim.h"
+#include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -58,8 +51,16 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/resource_quota/api.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/time.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace test {
@@ -99,10 +100,10 @@ class ServerThread {
     grpc_completion_queue* shutdown_cq =
         grpc_completion_queue_create_for_pluck(nullptr);
     grpc_server_shutdown_and_notify(server_, shutdown_cq, nullptr);
-    CHECK(grpc_completion_queue_pluck(shutdown_cq, nullptr,
-                                      grpc_timeout_seconds_to_deadline(1),
-                                      nullptr)
-              .type == GRPC_OP_COMPLETE);
+    GRPC_CHECK(grpc_completion_queue_pluck(shutdown_cq, nullptr,
+                                           grpc_timeout_seconds_to_deadline(1),
+                                           nullptr)
+                   .type == GRPC_OP_COMPLETE);
     grpc_completion_queue_destroy(shutdown_cq);
     grpc_server_destroy(server_);
     grpc_completion_queue_destroy(cq_);
@@ -132,11 +133,32 @@ class Client {
 
   void Connect() {
     ExecCtx exec_ctx;
-    absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
-        GetDNSResolver()->LookupHostnameBlocking(server_address_, "80");
-    ASSERT_EQ(absl::OkStatus(), addresses_or.status())
-        << addresses_or.status().ToString();
-    ASSERT_GE(addresses_or->size(), 1UL);
+    grpc_resolved_address addr;
+    if (IsEventEngineDnsNonClientChannelEnabled() &&
+        !grpc_event_engine::experimental::
+            EventEngineExperimentDisabledForPython()) {
+      auto resolver =
+          grpc_event_engine::experimental::GetDefaultEventEngine()
+              ->GetDNSResolver(grpc_event_engine::experimental::EventEngine::
+                                   DNSResolver::ResolverOptions());
+      ASSERT_TRUE(resolver.ok())
+          << "Could not create resolver: " << resolver.status();
+      auto addresses = grpc_event_engine::experimental::LookupHostnameBlocking(
+          resolver->get(), server_address_, "80");
+      ASSERT_TRUE(addresses.ok())
+          << "Hostname lookup failed: " << addresses.status();
+      ASSERT_GE(addresses->size(), 1)
+          << "Found zero hostnames for " << server_address_ << ":80";
+      addr = grpc_event_engine::experimental::CreateGRPCResolvedAddress(
+          addresses->at(0));
+    } else {
+      absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
+          GetDNSResolver()->LookupHostnameBlocking(server_address_, "80");
+      ASSERT_EQ(absl::OkStatus(), addresses_or.status())
+          << addresses_or.status().ToString();
+      ASSERT_GE(addresses_or->size(), 1UL);
+      addr = addresses_or->at(0);
+    }
     pollset_ = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     grpc_pollset_init(pollset_, &mu_);
     grpc_pollset_set* pollset_set = grpc_pollset_set_create();
@@ -147,8 +169,8 @@ class Client {
                     .PreconditionChannelArgs(nullptr);
     grpc_tcp_client_connect(
         state.closure(), &endpoint_, pollset_set,
-        grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
-        addresses_or->data(), Timestamp::Now() + Duration::Seconds(1));
+        grpc_event_engine::experimental::ChannelArgsEndpointConfig(args), &addr,
+        Timestamp::Now() + Duration::Seconds(1));
     ASSERT_TRUE(PollUntilDone(&state, Timestamp::InfFuture()));
     ASSERT_EQ(absl::OkStatus(), state.error());
     grpc_pollset_set_destroy(pollset_set);

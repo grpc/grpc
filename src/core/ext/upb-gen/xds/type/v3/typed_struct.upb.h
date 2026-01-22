@@ -3,10 +3,11 @@
  *     xds/type/v3/typed_struct.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_TYPE_V3_TYPED_STRUCT_PROTO_UPB_H_
-#define XDS_TYPE_V3_TYPED_STRUCT_PROTO_UPB_H_
+#ifndef XDS_TYPE_V3_TYPED_STRUCT_PROTO_UPB_H__UPB_H_
+#define XDS_TYPE_V3_TYPED_STRUCT_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -82,6 +83,7 @@ UPB_INLINE const struct google_protobuf_Struct* xds_type_v3_TypedStruct_value(co
   const struct google_protobuf_Struct* default_val = NULL;
   const struct google_protobuf_Struct* ret;
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Struct_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -97,6 +99,7 @@ UPB_INLINE void xds_type_v3_TypedStruct_set_type_url(xds_type_v3_TypedStruct *ms
 }
 UPB_INLINE void xds_type_v3_TypedStruct_set_value(xds_type_v3_TypedStruct *msg, struct google_protobuf_Struct* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Struct_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Struct* xds_type_v3_TypedStruct_mutable_value(xds_type_v3_TypedStruct* msg, upb_Arena* arena) {
@@ -114,4 +117,4 @@ UPB_INLINE struct google_protobuf_Struct* xds_type_v3_TypedStruct_mutable_value(
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_TYPE_V3_TYPED_STRUCT_PROTO_UPB_H_ */
+#endif  /* XDS_TYPE_V3_TYPED_STRUCT_PROTO_UPB_H__UPB_H_ */

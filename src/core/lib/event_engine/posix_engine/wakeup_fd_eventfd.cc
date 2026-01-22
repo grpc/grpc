@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <utility>
-
-#include "absl/strings/str_cat.h"
-
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
+#include <utility>
+
+#include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/crash.h"  // IWYU pragma: keep
+#include "absl/strings/str_cat.h"
 
 #ifdef GRPC_LINUX_EVENTFD
 
@@ -31,67 +31,65 @@
 #endif
 
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h"
-#include "src/core/lib/gprpp/strerror.h"
+#include "src/core/util/strerror.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 #ifdef GRPC_LINUX_EVENTFD
 
 absl::Status EventFdWakeupFd::Init() {
-  int read_fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
-  int write_fd = -1;
-  if (read_fd < 0) {
+  auto read_fd = posix_interface_->EventFd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+  if (!read_fd.ok()) {
     return absl::Status(absl::StatusCode::kInternal,
                         absl::StrCat("eventfd: ", grpc_core::StrError(errno)));
   }
-  SetWakeupFds(read_fd, write_fd);
+  SetWakeupFds(read_fd.value(), FileDescriptor::Invalid());
   return absl::OkStatus();
 }
 
 absl::Status EventFdWakeupFd::ConsumeWakeup() {
-  eventfd_t value;
-  int err;
+  PosixError err;
   do {
-    err = eventfd_read(ReadFd(), &value);
-  } while (err < 0 && errno == EINTR);
-  if (err < 0 && errno != EAGAIN) {
-    return absl::Status(
-        absl::StatusCode::kInternal,
-        absl::StrCat("eventfd_read: ", grpc_core::StrError(errno)));
+    err = posix_interface_->EventFdRead(ReadFd());
+  } while (err.IsPosixError(EINTR));
+  if (!err.ok() && !err.IsPosixError(EAGAIN)) {
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("eventfd_read: ", err.StrError()));
   }
   return absl::OkStatus();
 }
 
 absl::Status EventFdWakeupFd::Wakeup() {
-  int err;
+  PosixError err;
   do {
-    err = eventfd_write(ReadFd(), 1);
-  } while (err < 0 && errno == EINTR);
-  if (err < 0) {
-    return absl::Status(
-        absl::StatusCode::kInternal,
-        absl::StrCat("eventfd_write: ", grpc_core::StrError(errno)));
+    err = posix_interface_->EventFdWrite(ReadFd());
+  } while (err.IsPosixError(EINTR));
+  if (!err.ok()) {
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("eventfd_write: ", err.StrError()));
   }
   return absl::OkStatus();
 }
 
 EventFdWakeupFd::~EventFdWakeupFd() {
-  if (ReadFd() != 0) {
-    close(ReadFd());
+  if (ReadFd().ready()) {
+    posix_interface_->Close(ReadFd());
   }
 }
 
 bool EventFdWakeupFd::IsSupported() {
-  EventFdWakeupFd event_fd_wakeup_fd;
+  EventEnginePosixInterface posix_interface;
+  EventFdWakeupFd event_fd_wakeup_fd(&posix_interface);
   return event_fd_wakeup_fd.Init().ok();
 }
 
 absl::StatusOr<std::unique_ptr<WakeupFd>>
-EventFdWakeupFd::CreateEventFdWakeupFd() {
+EventFdWakeupFd::CreateEventFdWakeupFd(
+    EventEnginePosixInterface* posix_interface) {
   static bool kIsEventFdWakeupFdSupported = EventFdWakeupFd::IsSupported();
   if (kIsEventFdWakeupFdSupported) {
-    auto event_fd_wakeup_fd = std::make_unique<EventFdWakeupFd>();
+    auto event_fd_wakeup_fd =
+        std::make_unique<EventFdWakeupFd>(posix_interface);
     auto status = event_fd_wakeup_fd->Init();
     if (status.ok()) {
       return std::unique_ptr<WakeupFd>(std::move(event_fd_wakeup_fd));
@@ -103,7 +101,7 @@ EventFdWakeupFd::CreateEventFdWakeupFd() {
 
 #else  //  GRPC_LINUX_EVENTFD
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 
 absl::Status EventFdWakeupFd::Init() { grpc_core::Crash("unimplemented"); }
 
@@ -116,11 +114,11 @@ absl::Status EventFdWakeupFd::Wakeup() { grpc_core::Crash("unimplemented"); }
 bool EventFdWakeupFd::IsSupported() { return false; }
 
 absl::StatusOr<std::unique_ptr<WakeupFd>>
-EventFdWakeupFd::CreateEventFdWakeupFd() {
+EventFdWakeupFd::CreateEventFdWakeupFd(
+    EventEnginePosixInterface* posix_interface) {
   return absl::NotFoundError("Eventfd wakeup fd is not supported");
 }
 
 #endif  // GRPC_LINUX_EVENTFD
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

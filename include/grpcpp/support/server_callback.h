@@ -19,12 +19,6 @@
 #ifndef GRPCPP_SUPPORT_SERVER_CALLBACK_H
 #define GRPCPP_SUPPORT_SERVER_CALLBACK_H
 
-#include <atomic>
-#include <functional>
-#include <type_traits>
-
-#include "absl/functional/any_invocable.h"
-
 #include <grpc/impl/call.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/call_op_set.h>
@@ -33,6 +27,12 @@
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/message_allocator.h>
 #include <grpcpp/support/status.h>
+
+#include <atomic>
+#include <functional>
+#include <type_traits>
+
+#include "absl/functional/any_invocable.h"
 
 namespace grpc {
 
@@ -56,7 +56,7 @@ class ServerReactor {
   virtual void OnCancel() = 0;
 
   // The following is not API. It is for internal use only and specifies whether
-  // all reactions of this Reactor can be run without an extra executor
+  // all reactions of this Reactor can be run without extra EventEngine
   // scheduling. This should only be used for internally-defined reactors with
   // trivial reactions.
   virtual bool InternalInlineable() { return false; }
@@ -90,7 +90,7 @@ class ServerCallbackCall {
   // advance (used for the ServerContext CompletionOp), and one for where we
   // know the inlineability of the OnDone reaction. You should set the inline
   // flag to true if either the Reactor is InternalInlineable() or if this
-  // callback is already being forced to run dispatched to an executor
+  // callback is already being forced to run dispatched to an EventEngine thread
   // (typically because it contains additional work than just the MaybeDone).
 
   void MaybeDone() {
@@ -141,12 +141,12 @@ class ServerCallbackCall {
   // ever invoked on a fully-Unref'fed ServerCallbackCall.
   virtual void CallOnDone() = 0;
 
-  // If the OnDone reaction is inlineable, execute it inline. Otherwise send it
-  // to an executor.
+  // If the OnDone reaction is inlineable, execute it inline. Otherwise run it
+  // async on EventEngine.
   void ScheduleOnDone(bool inline_ondone);
 
-  // If the OnCancel reaction is inlineable, execute it inline. Otherwise send
-  // it to an executor.
+  // If the OnCancel reaction is inlineable, execute it inline. Otherwise run it
+  // async on EventEngine.
   void CallOnCancel(ServerReactor* reactor);
 
   // Implement the cancellation constraint counter. Return true if OnCancel
@@ -477,10 +477,10 @@ class ServerBidiReactor : public internal::ServerReactor {
   }
 
   grpc::internal::Mutex stream_mu_;
-  // TODO(vjpai): Make stream_or_backlog_ into a std::variant or absl::variant
-  //              once C++17 or ABSL is supported since stream and backlog are
-  //              mutually exclusive in this class. Do likewise with the
-  //              remaining reactor classes and their backlogs as well.
+  // TODO(vjpai): Make stream_or_backlog_ into an std::variant once C++17 or
+  // ABSL is supported since stream and backlog are mutually exclusive in this
+  // class. Do likewise with the  remaining reactor classes and their backlogs
+  // as well.
   std::atomic<ServerCallbackReaderWriter<Request, Response>*> stream_{nullptr};
   struct PreBindBacklog {
     bool send_initial_metadata_wanted = false;

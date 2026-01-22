@@ -3,15 +3,19 @@
  *     envoy/config/listener/v3/listener.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_LISTENER_V3_LISTENER_PROTO_UPBDEFS_H_
-#define ENVOY_CONFIG_LISTENER_V3_LISTENER_PROTO_UPBDEFS_H_
+
+
+#ifndef ENVOY_CONFIG_LISTENER_V3_LISTENER_PROTO_UPB_H__UPBDEFS_H_
+#define ENVOY_CONFIG_LISTENER_V3_LISTENER_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
 
-#include "upb/port/def.inc" // Must be last.
+#include "upb/port/def.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -53,6 +57,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_listener_v3_Listener_InternalListe
   return upb_DefPool_FindMessageByName(s, "envoy.config.listener.v3.Listener.InternalListenerConfig");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_config_listener_v3_Listener_FcdsConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_listener_v3_listener_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.listener.v3.Listener.FcdsConfig");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_config_listener_v3_ListenerManager_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_listener_v3_listener_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.listener.v3.ListenerManager");
@@ -68,10 +77,11 @@ UPB_INLINE const upb_MessageDef *envoy_config_listener_v3_ApiListenerManager_get
   return upb_DefPool_FindMessageByName(s, "envoy.config.listener.v3.ApiListenerManager");
 }
 
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_LISTENER_V3_LISTENER_PROTO_UPBDEFS_H_ */
+#endif  /* ENVOY_CONFIG_LISTENER_V3_LISTENER_PROTO_UPB_H__UPBDEFS_H_ */

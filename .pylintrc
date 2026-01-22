@@ -1,10 +1,19 @@
-[MASTER]
+[MAIN]
+py-version = 3.9
+load-plugins=
+	pylint.extensions.no_self_use,
+	pylint.extensions.comparison_placement,
+	pylint.extensions.redefined_variable_type,
+
 ignore=
 	src/python/grpcio/grpc/beta,
 	src/python/grpcio/grpc/framework,
 	src/python/grpcio/grpc/framework/common,
 	src/python/grpcio/grpc/framework/foundation,
 	src/python/grpcio/grpc/framework/interfaces,
+ignore-patterns=
+	.*pb2\.py,
+	.*pb2_grpc\.py,
 
 extension-pkg-whitelist=grpc._cython.cygrpc
 
@@ -49,9 +58,6 @@ disable=
 	# TODO(https://github.com/grpc/grpc/issues/261): This doesn't seem to
 	# work for now? Try with a later pylint?
 	locally-disabled,
-	# NOTE(nathaniel): What even is this? *Enabling* an inspection results
-	# in a warning? How does that encourage more analysis and coverage?
-	locally-enabled,
 	# NOTE(nathaniel): We don't write doc strings for most private code
 	# elements.
 	missing-docstring,
@@ -60,9 +66,6 @@ disable=
 	# expression is true than it is to worry about which is an identifier
 	# and which a literal value.
 	misplaced-comparison-constant,
-	# NOTE(nathaniel): Our completely abstract interface classes don't have
-	# constructors.
-	no-init,
 	# TODO(https://github.com/grpc/grpc/issues/261): Doesn't yet play
 	# nicely with some of our code being implemented in Cython. Maybe in a
 	# later version?
@@ -73,7 +76,7 @@ disable=
 	protected-access,
 	# NOTE(nathaniel): Pylint and I will probably never agree on this.
 	too-few-public-methods,
-	# NOTE(nathaniel): Pylint and I wil probably never agree on this for
+	# NOTE(nathaniel): Pylint and I will probably never agree on this for
 	# private classes. For public classes maybe?
 	too-many-instance-attributes,
 	# NOTE(nathaniel): Some of our modules have a lot of lines... of
@@ -99,5 +102,32 @@ disable=
 	wrong-import-order,
 	# TODO(https://github.com/PyCQA/pylint/issues/3882): Upgrade Pylint
 	unsubscriptable-object,
-  # NOTE(sergiitk): yapf compatibility, ref #25071
-  bad-continuation,
+
+	# NOTE(sergiitk): From here: just to make it work with pylint==2.17.7
+	#                 Pylint will be replaced with ruff anyway.
+	# Not enforced by ruff:
+	consider-using-f-string,
+	# TODO(sergiitk): Check; should probably be caught by pytype
+	abstract-class-instantiated,
+	# TODO(sergiitk): This is broken for protobuf enums.
+	redefined-variable-type,
+	# Expect to be caught (and fixed) by ruff.
+	# https://github.com/astral-sh/ruff/issues/970
+	# pylint                              | ruff          |
+	# ----------------------------------- | ------------- |
+	f-string-without-interpolation,       # F541
+	format-string-without-interpolation,  # F541
+	no-else-raise,                        # RET506
+	no-else-continue,                     # RET507
+	super-with-arguments,                 # UP008
+	unnecessary-lambda-assignment,        # E731
+	unnecessary-dunder-call,              # PLC2801
+	import-outside-toplevel,              # PLC0415
+	broad-exception-raised,               # TRY002
+	raise-missing-from,                   # B904
+	no-self-use,                          # PLR6301
+	inconsistent-return-statements,       # RET501, RET502
+	consider-using-dict-items,            # PLC0206
+	use-dict-literal,                     # C406
+	consider-iterating-dictionary,        # SIM118
+	unspecified-encoding,                 # PLW1514

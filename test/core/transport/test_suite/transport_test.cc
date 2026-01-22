@@ -20,6 +20,10 @@
 
 namespace grpc_core {
 
+ClientAndServerTransportPair (*g_create_transport_test_fixture)(
+    std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>) =
+    nullptr;
+
 ///////////////////////////////////////////////////////////////////////////////
 // TransportTest
 
@@ -35,7 +39,6 @@ CallInitiator TransportTest::CreateCall(
       "start-call", [this, handler = call.handler]() mutable {
         transport_pair_.client->client_transport()->StartCall(
             handler.StartCall());
-        return Empty{};
       });
   return std::move(call.initiator);
 }
@@ -57,8 +60,8 @@ void TransportTest::ServerCallDestination::StartCall(
   handlers_.push(handler.StartCall());
 }
 
-absl::optional<CallHandler> TransportTest::ServerCallDestination::PopHandler() {
-  if (handlers_.empty()) return absl::nullopt;
+std::optional<CallHandler> TransportTest::ServerCallDestination::PopHandler() {
+  if (handlers_.empty()) return std::nullopt;
   auto handler = std::move(handlers_.front());
   handlers_.pop();
   return handler;

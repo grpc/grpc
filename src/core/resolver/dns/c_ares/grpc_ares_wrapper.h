@@ -19,23 +19,23 @@
 #ifndef GRPC_SRC_CORE_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H
 #define GRPC_SRC_CORE_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <memory>
 
-#include <ares.h>
-
-#include "absl/base/thread_annotations.h"
-#include "absl/log/log.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
+
+#if GRPC_ARES == 1
+
+#include <ares.h>
 
 #define GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS 120000
 
@@ -124,5 +124,7 @@ extern void (*grpc_ares_test_only_inject_config)(ares_channel* channel);
 
 // Exposed in this header for C-core tests only
 extern bool g_grpc_ares_test_only_force_tcp;
+
+#endif
 
 #endif  // GRPC_SRC_CORE_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H

@@ -14,8 +14,6 @@
 # limitations under the License.
 """Run interop (cross-language) tests in parallel."""
 
-from __future__ import print_function
-
 import argparse
 import atexit
 import itertools
@@ -25,9 +23,7 @@ import os
 import re
 import subprocess
 import sys
-import tempfile
 import time
-import traceback
 import uuid
 
 import python_utils.dockerjob as dockerjob
@@ -1468,7 +1464,7 @@ if not args.use_docker and servers:
 
 # we want to include everything but objc in 'all'
 # because objc won't run on non-mac platforms
-all_but_objc = set(_LANGUAGES.keys()) - set(["objc"])
+all_but_objc = set(_LANGUAGES) - set(["objc"])
 languages = set(
     _LANGUAGES[l]
     for l in itertools.chain.from_iterable(

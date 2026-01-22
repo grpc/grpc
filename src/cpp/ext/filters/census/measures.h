@@ -19,9 +19,9 @@
 #ifndef GRPC_SRC_CPP_EXT_FILTERS_CENSUS_MEASURES_H
 #define GRPC_SRC_CPP_EXT_FILTERS_CENSUS_MEASURES_H
 
-#include "opencensus/stats/stats.h"
-
 #include <grpc/support/port_platform.h>
+
+#include "opencensus/stats/stats.h"
 
 namespace grpc {
 

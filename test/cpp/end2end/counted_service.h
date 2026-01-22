@@ -17,7 +17,7 @@
 #ifndef GRPC_TEST_CPP_END2END_COUNTED_SERVICE_H
 #define GRPC_TEST_CPP_END2END_COUNTED_SERVICE_H
 
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/sync.h"
 
 namespace grpc {
 namespace testing {

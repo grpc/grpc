@@ -3,7 +3,8 @@
  *     envoy/config/core/v3/substitution_format_string.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -18,6 +19,7 @@
 // Must be last.
 #include "upb/port/def.inc"
 
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
 static const upb_MiniTableField envoy_config_core_v3_JsonFormatOptions__fields[1] = {
   {1, 8, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
 };
@@ -35,25 +37,26 @@ const upb_MiniTable envoy__config__core__v3__JsonFormatOptions_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_SubstitutionFormatString_submsgs[4] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__JsonFormatOptions_msg_init},
+const upb_MiniTable* envoy__config__core__v3__JsonFormatOptions_msg_init_ptr = &envoy__config__core__v3__JsonFormatOptions_msg_init;
+static const upb_MiniTableSubInternal envoy_config_core_v3_SubstitutionFormatString__submsgs[4] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__DataSource_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__JsonFormatOptions_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_core_v3_SubstitutionFormatString__fields[7] = {
-  {1, UPB_SIZE(24, 16), -13, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(24, 16), -13, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {1, 32, UPB_SIZE(-21, -13), kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, 32, UPB_SIZE(-21, -13), 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {3, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-  {4, 32, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {5, UPB_SIZE(24, 16), -13, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {6, UPB_SIZE(16, 48), 0, 2, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {7, UPB_SIZE(20, 56), 64, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(24, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {5, 32, UPB_SIZE(-21, -13), 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(12, 48), 0, 2, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {7, UPB_SIZE(16, 56), 64, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__config__core__v3__SubstitutionFormatString_msg_init = {
-  &envoy_config_core_v3_SubstitutionFormatString_submsgs[0],
+  &envoy_config_core_v3_SubstitutionFormatString__submsgs[0],
   &envoy_config_core_v3_SubstitutionFormatString__fields[0],
   UPB_SIZE(40, 64), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -61,16 +64,17 @@ const upb_MiniTable envoy__config__core__v3__SubstitutionFormatString_msg_init =
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0010000c0100000a, &upb_pos_1bt},
-    {0x0010000c02000012, &upb_pom_1bt_maxmaxb},
+    {0x0020000c0100000a, &upb_pos_1bt},
+    {0x0020000c02000012, &upb_pom_1bt_maxmaxb},
     {0x000900003f000018, &upb_psb1_1bt},
-    {0x002000003f000022, &upb_pss_1bt},
-    {0x0010000c0501002a, &upb_pom_1bt_maxmaxb},
+    {0x001000003f000022, &upb_pss_1bt},
+    {0x0020000c0501002a, &upb_pom_1bt_maxmaxb},
     {0x003000003f020032, &upb_prm_1bt_maxmaxb},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
+const upb_MiniTable* envoy__config__core__v3__SubstitutionFormatString_msg_init_ptr = &envoy__config__core__v3__SubstitutionFormatString_msg_init;
 static const upb_MiniTable *messages_layout[2] = {
   &envoy__config__core__v3__JsonFormatOptions_msg_init,
   &envoy__config__core__v3__SubstitutionFormatString_msg_init,

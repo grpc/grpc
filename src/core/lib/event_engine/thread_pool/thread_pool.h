@@ -13,37 +13,37 @@
 // limitations under the License.
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_THREAD_POOL_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_THREAD_POOL_H
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <memory>
 
 #include "absl/functional/any_invocable.h"
 
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/event_engine/forkable.h"
-
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 // Interface for all EventEngine ThreadPool implementations
-class ThreadPool : public Forkable {
+class ThreadPool {
  public:
   // Asserts Quiesce was called.
-  ~ThreadPool() override = default;
+  virtual ~ThreadPool() = default;
   // Shut down the pool, and wait for all threads to exit.
   // This method is safe to call from within a ThreadPool thread.
   virtual void Quiesce() = 0;
   // Run must not be called after Quiesce completes
   virtual void Run(absl::AnyInvocable<void()> callback) = 0;
   virtual void Run(EventEngine::Closure* closure) = 0;
+
+#if GRPC_ENABLE_FORK_SUPPORT
+  virtual void PrepareFork() = 0;
+  virtual void PostFork() = 0;
+#endif  // GRPC_ENABLE_FORK_SUPPORT
 };
 
 // Creates a default thread pool.
 std::shared_ptr<ThreadPool> MakeThreadPool(size_t reserve_threads);
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_THREAD_POOL_H

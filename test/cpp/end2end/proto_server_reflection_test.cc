@@ -16,12 +16,6 @@
 //
 //
 
-#include <memory>
-#include <vector>
-
-#include <gmock/gmock-matchers.h>
-#include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -32,6 +26,10 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <grpcpp/support/channel_arguments.h>
+
+#include <memory>
+#include <vector>
 
 #include "src/proto/grpc/reflection/v1/reflection.grpc.pb.h"
 #include "src/proto/grpc/reflection/v1/reflection.pb.h"
@@ -40,7 +38,10 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/util/proto_reflection_descriptor_database.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc {
 namespace testing {
@@ -61,7 +62,10 @@ class ProtoServerReflectionTest : public ::testing::Test {
 
   void ResetStub() {
     string target = "dns:localhost:" + to_string(port_);
-    channel_ = grpc::CreateChannel(target, InsecureChannelCredentials());
+    ChannelArguments args;
+    ApplyCommonChannelArguments(args);
+    channel_ =
+        grpc::CreateCustomChannel(target, InsecureChannelCredentials(), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
     desc_db_ = std::make_unique<ProtoReflectionDescriptorDatabase>(channel_);
     desc_pool_ = std::make_unique<protobuf::DescriptorPool>(desc_db_.get());
@@ -83,15 +87,17 @@ class ProtoServerReflectionTest : public ::testing::Test {
     EXPECT_EQ(service_desc->DebugString(), ref_service_desc->DebugString());
 
     const protobuf::FileDescriptor* file_desc = service_desc->file();
-    if (known_files_.find(file_desc->package() + "/" + file_desc->name()) !=
+    if (known_files_.find(std::string(file_desc->package()) + "/" +
+                          std::string(file_desc->name())) !=
         known_files_.end()) {
       EXPECT_EQ(file_desc->DebugString(),
                 ref_service_desc->file()->DebugString());
-      known_files_.insert(file_desc->package() + "/" + file_desc->name());
+      known_files_.insert(std::string(file_desc->package()) + "/" +
+                          std::string(file_desc->name()));
     }
 
     for (int i = 0; i < service_desc->method_count(); ++i) {
-      CompareMethod(service_desc->method(i)->full_name());
+      CompareMethod(std::string(service_desc->method(i)->full_name()));
     }
   }
 
@@ -104,8 +110,8 @@ class ProtoServerReflectionTest : public ::testing::Test {
     EXPECT_TRUE(ref_method_desc != nullptr);
     EXPECT_EQ(method_desc->DebugString(), ref_method_desc->DebugString());
 
-    CompareType(method_desc->input_type()->full_name());
-    CompareType(method_desc->output_type()->full_name());
+    CompareType(std::string(method_desc->input_type()->full_name()));
+    CompareType(std::string(method_desc->output_type()->full_name()));
   }
 
   void CompareType(const std::string& type) {
@@ -148,7 +154,7 @@ TEST_F(ProtoServerReflectionTest, CheckResponseWithLocalDescriptorPool) {
 
   std::vector<std::string> services;
   desc_db_->GetServices(&services);
-  // The service list has at least one service (reflection servcie).
+  // The service list has at least one service (reflection service).
   EXPECT_TRUE(!services.empty());
 
   for (auto it = services.begin(); it != services.end(); ++it) {

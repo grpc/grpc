@@ -18,18 +18,16 @@
 #include <AvailabilityMacros.h>
 #ifdef AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 
-#include "absl/log/check.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/event_engine/cf_engine/dns_service_resolver.h"
 #include "src/core/lib/event_engine/posix_engine/lockfree_event.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/host_port.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 void DNSServiceResolverImpl::LookupHostname(
     EventEngine::DNSResolver::LookupHostnameCallback on_resolve,
@@ -43,7 +41,7 @@ void DNSServiceResolverImpl::LookupHostname(
   if (!grpc_core::SplitHostPort(name, &host, &port_string)) {
     engine_->Run([on_resolve = std::move(on_resolve),
                   status = absl::InvalidArgumentError(
-                      absl::StrCat("Unparseable name: ", name))]() mutable {
+                      absl::StrCat("Unparsable name: ", name))]() mutable {
       on_resolve(status);
     });
     return;
@@ -144,13 +142,13 @@ void DNSServiceResolverImpl::ResolveCallback(
       << ", this: " << context;
 
   // no need to increase refcount here, since ResolveCallback and Shutdown is
-  // called from the serial queue and it is guarenteed that it won't be called
+  // called from the serial queue and it is guaranteed that it won't be called
   // after the sdRef is deallocated
   auto that = static_cast<DNSServiceResolverImpl*>(context);
 
   grpc_core::ReleasableMutexLock lock(&that->request_mu_);
   auto request_it = that->requests_.find(sdRef);
-  CHECK(request_it != that->requests_.end());
+  GRPC_CHECK(request_it != that->requests_.end());
 
   if (errorCode != kDNSServiceErr_NoError &&
       errorCode != kDNSServiceErr_NoSuchRecord) {
@@ -222,10 +220,12 @@ void DNSServiceResolverImpl::Shutdown() {
   dispatch_async_f(queue_, Ref().release(), [](void* thatPtr) {
     grpc_core::RefCountedPtr<DNSServiceResolverImpl> that{
         static_cast<DNSServiceResolverImpl*>(thatPtr)};
-    grpc_core::MutexLock lock(&that->request_mu_);
-    for (auto& kv : that->requests_) {
-      auto& sdRef = kv.first;
-      auto& request = kv.second;
+
+    grpc_core::ReleasableMutexLock lock(&that->request_mu_);
+    auto requests = std::exchange(that->requests_, {});
+    lock.Release();
+
+    for (auto& [sdRef, request] : requests) {
       GRPC_TRACE_LOG(event_engine_dns, INFO)
           << "DNSServiceResolverImpl::Shutdown sdRef: " << sdRef
           << ", this: " << thatPtr;
@@ -233,12 +233,10 @@ void DNSServiceResolverImpl::Shutdown() {
           absl::CancelledError("DNSServiceResolverImpl::Shutdown"));
       DNSServiceRefDeallocate(static_cast<DNSServiceRef>(sdRef));
     }
-    that->requests_.clear();
   });
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 #endif  // GPR_APPLE

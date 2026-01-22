@@ -16,14 +16,6 @@
 //
 //
 
-#include <chrono>
-#include <utility>
-
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/impl/grpc_library.h>
@@ -32,13 +24,15 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
+#include <chrono>
+#include <utility>
+
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -46,11 +40,15 @@
 #include "src/core/lib/surface/channel_create.h"
 #include "src/core/server/server.h"
 #include "src/core/telemetry/stats.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/notification.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace testing {
@@ -82,24 +80,27 @@ class InProcessCHTTP2 {
           listener_endpoint = std::move(ep);
           listener_started.Notify();
         },
-        [](absl::Status status) { CHECK(status.ok()); }, config,
-        std::make_unique<grpc_core::MemoryQuota>("foo"));
+        [](absl::Status status) { GRPC_CHECK(status.ok()); }, config,
+        std::make_unique<grpc_core::MemoryQuota>(
+            grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+                "bar")));
     if (!listener.ok()) {
       grpc_core::Crash(absl::StrCat("failed to start listener: ",
                                     listener.status().ToString()));
     }
     auto target_addr = URIToResolvedAddress(addr);
-    CHECK(target_addr.ok());
-    CHECK((*listener)->Bind(*target_addr).ok());
-    CHECK((*listener)->Start().ok());
+    GRPC_CHECK(target_addr.ok());
+    GRPC_CHECK((*listener)->Bind(*target_addr).ok());
+    GRPC_CHECK((*listener)->Start().ok());
     // Creating the client
     std::unique_ptr<EventEngine::Endpoint> client_endpoint;
     grpc_core::Notification client_connected;
-    auto client_memory_quota =
-        std::make_unique<grpc_core::MemoryQuota>("client");
+    auto client_memory_quota = std::make_unique<grpc_core::MemoryQuota>(
+        grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+            "client"));
     std::ignore = fuzzing_engine->Connect(
         [&](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> endpoint) {
-          CHECK(endpoint.ok());
+          GRPC_CHECK(endpoint.ok());
           client_endpoint = std::move(*endpoint);
           client_connected.Notify();
         },
@@ -127,10 +128,10 @@ class InProcessCHTTP2 {
       grpc_core::Transport* transport = grpc_create_chttp2_transport(
           core_server->channel_args(), std::move(iomgr_server_endpoint),
           /*is_client=*/false);
-      CHECK(GRPC_LOG_IF_ERROR(
+      GRPC_CHECK(GRPC_LOG_IF_ERROR(
           "SetupTransport",
           core_server->SetupTransport(transport, nullptr,
-                                      core_server->channel_args(), nullptr)));
+                                      core_server->channel_args())));
       grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
                                           nullptr);
     }
@@ -148,7 +149,7 @@ class InProcessCHTTP2 {
           grpc_event_engine_endpoint_create(std::move(client_endpoint)));
       grpc_core::Transport* transport = grpc_create_chttp2_transport(
           args, std::move(endpoint), /*is_client=*/true);
-      CHECK(transport);
+      GRPC_CHECK(transport);
       grpc_channel* channel =
           grpc_core::ChannelCreate("target", args, GRPC_CLIENT_DIRECT_CHANNEL,
                                    transport)
@@ -220,18 +221,21 @@ static double UnaryPingPong(ThreadedFuzzingEventEngine* fuzzing_engine,
       EchoTestService::NewStub(fixture->channel()));
   auto baseline = grpc_core::global_stats().Collect();
   auto snapshot = grpc_core::global_stats().Collect();
+  auto http2_snapshot = grpc_core::http2_global_stats().Collect();
   auto last_snapshot = absl::Now();
   for (int iteration = 0; iteration < kIterations; iteration++) {
     if (iteration > 0 && iteration % kSnapshotEvery == 0) {
       auto new_snapshot = grpc_core::global_stats().Collect();
+      auto new_http2_snapshot = grpc_core::http2_global_stats().Collect();
       auto diff = new_snapshot->Diff(*snapshot);
+      auto http2_diff = new_http2_snapshot->Diff(*http2_snapshot);
       auto now = absl::Now();
       LOG(ERROR) << "  SNAPSHOT: UnaryPingPong(" << request_size << ", "
                  << response_size << "): writes_per_iteration="
                  << static_cast<double>(diff->syscall_write) /
                         static_cast<double>(kSnapshotEvery)
                  << " (total=" << diff->syscall_write << ", i=" << iteration
-                 << ") pings=" << diff->http2_pings_sent
+                 << ") pings=" << http2_diff->http2_pings_sent
                  << "; duration=" << now - last_snapshot;
       last_snapshot = now;
       snapshot = std::move(new_snapshot);
@@ -243,20 +247,20 @@ static double UnaryPingPong(ThreadedFuzzingEventEngine* fuzzing_engine,
     void* t;
     bool ok;
     response_reader->Finish(&recv_response, &recv_status, tag(4));
-    CHECK(fixture->cq()->Next(&t, &ok));
-    CHECK(ok);
-    CHECK(t == tag(0) || t == tag(1)) << "Found unexpected tag " << t;
+    GRPC_CHECK(fixture->cq()->Next(&t, &ok));
+    GRPC_CHECK(ok);
+    GRPC_CHECK(t == tag(0) || t == tag(1)) << "Found unexpected tag " << t;
     intptr_t slot = reinterpret_cast<intptr_t>(t);
     ServerEnv* senv = server_env[slot];
     senv->response_writer.Finish(send_response, Status::OK, tag(3));
     for (int i = (1 << 3) | (1 << 4); i != 0;) {
-      CHECK(fixture->cq()->Next(&t, &ok));
-      CHECK(ok);
+      GRPC_CHECK(fixture->cq()->Next(&t, &ok));
+      GRPC_CHECK(ok);
       int tagnum = static_cast<int>(reinterpret_cast<intptr_t>(t));
-      CHECK(i & (1 << tagnum));
+      GRPC_CHECK(i & (1 << tagnum));
       i -= 1 << tagnum;
     }
-    CHECK(recv_status.ok());
+    GRPC_CHECK(recv_status.ok());
 
     senv->~ServerEnv();
     senv = new (senv) ServerEnv();
@@ -292,14 +296,10 @@ TEST(WritesPerRpcTest, UnaryPingPong) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_event_engine::experimental::SetEventEngineFactory(
-      []() -> std::unique_ptr<grpc_event_engine::experimental::EventEngine> {
-        return std::make_unique<
-            grpc_event_engine::experimental::ThreadedFuzzingEventEngine>(
-            std::chrono::milliseconds(1));
-      });
-  // avoids a race around gpr_now_impl
-  auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+  grpc_event_engine::experimental::DefaultEventEngineScope engine_scope(
+      std::make_shared<
+          grpc_event_engine::experimental::ThreadedFuzzingEventEngine>(
+          std::chrono::milliseconds(1)));
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();

@@ -18,23 +18,21 @@
 #define GRPC_SRC_CORE_EXT_FILTERS_STATEFUL_SESSION_STATEFUL_SESSION_FILTER_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <utility>
-
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 
 #include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/gprpp/ref_counted_string.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/service_config/service_config_call_data.h"
+#include "src/core/util/ref_counted_string.h"
+#include "src/core/util/unique_type_name.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -87,10 +85,21 @@ class StatefulSessionFilter
                                  StatefulSessionFilter* filter);
     void OnServerInitialMetadata(ServerMetadata& md);
     void OnServerTrailingMetadata(ServerMetadata& md);
-    static const NoInterceptor OnClientToServerMessage;
-    static const NoInterceptor OnClientToServerHalfClose;
-    static const NoInterceptor OnServerToClientMessage;
-    static const NoInterceptor OnFinalize;
+    static inline const NoInterceptor OnClientToServerMessage;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerToClientMessage;
+    static inline const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList()
+          .Set("cluster_name", cluster_name_)
+          .Set("override_host_attribute_cookie_address_list",
+               override_host_attribute_->cookie_address_list())
+          .Set("override_host_attribute_actual_address_list",
+               override_host_attribute_->actual_address_list())
+          .Set("cookie_address_list", cookie_address_list_)
+          .Set("cluster_changed", cluster_changed_)
+          .Set("perform_filtering", perform_filtering_);
+    }
 
    private:
     const StatefulSessionMethodParsedConfig::CookieConfig* cookie_config_;

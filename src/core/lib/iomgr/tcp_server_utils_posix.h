@@ -19,11 +19,9 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_TCP_SERVER_UTILS_POSIX_H
 #define GRPC_SRC_CORE_LIB_IOMGR_TCP_SERVER_UTILS_POSIX_H
 
-#include <memory>
-
-#include "absl/container/flat_hash_map.h"
-
 #include <grpc/support/port_platform.h>
+
+#include <memory>
 
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -32,6 +30,7 @@
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "absl/container/flat_hash_map.h"
 
 // one listening port
 typedef struct grpc_tcp_listener {
@@ -90,6 +89,9 @@ struct grpc_tcp_server {
 
   // List of closures passed to shutdown_starting_add().
   grpc_closure_list shutdown_starting{nullptr, nullptr};
+
+  // List of closures passed to shutdown_ending_add().
+  grpc_closure_list shutdown_ending{nullptr, nullptr};
 
   // shutdown callback
   grpc_closure* shutdown_complete = nullptr;

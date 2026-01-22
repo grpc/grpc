@@ -121,7 +121,7 @@ initial metadata, where `GRPC_COMPRESS_REQUEST_ALGORITHM_KEY` is defined in
 and `<algorithm-name>` is the human readable name of the algorithm as given in
 [the HTTP2 spec](https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md)
 for `Message-Encoding` (e.g. gzip, identity, etc.). See
-[`grpc_compression_algorithm_name`](https://github.com/grpc/grpc/blob/master/src/core/lib/compression/compression.c)
+[`grpc_compression_algorithm_name`](https://github.com/grpc/grpc/blob/master/src/core/lib/compression/compression.cc)
 for the mapping between the `grpc_compression_algorithm` enum values and their
 textual representation.
 

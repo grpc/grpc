@@ -29,7 +29,7 @@ class ReconnectServiceStub {
     /**
      * @param \Grpc\Testing\ReconnectParams $request client request
      * @param \Grpc\ServerContext $context server request context
-     * @return \Grpc\Testing\EmptyMessage for response data, null if if error occured
+     * @return \Grpc\Testing\EmptyMessage for response data, null if if error occurred
      *     initial metadata (if any) and status (if not ok) should be set to $context
      */
     public function Start(
@@ -43,7 +43,7 @@ class ReconnectServiceStub {
     /**
      * @param \Grpc\Testing\EmptyMessage $request client request
      * @param \Grpc\ServerContext $context server request context
-     * @return \Grpc\Testing\ReconnectInfo for response data, null if if error occured
+     * @return \Grpc\Testing\ReconnectInfo for response data, null if if error occurred
      *     initial metadata (if any) and status (if not ok) should be set to $context
      */
     public function Stop(

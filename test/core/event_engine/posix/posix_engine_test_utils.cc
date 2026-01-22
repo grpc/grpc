@@ -20,10 +20,9 @@
 #include <stdlib.h>
 #include <sys/socket.h>
 
+#include "src/core/util/crash.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
-
-#include "src/core/lib/gprpp/crash.h"
 
 namespace grpc_event_engine {
 namespace experimental {

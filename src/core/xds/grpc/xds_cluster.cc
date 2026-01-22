@@ -16,15 +16,30 @@
 
 #include "src/core/xds/grpc/xds_cluster.h"
 
+#include "src/core/util/json/json_writer.h"
+#include "src/core/util/match.h"
+#include "src/core/util/time.h"
+#include "src/core/xds/grpc/xds_common_types.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 
-#include "src/core/lib/gprpp/match.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/util/json/json_writer.h"
-#include "src/core/xds/grpc/xds_common_types.h"
-
 namespace grpc_core {
+
+std::string XdsClusterResource::UpstreamTlsContext::ToString() const {
+  std::vector<std::string> contents;
+  if (!common_tls_context.Empty()) {
+    contents.push_back(
+        absl::StrCat("common_tls_context=", common_tls_context.ToString()));
+  }
+  contents.push_back(absl::StrCat("sni=", sni));
+  if (auto_host_sni) {
+    contents.push_back("auto_host_sni=true");
+  }
+  if (auto_sni_san_validation) {
+    contents.push_back("auto_sni_san_validation=true");
+  }
+  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
+}
 
 std::string XdsClusterResource::ToString() const {
   std::vector<std::string> contents;
@@ -49,14 +64,18 @@ std::string XdsClusterResource::ToString() const {
       });
   contents.push_back(absl::StrCat("lb_policy_config=",
                                   JsonDump(Json::FromArray(lb_policy_config))));
-  if (lrs_load_reporting_server.has_value()) {
+  if (lrs_load_reporting_server != nullptr) {
     contents.push_back(absl::StrCat("lrs_load_reporting_server_name=",
                                     lrs_load_reporting_server->server_uri()));
   }
-  if (!common_tls_context.Empty()) {
+  if (lrs_backend_metric_propagation != nullptr) {
     contents.push_back(
-        absl::StrCat("common_tls_context=", common_tls_context.ToString()));
+        absl::StrCat("lrs_backend_metric_propagation=",
+                     lrs_backend_metric_propagation->AsString()));
   }
+  if (use_http_connect) contents.push_back("use_http_connect=true");
+  contents.push_back(
+      absl::StrCat("upstream_tls_context=", upstream_tls_context.ToString()));
   if (connection_idle_timeout != Duration::Zero()) {
     contents.push_back(absl::StrCat("connection_idle_timeout=",
                                     connection_idle_timeout.ToString()));

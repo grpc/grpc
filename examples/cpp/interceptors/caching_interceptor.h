@@ -16,11 +16,11 @@
  *
  */
 
+#include <grpcpp/support/client_interceptor.h>
+
 #include <map>
 
 #include "absl/log/check.h"
-
-#include <grpcpp/support/client_interceptor.h>
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/keyvaluestore.grpc.pb.h"

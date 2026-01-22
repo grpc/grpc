@@ -19,14 +19,14 @@
 #ifndef GRPCPP_IMPL_GENERIC_STUB_INTERNAL_H
 #define GRPCPP_IMPL_GENERIC_STUB_INTERNAL_H
 
-#include <functional>
-
 #include <grpcpp/client_context.h>
 #include <grpcpp/impl/rpc_method.h>
 #include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/client_callback.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/stub_options.h>
+
+#include <functional>
 
 namespace grpc {
 

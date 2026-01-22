@@ -14,6 +14,8 @@
 
 #include "src/core/lib/event_engine/posix_engine/traced_buffer_list.h"
 
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,43 +23,21 @@
 
 #include <utility>
 
+#include "src/core/lib/event_engine/posix_engine/posix_interface.h"
+#include "src/core/lib/iomgr/port.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/sync.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
-
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_LINUX_ERRQUEUE
 #include <linux/errqueue.h>  // IWYU pragma: keep
 #include <linux/netlink.h>
 #include <sys/socket.h>  // IWYU pragma: keep
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 namespace {
-// Fills gpr_timespec gts based on values from timespec ts.
-void FillGprFromTimestamp(gpr_timespec* gts, const struct timespec* ts) {
-  gts->tv_sec = ts->tv_sec;
-  gts->tv_nsec = static_cast<int32_t>(ts->tv_nsec);
-  gts->clock_type = GPR_CLOCK_REALTIME;
-}
-
-void DefaultTimestampsCallback(void* /*arg*/, Timestamps* /*ts*/,
-                               absl::Status /*shudown_err*/) {
-  VLOG(2) << "Timestamps callback has not been registered";
-}
-
-// The saved callback function that will be invoked when we get all the
-// timestamps that we are going to get for a TracedBuffer.
-absl::AnyInvocable<void(void*, Timestamps*, absl::Status)>
-    g_timestamps_callback =
-        []() -> absl::AnyInvocable<void(void*, Timestamps*, absl::Status)> {
-  return DefaultTimestampsCallback;
-}();
 
 // Used to extract individual opt stats from cmsg, so as to avoid troubles with
 // unaligned reads.
@@ -69,265 +49,245 @@ T ReadUnaligned(const void* ptr) {
 }
 
 // Extracts opt stats from the tcp_info struct \a info to \a metrics
-void ExtractOptStatsFromTcpInfo(ConnectionMetrics* metrics,
-                                const tcp_info* info) {
+PosixWriteEventSink::ConnectionMetrics ExtractOptStatsFromTcpInfo(
+    const tcp_info* info) {
+  PosixWriteEventSink::ConnectionMetrics metrics;
   if (info == nullptr) {
-    return;
+    return metrics;
   }
   if (info->length > offsetof(tcp_info, tcpi_sndbuf_limited)) {
-    metrics->recurring_retrans = info->tcpi_retransmits;
-    metrics->is_delivery_rate_app_limited =
-        info->tcpi_delivery_rate_app_limited;
-    metrics->congestion_window = info->tcpi_snd_cwnd;
-    metrics->reordering = info->tcpi_reordering;
-    metrics->packet_retx = info->tcpi_total_retrans;
-    metrics->pacing_rate = info->tcpi_pacing_rate;
-    metrics->data_notsent = info->tcpi_notsent_bytes;
+    metrics.recurring_retrans = info->tcpi_retransmits;
+    metrics.is_delivery_rate_app_limited = info->tcpi_delivery_rate_app_limited;
+    metrics.congestion_window = info->tcpi_snd_cwnd;
+    metrics.reordering = info->tcpi_reordering;
+    metrics.packet_retx = info->tcpi_total_retrans;
+    metrics.pacing_rate = info->tcpi_pacing_rate;
+    metrics.data_notsent = info->tcpi_notsent_bytes;
     if (info->tcpi_min_rtt != UINT32_MAX) {
-      metrics->min_rtt = info->tcpi_min_rtt;
+      metrics.min_rtt = info->tcpi_min_rtt;
     }
-    metrics->packet_sent = info->tcpi_data_segs_out;
-    metrics->delivery_rate = info->tcpi_delivery_rate;
-    metrics->busy_usec = info->tcpi_busy_time;
-    metrics->rwnd_limited_usec = info->tcpi_rwnd_limited;
-    metrics->sndbuf_limited_usec = info->tcpi_sndbuf_limited;
+    metrics.packet_sent = info->tcpi_data_segs_out;
+    metrics.delivery_rate = info->tcpi_delivery_rate;
+    metrics.busy_usec = info->tcpi_busy_time;
+    metrics.rwnd_limited_usec = info->tcpi_rwnd_limited;
+    metrics.sndbuf_limited_usec = info->tcpi_sndbuf_limited;
   }
   if (info->length > offsetof(tcp_info, tcpi_dsack_dups)) {
-    metrics->data_sent = info->tcpi_bytes_sent;
-    metrics->data_retx = info->tcpi_bytes_retrans;
-    metrics->packet_spurious_retx = info->tcpi_dsack_dups;
+    metrics.data_sent = info->tcpi_bytes_sent;
+    metrics.data_retx = info->tcpi_bytes_retrans;
+    metrics.packet_spurious_retx = info->tcpi_dsack_dups;
   }
+  return metrics;
 }
 
 // Extracts opt stats from the given control message \a opt_stats to the
 // connection metrics \a metrics.
-void ExtractOptStatsFromCmsg(ConnectionMetrics* metrics,
-                             const cmsghdr* opt_stats) {
+PosixWriteEventSink::ConnectionMetrics ExtractOptStatsFromCmsg(
+    const cmsghdr* opt_stats) {
+  PosixWriteEventSink::ConnectionMetrics metrics;
   if (opt_stats == nullptr) {
-    return;
+    return metrics;
   }
   const auto* data = CMSG_DATA(opt_stats);
   constexpr int64_t cmsg_hdr_len = CMSG_ALIGN(sizeof(struct cmsghdr));
   const int64_t len = opt_stats->cmsg_len - cmsg_hdr_len;
   int64_t offset = 0;
-
   while (offset < len) {
     const auto* attr = reinterpret_cast<const nlattr*>(data + offset);
     const void* val = data + offset + NLA_HDRLEN;
     switch (attr->nla_type) {
       case TCP_NLA_BUSY: {
-        metrics->busy_usec = ReadUnaligned<uint64_t>(val);
+        metrics.busy_usec = ReadUnaligned<uint64_t>(val);
         break;
       }
       case TCP_NLA_RWND_LIMITED: {
-        metrics->rwnd_limited_usec = ReadUnaligned<uint64_t>(val);
+        metrics.rwnd_limited_usec = ReadUnaligned<uint64_t>(val);
         break;
       }
       case TCP_NLA_SNDBUF_LIMITED: {
-        metrics->sndbuf_limited_usec = ReadUnaligned<uint64_t>(val);
+        metrics.sndbuf_limited_usec = ReadUnaligned<uint64_t>(val);
         break;
       }
       case TCP_NLA_PACING_RATE: {
-        metrics->pacing_rate = ReadUnaligned<uint64_t>(val);
+        metrics.pacing_rate = ReadUnaligned<uint64_t>(val);
         break;
       }
       case TCP_NLA_DELIVERY_RATE: {
-        metrics->delivery_rate = ReadUnaligned<uint64_t>(val);
+        metrics.delivery_rate = ReadUnaligned<uint64_t>(val);
         break;
       }
       case TCP_NLA_DELIVERY_RATE_APP_LMT: {
-        metrics->is_delivery_rate_app_limited = ReadUnaligned<uint8_t>(val);
+        metrics.is_delivery_rate_app_limited = ReadUnaligned<uint8_t>(val);
         break;
       }
       case TCP_NLA_SND_CWND: {
-        metrics->congestion_window = ReadUnaligned<uint32_t>(val);
+        metrics.congestion_window = ReadUnaligned<uint32_t>(val);
         break;
       }
       case TCP_NLA_MIN_RTT: {
-        metrics->min_rtt = ReadUnaligned<uint32_t>(val);
+        metrics.min_rtt = ReadUnaligned<uint32_t>(val);
         break;
       }
       case TCP_NLA_SRTT: {
-        metrics->srtt = ReadUnaligned<uint32_t>(val);
+        metrics.srtt = ReadUnaligned<uint32_t>(val);
         break;
       }
       case TCP_NLA_RECUR_RETRANS: {
-        metrics->recurring_retrans = ReadUnaligned<uint8_t>(val);
+        metrics.recurring_retrans = ReadUnaligned<uint8_t>(val);
         break;
       }
       case TCP_NLA_BYTES_SENT: {
-        metrics->data_sent = ReadUnaligned<uint64_t>(val);
+        metrics.data_sent = ReadUnaligned<uint64_t>(val);
         break;
       }
       case TCP_NLA_DATA_SEGS_OUT: {
-        metrics->packet_sent = ReadUnaligned<uint64_t>(val);
+        metrics.packet_sent = ReadUnaligned<uint64_t>(val);
         break;
       }
       case TCP_NLA_TOTAL_RETRANS: {
-        metrics->packet_retx = ReadUnaligned<uint64_t>(val);
+        metrics.packet_retx = ReadUnaligned<uint64_t>(val);
         break;
       }
       case TCP_NLA_DELIVERED: {
-        metrics->packet_delivered = ReadUnaligned<uint32_t>(val);
+        metrics.packet_delivered = ReadUnaligned<uint32_t>(val);
         break;
       }
       case TCP_NLA_DELIVERED_CE: {
-        metrics->packet_delivered_ce = ReadUnaligned<uint32_t>(val);
+        metrics.packet_delivered_ce = ReadUnaligned<uint32_t>(val);
         break;
       }
       case TCP_NLA_BYTES_RETRANS: {
-        metrics->data_retx = ReadUnaligned<uint64_t>(val);
+        metrics.data_retx = ReadUnaligned<uint64_t>(val);
         break;
       }
       case TCP_NLA_DSACK_DUPS: {
-        metrics->packet_spurious_retx = ReadUnaligned<uint32_t>(val);
+        metrics.packet_spurious_retx = ReadUnaligned<uint32_t>(val);
         break;
       }
       case TCP_NLA_REORDERING: {
-        metrics->reordering = ReadUnaligned<uint32_t>(val);
+        metrics.reordering = ReadUnaligned<uint32_t>(val);
         break;
       }
       case TCP_NLA_SND_SSTHRESH: {
-        metrics->snd_ssthresh = ReadUnaligned<uint32_t>(val);
+        metrics.snd_ssthresh = ReadUnaligned<uint32_t>(val);
+        break;
+      }
+      case TCP_NLA_BYTES_NOTSENT: {
+        metrics.data_notsent = ReadUnaligned<uint16_t>(val);
         break;
       }
     }
     offset += NLA_ALIGN(attr->nla_len);
   }
+  return metrics;
 }
+
+grpc_core::Duration g_max_pending_ack_time = grpc_core::Duration::Seconds(10);
+
 }  // namespace.
 
-bool TracedBufferList::TracedBuffer::Finished(gpr_timespec ts) {
-  constexpr int kGrpcMaxPendingAckTimeMillis = 10000;
-  return gpr_time_to_millis(gpr_time_sub(ts, last_timestamp_)) >
-         kGrpcMaxPendingAckTimeMillis;
+bool TracedBufferList::TracedBuffer::TimedOut(grpc_core::Timestamp now) {
+  return last_timestamp_ + g_max_pending_ack_time < now;
 }
 
-void TracedBufferList::AddNewEntry(int32_t seq_no, int fd, void* arg) {
-  TracedBuffer* new_elem = new TracedBuffer(seq_no, arg);
+void TracedBufferList::AddNewEntry(int32_t seq_no,
+                                   EventEnginePosixInterface* posix_interface,
+                                   const FileDescriptor& fd,
+                                   EventEngine::Endpoint::WriteEventSink sink) {
+  TracedBuffer new_elem(seq_no, std::move(sink));
   // Store the current time as the sendmsg time.
-  new_elem->ts_.sendmsg_time.time = gpr_now(GPR_CLOCK_REALTIME);
-  new_elem->ts_.scheduled_time.time = gpr_inf_past(GPR_CLOCK_REALTIME);
-  new_elem->ts_.sent_time.time = gpr_inf_past(GPR_CLOCK_REALTIME);
-  new_elem->ts_.acked_time.time = gpr_inf_past(GPR_CLOCK_REALTIME);
-  if (GetSocketTcpInfo(&(new_elem->ts_.info), fd) == 0) {
-    ExtractOptStatsFromTcpInfo(&(new_elem->ts_.sendmsg_time.metrics),
-                               &(new_elem->ts_.info));
-  }
-  new_elem->last_timestamp_ = new_elem->ts_.sendmsg_time.time;
-  grpc_core::MutexLock lock(&mu_);
-  if (!head_) {
-    head_ = tail_ = new_elem;
+  // new_elem.ts_.sendmsg_time.time = gpr_now(GPR_CLOCK_REALTIME);
+  auto curr_time = absl::Now();
+  struct tcp_info info;
+  if (posix_interface != nullptr &&
+      GetSocketTcpInfo(&info, posix_interface, fd).ok()) {
+    new_elem.sink_.RecordEvent(EventEngine::Endpoint::WriteEvent::kSendMsg,
+                               curr_time, ExtractOptStatsFromTcpInfo(&info));
   } else {
-    tail_->next_ = new_elem;
-    tail_ = new_elem;
+    new_elem.sink_.RecordEvent(EventEngine::Endpoint::WriteEvent::kSendMsg,
+                               curr_time,
+                               PosixWriteEventSink::ConnectionMetrics());
   }
+  new_elem.last_timestamp_ = grpc_core::Timestamp::Now();
+  // new_elem.last_timestamp_ = new_elem.ts_.sendmsg_time.time;
+  grpc_core::MutexLock lock(&mu_);
+  list_.push_back(std::move(new_elem));
 }
 
 void TracedBufferList::ProcessTimestamp(struct sock_extended_err* serr,
                                         struct cmsghdr* opt_stats,
                                         struct scm_timestamping* tss) {
+  absl::Time timestamp = absl::TimeFromTimespec(tss->ts[0]);
+  grpc_core::Timestamp core_timestamp = grpc_core::Timestamp::Now();
+  auto metrics = ExtractOptStatsFromCmsg(opt_stats);
   grpc_core::MutexLock lock(&mu_);
-  TracedBuffer* elem = head_;
-  TracedBuffer* prev = nullptr;
-  while (elem != nullptr) {
+  auto it = list_.begin();
+  while (it != list_.end()) {
     // The byte number refers to the sequence number of the last byte which this
     // timestamp relates to.
-    if (serr->ee_data >= elem->seq_no_) {
+    if (serr->ee_data >= it->seq_no_) {
       switch (serr->ee_info) {
         case SCM_TSTAMP_SCHED:
-          FillGprFromTimestamp(&(elem->ts_.scheduled_time.time), &(tss->ts[0]));
-          ExtractOptStatsFromCmsg(&(elem->ts_.scheduled_time.metrics),
-                                  opt_stats);
-          elem->last_timestamp_ = elem->ts_.scheduled_time.time;
-          elem = elem->next_;
+          it->sink_.RecordEvent(EventEngine::Endpoint::WriteEvent::kScheduled,
+                                timestamp, metrics);
+          it->last_timestamp_ = core_timestamp;
+          ++it;
           break;
         case SCM_TSTAMP_SND:
-          FillGprFromTimestamp(&(elem->ts_.sent_time.time), &(tss->ts[0]));
-          ExtractOptStatsFromCmsg(&(elem->ts_.sent_time.metrics), opt_stats);
-          elem->last_timestamp_ = elem->ts_.sent_time.time;
-          elem = elem->next_;
+          it->sink_.RecordEvent(EventEngine::Endpoint::WriteEvent::kSent,
+                                timestamp, metrics);
+          it->last_timestamp_ = core_timestamp;
+          ++it;
           break;
         case SCM_TSTAMP_ACK:
-          FillGprFromTimestamp(&(elem->ts_.acked_time.time), &(tss->ts[0]));
-          ExtractOptStatsFromCmsg(&(elem->ts_.acked_time.metrics), opt_stats);
-          // Got all timestamps. Do the callback and free this TracedBuffer. The
-          // thing below can be passed by value if we don't want the restriction
-          // on the lifetime.
-          g_timestamps_callback(elem->arg_, &(elem->ts_), absl::OkStatus());
-          // Safe to update head_ to elem->next_ because the list is ordered by
-          // seq_no. Thus if elem is to be deleted, it has to be the first
-          // element in the list.
-          head_ = elem->next_;
-          delete elem;
-          elem = head_;
+          it->sink_.RecordEvent(EventEngine::Endpoint::WriteEvent::kAcked,
+                                timestamp, metrics);
+          it = list_.erase(it);
           break;
         default:
-          abort();
+          grpc_core::Crash(
+              absl::StrCat("Unknown timestamp type %d", serr->ee_info));
       }
     } else {
       break;
     }
   }
 
-  elem = head_;
-  gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
-  while (elem != nullptr) {
-    if (!elem->Finished(now)) {
-      prev = elem;
-      elem = elem->next_;
+  it = list_.begin();
+  while (it != list_.end()) {
+    if (!it->TimedOut(core_timestamp)) {
+      ++it;
       continue;
-    }
-    g_timestamps_callback(elem->arg_, &(elem->ts_),
-                          absl::DeadlineExceededError("Ack timed out"));
-    if (prev != nullptr) {
-      prev->next_ = elem->next_;
-      delete elem;
-      elem = prev->next_;
     } else {
-      head_ = elem->next_;
-      delete elem;
-      elem = head_;
+      LOG(ERROR) << "No timestamp received for TracedBuffer in "
+                 << g_max_pending_ack_time << ". Removing.";
+      it = list_.erase(it);
     }
   }
-  tail_ = (head_ == nullptr) ? head_ : prev;
 }
 
-void TracedBufferList::Shutdown(void* remaining, absl::Status shutdown_err) {
+void TracedBufferList::Shutdown(
+    std::optional<EventEngine::Endpoint::WriteEventSink> remaining) {
+  if (remaining.has_value()) {
+    PosixWriteEventSink sink(std::move(remaining).value());
+    sink.RecordEvent(EventEngine::Endpoint::WriteEvent::kClosed, absl::Now(),
+                     PosixWriteEventSink::ConnectionMetrics());
+  }
   grpc_core::MutexLock lock(&mu_);
-  while (head_) {
-    TracedBuffer* elem = head_;
-    g_timestamps_callback(elem->arg_, &(elem->ts_), shutdown_err);
-    head_ = head_->next_;
-    delete elem;
+  if (list_.empty()) return;
+  auto curr_time = absl::Now();
+  for (auto it = list_.begin(); it != list_.end(); ++it) {
+    it->sink_.RecordEvent(EventEngine::Endpoint::WriteEvent::kClosed, curr_time,
+                          PosixWriteEventSink::ConnectionMetrics());
   }
-  if (remaining != nullptr) {
-    g_timestamps_callback(remaining, nullptr, shutdown_err);
-  }
-  tail_ = head_;
+  list_.clear();
 }
 
-void TcpSetWriteTimestampsCallback(
-    absl::AnyInvocable<void(void*, Timestamps*, absl::Status)> fn) {
-  g_timestamps_callback = std::move(fn);
+void TracedBufferList::TestOnlySetMaxPendingAckTime(
+    grpc_core::Duration duration) {
+  g_max_pending_ack_time = duration;
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
-
-#else  // GRPC_LINUX_ERRQUEUE
-
-#include "src/core/lib/gprpp/crash.h"
-
-namespace grpc_event_engine {
-namespace experimental {
-
-void TcpSetWriteTimestampsCallback(
-    absl::AnyInvocable<void(void*, Timestamps*, absl::Status)> /*fn*/) {
-  grpc_core::Crash("Timestamps callback is not enabled for this platform");
-}
-
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_LINUX_ERRQUEUE

@@ -24,6 +24,7 @@ cc_binary(
         "//examples/protos:helloworld_cc_grpc",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/log:initialize",
     ],
 )
 
@@ -38,6 +39,7 @@ cc_binary(
         "//examples/protos:helloworld_cc_grpc",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/log:initialize",
         "@com_google_absl//absl/strings:str_format",
     ],
 )

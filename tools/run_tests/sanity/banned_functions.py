@@ -16,7 +16,6 @@
 
 
 # Explicitly ban select functions from being used in gRPC.
-#
 # Any new instance of a deprecated function being used in the code will be
 # flagged by the script. If there is a new instance of a deprecated function in
 # a Pull Request, then the Sanity tests will fail for the Pull Request.
@@ -28,54 +27,42 @@ import sys
 
 os.chdir(os.path.join(os.path.dirname(sys.argv[0]), "../../.."))
 
+# More files may be added to the RUBY_PHP_ALLOW_LIST
+# if they belong to the PHP or RUBY folder.
+RUBY_PHP_ALLOW_LIST = [
+    "./include/grpc/support/log.h",
+    "./src/core/util/log.cc",
+    "./src/php/ext/grpc/call_credentials.c",
+    "./src/php/ext/grpc/channel.c",
+    "./src/ruby/ext/grpc/rb_call.c",
+    "./src/ruby/ext/grpc/rb_call_credentials.c",
+    "./src/ruby/ext/grpc/rb_channel.c",
+    "./src/ruby/ext/grpc/rb_completion_queue.c",
+    "./src/ruby/ext/grpc/rb_event_thread.c",
+    "./src/ruby/ext/grpc/rb_grpc.c",
+    "./src/ruby/ext/grpc/rb_server.c",
+]
+
 #  Map of deprecated functions to allowlist files
 DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
-    "gpr_log_severity": [
-        "./include/grpc/support/log.h",
-        "./src/core/util/android/log.cc",
-        "./src/core/util/linux/log.cc",
-        "./src/core/util/log.cc",
-        "./src/core/util/posix/log.cc",
-        "./src/core/util/windows/log.cc",
-        "./src/ruby/ext/grpc/rb_grpc_imports.generated.c",
-        "./src/ruby/ext/grpc/rb_grpc_imports.generated.h",
-    ],
-    "gpr_log(": [
-        "./include/grpc/support/log.h",
-        "./src/core/util/android/log.cc",
-        "./src/core/util/linux/log.cc",
-        "./src/core/util/posix/log.cc",
-        "./src/core/util/windows/log.cc",
-        "./src/php/ext/grpc/call_credentials.c",
-        "./src/php/ext/grpc/channel.c",
-        "./src/ruby/ext/grpc/rb_call.c",
-        "./src/ruby/ext/grpc/rb_call_credentials.c",
-        "./src/ruby/ext/grpc/rb_channel.c",
-        "./src/ruby/ext/grpc/rb_event_thread.c",
-        "./src/ruby/ext/grpc/rb_grpc.c",
-        "./src/ruby/ext/grpc/rb_server.c",
-    ],
-    "gpr_should_log(": [
-        "./src/core/util/android/log.cc",
-        "./src/core/util/linux/log.cc",
-        "./src/core/util/log.cc",
-        "./src/core/util/posix/log.cc",
-        "./src/core/util/windows/log.cc",
-    ],
-    "gpr_log_message(": [
-        "./src/core/util/android/log.cc",
-        "./src/core/util/linux/log.cc",
-        "./src/core/util/log.cc",
-        "./src/core/util/posix/log.cc",
-        "./src/core/util/windows/log.cc",
-    ],
-    "gpr_log_func_args": [],  # Safe to delete this entry after Nov 2024.
-    "gpr_set_log_function(": [],  # Safe to delete this entry after Nov 2024.
-    "GPR_ASSERT": [],  # Safe to delete this entry after Nov 2024.
+    # These experimental logging functions are only for php and ruby.
+    "grpc_absl_log(": RUBY_PHP_ALLOW_LIST,
+    "grpc_absl_log_int(": RUBY_PHP_ALLOW_LIST,
+    "grpc_absl_log_str(": RUBY_PHP_ALLOW_LIST,
+    # These have been deprecated.
+    # Most of these have been deleted.
+    # Putting this check here just to prevent people from
+    # submitting PRs with any of these commented out.
     "gpr_assertion_failed": [],  # Safe to delete this entry after Nov 2024.
-    "GPR_DEBUG_ASSERT": [],  # Safe to delete this entry after Nov 2024.
+    "gpr_log(": [],  # Safe to delete this entry after Nov 2024.
+    "gpr_log_func_args": [],  # Safe to delete this entry after Nov 2024.
+    "gpr_log_message": [],  # Safe to delete this entry after Nov 2024.
     "gpr_log_severity_string": [],  # Safe to delete this entry after Nov 2024.
-    "gpr_set_log_verbosity(": [],  # Safe to delete this entry after Nov 2024.
+    "gpr_set_log_function": [],  # Safe to delete this entry after Nov 2024.
+    "gpr_set_log_verbosity": [],  # Safe to delete this entry after Nov 2024.
+    "gpr_should_log": [],  # Safe to delete this entry after Nov 2024.
+    "GPR_ASSERT": [],  # Safe to delete this entry after Nov 2024.
+    "GPR_DEBUG_ASSERT": [],  # Safe to delete this entry after Nov 2024.
 }
 
 errors = 0

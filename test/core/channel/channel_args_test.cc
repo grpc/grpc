@@ -18,24 +18,22 @@
 
 #include "src/core/lib/channel/channel_args.h"
 
-#include <string.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
+#include <string.h>
 
-#include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 
@@ -65,11 +63,11 @@ TEST(ChannelArgsTest, SetGetRemove) {
   EXPECT_EQ(*b.Get("answer"), ChannelArgs::Value(42));
   EXPECT_EQ(*c.Get("answer"), ChannelArgs::Value(42));
   EXPECT_EQ(c.GetInt("answer"), 42);
-  EXPECT_EQ(c.GetString("answer"), absl::nullopt);
+  EXPECT_EQ(c.GetString("answer"), std::nullopt);
   EXPECT_EQ(f.Get("answer"), nullptr);
   EXPECT_EQ(*c.Get("foo"), ChannelArgs::Value("bar"));
   EXPECT_EQ(c.GetString("foo"), "bar");
-  EXPECT_EQ(c.GetString("answer"), absl::nullopt);
+  EXPECT_EQ(c.GetString("answer"), std::nullopt);
   EXPECT_EQ(*d.Get("ptr"),
             ChannelArgs::Value(ChannelArgs::Pointer(ptr, &malloc_vtable)));
   EXPECT_EQ(*e.Get("alpha"), ChannelArgs::Value("beta"));
@@ -84,8 +82,8 @@ TEST(ChannelArgsTest, RemoveAllKeysWithPrefix) {
   args = args.Set("bar", 4);
   ChannelArgs modified = args.RemoveAllKeysWithPrefix("foo.");
   EXPECT_EQ(modified.GetInt("foo"), 1);
-  EXPECT_EQ(modified.GetInt("foo.bar"), absl::nullopt);
-  EXPECT_EQ(modified.GetInt("foo.baz"), absl::nullopt);
+  EXPECT_EQ(modified.GetInt("foo.bar"), std::nullopt);
+  EXPECT_EQ(modified.GetInt("foo.baz"), std::nullopt);
   EXPECT_EQ(modified.GetInt("bar"), 4);
 }
 
@@ -255,14 +253,15 @@ TEST(GrpcChannelArgsTest, Create) {
                                              const_cast<char*>("str value"));
   ch_args = grpc_channel_args_copy_and_add(nullptr, to_add, 2);
 
-  CHECK_EQ(ch_args->num_args, 2);
-  CHECK_EQ(strcmp(ch_args->args[0].key, to_add[0].key), 0);
-  CHECK(ch_args->args[0].type == to_add[0].type);
-  CHECK(ch_args->args[0].value.integer == to_add[0].value.integer);
+  GRPC_CHECK_EQ(ch_args->num_args, 2);
+  GRPC_CHECK_EQ(strcmp(ch_args->args[0].key, to_add[0].key), 0);
+  GRPC_CHECK(ch_args->args[0].type == to_add[0].type);
+  GRPC_CHECK(ch_args->args[0].value.integer == to_add[0].value.integer);
 
-  CHECK_EQ(strcmp(ch_args->args[1].key, to_add[1].key), 0);
-  CHECK(ch_args->args[1].type == to_add[1].type);
-  CHECK(strcmp(ch_args->args[1].value.string, to_add[1].value.string) == 0);
+  GRPC_CHECK_EQ(strcmp(ch_args->args[1].key, to_add[1].key), 0);
+  GRPC_CHECK(ch_args->args[1].type == to_add[1].type);
+  GRPC_CHECK(strcmp(ch_args->args[1].value.string, to_add[1].value.string) ==
+             0);
 
   grpc_channel_args_destroy(ch_args);
 }
@@ -318,18 +317,19 @@ TEST(GrpcChannelArgsTest, ChannelCreateWithArgs) {
 grpc_channel_args* mutate_channel_args(const char* target,
                                        grpc_channel_args* old_args,
                                        grpc_channel_stack_type /*type*/) {
-  CHECK_NE(old_args, nullptr);
-  CHECK_EQ(grpc_channel_args_find(old_args, "arg_int")->value.integer, 0);
-  CHECK(strcmp(grpc_channel_args_find(old_args, "arg_str")->value.string,
-               "arg_str_val") == 0);
-  CHECK(grpc_channel_args_find(old_args, "arg_pointer")->value.pointer.vtable ==
-        &fake_pointer_arg_vtable);
+  GRPC_CHECK_NE(old_args, nullptr);
+  GRPC_CHECK_EQ(grpc_channel_args_find(old_args, "arg_int")->value.integer, 0);
+  GRPC_CHECK(strcmp(grpc_channel_args_find(old_args, "arg_str")->value.string,
+                    "arg_str_val") == 0);
+  GRPC_CHECK(
+      grpc_channel_args_find(old_args, "arg_pointer")->value.pointer.vtable ==
+      &fake_pointer_arg_vtable);
 
   if (strcmp(target, "no_op_mutator") == 0) {
     return old_args;
   }
 
-  CHECK_EQ(strcmp(target, "minimal_stack_mutator"), 0);
+  GRPC_CHECK_EQ(strcmp(target, "minimal_stack_mutator"), 0);
   const char* args_to_remove[] = {"arg_int", "arg_str", "arg_pointer"};
 
   grpc_arg no_deadline_filter_arg = grpc_channel_arg_integer_create(

@@ -18,7 +18,6 @@
 
 #import "GRPCHost.h"
 
-#import <GRPCClient/GRPCCall+Cronet.h>
 #import <GRPCClient/GRPCCall.h>
 #import <GRPCClient/GRPCCallOptions.h>
 #import <GRPCClient/GRPCTransport.h>
@@ -118,8 +117,6 @@ static NSMutableDictionary *gHostCache;
   options.hostNameOverride = _hostNameOverride;
   if (_transportType == GRPCTransportTypeInsecure) {
     options.transport = GRPCDefaultTransportImplList.core_insecure;
-  } else if ([GRPCCall isUsingCronet]) {
-    options.transport = gGRPCCoreCronetID;
   } else {
     options.transport = GRPCDefaultTransportImplList.core_secure;
   }

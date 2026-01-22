@@ -17,25 +17,25 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_CLIENT_GRPC_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_CLIENT_GRPC_H
 
-#include <memory>
-
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/telemetry/metrics.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/useful.h"
 #include "src/core/xds/grpc/certificate_provider_store.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/xds_client/lrs_client.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_transport.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -45,8 +45,11 @@ class GrpcXdsClient final : public XdsClient {
   static constexpr absl::string_view kServerKey = "#server";
 
   // Factory function to get or create the global XdsClient instance.
+  // If bootstrap_override is null, the default bootstrap is used based
+  // on environment variables, channel args, etc.
   static absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GetOrCreate(
-      absl::string_view key, const ChannelArgs& args, const char* reason);
+      absl::string_view key, const ChannelArgs& args, const char* reason,
+      std::shared_ptr<GrpcXdsBootstrap> bootstrap_override = nullptr);
 
   // Do not instantiate directly -- use GetOrCreate() instead.
   // TODO(roth): The transport factory is injectable here to support
@@ -61,9 +64,11 @@ class GrpcXdsClient final : public XdsClient {
   // that also use certificate_provider_store(), but we should consider
   // alternatives for that case as well.
   GrpcXdsClient(absl::string_view key,
-                std::unique_ptr<GrpcXdsBootstrap> bootstrap,
+                std::shared_ptr<GrpcXdsBootstrap> bootstrap,
                 const ChannelArgs& args,
-                OrphanablePtr<XdsTransportFactory> transport_factory);
+                RefCountedPtr<XdsTransportFactory> transport_factory,
+                std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+                    stats_plugin_group);
 
   // Helpers for encoding the XdsClient object in channel args.
   static absl::string_view ChannelArgName() {
@@ -73,6 +78,8 @@ class GrpcXdsClient final : public XdsClient {
     return QsortCompare(a, b);
   }
 
+  void ResetBackoff() override;
+
   grpc_pollset_set* interested_parties() const;
 
   CertificateProviderStore& certificate_provider_store() const {
@@ -80,6 +87,8 @@ class GrpcXdsClient final : public XdsClient {
   }
 
   absl::string_view key() const { return key_; }
+
+  LrsClient& lrs_client() { return *lrs_client_; }
 
   // Builds ClientStatusResponse containing all resources from all XdsClients
   static grpc_slice DumpAllClientConfigs();
@@ -92,8 +101,10 @@ class GrpcXdsClient final : public XdsClient {
 
   std::string key_;
   OrphanablePtr<CertificateProviderStore> certificate_provider_store_;
-  GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group_;
+  std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+      stats_plugin_group_;
   std::unique_ptr<RegisteredMetricCallback> registered_metric_callback_;
+  RefCountedPtr<LrsClient> lrs_client_;
 };
 
 namespace internal {

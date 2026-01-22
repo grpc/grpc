@@ -14,9 +14,9 @@
 
 #include "src/core/lib/resource_quota/thread_quota.h"
 
-#include "absl/log/check.h"
-
 #include <grpc/support/port_platform.h>
+
+#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 
@@ -38,7 +38,7 @@ bool ThreadQuota::Reserve(size_t num_threads) {
 
 void ThreadQuota::Release(size_t num_threads) {
   MutexLock lock(&mu_);
-  CHECK(num_threads <= allocated_);
+  GRPC_CHECK(num_threads <= allocated_);
   allocated_ -= num_threads;
 }
 

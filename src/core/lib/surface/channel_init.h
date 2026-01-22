@@ -19,6 +19,7 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_INIT_H
 #define GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_INIT_H
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <initializer_list>
@@ -27,19 +28,18 @@
 #include <utility>
 #include <vector>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-
-#include <grpc/support/port_platform.h>
-
+#include "src/core/call/call_filters.h"
+#include "src/core/call/interception_chain.h"
+#include "src/core/channelz/channelz.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/call_filters.h"
-#include "src/core/lib/transport/interception_chain.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/unique_type_name.h"
+#include "absl/functional/any_invocable.h"
 
 /// This module provides a way for plugins (and the grpc core library itself)
 /// to register mutators for channel stacks.
@@ -232,7 +232,7 @@ class ChannelInit {
     // Exactly one terminal filter will be added at the end of each filter
     // stack.
     // If multiple are defined they are tried in registration order, and the
-    // first terminal filter whos predicates succeed is selected.
+    // first terminal filter whose predicates succeed is selected.
     FilterRegistration& Terminal() {
       terminal_ = true;
       return *this;
@@ -248,29 +248,41 @@ class ChannelInit {
     // stack.
     FilterRegistration& ExcludeFromMinimalStack();
     FilterRegistration& SkipV3() {
-      CHECK_EQ(version_, Version::kAny);
+      GRPC_CHECK_EQ(version_, Version::kAny);
       version_ = Version::kV2;
       return *this;
     }
     FilterRegistration& SkipV2() {
-      CHECK_EQ(version_, Version::kAny);
+      GRPC_CHECK_EQ(version_, Version::kAny);
       version_ = Version::kV3;
       return *this;
     }
     // Request this filter be placed as high as possible in the stack (given
     // before/after constraints).
     FilterRegistration& FloatToTop() {
-      CHECK_EQ(ordering_, Ordering::kDefault);
+      GRPC_CHECK_EQ(ordering_, Ordering::kDefault);
+      ordering_ = Ordering::kTop;
+      return *this;
+    }
+    // Request this filter be placed as high as possible in the stack (given
+    // before/after constraints).
+    FilterRegistration& FloatToTopIf(bool predicate) {
+      if (!predicate) {
+        return *this;
+      }
+      GRPC_CHECK_EQ(ordering_, Ordering::kDefault);
       ordering_ = Ordering::kTop;
       return *this;
     }
     // Request this filter be placed as low as possible in the stack (given
     // before/after constraints).
     FilterRegistration& SinkToBottom() {
-      CHECK_EQ(ordering_, Ordering::kDefault);
+      GRPC_CHECK_EQ(ordering_, Ordering::kDefault);
       ordering_ = Ordering::kBottom;
       return *this;
     }
+
+    const UniqueTypeName& name() { return name_; }
 
    private:
     friend class ChannelInit;
@@ -303,7 +315,7 @@ class ChannelInit {
     FilterRegistration& RegisterFilter(
         grpc_channel_stack_type type, const grpc_channel_filter* filter,
         SourceLocation registration_source = {}) {
-      CHECK(filter != nullptr);
+      GRPC_CHECK(filter != nullptr);
       return RegisterFilter(type, NameFromChannelFilter(filter), filter,
                             nullptr, registration_source);
     }
@@ -312,7 +324,9 @@ class ChannelInit {
         grpc_channel_stack_type type, SourceLocation registration_source = {}) {
       return RegisterFilter(
           type, UniqueTypeNameFor<Filter>(), &Filter::kFilter,
-          [](InterceptionChainBuilder& builder) { builder.Add<Filter>(); },
+          [](InterceptionChainBuilder& builder) {
+            builder.Add<Filter>(nullptr);
+          },
           registration_source);
     }
 
@@ -324,6 +338,34 @@ class ChannelInit {
           .SkipV3();
     }
 
+    // Register a builder in the normal fused filter registration pass.
+    // This occurs first during channel build time.
+    // The FilterRegistration methods can be called to declaratively define
+    // properties of the filter being registered.
+    // TODO(ctiller): remove in favor of the version that does not mention
+    // grpc_channel_filter
+    void RegisterFusedFilter(grpc_channel_stack_type type, UniqueTypeName name,
+                             const grpc_channel_filter* filter,
+                             FilterAdder filter_adder = nullptr,
+                             SourceLocation registration_source = {});
+
+    void RegisterFusedFilter(grpc_channel_stack_type type,
+                             const grpc_channel_filter* filter,
+                             SourceLocation registration_source = {}) {
+      GRPC_CHECK(filter != nullptr);
+      RegisterFusedFilter(type, NameFromChannelFilter(filter), filter, nullptr,
+                          registration_source);
+    }
+
+    template <typename Filter>
+    void RegisterFusedFilter(grpc_channel_stack_type type,
+                             SourceLocation registration_source = {}) {
+      RegisterFusedFilter(
+          type, UniqueTypeNameFor<Filter>(), &Filter::kFilter,
+          [](InterceptionChainBuilder& builder) { builder.Add<Filter>(); },
+          registration_source);
+    }
+
     // Register a post processor for the builder.
     // These run after the main graph has been placed into the builder.
     // At most one filter per slot per channel stack type can be added.
@@ -333,7 +375,7 @@ class ChannelInit {
                                PostProcessorSlot slot,
                                PostProcessor post_processor) {
       auto& slot_value = post_processors_[type][static_cast<int>(slot)];
-      CHECK(slot_value == nullptr);
+      GRPC_CHECK(slot_value == nullptr);
       slot_value = std::move(post_processor);
     }
 
@@ -343,6 +385,8 @@ class ChannelInit {
    private:
     std::vector<std::unique_ptr<FilterRegistration>>
         filters_[GRPC_NUM_CHANNEL_STACK_TYPES];
+    std::vector<std::unique_ptr<FilterRegistration>>
+        fused_filters_[GRPC_NUM_CHANNEL_STACK_TYPES];
     PostProcessor post_processors_[GRPC_NUM_CHANNEL_STACK_TYPES]
                                   [static_cast<int>(PostProcessorSlot::kCount)];
   };
@@ -354,6 +398,8 @@ class ChannelInit {
 
   void AddToInterceptionChainBuilder(grpc_channel_stack_type type,
                                      InterceptionChainBuilder& builder) const;
+
+  void AddData(channelz::DataSink sink, grpc_channel_stack_type type) const;
 
  private:
   // The type of object returned by a filter's Create method.
@@ -384,17 +430,49 @@ class ChannelInit {
     Ordering ordering;
     bool CheckPredicates(const ChannelArgs& args) const;
   };
+
+  struct FilterNode {
+    const Filter* curr;
+    int next;
+  };
+
   struct StackConfig {
     std::vector<Filter> filters;
+    std::vector<Filter> fused_filters;
     std::vector<Filter> terminators;
     std::vector<PostProcessor> post_processors;
+    channelz::PropertyTable filter_ordering;
   };
 
   StackConfig stack_configs_[GRPC_NUM_CHANNEL_STACK_TYPES];
 
+  static std::tuple<std::vector<Filter>, std::vector<Filter>>
+  SortFilterRegistrationsByDependencies(
+      const std::vector<std::unique_ptr<FilterRegistration>>&
+          filter_registrations,
+      grpc_channel_stack_type type, channelz::PropertyTable& filter_ordering);
+
+  static std::vector<Filter> SortFusedFilterRegistrations(
+      const std::vector<std::unique_ptr<FilterRegistration>>&
+          filter_registrations);
+
+  template <bool is_terminal>
+  static std::vector<FilterNode> SelectFiltersByPredicate(
+      const std::vector<Filter>& filters, ChannelStackBuilder* builder);
+
+  static void MergeFusedFilters(ChannelStackBuilder* builder,
+                                const std::vector<Filter>& fused_filters);
+
+  static void AppendFiltersToBuilder(const std::vector<FilterNode>& filter_list,
+                                     ChannelStackBuilder* builder);
+
   static StackConfig BuildStackConfig(
-      const std::vector<std::unique_ptr<FilterRegistration>>& registrations,
+      const std::vector<std::unique_ptr<FilterRegistration>>&
+          filter_registrations,
+      const std::vector<std::unique_ptr<FilterRegistration>>&
+          fused_filter_registrations,
       PostProcessor* post_processors, grpc_channel_stack_type type);
+
   static void PrintChannelStackTrace(
       grpc_channel_stack_type type,
       const std::vector<std::unique_ptr<ChannelInit::FilterRegistration>>&

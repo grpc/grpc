@@ -18,14 +18,13 @@
 
 #include "src/core/handshaker/proxy_mapper_registry.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <algorithm>
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
-
-#include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 
@@ -44,7 +43,7 @@ ProxyMapperRegistry ProxyMapperRegistry::Builder::Build() {
   return registry;
 }
 
-absl::optional<std::string> ProxyMapperRegistry::MapName(
+std::optional<std::string> ProxyMapperRegistry::MapName(
     absl::string_view server_uri, ChannelArgs* args) const {
   ChannelArgs args_backup = *args;
   for (const auto& mapper : mappers_) {
@@ -53,10 +52,10 @@ absl::optional<std::string> ProxyMapperRegistry::MapName(
     if (r.has_value()) return r;
   }
   *args = args_backup;
-  return absl::nullopt;
+  return std::nullopt;
 }
 
-absl::optional<grpc_resolved_address> ProxyMapperRegistry::MapAddress(
+std::optional<grpc_resolved_address> ProxyMapperRegistry::MapAddress(
     const grpc_resolved_address& address, ChannelArgs* args) const {
   ChannelArgs args_backup = *args;
   for (const auto& mapper : mappers_) {
@@ -65,7 +64,7 @@ absl::optional<grpc_resolved_address> ProxyMapperRegistry::MapAddress(
     if (r.has_value()) return r;
   }
   *args = args_backup;
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 }  // namespace grpc_core
