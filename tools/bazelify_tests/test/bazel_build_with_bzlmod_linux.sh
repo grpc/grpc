@@ -20,8 +20,7 @@ tools/bazel \
     --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
     build \
     -- \
-    :all \
-    -:grpcpp_csm_observability  # Needs google_cloud_cpp to be added to BCR
+    :all
 
 # Test if examples are buildable without dev dependencies.
 tools/bazel \
@@ -59,5 +58,4 @@ tools/bazel \
     build \
     --define=//third_party:grpc_use_openssl=true \
     -- \
-    :all \
-    -:grpcpp_csm_observability  # Needs google_cloud_cpp to be added to BCR
+    :all
