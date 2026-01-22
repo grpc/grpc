@@ -258,8 +258,6 @@
       return '\n'.join(lines)
     return _func
 
-  %>
-  <%
   # These files are added to a set so that they are not duplicated if multiple
   # targets use them. Generating the same file multiple times with
   # add_custom_command() is not allowed in CMake.
@@ -273,6 +271,19 @@
     for src in lib.src:
       if proto_re.match(src):
         protobuf_gen_files.add(src)
+
+  # Collect all abseil rules used by gpr, grpc, so on.
+  used_abseil_rules = set()
+  for lib in libs:
+    if lib.get("baselib"):
+      for dep in lib.transitive_deps:
+        if is_absl_lib(dep):
+          used_abseil_rules.add(lib_map[dep].cmake_target.replace("::", "_"))
+
+  cmake_libs = []
+  for lib in libs:
+    if not is_generate_cmake_target(lib): continue
+    cmake_libs.append(lib)
   %>
 
   cmake_minimum_required(VERSION 3.16)
@@ -348,15 +359,6 @@
 
   set(gRPC_ABSL_PROVIDER "module" CACHE STRING "Provider of absl library")
   set_property(CACHE gRPC_ABSL_PROVIDER PROPERTY STRINGS "module" "package")
-  <%
-    # Collect all abseil rules used by gpr, grpc, so on.
-    used_abseil_rules = set()
-    for lib in libs:
-      if lib.get("baselib"):
-        for dep in lib.transitive_deps:
-          if is_absl_lib(dep):
-            used_abseil_rules.add(lib_map[dep].cmake_target.replace("::", "_"))
-  %>
   set(gRPC_ABSL_USED_TARGETS
   % for rule in sorted(used_abseil_rules):
     ${rule}
@@ -528,7 +530,7 @@
     set(_gRPC_ALLTARGETS_LIBRARIES <%text>${_gRPC_ALLTARGETS_LIBRARIES}</%text> ws2_32 crypt32)
     set(_gRPC_STATIC_WIN32 STATIC)
   endif()
-    
+
   if(BUILD_SHARED_LIBS AND WIN32)
 
   # Currently for shared lib on Windows (i.e. a DLL) certain bits of source code
@@ -754,12 +756,6 @@
     add_custom_target(buildtests
       DEPENDS buildtests_c buildtests_cxx)
   endif()
-  <%
-    cmake_libs = []
-    for lib in libs:
-      if not is_generate_cmake_target(lib): continue
-      cmake_libs.append(lib)
-  %>
 
   % for lib in cmake_libs:
   %   if lib.build in ["test", "private"]:
