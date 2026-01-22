@@ -60,24 +60,25 @@ def check_key_cert_match(key_bytes, cert_bytes):
         public_key = cert.public_key()
 
         if private_key.public_key().public_numbers() == public_key.public_numbers():
-            print("Key and Certificate MATCH.", flush=True)
             return True
         else:
-            print("Key and Certificate DO NOT MATCH.", flush=True)
             return False
     except Exception as e:
-        print(f"Error checking key/cert pair: {e}", flush=True)
         return False
 
 
-# Of type CustomPrivateKeySign - Callable[[bytes, SignatureAlgorithm], bytes]
 def client_private_key_signer(data_to_sign, signature_algorithm):
+    """
+    Of type CustomPrivateKeySign - Callable[[bytes, SignatureAlgorithm], bytes]
+    Takes in data_to_sign and signs it using the test private key
+    """
     private_key_bytes = client_private_key()
     # Determine the key type and apply appropriate padding and algorithm.
     # This example assumes an RSA key. Different logic is needed for other key types (e.g., EC).
-    print("GREG: data_to_sign: ", data_to_sign, flush=True)
     try:
-        check_key_cert_match(client_private_key(), client_certificate_chain())
+        success = check_key_cert_match(client_private_key(), client_certificate_chain())
+        if not success:
+            return ValueError("provided key and certificate do not match.")
         private_key = serialization.load_pem_private_key(
             private_key_bytes,
             password=None,  # Pass password as bytes if the key is encrypted
@@ -86,7 +87,6 @@ def client_private_key_signer(data_to_sign, signature_algorithm):
         if not isinstance(private_key, rsa.RSAPrivateKey):
             raise ValueError("The provided key is not an RSA private key.")
     except Exception as e:
-        print(f"Error loading key: {e}")
         raise
 
     if isinstance(private_key, rsa.RSAPrivateKey):
@@ -94,20 +94,17 @@ def client_private_key_signer(data_to_sign, signature_algorithm):
             hasher = hashes.SHA256()
             pss_padding = padding.PSS(
                 mgf=padding.MGF1(hasher),
-                salt_length=hasher.digest_size,  # Key part for SLEN_CHECK_FAILED
+                salt_length=hasher.digest_size,
             )
 
             signature = private_key.sign(data_to_sign, pss_padding, hasher)
-            print("GREG: returning a signature", flush=True)
             return signature
         except Exception as e:
-            print(f"Error signing data: {e}", flush=True)
-            return None
+            raise
     else:
-        print(
-            "Unsupported private key type. This example only supports RSA.", flush=True
+        return ValueError(
+            "Unsupported private key type. This example only supports RSA."
         )
-        return None
 
 
 def parse_bool(value):

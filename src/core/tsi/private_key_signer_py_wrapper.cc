@@ -26,46 +26,19 @@
 
 namespace grpc_core {
 
-// This struct is used to pass the C++ move-only AnyInvocable through
-// the C-style void* pointer API.
-// struct CompletionContext {
-//   OnSignComplete on_complete;
-// };
-
-// TODO(get this working) - mixing async and non-async stuff I think
 std::variant<absl::StatusOr<std::string>, std::shared_ptr<AsyncSigningHandle>>
 PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
                                 SignatureAlgorithm signature_algorithm,
                                 OnSignComplete on_sign_complete) {
-  // We have a fn, sign_py_wrapper_ of type SignWrapperForPy to call
-  // Wrap it with the C++ APIs
-  // auto* context = new CompletionContext{
-  //     .on_complete = std::move(on_sign_complete),
-  // };
-  LOG(WARNING) << "GREG: Sign\n";
   auto event_engine = grpc_event_engine::experimental::GetDefaultEventEngine();
   event_engine->Run([self = shared_from_this(),
                      data_to_sign = std::string(data_to_sign),
                      signature_algorithm,
                      on_complete = std::move(on_sign_complete)]() mutable {
-    // gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-    //                              gpr_time_from_millis(3000, GPR_TIMESPAN)));
-    // Make sure it's safe to call into Python
-    // PyGILState_STATE gstate;
-    // gstate = PyGILState_Ensure();
     // Make the call into cython that will call the python callable
-    LOG(WARNING) << "GREG: Making call into cython from C++\n";
-    LOG(WARNING) << absl::StrFormat("GREG: sign_py_wrapper_ is nullptr: %v",
-                                    self->sign_py_wrapper_ == nullptr);
-    LOG(WARNING) << absl::StrFormat("GREG: sign_user_data_ is nullptr: %v",
-                                    self->sign_user_data_ == nullptr);
-    // auto temp = self->sign_py_wrapper_("abc", signature_algorithm, nullptr);
-    LOG(WARNING) << absl::StrFormat("GREG: data_to_sign %v", data_to_sign);
+    // Python GIL interaction is handled at the Cython layer
     auto signed_data = self->sign_py_wrapper_(data_to_sign, signature_algorithm,
                                               self->sign_user_data_);
-    // We're done needing Python
-    // PyGILState_Release(gstate);
-    LOG(WARNING) << "GREG: Calling on_complete\n";
     on_complete(signed_data);
   });
   // Some more involved handle with event engine?

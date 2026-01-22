@@ -194,11 +194,12 @@ cdef class SSLChannelCredentials(ChannelCredentials):
     self._pem_root_certificates = pem_root_certificates
     self._private_key = private_key
     self._certificate_chain = certificate_chain
-    # Python Callable
     self._private_key_signer = private_key_signer
+    # This gets passed around C++, make sure it stays
     Py_INCREF(self._private_key_signer)
 
   def __dealloc__(self):
+    # We manually increased the reference count, decrease it on dealloc of this object
     Py_DECREF(self._private_key_signer)
 
   cdef grpc_channel_credentials *c(self) except *:
@@ -212,15 +213,11 @@ cdef class SSLChannelCredentials(ChannelCredentials):
 
     c_tls_credentials_options = grpc_tls_credentials_options_create()
     c_pem_root_certificates = self._pem_root_certificates or <const char*>NULL
-    
-
-    print("gregorycooke channel creds ctor", flush=True)
     if self._private_key or self._certificate_chain or self._private_key_signer:
       c_tls_identity_pairs = grpc_tls_identity_pairs_create()
       c_private_key = self._private_key or <const char*>NULL
       c_cert_chain = self._certificate_chain or <const char*>NULL
       if self._private_key_signer:
-        print("gregorycooke ctor signer if block", flush=True)
         c_private_key_signer = build_private_key_signer(self._private_key_signer)
         grpc_tls_identity_pairs_add_pair_with_signer(c_tls_identity_pairs, c_private_key_signer, c_cert_chain)
       else:

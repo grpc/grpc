@@ -26,14 +26,13 @@
 #include "grpc/private_key_signer.h"
 #include "absl/status/statusor.h"
 
-// This needs to be an impl of `PrivateKeySigner`
-
 namespace grpc_core {
 typedef absl::StatusOr<std::string> (*SignWrapperForPy)(
     absl::string_view data_to_sign,
     grpc_core::PrivateKeySigner::SignatureAlgorithm signature_algorithm,
     void* user_data);
 
+// An implementation of PrivateKeySigner for interop with Python.
 class PrivateKeySignerPyWrapper
     : public PrivateKeySigner,
       public std::enable_shared_from_this<PrivateKeySignerPyWrapper> {
@@ -45,14 +44,16 @@ class PrivateKeySignerPyWrapper
        OnSignComplete on_sign_complete) override;
 
   void Cancel(std::shared_ptr<AsyncSigningHandle> handle) override;
-  // ~PrivateKeySignerPyWrapper() override{};
 
  private:
+  // This is a function provided by the Cython implementation of Private Key
+  // Offloading.
   SignWrapperForPy sign_py_wrapper_;
+  // This will hold the Python callable object
   void* sign_user_data_;
 };
 
-// Only intended to be called from cython
+// The entry point for Cython to build a PrivateKeySigner.
 std::shared_ptr<PrivateKeySigner> BuildPrivateKeySigner(SignWrapperForPy sign,
                                                         void* user_data);
 }  // namespace grpc_core

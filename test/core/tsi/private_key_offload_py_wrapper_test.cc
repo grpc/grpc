@@ -16,7 +16,8 @@
 //
 //
 
-// TODO(gregorycooke gtcooke94)
+// TODO(gtcooke94 - is this layer of testing important. It's async only so we
+// can only have a failing signer right now)
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
@@ -58,9 +59,6 @@ bssl::UniquePtr<EVP_PKEY> LoadPrivateKeyFromString(
       PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, nullptr));
 }
 
-// TODO(gregorycooke) use the private_key_offload_test.cc as templates for these
-// wrapper tests
-
 uint16_t GetBoringSslAlgorithm(
     PrivateKeySigner::SignatureAlgorithm signature_algorithm) {
   switch (signature_algorithm) {
@@ -90,74 +88,8 @@ absl::StatusOr<std::string> SignPyWrapperImplErrorTemp(
     absl::string_view data_to_sign,
     grpc_core::PrivateKeySigner::SignatureAlgorithm signature_algorithm,
     void* user_data) {
-  // gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-  //                              gpr_time_from_seconds(2, GPR_TIMESPAN)));
   return absl::InternalError("Intentional Failure for testing.");
 }
-
-// Provide a fake SignPyWrapperImpl, normally this will come from the cython
-// layer
-// void SignPyWrapperImpl(
-//     absl::string_view data_to_sign,
-//     grpc_core::PrivateKeySigner::SignatureAlgorithm signature_algorithm,
-//     OnSignCompletePyWrapper on_sign_complete_py_wrapper, void*
-//     completion_data, void* user_data) {
-//   SignerData* signer_data = static_cast<SignerData*>(user_data);
-//   const EVP_MD* md = nullptr;
-//   int padding = 0;
-//   if (!GetBoringSslAlgorithm(signature_algorithm, &md, &padding)) {
-//     on_sign_complete_py_wrapper(
-//         absl::InternalError("Unsupported signature algorithm"),
-//         completion_data);
-//     return;
-//   }
-//   bssl::ScopedEVP_MD_CTX ctx;
-//   EVP_PKEY_CTX* pctx = nullptr;
-//   if (!EVP_DigestSignInit(ctx.get(), &pctx, md, nullptr,
-//                           signer_data->pkey.get())) {
-//     on_sign_complete_py_wrapper(absl::InternalError("EVP_DigestSignInit
-//     failed"),
-//                                 completion_data);
-//     return;
-//   }
-//   if (padding == RSA_PKCS1_PADDING) {
-//     if (!EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PADDING)) {
-//       on_sign_complete_py_wrapper(
-//           absl::InternalError("EVP_PKEY_CTX_set_rsa_padding failed"),
-//           completion_data);
-//       return;
-//     }
-//   } else if (padding == RSA_PKCS1_PSS_PADDING) {
-//     if (!EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PSS_PADDING) ||
-//         !EVP_PKEY_CTX_set_rsa_pss_saltlen(pctx, -1)) {
-//       on_sign_complete_py_wrapper(
-//           absl::InternalError("EVP_PKEY_CTX_set_rsa_padding failed"),
-//           completion_data);
-//       return;
-//     }
-//   }
-//   size_t sig_len = 0;
-//   if (!EVP_DigestSignUpdate(ctx.get(), data_to_sign.data(),
-//                           data_to_sign.size()) ||
-//       !EVP_DigestSignFinal(ctx.get(), nullptr, &sig_len)) {
-//     on_sign_complete_py_wrapper(absl::InternalError("EVP_DigestSignFinal
-//     failed"),
-//                                 completion_data);
-//     return;
-//   }
-//   std::string sig;
-//   sig.resize(sig_len);
-//   if (!EVP_DigestSignFinal(ctx.get(),
-//   reinterpret_cast<uint8_t*>(sig.data()),
-//                            &sig_len)) {
-//     on_sign_complete_py_wrapper(absl::InternalError("EVP_DigestSignFinal
-//     failed"),
-//                                 completion_data);
-//     return;
-//   }
-//   sig.resize(sig_len);
-//   on_sign_complete_py_wrapper(std::move(sig), completion_data);
-// }
 
 enum class OffloadParty {
   kClient,

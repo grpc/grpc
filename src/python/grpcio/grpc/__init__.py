@@ -1722,27 +1722,24 @@ def ssl_channel_credentials(
         )
     )
 
-# PrivateKeySignDoneCallback = Callable[[Optional[bytes], bool], None]
 # Note: SignatureAlgorithm corresponds to C-core's enum class SignatureAlgorithm.
+# A function for a user to implement
+# Returns signed bytes and accepts bytes to sign and a signature algorithm.
 CustomPrivateKeySign = Callable[
     [
         bytes,
         _cygrpc.SignatureAlgorithm,
-        # PrivateKeySignDoneCallback,
     ],
     bytes,
 ]
 
 
-# TODO(gtcooke94) work here
 def ssl_channel_credentials_with_custom_signer(
     *,
     private_key_sign_fn: CustomPrivateKeySign,
     root_certificates: Optional[bytes] = None,
-    certificate_chain: Optional[bytes] = None,
+    certificate_chain: bytes,
 ) -> ChannelCredentials:
-    # TODO(gtcooke94) - to implement - will be a _cygrpc.SSLChannelCredentials
-    print("gregorycooke: ssl_channel_credentials", flush=True)
     return ChannelCredentials(
         _cygrpc.SSLChannelCredentials(
             root_certificates, None, certificate_chain, private_key_sign_fn

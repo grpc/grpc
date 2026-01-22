@@ -405,7 +405,6 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
 void SecurityHandshaker::OnHandshakeNextDoneGrpcWrapper(
     tsi_result result, void* user_data, const unsigned char* bytes_to_send,
     size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result) {
-  std::cout << "Grpc Wrapper\n";
   RefCountedPtr<SecurityHandshaker> h(
       static_cast<SecurityHandshaker*>(user_data));
   MutexLock lock(&h->mu_);
