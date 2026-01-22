@@ -38,6 +38,18 @@ _OBJC_RUNTESTS_TIMEOUT = 4 * 60 * 60
 
 # Set higher timeout for python_windows_opt_native test
 _PYTHON_WINDOWS_RUNTESTS_TIMEOUT = 1.5 * 60 * 60
+# TODO(sergiitk): DO NOT MERGE: only for an adhoc CI test
+_PYTHON_EXTRA_ENV = {
+    "GRPC_EXPERIMENTS": ",".join(
+        [
+            "event_engine_client",
+            "event_engine_listener",
+            "event_engine_dns",
+            "event_engine_fork",
+        ]
+    )
+}
+_PYTHON_EXTRA_ENV_PROFILE_NAME = "ee_py_fork"
 
 # Set timeout high for Ruby for MacOS for slow xcodebuild
 _RUBY_RUNTESTS_TIMEOUT = 2 * 60 * 60
@@ -156,6 +168,7 @@ def _workspace_jobspec(
 
 
 def _generate_jobs(
+    *,
     languages,
     configs,
     platforms,
@@ -165,6 +178,7 @@ def _generate_jobs(
     labels=[],
     extra_args=[],
     extra_envs={},
+    extra_envs_profile_name="",
     inner_jobs=_DEFAULT_INNER_JOBS,
     timeout_seconds=None,
 ):
@@ -197,8 +211,21 @@ def _generate_jobs(
                         ]
                     if "--build_only" in extra_args:
                         name += "_buildonly"
-                    for extra_env in extra_envs:
-                        name += "_%s_%s" % (extra_env, extra_envs[extra_env])
+
+                    # Append the extra_envs dict to the test name.
+                    if extra_envs:
+                        # Allow to set a profile name for the provided env vars,
+                        # instead of serialzing the dict as _$k1_$v1_$k2_v2.
+                        # Helpful when the name gets too long and unreadable,
+                        # or even results in "Filename too long" errors.
+                        if extra_envs_profile_name:
+                            name += f"_env_{extra_envs_profile_name}"
+                        else:
+                            for env_var, env_val in extra_envs.items():
+                                sanitized_val = re.sub(
+                                    r"[^a-zA-Z0-9_-]", "-", name
+                                )
+                                name += f"_{env_var}_{sanitized_val}"
 
                     runtests_args += extra_args
                     if platform == "linux":
@@ -283,6 +310,8 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         iomgr_platforms=["native"],
         labels=["basictests", "multilang"],
         extra_args=extra_args + ["--report_multi_target"],
+        extra_envs=_PYTHON_EXTRA_ENV,
+        extra_envs_profile_name=_PYTHON_EXTRA_ENV_PROFILE_NAME,
         inner_jobs=inner_jobs,
     )
 
@@ -296,6 +325,8 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         iomgr_platforms=["native"],
         labels=["basictests_arm64"],
         extra_args=extra_args + ["--report_multi_target"],
+        extra_envs=_PYTHON_EXTRA_ENV,
+        extra_envs_profile_name=_PYTHON_EXTRA_ENV_PROFILE_NAME,
         inner_jobs=inner_jobs,
     )
 
@@ -433,6 +464,8 @@ def _create_portability_test_jobs(
         compiler="python_alpine",
         labels=["portability", "multilang"],
         extra_args=extra_args + ["--report_multi_target"],
+        extra_envs=_PYTHON_EXTRA_ENV,
+        extra_envs_profile_name=_PYTHON_EXTRA_ENV_PROFILE_NAME,
         inner_jobs=inner_jobs,
     )
 
