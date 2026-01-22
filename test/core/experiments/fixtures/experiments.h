@@ -57,9 +57,12 @@ namespace grpc_core {
 #ifdef GRPC_EXPERIMENTS_ARE_FINAL
 
 #if defined(GRPC_CFSTREAM)
+// test_experiment_1
 inline bool IsTestExperiment1Enabled() { return false; }
+// test_experiment_2
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_2
 inline bool IsTestExperiment2Enabled() { return true; }
+// test_experiment_3
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_3
 #endif
@@ -70,12 +73,16 @@ inline bool IsTestExperiment3Enabled() {
   return true;
 #endif
 }
+// test_experiment_4
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_4
 inline bool IsTestExperiment4Enabled() { return true; }
 
 #elif defined(GPR_WINDOWS)
+// test_experiment_1
 inline bool IsTestExperiment1Enabled() { return false; }
+// test_experiment_2
 inline bool IsTestExperiment2Enabled() { return false; }
+// test_experiment_3
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_3
 #endif
@@ -86,10 +93,12 @@ inline bool IsTestExperiment3Enabled() {
   return true;
 #endif
 }
+// test_experiment_4
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_4
 inline bool IsTestExperiment4Enabled() { return true; }
 
 #else
+// test_experiment_1
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_1
 #endif
@@ -100,6 +109,7 @@ inline bool IsTestExperiment1Enabled() {
   return true;
 #endif
 }
+// test_experiment_2
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_2
 #endif
@@ -110,6 +120,7 @@ inline bool IsTestExperiment2Enabled() {
   return true;
 #endif
 }
+// test_experiment_3
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_3
 #endif
@@ -120,29 +131,38 @@ inline bool IsTestExperiment3Enabled() {
   return true;
 #endif
 }
+// test_experiment_4
 inline bool IsTestExperiment4Enabled() { return false; }
 #endif
 
 #else
 enum ExperimentIds {
+  // test_experiment_1
   kExperimentIdTestExperiment1,
+  // test_experiment_2
   kExperimentIdTestExperiment2,
+  // test_experiment_3
   kExperimentIdTestExperiment3,
+  // test_experiment_4
   kExperimentIdTestExperiment4,
   kNumTestExperiments
 };
+// test_experiment_1
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_1
 inline bool IsTestExperiment1Enabled() {
   return IsTestExperimentEnabled<kExperimentIdTestExperiment1>();
 }
+// test_experiment_2
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_2
 inline bool IsTestExperiment2Enabled() {
   return IsTestExperimentEnabled<kExperimentIdTestExperiment2>();
 }
+// test_experiment_3
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_3
 inline bool IsTestExperiment3Enabled() {
   return IsTestExperimentEnabled<kExperimentIdTestExperiment3>();
 }
+// test_experiment_4
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_4
 inline bool IsTestExperiment4Enabled() {
   return IsTestExperimentEnabled<kExperimentIdTestExperiment4>();
