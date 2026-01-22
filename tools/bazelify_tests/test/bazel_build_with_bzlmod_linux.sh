@@ -35,7 +35,6 @@ tools/bazel \
 tools/bazel \
     --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
     test \
-    --ignore_dev_dependency=false \
     -- \
     //test/core/config:all \
     //test/core/util:all \
