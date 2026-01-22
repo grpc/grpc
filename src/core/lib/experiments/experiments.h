@@ -64,6 +64,9 @@ inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
   return true;
 }
+inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
+  return false;
+}
 inline bool IsChannelzUseV2ForV1ApiEnabled() { return false; }
 inline bool IsChannelzUseV2ForV1ServiceEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_CONNECT_DEADLINE
@@ -137,6 +140,9 @@ inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
   return true;
 }
+inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
+  return false;
+}
 inline bool IsChannelzUseV2ForV1ApiEnabled() { return false; }
 inline bool IsChannelzUseV2ForV1ServiceEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_CONNECT_DEADLINE
@@ -210,6 +216,9 @@ inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
   return true;
 }
+inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
+  return false;
+}
 inline bool IsChannelzUseV2ForV1ApiEnabled() { return false; }
 inline bool IsChannelzUseV2ForV1ServiceEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_CONNECT_DEADLINE
@@ -281,6 +290,7 @@ enum ExperimentIds {
   kExperimentIdBufferListDeletionPrep,
   kExperimentIdCallTracerInTransport,
   kExperimentIdCallTracerSendInitialMetadataIsAnAnnotation,
+  kExperimentIdCallTracerSendTrailingMetadataIsAnAnnotation,
   kExperimentIdChannelzUseV2ForV1Api,
   kExperimentIdChannelzUseV2ForV1Service,
   kExperimentIdChaoticGoodConnectDeadline,
@@ -346,6 +356,11 @@ inline bool IsCallTracerInTransportEnabled() {
 inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
   return IsExperimentEnabled<
       kExperimentIdCallTracerSendInitialMetadataIsAnAnnotation>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_SEND_TRAILING_METADATA_IS_AN_ANNOTATION
+inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
+  return IsExperimentEnabled<
+      kExperimentIdCallTracerSendTrailingMetadataIsAnAnnotation>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHANNELZ_USE_V2_FOR_V1_API
 inline bool IsChannelzUseV2ForV1ApiEnabled() {
