@@ -59,10 +59,7 @@ def check_key_cert_match(key_bytes, cert_bytes):
         cert = x509.load_pem_x509_certificate(cert_bytes, default_backend())
         public_key = cert.public_key()
 
-        if private_key.public_key().public_numbers() == public_key.public_numbers():
-            return True
-        else:
-            return False
+        return private_key.public_key().public_numbers() == public_key.public_numbers()
     except Exception as e:
         return False
 
