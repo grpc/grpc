@@ -383,6 +383,8 @@ class ExperimentsCompiler(object):
             done.add(take)
             final[take] = self._experiment_definitions[take]
             del queue[take]
+        # Sort final experiments by name.
+        final = collections.OrderedDict(sorted(final.items()))
         self._experiment_definitions = final
         return True
 
