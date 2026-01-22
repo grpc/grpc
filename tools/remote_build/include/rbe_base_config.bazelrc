@@ -19,6 +19,8 @@
 
 startup --host_jvm_args=-Dbazel.DigestFunction=SHA256
 
+common --enable_bzlmod=true
+common --enable_workspace=false
 # the RBE instance to use
 build --remote_instance_name=projects/grpc-testing/instances/default_instance
 
