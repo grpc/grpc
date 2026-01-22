@@ -1006,6 +1006,7 @@ TEST_F(TlsConfigTest, UpstreamTlsContextSni) {
 }
 
 TEST_F(TlsConfigTest, UpstreamTlsContextSniNoEnv) {
+  grpc_core::testing::ScopedEnvVar env("GRPC_EXPERIMENTAL_XDS_SNI", "false");
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
