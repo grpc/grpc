@@ -823,10 +823,10 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
   test/core/tsi/alts/fake_handshaker/transport_security_common.proto test/core/tsi/alts/fake_handshaker/transport_security_common.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
-  third_party/cel-spec/proto/proto/cel/expr/checked.proto proto/cel/expr/checked.proto
+  third_party/cel-spec/proto/cel/expr/checked.proto proto/cel/expr/checked.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
-  third_party/cel-spec/proto/proto/cel/expr/syntax.proto proto/cel/expr/syntax.proto
+  third_party/cel-spec/proto/cel/expr/syntax.proto proto/cel/expr/syntax.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/envoy-api/envoy/admin/v3/certs.proto envoy/admin/v3/certs.proto

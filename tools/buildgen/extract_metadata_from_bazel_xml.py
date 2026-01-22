@@ -98,7 +98,7 @@ EXTERNAL_PROTO_LIBRARIES = {
     ),
     "dev_cel": ExternalProtoLibrary(
         destination="third_party/cel-spec/proto",
-        proto_prefix="third_party/cel-spec/proto/",
+        proto_prefix="third_party/cel-spec/",
     ),
 }
 
