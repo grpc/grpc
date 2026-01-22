@@ -52,7 +52,6 @@ void PrivateKeySignerPyWrapper::Cancel(
 
 std::shared_ptr<PrivateKeySigner> BuildPrivateKeySigner(
     SignWrapperForPy sign_py_wrapper, void* user_data) {
-  LOG(WARNING) << "GREG: BuildPrivateKeySigner\n";
   return std::make_shared<PrivateKeySignerPyWrapper>(sign_py_wrapper,
                                                      user_data);
 }
