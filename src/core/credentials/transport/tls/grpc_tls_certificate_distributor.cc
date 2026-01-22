@@ -178,10 +178,7 @@ void grpc_tls_certificate_distributor::WatchTlsCertificates(
   bool already_watching_identity_for_root_cert = false;
   bool start_watching_identity_cert = false;
   bool already_watching_root_for_identity_cert = false;
-  if (!root_cert_name.has_value() && !identity_cert_name.has_value()) {
-    // Nothing to watch.
-    return;
-  }
+  GRPC_CHECK(root_cert_name.has_value() || identity_cert_name.has_value());
   TlsCertificatesWatcherInterface* watcher_ptr = watcher.get();
   GRPC_CHECK_NE(watcher_ptr, nullptr);
   // Update watchers_ and certificate_info_map_.

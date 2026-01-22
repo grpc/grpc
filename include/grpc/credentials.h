@@ -984,7 +984,7 @@ typedef struct grpc_tls_certificate_provider grpc_tls_certificate_provider;
 /**
  * EXPERIMENTAL API - Subject to change
  *
- * Sets the identity ceritifcate provider in the options.
+ * Sets the identity certificate provider in the options.
  * The |options| will implicitly take a new ref to the |provider|.
  */
 GRPCAPI void grpc_tls_credentials_options_set_identity_certificate_provider(
@@ -994,7 +994,7 @@ GRPCAPI void grpc_tls_credentials_options_set_identity_certificate_provider(
 /**
  * EXPERIMENTAL API - Subject to change
  *
- * Sets the root ceritifcate provider in the options.
+ * Sets the root certificate provider in the options.
  * The |options| will implicitly take a new ref to the |provider|.
  */
 GRPCAPI void grpc_tls_credentials_options_set_root_certificate_provider(
