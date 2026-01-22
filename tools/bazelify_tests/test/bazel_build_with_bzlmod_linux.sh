@@ -36,7 +36,7 @@ tools/bazel \
 # to be replaced by a comprehensive test suite once the bzlmod migration is finished.
 tools/bazel \
     --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
-    build \
+    test \
     -- \
     //test/core/config:all \
     //test/core/util:all \
@@ -48,7 +48,7 @@ tools/bazel \
 # once it no longer causes CI timeouts.
 tools/bazel \
     --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
-    test \
+    build \
     --nobuild \
     --ignore_dev_dependency=false \
     -- \
