@@ -14,6 +14,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <gtest/gtest.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -71,6 +72,7 @@ int main(int argc, char** argv) {
 #define SEND_SIZE (4 * 1024 * 1024)
 #define NUM_FRAMES (SEND_SIZE / FRAME_SIZE + 1)
   grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
 
   addbuf(PFX_STR, sizeof(PFX_STR) - 1);
