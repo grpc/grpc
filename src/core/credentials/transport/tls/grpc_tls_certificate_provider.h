@@ -216,7 +216,7 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
   // attempt failed.
   PemKeyCertPairList pem_key_cert_pairs_ ABSL_GUARDED_BY(mu_);
   absl::StatusOr<std::shared_ptr<RootCertInfo>> root_certificates_
-      ABSL_GUARDED_BY(mu_);
+      ABSL_GUARDED_BY(mu_) = nullptr;
   // Stores each cert_name we get from the distributor callback and its watcher
   // information.
   std::map<std::string, WatcherInfo> watcher_info_ ABSL_GUARDED_BY(mu_);
