@@ -484,3 +484,20 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util_base",
     ],
 )
+
+grpc_cc_test(
+    name = "timer_list_test",
+    srcs = ["timer_list_test.cc"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:iomgr",
+        "//:iomgr_timer",
+        "//src/core:useful",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
