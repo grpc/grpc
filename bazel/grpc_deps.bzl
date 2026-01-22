@@ -95,11 +95,11 @@ def grpc_deps():
         # bazel run @com_google_fuzztest//bazel:setup_configs > tools/fuzztest.bazelrc
         http_archive(
             name = "com_google_fuzztest",
-            sha256 = "cdf8d8cd3cdc77280a7c59b310edf234e489a96b6e727cb271e7dfbeb9bcca8d",
-            strip_prefix = "fuzztest-4ecaeb5084a061a862af8f86789ee184cd3d3f18",
+            sha256 = "c31d122e8b06d1e9cf1edb59d7c6a66ed232101fb9074ad6b74d6282a5768a32",
+            strip_prefix = "fuzztest-b1d0067a853ff9320d7abe5b2761201b586f66dc",
             urls = [
                 # 2023-05-16
-                "https://github.com/google/fuzztest/archive/4ecaeb5084a061a862af8f86789ee184cd3d3f18.tar.gz",
+                "https://github.com/google/fuzztest/archive/b1d0067a853ff9320d7abe5b2761201b586f66dc.tar.gz",
             ],
         )
 
