@@ -146,6 +146,7 @@ class TlsCredentialsOptions {
   }
 
  private:
+  std::shared_ptr<CertificateProviderInterface> legacy_certificate_provider_;
   std::shared_ptr<CertificateProviderInterface> root_certificate_provider_;
   std::shared_ptr<CertificateProviderInterface> identity_certificate_provider_;
   std::shared_ptr<CertificateVerifier> certificate_verifier_;
