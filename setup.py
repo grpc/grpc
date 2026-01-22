@@ -462,7 +462,7 @@ else:
         #
         # Important! This must by in sync with the default value for the
         # GRPC_ENABLE_FORK_SUPPORT env var parsed in fork_posix.pyx.pxi
-        ("GRPC_ENABLE_FORK_SUPPORT_DEFAULT", 0),
+        ("GRPC_ENABLE_FORK_SUPPORT_DEFAULT", "false"),
     )
 
 # Fix for multiprocessing support on Apple devices.
