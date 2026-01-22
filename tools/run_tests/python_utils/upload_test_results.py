@@ -14,14 +14,10 @@
 # limitations under the License.
 """Helper to upload Jenkins test results to BQ"""
 
-from __future__ import print_function
-
 import os
 import sys
 import time
 import uuid
-
-import six
 
 gcp_utils_dir = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "../../gcp/utils")
@@ -140,7 +136,7 @@ def upload_results_to_bq(resultset, bq_table, extra_fields):
     )
 
     bq_rows = []
-    for shortname, results in six.iteritems(resultset):
+    for shortname, results in resultset.items():
         for result in results:
             test_results = {}
             _get_build_metadata(test_results)
@@ -151,7 +147,7 @@ def upload_results_to_bq(resultset, bq_table, extra_fields):
             test_results["return_code"] = result.returncode
             test_results["test_name"] = shortname
             test_results["timestamp"] = time.strftime("%Y-%m-%d %H:%M:%S")
-            for field_name, field_value in six.iteritems(extra_fields):
+            for field_name, field_value in extra_fields.items():
                 test_results[field_name] = field_value
             row = big_query_utils.make_row(str(uuid.uuid4()), test_results)
             bq_rows.append(row)
@@ -178,7 +174,7 @@ def upload_interop_results_to_bq(resultset, bq_table):
     )
 
     bq_rows = []
-    for shortname, results in six.iteritems(resultset):
+    for shortname, results in resultset.items():
         for result in results:
             test_results = {}
             _get_build_metadata(test_results)
