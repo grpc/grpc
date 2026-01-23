@@ -469,7 +469,6 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
   pool_->StartThread();
   // Tell the lifeguard to monitor the pool more closely.
   backoff_.Reset();
-  return;
 }
 
 // -------- WorkStealingThreadPool::ThreadState --------
