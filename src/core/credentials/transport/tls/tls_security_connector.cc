@@ -315,7 +315,6 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
   // hence no need to register the watcher.
   if (!watch_root_cert && !watch_identity_cert) {
     root_certificate_watcher_->OnCertificatesChanged(nullptr, std::nullopt);
-    identity_certificate_watcher_->OnCertificatesChanged(nullptr, std::nullopt);
   } else {
     if (watch_root_cert) {
       options_->root_certificate_distributor()->WatchTlsCertificates(
