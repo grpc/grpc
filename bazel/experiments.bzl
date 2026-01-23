@@ -115,7 +115,6 @@ EXPERIMENTS = {
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_ready_to_connecting",
-                "rr_wrr_connect_from_random_index",
                 "subchannel_connection_scaling",
             ],
             "endpoint_test": [
@@ -135,7 +134,6 @@ EXPERIMENTS = {
             ],
             "lb_unit_test": [
                 "pick_first_ready_to_connecting",
-                "rr_wrr_connect_from_random_index",
             ],
             "minimal_stack_test": [
                 "fuse_filters",
@@ -173,11 +171,17 @@ EXPERIMENTS = {
                 "event_engine_listener",
                 "event_engine_secure_endpoint",
             ],
+            "cpp_lb_end2end_test": [
+                "rr_wrr_connect_from_random_index",
+            ],
             "event_engine_client_test": [
                 "event_engine_client",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
+            ],
+            "lb_unit_test": [
+                "rr_wrr_connect_from_random_index",
             ],
             "posix_endpoint_test": [
                 "event_engine_secure_endpoint",
@@ -224,7 +228,6 @@ EXPERIMENTS = {
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_ready_to_connecting",
-                "rr_wrr_connect_from_random_index",
                 "subchannel_connection_scaling",
             ],
             "endpoint_test": [
@@ -244,7 +247,6 @@ EXPERIMENTS = {
             ],
             "lb_unit_test": [
                 "pick_first_ready_to_connecting",
-                "rr_wrr_connect_from_random_index",
             ],
             "minimal_stack_test": [
                 "fuse_filters",
@@ -282,11 +284,17 @@ EXPERIMENTS = {
                 "event_engine_listener",
                 "event_engine_secure_endpoint",
             ],
+            "cpp_lb_end2end_test": [
+                "rr_wrr_connect_from_random_index",
+            ],
             "event_engine_client_test": [
                 "event_engine_client",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
+            ],
+            "lb_unit_test": [
+                "rr_wrr_connect_from_random_index",
             ],
             "posix_endpoint_test": [
                 "event_engine_secure_endpoint",
@@ -333,7 +341,6 @@ EXPERIMENTS = {
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_ready_to_connecting",
-                "rr_wrr_connect_from_random_index",
                 "subchannel_connection_scaling",
             ],
             "endpoint_test": [
@@ -353,7 +360,6 @@ EXPERIMENTS = {
             ],
             "lb_unit_test": [
                 "pick_first_ready_to_connecting",
-                "rr_wrr_connect_from_random_index",
             ],
             "minimal_stack_test": [
                 "fuse_filters",
@@ -391,11 +397,17 @@ EXPERIMENTS = {
                 "event_engine_listener",
                 "event_engine_secure_endpoint",
             ],
+            "cpp_lb_end2end_test": [
+                "rr_wrr_connect_from_random_index",
+            ],
             "event_engine_client_test": [
                 "event_engine_client",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
+            ],
+            "lb_unit_test": [
+                "rr_wrr_connect_from_random_index",
             ],
             "posix_endpoint_test": [
                 "event_engine_secure_endpoint",
