@@ -64,8 +64,6 @@ inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
   return true;
 }
-inline bool IsChannelzUseV2ForV1ApiEnabled() { return false; }
-inline bool IsChannelzUseV2ForV1ServiceEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_CONNECT_DEADLINE
 inline bool IsChaoticGoodConnectDeadlineEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
@@ -137,8 +135,6 @@ inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
   return true;
 }
-inline bool IsChannelzUseV2ForV1ApiEnabled() { return false; }
-inline bool IsChannelzUseV2ForV1ServiceEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_CONNECT_DEADLINE
 inline bool IsChaoticGoodConnectDeadlineEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
@@ -210,8 +206,6 @@ inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
   return true;
 }
-inline bool IsChannelzUseV2ForV1ApiEnabled() { return false; }
-inline bool IsChannelzUseV2ForV1ServiceEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_CONNECT_DEADLINE
 inline bool IsChaoticGoodConnectDeadlineEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
@@ -281,8 +275,6 @@ enum ExperimentIds {
   kExperimentIdBufferListDeletionPrep,
   kExperimentIdCallTracerInTransport,
   kExperimentIdCallTracerSendInitialMetadataIsAnAnnotation,
-  kExperimentIdChannelzUseV2ForV1Api,
-  kExperimentIdChannelzUseV2ForV1Service,
   kExperimentIdChaoticGoodConnectDeadline,
   kExperimentIdChaoticGoodFramingLayer,
   kExperimentIdChttp2BoundWriteSize,
@@ -346,14 +338,6 @@ inline bool IsCallTracerInTransportEnabled() {
 inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
   return IsExperimentEnabled<
       kExperimentIdCallTracerSendInitialMetadataIsAnAnnotation>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_CHANNELZ_USE_V2_FOR_V1_API
-inline bool IsChannelzUseV2ForV1ApiEnabled() {
-  return IsExperimentEnabled<kExperimentIdChannelzUseV2ForV1Api>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_CHANNELZ_USE_V2_FOR_V1_SERVICE
-inline bool IsChannelzUseV2ForV1ServiceEnabled() {
-  return IsExperimentEnabled<kExperimentIdChannelzUseV2ForV1Service>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_CONNECT_DEADLINE
 inline bool IsChaoticGoodConnectDeadlineEnabled() {
