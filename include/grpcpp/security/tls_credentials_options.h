@@ -172,8 +172,22 @@ class TlsChannelCredentialsOptions final : public TlsCredentialsOptions {
 // It is used for experimental purposes for now and it is subject to change.
 class TlsServerCredentialsOptions final : public TlsCredentialsOptions {
  public:
-  // Server side is required to use a provider, because server always needs to
+  // Server side is required to use an identity provider, because server always needs to
   // use identity certs.
+  static absl::StatusOr<TlsServerCredentialsOptions> Create(
+      std::shared_ptr<CertificateProviderInterface>
+          identity_certificate_provider) {
+    if (identity_certificate_provider == nullptr) {
+      return absl::InvalidArgumentError(
+          "identity certificate provider must be non-null");
+    }
+    TlsServerCredentialsOptions options;
+    options.set_identity_certificate_provider(
+        std::move(identity_certificate_provider));
+    return options;
+  }
+
+  // DEPRECATED. Use Create() instead.
   explicit TlsServerCredentialsOptions(
       std::shared_ptr<CertificateProviderInterface> certificate_provider)
       : TlsCredentialsOptions() {
@@ -199,6 +213,8 @@ class TlsServerCredentialsOptions final : public TlsCredentialsOptions {
   void set_send_client_ca_list(bool send_client_ca_list);
 
  private:
+  // Default ctor, to be used by Create().
+  TlsServerCredentialsOptions() = default;
 };
 
 }  // namespace experimental
