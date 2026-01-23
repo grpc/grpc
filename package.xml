@@ -35,6 +35,7 @@
     <file baseinstalldir="/" name="include/grpc/compression.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/create_channel_from_endpoint.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/credentials.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/credentials_cpp.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/endpoint_config.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/event_engine.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/extensible.h" role="src" />
@@ -208,6 +209,8 @@
     <file baseinstalldir="/" name="src/core/client_channel/subchannel_pool_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/subchannel_stream_client.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/subchannel_stream_client.h" role="src" />
+    <file baseinstalldir="/" name="src/core/client_channel/subchannel_stream_limiter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/client_channel/subchannel_stream_limiter.h" role="src" />
     <file baseinstalldir="/" name="src/core/config/config_vars.cc" role="src" />
     <file baseinstalldir="/" name="src/core/config/config_vars.h" role="src" />
     <file baseinstalldir="/" name="src/core/config/config_vars_non_generated.cc" role="src" />

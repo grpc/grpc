@@ -818,6 +818,7 @@ include/grpc/census.h \
 include/grpc/compression.h \
 include/grpc/create_channel_from_endpoint.h \
 include/grpc/credentials.h \
+include/grpc/credentials_cpp.h \
 include/grpc/event_engine/endpoint_config.h \
 include/grpc/event_engine/event_engine.h \
 include/grpc/event_engine/extensible.h \
@@ -997,6 +998,8 @@ src/core/client_channel/subchannel_pool_interface.cc \
 src/core/client_channel/subchannel_pool_interface.h \
 src/core/client_channel/subchannel_stream_client.cc \
 src/core/client_channel/subchannel_stream_client.h \
+src/core/client_channel/subchannel_stream_limiter.cc \
+src/core/client_channel/subchannel_stream_limiter.h \
 src/core/config/GEMINI.md \
 src/core/config/config_vars.cc \
 src/core/config/config_vars.h \

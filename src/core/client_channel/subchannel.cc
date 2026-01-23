@@ -36,6 +36,7 @@
 #include "src/core/client_channel/buffered_call.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
+#include "src/core/client_channel/subchannel_stream_limiter.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/proxy_mapper_registry.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -1092,16 +1093,7 @@ class NewSubchannel::ConnectedSubchannel
   // connection.
   GRPC_MUST_USE_RESULT bool SetMaxConcurrentStreams(
       uint32_t max_concurrent_streams) {
-    uint64_t prev_stream_counts =
-        stream_counts_.load(std::memory_order_acquire);
-    uint32_t rpcs_in_flight;
-    do {
-      rpcs_in_flight = GetRpcsInFlight(prev_stream_counts);
-    } while (!stream_counts_.compare_exchange_weak(
-        prev_stream_counts,
-        MakeStreamCounts(max_concurrent_streams, rpcs_in_flight),
-        std::memory_order_acq_rel, std::memory_order_acquire));
-    return rpcs_in_flight < max_concurrent_streams;
+    return stream_limiter_.SetMaxConcurrentStreams(max_concurrent_streams);
   }
 
   // Returns true if the RPC can start.
@@ -1109,29 +1101,13 @@ class NewSubchannel::ConnectedSubchannel
     GRPC_TRACE_LOG(subchannel_call, INFO)
         << "subchannel " << subchannel_.get() << " connection " << this
         << ": attempting to get quota for an RPC...";
-    uint64_t prev_stream_counts =
-        stream_counts_.load(std::memory_order_acquire);
-    do {
-      const uint32_t rpcs_in_flight = GetRpcsInFlight(prev_stream_counts);
-      const uint32_t max_concurrent_streams =
-          GetMaxConcurrentStreams(prev_stream_counts);
-      GRPC_TRACE_LOG(subchannel_call, INFO)
-          << "  rpcs_in_flight=" << rpcs_in_flight
-          << ", max_concurrent_streams=" << max_concurrent_streams;
-      if (rpcs_in_flight == max_concurrent_streams) return false;
-    } while (!stream_counts_.compare_exchange_weak(
-        prev_stream_counts, prev_stream_counts + MakeStreamCounts(0, 1),
-        std::memory_order_acq_rel, std::memory_order_acquire));
-    return true;
+    bool result = stream_limiter_.GetQuotaForRpc();
+    GRPC_TRACE_LOG(subchannel_call, INFO) << "  quota acquired: " << result;
+    return result;
   }
 
   // Returns true if this RPC finishing brought the connection below quota.
-  bool ReturnQuotaForRpc() {
-    const uint64_t prev_stream_counts =
-        stream_counts_.fetch_sub(MakeStreamCounts(0, 1));
-    return GetRpcsInFlight(prev_stream_counts) ==
-           GetMaxConcurrentStreams(prev_stream_counts);
-  }
+  bool ReturnQuotaForRpc() { return stream_limiter_.ReturnQuotaForRpc(); }
 
  protected:
   explicit ConnectedSubchannel(WeakRefCountedPtr<NewSubchannel> subchannel,
@@ -1142,27 +1118,12 @@ class NewSubchannel::ConnectedSubchannel
                                                          : nullptr),
         subchannel_(std::move(subchannel)),
         args_(args),
-        stream_counts_(MakeStreamCounts(max_concurrent_streams, 0)) {}
+        stream_limiter_(max_concurrent_streams) {}
 
  private:
-  // First 32 bits are the MAX_CONCURRENT_STREAMS value reported by
-  // the transport.
-  // Last 32 bits are the current number of RPCs in flight on the connection.
-  static uint64_t MakeStreamCounts(uint32_t max_concurrent_streams,
-                                   uint32_t rpcs_in_flight) {
-    return (static_cast<uint64_t>(max_concurrent_streams) << 32) +
-           static_cast<int64_t>(rpcs_in_flight);
-  }
-  static uint32_t GetMaxConcurrentStreams(uint64_t stream_counts) {
-    return static_cast<uint32_t>(stream_counts >> 32);
-  }
-  static uint32_t GetRpcsInFlight(uint64_t stream_counts) {
-    return static_cast<uint32_t>(stream_counts & 0xffffffffu);
-  }
-
   WeakRefCountedPtr<NewSubchannel> subchannel_;
   ChannelArgs args_;
-  std::atomic<uint64_t> stream_counts_{0};
+  SubchannelStreamLimiter stream_limiter_;
 };
 
 //
@@ -1491,9 +1452,16 @@ class NewSubchannel::QueuedCall final
   RefCount ref_count_;
   WeakRefCountedPtr<NewSubchannel> subchannel_;
   CreateCallArgs args_;
+
+  // Note that unlike in the resolver and LB code, the subchannel code
+  // adds the call to the queue before adding batches to buffered_call_,
+  // so it's possible that the subchannel will get quota for the call
+  // and try to resume it before buffered_call_ contains any batches.
+  // In that case, we will not be holding the call combiner here, so we
+  // need a mutex for synchronization.
+  Mutex mu_ ABSL_ACQUIRED_AFTER(NewSubchannel::mu_);
   grpc_closure* after_call_stack_destroy_ ABSL_GUARDED_BY(&mu_) = nullptr;
   grpc_error_handle cancel_error_ ABSL_GUARDED_BY(&mu_);
-  Mutex mu_ ABSL_ACQUIRED_AFTER(NewSubchannel::mu_);
   BufferedCall buffered_call_ ABSL_GUARDED_BY(&mu_);
   RefCountedPtr<Call> subchannel_call_ ABSL_GUARDED_BY(&mu_);
 
@@ -1665,15 +1633,22 @@ void NewSubchannel::QueuedCall::ResumeOnConnectionLocked(
     subchannel_call_->SetAfterCallStackDestroy(after_call_stack_destroy_);
     after_call_stack_destroy_ = nullptr;
   }
+  // It's possible that the subchannel will get quota for the call
+  // and try to resume it before buffered_call_ contains any batches.
+  // In that case, we will not be holding the call combiner here, so we
+  // must not yeild it.  That's why we use
+  // YieldCallCombinerIfPendingBatchesFound here.
   if (!error.ok()) {
     buffered_call_.Fail(error,
                         BufferedCall::YieldCallCombinerIfPendingBatchesFound);
   } else {
-    buffered_call_.Resume([subchannel_call = subchannel_call_](
-                              grpc_transport_stream_op_batch* batch) {
-      // This will release the call combiner.
-      subchannel_call->StartTransportStreamOpBatch(batch);
-    });
+    buffered_call_.Resume(
+        [subchannel_call =
+             subchannel_call_](grpc_transport_stream_op_batch* batch) {
+          // This will release the call combiner.
+          subchannel_call->StartTransportStreamOpBatch(batch);
+        },
+        BufferedCall::YieldCallCombinerIfPendingBatchesFound);
   }
 }
 

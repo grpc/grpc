@@ -111,7 +111,8 @@ void BufferedCall::ResumePendingBatchInCallCombiner(
 
 // This is called via the call combiner, so access to calld is synchronized.
 void BufferedCall::Resume(
-    absl::AnyInvocable<void(grpc_transport_stream_op_batch*)> start_batch) {
+    absl::AnyInvocable<void(grpc_transport_stream_op_batch*)> start_batch,
+    YieldCallCombinerPredicate yield_call_combiner_predicate) {
   if (GRPC_TRACE_FLAG_ENABLED_OBJ(*tracer_)) {
     size_t num_batches = 0;
     for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
@@ -133,9 +134,10 @@ void BufferedCall::Resume(
       batch = nullptr;
     }
   }
-  if (closures.size() > 0) {
-    // Note: This will release the call combiner.
+  if (yield_call_combiner_predicate(closures)) {
     closures.RunClosures(call_combiner_);
+  } else {
+    closures.RunClosuresWithoutYielding(call_combiner_);
   }
 }
 

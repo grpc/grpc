@@ -30,6 +30,14 @@
 namespace grpc_core {
 namespace {
 
+// TODO(roth): There are a bunch of other test cases covered in the C++
+// e2e tests that should be covered here as well (or maybe instead).
+// However, those test cases require more explicit control over
+// connection establishment, and we don't currently have a good way to
+// handle that in core e2e tests.  Once the EventEngine migration is
+// finished, we should be able to do this by injecting a custom EE impl
+// that allows us to intercept connection attempts.
+
 CORE_END2END_TEST(Http2SingleHopTests, SubchannelConnectionScaling) {
   SKIP_IF_MINSTACK();
   if (!IsSubchannelConnectionScalingEnabled()) {
@@ -38,9 +46,7 @@ CORE_END2END_TEST(Http2SingleHopTests, SubchannelConnectionScaling) {
   }
   testing::ScopedExperimentalEnvVar env(
       "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
-  constexpr int kMaxConcurrentStreams = 3;
-  InitServer(DefaultServerArgs().Set(GRPC_ARG_MAX_CONCURRENT_STREAMS,
-                                     kMaxConcurrentStreams));
+  InitServer(DefaultServerArgs().Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 3));
   constexpr char kServiceConfig[] =
       "{\n"
       "  \"connectionScaling\": {\n"
@@ -92,7 +98,11 @@ CORE_END2END_TEST(Http2SingleHopTests, SubchannelConnectionScaling) {
   auto s4 = RequestCall(801);
   Expect(801, true);
   Step();
-  EXPECT_NE(s1.GetPeer(), s4.GetPeer());
+  // TODO(roth): Due to https://github.com/grpc/grpc/issues/35006, if
+  // the peer is a UDS, it will essentially always be a constant string.
+  // We should either fix that issue or maybe change this test to use
+  // channelz instead.
+  if (s1.GetPeer() != "unix:") EXPECT_NE(s1.GetPeer(), s4.GetPeer());
   // Clean up.
   c1.Cancel();
   c2.Cancel();
@@ -113,9 +123,7 @@ CORE_END2END_TEST(Http2SingleHopTests, HonorsMaxConnectionsPerSubchannel) {
   }
   testing::ScopedExperimentalEnvVar env(
       "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
-  constexpr int kMaxConcurrentStreams = 2;
-  InitServer(DefaultServerArgs().Set(GRPC_ARG_MAX_CONCURRENT_STREAMS,
-                                     kMaxConcurrentStreams));
+  InitServer(DefaultServerArgs().Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 2));
   constexpr char kServiceConfig[] =
       "{\n"
       "  \"connectionScaling\": {\n"
@@ -170,7 +178,11 @@ CORE_END2END_TEST(Http2SingleHopTests, HonorsMaxConnectionsPerSubchannel) {
   // Third and fourth RPCs should be on the same connection, which is
   // different from the connection of the first two.
   EXPECT_EQ(s3.GetPeer(), s4.GetPeer());
-  EXPECT_NE(s1.GetPeer(), s3.GetPeer());
+  // TODO(roth): Due to https://github.com/grpc/grpc/issues/35006, if
+  // the peer is a UDS, it will essentially always be a constant string.
+  // We should either fix that issue or maybe change this test to use
+  // channelz instead.
+  if (s1.GetPeer() != "unix:") EXPECT_NE(s1.GetPeer(), s3.GetPeer());
   // Start a 5th RPC, which will be queued.
   auto c5 = NewClientCall("/epsilon").Timeout(Duration::Seconds(1000)).Create();
   c5.NewBatch(901).SendInitialMetadata({});

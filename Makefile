@@ -710,6 +710,7 @@ LIBGRPC_SRC = \
     src/core/client_channel/subchannel.cc \
     src/core/client_channel/subchannel_pool_interface.cc \
     src/core/client_channel/subchannel_stream_client.cc \
+    src/core/client_channel/subchannel_stream_limiter.cc \
     src/core/config/config_vars.cc \
     src/core/config/config_vars_non_generated.cc \
     src/core/config/core_configuration.cc \
@@ -1817,6 +1818,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/compression.h \
     include/grpc/create_channel_from_endpoint.h \
     include/grpc/credentials.h \
+    include/grpc/credentials_cpp.h \
     include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \
     include/grpc/event_engine/extensible.h \

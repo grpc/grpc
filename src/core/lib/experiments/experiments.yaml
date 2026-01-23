@@ -52,6 +52,11 @@
   owner: roth@google.com
   test_tags: []
   allow_in_fuzzing_config: false
+- name: call_tracer_send_initial_metadata_is_an_annotation
+  description: Use the new annotation-based CallTracer API.
+  expiry: 2026/06/01
+  owner: ctiller@google.com
+  test_tags: []
 - name: channelz_use_v2_for_v1_api
   description: Use the v2 channelz API for the v1 channelz API.
   expiry: 2026/02/01
@@ -266,11 +271,23 @@
   owner: ctiller@google.com
   test_tags: []
   allow_in_fuzzing_config: false # experiment currently crashes if enabled
+- name: promise_filter_send_cancel_metadata
+  description: Enables sending all trailing metadata fields from server side promise-based filters
+    upon stream cancellation.
+  expiry: 2026/04/01
+  owner: akshitpatel@google.com
+  test_tags: ["core_end2end_test"]
+  allow_in_fuzzing_config: true
 - name: retry_in_callv3
   description: Support retries with call-v3
   expiry: 2026/02/01
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
+- name: return_preexisting_errors
+  description: Return errors that exist before the start of the call in RunHandler.
+  expiry: 2026/06/30
+  owner: aananthv@google.com
+  test_tags: []
 - name: rr_wrr_connect_from_random_index
   description:
     RR and WRR LB policies start connecting from a random index in the
