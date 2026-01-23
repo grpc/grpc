@@ -94,7 +94,6 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "buffer_list_deletion_prep",
                 "chttp2_bound_write_size",
-                "error_flatten",
                 "event_engine_fork",
                 "local_connector_secure",
                 "otel_export_telemetry_domains",
@@ -107,7 +106,6 @@ EXPERIMENTS = {
                 "secure_endpoint_offload_large_writes",
             ],
             "cpp_end2end_test": [
-                "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_end2end_test_client_ph2": [
@@ -121,9 +119,6 @@ EXPERIMENTS = {
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "error_tests": [
-                "error_flatten",
             ],
             "event_engine_fork_test": [
                 "event_engine_fork",
@@ -156,7 +151,6 @@ EXPERIMENTS = {
                 "pipelined_read_secure_endpoint",
             ],
             "xds_end2end_test": [
-                "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
             ],
         },
@@ -167,11 +161,18 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "chaotic_good_connect_deadline",
                 "chaotic_good_framing_layer",
+                "error_flatten",
                 "event_engine_client",
                 "event_engine_dns_non_client_channel",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "event_engine_secure_endpoint",
+            ],
+            "cpp_end2end_test": [
+                "error_flatten",
+            ],
+            "error_tests": [
+                "error_flatten",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
@@ -190,6 +191,9 @@ EXPERIMENTS = {
             ],
             "secure_endpoint_test": [
                 "event_engine_secure_endpoint",
+            ],
+            "xds_end2end_test": [
+                "error_flatten",
             ],
         },
     },
@@ -203,7 +207,6 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "buffer_list_deletion_prep",
                 "chttp2_bound_write_size",
-                "error_flatten",
                 "event_engine_fork",
                 "local_connector_secure",
                 "otel_export_telemetry_domains",
@@ -216,7 +219,6 @@ EXPERIMENTS = {
                 "secure_endpoint_offload_large_writes",
             ],
             "cpp_end2end_test": [
-                "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_end2end_test_client_ph2": [
@@ -230,9 +232,6 @@ EXPERIMENTS = {
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "error_tests": [
-                "error_flatten",
             ],
             "event_engine_fork_test": [
                 "event_engine_fork",
@@ -265,7 +264,6 @@ EXPERIMENTS = {
                 "pipelined_read_secure_endpoint",
             ],
             "xds_end2end_test": [
-                "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
             ],
         },
@@ -276,11 +274,18 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "chaotic_good_connect_deadline",
                 "chaotic_good_framing_layer",
+                "error_flatten",
                 "event_engine_client",
                 "event_engine_dns_non_client_channel",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "event_engine_secure_endpoint",
+            ],
+            "cpp_end2end_test": [
+                "error_flatten",
+            ],
+            "error_tests": [
+                "error_flatten",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
@@ -299,6 +304,9 @@ EXPERIMENTS = {
             ],
             "secure_endpoint_test": [
                 "event_engine_secure_endpoint",
+            ],
+            "xds_end2end_test": [
+                "error_flatten",
             ],
         },
     },
@@ -312,7 +320,6 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "buffer_list_deletion_prep",
                 "chttp2_bound_write_size",
-                "error_flatten",
                 "event_engine_fork",
                 "local_connector_secure",
                 "otel_export_telemetry_domains",
@@ -325,7 +332,6 @@ EXPERIMENTS = {
                 "secure_endpoint_offload_large_writes",
             ],
             "cpp_end2end_test": [
-                "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_end2end_test_client_ph2": [
@@ -339,9 +345,6 @@ EXPERIMENTS = {
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "error_tests": [
-                "error_flatten",
             ],
             "event_engine_fork_test": [
                 "event_engine_fork",
@@ -374,7 +377,6 @@ EXPERIMENTS = {
                 "pipelined_read_secure_endpoint",
             ],
             "xds_end2end_test": [
-                "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
             ],
         },
@@ -385,11 +387,18 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "chaotic_good_connect_deadline",
                 "chaotic_good_framing_layer",
+                "error_flatten",
                 "event_engine_client",
                 "event_engine_dns_non_client_channel",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "event_engine_secure_endpoint",
+            ],
+            "cpp_end2end_test": [
+                "error_flatten",
+            ],
+            "error_tests": [
+                "error_flatten",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
@@ -408,6 +417,9 @@ EXPERIMENTS = {
             ],
             "secure_endpoint_test": [
                 "event_engine_secure_endpoint",
+            ],
+            "xds_end2end_test": [
+                "error_flatten",
             ],
         },
     },
