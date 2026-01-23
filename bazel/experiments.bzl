@@ -114,7 +114,6 @@ EXPERIMENTS = {
                 "promise_based_http2_client_transport",
             ],
             "cpp_lb_end2end_test": [
-                "pick_first_ready_to_connecting",
                 "subchannel_connection_scaling",
             ],
             "endpoint_test": [
@@ -131,9 +130,6 @@ EXPERIMENTS = {
                 "multiping",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "lb_unit_test": [
-                "pick_first_ready_to_connecting",
             ],
             "minimal_stack_test": [
                 "fuse_filters",
@@ -172,6 +168,7 @@ EXPERIMENTS = {
                 "event_engine_secure_endpoint",
             ],
             "cpp_lb_end2end_test": [
+                "pick_first_ready_to_connecting",
                 "rr_wrr_connect_from_random_index",
             ],
             "event_engine_client_test": [
@@ -181,6 +178,7 @@ EXPERIMENTS = {
                 "event_engine_listener",
             ],
             "lb_unit_test": [
+                "pick_first_ready_to_connecting",
                 "rr_wrr_connect_from_random_index",
             ],
             "posix_endpoint_test": [
@@ -227,7 +225,6 @@ EXPERIMENTS = {
                 "promise_based_http2_client_transport",
             ],
             "cpp_lb_end2end_test": [
-                "pick_first_ready_to_connecting",
                 "subchannel_connection_scaling",
             ],
             "endpoint_test": [
@@ -244,9 +241,6 @@ EXPERIMENTS = {
                 "multiping",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "lb_unit_test": [
-                "pick_first_ready_to_connecting",
             ],
             "minimal_stack_test": [
                 "fuse_filters",
@@ -285,6 +279,7 @@ EXPERIMENTS = {
                 "event_engine_secure_endpoint",
             ],
             "cpp_lb_end2end_test": [
+                "pick_first_ready_to_connecting",
                 "rr_wrr_connect_from_random_index",
             ],
             "event_engine_client_test": [
@@ -294,6 +289,7 @@ EXPERIMENTS = {
                 "event_engine_listener",
             ],
             "lb_unit_test": [
+                "pick_first_ready_to_connecting",
                 "rr_wrr_connect_from_random_index",
             ],
             "posix_endpoint_test": [
@@ -340,7 +336,6 @@ EXPERIMENTS = {
                 "promise_based_http2_client_transport",
             ],
             "cpp_lb_end2end_test": [
-                "pick_first_ready_to_connecting",
                 "subchannel_connection_scaling",
             ],
             "endpoint_test": [
@@ -357,9 +352,6 @@ EXPERIMENTS = {
                 "multiping",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "lb_unit_test": [
-                "pick_first_ready_to_connecting",
             ],
             "minimal_stack_test": [
                 "fuse_filters",
@@ -398,6 +390,7 @@ EXPERIMENTS = {
                 "event_engine_secure_endpoint",
             ],
             "cpp_lb_end2end_test": [
+                "pick_first_ready_to_connecting",
                 "rr_wrr_connect_from_random_index",
             ],
             "event_engine_client_test": [
@@ -407,6 +400,7 @@ EXPERIMENTS = {
                 "event_engine_listener",
             ],
             "lb_unit_test": [
+                "pick_first_ready_to_connecting",
                 "rr_wrr_connect_from_random_index",
             ],
             "posix_endpoint_test": [
