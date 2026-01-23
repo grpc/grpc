@@ -41,6 +41,8 @@ package(
 exports_files([
     "LICENSE",
     "etc/roots.pem",
+    "copy.bara.sky",
+    "copybara.METADATA",
 ])
 
 exports_files(
