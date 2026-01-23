@@ -27,28 +27,26 @@
 
 namespace grpc_core {
 
+void CompletionCallbackForPy(absl::StatusOr<std::string> result,
+                             void* completion_data) {
+  CompletionContext* context = static_cast<CompletionContext*>(completion_data);
+  context->on_complete(result);
+  delete context;
+}
+
 std::variant<absl::StatusOr<std::string>, std::shared_ptr<AsyncSigningHandle>>
 PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
                                 SignatureAlgorithm signature_algorithm,
                                 OnSignComplete on_sign_complete) {
-  // auto event_engine =
-  // grpc_event_engine::experimental::GetDefaultEventEngine();
-  // event_engine->Run([self = shared_from_this(),
-  //                    data_to_sign = std::string(data_to_sign),
-  //                    signature_algorithm,
-  //                    on_complete = std::move(on_sign_complete)]() mutable {
-  // Make the call into cython that will call the python callable
-  // Python GIL interaction is handled at the Cython layer
+  auto* completion_context = new CompletionContext{std::move(on_sign_complete)};
   PrivateKeySignerPyWrapperResult result =
-      sign_py_wrapper_(data_to_sign, signature_algorithm, sign_user_data_);
+      sign_py_wrapper_(data_to_sign, signature_algorithm, sign_user_data_,
+                       CompletionCallbackForPy, completion_context);
   if (result.async_handle != nullptr) {
     return result.async_handle;
   } else {
     return result.sync_result;
   }
-
-  // Some more involved handle with event engine?
-  // return std::make_shared<grpc_core::AsyncSigningHandle>();
 }
 
 void PrivateKeySignerPyWrapper::Cancel(

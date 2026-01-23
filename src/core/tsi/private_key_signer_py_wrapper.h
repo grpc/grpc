@@ -37,10 +37,18 @@ struct PrivateKeySignerPyWrapperResult {
   std::shared_ptr<AsyncSigningHandle> async_handle;
 };
 
+typedef void (*CompletionFunctionPyWrapper)(absl::StatusOr<std::string> result,
+                                            void* completion_data);
+
 typedef PrivateKeySignerPyWrapperResult (*SignWrapperForPy)(
     absl::string_view data_to_sign,
     grpc_core::PrivateKeySigner::SignatureAlgorithm signature_algorithm,
-    void* user_data);
+    void* user_data, CompletionFunctionPyWrapper on_complete,
+    void* completion_data);
+
+struct CompletionContext {
+  PrivateKeySigner::OnSignComplete on_complete;
+};
 
 // An implementation of PrivateKeySigner for interop with Python.
 class PrivateKeySignerPyWrapper

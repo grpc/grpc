@@ -99,3 +99,4 @@ cdef extern from "src/core/tsi/private_key_signer_py_wrapper.h" namespace "grpc_
         shared_ptr[AsyncSigningHandle] async_handle
     ctypedef PrivateKeySignerPyWrapperResult(*SignWrapperForPy)(string_view, CSignatureAlgorithm, void*) noexcept
     shared_ptr[PrivateKeySigner] BuildPrivateKeySigner(SignWrapperForPy, void*)
+    ctypedef void (*CompletionCallbackForPy)(StatusOr[string], void*)

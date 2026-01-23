@@ -21,7 +21,32 @@ cdef StatusOr[string] MakeInternalError(string message):
 cdef StatusOr[string] MakeStringResult(string result):
   return StatusOr[string](result)
 
-cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignatureAlgorithm algorithm, void* user_data) noexcept nogil:
+cdef class OnCompleteWrapper:
+  cdef CompletionCallbackForPy c_on_complete
+  cdef void* c_completion_data
+
+  # Makes this class callable
+  def __call__(self, result):
+    # print(f"Python OnCompleteWrapper({result}) starting")
+    cdef StatusOr[string] cpp_result
+    cdef string cpp_string
+    if self.on_complete_c != NULL:
+      if isinstance(result, str):
+        cpp_string = result.encode('utf-8')
+        cpp_result = StatusOr[string](cpp_string)
+      elif isinstance(result, Exception):
+        # If python returns an exception, convert to absl::Status
+        cpp_string = str(result).encode('utf-8')
+        cpp_result = StatusOr[string](InternalError(cpp_string))
+      else:
+        cpp_string = f"Invalid result type: {type(result)}".encode('utf-8')
+        cpp_result = StatusOr[string](InternalError(cpp_string))
+      self.on_complete_c(cpp_result, self.c_data)
+      # Don't call multiple types
+      self.on_complete_c = NULL
+    print(f"Python OnCompleteWrapper({result}) ending")
+
+cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignatureAlgorithm algorithm, void* user_data, CompletionCallbackForPy on_complete, void* completion_data) noexcept nogil:
   # Get the original python function the user passes
   cdef string cpp_string
   cdef const char* data
@@ -31,6 +56,8 @@ cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignat
   with gil:
     # Cast the void* pointer holding the user's python sign impl
     py_user_func = <object>user_data
+
+    ## TODO(gregorycooke): do work here - Completion stuff has been added to the function signature but no impl done
 
     # Call the user's Python function
     py_result = None
