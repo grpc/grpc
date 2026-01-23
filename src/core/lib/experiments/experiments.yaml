@@ -292,7 +292,7 @@
   description:
     RR and WRR LB policies start connecting from a random index in the
     address list.
-  expiry: 2026/03/01
+  expiry: 2026/04/01
   owner: roth@google.com
   test_tags: ["lb_unit_test", "cpp_lb_end2end_test"]
 - name: schedule_cancellation_over_write
