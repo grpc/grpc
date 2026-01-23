@@ -41,7 +41,7 @@ describe GRPC::ActiveCall do
     @pass_through = proc { |x| x }
     host = '0.0.0.0:0'
     @server = new_core_server_for_testing(nil)
-    server_port = @server.add_http2_port(host, :this_port_is_insecure)
+    @server_port = @server.add_http2_port(host, :this_port_is_insecure)
     @server.start
     @received_rpcs_queue = Queue.new
     @server_thread = Thread.new do
@@ -53,12 +53,23 @@ describe GRPC::ActiveCall do
       end
       @received_rpcs_queue.push(received_rpc)
     end
-    @ch = GRPC::Core::Channel.new("0.0.0.0:#{server_port}", nil,
+    @ch = GRPC::Core::Channel.new("0.0.0.0:#{@server_port}", nil,
                                   :this_channel_is_insecure)
     @call = make_test_call
   end
 
   after(:each) do
+    arm = RUBY_PLATFORM =~ /(aarch64|arm64)/
+    if arm
+      begin
+        wakeup_ch = GRPC::Core::Channel.new("0.0.0.0:#{@server_port}", nil, :this_channel_is_insecure)
+        wakeup_call = wakeup_ch.create_call(nil, 0, wakeup_ch, '/wakeup', nil, deadline)
+        wakeup_call.run_batch(CallOps::SEND_INITIAL_METADATA => {})
+        wakeup_call.close
+        wakeup_ch.close
+      rescue StandardError
+      end
+    end
     @server.shutdown_and_notify(deadline)
     @server_thread.join
     @server.close
