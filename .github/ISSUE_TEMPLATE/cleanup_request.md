@@ -1,7 +1,9 @@
 ---
 name: Request a cleanup
 about: Suggest a cleanup in our repository
+title: ''
 labels: kind/internal cleanup, priority/P2, untriaged
+assignees: ''
 
 ---
 
@@ -15,4 +17,3 @@ For questions that specifically need to be answered by gRPC team members, please
 
 Issues specific to *grpc-java*, *grpc-go*, *grpc-node*, *grpc-dart*, *grpc-web* should be created in the repository they belong to (e.g. https://github.com/grpc/grpc-LANGUAGE/issues/new)
 -->
-

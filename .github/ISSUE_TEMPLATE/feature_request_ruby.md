@@ -1,7 +1,8 @@
 ---
 name: Request a gRPC Ruby feature
 about: Suggest an idea for this project
-labels: kind/enhancement, priority/P2, lang/ruby
+title: ''
+labels: kind/enhancement, lang/ruby, priority/P2
 assignees: apolcyn
 
 ---

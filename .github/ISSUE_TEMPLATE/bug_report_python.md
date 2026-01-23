@@ -1,11 +1,9 @@
 ---
 name: Report a gRPC Python bug
 about: Create a report to help us improve
-labels: kind/bug, priority/P2, lang/Python, untriaged
-assignees:
-  - asheshvidyut
-  - sergiitk
-  - sreenithi
+title: ''
+labels: kind/bug, lang/Python, priority/P2, untriaged
+assignees: asheshvidyut, sergiitk, sreenithi
 
 ---
 

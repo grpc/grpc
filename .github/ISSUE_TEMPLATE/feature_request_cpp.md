@@ -1,7 +1,9 @@
 ---
 name: Request a gRPC C++ feature
 about: Suggest an idea for this project
-labels: kind/enhancement, priority/P2, lang/c++, untriaged
+title: ''
+labels: kind/enhancement, lang/c++, priority/P2, untriaged
+assignees: ''
 
 ---
 

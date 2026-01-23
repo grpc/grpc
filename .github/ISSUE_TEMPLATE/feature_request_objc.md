@@ -1,7 +1,8 @@
 ---
 name: Request a gRPC ObjC feature
 about: Suggest an idea for this project
-labels: kind/enhancement, priority/P2, lang/ObjC
+title: ''
+labels: kind/enhancement, lang/ObjC, priority/P2
 assignees: pawbhard
 
 ---

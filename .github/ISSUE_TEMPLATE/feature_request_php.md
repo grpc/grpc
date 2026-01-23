@@ -1,7 +1,8 @@
 ---
 name: Request a gRPC PHP feature
 about: Suggest an idea for this project
-labels: kind/enhancement, priority/P2, lang/php
+title: ''
+labels: kind/enhancement, lang/php, priority/P2
 assignees: pawbhard
 
 ---

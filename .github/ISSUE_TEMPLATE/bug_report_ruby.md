@@ -1,7 +1,8 @@
 ---
 name: Report a gRPC Ruby bug
 about: Create a report to help us improve
-labels: kind/bug, priority/P2, lang/ruby
+title: ''
+labels: kind/bug, lang/ruby, priority/P2
 assignees: apolcyn
 
 ---
