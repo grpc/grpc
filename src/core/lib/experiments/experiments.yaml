@@ -346,7 +346,7 @@
   description:
     Fixes the subchannel wrapper to drop any non-cancelled watchers when
     it gets orphaned.
-  expiry: 2026/03/15
+  expiry: 2026/05/15
   owner: roth@google.com
   test_tags: ["cpp_end2end_test", "xds_end2end_test"]
 - name: tcp_frame_size_tuning
