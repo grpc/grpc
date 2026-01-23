@@ -31806,7 +31806,7 @@ targets:
   - posix
   - mac
 external_proto_libraries:
-- destination: third_party/cel-spec/proto
+- destination: third_party/cel-spec
   hash: d6cb6b4ed272500d16546c672a65a7452b241462a200dda3f62a7de413883344
   proto_prefix: third_party/cel-spec/
   strip_prefix: cel-spec-9f069b3ee58b02d6f6736c5ebd6587075c1a1b22

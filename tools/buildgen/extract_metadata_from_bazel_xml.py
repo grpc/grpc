@@ -97,7 +97,7 @@ EXTERNAL_PROTO_LIBRARIES = {
         proto_prefix="third_party/opencensus-proto/src/",
     ),
     "dev_cel": ExternalProtoLibrary(
-        destination="third_party/cel-spec/proto",
+        destination="third_party/cel-spec",
         proto_prefix="third_party/cel-spec/",
     ),
 }
