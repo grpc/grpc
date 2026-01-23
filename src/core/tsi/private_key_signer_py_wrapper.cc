@@ -23,6 +23,7 @@
 
 #include "grpc/private_key_signer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+// #include "src/core/util/match.h"
 
 namespace grpc_core {
 
@@ -30,19 +31,24 @@ std::variant<absl::StatusOr<std::string>, std::shared_ptr<AsyncSigningHandle>>
 PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
                                 SignatureAlgorithm signature_algorithm,
                                 OnSignComplete on_sign_complete) {
-  auto event_engine = grpc_event_engine::experimental::GetDefaultEventEngine();
-  event_engine->Run([self = shared_from_this(),
-                     data_to_sign = std::string(data_to_sign),
-                     signature_algorithm,
-                     on_complete = std::move(on_sign_complete)]() mutable {
-    // Make the call into cython that will call the python callable
-    // Python GIL interaction is handled at the Cython layer
-    auto signed_data = self->sign_py_wrapper_(data_to_sign, signature_algorithm,
-                                              self->sign_user_data_);
-    on_complete(signed_data);
-  });
+  // auto event_engine =
+  // grpc_event_engine::experimental::GetDefaultEventEngine();
+  // event_engine->Run([self = shared_from_this(),
+  //                    data_to_sign = std::string(data_to_sign),
+  //                    signature_algorithm,
+  //                    on_complete = std::move(on_sign_complete)]() mutable {
+  // Make the call into cython that will call the python callable
+  // Python GIL interaction is handled at the Cython layer
+  PrivateKeySignerPyWrapperResult result =
+      sign_py_wrapper_(data_to_sign, signature_algorithm, sign_user_data_);
+  if (result.async_handle != nullptr) {
+    return result.async_handle;
+  } else {
+    return result.sync_result;
+  }
+
   // Some more involved handle with event engine?
-  return std::make_shared<grpc_core::AsyncSigningHandle>();
+  // return std::make_shared<grpc_core::AsyncSigningHandle>();
 }
 
 void PrivateKeySignerPyWrapper::Cancel(

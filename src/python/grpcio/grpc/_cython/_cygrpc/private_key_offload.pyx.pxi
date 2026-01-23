@@ -15,14 +15,18 @@ from cython.operator cimport dereference
 from cpython.pystate cimport PyGILState_STATE, PyGILState_Ensure, PyGILState_Release
 from cpython.bytes cimport PyBytes_FromStringAndSize
 
-cdef Status MakeInternalError(string message):
-    return Status(AbslStatusCode.kUnknown, message)
+cdef StatusOr[string] MakeInternalError(string message):
+    return StatusOr[string](Status(AbslStatusCode.kUnknown, message))
 
-cdef StatusOr[string] async_sign_wrapper(string_view inp, CSignatureAlgorithm algorithm, void* user_data) noexcept nogil:
+cdef StatusOr[string] MakeStringResult(string result):
+  return StatusOr[string](result)
+
+cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignatureAlgorithm algorithm, void* user_data) noexcept nogil:
   # Get the original python function the user passes
   cdef string cpp_string
   cdef const char* data
   cdef size_t size
+  cdef PrivateKeySignerPyWrapperResult cpp_result
   # We need to hold the GIL to call the python function and interact with python values
   with gil:
     # Cast the void* pointer holding the user's python sign impl
@@ -38,19 +42,26 @@ cdef StatusOr[string] async_sign_wrapper(string_view inp, CSignatureAlgorithm al
       if isinstance(py_result, bytes):
         # We got a signature
         cpp_string = py_result
-        return StatusOr[string](cpp_string)
+        cpp_result.sync_result = MakeStringResult(cpp_string)
+        # return StatusOr[string](cpp_string)
       elif isinstance(py_result, Exception):
         # If python returns an exception, convert to absl::Status
         cpp_string = str(py_result).encode('utf-8')
-        return StatusOr[string](MakeInternalError(cpp_string))
+        cpp_result.sync_result = MakeInternalError(cpp_string)
+        # return StatusOr[string](MakeInternalError(cpp_string))
       else:
         # Any other return type is not valid
         cpp_string = f"Invalid result type: {type(py_result)}".encode('utf-8')
-        return StatusOr[string](MakeInternalError(cpp_string))
+        cpp_result.sync_result = MakeInternalError(cpp_string)
+        # return StatusOr[string](MakeInternalError(cpp_string))
+      return cpp_result
 
     except Exception as e:
       # If Python raises an exception, make it an error status
-      return StatusOr[string](MakeInternalError(f"Exception in user function: {e}".encode('utf-8')))
+      cpp_result.sync_result = MakeInternalError(f"Exception in user function: {e}".encode('utf-8'))
+      return cpp_result
+      # return StatusOr[string](MakeInternalError(f"Exception in user function: {e}".encode('utf-8')))
+    
 
 # To be called from the python layer when the user provides a signer function.
 cdef shared_ptr[PrivateKeySigner] build_private_key_signer(py_user_func):

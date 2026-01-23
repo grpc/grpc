@@ -59,6 +59,8 @@ cdef extern from "grpc/private_key_signer.h" namespace "grpc_core":
         kRsaPssRsaeSha512
 
 cdef extern from "grpc/private_key_signer.h":
+    cdef cppclass AsyncSigningHandle:
+        pass
     cdef void grpc_tls_identity_pairs_add_pair_with_signer(
         grpc_tls_identity_pairs* pairs,
         shared_ptr[PrivateKeySigner] private_key_signer,
@@ -78,5 +80,8 @@ cpdef enum SignatureAlgorithm:
 
 
 cdef extern from "src/core/tsi/private_key_signer_py_wrapper.h" namespace "grpc_core":
-    ctypedef StatusOr[string](*SignWrapperForPy)(string_view, CSignatureAlgorithm, void*) noexcept
+    cdef cppclass PrivateKeySignerPyWrapperResult:
+        StatusOr[string] sync_result
+        shared_ptr[AsyncSigningHandle] async_handle
+    ctypedef PrivateKeySignerPyWrapperResult(*SignWrapperForPy)(string_view, CSignatureAlgorithm, void*) noexcept
     shared_ptr[PrivateKeySigner] BuildPrivateKeySigner(SignWrapperForPy, void*)

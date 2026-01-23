@@ -27,7 +27,17 @@
 #include "absl/status/statusor.h"
 
 namespace grpc_core {
-typedef absl::StatusOr<std::string> (*SignWrapperForPy)(
+// typedef absl::StatusOr<std::string> (*SignWrapperForPy)(
+//     absl::string_view data_to_sign,
+//     grpc_core::PrivateKeySigner::SignatureAlgorithm signature_algorithm,
+//     void* user_data);
+
+struct PrivateKeySignerPyWrapperResult {
+  absl::StatusOr<std::string> sync_result;
+  std::shared_ptr<AsyncSigningHandle> async_handle;
+};
+
+typedef PrivateKeySignerPyWrapperResult (*SignWrapperForPy)(
     absl::string_view data_to_sign,
     grpc_core::PrivateKeySigner::SignatureAlgorithm signature_algorithm,
     void* user_data);
