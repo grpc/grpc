@@ -29,6 +29,8 @@
 #include "test/core/test_util/tls_utils.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "gtest/gtest.h"
+#include "src/core/telemetry/instrument.h"
+#include "gmock/gmock.h"
 
 namespace grpc {
 namespace testing {
@@ -82,37 +84,12 @@ class SubchannelMetricsTest : public ::testing::Test {
     stats_plugin_ = grpc_core::FakeStatsPluginBuilder()
                         .UseDisabledByDefaultMetrics(true)
                         .BuildAndRegister();
-    kConnectionAttemptsSucceeded_ =
-        grpc_core::GlobalInstrumentsRegistryTestPeer::
-            FindUInt64CounterHandleByName(
-                "grpc.subchannel.connection_attempts_succeeded")
-                .value();
-    kOpenConnections_ = grpc_core::GlobalInstrumentsRegistryTestPeer::
-                            FindInt64UpDownCounterHandleByName(
-                                "grpc.subchannel.open_connections")
-                                .value();
-    kDisconnections_ =
-        grpc_core::GlobalInstrumentsRegistryTestPeer::
-            FindUInt64CounterHandleByName("grpc.subchannel.disconnections")
-                .value();
-    kConnectionAttemptsFailed_ =
-        grpc_core::GlobalInstrumentsRegistryTestPeer::
-            FindUInt64CounterHandleByName(
-                "grpc.subchannel.connection_attempts_failed")
-                .value();
   }
   void TearDown() override {
     grpc_core::GlobalStatsPluginRegistryTestPeer::
         ResetGlobalStatsPluginRegistry();
   }
   std::shared_ptr<grpc_core::FakeStatsPlugin> stats_plugin_;
-  grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle
-      kConnectionAttemptsSucceeded_;
-  grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle kDisconnections_;
-  grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle
-      kConnectionAttemptsFailed_;
-  grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle
-      kOpenConnections_;
 };
 
 TEST_F(SubchannelMetricsTest, SubchannelMetricsBasic) {
@@ -125,6 +102,10 @@ TEST_F(SubchannelMetricsTest, SubchannelMetricsBasic) {
   builder.RegisterService(service.get());
   auto server = builder.BuildAndStart();
   ASSERT_NE(server, nullptr);
+  EXPECT_EQ(stats_plugin_->GetUInt64MetricValueByName(
+                "grpc.subchannel.connection_attempts_succeeded", {target, "", ""}), std::nullopt);
+  EXPECT_EQ(stats_plugin_->GetInt64MetricValueByName(
+                  "grpc.subchannel.open_connections", {target, "none", "", ""}), std::nullopt);
   auto channel =
       grpc::CreateChannel(target, grpc::InsecureChannelCredentials());
   auto stub = grpc::testing::EchoTestService::NewStub(channel);
@@ -144,20 +125,18 @@ TEST_F(SubchannelMetricsTest, SubchannelMetricsBasic) {
                        std::chrono::seconds(1));
   grpc::Status status = stub->Echo(&context, request, &response);
   ASSERT_TRUE(status.ok()) << "RPC failed: " << status.error_message();
-  EXPECT_THAT(stats_plugin_->GetUInt64CounterValue(
-                  kConnectionAttemptsSucceeded_, {target}, {"", ""}),
+  EXPECT_THAT(stats_plugin_->GetUInt64MetricValueByName(
+                  "grpc.subchannel.connection_attempts_succeeded", {target, "", ""}),
               ::testing::Optional(1));
-  // server and client both created with insecure credentials so creating
-  // separate test for none security is not necessary
-  EXPECT_THAT(stats_plugin_->GetInt64UpDownCounterValue(
-                  kOpenConnections_, {target}, {"none", "", ""}),
+  EXPECT_THAT(stats_plugin_->GetInt64MetricValueByName(
+                  "grpc.subchannel.open_connections", {target, "none", "", ""}),
               ::testing::Optional(1));
   server->Shutdown();
-  EXPECT_THAT(stats_plugin_->GetUInt64CounterValue(kDisconnections_, {target},
-                                                   {"", "", "unknown"}),
+  EXPECT_THAT(stats_plugin_->GetUInt64MetricValueByName(
+                  "grpc.subchannel.disconnections", {target, "", "", "unknown"}),
               ::testing::Optional(1));
-  EXPECT_THAT(stats_plugin_->GetInt64UpDownCounterValue(
-                  kOpenConnections_, {target}, {"none", "", ""}),
+  EXPECT_THAT(stats_plugin_->GetInt64MetricValueByName(
+                  "grpc.subchannel.open_connections", {target, "none", "", ""}),
               ::testing::Optional(0));
 }
 
@@ -174,8 +153,8 @@ TEST_F(SubchannelMetricsTest, ConnectionAttemptsFailed) {
       WaitForChannelState(channel.get(), [](grpc_connectivity_state state) {
         return state == GRPC_CHANNEL_TRANSIENT_FAILURE;
       }));
-  EXPECT_THAT(stats_plugin_->GetUInt64CounterValue(kConnectionAttemptsFailed_,
-                                                   {target}, {"", ""}),
+  EXPECT_THAT(stats_plugin_->GetUInt64MetricValueByName(
+                  "grpc.subchannel.connection_attempts_failed", {target, "", ""}),
               ::testing::Optional(1));
 }
 
@@ -195,8 +174,8 @@ TEST_F(SubchannelMetricsTest, MultipleConnectionAttemptsFailed) {
     hold->Fail(absl::UnavailableError("test failure"));
   }
   absl::SleepFor(absl::Milliseconds(50));
-  EXPECT_THAT(stats_plugin_->GetUInt64CounterValue(kConnectionAttemptsFailed_,
-                                                   {target}, {"", ""}),
+  EXPECT_THAT(stats_plugin_->GetUInt64MetricValueByName(
+                  "grpc.subchannel.connection_attempts_failed", {target, "", ""}),
               ::testing::Optional(kConnecionAttempts));
 }
 
@@ -239,14 +218,14 @@ TEST_F(SubchannelMetricsTest, SecurityLevelsPrivacyAndIntegrity) {
   grpc::Status status = stub->Echo(&context, request, &response);
   EXPECT_TRUE(status.ok()) << "RPC failed with code: " << status.error_code()
                            << " message: " << status.error_message();
-  EXPECT_THAT(stats_plugin_->GetInt64UpDownCounterValue(
-                  kOpenConnections_, {kOverridedTarget},
-                  {"privacy_and_integrity", "", ""}),
+  EXPECT_THAT(stats_plugin_->GetInt64MetricValueByName(
+                  "grpc.subchannel.open_connections",
+                  {kOverridedTarget, "privacy_and_integrity", "", ""}),
               ::testing::Optional(1));
   server->Shutdown();
-  EXPECT_THAT(stats_plugin_->GetInt64UpDownCounterValue(
-                  kOpenConnections_, {kOverridedTarget},
-                  {"privacy_and_integrity", "", ""}),
+  EXPECT_THAT(stats_plugin_->GetInt64MetricValueByName(
+                  "grpc.subchannel.open_connections",
+                  {kOverridedTarget, "privacy_and_integrity", "", ""}),
               ::testing::Optional(0));
 }
 

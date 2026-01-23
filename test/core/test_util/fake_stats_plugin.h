@@ -25,6 +25,7 @@
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/metrics.h"
 #include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/telemetry/instrument.h"
 #include "src/core/util/ref_counted.h"
 #include "gmock/gmock.h"
 #include "absl/container/flat_hash_map.h"
@@ -484,7 +485,79 @@ class FakeStatsPlugin : public StatsPlugin {
     return iter->second.GetValue(label_values, optional_values);
   }
 
+template <typename T>
+  std::optional<T> GetMetricValueByNameImpl(
+      absl::string_view name,
+      absl::Span<const absl::string_view> labels);
+
+  std::optional<uint64_t> GetUInt64MetricValueByName(
+      absl::string_view name,
+      absl::Span<const absl::string_view> labels);
+
+  std::optional<int64_t> GetInt64MetricValueByName(
+      absl::string_view name,
+      absl::Span<const absl::string_view> labels);
+
  private:
+  template <typename T>
+  class DomainMetricsSink : public MetricsSink {
+   public:
+    DomainMetricsSink(absl::string_view target_name,
+                      absl::Span<const std::string> label_keys,
+                      absl::Span<const std::string> label_values)
+        : target_name_(target_name),
+          target_label_keys_(label_keys.begin(), label_keys.end()),
+          target_label_values_(label_values.begin(), label_values.end()) {}
+
+    void Counter(absl::Span<const std::string> label_keys,
+                 absl::Span<const std::string> label_values,
+                 absl::string_view name, uint64_t value) override {
+      if (name != target_name_) return;
+      if (label_keys.size() != target_label_keys_.size() ||
+          label_values.size() != target_label_values_.size()) return;
+      for (size_t i = 0; i < label_keys.size(); ++i) {
+        if (label_keys[i] != target_label_keys_[i] ||
+            label_values[i] != target_label_values_[i]) return;
+      }
+      captured_value_ = static_cast<T>(value);
+    }
+    void UpDownCounter(absl::Span<const std::string> label_keys,
+                       absl::Span<const std::string> label_values,
+                       absl::string_view name, uint64_t value) override {
+      if (name != target_name_)
+        return;
+      if (label_keys.size() != target_label_keys_.size() ||
+          label_values.size() != target_label_values_.size())
+          return;
+      for (size_t i = 0; i < label_keys.size(); ++i) {
+        if (label_keys[i] != target_label_keys_[i] ||
+            label_values[i] != target_label_values_[i])
+              return;
+      }
+      captured_value_ = static_cast<T>(value);
+     }
+    void Histogram(absl::Span<const std::string> /*label_keys*/,
+                   absl::Span<const std::string> /*label_values*/,
+                   absl::string_view /*name*/, HistogramBuckets /*bounds*/,
+                   absl::Span<const uint64_t> /*counts*/) override {}
+    void DoubleGauge(absl::Span<const std::string> /*label_keys*/,
+                     absl::Span<const std::string> /*label_values*/,
+                     absl::string_view /*name*/, double /*value*/) override {}
+    void IntGauge(absl::Span<const std::string> /*label_keys*/,
+                  absl::Span<const std::string> /*label_values*/,
+                  absl::string_view /*name*/, int64_t /*value*/) override {}
+    void UintGauge(absl::Span<const std::string> /*label_keys*/,
+                   absl::Span<const std::string> /*label_values*/,
+                   absl::string_view /*name*/, uint64_t /*value*/) override {}
+
+    std::optional<T> captured_value() const { return captured_value_; }
+
+   private:
+    absl::string_view target_name_;
+    std::vector<std::string> target_label_keys_;
+    std::vector<std::string> target_label_values_;
+    std::optional<T> captured_value_;
+  };
   class Reporter : public CallbackMetricReporter {
    public:
     explicit Reporter(FakeStatsPlugin& plugin) : plugin_(plugin) {}

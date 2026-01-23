@@ -3991,6 +3991,7 @@ grpc_cc_library(
         "//src/core:client_channel/retry_filter_legacy_call_data.h",
         "//src/core:client_channel/subchannel.h",
         "//src/core:client_channel/subchannel_interface_internal.h",
+        "//src/core:client_channel/subchannel_metrics.h",
         "//src/core:client_channel/subchannel_stream_client.h",
     ],
     external_deps = [
@@ -4068,6 +4069,7 @@ grpc_cc_library(
         "//src/core:grpc_service_config",
         "//src/core:idle_filter_state",
         "//src/core:init_internally",
+        "//src/core:instrument",
         "//src/core:interception_chain",
         "//src/core:iomgr_fwd",
         "//src/core:json",

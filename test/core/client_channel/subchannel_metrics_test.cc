@@ -16,7 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/client_channel/subchannel.h"
+#include "src/core/telemetry/instrument.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"
 #include "gtest/gtest.h"
@@ -32,77 +32,53 @@ class SubchannelTest : public ::testing::Test {
 };
 
 TEST_F(SubchannelTest, MetricDefinitionDisconnections) {
-  const auto* descriptor =
-      GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
-          "grpc.subchannel.disconnections");
+  const auto* descriptor = instrument_detail::InstrumentIndex::Get().Find(
+      "grpc.subchannel.disconnections");
   ASSERT_NE(descriptor, nullptr);
-  EXPECT_EQ(descriptor->value_type,
-            GlobalInstrumentsRegistry::ValueType::kUInt64);
-  EXPECT_EQ(descriptor->instrument_type,
-            GlobalInstrumentsRegistry::InstrumentType::kCounter);
-  EXPECT_EQ(descriptor->enable_by_default, false);
   EXPECT_EQ(descriptor->name, "grpc.subchannel.disconnections");
-  EXPECT_EQ(descriptor->unit, "{disconnection}");
-  EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
-  EXPECT_THAT(
-      descriptor->optional_label_keys,
-      ::testing::ElementsAre("grpc.lb.backend_service", "grpc.lb.locality",
-                             "grpc.disconnect_error"));
+  EXPECT_EQ(descriptor->description, "Number of times the selected subchannel becomes disconnected.");
+  EXPECT_EQ(descriptor->unit, "disconnection");
+  EXPECT_TRUE(std::holds_alternative<grpc_core::InstrumentMetadata::CounterShape>(
+      descriptor->shape));
+  EXPECT_THAT(descriptor->domain->label_names(),
+              ::testing::ElementsAre("grpc.target",
+                                     "grpc.lb.backend_service",
+                                     "grpc.lb.locality",
+                                     "grpc.disconnect_error"));
 }
 
 TEST_F(SubchannelTest, MetricDefinitionConnectionAttemptsSucceeded) {
-  const auto* descriptor =
-      GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
-          "grpc.subchannel.connection_attempts_succeeded");
-  ASSERT_NE(descriptor, nullptr);
-  EXPECT_EQ(descriptor->value_type,
-            GlobalInstrumentsRegistry::ValueType::kUInt64);
-  EXPECT_EQ(descriptor->instrument_type,
-            GlobalInstrumentsRegistry::InstrumentType::kCounter);
-  EXPECT_EQ(descriptor->enable_by_default, false);
-  EXPECT_EQ(descriptor->name, "grpc.subchannel.connection_attempts_succeeded");
-  EXPECT_EQ(descriptor->unit, "{attempt}");
-  EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
-  EXPECT_THAT(
-      descriptor->optional_label_keys,
-      ::testing::ElementsAre("grpc.lb.backend_service", "grpc.lb.locality"));
-}
-
-TEST_F(SubchannelTest, MetricDefinitionConnectionAttemptsFailed) {
-  const auto* descriptor =
-      GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
-          "grpc.subchannel.connection_attempts_failed");
-  ASSERT_NE(descriptor, nullptr);
-  EXPECT_EQ(descriptor->value_type,
-            GlobalInstrumentsRegistry::ValueType::kUInt64);
-  EXPECT_EQ(descriptor->instrument_type,
-            GlobalInstrumentsRegistry::InstrumentType::kCounter);
-  EXPECT_EQ(descriptor->enable_by_default, false);
-  EXPECT_EQ(descriptor->name, "grpc.subchannel.connection_attempts_failed");
-  EXPECT_EQ(descriptor->unit, "{attempt}");
-  EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
-  EXPECT_THAT(
-      descriptor->optional_label_keys,
-      ::testing::ElementsAre("grpc.lb.backend_service", "grpc.lb.locality"));
-}
+  for (const auto& [name, description] : std::vector<std::pair<absl::string_view, absl::string_view>> {
+    {"grpc.subchannel.connection_attempts_succeeded", "Number of successful connection attempts."},
+    {"grpc.subchannel.connection_attempts_failed", "Number of failed connection attempts."},}) {
+    const auto* descriptor = instrument_detail::InstrumentIndex::Get().Find(name);
+    ASSERT_NE(descriptor, nullptr);
+    EXPECT_EQ(descriptor->name, name);
+    EXPECT_EQ(descriptor->description, description);
+    EXPECT_EQ(descriptor->unit, "attempt");
+    EXPECT_TRUE(std::holds_alternative<grpc_core::InstrumentMetadata::CounterShape>(
+        descriptor->shape));
+    EXPECT_THAT(descriptor->domain->label_names(),
+                ::testing::ElementsAre("grpc.target",
+                                      "grpc.lb.backend_service",
+                                      "grpc.lb.locality"));
+    }
+  }
 
 TEST_F(SubchannelTest, MetricDefinitionOpenConnections) {
-  const auto* descriptor =
-      GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
-          "grpc.subchannel.open_connections");
+  const auto* descriptor = instrument_detail::InstrumentIndex::Get().Find(
+      "grpc.subchannel.open_connections");
   ASSERT_NE(descriptor, nullptr);
-  EXPECT_EQ(descriptor->value_type,
-            GlobalInstrumentsRegistry::ValueType::kInt64);
-  EXPECT_EQ(descriptor->instrument_type,
-            GlobalInstrumentsRegistry::InstrumentType::kUpDownCounter);
-  EXPECT_EQ(descriptor->enable_by_default, false);
   EXPECT_EQ(descriptor->name, "grpc.subchannel.open_connections");
-  EXPECT_EQ(descriptor->unit, "{connection}");
-  EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
-  EXPECT_THAT(
-      descriptor->optional_label_keys,
-      ::testing::ElementsAre("grpc.security_level", "grpc.lb.backend_service",
-                             "grpc.lb.locality"));
+  EXPECT_EQ(descriptor->description, "Number of open subchannel connections.");
+  EXPECT_EQ(descriptor->unit, "connection");
+  EXPECT_TRUE(std::holds_alternative<grpc_core::InstrumentMetadata::UpDownCounterShape>(
+      descriptor->shape));
+  EXPECT_THAT(descriptor->domain->label_names(),
+              ::testing::ElementsAre("grpc.target",
+                                     "grpc.security_level",
+                                     "grpc.lb.backend_service",
+                                     "grpc.lb.locality"));
 }
 
 }  // namespace
