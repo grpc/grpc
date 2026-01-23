@@ -20,8 +20,6 @@ EXPERIMENT_ENABLES = {
     "buffer_list_deletion_prep": "buffer_list_deletion_prep",
     "call_tracer_in_transport": "call_tracer_in_transport",
     "call_tracer_send_initial_metadata_is_an_annotation": "call_tracer_send_initial_metadata_is_an_annotation",
-    "channelz_use_v2_for_v1_api": "channelz_use_v2_for_v1_api",
-    "channelz_use_v2_for_v1_service": "channelz_use_v2_for_v1_service",
     "chaotic_good_connect_deadline": "chaotic_good_connect_deadline",
     "chaotic_good_framing_layer": "chaotic_good_framing_layer",
     "chttp2_bound_write_size": "chttp2_bound_write_size",
@@ -90,10 +88,6 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "channelz_test": [
-                "channelz_use_v2_for_v1_api",
-                "channelz_use_v2_for_v1_service",
-            ],
             "chttp2_keepalive_tests": [
                 "subchannel_connection_scaling",
             ],
@@ -203,10 +197,6 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "channelz_test": [
-                "channelz_use_v2_for_v1_api",
-                "channelz_use_v2_for_v1_service",
-            ],
             "chttp2_keepalive_tests": [
                 "subchannel_connection_scaling",
             ],
@@ -316,10 +306,6 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "channelz_test": [
-                "channelz_use_v2_for_v1_api",
-                "channelz_use_v2_for_v1_service",
-            ],
             "chttp2_keepalive_tests": [
                 "subchannel_connection_scaling",
             ],
