@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.77.0-dev'
+  version = '1.79.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -451,6 +451,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/ping_callbacks.h',
                       'src/core/ext/transport/chttp2/transport/ping_promise.h',
                       'src/core/ext/transport/chttp2/transport/ping_rate_policy.h',
+                      'src/core/ext/transport/chttp2/transport/security_frame.h',
                       'src/core/ext/transport/chttp2/transport/stream.h',
                       'src/core/ext/transport/chttp2/transport/stream_data_queue.h',
                       'src/core/ext/transport/chttp2/transport/stream_lists.h',
@@ -1838,6 +1839,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/ping_callbacks.h',
                               'src/core/ext/transport/chttp2/transport/ping_promise.h',
                               'src/core/ext/transport/chttp2/transport/ping_rate_policy.h',
+                              'src/core/ext/transport/chttp2/transport/security_frame.h',
                               'src/core/ext/transport/chttp2/transport/stream.h',
                               'src/core/ext/transport/chttp2/transport/stream_data_queue.h',
                               'src/core/ext/transport/chttp2/transport/stream_lists.h',

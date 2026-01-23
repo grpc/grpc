@@ -29,29 +29,45 @@ from typing import (
 
 from grpc._cython import cygrpc
 
-if TYPE_CHECKING:
 
-    class CygrpcChannelCredentials:
-        """Type alias for cygrpc.ChannelCredentials."""
+class CygrpcChannelCredentials:
+    """Type alias for cygrpc.ChannelCredentials."""
 
-    class CygrpcCallCredentials:
-        """Type alias for cygrpc.CallCredentials."""
+    _cy_creds: cygrpc.ChannelCredentials
 
-    class CygrpcServerCredentials:
-        """Type alias for cygrpc.ServerCredentials."""
+    def __init__(self, cy_creds: cygrpc.ChannelCredentials):
+        self._cy_creds = cy_creds
 
-    class CygrpcServerCertificateConfig:
-        """Type alias for cygrpc.ServerCertificateConfig."""
 
-    class CygrpcBaseEvent:
-        """Type alias for cygrpc.BaseEvent."""
+class CygrpcCallCredentials:
+    """Type alias for cygrpc.CallCredentials."""
 
-else:
-    CygrpcChannelCredentials = cygrpc.ChannelCredentials
-    CygrpcCallCredentials = cygrpc.CallCredentials
-    CygrpcServerCredentials = cygrpc.ServerCredentials
-    CygrpcServerCertificateConfig = cygrpc.ServerCertificateConfig
-    CygrpcBaseEvent = cygrpc.BaseEvent
+    _cy_creds: cygrpc.CallCredentials
+
+    def __init__(self, cy_creds: cygrpc.CallCredentials):
+        self._cy_creds = cy_creds
+
+
+class CygrpcServerCredentials:
+    """Type alias for cygrpc.ServerCredentials."""
+
+    _cy_creds: cygrpc.ServerCredentials
+
+    def __init__(self, cy_creds: cygrpc.ServerCredentials):
+        self._cy_creds = cy_creds
+
+
+class CygrpcServerCertificateConfig:
+    """Type alias for cygrpc.ServerCertificateConfig."""
+
+    _cy_config: cygrpc.ServerCertificateConfig
+
+    def __init__(self, cy_config: cygrpc.ServerCertificateConfig):
+        self._cy_config = cy_config
+
+
+CygrpcBaseEvent = cygrpc.BaseEvent
+
 
 if TYPE_CHECKING:
     from grpc import ChannelConnectivity

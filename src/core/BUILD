@@ -195,6 +195,7 @@ grpc_cc_library(
         "//bazel:event_engine_base_hdrs",
     ],
     deps = [
+        "instrument",
         "memory_quota",
         "tcp_tracer",
         "//:channelz",
@@ -8117,6 +8118,7 @@ grpc_cc_library(
     ],
     deps = [
         ":chttp2_flow_control",
+        ":grpc_check",
         ":http2_settings",
         "//:chttp2_frame",
     ],
@@ -8343,13 +8345,16 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log",
+        "absl/status",
         "absl/strings",
     ],
     deps = [
+        "error",
         "grpc_check",
         "http2_status",
         "metadata_batch",
         "shared_bit_gen",
+        "status_helper",
         ":slice",
         ":slice_buffer",
         "//:chttp2_frame",
@@ -8371,6 +8376,7 @@ grpc_cc_library(
     ],
     deps = [
         "grpc_check",
+        ":metadata_info",
         "//:chttp2_frame",
     ],
 )
@@ -8434,6 +8440,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log",
+        "absl/status",
     ],
     deps = [
         "call_spine",
@@ -8489,6 +8496,7 @@ grpc_cc_library(
         "grpc_check",
         "grpc_promise_endpoint",
         "header_assembler",
+        "http2_security_frame",
         "http2_settings",
         "http2_settings_manager",
         "http2_settings_promises",
@@ -8589,6 +8597,36 @@ grpc_cc_library(
         "//:hpack_parser",
         "//:promise",
         "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "http2_security_frame",
+    hdrs = [
+        "ext/transport/chttp2/transport/security_frame.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/base:core_headers",
+        "absl/types:span",
+    ],
+    deps = [
+        "grpc_check",
+        "grpc_promise_endpoint",
+        ":activity",
+        ":context",
+        ":poll",
+        ":ref_counted",
+        ":sync",
+        "//:chttp2_frame",
+        "//:grpc_public_hdrs",
+        "//src/core:event_engine_extensions",
+        "//src/core:event_engine_query_extensions",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
+        "//src/core:transport_framing_endpoint_extension",
     ],
 )
 
@@ -11221,13 +11259,16 @@ grpc_cc_library(
     hdrs = ["ext/transport/chttp2/transport/writable_streams.h"],
     external_deps = [
         "absl/log",
+        "absl/strings",
         "absl/log:check",
+        "absl/status",
     ],
     deps = [
         "grpc_check",
         "if",
         "mpsc",
         "race",
+        "status_flag",
         "transport_common",
         "try_seq",
     ],

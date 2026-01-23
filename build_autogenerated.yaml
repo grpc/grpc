@@ -360,6 +360,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/ping_callbacks.h
   - src/core/ext/transport/chttp2/transport/ping_promise.h
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.h
+  - src/core/ext/transport/chttp2/transport/security_frame.h
   - src/core/ext/transport/chttp2/transport/stream.h
   - src/core/ext/transport/chttp2/transport/stream_data_queue.h
   - src/core/ext/transport/chttp2/transport/stream_lists.h
@@ -2522,6 +2523,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/ping_callbacks.h
   - src/core/ext/transport/chttp2/transport/ping_promise.h
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.h
+  - src/core/ext/transport/chttp2/transport/security_frame.h
   - src/core/ext/transport/chttp2/transport/stream.h
   - src/core/ext/transport/chttp2/transport/stream_data_queue.h
   - src/core/ext/transport/chttp2/transport/stream_lists.h
@@ -8734,6 +8736,7 @@ targets:
   - test/cpp/util/proto_file_parser.h
   - test/cpp/util/proto_reflection_descriptor_database.h
   - test/cpp/util/service_describer.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
   - src/proto/grpc/channelz/v2/latent_see.proto
@@ -8789,6 +8792,9 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/container:fixed_array
+  - absl/functional:overload
+  - absl/strings:charset
   - grpcpp_channelz
   - protoc
   - grpc_test_util
@@ -9082,6 +9088,7 @@ targets:
   - test/cpp/util/proto_file_parser.h
   - test/cpp/util/proto_reflection_descriptor_database.h
   - test/cpp/util/service_describer.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
   - src/proto/grpc/testing/echo.proto
@@ -9101,6 +9108,9 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
+  - absl/container:fixed_array
+  - absl/functional:overload
+  - absl/strings:charset
   - protoc
   - grpc++_test_util
 - name: client_auth_filter_test
@@ -9243,16 +9253,15 @@ targets:
   - test/core/test_util/test_lb_policies.h
   - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/test_service_impl.h
-  - third_party/protoc-gen-validate/validate/validate.h
   src:
   - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_service.proto
   - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
-  - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
@@ -14364,6 +14373,7 @@ targets:
   - test/cpp/util/proto_file_parser.h
   - test/cpp/util/proto_reflection_descriptor_database.h
   - test/cpp/util/service_describer.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
   - test/cpp/util/cli_call.cc
@@ -14374,6 +14384,9 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.cc
   - test/cpp/util/service_describer.cc
   deps:
+  - absl/container:fixed_array
+  - absl/functional:overload
+  - absl/strings:charset
   - grpc++
   - protoc
   - grpc++_test_config
@@ -14555,6 +14568,7 @@ targets:
   - test/cpp/util/proto_file_parser.h
   - test/cpp/util/proto_reflection_descriptor_database.h
   - test/cpp/util/service_describer.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
@@ -14573,6 +14587,9 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
+  - absl/container:fixed_array
+  - absl/functional:overload
+  - absl/strings:charset
   - grpc++_reflection
   - protoc
   - grpc++_test_config
@@ -14956,6 +14973,28 @@ targets:
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/transport/chttp2/http2_client_transport_test.cc
+  - test/core/transport/util/mock_promise_endpoint.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  uses_polling: false
+- name: http2_security_frame_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/promise/poll_matcher.h
+  - test/core/test_util/postmortem.h
+  - test/core/transport/util/mock_promise_endpoint.h
+  - test/core/transport/util/transport_test.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/transport/chttp2/http2_security_frame_test.cc
   - test/core/transport/util/mock_promise_endpoint.cc
   deps:
   - gtest
@@ -15546,6 +15585,7 @@ targets:
   - src/core/call/metadata.h
   - src/core/call/metadata_batch.h
   - src/core/call/metadata_compression_traits.h
+  - src/core/call/metadata_info.h
   - src/core/call/parsed_metadata.h
   - src/core/call/server_call.h
   - src/core/call/simple_slice_based_metadata.h
@@ -15563,6 +15603,7 @@ targets:
   - src/core/credentials/transport/tls/certificate_provider_factory.h
   - src/core/credentials/transport/tls/certificate_provider_registry.h
   - src/core/ext/transport/chttp2/transport/frame.h
+  - src/core/ext/transport/chttp2/transport/hpack_constants.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/transport/chttp2/transport/incoming_metadata_tracker.h
@@ -15904,6 +15945,7 @@ targets:
   - src/core/call/message.cc
   - src/core/call/metadata.cc
   - src/core/call/metadata_batch.cc
+  - src/core/call/metadata_info.cc
   - src/core/call/parsed_metadata.cc
   - src/core/call/server_call.cc
   - src/core/call/status_util.cc
@@ -18220,6 +18262,7 @@ targets:
   - test/cpp/util/proto_file_parser.h
   - test/cpp/util/proto_reflection_descriptor_database.h
   - test/cpp/util/service_describer.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
   - src/proto/grpc/channelz/v2/channelz.proto
@@ -18272,6 +18315,9 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/container:fixed_array
+  - absl/functional:overload
+  - absl/strings:charset
   - grpc++
   - protoc
   - grpc_test_util
@@ -23463,6 +23509,7 @@ targets:
   - test/cpp/server/server_builder_test.cc
   deps:
   - gtest
+  - grpc++
   - grpc++_unsecure
   - grpc_test_util_unsecure
   platforms:
@@ -23486,6 +23533,7 @@ targets:
   - test/cpp/server/server_builder_with_socket_mutator_test.cc
   deps:
   - gtest
+  - grpc++
   - grpc++_unsecure
   - grpc_test_util_unsecure
   platforms:
@@ -27814,6 +27862,7 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.h
   - test/cpp/util/service_describer.h
   - third_party/protoc-gen-validate/validate/validate.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
@@ -27909,6 +27958,9 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
+  - absl/container:fixed_array
+  - absl/functional:overload
+  - absl/strings:charset
   - grpc++
   - protoc
   - grpc_test_util
@@ -28703,6 +28755,7 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.h
   - test/cpp/util/service_describer.h
   - third_party/protoc-gen-validate/validate/validate.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
@@ -28864,6 +28917,9 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
+  - absl/container:fixed_array
+  - absl/functional:overload
+  - absl/strings:charset
   - grpc++
   - protoc
   - grpc_test_util
@@ -30062,6 +30118,7 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.h
   - test/cpp/util/service_describer.h
   - third_party/protoc-gen-validate/validate/validate.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
@@ -30177,6 +30234,9 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
+  - absl/container:fixed_array
+  - absl/functional:overload
+  - absl/strings:charset
   - grpc++
   - protoc
   - grpc_test_util
@@ -30194,6 +30254,7 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.h
   - test/cpp/util/service_describer.h
   - third_party/protoc-gen-validate/validate/validate.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
@@ -30287,6 +30348,9 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
+  - absl/container:fixed_array
+  - absl/functional:overload
+  - absl/strings:charset
   - grpc++
   - protoc
   - grpc_test_util
@@ -30303,6 +30367,7 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.h
   - test/cpp/util/service_describer.h
   - third_party/protoc-gen-validate/validate/validate.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
@@ -30425,6 +30490,9 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
+  - absl/container:fixed_array
+  - absl/functional:overload
+  - absl/strings:charset
   - grpc++
   - protoc
   - grpc_test_util
@@ -31518,6 +31586,7 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.h
   - test/cpp/util/service_describer.h
   - third_party/protoc-gen-validate/validate/validate.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/proto/grpc/lookup/v1/rls_config.proto
   - src/proto/grpc/reflection/v1alpha/reflection.proto
@@ -31615,6 +31684,9 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
+  - absl/container:fixed_array
+  - absl/functional:overload
+  - absl/strings:charset
   - grpc++
   - protoc
   - grpc_test_util

@@ -18,6 +18,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/cpp/ext/csm",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "tests",
 )
 
@@ -29,6 +33,7 @@ grpc_cc_test(
     external_deps = [
         "google_cloud_cpp:opentelemetry",
         "gtest",
+        "otel/sdk:headers",
         "otel/sdk/src/metrics",
     ],
     tags = [
@@ -39,6 +44,7 @@ grpc_cc_test(
     ],
     deps = [
         "//:grpc++",
+        "//src/core:xds_enabled_server",
         "//src/cpp/ext/csm:csm_observability",
         "//src/cpp/ext/otel:otel_plugin",
         "//test/core/test_util:grpc_test_util",
@@ -51,8 +57,11 @@ grpc_cc_test(
         "metadata_exchange_test.cc",
     ],
     external_deps = [
+        "absl/functional:any_invocable",
         "google_cloud_cpp:opentelemetry",
         "gtest",
+        "otel/api",
+        "otel/sdk:headers",
         "otel/sdk/src/metrics",
     ],
     tags = [
@@ -62,9 +71,15 @@ grpc_cc_test(
         "grpc:otel-namespace-calamity",
     ],
     deps = [
+        "//:call_tracer",
+        "//:config",
+        "//:gpr",
         "//:grpc++",
+        "//src/core:env",
         "//src/cpp/ext/csm:csm_observability",
+        "//src/cpp/ext/otel:otel_plugin",
         "//test/core/test_util:grpc_test_util",
+        "//test/cpp/end2end:test_service_impl",
         "//test/cpp/ext/otel:otel_test_library",
     ],
 )

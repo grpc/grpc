@@ -52,6 +52,7 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 #include "absl/types/span.h"
 
 namespace grpc_core {
@@ -166,17 +167,19 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
         // not receive the ACK. The transport must close when this happens.
         TrySeq(Sleep(settings_ack_timeout_),
                [sent_time = sent_time_, timeout = settings_ack_timeout_]() {
+                 const std::string message = absl::StrCat(
+                     RFC9113::kSettingsTimeout,
+                     " Sent Time : ", sent_time.ToString(),
+                     " Timeout Time : ", (sent_time + timeout).ToString(),
+                     " Current Time : ", Timestamp::Now().ToString());
                  GRPC_SETTINGS_TIMEOUT_DLOG
-                     << "SettingsPromiseManager::WaitForSettingsTimeout Timeout"
-                        " triggered. Transport will close. Sent Time : "
-                     << sent_time << " Timeout Time : " << (sent_time + timeout)
-                     << " Current Time " << Timestamp::Now();
+                     << "SettingsPromiseManager::WaitForSettingsTimeout"
+                     << message;
                  // Ideally we must set did_previous_settings_promise_resolve_
                  // to false, but in this case the transport will be closed so
                  // it does not matter. I am trying to avoid taking another ref
                  // on self in this TrySeq.
-                 return absl::CancelledError(
-                     std::string(RFC9113::kSettingsTimeout));
+                 return absl::CancelledError(message);
                })));
   }
 

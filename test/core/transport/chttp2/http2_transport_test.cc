@@ -94,10 +94,10 @@ class TestsNeedingStreamObjects : public ::testing::Test {
         std::make_unique<CallInitiatorAndHandler>(
             MakeCallPair(std::move(client_initial_metadata), std::move(arena)));
     RefCountedPtr<Stream> stream = MakeRefCounted<Stream>(
-        call_pair->handler.StartCall(),
-        /*allow_true_binary_metadata_peer=*/true,
-        /*allow_true_binary_metadata_acked=*/true, transport_flow_control_);
-    stream->SetStreamId(stream_id);
+        call_pair->handler.StartCall(), transport_flow_control_);
+    stream->InitializeStream(stream_id,
+                             /*allow_true_binary_metadata_peer=*/true,
+                             /*allow_true_binary_metadata_acked=*/true);
     GRPC_CHECK_EQ(stream->stream_id, stream_id);
     stream_set_.push_back(std::move(stream));
     return stream_set_.back();
@@ -644,7 +644,7 @@ TEST_F(TestsNeedingStreamObjects,
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// Http2ReadContext tests
+// Read and Write helper tests
 
 class Http2ReadContextTest : public ::testing::Test {
  protected:
@@ -749,6 +749,55 @@ TEST_F(Http2ReadContextTest, PauseAndWake) {
                ". SetPause Pause Wake _ . SetPause Pause Wake _ . "
                "SetPause Pause Wake _ . SetPause Pause Wake _ . "
                "SetPause Pause Wake _ . EndRead Wake EndWrite ");
+}
+
+TEST(Http2CommonTransportTest, GetWriteArgsTest) {
+  Http2Settings settings;
+  // Default value of preferred_receive_crypto_message_size is 0, yields
+  // INT_MAX for max_frame_size.
+  PromiseEndpoint::WriteArgs args = GetWriteArgs(settings);
+  EXPECT_EQ(args.max_frame_size(), INT_MAX);
+
+  // If we set 0, it's clamped to min_preferred_receive_crypto_message_size.
+  settings.SetPreferredReceiveCryptoMessageSize(0);
+  args = GetWriteArgs(settings);
+  EXPECT_EQ(args.max_frame_size(),
+            Http2Settings::min_preferred_receive_crypto_message_size());
+
+  // If we set 1024, it's clamped to min_preferred_receive_crypto_message_size.
+  settings.SetPreferredReceiveCryptoMessageSize(1024);
+  args = GetWriteArgs(settings);
+  EXPECT_EQ(args.max_frame_size(),
+            Http2Settings::min_preferred_receive_crypto_message_size());
+
+  // If we set min_preferred_receive_crypto_message_size, it's clamped to
+  // min_preferred_receive_crypto_message_size.
+  settings.SetPreferredReceiveCryptoMessageSize(
+      Http2Settings::min_preferred_receive_crypto_message_size());
+  args = GetWriteArgs(settings);
+  EXPECT_EQ(args.max_frame_size(),
+            Http2Settings::min_preferred_receive_crypto_message_size());
+
+  // If we set min_preferred_receive_crypto_message_size + 1, it's within range.
+  settings.SetPreferredReceiveCryptoMessageSize(
+      Http2Settings::min_preferred_receive_crypto_message_size() + 1);
+  args = GetWriteArgs(settings);
+  EXPECT_EQ(args.max_frame_size(),
+            Http2Settings::min_preferred_receive_crypto_message_size() + 1);
+
+  // If we set to max value, it's within range.
+  settings.SetPreferredReceiveCryptoMessageSize(
+      Http2Settings::max_preferred_receive_crypto_message_size());
+  args = GetWriteArgs(settings);
+  EXPECT_EQ(args.max_frame_size(),
+            Http2Settings::max_preferred_receive_crypto_message_size());
+
+  // If we set value > max value, it's clamped to max value.
+  settings.SetPreferredReceiveCryptoMessageSize(
+      Http2Settings::max_preferred_receive_crypto_message_size() + 1u);
+  args = GetWriteArgs(settings);
+  EXPECT_EQ(args.max_frame_size(),
+            Http2Settings::max_preferred_receive_crypto_message_size());
 }
 
 }  // namespace testing
