@@ -249,9 +249,8 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Run(
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::StartThread() {
-  last_started_thread_.store(
-      grpc_core::Timestamp::Now().milliseconds_after_process_epoch(),
-      std::memory_order_relaxed);
+  ThreadState* worker = new ThreadState(shared_from_this());
+  bool success = false;
   grpc_core::Thread(
       "event_engine",
       [](void* arg) {
@@ -259,9 +258,18 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::StartThread() {
         worker->ThreadBody();
         delete worker;
       },
-      new ThreadState(shared_from_this()), nullptr,
+      worker, &success,
       grpc_core::Thread::Options().set_tracked(false).set_joinable(false))
       .Start();
+  if (success) {
+    last_started_thread_.store(
+        grpc_core::Timestamp::Now().milliseconds_after_process_epoch(),
+        std::memory_order_relaxed);
+  } else {
+    GRPC_TRACE_LOG(event_engine, INFO)
+        << "Starting new ThreadPool thread failed";
+    delete worker;
+  }
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Quiesce() {
@@ -391,23 +399,15 @@ WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::Lifeguard(
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
     LifeguardMain() {
-  while (true) {
-    if (pool_->IsForking()) break;
+  while (!pool_->IsForking() && !pool_->IsQuiesced()) {
     // If the pool is shut down, loop quickly until quiesced. Otherwise,
     // reduce the check rate if the pool is idle.
     if (pool_->IsShutdown()) {
-      if (pool_->IsQuiesced()) break;
-      if (MaybeStartNewThread()) {
-        // A new thread needed to be spawned to handle the workload.
-        // Wait just a small while before checking again to prevent a busy loop.
-        backoff_.Reset();
-      }
-      // Sleep for a bit.
       pool_->work_signal()->WaitWithTimeout(backoff_.NextAttemptDelay());
-      continue;
+    } else {
+      lifeguard_should_shut_down_->WaitForNotificationWithTimeout(
+          absl::Milliseconds(backoff_.NextAttemptDelay().millis()));
     }
-    lifeguard_should_shut_down_->WaitForNotificationWithTimeout(
-        absl::Milliseconds(backoff_.NextAttemptDelay().millis()));
     MaybeStartNewThread();
   }
   lifeguard_running_.store(false, std::memory_order_relaxed);
@@ -431,11 +431,11 @@ WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::~Lifeguard() {
   lifeguard_is_shut_down_ = std::make_unique<grpc_core::Notification>();
 }
 
-bool WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
+void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
     MaybeStartNewThread() {
   // No new threads are started when forking.
   // No new work is done when forking needs to begin.
-  if (pool_->forking_.load()) return false;
+  if (pool_->forking_.load()) return;
   const auto living_thread_count = pool_->living_thread_count()->count();
   // Wake an idle worker thread if there's global work to be had.
   if (pool_->busy_thread_count()->count() < living_thread_count) {
@@ -444,7 +444,7 @@ bool WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
       backoff_.Reset();
     }
     // Idle threads will eventually wake up for an attempt at work stealing.
-    return false;
+    return;
   }
   // No new threads if in the throttled state.
   // However, all workers are busy, so the Lifeguard should be more
@@ -454,19 +454,22 @@ bool WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
               pool_->last_started_thread_) <
       kTimeBetweenThrottledThreadStarts) {
     backoff_.Reset();
-    return false;
+    return;
   }
   // All workers are busy and the pool is not throttled. Start a new thread.
   // TODO(hork): new threads may spawn when there is no work in the global
   // queue, nor any work to steal. Add more sophisticated logic about when to
   // start a thread.
   GRPC_TRACE_LOG(event_engine, INFO)
-      << "Starting new ThreadPool thread due to backlog (total threads: "
-      << living_thread_count + 1;
+      << "Starting new ThreadPool thread due to backlog (current threads: "
+      << living_thread_count << ")";
+  // Starting a new thread may fail. If it does, it won't be counted in
+  // living_thread_count, so it will likely try to create the thread again
+  // the next time MaybeStartNewThread is called.
   pool_->StartThread();
   // Tell the lifeguard to monitor the pool more closely.
   backoff_.Reset();
-  return true;
+  return;
 }
 
 // -------- WorkStealingThreadPool::ThreadState --------
