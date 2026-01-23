@@ -18,7 +18,7 @@ import contextlib
 import enum
 import logging
 import sys
-from typing import Callable, Optional
+from typing import Callable, Optional, Union
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
@@ -1733,10 +1733,18 @@ CustomPrivateKeySign = Callable[
     bytes,
 ]
 
+CustomPrivateKeySignWithHandle = Callable[
+    [
+        bytes,
+        _cygrpc.SignatureAlgorithm,
+    ],
+    Union[bytes, _cygrpc.PyAsyncSigningHandle],
+]
+
 
 def ssl_channel_credentials_with_custom_signer(
     *,
-    private_key_sign_fn: CustomPrivateKeySign,
+    private_key_sign_fn: CustomPrivateKeySignWithHandle,
     root_certificates: Optional[bytes] = None,
     certificate_chain: bytes,
 ) -> ChannelCredentials:

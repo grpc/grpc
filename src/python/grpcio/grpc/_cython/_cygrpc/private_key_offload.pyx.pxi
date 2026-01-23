@@ -68,4 +68,18 @@ cdef shared_ptr[PrivateKeySigner] build_private_key_signer(py_user_func):
   py_private_key_signer = BuildPrivateKeySigner(async_sign_wrapper, <void*>py_user_func)
   return py_private_key_signer
 
+cdef shared_ptr[AsyncSigningHandle] create_async_signing_handle():
+  return make_shared[AsyncSigningHandle]()
+
+
+cdef class PyAsyncSigningHandleImpl(PyAsyncSigningHandle):
+    # cdef AsyncSigningHandle* c_handle # Pointer to the wrapped C instance
+
+    def __cinit__(self):
+        self.c_handle = make_shared[AsyncSigningHandle]()
+
+    def __dealloc__(self):
+      # Maybe need to handle shared_ptr here
+      pass
+
 

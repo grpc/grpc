@@ -14,7 +14,7 @@
 # distutils: language=c++
 
 from libcpp.string cimport string
-from libcpp.memory cimport shared_ptr
+from libcpp.memory cimport shared_ptr, make_shared
 
 cdef extern from "absl/status/status.h" namespace "absl":
     cdef enum AbslStatusCode "absl::StatusCode":
@@ -47,6 +47,8 @@ cdef extern from "absl/strings/string_view.h" namespace "absl":
 cdef extern from "grpc/private_key_signer.h" namespace "grpc_core":
     cdef cppclass PrivateKeySigner:
         pass
+    cdef cppclass AsyncSigningHandle:
+        AsyncSigningHandle()
     cdef enum class CSignatureAlgorithm "grpc_core::PrivateKeySigner::SignatureAlgorithm":
         kRsaPkcs1Sha256,
         kRsaPkcs1Sha384,
@@ -59,12 +61,24 @@ cdef extern from "grpc/private_key_signer.h" namespace "grpc_core":
         kRsaPssRsaeSha512
 
 cdef extern from "grpc/private_key_signer.h":
-    cdef cppclass AsyncSigningHandle:
-        pass
     cdef void grpc_tls_identity_pairs_add_pair_with_signer(
         grpc_tls_identity_pairs* pairs,
         shared_ptr[PrivateKeySigner] private_key_signer,
         const char* cert_chain)
+
+cdef class PyAsyncSigningHandle:
+    cdef shared_ptr[AsyncSigningHandle] c_handle # Pointer to the wrapped C instance
+
+    # def __cinit__(self):
+    #     self.c_instance = AsyncSigningHandle()
+    #     if self.c_instance == NULL:
+    #         raise MemoryError("Failed to create MyCClass instance")
+
+    # def __dealloc__(self):
+    #     if self.c_instance != NULL:
+    #         # destroy_my_c_class(self.c_instance)
+    #         self.c_instance = NULL
+
 
 cpdef enum SignatureAlgorithm:
     RSA_PKCS1_SHA256 = <int>CSignatureAlgorithm.kRsaPkcs1Sha256
