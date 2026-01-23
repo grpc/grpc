@@ -21,7 +21,7 @@ accessible to bazel builds.
 DOCKERIMAGE_CURRENT_VERSIONS = {
     "third_party/rake-compiler-dock/rake_aarch64-linux-gnu.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_aarch64-linux-gnu@sha256:630e8ee14181ad896a67bfba59168781a4081707762ad3b22fd424b0599a1099",
     "third_party/rake-compiler-dock/rake_aarch64-linux-musl.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_aarch64-linux-musl@sha256:a35685d4087732d3deecdc0f3214598deef6a8c94a44e15ed8b39851e6bd5241",
-    "third_party/rake-compiler-dock/rake_arm64-darwin.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_arm64-darwin:18a4fe844d2bca92db18b9ecd55a9101f82c5f07",
+    "third_party/rake-compiler-dock/rake_arm64-darwin.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_arm64-darwin@sha256:cf957c32dd8817d45d3ebb02e4b3c66fcbe4c38db812d2cdbba2d2cd642241a5",
     "third_party/rake-compiler-dock/rake_x64-mingw-ucrt.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_x64-mingw-ucrt@sha256:307bb7983dc3acebd1a7dde7433955d67863b675f6240d7f7729003d55765061",
     "third_party/rake-compiler-dock/rake_x86-linux-gnu.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_x86-linux-gnu@sha256:42a74d7b9413a217a5ac94dd42c6b9e8748df9901a445c5fce677c9d513f2add",
     "third_party/rake-compiler-dock/rake_x86-linux-musl.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rake_x86-linux-musl@sha256:c9f5d24cd75e1eb2d0f159c7a51dec05b7c13f07fa9a0b26618d842e9c6a01e1",
