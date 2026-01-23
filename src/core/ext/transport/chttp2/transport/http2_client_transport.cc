@@ -1773,7 +1773,6 @@ void Http2ClientTransport::CloseTransport() {
   transport_closed_latch_.Set();
   settings_->HandleTransportShutdown(event_engine_.get());
 
-  MutexLock lock(&transport_mutex_);
   // This is the only place where the general_party_ is reset.
   general_party_.reset();
 }
@@ -1902,40 +1901,21 @@ void Http2ClientTransport::AddData(channelz::DataSink sink) {
 
   event_engine_->Run([self = RefAsSubclass<Http2ClientTransport>(),
                       sink = std::move(sink)]() mutable {
-    bool is_party_null = false;
+    RefCountedPtr<Party> party = nullptr;
     {
-      // Apart from CloseTransport, this is the only place where a lock is taken
-      // to access general_party_. All other access to general_party_ happens
-      // on the general party itself and hence do not race with CloseTransport.
-      // TODO(akshitpatel) : [PH2][P4] : Check if a new mutex is needed to
-      // protect general_party_. Curently transport_mutex_ can is used in
-      // these places:
-      // 1. In promises running on the transport party
-      // 2. In AddData promise
-      // 3. In Orphan function.
-      // 4. Stream creation (this will be removed soon).
-      // Given that #1 is already serialized (guaranteed by party), #2 is on
-      // demand and #3 happens once for the lifetime of the transport while
-      // closing the transport, the contention should be minimal.
       MutexLock lock(&self->transport_mutex_);
-      // TODO(akshitpatel) : [PH2][P2] : There is still a potential for a race
-      // here where the general_party_ is reset between the lock being
-      // released and the spawn. We cannot just do a spawn inside the mutex as
-      // that may result in deadlock.
-      // Potential fix to hold a ref to the party inside the mutex and do a
-      // spawn outside the mutex. The only side effect is that this introduces
-      // an additional ref to the party other the transport's copy.
-      if (GPR_UNLIKELY(self->general_party_ == nullptr)) {
-        is_party_null = true;
+      if (GPR_LIKELY(!self->is_transport_closed_)) {
+        GRPC_DCHECK(self->general_party_ != nullptr);
+        party = self->general_party_;
+      } else {
         GRPC_HTTP2_CLIENT_DLOG
-            << "Http2ClientTransport::AddData general_party_ is "
-               "null. Transport is closed.";
+            << "Http2ClientTransport::AddData Transport is closed.";
       }
     }
 
     ExecCtx exec_ctx;
-    if (!is_party_null) {
-      self->SpawnAddChannelzData(self->general_party_, std::move(sink));
+    if (party != nullptr) {
+      self->SpawnAddChannelzData(std::move(party), std::move(sink));
     }
     self.reset();  // Cleanup with exec_ctx in scope
   });
