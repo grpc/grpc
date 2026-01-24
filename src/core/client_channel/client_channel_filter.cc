@@ -217,7 +217,7 @@ class ClientChannelFilter::CallData {
   grpc_closure* original_recv_trailing_metadata_ready_ = nullptr;
   grpc_closure recv_trailing_metadata_ready_;
 
-  RefCountedPtr<DynamicFilters> dynamic_filters_;
+  RefCountedPtr<const DynamicFilters> dynamic_filters_;
   RefCountedPtr<DynamicFilters::Call> dynamic_call_;
 
   BufferedCall buffered_call_;
@@ -1417,6 +1417,46 @@ void ClientChannelFilter::UpdateServiceConfigInControlPlaneLocked(
       << saved_config_selector_.get();
 }
 
+namespace {
+
+// Filter chain builder impl to inject into ConfigSelector.
+class LegacyFilterChainBuilder final : public FilterChainBuilder {
+ public:
+  LegacyFilterChainBuilder(bool enable_retries, const ChannelArgs& channel_args,
+                           const Blackboard* blackboard)
+      : enable_retries_(enable_retries),
+        channel_args_(channel_args),
+        blackboard_(blackboard) {}
+
+  absl::StatusOr<RefCountedPtr<FilterChain>> Build() override {
+    if (enable_retries_) {
+      filters_.push_back({&RetryFilter::kFilterVtable, nullptr});
+    } else {
+      filters_.push_back({&DynamicTerminationFilter::kFilterVtable, nullptr});
+    }
+    RefCountedPtr<DynamicFilters> dynamic_filters =
+        DynamicFilters::Create(channel_args_, std::move(filters_), blackboard_);
+    if (dynamic_filters == nullptr) {
+      return absl::InternalError("error constructing dynamic filter stack");
+    }
+    filters_.clear();
+    return dynamic_filters;
+  }
+
+ private:
+  void AddFilter(const FilterHandle& filter_handle,
+                 RefCountedPtr<const FilterConfig> config) override {
+    filter_handle.AddToBuilder(&filters_, std::move(config));
+  }
+
+  const bool enable_retries_;
+  const ChannelArgs channel_args_;
+  const Blackboard* blackboard_;
+  std::vector<FilterAndConfig> filters_;
+};
+
+}  // namespace
+
 void ClientChannelFilter::UpdateServiceConfigInDataPlaneLocked(
     const ChannelArgs& args) {
   // Grab ref to service config.
@@ -1437,19 +1477,15 @@ void ClientChannelFilter::UpdateServiceConfigInDataPlaneLocked(
       new_args.GetBool(GRPC_ARG_ENABLE_RETRIES).value_or(true);
   // Construct dynamic filter stack.
   auto new_blackboard = MakeRefCounted<Blackboard>();
-  std::vector<const grpc_channel_filter*> filters =
-      config_selector->GetFilters(blackboard_.get(), new_blackboard.get());
   if (enable_retries) {
     RetryFilter::UpdateBlackboard(*service_config, blackboard_.get(),
                                   new_blackboard.get());
-    filters.push_back(&RetryFilter::kVtable);
-  } else {
-    filters.push_back(&DynamicTerminationFilter::kFilterVtable);
   }
+  LegacyFilterChainBuilder filter_chain_builder(enable_retries, new_args,
+                                                new_blackboard.get());
+  config_selector->BuildFilterChains(filter_chain_builder, blackboard_.get(),
+                                     new_blackboard.get());
   blackboard_ = std::move(new_blackboard);
-  RefCountedPtr<DynamicFilters> dynamic_filters =
-      DynamicFilters::Create(new_args, std::move(filters), blackboard_.get());
-  GRPC_CHECK(dynamic_filters != nullptr);
   // Grab data plane lock to update service config.
   //
   // We defer unreffing the old values (and deallocating memory) until
@@ -1462,7 +1498,6 @@ void ClientChannelFilter::UpdateServiceConfigInDataPlaneLocked(
     // Old values will be unreffed after lock is released.
     service_config_.swap(service_config);
     config_selector_.swap(config_selector);
-    dynamic_filters_.swap(dynamic_filters);
     // Re-process queued calls asynchronously.
     ReprocessQueuedResolverCalls();
   }
@@ -1500,13 +1535,11 @@ void ClientChannelFilter::DestroyResolverAndLbPolicyLocked() {
     // after we release the lock.
     RefCountedPtr<ServiceConfig> service_config_to_unref;
     RefCountedPtr<ConfigSelector> config_selector_to_unref;
-    RefCountedPtr<DynamicFilters> dynamic_filters_to_unref;
     {
       MutexLock lock(&resolution_mu_);
       received_service_config_data_ = false;
       service_config_to_unref = std::move(service_config_);
       config_selector_to_unref = std::move(config_selector_);
-      dynamic_filters_to_unref = std::move(dynamic_filters_);
     }
     // Clear LB policy if set.
     if (lb_policy_ != nullptr) {
@@ -1849,14 +1882,14 @@ grpc_error_handle ClientChannelFilter::CallData::ApplyServiceConfigToCallLocked(
   auto* service_config_call_data =
       arena_->New<ClientChannelServiceConfigCallData>(arena_);
   // Use the ConfigSelector to determine the config for the call.
-  absl::Status call_config_status =
-      (*config_selector)
-          ->GetCallConfig(
-              {send_initial_metadata(), arena_, service_config_call_data});
-  if (!call_config_status.ok()) {
+  auto filter_chain = (*config_selector)
+                          ->GetCallConfig({send_initial_metadata(), arena_,
+                                           service_config_call_data});
+  if (!filter_chain.ok()) {
     return absl_status_to_grpc_error(
-        MaybeRewriteIllegalStatusCode(call_config_status, "ConfigSelector"));
+        MaybeRewriteIllegalStatusCode(filter_chain.status(), "ConfigSelector"));
   }
+  dynamic_filters_ = filter_chain->TakeAsSubclass<const DynamicFilters>();
   // Apply our own method params to the call.
   auto* method_params = static_cast<ClientChannelMethodParsedConfig*>(
       service_config_call_data->GetMethodParsedConfig(
@@ -1937,7 +1970,6 @@ bool ClientChannelFilter::CallData::CheckResolutionLocked(
   }
   // Result found.
   *config_selector = chand()->config_selector_;
-  dynamic_filters_ = chand()->dynamic_filters_;
   return true;
 }
 
@@ -2105,7 +2137,7 @@ void ClientChannelFilter::CallData::CreateDynamicCall() {
                                      call_start_time_, deadline_,
                                      arena_,           call_combiner_};
   grpc_error_handle error;
-  DynamicFilters* channel_stack = args.channel_stack.get();
+  const DynamicFilters* channel_stack = args.channel_stack.get();
   GRPC_TRACE_LOG(client_channel_call, INFO)
       << "chand=" << chand() << " calld=" << this
       << ": creating dynamic call stack on channel_stack=" << channel_stack;

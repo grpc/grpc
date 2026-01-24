@@ -1327,6 +1327,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/filter/blackboard.cc )
   s.files += %w( src/core/filter/blackboard.h )
   s.files += %w( src/core/filter/filter_args.h )
+  s.files += %w( src/core/filter/filter_chain.h )
   s.files += %w( src/core/filter/fused_filters.cc )
   s.files += %w( src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc )
   s.files += %w( src/core/handshaker/endpoint_info/endpoint_info_handshaker.h )

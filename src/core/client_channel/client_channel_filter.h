@@ -276,8 +276,6 @@ class ClientChannelFilter final {
   RefCountedPtr<ServiceConfig> service_config_ ABSL_GUARDED_BY(resolution_mu_);
   RefCountedPtr<ConfigSelector> config_selector_
       ABSL_GUARDED_BY(resolution_mu_);
-  RefCountedPtr<DynamicFilters> dynamic_filters_
-      ABSL_GUARDED_BY(resolution_mu_);
 
   //
   // Fields related to LB picks.  Guarded by lb_mu_.

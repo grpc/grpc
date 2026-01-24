@@ -101,7 +101,8 @@ inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
-inline bool IsPickFirstReadyToConnectingEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_READY_TO_CONNECTING
+inline bool IsPickFirstReadyToConnectingEnabled() { return true; }
 inline bool IsPipelinedReadSecureEndpointEnabled() { return false; }
 inline bool IsPollsetAlternativeEnabled() { return false; }
 inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
@@ -111,7 +112,8 @@ inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsPromiseFilterSendCancelMetadataEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 inline bool IsReturnPreexistingErrorsEnabled() { return false; }
-inline bool IsRrWrrConnectFromRandomIndexEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_RR_WRR_CONNECT_FROM_RANDOM_INDEX
+inline bool IsRrWrrConnectFromRandomIndexEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
@@ -173,7 +175,8 @@ inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
-inline bool IsPickFirstReadyToConnectingEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_READY_TO_CONNECTING
+inline bool IsPickFirstReadyToConnectingEnabled() { return true; }
 inline bool IsPipelinedReadSecureEndpointEnabled() { return false; }
 inline bool IsPollsetAlternativeEnabled() { return false; }
 inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
@@ -183,7 +186,8 @@ inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsPromiseFilterSendCancelMetadataEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 inline bool IsReturnPreexistingErrorsEnabled() { return false; }
-inline bool IsRrWrrConnectFromRandomIndexEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_RR_WRR_CONNECT_FROM_RANDOM_INDEX
+inline bool IsRrWrrConnectFromRandomIndexEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
@@ -245,7 +249,8 @@ inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
-inline bool IsPickFirstReadyToConnectingEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_READY_TO_CONNECTING
+inline bool IsPickFirstReadyToConnectingEnabled() { return true; }
 inline bool IsPipelinedReadSecureEndpointEnabled() { return false; }
 inline bool IsPollsetAlternativeEnabled() { return false; }
 inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
@@ -255,7 +260,8 @@ inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsPromiseFilterSendCancelMetadataEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 inline bool IsReturnPreexistingErrorsEnabled() { return false; }
-inline bool IsRrWrrConnectFromRandomIndexEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_RR_WRR_CONNECT_FROM_RANDOM_INDEX
+inline bool IsRrWrrConnectFromRandomIndexEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
