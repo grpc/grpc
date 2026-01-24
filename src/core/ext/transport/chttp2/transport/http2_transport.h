@@ -67,6 +67,10 @@ struct CloseStreamArgs {
   bool close_writes;
 };
 
+// TODO(akshitpatel) [PH2][P3] : Write a way to measure the total size of a
+// transport object. Reference :
+// https://github.com/grpc/grpc/pull/41294/files#diff-c685cc4847f228327938326e2a45083a2d0845bacff0ac004bd802027a670c4e
+
 ///////////////////////////////////////////////////////////////////////////////
 // Read and Write helpers
 
@@ -203,6 +207,10 @@ ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame,
 bool ProcessIncomingWindowUpdateFrameFlowControl(
     const Http2WindowUpdateFrame& frame,
     chttp2::TransportFlowControl& flow_control, RefCountedPtr<Stream> stream);
+
+void MaybeAddTransportWindowUpdateFrame(
+    chttp2::TransportFlowControl& flow_control,
+    std::vector<Http2Frame>& frames);
 
 void MaybeAddStreamWindowUpdateFrame(RefCountedPtr<Stream> stream,
                                      std::vector<Http2Frame>& frames);

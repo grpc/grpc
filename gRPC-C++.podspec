@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.77.0-dev'
+  version = '1.79.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -501,12 +501,16 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-gen/envoy/config/cluster/v3/outlier_detection.upb_minitable.h',
                       'src/core/ext/upb-gen/envoy/config/common/matcher/v3/matcher.upb.h',
                       'src/core/ext/upb-gen/envoy/config/common/matcher/v3/matcher.upb_minitable.h',
+                      'src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb.h',
+                      'src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb_minitable.h',
                       'src/core/ext/upb-gen/envoy/config/core/v3/address.upb.h',
                       'src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.h',
                       'src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb.h',
                       'src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb_minitable.h',
                       'src/core/ext/upb-gen/envoy/config/core/v3/base.upb.h',
                       'src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.h',
+                      'src/core/ext/upb-gen/envoy/config/core/v3/cel.upb.h',
+                      'src/core/ext/upb-gen/envoy/config/core/v3/cel.upb_minitable.h',
                       'src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb.h',
                       'src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.h',
                       'src/core/ext/upb-gen/envoy/config/core/v3/event_service_config.upb.h',
@@ -825,9 +829,11 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-gen/envoy/config/cluster/v3/filter.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/config/cluster/v3/outlier_detection.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/config/common/matcher/v3/matcher.upbdefs.h',
+                      'src/core/ext/upbdefs-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/address.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/backoff.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/base.upbdefs.h',
+                      'src/core/ext/upbdefs-gen/envoy/config/core/v3/cel.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/config_source.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/event_service_config.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/extension.upbdefs.h',
@@ -1890,12 +1896,16 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-gen/envoy/config/cluster/v3/outlier_detection.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/config/common/matcher/v3/matcher.upb.h',
                               'src/core/ext/upb-gen/envoy/config/common/matcher/v3/matcher.upb_minitable.h',
+                              'src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb.h',
+                              'src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/address.upb.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/base.upb.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.h',
+                              'src/core/ext/upb-gen/envoy/config/core/v3/cel.upb.h',
+                              'src/core/ext/upb-gen/envoy/config/core/v3/cel.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/event_service_config.upb.h',
@@ -2214,9 +2224,11 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-gen/envoy/config/cluster/v3/filter.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/cluster/v3/outlier_detection.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/common/matcher/v3/matcher.upbdefs.h',
+                              'src/core/ext/upbdefs-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/address.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/backoff.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/base.upbdefs.h',
+                              'src/core/ext/upbdefs-gen/envoy/config/core/v3/cel.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/config_source.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/event_service_config.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/extension.upbdefs.h',

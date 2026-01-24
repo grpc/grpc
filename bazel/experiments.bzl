@@ -111,6 +111,9 @@ EXPERIMENTS = {
                 "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
             ],
+            "cpp_end2end_test_client_ph2": [
+                "promise_based_http2_client_transport",
+            ],
             "cpp_lb_end2end_test": [
                 "pick_first_ready_to_connecting",
                 "rr_wrr_connect_from_random_index",
@@ -223,6 +226,9 @@ EXPERIMENTS = {
                 "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
             ],
+            "cpp_end2end_test_client_ph2": [
+                "promise_based_http2_client_transport",
+            ],
             "cpp_lb_end2end_test": [
                 "pick_first_ready_to_connecting",
                 "rr_wrr_connect_from_random_index",
@@ -334,6 +340,9 @@ EXPERIMENTS = {
             "cpp_end2end_test": [
                 "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
+            ],
+            "cpp_end2end_test_client_ph2": [
+                "promise_based_http2_client_transport",
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_ready_to_connecting",

@@ -19,7 +19,6 @@ licenses(["notice"])
 grpc_package(
     name = "test/cpp/end2end",
     features = [
-        "layering_check",
         "parse_headers",
     ],
     visibility = "public",
@@ -337,7 +336,10 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    tags = [
+        "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
+    ],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -590,6 +592,7 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
         # Will fail as sync health check service is enabled by default internally, which is however
         # disabled in OSS:
         # b/117623310.
@@ -692,7 +695,10 @@ grpc_cc_test(
         "absl/memory",
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    tags = [
+        "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -761,12 +767,12 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_cc_grpc",
-        "//src/proto/grpc/testing/xds/v3:orca_service_cc_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/test_util:postmortem",
         "//test/core/test_util:test_lb_policies",
         "//test/cpp/util:test_util",
+        "@com_github_cncf_xds//xds/data/orca/v3:pkg_cc_proto",
     ],
 )
 
@@ -783,6 +789,7 @@ grpc_cc_test(
     flaky = True,
     tags = [
         "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
         "no_test_ios",
     ],
     deps = [
@@ -835,7 +842,10 @@ grpc_cc_test(
         "absl/strings",
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    tags = [
+        "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
+    ],
     deps = [
         ":test_service_impl",
         "//:backoff",
@@ -961,7 +971,10 @@ grpc_cc_test(
         "gtest",
         "absl/memory",
     ],
-    tags = ["cpp_end2end_test"],
+    tags = [
+        "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
+    ],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -1126,7 +1139,10 @@ grpc_cc_test(
         "absl/log",
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    tags = [
+        "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -1175,6 +1191,7 @@ grpc_cc_test(
     shard_count = 5,
     tags = [
         "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
         "no_windows",
     ],  # TODO(jtattermusch): fix test on windows
     deps = [
@@ -1231,6 +1248,7 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
         # This test only works with the open source protobuf.
         "grpc:broken-internally",
     ],
@@ -1258,7 +1276,10 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    tags = [
+        "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
+    ],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -1283,7 +1304,10 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    tags = [
+        "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
+    ],
     deps = [
         ":test_service_impl",
         "//:exec_ctx",
@@ -1310,7 +1334,10 @@ grpc_cc_test(
         "absl/strings",
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    tags = [
+        "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
+    ],
     deps = [
         "//:grpc++",
         "//:grpc++_reflection",
@@ -1334,7 +1361,10 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    tags = [
+        "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
+    ],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -1369,7 +1399,10 @@ grpc_cc_test(
         "gtest",
         "libssl",
     ],
-    tags = ["cpp_end2end_test"],
+    tags = [
+        "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
