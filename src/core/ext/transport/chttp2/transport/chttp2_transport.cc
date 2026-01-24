@@ -48,6 +48,7 @@
 #include "src/core/call/metadata_batch.h"
 #include "src/core/call/metadata_info.h"
 #include "src/core/channelz/property_list.h"
+#include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"

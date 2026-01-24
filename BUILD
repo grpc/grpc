@@ -3991,7 +3991,9 @@ grpc_cc_library(
         "//src/core:client_channel/retry_filter.cc",
         "//src/core:client_channel/retry_filter_legacy_call_data.cc",
         "//src/core:client_channel/subchannel.cc",
+        "//src/core:client_channel/subchannel_connectivity_state.cc",
         "//src/core:client_channel/subchannel_stream_client.cc",
+        "//src/core:client_channel/subchannel_stream_limiter.cc",
     ],
     hdrs = [
         "//src/core:client_channel/buffered_call.h",
@@ -4005,8 +4007,10 @@ grpc_cc_library(
         "//src/core:client_channel/retry_filter.h",
         "//src/core:client_channel/retry_filter_legacy_call_data.h",
         "//src/core:client_channel/subchannel.h",
+        "//src/core:client_channel/subchannel_connectivity_state.h",
         "//src/core:client_channel/subchannel_interface_internal.h",
         "//src/core:client_channel/subchannel_stream_client.h",
+        "//src/core:client_channel/subchannel_stream_limiter.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -5083,6 +5087,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channelz_property_list",
         "//src/core:chttp2_flow_control",
+        "//src/core:client_channel_internal_header",
         "//src/core:closure",
         "//src/core:connectivity_state",
         "//src/core:context_list_entry",
