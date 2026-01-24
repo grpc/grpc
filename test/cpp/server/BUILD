@@ -36,7 +36,7 @@ grpc_cc_test(
         "grpc:fails-internally",
     ],
     deps = [
-        "//:grpc++_unsecure",
+        "//:grpc++",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/test_util:grpc_test_util_base",
@@ -56,7 +56,7 @@ grpc_cc_test(
         "grpc:fails-internally",
     ],
     deps = [
-        "//:grpc++_unsecure",
+        "//:grpc++",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/test_util:grpc_test_util_unsecure",

@@ -32,7 +32,7 @@ grpc_cc_test(
     ],
     tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows RBE
     deps = [
-        "//:grpc++_unsecure",
+        "//:grpc++",
         "//src/core:notification",
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/test_util:grpc_test_util_unsecure",
