@@ -1175,7 +1175,7 @@ LIBGRPC_SRC = \
     src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc \
     src/core/handshaker/handshaker.cc \
     src/core/handshaker/handshaker_registry.cc \
-    src/core/handshaker/http_connect/http_connect_handshaker.cc \
+    src/core/handshaker/http_connect/http_connect_client_handshaker.cc \
     src/core/handshaker/http_connect/http_proxy_mapper.cc \
     src/core/handshaker/http_connect/xds_http_proxy_mapper.cc \
     src/core/handshaker/proxy_mapper_registry.cc \
@@ -1818,6 +1818,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/compression.h \
     include/grpc/create_channel_from_endpoint.h \
     include/grpc/credentials.h \
+    include/grpc/credentials_cpp.h \
     include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \
     include/grpc/event_engine/extensible.h \

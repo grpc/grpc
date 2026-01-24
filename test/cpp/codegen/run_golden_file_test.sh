@@ -15,5 +15,5 @@
 
 set -eux
 
-GENERATED_PB_H_DIR="${TEST_SRCDIR}/com_github_grpc_grpc/test/cpp/codegen/"
+GENERATED_PB_H_DIR="${TEST_SRCDIR}/${TEST_WORKSPACE:-com_github_grpc_grpc}/test/cpp/codegen/"
 test/cpp/codegen/golden_file_test --generated_file_path="$GENERATED_PB_H_DIR"

@@ -57,6 +57,7 @@
 #include "test/core/test_util/test_call_creds.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/counted_service.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/credentials.h"
 #include "test/cpp/util/test_config.h"
@@ -124,15 +125,15 @@ class BackendServiceImpl : public BackendService {
               EchoResponse* response) override {
     // The backend should not see a test user agent configured at the client
     // using GRPC_ARG_GRPCLB_CHANNEL_ARGS.
-    auto it = context->client_metadata().find("user-agent");
-    if (it != context->client_metadata().end()) {
+    auto [it, end] = context->client_metadata().equal_range("user-agent");
+    if (it != end) {
       EXPECT_FALSE(it->second.starts_with(kGrpclbSpecificUserAgentString));
     }
     // Backend should receive the call credentials metadata.
-    auto call_credentials_entry =
-        context->client_metadata().find(kCallCredsMdKey);
-    EXPECT_NE(call_credentials_entry, context->client_metadata().end());
-    if (call_credentials_entry != context->client_metadata().end()) {
+    auto [call_credentials_entry, call_credentials_end] =
+        context->client_metadata().equal_range(kCallCredsMdKey);
+    EXPECT_NE(call_credentials_entry, call_credentials_end);
+    if (call_credentials_entry != call_credentials_end) {
       EXPECT_EQ(call_credentials_entry->second, kCallCredsMdValue);
     }
     IncreaseRequestCount();
@@ -297,15 +298,14 @@ class BalancerServiceImpl : public BalancerService {
     // The loadbalancer should see a test user agent because it was
     // specifically configured at the client using
     // GRPC_ARG_GRPCLB_CHANNEL_ARGS
-    auto it = context->client_metadata().find("user-agent");
-    EXPECT_TRUE(it != context->client_metadata().end());
-    if (it != context->client_metadata().end()) {
+    auto [it, end] = context->client_metadata().equal_range("user-agent");
+    EXPECT_TRUE(it != end);
+    if (it != end) {
       EXPECT_THAT(std::string(it->second.data(), it->second.length()),
                   ::testing::StartsWith(kGrpclbSpecificUserAgentString));
     }
     // Balancer shouldn't receive the call credentials metadata.
-    EXPECT_EQ(context->client_metadata().find(kCallCredsMdKey),
-              context->client_metadata().end());
+    EXPECT_EQ(context->client_metadata().count(kCallCredsMdKey), 0);
     // Read initial request.
     LoadBalanceRequest request;
     if (!stream->Read(&request)) {
@@ -561,6 +561,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpclb_channel_args = grpclb_channel_args.Set(
         GRPC_ARG_PRIMARY_USER_AGENT_STRING, kGrpclbSpecificUserAgentString);
     ChannelArguments args;
+    ApplyCommonChannelArguments(args);
     if (fallback_timeout_ms > 0) {
       args.SetGrpclbFallbackTimeout(fallback_timeout_ms *
                                     grpc_test_slowdown_factor());

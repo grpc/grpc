@@ -35,6 +35,7 @@
     <file baseinstalldir="/" name="include/grpc/compression.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/create_channel_from_endpoint.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/credentials.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/credentials_cpp.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/endpoint_config.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/event_engine.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/extensible.h" role="src" />
@@ -1317,8 +1318,8 @@
     <file baseinstalldir="/" name="src/core/handshaker/handshaker_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/handshaker_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/handshaker_registry.h" role="src" />
-    <file baseinstalldir="/" name="src/core/handshaker/http_connect/http_connect_handshaker.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/handshaker/http_connect/http_connect_handshaker.h" role="src" />
+    <file baseinstalldir="/" name="src/core/handshaker/http_connect/http_connect_client_handshaker.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/handshaker/http_connect/http_connect_client_handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/http_connect/http_proxy_mapper.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/http_connect/http_proxy_mapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/http_connect/xds_http_proxy_mapper.cc" role="src" />

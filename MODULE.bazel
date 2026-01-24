@@ -28,14 +28,9 @@ bazel_dep(name = "bazel_skylib", version = "1.8.1")
 bazel_dep(name = "boringssl", version = "0.20241024.0")  # mistmatched 20241211
 bazel_dep(name = "c-ares", version = "1.19.1", repo_name = "com_github_cares_cares")
 bazel_dep(name = "envoy_api", version = "0.0.0-20251216-6ef568c")
-bazel_dep(name = "googleapis", version = "0.0.0-20240819-fe8ba054a", repo_name = "com_google_googleapis")
-
-# TODO(weizheyuan): These two dependencies needed to be added when the
-# xDS protos were updated, possibly due to bzlmod picking up a new
-# version of googleapis.  As part of our bzlmod migration, figure out why
-# they are needed and try to figure out a better alternative.
 bazel_dep(name = "googleapis-cc", version = "1.0.0")
 bazel_dep(name = "googleapis-grpc-cc", version = "1.0.0")
+bazel_dep(name = "googleapis-python", version = "1.0.0")
 bazel_dep(name = "googletest", version = "1.17.0", repo_name = "com_google_googletest")
 bazel_dep(name = "opencensus-cpp", version = "0.0.0-20230502-50eb5de.bcr.2", repo_name = "io_opencensus_cpp")
 bazel_dep(name = "openssl", version = "3.3.1.bcr.1")
@@ -50,17 +45,8 @@ bazel_dep(name = "rules_proto", version = "7.0.2")
 bazel_dep(name = "xds", version = "0.0.0-20240423-555b57e", repo_name = "com_github_cncf_xds")  # mismatched 20231116
 bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
 
-switched_rules = use_extension("@com_google_googleapis//:extensions.bzl", "switched_rules")
-switched_rules.use_languages(
-    cc = True,
-    grpc = True,
-    python = True,
-)
-
 # Development dependencies
 # ========================
-
-bazel_dep(name = "fuzztest", version = "20241028.0", dev_dependency = True, repo_name = "com_google_fuzztest")  # mistmached 2023-05-16
 bazel_dep(name = "google_benchmark", version = "1.9.0", dev_dependency = True, repo_name = "com_github_google_benchmark")
 bazel_dep(name = "rules_shell", version = "0.4.0", dev_dependency = True)
 
@@ -111,4 +97,32 @@ http_archive(
     sha256 = "bf6f56b36d8bc9156e518eb1cc37a146284082fa53522033f772aefbecfd15fc",
     strip_prefix = "typing_extensions-4.12.2",
     url = "https://github.com/python/typing_extensions/archive/4.12.2.tar.gz",
+)
+
+# Provide repo @com_google_fuzztest.
+include("//bazel:com_google_fuzztest.MODULE.bazel")
+
+# Provides repo @grpc_custom_exec_properties.
+include("//bazel:grpc_custom_exec_properties.MODULE.bazel")
+
+# -- google_cloud_cpp 2.35.0 related repos, which requires a modified version of googleapis, hence the version pinning.
+bazel_dep(name = "googleapis", version = "0.0.0-20251003-2193a2bf", repo_name = "com_google_googleapis")
+single_version_override(
+    module_name = "googleapis",
+    patch_strip = 1,
+    patches = [
+        "//bazel:googleapis/patches/fix_google_cloud_cpp.patch",
+    ],
+    version = "0.0.0-20251003-2193a2bf",
+)
+
+bazel_dep(name = "google_cloud_cpp", version = "2.35.0", dev_dependency = True)
+archive_override(
+    module_name = "google_cloud_cpp",
+    integrity = "sha256-geooz55bsDLTVrAYdAnzCxA1+OpbUwZ16iSMimwAcKo=",
+    strip_prefix = "google-cloud-cpp-2.35.0",
+    urls = [
+        "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.35.0.tar.gz",
+        "https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.35.0.tar.gz",
+    ],
 )

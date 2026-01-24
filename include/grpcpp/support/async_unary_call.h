@@ -148,7 +148,7 @@ class ClientAsyncResponseReaderHelper {
           auto* single_buf = static_cast<SingleBufType*>(single_buf_view);
           single_buf->set_output_tag(tag);
           single_buf->RecvInitialMetadata(context);
-          call->PerformOps(single_buf);
+          single_buf->FillOps(call);
         };
 
     // Note that this function goes one step further than the previous one
@@ -175,7 +175,7 @@ class ClientAsyncResponseReaderHelper {
         finish_buf->RecvMessage(static_cast<R*>(msg));
         finish_buf->AllowNoMessage();
         finish_buf->ClientRecvStatus(context, status);
-        call->PerformOps(finish_buf);
+        finish_buf->FillOps(call);
       } else {
         auto* single_buf = static_cast<SingleBufType*>(single_buf_view);
         single_buf->set_output_tag(tag);
@@ -183,7 +183,7 @@ class ClientAsyncResponseReaderHelper {
         single_buf->RecvMessage(static_cast<R*>(msg));
         single_buf->AllowNoMessage();
         single_buf->ClientRecvStatus(context, status);
-        call->PerformOps(single_buf);
+        single_buf->FillOps(call);
       }
     };
   }
@@ -298,7 +298,7 @@ class ServerAsyncResponseWriter final
     : public grpc::internal::ServerAsyncStreamingInterface {
  public:
   explicit ServerAsyncResponseWriter(grpc::ServerContext* ctx)
-      : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}
+      : call_(), ctx_(ctx) {}
 
   /// See \a ServerAsyncStreamingInterface::SendInitialMetadata for semantics.
   ///
@@ -317,7 +317,7 @@ class ServerAsyncResponseWriter final
       meta_buf_.set_compression_level(ctx_->compression_level());
     }
     ctx_->sent_initial_metadata_ = true;
-    call_.PerformOps(&meta_buf_);
+    meta_buf_.FillOps(&call_);
   }
 
   /// Indicate that the stream is to be finished and request notification
@@ -358,7 +358,7 @@ class ServerAsyncResponseWriter final
     } else {
       finish_buf_.ServerSendStatus(&ctx_->trailing_metadata_, status);
     }
-    call_.PerformOps(&finish_buf_);
+    finish_buf_.FillOps(&call_);
   }
 
   /// Indicate that the stream is to be finished with a non-OK status,
@@ -389,7 +389,7 @@ class ServerAsyncResponseWriter final
       ctx_->sent_initial_metadata_ = true;
     }
     finish_buf_.ServerSendStatus(&ctx_->trailing_metadata_, status);
-    call_.PerformOps(&finish_buf_);
+    finish_buf_.FillOps(&call_);
   }
 
  private:
