@@ -82,6 +82,8 @@
   default: true
 - name: monitoring_experiment
   default: true
+- name: pick_first_ready_to_connecting
+  default: true
 - name: pollset_alternative
   default: false
 - name: prioritize_finished_requests
