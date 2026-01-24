@@ -243,7 +243,7 @@ class grpc_ssl_server_security_connector
           server_credentials->config().pem_key_cert_pairs;
       options.num_key_cert_pairs =
           server_credentials->config().num_key_cert_pairs;
-      if (server_credentials->config().pem_root_certs != nullptr) {
+      if (!server_credentials->config().pem_root_certs.empty()) {
         options.root_cert_info = std::make_shared<RootCertInfo>(
             server_credentials->config().pem_root_certs);
       }
@@ -357,12 +357,12 @@ class grpc_ssl_server_security_connector
     tsi_ssl_server_handshaker_factory* new_handshaker_factory = nullptr;
     const grpc_ssl_server_credentials* server_creds =
         static_cast<const grpc_ssl_server_credentials*>(this->server_creds());
-    GRPC_DCHECK_NE(config->pem_root_certs, nullptr);
+    GRPC_DCHECK(!config->pem_root_certs.empty());
     tsi_ssl_server_handshaker_options options;
     options.pem_key_cert_pairs = grpc_convert_grpc_to_tsi_cert_pairs(
         config->pem_key_cert_pairs, config->num_key_cert_pairs);
     options.num_key_cert_pairs = config->num_key_cert_pairs;
-    if (config->pem_root_certs != nullptr) {
+    if (!config->pem_root_certs.empty()) {
       options.root_cert_info =
           std::make_shared<RootCertInfo>(config->pem_root_certs);
     }

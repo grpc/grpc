@@ -31,7 +31,7 @@
 
 struct grpc_ssl_config {
   tsi_ssl_pem_key_cert_pair* pem_key_cert_pair;
-  char* pem_root_certs;
+  std::string pem_root_certs;
   verify_peer_options verify_options;
   grpc_tls_version min_tls_version = grpc_tls_version::TLS1_2;
   grpc_tls_version max_tls_version = grpc_tls_version::TLS1_3;
