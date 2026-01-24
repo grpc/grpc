@@ -19,6 +19,9 @@ import %workspace%/tools/remote_build/include/test_config_common.bazelrc
 
 common --enable_bzlmod=true
 common --enable_workspace=false
-common --ignore_dev_dependency
+# TODO(weizheyuan): Re-enable this check once we upgrade all of the
+# transitive dependencies that are currently at mismatched versions.
+#common --check_direct_dependencies=error
+common --ignore_dev_dependency=false
 
 build --jobs=200

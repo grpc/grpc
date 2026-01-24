@@ -63,31 +63,6 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
-    name = "tdigest_test",
-    srcs = ["tdigest_test.cc"],
-    external_deps = [
-        "gtest",
-        "absl/random",
-        "absl/container:flat_hash_map",
-        "benchmark",
-    ],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//src/core:tdigest",
-    ],
-)
-
-grpc_cc_benchmark(
-    name = "bm_tdigest",
-    srcs = ["bm_tdigest.cc"],
-    monitoring = HISTORY,
-    deps = [
-        "//src/core:tdigest",
-    ],
-)
-
 grpc_cc_benchmark(
     name = "bm_latent_see",
     srcs = ["bm_latent_see.cc"],
@@ -904,17 +879,6 @@ grpc_cc_test(
         "//src/core:notification",
         "//src/core:wait_for_single_owner",
     ],
-)
-
-grpc_fuzz_test(
-    name = "tdigest_fuzztest",
-    srcs = ["tdigest_fuzztest.cc"],
-    external_deps = [
-        "fuzztest",
-        "fuzztest_main",
-        "gtest",
-    ],
-    deps = ["//src/core:tdigest"],
 )
 
 grpc_fuzz_test(

@@ -694,10 +694,11 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["grpc:no-internal-poller"],
     deps = [
         ":test_timeout",
+        "//:grpc",
         "//src/core:default_event_engine",
         "//src/core:time",
-        "//:grpc",
     ],
 )

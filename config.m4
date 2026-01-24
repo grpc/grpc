@@ -200,7 +200,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/transport/ping_callbacks.cc \
     src/core/ext/transport/chttp2/transport/ping_promise.cc \
     src/core/ext/transport/chttp2/transport/ping_rate_policy.cc \
-    src/core/ext/transport/chttp2/transport/security_frame.cc \
     src/core/ext/transport/chttp2/transport/stream_lists.cc \
     src/core/ext/transport/chttp2/transport/transport_common.cc \
     src/core/ext/transport/chttp2/transport/varint.cc \
@@ -228,9 +227,11 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-gen/envoy/config/cluster/v3/filter.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/cluster/v3/outlier_detection.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/common/matcher/v3/matcher.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/core/v3/cel.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/event_service_config.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/extension.upb_minitable.c \
@@ -403,9 +404,11 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-gen/envoy/config/cluster/v3/filter.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/cluster/v3/outlier_detection.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/common/matcher/v3/matcher.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/address.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/backoff.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/base.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/core/v3/cel.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/config_source.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/event_service_config.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/extension.upbdefs.c \
@@ -553,7 +556,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc \
     src/core/handshaker/handshaker.cc \
     src/core/handshaker/handshaker_registry.cc \
-    src/core/handshaker/http_connect/http_connect_handshaker.cc \
+    src/core/handshaker/http_connect/http_connect_client_handshaker.cc \
     src/core/handshaker/http_connect/http_proxy_mapper.cc \
     src/core/handshaker/http_connect/xds_http_proxy_mapper.cc \
     src/core/handshaker/proxy_mapper_registry.cc \
@@ -1487,7 +1490,7 @@ if test "$PHP_GRPC" != "no"; then
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
     -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
-    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.77.0dev\""')
+    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.79.0dev\""')
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/call)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz/v2tov1)
@@ -1537,6 +1540,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/config/bootstrap/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/config/cluster/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/config/common/matcher/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/config/core/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/config/endpoint/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/envoy/config/listener/v3)
@@ -1599,6 +1603,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/config/bootstrap/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/config/cluster/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/config/common/matcher/v3)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/config/common/mutation_rules/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/config/core/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/config/endpoint/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/envoy/config/listener/v3)

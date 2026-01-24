@@ -348,7 +348,7 @@ class Fuzzer {
   std::map<std::string, std::set<EndpointWatcher*>> endpoint_watchers_;
 };
 
-static const char* kBasicListener = R"pb(
+static const char* kBasicApiListener = R"pb(
   bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
   actions {
     start_watch {
@@ -371,22 +371,36 @@ static const char* kBasicListener = R"pb(
         type_url: "type.googleapis.com/envoy.config.listener.v3.Listener"
         resources {
           [type.googleapis.com/envoy.config.listener.v3.Listener] {
-            name: "server.example.com"
+            name: "service.example.com"
             api_listener {
               api_listener {
                 [type.googleapis.com/envoy.extensions.filters.network
                      .http_connection_manager.v3.HttpConnectionManager] {
+                  stat_prefix: "trafficdirector"
+                  rds {
+                    config_source {
+                      ads {}
+                      resource_api_version: V3
+                    }
+                    route_config_name: "URL_MAP/12347_arcus-um-good-1_0_service.example.com"
+                  }
                   http_filters {
-                    name: "router"
+                    name: "envoy.filters.http.fault"
                     typed_config {
                       [type.googleapis.com/
-                       envoy.extensions.filters.http.router.v3.Router] {}
+                       envoy.extensions.filters.http.fault.v3.HTTPFault] {}
                     }
                   }
-                  rds {
-                    route_config_name: "route_config"
-                    config_source { self {} }
+                  http_filters {
+                    name: "envoy.filters.http.router"
+                    typed_config {
+                      [type.googleapis.com/envoy.extensions.filters.http.router
+                           .v3.Router] { suppress_envoy_headers: true }
+                    }
                   }
+                  upgrade_configs { upgrade_type: "websocket" }
+                  normalize_path { value: true }
+                  merge_slashes: true
                 }
               }
             }
@@ -420,12 +434,40 @@ static const char* kBasicRouteConfig = R"pb(
         type_url: "type.googleapis.com/envoy.config.route.v3.RouteConfiguration"
         resources {
           [type.googleapis.com/envoy.config.route.v3.RouteConfiguration] {
-            name: "route_config1"
+            name: "URL_MAP/12347_arcus-um-good-1"
             virtual_hosts {
-              domains: "*"
+              name: "host_3402712176314620860"
+              domains: "service.example.com"
+              routes {
+                match { prefix: "/greeter/" }
+                route {
+                  weighted_clusters {
+                    clusters {
+                      name: "cloud-internal-istio:cloud_mp_1234_3456"
+                      weight { value: 40 }
+                    }
+                    clusters {
+                      name: "cloud-internal-istio:cloud_mp_1234_3456"
+                      weight { value: 60 }
+                    }
+                    total_weight { value: 100 }
+                  }
+                  timeout { seconds: 30 }
+                }
+                name: "URL_MAP/12347_arcus-um-good-1-route-0"
+              }
               routes {
                 match { prefix: "" }
-                route { cluster: "cluster1" }
+                route {
+                  cluster: "cloud-internal-istio:cloud_mp_1234_3456"
+                  timeout { seconds: 30 }
+                  retry_policy {
+                    retry_on: "gateway-error"
+                    num_retries { value: 1 }
+                    per_try_timeout { seconds: 30 }
+                  }
+                }
+                name: "URL_MAP/12347_arcus-um-good-1-route-1"
               }
             }
           }
@@ -458,12 +500,46 @@ static const char* kBasicCluster = R"pb(
         type_url: "type.googleapis.com/envoy.config.cluster.v3.Cluster"
         resources {
           [type.googleapis.com/envoy.config.cluster.v3.Cluster] {
-            name: "cluster1"
+            name: "cloud-internal-istio:cloud_mp_1234_3456"
             type: EDS
             eds_cluster_config {
-              eds_config { ads {} }
-              service_name: "endpoint1"
+              eds_config {
+                ads {}
+                initial_fetch_timeout { seconds: 15 }
+                resource_api_version: V3
+              }
             }
+            connect_timeout { seconds: 30 }
+            circuit_breakers {
+              thresholds {
+                max_connections { value: 2147483647 }
+                max_pending_requests { value: 2147483647 }
+                max_requests { value: 2147483647 }
+                max_retries { value: 2147483647 }
+              }
+            }
+            http2_protocol_options { max_concurrent_streams { value: 100 } }
+            metadata {
+              filter_metadata {
+                key: "com.google.trafficdirector"
+                value {
+                  fields {
+                    key: "backend_service_name"
+                    value { string_value: "bs-good3" }
+                  }
+                  fields {
+                    key: "backend_service_project_number"
+                    value { number_value: 1234 }
+                  }
+                }
+              }
+            }
+            common_lb_config {
+              healthy_panic_threshold { value: 1 }
+              locality_weighted_lb_config {}
+            }
+            alt_stat_name: "/projects/1234/global/backendServices/bs-good3"
+            lrs_server { self {} }
           }
         }
       }
@@ -514,6 +590,101 @@ static const char* kBasicEndpoint = R"pb(
   }
 )pb";
 
+static const char* kBasicSocketListener = R"pb(
+  bootstrap: "{\"xds_servers\": [{\"server_uri\":\"xds.example.com:443\", \"channel_creds\":[{\"type\": \"fake\"}]}]}"
+  actions {
+    start_watch {
+      resource_type { listener {} }
+      resource_name: "server.example.com"
+    }
+  }
+  actions {
+    read_message_from_client {
+      stream_id { ads {} }
+      ok: true
+    }
+  }
+  actions {
+    send_message_to_client {
+      stream_id { ads {} }
+      response {
+        version_info: "1"
+        nonce: "A"
+        type_url: "type.googleapis.com/envoy.config.listener.v3.Listener"
+        resources {
+          [type.googleapis.com/envoy.config.listener.v3.Listener] {
+            name: "path/to/resource?udpa.resource.listening_address=127.0.0.1:8080"
+            reuse_port: true
+            address { socket_address { address: "127.0.0.1" port_value: 8080 } }
+            filter_chains {
+              filters {
+                name: "envoy.http_connection_manager"
+                typed_config {
+                  [type.googleapis.com/envoy.extensions.filters.network
+                       .http_connection_manager.v3.HttpConnectionManager] {
+                    stat_prefix: "endpoint_config_selector-1"
+                    route_config {
+                      name: "inbound|endpoint_config_selector-1-8080"
+                      virtual_hosts {
+                        name: "inbound|endpoint_config_selector-1-8080"
+                        domains: "*"
+                        routes {
+                          match { prefix: "/" }
+                          non_forwarding_action {}
+                          decorator {
+                            operation: "endpoint_config_selector-1/*"
+                          }
+                        }
+                      }
+                    }
+                    http_filters {
+                      name: "envoy.filters.http.router"
+                      typed_config {
+                        [type.googleapis.com/
+                         envoy.extensions.filters.http.router.v3.Router] {}
+                      }
+                    }
+                    forward_client_cert_details: APPEND_FORWARD
+                    set_current_client_cert_details {
+                      subject { value: true }
+                      dns: true
+                      uri: true
+                    }
+                    upgrade_configs { upgrade_type: "websocket" }
+                  }
+                }
+              }
+              transport_socket {
+                name: "envoy.transport_sockets.tls"
+                typed_config {
+                  [type.googleapis.com/envoy.extensions.transport_sockets.tls.v3
+                       .DownstreamTlsContext] {
+                    common_tls_context {
+                      combined_validation_context {
+                        default_validation_context {}
+                        validation_context_certificate_provider_instance {
+                          instance_name: "gcp_id_2"
+                          certificate_name: "ROOTCA"
+                        }
+                      }
+                      tls_certificate_certificate_provider_instance {
+                        instance_name: "gcp_id_1"
+                        certificate_name: "DEFAULT"
+                      }
+                    }
+                    require_client_certificate { value: true }
+                  }
+                }
+              }
+            }
+            traffic_direction: INBOUND
+          }
+        }
+      }
+    }
+  }
+)pb";
+
 auto ParseTestProto(const std::string& proto) {
   xds_client_fuzzer::Msg msg;
   CHECK(google::protobuf::TextFormat::ParseFromString(proto, &msg));
@@ -528,8 +699,9 @@ void Fuzz(const xds_client_fuzzer::Msg& message) {
 }
 FUZZ_TEST(XdsClientFuzzer, Fuzz)
     .WithDomains(::fuzztest::Arbitrary<xds_client_fuzzer::Msg>().WithSeeds(
-        {ParseTestProto(kBasicCluster), ParseTestProto(kBasicEndpoint),
-         ParseTestProto(kBasicListener), ParseTestProto(kBasicRouteConfig)}));
+        {ParseTestProto(kBasicApiListener), ParseTestProto(kBasicRouteConfig),
+         ParseTestProto(kBasicCluster), ParseTestProto(kBasicEndpoint),
+         ParseTestProto(kBasicSocketListener)}));
 
 TEST(XdsClientFuzzer, XdsServersEmpty) {
   Fuzz(ParseTestProto(R"pb(
