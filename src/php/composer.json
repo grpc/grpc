@@ -5,16 +5,28 @@
   "version": "1.79.0",
   "require": {
     "php": ">=7.1.0",
+    "ext-grpc": "*",
     "google/protobuf": "^v3.3.0"
   },
   "require-dev": {
-    "google/auth": "^v1.3.0"
+    "google/auth": "^v1.3.0",
+    "phpunit/phpunit": "^9.5.9"
   },
   "autoload": {
     "psr-4": {
-      "Grpc\\": "lib/Grpc/",
-      "": ["tests/interop/",
-           "tests/generated_code/"]
+      "Grpc\\": "lib/Grpc/"
     }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "": [
+        "tests/generated_code/",
+        "tests/interop/",
+        "tests/unit_tests"
+      ]
+    }
+  },
+  "scripts": {
+    "tests:unit": "phpunit -c phpunit.xml"
   }
 }
