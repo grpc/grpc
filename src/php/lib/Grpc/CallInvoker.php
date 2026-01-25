@@ -18,15 +18,62 @@
  */
 namespace Grpc;
 
+use Google\Protobuf\Internal\Message;
+use Grpc\Internal\InterceptorChannel;
+
 /**
  * CallInvoker is used to pass the self defined channel into the stub,
  * while intercept each RPC with the channel accessible.
+ *
+ * @template T of Message
  */
 interface CallInvoker
 {
+    /**
+     * @param string $hostname
+     * @param array<string, mixed> $opts
+     *
+     * @return Channel|InterceptorChannel
+     */
     public function createChannelFactory($hostname, $opts);
+
+    /**
+     * @param Channel|InterceptorChannel $channel
+     * @param string $method
+     * @param array{0: class-string<T>, 1: string} $deserialize
+     * @param array<string, mixed> $options
+     *
+     * @return UnaryCall
+     */
     public function UnaryCall($channel, $method, $deserialize, $options);
+
+    /**
+     * @param Channel|InterceptorChannel $channel
+     * @param string $method
+     * @param array{0: class-string<T>, 1: string} $deserialize
+     * @param array<string, mixed> $options
+     *
+     * @return ClientStreamingCall
+     */
     public function ClientStreamingCall($channel, $method, $deserialize, $options);
+
+    /**
+     * @param Channel|InterceptorChannel $channel
+     * @param string $method
+     * @param array{0: class-string<T>, 1: string} $deserialize
+     * @param array<string, mixed> $options
+     *
+     * @return ServerStreamingCall
+     */
     public function ServerStreamingCall($channel, $method, $deserialize, $options);
+
+    /**
+     * @param Channel|InterceptorChannel $channel
+     * @param string $method
+     * @param array{0: class-string<T>, 1: string} $deserialize
+     * @param array<string, mixed> $options
+     *
+     * @return BidiStreamingCall
+     */
     public function BidiStreamingCall($channel, $method, $deserialize, $options);
 }

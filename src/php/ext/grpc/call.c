@@ -196,11 +196,11 @@ zval *grpc_php_wrap_call(grpc_call *wrapped, bool owned TSRMLS_DC) {
 
 /**
  * Constructs a new instance of the Call class.
- * @param Channel $channel_obj The channel to associate the call with.
+ * @param Channel $channel The channel to associate the call with.
  *                             Must not be closed.
  * @param string $method The method to call
- * @param Timeval $deadline_obj The deadline for completing the call
- * @param string $host_override = "" The host is set by user (optional)
+ * @param Timeval $deadline The deadline for completing the call
+ * @param string|null $host_override The host is set by user (optional)
  */
 PHP_METHOD(Call, __construct) {
   zval *channel_obj;
@@ -259,7 +259,7 @@ PHP_METHOD(Call, __construct) {
 
 /**
  * Start a batch of RPC actions.
- * @param array $array Array of actions to take
+ * @param array $ops Array of actions to take
  * @return object Object with results of all actions
  */
 PHP_METHOD(Call, startBatch) {
@@ -569,7 +569,7 @@ PHP_METHOD(Call, cancel) {
 
 /**
  * Set the CallCredentials for this call.
- * @param CallCredentials $creds_obj The CallCredentials object
+ * @param CallCredentials $credentials The CallCredentials object
  * @return int The error code
  */
 PHP_METHOD(Call, setCredentials) {
