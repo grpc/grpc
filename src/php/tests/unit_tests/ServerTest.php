@@ -1,4 +1,5 @@
 <?php
+
 /*
  *
  * Copyright 2015 gRPC authors.
@@ -46,8 +47,8 @@ class ServerTest extends \PHPUnit\Framework\TestCase
     public function testConstructorWithArray()
     {
         // key of array must be string
-         $this->server = new Grpc\Server(['ip' => '127.0.0.1',
-                                          'port' => '8080', ]);
+        $this->server = new Grpc\Server(['ip' => '127.0.0.1',
+                                         'port' => '8080', ]);
         $this->assertNotNull($this->server);
     }
 
@@ -56,11 +57,13 @@ class ServerTest extends \PHPUnit\Framework\TestCase
         $this->server = new Grpc\Server();
         $port = $this->server->addHttp2Port('0.0.0.0:0');
         $this->server->start();
-        $channel = new Grpc\Channel('localhost:'.$port,
-             [
+        $channel = new Grpc\Channel(
+            'localhost:'.$port,
+            [
                  'force_new' => true,
                  'credentials' => Grpc\ChannelCredentials::createInsecure()
-             ]);
+             ]
+        );
 
         $deadline = Grpc\Timeval::infFuture();
         $call = new Grpc\Call($channel, 'phony_method', $deadline);
@@ -85,9 +88,10 @@ class ServerTest extends \PHPUnit\Framework\TestCase
     private function createSslObj()
     {
         $server_credentials = Grpc\ServerCredentials::createSsl(
-             null,
-             file_get_contents(dirname(__FILE__).'/../data/server1.key'),
-             file_get_contents(dirname(__FILE__).'/../data/server1.pem'));
+            null,
+            file_get_contents(dirname(__FILE__).'/../data/server1.key'),
+            file_get_contents(dirname(__FILE__).'/../data/server1.pem')
+        );
 
         return $server_credentials;
     }
