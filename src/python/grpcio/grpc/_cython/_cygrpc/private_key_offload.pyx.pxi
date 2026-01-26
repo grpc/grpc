@@ -139,6 +139,11 @@ cdef shared_ptr[PrivateKeySigner] build_private_key_signer(py_user_func):
   py_private_key_signer = BuildPrivateKeySigner(async_sign_wrapper, <void*>py_user_func)
   return py_private_key_signer
 
+cdef shared_ptr[PrivateKeySigner] build_private_key_signer_with_cancellation(py_user_func, py_cancellation_func):
+  py_private_key_signer = BuildPrivateKeySignerWithCancellation(async_sign_wrapper, <void*>py_user_func, cancel_wrapper, <void*>py_cancellation_func)
+  return py_private_key_signer
+
+
 # cdef shared_ptr[AsyncSigningHandle] create_async_signing_handle():
 #   return make_shared[AsyncSigningHandleImpl]()
 

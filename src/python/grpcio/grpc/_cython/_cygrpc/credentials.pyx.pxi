@@ -188,19 +188,22 @@ cdef class SSLSessionCacheLRU:
 
 cdef class SSLChannelCredentials(ChannelCredentials):
 
-  def __cinit__(self, pem_root_certificates, private_key, certificate_chain, private_key_signer=None):
+  def __cinit__(self, pem_root_certificates, private_key, certificate_chain, private_key_signer=None, private_key_cancel=None):
     if pem_root_certificates is not None and not isinstance(pem_root_certificates, bytes):
       raise TypeError('expected certificate to be bytes, got %s' % (type(pem_root_certificates)))
     self._pem_root_certificates = pem_root_certificates
     self._private_key = private_key
     self._certificate_chain = certificate_chain
     self._private_key_signer = private_key_signer
+    self._private_key_cancel = private_key_cancel
     # This gets passed around C++, make sure it stays
     Py_INCREF(self._private_key_signer)
+    Py_INCREF(self._private_key_cancel)
 
   def __dealloc__(self):
     # We manually increased the reference count, decrease it on dealloc of this object
     Py_DECREF(self._private_key_signer)
+    Py_DECREF(self._private_key_cancel)
 
   cdef grpc_channel_credentials *c(self) except *:
     cdef const char *c_pem_root_certificates
@@ -218,7 +221,10 @@ cdef class SSLChannelCredentials(ChannelCredentials):
       c_private_key = self._private_key or <const char*>NULL
       c_cert_chain = self._certificate_chain or <const char*>NULL
       if self._private_key_signer:
-        c_private_key_signer = build_private_key_signer(self._private_key_signer)
+        if (self._private_key_cancel):
+          c_private_key_signer = build_private_key_signer_with_cancellation(self._private_key_signer, self._private_key_cancel)
+        else:
+          c_private_key_signer = build_private_key_signer(self._private_key_signer)
         grpc_tls_identity_pairs_add_pair_with_signer(c_tls_identity_pairs, c_private_key_signer, c_cert_chain)
       else:
         grpc_tls_identity_pairs_add_pair(c_tls_identity_pairs, c_private_key, c_cert_chain)

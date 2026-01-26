@@ -1757,6 +1757,19 @@ def ssl_channel_credentials_with_custom_signer(
     )
 
 
+def ssl_channel_credentials_with_custom_signer_with_cancellation(
+    *,
+    private_key_sign_fn: CustomPrivateKeySignWithHandle,
+    root_certificates: Optional[bytes] = None,
+    certificate_chain: bytes,
+) -> ChannelCredentials:
+    return ChannelCredentials(
+        _cygrpc.SSLChannelCredentials(
+            root_certificates, None, certificate_chain, private_key_sign_fn
+        )
+    )
+
+
 def xds_channel_credentials(fallback_credentials=None):
     """Creates a ChannelCredentials for use with xDS. This is an EXPERIMENTAL
       API.
