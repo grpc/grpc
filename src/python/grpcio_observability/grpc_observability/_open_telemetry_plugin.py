@@ -14,7 +14,7 @@
 
 from typing import AnyStr, Callable, Dict, Iterable, List, Optional
 
-# pytype: disable=pyi-error
+
 from grpc_observability import _open_telemetry_observability
 from grpc_observability._observability import OptionalLabelType
 from opentelemetry.metrics import MeterProvider

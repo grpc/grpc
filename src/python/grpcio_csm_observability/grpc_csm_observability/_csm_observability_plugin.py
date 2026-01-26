@@ -22,7 +22,7 @@ from grpc_observability._open_telemetry_plugin import OpenTelemetryLabelInjector
 from grpc_observability._open_telemetry_plugin import OpenTelemetryPlugin
 from grpc_observability._open_telemetry_plugin import OpenTelemetryPluginOption
 
-# pytype: disable=pyi-error
+
 from opentelemetry.metrics import MeterProvider
 from opentelemetry.resourcedetector.gcp_resource_detector import (
     GoogleCloudResourceDetector,
