@@ -14,28 +14,37 @@
 
 #include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"
 
+#include <grpc/byte_buffer.h>
+#include <grpc/credentials.h>
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/slice_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 #include <grpc/support/port_platform.h>
 
 #include <cstdint>
 #include <memory>
-#include <random>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "src/core/call/metadata.h"
-#include "src/core/call/metadata_batch.h"
+#include "src/core/channelz/channelz.h"
+#include "src/core/config/core_configuration.h"
+#include "src/core/ext/transport/chaotic_good/config.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
+#include "src/core/ext/transport/chaotic_good/pending_connection.h"
 #include "src/core/ext/transport/chaotic_good/server_transport.h"
+#include "src/core/ext/transport/chaotic_good/tcp_frame_header.h"
+#include "src/core/ext/transport/chaotic_good/tcp_frame_transport.h"
 #include "src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h"
 #include "src/core/handshaker/handshaker.h"
+#include "src/core/handshaker/handshaker_registry.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/debug/trace_impl.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/event_engine/extensions/chaotic_good_extension.h"
 #include "src/core/lib/event_engine/extensions/supports_fd.h"
 #include "src/core/lib/event_engine/posix.h"
@@ -44,36 +53,44 @@
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/utils.h"
+#include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/event_engine_wakeup_scheduler.h"
 #include "src/core/lib/promise/if.h"
-#include "src/core/lib/promise/join.h"
-#include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/server/server.h"
-#include "src/core/telemetry/metrics.h"
 #include "src/core/transport/auth_context.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/status_helper.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
+#include "src/core/util/uri.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
-#include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -559,16 +576,10 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
         auto& ep = self->connection_->endpoint_;
         auto socket_node =
             TcpFrameTransport::MakeSocketNode(self->connection_->args(), ep);
-        auto frame_transport = MakeOrphanable<TcpFrameTransport>(
-            config.MakeTcpFrameTransportOptions(), std::move(ep),
-            config.TakePendingDataEndpoints(),
-            MakeRefCounted<TransportContext>(
-                self->connection_->handshake_result_args(),
-                std::move(socket_node)));
         return self->connection_->listener_->server_->SetupTransport(
             new ChaoticGoodServerTransport(
-                self->connection_->handshake_result_args(),
-                std::move(frame_transport), config.MakeMessageChunker()),
+                self->connection_->handshake_result_args(), config,
+                std::move(ep), std::move(socket_node)),
             nullptr, self->connection_->handshake_result_args());
       });
 }

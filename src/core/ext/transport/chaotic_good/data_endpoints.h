@@ -35,6 +35,7 @@
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/util/ref_counted.h"
 #include "src/core/util/seq_bit_set.h"
 
 namespace grpc_core {
@@ -461,7 +462,8 @@ class Endpoint final {
 }  // namespace data_endpoints_detail
 
 // Collection of data connections.
-class DataEndpoints final : public channelz::DataSource {
+class DataEndpoints final : public channelz::DataSource,
+                            public RefCounted<DataEndpoints> {
  public:
   using ReadTicket = data_endpoints_detail::InputQueue::ReadTicket;
 

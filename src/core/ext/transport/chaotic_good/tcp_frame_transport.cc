@@ -14,23 +14,44 @@
 
 #include "src/core/ext/transport/chaotic_good/tcp_frame_transport.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/slice.h>
 #include <sys/types.h>
 
 #include <cstdint>
+#include <string>
+#include <utility>
 
+#include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chaotic_good/control_endpoint.h"
+#include "src/core/ext/transport/chaotic_good/data_endpoints.h"
+#include "src/core/ext/transport/chaotic_good/frame.h"
+#include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"
-#include "src/core/ext/transport/chaotic_good/serialize_little_endian.h"
+#include "src/core/ext/transport/chaotic_good/tcp_frame_header.h"
 #include "src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h"
 #include "src/core/ext/transport/chaotic_good/transport_context.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/debug/trace_impl.h"
+#include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/promise/if.h"
-#include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/loop.h"
+#include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/mpsc.h"
+#include "src/core/lib/promise/party.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/race.h"
-#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport_framing_endpoint_extension.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/types/variant.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -47,23 +68,20 @@ TransportFramingEndpointExtension* GetTransportFramingEndpointExtension(
 // TcpFrameTransport
 
 TcpFrameTransport::TcpFrameTransport(
-    Options options, PromiseEndpoint control_endpoint,
-    std::vector<PendingConnection> pending_data_endpoints,
+    Options options, RefCountedPtr<ControlEndpoint> control_endpoint,
+    RefCountedPtr<DataEndpoints> data_endpoints,
     TransportContextPtr ctx)
-    : DataSource(ctx->socket_node),
+    : channelz::DataSource(ctx->socket_node),
       ctx_(ctx),
-      control_endpoint_(std::move(control_endpoint), ctx, ztrace_collector_),
-      data_endpoints_(std::move(pending_data_endpoints), ctx,
-                      options.encode_alignment, options.decode_alignment,
-                      ztrace_collector_, options.enable_tracing,
-                      options.scheduler_config),
+      control_endpoint_(std::move(control_endpoint)),
+      data_endpoints_(std::move(data_endpoints)),
       options_(options) {
   auto* transport_framing_endpoint_extension =
       GetTransportFramingEndpointExtension(
-          *control_endpoint_.GetEventEngineEndpoint());
+          *control_endpoint_->GetEventEngineEndpoint());
   if (transport_framing_endpoint_extension != nullptr) {
     transport_framing_endpoint_extension->SetSendFrameCallback(
-        control_endpoint_.SecureFrameWriterCallback());
+        control_endpoint_->SecureFrameWriterCallback());
   }
   SourceConstructed();
 }
@@ -74,12 +92,12 @@ auto TcpFrameTransport::WriteFrame(MpscQueued<OutgoingFrame> queued_frame) {
   FrameHeader header = frame.MakeHeader();
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD: WriteFrame to:"
-      << ResolvedAddressToString(control_endpoint_.GetPeerAddress())
+      << ResolvedAddressToString(control_endpoint_->GetPeerAddress())
              .value_or("<<unknown peer address>>")
       << " " << frame.ToString();
   return If(
       // If we have no data endpoints, OR this is a small payload
-      data_endpoints_.empty() ||
+      data_endpoints_->empty() ||
           header.payload_length <= options_.inlined_payload_size_threshold,
       // ... then write it to the control endpoint
       [this, &header, &frame]() {
@@ -90,7 +108,7 @@ auto TcpFrameTransport::WriteFrame(MpscQueued<OutgoingFrame> queued_frame) {
         ztrace_collector_->Append(WriteFrameHeaderTrace{hdr});
         hdr.Serialize(output.AddTiny(TcpFrameHeader::kFrameHeaderSize));
         frame.SerializePayload(output);
-        return control_endpoint_.Write(std::move(output));
+        return control_endpoint_->Write(std::move(output));
       },
       // ... otherwise write it to a data connection
       [this, header, &queued_frame]() mutable {
@@ -102,8 +120,8 @@ auto TcpFrameTransport::WriteFrame(MpscQueued<OutgoingFrame> queued_frame) {
             << "CHAOTIC_GOOD: Send control frame " << hdr.ToString();
         hdr.Serialize(control_bytes.AddTiny(TcpFrameHeader::kFrameHeaderSize));
         ztrace_collector_->Append(WriteFrameHeaderTrace{hdr});
-        data_endpoints_.Write(tag, std::move(queued_frame));
-        return control_endpoint_.Write(std::move(control_bytes));
+        data_endpoints_->Write(tag, std::move(queued_frame));
+        return control_endpoint_->Write(std::move(control_bytes));
       });
 }
 
@@ -129,14 +147,14 @@ auto TcpFrameTransport::WriteLoop(MpscReceiver<OutgoingFrame> frames) {
 auto TcpFrameTransport::ReadFrameBytes() {
   return Loop([this]() {
     return TrySeq(
-        control_endpoint_.ReadSlice(TcpFrameHeader::kFrameHeaderSize),
+        control_endpoint_->ReadSlice(TcpFrameHeader::kFrameHeaderSize),
         [this](Slice read_buffer) {
           auto frame_header =
               TcpFrameHeader::Parse(reinterpret_cast<const uint8_t*>(
                   GRPC_SLICE_START_PTR(read_buffer.c_slice())));
           GRPC_TRACE_LOG(chaotic_good, INFO)
               << "CHAOTIC_GOOD: ReadHeader from:"
-              << ResolvedAddressToString(control_endpoint_.GetPeerAddress())
+              << ResolvedAddressToString(control_endpoint_->GetPeerAddress())
                      .value_or("<<unknown peer address>>")
               << " "
               << (frame_header.ok() ? frame_header->ToString()
@@ -155,7 +173,7 @@ auto TcpFrameTransport::ReadFrameBytes() {
               // call to get scheduled time to read the payload).
               [this, frame_header]() {
                 return Map(
-                    control_endpoint_.Read(frame_header.header.payload_length),
+                    control_endpoint_->Read(frame_header.header.payload_length),
                     [frame_header, this](absl::StatusOr<SliceBuffer> payload)
                         -> absl::StatusOr<LoopCtl<IncomingFrame>> {
                       if (!payload.ok()) return payload.status();
@@ -163,7 +181,7 @@ auto TcpFrameTransport::ReadFrameBytes() {
                           FrameType::kTcpSecurityFrame) {
                         auto* transport_framing_endpoint_extension =
                             GetTransportFramingEndpointExtension(
-                                *control_endpoint_.GetEventEngineEndpoint());
+                                *control_endpoint_->GetEventEngineEndpoint());
                         if (transport_framing_endpoint_extension != nullptr) {
                           transport_framing_endpoint_extension->ReceiveFrame(
                               std::move(*payload));
@@ -187,7 +205,7 @@ auto TcpFrameTransport::ReadFrameBytes() {
                 }
                 return IncomingFrame(
                     frame_header.header,
-                    data_endpoints_.Read(frame_header.payload_tag).Await());
+                    data_endpoints_->Read(frame_header.payload_tag).Await());
               });
         });
   });
@@ -199,12 +217,12 @@ auto TcpFrameTransport::UntilClosed(Promise promise) {
                   [self = RefAsSubclass<TcpFrameTransport>()](Empty) {
                     return absl::UnavailableError("Frame transport closed");
                   }),
-              data_endpoints_.AwaitClosed(), std::move(promise));
+              data_endpoints_->AwaitClosed(), std::move(promise));
 }
 
 void TcpFrameTransport::Start(Party* party, MpscReceiver<OutgoingFrame> frames,
                               RefCountedPtr<FrameTransportSink> sink) {
-  data_endpoints_.SetMpscProbe(frames.MakeProbe());
+  data_endpoints_->SetMpscProbe(frames.MakeProbe());
   auto write_party = Party::Make(party->arena()->Ref());
   write_party->Spawn(
       "tcp-write",
