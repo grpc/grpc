@@ -67,6 +67,7 @@ EXTERNAL_LINKS = [
 ]
 
 PROTOBUF_PROTO_PREFIX = "@com_google_protobuf//src/"
+PROTOBUF_GO_PROTO_PREFIX = "@com_google_protobuf//go:"
 
 # will be added to include path when building grpcio_tools
 CC_INCLUDES = [
@@ -97,6 +98,7 @@ COPY_FILES_SOURCE_TARGET_PAIRS = [
         "third_party/protobuf/upb_generator",
         "third_party/protobuf/upb_generator",
     ),
+    ("third_party/protobuf/go", "third_party/protobuf/src"),
     (
         "third_party/protobuf/third_party/utf8_range",
         "third_party/protobuf/third_party/utf8_range",
@@ -137,6 +139,7 @@ BAZEL_DEPS_COMMON_PROTOS_QUERIES = [
     "@com_google_protobuf//:well_known_type_protos",
     # has both plugin.proto and descriptor.proto
     "@com_google_protobuf//:compiler_plugin_proto",
+    "@com_google_protobuf//go:go_features_proto_srcs",
 ]
 
 
@@ -224,11 +227,17 @@ def _generate_deps_file_content():
     raw_proto_files = []
     for target in BAZEL_DEPS_COMMON_PROTOS_QUERIES:
         raw_proto_files += _bazel_query(target)
-    proto_files = [
-        name[len(PROTOBUF_PROTO_PREFIX) :].replace(":", "/")
-        for name in raw_proto_files
-        if name.endswith(".proto") and name.startswith(PROTOBUF_PROTO_PREFIX)
-    ]
+    proto_files = []
+    for name in raw_proto_files:
+        if name.endswith(".proto"):
+            if name.startswith(PROTOBUF_PROTO_PREFIX):
+                proto_files.append(
+                    name[len(PROTOBUF_PROTO_PREFIX) :].replace(":", "/")
+                )
+            elif name.startswith(PROTOBUF_GO_PROTO_PREFIX):
+                proto_files.append(
+                    name[len(PROTOBUF_GO_PROTO_PREFIX) :].replace(":", "/")
+                )
 
     commit_hash = protobuf_submodule_commit_hash()
     commit_hash_expr = COMMIT_HASH_PREFIX + commit_hash + COMMIT_HASH_SUFFIX

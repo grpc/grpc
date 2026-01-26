@@ -1,0 +1,12 @@
+// demo.proto
+edition = "2023";
+
+import "google/protobuf/go_features.proto";
+
+option go_package = "foo.com/demo";
+
+option features.(pb.go).api_level = API_OPAQUE;
+
+message Demo {
+  string name = 1;
+}
