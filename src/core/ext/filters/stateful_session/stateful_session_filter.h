@@ -70,7 +70,7 @@ class XdsOverrideHostAttribute
 class StatefulSessionFilter
     : public ImplementChannelFilter<StatefulSessionFilter> {
  public:
-  static const grpc_channel_filter kFilter;
+  static const grpc_channel_filter kFilterVtable;
 
   static absl::string_view TypeName() { return "stateful_session_filter"; }
 

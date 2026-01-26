@@ -106,6 +106,14 @@ class PublishToAppEncoder {
     Append(W3CTraceParentMetadata::key(), slice);
   }
 
+  void Encode(XForwardedForMetadata, const Slice& slice) {
+    Append(XForwardedForMetadata::key(), slice);
+  }
+
+  void Encode(XForwardedHostMetadata, const Slice& slice) {
+    Append(XForwardedHostMetadata::key(), slice);
+  }
+
  private:
   void Append(absl::string_view key, int64_t value) {
     Append(StaticSlice::FromStaticString(key).c_slice(),

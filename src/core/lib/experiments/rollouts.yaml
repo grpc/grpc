@@ -42,6 +42,8 @@
 
 - name: call_tracer_in_transport
   default: true
+- name: call_tracer_send_initial_metadata_is_an_annotation
+  default: true
 - name: chaotic_good_connect_deadline
   default: true
 - name: chaotic_good_framing_layer
@@ -80,6 +82,8 @@
   default: true
 - name: monitoring_experiment
   default: true
+- name: pick_first_ready_to_connecting
+  default: true
 - name: pollset_alternative
   default: false
 - name: prioritize_finished_requests
@@ -88,6 +92,10 @@
   default: false
 - name: promise_based_http2_server_transport
   default: false
+- name: promise_filter_send_cancel_metadata
+  default: false
+- name: rr_wrr_connect_from_random_index
+  default: true
 - name: schedule_cancellation_over_write
   default: false
 - name: skip_clear_peer_on_cancellation

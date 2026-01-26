@@ -279,7 +279,7 @@ CLIENT_CHANNEL_TEST(StartCall) {
 }
 
 // A filter that adds metadata foo=bar.
-class TestFilter {
+class TestFilter : public ImplementChannelFilter<TestFilter> {
  public:
   class Call {
    public:
@@ -301,6 +301,10 @@ class TestFilter {
     }
   };
 
+  static const grpc_channel_filter kFilterVtable;
+
+  static absl::string_view TypeName() { return "test_filter"; }
+
   static absl::StatusOr<std::unique_ptr<TestFilter>> Create(
       const ChannelArgs& /*args*/, ChannelFilter::Args /*filter_args*/) {
     return std::make_unique<TestFilter>();
@@ -314,6 +318,9 @@ const NoInterceptor TestFilter::Call::OnServerToClientMessage;
 const NoInterceptor TestFilter::Call::OnServerTrailingMetadata;
 const NoInterceptor TestFilter::Call::OnFinalize;
 
+const grpc_channel_filter TestFilter::kFilterVtable =
+    MakePromiseBasedFilter<TestFilter, FilterEndpoint::kClient, 0>();
+
 // A config selector that adds TestFilter as a dynamic filter.
 class TestConfigSelector : public ConfigSelector {
  public:
@@ -322,19 +329,24 @@ class TestConfigSelector : public ConfigSelector {
     return kFactory.Create();
   }
 
-  void AddFilters(InterceptionChainBuilder& builder,
-                  const Blackboard* /*old_blackboard*/,
-                  Blackboard* /*new_blackboard*/) override {
-    builder.Add<TestFilter>(nullptr);
+  void BuildFilterChains(FilterChainBuilder& builder,
+                         const Blackboard* /*old_blackboard*/,
+                         Blackboard* /*new_blackboard*/) override {
+    builder.AddFilter<TestFilter>(nullptr);
+    filter_chain_ = builder.Build();
   }
 
-  absl::Status GetCallConfig(GetCallConfigArgs /*args*/) override {
-    return absl::OkStatus();
+  absl::StatusOr<RefCountedPtr<const FilterChain>> GetCallConfig(
+      GetCallConfigArgs /*args*/) override {
+    return filter_chain_;
   }
 
   // Any instance of this class will behave the same, so all comparisons
   // are true.
   bool Equals(const ConfigSelector* /*other*/) const override { return true; }
+
+ private:
+  absl::StatusOr<RefCountedPtr<const FilterChain>> filter_chain_;
 };
 
 CLIENT_CHANNEL_TEST(ConfigSelectorWithDynamicFilters) {
