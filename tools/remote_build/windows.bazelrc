@@ -25,3 +25,7 @@ build --dynamic_mode=off
 build --test_timeout=60,600,1800,3600
 
 import %workspace%/tools/remote_build/include/test_config_common.bazelrc
+
+# TODO(weizheyuan): Fix @zlib build error under bzlmod and remove these 2 lines.
+common --enable_bzlmod=false
+common --enable_workspace=true
