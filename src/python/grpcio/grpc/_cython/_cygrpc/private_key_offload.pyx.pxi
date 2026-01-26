@@ -62,11 +62,15 @@ cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignat
   cdef const char* data
   cdef size_t size
   cdef PrivateKeySignerPyWrapperResult cpp_result
+  # cdef OnCompleteWrapper on_complete_wrapper
   # We need to hold the GIL to call the python function and interact with python values
   with gil:
     # Cast the void* pointer holding the user's python sign impl
     py_user_func = <object>user_data
 
+    on_complete_wrapper = OnCompleteWrapper()
+    on_complete_wrapper.c_on_complete = on_complete
+    on_complete_wrapper.c_completion_data = completion_data
     ## TODO(gregorycooke): do work here - Completion stuff has been added to the function signature but no impl done
 
     # Call the user's Python function
@@ -75,7 +79,7 @@ cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignat
       data = inp.data()
       size = inp.length()
       py_bytes = PyBytes_FromStringAndSize(data, size)
-      py_result = py_user_func(py_bytes, algorithm)
+      py_result = py_user_func(py_bytes, algorithm, on_complete_wrapper, "")
       if isinstance(py_result, PyAsyncSigningHandleImpl):
         async_handle = <PyAsyncSigningHandleImpl>py_result
         cpp_result.async_handle = async_handle.c_handle

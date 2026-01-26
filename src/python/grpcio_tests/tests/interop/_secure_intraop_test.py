@@ -85,7 +85,7 @@ class SecureInteropWithPrivateKeyOffloadingTest(
             grpc.secure_channel(
                 "localhost:{}".format(port),
                 grpc.ssl_channel_credentials_with_custom_signer(
-                    private_key_sign_fn=resources.client_private_key_signer,
+                    private_key_sign_fn=resources.sync_client_private_key_signer,
                     root_certificates=resources.test_root_certificates(),
                     certificate_chain=resources.client_certificate_chain(),
                 ),

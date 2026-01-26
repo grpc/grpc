@@ -1737,6 +1737,8 @@ CustomPrivateKeySignWithHandle = Callable[
     [
         bytes,
         _cygrpc.SignatureAlgorithm,
+        _cygrpc.OnCompleteWrapper,
+        object,
     ],
     Union[bytes, _cygrpc.PyAsyncSigningHandle],
 ]
