@@ -20,16 +20,35 @@
 #include <grpc/support/string_util.h>
 #include <string.h>
 
+#include <string>
+#include <unordered_set>
+
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/transport/auth_context.h"
+#include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
+
+bool IsRegionalAccessBoundaryLookupEnabled() {
+  auto is_rab_lookup_enabled =
+      grpc_core::GetEnv("GOOGLE_AUTH_REGIONAL_ACCESS_BOUNDARY_ENABLED");
+  if (is_rab_lookup_enabled.has_value() &&
+      !is_rab_lookup_enabled.value().empty()) {
+    std::string value = is_rab_lookup_enabled.value();
+    for (auto& c : value) c = std::tolower(c);
+
+    // Use a set for the "in" behavior
+    static const std::unordered_set<std::string> targets = {"true", "1"};
+    return targets.count(value);
+  }
+  return false;
+}
 
 namespace {
 

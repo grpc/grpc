@@ -103,3 +103,25 @@ grpc_cc_test(
         "//test/core/test_util:test_call_creds",
     ],
 )
+
+grpc_cc_test(
+    name = "regional_access_boundary_util_test",
+    srcs = ["regional_access_boundary_util_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//src/core:arena",
+        "//src/core:arena_promise",
+        "//:grpc_security_base",
+        "//src/core:env",
+        "//src/core:metadata_batch",
+        "//src/core:regional_access_boundary_util",
+        "//src/core:resource_quota",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)

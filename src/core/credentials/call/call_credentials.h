@@ -22,12 +22,14 @@
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/impl/grpc_types.h>
+#include <grpc/support/time.h>
 #include <grpc/support/port_platform.h>
 
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "absl/time/time.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/security_connector.h"
@@ -53,8 +55,11 @@ typedef enum {
 #define GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY \
   "x-goog-iam-authorization-token"
 #define GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY "x-goog-iam-authority-selector"
+#define GRPC_ALLOWED_LOCATIONS_KEY "x-allowed-locations"
 
 #define GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS 60
+
+#define GRPC_REGIONAL_ACCESS_BOUNDARY_CACHE_DURATION_SECS 21600 // 6 hours, in seconds
 
 #define GRPC_COMPUTE_ENGINE_METADATA_HOST "metadata.google.internal."
 #define GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH \
@@ -85,9 +90,24 @@ void grpc_override_well_known_credentials_path_getter(
 
 // --- grpc_core::CredentialsMetadataArray. ---
 
+struct RegionalAccessBoundary {
+  std::string encoded_locations;
+  std::vector<std::string> locations;
+  gpr_timespec expiration = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(
+          GRPC_REGIONAL_ACCESS_BOUNDARY_CACHE_DURATION_SECS, GPR_TIMESPAN));
+
+  bool isValid() const {
+    // 0 because we do not allow any grace after the expiration time passes
+    gpr_timespec grace_period = gpr_time_from_seconds(0, GPR_TIMESPAN); 
+    return gpr_time_cmp(
+              gpr_time_sub(expiration, gpr_now(GPR_CLOCK_REALTIME)),
+              grace_period) > 0;
+  }
+};
+
 namespace grpc_core {
 using CredentialsMetadataArray = std::vector<std::pair<Slice, Slice>>;
-}
+}  // namespace grpc_core
 
 // --- grpc_call_credentials. ---
 
@@ -113,14 +133,36 @@ struct grpc_call_credentials
   // that creds implementation.
   explicit grpc_call_credentials(
       grpc_security_level min_security_level = GRPC_PRIVACY_AND_INTEGRITY)
-      : min_security_level_(min_security_level) {}
+      : min_security_level_(min_security_level) {
+    gpr_mu_init(&regional_access_boundary_cache_mu);
+  }
 
-  ~grpc_call_credentials() override = default;
+  ~grpc_call_credentials() override {
+    gpr_mu_destroy(&regional_access_boundary_cache_mu);
+  }
 
   virtual grpc_core::ArenaPromise<
       absl::StatusOr<grpc_core::ClientMetadataHandle>>
   GetRequestMetadata(grpc_core::ClientMetadataHandle initial_metadata,
                      const GetRequestMetadataArgs* args) = 0;
+
+  gpr_mu regional_access_boundary_cache_mu;
+  std::optional<RegionalAccessBoundary> regional_access_boundary_cache;
+  bool regional_access_boundary_fetch_in_flight = false;
+  int regional_access_boundary_cooldown_multiplier = 1;
+  gpr_timespec regional_access_boundary_cooldown_deadline = gpr_inf_past(GPR_CLOCK_REALTIME);
+
+  virtual void InvalidateRegionalAccessBoundaryCache() {
+    gpr_mu_lock(&regional_access_boundary_cache_mu);
+    regional_access_boundary_cache.reset();
+    gpr_mu_unlock(&regional_access_boundary_cache_mu);
+  }
+
+  // Builds the URL for looking up the regional access boundary. Implemented by each creds
+  // implementation which support the regional access boundary feature.
+  virtual std::string build_regional_access_boundary_url() {
+    return "grpc_call_credentials did not provide regional access boundary url";
+  }
 
   virtual grpc_security_level min_security_level() const {
     return min_security_level_;
