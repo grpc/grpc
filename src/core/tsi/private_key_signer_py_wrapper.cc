@@ -50,14 +50,21 @@ PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
 }
 
 void PrivateKeySignerPyWrapper::Cancel(
-    std::shared_ptr<AsyncSigningHandle>) { /* TODO(gregorycooke) will need to
-                                              bubble up to Python? */
+    std::shared_ptr<AsyncSigningHandle> handle) {
+  cancel_py_wrapper_(handle, cancel_user_data_);
 }
 
 std::shared_ptr<PrivateKeySigner> BuildPrivateKeySigner(
     SignWrapperForPy sign_py_wrapper, void* user_data) {
   return std::make_shared<PrivateKeySignerPyWrapper>(sign_py_wrapper,
                                                      user_data);
+}
+
+std::shared_ptr<PrivateKeySigner> BuildPrivateKeySignerWithCancellation(
+    SignWrapperForPy sign_py_wrapper, void* user_data,
+    CancelWrapperForPy cancel_py_wrapper_, void* cancel_user_data) {
+  return std::make_shared<PrivateKeySignerPyWrapper>(
+      sign_py_wrapper, user_data, cancel_py_wrapper_, cancel_user_data);
 }
 
 }  // namespace grpc_core

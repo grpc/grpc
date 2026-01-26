@@ -14,6 +14,7 @@
 from cython.operator cimport dereference
 from cpython.pystate cimport PyGILState_STATE, PyGILState_Ensure, PyGILState_Release
 from cpython.bytes cimport PyBytes_FromStringAndSize
+# from libcpp.memory import static_pointer_cast
 
 import faulthandler
 
@@ -29,7 +30,10 @@ cdef class PyAsyncSigningHandleImpl(PyAsyncSigningHandle):
     cdef shared_ptr[AsyncSigningHandle] c_handle # Pointer to the wrapped C instance
 
     def __cinit__(self):
-        self.c_handle = make_shared[AsyncSigningHandle]()
+        cdef shared_ptr[AsyncSigningHandlePyWrapper] py_wrapper_handle = make_shared[AsyncSigningHandlePyWrapper]()
+        # might need to incref here
+        py_wrapper_handle.get().python_handle = <void*> self
+        self.c_handle = static_pointer_cast[AsyncSigningHandle, AsyncSigningHandlePyWrapper](py_wrapper_handle)
 
     def __dealloc__(self):
       # Maybe need to handle shared_ptr here
@@ -119,6 +123,16 @@ cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignat
       return cpp_result
       # return StatusOr[string](MakeInternalError(f"Exception in user function: {e}".encode('utf-8')))
     
+cdef void cancel_wrapper(shared_ptr[AsyncSigningHandle] handle, void* cancel_data) noexcept nogil:
+  # cdef shared_ptr[AsyncSigningHandlePyWrapper] impl = static_pointer_cast[AsyncSigningHandlePyWrapper, AsyncSigningHandle](handle)
+  # cdef void* py_handle_ptr = impl.get().python_handle
+  # cdef shared_ptr[AsyncSigningHandlePyWrapper] impl
+  with gil:
+    impl = <shared_ptr[AsyncSigningHandlePyWrapper]>static_pointer_cast[AsyncSigningHandlePyWrapper, AsyncSigningHandle](handle)
+    py_handle_ptr = impl.get().python_handle
+    py_handle = <PyAsyncSigningHandleImpl>py_handle_ptr
+    py_cancel_func = <object>cancel_data
+    py_cancel_func(py_handle)
 
 # To be called from the python layer when the user provides a signer function.
 cdef shared_ptr[PrivateKeySigner] build_private_key_signer(py_user_func):

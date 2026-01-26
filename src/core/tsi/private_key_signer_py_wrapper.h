@@ -40,6 +40,9 @@ struct PrivateKeySignerPyWrapperResult {
 typedef void (*CompletionFunctionPyWrapper)(absl::StatusOr<std::string> result,
                                             void* completion_data);
 
+typedef void (*CancelWrapperForPy)(std::shared_ptr<AsyncSigningHandle>,
+                                   void* cancel_data);
+
 typedef PrivateKeySignerPyWrapperResult (*SignWrapperForPy)(
     absl::string_view data_to_sign,
     grpc_core::PrivateKeySigner::SignatureAlgorithm signature_algorithm,
@@ -57,6 +60,13 @@ class PrivateKeySignerPyWrapper
  public:
   PrivateKeySignerPyWrapper(SignWrapperForPy sign_py_wrapper, void* user_data)
       : sign_py_wrapper_(sign_py_wrapper), sign_user_data_(user_data) {}
+  PrivateKeySignerPyWrapper(SignWrapperForPy sign_py_wrapper, void* user_data,
+                            CancelWrapperForPy cancel_py_wrapper,
+                            void* cancel_data)
+      : sign_py_wrapper_(sign_py_wrapper),
+        sign_user_data_(user_data),
+        cancel_py_wrapper_(cancel_py_wrapper),
+        cancel_user_data_(cancel_data) {}
   std::variant<absl::StatusOr<std::string>, std::shared_ptr<AsyncSigningHandle>>
   Sign(absl::string_view data_to_sign, SignatureAlgorithm signature_algorithm,
        OnSignComplete on_sign_complete) override;
@@ -69,11 +79,22 @@ class PrivateKeySignerPyWrapper
   SignWrapperForPy sign_py_wrapper_;
   // This will hold the Python callable object
   void* sign_user_data_;
+  CancelWrapperForPy cancel_py_wrapper_;
+  void* cancel_user_data_;
 };
 
 // The entry point for Cython to build a PrivateKeySigner.
 std::shared_ptr<PrivateKeySigner> BuildPrivateKeySigner(SignWrapperForPy sign,
                                                         void* user_data);
+
+std::shared_ptr<PrivateKeySigner> BuildPrivateKeySignerWithCancellation(
+    SignWrapperForPy sign_py_wrapper, void* user_data,
+    CancelWrapperForPy cancel_py_wrapper_, void* cancel_user_data);
+
+class AsyncSigningHandlePyWrapper : public AsyncSigningHandle {
+ public:
+  void* python_handle;
+};
 }  // namespace grpc_core
 
 #endif  // GRPC_PRIVATE_KEY_SIGNER_PY_WRAPPER_H

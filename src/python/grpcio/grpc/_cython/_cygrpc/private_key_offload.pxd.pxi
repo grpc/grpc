@@ -14,7 +14,7 @@
 # distutils: language=c++
 
 from libcpp.string cimport string
-from libcpp.memory cimport shared_ptr, make_shared
+from libcpp.memory cimport shared_ptr, make_shared, static_pointer_cast
 
 cdef extern from "absl/status/status.h" namespace "absl":
     cdef enum AbslStatusCode "absl::StatusCode":
@@ -100,3 +100,9 @@ cdef extern from "src/core/tsi/private_key_signer_py_wrapper.h" namespace "grpc_
     ctypedef void (*CompletionFunctionPyWrapper)(StatusOr[string], void*)
     ctypedef PrivateKeySignerPyWrapperResult(*SignWrapperForPy)(string_view, CSignatureAlgorithm, void*, CompletionFunctionPyWrapper, void*) noexcept nogil
     shared_ptr[PrivateKeySigner] BuildPrivateKeySigner(SignWrapperForPy, void*)
+    ctypedef void (*CancelWrapperForPy)(shared_ptr[AsyncSigningHandle], void*)
+    shared_ptr[PrivateKeySigner] BuildPrivateKeySignerWithCancellation(SignWrapperForPy, void*, CancelWrapperForPy, void*)
+    cdef cppclass AsyncSigningHandlePyWrapper:
+        AsyncSigningHandlePyWrapper()
+        void* python_handle
+
