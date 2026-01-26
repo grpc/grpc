@@ -19,8 +19,8 @@ import threading
 import time
 from typing import Callable, Dict, Optional, Sequence
 
-import grpc  
-from grpc import _common  
+import grpc
+from grpc import _common
 from grpc._typing import DoneCallbackType
 
 _LOGGER = logging.getLogger(__name__)

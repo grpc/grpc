@@ -34,11 +34,11 @@ from typing import (
     Union,
 )
 
-import grpc  
-from grpc import _common  
-from grpc import _compression  
-from grpc import _grpcio_metadata  
-from grpc import _observability  
+import grpc
+from grpc import _common
+from grpc import _compression
+from grpc import _grpcio_metadata
+from grpc import _observability
 from grpc._cython import cygrpc
 from grpc._typing import ChannelArgumentType
 from grpc._typing import DeserializingFunction
@@ -48,7 +48,7 @@ from grpc._typing import NullaryCallbackType
 from grpc._typing import ResponseType
 from grpc._typing import SerializingFunction
 from grpc._typing import UserTag
-import grpc.experimental  
+import grpc.experimental
 
 _LOGGER = logging.getLogger(__name__)
 

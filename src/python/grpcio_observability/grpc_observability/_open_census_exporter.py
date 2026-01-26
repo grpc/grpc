@@ -17,7 +17,7 @@ import os
 from typing import List, Mapping, Optional, Tuple
 
 from google.rpc import code_pb2
-from grpc_observability import _observability  
+from grpc_observability import _observability
 from grpc_observability import _observability_config
 from grpc_observability import _views
 from opencensus.common.transports import async_
