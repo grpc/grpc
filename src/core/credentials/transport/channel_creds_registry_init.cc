@@ -89,15 +89,14 @@ class TlsChannelCredsFactory : public ChannelCredsFactory<> {
         !config->ca_certificate_file().empty()) {
       // TODO(gtcooke94): Expose the spiffe_bundle_map option in the XDS
       // bootstrap config to use here.
-      auto provider = MakeRefCounted<FileWatcherCertificateProvider>(
-          config->private_key_file(), config->certificate_file(),
-          config->ca_certificate_file(), /*spiffe_bundle_map_file=*/"",
-          config->refresh_interval().millis() / GPR_MS_PER_SEC);
-      options->set_root_certificate_provider(
-          config->ca_certificate_file().empty() ? nullptr : provider);
-      options->set_identity_certificate_provider(
-          config->certificate_file().empty() ? nullptr : provider);
+      options->set_certificate_provider(
+          MakeRefCounted<FileWatcherCertificateProvider>(
+              config->private_key_file(), config->certificate_file(),
+              config->ca_certificate_file(), /*spiffe_bundle_map_file=*/"",
+              config->refresh_interval().millis() / GPR_MS_PER_SEC));
     }
+    options->set_watch_root_cert(!config->ca_certificate_file().empty());
+    options->set_watch_identity_pair(!config->certificate_file().empty());
     options->set_certificate_verifier(
         MakeRefCounted<HostNameCertificateVerifier>());
     return MakeRefCounted<TlsCredentials>(std::move(options));

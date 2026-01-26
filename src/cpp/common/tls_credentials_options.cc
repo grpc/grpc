@@ -50,24 +50,10 @@ TlsCredentialsOptions::TlsCredentialsOptions(
 
 void TlsCredentialsOptions::set_certificate_provider(
     std::shared_ptr<CertificateProviderInterface> certificate_provider) {
-  legacy_certificate_provider_ = std::move(certificate_provider);
-}
-
-void TlsCredentialsOptions::set_root_certificate_provider(
-    std::shared_ptr<CertificateProviderInterface> certificate_provider) {
-  root_certificate_provider_ = std::move(certificate_provider);
-  if (root_certificate_provider_ != nullptr) {
-    grpc_tls_credentials_options_set_root_certificate_provider(
-        c_credentials_options_, root_certificate_provider_->c_provider());
-  }
-}
-
-void TlsCredentialsOptions::set_identity_certificate_provider(
-    std::shared_ptr<CertificateProviderInterface> certificate_provider) {
-  identity_certificate_provider_ = std::move(certificate_provider);
-  if (identity_certificate_provider_ != nullptr) {
-    grpc_tls_credentials_options_set_identity_certificate_provider(
-        c_credentials_options_, identity_certificate_provider_->c_provider());
+  certificate_provider_ = certificate_provider;
+  if (certificate_provider_ != nullptr) {
+    grpc_tls_credentials_options_set_certificate_provider(
+        c_credentials_options_, certificate_provider_->c_provider());
   }
 }
 
@@ -78,10 +64,7 @@ void TlsCredentialsOptions::set_crl_provider(
 }
 
 void TlsCredentialsOptions::watch_root_certs() {
-  if (legacy_certificate_provider_ != nullptr) {
-    grpc_tls_credentials_options_set_root_certificate_provider(
-        c_credentials_options_, legacy_certificate_provider_->c_provider());
-  }
+  grpc_tls_credentials_options_watch_root_certs(c_credentials_options_);
 }
 
 void TlsCredentialsOptions::set_root_cert_name(
@@ -91,10 +74,8 @@ void TlsCredentialsOptions::set_root_cert_name(
 }
 
 void TlsCredentialsOptions::watch_identity_key_cert_pairs() {
-  if (legacy_certificate_provider_ != nullptr) {
-    grpc_tls_credentials_options_set_identity_certificate_provider(
-        c_credentials_options_, legacy_certificate_provider_->c_provider());
-  }
+  grpc_tls_credentials_options_watch_identity_key_cert_pairs(
+      c_credentials_options_);
 }
 
 void TlsCredentialsOptions::set_identity_cert_name(
