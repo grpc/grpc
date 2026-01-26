@@ -840,7 +840,6 @@ Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
   ep_ctx->arena->SetContext(ctx->event_engine.get());
   ep_ctx->clock = clock;
   ep_ctx->transport_ctx = std::move(ctx);
-  ep_ctx->reader = ep_ctx->output_buffers->MakeReader(ep_ctx->id);
   party_ = Party::Make(ep_ctx->arena);
   party_->Spawn(
       "write",
@@ -869,6 +868,7 @@ Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
               }
               auto endpoint = std::make_shared<PromiseEndpoint>(std::move(ep));
               ep_ctx->endpoint = endpoint;
+              ep_ctx->reader = ep_ctx->output_buffers->MakeReader(ep_ctx->id);
               // Enable RxMemoryAlignment and RPC receive coalescing after the
               // transport setup is complete. At this point all the settings
               // frames should have been read.
