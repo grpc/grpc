@@ -35,6 +35,7 @@
     <file baseinstalldir="/" name="include/grpc/compression.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/create_channel_from_endpoint.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/credentials.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/credentials_cpp.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/endpoint_config.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/event_engine.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/extensible.h" role="src" />
@@ -518,6 +519,9 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/common/matcher/v3/matcher.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/common/matcher/v3/matcher.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/common/matcher/v3/matcher.upb_minitable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/core/v3/address.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.h" role="src" />
@@ -527,6 +531,9 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/core/v3/base.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/core/v3/cel.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/core/v3/cel.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/core/v3/cel.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.h" role="src" />
@@ -1014,12 +1021,16 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/cluster/v3/outlier_detection.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/common/matcher/v3/matcher.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/common/matcher/v3/matcher.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/core/v3/address.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/core/v3/address.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/core/v3/backoff.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/core/v3/backoff.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/core/v3/base.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/core/v3/base.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/core/v3/cel.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/core/v3/cel.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/core/v3/config_source.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/core/v3/config_source.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/core/v3/event_service_config.upbdefs.c" role="src" />
@@ -1298,6 +1309,7 @@
     <file baseinstalldir="/" name="src/core/filter/blackboard.cc" role="src" />
     <file baseinstalldir="/" name="src/core/filter/blackboard.h" role="src" />
     <file baseinstalldir="/" name="src/core/filter/filter_args.h" role="src" />
+    <file baseinstalldir="/" name="src/core/filter/filter_chain.h" role="src" />
     <file baseinstalldir="/" name="src/core/filter/fused_filters.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/endpoint_info/endpoint_info_handshaker.h" role="src" />
@@ -1306,8 +1318,8 @@
     <file baseinstalldir="/" name="src/core/handshaker/handshaker_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/handshaker_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/handshaker_registry.h" role="src" />
-    <file baseinstalldir="/" name="src/core/handshaker/http_connect/http_connect_handshaker.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/handshaker/http_connect/http_connect_handshaker.h" role="src" />
+    <file baseinstalldir="/" name="src/core/handshaker/http_connect/http_connect_client_handshaker.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/handshaker/http_connect/http_connect_client_handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/http_connect/http_proxy_mapper.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/http_connect/http_proxy_mapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/http_connect/xds_http_proxy_mapper.cc" role="src" />
