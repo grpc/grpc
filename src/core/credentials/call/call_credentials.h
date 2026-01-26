@@ -22,11 +22,17 @@
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/impl/grpc_types.h>
+#include <grpc/support/time.h>
 #include <grpc/support/port_platform.h>
 
 #include <string>
 #include <utility>
 #include <vector>
+#include <memory>
+
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -39,8 +45,7 @@
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
+#include "src/core/credentials/call/regional_access_boundary_fetcher.h"
 
 // --- Constants. ---
 
@@ -87,7 +92,7 @@ void grpc_override_well_known_credentials_path_getter(
 
 namespace grpc_core {
 using CredentialsMetadataArray = std::vector<std::pair<Slice, Slice>>;
-}
+}  // namespace grpc_core
 
 // --- grpc_call_credentials. ---
 
@@ -113,7 +118,8 @@ struct grpc_call_credentials
   // that creds implementation.
   explicit grpc_call_credentials(
       grpc_security_level min_security_level = GRPC_PRIVACY_AND_INTEGRITY)
-      : min_security_level_(min_security_level) {}
+      : min_security_level_(min_security_level),
+        regional_access_boundary_fetcher_(std::make_unique<grpc_core::RegionalAccessBoundaryFetcher>()) {}
 
   ~grpc_call_credentials() override = default;
 
@@ -121,6 +127,20 @@ struct grpc_call_credentials
       absl::StatusOr<grpc_core::ClientMetadataHandle>>
   GetRequestMetadata(grpc_core::ClientMetadataHandle initial_metadata,
                      const GetRequestMetadataArgs* args) = 0;
+
+  std::unique_ptr<grpc_core::RegionalAccessBoundaryFetcher> regional_access_boundary_fetcher_;
+
+  virtual void InvalidateRegionalAccessBoundaryCache() {
+    if (regional_access_boundary_fetcher_ != nullptr) {
+        regional_access_boundary_fetcher_->InvalidateCache();
+    }
+  }
+
+  // Builds the URL for looking up the regional access boundary. Implemented by each creds
+  // implementation which support the regional access boundary feature.
+  virtual std::string build_regional_access_boundary_url() {
+    return "grpc_call_credentials did not provide regional access boundary url";
+  }
 
   virtual grpc_security_level min_security_level() const {
     return min_security_level_;

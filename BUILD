@@ -2401,6 +2401,7 @@ grpc_cc_library(
         "//src/core:metadata_batch",
         "//src/core:poll",
         "//src/core:ref_counted",
+        "//src/core:regional_access_boundary_fetcher",
         "//src/core:resource_quota",
         "//src/core:seq",
         "//src/core:slice",
