@@ -26,27 +26,27 @@ class IntraopTestCase(object):
     def testEmptyUnary(self):
         methods.TestCase.EMPTY_UNARY.test_interoperability(self.stub, None)
 
-    # def testLargeUnary(self):
-    #     methods.TestCase.LARGE_UNARY.test_interoperability(self.stub, None)
+    def testLargeUnary(self):
+        methods.TestCase.LARGE_UNARY.test_interoperability(self.stub, None)
 
-    # def testServerStreaming(self):
-    #     methods.TestCase.SERVER_STREAMING.test_interoperability(self.stub, None)
+    def testServerStreaming(self):
+        methods.TestCase.SERVER_STREAMING.test_interoperability(self.stub, None)
 
-    # def testClientStreaming(self):
-    #     methods.TestCase.CLIENT_STREAMING.test_interoperability(self.stub, None)
+    def testClientStreaming(self):
+        methods.TestCase.CLIENT_STREAMING.test_interoperability(self.stub, None)
 
-    # def testPingPong(self):
-    #     methods.TestCase.PING_PONG.test_interoperability(self.stub, None)
+    def testPingPong(self):
+        methods.TestCase.PING_PONG.test_interoperability(self.stub, None)
 
-    # def testCancelAfterBegin(self):
-    #     methods.TestCase.CANCEL_AFTER_BEGIN.test_interoperability(self.stub, None)
+    def testCancelAfterBegin(self):
+        methods.TestCase.CANCEL_AFTER_BEGIN.test_interoperability(self.stub, None)
 
-    # def testCancelAfterFirstResponse(self):
-    #     methods.TestCase.CANCEL_AFTER_FIRST_RESPONSE.test_interoperability(
-    #         self.stub, None
-    #     )
+    def testCancelAfterFirstResponse(self):
+        methods.TestCase.CANCEL_AFTER_FIRST_RESPONSE.test_interoperability(
+            self.stub, None
+        )
 
-    # def testTimeoutOnSleepingServer(self):
-    #     methods.TestCase.TIMEOUT_ON_SLEEPING_SERVER.test_interoperability(
-    #         self.stub, None
-    #     )
+    def testTimeoutOnSleepingServer(self):
+        methods.TestCase.TIMEOUT_ON_SLEEPING_SERVER.test_interoperability(
+            self.stub, None
+        )
