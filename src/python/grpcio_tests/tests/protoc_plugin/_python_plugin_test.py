@@ -737,7 +737,7 @@ class ModuleMainTest(unittest.TestCase):
             raise unittest.SkipTest(
                 "Running on a interpreter that cannot be invoked from the CLI."
             )
-        
+
         # Path to the demo.proto file
         proto_path = os.path.join(
             "src",
@@ -751,7 +751,7 @@ class ModuleMainTest(unittest.TestCase):
         )
         # Directory containing the proto file
         proto_dir = os.path.dirname(proto_path)
-        
+
         work_dir = tempfile.mkdtemp()
         try:
             invocation = (
