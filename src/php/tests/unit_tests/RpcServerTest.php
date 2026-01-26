@@ -65,7 +65,7 @@ class RpcServerTest extends \PHPUnit\Framework\TestCase
             'Number',
             \Grpc\MethodDescriptor::UNARY_CALL
         );
-        $byeMethodDescritor = new \Grpc\MethodDescriptor(
+        $byeMethodDescriptor = new \Grpc\MethodDescriptor(
             $this->mockService,
             'bye',
             'String',
@@ -76,13 +76,13 @@ class RpcServerTest extends \PHPUnit\Framework\TestCase
             ->with()
             ->will($this->returnValue([
                 '/test/hello' => $helloMethodDescriptor2,
-                '/test/bye' => $byeMethodDescritor
+                '/test/bye' => $byeMethodDescriptor
             ]));
 
         $pathMap = $this->server->handle($mockService2);
         $this->assertEquals($pathMap, [
             '/test/hello' => $helloMethodDescriptor2,
-            '/test/bye' => $byeMethodDescritor
+            '/test/bye' => $byeMethodDescriptor
         ]);
     }
 }
