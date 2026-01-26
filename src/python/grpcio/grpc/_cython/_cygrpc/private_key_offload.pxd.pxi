@@ -67,7 +67,7 @@ cdef extern from "grpc/private_key_signer.h":
         const char* cert_chain)
 
 cdef class PyAsyncSigningHandle:
-    cdef shared_ptr[AsyncSigningHandle] c_handle # Pointer to the wrapped C instance
+    pass
 
     # def __cinit__(self):
     #     self.c_instance = AsyncSigningHandle()
@@ -97,6 +97,6 @@ cdef extern from "src/core/tsi/private_key_signer_py_wrapper.h" namespace "grpc_
     cdef cppclass PrivateKeySignerPyWrapperResult:
         StatusOr[string] sync_result
         shared_ptr[AsyncSigningHandle] async_handle
-    ctypedef PrivateKeySignerPyWrapperResult(*SignWrapperForPy)(string_view, CSignatureAlgorithm, void*) noexcept
+    ctypedef void (*CompletionFunctionPyWrapper)(StatusOr[string], void*)
+    ctypedef PrivateKeySignerPyWrapperResult(*SignWrapperForPy)(string_view, CSignatureAlgorithm, void*, CompletionFunctionPyWrapper, void*) noexcept nogil
     shared_ptr[PrivateKeySigner] BuildPrivateKeySigner(SignWrapperForPy, void*)
-    ctypedef void (*CompletionCallbackForPy)(StatusOr[string], void*)

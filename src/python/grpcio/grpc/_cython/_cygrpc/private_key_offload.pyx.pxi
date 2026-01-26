@@ -21,8 +21,18 @@ cdef StatusOr[string] MakeInternalError(string message):
 cdef StatusOr[string] MakeStringResult(string result):
   return StatusOr[string](result)
 
+cdef class PyAsyncSigningHandleImpl(PyAsyncSigningHandle):
+    cdef shared_ptr[AsyncSigningHandle] c_handle # Pointer to the wrapped C instance
+
+    def __cinit__(self):
+        self.c_handle = make_shared[AsyncSigningHandle]()
+
+    def __dealloc__(self):
+      # Maybe need to handle shared_ptr here
+      pass
+
 cdef class OnCompleteWrapper:
-  cdef CompletionCallbackForPy c_on_complete
+  cdef CompletionFunctionPyWrapper c_on_complete
   cdef void* c_completion_data
 
   # Makes this class callable
@@ -30,23 +40,23 @@ cdef class OnCompleteWrapper:
     # print(f"Python OnCompleteWrapper({result}) starting")
     cdef StatusOr[string] cpp_result
     cdef string cpp_string
-    if self.on_complete_c != NULL:
+    if self.c_on_complete != NULL:
       if isinstance(result, str):
         cpp_string = result.encode('utf-8')
-        cpp_result = StatusOr[string](cpp_string)
+        cpp_result = MakeStringResult(cpp_string)
       elif isinstance(result, Exception):
         # If python returns an exception, convert to absl::Status
         cpp_string = str(result).encode('utf-8')
-        cpp_result = StatusOr[string](InternalError(cpp_string))
+        cpp_result = MakeInternalError(cpp_string)
       else:
         cpp_string = f"Invalid result type: {type(result)}".encode('utf-8')
-        cpp_result = StatusOr[string](InternalError(cpp_string))
-      self.on_complete_c(cpp_result, self.c_data)
+        cpp_result = MakeInternalError(cpp_string)
+      self.c_on_complete(cpp_result, <void*> self.c_data)
       # Don't call multiple types
-      self.on_complete_c = NULL
+      self.c_on_complete = NULL
     print(f"Python OnCompleteWrapper({result}) ending")
 
-cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignatureAlgorithm algorithm, void* user_data, CompletionCallbackForPy on_complete, void* completion_data) noexcept nogil:
+cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignatureAlgorithm algorithm, void* user_data, CompletionFunctionPyWrapper on_complete, void* completion_data) noexcept nogil:
   # Get the original python function the user passes
   cdef string cpp_string
   cdef const char* data
@@ -66,7 +76,10 @@ cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignat
       size = inp.length()
       py_bytes = PyBytes_FromStringAndSize(data, size)
       py_result = py_user_func(py_bytes, algorithm)
-      if isinstance(py_result, bytes):
+      if isinstance(py_result, PyAsyncSigningHandleImpl):
+        async_handle = <PyAsyncSigningHandleImpl>py_result
+        cpp_result.async_handle = async_handle.c_handle
+      elif isinstance(py_result, bytes):
         # We got a signature
         cpp_string = py_result
         cpp_result.sync_result = MakeStringResult(cpp_string)
@@ -95,18 +108,9 @@ cdef shared_ptr[PrivateKeySigner] build_private_key_signer(py_user_func):
   py_private_key_signer = BuildPrivateKeySigner(async_sign_wrapper, <void*>py_user_func)
   return py_private_key_signer
 
-cdef shared_ptr[AsyncSigningHandle] create_async_signing_handle():
-  return make_shared[AsyncSigningHandle]()
+# cdef shared_ptr[AsyncSigningHandle] create_async_signing_handle():
+#   return make_shared[AsyncSigningHandle]()
 
 
-cdef class PyAsyncSigningHandleImpl(PyAsyncSigningHandle):
-    # cdef AsyncSigningHandle* c_handle # Pointer to the wrapped C instance
-
-    def __cinit__(self):
-        self.c_handle = make_shared[AsyncSigningHandle]()
-
-    def __dealloc__(self):
-      # Maybe need to handle shared_ptr here
-      pass
 
 
