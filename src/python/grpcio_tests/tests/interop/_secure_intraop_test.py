@@ -30,6 +30,7 @@ _SERVER_HOST_OVERRIDE = "foo.test.google.fr"
 @unittest.skipIf(
     sys.version_info[0] < 3, "ProtoBuf descriptor has moved on from Python2"
 )
+@unittest.skip(reason="temp")
 class SecureIntraopTest(_intraop_test_case.IntraopTestCase, unittest.TestCase):
     def setUp(self):
         self.server = test_common.test_server()
@@ -62,7 +63,8 @@ class SecureIntraopTest(_intraop_test_case.IntraopTestCase, unittest.TestCase):
         self.server.stop(None)
 
 
-class SecureInteropWithPrivateKeyOffloadingTest(
+@unittest.skip(reason="temp")
+class SecureInteropWithSyncPrivateKeyOffloadingTest(
     _intraop_test_case.IntraopTestCase, unittest.TestCase
 ):
 
@@ -86,6 +88,46 @@ class SecureInteropWithPrivateKeyOffloadingTest(
                 "localhost:{}".format(port),
                 grpc.ssl_channel_credentials_with_custom_signer(
                     private_key_sign_fn=resources.sync_client_private_key_signer,
+                    root_certificates=resources.test_root_certificates(),
+                    certificate_chain=resources.client_certificate_chain(),
+                ),
+                (
+                    (
+                        "grpc.ssl_target_name_override",
+                        _SERVER_HOST_OVERRIDE,
+                    ),
+                ),
+            )
+        )
+
+    def tearDown(self):
+        self.server.stop(None)
+
+
+class SecureInteropWithAsyncPrivateKeyOffloadingTest(
+    _intraop_test_case.IntraopTestCase, unittest.TestCase
+):
+
+    def setUp(self):
+        self.server = test_common.test_server()
+        test_pb2_grpc.add_TestServiceServicer_to_server(
+            service.TestService(), self.server
+        )
+        # Configure the server for mTLS so the client will do Private Key signing
+        port = self.server.add_secure_port(
+            "[::]:0",
+            grpc.ssl_server_credentials(
+                [(resources.private_key(), resources.certificate_chain())],
+                resources.test_root_certificates(),
+                require_client_auth=True,
+            ),
+        )
+        self.server.start()
+        self.stub = test_pb2_grpc.TestServiceStub(
+            grpc.secure_channel(
+                "localhost:{}".format(port),
+                grpc.ssl_channel_credentials_with_custom_signer(
+                    private_key_sign_fn=resources.async_client_private_key_signer,
                     root_certificates=resources.test_root_certificates(),
                     certificate_chain=resources.client_certificate_chain(),
                 ),

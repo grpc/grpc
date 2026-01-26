@@ -22,6 +22,8 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography import x509
+import threading
+from grpc._cython import cygrpc as _cygrpc
 
 _ROOT_CERTIFICATES_RESOURCE_PATH = "credentials/ca.pem"
 _PRIVATE_KEY_RESOURCE_PATH = "credentials/server1.key"
@@ -144,6 +146,60 @@ def sync_client_private_key_signer(
         return ValueError(
             "Unsupported private key type. This example only supports RSA."
         )
+
+
+def async_signer_worker(
+    data_to_sign, signature_algorithm, on_complete, completion_data
+):
+    print("GREG: async signer worker", flush=True)
+    private_key_bytes = client_private_key()
+    # Determine the key type and apply appropriate padding and algorithm.
+    # This example assumes an RSA key. Different logic is needed for other key types (e.g., EC).
+    try:
+        success = check_key_cert_match(client_private_key(), client_certificate_chain())
+        if not success:
+            on_complete(ValueError("provided key and certificate do not match."))
+        private_key = serialization.load_pem_private_key(
+            private_key_bytes,
+            password=None,  # Pass password as bytes if the key is encrypted
+            backend=default_backend(),
+        )
+        if not isinstance(private_key, rsa.RSAPrivateKey):
+            raise ValueError("The provided key is not an RSA private key.")
+    except Exception as e:
+        raise
+
+    if isinstance(private_key, rsa.RSAPrivateKey):
+        try:
+            hasher = hashes.SHA256()
+            pss_padding = padding.PSS(
+                mgf=padding.MGF1(hasher),
+                salt_length=hasher.digest_size,
+            )
+
+            signature = private_key.sign(data_to_sign, pss_padding, hasher)
+            on_complete(signature)
+        except Exception as e:
+            raise
+    else:
+        on_complete(
+            ValueError("Unsupported private key type. This example only supports RSA.")
+        )
+
+
+def async_client_private_key_signer(
+    data_to_sign, signature_algorithm, on_complete, completion_data
+):
+    """
+    Of type CustomPrivateKeySign - Callable[[bytes, SignatureAlgorithm], bytes]
+    Takes in data_to_sign and signs it using the test private key
+    """
+    print("GREG: async signer", flush=True)
+    signer_thread = threading.Thread(
+        target=async_signer_worker,
+        args=(data_to_sign, signature_algorithm, on_complete, completion_data),
+    ).start()
+    return _cygrpc.create_async_signing_handle()
 
 
 def parse_bool(value):

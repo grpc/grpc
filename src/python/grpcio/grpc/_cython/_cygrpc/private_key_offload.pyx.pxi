@@ -15,6 +15,10 @@ from cython.operator cimport dereference
 from cpython.pystate cimport PyGILState_STATE, PyGILState_Ensure, PyGILState_Release
 from cpython.bytes cimport PyBytes_FromStringAndSize
 
+import faulthandler
+
+faulthandler.enable()
+
 cdef StatusOr[string] MakeInternalError(string message):
     return StatusOr[string](Status(AbslStatusCode.kUnknown, message))
 
@@ -37,24 +41,47 @@ cdef class OnCompleteWrapper:
 
   # Makes this class callable
   def __call__(self, result):
-    # print(f"Python OnCompleteWrapper({result}) starting")
+    print(f"Python OnCompleteWrapper({result}) starting", flush=True)
     cdef StatusOr[string] cpp_result
     cdef string cpp_string
     if self.c_on_complete != NULL:
-      if isinstance(result, str):
-        cpp_string = result.encode('utf-8')
+      
+
+      if isinstance(result, bytes):
+        # We got a signature
+        cpp_string = result
         cpp_result = MakeStringResult(cpp_string)
+        # return StatusOr[string](cpp_string)
       elif isinstance(result, Exception):
         # If python returns an exception, convert to absl::Status
         cpp_string = str(result).encode('utf-8')
         cpp_result = MakeInternalError(cpp_string)
       else:
+        # Any other return type is not valid
+        print("GREG: in else of async sign", flush=True)
         cpp_string = f"Invalid result type: {type(result)}".encode('utf-8')
         cpp_result = MakeInternalError(cpp_string)
-      self.c_on_complete(cpp_result, <void*> self.c_data)
+        # return StatusOr[string](MakeInternalError(cpp_string))
+      self.c_on_complete(cpp_result, <void*> self.c_completion_data)
       # Don't call multiple types
       self.c_on_complete = NULL
-    print(f"Python OnCompleteWrapper({result}) ending")
+    print(f"Python OnCompleteWrapper({result}) ending", flush=True)
+
+
+    #   if isinstance(result, str):
+    #     cpp_string = result.encode('utf-8')
+    #     cpp_result = MakeStringResult(cpp_string)
+    #   elif isinstance(result, Exception):
+    #     # If python returns an exception, convert to absl::Status
+    #     cpp_string = str(result).encode('utf-8')
+    #     cpp_result = MakeInternalError(cpp_string)
+    #   else:
+    #     cpp_string = f"Invalid result type: {type(result)}".encode('utf-8')
+    #     cpp_result = MakeInternalError(cpp_string)
+    #   self.c_on_complete(cpp_result, <void*> self.c_completion_data)
+    #   # Don't call multiple types
+    #   self.c_on_complete = NULL
+    # print(f"Python OnCompleteWrapper({result}) ending", flush=True)
 
 cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignatureAlgorithm algorithm, void* user_data, CompletionFunctionPyWrapper on_complete, void* completion_data) noexcept nogil:
   # Get the original python function the user passes
@@ -66,6 +93,7 @@ cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignat
   # We need to hold the GIL to call the python function and interact with python values
   with gil:
     # Cast the void* pointer holding the user's python sign impl
+    print("GREG: in async_sign_wrapper", flush=True)
     py_user_func = <object>user_data
 
     on_complete_wrapper = OnCompleteWrapper()
@@ -80,7 +108,8 @@ cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignat
       size = inp.length()
       py_bytes = PyBytes_FromStringAndSize(data, size)
       py_result = py_user_func(py_bytes, algorithm, on_complete_wrapper, "")
-      if isinstance(py_result, PyAsyncSigningHandleImpl):
+      if isinstance(py_result, PyAsyncSigningHandle):
+        print("async return from user func", flush=True)
         async_handle = <PyAsyncSigningHandleImpl>py_result
         cpp_result.async_handle = async_handle.c_handle
       elif isinstance(py_result, bytes):
@@ -95,12 +124,14 @@ cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignat
         # return StatusOr[string](MakeInternalError(cpp_string))
       else:
         # Any other return type is not valid
+        print("GREG: in else of async sign", flush=True)
         cpp_string = f"Invalid result type: {type(py_result)}".encode('utf-8')
         cpp_result.sync_result = MakeInternalError(cpp_string)
         # return StatusOr[string](MakeInternalError(cpp_string))
       return cpp_result
 
     except Exception as e:
+      print("GREG: in except of async sign: ", e, flush=True)
       # If Python raises an exception, make it an error status
       cpp_result.sync_result = MakeInternalError(f"Exception in user function: {e}".encode('utf-8'))
       return cpp_result
@@ -113,7 +144,10 @@ cdef shared_ptr[PrivateKeySigner] build_private_key_signer(py_user_func):
   return py_private_key_signer
 
 # cdef shared_ptr[AsyncSigningHandle] create_async_signing_handle():
-#   return make_shared[AsyncSigningHandle]()
+#   return make_shared[AsyncSigningHandleImpl]()
+
+def create_async_signing_handle():
+  return PyAsyncSigningHandleImpl()
 
 
 
