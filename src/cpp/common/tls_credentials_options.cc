@@ -77,12 +77,7 @@ void TlsCredentialsOptions::set_crl_provider(
                                                 crl_provider);
 }
 
-void TlsCredentialsOptions::watch_root_certs() {
-  if (legacy_certificate_provider_ != nullptr) {
-    grpc_tls_credentials_options_set_root_certificate_provider(
-        c_credentials_options_, legacy_certificate_provider_->c_provider());
-  }
-}
+void TlsCredentialsOptions::watch_root_certs() { is_watching_roots_ = true; }
 
 void TlsCredentialsOptions::set_root_cert_name(
     const std::string& root_cert_name) {
@@ -91,10 +86,7 @@ void TlsCredentialsOptions::set_root_cert_name(
 }
 
 void TlsCredentialsOptions::watch_identity_key_cert_pairs() {
-  if (legacy_certificate_provider_ != nullptr) {
-    grpc_tls_credentials_options_set_identity_certificate_provider(
-        c_credentials_options_, legacy_certificate_provider_->c_provider());
-  }
+  is_watching_identity_ = true;
 }
 
 void TlsCredentialsOptions::set_identity_cert_name(
@@ -137,6 +129,16 @@ void TlsCredentialsOptions::set_max_tls_version(grpc_tls_version tls_version) {
 
 grpc_tls_credentials_options* TlsCredentialsOptions::c_credentials_options()
     const {
+  if (legacy_certificate_provider_ != nullptr) {
+    if (is_watching_roots_) {
+      grpc_tls_credentials_options_set_root_certificate_provider(
+          c_credentials_options_, legacy_certificate_provider_->c_provider());
+    }
+    if (is_watching_identity_) {
+      grpc_tls_credentials_options_set_identity_certificate_provider(
+          c_credentials_options_, legacy_certificate_provider_->c_provider());
+    }
+  }
   return grpc_tls_credentials_options_copy(c_credentials_options_);
 }
 
