@@ -22,6 +22,6 @@ common --enable_workspace=false
 # TODO(weizheyuan): Re-enable this check once we upgrade all of the
 # transitive dependencies that are currently at mismatched versions.
 #common --check_direct_dependencies=error
-common --ignore_dev_dependency
+common --ignore_dev_dependency=false
 
 build --jobs=200

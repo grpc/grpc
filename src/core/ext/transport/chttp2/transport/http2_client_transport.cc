@@ -1107,8 +1107,8 @@ auto Http2ClientTransport::ProcessAndWriteControlFrames() {
       apply_status == http2::Http2ErrorCode::kNoError) {
     EnforceLatestIncomingSettings();
     settings_->MaybeGetSettingsAndSettingsAckFrames(flow_control_, output_buf);
-    ping_manager_->MaybeGetSerializedPingFrames(output_buf,
-                                                NextAllowedPingInterval());
+    MaybeSpawnDelayedPing(ping_manager_->MaybeGetSerializedPingFrames(
+        output_buf, NextAllowedPingInterval()));
     MaybeGetWindowUpdateFrames(output_buf);
     security_frame_handler_->MaybeAppendSecurityFrame(output_buf);
   }
@@ -1139,7 +1139,7 @@ void Http2ClientTransport::NotifyControlFramesWriteDone() {
   // All notifications are expected to be synchronous.
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport NotifyControlFramesWriteDone";
   reader_state_.ResumeReadLoopIfPaused();
-  ping_manager_->NotifyPingSent();
+  MaybeSpawnPingTimeout(ping_manager_->NotifyPingSent());
   goaway_manager_.NotifyGoawaySent();
   MaybeSpawnWaitForSettingsTimeout();
 }
@@ -1504,7 +1504,7 @@ Http2ClientTransport::Http2ClientTransport(
       KeepAliveInterfaceImpl::Make(this),
       ((args.keepalive_timeout < args.ping_timeout) ? args.keepalive_timeout
                                                     : Duration::Infinity()),
-      args.keepalive_time, general_party_.get());
+      args.keepalive_time);
 
   GRPC_DCHECK(ping_manager_.has_value());
   GRPC_DCHECK(keepalive_manager_.has_value());
@@ -1514,6 +1514,7 @@ Http2ClientTransport::Http2ClientTransport(
 
 void Http2ClientTransport::SpawnTransportLoops() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::SpawnTransportLoops Begin";
+  MaybeSpawnKeepaliveLoop();
   SpawnGuardedTransportParty(
       "FlowControlPeriodicUpdateLoop",
       UntilTransportClosed(FlowControlPeriodicUpdateLoop()));
@@ -1772,7 +1773,6 @@ void Http2ClientTransport::CloseTransport() {
   transport_closed_latch_.Set();
   settings_->HandleTransportShutdown(event_engine_.get());
 
-  MutexLock lock(&transport_mutex_);
   // This is the only place where the general_party_ is reset.
   general_party_.reset();
 }
@@ -1901,40 +1901,21 @@ void Http2ClientTransport::AddData(channelz::DataSink sink) {
 
   event_engine_->Run([self = RefAsSubclass<Http2ClientTransport>(),
                       sink = std::move(sink)]() mutable {
-    bool is_party_null = false;
+    RefCountedPtr<Party> party = nullptr;
     {
-      // Apart from CloseTransport, this is the only place where a lock is taken
-      // to access general_party_. All other access to general_party_ happens
-      // on the general party itself and hence do not race with CloseTransport.
-      // TODO(akshitpatel) : [PH2][P4] : Check if a new mutex is needed to
-      // protect general_party_. Curently transport_mutex_ can is used in
-      // these places:
-      // 1. In promises running on the transport party
-      // 2. In AddData promise
-      // 3. In Orphan function.
-      // 4. Stream creation (this will be removed soon).
-      // Given that #1 is already serialized (guaranteed by party), #2 is on
-      // demand and #3 happens once for the lifetime of the transport while
-      // closing the transport, the contention should be minimal.
       MutexLock lock(&self->transport_mutex_);
-      // TODO(akshitpatel) : [PH2][P2] : There is still a potential for a race
-      // here where the general_party_ is reset between the lock being
-      // released and the spawn. We cannot just do a spawn inside the mutex as
-      // that may result in deadlock.
-      // Potential fix to hold a ref to the party inside the mutex and do a
-      // spawn outside the mutex. The only side effect is that this introduces
-      // an additional ref to the party other the transport's copy.
-      if (GPR_UNLIKELY(self->general_party_ == nullptr)) {
-        is_party_null = true;
+      if (GPR_LIKELY(!self->is_transport_closed_)) {
+        GRPC_DCHECK(self->general_party_ != nullptr);
+        party = self->general_party_;
+      } else {
         GRPC_HTTP2_CLIENT_DLOG
-            << "Http2ClientTransport::AddData general_party_ is "
-               "null. Transport is closed.";
+            << "Http2ClientTransport::AddData Transport is closed.";
       }
     }
 
     ExecCtx exec_ctx;
-    if (!is_party_null) {
-      self->SpawnAddChannelzData(self->general_party_, std::move(sink));
+    if (party != nullptr) {
+      self->SpawnAddChannelzData(std::move(party), std::move(sink));
     }
     self.reset();  // Cleanup with exec_ctx in scope
   });
@@ -2225,6 +2206,40 @@ int64_t Http2ClientTransport::TestOnlyGetStreamFlowControlWindow(
     return -1;
   }
   return stream->flow_control.remote_window_delta();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Http2ClientTransport - Ping Helpers
+
+void Http2ClientTransport::MaybeSpawnPingTimeout(
+    std::optional<uint64_t> opaque_data) {
+  if (opaque_data.has_value()) {
+    SpawnGuardedTransportParty(
+        "PingTimeout", [self = RefAsSubclass<Http2ClientTransport>(),
+                        opaque_data = *opaque_data]() {
+          return self->ping_manager_->TimeoutPromise(opaque_data);
+        });
+  }
+}
+void Http2ClientTransport::MaybeSpawnDelayedPing(
+    std::optional<Duration> delayed_ping_wait) {
+  if (delayed_ping_wait.has_value()) {
+    SpawnGuardedTransportParty(
+        "DelayedPing", [self = RefAsSubclass<Http2ClientTransport>(),
+                        wait = *delayed_ping_wait]() {
+          GRPC_HTTP2_PING_LOG << "Scheduling delayed ping after wait=" << wait;
+          return self->ping_manager_->DelayedPingPromise(wait);
+        });
+  }
+}
+
+void Http2ClientTransport::MaybeSpawnKeepaliveLoop() {
+  if (keepalive_manager_->IsKeepAliveLoopNeeded()) {
+    SpawnGuardedTransportParty(
+        "KeepaliveLoop", [self = RefAsSubclass<Http2ClientTransport>()]() {
+          return self->keepalive_manager_->KeepaliveLoop();
+        });
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -137,7 +137,7 @@ GcpAuthenticationFilter::CallCredentialsCache::Get(
 // GcpAuthenticationFilter
 //
 
-const grpc_channel_filter GcpAuthenticationFilter::kFilter =
+const grpc_channel_filter GcpAuthenticationFilter::kFilterVtable =
     MakePromiseBasedFilter<GcpAuthenticationFilter, FilterEndpoint::kClient,
                            0>();
 

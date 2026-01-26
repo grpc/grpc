@@ -66,7 +66,7 @@ class GoogleDefaultChannelCredsFactory : public ChannelCredsFactory<> {
   }
   RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
       RefCountedPtr<const ChannelCredsConfig> /*config*/,
-      const CertificateProviderStoreInterface& /*certificate_provider_store*/)
+      CertificateProviderStoreInterface& /*certificate_provider_store*/)
       const override {
     return RefCountedPtr<grpc_channel_credentials>(
         grpc_google_default_credentials_create(nullptr, nullptr));
@@ -112,38 +112,37 @@ class TlsChannelCredsFactory : public ChannelCredsFactory<> {
 
   RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
       RefCountedPtr<const ChannelCredsConfig> base_config,
-      const CertificateProviderStoreInterface& certificate_provider_store)
+      CertificateProviderStoreInterface& certificate_provider_store)
       const override {
     auto* config = static_cast<const TlsConfig*>(base_config.get());
     auto options = MakeRefCounted<grpc_tls_credentials_options>();
     if (!config->root_certificate_provider().instance_name.empty()) {
-// FIXME: make this work once https://github.com/grpc/grpc/pull/41088 is merged
-// (or maybe need a layer of indirection anyway for the cert names?)
-#if 0
       options->set_root_certificate_provider(
           certificate_provider_store.CreateOrGetCertificateProvider(
               config->root_certificate_provider().instance_name));
-      // FIXME: figure out how to plumb certificate name
+      options->set_root_cert_name(
+          config->root_certificate_provider().certificate_name);
       if (!config->identity_certificate_provider().instance_name.empty()) {
         options->set_identity_certificate_provider(
             certificate_provider_store.CreateOrGetCertificateProvider(
                 config->identity_certificate_provider().instance_name));
-        // FIXME: figure out how to plumb certificate name
+        options->set_identity_cert_name(
+            config->identity_certificate_provider().certificate_name);
       }
-#endif
     } else {
       if (!config->certificate_file().empty() ||
           !config->ca_certificate_file().empty()) {
         // TODO(gtcooke94): Expose the spiffe_bundle_map option in the XDS
         // bootstrap config to use here.
-        options->set_certificate_provider(
-            MakeRefCounted<FileWatcherCertificateProvider>(
-                config->private_key_file(), config->certificate_file(),
-                config->ca_certificate_file(), /*spiffe_bundle_map_file=*/"",
-                config->refresh_interval().millis() / GPR_MS_PER_SEC));
+        auto provider = MakeRefCounted<FileWatcherCertificateProvider>(
+            config->private_key_file(), config->certificate_file(),
+            config->ca_certificate_file(), /*spiffe_bundle_map_file=*/"",
+            config->refresh_interval().millis() / GPR_MS_PER_SEC);
+        options->set_root_certificate_provider(
+            config->ca_certificate_file().empty() ? nullptr : provider);
+        options->set_identity_certificate_provider(
+            config->certificate_file().empty() ? nullptr : provider);
       }
-      options->set_watch_root_cert(!config->ca_certificate_file().empty());
-      options->set_watch_identity_pair(!config->certificate_file().empty());
     }
     options->set_certificate_verifier(
         MakeRefCounted<HostNameCertificateVerifier>());
@@ -361,7 +360,7 @@ class InsecureChannelCredsFactory : public ChannelCredsFactory<> {
   }
   RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
       RefCountedPtr<const ChannelCredsConfig> /*config*/,
-      const CertificateProviderStoreInterface& /*certificate_provider_store*/)
+      CertificateProviderStoreInterface& /*certificate_provider_store*/)
       const override {
     return RefCountedPtr<grpc_channel_credentials>(
         grpc_insecure_credentials_create());
@@ -407,7 +406,7 @@ class XdsChannelCredsFactory : public ChannelCredsFactory<> {
 
   RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
       RefCountedPtr<const ChannelCredsConfig> config,
-      const CertificateProviderStoreInterface& certificate_provider_store)
+      CertificateProviderStoreInterface& certificate_provider_store)
       const override {
     auto fallback_creds =
         CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
@@ -512,7 +511,7 @@ class FakeChannelCredsFactory : public ChannelCredsFactory<> {
   }
   RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
       RefCountedPtr<const ChannelCredsConfig> /*config*/,
-      const CertificateProviderStoreInterface& /*certificate_provider_store*/)
+      CertificateProviderStoreInterface& /*certificate_provider_store*/)
       const override {
     return RefCountedPtr<grpc_channel_credentials>(
         grpc_fake_transport_security_credentials_create());

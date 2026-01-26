@@ -35,6 +35,7 @@
     <file baseinstalldir="/" name="include/grpc/compression.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/create_channel_from_endpoint.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/credentials.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/credentials_cpp.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/endpoint_config.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/event_engine.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/extensible.h" role="src" />
@@ -1317,6 +1318,7 @@
     <file baseinstalldir="/" name="src/core/filter/blackboard.cc" role="src" />
     <file baseinstalldir="/" name="src/core/filter/blackboard.h" role="src" />
     <file baseinstalldir="/" name="src/core/filter/filter_args.h" role="src" />
+    <file baseinstalldir="/" name="src/core/filter/filter_chain.h" role="src" />
     <file baseinstalldir="/" name="src/core/filter/fused_filters.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/endpoint_info/endpoint_info_handshaker.h" role="src" />

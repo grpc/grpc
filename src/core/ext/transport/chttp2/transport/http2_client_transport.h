@@ -387,6 +387,9 @@ class Http2ClientTransport final : public ClientTransport,
   bool test_only_ack_pings_;
   std::optional<PingManager> ping_manager_;
   std::optional<KeepaliveManager> keepalive_manager_;
+  void MaybeSpawnPingTimeout(std::optional<uint64_t> opaque_data);
+  void MaybeSpawnDelayedPing(std::optional<Duration> delayed_ping_wait);
+  void MaybeSpawnKeepaliveLoop();
 
   // Flags
   bool keepalive_permit_without_calls_;
@@ -425,6 +428,9 @@ class Http2ClientTransport final : public ClientTransport,
     Promise<absl::Status> PingTimeout() override;
 
    private:
+    // Holding a raw pointer to transport works because all the promises
+    // invoking the methods of this class are invoked while holding a ref to the
+    // transport.
     Http2ClientTransport* transport_;
     explicit PingSystemInterfaceImpl(Http2ClientTransport* transport)
         : transport_(transport) {}
@@ -441,7 +447,9 @@ class Http2ClientTransport final : public ClientTransport,
     Promise<absl::Status> SendPingAndWaitForAck() override;
     Promise<absl::Status> OnKeepAliveTimeout() override;
     bool NeedToSendKeepAlivePing() override;
-
+    // Holding a raw pointer to transport works because all the promises
+    // invoking the methods of this class are invoked while holding a ref to the
+    // transport.
     Http2ClientTransport* transport_;
   };
 
@@ -461,7 +469,9 @@ class Http2ClientTransport final : public ClientTransport,
    private:
     explicit GoawayInterfaceImpl(Http2ClientTransport* transport)
         : transport_(transport) {}
-
+    // Holding a raw pointer to transport works because all the promises
+    // invoking the methods of this class are invoked while holding a ref to the
+    // transport.
     Http2ClientTransport* transport_;
   };
 

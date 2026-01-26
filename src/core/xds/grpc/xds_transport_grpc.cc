@@ -254,7 +254,7 @@ namespace {
 
 RefCountedPtr<Channel> CreateXdsChannel(
     const ChannelArgs& args,
-    const CertificateProviderStoreInterface& certificate_provider_store,
+    CertificateProviderStoreInterface& certificate_provider_store,
     const GrpcXdsServerInterface& server) {
   RefCountedPtr<grpc_channel_credentials> channel_creds =
       CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(

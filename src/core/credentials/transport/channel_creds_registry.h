@@ -68,8 +68,8 @@ class ChannelCredsFactory final {
       ValidationErrors* errors) const = delete;
   virtual RefCountedPtr<T> CreateChannelCreds(
       RefCountedPtr<const ChannelCredsConfig> config,
-      const CertificateProviderStoreInterface& certificate_provider_store)
-      const = delete;
+      CertificateProviderStoreInterface& certificate_provider_store) const =
+      delete;
 };
 
 template <>
@@ -88,8 +88,7 @@ class ChannelCredsFactory<grpc_channel_credentials> {
       ValidationErrors* errors) const = 0;
   virtual RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
       RefCountedPtr<const ChannelCredsConfig> config,
-      const CertificateProviderStoreInterface& certificate_provider_store)
-      const = 0;
+      CertificateProviderStoreInterface& certificate_provider_store) const = 0;
 };
 
 template <typename T = grpc_channel_credentials>
@@ -154,8 +153,7 @@ class ChannelCredsRegistry {
 
   RefCountedPtr<T> CreateChannelCreds(
       RefCountedPtr<const ChannelCredsConfig> config,
-      const CertificateProviderStoreInterface& certificate_provider_store)
-      const {
+      CertificateProviderStoreInterface& certificate_provider_store) const {
     if (config == nullptr) return nullptr;
     auto it = name_map_.find(config->type());
     if (it == name_map_.cend()) {
