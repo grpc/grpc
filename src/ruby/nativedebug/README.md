@@ -19,10 +19,10 @@ for example, a lot of information will initially be missing.
 
 ## Download Location
 
-**Version 1.60.0+**: Download from GCS (exceeds RubyGems 500MB limit)
+**Version 1.79.0+**: Download from GCS (exceeds RubyGems 500MB limit)
 
 ```bash
-VERSION=1.60.1  # your grpc version
+VERSION=1.79.1  # your grpc version
 PLATFORM=x86_64-linux  # or x86-linux
 
 # Download gem
