@@ -45,8 +45,6 @@ cdef class OnCompleteWrapper:
     cdef StatusOr[string] cpp_result
     cdef string cpp_string
     if self.c_on_complete != NULL:
-      
-
       if isinstance(result, bytes):
         # We got a signature
         cpp_string = result
@@ -66,22 +64,6 @@ cdef class OnCompleteWrapper:
       # Don't call multiple types
       self.c_on_complete = NULL
     print(f"Python OnCompleteWrapper({result}) ending", flush=True)
-
-
-    #   if isinstance(result, str):
-    #     cpp_string = result.encode('utf-8')
-    #     cpp_result = MakeStringResult(cpp_string)
-    #   elif isinstance(result, Exception):
-    #     # If python returns an exception, convert to absl::Status
-    #     cpp_string = str(result).encode('utf-8')
-    #     cpp_result = MakeInternalError(cpp_string)
-    #   else:
-    #     cpp_string = f"Invalid result type: {type(result)}".encode('utf-8')
-    #     cpp_result = MakeInternalError(cpp_string)
-    #   self.c_on_complete(cpp_result, <void*> self.c_completion_data)
-    #   # Don't call multiple types
-    #   self.c_on_complete = NULL
-    # print(f"Python OnCompleteWrapper({result}) ending", flush=True)
 
 cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignatureAlgorithm algorithm, void* user_data, CompletionFunctionPyWrapper on_complete, void* completion_data) noexcept nogil:
   # Get the original python function the user passes

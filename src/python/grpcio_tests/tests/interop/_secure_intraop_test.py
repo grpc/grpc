@@ -30,7 +30,6 @@ _SERVER_HOST_OVERRIDE = "foo.test.google.fr"
 @unittest.skipIf(
     sys.version_info[0] < 3, "ProtoBuf descriptor has moved on from Python2"
 )
-@unittest.skip(reason="temp")
 class SecureIntraopTest(_intraop_test_case.IntraopTestCase, unittest.TestCase):
     def setUp(self):
         self.server = test_common.test_server()
@@ -63,7 +62,6 @@ class SecureIntraopTest(_intraop_test_case.IntraopTestCase, unittest.TestCase):
         self.server.stop(None)
 
 
-@unittest.skip(reason="temp")
 class SecureInteropWithSyncPrivateKeyOffloadingTest(
     _intraop_test_case.IntraopTestCase, unittest.TestCase
 ):
