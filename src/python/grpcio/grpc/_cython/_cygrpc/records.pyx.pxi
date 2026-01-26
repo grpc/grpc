@@ -59,7 +59,7 @@ class WriteFlag:
   no_compress = GRPC_WRITE_NO_COMPRESS
 
 
-class StatusCode:
+class StatusCode(enum.IntEnum):
   ok = GRPC_STATUS_OK
   cancelled = GRPC_STATUS_CANCELLED
   unknown = GRPC_STATUS_UNKNOWN
