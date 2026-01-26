@@ -154,7 +154,7 @@ def proxymain
     opts.on('--driver_port PORT', '<port>') do |v|
       options['driver_port'] = v
     end
-    opts.on("-c", "--[no-]use_protobuf_c_extension", "Use protobuf C-extention") do |c|
+    opts.on("-c", "--[no-]use_protobuf_c_extension", "Use protobuf C-extension") do |c|
       options[:c_ext] = c
     end
     opts.on("-b", "--php_client_bin [FILE]",
