@@ -60,6 +60,7 @@ class WriteFlag:
 
 
 class StatusCode(enum.IntEnum):
+  __module__ = 'grpc._cython.cygrpc'
   ok = GRPC_STATUS_OK
   cancelled = GRPC_STATUS_CANCELLED
   unknown = GRPC_STATUS_UNKNOWN
@@ -100,6 +101,7 @@ class CompletionType:
 
 
 class OperationType(enum.IntEnum):
+  __module__ = 'grpc._cython.cygrpc'
   send_initial_metadata = GRPC_OP_SEND_INITIAL_METADATA
   send_message = GRPC_OP_SEND_MESSAGE
   send_close_from_client = GRPC_OP_SEND_CLOSE_FROM_CLIENT
