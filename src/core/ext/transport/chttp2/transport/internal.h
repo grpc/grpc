@@ -924,4 +924,26 @@ void schedule_bdp_ping_locked(
 
 uint32_t grpc_chttp2_min_read_progress_size(grpc_chttp2_transport* t);
 
+namespace grpc_core {
+
+inline bool ShouldLogParseError() {
+  if (GRPC_TRACE_FLAG_ENABLED(http)) return true;
+  static constexpr uint64_t kLogInterval = Duration::Seconds(1).millis();
+  static std::atomic<uint64_t> last_log_time{0};
+  const uint64_t now = Timestamp::Now().milliseconds_after_process_epoch();
+  uint64_t last = last_log_time.load(std::memory_order_relaxed);
+  while (last == 0 || now >= last + kLogInterval) {
+    if (last_log_time.compare_exchange_weak(last, now,
+                                            std::memory_order_relaxed)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+}  // namespace grpc_core
+
+#define GRPC_CHTTP2_LOG_PARSE_ERROR() \
+  LOG_IF(ERROR, grpc_core::ShouldLogParseError())
+
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H

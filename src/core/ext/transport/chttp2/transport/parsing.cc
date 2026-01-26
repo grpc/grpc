@@ -468,7 +468,7 @@ static grpc_error_handle init_frame_parser(grpc_chttp2_transport* t,
       }
       return init_security_frame_parser(t);
     default:
-      GRPC_TRACE_LOG(http, ERROR)
+      GRPC_CHTTP2_LOG_PARSE_ERROR()
           << "Unknown frame type "
           << absl::StrFormat("%02x", t->incoming_frame_type);
       return init_non_header_skip_frame_parser(t);
@@ -951,7 +951,7 @@ static grpc_error_handle parse_frame_slice(grpc_chttp2_transport* t,
   if (GPR_LIKELY(err.ok())) {
     return err;
   }
-  GRPC_TRACE_LOG(http, ERROR)
+  GRPC_CHTTP2_LOG_PARSE_ERROR()
       << "INCOMING[" << t << ";" << s << "]: Parse failed with " << err;
   if (grpc_error_get_int(err, grpc_core::StatusIntProperty::kStreamId,
                          &unused)) {

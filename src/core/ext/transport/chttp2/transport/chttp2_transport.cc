@@ -2998,6 +2998,8 @@ static void read_action_parse_loop_locked(
       }
     }
     if (errors[1] != absl::OkStatus()) {
+      GRPC_CHTTP2_LOG_PARSE_ERROR()
+          << "Failed parsing HTTP/2: " << errors[1].message();
       errors[2] = try_http_parsing(t.get());
       error = GRPC_ERROR_CREATE_REFERENCING("Failed parsing HTTP/2", errors,
                                             GPR_ARRAY_SIZE(errors));
