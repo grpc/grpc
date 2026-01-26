@@ -13,6 +13,7 @@
 # limitations under the License.
 """Custom rules for gRPC Python"""
 
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_python//python:defs.bzl", "py_library")
 
 # Adapted with modifications from
@@ -71,7 +72,7 @@ def pyx_library(name, deps = [], py_deps = [], srcs = [], **kwargs):
     for src in pyx_srcs:
         stem = src.split(".")[0]
         shared_object_name = stem + ".so"
-        native.cc_binary(
+        cc_binary(
             name = shared_object_name,
             srcs = [stem + ".cpp"],
             deps = deps + ["@local_config_python//:python_headers"],

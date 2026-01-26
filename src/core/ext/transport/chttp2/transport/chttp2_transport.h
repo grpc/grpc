@@ -135,6 +135,8 @@ class HttpAnnotation : public CallTracerAnnotationInterface::Annotation {
   }
 
   std::string ToString() const override;
+  void ForEachKeyValue(
+      absl::FunctionRef<void(absl::string_view, ValueType)> f) const override;
 
   Type http_type() const { return type_; }
   gpr_timespec time() const { return time_; }

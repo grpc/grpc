@@ -52,6 +52,7 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 #include "absl/types/span.h"
 
 namespace grpc_core {
@@ -166,17 +167,19 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
         // not receive the ACK. The transport must close when this happens.
         TrySeq(Sleep(settings_ack_timeout_),
                [sent_time = sent_time_, timeout = settings_ack_timeout_]() {
+                 const std::string message = absl::StrCat(
+                     RFC9113::kSettingsTimeout,
+                     " Sent Time : ", sent_time.ToString(),
+                     " Timeout Time : ", (sent_time + timeout).ToString(),
+                     " Current Time : ", Timestamp::Now().ToString());
                  GRPC_SETTINGS_TIMEOUT_DLOG
-                     << "SettingsPromiseManager::WaitForSettingsTimeout Timeout"
-                        " triggered. Transport will close. Sent Time : "
-                     << sent_time << " Timeout Time : " << (sent_time + timeout)
-                     << " Current Time " << Timestamp::Now();
+                     << "SettingsPromiseManager::WaitForSettingsTimeout"
+                     << message;
                  // Ideally we must set did_previous_settings_promise_resolve_
                  // to false, but in this case the transport will be closed so
                  // it does not matter. I am trying to avoid taking another ref
                  // on self in this TrySeq.
-                 return absl::CancelledError(
-                     std::string(RFC9113::kSettingsTimeout));
+                 return absl::CancelledError(message);
                })));
   }
 
@@ -205,12 +208,14 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   // written to apply the settings. If the first settings frame is received from
   // the peer that that needs some special handling too.
   http2::Http2ErrorCode MaybeReportAndApplyBufferedPeerSettings(
-      grpc_event_engine::experimental::EventEngine* event_engine) {
+      grpc_event_engine::experimental::EventEngine* event_engine,
+      bool& should_spawn_security_frame_loop) {
     http2::Http2ErrorCode status = settings_.ApplyIncomingSettings(
         std::exchange(pending_peer_settings_, {}));
     if (state_ == SettingsState::kFirstPeerSettingsReceived) {
       MaybeReportInitialSettings(event_engine);
       state_ = SettingsState::kReady;
+      should_spawn_security_frame_loop = IsSecurityFrameExpected();
     }
     return status;
   }
@@ -256,6 +261,9 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   const Http2Settings& acked() const { return settings_.acked(); }
   const Http2Settings& peer() const { return settings_.peer(); }
 
+  //////////////////////////////////////////////////////////////////////////////
+  // ChannelZ and Security Frame Stuff
+
   channelz::PropertyGrid ChannelzProperties() const {
     return settings_.ChannelzProperties();
   }
@@ -265,8 +273,7 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
         << "Security frame must not be received before SETTINGS frame";
     // TODO(tjagtap) : [PH2][P3] : Evaluate when to accept the frame and when to
     // reject it. Compare it with the requirement and with CHTTP2.
-    return (settings_.acked().allow_security_frame() ||
-            settings_.local().allow_security_frame()) &&
+    return (settings_.local().allow_security_frame()) &&
            settings_.peer().allow_security_frame();
   };
 
@@ -382,8 +389,8 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
   // better debuggability.
   Timestamp sent_time_ = Timestamp::InfFuture();
   Waker ack_timeout_waker_;
-  bool did_register_ack_timeout_waker_ = false;
   int number_of_acks_unprocessed_ = 0;
+  bool did_register_ack_timeout_waker_ = false;
   bool should_wait_for_settings_ack_ = false;
 
   // For CHTTP2, MaybeSendUpdate() checks `update_state_` to ensure only one

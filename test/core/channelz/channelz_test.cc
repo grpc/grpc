@@ -372,16 +372,28 @@ TEST_P(ChannelzChannelTest, BasicDataSource) {
     const Json::Object& object = json.object();
     auto it_additional_info = object.find("additionalInfo");
     ASSERT_NE(it_additional_info, object.end());
-    ASSERT_EQ(it_additional_info->second.type(), Json::Type::kObject);
-    const Json::Object& additional_info = it_additional_info->second.object();
-    auto it_test_data = additional_info.find("testData");
-    ASSERT_NE(it_test_data, additional_info.end());
-    ASSERT_EQ(it_test_data->second.type(), Json::Type::kObject);
-    const Json::Object& test_data = it_test_data->second.object();
-    auto it = test_data.find("test");
-    ASSERT_NE(it, test_data.end());
-    ASSERT_EQ(it->second.type(), Json::Type::kString);
-    EXPECT_EQ(it->second.string(), "yes");
+    ASSERT_EQ(it_additional_info->second.type(), Json::Type::kArray);
+    const Json::Array& additional_info = it_additional_info->second.array();
+    bool found = false;
+    for (const auto& item : additional_info) {
+      ASSERT_EQ(item.type(), Json::Type::kObject);
+      const Json::Object& item_obj = item.object();
+      auto it_name = item_obj.find("name");
+      if (it_name != item_obj.end() &&
+          it_name->second.type() == Json::Type::kString &&
+          it_name->second.string() == "testData") {
+        found = true;
+        auto it_value = item_obj.find("value");
+        ASSERT_NE(it_value, item_obj.end());
+        ASSERT_EQ(it_value->second.type(), Json::Type::kObject);
+        const Json::Object& test_data = it_value->second.object();
+        auto it = test_data.find("test");
+        ASSERT_NE(it, test_data.end());
+        ASSERT_EQ(it->second.type(), Json::Type::kString);
+        EXPECT_EQ(it->second.string(), "yes");
+      }
+    }
+    EXPECT_TRUE(found);
   }
   // Render again without the data source
   {
@@ -390,10 +402,17 @@ TEST_P(ChannelzChannelTest, BasicDataSource) {
     const Json::Object& object = json.object();
     auto it = object.find("additionalInfo");
     if (it != object.end()) {
-      ASSERT_EQ(it->second.type(), Json::Type::kObject);
-      const Json::Object& additional_info = it->second.object();
-      auto it_test_data = additional_info.find("testData");
-      EXPECT_EQ(it_test_data, additional_info.end());
+      ASSERT_EQ(it->second.type(), Json::Type::kArray);
+      const Json::Array& additional_info = it->second.array();
+      for (const auto& item : additional_info) {
+        ASSERT_EQ(item.type(), Json::Type::kObject);
+        const Json::Object& item_obj = item.object();
+        auto it_name = item_obj.find("name");
+        if (it_name != item_obj.end() &&
+            it_name->second.type() == Json::Type::kString) {
+          EXPECT_NE(it_name->second.string(), "testData");
+        }
+      }
     }
   }
 }

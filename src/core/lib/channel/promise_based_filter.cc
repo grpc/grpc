@@ -23,6 +23,7 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/call/metadata.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error.h"
@@ -156,14 +157,16 @@ std::string BaseCallData::LogTag() const {
 }
 
 void BaseCallData::AddData(channelz::DataSink sink) {
-  auto add = [sink, this](grpc_error_handle) mutable {
-    sink.AddData(elem_->filter->name.name(), ChannelzProperties());
-    GRPC_CALL_COMBINER_STOP(call_combiner(), "channelz_add_data");
-    GRPC_CALL_STACK_UNREF(call_stack_, "channelz_add_data");
-  };
-  GRPC_CALL_STACK_REF(call_stack_, "channelz_add_data");
-  GRPC_CALL_COMBINER_START(call_combiner_, NewClosure(std::move(add)),
-                           absl::OkStatus(), "channelz_add_data");
+  EnsureRunInExecCtx([this, sink = std::move(sink)]() mutable {
+    auto add = [sink, this](grpc_error_handle) mutable {
+      sink.AddData(elem_->filter->name.name(), ChannelzProperties());
+      GRPC_CALL_COMBINER_STOP(call_combiner(), "channelz_add_data");
+      GRPC_CALL_STACK_UNREF(call_stack_, "channelz_add_data");
+    };
+    GRPC_CALL_STACK_REF(call_stack_, "channelz_add_data");
+    GRPC_CALL_COMBINER_START(call_combiner_, NewClosure(std::move(add)),
+                             absl::OkStatus(), "channelz_add_data");
+  });
 }
 
 channelz::PropertyList BaseCallData::ChannelzProperties() const {
@@ -1305,9 +1308,11 @@ ClientCallData::ClientCallData(grpc_call_element* elem,
   if (server_initial_metadata_pipe() != nullptr) {
     recv_initial_metadata_ = arena()->New<RecvInitialMetadata>();
   }
+  SourceConstructed();
 }
 
 ClientCallData::~ClientCallData() {
+  SourceDestructing();
   ScopedActivity scoped_activity(this);
   GRPC_CHECK_EQ(poll_ctx_, nullptr);
   if (recv_initial_metadata_ != nullptr) {
@@ -1994,9 +1999,11 @@ ServerCallData::ServerCallData(grpc_call_element* elem,
   GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_,
                     RecvTrailingMetadataReadyCallback, this,
                     grpc_schedule_on_exec_ctx);
+  SourceConstructed();
 }
 
 ServerCallData::~ServerCallData() {
+  SourceDestructing();
   GRPC_TRACE_LOG(channel, INFO)
       << LogTag() << " ~ServerCallData " << DebugString();
   if (send_initial_metadata_ != nullptr) {
@@ -2034,6 +2041,7 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
                !batch->recv_trailing_metadata);
     PollContext poll_ctx(this, &flusher);
     Completed(batch->payload->cancel_stream.cancel_error,
+              std::move(batch->payload->cancel_stream.send_trailing_metadata),
               batch->payload->cancel_stream.tarpit, &flusher);
     if (is_last()) {
       batch.CompleteWith(&flusher);
@@ -2154,6 +2162,7 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
 
 // Handle cancellation.
 void ServerCallData::Completed(grpc_error_handle error,
+                               ServerMetadataHandle trailing_metadata,
                                bool tarpit_cancellation, Flusher* flusher) {
   GRPC_TRACE_VLOG(channel, 2)
       << LogTag() << "ServerCallData::Completed: send_trailing_state="
@@ -2181,6 +2190,10 @@ void ServerCallData::Completed(grpc_error_handle error,
         batch->cancel_stream = true;
         batch->payload->cancel_stream.cancel_error = error;
         batch->payload->cancel_stream.tarpit = tarpit_cancellation;
+        if (IsPromiseFilterSendCancelMetadataEnabled()) {
+          batch->payload->cancel_stream.send_trailing_metadata =
+              std::move(trailing_metadata);
+        }
         flusher->Resume(batch);
       }
       break;
@@ -2313,8 +2326,8 @@ void ServerCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
       << " md=" << recv_trailing_metadata_->DebugString();
   Flusher flusher(this);
   PollContext poll_ctx(this, &flusher);
-  Completed(error, recv_trailing_metadata_->get(GrpcTarPit()).has_value(),
-            &flusher);
+  Completed(error, /*trailing_metadata=*/nullptr,
+            recv_trailing_metadata_->get(GrpcTarPit()).has_value(), &flusher);
   flusher.AddClosure(original_recv_trailing_metadata_ready_, std::move(error),
                      "continue recv trailing");
 }
@@ -2521,8 +2534,14 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
           break;
         case SendTrailingState::kInitial: {
           GRPC_CHECK(*md->get_pointer(GrpcStatusMetadata()) != GRPC_STATUS_OK);
-          Completed(StatusFromMetadata(*md), md->get(GrpcTarPit()).has_value(),
-                    flusher);
+          if (IsPromiseFilterSendCancelMetadataEnabled()) {
+            absl::Status status = StatusFromMetadata(*md);
+            bool tar_pit_set = md->get(GrpcTarPit()).has_value();
+            Completed(std::move(status), std::move(md), tar_pit_set, flusher);
+          } else {
+            Completed(StatusFromMetadata(*md), /*trailing_metadata=*/nullptr,
+                      md->get(GrpcTarPit()).has_value(), flusher);
+          }
         } break;
         case SendTrailingState::kCancelled:
           // Nothing to do.
