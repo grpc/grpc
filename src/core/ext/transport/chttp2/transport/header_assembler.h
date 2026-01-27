@@ -301,10 +301,8 @@ class HeaderAssembler {
             stream_error = result;
           }
         } else {
-          LOG(ERROR) << "Connection Error: " << kAssemblerHpackError;
-          return Http2Status::Http2ConnectionError(
-              Http2ErrorCode::kCompressionError,
-              std::string(kAssemblerHpackError));
+          LOG(ERROR) << "HPack Error: " << result;
+          return ToHttpOkOrConnError(result);
         }
       }
     }

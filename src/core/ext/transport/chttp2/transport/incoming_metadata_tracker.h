@@ -21,9 +21,15 @@
 
 #include <cstdint>
 #include <string>
+#include <utility>
 
+#include "src/core/call/metadata_info.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/util/grpc_check.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 
 namespace grpc_core {
@@ -40,13 +46,26 @@ class IncomingMetadataTracker {
   // a time. This class is distinct from HeaderAssembler, which buffers header
   // payloads on a per-stream basis.
  public:
-  IncomingMetadataTracker() = default;
+  explicit IncomingMetadataTracker(Slice peer_string)
+      : peer_string_(std::move(peer_string)) {}
   ~IncomingMetadataTracker() = default;
 
   IncomingMetadataTracker(IncomingMetadataTracker&& rvalue) = delete;
   IncomingMetadataTracker& operator=(IncomingMetadataTracker&& rvalue) = delete;
   IncomingMetadataTracker(const IncomingMetadataTracker&) = delete;
   IncomingMetadataTracker& operator=(const IncomingMetadataTracker&) = delete;
+
+  static Slice GetPeerString(const PromiseEndpoint& endpoint) {
+    absl::StatusOr<std::string> uri =
+        grpc_event_engine::experimental::ResolvedAddressToURI(
+            endpoint.GetPeerAddress());
+    if (uri.ok()) {
+      return Slice::FromCopiedString(*uri);
+    }
+    return Slice::FromCopiedString("unknown");
+  }
+
+  Slice peer_string() const { return peer_string_.Ref(); }
 
   void set_soft_limit(uint32_t limit) {
     max_header_list_size_soft_limit_ = limit;
@@ -114,11 +133,15 @@ class IncomingMetadataTracker {
   }
 
  private:
+  // Initialized only once at the time of transport creation.
+  // Should remain constant for the lifetime of the transport.
+  const Slice peer_string_;
+
   bool incoming_header_in_progress_ = false;
   bool incoming_header_end_stream_ = false;
   uint32_t incoming_header_stream_id_ = 0;
-  // DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT
-  uint32_t max_header_list_size_soft_limit_ = 8 * 1024;
+  uint32_t max_header_list_size_soft_limit_ =
+      DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT;
 };
 
 }  // namespace http2

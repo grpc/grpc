@@ -132,6 +132,12 @@ class MessageChunker {
   uint32_t max_chunk_size() const { return max_chunk_size_; }
   uint32_t alignment() const { return alignment_; }
 
+  void AddData(channelz::DataSink sink) {
+    sink.AddData("message_chunker", channelz::PropertyList()
+                                        .Set("max_chunk_size", max_chunk_size_)
+                                        .Set("alignment", alignment_));
+  }
+
  private:
   bool ShouldChunk(Message& message) {
     return max_chunk_size_ != 0 &&

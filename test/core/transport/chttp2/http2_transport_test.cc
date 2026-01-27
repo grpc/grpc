@@ -22,6 +22,7 @@
 #include <grpc/event_engine/slice.h>
 #include <grpc/grpc.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -29,45 +30,32 @@
 #include <vector>
 
 #include "src/core/call/call_spine.h"
-#include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
-#include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
-#include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/sleep.h"
-#include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
-#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
-#include "test/core/promise/poll_matcher.h"
-#include "test/core/test_util/postmortem.h"
-#include "test/core/transport/chttp2/http2_frame_test_helper.h"
-#include "test/core/transport/util/mock_promise_endpoint.h"
-#include "test/core/transport/util/transport_test.h"
-#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/span.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -644,7 +632,7 @@ TEST_F(TestsNeedingStreamObjects,
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// Http2ReadContext tests
+// Read and Write helper tests
 
 class Http2ReadContextTest : public ::testing::Test {
  protected:
@@ -749,6 +737,91 @@ TEST_F(Http2ReadContextTest, PauseAndWake) {
                ". SetPause Pause Wake _ . SetPause Pause Wake _ . "
                "SetPause Pause Wake _ . SetPause Pause Wake _ . "
                "SetPause Pause Wake _ . EndRead Wake EndWrite ");
+}
+
+TEST(Http2CommonTransportTest, GetWriteArgsTest) {
+  Http2Settings settings;
+  // Default value of preferred_receive_crypto_message_size is 0, yields
+  // INT_MAX for max_frame_size.
+  PromiseEndpoint::WriteArgs args = WriteContext::GetWriteArgs(settings);
+  EXPECT_EQ(args.max_frame_size(), INT_MAX);
+
+  // If we set 0, it's clamped to min_preferred_receive_crypto_message_size.
+  settings.SetPreferredReceiveCryptoMessageSize(0);
+  args = WriteContext::GetWriteArgs(settings);
+  EXPECT_EQ(args.max_frame_size(),
+            Http2Settings::min_preferred_receive_crypto_message_size());
+
+  // If we set 1024, it's clamped to min_preferred_receive_crypto_message_size.
+  settings.SetPreferredReceiveCryptoMessageSize(1024);
+  args = WriteContext::GetWriteArgs(settings);
+  EXPECT_EQ(args.max_frame_size(),
+            Http2Settings::min_preferred_receive_crypto_message_size());
+
+  // If we set min_preferred_receive_crypto_message_size, it's clamped to
+  // min_preferred_receive_crypto_message_size.
+  settings.SetPreferredReceiveCryptoMessageSize(
+      Http2Settings::min_preferred_receive_crypto_message_size());
+  args = WriteContext::GetWriteArgs(settings);
+  EXPECT_EQ(args.max_frame_size(),
+            Http2Settings::min_preferred_receive_crypto_message_size());
+
+  // If we set min_preferred_receive_crypto_message_size + 1, it's within range.
+  settings.SetPreferredReceiveCryptoMessageSize(
+      Http2Settings::min_preferred_receive_crypto_message_size() + 1);
+  args = WriteContext::GetWriteArgs(settings);
+  EXPECT_EQ(args.max_frame_size(),
+            Http2Settings::min_preferred_receive_crypto_message_size() + 1);
+
+  // If we set to max value, it's within range.
+  settings.SetPreferredReceiveCryptoMessageSize(
+      Http2Settings::max_preferred_receive_crypto_message_size());
+  args = WriteContext::GetWriteArgs(settings);
+  EXPECT_EQ(args.max_frame_size(),
+            Http2Settings::max_preferred_receive_crypto_message_size());
+
+  // If we set value > max value, it's clamped to max value.
+  settings.SetPreferredReceiveCryptoMessageSize(
+      Http2Settings::max_preferred_receive_crypto_message_size() + 1u);
+  args = WriteContext::GetWriteArgs(settings);
+  EXPECT_EQ(args.max_frame_size(),
+            Http2Settings::max_preferred_receive_crypto_message_size());
+}
+
+TEST(Http2CommonTransportTest, WriteContextTest) {
+  WriteContext write_context;
+
+  // 1. Initialize
+  WriteContext::WriteQuota write_quota = write_context.StartNewWriteAttempt();
+  size_t initial_target = write_quota.GetTargetWriteSize();
+  EXPECT_GT(initial_target, 0u);
+  EXPECT_EQ(write_quota.GetWriteBytesRemaining(), initial_target);
+
+  // 2. Consume bytes
+  // We consume less than target to verify remaining calculation.
+  size_t bytes_consumed = 1;
+  write_quota.IncrementBytesConsumed(bytes_consumed);
+  EXPECT_EQ(write_quota.GetWriteBytesRemaining(),
+            initial_target - bytes_consumed);
+
+  // 3. Begin Write
+  // This forwards to policy.
+  write_context.BeginWrite(bytes_consumed);
+
+  // 4. End Write (Success)
+  write_context.EndWrite(true);
+
+  // 5. Re-Initialize
+  WriteContext::WriteQuota write_quota2 = write_context.StartNewWriteAttempt();
+  EXPECT_GT(write_quota2.GetTargetWriteSize(), 0u);
+
+  // 6. Test Exceeding target (should clamp remaining to 0)
+  // Note: IncrementBytesConsumed just adds to the counter.
+  write_quota2.IncrementBytesConsumed(write_quota2.GetTargetWriteSize() + 100u);
+  EXPECT_EQ(write_quota2.GetWriteBytesRemaining(), 0u);
+
+  write_context.BeginWrite(100);
+  write_context.EndWrite(false);  // Fail
 }
 
 }  // namespace testing

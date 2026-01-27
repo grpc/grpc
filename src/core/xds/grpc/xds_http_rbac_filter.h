@@ -46,7 +46,7 @@ class XdsHttpRbacFilter final : public XdsHttpFilterImpl {
       absl::string_view /*instance_name*/,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const override;
-  void AddFilter(InterceptionChainBuilder& builder) const override;
+  void AddFilter(FilterChainBuilder& builder) const override;
   const grpc_channel_filter* channel_filter() const override;
   ChannelArgs ModifyChannelArgs(const ChannelArgs& args) const override;
   absl::StatusOr<ServiceConfigJsonEntry> GenerateMethodConfig(
