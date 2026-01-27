@@ -1762,10 +1762,15 @@ def ssl_channel_credentials_with_custom_signer_with_cancellation(
     private_key_sign_fn: CustomPrivateKeySignWithHandle,
     root_certificates: Optional[bytes] = None,
     certificate_chain: bytes,
+    cancel_fn,
 ) -> ChannelCredentials:
     return ChannelCredentials(
         _cygrpc.SSLChannelCredentials(
-            root_certificates, None, certificate_chain, private_key_sign_fn
+            root_certificates,
+            None,
+            certificate_chain,
+            private_key_sign_fn,
+            cancel_fn,
         )
     )
 

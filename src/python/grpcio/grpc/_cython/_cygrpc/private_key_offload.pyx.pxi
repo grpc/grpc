@@ -28,16 +28,18 @@ cdef StatusOr[string] MakeStringResult(string result):
 
 cdef class PyAsyncSigningHandleImpl(PyAsyncSigningHandle):
     cdef shared_ptr[AsyncSigningHandle] c_handle # Pointer to the wrapped C instance
+    cdef dict __dict__
 
     def __cinit__(self):
         cdef shared_ptr[AsyncSigningHandlePyWrapper] py_wrapper_handle = make_shared[AsyncSigningHandlePyWrapper]()
         # might need to incref here
         py_wrapper_handle.get().python_handle = <void*> self
+        Py_INCREF(self)
         self.c_handle = static_pointer_cast[AsyncSigningHandle, AsyncSigningHandlePyWrapper](py_wrapper_handle)
 
     def __dealloc__(self):
       # Maybe need to handle shared_ptr here
-      pass
+      Py_DECREF(self)
 
 cdef class OnCompleteWrapper:
   cdef CompletionFunctionPyWrapper c_on_complete
@@ -128,10 +130,12 @@ cdef void cancel_wrapper(shared_ptr[AsyncSigningHandle] handle, void* cancel_dat
   # cdef void* py_handle_ptr = impl.get().python_handle
   # cdef shared_ptr[AsyncSigningHandlePyWrapper] impl
   with gil:
+    print("GREG: In cancel_wrapper", flush=True)
     impl = <shared_ptr[AsyncSigningHandlePyWrapper]>static_pointer_cast[AsyncSigningHandlePyWrapper, AsyncSigningHandle](handle)
     py_handle_ptr = impl.get().python_handle
     py_handle = <PyAsyncSigningHandleImpl>py_handle_ptr
     py_cancel_func = <object>cancel_data
+    print("Calling py_cancel_func", flush=True)
     py_cancel_func(py_handle)
 
 # To be called from the python layer when the user provides a signer function.
