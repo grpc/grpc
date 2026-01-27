@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-cdef bint _disable_absl_init_log = os.environ.get("GRPC_PYTHON_DISABLE_ABSL_INIT_LOG", "")
+cdef bint _disable_absl_init_log = os.environ.get("GRPC_PYTHON_DISABLE_ABSL_INIT_LOG", "") in {"1", "t", "true", "y", "yes"}
 
 #
 # initialize absl
