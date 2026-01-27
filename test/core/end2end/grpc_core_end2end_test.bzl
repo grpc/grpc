@@ -63,6 +63,7 @@ _DEPS = [
     "//src/core:channel_init",
     "//src/core:channel_stack_type",
     "//src/core:chaotic_good",
+    "//src/core:client_channel_internal_header",
     "//src/core:closure",
     "//src/core:error",
     "//src/core:experiments",
