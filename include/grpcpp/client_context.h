@@ -37,6 +37,7 @@
 #include <grpc/impl/compression_types.h>
 #include <grpc/impl/propagation_bits.h>
 #include <grpcpp/impl/create_auth_context.h>
+#include <grpcpp/impl/enabled_call_options.h>
 #include <grpcpp/impl/metadata_map.h>
 #include <grpcpp/impl/rpc_method.h>
 #include <grpcpp/impl/sync.h>
@@ -366,6 +367,11 @@ class ClientContext {
   ///
   /// \return The call's peer URI.
   std::string peer() const;
+
+  template <typename T>
+  std::enable_if_t<impl::kIsEnabled<T>> SetCallOption(T option) {
+    grpc::SetCallOptionsInternal(option);
+  }
 
   /// Sets the census context.
   /// It is only valid to call this before the client call is created. A common

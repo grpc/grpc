@@ -476,6 +476,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/completion_queue_tag.h",
     "include/grpcpp/impl/create_auth_context.h",
     "include/grpcpp/impl/delegating_channel.h",
+    "include/grpcpp/impl/enabled_call_options.h",
     "include/grpcpp/impl/generic_stub_internal.h",
     "include/grpcpp/impl/grpc_library.h",
     "include/grpcpp/impl/intercepted_channel.h",
@@ -1691,6 +1692,16 @@ grpc_cc_library(
         "//src/core:useful",
         "//src/core:windows_event_engine",
         "//src/core:windows_event_engine_listener",
+    ],
+)
+
+grpc_cc_library(
+    name = "telemetry_label",
+    hdrs = [
+        "//src/core:telemetry/telemetry_label.h",
+    ],
+    deps = [
+        "//src/core:arena",
     ],
 )
 
