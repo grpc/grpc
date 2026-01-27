@@ -67,6 +67,7 @@ processing requests via debug logs. Available tracers include:
   - server_channel - Lightweight trace of significant server channel events.
   - stateful_session_filter - Stateful session affinity.
   - subchannel - Connectivity state of subchannels.
+  - subchannel_call - Call handling in the subchannel.
   - subchannel_pool - Subchannel pool.
   - tcp - Bytes in and out of a channel.
   - timer - Timers (alarms) in the grpc internals.

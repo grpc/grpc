@@ -45,11 +45,6 @@ class BufferedCall {
   // Must be called from within the call combiner.
   void EnqueueBatch(grpc_transport_stream_op_batch* batch);
 
-  // Resumes all queued batches by passing them to start_batch().
-  // Must be called from within the call combiner.
-  void Resume(
-      absl::AnyInvocable<void(grpc_transport_stream_op_batch*)> start_batch);
-
   // A predicate type and some useful implementations for Fail().
   typedef bool (*YieldCallCombinerPredicate)(
       const CallCombinerClosureList& closures);
@@ -63,6 +58,17 @@ class BufferedCall {
       const CallCombinerClosureList& closures) {
     return closures.size() > 0;
   }
+
+  // Resumes all queued batches by passing them to start_batch().
+  // Must be called from within the call combiner.
+  void Resume(
+      absl::AnyInvocable<void(grpc_transport_stream_op_batch*)> start_batch) {
+    Resume(std::move(start_batch), YieldCallCombiner);
+  }
+  void Resume(
+      absl::AnyInvocable<void(grpc_transport_stream_op_batch*)> start_batch,
+      YieldCallCombinerPredicate yield_call_combiner_predicate);
+
   // Fails all queued batches.
   // Must be called from within the call combiner.
   // If yield_call_combiner_predicate returns true, assumes responsibility for
