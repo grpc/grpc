@@ -31,6 +31,8 @@
 #include "src/core/util/ref_counted_ptr.h"
 
 #define GRPC_REGIONAL_ACCESS_BOUNDARY_CACHE_DURATION_SECS 21600 // 6 hours, in seconds
+#define GRPC_REGIONAL_ACCESS_BOUNDARY_BASE_COOLDOWN_DURATION_SECS 900 // 15 minutes, in seconds
+#define GRPC_REGIONAL_ACCESS_BOUNDARY_MAX_COOLDOWN_DURATION_SECS 3600 // 60 minutes, in seconds
 #define GRPC_ALLOWED_LOCATIONS_KEY "x-allowed-locations"
 
 struct grpc_call_credentials;
@@ -66,6 +68,11 @@ class RegionalAccessBoundaryFetcher {
  private:
   friend class RegionalAccessBoundaryFetcherTest;
   friend class CredentialsTest;
+  friend struct RegionalAccessBoundaryRequest;
+  friend void RetryFetchRegionalAccessBoundary(void* arg, grpc_error_handle error);
+  friend void OnRegionalAccessBoundaryResponse(void* arg, grpc_error_handle error);
+  friend void StartRegionalAccessBoundaryFetch(
+      grpc_core::RefCountedPtr<RegionalAccessBoundaryRequest> req);
 
   gpr_mu cache_mu_;
   std::optional<RegionalAccessBoundary> cache_;
