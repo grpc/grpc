@@ -114,9 +114,12 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:channel_arg_names",
+        "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:grpc",
         "//:grpc++",
+        "//src/core:channel_args",
         "//src/core:socket_mutator",
         "//src/core:useful",
         "//test/core/test_util:grpc_test_util",
