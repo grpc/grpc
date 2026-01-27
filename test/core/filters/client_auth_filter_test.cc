@@ -81,11 +81,48 @@ class ClientAuthFilterTest : public FilterTest<ClientAuthFilter> {
     absl::Status status_;
   };
 
+  class MockCallCreds : public grpc_call_credentials {
+   public:
+    MockCallCreds() : grpc_call_credentials(GRPC_SECURITY_NONE) {}
+
+    MOCK_METHOD(void, InvalidateRegionalAccessBoundaryCache, (), (override));
+
+    void Orphaned() override {}
+
+    UniqueTypeName type() const override {
+      static UniqueTypeName::Factory kFactory("MockCallCreds");
+      return kFactory.Create();
+    }
+
+    ArenaPromise<absl::StatusOr<ClientMetadataHandle>> GetRequestMetadata(
+        ClientMetadataHandle md,
+        const GetRequestMetadataArgs* /*args*/) override {
+      return Immediate<absl::StatusOr<ClientMetadataHandle>>(std::move(md));
+    }
+
+    int cmp_impl(const grpc_call_credentials* /*other*/) const override {
+      return 0;
+    }
+  };
+
   ClientAuthFilterTest()
       : channel_creds_(grpc_fake_transport_security_credentials_create()) {}
 
   Channel MakeChannelWithCallCredsResult(absl::Status status) {
     return MakeChannel(MakeChannelArgs(std::move(status))).value();
+  }
+
+  Channel MakeChannelWithCreds(RefCountedPtr<grpc_call_credentials> creds) {
+    ChannelArgs args;
+    auto security_connector = channel_creds_->create_security_connector(
+        std::move(creds), std::string(target()).c_str(), &args);
+    auto auth_context = MakeRefCounted<grpc_auth_context>(nullptr);
+    absl::string_view security_level = "TSI_SECURITY_NONE";
+    auth_context->add_property(GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,
+                               security_level.data(), security_level.size());
+    return MakeChannel(args.SetObject(std::move(security_connector))
+                           .SetObject(std::move(auth_context)))
+        .value();
   }
 
   ChannelArgs MakeChannelArgs(absl::Status status_for_call_creds) {
@@ -133,6 +170,25 @@ TEST_F(ClientAuthFilterTest, RewritesInvalidStatusFromCallCreds) {
   EXPECT_EVENT(Finished(&call, HasMetadataResult(absl::InternalError(
                                    "Illegal status code from call credentials; "
                                    "original status: ABORTED: nope"))));
+  Step();
+}
+
+TEST_F(ClientAuthFilterTest, InvalidateRegionalAccessBoundaryCache) {
+  auto creds = MakeRefCounted<MockCallCreds>();
+  EXPECT_CALL(*creds, InvalidateRegionalAccessBoundaryCache()).Times(1);
+
+  Call call(MakeChannelWithCreds(creds));
+  call.Start(call.NewClientMetadata({{":authority", target()}}));
+  EXPECT_EVENT(Started(&call, ::testing::_));
+  Step();
+
+  auto trailing_md = call.NewServerMetadata();
+  trailing_md->Set(GrpcStatusMetadata(), GRPC_STATUS_INVALID_ARGUMENT);
+  trailing_md->Set(GrpcMessageMetadata(),
+                   Slice::FromStaticString("stale_boundary"));
+  call.FinishNextFilter(std::move(trailing_md));
+
+  EXPECT_EVENT(Finished(&call, ::testing::_));
   Step();
 }
 

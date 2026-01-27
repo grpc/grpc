@@ -115,7 +115,7 @@ class ClientAuthFilter final : public ImplementChannelFilter<ClientAuthFilter> {
     static const inline NoInterceptor OnClientToServerMessage;
     static const inline NoInterceptor OnClientToServerHalfClose;
     static const inline NoInterceptor OnServerToClientMessage;
-    static const inline NoInterceptor OnServerTrailingMetadata;
+    void OnServerTrailingMetadata(ServerMetadata& md, ClientAuthFilter* filter);
     static const inline NoInterceptor OnFinalize;
   };
 

@@ -24,6 +24,9 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/call/metadata_batch.h"
+#include "src/core/call/security_context.h"
+#include "src/core/client_channel/client_channel_filter.h"
+#include "src/core/credentials/call/call_creds_util.h"
 #include "src/core/call/status_util.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/retry_service_config.h"
@@ -1132,6 +1135,13 @@ void RetryFilter::LegacyCallData::CallAttempt::BatchData::
         call_attempt->ShouldRetry(status, server_pushback)) {
       retry = kConfigurableRetry;
     }
+    // Ignore the retry policy and do a transparent retry if we encounter
+    // a stale regional access boundary as we will invalidate the cache
+    // and will not see the same stale error on retry.
+    if (grpc_core::IsStaleRegionalAccessBoundaryError(status, md_batch->get_pointer(GrpcMessageMetadata()))) {
+      retry = kTransparentRetry;
+    }
+
     // If we're retrying, do so.
     if (retry != kNoRetry) {
       CallCombinerClosureList closures;

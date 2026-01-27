@@ -29,6 +29,7 @@
 namespace grpc_core {
 
 bool IsRegionalAccessBoundaryLookupEnabled();
+bool IsStaleRegionalAccessBoundaryError(grpc_status_code status_code, const grpc_core::Slice* grpc_message);
 
 // Helper function to construct service URL for jwt call creds.
 std::string MakeJwtServiceUrl(

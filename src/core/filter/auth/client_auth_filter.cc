@@ -43,6 +43,7 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
+#include "src/core/credentials/call/call_creds_util.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
@@ -189,4 +190,20 @@ absl::StatusOr<std::unique_ptr<ClientAuthFilter>> ClientAuthFilter::Create(
 const grpc_channel_filter ClientAuthFilter::kFilter =
     MakePromiseBasedFilter<ClientAuthFilter, FilterEndpoint::kClient>();
 
+void ClientAuthFilter::Call::OnServerTrailingMetadata(ServerMetadata& md,
+                                                     ClientAuthFilter* filter) {
+  auto status = md.get(GrpcStatusMetadata());
+  if (status.has_value() && grpc_core::IsStaleRegionalAccessBoundaryError(
+          *status, md.get_pointer(GrpcMessageMetadata()))) {
+    auto* sec_ctx = GetContext<grpc_client_security_context>();
+    if (sec_ctx != nullptr && sec_ctx->creds != nullptr) {
+      sec_ctx->creds->InvalidateRegionalAccessBoundaryCache();
+    } else {
+      auto creds = filter->GetCallCreds();
+      if (creds.ok() && *creds != nullptr) {
+        (*creds)->InvalidateRegionalAccessBoundaryCache();
+      }
+    }
+  }
+}
 }  // namespace grpc_core
