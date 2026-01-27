@@ -39,6 +39,7 @@
 
 #include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
+#include "src/core/call/status_util.h"
 #include "src/core/lib/promise/all_ok.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/poll.h"
@@ -161,7 +162,9 @@ void ServerCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
     CToMetadata(op.data.send_status_from_server.trailing_metadata,
                 op.data.send_status_from_server.trailing_metadata_count,
                 metadata.get());
-    metadata->Set(GrpcStatusMetadata(), op.data.send_status_from_server.status);
+    grpc_status_code clamped_status =
+        grpc_status_code_clamp_to_valid(op.data.send_status_from_server.status);
+    metadata->Set(GrpcStatusMetadata(), clamped_status);
     if (auto* details = op.data.send_status_from_server.status_details) {
       // TODO(ctiller): this should not be a copy, but we have
       // callers that allocate and pass in a slice created with
