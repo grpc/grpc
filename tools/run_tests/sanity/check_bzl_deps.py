@@ -137,7 +137,7 @@ def get_commit_hash_from_github_url(url):
         return get_commit_hash_from_github_tag(
             mo.group(1), mo.group(2), mo.group(3)
         )
-    # Something like https://github.com/abseil/abseil-cpp/releases/download/20250512.1/abseil-cpp-20250512.1.tar.gz
+    # Something like https://github.com/abseil/abseil-cpp/releases/download/20250814.1/abseil-cpp-20250814.1.tar.gz
     mo = re.search(r"/([^/]+)/([^/]+)/releases/download/([^/]+)/", url)
     if mo:
         return get_commit_hash_from_github_tag(

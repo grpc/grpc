@@ -1635,7 +1635,6 @@ LIBGRPC_SRC = \
     third_party/abseil-cpp/absl/flags/usage_config.cc \
     third_party/abseil-cpp/absl/hash/internal/city.cc \
     third_party/abseil-cpp/absl/hash/internal/hash.cc \
-    third_party/abseil-cpp/absl/hash/internal/low_level_hash.cc \
     third_party/abseil-cpp/absl/log/globals.cc \
     third_party/abseil-cpp/absl/log/internal/check_op.cc \
     third_party/abseil-cpp/absl/log/internal/conditions.cc \
@@ -1648,6 +1647,7 @@ LIBGRPC_SRC = \
     third_party/abseil-cpp/absl/log/internal/proto.cc \
     third_party/abseil-cpp/absl/log/internal/structured_proto.cc \
     third_party/abseil-cpp/absl/log/internal/vlog_config.cc \
+    third_party/abseil-cpp/absl/log/log_entry.cc \
     third_party/abseil-cpp/absl/log/log_sink.cc \
     third_party/abseil-cpp/absl/numeric/int128.cc \
     third_party/abseil-cpp/absl/profiling/internal/exponential_biased.cc \

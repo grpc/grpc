@@ -6,6 +6,10 @@ grpc_deps()
 
 grpc_test_only_deps()
 
+load("@bazel_features//:deps.bzl", "bazel_features_deps")
+
+bazel_features_deps()
+
 load("//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
 
 grpc_extra_deps()
