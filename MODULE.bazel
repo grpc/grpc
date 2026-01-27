@@ -28,7 +28,6 @@ bazel_dep(name = "bazel_skylib", version = "1.8.1")
 bazel_dep(name = "boringssl", version = "0.20241024.0")  # mismatched 20241211
 bazel_dep(name = "c-ares", version = "1.19.1", repo_name = "com_github_cares_cares")
 bazel_dep(name = "envoy_api", version = "0.0.0-20251216-6ef568c")
-bazel_dep(name = "googleapis", version = "0.0.0-20251003-2193a2bf", repo_name = "com_google_googleapis")
 bazel_dep(name = "googleapis-cc", version = "1.0.0")
 bazel_dep(name = "googleapis-grpc-cc", version = "1.0.0")
 bazel_dep(name = "googleapis-python", version = "1.0.0")
@@ -132,6 +131,28 @@ exec_properties.custom_exec_properties(
     },
 )
 use_repo(exec_properties, "grpc_custom_exec_properties")
+
+# -- google_cloud_cpp 2.35.0 related repos, which requires a modified version of googleapis, hence the version pinning.
+bazel_dep(name = "googleapis", version = "0.0.0-20251003-2193a2bf", repo_name = "com_google_googleapis")
+single_version_override(
+    module_name = "googleapis",
+    patch_strip = 1,
+    patches = [
+        "//bazel:googleapis/patches/fix_google_cloud_cpp.patch",
+    ],
+    version = "0.0.0-20251003-2193a2bf",
+)
+
+bazel_dep(name = "google_cloud_cpp", version = "2.35.0", dev_dependency = True)
+archive_override(
+    module_name = "google_cloud_cpp",
+    integrity = "sha256-geooz55bsDLTVrAYdAnzCxA1+OpbUwZ16iSMimwAcKo=",
+    strip_prefix = "google-cloud-cpp-2.35.0",
+    urls = [
+        "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.35.0.tar.gz",
+        "https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.35.0.tar.gz",
+    ],
+)
 
 # --- Python headers
 # TODO(weizheyuan): Maybe replace this with python header exposed by rules_python.
