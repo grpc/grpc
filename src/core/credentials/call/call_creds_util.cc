@@ -54,6 +54,14 @@ bool IsRegionalAccessBoundaryLookupEnabled() {
   return false;
 }
 
+// TODO(mcastelaz) - Update this implementation when error details for this case become clear
+bool IsStaleRegionalAccessBoundaryError(grpc_status_code status_code, const grpc_core::Slice* grpc_message) {
+  static const char* kStaleRegionalAccessBoundaryMessage = "stale_boundary";
+  return status_code == GRPC_STATUS_INVALID_ARGUMENT &&
+         grpc_message != nullptr &&
+         *grpc_message == grpc_core::Slice::FromStaticString(kStaleRegionalAccessBoundaryMessage);
+}
+
 namespace {
 
 struct ServiceUrlAndMethod {
