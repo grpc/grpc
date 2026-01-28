@@ -53,7 +53,9 @@ _USER_AGENT = "grpc-python-asyncio/{}".format(_grpcio_metadata.__version__)
 if sys.version_info[1] < 7:
 
     def _all_tasks() -> Iterable[asyncio.Task]:
-        return asyncio.Task.all_tasks()  # pylint: disable=no-member
+        return (
+            asyncio.Task.all_tasks()  # pylint: disable=no-member # pyright: ignore [reportAttributeAccessIssue]
+        )  # type: ignore # noqa: PGH003
 
 else:
 
@@ -128,9 +130,9 @@ class _BaseMultiCallable:
         ):
             metadata = Metadata.from_tuple(tuple(metadata))
         if compression:
-            metadata = Metadata(
-                *_compression.augment_metadata(metadata, compression)
-            )
+            augmented = _compression.augment_metadata(metadata, compression)
+            if augmented:
+                metadata = Metadata(*augmented)
         return metadata
 
 
@@ -163,7 +165,7 @@ class UnaryUnaryMultiCallable(
             )
         else:
             call = InterceptedUnaryUnaryCall(
-                self._interceptors,
+                self._interceptors,  # type: ignore # noqa: PGH003
                 request,
                 timeout,
                 metadata,
@@ -209,7 +211,7 @@ class UnaryStreamMultiCallable(
             )
         else:
             call = InterceptedUnaryStreamCall(
-                self._interceptors,
+                self._interceptors,  # type: ignore # noqa: PGH003
                 request,
                 timeout,
                 metadata,
@@ -254,7 +256,7 @@ class StreamUnaryMultiCallable(
             )
         else:
             call = InterceptedStreamUnaryCall(
-                self._interceptors,
+                self._interceptors,  # type: ignore # noqa: PGH003
                 request_iterator,
                 timeout,
                 metadata,
@@ -299,7 +301,7 @@ class StreamStreamMultiCallable(
             )
         else:
             call = InterceptedStreamStreamCall(
-                self._interceptors,
+                self._interceptors,  # type: ignore # noqa: PGH003
                 request_iterator,
                 timeout,
                 metadata,
@@ -327,7 +329,7 @@ class Channel(_base_channel.Channel):
         self,
         target: str,
         options: ChannelArgumentType,
-        credentials: Optional[grpc.ChannelCredentials],
+        credentials: Optional[cygrpc.ChannelCredentials],
         compression: Optional[grpc.Compression],
         interceptors: Optional[Sequence[ClientInterceptor]],
     ):
@@ -425,12 +427,12 @@ class Channel(_base_channel.Channel):
             # might not always be the case.
             if candidate is not None and isinstance(candidate, _base_call.Call):
                 if hasattr(candidate, "_channel"):
-                    # For intercepted Call object
-                    if candidate._channel is not self._channel:
+                    if candidate._channel is not self._channel:  # type: ignore # noqa: PGH003
                         continue
                 elif hasattr(candidate, "_cython_call"):
                     # For normal Call object
-                    if candidate._cython_call._channel is not self._channel:
+                    cython_call = candidate._cython_call  # type: ignore # noqa: PGH003
+                    if cython_call._channel is not self._channel:
                         continue
                 else:
                     # Unidentified Call object
@@ -482,7 +484,7 @@ class Channel(_base_channel.Channel):
     # TODO(xuanwn): Implement this method after we have
     # observability for Asyncio.
     def _get_registered_call_handle(self, method: str) -> int:
-        pass
+        raise NotImplementedError()
 
     # TODO(xuanwn): Implement _registered_method after we have
     # observability for Asyncio.

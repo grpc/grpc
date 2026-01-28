@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import enum
 
 
 cdef bytes _slice_bytes(grpc_slice slice):
@@ -58,7 +59,8 @@ class WriteFlag:
   no_compress = GRPC_WRITE_NO_COMPRESS
 
 
-class StatusCode:
+class StatusCode(enum.IntEnum):
+  __module__ = 'grpc._cython.cygrpc'
   ok = GRPC_STATUS_OK
   cancelled = GRPC_STATUS_CANCELLED
   unknown = GRPC_STATUS_UNKNOWN
@@ -98,7 +100,8 @@ class CompletionType:
   operation_complete = GRPC_OP_COMPLETE
 
 
-class OperationType:
+class OperationType(enum.IntEnum):
+  __module__ = 'grpc._cython.cygrpc'
   send_initial_metadata = GRPC_OP_SEND_INITIAL_METADATA
   send_message = GRPC_OP_SEND_MESSAGE
   send_close_from_client = GRPC_OP_SEND_CLOSE_FROM_CLIENT
