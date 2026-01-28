@@ -11,7 +11,7 @@ from tests.interop import resources
 from tests.interop import service
 from tests.interop import methods
 from tests.unit import test_common
-from grpc._cython import cygrpc as _cygrpc
+# from grpc._cython import cygrpc as _cygrpc
 import time
 import faulthandler
 from functools import partial
@@ -155,6 +155,30 @@ class SecurityTest(unittest.TestCase):
         channel.close()
         # Wait until cancel_event is set with a timeout of 1 second for failure
         self.assertTrue(test_handle.cancel_event.wait(timeout=1))
+
+    # @unittest.skip(
+    #     reason="This is the test that is failing right now, if we timeout and don't call channel.cancel() Python segfaults when going to call the cancel fn."
+    # )
+    def test_async_signer_test_times_out(self):
+        channel = grpc.secure_channel(
+            "localhost:{}".format(self.port),
+            grpc.ssl_channel_credentials_with_custom_signer_with_cancellation(
+                private_key_sign_fn=resources.async_client_private_key_signer_with_cancel,
+                root_certificates=resources.test_root_certificates(),
+                certificate_chain=resources.client_certificate_chain(),
+                cancel_fn=resources.cancel_async,
+            ),
+            (
+                (
+                    "grpc.ssl_target_name_override",
+                    _SERVER_HOST_OVERRIDE,
+                ),
+            ),
+        )
+        self.stub = test_pb2_grpc.TestServiceStub(channel)
+        # Let it timeout and just go out of scope
+        response = self.stub.EmptyCall(empty_pb2.Empty(), timeout=2)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
