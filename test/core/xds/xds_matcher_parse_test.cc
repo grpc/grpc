@@ -515,6 +515,16 @@ TEST_F(MatcherTest, NestedMatcher) {
 // Error Cases
 //
 
+TEST_F(MatcherTest, UnsetMatcher) {
+  Matcher matcher_proto;
+  ValidationErrors errors;
+  auto matcher = ParseXdsMatcher(decode_context_, nullptr, action_registry_,
+                                 RpcMatchContext::Type(), true, &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(errors.status(absl::StatusCode::kInvalidArgument, "").message(),
+            ": [field: error:field not set]");
+}
+
 TEST_F(MatcherTest, EmptyMatcher) {
   Matcher matcher_proto;
   ValidationErrors errors;

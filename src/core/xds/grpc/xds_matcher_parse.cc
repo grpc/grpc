@@ -361,6 +361,10 @@ std::unique_ptr<XdsMatcher> ParseXdsMatcher(
     const XdsMatcherActionRegistry& action_registry,
     const UniqueTypeName& matcher_context, bool allow_keep_matching,
     ValidationErrors* errors) {
+  if (matcher == nullptr) {
+    errors->AddError("field not set");
+    return nullptr;
+  }
   return ParseXdsMatcherRecursive(context, matcher, action_registry,
                                   matcher_context, allow_keep_matching,
                                   /*depth=*/0, errors);
