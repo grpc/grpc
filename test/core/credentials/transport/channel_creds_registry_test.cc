@@ -60,7 +60,7 @@ class TestChannelCredsFactory : public ChannelCredsFactory<> {
   }
   RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
       RefCountedPtr<const ChannelCredsConfig> /*config*/,
-      const CertificateProviderStoreInterface&
+      CertificateProviderStoreInterface&
       /*certificate_provider_store*/) const override {
     return RefCountedPtr<grpc_channel_credentials>(
         grpc_fake_transport_security_credentials_create());
