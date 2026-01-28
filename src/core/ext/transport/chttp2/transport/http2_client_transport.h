@@ -123,11 +123,7 @@ class Http2ClientTransport final : public ClientTransport,
 
   void Orphan() override;
 
-  RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
-    return const_cast<channelz::BaseNode*>(
-               channelz::DataSource::channelz_node())
-        ->RefAsSubclass<channelz::SocketNode>();
-  }
+  RefCountedPtr<channelz::SocketNode> GetSocketNode() const override;
 
   std::unique_ptr<channelz::ZTrace> GetZTrace(absl::string_view name) override {
     if (name == "transport_frames") return ztrace_collector_->MakeZTrace();
