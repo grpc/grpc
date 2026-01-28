@@ -201,6 +201,37 @@ CLIENT_CALL_TEST(SendInitialMetadataAndReceiveStatusAfterCancellation) {
   WaitForAllPendingWork();
 }
 
+// Test to assert unordered pending batches are executed.
+CLIENT_CALL_TEST(UnorderedStart) {
+  InitCall(CallOptions());
+  NewBatch(1).SendMessage("hello");
+  // SendMessage op is not expected to finish until the initial metadata is sent
+  // and pulled.
+  TickThroughCqExpectations(Duration::Seconds(1));
+  NewBatch(101).SendInitialMetadata({});
+  Expect(101, true);
+  TickThroughCqExpectations();
+  SpawnTestSeq(
+      handler(), "pull-initial-metadata-then-message",
+      [this]() { return handler().PullClientInitialMetadata(); },
+      [](ValueOrFailure<ClientMetadataHandle> md) {
+        CHECK(md.ok());
+        EXPECT_EQ((*md)->get_pointer(HttpPathMetadata())->as_string_view(),
+                  kDefaultPath);
+        return Immediate(Empty{});
+      },
+      [this]() { return handler().PullMessage(); },
+      [](auto msg) {
+        CHECK(msg.ok());
+        CHECK(msg.has_value());
+        EXPECT_EQ(msg.value().payload()->JoinIntoString(), "hello");
+        return Immediate(Empty{});
+      });
+  Expect(1, true);
+  TickThroughCqExpectations();
+  WaitForAllPendingWork();
+}
+
 CLIENT_CALL_TEST(SendInitialMetadataAndReceiveStatusAfterTimeout) {
   auto start = Timestamp::Now();
   InitCall(CallOptions().SetTimeout(Duration::Seconds(1)));

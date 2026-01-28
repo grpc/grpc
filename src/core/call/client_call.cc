@@ -105,7 +105,7 @@ ClientCall::ClientCall(grpc_call*, uint32_t, grpc_completion_queue* cq,
                        grpc_compression_options compression_options,
                        RefCountedPtr<Arena> arena,
                        RefCountedPtr<UnstartedCallDestination> destination)
-    : Call(false, deadline, std::move(arena)),
+    : Call(/*is_client=*/true, deadline, std::move(arena)),
       DualRefCounted("ClientCall"),
       cq_(cq),
       call_destination_(std::move(destination)),
@@ -122,6 +122,35 @@ ClientCall::ClientCall(grpc_call*, uint32_t, grpc_completion_queue* cq,
     send_initial_metadata_->Set(GrpcTimeoutMetadata(), deadline);
     UpdateDeadline(deadline).IgnoreError();
   }
+  SourceConstructed();
+}
+
+void ClientCall::AddData(channelz::DataSink sink) {
+  Call::AddData(sink);
+  sink.AddData(
+      "client_call",
+      channelz::PropertyList()
+          .Set("call_state",
+               [this]() {
+                 switch (call_state_.load(std::memory_order_relaxed)) {
+                   case kUnstarted:
+                     return "Unstarted";
+                   case kStarted:
+                     return "Started";
+                   case kCancelled:
+                     return "Cancelled";
+                   default:
+                     return "StartedWithoutInitialMetadata";
+                 }
+               }())
+          .Set("cancel_status",
+               [this]() -> std::string {
+                 auto* p = cancel_status_.Get();
+                 if (p == nullptr) return "not cancelled";
+                 return p->ToString();
+               }())
+          .Set("saw_trailing_metadata",
+               saw_trailing_metadata_.load(std::memory_order_relaxed)));
 }
 
 grpc_call_error ClientCall::StartBatch(const grpc_op* ops, size_t nops,
@@ -228,11 +257,20 @@ Party::WakeupHold ClientCall::StartCall(
     const grpc_op& send_initial_metadata_op) {
   GRPC_LATENT_SEE_SCOPE("ClientCall::StartCall");
   auto cur_state = call_state_.load(std::memory_order_acquire);
+  // TODO(akshitpatel): [PH2][P3]: Might need to invoke
+  // PrepareApplicationMetadata here.
   CToMetadata(send_initial_metadata_op.data.send_initial_metadata.metadata,
               send_initial_metadata_op.data.send_initial_metadata.count,
               send_initial_metadata_.get());
   PrepareOutgoingInitialMetadata(send_initial_metadata_op,
                                  *send_initial_metadata_);
+  send_initial_metadata_->Set(
+      WaitForReady(),
+      WaitForReady::ValueType{
+          (send_initial_metadata_op.flags &
+           GRPC_INITIAL_METADATA_WAIT_FOR_READY) != 0,
+          (send_initial_metadata_op.flags &
+           GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET) != 0});
   auto call = MakeCallPair(std::move(send_initial_metadata_), arena()->Ref());
   started_call_initiator_ = std::move(call.initiator);
   Party::WakeupHold wakeup_hold{started_call_initiator_.party()};
@@ -264,7 +302,7 @@ bool ClientCall::StartCallMaybeUpdateState(uintptr_t& cur_state,
                                               std::memory_order_acquire)) {
         call_destination_->StartCall(std::move(handler));
         auto unordered_start = reinterpret_cast<UnorderedStart*>(cur_state);
-        while (unordered_start->next != nullptr) {
+        while (unordered_start != nullptr) {
           unordered_start->start_pending_batch();
           auto next = unordered_start->next;
           delete unordered_start;

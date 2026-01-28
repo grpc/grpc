@@ -189,7 +189,7 @@ class ClientReader final : public ClientReaderInterface<R> {
 
     grpc::internal::CallOpSet<grpc::internal::CallOpRecvInitialMetadata> ops;
     ops.RecvInitialMetadata(context_);
-    call_.PerformOps(&ops);
+    ops.FillOps(&call_);
     cq_.Pluck(&ops);  /// status ignored
   }
 
@@ -212,7 +212,7 @@ class ClientReader final : public ClientReaderInterface<R> {
       ops.RecvInitialMetadata(context_);
     }
     ops.RecvMessage(msg);
-    call_.PerformOps(&ops);
+    ops.FillOps(&call_);
     return cq_.Pluck(&ops) && ops.got_message;
   }
 
@@ -230,7 +230,7 @@ class ClientReader final : public ClientReaderInterface<R> {
     }
     grpc::Status status;
     ops.ClientRecvStatus(context_, &status);
-    call_.PerformOps(&ops);
+    ops.FillOps(&call_);
     ABSL_CHECK(cq_.Pluck(&ops));
     return status;
   }
@@ -262,7 +262,7 @@ class ClientReader final : public ClientReaderInterface<R> {
     // TODO(ctiller): don't assert
     ABSL_CHECK(ops.SendMessagePtr(&request, channel->memory_allocator()).ok());
     ops.ClientSendClose();
-    call_.PerformOps(&ops);
+    ops.FillOps(&call_);
     cq_.Pluck(&ops);
   }
 };
@@ -311,7 +311,7 @@ class ClientWriter : public ClientWriterInterface<W> {
 
     grpc::internal::CallOpSet<grpc::internal::CallOpRecvInitialMetadata> ops;
     ops.RecvInitialMetadata(context_);
-    call_.PerformOps(&ops);
+    ops.FillOps(&call_);
     cq_.Pluck(&ops);  // status ignored
   }
 
@@ -341,14 +341,14 @@ class ClientWriter : public ClientWriterInterface<W> {
       return false;
     }
 
-    call_.PerformOps(&ops);
+    ops.FillOps(&call_);
     return cq_.Pluck(&ops);
   }
 
   bool WritesDone() override {
     grpc::internal::CallOpSet<grpc::internal::CallOpClientSendClose> ops;
     ops.ClientSendClose();
-    call_.PerformOps(&ops);
+    ops.FillOps(&call_);
     return cq_.Pluck(&ops);
   }
 
@@ -364,7 +364,7 @@ class ClientWriter : public ClientWriterInterface<W> {
       finish_ops_.RecvInitialMetadata(context_);
     }
     finish_ops_.ClientRecvStatus(context_, &status);
-    call_.PerformOps(&finish_ops_);
+    finish_ops_.FillOps(&call_);
     ABSL_CHECK(cq_.Pluck(&finish_ops_));
     return status;
   }
@@ -394,7 +394,7 @@ class ClientWriter : public ClientWriterInterface<W> {
       grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata> ops;
       ops.SendInitialMetadata(&context->send_initial_metadata_,
                               context->initial_metadata_flags());
-      call_.PerformOps(&ops);
+      ops.FillOps(&call_);
       cq_.Pluck(&ops);
     }
   }
@@ -462,7 +462,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
 
     grpc::internal::CallOpSet<grpc::internal::CallOpRecvInitialMetadata> ops;
     ops.RecvInitialMetadata(context_);
-    call_.PerformOps(&ops);
+    ops.FillOps(&call_);
     cq_.Pluck(&ops);  // status ignored
   }
 
@@ -484,7 +484,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
       ops.RecvInitialMetadata(context_);
     }
     ops.RecvMessage(msg);
-    call_.PerformOps(&ops);
+    ops.FillOps(&call_);
     return cq_.Pluck(&ops) && ops.got_message;
   }
 
@@ -513,14 +513,14 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
       return false;
     }
 
-    call_.PerformOps(&ops);
+    ops.FillOps(&call_);
     return cq_.Pluck(&ops);
   }
 
   bool WritesDone() override {
     grpc::internal::CallOpSet<grpc::internal::CallOpClientSendClose> ops;
     ops.ClientSendClose();
-    call_.PerformOps(&ops);
+    ops.FillOps(&call_);
     return cq_.Pluck(&ops);
   }
 
@@ -538,7 +538,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
     }
     grpc::Status status;
     ops.ClientRecvStatus(context_, &status);
-    call_.PerformOps(&ops);
+    ops.FillOps(&call_);
     ABSL_CHECK(cq_.Pluck(&ops));
     return status;
   }
@@ -567,7 +567,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
       grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata> ops;
       ops.SendInitialMetadata(&context->send_initial_metadata_,
                               context->initial_metadata_flags());
-      call_.PerformOps(&ops);
+      ops.FillOps(&call_);
       cq_.Pluck(&ops);
     }
   }
@@ -597,7 +597,7 @@ class ServerReader final : public ServerReaderInterface<R> {
       ops.set_compression_level(ctx_->compression_level());
     }
     ctx_->sent_initial_metadata_ = true;
-    call_->PerformOps(&ops);
+    ops.FillOps(call_);
     call_->cq()->Pluck(&ops);
   }
 
@@ -610,7 +610,7 @@ class ServerReader final : public ServerReaderInterface<R> {
   bool Read(R* msg) override {
     grpc::internal::CallOpSet<grpc::internal::CallOpRecvMessage<R>> ops;
     ops.RecvMessage(msg);
-    call_->PerformOps(&ops);
+    ops.FillOps(call_);
     bool ok = call_->cq()->Pluck(&ops) && ops.got_message;
     if (!ok) {
       ctx_->MaybeMarkCancelledOnRead();
@@ -654,7 +654,7 @@ class ServerWriter final : public ServerWriterInterface<W> {
       ops.set_compression_level(ctx_->compression_level());
     }
     ctx_->sent_initial_metadata_ = true;
-    call_->PerformOps(&ops);
+    ops.FillOps(call_);
     call_->cq()->Pluck(&ops);
   }
 
@@ -682,7 +682,7 @@ class ServerWriter final : public ServerWriterInterface<W> {
       }
       ctx_->sent_initial_metadata_ = true;
     }
-    call_->PerformOps(&ctx_->pending_ops_);
+    ctx_->pending_ops_.FillOps(call_);
     // if this is the last message we defer the pluck until AFTER we start
     // the trailing md op. This prevents hangs. See
     // https://github.com/grpc/grpc/issues/11546
@@ -729,7 +729,7 @@ class ServerReaderWriterBody final {
       ops.set_compression_level(ctx_->compression_level());
     }
     ctx_->sent_initial_metadata_ = true;
-    call_->PerformOps(&ops);
+    ops.FillOps(call_);
     call_->cq()->Pluck(&ops);
   }
 
@@ -742,7 +742,7 @@ class ServerReaderWriterBody final {
   bool Read(R* msg) {
     grpc::internal::CallOpSet<grpc::internal::CallOpRecvMessage<R>> ops;
     ops.RecvMessage(msg);
-    call_->PerformOps(&ops);
+    ops.FillOps(call_);
     bool ok = call_->cq()->Pluck(&ops) && ops.got_message;
     if (!ok) {
       ctx_->MaybeMarkCancelledOnRead();
@@ -767,7 +767,7 @@ class ServerReaderWriterBody final {
       }
       ctx_->sent_initial_metadata_ = true;
     }
-    call_->PerformOps(&ctx_->pending_ops_);
+    ctx_->pending_ops_.FillOps(call_);
     // if this is the last message we defer the pluck until AFTER we start
     // the trailing md op. This prevents hangs. See
     // https://github.com/grpc/grpc/issues/11546

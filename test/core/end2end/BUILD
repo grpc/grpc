@@ -173,6 +173,7 @@ grpc_cc_library(
             "fixtures/h2_ssl_cred_reload_fixture.h",
             "fixtures/h2_ssl_tls_common.h",
             "fixtures/h2_tls_common.h",
+            "fixtures/http_common_secure_fixtures.h",
             "fixtures/inproc_fixture.h",
             "fixtures/local_util.h",
             "fixtures/secure_fixture.h",
@@ -186,6 +187,7 @@ grpc_cc_library(
             "absl/functional:any_invocable",
             "absl/log:check",
             "absl/log:log",
+            "absl/log:globals",
             "absl/memory",
             "absl/meta:type_traits",
             "absl/random",
@@ -452,6 +454,7 @@ grpc_cc_test(
     external_deps = [
         "absl/functional:any_invocable",
         "absl/log:check",
+        "absl/log:globals",
         "absl/log:log",
         "absl/memory",
         "absl/meta:type_traits",

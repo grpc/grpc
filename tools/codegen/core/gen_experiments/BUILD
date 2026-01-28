@@ -14,13 +14,10 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test")
 
-package(
-    default_applicable_licenses = ["//:license"],
-    features = [
-        "layering_check",
-        "parse_headers",
-    ],
-)
+package(features = [
+    "layering_check",
+    "parse_headers",
+])
 
 # This library generates experiment header and source files for RPC frameworks.
 # To ensure its usability for other RPC frameworks, avoid adding any gRPC-specific dependencies.

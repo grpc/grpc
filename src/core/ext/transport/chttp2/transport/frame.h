@@ -32,6 +32,10 @@
 
 namespace grpc_core {
 
+// Prints the first `length` bytes of the payload. If the payload is longer than
+// `length`, it appends "<clipped>" to the output.
+std::string MaybeTruncatePayload(SliceBuffer& payload, uint32_t length = 15);
+
 ///////////////////////////////////////////////////////////////////////////////
 // Frame types
 //
@@ -252,19 +256,22 @@ size_t GetFrameMemoryUsage(const Http2Frame& frame);
 // GRPC Header
 
 constexpr uint8_t kGrpcHeaderSizeInBytes = 5;
+constexpr uint8_t kGrpcMessageHeaderNoFlags = 0;
+constexpr uint8_t kGrpcMessageHeaderWriteInternalCompress = 1;
 
 struct GrpcMessageHeader {
-  uint8_t flags = 0;
+  uint32_t flags = 0;
   uint32_t length = 0;
 };
 
 // If the payload SliceBuffer is too small to hold a gRPC header, this function
 // will crash. The calling function MUST ensure that the payload SliceBuffer
 // has length greater than or equal to the gRPC header.
-GrpcMessageHeader ExtractGrpcHeader(SliceBuffer& payload);
+http2::ValueOrHttp2Status<GrpcMessageHeader> ExtractGrpcHeader(
+    SliceBuffer& payload);
 
-void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, const uint8_t flags,
-                                   const uint32_t length);
+void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, uint32_t flags,
+                                   uint32_t length);
 
 ///////////////////////////////////////////////////////////////////////////////
 // Validations
@@ -276,7 +283,8 @@ http2::Http2Status ValidateFrameHeader(uint32_t max_frame_size_setting,
                                        bool incoming_header_in_progress,
                                        uint32_t incoming_header_stream_id,
                                        Http2FrameHeader& current_frame_header,
-                                       uint32_t last_stream_id, bool is_client);
+                                       uint32_t last_stream_id, bool is_client,
+                                       bool is_first_settings_processed);
 
 ///////////////////////////////////////////////////////////////////////////////
 // RFC9113 Related Strings and Consts
@@ -372,6 +380,18 @@ inline constexpr absl::string_view kIncorrectFrameSizeSetting =
 inline constexpr absl::string_view kSettingsTimeout =
     "Settings timeout. The HTTP2 settings frame was not ACKed within the "
     "timeout. Connection will be closed";
+inline constexpr absl::string_view kLastStreamClosed =
+    "Closing last stream and cannot create any more streams.";
+inline constexpr absl::string_view kFirstSettingsFrameClient =
+    "RFC9113: The server connection preface consists of a potentially empty "
+    "SETTINGS frame that MUST be the first frame the server sends in the "
+    "HTTP/2 connection. Clients and servers MUST treat an invalid connection "
+    "preface as a connection error of type PROTOCOL_ERROR.";
+inline constexpr absl::string_view kFirstSettingsFrameServer =
+    "RFC9113: The client connection preface starts with a sequence of 24 "
+    "octets. This sequence is followed by a SETTINGS frame, which MAY be "
+    "empty. Clients and servers MUST treat an invalid connection preface as a "
+    "connection error of type PROTOCOL_ERROR.";
 
 inline constexpr uint32_t kMaxStreamId31Bit = 0x7fffffffu;
 inline constexpr uint32_t kMaxSize31Bit = 0x7fffffffu;
@@ -386,7 +406,10 @@ inline constexpr uint32_t kHttp2InitialWindowSize = 65535u;
 namespace GrpcErrors {
 inline constexpr absl::string_view kTooManyMetadata =
     "gRPC Error : A gRPC server can send upto 1 initial metadata followed by "
-    "upto 1 trailing metadata";
+    "upto 1 trailing metadata.";
+inline constexpr absl::string_view kOutOfOrderDataFrame =
+    "gRPC Error : DATA frames must follow initial metadata and precede "
+    "trailing metadata.";
 }  // namespace GrpcErrors
 
 }  // namespace grpc_core

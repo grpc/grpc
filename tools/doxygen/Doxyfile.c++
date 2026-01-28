@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.77.0-dev
+PROJECT_NUMBER         = 1.79.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -822,7 +822,6 @@ include/grpc++/impl/codegen/async_stream.h \
 include/grpc++/impl/codegen/async_unary_call.h \
 include/grpc++/impl/codegen/byte_buffer.h \
 include/grpc++/impl/codegen/call.h \
-include/grpc++/impl/codegen/call_hook.h \
 include/grpc++/impl/codegen/channel_interface.h \
 include/grpc++/impl/codegen/client_context.h \
 include/grpc++/impl/codegen/client_unary_call.h \
@@ -884,6 +883,7 @@ include/grpc/census.h \
 include/grpc/compression.h \
 include/grpc/create_channel_from_endpoint.h \
 include/grpc/credentials.h \
+include/grpc/credentials_cpp.h \
 include/grpc/event_engine/endpoint_config.h \
 include/grpc/event_engine/event_engine.h \
 include/grpc/event_engine/extensible.h \
@@ -973,7 +973,6 @@ include/grpcpp/generic/generic_stub_callback.h \
 include/grpcpp/grpcpp.h \
 include/grpcpp/health_check_service_interface.h \
 include/grpcpp/impl/call.h \
-include/grpcpp/impl/call_hook.h \
 include/grpcpp/impl/call_op_set.h \
 include/grpcpp/impl/call_op_set_interface.h \
 include/grpcpp/impl/channel_argument_option.h \
@@ -984,7 +983,6 @@ include/grpcpp/impl/codegen/async_stream.h \
 include/grpcpp/impl/codegen/async_unary_call.h \
 include/grpcpp/impl/codegen/byte_buffer.h \
 include/grpcpp/impl/codegen/call.h \
-include/grpcpp/impl/codegen/call_hook.h \
 include/grpcpp/impl/codegen/call_op_set.h \
 include/grpcpp/impl/codegen/call_op_set_interface.h \
 include/grpcpp/impl/codegen/callback_common.h \

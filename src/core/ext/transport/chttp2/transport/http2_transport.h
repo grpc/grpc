@@ -19,19 +19,25 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_TRANSPORT_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_TRANSPORT_H
 
+#include <cstddef>
 #include <cstdint>
+#include <string>
 
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
-#include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
-#include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
+#include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -52,28 +58,193 @@ namespace http2 {
 #define GRPC_HTTP2_COMMON_DLOG \
   DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
 
-constexpr uint32_t kMaxWriteSize = /*10 MB*/ 10u * 1024u * 1024u;
-
 constexpr uint32_t kGoawaySendTimeoutSeconds = 5u;
 
-///////////////////////////////////////////////////////////////////////////////
-// Settings and ChannelArgs helpers
+struct CloseStreamArgs {
+  bool close_reads;
+  bool close_writes;
+};
 
-void InitLocalSettings(Http2Settings& settings, const bool is_client);
+// TODO(akshitpatel) [PH2][P3] : Write a way to measure the total size of a
+// transport object. Reference :
+// https://github.com/grpc/grpc/pull/41294/files#diff-c685cc4847f228327938326e2a45083a2d0845bacff0ac004bd802027a670c4e
+
+///////////////////////////////////////////////////////////////////////////////
+// Read and Write helpers
+
+class Http2ReadContext {
+ public:
+  Http2ReadContext() = default;
+  Http2ReadContext(const Http2ReadContext&) = delete;
+  Http2ReadContext& operator=(const Http2ReadContext&) = delete;
+  Http2ReadContext(Http2ReadContext&&) = delete;
+  Http2ReadContext& operator=(Http2ReadContext&&) = delete;
+
+  // Signals that the read loop should pause. If it's already paused, this is a
+  // no-op.
+  void SetPauseReadLoop() {
+    // TODO(tjagtap) [PH2][P2][Settings] Plumb with when we receive urgent
+    // settings. Example - initial window size 0 is urgent because it indicates
+    // extreme memory pressure on the server.
+    should_pause_read_loop_ = true;
+  }
+
+  // If SetPauseReadLoop() was called, this returns Pending and
+  // registers a waker that will be woken by WakeReadLoop().
+  // If SetPauseReadLoop() was not called, this returns OkStatus.
+  // This should be polled by the read loop to yield control when requested.
+  Poll<absl::Status> MaybePauseReadLoop() {
+    if (should_pause_read_loop_) {
+      read_loop_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+      return Pending{};
+    }
+    return absl::OkStatus();
+  }
+
+  // If SetPauseReadLoop() was called, resumes it by
+  // waking up the ReadLoop. If not paused, this is a no-op.
+  void ResumeReadLoopIfPaused() {
+    if (should_pause_read_loop_) {
+      should_pause_read_loop_ = false;
+      read_loop_waker_.Wakeup();
+    }
+  }
+
+ private:
+  bool should_pause_read_loop_ = false;
+  Waker read_loop_waker_;
+};
+
+class WriteContext {
+ public:
+  WriteContext() = default;
+  // WriteContext is neither copyable nor movable.
+  WriteContext(const WriteContext&) = delete;
+  WriteContext& operator=(const WriteContext&) = delete;
+  WriteContext(WriteContext&&) = delete;
+  WriteContext& operator=(WriteContext&&) = delete;
+
+  class WriteQuota {
+   public:
+    explicit WriteQuota(size_t target_write_size)
+        : target_write_size_(target_write_size) {}
+
+    // WriteQuota is neither copyable nor movable.
+    WriteQuota(const WriteQuota&) = delete;
+    WriteQuota& operator=(const WriteQuota&) = delete;
+    WriteQuota(WriteQuota&&) = delete;
+    WriteQuota& operator=(WriteQuota&&) = delete;
+
+    // Increments the bytes consumed for the current write attempt.
+    void IncrementBytesConsumed(size_t bytes_consumed) {
+      bytes_consumed_ += bytes_consumed;
+    }
+
+    // Returns the number of bytes remaining that can be written in the current
+    // write attempt.
+    size_t GetWriteBytesRemaining() const {
+      return (target_write_size_ > bytes_consumed_)
+                 ? target_write_size_ - bytes_consumed_
+                 : 0u;
+    }
+
+    // Returns the target write size for the current write attempt.
+    size_t GetTargetWriteSize() const { return target_write_size_; }
+
+    std::string DebugString() const {
+      return absl::StrCat("WriteQuota: target_write_size: ", target_write_size_,
+                          " bytes_consumed: ", bytes_consumed_);
+    }
+
+   private:
+    const size_t target_write_size_;
+    size_t bytes_consumed_ = 0;
+  };
+
+  // Starts a new write attempt.
+  WriteQuota StartNewWriteAttempt() {
+    size_t target_write_size = write_size_policy_.WriteTargetSize();
+    GRPC_HTTP2_COMMON_DLOG
+        << "Http2ClientTransport WriteContext StartNewWriteAttempt "
+           "target_write_size_ = "
+        << target_write_size;
+    return WriteQuota(target_write_size);
+  }
+
+  // Signals that the specified number of bytes are about to be written. Caller
+  // should try to call this as close to the actual write as possible. EndWrite
+  // MUST be called after this.
+  void BeginWrite(size_t bytes_to_write) {
+    write_size_policy_.BeginWrite(bytes_to_write);
+  }
+
+  // Signals that a write has completed with the specified status.
+  void EndWrite(bool write_success) {
+    write_size_policy_.EndWrite(write_success);
+  }
+
+  static inline PromiseEndpoint::WriteArgs GetWriteArgs(
+      const Http2Settings& peer_settings) {
+    PromiseEndpoint::WriteArgs args;
+    int max_frame_size = peer_settings.preferred_receive_crypto_message_size();
+    // Note: max frame size is 0 if the remote peer does not support adjusting
+    // the sending frame size.
+    if (max_frame_size == 0) {
+      max_frame_size = INT_MAX;
+    }
+    // `WriteArgs.max_frame_size` is a suggestion to the endpoint implementation
+    // to group data to be written into frames of the specified max_frame_size.
+    // It is different from HTTP2 SETTINGS_MAX_FRAME_SIZE. That setting limits
+    // HTTP2 frame payload size.
+    args.set_max_frame_size(max_frame_size);
+
+    // TODO(akshitpatel) [PH2][P1] : Currently only the WriteArgs related to
+    // preferred_receive_crypto_message_size have been plumbed. The other write
+    // args may need to be plumbed for PH2.
+    // CHTTP2 : Reference :
+    // File : src/core/ext/transport/chttp2/transport/chttp2_transport.cc
+    // Function : write_action
+
+    return args;
+  }
+
+ private:
+  Chttp2WriteSizePolicy write_size_policy_;
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// Settings helpers
+
+void InitLocalSettings(Http2Settings& settings, bool is_client);
+
+////////////////////////////////////////////////////////////////////////////////
+// Channel Args helpers
+
+struct TransportChannelArgs {
+  Duration keepalive_time;
+  Duration keepalive_timeout;
+  Duration ping_timeout;
+  Duration settings_timeout;
+  bool keepalive_permit_without_calls;
+  bool enable_preferred_rx_crypto_frame_advertisement;
+  // This is used to test peer behaviour when we never send a ping ack.
+  bool test_only_ack_pings;
+  uint32_t max_header_list_size_soft_limit;
+  int max_usable_hpack_table_size;
+  int initial_sequence_number;
+
+  std::string DebugString() const;
+};
+
+void ReadChannelArgs(const ChannelArgs& channel_args,
+                     TransportChannelArgs& args, Http2Settings& local_settings,
+                     chttp2::TransportFlowControl& flow_control,
+                     bool is_client);
 
 void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
                                  Http2Settings& local_settings,
                                  chttp2::TransportFlowControl& flow_control,
-                                 const bool is_client);
-
-// Appends SETTINGS and SETTINGS ACK frames to output_buf if needed.
-// A SETTINGS frame is appended if local settings changed.
-// SETTINGS ACK frames are appended for any incoming settings that need
-// acknowledgment.
-void MaybeGetSettingsAndSettingsAckFrames(
-    chttp2::TransportFlowControl& flow_control, Http2SettingsManager& settings,
-    RefCountedPtr<SettingsTimeoutManager> transport_settings,
-    SliceBuffer& output_buf);
+                                 bool is_client);
 
 ///////////////////////////////////////////////////////////////////////////////
 // ChannelZ helpers
@@ -99,6 +270,13 @@ ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame,
 bool ProcessIncomingWindowUpdateFrameFlowControl(
     const Http2WindowUpdateFrame& frame,
     chttp2::TransportFlowControl& flow_control, RefCountedPtr<Stream> stream);
+
+void MaybeAddTransportWindowUpdateFrame(
+    chttp2::TransportFlowControl& flow_control,
+    std::vector<Http2Frame>& frames);
+
+void MaybeAddStreamWindowUpdateFrame(RefCountedPtr<Stream> stream,
+                                     std::vector<Http2Frame>& frames);
 
 ///////////////////////////////////////////////////////////////////////////////
 // Header and Continuation frame processing helpers

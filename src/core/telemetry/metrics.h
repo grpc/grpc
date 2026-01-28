@@ -27,6 +27,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/instrument.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
@@ -320,6 +321,7 @@ class StatsPlugin {
   // instrument storage objects for the instrument domains, and partitions
   // the instrument collection so that different stats plugins only see the
   // subset of metrics they're allowed to see.
+  // The returned scope must be a root scope (i.e. have no parents).
   virtual RefCountedPtr<CollectionScope> GetCollectionScope() const = 0;
 
   // Adds \a value to the uint64 counter specified by \a handle. \a label_values
@@ -416,9 +418,11 @@ class GlobalStatsPluginRegistry {
     // Finish construction: must be called after all plugins have been added.
     void Finish() {
       std::vector<RefCountedPtr<CollectionScope>> collection_scopes;
-      collection_scopes.reserve(plugins_state_.size());
+      collection_scopes.reserve(plugins_state_.size() + 1);
+      collection_scopes.push_back(GlobalCollectionScope());
       for (auto& state : plugins_state_) {
         if (auto scope = state.plugin->GetCollectionScope(); scope != nullptr) {
+          GRPC_DCHECK(scope->IsRoot());
           collection_scopes.push_back(scope);
         }
       }

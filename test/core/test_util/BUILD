@@ -657,3 +657,32 @@ grpc_cc_library(
         "//src/core:postmortem",
     ],
 )
+
+grpc_cc_library(
+    name = "test_timeout",
+    testonly = True,
+    hdrs = ["test_timeout.h"],
+    external_deps = [
+    ],
+    deps = [
+        "//:grpc",
+        "//:grpc_base",
+        "//src/core:grpc_check",
+        "//src/core:time",
+    ],
+)
+
+grpc_cc_test(
+    name = "test_timeout_test",
+    srcs = ["test_timeout_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    tags = ["grpc:no-internal-poller"],
+    deps = [
+        ":test_timeout",
+        "//:grpc",
+        "//src/core:default_event_engine",
+        "//src/core:time",
+    ],
+)

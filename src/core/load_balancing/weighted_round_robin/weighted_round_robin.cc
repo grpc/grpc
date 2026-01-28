@@ -343,8 +343,6 @@ class WeightedRoundRobin final : public LoadBalancingPolicy {
             error_utilization_penalty_(error_utilization_penalty),
             child_tracker_(std::move(child_tracker)) {}
 
-      void Start() override;
-
       void Finish(FinishArgs args) override;
 
      private:
@@ -506,10 +504,6 @@ void WeightedRoundRobin::EndpointWeight::ResetNonEmptySince() {
 //
 // WeightedRoundRobin::Picker::SubchannelCallTracker
 //
-
-void WeightedRoundRobin::Picker::SubchannelCallTracker::Start() {
-  if (child_tracker_ != nullptr) child_tracker_->Start();
-}
 
 void WeightedRoundRobin::Picker::SubchannelCallTracker::Finish(
     FinishArgs args) {

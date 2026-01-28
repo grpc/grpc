@@ -60,14 +60,6 @@ class Http2SettingsManager {
   // This function is not idempotent.
   std::optional<Http2SettingsFrame> MaybeSendUpdate();
 
-  // Returns 0 if we don't need to send a SETTINGS ACK frame to the peer.
-  // Returns n>0 if we need to send n SETTINGS ACK frames to the peer.
-  // Transport MUST send one SETTINGS ACK frame for each count returned by this
-  // function to the peer.
-  // This function is not idempotent.
-  uint32_t MaybeSendAck();
-  void OnSettingsReceived() { ++num_acks_to_send_; }
-
   // To be called from a promise based HTTP2 transport only
   http2::Http2ErrorCode ApplyIncomingSettings(
       const std::vector<Http2SettingsFrame::Setting>& settings) {
@@ -88,13 +80,6 @@ class Http2SettingsManager {
   // Call when we receive an ACK from our peer.
   // This function is not idempotent.
   GRPC_MUST_USE_RESULT bool AckLastSend();
-
-  GRPC_MUST_USE_RESULT bool IsPreviousSettingsPromiseResolved() const {
-    return did_previous_settings_promise_resolve_;
-  }
-  void SetPreviousSettingsPromiseResolved(const bool value) {
-    did_previous_settings_promise_resolve_ = value;
-  }
 
  private:
   struct CountUpdates {
@@ -151,17 +136,6 @@ class Http2SettingsManager {
   Http2Settings local_;
   Http2Settings sent_;
   Http2Settings acked_;
-
-  // For CHTTP2, MaybeSendUpdate() checks `update_state_` to ensure only one
-  // SETTINGS frame is in flight at a time. PH2 requires an additional
-  // constraint: a new SETTINGS frame cannot be sent until the SETTINGS-ACK
-  // timeout promise for the previous frame has resolved. This flag tracks this
-  // condition for PH2.
-  // TODO(tjagtap) [PH2][P1][Settings] : Refactor this.
-  bool did_previous_settings_promise_resolve_ = true;
-
-  // Number of incoming SETTINGS frames that we have received but not ACKed yet.
-  uint32_t num_acks_to_send_ = 0;
 };
 
 }  // namespace grpc_core
