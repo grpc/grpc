@@ -277,7 +277,7 @@ def package_data():
     )
     proto_files = []
     for proto_file in PROTO_FILES:
-        proto_file_path = proto_file[proto_file.find(PROTO_PATH_PREFIX):]
+        proto_file_path = proto_file[proto_file.find(PROTO_PATH_PREFIX) :]
         source = os.path.join(PROTO_INCLUDE, proto_file)
         target = os.path.join(proto_resources_path, proto_file_path)
         relative_target = os.path.join(
