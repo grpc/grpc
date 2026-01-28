@@ -69,10 +69,10 @@ def pyx_library(name, deps = [], py_deps = [], srcs = [], **kwargs):
 
     shared_objects = []
     defines = kwargs.pop("defines", [])
-    linkopts = [
-        "-L/opt/homebrew/Cellar/python@3.11/3.11.12_1/Frameworks/Python.framework/Versions/3.11/lib",
-        "-lpython3.11",
-    ]
+    linkopts = select({
+        "@bazel_tools//src/conditions:darwin": ["-undefined", "dynamic_lookup"],
+        "//conditions:default": [],
+    })
     for src in pyx_srcs:
         stem = src.split(".")[0]
         shared_object_name = stem + ".so"
