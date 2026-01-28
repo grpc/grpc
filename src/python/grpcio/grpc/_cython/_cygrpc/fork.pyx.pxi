@@ -1,4 +1,4 @@
-# Copyright 2018 gRPC authors.
+# Copyright 2026 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+import sys
 
 _AWAIT_THREADS_TIMEOUT_SECONDS = 5
 
@@ -37,7 +38,14 @@ _GRPC_ENABLE_FORK_SUPPORT = (
     os.environ.get('GRPC_ENABLE_FORK_SUPPORT', '0')
         .lower() in _TRUE_VALUES)
 
+if sys.platform == "win32":
+    _GRPC_ENABLE_FORK_SUPPORT = False
+
 _fork_handler_failed = False
+
+# These cdef functions are always compiled, even on Windows, to satisfy the
+# declarations in fork.pxd.pxi. On Windows they are effectively unused
+# because _GRPC_ENABLE_FORK_SUPPORT is forced to False.
 
 cdef void __prefork() noexcept nogil:
     with gil:
@@ -99,12 +107,11 @@ def fork_handlers_and_grpc_init():
     if _GRPC_ENABLE_FORK_SUPPORT:
         with _fork_state.fork_handler_registered_lock:
             if not _fork_state.fork_handler_registered:
-                os.register_at_fork(before=__prefork,
-                                    after_in_parent=__postfork_parent,
-                                    after_in_child=__postfork_child)
-                _fork_state.fork_handler_registered = True
-
-
+                if hasattr(os, 'register_at_fork'):
+                    os.register_at_fork(before=__prefork,
+                                        after_in_parent=__postfork_parent,
+                                        after_in_child=__postfork_child)
+                    _fork_state.fork_handler_registered = True
 
 
 class ForkManagedThread(object):
@@ -155,7 +162,9 @@ def return_from_user_request_generator():
 
 
 def get_fork_epoch():
-    return _fork_state.fork_epoch
+    if _GRPC_ENABLE_FORK_SUPPORT:
+        return _fork_state.fork_epoch
+    return 0
 
 
 def is_fork_support_enabled():
