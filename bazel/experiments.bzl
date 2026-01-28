@@ -69,6 +69,7 @@ EXPERIMENT_ENABLES = {
     "track_zero_copy_allocations_in_resource_quota": "track_zero_copy_allocations_in_resource_quota",
     "tsi_frame_protector_without_locks": "tsi_frame_protector_without_locks",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
+    "wildcard_ip_expansion_restriction": "wildcard_ip_expansion_restriction",
 }
 
 EXPERIMENT_POLLERS = [
@@ -105,6 +106,7 @@ EXPERIMENTS = {
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
+                "wildcard_ip_expansion_restriction",
             ],
             "cpp_end2end_test": [
                 "error_flatten",
@@ -216,6 +218,7 @@ EXPERIMENTS = {
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
+                "wildcard_ip_expansion_restriction",
             ],
             "cpp_end2end_test": [
                 "error_flatten",
@@ -327,6 +330,7 @@ EXPERIMENTS = {
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
+                "wildcard_ip_expansion_restriction",
             ],
             "cpp_end2end_test": [
                 "error_flatten",

@@ -51,6 +51,20 @@ class ListenerSocketsContainer {
   virtual ~ListenerSocketsContainer() = default;
 };
 
+// Creates a listener socket, and prepares it with specified options, but
+// does not bind or listen on it.
+absl::StatusOr<ListenerSocketsContainer::ListenerSocket>
+CreateListenerSocketWithoutBinding(EventEnginePosixInterface* posix_interface,
+                                   const PosixTcpOptions& options,
+                                   const EventEngine::ResolvedAddress& addr);
+
+// Binds and listens on a listener socket. The socket must have been created
+// with `CreateListenerSocketWithoutBinding`.
+absl::Status BindListenerSocket(
+    EventEnginePosixInterface* posix_interface,
+    const EventEngine::ResolvedAddress& addr,
+    ListenerSocketsContainer::ListenerSocket& socket);
+
 // Creates and configures a socket to be used by the EventEngine Listener. The
 // type of the socket to create is determined by the by the passed address. The
 // socket configuration is specified by passed tcp options. If successful, it
@@ -70,7 +84,9 @@ CreateAndPrepareListenerSocket(
 absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
     EventEnginePosixInterface* posix_interface,
     ListenerSocketsContainer& listener_sockets, const PosixTcpOptions& options,
-    int requested_port);
+    int requested_port,
+    absl::AnyInvocable<bool(const ListenerSocketsContainer::ListenerSocket&)>
+        socket_filter = nullptr);
 
 // Get all addresses assigned to network interfaces on the machine and create
 // and add a socket for each local address. Each newly created socket is
