@@ -34,24 +34,17 @@
 
 namespace grpc_core {
 
-SubchannelKey::SubchannelKey(const grpc_resolved_address& address,
-                             const ChannelArgs& args)
-    : address_(address), args_(args) {}
+SubchannelKey::SubchannelKey(std::string address, const ChannelArgs& args)
+    : address_(std::move(address)), args_(args) {}
 
 int SubchannelKey::Compare(const SubchannelKey& other) const {
-  if (address_.len < other.address_.len) return -1;
-  if (address_.len > other.address_.len) return 1;
-  int r = memcmp(address_.addr, other.address_.addr, address_.len);
+  int r = address_.compare(other.address_);
   if (r != 0) return r;
   return QsortCompare(args_, other.args_);
 }
 
 std::string SubchannelKey::ToString() const {
-  auto addr_uri = grpc_sockaddr_to_uri(&address_);
-  return absl::StrCat(
-      "{address=",
-      addr_uri.ok() ? addr_uri.value() : addr_uri.status().ToString(),
-      ", args=", args_.ToString(), "}");
+  return absl::StrCat("{address=", address_, ", args=", args_.ToString(), "}");
 }
 
 absl::string_view SubchannelPoolInterface::ChannelArgName() {

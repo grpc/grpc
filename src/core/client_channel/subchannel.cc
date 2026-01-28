@@ -36,7 +36,9 @@
 #include "src/core/client_channel/subchannel_pool_interface.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/proxy_mapper_registry.h"
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/util/uri.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
@@ -116,7 +118,7 @@ RefCountedPtr<Subchannel::Call> Subchannel::Call::Ref(
 
 RefCountedPtr<Subchannel> Subchannel::Create(
     OrphanablePtr<SubchannelConnector> connector,
-    const grpc_resolved_address& address, const ChannelArgs& args) {
+    const std::string& address, const ChannelArgs& args) {
   if (!IsSubchannelConnectionScalingEnabled()) {
     return OldSubchannel::Create(std::move(connector), address, args);
   }
@@ -664,10 +666,11 @@ OldSubchannel::OldSubchannel(SubchannelKey key,
                     grpc_schedule_on_exec_ctx);
   // Check proxy mapper to determine address to connect to and channel
   // args to use.
-  address_for_connect_ = CoreConfiguration::Get()
-                             .proxy_mapper_registry()
-                             .MapAddress(key_.address(), &args_)
-                             .value_or(key_.address());
+  address_for_connect_ =
+      CoreConfiguration::Get()
+          .proxy_mapper_registry()
+          .MapAddress(key_.address(), &args_)
+          .value_or(key_.address());
   // Initialize channelz.
   const bool channelz_enabled = args_.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
                                     .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT);
@@ -677,9 +680,7 @@ OldSubchannel::OldSubchannel(SubchannelKey key,
             .value_or(GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT),
         0, INT_MAX);
     channelz_node_ = MakeRefCounted<channelz::SubchannelNode>(
-        grpc_sockaddr_to_uri(&key_.address())
-            .value_or("<unknown address type>"),
-        channel_tracer_max_memory);
+        key_.address(), channel_tracer_max_memory);
     GRPC_CHANNELZ_LOG(channelz_node_) << "subchannel created";
     channelz_node_->SetChannelArgs(args_);
     args_ = args_.SetObject<channelz::BaseNode>(channelz_node_);
@@ -699,7 +700,7 @@ OldSubchannel::~OldSubchannel() {
 
 RefCountedPtr<Subchannel> OldSubchannel::Create(
     OrphanablePtr<SubchannelConnector> connector,
-    const grpc_resolved_address& address, const ChannelArgs& args) {
+    const std::string& address, const ChannelArgs& args) {
   SubchannelKey key(address, args);
   auto* subchannel_pool = args.GetObject<SubchannelPoolInterface>();
   GRPC_CHECK_NE(subchannel_pool, nullptr);
@@ -835,9 +836,7 @@ void OldSubchannel::SetConnectivityStateLocked(grpc_connectivity_state state,
   } else {
     // Augment status message to include IP address.
     status_ = absl::Status(status.code(),
-                           absl::StrCat(grpc_sockaddr_to_uri(&key_.address())
-                                            .value_or("<unknown address type>"),
-                                        ": ", status.message()));
+                           absl::StrCat(key_.address(), ": ", status.message()));
     status.ForEachPayload(
         [this](absl::string_view key, const absl::Cord& value)
         // Want to use ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_) here,
@@ -1511,10 +1510,11 @@ NewSubchannel::NewSubchannel(SubchannelKey key,
                     grpc_schedule_on_exec_ctx);
   // Check proxy mapper to determine address to connect to and channel
   // args to use.
-  address_for_connect_ = CoreConfiguration::Get()
-                             .proxy_mapper_registry()
-                             .MapAddress(key_.address(), &args_)
-                             .value_or(key_.address());
+  address_for_connect_ =
+      CoreConfiguration::Get()
+          .proxy_mapper_registry()
+          .MapAddress(key_.address(), &args_)
+          .value_or(key_.address());
   // Initialize channelz.
   const bool channelz_enabled = args_.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
                                     .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT);
@@ -1524,9 +1524,7 @@ NewSubchannel::NewSubchannel(SubchannelKey key,
             .value_or(GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT),
         0, INT_MAX);
     channelz_node_ = MakeRefCounted<channelz::SubchannelNode>(
-        grpc_sockaddr_to_uri(&key_.address())
-            .value_or("<unknown address type>"),
-        channel_tracer_max_memory);
+        key_.address(), channel_tracer_max_memory);
     GRPC_CHANNELZ_LOG(channelz_node_) << "subchannel created";
     channelz_node_->SetChannelArgs(args_);
     args_ = args_.SetObject<channelz::BaseNode>(channelz_node_);
@@ -1546,7 +1544,7 @@ NewSubchannel::~NewSubchannel() {
 
 RefCountedPtr<Subchannel> NewSubchannel::Create(
     OrphanablePtr<SubchannelConnector> connector,
-    const grpc_resolved_address& address, const ChannelArgs& args) {
+    const std::string& address, const ChannelArgs& args) {
   SubchannelKey key(address, args);
   auto* subchannel_pool = args.GetObject<SubchannelPoolInterface>();
   GRPC_CHECK_NE(subchannel_pool, nullptr);
@@ -1682,9 +1680,7 @@ void NewSubchannel::SetConnectivityStateLocked(grpc_connectivity_state state,
   } else {
     // Augment status message to include IP address.
     status_ = absl::Status(status.code(),
-                           absl::StrCat(grpc_sockaddr_to_uri(&key_.address())
-                                            .value_or("<unknown address type>"),
-                                        ": ", status.message()));
+                           absl::StrCat(key_.address(), ": ", status.message()));
     status.ForEachPayload(
         [this](absl::string_view key, const absl::Cord& value)
         // Want to use ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_) here,

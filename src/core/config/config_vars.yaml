@@ -140,6 +140,12 @@
   fuzz: true
   description: "EXPERIMENTAL: \
     If true, channelz will allow inspecting calls as well as channels."
+- name: uri_migration_experiment
+  type: bool
+  default: false
+  fuzz: true
+  description: "EXPERIMENTAL: \
+    If true, migrate grpc_resolved_address to uri string."
 - name: experimental_target_memory_pressure
   type: double
   default: 0.95

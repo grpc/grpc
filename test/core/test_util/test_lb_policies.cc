@@ -340,7 +340,7 @@ class AddressTestLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
           cb_(std::move(cb)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        const grpc_resolved_address& address,
+        const std::string& address,
         const ChannelArgs& per_address_args, const ChannelArgs& args) override {
       cb_(EndpointAddresses(address, per_address_args));
       return parent_helper()->CreateSubchannel(address, per_address_args, args);
@@ -417,9 +417,7 @@ class FixedAddressLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
     args.config.reset();
     EndpointAddressesList addresses;
     if (uri.ok()) {
-      grpc_resolved_address address;
-      GRPC_CHECK(grpc_parse_uri(*uri, &address));
-      addresses.emplace_back(address, ChannelArgs());
+      addresses.emplace_back(config->address(), ChannelArgs());
     } else {
       LOG(ERROR) << kFixedAddressLbPolicyName << ": could not parse URI ("
                  << uri.status().ToString() << "), using empty address list";
@@ -520,7 +518,7 @@ class OobBackendMetricTestLoadBalancingPolicy
         : ParentOwningDelegatingChannelControlHelper(std::move(parent)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        const grpc_resolved_address& address,
+        const std::string& address,
         const ChannelArgs& per_address_args, const ChannelArgs& args) override {
       auto subchannel =
           parent_helper()->CreateSubchannel(address, per_address_args, args);

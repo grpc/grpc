@@ -55,8 +55,8 @@ std::optional<std::string> ProxyMapperRegistry::MapName(
   return std::nullopt;
 }
 
-std::optional<grpc_resolved_address> ProxyMapperRegistry::MapAddress(
-    const grpc_resolved_address& address, ChannelArgs* args) const {
+std::optional<std::string> ProxyMapperRegistry::MapAddress(
+    const std::string& address, ChannelArgs* args) const {
   ChannelArgs args_backup = *args;
   for (const auto& mapper : mappers_) {
     *args = args_backup;

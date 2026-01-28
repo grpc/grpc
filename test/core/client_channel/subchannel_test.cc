@@ -16,11 +16,13 @@
 
 #include <atomic>
 #include <memory>
+#include <string>
 
 #include "src/core/client_channel/client_channel.h"
 #include "src/core/client_channel/local_subchannel_pool.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/util/orphanable.h"
 #include "test/core/call/yodel/yodel_test.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
@@ -41,10 +43,9 @@ class SubchannelTest : public YodelTest {
   using YodelTest::YodelTest;
 
   RefCountedPtr<Subchannel> InitChannel(const ChannelArgs& args) {
-    grpc_resolved_address addr;
-    CHECK(grpc_parse_uri(URI::Parse(kTestAddress).value(), &addr));
-    auto subchannel = Subchannel::Create(MakeOrphanable<TestConnector>(this),
-                                         addr, CompleteArgs(args));
+    auto subchannel =
+        Subchannel::Create(MakeOrphanable<TestConnector>(this),
+                           std::string(kTestAddress), CompleteArgs(args));
     auto watcher = MakeRefCounted<Watcher>();
     {
       ExecCtx exec_ctx;

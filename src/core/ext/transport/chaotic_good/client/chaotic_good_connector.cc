@@ -31,6 +31,7 @@
 #include "src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/tcp_connect/tcp_connect_handshaker.h"
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
@@ -218,8 +219,13 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
   auto arena = SimpleArenaAllocator(0)->MakeArena();
   auto result_notifier = std::make_unique<ResultNotifier>(args, result, notify);
   arena->SetContext(event_engine.get());
+  auto uri = grpc_core::URI::Parse(*args.address);
+  GRPC_CHECK(uri.ok()) << "Failed to parse URI: " << args.address;
+  grpc_resolved_address resolved_address;
+  GRPC_CHECK(grpc_parse_uri(*uri, &resolved_address));
   auto resolved_addr = EventEngine::ResolvedAddress(
-      reinterpret_cast<const sockaddr*>(args.address->addr), args.address->len);
+      reinterpret_cast<const sockaddr*>(resolved_address.addr),
+      resolved_address.len);
   GRPC_CHECK_NE(resolved_addr.address(), nullptr);
   auto* result_notifier_ptr = result_notifier.get();
   auto activity = MakeActivity(

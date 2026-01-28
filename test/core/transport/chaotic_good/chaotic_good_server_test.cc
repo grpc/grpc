@@ -115,9 +115,7 @@ class ChaoticGoodServerTest : public ::testing::TestWithParam<CredentialsType> {
   }
 
   void ConstructConnector() {
-    auto uri = URI::Parse("ipv6:" + addr_);
-    GRPC_CHECK_OK(uri);
-    GRPC_CHECK(grpc_parse_uri(*uri, &resolved_addr_));
+    resolved_addr_ = "ipv6:" + addr_;
     args_.address = &resolved_addr_;
     args_.deadline = Timestamp::Now() + Duration::Seconds(15);
     args_.channel_args = channel_args();
@@ -130,11 +128,11 @@ class ChaoticGoodServerTest : public ::testing::TestWithParam<CredentialsType> {
         channel_creds = grpc_fake_transport_security_credentials_create();
         break;
     }
-    LOG(ERROR) << "addr: " << uri->ToString();
+    LOG(ERROR) << "addr: " << resolved_addr_;
     args_.channel_args =
         args_.channel_args.SetObject<grpc_channel_security_connector>(
             channel_creds->create_security_connector(
-                nullptr, uri->ToString().c_str(), &args_.channel_args));
+                nullptr, resolved_addr_.c_str(), &args_.channel_args));
     grpc_channel_credentials_release(channel_creds);
     connector_ = MakeRefCounted<ChaoticGoodConnector>();
   }
@@ -161,7 +159,7 @@ class ChaoticGoodServerTest : public ::testing::TestWithParam<CredentialsType> {
   Notification connect_finished_;
   int port_;
   std::string addr_;
-  grpc_resolved_address resolved_addr_;
+  std::string resolved_addr_;
   RefCountedPtr<ChaoticGoodConnector> connector_;
 };
 

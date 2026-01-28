@@ -39,7 +39,7 @@ class SubchannelConnector : public InternallyRefCounted<SubchannelConnector> {
  public:
   struct Args {
     // Address to connect to.
-    grpc_resolved_address* address;
+    const std::string* address;
     // Set of pollsets interested in this connection.
     grpc_pollset_set* interested_parties;
     // Deadline for connection.

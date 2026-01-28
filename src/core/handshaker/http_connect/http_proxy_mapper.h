@@ -41,8 +41,8 @@ class HttpProxyMapper final : public ProxyMapperInterface {
   std::optional<std::string> MapName(absl::string_view server_uri,
                                      ChannelArgs* args) override;
 
-  std::optional<grpc_resolved_address> MapAddress(
-      const grpc_resolved_address& address, ChannelArgs* args) override;
+  std::optional<std::string> MapAddress(
+      const std::string& address, ChannelArgs* args) override;
 };
 
 void RegisterHttpProxyMapper(CoreConfiguration::Builder* builder);

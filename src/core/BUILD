@@ -4332,6 +4332,7 @@ grpc_cc_library(
         "//:http_connect_client_handshaker",
         "//:parse_address",
         "//:sockaddr_utils",
+        "//:uri",
     ],
 )
 
@@ -7095,8 +7096,10 @@ grpc_cc_library(
         "//:grpc_base",
         "//:grpc_trace",
         "//:orphanable",
+        "//:parse_address",
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
+        "//:uri",
         "//:work_serializer",
     ],
 )
@@ -7233,6 +7236,7 @@ grpc_cc_library(
         "//:grpc_base",
         "//:grpc_trace",
         "//:orphanable",
+        "//:parse_address",
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
         "//:work_serializer",
@@ -7745,6 +7749,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:orphanable",
         "//:ref_counted_ptr",
+        "//:sockaddr_utils",
         "//:uri",
     ],
 )
@@ -7804,6 +7809,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:orphanable",
         "//:ref_counted_ptr",
+        "//:sockaddr_utils",
         "//:uri",
     ],
 )
@@ -9570,6 +9576,7 @@ grpc_cc_library(
         "//:grpc_client_channel",
         "//:handshaker",
         "//:iomgr",
+        "//:parse_address",
         "//:ref_counted_ptr",
     ],
 )
@@ -10028,6 +10035,7 @@ grpc_cc_library(
         "//:grpc_client_channel",
         "//:handshaker",
         "//:iomgr",
+        "//:parse_address",
         "//:ref_counted_ptr",
     ],
 )

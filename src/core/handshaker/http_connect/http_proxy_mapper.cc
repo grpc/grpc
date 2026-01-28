@@ -164,18 +164,11 @@ std::optional<std::string> GetChannelArgOrEnvVarValue(
   return GetEnv(env_var);
 }
 
-std::optional<grpc_resolved_address> GetAddressProxyServer(
+std::optional<std::string> GetAddressProxyServer(
     const ChannelArgs& args) {
-  auto address_value = GetChannelArgOrEnvVarValue(
+  auto address = GetChannelArgOrEnvVarValue(
       args, GRPC_ARG_ADDRESS_HTTP_PROXY, HttpProxyMapper::kAddressProxyEnvVar);
-  if (!address_value.has_value()) {
-    return std::nullopt;
-  }
-  auto address = StringToSockaddr(*address_value);
-  if (!address.ok()) {
-    LOG(ERROR) << "cannot parse value of '"
-               << std::string(HttpProxyMapper::kAddressProxyEnvVar)
-               << "' env var. Error: " << address.status().ToString();
+  if (!address.has_value()) {
     return std::nullopt;
   }
   return *address;
@@ -243,32 +236,35 @@ std::optional<std::string> HttpProxyMapper::MapName(
   return name_to_resolve;
 }
 
-std::optional<grpc_resolved_address> HttpProxyMapper::MapAddress(
-    const grpc_resolved_address& address, ChannelArgs* args) {
+std::optional<std::string> HttpProxyMapper::MapAddress(
+    const std::string& address, ChannelArgs* args) {
   auto proxy_address = GetAddressProxyServer(*args);
   if (!proxy_address.has_value()) {
     return std::nullopt;
   }
-  auto address_string = grpc_sockaddr_to_string(&address, true);
-  if (!address_string.ok()) {
-    LOG(ERROR) << "Unable to convert address to string: "
-               << address_string.status();
+  auto uri = URI::Parse(address);
+  if (!uri.ok()) {
+    LOG(ERROR) << "Address " << address << " cannot be parsed as a URI";
     return std::nullopt;
   }
   std::string host_name, port;
-  if (!SplitHostPort(*address_string, &host_name, &port)) {
-    LOG(ERROR) << "Address " << *address_string
-               << " cannot be split in host and port";
+  if (!SplitHostPort(absl::StripPrefix(uri->path(), "/"), &host_name, &port)) {
+    LOG(ERROR) << "Address " << address << " cannot be split in host and port";
     return std::nullopt;
   }
   auto enabled_addresses = GetChannelArgOrEnvVarValue(
       *args, GRPC_ARG_ADDRESS_HTTP_PROXY_ENABLED_ADDRESSES,
       kAddressProxyEnabledAddressesEnvVar);
-  if (!enabled_addresses.has_value() ||
-      !AddressIncluded(address, host_name, *enabled_addresses)) {
+  grpc_resolved_address resolved_address;
+  if (!grpc_parse_uri(*uri, &resolved_address)){
+    LOG(ERROR) << "Address " << address << " cannot be parsed as a URI";
     return std::nullopt;
   }
-  *args = args->Set(GRPC_ARG_HTTP_CONNECT_SERVER, *address_string);
+  if (!enabled_addresses.has_value() ||
+      !AddressIncluded(resolved_address, host_name, *enabled_addresses)) {
+    return std::nullopt;
+  }
+  *args = args->Set(GRPC_ARG_HTTP_CONNECT_SERVER, address);
   return proxy_address;
 }
 

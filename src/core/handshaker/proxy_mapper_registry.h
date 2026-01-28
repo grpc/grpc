@@ -60,8 +60,8 @@ class ProxyMapperRegistry {
   std::optional<std::string> MapName(absl::string_view server_uri,
                                      ChannelArgs* args) const;
 
-  std::optional<grpc_resolved_address> MapAddress(
-      const grpc_resolved_address& address, ChannelArgs* args) const;
+  std::optional<std::string> MapAddress(
+      const std::string& address, ChannelArgs* args) const;
 
  private:
   ProxyMapperRegistry() = default;
