@@ -275,6 +275,7 @@ class ShutdownCallback : public grpc_completion_queue_functor {
       // Otherwise we need to use the alternative CQ variant
       callback_cq = CompletionQueue::CallbackAlternativeCQ();
     }
+    grpc_channel_init_completion_queue(c_channel_, callback_cq->cq());
     callback_cq_.store(callback_cq, std::memory_order_release);
   }
   return callback_cq;
