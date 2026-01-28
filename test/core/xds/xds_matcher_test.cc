@@ -588,13 +588,13 @@ TEST(XdsMatcherPrefixMapTest, MatchIgnoredIfNestedMatcherDoesNotMatch) {
                   .value())),
       XdsMatcher::OnMatch(std::make_unique<TestAction>("nested"), false));
   absl::flat_hash_map<std::string, XdsMatcher::OnMatch> map;
-  map.emplace("/foo/bar", XdsMatcher::OnMatch(
-                              std::make_unique<TestAction>("shorter_prefix"),
-                              false));
+  map.emplace("/foo/bar",
+              XdsMatcher::OnMatch(
+                  std::make_unique<TestAction>("shorter_prefix"), false));
   map.emplace("/foo/bar/baz",
               XdsMatcher::OnMatch(std::make_unique<XdsMatcherList>(
                                       std::move(nested_matchers), std::nullopt),
-              false));
+                                  false));
   XdsMatcherPrefixMap matcher(std::make_unique<TestPathInput>(), std::move(map),
                               std::nullopt);
   EXPECT_TRUE(matcher.FindMatches(context, result));
