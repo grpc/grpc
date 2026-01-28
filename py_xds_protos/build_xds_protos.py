@@ -1,0 +1,198 @@
+#! /usr/bin/env python3
+# Copyright 2021 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""Builds the content of xds-protos package"""
+
+import os
+import sys
+
+from grpc_tools import protoc
+
+if sys.version_info >= (3, 9, 0):
+    from importlib import resources
+else:
+    import pkg_resources
+
+
+def localize_path(p):
+    return os.path.join(*p.split("/"))
+
+
+def _get_resource_file_name(
+    package_or_requirement: str, resource_name: str
+) -> str:
+    """Obtain the filename for a resource on the file system."""
+    file_name = None
+    if sys.version_info >= (3, 9, 0):
+        file_name = (
+            resources.files(package_or_requirement) / resource_name
+        ).resolve()
+    else:
+        file_name = pkg_resources.resource_filename(
+            package_or_requirement, resource_name
+        )
+    return str(file_name)
+
+
+# We might not want to compile all the protos
+EXCLUDE_PROTO_PACKAGES_LIST = tuple(
+    localize_path(p)
+    for p in (
+        # Requires extra dependency to Prometheus protos
+        "envoy/service/metrics/v2",
+        "envoy/service/metrics/v3",
+        "envoy/service/metrics/v4alpha",
+    )
+)
+
+# Compute the paths
+WORK_DIR = os.path.dirname(os.path.abspath(__file__))
+ENVOY_API_PROTO_ROOT = os.path.join("third_party", "envoy-api")
+XDS_PROTO_ROOT = os.path.join("third_party", "xds")
+GOOGLEAPIS_ROOT = os.path.join("third_party", "googleapis")
+VALIDATE_ROOT = os.path.join("third_party", "protoc-gen-validate")
+OPENCENSUS_PROTO_ROOT = os.path.join(
+    "third_party", "opencensus-proto", "src"
+)
+OPENTELEMETRY_PROTO_ROOT = os.path.join("third_party", "opentelemetry")
+WELL_KNOWN_PROTOS_INCLUDE = _get_resource_file_name("grpc_tools", "_proto")
+
+OUTPUT_PATH = WORK_DIR
+
+# Prepare the test file generation
+TEST_FILE_NAME = "generated_file_import_test.py"
+TEST_IMPORTS = []
+
+# The pkgutil-style namespace packaging __init__.py
+PKGUTIL_STYLE_INIT = (
+    "__path__ = __import__('pkgutil').extend_path(__path__, __name__)\n"
+)
+NAMESPACE_PACKAGES = ["google"]
+
+
+def add_test_import(proto_package_path: str, file_name: str, service: bool = False):
+    TEST_IMPORTS.append(
+        "from %s import %s\n"
+        % (
+            proto_package_path.replace("/", ".").replace("-", "_"),
+            file_name.replace(".proto", "_pb2").replace("-", "_"),
+        )
+    )
+    if service:
+        TEST_IMPORTS.append(
+            "from %s import %s\n"
+            % (
+                proto_package_path.replace("/", ".").replace("-", "_"),
+                file_name.replace(".proto", "_pb2_grpc").replace("-", "_"),
+            )
+        )
+
+
+# Prepare Protoc command
+COMPILE_PROTO_ONLY = [
+    "grpc_tools.protoc",
+    "--proto_path={}".format(ENVOY_API_PROTO_ROOT),
+    "--proto_path={}".format(XDS_PROTO_ROOT),
+    "--proto_path={}".format(GOOGLEAPIS_ROOT),
+    "--proto_path={}".format(VALIDATE_ROOT),
+    "--proto_path={}".format(WELL_KNOWN_PROTOS_INCLUDE),
+    "--proto_path={}".format(OPENCENSUS_PROTO_ROOT),
+    "--proto_path={}".format(OPENTELEMETRY_PROTO_ROOT),
+    "--python_out={}".format(OUTPUT_PATH),
+]
+COMPILE_BOTH = COMPILE_PROTO_ONLY + ["--grpc_python_out={}".format(OUTPUT_PATH)]
+
+
+def has_grpc_service(proto_package_path: str) -> bool:
+    return proto_package_path.startswith(os.path.join("envoy", "service"))
+
+
+def compile_protos(proto_root: str, sub_dir: str = ".") -> None:
+    compiled_any = False
+    for root, _, files in os.walk(os.path.join(proto_root, sub_dir)):
+        proto_package_path = os.path.relpath(root, proto_root)
+        if proto_package_path in EXCLUDE_PROTO_PACKAGES_LIST:
+            print(f"Skipping package {proto_package_path}")
+            continue
+        for file_name in files:
+            if file_name.endswith(".proto"):
+                # Compile proto
+                compiled_any = True
+                if has_grpc_service(proto_package_path):
+                    return_code = protoc.main(
+                        COMPILE_BOTH + [os.path.join(root, file_name)]
+                    )
+                    add_test_import(proto_package_path, file_name, service=True)
+                else:
+                    return_code = protoc.main(
+                        COMPILE_PROTO_ONLY + [os.path.join(root, file_name)]
+                    )
+                    add_test_import(proto_package_path, file_name, service=False)
+                if return_code != 0:
+                    raise Exception("error: {} failed".format(COMPILE_BOTH))
+    # Ensure a deterministic order.
+    TEST_IMPORTS.sort()
+    if not compiled_any:
+        raise Exception(
+            "No proto files found at {}. Did you update git submodules?".format(
+                proto_root, sub_dir
+            )
+        )
+
+
+def create_init_file(path: str, package_path: str = "") -> None:
+    with open(os.path.join(path, "__init__.py"), "w") as f:
+        # Apply the pkgutil-style namespace packaging, which is compatible for 2
+        # and 3. Here is the full table of namespace compatibility:
+        # https://github.com/pypa/sample-namespace-packages/blob/master/table.md
+        if package_path in NAMESPACE_PACKAGES:
+            f.write(PKGUTIL_STYLE_INIT)
+
+
+def main():
+    # Compile xDS protos
+    compile_protos(ENVOY_API_PROTO_ROOT)
+    compile_protos(XDS_PROTO_ROOT)
+    # We don't want to compile the entire GCP surface API, just the essential ones
+    compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "api"))
+    compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "rpc"))
+    compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "longrunning"))
+    compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "logging"))
+    compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "type"))
+    compile_protos(VALIDATE_ROOT, "validate")
+    compile_protos(OPENCENSUS_PROTO_ROOT)
+    compile_protos(OPENTELEMETRY_PROTO_ROOT)
+
+    # Generate __init__.py files for all modules
+    create_init_file(WORK_DIR)
+    for proto_root_module in [
+        "envoy",
+        "google",
+        "opencensus",
+        "udpa",
+        "validate",
+        "xds",
+        "opentelemetry",
+    ]:
+        for root, _, _ in os.walk(os.path.join(WORK_DIR, proto_root_module)):
+            package_path = os.path.relpath(root, WORK_DIR)
+            create_init_file(root, package_path)
+
+    # Generate test file
+    with open(os.path.join(WORK_DIR, TEST_FILE_NAME), "w") as f:
+        f.writelines(TEST_IMPORTS)
+
+
+if __name__ == "__main__":
+    main()

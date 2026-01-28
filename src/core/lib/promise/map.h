@@ -22,11 +22,11 @@
 #include <type_traits>
 #include <utility>
 
+#include "src/core/lib/promise/detail/promise_like.h"
+#include "src/core/lib/promise/poll.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "src/core/lib/promise/detail/promise_like.h"
-#include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
 
@@ -156,6 +156,18 @@ class Map {
     return Pending();
   }
 
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* map_promise =
+        grpc_channelz_v2_Promise_mutable_map_promise(promise_proto, arena);
+    PromiseAsProto(
+        promise_,
+        grpc_channelz_v2_Promise_Map_mutable_promise(map_promise, arena),
+        arena);
+    grpc_channelz_v2_Promise_Map_set_map_fn(
+        map_promise, StdStringToUpbString(TypeName<Fn>()));
+  }
+
  private:
   template <typename SomeOtherPromise, typename SomeOtherFn>
   friend class Map;
@@ -193,6 +205,18 @@ class Map<Map<Promise, Fn0>, Fn1> {
       return fn_(std::move(*p));
     }
     return Pending();
+  }
+
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* map_promise =
+        grpc_channelz_v2_Promise_mutable_map_promise(promise_proto, arena);
+    PromiseAsProto(
+        promise_,
+        grpc_channelz_v2_Promise_Map_mutable_promise(map_promise, arena),
+        arena);
+    grpc_channelz_v2_Promise_Map_set_map_fn(
+        map_promise, StdStringToUpbString(TypeName<FusedFn>()));
   }
 
  private:

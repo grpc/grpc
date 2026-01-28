@@ -24,10 +24,10 @@
 #include <memory>
 
 #include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/telemetry/stats_data.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace testing {
@@ -54,7 +54,7 @@ TEST(StatsTest, IncSpecificCounter) {
 
 TEST(StatsTest, IncrementHttp2MetadataSize) {
   ExecCtx exec_ctx;
-  global_stats().IncrementHttp2MetadataSize(0);
+  http2_global_stats().IncrementHttp2MetadataSize(0);
 }
 
 static int FindExpectedBucket(const HistogramView& h, int value) {

@@ -22,22 +22,28 @@
 namespace grpc_event_engine::experimental {
 
 bool UseEventEngineClient() {
-#if defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
-  return false;
-#endif
-  return grpc_core::IsEventEngineClientEnabled();
+  return !EventEngineExperimentDisabledForPython() &&
+         grpc_core::IsEventEngineClientEnabled();
 }
 
 bool UseEventEngineListener() {
-#if defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
-  return false;
-#endif
-  return grpc_core::IsEventEngineListenerEnabled();
+  return !EventEngineExperimentDisabledForPython() &&
+         grpc_core::IsEventEngineListenerEnabled();
 }
 
 bool UsePollsetAlternative() {
   return UseEventEngineClient() && UseEventEngineListener() &&
          grpc_core::IsPollsetAlternativeEnabled();
+}
+
+// Returns true if the poller is disabled by build configuration or experiment
+// flags.
+bool EventEngineExperimentDisabledForPython() {
+#ifdef GRPC_PYTHON_BUILD
+  return !grpc_core::IsEventEnginePollerForPythonEnabled();
+#else
+  return false;
+#endif
 }
 
 }  // namespace grpc_event_engine::experimental

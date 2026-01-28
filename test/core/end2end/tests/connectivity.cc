@@ -19,11 +19,11 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace {
@@ -60,7 +60,7 @@ CORE_END2END_TEST(RetryHttp2Tests, ConnectivityWatch) {
   state = CheckConnectivityState(false);
   EXPECT_EQ(state, GRPC_CHANNEL_TRANSIENT_FAILURE);
   // now let's bring up a server to connect to
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   // when the channel gets connected, it will report READY
   WatchConnectivityState(state, Duration::Seconds(10), 4);
   Expect(4, true);

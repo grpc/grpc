@@ -18,31 +18,28 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP_CLIENT
 
 #include <errno.h>
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
 #include <netinet/in.h>
 #include <string.h>
 #include <unistd.h>
 
-#include "absl/container/flat_hash_map.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
+#include <memory>
+
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/event_engine_shims/tcp_client.h"
-#include "src/core/lib/iomgr/executor.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_client_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
@@ -50,9 +47,14 @@
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/iomgr/vsock.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/net/socket_mutator.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/string.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 
 using ::grpc_event_engine::experimental::EndpointConfig;
 
@@ -70,6 +72,7 @@ struct async_connect {
   int64_t connection_handle;
   bool connect_cancelled;
   grpc_core::PosixTcpOptions options;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine;
 };
 
 struct ConnectionShard {
@@ -100,7 +103,7 @@ static grpc_error_handle prepare_socket(
     const grpc_core::PosixTcpOptions& options) {
   grpc_error_handle err;
 
-  CHECK_GE(fd, 0);
+  GRPC_CHECK_GE(fd, 0);
 
   err = grpc_set_socket_nonblocking(fd, 1);
   if (!err.ok()) goto error;
@@ -184,7 +187,7 @@ static void on_writable(void* acp, grpc_error_handle error) {
       << ": on_writable: error=" << grpc_core::StatusToString(error);
 
   gpr_mu_lock(&ac->mu);
-  CHECK(ac->fd);
+  GRPC_CHECK(ac->fd);
   fd = ac->fd;
   ac->fd = nullptr;
   bool connect_cancelled = ac->connect_cancelled;
@@ -270,17 +273,21 @@ finish:
     error =
         grpc_core::AddMessagePrefix("Failed to connect to remote host", error);
   }
+  auto engine = ac->engine;
   if (done) {
     // This is safe even outside the lock, because "done", the sentinel, is
     // populated *inside* the lock.
     gpr_mu_destroy(&ac->mu);
     delete ac;
   }
-  // Push async connect closure to the executor since this may actually be
-  // called during the shutdown process, in which case a deadlock could form
-  // between the core shutdown mu and the connector mu (b/188239051)
+  // Run the connect closure asynchronously since this may actually be called
+  // during the shutdown process, in which case a deadlock could form between
+  // the core shutdown mu and the connector mu (b/188239051)
   if (!connect_cancelled) {
-    grpc_core::Executor::Run(closure, error);
+    engine->Run([closure, error]() {
+      grpc_core::ExecCtx exec_ctx;
+      closure->cb(closure->cb_arg, error);
+    });
   }
 }
 
@@ -367,6 +374,7 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
   ac->addr_str = addr_uri.value();
   ac->connection_handle = connection_id;
   ac->connect_cancelled = false;
+  ac->engine = grpc_event_engine::experimental::GetDefaultEventEngine();
   gpr_mu_init(&ac->mu);
   ac->refs = 2;
   GRPC_CLOSURE_INIT(&ac->write_closure, on_writable, ac,
@@ -430,7 +438,7 @@ static bool tcp_cancel_connect(int64_t connection_handle) {
     auto it = shard->pending_connections.find(connection_handle);
     if (it != shard->pending_connections.end()) {
       ac = it->second;
-      CHECK_NE(ac, nullptr);
+      GRPC_CHECK_NE(ac, nullptr);
       // Trying to acquire ac->mu here would could cause a deadlock because
       // the on_writable method tries to acquire the two mutexes used
       // here in the reverse order. But we dont need to acquire ac->mu before

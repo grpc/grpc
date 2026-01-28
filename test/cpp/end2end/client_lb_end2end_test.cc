@@ -38,15 +38,6 @@
 #include <string>
 #include <thread>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/client_channel/config_selector.h"
 #include "src/core/client_channel/global_subchannel_pool.h"
@@ -66,6 +57,7 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
@@ -78,9 +70,18 @@
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/test_lb_policies.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/credentials.h"
 #include "xds/data/orca/v3/orca_load_report.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc {
 namespace testing {
@@ -238,9 +239,9 @@ class FakeResolverResponseGeneratorWrapper {
     for (const int& port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri =
           grpc_core::URI::Parse(grpc_core::LocalIpUri(port));
-      CHECK_OK(lb_uri);
+      GRPC_CHECK_OK(lb_uri);
       grpc_resolved_address address;
-      CHECK(grpc_parse_uri(*lb_uri, &address));
+      GRPC_CHECK(grpc_parse_uri(*lb_uri, &address));
       result.addresses->emplace_back(address, per_address_args);
     }
     if (result.addresses->empty()) {
@@ -313,6 +314,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
       const FakeResolverResponseGeneratorWrapper& response_generator,
       ChannelArguments args = ChannelArguments(),
       std::shared_ptr<ChannelCredentials> channel_creds = nullptr) {
+    ApplyCommonChannelArguments(args);
     if (!lb_policy_name.empty()) {
       args.SetLoadBalancingPolicyName(lb_policy_name);
     }  // else, default to pick first
@@ -1539,22 +1541,18 @@ TEST_F(RoundRobinTest, Basic) {
   auto stub = BuildStub(channel);
   response_generator.SetNextResolution(GetServersPorts());
   // Wait until all backends are ready.
-  do {
-    CheckRpcSendOk(DEBUG_LOCATION, stub);
-  } while (!SeenAllServers());
-  ResetCounters();
+  WaitForServers(DEBUG_LOCATION, stub);
   // "Sync" to the end of the list. Next sequence of picks will start at the
   // first server (index 0).
   WaitForServer(DEBUG_LOCATION, stub, servers_.size() - 1);
+  // Backends should be iterated over in the order in which the addresses were
+  // given.
   std::vector<int> connection_order;
   for (size_t i = 0; i < servers_.size(); ++i) {
     CheckRpcSendOk(DEBUG_LOCATION, stub);
     UpdateConnectionOrder(servers_, &connection_order);
   }
-  // Backends should be iterated over in the order in which the addresses were
-  // given.
-  const auto expected = std::vector<int>{0, 1, 2};
-  EXPECT_EQ(expected, connection_order);
+  EXPECT_THAT(connection_order, ::testing::ElementsAre(0, 1, 2));
   // Check LB policy name for the channel.
   EXPECT_EQ("round_robin", channel->GetLoadBalancingPolicyName());
 }
@@ -3137,7 +3135,11 @@ TEST_F(ControlPlaneStatusRewritingTest, RewritesFromConfigSelector) {
     bool Equals(const ConfigSelector* other) const override {
       return status_ == static_cast<const FailConfigSelector*>(other)->status_;
     }
-    absl::Status GetCallConfig(GetCallConfigArgs /*args*/) override {
+    void BuildFilterChains(grpc_core::FilterChainBuilder&,
+                           const grpc_core::Blackboard*,
+                           grpc_core::Blackboard*) override {}
+    absl::StatusOr<grpc_core::RefCountedPtr<const grpc_core::FilterChain>>
+    GetCallConfig(GetCallConfigArgs /*args*/) override {
       return status_;
     }
 
@@ -3210,7 +3212,7 @@ class WeightedRoundRobinTest : public ClientLbEnd2endTest {
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
       const std::vector<size_t>& expected_weights, size_t total_passes = 3,
       EchoRequest* request_ptr = nullptr, int timeout_ms = 15000) {
-    CHECK_EQ(expected_weights.size(), servers_.size());
+    GRPC_CHECK_EQ(expected_weights.size(), servers_.size());
     size_t total_picks_per_pass = 0;
     for (size_t picks : expected_weights) {
       total_picks_per_pass += picks;
@@ -3391,10 +3393,6 @@ int main(int argc, char** argv) {
   grpc_core::ConfigVars::Overrides overrides;
   overrides.client_channel_backup_poll_interval_ms = 1;
   grpc_core::ConfigVars::SetOverrides(overrides);
-#if TARGET_OS_IPHONE
-  // Workaround Apple CFStream bug
-  grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
   grpc_init();
   grpc::testing::ConnectionAttemptInjector::Init();
   const auto result = RUN_ALL_TESTS();

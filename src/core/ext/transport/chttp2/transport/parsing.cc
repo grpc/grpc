@@ -31,15 +31,6 @@
 #include <utility>
 #include <variant>
 
-#include "absl/base/attributes.h"
-#include "absl/container/flat_hash_map.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/random/bit_gen_ref.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
@@ -54,6 +45,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
@@ -72,10 +64,19 @@
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/random_early_detection.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/status_helper.h"
+#include "absl/base/attributes.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/log/log.h"
+#include "absl/random/bit_gen_ref.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
 using grpc_core::HPackParser;
 using grpc_core::http2::Http2ErrorCode;
@@ -212,7 +213,7 @@ std::string FrameTypeString(uint8_t frame_type, uint8_t flags) {
 std::variant<size_t, absl::Status> grpc_chttp2_perform_read(
     grpc_chttp2_transport* t, const grpc_slice& slice,
     size_t& requests_started) {
-  GRPC_LATENT_SEE_INNER_SCOPE("grpc_chttp2_perform_read");
+  GRPC_LATENT_SEE_SCOPE("grpc_chttp2_perform_read");
 
   const uint8_t* beg = GRPC_SLICE_START_PTR(slice);
   const uint8_t* end = GRPC_SLICE_END_PTR(slice);
@@ -273,7 +274,7 @@ std::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       }
       [[fallthrough]];
     case GRPC_DTS_FH_0:
-      DCHECK_LT(cur, end);
+      GRPC_DCHECK_LT(cur, end);
       t->incoming_frame_size = (static_cast<uint32_t>(*cur)) << 16;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_1;
@@ -281,7 +282,7 @@ std::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       }
       [[fallthrough]];
     case GRPC_DTS_FH_1:
-      DCHECK_LT(cur, end);
+      GRPC_DCHECK_LT(cur, end);
       t->incoming_frame_size |= (static_cast<uint32_t>(*cur)) << 8;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_2;
@@ -289,7 +290,7 @@ std::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       }
       [[fallthrough]];
     case GRPC_DTS_FH_2:
-      DCHECK_LT(cur, end);
+      GRPC_DCHECK_LT(cur, end);
       t->incoming_frame_size |= *cur;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_3;
@@ -297,7 +298,7 @@ std::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       }
       [[fallthrough]];
     case GRPC_DTS_FH_3:
-      DCHECK_LT(cur, end);
+      GRPC_DCHECK_LT(cur, end);
       t->incoming_frame_type = *cur;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_4;
@@ -305,7 +306,7 @@ std::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       }
       [[fallthrough]];
     case GRPC_DTS_FH_4:
-      DCHECK_LT(cur, end);
+      GRPC_DCHECK_LT(cur, end);
       t->incoming_frame_flags = *cur;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_5;
@@ -313,7 +314,7 @@ std::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       }
       [[fallthrough]];
     case GRPC_DTS_FH_5:
-      DCHECK_LT(cur, end);
+      GRPC_DCHECK_LT(cur, end);
       t->incoming_stream_id = ((static_cast<uint32_t>(*cur)) & 0x7f) << 24;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_6;
@@ -321,7 +322,7 @@ std::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       }
       [[fallthrough]];
     case GRPC_DTS_FH_6:
-      DCHECK_LT(cur, end);
+      GRPC_DCHECK_LT(cur, end);
       t->incoming_stream_id |= (static_cast<uint32_t>(*cur)) << 16;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_7;
@@ -329,7 +330,7 @@ std::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       }
       [[fallthrough]];
     case GRPC_DTS_FH_7:
-      DCHECK_LT(cur, end);
+      GRPC_DCHECK_LT(cur, end);
       t->incoming_stream_id |= (static_cast<uint32_t>(*cur)) << 8;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_8;
@@ -337,7 +338,7 @@ std::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       }
       [[fallthrough]];
     case GRPC_DTS_FH_8:
-      DCHECK_LT(cur, end);
+      GRPC_DCHECK_LT(cur, end);
       t->incoming_stream_id |= (static_cast<uint32_t>(*cur));
       GRPC_TRACE_LOG(http, INFO)
           << "INCOMING[" << t << "]: "
@@ -371,7 +372,7 @@ std::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       }
       [[fallthrough]];
     case GRPC_DTS_FRAME:
-      DCHECK_LT(cur, end);
+      GRPC_DCHECK_LT(cur, end);
       if (static_cast<uint32_t>(end - cur) == t->incoming_frame_size) {
         err = parse_frame_slice(
             t,
@@ -545,8 +546,7 @@ void grpc_chttp2_parsing_become_skip_parser(grpc_chttp2_transport* t) {
 static grpc_error_handle init_data_frame_parser(grpc_chttp2_transport* t) {
   // Update BDP accounting since we have received a data frame.
   grpc_core::BdpEstimator* bdp_est = t->flow_control.bdp_estimator();
-  grpc_core::global_stats().IncrementHttp2ReadDataFrameSize(
-      t->incoming_frame_size);
+  t->http2_stats->IncrementHttp2ReadDataFrameSize(t->incoming_frame_size);
   if (bdp_est) {
     if (t->bdp_ping_blocked) {
       t->bdp_ping_blocked = false;
@@ -671,11 +671,12 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
                         nullptr, &t->http2_ztrace_collector));
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
-    } else if (grpc_core::IsRqFastRejectEnabled() &&
-               GPR_UNLIKELY(t->memory_owner.IsMemoryPressureHigh())) {
+    } else if (GPR_UNLIKELY(
+                   t->memory_owner.RejectNewStreamsUnderHighMemoryPressure())) {
       // We have more streams allocated than we'd like, so apply some pushback
       // by refusing this stream.
-      grpc_core::global_stats().IncrementRqCallsRejected();
+      t->memory_owner.telemetry_storage()->Increment(
+          grpc_core::ResourceQuotaDomain::kCallsRejected);
       ++t->num_pending_induced_frames;
       grpc_slice_buffer_add(
           &t->qbuf, grpc_chttp2_rst_stream_create(
@@ -753,6 +754,17 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       GRPC_CHTTP2_IF_TRACING(ERROR) << "grpc_chttp2_stream not accepted";
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
     }
+
+    uint32_t current_open_streams = t->stream_map.size() + t->extra_streams;
+    if (t->max_concurrent_streams_overload_protection) {
+      current_open_streams =
+          t->streams_allocated.load(std::memory_order_relaxed);
+    }
+
+    t->settings.mutable_local().UpdateMaxConcurrentStreams(
+        t->stream_quota->GetConnectionMaxConcurrentRequests(
+            current_open_streams));
+
     if (GRPC_TRACE_FLAG_ENABLED(http) ||
         GRPC_TRACE_FLAG_ENABLED(chttp2_new_stream)) {
       LOG(INFO) << "[t:" << t << " fd:" << grpc_endpoint_get_fd(t->ep.get())
@@ -767,7 +779,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
   } else {
     t->incoming_stream = s;
   }
-  DCHECK_NE(s, nullptr);
+  GRPC_DCHECK_NE(s, nullptr);
   s->call_tracer_wrapper.RecordIncomingBytes({9, 0, 0});
   if (GPR_UNLIKELY(s->read_closed)) {
     GRPC_CHTTP2_IF_TRACING(ERROR)
@@ -977,7 +989,7 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
                                                   const grpc_slice& slice,
                                                   int is_last) {
   auto* parser = static_cast<grpc_core::HPackParser*>(hpack_parser);
-  grpc_core::CallTracerAnnotationInterface* call_tracer = nullptr;
+  grpc_core::CallSpan* call_tracer = nullptr;
   if (s != nullptr) {
     s->call_tracer_wrapper.RecordIncomingBytes(
         {0, 0, GRPC_SLICE_LENGTH(slice)});

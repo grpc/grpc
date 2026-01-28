@@ -27,9 +27,6 @@
 
 #include <string>
 
-#include "absl/flags/flag.h"
-#include "absl/flags/parse.h"
-#include "absl/log/initialize.h"
 #include "opentelemetry/exporters/ostream/metric_exporter.h"
 #include "opentelemetry/exporters/ostream/metric_exporter_factory.h"
 #include "opentelemetry/exporters/ostream/span_exporter_factory.h"
@@ -38,7 +35,9 @@
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "opentelemetry/sdk/trace/simple_processor_factory.h"
 #include "opentelemetry/sdk/trace/tracer_provider.h"
-#include "opentelemetry/trace/propagation/http_trace_context.h"
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
+#include "absl/log/initialize.h"
 
 #ifdef BAZEL_BUILD
 #include "examples/cpp/otel/util.h"
@@ -78,9 +77,8 @@ int main(int argc, char** argv) {
       grpc::OpenTelemetryPluginBuilder()
           .SetMeterProvider(std::move(meter_provider))
           .SetTracerProvider(std::move(tracer_provider))
-          .SetTextMapPropagator(
-              std::make_unique<
-                  opentelemetry::trace::propagation::HttpTraceContext>())
+          .SetTextMapPropagator(grpc::OpenTelemetryPluginBuilder::
+                                    MakeGrpcTraceBinTextMapPropagator())
           .BuildAndRegisterGlobal();
   if (!status.ok()) {
     std::cerr << "Failed to register gRPC OpenTelemetry Plugin: "

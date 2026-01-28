@@ -15,7 +15,13 @@
 load("//bazel:grpc_build_system.bzl", "grpc_cc_proto_library", "grpc_internal_proto_library", "grpc_package")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
-grpc_package(name = "test/core/ext/filters/event_engine_client_channel_resolver")
+grpc_package(
+    name = "test/core/ext/filters/event_engine_client_channel_resolver",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 licenses(["notice"])
 
@@ -37,6 +43,11 @@ grpc_fuzz_test(
     name = "resolver_fuzzer",
     srcs = ["resolver_fuzzer.cc"],
     external_deps = [
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
         "absl/log:check",
         "gtest",
         "fuzztest",
@@ -48,11 +59,23 @@ grpc_fuzz_test(
     ],
     deps = [
         "resolver_fuzzer_cc_proto",
+        "//:debug_location",
+        "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc",
+        "//:grpc_resolver",
+        "//:orphanable",
+        "//:uri",
+        "//:work_serializer",
         "//src/core:channel_args",
+        "//src/core:default_event_engine",
+        "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:experiments",
+        "//src/core:grpc_check",
+        "//src/core:grpc_resolver_dns_event_engine",
         "//test/core/event_engine:aborting_event_engine",
         "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
         "//test/core/test_util:fuzz_config_vars",
         "//test/core/test_util:fuzz_config_vars_helpers",
         "//test/core/test_util:fuzzing_channel_args",

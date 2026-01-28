@@ -21,6 +21,7 @@ FROM debian:11
 {% include "../../compile_python_311.include" %}
 {% include "../../compile_python_312.include" %}
 {% include "../../compile_python_313.include" %}
+{% include "../../compile_python_314.include" %}
 
 # Python test coverage requires libsqlite3, and it have
 # to be installed before Python.

@@ -14,7 +14,6 @@
 
 #include "server_call_tracer.h"
 
-#include <grpc/support/port_platform.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -24,12 +23,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/strings/escaping.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
 #include "constants.h"
 #include "observability_util.h"
 #include "python_observability_context.h"
@@ -41,6 +34,13 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/strings/escaping.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 namespace grpc_observability {
 
@@ -91,6 +91,13 @@ bool KeyInLabels(std::string key, const std::vector<Label>& labels) {
 //
 
 void PythonOpenCensusServerCallTracer::RecordSendInitialMetadata(
+    grpc_metadata_batch* send_initial_metadata) {
+  GRPC_CHECK(
+      !grpc_core::IsCallTracerSendInitialMetadataIsAnAnnotationEnabled());
+  MutateSendInitialMetadata(send_initial_metadata);
+}
+
+void PythonOpenCensusServerCallTracer::MutateSendInitialMetadata(
     grpc_metadata_batch* send_initial_metadata) {
   // Only add labels if exchange is needed (Client send metadata with keys in
   // MetadataExchangeKeyNames).
@@ -221,8 +228,8 @@ void PythonOpenCensusServerCallTracer::RecordEnd(
     }
   }
 
-  // After RecordEnd, Core will make no further usage of this ServerCallTracer,
-  // so we are free it here.
+  // After RecordEnd, Core will make no further usage of this
+  // ServerCallTracerInterface, so we are free it here.
   delete this;
 }
 
@@ -251,6 +258,12 @@ void PythonOpenCensusServerCallTracer::RecordAnnotation(
   }
 
   switch (annotation.type()) {
+    case grpc_core::CallTracerAnnotationInterface::AnnotationType::
+        kSendInitialMetadata:
+      // Python OpenCensus does not have any immutable tracing for send initial
+      // metadata. All work for send initial metadata is mutation, which is
+      // handled in MutateSendInitialMetadata.
+      break;
     // Annotations are expensive to create. We should only create it if the
     // call is being sampled by default.
     default:
@@ -284,7 +297,7 @@ bool PythonOpenCensusServerCallTracer::IsSampled() {
 // PythonOpenCensusServerCallTracerFactory
 //
 
-grpc_core::ServerCallTracer*
+grpc_core::ServerCallTracerInterface*
 PythonOpenCensusServerCallTracerFactory::CreateNewServerCallTracer(
     grpc_core::Arena* arena, const grpc_core::ChannelArgs& channel_args) {
   // We don't use arena here to to ensure that memory is allocated and freed in

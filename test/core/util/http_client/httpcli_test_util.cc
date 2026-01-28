@@ -27,14 +27,14 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/check.h"
+#include "src/core/config/config_vars.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/subprocess.h"
+#include "test/core/test_util/port.h"
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "src/core/config/config_vars.h"
-#include "src/core/util/subprocess.h"
-#include "test/core/test_util/port.h"
 
 namespace grpc_core {
 namespace testing {
@@ -62,7 +62,7 @@ HttpRequestTestServer StartHttpRequestTestServer(int argc, char** argv,
   std::vector<const char*> args;
   std::string python_wrapper_path;
   std::string test_server_path;
-  CHECK_LE(argc, 2);
+  GRPC_CHECK_LE(argc, 2);
   if (argc == 2) {
     args.push_back(argv[1]);
   } else {
@@ -91,7 +91,7 @@ HttpRequestTestServer StartHttpRequestTestServer(int argc, char** argv,
   }
   // Start the server.
   gpr_subprocess* server = gpr_subprocess_create(args.size(), args.data());
-  CHECK(server);
+  GRPC_CHECK(server);
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                gpr_time_from_seconds(5, GPR_TIMESPAN)));
   return {server, server_port};

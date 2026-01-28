@@ -35,6 +35,10 @@ bool UseEventEngineListener();
 // may disable the poller in some builds.
 bool UsePollsetAlternative();
 
+// Returns true if the poller is disabled by build configuration or experiment
+// flags.
+bool EventEngineExperimentDisabledForPython();
+
 }  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_SHIM_H

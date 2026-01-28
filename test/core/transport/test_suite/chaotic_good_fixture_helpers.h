@@ -17,15 +17,15 @@
 
 #include <memory>
 
-#include "absl/log/check.h"
-#include "gmock/gmock.h"
 #include "src/core/ext/transport/chaotic_good/client_transport.h"
 #include "src/core/ext/transport/chaotic_good/server_transport.h"
 #include "src/core/lib/event_engine/memory_allocator_factory.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/transport/test_suite/transport_test.h"
+#include "gmock/gmock.h"
 
 namespace grpc_core {
 
@@ -61,7 +61,8 @@ class FakeClientConnectionFactory final
 class FakeServerConnectionFactory final
     : public chaotic_good::ServerConnectionFactory {
  public:
-  chaotic_good::PendingConnection RequestDataConnection() override {
+  chaotic_good::PendingConnection RequestDataConnection(
+      const ChannelArgs&) override {
     Crash("RequestDataConnection not implemented");
   }
   void Orphaned() override {}

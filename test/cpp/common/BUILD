@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/cpp/common")
+grpc_package(
+    name = "test/cpp/common",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "alarm_test",
@@ -27,6 +33,7 @@ grpc_cc_test(
     tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows RBE
     deps = [
         "//:grpc++_unsecure",
+        "//src/core:notification",
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/test_util:grpc_test_util_unsecure",
     ],
@@ -38,11 +45,20 @@ grpc_cc_test(
     external_deps = [
         "absl/log:check",
         "gtest",
+        "absl/log",
     ],
     flaky = True,
     deps = [
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc",
         "//:grpc++",
+        "//:iomgr",
+        "//:iomgr_timer",
         "//src/core:closure",
+        "//src/core:error",
+        "//src/core:grpc_check",
+        "//src/core:time",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -78,7 +94,12 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:grpc",
         "//:grpc++",
+        "//:grpc++_base",
+        "//:grpc_base",
+        "//:grpc_security_base",
+        "//:transport_auth_context",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -93,7 +114,11 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:exec_ctx",
+        "//:grpc",
         "//:grpc++",
+        "//src/core:socket_mutator",
+        "//src/core:useful",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -105,7 +130,11 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        "//:grpc",
         "//:grpc++",
+        "//:grpc++_base",
+        "//:grpc_security_base",
+        "//:transport_auth_context",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -116,9 +145,14 @@ grpc_cc_test(
     srcs = ["alts_util_test.cc"],
     external_deps = [
         "gtest",
+        "@com_google_protobuf//upb/mem",
     ],
     deps = [
+        "//:alts_upb",
+        "//:grpc++",
         "//:grpc++_alts",
+        "//:grpc++_base",
+        "//:tsi_alts_credentials",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],

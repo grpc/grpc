@@ -35,12 +35,6 @@
 #include <utility>
 #include <variant>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/container/flat_hash_map.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good_legacy/config.h"
@@ -54,8 +48,8 @@
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/inter_activity_latch.h"
 #include "src/core/lib/promise/inter_activity_pipe.h"
+#include "src/core/lib/promise/lock_based_mpsc.h"
 #include "src/core/lib/promise/loop.h"
-#include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
@@ -71,6 +65,12 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 namespace chaotic_good_legacy {
@@ -90,7 +90,15 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   void PerformOp(grpc_transport_op*) override;
   void Orphan() override;
   RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
-    return nullptr;
+    return socket_node_;
+  }
+  void StartWatch(RefCountedPtr<StateWatcher>) override {
+    // TODO(roth): Implement as part of migrating server side to new
+    // watcher API.
+  }
+  void StopWatch(RefCountedPtr<StateWatcher>) override {
+    // TODO(roth): Implement as part of migrating server side to new
+    // watcher API.
   }
 
   void SetCallDestination(
@@ -105,13 +113,25 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   };
   using StreamMap = absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>>;
 
+  struct ChannelzDataSource final : public channelz::DataSource {
+    explicit ChannelzDataSource(RefCountedPtr<channelz::BaseNode> socket_node,
+                                ChaoticGoodServerTransport* transport)
+        : channelz::DataSource(std::move(socket_node)), transport_(transport) {
+      SourceConstructed();
+    }
+    ~ChannelzDataSource() { SourceDestructing(); }
+    void AddData(channelz::DataSink sink) override;
+    ChaoticGoodServerTransport* const transport_;
+  };
+
   absl::Status NewStream(uint32_t stream_id, CallInitiator call_initiator);
   RefCountedPtr<Stream> LookupStream(uint32_t stream_id);
   RefCountedPtr<Stream> ExtractStream(uint32_t stream_id);
-  auto SendCallInitialMetadataAndBody(uint32_t stream_id,
-                                      MpscSender<ServerFrame> outgoing_frames,
-                                      CallInitiator call_initiator);
-  auto SendCallBody(uint32_t stream_id, MpscSender<ServerFrame> outgoing_frames,
+  auto SendCallInitialMetadataAndBody(
+      uint32_t stream_id, LockBasedMpscSender<ServerFrame> outgoing_frames,
+      CallInitiator call_initiator);
+  auto SendCallBody(uint32_t stream_id,
+                    LockBasedMpscSender<ServerFrame> outgoing_frames,
                     CallInitiator call_initiator);
   auto CallOutboundLoop(uint32_t stream_id, CallInitiator call_initiator);
   auto OnTransportActivityDone(absl::string_view activity);
@@ -132,10 +152,11 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   auto PushFrameIntoCall(RefCountedPtr<Stream> stream, ClientEndOfStream frame);
   auto PushFrameIntoCall(RefCountedPtr<Stream> stream, BeginMessageFrame frame);
   auto PushFrameIntoCall(RefCountedPtr<Stream> stream, MessageChunkFrame frame);
-  auto SendFrame(ServerFrame frame, MpscSender<ServerFrame> outgoing_frames,
+  auto SendFrame(ServerFrame frame,
+                 LockBasedMpscSender<ServerFrame> outgoing_frames,
                  CallInitiator call_initiator);
   auto SendFrameAcked(ServerFrame frame,
-                      MpscSender<ServerFrame> outgoing_frames,
+                      LockBasedMpscSender<ServerFrame> outgoing_frames,
                       CallInitiator call_initiator);
 
   RefCountedPtr<UnstartedCallDestination> call_destination_;
@@ -143,7 +164,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
       event_engine_;
   InterActivityLatch<void> got_acceptor_;
-  MpscReceiver<ServerFrame> outgoing_frames_;
+  LockBasedMpscReceiver<ServerFrame> outgoing_frames_;
   Mutex mu_;
   // Map of stream incoming server frames, key is stream_id.
   StreamMap stream_map_ ABSL_GUARDED_BY(mu_);
@@ -153,6 +174,8 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
       "chaotic_good_server", GRPC_CHANNEL_READY};
   MessageChunker message_chunker_;
+  RefCountedPtr<channelz::SocketNode> socket_node_;
+  std::unique_ptr<ChannelzDataSource> channelz_data_source_;
 };
 
 }  // namespace chaotic_good_legacy

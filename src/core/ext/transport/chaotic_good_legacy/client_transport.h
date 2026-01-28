@@ -32,11 +32,8 @@
 #include <utility>
 #include <variant>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/container/flat_hash_map.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
 #include "src/core/call/metadata_batch.h"  // IWYU pragma: keep
+#include "src/core/channelz/property_list.h"
 #include "src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good_legacy/config.h"
 #include "src/core/ext/transport/chaotic_good_legacy/frame.h"
@@ -48,8 +45,8 @@
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/inter_activity_pipe.h"
+#include "src/core/lib/promise/lock_based_mpsc.h"
 #include "src/core/lib/promise/loop.h"
-#include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/try_join.h"
@@ -60,6 +57,10 @@
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace chaotic_good_legacy {
@@ -80,8 +81,10 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   void PerformOp(grpc_transport_op*) override;
   void Orphan() override;
   RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
-    return nullptr;
+    return socket_node_;
   }
+  void StartWatch(RefCountedPtr<StateWatcher> watcher) override;
+  void StopWatch(RefCountedPtr<StateWatcher> watcher) override;
 
   void StartCall(CallHandler call_handler) override;
   void AbortWithError();
@@ -93,6 +96,17 @@ class ChaoticGoodClientTransport final : public ClientTransport {
     MessageReassembly message_reassembly;
   };
   using StreamMap = absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>>;
+
+  struct ChannelzDataSource final : public channelz::DataSource {
+    explicit ChannelzDataSource(RefCountedPtr<channelz::BaseNode> socket_node,
+                                ChaoticGoodClientTransport* transport)
+        : channelz::DataSource(std::move(socket_node)), transport_(transport) {
+      SourceConstructed();
+    }
+    ~ChannelzDataSource() { SourceDestructing(); }
+    void AddData(channelz::DataSink sink) override;
+    ChaoticGoodClientTransport* const transport_;
+  };
 
   uint32_t MakeStream(CallHandler call_handler);
   RefCountedPtr<Stream> LookupStream(uint32_t stream_id);
@@ -114,7 +128,7 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   grpc_event_engine::experimental::MemoryAllocator allocator_;
   // Max buffer is set to 4, so that for stream writes each time it will queue
   // at most 2 frames.
-  MpscReceiver<ClientFrame> outgoing_frames_;
+  LockBasedMpscReceiver<ClientFrame> outgoing_frames_;
   Mutex mu_;
   uint32_t next_stream_id_ ABSL_GUARDED_BY(mu_) = 1;
   // Map of stream incoming server frames, key is stream_id.
@@ -122,7 +136,10 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   RefCountedPtr<Party> party_;
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
       "chaotic_good_client", GRPC_CHANNEL_READY};
+  RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(mu_);
   MessageChunker message_chunker_;
+  RefCountedPtr<channelz::SocketNode> socket_node_;
+  std::unique_ptr<ChannelzDataSource> channelz_data_source_;
 };
 
 }  // namespace chaotic_good_legacy

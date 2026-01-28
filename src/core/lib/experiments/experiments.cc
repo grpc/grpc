@@ -23,12 +23,21 @@
 
 #if defined(GRPC_CFSTREAM)
 namespace {
+const char* const description_buffer_list_deletion_prep =
+    "Gate the removal of old TCP timestamp collection mechanism.";
+const char* const additional_constraints_buffer_list_deletion_prep = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
-const char* const description_callv3_client_auth_filter =
-    "Use the CallV3 client auth filter.";
-const char* const additional_constraints_callv3_client_auth_filter = "{}";
+const char* const
+    description_call_tracer_send_initial_metadata_is_an_annotation =
+        "Use the new annotation-based CallTracer API.";
+const char* const
+    additional_constraints_call_tracer_send_initial_metadata_is_an_annotation =
+        "{}";
+const char* const description_chaotic_good_connect_deadline =
+    "Use the deadline from the connect args in chaotic good connector";
+const char* const additional_constraints_chaotic_good_connect_deadline = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -73,12 +82,26 @@ const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(
         grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+const char* const description_event_engine_poller_for_python =
+    "Enable event engine poller in gRPC Python";
+const char* const additional_constraints_event_engine_poller_for_python = "{}";
 const char* const description_event_engine_secure_endpoint =
     "Use EventEngine secure endpoint wrapper instead of iomgr when available";
 const char* const additional_constraints_event_engine_secure_endpoint = "{}";
+const char* const description_fail_recv_metadata_on_deadline_exceeded =
+    "Fail recv initial metadata when the deadline is exceeded.";
+const char* const
+    additional_constraints_fail_recv_metadata_on_deadline_exceeded = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_fuse_filters =
+    "If set, individual filters are merged into fused filters";
+const char* const additional_constraints_fuse_filters = "{}";
+const char* const description_graceful_external_connection_failure =
+    "If set, handles external connection failures gracefully";
+const char* const additional_constraints_graceful_external_connection_failure =
+    "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -90,17 +113,29 @@ const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
-const char* const description_max_pings_wo_data_throttle =
-    "Experiment to throttle pings to a period of 1 min when "
-    "GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of "
-    "completely blocking).";
-const char* const additional_constraints_max_pings_wo_data_throttle = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_otel_export_telemetry_domains =
+    "Export telemetry domains in OpenTelemetry metrics.";
+const char* const additional_constraints_otel_export_telemetry_domains = "{}";
+const char* const description_pick_first_ignore_empty_updates =
+    "Ignore empty resolutions in pick_first";
+const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
+const char* const description_pick_first_ready_to_connecting =
+    "When the subchannel goes from READY to CONNECTING or TRANSIENT_FAILURE, "
+    "pick_first goes to CONNECTING and starts a new Happy Eyeballs pass.";
+const char* const additional_constraints_pick_first_ready_to_connecting = "{}";
+const char* const description_pipelined_read_secure_endpoint =
+    "Enable pipelined reads for EventEngine secure endpoints";
+const char* const additional_constraints_pipelined_read_secure_endpoint = "{}";
+const uint8_t required_experiments_pipelined_read_secure_endpoint[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
 const char* const description_pollset_alternative =
     "Code outside iomgr that relies directly on pollsets will use non-pollset "
     "alternatives when enabled.";
@@ -108,10 +143,10 @@ const char* const additional_constraints_pollset_alternative = "{}";
 const uint8_t required_experiments_pollset_alternative[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
-const char* const description_posix_ee_skip_grpc_init =
-    "Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on "
-    "creation and destruction.";
-const char* const additional_constraints_posix_ee_skip_grpc_init = "{}";
+const char* const description_prioritize_finished_requests =
+    "Prioritize flushing out finished requests over other in-flight requests "
+    "during transport writes.";
+const char* const additional_constraints_prioritize_finished_requests = "{}";
 const char* const description_promise_based_http2_client_transport =
     "Use promises for the http2 client transport. We have kept client and "
     "server transport experiments separate to help with smoother roll outs and "
@@ -127,16 +162,21 @@ const char* const additional_constraints_promise_based_http2_server_transport =
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_promise_filter_send_cancel_metadata =
+    "Enables sending all trailing metadata fields from server side "
+    "promise-based filters upon stream cancellation.";
+const char* const additional_constraints_promise_filter_send_cancel_metadata =
+    "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
-const char* const description_rq_fast_reject =
-    "Resource quota rejects requests immediately (before allocating the "
-    "request structure) under very high memory pressure.";
-const char* const additional_constraints_rq_fast_reject = "{}";
-const char* const description_rst_stream_fix =
-    "Fix for RST_STREAM - do not send for idle streams "
-    "(https://github.com/grpc/grpc/issues/38758)";
-const char* const additional_constraints_rst_stream_fix = "{}";
+const char* const description_return_preexisting_errors =
+    "Return errors that exist before the start of the call in RunHandler.";
+const char* const additional_constraints_return_preexisting_errors = "{}";
+const char* const description_rr_wrr_connect_from_random_index =
+    "RR and WRR LB policies start connecting from a random index in the "
+    "address list.";
+const char* const additional_constraints_rr_wrr_connect_from_random_index =
+    "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -157,17 +197,23 @@ const uint8_t required_experiments_secure_endpoint_offload_large_writes[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
-const char* const description_server_global_callbacks_ownership =
-    "If set, server global callbacks ownership is fixed to not be owned by "
-    "gRPC.";
-const char* const additional_constraints_server_global_callbacks_ownership =
-    "{}";
-const char* const description_shard_global_connection_pool =
-    "If set, shard the global connection pool to improve parallelism.";
-const char* const additional_constraints_shard_global_connection_pool = "{}";
+const char* const description_skip_clear_peer_on_cancellation =
+    "If set, skips clearing of peer string on call cancellation.";
+const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
+const char* const description_sleep_use_non_owning_waker =
+    "If set, the sleep promise uses a non-owning waker.";
+const char* const additional_constraints_sleep_use_non_owning_waker = "{}";
+const char* const description_subchannel_connection_scaling =
+    "Subchannel connection scaling support.";
+const char* const additional_constraints_subchannel_connection_scaling = "{}";
+const char* const description_subchannel_wrapper_cleanup_on_orphan =
+    "Fixes the subchannel wrapper to drop any non-cancelled watchers when it "
+    "gets orphaned.";
+const char* const additional_constraints_subchannel_wrapper_cleanup_on_orphan =
+    "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -177,6 +223,15 @@ const char* const additional_constraints_tcp_frame_size_tuning = "{}";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const additional_constraints_tcp_rcv_lowat = "{}";
+const char* const description_track_writes_in_resource_quota =
+    "Track the Write memory in Resource Quota.";
+const char* const additional_constraints_track_writes_in_resource_quota = "{}";
+const char* const description_track_zero_copy_allocations_in_resource_quota =
+    "Track the memory allocattions under the zero copy path in Resource Quota. "
+    "This includes the encryption / decryption for privacy-and-integrity "
+    "payloads.";
+const char* const
+    additional_constraints_track_zero_copy_allocations_in_resource_quota = "{}";
 const char* const description_tsi_frame_protector_without_locks =
     "Do not hold locks while using the tsi_frame_protector.";
 const char* const additional_constraints_tsi_frame_protector_without_locks =
@@ -190,10 +245,17 @@ const char* const additional_constraints_unconstrained_max_quota_buffer_size =
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
+    {"buffer_list_deletion_prep", description_buffer_list_deletion_prep,
+     additional_constraints_buffer_list_deletion_prep, nullptr, 0, false, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
-    {"callv3_client_auth_filter", description_callv3_client_auth_filter,
-     additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
+    {"call_tracer_send_initial_metadata_is_an_annotation",
+     description_call_tracer_send_initial_metadata_is_an_annotation,
+     additional_constraints_call_tracer_send_initial_metadata_is_an_annotation,
+     nullptr, 0, true, true},
+    {"chaotic_good_connect_deadline", description_chaotic_good_connect_deadline,
+     additional_constraints_chaotic_good_connect_deadline, nullptr, 0, true,
+     true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -208,7 +270,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_dns_non_client_channel",
      description_event_engine_dns_non_client_channel,
      additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,
-     false, false},
+     true, false},
     {"event_engine_fork", description_event_engine_fork,
      additional_constraints_event_engine_fork, nullptr, 0, false, false},
     {"event_engine_listener", description_event_engine_listener,
@@ -220,11 +282,25 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
+    {"event_engine_poller_for_python",
+     description_event_engine_poller_for_python,
+     additional_constraints_event_engine_poller_for_python, nullptr, 0, false,
+     true},
     {"event_engine_secure_endpoint", description_event_engine_secure_endpoint,
      additional_constraints_event_engine_secure_endpoint, nullptr, 0, true,
      false},
+    {"fail_recv_metadata_on_deadline_exceeded",
+     description_fail_recv_metadata_on_deadline_exceeded,
+     additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
+     false, false},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"fuse_filters", description_fuse_filters,
+     additional_constraints_fuse_filters, nullptr, 0, false, false},
+    {"graceful_external_connection_failure",
+     description_graceful_external_connection_failure,
+     additional_constraints_graceful_external_connection_failure, nullptr, 0,
+     true, false},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -234,17 +310,31 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
      true},
-    {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
-     additional_constraints_max_pings_wo_data_throttle, nullptr, 0, true, true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
+    {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
+     additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
+     true},
+    {"pick_first_ignore_empty_updates",
+     description_pick_first_ignore_empty_updates,
+     additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
+     true},
+    {"pick_first_ready_to_connecting",
+     description_pick_first_ready_to_connecting,
+     additional_constraints_pick_first_ready_to_connecting, nullptr, 0, true,
+     true},
+    {"pipelined_read_secure_endpoint",
+     description_pipelined_read_secure_endpoint,
+     additional_constraints_pipelined_read_secure_endpoint,
+     required_experiments_pipelined_read_secure_endpoint, 3, false, false},
     {"pollset_alternative", description_pollset_alternative,
      additional_constraints_pollset_alternative,
      required_experiments_pollset_alternative, 2, false, false},
-    {"posix_ee_skip_grpc_init", description_posix_ee_skip_grpc_init,
-     additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, true, true},
+    {"prioritize_finished_requests", description_prioritize_finished_requests,
+     additional_constraints_prioritize_finished_requests, nullptr, 0, false,
+     true},
     {"promise_based_http2_client_transport",
      description_promise_based_http2_client_transport,
      additional_constraints_promise_based_http2_client_transport, nullptr, 0,
@@ -257,12 +347,18 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"promise_filter_send_cancel_metadata",
+     description_promise_filter_send_cancel_metadata,
+     additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
+     false, true},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
-    {"rq_fast_reject", description_rq_fast_reject,
-     additional_constraints_rq_fast_reject, nullptr, 0, false, true},
-    {"rst_stream_fix", description_rst_stream_fix,
-     additional_constraints_rst_stream_fix, nullptr, 0, true, true},
+    {"return_preexisting_errors", description_return_preexisting_errors,
+     additional_constraints_return_preexisting_errors, nullptr, 0, false, true},
+    {"rr_wrr_connect_from_random_index",
+     description_rr_wrr_connect_from_random_index,
+     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, true,
+     true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -275,21 +371,35 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_secure_endpoint_offload_large_writes,
      additional_constraints_secure_endpoint_offload_large_writes,
      required_experiments_secure_endpoint_offload_large_writes, 3, false, true},
-    {"server_global_callbacks_ownership",
-     description_server_global_callbacks_ownership,
-     additional_constraints_server_global_callbacks_ownership, nullptr, 0,
-     false, true},
-    {"shard_global_connection_pool", description_shard_global_connection_pool,
-     additional_constraints_shard_global_connection_pool, nullptr, 0, true,
+    {"skip_clear_peer_on_cancellation",
+     description_skip_clear_peer_on_cancellation,
+     additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
      true},
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
      additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
      true},
+    {"sleep_use_non_owning_waker", description_sleep_use_non_owning_waker,
+     additional_constraints_sleep_use_non_owning_waker, nullptr, 0, true, true},
+    {"subchannel_connection_scaling", description_subchannel_connection_scaling,
+     additional_constraints_subchannel_connection_scaling, nullptr, 0, false,
+     true},
+    {"subchannel_wrapper_cleanup_on_orphan",
+     description_subchannel_wrapper_cleanup_on_orphan,
+     additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
+     false, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
+    {"track_writes_in_resource_quota",
+     description_track_writes_in_resource_quota,
+     additional_constraints_track_writes_in_resource_quota, nullptr, 0, false,
+     true},
+    {"track_zero_copy_allocations_in_resource_quota",
+     description_track_zero_copy_allocations_in_resource_quota,
+     additional_constraints_track_zero_copy_allocations_in_resource_quota,
+     nullptr, 0, false, true},
     {"tsi_frame_protector_without_locks",
      description_tsi_frame_protector_without_locks,
      additional_constraints_tsi_frame_protector_without_locks, nullptr, 0,
@@ -304,12 +414,21 @@ const ExperimentMetadata g_experiment_metadata[] = {
 
 #elif defined(GPR_WINDOWS)
 namespace {
+const char* const description_buffer_list_deletion_prep =
+    "Gate the removal of old TCP timestamp collection mechanism.";
+const char* const additional_constraints_buffer_list_deletion_prep = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
-const char* const description_callv3_client_auth_filter =
-    "Use the CallV3 client auth filter.";
-const char* const additional_constraints_callv3_client_auth_filter = "{}";
+const char* const
+    description_call_tracer_send_initial_metadata_is_an_annotation =
+        "Use the new annotation-based CallTracer API.";
+const char* const
+    additional_constraints_call_tracer_send_initial_metadata_is_an_annotation =
+        "{}";
+const char* const description_chaotic_good_connect_deadline =
+    "Use the deadline from the connect args in chaotic good connector";
+const char* const additional_constraints_chaotic_good_connect_deadline = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -354,12 +473,26 @@ const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(
         grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+const char* const description_event_engine_poller_for_python =
+    "Enable event engine poller in gRPC Python";
+const char* const additional_constraints_event_engine_poller_for_python = "{}";
 const char* const description_event_engine_secure_endpoint =
     "Use EventEngine secure endpoint wrapper instead of iomgr when available";
 const char* const additional_constraints_event_engine_secure_endpoint = "{}";
+const char* const description_fail_recv_metadata_on_deadline_exceeded =
+    "Fail recv initial metadata when the deadline is exceeded.";
+const char* const
+    additional_constraints_fail_recv_metadata_on_deadline_exceeded = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_fuse_filters =
+    "If set, individual filters are merged into fused filters";
+const char* const additional_constraints_fuse_filters = "{}";
+const char* const description_graceful_external_connection_failure =
+    "If set, handles external connection failures gracefully";
+const char* const additional_constraints_graceful_external_connection_failure =
+    "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -371,17 +504,29 @@ const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
-const char* const description_max_pings_wo_data_throttle =
-    "Experiment to throttle pings to a period of 1 min when "
-    "GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of "
-    "completely blocking).";
-const char* const additional_constraints_max_pings_wo_data_throttle = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_otel_export_telemetry_domains =
+    "Export telemetry domains in OpenTelemetry metrics.";
+const char* const additional_constraints_otel_export_telemetry_domains = "{}";
+const char* const description_pick_first_ignore_empty_updates =
+    "Ignore empty resolutions in pick_first";
+const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
+const char* const description_pick_first_ready_to_connecting =
+    "When the subchannel goes from READY to CONNECTING or TRANSIENT_FAILURE, "
+    "pick_first goes to CONNECTING and starts a new Happy Eyeballs pass.";
+const char* const additional_constraints_pick_first_ready_to_connecting = "{}";
+const char* const description_pipelined_read_secure_endpoint =
+    "Enable pipelined reads for EventEngine secure endpoints";
+const char* const additional_constraints_pipelined_read_secure_endpoint = "{}";
+const uint8_t required_experiments_pipelined_read_secure_endpoint[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
 const char* const description_pollset_alternative =
     "Code outside iomgr that relies directly on pollsets will use non-pollset "
     "alternatives when enabled.";
@@ -389,10 +534,10 @@ const char* const additional_constraints_pollset_alternative = "{}";
 const uint8_t required_experiments_pollset_alternative[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
-const char* const description_posix_ee_skip_grpc_init =
-    "Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on "
-    "creation and destruction.";
-const char* const additional_constraints_posix_ee_skip_grpc_init = "{}";
+const char* const description_prioritize_finished_requests =
+    "Prioritize flushing out finished requests over other in-flight requests "
+    "during transport writes.";
+const char* const additional_constraints_prioritize_finished_requests = "{}";
 const char* const description_promise_based_http2_client_transport =
     "Use promises for the http2 client transport. We have kept client and "
     "server transport experiments separate to help with smoother roll outs and "
@@ -408,16 +553,21 @@ const char* const additional_constraints_promise_based_http2_server_transport =
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_promise_filter_send_cancel_metadata =
+    "Enables sending all trailing metadata fields from server side "
+    "promise-based filters upon stream cancellation.";
+const char* const additional_constraints_promise_filter_send_cancel_metadata =
+    "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
-const char* const description_rq_fast_reject =
-    "Resource quota rejects requests immediately (before allocating the "
-    "request structure) under very high memory pressure.";
-const char* const additional_constraints_rq_fast_reject = "{}";
-const char* const description_rst_stream_fix =
-    "Fix for RST_STREAM - do not send for idle streams "
-    "(https://github.com/grpc/grpc/issues/38758)";
-const char* const additional_constraints_rst_stream_fix = "{}";
+const char* const description_return_preexisting_errors =
+    "Return errors that exist before the start of the call in RunHandler.";
+const char* const additional_constraints_return_preexisting_errors = "{}";
+const char* const description_rr_wrr_connect_from_random_index =
+    "RR and WRR LB policies start connecting from a random index in the "
+    "address list.";
+const char* const additional_constraints_rr_wrr_connect_from_random_index =
+    "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -438,17 +588,23 @@ const uint8_t required_experiments_secure_endpoint_offload_large_writes[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
-const char* const description_server_global_callbacks_ownership =
-    "If set, server global callbacks ownership is fixed to not be owned by "
-    "gRPC.";
-const char* const additional_constraints_server_global_callbacks_ownership =
-    "{}";
-const char* const description_shard_global_connection_pool =
-    "If set, shard the global connection pool to improve parallelism.";
-const char* const additional_constraints_shard_global_connection_pool = "{}";
+const char* const description_skip_clear_peer_on_cancellation =
+    "If set, skips clearing of peer string on call cancellation.";
+const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
+const char* const description_sleep_use_non_owning_waker =
+    "If set, the sleep promise uses a non-owning waker.";
+const char* const additional_constraints_sleep_use_non_owning_waker = "{}";
+const char* const description_subchannel_connection_scaling =
+    "Subchannel connection scaling support.";
+const char* const additional_constraints_subchannel_connection_scaling = "{}";
+const char* const description_subchannel_wrapper_cleanup_on_orphan =
+    "Fixes the subchannel wrapper to drop any non-cancelled watchers when it "
+    "gets orphaned.";
+const char* const additional_constraints_subchannel_wrapper_cleanup_on_orphan =
+    "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -458,6 +614,15 @@ const char* const additional_constraints_tcp_frame_size_tuning = "{}";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const additional_constraints_tcp_rcv_lowat = "{}";
+const char* const description_track_writes_in_resource_quota =
+    "Track the Write memory in Resource Quota.";
+const char* const additional_constraints_track_writes_in_resource_quota = "{}";
+const char* const description_track_zero_copy_allocations_in_resource_quota =
+    "Track the memory allocattions under the zero copy path in Resource Quota. "
+    "This includes the encryption / decryption for privacy-and-integrity "
+    "payloads.";
+const char* const
+    additional_constraints_track_zero_copy_allocations_in_resource_quota = "{}";
 const char* const description_tsi_frame_protector_without_locks =
     "Do not hold locks while using the tsi_frame_protector.";
 const char* const additional_constraints_tsi_frame_protector_without_locks =
@@ -471,10 +636,17 @@ const char* const additional_constraints_unconstrained_max_quota_buffer_size =
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
+    {"buffer_list_deletion_prep", description_buffer_list_deletion_prep,
+     additional_constraints_buffer_list_deletion_prep, nullptr, 0, false, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
-    {"callv3_client_auth_filter", description_callv3_client_auth_filter,
-     additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
+    {"call_tracer_send_initial_metadata_is_an_annotation",
+     description_call_tracer_send_initial_metadata_is_an_annotation,
+     additional_constraints_call_tracer_send_initial_metadata_is_an_annotation,
+     nullptr, 0, true, true},
+    {"chaotic_good_connect_deadline", description_chaotic_good_connect_deadline,
+     additional_constraints_chaotic_good_connect_deadline, nullptr, 0, true,
+     true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -489,7 +661,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_dns_non_client_channel",
      description_event_engine_dns_non_client_channel,
      additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,
-     false, false},
+     true, false},
     {"event_engine_fork", description_event_engine_fork,
      additional_constraints_event_engine_fork, nullptr, 0, false, false},
     {"event_engine_listener", description_event_engine_listener,
@@ -501,11 +673,25 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
+    {"event_engine_poller_for_python",
+     description_event_engine_poller_for_python,
+     additional_constraints_event_engine_poller_for_python, nullptr, 0, false,
+     true},
     {"event_engine_secure_endpoint", description_event_engine_secure_endpoint,
      additional_constraints_event_engine_secure_endpoint, nullptr, 0, true,
      false},
+    {"fail_recv_metadata_on_deadline_exceeded",
+     description_fail_recv_metadata_on_deadline_exceeded,
+     additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
+     false, false},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"fuse_filters", description_fuse_filters,
+     additional_constraints_fuse_filters, nullptr, 0, false, false},
+    {"graceful_external_connection_failure",
+     description_graceful_external_connection_failure,
+     additional_constraints_graceful_external_connection_failure, nullptr, 0,
+     true, false},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -515,17 +701,31 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
      true},
-    {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
-     additional_constraints_max_pings_wo_data_throttle, nullptr, 0, true, true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
+    {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
+     additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
+     true},
+    {"pick_first_ignore_empty_updates",
+     description_pick_first_ignore_empty_updates,
+     additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
+     true},
+    {"pick_first_ready_to_connecting",
+     description_pick_first_ready_to_connecting,
+     additional_constraints_pick_first_ready_to_connecting, nullptr, 0, true,
+     true},
+    {"pipelined_read_secure_endpoint",
+     description_pipelined_read_secure_endpoint,
+     additional_constraints_pipelined_read_secure_endpoint,
+     required_experiments_pipelined_read_secure_endpoint, 3, false, false},
     {"pollset_alternative", description_pollset_alternative,
      additional_constraints_pollset_alternative,
      required_experiments_pollset_alternative, 2, false, false},
-    {"posix_ee_skip_grpc_init", description_posix_ee_skip_grpc_init,
-     additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, true, true},
+    {"prioritize_finished_requests", description_prioritize_finished_requests,
+     additional_constraints_prioritize_finished_requests, nullptr, 0, false,
+     true},
     {"promise_based_http2_client_transport",
      description_promise_based_http2_client_transport,
      additional_constraints_promise_based_http2_client_transport, nullptr, 0,
@@ -538,12 +738,18 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"promise_filter_send_cancel_metadata",
+     description_promise_filter_send_cancel_metadata,
+     additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
+     false, true},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
-    {"rq_fast_reject", description_rq_fast_reject,
-     additional_constraints_rq_fast_reject, nullptr, 0, false, true},
-    {"rst_stream_fix", description_rst_stream_fix,
-     additional_constraints_rst_stream_fix, nullptr, 0, true, true},
+    {"return_preexisting_errors", description_return_preexisting_errors,
+     additional_constraints_return_preexisting_errors, nullptr, 0, false, true},
+    {"rr_wrr_connect_from_random_index",
+     description_rr_wrr_connect_from_random_index,
+     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, true,
+     true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -556,21 +762,35 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_secure_endpoint_offload_large_writes,
      additional_constraints_secure_endpoint_offload_large_writes,
      required_experiments_secure_endpoint_offload_large_writes, 3, false, true},
-    {"server_global_callbacks_ownership",
-     description_server_global_callbacks_ownership,
-     additional_constraints_server_global_callbacks_ownership, nullptr, 0,
-     false, true},
-    {"shard_global_connection_pool", description_shard_global_connection_pool,
-     additional_constraints_shard_global_connection_pool, nullptr, 0, true,
+    {"skip_clear_peer_on_cancellation",
+     description_skip_clear_peer_on_cancellation,
+     additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
      true},
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
      additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
      true},
+    {"sleep_use_non_owning_waker", description_sleep_use_non_owning_waker,
+     additional_constraints_sleep_use_non_owning_waker, nullptr, 0, true, true},
+    {"subchannel_connection_scaling", description_subchannel_connection_scaling,
+     additional_constraints_subchannel_connection_scaling, nullptr, 0, false,
+     true},
+    {"subchannel_wrapper_cleanup_on_orphan",
+     description_subchannel_wrapper_cleanup_on_orphan,
+     additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
+     false, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
+    {"track_writes_in_resource_quota",
+     description_track_writes_in_resource_quota,
+     additional_constraints_track_writes_in_resource_quota, nullptr, 0, false,
+     true},
+    {"track_zero_copy_allocations_in_resource_quota",
+     description_track_zero_copy_allocations_in_resource_quota,
+     additional_constraints_track_zero_copy_allocations_in_resource_quota,
+     nullptr, 0, false, true},
     {"tsi_frame_protector_without_locks",
      description_tsi_frame_protector_without_locks,
      additional_constraints_tsi_frame_protector_without_locks, nullptr, 0,
@@ -585,12 +805,21 @@ const ExperimentMetadata g_experiment_metadata[] = {
 
 #else
 namespace {
+const char* const description_buffer_list_deletion_prep =
+    "Gate the removal of old TCP timestamp collection mechanism.";
+const char* const additional_constraints_buffer_list_deletion_prep = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
-const char* const description_callv3_client_auth_filter =
-    "Use the CallV3 client auth filter.";
-const char* const additional_constraints_callv3_client_auth_filter = "{}";
+const char* const
+    description_call_tracer_send_initial_metadata_is_an_annotation =
+        "Use the new annotation-based CallTracer API.";
+const char* const
+    additional_constraints_call_tracer_send_initial_metadata_is_an_annotation =
+        "{}";
+const char* const description_chaotic_good_connect_deadline =
+    "Use the deadline from the connect args in chaotic good connector";
+const char* const additional_constraints_chaotic_good_connect_deadline = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -635,12 +864,26 @@ const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(
         grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+const char* const description_event_engine_poller_for_python =
+    "Enable event engine poller in gRPC Python";
+const char* const additional_constraints_event_engine_poller_for_python = "{}";
 const char* const description_event_engine_secure_endpoint =
     "Use EventEngine secure endpoint wrapper instead of iomgr when available";
 const char* const additional_constraints_event_engine_secure_endpoint = "{}";
+const char* const description_fail_recv_metadata_on_deadline_exceeded =
+    "Fail recv initial metadata when the deadline is exceeded.";
+const char* const
+    additional_constraints_fail_recv_metadata_on_deadline_exceeded = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_fuse_filters =
+    "If set, individual filters are merged into fused filters";
+const char* const additional_constraints_fuse_filters = "{}";
+const char* const description_graceful_external_connection_failure =
+    "If set, handles external connection failures gracefully";
+const char* const additional_constraints_graceful_external_connection_failure =
+    "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -652,17 +895,29 @@ const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
-const char* const description_max_pings_wo_data_throttle =
-    "Experiment to throttle pings to a period of 1 min when "
-    "GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of "
-    "completely blocking).";
-const char* const additional_constraints_max_pings_wo_data_throttle = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_otel_export_telemetry_domains =
+    "Export telemetry domains in OpenTelemetry metrics.";
+const char* const additional_constraints_otel_export_telemetry_domains = "{}";
+const char* const description_pick_first_ignore_empty_updates =
+    "Ignore empty resolutions in pick_first";
+const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
+const char* const description_pick_first_ready_to_connecting =
+    "When the subchannel goes from READY to CONNECTING or TRANSIENT_FAILURE, "
+    "pick_first goes to CONNECTING and starts a new Happy Eyeballs pass.";
+const char* const additional_constraints_pick_first_ready_to_connecting = "{}";
+const char* const description_pipelined_read_secure_endpoint =
+    "Enable pipelined reads for EventEngine secure endpoints";
+const char* const additional_constraints_pipelined_read_secure_endpoint = "{}";
+const uint8_t required_experiments_pipelined_read_secure_endpoint[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
 const char* const description_pollset_alternative =
     "Code outside iomgr that relies directly on pollsets will use non-pollset "
     "alternatives when enabled.";
@@ -670,10 +925,10 @@ const char* const additional_constraints_pollset_alternative = "{}";
 const uint8_t required_experiments_pollset_alternative[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
-const char* const description_posix_ee_skip_grpc_init =
-    "Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on "
-    "creation and destruction.";
-const char* const additional_constraints_posix_ee_skip_grpc_init = "{}";
+const char* const description_prioritize_finished_requests =
+    "Prioritize flushing out finished requests over other in-flight requests "
+    "during transport writes.";
+const char* const additional_constraints_prioritize_finished_requests = "{}";
 const char* const description_promise_based_http2_client_transport =
     "Use promises for the http2 client transport. We have kept client and "
     "server transport experiments separate to help with smoother roll outs and "
@@ -689,16 +944,21 @@ const char* const additional_constraints_promise_based_http2_server_transport =
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
+const char* const description_promise_filter_send_cancel_metadata =
+    "Enables sending all trailing metadata fields from server side "
+    "promise-based filters upon stream cancellation.";
+const char* const additional_constraints_promise_filter_send_cancel_metadata =
+    "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
-const char* const description_rq_fast_reject =
-    "Resource quota rejects requests immediately (before allocating the "
-    "request structure) under very high memory pressure.";
-const char* const additional_constraints_rq_fast_reject = "{}";
-const char* const description_rst_stream_fix =
-    "Fix for RST_STREAM - do not send for idle streams "
-    "(https://github.com/grpc/grpc/issues/38758)";
-const char* const additional_constraints_rst_stream_fix = "{}";
+const char* const description_return_preexisting_errors =
+    "Return errors that exist before the start of the call in RunHandler.";
+const char* const additional_constraints_return_preexisting_errors = "{}";
+const char* const description_rr_wrr_connect_from_random_index =
+    "RR and WRR LB policies start connecting from a random index in the "
+    "address list.";
+const char* const additional_constraints_rr_wrr_connect_from_random_index =
+    "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -719,17 +979,23 @@ const uint8_t required_experiments_secure_endpoint_offload_large_writes[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
-const char* const description_server_global_callbacks_ownership =
-    "If set, server global callbacks ownership is fixed to not be owned by "
-    "gRPC.";
-const char* const additional_constraints_server_global_callbacks_ownership =
-    "{}";
-const char* const description_shard_global_connection_pool =
-    "If set, shard the global connection pool to improve parallelism.";
-const char* const additional_constraints_shard_global_connection_pool = "{}";
+const char* const description_skip_clear_peer_on_cancellation =
+    "If set, skips clearing of peer string on call cancellation.";
+const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
+const char* const description_sleep_use_non_owning_waker =
+    "If set, the sleep promise uses a non-owning waker.";
+const char* const additional_constraints_sleep_use_non_owning_waker = "{}";
+const char* const description_subchannel_connection_scaling =
+    "Subchannel connection scaling support.";
+const char* const additional_constraints_subchannel_connection_scaling = "{}";
+const char* const description_subchannel_wrapper_cleanup_on_orphan =
+    "Fixes the subchannel wrapper to drop any non-cancelled watchers when it "
+    "gets orphaned.";
+const char* const additional_constraints_subchannel_wrapper_cleanup_on_orphan =
+    "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -739,6 +1005,15 @@ const char* const additional_constraints_tcp_frame_size_tuning = "{}";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const additional_constraints_tcp_rcv_lowat = "{}";
+const char* const description_track_writes_in_resource_quota =
+    "Track the Write memory in Resource Quota.";
+const char* const additional_constraints_track_writes_in_resource_quota = "{}";
+const char* const description_track_zero_copy_allocations_in_resource_quota =
+    "Track the memory allocattions under the zero copy path in Resource Quota. "
+    "This includes the encryption / decryption for privacy-and-integrity "
+    "payloads.";
+const char* const
+    additional_constraints_track_zero_copy_allocations_in_resource_quota = "{}";
 const char* const description_tsi_frame_protector_without_locks =
     "Do not hold locks while using the tsi_frame_protector.";
 const char* const additional_constraints_tsi_frame_protector_without_locks =
@@ -752,10 +1027,17 @@ const char* const additional_constraints_unconstrained_max_quota_buffer_size =
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
+    {"buffer_list_deletion_prep", description_buffer_list_deletion_prep,
+     additional_constraints_buffer_list_deletion_prep, nullptr, 0, false, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
-    {"callv3_client_auth_filter", description_callv3_client_auth_filter,
-     additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
+    {"call_tracer_send_initial_metadata_is_an_annotation",
+     description_call_tracer_send_initial_metadata_is_an_annotation,
+     additional_constraints_call_tracer_send_initial_metadata_is_an_annotation,
+     nullptr, 0, true, true},
+    {"chaotic_good_connect_deadline", description_chaotic_good_connect_deadline,
+     additional_constraints_chaotic_good_connect_deadline, nullptr, 0, true,
+     true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -770,7 +1052,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_dns_non_client_channel",
      description_event_engine_dns_non_client_channel,
      additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,
-     false, false},
+     true, false},
     {"event_engine_fork", description_event_engine_fork,
      additional_constraints_event_engine_fork, nullptr, 0, false, false},
     {"event_engine_listener", description_event_engine_listener,
@@ -782,11 +1064,25 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
+    {"event_engine_poller_for_python",
+     description_event_engine_poller_for_python,
+     additional_constraints_event_engine_poller_for_python, nullptr, 0, false,
+     true},
     {"event_engine_secure_endpoint", description_event_engine_secure_endpoint,
      additional_constraints_event_engine_secure_endpoint, nullptr, 0, true,
      false},
+    {"fail_recv_metadata_on_deadline_exceeded",
+     description_fail_recv_metadata_on_deadline_exceeded,
+     additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
+     false, false},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"fuse_filters", description_fuse_filters,
+     additional_constraints_fuse_filters, nullptr, 0, false, false},
+    {"graceful_external_connection_failure",
+     description_graceful_external_connection_failure,
+     additional_constraints_graceful_external_connection_failure, nullptr, 0,
+     true, false},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -796,17 +1092,31 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
      true},
-    {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
-     additional_constraints_max_pings_wo_data_throttle, nullptr, 0, true, true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
+    {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
+     additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
+     true},
+    {"pick_first_ignore_empty_updates",
+     description_pick_first_ignore_empty_updates,
+     additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
+     true},
+    {"pick_first_ready_to_connecting",
+     description_pick_first_ready_to_connecting,
+     additional_constraints_pick_first_ready_to_connecting, nullptr, 0, true,
+     true},
+    {"pipelined_read_secure_endpoint",
+     description_pipelined_read_secure_endpoint,
+     additional_constraints_pipelined_read_secure_endpoint,
+     required_experiments_pipelined_read_secure_endpoint, 3, false, false},
     {"pollset_alternative", description_pollset_alternative,
      additional_constraints_pollset_alternative,
      required_experiments_pollset_alternative, 2, false, false},
-    {"posix_ee_skip_grpc_init", description_posix_ee_skip_grpc_init,
-     additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, true, true},
+    {"prioritize_finished_requests", description_prioritize_finished_requests,
+     additional_constraints_prioritize_finished_requests, nullptr, 0, false,
+     true},
     {"promise_based_http2_client_transport",
      description_promise_based_http2_client_transport,
      additional_constraints_promise_based_http2_client_transport, nullptr, 0,
@@ -819,12 +1129,18 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
      false},
+    {"promise_filter_send_cancel_metadata",
+     description_promise_filter_send_cancel_metadata,
+     additional_constraints_promise_filter_send_cancel_metadata, nullptr, 0,
+     false, true},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
-    {"rq_fast_reject", description_rq_fast_reject,
-     additional_constraints_rq_fast_reject, nullptr, 0, false, true},
-    {"rst_stream_fix", description_rst_stream_fix,
-     additional_constraints_rst_stream_fix, nullptr, 0, true, true},
+    {"return_preexisting_errors", description_return_preexisting_errors,
+     additional_constraints_return_preexisting_errors, nullptr, 0, false, true},
+    {"rr_wrr_connect_from_random_index",
+     description_rr_wrr_connect_from_random_index,
+     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, true,
+     true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -837,21 +1153,35 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_secure_endpoint_offload_large_writes,
      additional_constraints_secure_endpoint_offload_large_writes,
      required_experiments_secure_endpoint_offload_large_writes, 3, false, true},
-    {"server_global_callbacks_ownership",
-     description_server_global_callbacks_ownership,
-     additional_constraints_server_global_callbacks_ownership, nullptr, 0,
-     false, true},
-    {"shard_global_connection_pool", description_shard_global_connection_pool,
-     additional_constraints_shard_global_connection_pool, nullptr, 0, true,
+    {"skip_clear_peer_on_cancellation",
+     description_skip_clear_peer_on_cancellation,
+     additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
      true},
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
      additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
      true},
+    {"sleep_use_non_owning_waker", description_sleep_use_non_owning_waker,
+     additional_constraints_sleep_use_non_owning_waker, nullptr, 0, true, true},
+    {"subchannel_connection_scaling", description_subchannel_connection_scaling,
+     additional_constraints_subchannel_connection_scaling, nullptr, 0, false,
+     true},
+    {"subchannel_wrapper_cleanup_on_orphan",
+     description_subchannel_wrapper_cleanup_on_orphan,
+     additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
+     false, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
+    {"track_writes_in_resource_quota",
+     description_track_writes_in_resource_quota,
+     additional_constraints_track_writes_in_resource_quota, nullptr, 0, false,
+     true},
+    {"track_zero_copy_allocations_in_resource_quota",
+     description_track_zero_copy_allocations_in_resource_quota,
+     additional_constraints_track_zero_copy_allocations_in_resource_quota,
+     nullptr, 0, false, true},
     {"tsi_frame_protector_without_locks",
      description_tsi_frame_protector_without_locks,
      additional_constraints_tsi_frame_protector_without_locks, nullptr, 0,

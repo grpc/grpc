@@ -18,6 +18,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/cpp/interop",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "public",
 )
 
@@ -33,6 +37,10 @@ grpc_cc_library(
         "absl/flags:flag",
     ],
     deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc_base",
         "//test/cpp/util:test_util",
     ],
 )
@@ -46,14 +54,22 @@ grpc_cc_binary(
         "absl/flags:flag",
         "absl/log:check",
         "absl/log:log",
+        "absl/strings:str_format",
         "absl/time:time",
     ],
     tags = ["no_windows"],
     deps = [
+        "//:gpr",
+        "//:gpr_platform",
         "//:grpc++",
+        "//:grpc++_base",
+        "//src/core:grpc_check",
+        "//src/core:iomgr_port",
+        "//src/core:socket_mutator",
         "//src/proto/grpc/testing:empty_cc_proto",
         "//src/proto/grpc/testing:messages_cc_proto",
         "//src/proto/grpc/testing:test_cc_grpc",
+        "//src/proto/grpc/testing:test_cc_proto",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
@@ -70,7 +86,10 @@ grpc_cc_binary(
     ],
     deps = [
         ":interop_server_lib",
+        ":server_helper_lib",
         "//:grpc++",
+        "//test/core/test_util:grpc_test_util",
+        "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
 )
@@ -81,11 +100,21 @@ grpc_cc_library(
         "interop_server.cc",
     ],
     external_deps = [
+        "absl/flags:flag",
+        "absl/log",
         "absl/log:check",
     ],
     deps = [
         ":server_helper_lib",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc_base",
+        "//:grpcpp_backend_metric_recorder",
+        "//:grpcpp_call_metric_recorder",
         "//:grpcpp_orca_service",
+        "//src/core:grpc_check",
+        "//src/core:sync",
         "//src/proto/grpc/testing:empty_cc_proto",
         "//src/proto/grpc/testing:messages_cc_proto",
         "//src/proto/grpc/testing:test_cc_grpc",
@@ -104,16 +133,28 @@ grpc_cc_library(
         "interop_client.h",
     ],
     external_deps = [
+        "absl/cleanup",
         "absl/flags:flag",
         "absl/log:check",
         "absl/log:log",
+        "absl/strings",
+        "absl/strings:str_format",
     ],
     deps = [
         ":backend_metrics_lb_policy",
+        "//:config",
+        "//:config_vars",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc_base",
+        "//:grpc_core_credentials_header",
+        "//src/core:grpc_check",
         "//src/proto/grpc/testing:empty_cc_proto",
         "//src/proto/grpc/testing:messages_cc_proto",
         "//src/proto/grpc/testing:test_cc_grpc",
         "//test/core/credentials/call/oauth2:oauth2_utils",
+        "//test/core/test_util:grpc_test_util_base",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
@@ -126,9 +167,15 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log",
     ],
     deps = [
         ":client_helper_lib",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//test/core/test_util:grpc_test_util",
+        "//test/cpp/util:test_config",
     ],
 )
 
@@ -149,7 +196,11 @@ grpc_cc_binary(
         "absl/flags:flag",
     ],
     deps = [
+        "//:gpr",
         "//:grpc++",
+        "//:grpc++_base",
+        "//src/proto/grpc/testing:metrics_cc_grpc",
+        "//src/proto/grpc/testing:metrics_cc_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:metrics_server_lib",
         "//test/cpp/util:test_config",
@@ -164,11 +215,22 @@ grpc_cc_binary(
     external_deps = [
         "absl/flags:flag",
         "absl/log:check",
+        "absl/log:log",
     ],
     deps = [
         ":client_helper_lib",
+        "//:gpr",
+        "//:grpc",
         "//:grpc++",
+        "//:grpc++_base",
+        "//:grpc_base",
+        "//src/core:grpc_check",
+        "//src/proto/grpc/testing:empty_cc_proto",
+        "//src/proto/grpc/testing:messages_cc_proto",
+        "//src/proto/grpc/testing:test_cc_grpc",
         "//test/core/test_util:grpc_test_util",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
     ],
 )
 
@@ -180,11 +242,21 @@ grpc_cc_binary(
     external_deps = [
         "absl/flags:flag",
         "absl/log:check",
+        "absl/log",
     ],
     deps = [
         ":interop_server_lib",
+        "//:gpr",
+        "//:grpc",
         "//:grpc++",
+        "//:grpc++_base",
+        "//:grpc_base",
+        "//src/core:grpc_check",
+        "//src/proto/grpc/testing:empty_cc_proto",
+        "//src/proto/grpc/testing:messages_cc_proto",
+        "//src/proto/grpc/testing:test_cc_grpc",
         "//test/core/test_util:grpc_test_util",
+        "//test/cpp/util:test_config",
     ],
 )
 
@@ -200,12 +272,19 @@ grpc_cc_binary(
         "absl/log:check",
         "absl/log:globals",
         "absl/log:log",
+        "absl/strings:str_format",
     ],
     deps = [
         ":client_helper_lib",
+        "//:gpr",
         "//:grpc++",
+        "//:grpc++_base",
+        "//src/core:grpc_check",
+        "//src/proto/grpc/testing:metrics_cc_grpc",
+        "//src/proto/grpc/testing:metrics_cc_proto",
         "//test/cpp/util:metrics_server_lib",
         "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
     ],
 )
 
@@ -218,12 +297,15 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log",
+        "absl/strings",
     ],
     tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//:iomgr",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
@@ -247,12 +329,17 @@ grpc_cc_library(
     hdrs = ["xds_stats_watcher.h"],
     external_deps = [
         "absl/log:check",
+        "absl/status",
+        "absl/types:span",
+        "absl/algorithm:container",
+        "absl/strings",
     ],
     deps = [
         ":rpc_behavior_lb_policy",
         "//:grpc++",
         "//:grpc++_reflection",
         "//:grpcpp_admin",
+        "//src/core:grpc_check",
         "//src/proto/grpc/testing:empty_cc_proto",
         "//src/proto/grpc/testing:messages_cc_proto",
         "//src/proto/grpc/testing:test_cc_grpc",
@@ -267,7 +354,12 @@ grpc_cc_test(
         "xds_stats_watcher_test.cc",
     ],
     external_deps = ["gtest"],
-    deps = [":xds_stats_watcher"],
+    deps = [
+        ":xds_stats_watcher",
+        "//:grpc",
+        "//:grpc_base",
+        "//test/core/test_util:grpc_test_util",
+    ],
 )
 
 grpc_cc_binary(
@@ -276,18 +368,25 @@ grpc_cc_binary(
         "xds_interop_client.cc",
     ],
     external_deps = [
+        "absl/algorithm:container",
         "absl/flags:flag",
         "absl/log:check",
+        "absl/log:log",
+        "absl/strings",
         "otel/exporters/prometheus:prometheus_exporter",
         "otel/sdk/src/metrics",
+        "otel/sdk:headers",
     ],
     deps = [
         ":rpc_behavior_lb_policy",
         ":xds_stats_watcher",
         "//:grpc++",
         "//:grpc++_reflection",
+        "//:grpc_base",
         "//:grpcpp_admin",
         "//:grpcpp_csm_observability",
+        "//src/core:env",
+        "//src/core:grpc_check",
         "//src/proto/grpc/testing:empty_cc_proto",
         "//src/proto/grpc/testing:messages_cc_proto",
         "//src/proto/grpc/testing:test_cc_grpc",
@@ -307,10 +406,20 @@ grpc_cc_library(
         "pre_stop_hook_server.h",
         "xds_interop_server_lib.h",
     ],
+    external_deps = [
+        "absl/strings:str_format",
+        "absl/strings",
+        "absl/log:log",
+    ],
     deps = [
+        "//:gpr",
+        "//:gpr_platform",
+        "//:grpc",
         "//:grpc++",
         "//:grpc++_reflection",
+        "//:grpc++_xds_server",
         "//:grpcpp_admin",
+        "//src/core:sync",
         "//src/proto/grpc/testing:empty_cc_proto",
         "//src/proto/grpc/testing:messages_cc_proto",
         "//src/proto/grpc/testing:test_cc_grpc",
@@ -326,13 +435,17 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:log",
         "otel/exporters/prometheus:prometheus_exporter",
         "otel/sdk/src/metrics",
+        "otel/sdk:headers",
     ],
     deps = [
         ":xds_interop_server_lib",
+        "//:grpc",
         "//:grpc++",
         "//:grpcpp_csm_observability",
+        "//:iomgr",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/end2end:test_health_check_service_impl",
         "//test/cpp/util:test_config",
@@ -344,11 +457,21 @@ grpc_cc_test(
     srcs = [
         "pre_stop_hook_server_test.cc",
     ],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/strings:str_format",
+    ],
     deps = [
         ":xds_interop_server_lib",
+        "//:grpc",
         "//:grpc++",
+        "//:grpc++_base",
+        "//:grpc_base",
+        "//src/core:sync",
+        "//src/proto/grpc/testing:empty_cc_proto",
         "//src/proto/grpc/testing:istio_echo_cc_grpc",
+        "//src/proto/grpc/testing:messages_cc_proto",
+        "//src/proto/grpc/testing:test_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
     ],
@@ -359,11 +482,20 @@ grpc_cc_test(
     srcs = [
         "xds_interop_server_test.cc",
     ],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/strings:str_format",
+    ],
     deps = [
         ":xds_interop_server_lib",
+        "//:grpc",
         "//:grpc++",
+        "//:grpc++_base",
+        "//:grpc_base",
+        "//src/core:sync",
+        "//src/proto/grpc/testing:empty_cc_proto",
         "//src/proto/grpc/testing:istio_echo_cc_grpc",
+        "//src/proto/grpc/testing:test_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
     ],
@@ -375,9 +507,17 @@ grpc_cc_library(
         "istio_echo_server_lib.cc",
     ],
     hdrs = ["istio_echo_server_lib.h"],
+    external_deps = [
+        "absl/log:log",
+        "absl/strings",
+        "absl/strings:str_format",
+        "absl/synchronization",
+    ],
     deps = [
+        "//:gpr",
         "//:grpc++",
         "//src/proto/grpc/testing:istio_echo_cc_grpc",
+        "//src/proto/grpc/testing:istio_echo_cc_proto",
     ],
 )
 
@@ -388,13 +528,24 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/algorithm:container",
+        "absl/log:log",
+        "absl/strings:str_format",
+        "absl/strings",
     ],
     deps = [
         ":istio_echo_server_lib",
+        "//:gpr",
         "//:grpc++",
+        "//:grpc++_base",
         "//:grpc++_reflection",
+        "//:grpc++_xds_server",
+        "//:grpc_base",
         "//:grpcpp_admin",
+        "//:iomgr",
+        "//src/core:env",
         "//src/proto/grpc/testing:istio_echo_cc_grpc",
+        "//src/proto/grpc/testing:istio_echo_cc_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
     ],
@@ -405,10 +556,16 @@ grpc_cc_test(
     srcs = [
         "istio_echo_server_test.cc",
     ],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
     deps = [
         ":istio_echo_server_lib",
+        "//:gpr",
         "//:grpc++",
+        "//:grpc++_base",
         "//src/proto/grpc/testing:istio_echo_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
@@ -425,9 +582,14 @@ grpc_cc_binary(
         "absl/flags:flag",
         "absl/log:check",
         "absl/log:log",
+        "absl/strings:str_format",
     ],
     deps = [
+        "//:gpr",
+        "//:grpc",
         "//:grpc++",
+        "//src/core:grpc_check",
+        "//src/core:useful",
         "//src/proto/grpc/testing:empty_cc_proto",
         "//src/proto/grpc/testing:messages_cc_proto",
         "//src/proto/grpc/testing:test_cc_grpc",
@@ -445,11 +607,20 @@ grpc_cc_binary(
     external_deps = [
         "absl/flags:flag",
         "absl/log:check",
+        "absl/log:log",
+        "absl/strings",
     ],
     deps = [
         ":client_helper_lib",
+        "//:gpr",
+        "//:grpc",
         "//:grpc++",
+        "//:grpc_base",
+        "//src/core:grpc_check",
+        "//src/core:useful",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
     ],
 )
 
@@ -460,12 +631,16 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:log",
     ],
     tags = ["nobuilder"],
     deps = [
         ":interop_server_lib",
+        ":server_helper_lib",
         "//:grpc++",
         "//:grpcpp_gcp_observability",
+        "//test/core/test_util:grpc_test_util",
+        "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
 )
@@ -477,8 +652,10 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:log",
         "otel/exporters/prometheus:prometheus_exporter",
         "otel/sdk/src/metrics",
+        "otel/sdk:headers",
     ],
     tags = [
         "nobuilder",
@@ -487,8 +664,13 @@ grpc_cc_library(
     ],
     deps = [
         ":client_helper_lib",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
         "//:grpcpp_gcp_observability",
         "//src/cpp/ext/otel:otel_plugin",
+        "//test/core/test_util:grpc_test_util",
+        "//test/cpp/util:test_config",
     ],
 )
 
@@ -511,6 +693,8 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:log",
+        "absl/strings",
     ],
     tags = [
         "no_windows",
@@ -520,6 +704,7 @@ grpc_cc_binary(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//:iomgr",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
@@ -536,11 +721,19 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
+        "absl/strings:str_format",
     ],
     tags = ["nobuilder"],
     deps = [
+        "//:config",
+        "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//:oob_backend_metric",
+        "//src/core:delegating_helper",
+        "//src/core:grpc_check",
+        "//src/core:pollset_set",
         "//src/proto/grpc/testing:messages_cc_proto",
     ],
 )
@@ -553,8 +746,15 @@ grpc_cc_test(
     external_deps = ["gtest"],
     deps = [
         ":backend_metrics_lb_policy",
+        "//:grpc",
         "//:grpc++",
+        "//:grpc++_base",
+        "//:grpc_base",
+        "//:grpcpp_call_metric_recorder",
         "//:grpcpp_orca_service",
+        "//src/core:notification",
+        "//src/core:sync",
+        "//src/proto/grpc/testing:messages_cc_proto",
         "//src/proto/grpc/testing:test_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
@@ -571,10 +771,18 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log:check",
+        "absl/strings:str_format",
     ],
     tags = ["nobuilder"],
     deps = [
+        "//:config",
+        "//:gpr_platform",
         "//:grpc",
         "//:grpc++",
+        "//src/core:delegating_helper",
+        "//src/core:grpc_check",
+        "//src/core:json_args",
+        "//src/core:json_object_loader",
+        "//src/core:pollset_set",
     ],
 )

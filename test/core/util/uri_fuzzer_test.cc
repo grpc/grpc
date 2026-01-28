@@ -22,10 +22,10 @@
 #include <string.h>
 
 #include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/dump_args.h"
 #include "src/core/util/uri.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace {
@@ -57,6 +57,10 @@ void ParseRoundTrips(std::string buffer) {
 FUZZ_TEST(UriTest, ParseRoundTrips);
 
 TEST(UriTest, ParseRoundTripsRegression) { ParseRoundTrips("W:////\244"); }
+
+TEST(UriTest, UserInfoWithoutHostPort) {
+  ParseRoundTrips("foo://user_info@/path");
+}
 
 }  // namespace
 }  // namespace grpc_core

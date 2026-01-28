@@ -21,9 +21,9 @@
 #include <map>
 #include <memory>
 
+#include "test/core/test_util/test_config.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "test/core/test_util/test_config.h"
 
 namespace grpc {
 namespace testing {

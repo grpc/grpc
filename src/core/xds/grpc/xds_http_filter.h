@@ -20,10 +20,8 @@
 #include <optional>
 #include <string>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "src/core/call/interception_chain.h"
+#include "src/core/filter/blackboard.h"
+#include "src/core/filter/filter_chain.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/util/json/json.h"
@@ -32,6 +30,9 @@
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "upb/reflection/def.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -91,8 +92,8 @@ class XdsHttpFilterImpl {
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const = 0;
 
-  // C-core channel filter implementation.
-  virtual void AddFilter(InterceptionChainBuilder& builder) const = 0;
+  // Adds the filter to the builder.
+  virtual void AddFilter(FilterChainBuilder& builder) const = 0;
   // TODO(roth): Remove this once the legacy filter stack goes away.
   virtual const grpc_channel_filter* channel_filter() const = 0;
 
@@ -118,6 +119,12 @@ class XdsHttpFilterImpl {
   // Currently used only on the client side.
   virtual absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
       const FilterConfig& hcm_filter_config) const = 0;
+
+  // Adds state to new_blackboard if needed for the specified filter
+  // config.  Copies existing state from old_blackboard as appropriate.
+  virtual void UpdateBlackboard(const FilterConfig& /*hcm_filter_config*/,
+                                const Blackboard* /*old_blackboard*/,
+                                Blackboard* /*new_blackboard*/) const {}
 
   // Returns true if the filter is supported on clients; false otherwise
   virtual bool IsSupportedOnClients() const = 0;

@@ -25,9 +25,7 @@
 #include <utility>
 #include <variant>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/if.h"
@@ -37,7 +35,10 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
@@ -58,10 +59,10 @@ struct Pipe;
 template <typename T>
 class NextResult final {
  public:
-  NextResult() : center_(nullptr) {}
+  NextResult() : center_(nullptr), cancelled_(true) {}
   explicit NextResult(RefCountedPtr<pipe_detail::Center<T>> center)
-      : center_(std::move(center)) {
-    CHECK(center_ != nullptr);
+      : center_(std::move(center)), cancelled_(false) {
+    GRPC_CHECK(center_ != nullptr);
   }
   explicit NextResult(bool cancelled)
       : center_(nullptr), cancelled_(cancelled) {}
@@ -77,11 +78,11 @@ class NextResult final {
   bool has_value() const;
   // Only valid if has_value()
   const T& value() const {
-    CHECK(has_value());
+    GRPC_CHECK(has_value());
     return **this;
   }
   T& value() {
-    CHECK(has_value());
+    GRPC_CHECK(has_value());
     return **this;
   }
   const T& operator*() const;
@@ -118,7 +119,7 @@ class Center : public InterceptorList<T> {
     GRPC_TRACE_VLOG(promise_primitives, 2)
         << DebugOpString("IncrementRefCount");
     refs_++;
-    DCHECK_NE(refs_, 0);
+    GRPC_DCHECK_NE(refs_, 0);
   }
 
   RefCountedPtr<Center> Ref() {
@@ -130,7 +131,7 @@ class Center : public InterceptorList<T> {
   // If no refs remain, destroy this object
   void Unref() {
     GRPC_TRACE_VLOG(promise_primitives, 2) << DebugOpString("Unref");
-    DCHECK_GT(refs_, 0);
+    GRPC_DCHECK_GT(refs_, 0);
     refs_--;
     if (0 == refs_) {
       this->~Center();
@@ -143,7 +144,7 @@ class Center : public InterceptorList<T> {
   // Return false if the recv end is closed.
   Poll<bool> Push(T* value) {
     GRPC_TRACE_LOG(promise_primitives, INFO) << DebugOpString("Push");
-    DCHECK_NE(refs_, 0);
+    GRPC_DCHECK_NE(refs_, 0);
     switch (value_state_) {
       case ValueState::kClosed:
       case ValueState::kReadyClosed:
@@ -165,7 +166,7 @@ class Center : public InterceptorList<T> {
 
   Poll<bool> PollAck() {
     GRPC_TRACE_LOG(promise_primitives, INFO) << DebugOpString("PollAck");
-    DCHECK_NE(refs_, 0);
+    GRPC_DCHECK_NE(refs_, 0);
     switch (value_state_) {
       case ValueState::kClosed:
         return true;
@@ -191,7 +192,7 @@ class Center : public InterceptorList<T> {
   // Return nullopt if the send end is closed and no value had been pushed.
   Poll<std::optional<T>> Next() {
     GRPC_TRACE_LOG(promise_primitives, INFO) << DebugOpString("Next");
-    DCHECK_NE(refs_, 0);
+    GRPC_DCHECK_NE(refs_, 0);
     switch (value_state_) {
       case ValueState::kEmpty:
       case ValueState::kAcked:
@@ -216,7 +217,7 @@ class Center : public InterceptorList<T> {
   Poll<bool> PollClosedForSender() {
     GRPC_TRACE_LOG(promise_primitives, INFO)
         << DebugOpString("PollClosedForSender");
-    DCHECK_NE(refs_, 0);
+    GRPC_DCHECK_NE(refs_, 0);
     switch (value_state_) {
       case ValueState::kEmpty:
       case ValueState::kAcked:
@@ -238,7 +239,7 @@ class Center : public InterceptorList<T> {
   Poll<bool> PollClosedForReceiver() {
     GRPC_TRACE_LOG(promise_primitives, INFO)
         << DebugOpString("PollClosedForReceiver");
-    DCHECK_NE(refs_, 0);
+    GRPC_DCHECK_NE(refs_, 0);
     switch (value_state_) {
       case ValueState::kEmpty:
       case ValueState::kAcked:
@@ -257,7 +258,7 @@ class Center : public InterceptorList<T> {
 
   Poll<Empty> PollEmpty() {
     GRPC_TRACE_LOG(promise_primitives, INFO) << DebugOpString("PollEmpty");
-    DCHECK_NE(refs_, 0);
+    GRPC_DCHECK_NE(refs_, 0);
     switch (value_state_) {
       case ValueState::kReady:
       case ValueState::kReadyClosed:
@@ -360,6 +361,15 @@ class Center : public InterceptorList<T> {
     }
   }
 
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("refs", refs_)
+        .Set("state", ValueStateName(value_state_))
+        .Set("on_empty", on_empty_.DebugString())
+        .Set("on_full", on_full_.DebugString())
+        .Set("on_closed", on_closed_.DebugString());
+  }
+
  private:
   // State of value_.
   enum class ValueState : uint8_t {
@@ -458,6 +468,10 @@ class PipeSender {
       center_->MarkCancelled();
       center_.reset();
     }
+  }
+
+  channelz::PropertyList ChannelzProperties() {
+    return center_->ChannelzProperties();
   }
 
   void Swap(PipeSender<T>* other) { std::swap(center_, other->center_); }
@@ -646,7 +660,7 @@ class Push {
         return Pending{};
       }
     }
-    DCHECK(std::holds_alternative<AwaitingAck>(state_));
+    GRPC_DCHECK(std::holds_alternative<AwaitingAck>(state_));
     return center_->PollAck();
   }
 

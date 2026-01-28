@@ -26,6 +26,13 @@
 
 #include <mutex>
 
+#include "src/core/lib/surface/init.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/postmortem_emit.h"
+#include "src/core/util/wait_for_single_owner.h"
+#include "test/core/event_engine/test_init.h"
+#include "test/core/test_util/build.h"
+#include "test/core/test_util/stack_tracer.h"
 #include "absl/debugging/failure_signal_handler.h"
 #include "absl/log/globals.h"
 #include "absl/log/initialize.h"
@@ -34,11 +41,6 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-#include "src/core/lib/surface/init.h"
-#include "src/core/util/crash.h"
-#include "test/core/event_engine/test_init.h"
-#include "test/core/test_util/build.h"
-#include "test/core/test_util/stack_tracer.h"
 
 int64_t g_fixture_slowdown_factor = 1;
 int64_t g_poller_slowdown_factor = 1;
@@ -155,6 +157,10 @@ void grpc_test_init(int* argc, char** argv) {
   // seed rng with pid, so we don't end up with the same random numbers as a
   // concurrently running test binary
   srand(seed());
+  grpc_core::SetWaitForSingleOwnerStalledCallback([]() {
+    grpc_core::PostMortemEmit();
+    AsanAssertNoLeaks();
+  });
 }
 
 void grpc_set_absl_verbosity_debug() {

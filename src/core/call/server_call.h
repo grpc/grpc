@@ -39,10 +39,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/promise/poll.h"
@@ -53,8 +49,12 @@
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -72,6 +72,7 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
         cq_(cq),
         server_(server) {
     global_stats().IncrementServerCallsCreated();
+    SourceConstructed();
   }
 
   void CancelWithError(grpc_error_handle error) override {
@@ -97,6 +98,7 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
   void InternalUnref(const char*) override { WeakUnref(); }
 
   void Orphaned() override {
+    SourceDestructing();
     if (!saw_was_cancelled_.load(std::memory_order_relaxed)) {
       CancelWithError(absl::CancelledError());
     }

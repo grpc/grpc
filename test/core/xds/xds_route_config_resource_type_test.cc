@@ -30,11 +30,6 @@
 #include <variant>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
 #include "envoy/config/core/v3/base.pb.h"
 #include "envoy/config/core/v3/extension.pb.h"
 #include "envoy/config/route/v3/route.pb.h"
@@ -43,8 +38,6 @@
 #include "envoy/type/matcher/v3/string.pb.h"
 #include "envoy/type/v3/percent.pb.h"
 #include "envoy/type/v3/range.pb.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "re2/re2.h"
 #include "src/core/call/status_util.h"
 #include "src/core/lib/debug/trace.h"
@@ -66,6 +59,13 @@
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
 #include "xds/type/v3/typed_struct.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
 using envoy::config::route::v3::RouteConfiguration;
 using grpc::lookup::v1::RouteLookupClusterSpecifier;
@@ -1590,7 +1590,6 @@ TEST_F(HashPolicyTest, InvalidPolicies) {
 using AuthorityRewriteDisabledInBootstrapTest = XdsRouteConfigTest;
 
 TEST_F(AuthorityRewriteDisabledInBootstrapTest, AutoHostRewriteIgnored) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_AUTHORITY_REWRITE");
   RouteConfiguration route_config;
   route_config.set_name("foo");
   auto* vhost = route_config.add_virtual_hosts();
@@ -1626,7 +1625,6 @@ class AuthorityRewriteEnabledInBootstrapTest : public XdsRouteConfigTest {
 };
 
 TEST_F(AuthorityRewriteEnabledInBootstrapTest, AutoHostRewriteTrue) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_AUTHORITY_REWRITE");
   RouteConfiguration route_config;
   route_config.set_name("foo");
   auto* vhost = route_config.add_virtual_hosts();
@@ -1653,36 +1651,6 @@ TEST_F(AuthorityRewriteEnabledInBootstrapTest, AutoHostRewriteTrue) {
       std::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
   ASSERT_NE(action, nullptr);
   EXPECT_TRUE(action->auto_host_rewrite);
-}
-
-TEST_F(AuthorityRewriteEnabledInBootstrapTest,
-       AutoHostRewriteIgnoredWithoutEnvVar) {
-  RouteConfiguration route_config;
-  route_config.set_name("foo");
-  auto* vhost = route_config.add_virtual_hosts();
-  vhost->add_domains("*");
-  auto* route_proto = vhost->add_routes();
-  route_proto->mutable_match()->set_prefix("");
-  auto* route_action = route_proto->mutable_route();
-  route_action->set_cluster("cluster1");
-  route_action->mutable_auto_host_rewrite()->set_value(true);
-  std::string serialized_resource;
-  ASSERT_TRUE(route_config.SerializeToString(&serialized_resource));
-  auto* resource_type = XdsRouteConfigResourceType::Get();
-  auto decode_result =
-      resource_type->Decode(decode_context_, serialized_resource);
-  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
-  ASSERT_TRUE(decode_result.name.has_value());
-  EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource =
-      static_cast<const XdsRouteConfigResource&>(**decode_result.resource);
-  ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
-  ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
-  auto& route = resource.virtual_hosts[0].routes[0];
-  auto* action =
-      std::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
-  ASSERT_NE(action, nullptr);
-  EXPECT_FALSE(action->auto_host_rewrite);
 }
 
 //

@@ -30,12 +30,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/container/inlined_vector.h"
-#include "absl/functional/function_ref.h"
-#include "absl/log/check.h"
-#include "absl/meta/type_traits.h"
-#include "absl/strings/numbers.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/custom_metadata.h"
 #include "src/core/call/metadata_compression_traits.h"
 #include "src/core/call/parsed_metadata.h"
@@ -45,10 +39,16 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/chunked_vector.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/if_list.h"
 #include "src/core/util/packed_table.h"
 #include "src/core/util/time.h"
 #include "src/core/util/type_list.h"
+#include "absl/container/inlined_vector.h"
+#include "absl/functional/function_ref.h"
+#include "absl/meta/type_traits.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -107,7 +107,7 @@ struct TeMetadata {
                                   MetadataParseErrorFn on_error);
   static ValueType MementoToValue(MementoType te) { return te; }
   static StaticSlice Encode(ValueType x) {
-    CHECK(x == kTrailers);
+    GRPC_CHECK(x == kTrailers);
     return StaticSlice::FromStaticString("trailers");
   }
   static const char* DisplayValue(ValueType te);
@@ -213,7 +213,7 @@ struct CompressionAlgorithmBasedMetadata {
                                   MetadataParseErrorFn on_error);
   static ValueType MementoToValue(MementoType x) { return x; }
   static Slice Encode(ValueType x) {
-    CHECK(x != GRPC_COMPRESS_ALGORITHMS_COUNT);
+    GRPC_CHECK(x != GRPC_COMPRESS_ALGORITHMS_COUNT);
     return Slice::FromStaticString(CompressionAlgorithmAsString(x));
   }
   static const char* DisplayValue(ValueType x) {
@@ -324,6 +324,22 @@ struct XEnvoyPeerMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kTransferOnTrailersOnly = true;
   using CompressionTraits = StableValueCompressor;
   static absl::string_view key() { return "x-envoy-peer-metadata"; }
+};
+
+// x-forwarded-for metadata trait for HTTP connect.
+struct XForwardedForMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
+  using CompressionTraits = StableValueCompressor;
+  static absl::string_view key() { return "x-forwarded-for"; }
+};
+
+// x-forwarded-host metadata trait for HTTP connect.
+struct XForwardedHostMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
+  using CompressionTraits = StableValueCompressor;
+  static absl::string_view key() { return "x-forwarded-host"; }
 };
 
 // :authority metadata trait.
@@ -630,6 +646,8 @@ struct GrpcTarPit {
   static absl::string_view DisplayValue(Empty) { return "tarpit"; }
 };
 
+bool IsMetadataKeyAllowedInDebugOutput(absl::string_view key);
+
 namespace metadata_detail {
 
 // Build a key/value formatted debug string.
@@ -646,7 +664,6 @@ class DebugStringBuilder {
   std::string TakeOutput() { return std::move(out_); }
 
  private:
-  bool IsAllowListed(absl::string_view key) const;
   void Add(absl::string_view key, absl::string_view value);
   std::string out_;
 };
@@ -1651,7 +1668,8 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     grpc_core::GrpcServerStatsBinMetadata, grpc_core::GrpcTraceBinMetadata,
     grpc_core::GrpcTagsBinMetadata, grpc_core::GrpcLbClientStatsMetadata,
     grpc_core::LbCostBinMetadata, grpc_core::LbTokenMetadata,
-    grpc_core::XEnvoyPeerMetadata, grpc_core::W3CTraceParentMetadata,
+    grpc_core::XEnvoyPeerMetadata, grpc_core::XForwardedForMetadata,
+    grpc_core::XForwardedHostMetadata, grpc_core::W3CTraceParentMetadata,
     // Non-encodable things
     grpc_core::GrpcStreamNetworkState, grpc_core::PeerString,
     grpc_core::GrpcStatusContext, grpc_core::GrpcStatusFromWire,

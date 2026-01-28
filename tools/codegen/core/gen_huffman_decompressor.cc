@@ -750,11 +750,14 @@ class TableBuilder {
       }
       if (slice_bits == 0) {
         global_fns->Add(absl::StrCat(
-            "static inline uint64_t GetOp", id, "(size_t i) { return ",
+            "GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static inline uint64_t GetOp",
+            id, "(size_t i) { return ",
             inner_names[0]->Index(outer_names[0]->Index("i")), "; }"));
-        global_fns->Add(absl::StrCat("static inline uint64_t GetEmit", id,
-                                     "(size_t, size_t emit) { return ",
-                                     emit_names[0]->Index("emit"), "; }"));
+        global_fns->Add(
+            absl::StrCat("GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static inline "
+                         "uint64_t GetEmit",
+                         id, "(size_t, size_t emit) { return ",
+                         emit_names[0]->Index("emit"), "; }"));
       } else {
         GenCompound(id, emit_names, "emit", "uint8_t", global_decls,
                     global_values);
@@ -763,14 +766,16 @@ class TableBuilder {
         GenCompound(id, outer_names, "outer", TypeForMax(max_outer),
                     global_decls, global_values);
         global_fns->Add(absl::StrCat(
-            "static inline uint64_t GetOp", id, "(size_t i) { return table", id,
-            "_inner_[i >> ", op_bits - slice_bits, "][table", id,
-            "_outer_[i >> ", op_bits - slice_bits, "][i & 0x",
+            "GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static inline uint64_t GetOp",
+            id, "(size_t i) { return table", id, "_inner_[i >> ",
+            op_bits - slice_bits, "][table", id, "_outer_[i >> ",
+            op_bits - slice_bits, "][i & 0x",
             absl::Hex((1 << (op_bits - slice_bits)) - 1), "]]; }"));
-        global_fns->Add(absl::StrCat("static inline uint64_t GetEmit", id,
-                                     "(size_t i, size_t emit) { return table",
-                                     id, "_emit_[i >> ", op_bits - slice_bits,
-                                     "][emit]; }"));
+        global_fns->Add(
+            absl::StrCat("GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static inline "
+                         "uint64_t GetEmit",
+                         id, "(size_t i, size_t emit) { return table", id,
+                         "_emit_[i >> ", op_bits - slice_bits, "][emit]; }"));
       }
     }
     uint64_t MaxInner() const {
@@ -836,25 +841,29 @@ class TableBuilder {
             global_values));
       }
       if (slice_bits == 0) {
-        global_fns->Add(absl::StrCat("static inline uint64_t GetOp", id,
-                                     "(size_t i) { return ",
-                                     ops_names[0]->Index("i"), "; }"));
-        global_fns->Add(absl::StrCat("static inline uint64_t GetEmit", id,
-                                     "(size_t, size_t emit) { return ",
-                                     emit_names[0]->Index("emit"), "; }"));
+        global_fns->Add(absl::StrCat(
+            "GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static inline uint64_t GetOp",
+            id, "(size_t i) { return ", ops_names[0]->Index("i"), "; }"));
+        global_fns->Add(
+            absl::StrCat("GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static inline "
+                         "uint64_t GetEmit",
+                         id, "(size_t, size_t emit) { return ",
+                         emit_names[0]->Index("emit"), "; }"));
       } else {
         GenCompound(id, emit_names, "emit", "uint8_t", global_decls,
                     global_values);
         GenCompound(id, ops_names, "ops", TypeForMax(max_op), global_decls,
                     global_values);
         global_fns->Add(absl::StrCat(
-            "static inline uint64_t GetOp", id, "(size_t i) { return table", id,
-            "_ops_[i >> ", op_bits - slice_bits, "][i & 0x",
+            "GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static inline uint64_t GetOp",
+            id, "(size_t i) { return table", id, "_ops_[i >> ",
+            op_bits - slice_bits, "][i & 0x",
             absl::Hex((1 << (op_bits - slice_bits)) - 1), "]; }"));
-        global_fns->Add(absl::StrCat("static inline uint64_t GetEmit", id,
-                                     "(size_t i, size_t emit) { return table",
-                                     id, "_emit_[i >> ", op_bits - slice_bits,
-                                     "][emit]; }"));
+        global_fns->Add(
+            absl::StrCat("GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static inline "
+                         "uint64_t GetEmit",
+                         id, "(size_t i, size_t emit) { return table", id,
+                         "_emit_[i >> ", op_bits - slice_bits, "][emit]; }"));
       }
     }
     uint64_t MaxOp() const {
@@ -1235,7 +1244,8 @@ class FunMaker {
 
  private:
   Sink* NewFun(std::string name, std::string returns) {
-    sink_->Add(absl::StrCat(returns, " ", name, "() {"));
+    sink_->Add(absl::StrCat("GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ", returns,
+                            " ", name, "() {"));
     auto fn = sink_->Add<Indent>();
     sink_->Add("}");
     return fn;
@@ -1706,7 +1716,7 @@ void GenMicrobenchmarks() {
 void GenSelected() {
   FileSet selected("src/core/ext/transport/chttp2/transport/decode_huff");
   selected.AddFrontMatter(2023);
-  selected.AddBuild(std::vector<int>({15, 7, 8}), true);
+  selected.AddBuild(std::vector<int>({14, 5, 11}), true);
   selected.AddTailMatter();
   WriteFile(selected.base_name + ".h", selected.header);
   WriteFile(selected.base_name + ".cc", selected.source);

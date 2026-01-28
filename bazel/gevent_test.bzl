@@ -16,6 +16,7 @@ Houses py_grpc_gevent_test.
 """
 
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
 
 _GRPC_LIB = "//src/python/grpcio/grpc:grpcio"
 
@@ -48,7 +49,7 @@ def py_grpc_gevent_test(
     supplied_python_version = kwargs.pop("python_version", "")
     if supplied_python_version and supplied_python_version != "PY3":
         fail("py_grpc_gevent_test only supports python_version=PY3")
-    native.py_library(
+    py_library(
         name = lib_name,
         srcs = srcs,
     )
@@ -72,8 +73,7 @@ def py_grpc_gevent_test(
     # TODO(https://github.com/grpc/grpc/issues/27542): Remove once gevent is deemed non-flaky.
     if "flaky" in kwargs:
         kwargs.pop("flaky")
-
-    native.py_test(
+    py_test(
         name = name + ".gevent",
         args = [name],
         data = data,

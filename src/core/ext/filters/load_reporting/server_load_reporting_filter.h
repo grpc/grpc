@@ -24,11 +24,11 @@
 
 #include <string>
 
-#include "absl/status/statusor.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/transport.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 
@@ -58,6 +58,9 @@ class ServerLoadReportingFilter
     static inline const NoInterceptor OnServerToClientMessage;
     void OnFinalize(const grpc_call_final_info* final_info,
                     ServerLoadReportingFilter* filter);
+    channelz::PropertyList ChannelzProperties() const {
+      return channelz::PropertyList();
+    }
 
    private:
     std::string client_ip_and_lr_token_;

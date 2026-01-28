@@ -16,17 +16,31 @@
 # Instructions for generation follow:
 # Use the oldest supported version of Python
 #
-#   $ docker run -it --rm -v $(pwd):/grpc python:3.8 /bin/bash
+#   $ docker run -it --rm -v $(pwd):/grpc python:3.9 /bin/bash
 #   # cd grpc
 #   # pip install pip-tools
-#   # pip-compile --allow-unsafe requirements.bazel.txt > requirements.bazel.lock
+#   # pip-compile --allow-unsafe requirements.bazel.txt -o requirements.bazel.lock
 #   # exit
 #   $ sudo chown $USER requirements.bazel.lock
+#
+# When installing a new package, sometimes it's desirable to avoid unnecessary
+# package upgrades. In such case, consider the following flow instead.
+#
+#   $ python3.9 -m venv .venv-bazel
+#   $ source .venv-bazel/bin/activate
+#   $ pip install pip-tools
+#   $ pip install -r requirements.bazel.lock
+#
+#   Add the new package to requirements.bazel.txt
+#   $ pip-compile --no-upgrade --allow-unsafe requirements.bazel.txt -o requirements.bazel.lock
+#
+#   To update a single package, change its version spec requirements.bazel.txt
+#   $ pip-compile --no-upgrade --allow-unsafe requirements.bazel.txt -o requirements.bazel.lock -P package_name
 
 absl-py
 certifi
 chardet
-gevent
+gevent~=25.8
 google-auth
 googleapis-common-protos
 idna
@@ -37,5 +51,8 @@ opentelemetry-sdk
 protobuf
 pyyaml  # for DNS test
 requests
+setuptools>=77.0.1
+typeguard~=4.2
+typing-extensions==4.12.2
 twisted  # for DNS test
 urllib3

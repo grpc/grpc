@@ -16,6 +16,8 @@
 
 ENV['GRPC_ENABLE_FORK_SUPPORT'] = "1"
 fail "forking only supported on linux" unless RUBY_PLATFORM =~ /linux/
+# TODO(apolcyn): remove after this experiment is on by default
+ENV['GRPC_EXPERIMENTS'] = "event_engine_fork"
 
 this_dir = File.expand_path(File.dirname(__FILE__))
 protos_lib_dir = File.join(this_dir, 'lib')
@@ -57,18 +59,15 @@ def run_client(stub)
       with_logging("child2: GRPC.postfork_child") { GRPC.postfork_child }
       with_logging("child2: first post-fork RPC") { do_rpc(stub) }
       with_logging("child2: second post-fork RPC") { do_rpc(stub) }
-      STDERR.puts "child2: done"
     end
     with_logging("child1: GRPC.postfork_parent") { GRPC.postfork_parent }
     with_logging("child1: second post-fork RPC") { do_rpc(stub) }
-    Process.wait(pid2)
-    STDERR.puts "child1: done"
+    with_logging("child1: wait for child2") { Process.wait(pid2) }
   end
   with_logging("parent: GRPC.postfork_parent") { GRPC.postfork_parent }
   with_logging("parent: first post-fork RPC") { do_rpc(stub) }
   with_logging("parent: second post-fork RPC") { do_rpc(stub) }
-  Process.wait pid
-  STDERR.puts "parent: done"
+  with_logging("parent: wait for child1") { Process.wait pid }
 end
 
 # This is designed to test fork support around three key things:

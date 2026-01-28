@@ -34,21 +34,21 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
+#include "src/core/lib/compression/message_compress.h"
+#include "src/core/lib/surface/event_string.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/match.h"
+#include "src/core/util/postmortem_emit.h"
+#include "test/core/test_util/build.h"
+#include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 #include "absl/log/log.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "gtest/gtest.h"
-#include "src/core/lib/compression/message_compress.h"
-#include "src/core/lib/surface/event_string.h"
-#include "src/core/util/crash.h"
-#include "src/core/util/match.h"
-#include "test/core/test_util/build.h"
-#include "test/core/test_util/postmortem.h"
-#include "test/core/test_util/test_config.h"
 
 // a set of metadata we expect to find on an event
 typedef struct metadata {
@@ -162,9 +162,9 @@ int byte_buffer_eq_slice(grpc_byte_buffer* bb, grpc_slice b) {
   if (bb->data.raw.compression > GRPC_COMPRESS_NONE) {
     grpc_slice_buffer decompressed_buffer;
     grpc_slice_buffer_init(&decompressed_buffer);
-    CHECK(grpc_msg_decompress(bb->data.raw.compression,
-                              &bb->data.raw.slice_buffer,
-                              &decompressed_buffer));
+    GRPC_CHECK(grpc_msg_decompress(bb->data.raw.compression,
+                                   &bb->data.raw.slice_buffer,
+                                   &decompressed_buffer));
     grpc_byte_buffer* rbb = grpc_raw_byte_buffer_create(
         decompressed_buffer.slices, decompressed_buffer.count);
     int ret_val = raw_byte_buffer_eq_slice(rbb, b);
@@ -311,13 +311,13 @@ std::string CrashMessage(const CqVerifier::Failure& failure) {
 
 void CqVerifier::FailUsingGprCrashWithStdio(const Failure& failure) {
   LOG(INFO) << CrashMessage(failure);
-  PostMortem::Emit();
+  PostMortemEmit();
   CrashWithStdio(CrashMessage(failure));
 }
 
 void CqVerifier::FailUsingGprCrash(const Failure& failure) {
   LOG(INFO) << CrashMessage(failure);
-  PostMortem::Emit();
+  PostMortemEmit();
   Crash(CrashMessage(failure));
 }
 
@@ -432,7 +432,7 @@ void CqVerifier::VerifyEmpty(Duration timeout, SourceLocation location) {
   }
   const gpr_timespec deadline =
       gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), timeout.as_timespec());
-  CHECK(expectations_.empty());
+  GRPC_CHECK(expectations_.empty());
   grpc_event ev = Step(deadline);
   if (ev.type != GRPC_QUEUE_TIMEOUT) {
     FailUnexpectedEvent(&ev, location);

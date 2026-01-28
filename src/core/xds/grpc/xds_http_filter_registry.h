@@ -24,9 +24,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
-#include "src/core/call/interception_chain.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/util/validation_errors.h"
@@ -34,6 +31,8 @@
 #include "src/core/xds/grpc/xds_http_filter.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "upb/reflection/def.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -51,7 +50,7 @@ class XdsHttpRouterFilter final : public XdsHttpFilterImpl {
       absl::string_view /*instance_name*/,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const override;
-  void AddFilter(InterceptionChainBuilder& /*builder*/) const override {}
+  void AddFilter(FilterChainBuilder& /*builder*/) const override {}
   const grpc_channel_filter* channel_filter() const override { return nullptr; }
   absl::StatusOr<ServiceConfigJsonEntry> GenerateMethodConfig(
       const FilterConfig& /*hcm_filter_config*/,

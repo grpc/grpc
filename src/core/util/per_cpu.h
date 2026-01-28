@@ -55,6 +55,12 @@ class PerCpuOptions {
   size_t max_shards_ = std::numeric_limits<size_t>::max();
 };
 
+#ifdef GPR_CPU_CUSTOM
+class PerCpuShardingHelper {
+ public:
+  size_t GetShardingBits() { return gpr_cpu_current_cpu(); }
+};
+#else
 class PerCpuShardingHelper {
  public:
   size_t GetShardingBits() {
@@ -76,6 +82,7 @@ class PerCpuShardingHelper {
   };
   static thread_local State state_;
 };
+#endif  // GPR_CPU_CUSTOM
 
 template <typename T>
 class PerCpu {

@@ -23,6 +23,7 @@
 #include "envoy/config/overload/v3/overload.upb_minitable.h"
 #include "envoy/config/trace/v3/http_tracer.upb_minitable.h"
 #include "envoy/extensions/transport_sockets/tls/v3/secret.upb_minitable.h"
+#include "envoy/type/matcher/v3/string.upb_minitable.h"
 #include "envoy/type/v3/percent.upb_minitable.h"
 #include "google/protobuf/duration.upb_minitable.h"
 #include "google/protobuf/struct.upb_minitable.h"
@@ -38,7 +39,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal envoy_config_bootstrap_v3_Bootstrap__submsgs[31] = {
+static const upb_MiniTableSubInternal envoy_config_bootstrap_v3_Bootstrap__submsgs[32] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Node_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Bootstrap__StaticResources_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Bootstrap__DynamicResources_msg_init_ptr},
@@ -70,14 +71,15 @@ static const upb_MiniTableSubInternal envoy_config_bootstrap_v3_Bootstrap__subms
   {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Bootstrap__DeferredStatOptions_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__Bootstrap__GrpcAsyncClientManagerConfig_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__bootstrap__v3__MemoryAllocatorManager_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
 };
 
-static const upb_MiniTableField envoy_config_bootstrap_v3_Bootstrap__fields[39] = {
+static const upb_MiniTableField envoy_config_bootstrap_v3_Bootstrap__fields[40] = {
   {1, UPB_SIZE(16, 88), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(20, 96), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(24, 104), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {4, UPB_SIZE(28, 112), 67, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {5, UPB_SIZE(148, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(156, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {6, UPB_SIZE(32, 120), 0, 4, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {7, UPB_SIZE(36, 128), 68, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {8, UPB_SIZE(40, 136), 69, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
@@ -88,13 +90,13 @@ static const upb_MiniTableField envoy_config_bootstrap_v3_Bootstrap__fields[39] 
   {15, UPB_SIZE(60, 176), 74, 11, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {16, 12, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {17, UPB_SIZE(64, 184), 75, 12, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {18, UPB_SIZE(156, 40), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {18, UPB_SIZE(164, 40), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {19, UPB_SIZE(68, 192), 76, 13, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {20, 13, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   {21, UPB_SIZE(72, 200), 0, 14, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {22, UPB_SIZE(76, 208), 0, 15, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {23, UPB_SIZE(80, 216), 77, 16, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {24, UPB_SIZE(164, 56), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {24, UPB_SIZE(172, 56), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {25, UPB_SIZE(84, 224), 0, 17, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {26, UPB_SIZE(88, 232), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {27, UPB_SIZE(92, 240), 78, 18, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
@@ -103,7 +105,7 @@ static const upb_MiniTableField envoy_config_bootstrap_v3_Bootstrap__fields[39] 
   {30, UPB_SIZE(100, 256), 79, 20, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {31, UPB_SIZE(104, 264), 80, 21, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {32, UPB_SIZE(108, 272), 0, 22, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {33, UPB_SIZE(172, 72), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {33, UPB_SIZE(180, 72), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {34, UPB_SIZE(112, 280), 81, 23, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {35, UPB_SIZE(116, 288), 82, 24, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {36, UPB_SIZE(120, 296), 83, 25, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
@@ -112,12 +114,13 @@ static const upb_MiniTableField envoy_config_bootstrap_v3_Bootstrap__fields[39] 
   {39, UPB_SIZE(132, 320), 86, 28, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {40, UPB_SIZE(136, 328), 87, 29, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {41, UPB_SIZE(140, 336), 88, 30, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {42, UPB_SIZE(152, 344), UPB_SIZE(-149, -21), 31, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__config__bootstrap__v3__Bootstrap_msg_init = {
   &envoy_config_bootstrap_v3_Bootstrap__submsgs[0],
   &envoy_config_bootstrap_v3_Bootstrap__fields[0],
-  UPB_SIZE(184, 344), 39, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(248), 0,
+  UPB_SIZE(192, 352), 40, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(248), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.bootstrap.v3.Bootstrap",
 #endif
@@ -322,25 +325,27 @@ const upb_MiniTable envoy__config__bootstrap__v3__Bootstrap__CertificateProvider
 };
 
 const upb_MiniTable* envoy__config__bootstrap__v3__Bootstrap__CertificateProviderInstancesEntry_msg_init_ptr = &envoy__config__bootstrap__v3__Bootstrap__CertificateProviderInstancesEntry_msg_init;
-static const upb_MiniTableSubInternal envoy_config_bootstrap_v3_Admin__submsgs[3] = {
+static const upb_MiniTableSubInternal envoy_config_bootstrap_v3_Admin__submsgs[4] = {
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__Address_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__SocketOption_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &envoy__config__accesslog__v3__AccessLog_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__StringMatcher_msg_init_ptr},
 };
 
-static const upb_MiniTableField envoy_config_bootstrap_v3_Admin__fields[6] = {
-  {1, UPB_SIZE(24, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {2, 32, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+static const upb_MiniTableField envoy_config_bootstrap_v3_Admin__fields[7] = {
+  {1, UPB_SIZE(28, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(36, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(12, 48), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {4, UPB_SIZE(16, 56), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {5, UPB_SIZE(20, 64), 0, 2, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {6, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {7, UPB_SIZE(24, 72), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__config__bootstrap__v3__Admin_msg_init = {
   &envoy_config_bootstrap_v3_Admin__submsgs[0],
   &envoy_config_bootstrap_v3_Admin__fields[0],
-  UPB_SIZE(40, 72), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(48, 80), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.bootstrap.v3.Admin",
 #endif
@@ -352,7 +357,7 @@ const upb_MiniTable envoy__config__bootstrap__v3__Admin_msg_init = {
     {0x003800003f010022, &upb_prm_1bt_maxmaxb},
     {0x004000003f02002a, &upb_prm_1bt_maxmaxb},
     {0x000900003f000030, &upb_psb1_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x004800003f03003a, &upb_prm_1bt_maxmaxb},
   })
 };
 

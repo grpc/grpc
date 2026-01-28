@@ -32,6 +32,7 @@
 #define ALTS_SERVICE_METHOD "/grpc.gcp.HandshakerService/DoHandshake"
 #define ALTS_APPLICATION_PROTOCOL "grpc"
 #define ALTS_RECORD_PROTOCOL "ALTSRP_GCM_AES128_REKEY"
+#define ALTS_INTEGRITY_ONLY_RECORD_PROTOCOL "ALTSRP_GMAC_128"
 #define ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING "lame"
 
 const size_t kAltsAes128GcmRekeyKeyLength = 44;

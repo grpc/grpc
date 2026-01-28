@@ -16,9 +16,9 @@
 //
 //
 
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/port.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_EV
@@ -39,11 +39,12 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#include "absl/log/log.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/util/strerror.h"
+#include "absl/log/log.h"
 
 static gpr_mu* g_mu;
 static grpc_pollset* g_pollset;
@@ -509,7 +510,9 @@ static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
 }
 
 TEST(FdPosixTest, MainTest) {
-  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled()) {
+  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled() &&
+      !grpc_event_engine::experimental::
+          EventEngineExperimentDisabledForPython()) {
     GTEST_SKIP() << "The event_engine_for_all_other_endpoints experiment is "
                     "enabled, which replaces iomgr grpc_fds with minimal "
                     "implementations. The full iomgr API is not supported, so "

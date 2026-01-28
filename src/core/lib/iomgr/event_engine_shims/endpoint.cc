@@ -24,12 +24,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/extensions/can_track_errors.h"
 #include "src/core/lib/event_engine/extensions/supports_fd.h"
@@ -45,8 +39,14 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/util/construct_destruct.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/string.h"
 #include "src/core/util/sync.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -312,8 +312,9 @@ void EndpointRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
 
 // Write the data from slices and invoke the provided closure asynchronously
 // after the write is complete.
-void EndpointWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                   grpc_closure* cb, void* arg, int max_frame_size) {
+void EndpointWrite(
+    grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb,
+    grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args) {
   auto* eeep =
       reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
           ep);
@@ -323,10 +324,7 @@ void EndpointWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
     return;
   }
 
-  EventEngine::Endpoint::WriteArgs write_args;
-  write_args.SetDeprecatedAndDiscouragedGoogleSpecificPointer(arg);
-  write_args.set_max_frame_size(max_frame_size);
-  if (eeep->wrapper->Write(cb, slices, std::move(write_args))) {
+  if (eeep->wrapper->Write(cb, slices, std::move(args))) {
     // Write succeeded immediately. Run the callback inline.
     eeep->wrapper->FinishPendingWrite(absl::OkStatus());
   }
@@ -414,9 +412,10 @@ EventEngineEndpointWrapper::EventEngineEndpointWrapper(
 }  // namespace
 
 grpc_endpoint* grpc_event_engine_endpoint_create(
-    std::unique_ptr<EventEngine::Endpoint> ee_endpoint) {
-  DCHECK(ee_endpoint != nullptr);
-  auto wrapper = new EventEngineEndpointWrapper(std::move(ee_endpoint));
+    absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ee_endpoint) {
+  GRPC_DCHECK(ee_endpoint.ok()) << ee_endpoint.status();
+  GRPC_DCHECK(ee_endpoint.value() != nullptr);
+  auto wrapper = new EventEngineEndpointWrapper(std::move(ee_endpoint).value());
   return wrapper->GetGrpcEndpoint();
 }
 

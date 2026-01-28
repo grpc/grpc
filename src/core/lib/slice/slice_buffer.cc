@@ -26,8 +26,8 @@
 
 #include <utility>
 
-#include "absl/log/check.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "absl/log/check.h"
 
 namespace grpc_core {
 

@@ -33,13 +33,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/container/inlined_vector.h"
-#include "absl/functional/function_ref.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/meta/type_traits.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/call_filters.h"
 #include "src/core/call/call_finalization.h"
 #include "src/core/call/message.h"
@@ -73,8 +66,15 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
 #include "src/core/util/time.h"
+#include "absl/container/inlined_vector.h"
+#include "absl/functional/function_ref.h"
+#include "absl/log/log.h"
+#include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -196,7 +196,10 @@ struct CallHasAsyncErrorInterceptor<
 template <typename Derived>
 struct CallHasAsyncErrorInterceptor<
     Derived, std::enable_if_t<IsFusedFilter<Derived>::value>> {
-  static constexpr bool value = Derived::FusedFilterHasAsyncErrorInterceptor();
+  // Fused filter types return a promise, which resolves to a
+  // ServerMetadataHandle type. So we assume that an async error interceptor is
+  // always needed.
+  static constexpr bool value = true;
 };
 
 // Given a boolean X export a type:
@@ -284,7 +287,7 @@ auto MapResult(const NoInterceptor*, Promise x, void*) {
 template <typename Promise, typename Derived>
 auto MapResult(absl::Status (Derived::Call::*fn)(ServerMetadata&), Promise x,
                FilterCallData<Derived>* call_data) {
-  DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
+  GRPC_DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
   return OnCancel(Map(std::move(x),
                       [call_data](ServerMetadataHandle md) {
                         auto status =
@@ -305,7 +308,7 @@ auto MapResult(absl::Status (Derived::Call::*fn)(ServerMetadata&), Promise x,
 template <typename Promise, typename Derived>
 auto MapResult(void (Derived::Call::*fn)(ServerMetadata&), Promise x,
                FilterCallData<Derived>* call_data) {
-  DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
+  GRPC_DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
   return OnCancel(Map(std::move(x),
                       [call_data](ServerMetadataHandle md) {
                         call_data->call.OnServerTrailingMetadata(*md);
@@ -322,7 +325,7 @@ auto MapResult(void (Derived::Call::*fn)(ServerMetadata&), Promise x,
 template <typename Promise, typename Derived>
 auto MapResult(void (Derived::Call::*fn)(ServerMetadata&, Derived*), Promise x,
                FilterCallData<Derived>* call_data) {
-  DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
+  GRPC_DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
   return OnCancel(
       Map(std::move(x),
           [call_data](ServerMetadataHandle md) {
@@ -343,7 +346,7 @@ template <typename P, typename Call, typename Derived,
           typename = std::enable_if_t<IsFusedFilter<Derived>::value>>
 auto MapResult(void (Call::*fn)(ServerMetadata&, Derived*), P x,
                FilterCallData<Derived>* call_data) {
-  DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
+  GRPC_DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
   return OnCancel(
       Map(std::move(x),
           [call_data](ServerMetadataHandle md) {
@@ -364,7 +367,7 @@ template <typename P, typename Call, typename Derived,
           typename = std::enable_if_t<IsFusedFilter<Derived>::value>>
 auto MapResult(void (Call::*fn)(ServerMetadata&), P x,
                FilterCallData<Derived>* call_data) {
-  DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
+  GRPC_DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
   return OnCancel(Map(std::move(x),
                       [call_data](ServerMetadataHandle md) {
                         call_data->call.OnServerTrailingMetadata(*md);
@@ -549,7 +552,7 @@ template <typename Interceptor, typename Derived>
 auto RunCall(Interceptor interceptor, CallArgs call_args,
              NextPromiseFactory next_promise_factory,
              FilterCallData<Derived>* call_data) {
-  DCHECK(interceptor == &Derived::Call::OnClientInitialMetadata);
+  GRPC_DCHECK(interceptor == &Derived::Call::OnClientInitialMetadata);
   return RunCallImpl<Interceptor, Derived>::Run(
       std::move(call_args), std::move(next_promise_factory), call_data);
 }
@@ -1245,7 +1248,9 @@ class InvalidChannelFilter : public ChannelFilter {
 };
 
 // Call data shared between all implementations of promise-based filters.
-class BaseCallData : public Activity, private Wakeable {
+class BaseCallData : public Activity,
+                     private Wakeable,
+                     public channelz::DataSource {
  protected:
   // Hook to allow interception of messages on the send/receive path by
   // PipeSender and PipeReceiver, as appropriate according to whether we're
@@ -1270,7 +1275,8 @@ class BaseCallData : public Activity, private Wakeable {
   ~BaseCallData() override;
 
   void set_pollent(grpc_polling_entity* pollent) {
-    CHECK(nullptr == pollent_.exchange(pollent, std::memory_order_release));
+    GRPC_CHECK(nullptr ==
+               pollent_.exchange(pollent, std::memory_order_release));
   }
 
   // Activity implementation (partial).
@@ -1289,6 +1295,8 @@ class BaseCallData : public Activity, private Wakeable {
 
   Call* call() { return arena_->GetContext<Call>(); }
 
+  void AddData(channelz::DataSink sink) final;
+
  protected:
   class ScopedContext : public promise_detail::Context<Arena>,
                         public promise_detail::Context<grpc_polling_entity>,
@@ -1304,16 +1312,14 @@ class BaseCallData : public Activity, private Wakeable {
     }
   };
 
-  class Flusher : public latent_see::InnerScope {
+  class Flusher {
    public:
-    explicit Flusher(BaseCallData* call,
-                     latent_see::Metadata* desc = GRPC_LATENT_SEE_METADATA(
-                         "PromiseBasedFilter::Flusher"));
+    explicit Flusher(BaseCallData* call);
     // Calls closures, schedules batches, relinquishes call combiner.
     ~Flusher();
 
     void Resume(grpc_transport_stream_op_batch* batch) {
-      CHECK(!call_->is_last());
+      GRPC_CHECK(!call_->is_last());
       if (batch->HasOp()) {
         release_.push_back(batch);
       } else if (batch->on_complete != nullptr) {
@@ -1392,7 +1398,7 @@ class BaseCallData : public Activity, private Wakeable {
     PipeSender<MessageHandle>* original_sender() override { abort(); }
 
     void GotPipe(PipeReceiver<MessageHandle>* receiver) override {
-      CHECK_EQ(receiver_, nullptr);
+      GRPC_CHECK_EQ(receiver_, nullptr);
       receiver_ = receiver;
     }
 
@@ -1400,7 +1406,7 @@ class BaseCallData : public Activity, private Wakeable {
 
     PipeSender<MessageHandle>* Push() override { return &pipe_.sender; }
     PipeReceiver<MessageHandle>* Pull() override {
-      CHECK_NE(receiver_, nullptr);
+      GRPC_CHECK_NE(receiver_, nullptr);
       return receiver_;
     }
 
@@ -1421,12 +1427,12 @@ class BaseCallData : public Activity, private Wakeable {
     void GotPipe(PipeReceiver<MessageHandle>*) override { abort(); }
 
     void GotPipe(PipeSender<MessageHandle>* sender) override {
-      CHECK_EQ(sender_, nullptr);
+      GRPC_CHECK_EQ(sender_, nullptr);
       sender_ = sender;
     }
 
     PipeSender<MessageHandle>* Push() override {
-      CHECK_NE(sender_, nullptr);
+      GRPC_CHECK_NE(sender_, nullptr);
       return sender_;
     }
     PipeReceiver<MessageHandle>* Pull() override { return &pipe_.receiver; }
@@ -1468,6 +1474,10 @@ class BaseCallData : public Activity, private Wakeable {
     bool IsIdle() const;
     // Return true if we've released the message for forwarding down the stack.
     bool IsForwarded() const { return state_ == State::kForwardedBatch; }
+
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList().Set("state", StateString(state_));
+    }
 
    private:
     enum class State : uint8_t {
@@ -1541,6 +1551,10 @@ class BaseCallData : public Activity, private Wakeable {
     void WakeInsideCombiner(Flusher* flusher, bool allow_push_to_pipe);
     // Call is completed, we have trailing metadata. Close things out.
     void Done(const ServerMetadata& metadata, Flusher* flusher);
+
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList().Set("state", StateString(state_));
+    }
 
    private:
     enum class State : uint8_t {
@@ -1624,6 +1638,7 @@ class BaseCallData : public Activity, private Wakeable {
   }
   SendMessage* send_message() const { return send_message_; }
   ReceiveMessage* receive_message() const { return receive_message_; }
+  virtual channelz::PropertyList ChannelzProperties() const;
 
   bool is_last() const {
     return grpc_call_stack_element(call_stack_, call_stack_->count - 1) ==
@@ -1705,6 +1720,7 @@ class ClientCallData : public BaseCallData {
   static const char* StateString(SendInitialState);
   static const char* StateString(RecvTrailingState);
   std::string DebugString() const;
+  channelz::PropertyList ChannelzProperties() const override;
 
   struct RecvInitialMetadata;
   class PollContext;
@@ -1821,13 +1837,15 @@ class ServerCallData : public BaseCallData {
   static const char* StateString(RecvInitialState state);
   static const char* StateString(SendTrailingState state);
   std::string DebugString() const;
+  channelz::PropertyList ChannelzProperties() const override;
 
   class PollContext;
   struct SendInitialMetadata;
 
   // Shut things down when the call completes.
-  void Completed(grpc_error_handle error, bool tarpit_cancellation,
-                 Flusher* flusher);
+  void Completed(grpc_error_handle error,
+                 ServerMetadataHandle trailing_metadata,
+                 bool tarpit_cancellation, Flusher* flusher);
   // Construct a promise that will "call" the next filter.
   // Effectively:
   //   - put the modified initial metadata into the batch being sent up.
@@ -1941,7 +1959,7 @@ struct CallDataFilterWithFlagsMethods {
     if ((kFlags & kFilterIsLast) != 0) {
       ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure, absl::OkStatus());
     } else {
-      CHECK_EQ(then_schedule_closure, nullptr);
+      GRPC_CHECK_EQ(then_schedule_closure, nullptr);
     }
   }
 };
@@ -1978,12 +1996,12 @@ template <typename F, uint8_t kFlags>
 struct ChannelFilterWithFlagsMethods {
   static absl::Status InitChannelElem(grpc_channel_element* elem,
                                       grpc_channel_element_args* args) {
-    CHECK(args->is_last == ((kFlags & kFilterIsLast) != 0));
-    auto status = F::Create(
-        args->channel_args,
-        ChannelFilter::Args(args->channel_stack, elem,
-                            grpc_channel_stack_filter_instance_number,
-                            args->old_blackboard, args->new_blackboard));
+    GRPC_CHECK(args->is_last == ((kFlags & kFilterIsLast) != 0));
+    auto status =
+        F::Create(args->channel_args,
+                  ChannelFilter::Args(args->channel_stack, elem,
+                                      grpc_channel_stack_filter_instance_number,
+                                      args->config, args->blackboard));
     if (!status.ok()) {
       new (elem->channel_data) F*(nullptr);
       return absl_status_to_grpc_error(status.status());

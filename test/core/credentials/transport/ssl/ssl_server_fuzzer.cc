@@ -21,16 +21,16 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
-#include "absl/log/check.h"
-#include "absl/synchronization/notification.h"
 #include "fuzztest/fuzztest.h"
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/notification.h"
 #include "test/core/test_util/mock_endpoint.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "absl/synchronization/notification.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
@@ -67,7 +67,7 @@ void SslServerTest(std::vector<uint8_t> buffer) {
     // Create security connector
     grpc_core::RefCountedPtr<grpc_server_security_connector> sc =
         creds->create_security_connector(grpc_core::ChannelArgs());
-    CHECK(sc != nullptr);
+    GRPC_CHECK(sc != nullptr);
     grpc_core::Timestamp deadline =
         grpc_core::Duration::Seconds(1) + grpc_core::Timestamp::Now();
 
@@ -82,7 +82,7 @@ void SslServerTest(std::vector<uint8_t> buffer) {
                                channel_args, deadline, nullptr /* acceptor */,
                                [&](absl::StatusOr<HandshakerArgs*> result) {
                                  // The fuzzer should not pass the handshake.
-                                 CHECK(!result.ok());
+                                 GRPC_CHECK(!result.ok());
                                  handshake_completed.Notify();
                                });
     grpc_core::ExecCtx::Get()->Flush();

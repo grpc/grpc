@@ -24,13 +24,13 @@
 #include <string>
 #include <vector>
 
+#include "constants.h"
+#include "sampler.h"
+#include "src/core/lib/channel/channel_stack.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "constants.h"
-#include "sampler.h"
-#include "src/core/lib/channel/channel_stack.h"
 
 namespace grpc_observability {
 
@@ -209,11 +209,11 @@ class Span final {
 };
 
 // PythonCensusContext is associated with each clientCallTracer,
-// clientCallAttemptTracer and ServerCallTracer to help manage the span,
-// spanContext and labels for each tracer. Create a new PythonCensusContext will
-// always result in creating a new span (and a new SpanContext for that span).
-// It's created during callTracer initialization and will be destroyed after
-// the destruction of each callTracer.
+// clientCallAttemptTracer and ServerCallTracerInterface to help manage the
+// span, spanContext and labels for each tracer. Create a new
+// PythonCensusContext will always result in creating a new span (and a new
+// SpanContext for that span). It's created during callTracer initialization and
+// will be destroyed after the destruction of each callTracer.
 class PythonCensusContext {
  public:
   PythonCensusContext() : span_(Span::BlankSpan()), labels_({}) {}

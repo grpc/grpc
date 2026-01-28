@@ -25,17 +25,17 @@
 #include <utility>
 #include <variant>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/string_view.h"
 #include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/call/message.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/transport/chttp2/http2_common_test_inputs.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -77,32 +77,36 @@ void AssemblerFuzzer(
       // To avoid this test DCHECK, we are always passing is_end_stream as
       // false. Consider computing the index of the last index payload in each
       // step and setting is_end_stream to true for the last payload.
-      absl::Status result =
+      Http2Status result =
           assembler.AppendNewDataFrame(payload, /*is_end_stream=*/false);
       VLOG(3) << "      AssemblerFuzzer AppendNewDataFrame result: " << result;
       EXPECT_EQ(payload.Length(), 0);
     } else {
-      CHECK(std::holds_alternative<uint8_t>(step));
+      GRPC_CHECK(std::holds_alternative<uint8_t>(step));
       const uint8_t num_msgs = std::get<uint8_t>(step);
       LOG(INFO) << "    AssemblerFuzzer Extract : { Step:" << count_steps
                 << ", Number of extracts: " << static_cast<int>(num_msgs)
                 << " }";
       for (uint8_t count_msgs = 0; count_msgs < num_msgs; count_msgs++) {
-        absl::StatusOr<MessageHandle> result = assembler.ExtractMessage();
-        if (!result.ok()) {
+        ValueOrHttp2Status<MessageHandle> result = assembler.ExtractMessage();
+        if (!result.IsOk()) {
           // The fuzzing input did not have the right amount of bytes.
           // While this would be a bug for real transport code, for a fuzz test
           // getting an error is expected.
-          LOG(INFO) << "    AssemblerFuzzer Extract Error: " << result.status();
-          break;
-        } else if (*result == nullptr) {
-          // It is rare to reach this point when running with a fuzzer.
-          // We reach here if there is no more data to extract.
-          LOG(INFO) << "    AssemblerFuzzer Extract : No more data";
+          LOG(INFO) << "    AssemblerFuzzer Extract Error: "
+                    << result.DebugString();
           break;
         } else {
-          LOG(INFO) << "    AssemblerFuzzer Extracted "
-                    << (*result)->payload()->Length() << " Bytes";
+          MessageHandle message = TakeValue(std::move(result));
+          if (message == nullptr) {
+            // It is rare to reach this point when running with a fuzzer.
+            // We reach here if there is no more data to extract.
+            LOG(INFO) << "    AssemblerFuzzer Extract : No more data";
+            break;
+          } else {
+            LOG(INFO) << "    AssemblerFuzzer Extracted "
+                      << message->payload()->Length() << " Bytes";
+          }
         }
       }
     }
@@ -132,7 +136,7 @@ void AssemblerFuzzer(
   //    std::vector<uint8_t> bytes,
   //    std::vector<size_t> span_lengths1,
   //    std::vector<size_t> span_lengths2) {
-  //        CHECK_EQ(
+  //        GRPC_CHECK_EQ(
   //            PushSegmentsAndPullMessages(Split(bytes, span_lengths1)),
   //            PushSegmentsAndPullMessages(Split(bytes, span_lengths2)));
   //    }

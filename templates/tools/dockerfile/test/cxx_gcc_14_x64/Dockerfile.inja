@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM gcc:14
+# SHA is pinned to avoid unintended updates to Python
+FROM gcc:14@sha256:5e927c284bf55a7dc796262e311a0703344f62f41f5621eb56843111b1d37e15
 
 RUN apt-get update && apt-get install -y curl git time wget zip && apt-get clean
 {% include "../../git_avoid_dubious_ownership_error.include" %}

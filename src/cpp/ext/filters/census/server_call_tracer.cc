@@ -19,6 +19,7 @@
 #include "src/cpp/ext/filters/census/server_call_tracer.h"
 
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpcpp/opencensus.h>
 #include <stdint.h>
@@ -31,11 +32,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
 #include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
 #include "opencensus/tags/tag_map.h"
@@ -52,9 +48,15 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/grpc_check.h"
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/measures.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 namespace grpc {
 namespace internal {
@@ -92,7 +94,7 @@ void FilterInitialMetadata(grpc_metadata_batch* b,
 
 // OpenCensusServerCallTracer implementation
 
-class OpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
+class OpenCensusServerCallTracer : public grpc_core::ServerCallTracerInterface {
  public:
   // Maximum size of server stats that are sent on the wire.
   static constexpr uint32_t kMaxServerStatsLen = 16;
@@ -113,6 +115,12 @@ class OpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
   // Please refer to `grpc_transport_stream_op_batch_payload` for details on
   // arguments.
   void RecordSendInitialMetadata(
+      grpc_metadata_batch* send_initial_metadata) override {
+    GRPC_CHECK(
+        !grpc_core::IsCallTracerSendInitialMetadataIsAnAnnotationEnabled());
+    MutateSendInitialMetadata(send_initial_metadata);
+  }
+  void MutateSendInitialMetadata(
       grpc_metadata_batch* /*send_initial_metadata*/) override {}
 
   void RecordSendTrailingMetadata(
@@ -167,6 +175,13 @@ class OpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
   }
 
   void RecordAnnotation(const Annotation& annotation) override {
+    if (annotation.type() == grpc_core::CallTracerAnnotationInterface::
+                                 AnnotationType::kSendInitialMetadata) {
+      // Census does not have any immutable tracing for send initial metadata.
+      // All Census work for send initial metadata is mutation, which is handled
+      // in MutateSendInitialMetadata.
+      return;
+    }
     if (!context_.Span().IsRecording()) {
       return;
     }
@@ -293,7 +308,7 @@ void OpenCensusServerCallTracer::RecordOutgoingBytes(
 // OpenCensusServerCallTracerFactory
 //
 
-grpc_core::ServerCallTracer*
+grpc_core::ServerCallTracerInterface*
 OpenCensusServerCallTracerFactory::CreateNewServerCallTracer(
     grpc_core::Arena* arena, const grpc_core::ChannelArgs& /*args*/) {
   return arena->ManagedNew<OpenCensusServerCallTracer>();

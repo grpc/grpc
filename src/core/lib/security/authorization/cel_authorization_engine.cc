@@ -21,11 +21,11 @@
 #include <optional>
 #include <utility>
 
+#include "upb/base/string_view.h"
+#include "upb/message/map.h"
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
-#include "upb/base/string_view.h"
-#include "upb/message/map.h"
 
 namespace grpc_core {
 

@@ -48,14 +48,22 @@ grpc_core::Transport* grpc_create_chttp2_transport(
 
 /// Takes ownership of \a read_buffer, which (if non-NULL) contains
 /// leftover bytes previously read from the endpoint (e.g., by handshakers).
+///
 /// If non-null, \a notify_on_receive_settings will be scheduled when
-/// HTTP/2 settings are received from the peer.
+/// HTTP/2 settings are received from the peer.  The argument will be
+/// the peer's MAX_CONCURRENT_STREAMS setting.
+///
 /// If non-null, the endpoint will be removed from
 /// interested_parties_until_recv_settings before
 /// notify_on_receive_settings is invoked.
+//
+// TODO(roth): Consider using the new StateWatcher API in the connector
+// code instead of supporting notify_on_receive_settings and
+// notify_on_close here.  This might be easier after pollset_set goes away.
 void grpc_chttp2_transport_start_reading(
     grpc_core::Transport* transport, grpc_slice_buffer* read_buffer,
-    grpc_closure* notify_on_receive_settings,
+    absl::AnyInvocable<void(absl::StatusOr<uint32_t>)>
+        notify_on_receive_settings,
     grpc_pollset_set* interested_parties_until_recv_settings,
     grpc_closure* notify_on_close);
 
@@ -79,13 +87,10 @@ void TestOnlyGlobalHttp2TransportDisableTransientFailureStateNotification(
 
 typedef void (*WriteTimestampsCallback)(void*, Timestamps*,
                                         grpc_error_handle error);
-typedef void* (*CopyContextFn)(Arena*);
 
 void GrpcHttp2SetWriteTimestampsCallback(WriteTimestampsCallback fn);
-void GrpcHttp2SetCopyContextFn(CopyContextFn fn);
 
 WriteTimestampsCallback GrpcHttp2GetWriteTimestampsCallback();
-CopyContextFn GrpcHttp2GetCopyContextFn();
 
 // Interprets the passed arg as a ContextList type and for each entry in the
 // passed ContextList, it executes the function set using
@@ -130,6 +135,8 @@ class HttpAnnotation : public CallTracerAnnotationInterface::Annotation {
   }
 
   std::string ToString() const override;
+  void ForEachKeyValue(
+      absl::FunctionRef<void(absl::string_view, ValueType)> f) const override;
 
   Type http_type() const { return type_; }
   gpr_timespec time() const { return time_; }

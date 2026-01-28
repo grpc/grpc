@@ -18,17 +18,17 @@
 #include <thread>
 #include <vector>
 
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/ref_counted.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 namespace {
 
 TEST(SingleSetPtrTest, NoOp) { SingleSetPtr<int>(); }
 
-TEST(SingleSetPtrTest, CanSet) {
+TEST(SingleSetPtrDeathTest, CanSet) {
   SingleSetPtr<int> p;
   EXPECT_FALSE(p.is_set());
   EXPECT_DEATH_IF_SUPPORTED({ LOG(ERROR) << *p; }, "");

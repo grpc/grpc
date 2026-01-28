@@ -23,12 +23,12 @@
 #include <utility>
 #include <vector>
 
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/no_destruct.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gtest/gtest.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace {
@@ -127,8 +127,8 @@ void HpackSize(CoreEnd2endTest& test, int encode_size, int decode_size) {
   // TODO(ctiller): right now the hpack encoder isn't compressing these, so this
   // test doesn't do what we want - which is to test overflow the hpack table
   // slot count.
-  test.InitServer(
-      ChannelArgs().Set(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER, decode_size));
+  test.InitServer(CoreEnd2endTest::DefaultServerArgs().Set(
+      GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER, decode_size));
   test.InitClient(
       ChannelArgs().Set(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER, encode_size));
   for (size_t i = 0; i < 4 * hobbits->size(); i++) {
@@ -209,7 +209,11 @@ CORE_END2END_TEST(Http2SingleHopTests, Encode4096Decode4194304) {
   HpackSize(*this, 4096, 4194304);
 }
 CORE_END2END_TEST(Http2SingleHopTests, Encode32768Decode0) {
+  // TODO(tjagtap) : [PH2][P1] : Remove once E2E is fixed.
+  EnableLoggingForPH2Tests();
   HpackSize(*this, 32768, 0);
+  // TODO(tjagtap) : [PH2][P1] : Remove once E2E is fixed.
+  DisableLoggingForPH2Tests();
 }
 CORE_END2END_TEST(Http2SingleHopTests, Encode32768Decode100) {
   HpackSize(*this, 32768, 100);
@@ -224,7 +228,11 @@ CORE_END2END_TEST(Http2SingleHopTests, Encode32768Decode32768) {
   HpackSize(*this, 32768, 32768);
 }
 CORE_END2END_TEST(Http2SingleHopTests, Encode32768Decode4194304) {
+  // TODO(tjagtap) : [PH2][P1] : Remove once E2E is fixed.
+  EnableLoggingForPH2Tests();
   HpackSize(*this, 32768, 4194304);
+  // TODO(tjagtap) : [PH2][P1] : Remove once E2E is fixed.
+  DisableLoggingForPH2Tests();
 }
 CORE_END2END_TEST(Http2SingleHopTests, Encode4194304Decode0) {
   HpackSize(*this, 4194304, 0);

@@ -18,7 +18,13 @@ Contains build targets used by Starlark files in the bazel/ directory.
 
 licenses(["notice"])
 
-package(default_visibility = ["//:__subpackages__"])
+package(
+    default_visibility = ["//:__subpackages__"],
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 filegroup(
     name = "_single_module_tester",
@@ -33,6 +39,11 @@ filegroup(
 filegroup(
     name = "_logging_threshold_test_main",
     srcs = ["_logging_threshold_test_main.py"],
+)
+
+filegroup(
+    name = "_run_time_type_check_main",
+    srcs = ["_run_time_type_check_main.py"],
 )
 
 ###############################################################################
@@ -61,11 +72,18 @@ package_group(
 
 package_group(
     name = "channelz",
-    packages = [],
+    packages = [
+        "//...",
+    ],
 )
 
 package_group(
     name = "cli",
+    packages = [],
+)
+
+package_group(
+    name = "sleuth",
     packages = [],
 )
 
@@ -170,6 +188,11 @@ package_group(
 )
 
 package_group(
+    name = "xds_client_grpc",
+    packages = [],
+)
+
+package_group(
     name = "grpc_python_observability",
     packages = [],
 )
@@ -213,4 +236,20 @@ package_group(
     name = "core_end2end_tests",
     packages = [
     ],
+)
+
+package_group(
+    name = "end2end_test_utils",
+    packages = [
+    ],
+)
+
+package_group(
+    name = "socket_mutator",
+    packages = [],
+)
+
+package_group(
+    name = "transport_common",
+    packages = [],
 )

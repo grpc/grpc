@@ -26,12 +26,12 @@
 
 #include <memory>
 
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/slice_splitter.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 typedef enum { ONE_A = 0, ONE_KB_A, ONE_MB_A, TEST_VALUE_COUNT } test_value;
 

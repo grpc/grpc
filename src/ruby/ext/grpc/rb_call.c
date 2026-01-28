@@ -23,7 +23,6 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "rb_byte_buffer.h"
 #include "rb_call_credentials.h"
@@ -808,12 +807,6 @@ struct call_run_batch_args {
   run_batch_stack* st;
 };
 
-static void cancel_call_unblock_func(void* arg) {
-  grpc_absl_log(GPR_DEBUG, "GRPC_RUBY: cancel_call_unblock_func");
-  grpc_call* call = (grpc_call*)arg;
-  grpc_call_cancel(call, NULL);
-}
-
 static VALUE grpc_rb_call_run_batch_try(VALUE value_args) {
   grpc_rb_fork_unsafe_begin();
   struct call_run_batch_args* args = (struct call_run_batch_args*)value_args;
@@ -836,8 +829,7 @@ static VALUE grpc_rb_call_run_batch_try(VALUE value_args) {
              grpc_call_error_detail_of(err), err);
   }
   ev = rb_completion_queue_pluck(args->call->queue, tag,
-                                 gpr_inf_future(GPR_CLOCK_REALTIME),
-                                 cancel_call_unblock_func, args->call->wrapped);
+                                 gpr_inf_future(GPR_CLOCK_REALTIME), "call op");
   if (!ev.success) {
     rb_raise(grpc_rb_eCallError, "call#run_batch failed somehow");
   }

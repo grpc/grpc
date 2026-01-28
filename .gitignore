@@ -18,11 +18,14 @@ dist/
 htmlcov/
 py3*/
 pyb/
-python_pylint_venv/
 src/python/grpcio_*/=*
 src/python/grpcio_*/build/
 src/python/grpcio_*/LICENSE
 src/python/grpcio_status/grpc_status/google/rpc/status.proto
+.venv
+# TODO(sergiitk): conform all "named" virtual environments to .venv-*
+.venv-*
+python_pylint_venv/
 black_virtual_environment/
 isort_virtual_environment/
 

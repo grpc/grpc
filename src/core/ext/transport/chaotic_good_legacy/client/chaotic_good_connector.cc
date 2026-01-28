@@ -21,11 +21,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/random/bit_gen_ref.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "src/core/client_channel/client_channel_factory.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/config/core_configuration.h"
@@ -62,9 +57,14 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
+#include "absl/log/log.h"
+#include "absl/random/bit_gen_ref.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 using grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using grpc_event_engine::experimental::EventEngine;
@@ -216,13 +216,15 @@ auto ConnectChaoticGood(EventEngine::ResolvedAddress addr,
 
 void ChaoticGoodConnector::Connect(const Args& args, Result* result,
                                    grpc_closure* notify) {
+  // TODO(ctiller): Figure out a better value to use here.
+  result->max_concurrent_streams = std::numeric_limits<uint32_t>::max();
   auto event_engine = args.channel_args.GetObjectRef<EventEngine>();
   auto arena = SimpleArenaAllocator(0)->MakeArena();
   auto result_notifier = std::make_unique<ResultNotifier>(args, result, notify);
   arena->SetContext(event_engine.get());
   auto resolved_addr = EventEngine::ResolvedAddress(
       reinterpret_cast<const sockaddr*>(args.address->addr), args.address->len);
-  CHECK_NE(resolved_addr.address(), nullptr);
+  GRPC_CHECK_NE(resolved_addr.address(), nullptr);
   auto* result_notifier_ptr = result_notifier.get();
   auto activity = MakeActivity(
       [result_notifier_ptr, resolved_addr]() mutable {

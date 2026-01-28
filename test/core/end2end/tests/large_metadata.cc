@@ -22,11 +22,11 @@
 
 #include <string>
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace {
@@ -36,7 +36,12 @@ class LargeMetadataTest {
   LargeMetadataTest(CoreEnd2endTest& test, const ChannelArgs& args)
       : test_(test) {
     test_.InitClient(args);
-    test_.InitServer(args);
+    // TODO(b/424667351) : Remove ping timeout channel arg after fixing.
+    // This is a workaround for the flakiness that arises when a server is
+    // trying to gracefully shutdown, and waiting for a ping response from the
+    // client. In the failure cases, the client sockets are already shutdown
+    // with the notification not reaching the server socket.
+    test_.InitServer(args.Set(GRPC_ARG_PING_TIMEOUT_MS, 5000));
   }
 
   int PerformRequests(size_t metadata_size, int count) {

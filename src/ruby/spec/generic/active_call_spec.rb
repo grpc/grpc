@@ -60,8 +60,8 @@ describe GRPC::ActiveCall do
 
   after(:each) do
     @server.shutdown_and_notify(deadline)
-    @server.close
     @server_thread.join
+    @server.close
     # Don't rely on GC to unref the call, since that can prevent
     # the channel connectivity state polling thread from shutting down.
     @call.close

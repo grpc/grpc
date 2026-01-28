@@ -37,15 +37,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-#include "absl/strings/strip.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/insecure/insecure_credentials.h"
@@ -63,6 +54,7 @@
 #include "src/core/lib/event_engine/extensions/supports_fd.h"
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -82,6 +74,7 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -90,6 +83,14 @@
 #include "src/core/util/time.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/uri.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -206,24 +207,20 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
 }
 
 void NewChttp2ServerListener::ActiveConnection::HandshakingState::
-    OnReceiveSettings(void* arg, grpc_error_handle /* error */) {
-  HandshakingState* self = static_cast<HandshakingState*>(arg);
-  self->connection_->work_serializer_.Run(
-      [self] {
+    OnReceiveSettings() {
+  connection_->work_serializer_.Run(
+      [self = Ref()] {
         if (self->timer_handle_.has_value()) {
           self->connection_->listener_state_->event_engine()->Cancel(
               *self->timer_handle_);
           self->timer_handle_.reset();
         }
-        self->Unref();
       },
       DEBUG_LOCATION);
 }
 
 void NewChttp2ServerListener::ActiveConnection::HandshakingState::
     OnHandshakeDoneLocked(absl::StatusOr<HandshakerArgs*> result) {
-  OrphanablePtr<HandshakingState> handshaking_state_ref;
-  RefCountedPtr<HandshakeManager> handshake_mgr;
   // If the handshaking succeeded but there is no endpoint, then the
   // handshaker may have handed off the connection to some external
   // code, so we can just clean up here without creating a transport.
@@ -234,22 +231,22 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
                                      std::move((*result)->endpoint), false)
             ->Ref();
     grpc_error_handle channel_init_err =
-        connection_->listener_state_->server()->SetupTransport(
+        connection_->listener_state_->SetupTransport(
             transport.get(), accepting_pollset_, (*result)->args);
     if (channel_init_err.ok()) {
       // Use notify_on_receive_settings callback to enforce the
       // handshake deadline.
       connection_->state_ =
           DownCast<grpc_chttp2_transport*>(transport.get())->Ref();
-      Ref().release();  // Held by OnReceiveSettings().
-      GRPC_CLOSURE_INIT(&on_receive_settings_, OnReceiveSettings, this,
-                        grpc_schedule_on_exec_ctx);
       grpc_closure* on_close = &connection_->on_close_;
-      // Refs helds by OnClose()
+      // Refs held by OnClose()
       connection_->Ref().release();
       grpc_chttp2_transport_start_reading(
           transport.get(), (*result)->read_buffer.c_slice_buffer(),
-          &on_receive_settings_, nullptr, on_close);
+          [self = Ref()](absl::StatusOr<uint32_t>) {
+            self->OnReceiveSettings();
+          },
+          nullptr, on_close);
       timer_handle_ = connection_->listener_state_->event_engine()->RunAfter(
           deadline_ - Timestamp::Now(), [self = Ref()]() mutable {
             // HandshakingState deletion might require an active ExecCtx.
@@ -522,7 +519,7 @@ void NewChttp2ServerListener::Start() {
       LOG(ERROR) << "Error adding port to server: " << StatusToString(error);
       // TODO(yashykt): We wouldn't need to assert here if we bound to the
       // port earlier during AddPort.
-      CHECK(0);
+      GRPC_CHECK(0);
     }
   }
   if (tcp_server != nullptr) {
@@ -649,7 +646,9 @@ absl::StatusOr<int> Chttp2ServerAddPort(Server* server, const char* addr,
       resolved = grpc_resolve_vsock_address(parsed_addr_unprefixed);
       GRPC_RETURN_IF_ERROR(resolved.status());
     } else {
-      if (IsEventEngineDnsNonClientChannelEnabled()) {
+      if (IsEventEngineDnsNonClientChannelEnabled() &&
+          !grpc_event_engine::experimental::
+              EventEngineExperimentDisabledForPython()) {
         absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>> ee_resolver =
             args.GetObjectRef<EventEngine>()->GetDNSResolver(
                 EventEngine::DNSResolver::ResolverOptions());
@@ -691,7 +690,7 @@ absl::StatusOr<int> Chttp2ServerAddPort(Server* server, const char* addr,
         if (port_num == -1) {
           port_num = port_temp;
         } else {
-          CHECK(port_num == port_temp);
+          GRPC_CHECK(port_num == port_temp);
         }
       }
     }
@@ -721,7 +720,7 @@ namespace experimental {
 
 absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
     std::unique_ptr<EventEngine::Endpoint> endpoint) {
-  CHECK_NE(server_.get(), nullptr);
+  GRPC_CHECK_NE(server_.get(), nullptr);
   RefCountedPtr<NewChttp2ServerListener> new_listener;
   {
     MutexLock lock(&mu_);
@@ -741,7 +740,7 @@ absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
 }
 
 absl::Status PassiveListenerImpl::AcceptConnectedFd(int fd) {
-  CHECK_NE(server_.get(), nullptr);
+  GRPC_CHECK_NE(server_.get(), nullptr);
   ExecCtx exec_ctx;
   auto& args = server_->channel_args();
   auto* supports_fd = QueryExtension<EventEngineSupportsFdExtension>(
@@ -753,7 +752,10 @@ absl::Status PassiveListenerImpl::AcceptConnectedFd(int fd) {
   }
   auto endpoint =
       supports_fd->CreateEndpointFromFd(fd, ChannelArgsEndpointConfig(args));
-  return AcceptConnectedEndpoint(std::move(endpoint));
+  if (!endpoint.ok()) {
+    return std::move(endpoint).status();
+  }
+  return AcceptConnectedEndpoint(std::move(endpoint).value());
 }
 
 void PassiveListenerImpl::ListenerDestroyed() {
@@ -808,7 +810,7 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
 
 void grpc_server_add_channel_from_fd(grpc_server* /* server */, int /* fd */,
                                      grpc_server_credentials* /* creds */) {
-  CHECK(0);
+  GRPC_CHECK(0);
 }
 
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD

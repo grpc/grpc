@@ -22,20 +22,22 @@
 #include <cstdint>
 #include <type_traits>
 
-#include "absl/container/flat_hash_map.h"
 #include "src/core/call/call_destination.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "absl/container/flat_hash_map.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -66,6 +68,15 @@ class Http2ServerTransport final : public ServerTransport {
   // is complete.
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
+
+  void StartWatch(RefCountedPtr<StateWatcher>) override {
+    // TODO(roth): Implement as part of migrating server side to new
+    // watcher API.
+  }
+  void StopWatch(RefCountedPtr<StateWatcher>) override {
+    // TODO(roth): Implement as part of migrating server side to new
+    // watcher API.
+  }
 
   void SetCallDestination(
       RefCountedPtr<UnstartedCallDestination> call_destination) override;
@@ -110,7 +121,6 @@ class Http2ServerTransport final : public ServerTransport {
   PromiseEndpoint endpoint_;
   Http2SettingsManager settings_;
 
-  // TODO(tjagtap) : [PH2][P3] : This is not nice. Fix by using Stapler.
   Http2FrameHeader current_frame_header_;
 
   struct Stream : public RefCounted<Stream> {
@@ -137,14 +147,14 @@ class Http2ServerTransport final : public ServerTransport {
     LOG(INFO) << "Http2ServerTransport::CloseStream for stream id=" << stream_id
               << " status=" << status << " location=" << whence.file() << ":"
               << whence.line();
-    // TODO(akshitpatel) : [PH2][P1] : Implement this.
+    // TODO(akshitpatel) : [PH2][P2] : Implement this.
   }
 
   // This function is supposed to be idempotent.
   void CloseTransport(const Http2Status& status, DebugLocation whence = {}) {
     LOG(INFO) << "Http2ClientTransport::CloseTransport status=" << status
               << " location=" << whence.file() << ":" << whence.line();
-    // TODO(akshitpatel) : [PH2][P1] : Implement this.
+    // TODO(akshitpatel) : [PH2][P2] : Implement this.
   }
 
   // Handles the error status and returns the corresponding absl status. Absl
@@ -157,7 +167,7 @@ class Http2ServerTransport final : public ServerTransport {
   // corresponding (failed) absl status.
   absl::Status HandleError(Http2Status status, DebugLocation whence = {}) {
     auto error_type = status.GetType();
-    DCHECK(error_type != Http2Status::Http2ErrorType::kOk);
+    GRPC_DCHECK(error_type != Http2Status::Http2ErrorType::kOk);
 
     if (error_type == Http2Status::Http2ErrorType::kStreamError) {
       CloseStream(current_frame_header_.stream_id, status.GetAbslStreamError(),
@@ -171,20 +181,18 @@ class Http2ServerTransport final : public ServerTransport {
     GPR_UNREACHABLE_CODE(return absl::InternalError("Invalid error type"));
   }
 
-  // TODO(tjagtap) : [PH2][P1] : Either use this in code or delete it.
+  // TODO(tjagtap) : [PH2][P2] : Either use this in code or delete it.
   // uint32_t next_stream_id_ ABSL_GUARDED_BY(transport_mutex_) = 1;
-  // TODO(tjagtap) : [PH2][P1] : Either use this in code or delete it. This was
+  // TODO(tjagtap) : [PH2][P2] : Either use this in code or delete it. This was
   // copied from Chaotic Good.
   // uint32_t last_seen_new_stream_id_ = 0;
 
-  // TODO(tjagtap) : [PH2][P1] : Implement if needed.
+  // TODO(tjagtap) : [PH2][P2] : Implement if needed.
   // uint32_t MakeStream(CallHandler call_handler);
-  // TODO(tjagtap) : [PH2][P1] : Implement if needed.
+  // TODO(tjagtap) : [PH2][P2] : Implement if needed.
   // RefCountedPtr<Http2ServerTransport::Stream> LookupStream(uint32_t
   // stream_id);
 };
-
-GRPC_CHECK_CLASS_SIZE(Http2ServerTransport, 240);
 
 }  // namespace http2
 }  // namespace grpc_core

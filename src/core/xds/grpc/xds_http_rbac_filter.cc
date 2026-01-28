@@ -25,9 +25,6 @@
 #include <utility>
 #include <variant>
 
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/rbac/v3/rbac.upb.h"
 #include "envoy/config/route/v3/route_components.upb.h"
@@ -55,6 +52,9 @@
 #include "upb/base/string_view.h"
 #include "upb/message/array.h"
 #include "upb/message/map.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -569,8 +569,8 @@ XdsHttpRbacFilter::GenerateFilterConfigOverride(
   return FilterConfig{OverrideConfigProtoName(), std::move(rbac_json)};
 }
 
-void XdsHttpRbacFilter::AddFilter(InterceptionChainBuilder& builder) const {
-  builder.Add<RbacFilter>();
+void XdsHttpRbacFilter::AddFilter(FilterChainBuilder& builder) const {
+  builder.AddFilter<RbacFilter>(nullptr);
 }
 
 const grpc_channel_filter* XdsHttpRbacFilter::channel_filter() const {

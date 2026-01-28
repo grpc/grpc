@@ -32,24 +32,28 @@ import tempfile
 class DataMember:
     name: str  # name of the data member without the trailing '_'
     type: str  # Type (eg. std::string, bool)
+
     test_name: str  # The name to use for the associated test
     test_value_1: str  # Test-specific value to use for comparison
     test_value_2: str  # Test-specific value (different from test_value_1)
-    default_initializer: str = (  # If non-empty, this will be used as the default initialization of this field
-        ""
-    )
-    getter_comment: str = ""  # Comment to add before the getter for this field
-    special_getter_return_type: str = (  # Override for the return type of getter (eg. const std::string&)
-        ""
-    )
-    override_getter: str = (  # Override for the entire getter method. Relevant for certificate_verifier and certificate_provider
-        ""
-    )
-    setter_comment: str = ""  # Commend to add before the setter for this field
+
+    # If non-empty, this will be used as the default initialization
+    # of this field.
+    default_initializer: str = ""
+
+    # Comment to add before the getter for this field
+    getter_comment: str = ""
+    # Override for the return type of getter (eg. const std::string&)
+    special_getter_return_type: str = ""
+    # Override for the entire getter method.
+    # Relevant for certificate_verifier and certificate_provider.
+    override_getter: str = ""
+
+    setter_comment: str = ""  # Comment to add before the setter for this field
     setter_move_semantics: bool = False  # Should the setter use move-semantics
-    special_comparator: str = (  # If non-empty, this will be used in `operator==`
-        ""
-    )
+
+    # If non-empty, this will be used in `operator==`
+    special_comparator: str = ""
 
 
 _DATA_MEMBERS = [
@@ -101,7 +105,7 @@ _DATA_MEMBERS = [
         ),
         test_name="DifferentCertificateVerifier",
         test_value_1="MakeRefCounted<HostNameCertificateVerifier>()",
-        test_value_2="MakeRefCounted<XdsCertificateVerifier>(nullptr)",
+        test_value_2='MakeRefCounted<XdsCertificateVerifier>(nullptr, "")',
     ),
     DataMember(
         name="check_call_host",
@@ -238,6 +242,18 @@ _DATA_MEMBERS = [
         test_value_1="false",
         test_value_2="true",
     ),
+    DataMember(
+        name="sni_override",
+        type="std::optional<std::string>",
+        setter_move_semantics=True,
+        setter_comment=(
+            "If set to nullopt, do not override. If set to empty string, disable sending SNI. Otherwise, override SNI"
+        ),
+        test_name="DifferentSniOverride",
+        test_value_1='"sni_override_1"',
+        test_value_2='"sni_override_2"',
+        special_getter_return_type="const std::optional<std::string>&",
+    ),
 ]
 
 
@@ -337,9 +353,11 @@ for data_member in _DATA_MEMBERS:
         print(
             "  %s %s() const { return %s; }"
             % (
-                data_member.special_getter_return_type
-                if data_member.special_getter_return_type != ""
-                else data_member.type,
+                (
+                    data_member.special_getter_return_type
+                    if data_member.special_getter_return_type != ""
+                    else data_member.type
+                ),
                 data_member.name,
                 data_member.name + "_",
             ),

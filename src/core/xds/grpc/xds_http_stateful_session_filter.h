@@ -21,8 +21,6 @@
 
 #include <optional>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/util/validation_errors.h"
@@ -30,6 +28,8 @@
 #include "src/core/xds/grpc/xds_http_filter.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "upb/reflection/def.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -46,7 +46,7 @@ class XdsHttpStatefulSessionFilter final : public XdsHttpFilterImpl {
       absl::string_view /*instance_name*/,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const override;
-  void AddFilter(InterceptionChainBuilder& builder) const override;
+  void AddFilter(FilterChainBuilder& builder) const override;
   const grpc_channel_filter* channel_filter() const override;
   ChannelArgs ModifyChannelArgs(const ChannelArgs& args) const override;
   absl::StatusOr<ServiceConfigJsonEntry> GenerateMethodConfig(

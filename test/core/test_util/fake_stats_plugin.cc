@@ -14,8 +14,8 @@
 
 #include "test/core/test_util/fake_stats_plugin.h"
 
-#include "absl/log/check.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 
@@ -23,7 +23,7 @@ class FakeStatsClientFilter : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::string_view TypeName() { return "fake_stats_client"; }
+  static absl::string_view TypeName() { return "legacy_fake_stats_client"; }
 
   explicit FakeStatsClientFilter(
       FakeClientCallTracerFactory* fake_client_call_tracer_factory);
@@ -47,7 +47,7 @@ FakeStatsClientFilter::Create(const ChannelArgs& args,
   auto* fake_client_call_tracer_factory =
       args.GetPointer<FakeClientCallTracerFactory>(
           GRPC_ARG_INJECT_FAKE_CLIENT_CALL_TRACER_FACTORY);
-  CHECK_NE(fake_client_call_tracer_factory, nullptr);
+  GRPC_CHECK_NE(fake_client_call_tracer_factory, nullptr);
   return std::make_unique<FakeStatsClientFilter>(
       fake_client_call_tracer_factory);
 }
@@ -57,7 +57,8 @@ ArenaPromise<ServerMetadataHandle> FakeStatsClientFilter::MakeCallPromise(
   FakeClientCallTracer* client_call_tracer =
       fake_client_call_tracer_factory_->CreateFakeClientCallTracer();
   if (client_call_tracer != nullptr) {
-    SetContext<CallTracerAnnotationInterface>(client_call_tracer);
+    SetContext<CallSpan>(
+        WrapClientCallTracer(client_call_tracer, GetContext<Arena>()));
   }
   return next_promise_factory(std::move(call_args));
 }
@@ -85,7 +86,7 @@ namespace {
 void AddKeyValuePairs(absl::Span<const absl::string_view> keys,
                       absl::Span<const absl::string_view> values,
                       std::vector<std::string>* key_value_pairs) {
-  CHECK(keys.size() == values.size());
+  GRPC_CHECK(keys.size() == values.size());
   for (size_t i = 0; i < keys.size(); ++i) {
     key_value_pairs->push_back(absl::StrCat(keys[i], "=", values[i]));
   }

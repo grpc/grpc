@@ -27,14 +27,14 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/util/sync.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
@@ -44,7 +44,8 @@ class StressTest {
   // Create a stress test with some size.
   StressTest(size_t num_quotas, size_t num_allocators) {
     for (size_t i = 0; i < num_quotas; ++i) {
-      quotas_.emplace_back(absl::StrCat("quota[", i, "]"));
+      quotas_.emplace_back(MakeRefCounted<channelz::ResourceQuotaNode>(
+          absl::StrCat("quota[", i, "]")));
     }
     std::random_device g;
     std::uniform_int_distribution<size_t> dist(0, num_quotas - 1);

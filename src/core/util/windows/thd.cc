@@ -27,11 +27,11 @@
 #include <grpc/support/time.h>
 #include <string.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/memory.h"
 #include "src/core/util/thd.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 
 namespace {
 class ThreadInternalsWindows;
@@ -175,8 +175,6 @@ Thread::Thread(const char* /* thd_name */, void (*thd_body)(void* arg),
 
 }  // namespace grpc_core
 
-gpr_thd_id gpr_thd_currentid(void) {
-  return reinterpret_cast<gpr_thd_id>(g_thd_info);
-}
+gpr_thd_id gpr_thd_currentid(void) { return GetCurrentThreadId(); }
 
 #endif  // GPR_WINDOWS

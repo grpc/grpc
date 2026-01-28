@@ -27,11 +27,6 @@
 #include <variant>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
 #include "envoy/config/core/v3/address.pb.h"
 #include "envoy/config/core/v3/base.pb.h"
 #include "envoy/config/core/v3/config_source.pb.h"
@@ -43,8 +38,6 @@
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.pb.h"
 #include "envoy/type/matcher/v3/string.pb.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error.h"
@@ -60,11 +53,17 @@
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
-#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
 #include "xds/type/v3/typed_struct.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
 using envoy::config::listener::v3::Listener;
 using envoy::extensions::filters::http::fault::v3::HTTPFault;
@@ -697,14 +696,14 @@ TEST_P(HttpConnectionManagerTest, TerminalFilterNotLast) {
                    ".value["
                    "envoy.extensions.filters.network.http_connection_manager.v3"
                    ".HttpConnectionManager].http_filters errors:["
-                   "terminal filter for config type "
-                   "envoy.extensions.filters.http.router.v3.Router must be the "
-                   "last filter in the chain; "
                    "non-terminal filter for config type ",
                    (GetParam().in_api_listener
                         ? "envoy.extensions.filters.http.fault.v3.HTTPFault"
                         : "envoy.extensions.filters.http.rbac.v3.RBAC"),
-                   " is the last filter in the chain]]"))
+                   " is the last filter in the chain; "
+                   "terminal filter for config type "
+                   "envoy.extensions.filters.http.router.v3.Router must be the "
+                   "last filter in the chain]]"))
       << decode_result.resource.status();
 }
 
@@ -1567,7 +1566,6 @@ TEST_F(TcpListenerTest, DownstreamTlsContextWithCaCertProviderInstance) {
 }
 
 TEST_F(TcpListenerTest, SystemRootCerts) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_SYSTEM_ROOT_CERTS");
   Listener listener;
   listener.set_name("foo");
   HttpConnectionManager hcm;

@@ -30,14 +30,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
-#include "absl/types/span.h"
-#include "gtest/gtest.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/weighted_target/weighted_target.h"
@@ -52,12 +44,21 @@
 #include "test/core/load_balancing/lb_policy_test_lib.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 namespace testing {
 namespace {
 
 constexpr absl::string_view kLocalityName = "locality0";
+constexpr absl::string_view kBackendServiceName = "backend_service0";
 
 class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
  protected:
@@ -108,8 +109,9 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
   WeightedRoundRobinTest()
       : LoadBalancingPolicyTest(
             "weighted_round_robin",
-            ChannelArgs().Set(GRPC_ARG_LB_WEIGHTED_TARGET_CHILD,
-                              kLocalityName)) {}
+            ChannelArgs()
+                .Set(GRPC_ARG_LB_WEIGHTED_TARGET_CHILD, kLocalityName)
+                .Set(GRPC_ARG_BACKEND_SERVICE, kBackendServiceName)) {}
 
   void SetUp() override {
     LoadBalancingPolicyTest::SetUp();
@@ -200,7 +202,6 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       const auto& address = picks[i];
       auto& subchannel_call_tracker = subchannel_call_trackers[i];
       if (subchannel_call_tracker != nullptr) {
-        subchannel_call_tracker->Start();
         std::optional<BackendMetricData> backend_metric_data;
         auto it = backend_metrics.find(address);
         if (it != backend_metrics.end()) {
@@ -1010,8 +1011,9 @@ TEST_F(WeightedRoundRobinTest, MetricDefinitionRrFallback) {
   EXPECT_EQ(descriptor->name, "grpc.lb.wrr.rr_fallback");
   EXPECT_EQ(descriptor->unit, "{update}");
   EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
-  EXPECT_THAT(descriptor->optional_label_keys,
-              ::testing::ElementsAre("grpc.lb.locality"));
+  EXPECT_THAT(
+      descriptor->optional_label_keys,
+      ::testing::ElementsAre("grpc.lb.locality", "grpc.lb.backend_service"));
 }
 
 TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeightNotYetUsable) {
@@ -1027,8 +1029,9 @@ TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeightNotYetUsable) {
   EXPECT_EQ(descriptor->name, "grpc.lb.wrr.endpoint_weight_not_yet_usable");
   EXPECT_EQ(descriptor->unit, "{endpoint}");
   EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
-  EXPECT_THAT(descriptor->optional_label_keys,
-              ::testing::ElementsAre("grpc.lb.locality"));
+  EXPECT_THAT(
+      descriptor->optional_label_keys,
+      ::testing::ElementsAre("grpc.lb.locality", "grpc.lb.backend_service"));
 }
 
 TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeightStale) {
@@ -1044,8 +1047,9 @@ TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeightStale) {
   EXPECT_EQ(descriptor->name, "grpc.lb.wrr.endpoint_weight_stale");
   EXPECT_EQ(descriptor->unit, "{endpoint}");
   EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
-  EXPECT_THAT(descriptor->optional_label_keys,
-              ::testing::ElementsAre("grpc.lb.locality"));
+  EXPECT_THAT(
+      descriptor->optional_label_keys,
+      ::testing::ElementsAre("grpc.lb.locality", "grpc.lb.backend_service"));
 }
 
 TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeights) {
@@ -1061,8 +1065,9 @@ TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeights) {
   EXPECT_EQ(descriptor->name, "grpc.lb.wrr.endpoint_weights");
   EXPECT_EQ(descriptor->unit, "{weight}");
   EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
-  EXPECT_THAT(descriptor->optional_label_keys,
-              ::testing::ElementsAre("grpc.lb.locality"));
+  EXPECT_THAT(
+      descriptor->optional_label_keys,
+      ::testing::ElementsAre("grpc.lb.locality", "grpc.lb.backend_service"));
 }
 
 TEST_F(WeightedRoundRobinTest, MetricValues) {
@@ -1083,7 +1088,8 @@ TEST_F(WeightedRoundRobinTest, MetricValues) {
           "grpc.lb.wrr.endpoint_weights")
           .value();
   const absl::string_view kLabelValues[] = {target_};
-  const absl::string_view kOptionalLabelValues[] = {kLocalityName};
+  const absl::string_view kOptionalLabelValues[] = {kLocalityName,
+                                                    kBackendServiceName};
   auto stats_plugin = std::make_shared<FakeStatsPlugin>(
       nullptr, /*use_disabled_by_default_metrics=*/true);
   stats_plugin_group_.AddStatsPlugin(stats_plugin, nullptr);

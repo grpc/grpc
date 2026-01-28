@@ -27,10 +27,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/functional/bind_front.h"
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/credentials/transport/transport_credentials.h"
@@ -40,6 +36,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -48,9 +45,13 @@
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/http_client/format_request.h"
 #include "src/core/util/http_client/parser.h"
 #include "src/core/util/status_helper.h"
+#include "absl/functional/bind_front.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc_core {
 
@@ -175,7 +176,10 @@ HttpRequest::HttpRequest(
       pollent_(pollent),
       pollset_set_(grpc_pollset_set_create()),
       test_only_generate_response_(std::move(test_only_generate_response)),
-      use_event_engine_dns_resolver_(IsEventEngineDnsNonClientChannelEnabled()),
+      use_event_engine_dns_resolver_(
+          IsEventEngineDnsNonClientChannelEnabled() &&
+          !grpc_event_engine::experimental::
+              EventEngineExperimentDisabledForPython()),
       resolver_(!use_event_engine_dns_resolver_ ? GetDNSResolver() : nullptr),
       ee_resolver_(
           use_event_engine_dns_resolver_
@@ -196,8 +200,10 @@ HttpRequest::HttpRequest(
   GRPC_CLOSURE_INIT(&continue_done_write_after_schedule_on_exec_ctx_,
                     ContinueDoneWriteAfterScheduleOnExecCtx, this,
                     grpc_schedule_on_exec_ctx);
-  CHECK(pollent);
-  grpc_polling_entity_add_to_pollset_set(pollent, pollset_set_);
+  if (!grpc_event_engine::experimental::UsePollsetAlternative()) {
+    GRPC_CHECK(pollent);
+    grpc_polling_entity_add_to_pollset_set(pollent, pollset_set_);
+  }
 }
 
 HttpRequest::~HttpRequest() {
@@ -253,7 +259,7 @@ void HttpRequest::Start() {
 void HttpRequest::Orphan() {
   {
     MutexLock lock(&mu_);
-    CHECK(!cancelled_);
+    GRPC_CHECK(!cancelled_);
     cancelled_ = true;
     // cancel potentially pending DNS resolution.
     if (use_event_engine_dns_resolver_) {
@@ -329,8 +335,9 @@ void HttpRequest::StartWrite() {
   CSliceRef(request_text_);
   grpc_slice_buffer_add(&outgoing_, request_text_);
   Ref().release();  // ref held by pending write
-  grpc_endpoint_write(ep_.get(), &outgoing_, &done_write_, nullptr,
-                      /*max_frame_size=*/INT_MAX);
+  grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args;
+  args.set_max_frame_size(INT_MAX);
+  grpc_endpoint_write(ep_.get(), &outgoing_, &done_write_, std::move(args));
 }
 
 void HttpRequest::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {

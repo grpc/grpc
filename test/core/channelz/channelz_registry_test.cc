@@ -21,14 +21,16 @@
 #include <stdlib.h>
 
 #include <algorithm>
+#include <set>
 #include <thread>
 #include <vector>
 
-#include "gtest/gtest.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/util/notification.h"
+#include "src/core/util/shared_bit_gen.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace channelz {
@@ -187,6 +189,130 @@ TEST_P(ChannelzRegistryTest, ThreadStressTest) {
   for (auto& thread : threads) {
     thread.join();
   }
+}
+
+TEST_P(ChannelzRegistryTest, HugeNodeCount) {
+  std::vector<RefCountedPtr<BaseNode>> nodes;
+  nodes.reserve(20000);
+  for (int i = 0; i < 10000; ++i) {
+    nodes.push_back(MakeRefCounted<ChannelNode>("x", 1, false));
+    nodes.push_back(MakeRefCounted<SocketNode>("x", "y", "z", nullptr));
+  }
+  auto [channels1, end] = ChannelzRegistry::GetTopChannels(0);
+  EXPECT_FALSE(end);
+  auto [channels2, end2] =
+      ChannelzRegistry::GetTopChannels(channels1.back()->uuid());
+  EXPECT_FALSE(end2);
+  std::shuffle(nodes.begin(), nodes.end(), SharedBitGen());
+}
+
+TEST_P(ChannelzRegistryTest, HugeNodeCountWithParents) {
+  std::vector<RefCountedPtr<BaseNode>> nodes;
+  for (int i = 0; i < 10; ++i) {
+    nodes.push_back(MakeRefCounted<ChannelNode>("x", 1, false));
+    auto parent = nodes.back();
+    for (int j = 0; j < 1000; ++j) {
+      nodes.push_back(MakeRefCounted<SubchannelNode>("x", 1));
+      nodes.back()->AddParent(parent.get());
+    }
+  }
+  auto [channels1, end] = ChannelzRegistry::GetTopChannels(0);
+  EXPECT_TRUE(end);
+  std::shuffle(nodes.begin(), nodes.end(), SharedBitGen());
+}
+
+TEST_P(ChannelzRegistryTest, GetDescendants) {
+  auto root = MakeRefCounted<ChannelNode>("root", 1, false);
+  auto ch1 = MakeRefCounted<SubchannelNode>("ch1", 1);
+  auto ch2 = MakeRefCounted<SubchannelNode>("ch2", 1);
+  ch1->AddParent(root.get());
+  ch2->AddParent(root.get());
+  auto sock1 = MakeRefCounted<SocketNode>("sock1", "y", "z", nullptr);
+  auto sock2 = MakeRefCounted<SocketNode>("sock2", "y", "z", nullptr);
+  auto sock3 = MakeRefCounted<SocketNode>("sock3", "y", "z", nullptr);
+  auto sock4 = MakeRefCounted<SocketNode>("sock4", "y", "z", nullptr);
+  sock1->AddParent(ch1.get());
+  sock2->AddParent(ch1.get());
+  sock3->AddParent(ch2.get());
+  sock4->AddParent(ch2.get());
+
+  auto descendants = ChannelzRegistry::GetDescendants(root.get(), 10);
+  std::set<intptr_t> descendant_uuids;
+  for (const auto& node : descendants) {
+    descendant_uuids.insert(node->uuid());
+  }
+  EXPECT_EQ(descendants.size(), 7);
+  EXPECT_EQ(descendant_uuids.size(), 7);
+  EXPECT_EQ(descendants[0]->uuid(), root->uuid());
+  EXPECT_TRUE(descendant_uuids.count(root->uuid()));
+  EXPECT_TRUE(descendant_uuids.count(ch1->uuid()));
+  EXPECT_TRUE(descendant_uuids.count(ch2->uuid()));
+  EXPECT_TRUE(descendant_uuids.count(sock1->uuid()));
+  EXPECT_TRUE(descendant_uuids.count(sock2->uuid()));
+  EXPECT_TRUE(descendant_uuids.count(sock3->uuid()));
+  EXPECT_TRUE(descendant_uuids.count(sock4->uuid()));
+
+  // test max_results
+  descendants = ChannelzRegistry::GetDescendants(root.get(), 4);
+  EXPECT_EQ(descendants.size(), 4);
+  descendant_uuids.clear();
+  for (const auto& node : descendants) {
+    descendant_uuids.insert(node->uuid());
+  }
+  EXPECT_EQ(descendant_uuids.size(), 4);
+  EXPECT_EQ(descendants[0]->uuid(), root->uuid());
+  EXPECT_TRUE(descendant_uuids.count(root->uuid()));
+  EXPECT_TRUE(descendant_uuids.count(ch1->uuid()));
+  EXPECT_TRUE(descendant_uuids.count(ch2->uuid()));
+
+  // Null root.
+  EXPECT_EQ(ChannelzRegistry::GetDescendants(nullptr, 10).size(), 0);
+
+  // Zero max_results.
+  EXPECT_EQ(ChannelzRegistry::GetDescendants(root.get(), 0).size(), 0);
+
+  // Node with no children.
+  auto descendants2 = ChannelzRegistry::GetDescendants(sock1.get(), 10);
+  EXPECT_EQ(descendants2.size(), 1);
+  EXPECT_EQ(descendants2[0]->uuid(), sock1->uuid());
+}
+
+TEST_P(ChannelzRegistryTest, GetDescendantsDiamond) {
+  auto root = MakeRefCounted<ChannelNode>("root", 1, false);
+  // Diamond dependency.
+  auto ch1 = MakeRefCounted<SubchannelNode>("ch1", 1);
+  auto ch2 = MakeRefCounted<SubchannelNode>("ch2", 1);
+  auto child = MakeRefCounted<SubchannelNode>("child", 1);
+  ch1->AddParent(root.get());
+  ch2->AddParent(root.get());
+  child->AddParent(ch1.get());
+  child->AddParent(ch2.get());
+  auto descendants = ChannelzRegistry::GetDescendants(root.get(), 10);
+  std::set<intptr_t> descendant_uuids;
+  for (const auto& node : descendants) {
+    descendant_uuids.insert(node->uuid());
+  }
+  EXPECT_EQ(descendants.size(), 4);
+  EXPECT_EQ(descendant_uuids.size(), 4);
+  EXPECT_TRUE(descendant_uuids.count(root->uuid()));
+  EXPECT_TRUE(descendant_uuids.count(ch1->uuid()));
+  EXPECT_TRUE(descendant_uuids.count(ch2->uuid()));
+  EXPECT_TRUE(descendant_uuids.count(child->uuid()));
+}
+
+TEST_P(ChannelzRegistryTest, ServerWithChildren) {
+  auto server = MakeRefCounted<ServerNode>(1);
+  std::vector<RefCountedPtr<BaseNode>> sockets;
+  sockets.reserve(20000);
+  for (int i = 0; i < 20000; ++i) {
+    sockets.push_back(MakeRefCounted<SocketNode>("x", "y", "z", nullptr));
+    sockets.back()->AddParent(server.get());
+  }
+  std::shuffle(sockets.begin(), sockets.end(), SharedBitGen());
+  sockets.resize(10000);
+  auto child_sockets = server->child_sockets();
+  server.reset();
+  sockets.clear();
 }
 
 }  // namespace testing

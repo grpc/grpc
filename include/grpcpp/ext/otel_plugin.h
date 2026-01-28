@@ -28,13 +28,13 @@
 
 #include <memory>
 
+#include "opentelemetry/context/propagation/text_map_propagator.h"
+#include "opentelemetry/metrics/meter_provider.h"
+#include "opentelemetry/trace/tracer_provider.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "opentelemetry/context/propagation/text_map_propagator.h"
-#include "opentelemetry/metrics/meter_provider.h"
-#include "opentelemetry/trace/tracer_provider.h"
 
 namespace grpc {
 namespace internal {
@@ -99,6 +99,15 @@ class OpenTelemetryPluginBuilder {
   static constexpr absl::string_view
       kServerCallRcvdTotalCompressedMessageSizeInstrumentName =
           "grpc.server.call.rcvd_total_compressed_message_size";
+
+  /// Experimental Retry Metrics
+  static constexpr absl::string_view kClientCallRetriesInstrumentName =
+      "grpc.client.call.retries";
+  static constexpr absl::string_view
+      kClientCallTransparentRetriesInstrumentName =
+          "grpc.client.call.transparent_retries";
+  static constexpr absl::string_view kClientCallRetryDelayInstrumentName =
+      "grpc.client.call.retry_delay";
 
   OpenTelemetryPluginBuilder();
   ~OpenTelemetryPluginBuilder();

@@ -28,7 +28,6 @@ py_test(
     name = "fork_test",
     srcs = glob(["*.py"]),
     # TODO(yijiem): remove this to test EventEngine fork support
-    env = {"GRPC_EXPERIMENTS": "-event_engine_client"},
     imports = ["../.."],
     main = "_fork_interop_test.py",
     python_version = "PY3",

@@ -24,14 +24,14 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
 grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
 grpc_google_iam_credentials::GetRequestMetadata(
@@ -69,9 +69,9 @@ grpc_call_credentials* grpc_google_iam_credentials_create(
   GRPC_TRACE_LOG(api, INFO) << "grpc_iam_credentials_create(token=" << token
                             << ", authority_selector=" << authority_selector
                             << ", reserved=" << reserved << ")";
-  CHECK_EQ(reserved, nullptr);
-  CHECK_NE(token, nullptr);
-  CHECK_NE(authority_selector, nullptr);
+  GRPC_CHECK_EQ(reserved, nullptr);
+  GRPC_CHECK_NE(token, nullptr);
+  GRPC_CHECK_NE(authority_selector, nullptr);
   return grpc_core::MakeRefCounted<grpc_google_iam_credentials>(
              token, authority_selector)
       .release();

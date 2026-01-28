@@ -21,10 +21,11 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "src/core/util/construct_destruct.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-#include "src/core/util/construct_destruct.h"
 
 namespace grpc_core {
 
@@ -112,12 +113,12 @@ class Poll {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool ready() const { return ready_; }
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T& value() {
-    DCHECK(ready());
+    GRPC_DCHECK(ready());
     return value_;
   }
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION const T& value() const {
-    DCHECK(ready());
+    GRPC_DCHECK(ready());
     return value_;
   }
 
@@ -174,7 +175,7 @@ class Poll<Empty> {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool ready() const { return ready_; }
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Empty value() const {
-    DCHECK(ready());
+    GRPC_DCHECK(ready());
     return Empty{};
   }
 
@@ -268,6 +269,16 @@ struct PollCastImpl<T, Poll<T>> {
 template <typename T, typename U>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<T> poll_cast(U poll) {
   return PollCastImpl<T, U>::Cast(std::move(poll));
+}
+
+template <typename T>
+bool IsPending(const T&) {
+  return false;
+}
+
+template <typename T>
+bool IsPending(const Poll<T>& poll) {
+  return poll.pending();
 }
 
 // Convert a poll to a string

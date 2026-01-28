@@ -14,12 +14,12 @@
 
 #include "test/core/transport/chaotic_good/mock_frame_transport.h"
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "test/core/promise/poll_matcher.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -56,17 +56,18 @@ void MockFrameTransport::Start(Party* party,
                   outgoing_frames = std::move(outgoing_frames)]() mutable {
               return TrySeq(
                   outgoing_frames.Next(),
-                  [self](OutgoingFrame frame) -> LoopCtl<absl::Status> {
+                  [self](MpscQueued<OutgoingFrame> frame)
+                      -> LoopCtl<absl::Status> {
                     if (self->expected_writes_.empty()) {
                       ADD_FAILURE() << "Unexpected write of "
                                     << absl::ConvertVariantTo<FrameInterface&>(
-                                           frame.payload)
+                                           frame->payload)
                                            .ToString();
                       return Continue{};
                     }
                     auto expected = std::move(self->expected_writes_.front());
                     self->expected_writes_.pop();
-                    EXPECT_EQ(expected.frame, frame.payload)
+                    EXPECT_EQ(expected.frame, frame->payload)
                         << " from " << expected.whence.file() << ":"
                         << expected.whence.line();
                     return Continue{};

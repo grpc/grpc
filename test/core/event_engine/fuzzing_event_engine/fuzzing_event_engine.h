@@ -34,11 +34,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/time_util.h"
@@ -47,6 +42,11 @@
 #include "src/core/util/sync.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/test_util/port.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -266,6 +266,10 @@ class FuzzingEventEngine : public EventEngine {
   // other index 1, both pointing to the same EndpointMiddle.
   class FuzzingEndpoint final : public Endpoint {
    public:
+    class TelemetryInfo;
+    class MetricsSet;
+    class FullMetricsSet;
+
     FuzzingEndpoint(std::shared_ptr<EndpointMiddle> middle, int index)
         : middle_(std::move(middle)), index_(index) {}
     ~FuzzingEndpoint() override;
@@ -280,9 +284,7 @@ class FuzzingEventEngine : public EventEngine {
     const ResolvedAddress& GetLocalAddress() const override {
       return middle_->addrs[my_index()];
     }
-    std::vector<size_t> AllWriteMetrics() override;
-    std::optional<absl::string_view> GetMetricName(size_t key) override;
-    std::optional<size_t> GetMetricKey(absl::string_view name) override;
+    std::shared_ptr<Endpoint::TelemetryInfo> GetTelemetryInfo() const override;
 
    private:
     int my_index() const { return index_; }

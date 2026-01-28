@@ -23,18 +23,18 @@
 #include <memory>
 #include <vector>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
-#include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "gtest/gtest.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
 // IWYU pragma: no_include <ratio>
@@ -52,8 +52,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
@@ -65,6 +63,8 @@
 #include "src/core/util/strerror.h"
 #include "test/core/event_engine/posix/posix_engine_test_utils.h"
 #include "test/core/test_util/port.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
 
 static gpr_mu g_mu;
 static std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
@@ -161,7 +161,7 @@ void SessionShutdownCb(session* se, bool /*success*/) {
 
 // Called when data become readable in a session.
 void SessionReadCb(session* se, absl::Status status) {
-  int fd = se->em_fd->WrappedFd();
+  FileDescriptor fd = se->em_fd->WrappedFd();
 
   ssize_t read_once = 0;
   ssize_t read_total = 0;
@@ -172,7 +172,7 @@ void SessionReadCb(session* se, absl::Status status) {
   }
 
   do {
-    read_once = read(fd, se->read_buf, BUF_SIZE);
+    read_once = read(fd.fd(), se->read_buf, BUF_SIZE);
     if (read_once > 0) read_total += read_once;
   } while (read_once > 0);
   se->sv->read_bytes_total += read_total;
@@ -209,7 +209,7 @@ void ListenShutdownCb(server* sv) {
 
 // Called when a new TCP connection request arrives in the listening port.
 void ListenCb(server* sv, absl::Status status) {
-  int fd;
+  PosixErrorOr<FileDescriptor> fd;
   int flags;
   session* se;
   struct sockaddr_storage ss;
@@ -222,25 +222,26 @@ void ListenCb(server* sv, absl::Status status) {
   }
 
   do {
-    fd = accept(listen_em_fd->WrappedFd(),
-                reinterpret_cast<struct sockaddr*>(&ss), &slen);
-  } while (fd < 0 && errno == EINTR);
-  if (fd < 0 && errno == EAGAIN) {
+    fd = g_event_poller->posix_interface().Accept(
+        listen_em_fd->WrappedFd(), reinterpret_cast<struct sockaddr*>(&ss),
+        &slen);
+  } while (fd.IsPosixError(EINTR));
+  if (fd.IsPosixError(EAGAIN)) {
     sv->listen_closure = PosixEngineClosure::TestOnlyToClosure(
         [sv](absl::Status status) { ListenCb(sv, status); });
     listen_em_fd->NotifyOnRead(sv->listen_closure);
     return;
-  } else if (fd < 0) {
+  } else if (!fd.ok()) {
     LOG(ERROR) << "Failed to accept a connection, returned error: "
-               << grpc_core::StrError(errno);
+               << fd.StrError();
   }
-  EXPECT_GE(fd, 0);
-  EXPECT_LT(fd, FD_SETSIZE);
-  flags = fcntl(fd, F_GETFL, 0);
-  fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+  ASSERT_TRUE(fd.ok()) << fd.StrError();
+  EXPECT_LT(fd->fd(), FD_SETSIZE);
+  flags = fcntl(fd->fd(), F_GETFL, 0);
+  fcntl(fd->fd(), F_SETFL, flags | O_NONBLOCK);
   se = static_cast<session*>(gpr_malloc(sizeof(*se)));
   se->sv = sv;
-  se->em_fd = g_event_poller->CreateHandle(fd, "listener", false);
+  se->em_fd = g_event_poller->CreateHandle(fd.value(), "listener", false);
   se->session_read_closure = PosixEngineClosure::TestOnlyToClosure(
       [se](absl::Status status) { SessionReadCb(se, status); });
   se->em_fd->NotifyOnRead(se->session_read_closure);
@@ -266,7 +267,8 @@ int ServerStart(server* sv) {
   port = ntohs(sin.sin6_port);
   EXPECT_EQ(listen(fd, MAX_NUM_FD), 0);
 
-  sv->em_fd = g_event_poller->CreateHandle(fd, "server", false);
+  sv->em_fd = g_event_poller->CreateHandle(
+      g_event_poller->posix_interface().Adopt(fd), "server", false);
   sv->listen_closure = PosixEngineClosure::TestOnlyToClosure(
       [sv](absl::Status status) { ListenCb(sv, status); });
   sv->em_fd->NotifyOnRead(sv->listen_closure);
@@ -305,7 +307,8 @@ void ClientSessionShutdownCb(client* cl) {
 
 // Write as much as possible, then register notify_on_write.
 void ClientSessionWrite(client* cl, absl::Status status) {
-  int fd = cl->em_fd->WrappedFd();
+  // Test calls unwrapped Posix functions
+  int fd = cl->em_fd->WrappedFd().fd();
   ssize_t write_once = 0;
 
   if (!status.ok()) {
@@ -354,7 +357,8 @@ void ClientStart(client* cl, int port) {
     }
   }
 
-  cl->em_fd = g_event_poller->CreateHandle(fd, "client", false);
+  cl->em_fd = g_event_poller->CreateHandle(
+      g_event_poller->posix_interface().Adopt(fd), "client", false);
   ClientSessionWrite(cl, absl::OkStatus());
 }
 
@@ -375,29 +379,23 @@ class EventPollerTest : public ::testing::Test {
   void SetUp() override {
     engine_ = PosixEventEngine::MakePosixEventEngine();
     EXPECT_NE(engine_, nullptr);
-    scheduler_ = std::make_unique<TestScheduler>(engine_.get());
-    EXPECT_NE(scheduler_, nullptr);
-    g_event_poller = MakeDefaultPoller(scheduler_.get());
+    thread_pool_ = std::make_shared<TestThreadPool>(engine_.get());
+    EXPECT_NE(thread_pool_, nullptr);
+    g_event_poller = MakeDefaultPoller(thread_pool_);
     engine_ = PosixEventEngine::MakeTestOnlyPosixEventEngine(g_event_poller);
     EXPECT_NE(engine_, nullptr);
-    scheduler_->ChangeCurrentEventEngine(engine_.get());
+    thread_pool_->ChangeCurrentEventEngine(engine_.get());
     if (g_event_poller != nullptr) {
       LOG(INFO) << "Using poller: " << g_event_poller->Name();
     }
   }
 
-  void TearDown() override {
-    if (g_event_poller != nullptr) {
-      g_event_poller->Shutdown();
-    }
-  }
-
  public:
-  TestScheduler* Scheduler() { return scheduler_.get(); }
+  TestThreadPool* thread_pool() const { return thread_pool_.get(); }
 
  private:
   std::shared_ptr<PosixEventEngine> engine_;
-  std::unique_ptr<TestScheduler> scheduler_;
+  std::shared_ptr<TestThreadPool> thread_pool_;
 };
 
 // Test grpc_fd. Start an upload server and client, upload a stream of bytes
@@ -468,8 +466,9 @@ TEST_F(EventPollerTest, TestEventPollerHandleChange) {
   flags = fcntl(sv[1], F_GETFL, 0);
   EXPECT_EQ(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK), 0);
 
-  em_fd =
-      g_event_poller->CreateHandle(sv[0], "TestEventPollerHandleChange", false);
+  em_fd = g_event_poller->CreateHandle(
+      g_event_poller->posix_interface().Adopt(sv[0]),
+      "TestEventPollerHandleChange", false);
   EXPECT_NE(em_fd, nullptr);
   // Register the first callback, then make its FD readable
   em_fd->NotifyOnRead(first_closure);
@@ -525,10 +524,10 @@ std::atomic<int> kTotalActiveWakeupFdHandles{0};
 // a specified number of read events.
 class WakeupFdHandle : public grpc_core::DualRefCounted<WakeupFdHandle> {
  public:
-  WakeupFdHandle(int num_wakeups, Scheduler* scheduler,
+  WakeupFdHandle(int num_wakeups, ThreadPool* thread_pool,
                  PosixEventPoller* poller)
       : num_wakeups_(num_wakeups),
-        scheduler_(scheduler),
+        thread_pool_(thread_pool),
         poller_(poller),
         on_read_(
             PosixEngineClosure::ToPermanentClosure([this](absl::Status status) {
@@ -556,7 +555,7 @@ class WakeupFdHandle : public grpc_core::DualRefCounted<WakeupFdHandle> {
                 Ref().release();
                 // Schedule next wakeup to trigger the registered NotifyOnRead
                 // callback.
-                scheduler_->Run(SelfDeletingClosure::Create([this]() {
+                thread_pool_->Run(SelfDeletingClosure::Create([this]() {
                   // Send next wakeup.
                   EXPECT_TRUE(wakeup_fd_->Wakeup().ok());
                   Unref();
@@ -566,9 +565,9 @@ class WakeupFdHandle : public grpc_core::DualRefCounted<WakeupFdHandle> {
     WeakRef().release();
     ++kTotalActiveWakeupFdHandles;
     EXPECT_GT(num_wakeups_, 0);
-    EXPECT_NE(scheduler_, nullptr);
+    EXPECT_NE(thread_pool_, nullptr);
     EXPECT_NE(poller_, nullptr);
-    wakeup_fd_ = *PipeWakeupFd::CreatePipeWakeupFd();
+    wakeup_fd_ = *PipeWakeupFd::CreatePipeWakeupFd(&poller_->posix_interface());
     handle_ = poller_->CreateHandle(wakeup_fd_->ReadFd(), "test", false);
     EXPECT_NE(handle_, nullptr);
     handle_->NotifyOnRead(on_read_);
@@ -600,7 +599,7 @@ class WakeupFdHandle : public grpc_core::DualRefCounted<WakeupFdHandle> {
     ssize_t r;
     int total_bytes_read = 0;
     for (;;) {
-      r = read(wakeup_fd_->ReadFd(), buf, sizeof(buf));
+      r = read(wakeup_fd_->ReadFd().fd(), buf, sizeof(buf));
       if (r > 0) {
         total_bytes_read += r;
         continue;
@@ -620,7 +619,7 @@ class WakeupFdHandle : public grpc_core::DualRefCounted<WakeupFdHandle> {
     }
   }
   int num_wakeups_;
-  Scheduler* scheduler_;
+  ThreadPool* thread_pool_;
   PosixEventPoller* poller_;
   PosixEngineClosure* on_read_;
   std::unique_ptr<WakeupFd> wakeup_fd_;
@@ -633,20 +632,20 @@ class WakeupFdHandle : public grpc_core::DualRefCounted<WakeupFdHandle> {
 // pending events. This continues until all Fds have orphaned themselves.
 class Worker : public grpc_core::DualRefCounted<Worker> {
  public:
-  Worker(Scheduler* scheduler, PosixEventPoller* poller, int num_handles,
+  Worker(ThreadPool* thread_pool, PosixEventPoller* poller, int num_handles,
          int num_wakeups_per_handle)
-      : scheduler_(scheduler), poller_(poller) {
+      : thread_pool_(thread_pool), poller_(poller) {
     handles_.reserve(num_handles);
     for (int i = 0; i < num_handles; i++) {
       handles_.push_back(
-          new WakeupFdHandle(num_wakeups_per_handle, scheduler_, poller_));
+          new WakeupFdHandle(num_wakeups_per_handle, thread_pool_, poller_));
     }
     WeakRef().release();
   }
   void Orphaned() override { signal.Notify(); }
   void Start() {
     // Start executing Work(..).
-    scheduler_->Run([this]() { Work(); });
+    thread_pool_->Run([this]() { Work(); });
   }
 
   void Wait() {
@@ -660,7 +659,7 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
       // Schedule next work instantiation immediately and take a Ref for
       // the next instantiation.
       Ref().release();
-      scheduler_->Run([this]() { Work(); });
+      thread_pool_->Run([this]() { Work(); });
     });
     ASSERT_TRUE(result == Poller::WorkResult::kOk ||
                 result == Poller::WorkResult::kKicked);
@@ -670,7 +669,7 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
     // been deleted.
     Unref();
   }
-  Scheduler* scheduler_;
+  ThreadPool* thread_pool_;
   PosixEventPoller* poller_;
   grpc_core::Notification signal;
   std::vector<WakeupFdHandle*> handles_;
@@ -688,7 +687,7 @@ TEST_F(EventPollerTest, TestMultipleHandles) {
   if (g_event_poller == nullptr) {
     return;
   }
-  Worker* worker = new Worker(Scheduler(), g_event_poller.get(), kNumHandles,
+  Worker* worker = new Worker(thread_pool(), g_event_poller.get(), kNumHandles,
                               kNumWakeupsPerHandle);
   worker->Start();
   worker->Wait();

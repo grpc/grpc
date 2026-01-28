@@ -76,6 +76,7 @@ _GRPC_DEP_NAMES = [
 
 _GRPC_BAZEL_ONLY_DEPS = [
     "platforms",
+    "com_google_googletest",
     "rules_cc",
     "com_google_absl",
     "com_google_fuzztest",

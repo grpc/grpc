@@ -35,21 +35,21 @@
 #include <optional>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/time.h"
 #include "google/protobuf/duration.upb.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
 #include "src/cpp/server/backend_metric_recorder.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
 #include "xds/data/orca/v3/orca_load_report.upb.h"
 #include "xds/service/orca/v3/orca.upb.h"
+#include "absl/log/log.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 
 namespace grpc {
 namespace experimental {
@@ -174,7 +174,7 @@ OrcaService::OrcaService(ServerMetricRecorder* const server_metric_recorder,
                          Options options)
     : server_metric_recorder_(server_metric_recorder),
       min_report_duration_(options.min_report_duration) {
-  CHECK_NE(server_metric_recorder_, nullptr);
+  GRPC_CHECK_NE(server_metric_recorder_, nullptr);
   AddMethod(new internal::RpcServiceMethod(
       "/xds.service.orca.v3.OpenRcaService/StreamCoreMetrics",
       internal::RpcMethod::SERVER_STREAMING, /*handler=*/nullptr));

@@ -28,13 +28,13 @@
 #include <netinet/ip.h>
 #include <string.h>
 
-#include "absl/log/check.h"
-#include "gtest/gtest.h"
-#include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/net/socket_mutator.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 struct test_socket_mutator {
   grpc_socket_mutator base;
@@ -196,7 +196,7 @@ TEST(SocketUtilsTest, MainTest) {
 
   if (grpc_ipv6_loopback_available()) {
     sock = socket(AF_INET6, SOCK_STREAM, 0);
-    CHECK_GT(sock, 0);
+    GRPC_CHECK_GT(sock, 0);
 
     test_set_socket_dscp_ipv6(sock, 8 /*CS1*/);
     test_set_socket_dscp_ipv6(sock, 16 /*CS2*/);

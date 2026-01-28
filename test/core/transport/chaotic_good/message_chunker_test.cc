@@ -17,9 +17,9 @@
 #include <vector>
 
 #include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "test/core/promise/poll_matcher.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace {
@@ -34,7 +34,7 @@ struct Sender {
   Sender(Sender&&) = delete;
   Sender& operator=(const Sender&) = delete;
   Sender& operator=(Sender&&) = delete;
-  auto Send(chaotic_good::OutgoingFrame frame) {
+  auto Send(chaotic_good::OutgoingFrame frame, uint32_t) {
     frames.emplace_back(std::move(frame.payload));
     return []() -> Poll<StatusFlag> { return Success{}; };
   }

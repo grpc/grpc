@@ -24,12 +24,6 @@ build:macos   --host_cxxopt='-std=c++17'
 build:freebsd   --cxxopt='-std=c++17'
 build:freebsd   --host_cxxopt='-std=c++17'
 
-# TODO(veblush): Remove these once upb is upgraded to 25.x or later
-build:linux --copt=-Wno-typedef-redefinition
-build:linux --host_copt=-Wno-typedef-redefinition
-build:macos --copt=-Wno-typedef-redefinition
-build:macos --host_copt=-Wno-typedef-redefinition
-
 # Don't trigger --config=<host platform> when cross-compiling.
 build:android --noenable_platform_specific_config
 build:ios --noenable_platform_specific_config
@@ -61,7 +55,6 @@ build:asan --strip=never
 build:asan --copt=-fsanitize=address
 build:asan --copt=-O0
 build:asan --copt=-fno-omit-frame-pointer
-build:asan --copt=-DGPR_NO_DIRECT_SYSCALLS
 build:asan --copt=-DGRPC_ASAN
 build:asan --copt=-DADDRESS_SANITIZER  # used by absl
 build:asan --linkopt=-fsanitize=address
@@ -78,13 +71,13 @@ build:fork_support --cxxopt=-DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1
 build:fork_support --action_env=GRPC_ENABLE_FORK_SUPPORT=1
 
 
-# We have a separate ASAN config for Mac OS to workaround a couple of bugs:
+# We have a separate ASAN config for macOS to workaround a couple of bugs:
 # 1. https://github.com/bazelbuild/bazel/issues/6932
-#    _FORTIFY_SOURCE=1 is enabled by default on Mac OS, which breaks ASAN.
+#    _FORTIFY_SOURCE=1 is enabled by default on macOS, which breaks ASAN.
 #    We workaround it by setting _FORTIFY_SOURCE=0 and ignoring macro redefined
 #    warnings.
 # 2. https://github.com/google/sanitizers/issues/1026
-#    LSAN is not supported by the version of Clang that ships with Mac OS, so
+#    LSAN is not supported by the version of Clang that ships with macOS, so
 #    we disable it.
 build:asan_macos --strip=never
 build:asan_macos --copt=-fsanitize=address
@@ -93,7 +86,6 @@ build:asan_macos --copt -D_FORTIFY_SOURCE=0
 build:asan_macos --copt=-fsanitize=address
 build:asan_macos --copt=-O0
 build:asan_macos --copt=-fno-omit-frame-pointer
-build:asan_macos --copt=-DGPR_NO_DIRECT_SYSCALLS
 build:asan_macos --linkopt=-fsanitize=address
 build:asan_macos --action_env=ASAN_OPTIONS=detect_leaks=0
 build:asan_macos --action_env=ASAN_OPTIONS=detect_odr_violation=0  # https://github.com/google/sanitizers/issues/1017
@@ -105,14 +97,12 @@ build:msan --copt=-O0
 build:msan --copt=-fsanitize-memory-track-origins
 build:msan --copt=-fsanitize-memory-use-after-dtor
 build:msan --copt=-fno-omit-frame-pointer
-build:msan --copt=-DGPR_NO_DIRECT_SYSCALLS
 build:msan --linkopt=-fsanitize=memory
 build:msan --action_env=MSAN_OPTIONS=poison_in_dtor=1
 
 build:tsan --strip=never
 build:tsan --copt=-fsanitize=thread
 build:tsan --copt=-fno-omit-frame-pointer
-build:tsan --copt=-DGPR_NO_DIRECT_SYSCALLS
 build:tsan --copt=-DGRPC_TSAN
 build:tsan --linkopt=-fsanitize=thread
 build:tsan --action_env=TSAN_OPTIONS=suppressions=test/core/test_util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
@@ -120,7 +110,6 @@ build:tsan --action_env=TSAN_OPTIONS=suppressions=test/core/test_util/tsan_suppr
 build:tsan_macos --strip=never
 build:tsan_macos --copt=-fsanitize=thread
 build:tsan_macos --copt=-fno-omit-frame-pointer
-build:tsan_macos --copt=-DGPR_NO_DIRECT_SYSCALLS
 build:tsan_macos --copt=-DGRPC_TSAN
 build:tsan_macos --linkopt=-fsanitize=thread
 build:tsan_macos --action_env=TSAN_OPTIONS=suppressions=test/core/test_util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
@@ -150,10 +139,10 @@ build:python_single_threaded_unary_stream --test_env="GRPC_SINGLE_THREADED_UNARY
 
 build:python_poller_engine --test_env="GRPC_ASYNCIO_ENGINE=poller"
 
-build:python --copt=-DGRPC_DO_NOT_INSTANTIATE_POSIX_POLLER
+build:python --copt=-DGRPC_PYTHON_BUILD
 
 # Compile database generation config
-build:compdb --build_tag_filters=-nocompdb --features=-layering_check
+build:compdb --build_tag_filters=-nocompdb
 
 try-import %workspace%/tools/fuzztest.bazelrc
 
@@ -162,3 +151,6 @@ build --@io_opentelemetry_cpp//api:with_abseil
 
 # Bazel 7.4.1 needs this (https://github.com/bazelbuild/bazel/issues/24369)
 test --nozip_undeclared_test_outputs
+
+# Custom checks
+test:postmortem --//:postmortem_checks=true

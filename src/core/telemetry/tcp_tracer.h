@@ -131,7 +131,7 @@ class TcpCallTracer {
   virtual void RecordEvent(
       grpc_event_engine::experimental::internal::WriteEvent event,
       absl::Time time, size_t byte_offset,
-      std::vector<TcpEventMetric> metrics) = 0;
+      const std::vector<TcpEventMetric>& metrics) = 0;
 };
 
 class TcpConnectionTracer {

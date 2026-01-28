@@ -19,6 +19,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/core/transport/chaotic_good_legacy",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "tests",
 )
 
@@ -27,14 +31,20 @@ grpc_cc_library(
     testonly = 1,
     srcs = ["transport_test.cc"],
     hdrs = ["transport_test.h"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+    ],
     deps = [
         "//:iomgr_timer",
+        "//src/core:call_arena_allocator",
+        "//src/core:call_spine",
         "//src/core:chaotic_good_legacy_frame",
+        "//src/core:event_engine_context",
         "//src/core:memory_quota",
         "//src/core:resource_quota",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 
@@ -78,6 +88,9 @@ grpc_cc_test(
     deps = [
         "//:channel_create",
         "//src/core:chaotic_good_legacy_frame",
+        "//src/core:grpc_check",
+        "//src/core:memory_quota",
+        "//src/core:resource_quota",
     ],
 )
 
@@ -115,6 +128,7 @@ grpc_fuzz_test(
         "//src/core:chaotic_good_legacy_frame",
         "//src/core:chaotic_good_legacy_frame_header",
         "//src/core:event_engine_memory_allocator",
+        "//src/core:grpc_check",
         "//src/core:memory_quota",
         "//src/core:resource_quota",
         "//src/core:slice",
@@ -136,12 +150,15 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "transport_test",
+        "//:config",
         "//:grpc",
         "//:grpc_public_hdrs",
         "//src/core:arena",
+        "//src/core:chaotic_good_frame_cc_proto",
         "//src/core:chaotic_good_legacy_client_transport",
         "//src/core:if",
         "//src/core:loop",
+        "//src/core:metadata_batch",
         "//src/core:seq",
         "//src/core:slice_buffer",
         "//test/core/transport/util:mock_promise_endpoint",
@@ -161,6 +178,8 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:config",
+        "//:grpc_base",
         "//:grpc_public_hdrs",
         "//:grpc_unsecure",
         "//:iomgr_timer",
@@ -168,12 +187,14 @@ grpc_cc_test(
         "//src/core:activity",
         "//src/core:arena",
         "//src/core:chaotic_good_legacy_client_transport",
+        "//src/core:event_engine_context",
         "//src/core:event_engine_wakeup_scheduler",
         "//src/core:grpc_promise_endpoint",
         "//src/core:if",
         "//src/core:join",
         "//src/core:loop",
         "//src/core:memory_quota",
+        "//src/core:metadata_batch",
         "//src/core:pipe",
         "//src/core:resource_quota",
         "//src/core:seq",
@@ -181,6 +202,7 @@ grpc_cc_test(
         "//src/core:slice_buffer",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
+        "//test/core/transport/util:mock_promise_endpoint",
     ],
 )
 
@@ -203,8 +225,10 @@ grpc_cc_test(
         "//:iomgr_timer",
         "//:ref_counted_ptr",
         "//src/core:arena",
+        "//src/core:chaotic_good_frame_cc_proto",
         "//src/core:chaotic_good_legacy_server_transport",
         "//src/core:memory_quota",
+        "//src/core:metadata_batch",
         "//src/core:resource_quota",
         "//src/core:seq",
         "//src/core:slice",
@@ -227,6 +251,7 @@ grpc_fuzz_test(
         "no_windows",
     ],
     deps = [
+        "//:grpc",
         "//src/core:chaotic_good_legacy_control_endpoint",
         "//test/core/call/yodel:yodel_test",
         "//test/core/transport/util:mock_promise_endpoint",
@@ -245,9 +270,11 @@ grpc_fuzz_test(
         "no_windows",
     ],
     deps = [
+        "//:grpc",
         "//src/core:chaotic_good_legacy_data_endpoints",
         "//test/core/call/yodel:yodel_test",
         "//test/core/transport/util:mock_promise_endpoint",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 

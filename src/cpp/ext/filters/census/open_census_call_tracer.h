@@ -28,10 +28,6 @@
 #include <memory>
 #include <string>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/time.h"
 #include "opencensus/trace/span.h"
 #include "opencensus/trace/span_context.h"
 #include "opencensus/trace/span_id.h"
@@ -45,6 +41,10 @@
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 
 // TODO(yashykt): This might not be the right place for this channel arg, but we
 // don't have a better place for this right now.
@@ -61,7 +61,7 @@
 namespace grpc {
 namespace internal {
 
-class OpenCensusCallTracer : public grpc_core::ClientCallTracer {
+class OpenCensusCallTracer : public grpc_core::ClientCallTracerInterface {
  public:
   class OpenCensusCallAttemptTracer : public CallAttemptTracer {
    public:
@@ -80,6 +80,8 @@ class OpenCensusCallTracer : public grpc_core::ClientCallTracer {
     bool IsSampled() override { return context_.Span().IsSampled(); }
 
     void RecordSendInitialMetadata(
+        grpc_metadata_batch* send_initial_metadata) override;
+    void MutateSendInitialMetadata(
         grpc_metadata_batch* send_initial_metadata) override;
     void RecordSendTrailingMetadata(
         grpc_metadata_batch* /*send_trailing_metadata*/) override {}

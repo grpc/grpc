@@ -26,10 +26,6 @@
 #include <memory>
 #include <string>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/time.h"
 #include "opentelemetry/trace/span.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/iomgr/error.h"
@@ -41,36 +37,45 @@
 #include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/sync.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 
 namespace grpc {
 namespace internal {
 
-class OpenTelemetryPluginImpl::ClientCallTracer
-    : public grpc_core::ClientCallTracer {
+class OpenTelemetryPluginImpl::ClientCallTracerInterface
+    : public grpc_core::ClientCallTracerInterface {
  public:
+  template <typename UnrefBehavior>
   class CallAttemptTracer
-      : public grpc_core::ClientCallTracer::CallAttemptTracer {
+      : public grpc_core::ClientCallTracerInterface::CallAttemptTracer,
+        public grpc_core::RefCounted<CallAttemptTracer<UnrefBehavior>,
+                                     grpc_core::NonPolymorphicRefCount,
+                                     UnrefBehavior> {
    public:
-    CallAttemptTracer(const OpenTelemetryPluginImpl::ClientCallTracer* parent,
-                      uint64_t attempt_num, bool is_transparent_retry,
-                      bool arena_allocated);
+    CallAttemptTracer(
+        OpenTelemetryPluginImpl::ClientCallTracerInterface* const parent,
+        uint64_t attempt_num, bool is_transparent_retry);
+
+    ~CallAttemptTracer() override;
 
     std::string TraceId() override {
-      // Not implemented
-      return "";
+      return OTelSpanTraceIdToString(span_.get());
     }
 
     std::string SpanId() override {
-      // Not implemented
-      return "";
+      return OTelSpanSpanIdToString(span_.get());
     }
 
     bool IsSampled() override {
-      // Not implemented
-      return false;
+      return span_ != nullptr && span_->GetContext().IsSampled();
     }
 
     void RecordSendInitialMetadata(
+        grpc_metadata_batch* send_initial_metadata) override;
+    void MutateSendInitialMetadata(
         grpc_metadata_batch* send_initial_metadata) override;
     void RecordSendTrailingMetadata(
         grpc_metadata_batch* /*send_trailing_metadata*/) override {}
@@ -103,8 +108,7 @@ class OpenTelemetryPluginImpl::ClientCallTracer
 
     void PopulateLabelInjectors(grpc_metadata_batch* metadata);
 
-    const ClientCallTracer* parent_;
-    const bool arena_allocated_;
+    ClientCallTracerInterface* const parent_;
     // Start time (for measuring latency).
     absl::Time start_time_;
     std::unique_ptr<LabelsIterable> injected_labels_;
@@ -126,28 +130,24 @@ class OpenTelemetryPluginImpl::ClientCallTracer
     uint64_t recv_seq_num_ = 0;
   };
 
-  ClientCallTracer(
+  ClientCallTracerInterface(
       const grpc_core::Slice& path, grpc_core::Arena* arena,
       bool registered_method, OpenTelemetryPluginImpl* otel_plugin,
       std::shared_ptr<OpenTelemetryPluginImpl::ClientScopeConfig> scope_config);
-  ~ClientCallTracer() override;
+  ~ClientCallTracerInterface() override;
 
   std::string TraceId() override {
-    // Not implemented
-    return "";
+    return OTelSpanTraceIdToString(span_.get());
   }
 
-  std::string SpanId() override {
-    // Not implemented
-    return "";
-  }
+  std::string SpanId() override { return OTelSpanSpanIdToString(span_.get()); }
 
   bool IsSampled() override {
-    // Not implemented
-    return false;
+    return span_ != nullptr && span_->GetContext().IsSampled();
   }
 
-  CallAttemptTracer* StartNewAttempt(bool is_transparent_retry) override;
+  grpc_core::ClientCallTracerInterface::CallAttemptTracer* StartNewAttempt(
+      bool is_transparent_retry) override;
   void RecordAnnotation(absl::string_view annotation) override;
   void RecordAnnotation(const Annotation& /*annotation*/) override;
 
@@ -160,11 +160,18 @@ class OpenTelemetryPluginImpl::ClientCallTracer
   const bool registered_method_;
   OpenTelemetryPluginImpl* otel_plugin_;
   std::shared_ptr<OpenTelemetryPluginImpl::ClientScopeConfig> scope_config_;
+  // TODO(ctiller@): When refactoring the tracer code, consider the possibility
+  // of removing this mutex. More discussion in
+  // https://github.com/grpc/grpc/pull/39195/files#r2191231973.
   grpc_core::Mutex mu_;
-  // Non-transparent attempts per call (including first attempt)
+  // Non-transparent retry attempts per call (includes initial attempt)
   uint64_t retries_ ABSL_GUARDED_BY(&mu_) = 0;
   // Transparent retries per call
   uint64_t transparent_retries_ ABSL_GUARDED_BY(&mu_) = 0;
+  // Retry delay
+  absl::Duration retry_delay_ ABSL_GUARDED_BY(&mu_);
+  absl::Time time_at_last_attempt_end_ ABSL_GUARDED_BY(&mu_);
+  uint64_t num_active_attempts_ ABSL_GUARDED_BY(&mu_) = 0;
   opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> span_;
 };
 

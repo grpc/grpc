@@ -23,8 +23,6 @@
 #include <grpc/support/alloc.h>
 #include <sys/types.h>
 
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -33,6 +31,8 @@
 #include "src/core/util/useful.h"
 #include "test/core/iomgr/endpoint_tests.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 static gpr_mu* g_mu;
 static grpc_pollset* g_pollset;
@@ -51,8 +51,9 @@ static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
   grpc_endpoint_read(m->wrapped_ep, slices, cb, urgent, min_progress_size);
 }
 
-static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                     grpc_closure* cb, void* arg, int max_frame_size) {
+static void me_write(
+    grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb,
+    grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args) {
   intercept_endpoint* m = reinterpret_cast<intercept_endpoint*>(ep);
   int remaining = slices->length;
   while (remaining > 0) {
@@ -61,13 +62,14 @@ static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
         tsi_fake_zero_copy_grpc_protector_next_frame_size(slices);
     ASSERT_GT(next_frame_size, TSI_FAKE_FRAME_HEADER_SIZE);
     // Ensure the protected data size does not exceed the max_frame_size.
-    ASSERT_LE(next_frame_size - TSI_FAKE_FRAME_HEADER_SIZE, max_frame_size);
+    ASSERT_LE(next_frame_size - TSI_FAKE_FRAME_HEADER_SIZE,
+              args.max_frame_size());
     // Move this frame into a staging buffer and repeat.
     grpc_slice_buffer_move_first(slices, next_frame_size, &m->staging_buffer);
     remaining -= next_frame_size;
   }
   grpc_slice_buffer_swap(&m->staging_buffer, slices);
-  grpc_endpoint_write(m->wrapped_ep, slices, cb, arg, max_frame_size);
+  grpc_endpoint_write(m->wrapped_ep, slices, cb, std::move(args));
 }
 
 static void me_add_to_pollset(grpc_endpoint* /*ep*/,
@@ -307,6 +309,12 @@ static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
 }
 
 TEST(SecureEndpointTest, MainTest) {
+#ifndef GPR_WINDOWS
+  if (grpc_core::IsEventEngineSecureEndpointEnabled()) {
+    GTEST_SKIP() << "Skipping test on non-Windows platforms for "
+                    "EventEngineSecureEndpoint";
+  }
+#endif
   grpc_closure destroyed;
   grpc_init();
 

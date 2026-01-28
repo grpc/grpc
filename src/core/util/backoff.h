@@ -19,8 +19,8 @@
 #ifndef GRPC_SRC_CORE_UTIL_BACKOFF_H
 #define GRPC_SRC_CORE_UTIL_BACKOFF_H
 
-#include "absl/random/random.h"
 #include "src/core/util/time.h"
+#include "absl/random/random.h"
 
 namespace grpc_core {
 
@@ -79,6 +79,7 @@ class BackOff {
   bool initial_;
   /// current delay before retries
   Duration current_backoff_;
+  absl::InsecureBitGen bitgen_;
 };
 
 }  // namespace grpc_core

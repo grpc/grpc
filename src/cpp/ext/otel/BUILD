@@ -25,6 +25,7 @@ package(
     default_visibility = ["//visibility:public"],
     features = [
         "layering_check",
+        "parse_headers",
     ],
 )
 
@@ -47,7 +48,6 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
         "absl/container:flat_hash_set",
         "absl/functional:any_invocable",
-        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -64,6 +64,7 @@ grpc_cc_library(
     deps = [
         "//:call_tracer",
         "//:config",
+        "//:exec_ctx",
         "//:gpr",
         "//:gpr_platform",
         "//:grpc++",
@@ -80,6 +81,8 @@ grpc_cc_library(
         "//src/core:error",
         "//src/core:event_engine_utils",
         "//src/core:experiments",
+        "//src/core:grpc_check",
+        "//src/core:instrument",
         "//src/core:match",
         "//src/core:metadata_batch",
         "//src/core:metrics",

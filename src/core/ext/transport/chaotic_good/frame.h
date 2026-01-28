@@ -17,12 +17,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <variant>
 
-#include "absl/random/bit_gen_ref.h"
-#include "absl/status/status.h"
 #include "src/core/call/message.h"
 #include "src/core/call/metadata.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
@@ -30,6 +29,8 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/match.h"
+#include "absl/random/bit_gen_ref.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -218,11 +219,21 @@ struct MessageChunkFrame final : public FrameInterface {
   SliceBuffer payload;
 };
 
+template <typename T>
+inline std::enable_if_t<std::is_base_of<FrameInterface, T>::value, uint32_t>
+FrameMpscTokens(const T& frame) {
+  return frame.MakeHeader().payload_length;
+}
+
 using Frame =
     std::variant<SettingsFrame, ClientInitialMetadataFrame,
                  ServerInitialMetadataFrame, ServerTrailingMetadataFrame,
                  MessageFrame, BeginMessageFrame, MessageChunkFrame,
                  ClientEndOfStream, CancelFrame>;
+
+inline uint32_t FrameMpscTokens(const Frame& frame) {
+  return FrameMpscTokens(absl::ConvertVariantTo<const FrameInterface&>(frame));
+}
 
 inline Frame CopyFrame(const Frame& frame) {
   return Match(

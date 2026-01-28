@@ -21,10 +21,10 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 
-#include "absl/base/attributes.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/base/attributes.h"
+#include "absl/log/log.h"
 
 static uint8_t decode_table[] = {
     0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40,
@@ -191,8 +191,8 @@ grpc_slice grpc_chttp2_base64_decode(const grpc_slice& input) {
     grpc_core::CSliceUnref(output);
     return grpc_empty_slice();
   }
-  CHECK(ctx.output_cur == GRPC_SLICE_END_PTR(output));
-  CHECK(ctx.input_cur == GRPC_SLICE_END_PTR(input));
+  GRPC_CHECK(ctx.output_cur == GRPC_SLICE_END_PTR(output));
+  GRPC_CHECK(ctx.input_cur == GRPC_SLICE_END_PTR(input));
   return output;
 }
 
@@ -234,7 +234,7 @@ grpc_slice grpc_chttp2_base64_decode_with_length(const grpc_slice& input,
     grpc_core::CSliceUnref(output);
     return grpc_empty_slice();
   }
-  CHECK(ctx.output_cur == GRPC_SLICE_END_PTR(output));
-  CHECK(ctx.input_cur <= GRPC_SLICE_END_PTR(input));
+  GRPC_CHECK(ctx.output_cur == GRPC_SLICE_END_PTR(output));
+  GRPC_CHECK(ctx.input_cur <= GRPC_SLICE_END_PTR(input));
   return output;
 }

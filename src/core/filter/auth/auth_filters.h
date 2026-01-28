@@ -24,7 +24,6 @@
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/port_platform.h>
 
-#include "absl/status/statusor.h"
 #include "src/core/call/status_util.h"
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/credentials/transport/security_connector.h"
@@ -36,6 +35,7 @@
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 
@@ -117,36 +117,14 @@ class ClientAuthFilter final : public ImplementChannelFilter<ClientAuthFilter> {
     static const inline NoInterceptor OnServerToClientMessage;
     static const inline NoInterceptor OnServerTrailingMetadata;
     static const inline NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList();
+    }
   };
 
  private:
   void InstallContext();
   absl::StatusOr<RefCountedPtr<grpc_call_credentials>> GetCallCreds();
-
-  // Contains refs to security connector and auth context.
-  grpc_call_credentials::GetRequestMetadataArgs args_;
-};
-
-class LegacyClientAuthFilter final : public ChannelFilter {
- public:
-  static const grpc_channel_filter kFilter;
-
-  static absl::string_view TypeName() { return "client-auth-filter"; }
-
-  LegacyClientAuthFilter(
-      RefCountedPtr<grpc_channel_security_connector> security_connector,
-      RefCountedPtr<grpc_auth_context> auth_context);
-
-  static absl::StatusOr<std::unique_ptr<ClientAuthFilter>> Create(
-      const ChannelArgs& args, ChannelFilter::Args);
-
-  // Construct a promise for one call.
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
-
- private:
-  ArenaPromise<absl::StatusOr<CallArgs>> GetCallCredsMetadata(
-      CallArgs call_args);
 
   // Contains refs to security connector and auth context.
   grpc_call_credentials::GetRequestMetadataArgs args_;
@@ -198,12 +176,12 @@ class ServerAuthFilter final : public ImplementChannelFilter<ServerAuthFilter> {
    public:
     explicit Call(ServerAuthFilter* filter);
     auto OnClientInitialMetadata(ClientMetadata& md, ServerAuthFilter* filter) {
-      return If(
+      return AssertResultType<absl::Status>(If(
           filter->server_credentials_ == nullptr ||
               filter->server_credentials_->auth_metadata_processor().process ==
                   nullptr,
           ImmediateOkStatus(),
-          [filter, md = &md]() { return RunApplicationCode(filter, *md); });
+          [filter, md = &md]() { return RunApplicationCode(filter, *md); }));
     }
     static inline const NoInterceptor OnServerInitialMetadata;
     static inline const NoInterceptor OnClientToServerMessage;
@@ -211,6 +189,9 @@ class ServerAuthFilter final : public ImplementChannelFilter<ServerAuthFilter> {
     static inline const NoInterceptor OnServerToClientMessage;
     static inline const NoInterceptor OnServerTrailingMetadata;
     static inline const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList();
+    }
   };
 
  private:

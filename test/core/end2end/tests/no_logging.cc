@@ -26,7 +26,11 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/time.h"
+#include "test/core/end2end/end2end_tests.h"
+#include "gtest/gtest.h"
 #include "absl/log/globals.h"
 #include "absl/log/log.h"
 #include "absl/log/log_entry.h"
@@ -34,10 +38,6 @@
 #include "absl/log/log_sink_registry.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "gtest/gtest.h"
-#include "src/core/lib/debug/trace.h"
-#include "src/core/util/time.h"
-#include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
 
@@ -55,7 +55,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
   }
 
   ~VerifyLogNoiseLogSink() override {
-    CHECK(log_noise_absent_)
+    GRPC_CHECK(log_noise_absent_)
         << "Unwanted logs present. This will cause log noise. Either user a "
            "tracer (example GRPC_TRACE_LOG or GRPC_TRACE_VLOG) or convert the "
            "statement to VLOG(2).";
@@ -110,7 +110,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
          {"config.cc", std::regex("gRPC experiments.*")},
          // logs from fixtures are never a production issue
          {"http_proxy_fixture.cc", std::regex(".*")},
-         {"http_connect_handshaker.cc",
+         {"http_connect_client_handshaker.cc",
           std::regex("HTTP proxy handshake with .* failed:.*")}});
 
     if (allow_non_error_logs_.load(std::memory_order_relaxed) &&

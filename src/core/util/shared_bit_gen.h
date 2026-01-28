@@ -19,6 +19,25 @@
 
 namespace grpc_core {
 
+#if defined(GRPC_CPU_INTENSIVE_BITGEN)
+class SharedBitGen {
+ public:
+  SharedBitGen() = default;
+  SharedBitGen(const SharedBitGen&) = delete;
+  SharedBitGen& operator=(const SharedBitGen&) = delete;
+  SharedBitGen(SharedBitGen&&) = default;
+  SharedBitGen& operator=(SharedBitGen&&) = default;
+
+  using result_type = absl::BitGen::result_type;
+  result_type operator()() { return bit_gen_(); }
+
+  static constexpr auto min() { return absl::BitGen::min(); }
+  static constexpr auto max() { return absl::BitGen::max(); }
+
+ private:
+  absl::BitGen bit_gen_;
+};
+#else
 class SharedBitGen {
  public:
   SharedBitGen() = default;
@@ -38,6 +57,7 @@ class SharedBitGen {
   // for the mutex acquisition.
   static thread_local absl::BitGen bit_gen_;
 };
+#endif  // defined(GRPC_CPU_INTENSIVE_BITGEN)
 
 }  // namespace grpc_core
 

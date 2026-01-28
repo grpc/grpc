@@ -28,11 +28,6 @@
 #include <optional>
 #include <utility>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/thread_local.h"
@@ -42,8 +37,13 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
 #include "src/core/util/examine_stack.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/thd.h"
 #include "src/core/util/time.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 #ifdef GPR_POSIX_SYNC
 #include <csignal>
@@ -180,7 +180,7 @@ WorkStealingThreadPool::WorkStealingThreadPool(size_t reserve_threads)
 void WorkStealingThreadPool::Quiesce() { pool_->Quiesce(); }
 
 WorkStealingThreadPool::~WorkStealingThreadPool() {
-  CHECK(pool_->IsQuiesced());
+  GRPC_CHECK(pool_->IsQuiesced());
 }
 
 void WorkStealingThreadPool::Run(absl::AnyInvocable<void()> callback) {
@@ -213,11 +213,13 @@ EventEngine::Closure* WorkStealingThreadPool::TheftRegistry::StealOne() {
   return nullptr;
 }
 
+#if GRPC_ENABLE_FORK_SUPPORT
+
 void WorkStealingThreadPool::PrepareFork() { pool_->PrepareFork(); }
 
-void WorkStealingThreadPool::PostforkParent() { pool_->Postfork(); }
+void WorkStealingThreadPool::PostFork() { pool_->Postfork(); }
 
-void WorkStealingThreadPool::PostforkChild() { pool_->Postfork(); }
+#endif  // GRPC_ENABLE_FORK_SUPPORT
 
 // -------- WorkStealingThreadPool::WorkStealingThreadPoolImpl --------
 
@@ -235,7 +237,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Start() {
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Run(
     EventEngine::Closure* closure) {
-  CHECK(!IsQuiesced());
+  GRPC_CHECK(!IsQuiesced());
   if (g_local_queue != nullptr && g_local_queue->owner() == this) {
     g_local_queue->Add(closure);
   } else {
@@ -277,7 +279,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Quiesce() {
   if (!threads_were_shut_down.ok() && g_log_verbose_failures) {
     DumpStacksAndCrash();
   }
-  CHECK(queue_.Empty());
+  GRPC_CHECK(queue_.Empty());
   quiesced_.store(true, std::memory_order_relaxed);
   grpc_core::MutexLock lock(&lifeguard_ptr_mu_);
   lifeguard_.reset();
@@ -291,14 +293,14 @@ bool WorkStealingThreadPool::WorkStealingThreadPoolImpl::SetThrottled(
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::SetShutdown(
     bool is_shutdown) {
   auto was_shutdown = shutdown_.exchange(is_shutdown);
-  CHECK(is_shutdown != was_shutdown);
+  GRPC_CHECK(is_shutdown != was_shutdown);
   work_signal_.SignalAll();
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::SetForking(
     bool is_forking) {
   auto was_forking = forking_.exchange(is_forking);
-  CHECK(is_forking != was_forking);
+  GRPC_CHECK(is_forking != was_forking);
 }
 
 bool WorkStealingThreadPool::WorkStealingThreadPoolImpl::IsForking() {
@@ -508,7 +510,7 @@ void WorkStealingThreadPool::ThreadState::ThreadBody() {
   } else if (pool_->IsShutdown()) {
     FinishDraining();
   }
-  CHECK(g_local_queue->Empty());
+  GRPC_CHECK(g_local_queue->Empty());
   pool_->theft_registry()->Unenroll(g_local_queue);
   delete g_local_queue;
   if (g_log_verbose_failures) {

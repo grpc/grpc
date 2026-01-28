@@ -245,6 +245,16 @@ grpc_objc_testing_library(
 )
 
 grpc_objc_testing_library(
+    name = "EventEngineServerTests-lib",
+    srcs = ["EventEngineTests/CFEventEngineServerTests.mm"],
+    deps = [
+        "//src/core:cf_event_engine",
+        "//test/core/event_engine/test_suite/posix:oracle_event_engine_posix",
+        "//test/core/event_engine/test_suite/tests:server",
+    ],
+)
+
+grpc_objc_testing_library(
     name = "EventEngineUnitTests-lib",
     srcs = ["EventEngineTests/CFEventEngineUnitTests.mm"],
     deps = [
@@ -258,6 +268,11 @@ grpc_objc_testing_library(
 grpc_objc_ios_unit_test(
     name = "EventEngineClientTests",
     deps = [":EventEngineClientTests-lib"],
+)
+
+grpc_objc_ios_unit_test(
+    name = "EventEngineServerTests",
+    deps = [":EventEngineServerTests-lib"],
 )
 
 grpc_objc_ios_unit_test(
@@ -303,6 +318,10 @@ grpc_sh_test(
         "@bazel_tools//tools/bash/runfiles",
         "@com_google_protobuf//:protoc",
     ] + glob(["PluginTest/*.proto"]),
+    env = {
+        "RLOCATIONPATH_PROTOC": "$(rlocationpath @com_google_protobuf//:protoc)",
+        "RLOCATIONPATH_PLUGIN": "$(rlocationpath //src/compiler:grpc_objective_c_plugin)",
+    },
     uses_polling = False,
 )
 
@@ -315,5 +334,9 @@ grpc_sh_test(
         "@com_google_protobuf//:protoc",
         "@com_google_protobuf//:well_known_type_protos",
     ] + glob(["RemoteTestClient/*.proto"]),
+    env = {
+        "RLOCATIONPATH_PROTOC": "$(rlocationpath @com_google_protobuf//:protoc)",
+        "RLOCATIONPATH_PLUGIN": "$(rlocationpath //src/compiler:grpc_objective_c_plugin)",
+    },
     uses_polling = False,
 )

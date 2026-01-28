@@ -75,7 +75,9 @@
   description: Enable fork support
   prelude: |
     #ifdef GRPC_ENABLE_FORK_SUPPORT
+    #ifndef GRPC_ENABLE_FORK_SUPPORT_DEFAULT
     #define GRPC_ENABLE_FORK_SUPPORT_DEFAULT true
+    #endif  // !defined(GRPC_ENABLE_FORK_SUPPORT_DEFAULT)
     #else
     #define GRPC_ENABLE_FORK_SUPPORT_DEFAULT false
     #endif  // GRPC_ENABLE_FORK_SUPPORT
@@ -103,6 +105,10 @@
   default:
   description: Path to the default SSL roots file.
   force-load-on-access: true
+- name: use_system_roots_over_language_callback
+  type: bool
+  default: false
+  description: Prefer loading system root certificates over language callback.
 - name: not_use_system_ssl_roots
   type: bool
   default: false
@@ -128,3 +134,22 @@
   description: "EXPERIMENTAL: \
     If non-zero, extend the lifetime of channelz nodes past the underlying object lifetime, up to this many nodes. \
     The value may be adjusted slightly to account for implementation limits."
+- name: channelz_call_tracer
+  type: bool
+  default: false
+  fuzz: true
+  description: "EXPERIMENTAL: \
+    If true, channelz will allow inspecting calls as well as channels."
+- name: experimental_target_memory_pressure
+  type: double
+  default: 0.95
+  description: "EXPERIMENTAL: \
+    The target pressure for the memory quota pressure controller. This is a value between 0 and 1."
+  fuzz: true
+- name: experimental_memory_pressure_threshold
+  type: double
+  default: 0.99
+  description: "EXPERIMENTAL: \
+    The threshold for the memory quota pressure controller. \
+    This is a value between 0 and 1, and must always be greater than the target pressure."
+  fuzz: true

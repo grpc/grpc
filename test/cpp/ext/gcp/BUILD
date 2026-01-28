@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/cpp/ext/gcp")
+grpc_package(
+    name = "test/cpp/ext/gcp",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "observability_test",
@@ -49,7 +55,12 @@ grpc_cc_test(
     ],
     uses_polling = False,
     deps = [
+        "//:config",
+        "//:gpr",
+        "//src/core:env",
+        "//src/core:json_reader",
         "//src/cpp/ext/gcp:observability_config",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
 )
@@ -80,9 +91,14 @@ grpc_cc_test(
     ],
     external_deps = [
         "gtest",
+        "absl/strings",
+        "absl/synchronization",
     ],
     linkstatic = True,
     deps = [
+        "//:grpc",
+        "//src/core:env",
+        "//src/core:notification",
         "//src/cpp/ext/gcp:environment_autodetect",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",

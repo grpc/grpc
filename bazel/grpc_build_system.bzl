@@ -32,7 +32,13 @@ load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl", "ios_test_runner")
 load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
 load("@com_google_protobuf//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("//bazel:copts.bzl", "GRPC_DEFAULT_COPTS")
 load("//bazel:experiments.bzl", "EXPERIMENTS", "EXPERIMENT_ENABLES", "EXPERIMENT_POLLERS")
@@ -63,8 +69,6 @@ def _get_external_deps(external_deps):
     for dep in external_deps:
         if dep.startswith("@"):
             ret.append(dep)
-        elif dep == "address_sorting":
-            ret.append("//third_party/address_sorting")
         elif dep == "xxhash":
             ret.append("//third_party/xxhash")
         elif dep == "cares":
@@ -80,8 +84,6 @@ def _get_external_deps(external_deps):
             ret.append(dep.replace("otel/", "@io_opentelemetry_cpp//"))
         elif dep.startswith("google_cloud_cpp"):
             ret.append(dep.replace("google_cloud_cpp", "@google_cloud_cpp//"))
-        elif dep == "libprotobuf_mutator":
-            ret.append("@com_google_libprotobuf_mutator//:libprotobuf_mutator")
         else:
             ret.append("//third_party:" + dep)
     return ret
@@ -154,7 +156,7 @@ def grpc_cc_library(
     # See b/391433873.
     if "fuzztest" in external_deps and "grpc-fuzztest" not in tags:
         tags = tags + ["grpc-fuzztest"]
-    native.cc_library(
+    cc_library(
         name = name,
         srcs = srcs,
         defines = defines +
@@ -189,7 +191,7 @@ def grpc_cc_library(
     )
 
 def grpc_proto_plugin(name, srcs = [], deps = []):
-    native.cc_binary(
+    cc_binary(
         name = name + "_native",
         srcs = srcs,
         deps = deps,
@@ -198,13 +200,15 @@ def grpc_proto_plugin(name, srcs = [], deps = []):
         name = name + "_universal",
         binary = name + "_native",
     )
+
+    # In order to avoid warnings from Bazel, names of the rule and its output file must differ.
     native.genrule(
         name = name,
         srcs = select({
             "@platforms//os:macos": [name + "_universal"],
             "//conditions:default": [name + "_native"],
         }),
-        outs = [name],
+        outs = [name + "_binary"],
         cmd = "cp $< $@",
         executable = True,
     )
@@ -264,7 +268,7 @@ def grpc_cc_grpc_library(
     cc_grpc_library(
         name = name,
         srcs = srcs,
-        deps = deps,
+        deps = deps + ["//:grpc++"],
         visibility = visibility,
         generate_mocks = generate_mocks,
         allow_deprecated = allow_deprecated,
@@ -583,7 +587,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             **test_args
         )
 
-    native.cc_library(
+    cc_library(
         name = "%s_TEST_LIBRARY" % name,
         testonly = 1,
         srcs = srcs,
@@ -597,7 +601,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             fail("srcs changed")
         if poller_config["deps"] != core_deps:
             fail("deps changed: %r --> %r" % (deps, poller_config["deps"]))
-        native.cc_test(
+        cc_test(
             name = poller_config["name"],
             deps = ["%s_TEST_LIBRARY" % name],
             tags = poller_config["tags"],
@@ -607,7 +611,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             **test_args
         )
 
-def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], testonly = False, linkshared = False, linkopts = [], tags = [], features = [], visibility = None):
+def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], testonly = False, linkshared = False, linkopts = [], tags = [], target_compatible_with = [], features = [], visibility = None):
     """Generates a cc_binary for use in the gRPC repo.
 
     Args:
@@ -621,12 +625,13 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
       linkshared: Enables linkshared on the binary.
       linkopts: linkopts to supply to the cc_binary.
       tags: Tags to apply to the target.
+      target_compatible_with: Constraint values that must be present in the target platform
       features: features to be supplied to the cc_binary.
       visibility: The visibility of the target.
     """
     visibility = _update_visibility(visibility)
     copts = []
-    native.cc_binary(
+    cc_binary(
         name = name,
         srcs = srcs,
         args = args,
@@ -637,6 +642,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
         copts = GRPC_DEFAULT_COPTS + copts,
         linkopts = if_not_windows(["-pthread"]) + linkopts,
         tags = tags,
+        target_compatible_with = target_compatible_with,
         features = features,
         visibility = visibility,
     )
@@ -659,7 +665,7 @@ def grpc_generate_objc_one_off_targets():
 def grpc_generate_one_off_internal_targets():
     pass
 
-def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, exclude_pollers = [], uses_event_engine = True):
+def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, size = "medium", timeout = None, tags = [], env = {}, exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, exclude_pollers = [], uses_event_engine = True):
     """Execute an sh_test for every <poller> x <EventEngine> combination
 
     Args:
@@ -671,6 +677,7 @@ def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, siz
         size: The size of the test.
         timeout: The test timeout.
         tags: The tags for the test.
+        env: Environment variables to set for the test.
         exec_compatible_with: A list of constraint values that must be
             satisfied for the platform.
         exec_properties: A dictionary of strings that will be added to the
@@ -691,19 +698,19 @@ def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, siz
     }
 
     for poller_config in expand_tests(name, srcs, [], tags, args, exclude_pollers, uses_polling, uses_event_engine, flaky):
-        native.sh_test(
+        sh_test(
             name = poller_config["name"],
             srcs = poller_config["srcs"],
             deps = poller_config["deps"],
             tags = poller_config["tags"],
             args = poller_config["args"],
-            env = poller_config["env"],
+            env = poller_config["env"] | env,
             flaky = poller_config["flaky"],
             **test_args
         )
 
 def grpc_sh_binary(name, srcs, data = []):
-    native.sh_binary(
+    sh_binary(
         name = name,
         srcs = srcs,
         data = data,
@@ -718,7 +725,7 @@ def grpc_py_binary(
         testonly = False,
         python_version = "PY2",
         **kwargs):
-    native.py_binary(
+    py_binary(
         name = name,
         srcs = srcs,
         testonly = testonly,
@@ -742,6 +749,8 @@ def grpc_package(name, visibility = "private", features = []):
         visibility = ["//visibility:public"]
     elif visibility == "private":
         visibility = []
+    elif visibility == "grpc":
+        visibility = ["//:__subpackages__"]
     else:
         fail("Unknown visibility " + visibility)
 
@@ -810,6 +819,18 @@ def grpc_upb_proto_library(name, deps):
 
 def grpc_upb_proto_reflection_library(name, deps):
     upb_proto_reflection_library(name = name, deps = deps)
+
+def grpc_add_well_known_proto_upb_targets(targets):
+    """Adds well-known proto upb targets to the given targets."""
+    for target in targets:
+        grpc_upb_proto_library(
+            name = "protobuf_" + target + "_upb",
+            deps = ["@com_google_protobuf//:" + target + "_proto"],
+        )
+        grpc_upb_proto_reflection_library(
+            name = "protobuf_" + target + "_upbdefs",
+            deps = ["@com_google_protobuf//:" + target + "_proto"],
+        )
 
 # buildifier: disable=unnamed-macro
 def python_config_settings():

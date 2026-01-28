@@ -17,21 +17,19 @@
 #include <memory>
 
 #include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/credentials/transport/fake/fake_security_connector.h"
 #include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/util/env.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
 #include "test/core/end2end/fuzzers/network_input.h"
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
@@ -62,7 +60,6 @@ class ConnectorFuzzer {
     grpc_timer_manager_set_start_threaded(false);
     grpc_init();
     ExecCtx exec_ctx;
-    Executor::SetThreadingAll(false);
     listener_ =
         engine_
             ->CreateListener(
@@ -74,7 +71,8 @@ class ConnectorFuzzer {
                   network_inputs_.pop();
                 },
                 [](absl::Status) {}, ChannelArgsEndpointConfig(ChannelArgs{}),
-                std::make_unique<MemoryQuota>("foo"))
+                std::make_unique<MemoryQuota>(
+                    MakeRefCounted<channelz::ResourceQuotaNode>("bar")))
             .value();
     if (msg.has_shutdown_connector() &&
         msg.shutdown_connector().delay_ms() > 0) {

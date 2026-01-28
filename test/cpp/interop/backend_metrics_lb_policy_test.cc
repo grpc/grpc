@@ -18,13 +18,11 @@
 
 #include "test/cpp/interop/backend_metrics_lb_policy.h"
 
-#include <gmock/gmock.h>
 #include <grpc/grpc.h>
 #include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/ext/orca_service.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/status.h>
-#include <gtest/gtest.h>
 
 #include <memory>
 #include <thread>
@@ -35,6 +33,8 @@
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc {
 namespace testing {

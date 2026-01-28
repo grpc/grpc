@@ -23,7 +23,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/status/status.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
@@ -38,12 +37,13 @@
 #include "src/core/service_config/service_config_call_data.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/util/latent_see.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 
 absl::Status RbacFilter::Call::OnClientInitialMetadata(ClientMetadata& md,
                                                        RbacFilter* filter) {
-  GRPC_LATENT_SEE_INNER_SCOPE("RbacFilter::Call::OnClientInitialMetadata");
+  GRPC_LATENT_SEE_SCOPE("RbacFilter::Call::OnClientInitialMetadata");
   // Fetch and apply the rbac policy from the service config.
   auto* service_config_call_data = GetContext<ServiceConfigCallData>();
   auto* method_params = static_cast<RbacMethodParsedConfig*>(

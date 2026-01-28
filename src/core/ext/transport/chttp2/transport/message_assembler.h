@@ -19,20 +19,25 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_MESSAGE_ASSEMBLER_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_MESSAGE_ASSEMBLER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <cstdint>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "src/core/call/message.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 namespace http2 {
+
+#define GRPC_MESSAGE_ASSEMBLER_DEBUG VLOG(2)
 
 // TODO(tjagtap) TODO(akshitpatel): [PH2][P3] : Write micro benchmarks for
 // assembler and disassembler code
@@ -51,44 +56,49 @@ class GrpcMessageAssembler {
  public:
   // Input : The input must contain the payload from the Http2DataFrame.
   // This function will move the payload into an internal buffer.
-  absl::Status AppendNewDataFrame(SliceBuffer& payload,
-                                  const bool is_end_stream) {
-    DCHECK(!is_end_stream_)
+  Http2Status AppendNewDataFrame(SliceBuffer& payload,
+                                 const bool is_end_stream) {
+    GRPC_DCHECK(!is_end_stream_)
         << "Calling this function when a previous frame was marked as the last "
            "frame does not make sense.";
     is_end_stream_ = is_end_stream;
     if constexpr (sizeof(size_t) == 4) {
       if (GPR_UNLIKELY(message_buffer_.Length() >=
                        UINT32_MAX - payload.Length())) {
-        // STREAM_ERROR
-        return absl::Status(
-            absl::StatusCode::kInternal,
+        return Http2Status::Http2StreamError(
+            Http2ErrorCode::kInternalError,
             "Stream Error: SliceBuffer overflow for 32 bit platforms.");
       }
     }
     payload.MoveFirstNBytesIntoSliceBuffer(payload.Length(), message_buffer_);
-    DCHECK_EQ(payload.Length(), 0u);
-    return absl::OkStatus();
+    GRPC_DCHECK_EQ(payload.Length(), 0u);
+    return Http2Status::Ok();
   }
 
   // Returns a valid MessageHandle if it has a complete message.
   // Returns a nullptr if it does not have a complete message.
   // Returns an error if an incomplete message is received and the stream ends.
-  absl::StatusOr<MessageHandle> ExtractMessage() {
+  ValueOrHttp2Status<MessageHandle> ExtractMessage() {
     const size_t current_len = message_buffer_.Length();
     if (current_len < kGrpcHeaderSizeInBytes) {
+      // TODO(tjagtap) : [PH2][P3] : Write a test for this.
       return ReturnNullOrError();
     }
-    GrpcMessageHeader header = ExtractGrpcHeader(message_buffer_);
+    ValueOrHttp2Status<GrpcMessageHeader> header =
+        ExtractGrpcHeader(message_buffer_);
+    if (!header.IsOk()) {
+      return header.TakeStatus(std::move(header));
+    }
+    const uint32_t header_length = header.value().length;
+
     if constexpr (sizeof(size_t) == 4) {
-      if (GPR_UNLIKELY(header.length > kOneGb)) {
-        // STREAM_ERROR
-        return absl::Status(
-            absl::StatusCode::kInternal,
+      if (GPR_UNLIKELY(header_length > kOneGb)) {
+        return Http2Status::Http2StreamError(
+            Http2ErrorCode::kInternalError,
             "Stream Error: SliceBuffer overflow for 32 bit platforms.");
       }
     }
-    if (GPR_LIKELY(current_len - kGrpcHeaderSizeInBytes >= header.length)) {
+    if (GPR_LIKELY(current_len - kGrpcHeaderSizeInBytes >= header_length)) {
       SliceBuffer discard;
       message_buffer_.MoveFirstNBytesIntoSliceBuffer(kGrpcHeaderSizeInBytes,
                                                      discard);
@@ -99,34 +109,31 @@ class GrpcMessageAssembler {
       // bounds.
       MessageHandle grpc_message = Arena::MakePooled<Message>();
       message_buffer_.MoveFirstNBytesIntoSliceBuffer(
-          header.length, *(grpc_message->payload()));
-      uint32_t& flag = grpc_message->mutable_flags();
-      flag = header.flags;
-      return grpc_message;
+          header_length, *(grpc_message->payload()));
+      grpc_message->mutable_flags() = header.value().flags;
+      return std::move(grpc_message);
     }
     return ReturnNullOrError();
   }
 
  private:
-  absl::StatusOr<MessageHandle> ReturnNullOrError() {
-    // TODO(tjagtap) : [PH2][P1] Replace with Http2StatusOr when that PR lands
+  ValueOrHttp2Status<MessageHandle> ReturnNullOrError() {
     if (GPR_UNLIKELY(is_end_stream_ && message_buffer_.Length() > 0)) {
-      return absl::InternalError("Incomplete gRPC frame received");
+      return Http2Status::Http2StreamError(Http2ErrorCode::kInternalError,
+                                           "Incomplete gRPC frame received");
     }
-    return nullptr;
+    GRPC_MESSAGE_ASSEMBLER_DEBUG
+        << "Incomplete gRPC message received. Return nullptr";
+    return ValueOrHttp2Status<MessageHandle>(nullptr);
   }
+
   bool is_end_stream_ = false;
   SliceBuffer message_buffer_;
 };
 
-constexpr uint32_t kMaxMessageBatchSize = (16 * 1024u);
-
 // This class is meant to convert gRPC Messages into Http2DataFrame ensuring
 // that the payload size of the data frame is configurable.
-// This class is not responsible for queueing or backpressure. That will be done
-// by other classes.
-// TODO(tjagtap) : [PH2][P2] Edit comment once this
-// class is integrated and exercised.
+// This class is not responsible for queueing or backpressure.
 class GrpcMessageDisassembler {
  public:
   // One GrpcMessageDisassembler instance MUST be associated with one stream
@@ -135,15 +142,17 @@ class GrpcMessageDisassembler {
 
   // GrpcMessageDisassembler object will take ownership of the message.
   void PrepareSingleMessageForSending(MessageHandle message) {
-    DCHECK_EQ(GetBufferedLength(), 0u);
+    GRPC_DCHECK_EQ(GetBufferedLength(), 0u);
     PrepareMessageForSending(std::move(message));
   }
 
   // GrpcMessageDisassembler object will take ownership of the message.
   void PrepareBatchedMessageForSending(MessageHandle message) {
+    // The size of the message is controlled by the application (and by using
+    // GRPC_ARG_MAX_SEND_MESSAGE_LENGTH). PH2 ensures that if the the message
+    // size is larger than the default stream queue size kStreamQueueSize, at
+    // max one message will be buffered in the disassembler.
     PrepareMessageForSending(std::move(message));
-    DCHECK_LE(GetBufferedLength(), kMaxMessageBatchSize)
-        << "Avoid batches larger than " << kMaxMessageBatchSize << "bytes";
   }
 
   size_t GetBufferedLength() const { return message_.Length(); }
@@ -152,8 +161,8 @@ class GrpcMessageDisassembler {
   Http2DataFrame GenerateNextFrame(const uint32_t stream_id,
                                    const uint32_t max_length,
                                    const bool is_end_stream = false) {
-    DCHECK_GT(max_length, 0u);
-    DCHECK_GT(GetBufferedLength(), 0u);
+    GRPC_DCHECK_GT(max_length, 0u);
+    GRPC_DCHECK_GT(GetBufferedLength(), 0u);
     SliceBuffer temp;
     const uint32_t current_length =
         message_.Length() >= max_length ? max_length : message_.Length();

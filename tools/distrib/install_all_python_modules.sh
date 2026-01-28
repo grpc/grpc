@@ -23,13 +23,14 @@ cd "$BASEDIR";
 
 # unit-tests setup starts from here
 function maybe_run_command () {
+  # TODO(ssreenithi): find pyproject.toml/nox equivalent
   if python3 setup.py --help-commands | grep "$1" &>/dev/null; then
     python3 setup.py "$1";
   fi
 }
 
-python3 -m pip install --upgrade "cython<4.0.0rc1";
-python3 setup.py install;
+python3 -m pip install --upgrade "cython==3.1.1";
+python3 -m pip install .;
 
 # Build and install grpcio_tools
 pushd tools/distrib/python/grpcio_tools;
@@ -44,7 +45,7 @@ pushd src/python/grpcio_observability;
 popd;
 
 # Install xds_protos
-pushd tools/distrib/python/xds_protos;
+pushd py_xds_protos;
   GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
 popd;
 

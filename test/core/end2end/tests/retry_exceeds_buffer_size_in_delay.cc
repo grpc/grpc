@@ -20,10 +20,10 @@
 #include <optional>
 #include <string>
 
-#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace {
@@ -37,7 +37,7 @@ namespace {
 // - retry attempt gets ABORTED but is not retried
 CORE_END2END_TEST(RetryTests, RetryExceedsBufferSizeInDelay) {
   SKIP_IF_V3();  // Not working yet
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   InitClient(
       ChannelArgs()
           .Set(GRPC_ARG_SERVICE_CONFIG,

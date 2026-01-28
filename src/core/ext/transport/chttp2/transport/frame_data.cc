@@ -22,9 +22,6 @@
 #include <grpc/support/port_platform.h>
 #include <stdlib.h>
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -32,7 +29,10 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/stats.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/status_helper.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
 
 absl::Status grpc_chttp2_data_parser_begin_frame(uint8_t flags,
                                                  uint32_t stream_id,
@@ -63,7 +63,7 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
 
   hdr = GRPC_SLICE_MALLOC(header_size);
   p = GRPC_SLICE_START_PTR(hdr);
-  CHECK(write_bytes < (1 << 24));
+  GRPC_CHECK(write_bytes < (1 << 24));
   *p++ = static_cast<uint8_t>(write_bytes >> 16);
   *p++ = static_cast<uint8_t>(write_bytes >> 8);
   *p++ = static_cast<uint8_t>(write_bytes);
@@ -80,7 +80,7 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
 
   grpc_slice_buffer_move_first_no_ref(inbuf, write_bytes, outbuf);
 
-  grpc_core::global_stats().IncrementHttp2WriteDataFrameSize(write_bytes);
+  grpc_core::http2_global_stats().IncrementHttp2WriteDataFrameSize(write_bytes);
   call_tracer->RecordOutgoingBytes({header_size, 0, 0});
 }
 

@@ -33,13 +33,13 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "absl/log/log.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/credentials/transport/tls/load_system_roots.h"
 #include "src/core/credentials/transport/tls/load_system_roots_supported.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/load_file.h"
 #include "src/core/util/useful.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 namespace {
@@ -131,6 +131,7 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
       } else {
         LOG(ERROR) << "failed to read file: " << roots_filenames[i].path;
       }
+      close(file_descriptor);
     }
   }
   bundle_slice = grpc_slice_new(bundle_string, bytes_read, gpr_free);

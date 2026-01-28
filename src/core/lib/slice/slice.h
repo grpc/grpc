@@ -25,12 +25,12 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/strings/string_view.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/string.h"
+#include "absl/log/check.h"
+#include "absl/strings/string_view.h"
 
 // Herein lies grpc_core::Slice and its team of thin wrappers around grpc_slice.
 // They aim to keep you safe by providing strong guarantees around lifetime and
@@ -292,6 +292,11 @@ class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND MutableSlice
   // remainder.
   MutableSlice TakeFirst(size_t n) {
     return MutableSlice(NoCheck{}, grpc_slice_split_head(c_slice_ptr(), n));
+  }
+
+  MutableSlice TakeFirstNoInline(size_t n) {
+    return MutableSlice(NoCheck{},
+                        grpc_slice_split_head_no_inline(c_slice_ptr(), n));
   }
 
   // Iterator access to the underlying bytes

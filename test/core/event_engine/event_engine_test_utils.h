@@ -27,12 +27,13 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
-#include "src/core/util/notification.h"
-#include "src/core/util/sync.h"
 
 using EventEngineFactory = std::function<
     std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>;
@@ -52,7 +53,8 @@ std::string GetNextSendMessage();
 // calling thread until said Write and Read operations are complete.
 absl::Status SendValidatePayload(absl::string_view data,
                                  EventEngine::Endpoint* send_endpoint,
-                                 EventEngine::Endpoint* receive_endpoint);
+                                 EventEngine::Endpoint* receive_endpoint,
+                                 int read_hint_bytes = -1);
 
 // A helper class to create clients/listeners and connections between them.
 // The clients and listeners can be created by the oracle EventEngine
@@ -63,7 +65,9 @@ class ConnectionManager {
  public:
   ConnectionManager(std::unique_ptr<EventEngine> test_event_engine,
                     std::unique_ptr<EventEngine> oracle_event_engine)
-      : memory_quota_(std::make_unique<grpc_core::MemoryQuota>("foo")),
+      : memory_quota_(std::make_unique<grpc_core::MemoryQuota>(
+            grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+                "foo"))),
         test_event_engine_(std::move(test_event_engine)),
         oracle_event_engine_(std::move(oracle_event_engine)) {}
   ~ConnectionManager() = default;
@@ -196,12 +200,8 @@ class ThreadedNoopEndpoint : public EventEngine::Endpoint {
     return local_;
   }
 
-  std::vector<size_t> AllWriteMetrics() override { return {}; }
-  std::optional<absl::string_view> GetMetricName(size_t) override {
-    return std::nullopt;
-  }
-  std::optional<size_t> GetMetricKey(absl::string_view) override {
-    return std::nullopt;
+  std::shared_ptr<TelemetryInfo> GetTelemetryInfo() const override {
+    return nullptr;
   }
 
  private:

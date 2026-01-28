@@ -24,12 +24,12 @@
 #include <memory>
 #include <optional>
 
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/test_util/test_call_creds.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 namespace {
@@ -241,7 +241,7 @@ void TestRequestResponseWithPayloadAndDeletedCallCreds(
 CORE_END2END_TEST(PerCallCredsOnInsecureTests,
                   RequestWithServerRejectingClientCreds) {
   InitClient(ChannelArgs());
-  InitServer(ChannelArgs().Set(FAIL_AUTH_CHECK_SERVER_ARG_NAME, true));
+  InitServer(DefaultServerArgs().Set(FAIL_AUTH_CHECK_SERVER_ARG_NAME, true));
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   auto* creds =
       grpc_md_only_test_credentials_create(fake_md_key, fake_md_value);

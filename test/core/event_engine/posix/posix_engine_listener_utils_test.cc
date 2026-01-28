@@ -21,23 +21,23 @@
 #include <list>
 #include <string>
 
+#include "src/core/lib/iomgr/port.h"
+#include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "gtest/gtest.h"
-#include "src/core/lib/iomgr/port.h"
 
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 
 #include <ifaddrs.h>
 
-#include "absl/log/log.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "test/core/test_util/port.h"
+#include "absl/log/log.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -72,11 +72,13 @@ class TestListenerSocketsContainer : public ListenerSocketsContainer {
 }  // namespace
 
 TEST(PosixEngineListenerUtils, ListenerContainerAddWildcardAddressesTest) {
+  EventEnginePosixInterface posix_interface;
   TestListenerSocketsContainer listener_sockets;
   int port = grpc_pick_unused_port_or_die();
   ChannelArgsEndpointConfig config;
   auto result = ListenerContainerAddWildcardAddresses(
-      listener_sockets, TcpOptionsFromEndpointConfig(config), port);
+      &posix_interface, listener_sockets, TcpOptionsFromEndpointConfig(config),
+      port);
   EXPECT_TRUE(result.ok());
   EXPECT_GT(*result, 0);
   port = *result;
@@ -94,7 +96,7 @@ TEST(PosixEngineListenerUtils, ListenerContainerAddWildcardAddressesTest) {
                 absl::StrCat("0.0.0.0:", std::to_string(port)));
     }
     EXPECT_FALSE(IsSockAddrLinkLocal(&((*socket).addr)));
-    close(socket->sock.Fd());
+    posix_interface.Close(socket->sock);
   }
 }
 
@@ -186,6 +188,7 @@ TEST(PosixEngineListenerUtils, ListenerContainerIpv6LinkLocalTest) {
 
 #ifdef GRPC_HAVE_IFADDRS
 TEST(PosixEngineListenerUtils, ListenerContainerAddAllLocalAddressesTest) {
+  EventEnginePosixInterface posix_interface;
   TestListenerSocketsContainer listener_sockets;
   int port = grpc_pick_unused_port_or_die();
   ChannelArgsEndpointConfig config;
@@ -203,7 +206,8 @@ TEST(PosixEngineListenerUtils, ListenerContainerAddAllLocalAddressesTest) {
   }
   freeifaddrs(ifa);
   auto result = ListenerContainerAddAllLocalAddresses(
-      listener_sockets, TcpOptionsFromEndpointConfig(config), port);
+      &posix_interface, listener_sockets, TcpOptionsFromEndpointConfig(config),
+      port);
   if (num_ifaddrs == 0 || !result.ok()) {
     // Its possible that the machine may not have any Ipv4/Ipv6 interfaces
     // configured for listening. In that case, don't fail test.
@@ -224,7 +228,7 @@ TEST(PosixEngineListenerUtils, ListenerContainerAddAllLocalAddressesTest) {
                 (*socket).addr.address()->sa_family == AF_INET);
     EXPECT_EQ(ResolvedAddressGetPort((*socket).addr), port);
     EXPECT_FALSE(IsSockAddrLinkLocal(&((*socket).addr)));
-    close(socket->sock.Fd());
+    posix_interface.Close(socket->sock);
   }
 }
 #endif  // GRPC_HAVE_IFADDRS

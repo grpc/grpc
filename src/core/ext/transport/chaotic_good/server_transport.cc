@@ -23,13 +23,7 @@
 #include <string>
 #include <tuple>
 
-#include "absl/cleanup/cleanup.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/random/bit_gen_ref.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"
@@ -47,7 +41,14 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/cleanup/cleanup.h"
+#include "absl/log/log.h"
+#include "absl/random/bit_gen_ref.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -97,7 +98,7 @@ void ChaoticGoodServerTransport::StreamDispatch::DispatchFrame(
   if (stream == nullptr) return;
   stream->spawn_serializer->Spawn(
       [this, stream, frame = std::move(frame)]() mutable {
-        DCHECK_NE(stream.get(), nullptr);
+        GRPC_DCHECK_NE(stream.get(), nullptr);
         auto& call = stream->call;
         return call.CancelIfFails(call.UntilCallCompletes(TrySeq(
             frame.Payload(),
@@ -140,7 +141,7 @@ auto ChaoticGoodServerTransport::StreamDispatch::SendCallInitialMetadataAndBody(
               frame.stream_id = stream_id;
               return TrySeq(
                   outgoing_frames_.Send(
-                      OutgoingFrame{std::move(frame), call_tracer}),
+                      OutgoingFrame{std::move(frame), call_tracer}, 1),
                   SendCallBody(stream_id, call_initiator, call_tracer));
             },
             []() { return StatusFlag(true); });
@@ -150,7 +151,7 @@ auto ChaoticGoodServerTransport::StreamDispatch::SendCallInitialMetadataAndBody(
 auto ChaoticGoodServerTransport::StreamDispatch::CallOutboundLoop(
     uint32_t stream_id, CallInitiator call_initiator) {
   std::shared_ptr<TcpCallTracer> call_tracer;
-  auto tracer = call_initiator.arena()->GetContext<CallTracerInterface>();
+  auto tracer = call_initiator.arena()->GetContext<CallTracer>();
   if (tracer != nullptr && tracer->IsSampled()) {
     call_tracer = tracer->StartNewTcpTrace();
   }
@@ -171,7 +172,7 @@ auto ChaoticGoodServerTransport::StreamDispatch::CallOutboundLoop(
             frame.body = ServerMetadataProtoFromGrpc(*md);
             frame.stream_id = stream_id;
             return outgoing_frames.Send(
-                OutgoingFrame{std::move(frame), call_tracer});
+                OutgoingFrame{std::move(frame), call_tracer}, 1);
           }));
 }
 
@@ -268,7 +269,8 @@ ChaoticGoodServerTransport::StreamDispatch::StreamDispatch(
     const ChannelArgs& args, FrameTransport* frame_transport,
     MessageChunker message_chunker,
     RefCountedPtr<UnstartedCallDestination> call_destination)
-    : ctx_(frame_transport->ctx()),
+    : channelz::DataSource(frame_transport->ctx()->socket_node),
+      ctx_(frame_transport->ctx()),
       call_arena_allocator_(MakeRefCounted<CallArenaAllocator>(
           args.GetObject<ResourceQuota>()
               ->memory_quota()
@@ -276,15 +278,27 @@ ChaoticGoodServerTransport::StreamDispatch::StreamDispatch(
           1024)),
       call_destination_(std::move(call_destination)),
       message_chunker_(message_chunker) {
-  CHECK(ctx_ != nullptr);
+  GRPC_CHECK(ctx_ != nullptr);
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       ctx_->event_engine.get());
   party_ = Party::Make(std::move(party_arena));
   incoming_frame_spawner_ = party_->MakeSpawnSerializer();
-  MpscReceiver<OutgoingFrame> outgoing_pipe(8);
+  MpscReceiver<OutgoingFrame> outgoing_pipe(256 * 1024 * 1024);
   outgoing_frames_ = outgoing_pipe.MakeSender();
   frame_transport->Start(party_.get(), std::move(outgoing_pipe), Ref());
+  SourceConstructed();
+}
+
+void ChaoticGoodServerTransport::StreamDispatch::AddData(
+    channelz::DataSink sink) {
+  party_->ExportToChannelz("transport_party", sink);
+  MutexLock lock(&mu_);
+  message_chunker_.AddData(sink);
+  sink.AddData("transport_state",
+               channelz::PropertyList()
+                   .Set("stream_map_size", stream_map_.size())
+                   .Set("last_seen_new_stream_id", last_seen_new_stream_id_));
 }
 
 void ChaoticGoodServerTransport::SetCallDestination(

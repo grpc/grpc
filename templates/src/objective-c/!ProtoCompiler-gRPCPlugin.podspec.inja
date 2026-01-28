@@ -97,7 +97,7 @@ Pod::Spec.new do |s|
 
   repo_root = '../..'
   bazel = "#{repo_root}/tools/bazel"
-  plugin = 'grpc_objective_c_plugin'
+  plugin = 'grpc_objective_c_plugin_binary'
 
   s.preserve_paths = plugin
 

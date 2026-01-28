@@ -22,11 +22,11 @@
 
 #include <memory>
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace {
@@ -65,11 +65,6 @@ CORE_END2END_TEST(CoreEnd2endTests, CancelWithStatus2) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, CancelWithStatus3) {
-  InitClient(ChannelArgs());
-  // This is a workaround for the flakiness that if the server ever enters
-  // GracefulShutdown for whatever reason while the client has already been
-  // shutdown, the test would not timeout and fail.
-  InitServer(ChannelArgs().Set(GRPC_ARG_PING_TIMEOUT_MS, 5000));
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   IncomingMetadata server_initial_metadata;
   IncomingStatusOnClient server_status;
@@ -89,11 +84,6 @@ CORE_END2END_TEST(CoreEnd2endTests, CancelWithStatus3) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, CancelWithStatus4) {
-  InitClient(ChannelArgs());
-  // This is a workaround for the flakiness that if the server ever enters
-  // GracefulShutdown for whatever reason while the client has already been
-  // shutdown, the test would not timeout and fail.
-  InitServer(ChannelArgs().Set(GRPC_ARG_PING_TIMEOUT_MS, 5000));
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   IncomingMetadata server_initial_metadata;
   IncomingStatusOnClient server_status;

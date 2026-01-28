@@ -21,13 +21,6 @@
 #include <set>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/config_source.upb.h"
@@ -48,6 +41,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/util/down_cast.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/match.h"
 #include "src/core/util/upb_utils.h"
@@ -57,6 +51,12 @@
 #include "src/core/xds/grpc/xds_route_config_parser.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "upb/text/encode.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 
 namespace grpc_core {
 
@@ -739,8 +739,8 @@ void AddFilterChainDataForSourceType(
     const FilterChain& filter_chain,
     InternalFilterChainMap::DestinationIp* destination_ip,
     ValidationErrors* errors) {
-  CHECK(static_cast<unsigned int>(filter_chain.filter_chain_match.source_type) <
-        3u);
+  GRPC_CHECK(static_cast<unsigned int>(
+                 filter_chain.filter_chain_match.source_type) < 3u);
   AddFilterChainDataForSourceIpRange(
       filter_chain,
       &destination_ip->source_types_array[static_cast<int>(

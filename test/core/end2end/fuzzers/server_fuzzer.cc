@@ -20,9 +20,7 @@
 #include <optional>
 #include <string>
 
-#include "absl/log/check.h"
 #include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"
@@ -30,6 +28,7 @@
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/notification.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
@@ -38,6 +37,7 @@
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/fuzz_config_vars_helpers.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace testing {
@@ -72,7 +72,7 @@ class ServerFuzzer final : public BasicFuzzer {
     }
   }
 
-  ~ServerFuzzer() { CHECK_EQ(server_, nullptr); }
+  ~ServerFuzzer() { GRPC_CHECK_EQ(server_, nullptr); }
 
  private:
   Result CreateChannel(
@@ -109,7 +109,7 @@ void RunServerFuzzer(const fuzzer_input::Msg& msg,
 
 auto ParseTestProto(const std::string& proto) {
   fuzzer_input::Msg msg;
-  CHECK(google::protobuf::TextFormat::ParseFromString(proto, &msg));
+  GRPC_CHECK(google::protobuf::TextFormat::ParseFromString(proto, &msg));
   return msg;
 }
 
@@ -125,8 +125,8 @@ void ChaoticGood(fuzzer_input::Msg msg) {
         listener->Bind(grpc_event_engine::experimental::URIToResolvedAddress(
                            absl::StrCat("ipv4:0.0.0.0:", port_num))
                            .value());
-    CHECK_OK(port);
-    CHECK_EQ(port.value(), port_num);
+    GRPC_CHECK_OK(port);
+    GRPC_CHECK_EQ(port.value(), port_num);
     Server::FromC(server)->AddListener(
         OrphanablePtr<chaotic_good::ChaoticGoodServerListener>(listener));
   });
@@ -317,6 +317,22 @@ TEST(ServerFuzzers, ChaoticGoodRegression2) {
                resource_quota {}
              }
            }
+      )pb"));
+}
+
+TEST(ServerFuzzers, ChaoticGoodRegression3) {
+  ChaoticGood(ParseTestProto(
+      R"pb(network_input {
+             connect_timeout_ms: 2147483647
+             endpoint_config { args { resource_quota {} } }
+           }
+           api_actions { post_mortem_emit {} }
+           event_engine_actions {
+             run_delay: 18446744073709551615
+             assign_ports: 4294967295
+             endpoint_metrics { key: 2147483647 name: "\362\241\213\224" }
+           }
+           shutdown_connector { delay_ms: 1 }
       )pb"));
 }
 

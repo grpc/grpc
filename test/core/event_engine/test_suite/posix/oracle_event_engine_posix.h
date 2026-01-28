@@ -25,18 +25,31 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/thd.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_event_engine {
 namespace experimental {
+
+class PosixOracleReadWriteHelper {
+ public:
+  std::string ReadBytes(int sockfd, int& saved_errno, int num_expected_bytes);
+  int WriteBytes(int sockfd, int& saved_errno, std::string write_bytes);
+  void SetShutdown() { shutdown_ = true; }
+
+ private:
+  std::string TryReadBytes(int sockfd, int& saved_errno,
+                           int num_expected_bytes);
+  int TryWriteBytes(int sockfd, int& saved_errno, std::string write_bytes);
+  std::atomic<bool> shutdown_{false};
+};
 
 class PosixOracleEndpoint : public EventEngine::Endpoint {
  public:
@@ -48,18 +61,14 @@ class PosixOracleEndpoint : public EventEngine::Endpoint {
   bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
              SliceBuffer* data, WriteArgs args) override;
   void Shutdown();
-  EventEngine::ResolvedAddress& GetPeerAddress() const override {
-    grpc_core::Crash("unimplemented");
+  const EventEngine::ResolvedAddress& GetPeerAddress() const override {
+    return fake_addr_;
   }
-  EventEngine::ResolvedAddress& GetLocalAddress() const override {
-    grpc_core::Crash("unimplemented");
+  const EventEngine::ResolvedAddress& GetLocalAddress() const override {
+    return fake_addr_;
   }
-  std::vector<size_t> AllWriteMetrics() override { return {}; }
-  std::optional<absl::string_view> GetMetricName(size_t) override {
-    return std::nullopt;
-  }
-  std::optional<size_t> GetMetricKey(absl::string_view) override {
-    return std::nullopt;
+  std::shared_ptr<TelemetryInfo> GetTelemetryInfo() const override {
+    return nullptr;
   }
 
  private:
@@ -117,14 +126,16 @@ class PosixOracleEndpoint : public EventEngine::Endpoint {
   mutable grpc_core::Mutex mu_;
   bool is_shutdown_ = false;
   int socket_fd_;
-  ReadOperation read_ops_channel_;
-  WriteOperation write_ops_channel_;
-  std::unique_ptr<grpc_core::Notification> read_op_signal_{
+  ReadOperation read_ops_channel_ ABSL_GUARDED_BY(mu_);
+  WriteOperation write_ops_channel_ ABSL_GUARDED_BY(mu_);
+  std::unique_ptr<grpc_core::Notification> read_op_signal_ ABSL_GUARDED_BY(mu_){
       new grpc_core::Notification()};
-  std::unique_ptr<grpc_core::Notification> write_op_signal_{
-      new grpc_core::Notification()};
-  grpc_core::Thread read_ops_ ABSL_GUARDED_BY(mu_);
-  grpc_core::Thread write_ops_ ABSL_GUARDED_BY(mu_);
+  std::unique_ptr<grpc_core::Notification> write_op_signal_
+      ABSL_GUARDED_BY(mu_){new grpc_core::Notification()};
+  grpc_core::Thread read_ops_;
+  grpc_core::Thread write_ops_;
+  EventEngine::ResolvedAddress fake_addr_;
+  PosixOracleReadWriteHelper read_write_helper_;
 };
 
 class PosixOracleListener : public EventEngine::Listener {
@@ -148,6 +159,7 @@ class PosixOracleListener : public EventEngine::Listener {
   int pipefd_[2];
   bool is_started_ = false;
   std::vector<int> listener_fds_;
+  PosixOracleReadWriteHelper read_write_helper_;
 };
 
 // A posix based oracle EventEngine.

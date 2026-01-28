@@ -17,10 +17,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/status/statusor.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 
@@ -35,11 +35,7 @@ class ChannelStackBuilderImpl final : public ChannelStackBuilder {
  public:
   using ChannelStackBuilder::ChannelStackBuilder;
 
-  void SetBlackboards(const Blackboard* old_blackboard,
-                      Blackboard* new_blackboard) {
-    old_blackboard_ = old_blackboard;
-    new_blackboard_ = new_blackboard;
-  }
+  void SetBlackboard(const Blackboard* blackboard) { blackboard_ = blackboard; }
 
   // Build the channel stack.
   // After success, *result holds the new channel stack,
@@ -49,8 +45,7 @@ class ChannelStackBuilderImpl final : public ChannelStackBuilder {
   absl::StatusOr<RefCountedPtr<grpc_channel_stack>> Build() override;
 
  private:
-  const Blackboard* old_blackboard_ = nullptr;
-  Blackboard* new_blackboard_ = nullptr;
+  const Blackboard* blackboard_ = nullptr;
 };
 
 }  // namespace grpc_core

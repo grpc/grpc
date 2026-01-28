@@ -22,7 +22,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/check.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -31,6 +30,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 
@@ -67,7 +67,8 @@ Channel::Channel(std::string target, const ChannelArgs& channel_args)
           channel_args.GetObject<ResourceQuota>()
               ->memory_quota()
               ->CreateMemoryOwner(),
-          1024)) {}
+          1024)),
+      memory_allocator_(&call_arena_allocator_->allocator()) {}
 
 Channel::RegisteredCall* Channel::RegisterCall(const char* method,
                                                const char* host) {
@@ -102,7 +103,7 @@ grpc_call* grpc_channel_create_call(grpc_channel* channel,
                                     grpc_completion_queue* completion_queue,
                                     grpc_slice method, const grpc_slice* host,
                                     gpr_timespec deadline, void* reserved) {
-  CHECK(!reserved);
+  GRPC_CHECK(!reserved);
   grpc_core::ExecCtx exec_ctx;
   return grpc_core::Channel::FromC(channel)->CreateCall(
       parent_call, propagation_mask, completion_queue, nullptr,
@@ -119,7 +120,7 @@ void* grpc_channel_register_call(grpc_channel* channel, const char* method,
   GRPC_TRACE_LOG(api, INFO) << "grpc_channel_register_call(channel=" << channel
                             << ", method=" << method << ", host=" << host
                             << ", reserved=" << reserved << ")";
-  CHECK(!reserved);
+  GRPC_CHECK(!reserved);
   grpc_core::ExecCtx exec_ctx;
   return grpc_core::Channel::FromC(channel)->RegisterCall(method, host);
 }
@@ -208,6 +209,6 @@ void grpc_channel_ping(grpc_channel* channel, grpc_completion_queue* cq,
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_channel_ping(channel=" << channel << ", cq=" << cq
       << ", tag=" << tag << ", reserved=" << reserved << ")";
-  CHECK_EQ(reserved, nullptr);
+  GRPC_CHECK_EQ(reserved, nullptr);
   grpc_core::Channel::FromC(channel)->Ping(cq, tag);
 }

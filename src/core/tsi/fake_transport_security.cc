@@ -23,13 +23,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/transport_security_grpc.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/memory.h"
+#include "absl/log/log.h"
 
 // --- Constants. ---
 #define TSI_FAKE_FRAME_HEADER_SIZE 4
@@ -124,8 +124,8 @@ static void store32_little_endian(uint32_t value, unsigned char* buf) {
 }
 
 static uint32_t read_frame_size(const grpc_slice_buffer* sb) {
-  CHECK(sb != nullptr);
-  CHECK(sb->length >= TSI_FAKE_FRAME_HEADER_SIZE);
+  GRPC_CHECK(sb != nullptr);
+  GRPC_CHECK(sb->length >= TSI_FAKE_FRAME_HEADER_SIZE);
   uint8_t frame_size_buffer[TSI_FAKE_FRAME_HEADER_SIZE];
   uint8_t* buf = frame_size_buffer;
   // Copies the first 4 bytes to a temporary buffer.
@@ -142,7 +142,7 @@ static uint32_t read_frame_size(const grpc_slice_buffer* sb) {
       remaining -= slice_length;
     }
   }
-  CHECK_EQ(remaining, 0u);
+  GRPC_CHECK_EQ(remaining, 0u);
   return load32_little_endian(frame_size_buffer);
 }
 
@@ -520,12 +520,30 @@ static tsi_result fake_zero_copy_grpc_protector_max_frame_size(
   return TSI_OK;
 }
 
+static bool fake_zero_copy_grpc_protector_read_frame_size(
+    tsi_zero_copy_grpc_protector*, grpc_slice_buffer* protected_slices,
+    uint32_t* frame_size) {
+  if (frame_size == nullptr) return false;
+  uint32_t parsed_frame_size = 0;
+  while (protected_slices->length >= TSI_FAKE_FRAME_HEADER_SIZE) {
+    uint32_t parsed_frame_size = read_frame_size(protected_slices);
+    if (parsed_frame_size <= 4) {
+      LOG(ERROR) << "Invalid frame size.";
+      return false;
+    }
+  }
+  *frame_size = parsed_frame_size;
+  return true;
+}
+
 static const tsi_zero_copy_grpc_protector_vtable
     zero_copy_grpc_protector_vtable = {
         fake_zero_copy_grpc_protector_protect,
         fake_zero_copy_grpc_protector_unprotect,
         fake_zero_copy_grpc_protector_destroy,
         fake_zero_copy_grpc_protector_max_frame_size,
+        fake_zero_copy_grpc_protector_read_frame_size,
+        nullptr /* set_allocator */
 };
 
 // --- tsi_handshaker_result methods implementation. ---

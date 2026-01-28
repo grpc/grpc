@@ -23,8 +23,6 @@
 #include <new>
 #include <optional>
 
-#include "absl/status/status.h"
-#include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -38,6 +36,8 @@
 #include "src/core/util/time.h"
 #include "src/core/util/unique_type_name.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace {
@@ -137,7 +137,7 @@ CORE_END2END_TEST(RetryTests, RetryRecvMessageReplay) {
             // Skip on proxy (which explicitly disables retries).
             .IfChannelArg(GRPC_ARG_ENABLE_RETRIES, true);
       });
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       "{\n"

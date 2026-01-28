@@ -25,8 +25,6 @@
 #include <optional>
 #include <utility>
 
-#include "absl/container/inlined_vector.h"
-#include "absl/functional/any_invocable.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/client_channel/retry_filter.h"
@@ -47,6 +45,8 @@
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
+#include "absl/container/inlined_vector.h"
+#include "absl/functional/any_invocable.h"
 
 namespace grpc_core {
 
@@ -252,7 +252,7 @@ class RetryFilter::LegacyCallData final {
     void MaybeCancelPerAttemptRecvTimer();
 
     LegacyCallData* calld_;
-    OrphanablePtr<ClientChannelFilter::FilterBasedLoadBalancedCall> lb_call_;
+    OrphanablePtr<ClientChannelFilter::LoadBalancedCall> lb_call_;
     bool lb_call_committed_ = false;
 
     grpc_closure on_per_attempt_recv_timer_;
@@ -362,15 +362,14 @@ class RetryFilter::LegacyCallData final {
   void AddClosureToStartTransparentRetry(CallCombinerClosureList* closures);
   static void StartTransparentRetry(void* arg, grpc_error_handle error);
 
-  OrphanablePtr<ClientChannelFilter::FilterBasedLoadBalancedCall>
-  CreateLoadBalancedCall(absl::AnyInvocable<void()> on_commit,
-                         bool is_transparent_retry);
+  OrphanablePtr<ClientChannelFilter::LoadBalancedCall> CreateLoadBalancedCall(
+      absl::AnyInvocable<void()> on_commit, bool is_transparent_retry);
 
   void CreateCallAttempt(bool is_transparent_retry);
 
   RetryFilter* chand_;
   grpc_polling_entity* pollent_;
-  RefCountedPtr<internal::ServerRetryThrottleData> retry_throttle_data_;
+  RefCountedPtr<internal::RetryThrottler> retry_throttler_;
   const internal::RetryMethodConfig* retry_policy_ = nullptr;
   BackOff retry_backoff_;
 
@@ -391,8 +390,7 @@ class RetryFilter::LegacyCallData final {
   // LB call used when we've committed to a call attempt and the retry
   // state for that attempt is no longer needed.  This provides a fast
   // path for long-running streaming calls that minimizes overhead.
-  OrphanablePtr<ClientChannelFilter::FilterBasedLoadBalancedCall>
-      committed_call_;
+  OrphanablePtr<ClientChannelFilter::LoadBalancedCall> committed_call_;
 
   // When are are not yet fully committed to a particular call (i.e.,
   // either we might still retry or we have committed to the call but

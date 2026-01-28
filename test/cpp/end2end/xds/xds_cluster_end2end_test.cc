@@ -17,11 +17,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/log.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -32,6 +27,11 @@
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "xds/data/orca/v3/orca_load_report.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc {
 namespace testing {
@@ -44,7 +44,7 @@ using ::envoy::type::v3::FractionalPercent;
 
 using ClientStats = LrsServiceImpl::ClientStats;
 using OptionalLabelKey =
-    grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey;
+    grpc_core::ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey;
 
 constexpr char kLbDropType[] = "lb";
 constexpr char kThrottleDropType[] = "throttle";
@@ -339,7 +339,9 @@ TEST_P(CdsTest, MetricLabels) {
           ::testing::Pair(OptionalLabelKey::kXdsServiceNamespace,
                           "mynamespace"),
           ::testing::Pair(OptionalLabelKey::kLocality,
-                          LocalityNameString("locality0"))));
+                          LocalityNameString("locality0")),
+          ::testing::Pair(OptionalLabelKey::kBackendService,
+                          kDefaultClusterName)));
   // Send an RPC to backend 1.
   WaitForBackend(DEBUG_LOCATION, 1);
   // Verify that the optional labels are recorded in the call
@@ -353,7 +355,9 @@ TEST_P(CdsTest, MetricLabels) {
           ::testing::Pair(OptionalLabelKey::kXdsServiceNamespace,
                           "mynamespace"),
           ::testing::Pair(OptionalLabelKey::kLocality,
-                          LocalityNameString("locality1"))));
+                          LocalityNameString("locality1")),
+          ::testing::Pair(OptionalLabelKey::kBackendService,
+                          kDefaultClusterName)));
 }
 
 //
@@ -1208,8 +1212,6 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, EdsAuthorityRewriteTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
 TEST_P(EdsAuthorityRewriteTest, AutoAuthorityRewrite) {
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_AUTHORITY_REWRITE");
   constexpr char kAltAuthority1[] = "alt_authority1";
   constexpr char kAltAuthority2[] = "alt_authority2";
   // Note: We use InsecureCreds, since FakeCreds are too picky about
@@ -1258,37 +1260,7 @@ TEST_P(EdsAuthorityRewriteTest, AutoAuthorityRewrite) {
       ::testing::ElementsAre(kAltAuthority1, kAltAuthority2, kServerName));
 }
 
-TEST_P(EdsAuthorityRewriteTest, NoRewriteWithoutEnvVar) {
-  constexpr char kAltAuthority[] = "alt_authority";
-  InitClient(MakeBootstrapBuilder().SetTrustedXdsServer());
-  // Set auto_host_rewrite in the RouteConfig.
-  RouteConfiguration new_route_config = default_route_config_;
-  new_route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->mutable_auto_host_rewrite()
-      ->set_value(true);
-  SetRouteConfiguration(balancer_.get(), new_route_config);
-  // Create a backend with a hostname in EDS.
-  CreateAndStartBackends(1);
-  EdsResourceArgs args(
-      {{"locality0",
-        {CreateEndpoint(0, ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-                        /*lb_weight=*/1, /*additional_backend_indexes=*/{},
-                        /*hostname=*/kAltAuthority)}}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Send an RPC and check the authority seen on the server side.
-  EchoResponse response;
-  Status status = SendRpc(
-      RpcOptions().set_echo_host_from_authority_header(true), &response);
-  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
-                           << " message=" << status.error_message();
-  EXPECT_EQ(response.param().host(), kServerName);
-}
-
 TEST_P(EdsAuthorityRewriteTest, NoRewriteIfServerNotTrustedInBootstrap) {
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_AUTHORITY_REWRITE");
   constexpr char kAltAuthority[] = "alt_authority";
   InitClient();
   // Set auto_host_rewrite in the RouteConfig.
@@ -1317,8 +1289,6 @@ TEST_P(EdsAuthorityRewriteTest, NoRewriteIfServerNotTrustedInBootstrap) {
 }
 
 TEST_P(EdsAuthorityRewriteTest, NoRewriteIfNoHostnameInEds) {
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_AUTHORITY_REWRITE");
   InitClient(MakeBootstrapBuilder().SetTrustedXdsServer());
   // Set auto_host_rewrite in the RouteConfig.
   RouteConfiguration new_route_config = default_route_config_;
@@ -1342,8 +1312,6 @@ TEST_P(EdsAuthorityRewriteTest, NoRewriteIfNoHostnameInEds) {
 }
 
 TEST_P(EdsAuthorityRewriteTest, NoRewriteIfNotEnabledInRoute) {
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_AUTHORITY_REWRITE");
   constexpr char kAltAuthority[] = "alt_authority";
   InitClient(MakeBootstrapBuilder().SetTrustedXdsServer());
   // Create a backend with a hostname in EDS.
@@ -2441,10 +2409,6 @@ int main(int argc, char** argv) {
   grpc_core::ConfigVars::Overrides overrides;
   overrides.client_channel_backup_poll_interval_ms = 1;
   grpc_core::ConfigVars::SetOverrides(overrides);
-#if TARGET_OS_IPHONE
-  // Workaround Apple CFStream bug
-  grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
   grpc_core::RegisterFakeStatsPlugin();
   grpc_init();
   grpc::testing::ConnectionAttemptInjector::Init();

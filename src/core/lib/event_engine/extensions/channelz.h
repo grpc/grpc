@@ -18,9 +18,9 @@
 #include <memory>
 #include <utility>
 
-#include "absl/strings/string_view.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_event_engine::experimental {
 
@@ -30,13 +30,15 @@ class ChannelzExtension {
   static absl::string_view EndpointExtensionName() {
     return "io.grpc.event_engine.extension.channelz";
   }
-  virtual void AddJson(grpc_core::channelz::DataSink& sink) = 0;
+  virtual void AddData(grpc_core::channelz::DataSink& sink) = 0;
 
   void SetSocketNode(
       grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> socket_node) {
-    data_source_ =
-        std::make_unique<EndpointDataSource>(std::move(socket_node), this);
+    data_source_.emplace(std::move(socket_node), this);
   }
+
+ protected:
+  void ShutdownChannelzExtension() { data_source_.reset(); }
 
  private:
   class EndpointDataSource final : public grpc_core::channelz::DataSource {
@@ -44,17 +46,19 @@ class ChannelzExtension {
     EndpointDataSource(
         grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> socket_node,
         ChannelzExtension* ep)
-        : grpc_core::channelz::DataSource(std::move(socket_node)), ep_(ep) {}
-    ~EndpointDataSource() { ResetDataSource(); }
-    void AddData(grpc_core::channelz::DataSink& sink) override {
-      ep_->AddJson(sink);
+        : grpc_core::channelz::DataSource(std::move(socket_node)), ep_(ep) {
+      SourceConstructed();
+    }
+    ~EndpointDataSource() { SourceDestructing(); }
+    void AddData(grpc_core::channelz::DataSink sink) override {
+      ep_->AddData(sink);
     }
 
    private:
     ChannelzExtension* ep_;
   };
 
-  std::unique_ptr<EndpointDataSource> data_source_;
+  std::optional<EndpointDataSource> data_source_;
 };
 
 }  // namespace grpc_event_engine::experimental

@@ -23,14 +23,15 @@
 #include <memory>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace {
@@ -40,15 +41,17 @@ bool localhost_to_ipv6 = false;
 gpr_once g_resolve_localhost_ipv46 = GPR_ONCE_INIT;
 
 void InitResolveLocalhost() {
-  if (IsEventEngineDnsNonClientChannelEnabled()) {
+  if (IsEventEngineDnsNonClientChannelEnabled() &&
+      !grpc_event_engine::experimental::
+          EventEngineExperimentDisabledForPython()) {
     auto resolver =
         grpc_event_engine::experimental::GetDefaultEventEngine()
             ->GetDNSResolver(grpc_event_engine::experimental::EventEngine::
                                  DNSResolver::ResolverOptions());
-    CHECK_OK(resolver.status());
+    GRPC_CHECK_OK(resolver.status());
     auto addresses = grpc_event_engine::experimental::LookupHostnameBlocking(
         resolver->get(), "localhost", "https");
-    CHECK_OK(addresses.status());
+    GRPC_CHECK_OK(addresses.status());
     for (const auto& addr : *addresses) {
       if (addr.address()->sa_family == AF_INET) {
         localhost_to_ipv4 = true;
@@ -59,7 +62,7 @@ void InitResolveLocalhost() {
   } else {
     absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
         GetDNSResolver()->LookupHostnameBlocking("localhost", "https");
-    CHECK_OK(addresses_or);
+    GRPC_CHECK_OK(addresses_or);
     for (const auto& addr : *addresses_or) {
       const grpc_sockaddr* sock_addr =
           reinterpret_cast<const grpc_sockaddr*>(&addr);

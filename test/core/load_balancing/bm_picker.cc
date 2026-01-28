@@ -17,7 +17,6 @@
 
 #include <memory>
 
-#include "absl/strings/string_view.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/parse_address.h"
@@ -28,6 +27,7 @@
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/util/json/json_reader.h"
 #include "test/core/test_util/build.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace {
@@ -180,8 +180,7 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
       return *helper_->stats_plugin_group_;
     }
 
-    void AddTraceEvent(TraceSeverity severity,
-                       absl::string_view message) override {
+    void AddTraceEvent(absl::string_view message) override {
       LOG(FATAL) << "unimplemented";
     }
 
