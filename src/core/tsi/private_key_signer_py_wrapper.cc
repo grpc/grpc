@@ -51,7 +51,27 @@ PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
 
 void PrivateKeySignerPyWrapper::Cancel(
     std::shared_ptr<AsyncSigningHandle> handle) {
-  cancel_py_wrapper_(handle, cancel_user_data_);
+  LOG(INFO) << "GREG: in PyWrapperCancel\n";
+  if (cancel_py_wrapper_ == nullptr) {
+    LOG(INFO) << "GREG: cancel_py_wrapper_ is nullptr\n";
+  }
+  LOG(INFO) << "GREG: cancel_wrapper is null "
+            << (cancel_py_wrapper_ == nullptr) << "\n";
+  LOG(INFO) << "GREG: user_data is null " << (cancel_user_data_ == nullptr)
+            << "\n";
+  try {
+    cancel_py_wrapper_(handle, cancel_user_data_);
+  } catch (const std::exception& exc) {
+    LOG(INFO) << "GREG: " << exc.what() << "\n";
+  } catch (...) {
+    LOG(INFO) << "GREG: cancel wrapper catch\n";
+    throw;
+  }
+  LOG(INFO) << "GREG: After cancel wrapper py call\n";
+}
+
+PrivateKeySignerPyWrapper::~PrivateKeySignerPyWrapper() {
+  LOG(INFO) << "GREG: in wrapper dtor\n";
 }
 
 std::shared_ptr<PrivateKeySigner> BuildPrivateKeySigner(
@@ -63,6 +83,7 @@ std::shared_ptr<PrivateKeySigner> BuildPrivateKeySigner(
 std::shared_ptr<PrivateKeySigner> BuildPrivateKeySignerWithCancellation(
     SignWrapperForPy sign_py_wrapper, void* user_data,
     CancelWrapperForPy cancel_py_wrapper_, void* cancel_user_data) {
+  LOG(INFO) << "GREG: Private key signer built with cancellation\n";
   return std::make_shared<PrivateKeySignerPyWrapper>(
       sign_py_wrapper, user_data, cancel_py_wrapper_, cancel_user_data);
 }

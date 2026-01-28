@@ -72,6 +72,7 @@ class PrivateKeySignerPyWrapper
        OnSignComplete on_sign_complete) override;
 
   void Cancel(std::shared_ptr<AsyncSigningHandle> handle) override;
+  ~PrivateKeySignerPyWrapper() override;
 
  private:
   // This is a function provided by the Cython implementation of Private Key

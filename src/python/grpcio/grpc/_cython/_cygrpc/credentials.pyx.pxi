@@ -202,8 +202,9 @@ cdef class SSLChannelCredentials(ChannelCredentials):
 
   def __dealloc__(self):
     # We manually increased the reference count, decrease it on dealloc of this object
+    print("GREG: in __dealloc__ for channel creds", flush=True)
     Py_DECREF(self._private_key_signer)
-    Py_DECREF(self._private_key_cancel)
+    # Py_DECREF(self._private_key_cancel)
 
   cdef grpc_channel_credentials *c(self) except *:
     cdef const char *c_pem_root_certificates

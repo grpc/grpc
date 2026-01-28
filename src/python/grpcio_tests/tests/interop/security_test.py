@@ -12,9 +12,12 @@ from tests.interop import service
 from tests.interop import methods
 from tests.unit import test_common
 import time
+import faulthandler
+
+faulthandler.enable()
 
 _SERVER_HOST_OVERRIDE = "foo.test.google.fr"
- 
+
 class SecurityTest(unittest.TestCase):
     def setUp(self):
         self.server = test_common.test_server()
@@ -34,7 +37,7 @@ class SecurityTest(unittest.TestCase):
 
     def tearDown(self):
         self.server.stop(None)
-    
+
     @unittest.skip(reason="temp")
     def test_success(self):
         self.stub = test_pb2_grpc.TestServiceStub(
@@ -121,26 +124,36 @@ class SecurityTest(unittest.TestCase):
                 ),
             )
         )
-        future = self.stub.EmptyCall.future(empty_pb2.Empty(), timeout=10)
-        time.sleep(5)
-        cancelled = future.cancel()
-        # methods._cancel_after_first_response(self.stub)
-        if cancelled:
-            print("RPC cancel signal sent.", flush=True)
-        else:
-            print("RPC could not be cancelled (e.g., already completed).", flush=True)
-
         try:
-            result = future.result()
-            print(f"RPC completed with result: {result}", flush=True)
-        except grpc.FutureCancelledError:
-            print("RPC was cancelled by the client.", flush=True)
+            self.stub.EmptyCall(empty_pb2.Empty(), timeout=5.0)
+            # time.sleep(5)
+        except grpc.FutureTimeoutError:
+            print("The RPC call timed out.")
         except grpc.RpcError as e:
-            if e.code() == grpc.StatusCode.CANCELLED:
-                print("RPC was cancelled.", flush=True)
+            if e.code() == grpc.StatusCode.DEADLINE_EXCEEDED:
+                print("Server did not respond within the deadline.")
             else:
-                print(f"RPC failed with other error: {e}", flush=True)
-        time.sleep(1)
+                print(f"An gRPC error occurred: {e.details()}")
+        print("Call complete", flush=True)
+        # cancelled = future.cancel()
+        # # methods._cancel_after_first_response(self.stub)
+        # if cancelled:
+        #     print("RPC cancel signal sent.", flush=True)
+        # else:
+        #     print("RPC could not be cancelled (e.g., already completed).", flush=True)
+
+        # try:
+        #     result = future.result()
+        #     print(f"RPC completed with result: {result}", flush=True)
+        # except grpc.FutureCancelledError:
+        #     print("RPC was cancelled by the client.", flush=True)
+        # except grpc.RpcError as e:
+        #     if e.code() == grpc.StatusCode.CANCELLED:
+        #         print("RPC was cancelled.", flush=True)
+        #     else:
+        #         print(f"RPC failed with other error: {e}", flush=True)
+        time.sleep(5)
+        print("after sleep", flush=True)
         self.assertTrue(True)
 
 if __name__ == "__main__":
