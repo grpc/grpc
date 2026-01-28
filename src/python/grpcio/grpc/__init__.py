@@ -1775,6 +1775,10 @@ def ssl_channel_credentials_with_custom_signer_with_cancellation(
     )
 
 
+def create_async_handle_for_custom_signer():
+    return _cygrpc.create_async_signing_handle()
+
+
 def xds_channel_credentials(fallback_credentials=None):
     """Creates a ChannelCredentials for use with xDS. This is an EXPERIMENTAL
       API.

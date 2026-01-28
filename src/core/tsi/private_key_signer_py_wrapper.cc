@@ -65,7 +65,7 @@ void PrivateKeySignerPyWrapper::Cancel(
     LOG(INFO) << "GREG: " << exc.what() << "\n";
   } catch (...) {
     LOG(INFO) << "GREG: cancel wrapper catch\n";
-    throw;
+    // throw;
   }
   LOG(INFO) << "GREG: After cancel wrapper py call\n";
 }

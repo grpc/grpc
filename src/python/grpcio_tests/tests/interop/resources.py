@@ -315,6 +315,28 @@ def async_signer_worker_until_cancel(
     print("GREG: thread cancellation done", flush=True)
 
 
+def async_signer_with_test_handle(
+    handle, data_to_sign, signature_algorithm, on_complete, completion_data
+):
+    print("GREG: async signer", flush=True)
+    # cancel_event = threading.Event()
+    signer_thread = threading.Thread(
+        target=async_signer_worker_until_cancel,
+        args=(
+            data_to_sign,
+            signature_algorithm,
+            on_complete,
+            completion_data,
+            handle.cancel_event,
+        ),
+    ).start()
+    # Add something where we put something cancellable on this handle
+    # handle = _cygrpc.create_async_signing_handle()
+    # handle.cancel_event = cancel_event
+    handle.thread = signer_thread
+    return handle
+
+
 def async_client_private_key_signer_with_cancel(
     data_to_sign, signature_algorithm, on_complete, completion_data
 ):

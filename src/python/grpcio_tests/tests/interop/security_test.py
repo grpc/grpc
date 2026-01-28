@@ -11,8 +11,11 @@ from tests.interop import resources
 from tests.interop import service
 from tests.interop import methods
 from tests.unit import test_common
+from grpc._cython import cygrpc as _cygrpc
 import time
 import faulthandler
+from functools import partial
+import threading
 
 faulthandler.enable()
 
@@ -38,8 +41,8 @@ class SecurityTest(unittest.TestCase):
     def tearDown(self):
         self.server.stop(None)
 
-    @unittest.skip(reason="temp")
-    def test_success(self):
+    # @unittest.skip(reason="temp")
+    def test_success_sync(self):
         self.stub = test_pb2_grpc.TestServiceStub(
             grpc.secure_channel(
                 "localhost:{}".format(self.port),
@@ -59,7 +62,27 @@ class SecurityTest(unittest.TestCase):
         response = self.stub.EmptyCall(empty_pb2.Empty())
         self.assertIsInstance(response, empty_pb2.Empty)
 
-    @unittest.skip(reason="temp")
+    def test_success_async(self):
+        self.stub = test_pb2_grpc.TestServiceStub(
+            grpc.secure_channel(
+                "localhost:{}".format(self.port),
+                grpc.ssl_channel_credentials_with_custom_signer(
+                    private_key_sign_fn=resources.async_client_private_key_signer,
+                    root_certificates=resources.test_root_certificates(),
+                    certificate_chain=resources.client_certificate_chain(),
+                ),
+                (
+                    (
+                        "grpc.ssl_target_name_override",
+                        _SERVER_HOST_OVERRIDE,
+                    ),
+                ),
+            )
+        )
+        response = self.stub.EmptyCall(empty_pb2.Empty())
+        self.assertIsInstance(response, empty_pb2.Empty)
+
+    # @unittest.skip(reason="temp")
     def test_bad_sync_signer(self):
         self.stub = test_pb2_grpc.TestServiceStub(
             grpc.secure_channel(
@@ -79,11 +102,9 @@ class SecurityTest(unittest.TestCase):
         )
         with self.assertRaises(Exception) as context:
             response = self.stub.EmptyCall(empty_pb2.Empty())
-        # print("GREG: ", context.exception, flush=True)
-        # self.assertIsInstance(context.exception, _InactiveRpcError)
-        # self.assertTrue("PRIVATE_KEY_OPERATION_FAILED" in context.exception.details())
+            # Check result better
 
-    @unittest.skip(reason="temp")
+    # @unittest.skip(reason="temp")
     def test_bad_async_signer(self):
         self.stub = test_pb2_grpc.TestServiceStub(
             grpc.secure_channel(
@@ -103,14 +124,17 @@ class SecurityTest(unittest.TestCase):
         )
         with self.assertRaises(Exception) as context:
             response = self.stub.EmptyCall(empty_pb2.Empty())
-        # self.assertIsInstance(context.exception, _InactiveRpcError)
-        # self.assertTrue("PRIVATE_KEY_OPERATION_FAILED" in context.exception.details())
+            # TODO check result better
 
     def test_async_signer_with_cancel(self):
+        # test_handle = _cygrpc.create_async_signing_test_handle()
+        test_handle = grpc.create_async_handle_for_custom_signer()
+        test_handle.cancel_event = threading.Event()
+        bound_signing_fn = partial(resources.async_signer_with_test_handle, test_handle)
         channel = grpc.secure_channel(
             "localhost:{}".format(self.port),
             grpc.ssl_channel_credentials_with_custom_signer_with_cancellation(
-                private_key_sign_fn=resources.async_client_private_key_signer_with_cancel,
+                private_key_sign_fn=bound_signing_fn,
                 root_certificates=resources.test_root_certificates(),
                 certificate_chain=resources.client_certificate_chain(),
                 cancel_fn=resources.cancel_async,
@@ -123,38 +147,14 @@ class SecurityTest(unittest.TestCase):
             ),
         )
         self.stub = test_pb2_grpc.TestServiceStub(channel)
-        try:
-            self.stub.EmptyCall(empty_pb2.Empty(), timeout=5.0)
-            # time.sleep(5)
-        except grpc.FutureTimeoutError:
-            print("The RPC call timed out.")
-        except grpc.RpcError as e:
-            if e.code() == grpc.StatusCode.DEADLINE_EXCEEDED:
-                print("Server did not respond within the deadline.")
-            else:
-                print(f"An gRPC error occurred: {e.details()}")
-        print("Call complete", flush=True)
+        future = self.stub.EmptyCall.future(empty_pb2.Empty())
+        # Let it get into the handshake
+        time.sleep(1)
+        self.assertFalse(test_handle.cancel_event.is_set())
+        future.cancel()
         channel.close()
-        # cancelled = future.cancel()
-        # # methods._cancel_after_first_response(self.stub)
-        # if cancelled:
-        #     print("RPC cancel signal sent.", flush=True)
-        # else:
-        #     print("RPC could not be cancelled (e.g., already completed).", flush=True)
-
-        # try:
-        #     result = future.result()
-        #     print(f"RPC completed with result: {result}", flush=True)
-        # except grpc.FutureCancelledError:
-        #     print("RPC was cancelled by the client.", flush=True)
-        # except grpc.RpcError as e:
-        #     if e.code() == grpc.StatusCode.CANCELLED:
-        #         print("RPC was cancelled.", flush=True)
-        #     else:
-        #         print(f"RPC failed with other error: {e}", flush=True)
-        time.sleep(5)
-        print("after sleep", flush=True)
-        self.assertTrue(True)
+        # Wait until cancel_event is set with a timeout of 1 second for failure
+        self.assertTrue(test_handle.cancel_event.wait(timeout=1))
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

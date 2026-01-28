@@ -21,6 +21,9 @@ import faulthandler
 
 faulthandler.enable()
 
+cdef extern from "Python.h":  # Usually, core internal headers are not directly exposed
+    bint Py_IsFinalizing()
+
 cdef StatusOr[string] MakeInternalError(string message):
     return StatusOr[string](Status(AbslStatusCode.kUnknown, message))
 
@@ -126,6 +129,7 @@ cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignat
       cpp_result.sync_result = MakeInternalError(f"Exception in user function: {e}".encode('utf-8'))
       return cpp_result
       # return StatusOr[string](MakeInternalError(f"Exception in user function: {e}".encode('utf-8')))
+
     
 cdef void cancel_wrapper(shared_ptr[AsyncSigningHandle] handle, void* cancel_data) noexcept nogil:
   printf("GREG: In cancel_wrapper!!!!\n")
