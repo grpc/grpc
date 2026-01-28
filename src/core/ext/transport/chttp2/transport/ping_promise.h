@@ -79,7 +79,7 @@ namespace http2 {
 class PingInterface {
  public:
   // Returns a promise that triggers a write cycle on the transport.
-  virtual Promise<absl::Status> TriggerWrite() = 0;
+  virtual absl::Status TriggerWrite() = 0;
 
   // Returns a promise that handles the ping timeout.
   virtual Promise<absl::Status> PingTimeout() = 0;

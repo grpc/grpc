@@ -1249,6 +1249,7 @@ grpc_fuzz_test(
         "fuzztest_main",
         "gtest",
         "absl/log",
+        "absl/status",
     ],
     deps = [
         "//:config",
