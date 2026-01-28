@@ -19,6 +19,7 @@
 #ifndef GRPCPP_SECURITY_CREDENTIALS_H
 #define GRPCPP_SECURITY_CREDENTIALS_H
 
+#include "src/core/credentials/call/call_credentials.h"
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpcpp/channel.h>
@@ -209,7 +210,8 @@ constexpr long kMaxAuthTokenLifetimeSecs = 3600;
 /// \a kMaxAuthTokenLifetimeSecs or will be cropped to this value.
 std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
     const grpc::string& json_key,
-    long token_lifetime_seconds = kMaxAuthTokenLifetimeSecs);
+    long token_lifetime_seconds = kMaxAuthTokenLifetimeSecs,
+    const grpc::string& encoded_locations = "");
 
 /// Builds refresh token credentials.
 /// json_refresh_token is the JSON string containing the refresh token along

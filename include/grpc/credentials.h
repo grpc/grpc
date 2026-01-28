@@ -46,11 +46,19 @@ typedef struct grpc_auth_context grpc_auth_context;
    - json_key is the JSON key string containing the client's private key.
    - token_lifetime is the lifetime of each Json Web Token (JWT) created with
      this credentials.  It should not exceed grpc_max_auth_token_lifetime or
-     will be cropped to this value.  */
+     will be cropped to this value.
+   - encoded_locations is an optional string containing a trust boundary.
+     Can be set to NULL.  */
+
 GRPCAPI grpc_call_credentials*
 grpc_service_account_jwt_access_credentials_create(const char* json_key,
                                                    gpr_timespec token_lifetime,
                                                    void* reserved);
+/** Creates a JWT credentials object with regional access boundary. */
+GRPCAPI grpc_call_credentials*
+grpc_service_account_jwt_access_credentials_create_with_regional_access_boundary(
+    const char* json_key, gpr_timespec token_lifetime,
+    const char* regional_access_boundary, void* reserved);
 
 /** Builds External Account credentials.
  - json_string is the JSON string containing the credentials options.
