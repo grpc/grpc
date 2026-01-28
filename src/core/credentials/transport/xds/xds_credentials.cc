@@ -24,7 +24,6 @@
 
 #include <optional>
 
-#include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
 #include "src/core/credentials/transport/tls/tls_credentials.h"
 #include "src/core/credentials/transport/tls/tls_utils.h"
@@ -175,15 +174,13 @@ XdsCredentials::create_security_connector(
     if (watch_root || use_system_root_certs || watch_identity) {
       auto tls_credentials_options =
           MakeRefCounted<grpc_tls_credentials_options>();
-      if (watch_root || watch_identity) {
-        tls_credentials_options->set_certificate_provider(
+      if (watch_root) {
+        tls_credentials_options->set_root_certificates_provider(
             xds_certificate_provider);
-        if (watch_root) {
-          tls_credentials_options->set_watch_root_cert(true);
-        }
-        if (watch_identity) {
-          tls_credentials_options->set_watch_identity_pair(true);
-        }
+      }
+      if (watch_identity) {
+        tls_credentials_options->set_identity_credentials_provider(
+            xds_certificate_provider);
       }
       tls_credentials_options->set_verify_server_cert(true);
       auto hostname = args->GetOwnedString(GRPC_ARG_ADDRESS_NAME);
@@ -233,10 +230,11 @@ XdsServerCredentials::create_security_connector(const ChannelArgs& args) {
       xds_certificate_provider->ProvidesIdentityCerts()) {
     auto tls_credentials_options =
         MakeRefCounted<grpc_tls_credentials_options>();
-    tls_credentials_options->set_watch_identity_pair(true);
-    tls_credentials_options->set_certificate_provider(xds_certificate_provider);
+    tls_credentials_options->set_identity_credentials_provider(
+        xds_certificate_provider);
     if (xds_certificate_provider->ProvidesRootCerts()) {
-      tls_credentials_options->set_watch_root_cert(true);
+      tls_credentials_options->set_root_certificates_provider(
+          xds_certificate_provider);
       tls_credentials_options->set_cert_request_type(
           xds_certificate_provider->require_client_certificate()
               ? GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
