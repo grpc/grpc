@@ -231,7 +231,7 @@ def _generate_deps_file_content():
     for target in BAZEL_DEPS_COMMON_PROTOS_QUERIES:
         raw_proto_files += _bazel_query(target)
     proto_files = [
-        name[len(PROTOBUF_PROTO_PREFIX):].replace(":", "/")
+        name[len(PROTOBUF_PROTO_PREFIX) :].replace(":", "/")
         for name in raw_proto_files
         if name.endswith(".proto") and name.startswith(PROTOBUF_PROTO_PREFIX)
     ]
