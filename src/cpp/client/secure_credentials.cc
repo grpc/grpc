@@ -40,10 +40,6 @@
 #include <utility>
 
 #include "src/core/credentials/call/call_credentials.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_join.h"
 #include "src/core/credentials/call/json_util.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -99,10 +95,14 @@ std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials(
 }
 
 std::shared_ptr<CallCredentials> ExternalAccountCredentials(
-    const grpc::string& json_string, const std::vector<grpc::string>& scopes) {
+    const grpc::string& json_string, const std::vector<grpc::string>& scopes,
+    const grpc::string& regional_access_boundary) {
   grpc::internal::GrpcLibrary init;  // To call grpc_init().
-  return WrapCallCredentials(grpc_external_account_credentials_create(
-      json_string.c_str(), absl::StrJoin(scopes, ",").c_str()));
+  return WrapCallCredentials(
+      grpc_external_account_credentials_create_with_regional_access_boundary(
+          json_string.c_str(), absl::StrJoin(scopes, ",").c_str(),
+          regional_access_boundary.empty() ? nullptr
+                                           : regional_access_boundary.c_str()));
 }
 
 // Builds SSL Credentials given SSL specific options

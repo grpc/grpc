@@ -5183,6 +5183,7 @@ grpc_cc_library(
         "status_helper",
         "time",
         "token_fetcher_credentials",
+        "regional_access_boundary_fetcher",
         "//:gpr",
         "//:grpc_base",
         "//:grpc_core_credentials_header",

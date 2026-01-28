@@ -64,12 +64,37 @@ class ExternalAccountCredentials : public TokenFetcherCredentials {
     std::string client_id;
     std::string client_secret;
     std::string workforce_pool_user_project;
+    std::string workforce_pool_id;
+    std::string workload_pool_project;
+    std::string workload_pool_id;
+    std::string regional_access_boundary;
   };
 
   static absl::StatusOr<RefCountedPtr<ExternalAccountCredentials>> Create(
       const Json& json, std::vector<std::string> scopes,
+      std::string regional_access_boundary = "",
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine = nullptr);
+
+  grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
+  GetRequestMetadata(grpc_core::ClientMetadataHandle initial_metadata,
+                     const GetRequestMetadataArgs* args) override;
+
+  std::string build_regional_access_boundary_url() override {
+    if (!options_.workforce_pool_id.empty()) {
+      return absl::StrFormat(
+          "https://iamcredentials.googleapis.com/v1/locations/global/"
+          "workforcePools/%s/allowedLocations",
+          options_.workforce_pool_id);
+    } else if (!options_.workload_pool_project.empty() &&
+               !options_.workload_pool_id.empty()) {
+      return absl::StrFormat(
+          "https://staging-iamcredentials.sandbox.googleapis.com/v1/projects/"
+          "%s/locations/global/workloadIdentityPools/%s/allowedLocations",
+          options_.workload_pool_project, options_.workload_pool_id);
+    }
+    return grpc_call_credentials::build_regional_access_boundary_url();
+  }
 
   ExternalAccountCredentials(
       Options options, std::vector<std::string> scopes,
