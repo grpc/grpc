@@ -345,7 +345,6 @@ def cancel_async(handle):
     print("GREG IN CANCEL_ASYNC", flush=True)
     print("GREG: handle: ", handle, flush=True)
     print("GREG: cancel event: ", handle.cancel_event, flush=True)
-    handle.thread.join()
     handle.cancel_event.set()
     print("cancel_event set", flush=True)
 

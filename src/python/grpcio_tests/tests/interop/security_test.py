@@ -107,23 +107,22 @@ class SecurityTest(unittest.TestCase):
         # self.assertTrue("PRIVATE_KEY_OPERATION_FAILED" in context.exception.details())
 
     def test_async_signer_with_cancel(self):
-        self.stub = test_pb2_grpc.TestServiceStub(
-            grpc.secure_channel(
-                "localhost:{}".format(self.port),
-                grpc.ssl_channel_credentials_with_custom_signer_with_cancellation(
-                    private_key_sign_fn=resources.async_client_private_key_signer_with_cancel,
-                    root_certificates=resources.test_root_certificates(),
-                    certificate_chain=resources.client_certificate_chain(),
-                    cancel_fn=resources.cancel_async,
-                ),
+        channel = grpc.secure_channel(
+            "localhost:{}".format(self.port),
+            grpc.ssl_channel_credentials_with_custom_signer_with_cancellation(
+                private_key_sign_fn=resources.async_client_private_key_signer_with_cancel,
+                root_certificates=resources.test_root_certificates(),
+                certificate_chain=resources.client_certificate_chain(),
+                cancel_fn=resources.cancel_async,
+            ),
+            (
                 (
-                    (
-                        "grpc.ssl_target_name_override",
-                        _SERVER_HOST_OVERRIDE,
-                    ),
+                    "grpc.ssl_target_name_override",
+                    _SERVER_HOST_OVERRIDE,
                 ),
-            )
+            ),
         )
+        self.stub = test_pb2_grpc.TestServiceStub(channel)
         try:
             self.stub.EmptyCall(empty_pb2.Empty(), timeout=5.0)
             # time.sleep(5)
@@ -135,6 +134,7 @@ class SecurityTest(unittest.TestCase):
             else:
                 print(f"An gRPC error occurred: {e.details()}")
         print("Call complete", flush=True)
+        channel.close()
         # cancelled = future.cancel()
         # # methods._cancel_after_first_response(self.stub)
         # if cancelled:

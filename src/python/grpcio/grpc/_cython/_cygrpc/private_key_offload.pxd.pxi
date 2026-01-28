@@ -100,7 +100,7 @@ cdef extern from "src/core/tsi/private_key_signer_py_wrapper.h" namespace "grpc_
     ctypedef void (*CompletionFunctionPyWrapper)(StatusOr[string], void*)
     ctypedef PrivateKeySignerPyWrapperResult(*SignWrapperForPy)(string_view, CSignatureAlgorithm, void*, CompletionFunctionPyWrapper, void*) noexcept nogil
     shared_ptr[PrivateKeySigner] BuildPrivateKeySigner(SignWrapperForPy, void*)
-    ctypedef void (*CancelWrapperForPy)(shared_ptr[AsyncSigningHandle], void*) noexcept
+    ctypedef void (*CancelWrapperForPy)(shared_ptr[AsyncSigningHandle], void*) noexcept nogil
     shared_ptr[PrivateKeySigner] BuildPrivateKeySignerWithCancellation(SignWrapperForPy, void*, CancelWrapperForPy, void*)
     cdef cppclass AsyncSigningHandlePyWrapper:
         AsyncSigningHandlePyWrapper()

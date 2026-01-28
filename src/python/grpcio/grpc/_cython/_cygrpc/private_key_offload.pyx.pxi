@@ -41,7 +41,7 @@ cdef class PyAsyncSigningHandleImpl(PyAsyncSigningHandle):
     def __dealloc__(self):
       print("GREG: in handle __dealloc__", flush=True)
       # Maybe need to handle shared_ptr here
-      Py_DECREF(self)
+      # Py_DECREF(self)
 
 cdef class OnCompleteWrapper:
   cdef CompletionFunctionPyWrapper c_on_complete
@@ -127,25 +127,23 @@ cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignat
       return cpp_result
       # return StatusOr[string](MakeInternalError(f"Exception in user function: {e}".encode('utf-8')))
     
-cdef void cancel_wrapper(shared_ptr[AsyncSigningHandle] handle, void* cancel_data) noexcept:
-  print("GREG: In cancel_wrapper!!!!\n", flush=True)
+cdef void cancel_wrapper(shared_ptr[AsyncSigningHandle] handle, void* cancel_data) noexcept nogil:
+  printf("GREG: In cancel_wrapper!!!!\n")
   # cdef shared_ptr[AsyncSigningHandlePyWrapper] impl = static_pointer_cast[AsyncSigningHandlePyWrapper, AsyncSigningHandle](handle)
   # cdef void* py_handle_ptr = impl.get().python_handle
   # cdef shared_ptr[AsyncSigningHandlePyWrapper] impl
-  cdef PyGILState_STATE gstate;
-  gstate = PyGILState_Ensure()
-  try:
-    print("GREG: In cancel_wrapper in gil", flush=True)
-    impl = <shared_ptr[AsyncSigningHandlePyWrapper]>static_pointer_cast[AsyncSigningHandlePyWrapper, AsyncSigningHandle](handle)
-    py_handle_ptr = impl.get().python_handle
-    py_handle = <PyAsyncSigningHandleImpl>py_handle_ptr
-    py_cancel_func = <object>cancel_data
-    print("Calling py_cancel_func", flush=True)
-    py_cancel_func(py_handle)
-  except Exception as e:
-    print("GREG: exception", flush=True)
+  with gil:
+    try:
+      print("GREG: In cancel_wrapper in gil", flush=True)
+      impl = <shared_ptr[AsyncSigningHandlePyWrapper]>static_pointer_cast[AsyncSigningHandlePyWrapper, AsyncSigningHandle](handle)
+      py_handle_ptr = impl.get().python_handle
+      py_handle = <PyAsyncSigningHandleImpl>py_handle_ptr
+      py_cancel_func = <object>cancel_data
+      print("Calling py_cancel_func", flush=True)
+      py_cancel_func(py_handle)
+    except Exception as e:
+      print("GREG: exception", e, flush=True)
     
-  PyGILState_Release(gstate)
 
 # To be called from the python layer when the user provides a signer function.
 cdef shared_ptr[PrivateKeySigner] build_private_key_signer(py_user_func):
