@@ -17,6 +17,7 @@ This module contains build rules relating to gRPC Objective-C.
 """
 
 load("@rules_proto//proto:defs.bzl", "ProtoInfo")
+load("//bazel/private:plugin_toolchain_helpers.bzl", "objective_c_plugin_toolchain", plugin_toolchains = "toolchains")
 load(
     "//bazel:protobuf.bzl",
     "get_include_directory",
@@ -67,13 +68,15 @@ def _generate_objc_impl(ctx):
     arguments = []
     tools = []
     if ctx.executable.plugin:
+        plugin = plugin_toolchains.find_toolchain(ctx, "plugin", objective_c_plugin_toolchain)
+        plugin_options = plugin_toolchains.options(ctx, [], objective_c_plugin_toolchain)
         arguments += get_plugin_args(
-            ctx.executable.plugin,
-            [],
+            plugin,
+            plugin_options,
             dir_out,
             False,
         )
-        tools = [ctx.executable.plugin]
+        tools = [plugin]
     arguments.append("--objc_out=" + dir_out)
 
     arguments.append("--proto_path=.")
@@ -163,7 +166,7 @@ generate_objc = rule(
             providers = [ProtoInfo],
         ),
         "plugin": attr.label(
-            default = Label("//src/compiler:grpc_objective_c_plugin"),
+            default = Label("//bazel/private:maybe_grpc_objective_c_plugin"),
             executable = True,
             providers = ["files_to_run"],
             cfg = "exec",
@@ -184,9 +187,13 @@ generate_objc = rule(
             executable = True,
             cfg = "exec",
         ),
+        "_enable_plugin_toolchain_resolution": attr.label(
+            default = Label("//bazel/toolchains:enable_plugin_toolchain_resolution"),
+        ),
     },
     output_to_genfiles = True,
     implementation = _generate_objc_impl,
+    toolchains = plugin_toolchains.use_toolchain(objective_c_plugin_toolchain),
 )
 
 def _group_objc_files_impl(ctx):
