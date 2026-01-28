@@ -76,6 +76,8 @@ include "_cygrpc/aio/call.pyx.pxi"
 include "_cygrpc/aio/channel.pyx.pxi"
 include "_cygrpc/aio/server.pyx.pxi"
 
+# Include only for OSS
+include "_cygrpc/absl.pyx.pxi"
 
 #
 # initialize gRPC
