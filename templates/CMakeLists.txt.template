@@ -38,7 +38,13 @@
     """Removes third_party prefix to match ProtoBuf's relative import path."""
     for prefix in third_party_proto_prefixes:
       if path.startswith(prefix):
-        return path[len(prefix):]
+        path = path[len(prefix):]
+        # Hack for cel-spec protos: They are in the proto/ subdirectory
+        # in their repo, but the expected proto import path does not
+        # include that directory, so we need to strip it off here.
+        if prefix == "third_party/cel-spec/":
+          path = path.removeprefix("proto/")
+        break
     return path
 
   def proto_replace_ext(filename, ext):

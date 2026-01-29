@@ -13,7 +13,7 @@
 
 extern _upb_DefPool_Init google_protobuf_descriptor_proto_upbdefinit;
 
-static const char descriptor[483] = {
+static const char descriptor[488] = {
     '\n', '\035', 'u', 'd', 'p', 'a', '/', 'a', 'n', 'n', 'o', 't',
     'a', 't', 'i', 'o', 'n', 's', '/', 's', 't', 'a', 't', 'u',
     's', '.', 'p', 'r', 'o', 't', 'o', '\022', '\020', 'u', 'd', 'p',
@@ -50,11 +50,11 @@ static const char descriptor[483] = {
     '.', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's',
     '.', 'S', 't', 'a', 't', 'u', 's', 'A', 'n', 'n', 'o', 't',
     'a', 't', 'i', 'o', 'n', 'R', '\n', 'f', 'i', 'l', 'e', 'S',
-    't', 'a', 't', 'u', 's', 'B', '$', 'Z', '\"', 'g', 'i', 't',
+    't', 'a', 't', 'u', 's', 'B', ')', 'Z', '\'', 'g', 'i', 't',
     'h', 'u', 'b', '.', 'c', 'o', 'm', '/', 'c', 'n', 'c', 'f',
-    '/', 'x', 'd', 's', '/', 'g', 'o', '/', 'a', 'n', 'n', 'o',
-    't', 'a', 't', 'i', 'o', 'n', 's', 'b', '\006', 'p', 'r', 'o',
-    't', 'o', '3',
+    '/', 'x', 'd', 's', '/', 'g', 'o', '/', 'u', 'd', 'p', 'a',
+    '/', 'a', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's',
+    'b', '\006', 'p', 'r', 'o', 't', 'o', '3',
 };
 
 static _upb_DefPool_Init *deps[2] = {
