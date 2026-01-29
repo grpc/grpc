@@ -18,12 +18,10 @@
 
 #include "src/core/tsi/private_key_signer_py_wrapper.h"
 
-// #include <Python.h>
 #include <grpc/support/log.h>
 
 #include "grpc/private_key_signer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-// #include "src/core/util/match.h"
 
 namespace grpc_core {
 
@@ -66,7 +64,6 @@ std::shared_ptr<PrivateKeySigner> BuildPrivateKeySigner(
 std::shared_ptr<PrivateKeySigner> BuildPrivateKeySignerWithCancellation(
     SignWrapperForPy sign_py_wrapper, void* user_data,
     CancelWrapperForPy cancel_py_wrapper_, void* cancel_user_data) {
-  LOG(INFO) << "GREG: Private key signer built with cancellation\n";
   return std::make_shared<PrivateKeySignerPyWrapper>(
       sign_py_wrapper, user_data, cancel_py_wrapper_, cancel_user_data);
 }
