@@ -92,6 +92,7 @@ _ALLOWLIST_DICT = {
     "^test/distrib/ruby/": [_RUBY_TEST_SUITE],
     "^tools/run_tests/xds_k8s_test_driver/": [],
     "^tools/internal_ci/linux/grpc_xds_k8s.*": [],
+    "^tools/internal_ci/macos/grpc_python_.*": [_PYTHON_TEST_SUITE],
     "^vsprojects/": [_WINDOWS_TEST_SUITE],
     "composer\.json$": [_PHP_TEST_SUITE],
     "config\.m4$": [_PHP_TEST_SUITE],
