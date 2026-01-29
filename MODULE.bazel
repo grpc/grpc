@@ -22,7 +22,14 @@ module(
 # Regular dependencies
 # ====================
 
+# -- Abseil library.
+# Pinning version to be consistent with third_party/abseil-cpp
 bazel_dep(name = "abseil-cpp", version = "20250512.1", repo_name = "com_google_absl")
+single_version_override(
+    module_name = "abseil-cpp",
+    version = "20250512.1",
+)
+
 bazel_dep(name = "apple_support", version = "1.17.1", repo_name = "build_bazel_apple_support")
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
 bazel_dep(name = "boringssl", version = "0.20241024.0")  # mismatched 20241211
@@ -36,7 +43,15 @@ bazel_dep(name = "opencensus-cpp", version = "0.0.0-20230502-50eb5de.bcr.2", rep
 bazel_dep(name = "openssl", version = "3.3.1.bcr.1")
 bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opentelemetry_cpp")
 bazel_dep(name = "platforms", version = "0.0.11")
+
+# --- Protobuf related packages.
+# Pinning to 31.1 to avoid xDs breakage until we can upgrade to Protobuf >= 33.0
 bazel_dep(name = "protobuf", version = "31.1", repo_name = "com_google_protobuf")
+single_version_override(
+    module_name = "protobuf",
+    version = "31.1",
+)
+
 bazel_dep(name = "protoc-gen-validate", version = "1.2.1.bcr.1", repo_name = "com_envoyproxy_protoc_gen_validate")  # Not needed directly
 bazel_dep(name = "re2", version = "2024-07-02.bcr.1", repo_name = "com_googlesource_code_re2")  # mismached 2022-04-01
 bazel_dep(name = "rules_apple", version = "3.16.0", repo_name = "build_bazel_rules_apple")
