@@ -40,19 +40,9 @@ BAZEL_REMOTE_CACHE_ARGS=(
   --remote_default_exec_properties="grpc_cache_silo_key2=${KOKORO_IMAGE_VERSION}"
 )
 
-EXCLUDE_TARGETS="
-  -//examples/python/auth:_auth_example_test
-  -//examples/python/debug:_debug_example_test
-  -//examples/python/errors:test/_error_handling_example_test
-  -//examples/python/wait_for_ready:test/_wait_for_ready_example_test
-  -//src/python/grpcio_tests/tests/admin:admin_test
-  -//src/python/grpcio_tests/tests/csds:csds_test
-  -//src/python/grpcio_tests/tests/interop:_insecure_intraop_test
-  -//src/python/grpcio_tests/tests/interop:_secure_intraop_test
-  -//src/python/grpcio_tests/tests_aio/interop:local_interop_test
-  -//src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client_test
-"
-TEST_TARGETS="//src/python/... //tools/distrib/python/grpcio_tools/... //examples/python/... ${EXCLUDE_TARGETS}"
+# Test targets mirrored from tools/internal_ci/linux/grpc_python_bazel_test_in_docker.sh
+# Exclude all grpcio_tests and examples/python tests as requested
+TEST_TARGETS="//src/python/... //tools/distrib/python/grpcio_tools/... -//src/python/grpcio_tests/... -//examples/python/..."
 BAZEL_FLAGS="--test_output=errors --config=python"
 
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests
