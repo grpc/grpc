@@ -181,6 +181,38 @@ TEST_F(MatcherTest, MatcherListSinglePredicate) {
       "on_match={action=StringAction{str=foobar}, keep_matching=false}}}");
 }
 
+TEST_F(MatcherTest, KeepMatching) {
+  Matcher matcher_proto;
+  auto* field_matcher = matcher_proto.mutable_matcher_list()->add_matchers();
+  auto* predicate =
+      field_matcher->mutable_predicate()->mutable_single_predicate();
+  auto* input = predicate->mutable_input();
+  input->set_name("foo");
+  HttpRequestHeaderMatchInput http_request_header_match_input;
+  http_request_header_match_input.set_header_name("foo");
+  input->mutable_typed_config()->PackFrom(http_request_header_match_input);
+  predicate->mutable_value_match()->set_exact("bar");
+  auto* on_match = field_matcher->mutable_on_match();
+  on_match->set_keep_matching(true);
+  auto* action = on_match->mutable_action();
+  action->set_name("type.googleapis.com/google.protobuf.StringValue");
+  StringValue string_value;
+  string_value.set_value("foobar");
+  action->mutable_typed_config()->PackFrom(string_value);
+  ValidationErrors errors;
+  auto matcher =
+      ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
+  EXPECT_TRUE(errors.ok())
+      << errors.status(absl::StatusCode::kInvalidArgument, "").message();
+  EXPECT_NE(matcher, nullptr);
+  EXPECT_EQ(
+      matcher->ToString(),
+      "XdsMatcherList{{predicate=SinglePredicate{input=MetadataInput(key=foo), "
+      "matcher=StringMatcher{exact=bar}}, "
+      "on_match={action=StringAction{str=foobar}, keep_matching=true}}}");
+}
+
 TEST_F(MatcherTest, MatcherListWithMultipleMatchers) {
   Matcher matcher_proto;
   // First matcher
@@ -1001,6 +1033,34 @@ TEST_F(MatcherTest, MatcherOnNoMatchError) {
   EXPECT_EQ(
       errors.status(absl::StatusCode::kInvalidArgument, "").message(),
       ": [field:on_no_match error:One of action or matcher should be present]");
+}
+
+TEST_F(MatcherTest, KeepMatchingWhenNotAllowed) {
+  Matcher matcher_proto;
+  auto* field_matcher = matcher_proto.mutable_matcher_list()->add_matchers();
+  auto* predicate =
+      field_matcher->mutable_predicate()->mutable_single_predicate();
+  auto* input = predicate->mutable_input();
+  input->set_name("foo");
+  HttpRequestHeaderMatchInput http_request_header_match_input;
+  http_request_header_match_input.set_header_name("foo");
+  input->mutable_typed_config()->PackFrom(http_request_header_match_input);
+  predicate->mutable_value_match()->set_exact("bar");
+  auto* on_match = field_matcher->mutable_on_match();
+  on_match->set_keep_matching(true);
+  auto* action = on_match->mutable_action();
+  action->set_name("type.googleapis.com/google.protobuf.StringValue");
+  StringValue string_value;
+  string_value.set_value("foobar");
+  action->mutable_typed_config()->PackFrom(string_value);
+  ValidationErrors errors;
+  auto matcher = ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
+                                 action_registry_, RpcMatchContext::Type(),
+                                 /*keep_matching=*/false, &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(errors.status(absl::StatusCode::kInvalidArgument, "").message(),
+            ": [field:matcher_list.matchers[0].on_match.keep_matching "
+            "error:not supported in this component]");
 }
 
 TEST_F(MatcherTest, ExceedsMaxDepth) {

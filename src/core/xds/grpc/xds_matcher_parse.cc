@@ -94,10 +94,13 @@ XdsMatcher::OnMatch ParseOnMatch(
     return XdsMatcher::OnMatch(std::unique_ptr<XdsMatcher::Action>(nullptr),
                                false);
   }
-  // TODO(bpawan): b/431645620 Parse keep matching once we move to latest xds
-  // protos
-  // FIXME
-  bool keep_matching = false;
+  // Handle keep_matching.
+  bool keep_matching =
+      xds_type_matcher_v3_Matcher_OnMatch_keep_matching(on_match);
+  if (keep_matching && !allow_keep_matching) {
+    ValidationErrors::ScopedField field(errors, ".keep_matching");
+    errors->AddError("not supported in this component");
+  }
   // Action is a variant which can have Action or a Nested Matcher
   if (const auto* action_proto =
           xds_type_matcher_v3_Matcher_OnMatch_action(on_match);
