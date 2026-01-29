@@ -433,14 +433,7 @@ grpc_core::Resolver::Result BuildResolverResult(
   grpc_core::Resolver::Result result;
   result.addresses = grpc_core::EndpointAddressesList();
   for (const auto& address_str : addresses) {
-    absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(address_str);
-    if (!uri.ok()) {
-      LOG(ERROR) << "Failed to parse uri. Error: " << uri.status();
-      GRPC_CHECK_OK(uri);
-    }
-    grpc_resolved_address address;
-    GRPC_CHECK(grpc_parse_uri(*uri, &address));
-    result.addresses->emplace_back(address, grpc_core::ChannelArgs());
+    result.addresses->emplace_back(address_str, grpc_core::ChannelArgs());
   }
   return result;
 }

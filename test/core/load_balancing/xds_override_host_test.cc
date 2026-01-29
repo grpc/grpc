@@ -126,7 +126,7 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
   EndpointAddresses MakeAddressWithHealthStatus(
       absl::string_view address, XdsHealthStatus::HealthStatus status) {
     return EndpointAddresses(
-        MakeAddress(address),
+        std::string(address),
         ChannelArgs().Set(GRPC_ARG_XDS_HEALTH_STATUS, status));
   }
 
@@ -159,14 +159,9 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
 
   XdsOverrideHostAttribute* MakeOverrideHostAttribute(
       absl::Span<const absl::string_view> addresses) {
-    std::vector<absl::string_view> address_list;
-    address_list.reserve(addresses.size());
-    for (absl::string_view address : addresses) {
-      address_list.emplace_back(absl::StripPrefix(address, "ipv4:"));
-    }
     attribute_storage_.emplace_back(
         std::make_unique<OverrideHostAttributeStorage>(
-            absl::StrJoin(address_list, ",")));
+            absl::StrJoin(addresses, ",")));
     return &attribute_storage_.back()->attribute;
   }
 
@@ -183,12 +178,8 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
       SourceLocation location = SourceLocation()) {
     std::array<absl::string_view, 1> kArray = {expected};
     if (expected_address_list.empty()) expected_address_list = kArray;
-    std::vector<absl::string_view> expected_addresses;
-    expected_addresses.reserve(expected_address_list.size());
-    for (absl::string_view address : expected_address_list) {
-      expected_addresses.push_back(absl::StripPrefix(address, "ipv4:"));
-    }
-    std::string expected_addresses_str = absl::StrJoin(expected_addresses, ",");
+    std::string expected_addresses_str =
+        absl::StrJoin(expected_address_list, ",");
     for (size_t i = 0; i < 3; ++i) {
       EXPECT_EQ(ExpectPickComplete(picker, {attribute}, /*metadata=*/{},
                                    /*subchannel_call_tracker=*/nullptr,
@@ -217,10 +208,9 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
           << location.file() << ":" << location.line();
       EXPECT_THAT(*address, ::testing::AnyOfArray(expected))
           << location.file() << ":" << location.line();
-      EXPECT_EQ(attribute->actual_address_list(),
-                absl::StripPrefix(*address, "ipv4:"))
+      EXPECT_EQ(attribute->actual_address_list(), *address)
           << "  Actual: " << attribute->actual_address_list() << "\n"
-          << "Expected: " << absl::StripPrefix(*address, "ipv4:") << "\n"
+          << "Expected: " << *address << "\n"
           << location.file() << ":" << location.line();
       actual_picks.push_back(std::move(*address));
     }

@@ -299,8 +299,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Creates a new subchannel with the specified channel args.
     /// The args and per_address_args will be merged by the channel.
     virtual RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        const grpc_resolved_address& address,
-        const ChannelArgs& per_address_args, const ChannelArgs& args) = 0;
+        const std::string& address, const ChannelArgs& per_address_args,
+        const ChannelArgs& args) = 0;
 
     /// Sets the connectivity state and returns a new picker to be used
     /// by the client channel.
