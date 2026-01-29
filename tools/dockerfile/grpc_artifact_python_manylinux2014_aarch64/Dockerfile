@@ -27,7 +27,6 @@ RUN git config --global protocol.file.allow always && \
   git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/bloaty && \
   git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/boringssl-with-bazel && \
   git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/cares/cares && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/cel-spec && \
   git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/envoy-api && \
   git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/googleapis && \
   git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/googletest && \
