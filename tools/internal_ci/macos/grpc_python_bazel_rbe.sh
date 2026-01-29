@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2026 gRPC authors.
+# Copyright 2025 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ TEST_TARGETS="//src/python/... //tools/distrib/python/grpcio_tools/... //example
 BAZEL_FLAGS="--test_output=errors --config=python"
 
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests
+# Run standard Python Bazel tests
 python_bazel_tests/bazel_wrapper \
   --output_base=.bazel_rbe \
   --bazelrc=tools/remote_build/mac.bazelrc \
@@ -55,6 +56,8 @@ python_bazel_tests/bazel_wrapper \
   ${TEST_TARGETS}
 
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_single_threaded_unary_streams
+# Run single-threaded unary stream tests
+# Note: MacOS might differ in threading behavior, but we keep parity with Linux config
 python_bazel_tests_single_threaded_unary_streams/bazel_wrapper \
   --output_base=.bazel_rbe \
   --bazelrc=tools/remote_build/mac.bazelrc \
@@ -66,6 +69,7 @@ python_bazel_tests_single_threaded_unary_streams/bazel_wrapper \
   ${TEST_TARGETS}
 
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_poller_engine
+# Run tests with poller engine
 python_bazel_tests_poller_engine/bazel_wrapper \
   --output_base=.bazel_rbe \
   --bazelrc=tools/remote_build/mac.bazelrc \
@@ -75,3 +79,17 @@ python_bazel_tests_poller_engine/bazel_wrapper \
   --config=python_poller_engine \
   ${BAZEL_FLAGS} \
   ${TEST_TARGETS}
+
+python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_fork_support
+# Run fork support tests
+# Note: Logic mirrored from tools/internal_ci/linux/grpc_python_bazel_test_fork_in_docker.sh
+python_bazel_tests_fork_support/bazel_wrapper \
+  --output_base=.bazel_rbe \
+  --bazelrc=tools/remote_build/mac.bazelrc \
+  test \
+  --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \
+  "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
+  --config=fork_support \
+  --runs_per_test=16 \
+  ${BAZEL_FLAGS} \
+  //src/python/grpcio_tests/tests/fork:fork_test
