@@ -62,6 +62,11 @@ EXCLUDED_TARGETS=(
   "-//third_party/toolchains/rbe_windows_vs2022_bazel7/..."
   "-//third_party/toolchains:rbe_windows_default_toolchain_suite"
 
+  # BUILD files in CEL comformance tests expect the root of the CEL
+  # repo, which isn't what gets used here, so the dependencies don't
+  # work right.
+  "-//third_party/cel-spec/proto/cel/expr/conformance/..."
+
   # Exclude bazelified tests as they contain some bazel hackery
   "-//tools/bazelify_tests/..."
 

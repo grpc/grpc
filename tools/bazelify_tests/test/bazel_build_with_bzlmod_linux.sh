@@ -43,9 +43,14 @@ tools/bazel \
     //test/core/util:all \
     //test/cpp/common:all
 
+# Use --nobuild flag to trigger bazel dependency analysis but skip C++
+# compilation.
+# TODO(weizheyuan): Re-enable the full build (by removing --nobuild)
+# once it no longer causes CI timeouts.
 tools/bazel \
     --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
     build \
+    --nobuild \
     --ignore_dev_dependency=false \
     -- \
     //test/... \
