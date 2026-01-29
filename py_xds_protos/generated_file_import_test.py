@@ -793,7 +793,6 @@ from opentelemetry.proto.metrics.v1 import metrics_pb2
 from opentelemetry.proto.resource.v1 import resource_pb2
 from opentelemetry.proto.trace.v1 import trace_config_pb2
 from opentelemetry.proto.trace.v1 import trace_pb2
-from test.v1 import simple_pb2
 from udpa.annotations import migrate_pb2
 from udpa.annotations import security_pb2
 from udpa.annotations import sensitive_pb2
