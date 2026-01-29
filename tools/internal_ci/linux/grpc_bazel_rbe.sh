@@ -29,7 +29,7 @@ tools/bazel version
 # Needed for upload_rbe_results.py big_query_utils called by bazel_report_helper.py
 # Note: the versions are locked to the ones supporting python3.10.
 # Google will drop Python 3.10 once it reaches its end of life (2026-10-04)
-pip install --user google-api-python-client==2.187.0 oauth2client==4.1.3
+pip install --user google-api-python-client==2.187.0 oauth2client==25.3.0
 
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_rbe
 
