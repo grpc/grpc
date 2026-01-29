@@ -23,7 +23,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography import x509
 import threading
-from grpc._cython import cygrpc as _cygrpc
+import grpc
 
 _ROOT_CERTIFICATES_RESOURCE_PATH = "credentials/ca.pem"
 _PRIVATE_KEY_RESOURCE_PATH = "credentials/server1.key"
@@ -66,52 +66,12 @@ def check_key_cert_match(key_bytes, cert_bytes):
         return False
 
 
-def old_client_private_key_signer(data_to_sign, signature_algorithm):
-    """
-    Of type CustomPrivateKeySign - Callable[[bytes, SignatureAlgorithm], bytes]
-    Takes in data_to_sign and signs it using the test private key
-    """
-    private_key_bytes = client_private_key()
-    # Determine the key type and apply appropriate padding and algorithm.
-    # This example assumes an RSA key. Different logic is needed for other key types (e.g., EC).
-    try:
-        success = check_key_cert_match(client_private_key(), client_certificate_chain())
-        if not success:
-            return ValueError("provided key and certificate do not match.")
-        private_key = serialization.load_pem_private_key(
-            private_key_bytes,
-            password=None,  # Pass password as bytes if the key is encrypted
-            backend=default_backend(),
-        )
-        if not isinstance(private_key, rsa.RSAPrivateKey):
-            raise ValueError("The provided key is not an RSA private key.")
-    except Exception as e:
-        raise
-
-    if isinstance(private_key, rsa.RSAPrivateKey):
-        try:
-            hasher = hashes.SHA256()
-            pss_padding = padding.PSS(
-                mgf=padding.MGF1(hasher),
-                salt_length=hasher.digest_size,
-            )
-
-            signature = private_key.sign(data_to_sign, pss_padding, hasher)
-            return signature
-        except Exception as e:
-            raise
-    else:
-        return ValueError(
-            "Unsupported private key type. This example only supports RSA."
-        )
-
-
 def sync_client_private_key_signer(
     data_to_sign, signature_algorithm, on_complete, completion_data
 ):
     """
     Of type CustomPrivateKeySign - Callable[[bytes, SignatureAlgorithm], bytes]
-    Takes in data_to_sign and signs it using the test private key
+    Takes in data_to_sign and signs it using the test private key with a sync return
     """
     private_key_bytes = client_private_key()
     # Determine the key type and apply appropriate padding and algorithm.
@@ -122,7 +82,7 @@ def sync_client_private_key_signer(
             return ValueError("provided key and certificate do not match.")
         private_key = serialization.load_pem_private_key(
             private_key_bytes,
-            password=None,  # Pass password as bytes if the key is encrypted
+            password=None,
             backend=default_backend(),
         )
         if not isinstance(private_key, rsa.RSAPrivateKey):
@@ -145,60 +105,23 @@ def sync_client_private_key_signer(
     else:
         return ValueError(
             "Unsupported private key type. This example only supports RSA."
-        )
-
-
-def async_signer_worker(
-    data_to_sign, signature_algorithm, on_complete, completion_data
-):
-    print("GREG: async signer worker", flush=True)
-    private_key_bytes = client_private_key()
-    # Determine the key type and apply appropriate padding and algorithm.
-    # This example assumes an RSA key. Different logic is needed for other key types (e.g., EC).
-    try:
-        success = check_key_cert_match(client_private_key(), client_certificate_chain())
-        if not success:
-            on_complete(ValueError("provided key and certificate do not match."))
-        private_key = serialization.load_pem_private_key(
-            private_key_bytes,
-            password=None,  # Pass password as bytes if the key is encrypted
-            backend=default_backend(),
-        )
-        if not isinstance(private_key, rsa.RSAPrivateKey):
-            raise ValueError("The provided key is not an RSA private key.")
-    except Exception as e:
-        raise
-
-    if isinstance(private_key, rsa.RSAPrivateKey):
-        try:
-            hasher = hashes.SHA256()
-            pss_padding = padding.PSS(
-                mgf=padding.MGF1(hasher),
-                salt_length=hasher.digest_size,
-            )
-
-            signature = private_key.sign(data_to_sign, pss_padding, hasher)
-            on_complete(signature)
-        except Exception as e:
-            raise
-    else:
-        on_complete(
-            ValueError("Unsupported private key type. This example only supports RSA.")
         )
 
 
 def bad_async_signer_worker(
     data_to_sign, signature_algorithm, on_complete, completion_data
 ):
-    print("GREG: async signer worker", flush=True)
-    # Use the server private key
+    """
+    A signing function that uses a mismatched private key and certificate.
+    Specifically, this is used on the client side and should use the client.key
+    file, but rather uses the server.key file to generate an incorrect signature
+    """
+    # Use the server private key and expect failure
     private_key_bytes = server_private_key()
-    # Determine the key type and apply appropriate padding and algorithm.
-    # This example assumes an RSA key. Different logic is needed for other key types (e.g., EC).
     try:
         private_key = serialization.load_pem_private_key(
             private_key_bytes,
-            password=None,  # Pass password as bytes if the key is encrypted
+            password=None,
             backend=default_backend(),
         )
         if not isinstance(private_key, rsa.RSAPrivateKey):
@@ -229,15 +152,53 @@ def bad_async_client_private_key_signer(
 ):
     """
     Of type CustomPrivateKeySign - Callable[[bytes, SignatureAlgorithm], bytes]
-    Takes in data_to_sign and signs it using the test private key
+    Takes in data_to_sign and signs it using the wrong private key, resulting in handshake failure
     """
-    print("GREG: async signer", flush=True)
     signer_thread = threading.Thread(
         target=bad_async_signer_worker,
         args=(data_to_sign, signature_algorithm, on_complete, completion_data),
     ).start()
     # Add something where we put something cancellable on this handle
-    return _cygrpc.create_async_signing_handle()
+    return grpc.create_async_handle_for_custom_signer()
+
+
+def async_signer_worker(
+    data_to_sign, signature_algorithm, on_complete, completion_data
+):
+    """
+    Meant to be used as an async function for a thread, for example
+    """
+    private_key_bytes = client_private_key()
+    try:
+        success = check_key_cert_match(client_private_key(), client_certificate_chain())
+        if not success:
+            on_complete(ValueError("provided key and certificate do not match."))
+        private_key = serialization.load_pem_private_key(
+            private_key_bytes,
+            password=None,  # Pass password as bytes if the key is encrypted
+            backend=default_backend(),
+        )
+        if not isinstance(private_key, rsa.RSAPrivateKey):
+            on_complete(ValueError("The provided key is not an RSA private key."))
+    except Exception as e:
+        raise
+
+    if isinstance(private_key, rsa.RSAPrivateKey):
+        try:
+            hasher = hashes.SHA256()
+            pss_padding = padding.PSS(
+                mgf=padding.MGF1(hasher),
+                salt_length=hasher.digest_size,
+            )
+
+            signature = private_key.sign(data_to_sign, pss_padding, hasher)
+            on_complete(signature)
+        except Exception as e:
+            raise
+    else:
+        on_complete(
+            ValueError("Unsupported private key type. This example only supports RSA.")
+        )
 
 
 def async_client_private_key_signer(
@@ -253,7 +214,7 @@ def async_client_private_key_signer(
         args=(data_to_sign, signature_algorithm, on_complete, completion_data),
     ).start()
     # Add something where we put something cancellable on this handle
-    return _cygrpc.create_async_signing_handle()
+    return grpc.create_async_handle_for_custom_signer()
 
 
 def sync_bad_client_private_key_signer(
@@ -261,7 +222,7 @@ def sync_bad_client_private_key_signer(
 ):
     """
     Of type CustomPrivateKeySign - Callable[[bytes, SignatureAlgorithm], bytes]
-    Takes in data_to_sign and signs it using the test private key
+    Takes in data_to_sign and signs it using the wrong private key and returns synchronously
     """
     # use the server's private key
     private_key_bytes = server_private_key()
@@ -297,25 +258,34 @@ def sync_bad_client_private_key_signer(
 
 
 def async_signer_worker_until_cancel(
-    data_to_sign, signature_algorithm, on_complete, completion_data, cancellation_event
+    data_to_sign,
+    signature_algorithm,
+    on_complete,
+    completion_data,
+    cancellation_event,
+    handshake_started_event,
 ):
+    """
+    Infinitely loops until cancelled for testing cancellation
+    """
+    handshake_started_event.set()
     while not cancellation_event.is_set():
         try:
-            print("GREG: waiting on cancellation", flush=True)
-            print("GREG: cancellation_event: ", cancellation_event, flush=True)
             # Use wait() with a timeout to make the thread responsive to cancellation
             cancellation_event.wait(timeout=1)
         except Exception as e:
-            print("GREG: Worker thread: exception occurred", e, flush=True)
-            break  # Exit on error
-    # on_complete(ValueError("cancelled"))
-    print("GREG: thread cancellation done", flush=True)
+            raise
 
 
 def async_signer_with_test_handle(
     handle, data_to_sign, signature_algorithm, on_complete, completion_data
 ):
-    print("GREG: async signer", flush=True)
+    """
+    A helper for an async signer that uses a handle provided by the test.
+    This makes the values of the handle available to the test.
+    Runs infinitely until cancelled, and the passed handle should then have the
+    handle.cancel_event set
+    """
     # cancel_event = threading.Event()
     signer_thread = threading.Thread(
         target=async_signer_worker_until_cancel,
@@ -325,11 +295,9 @@ def async_signer_with_test_handle(
             on_complete,
             completion_data,
             handle.cancel_event,
+            handle.handshake_started,
         ),
     ).start()
-    # Add something where we put something cancellable on this handle
-    # handle = _cygrpc.create_async_signing_handle()
-    # handle.cancel_event = cancel_event
     handle.thread = signer_thread
     return handle
 
@@ -340,9 +308,10 @@ def async_client_private_key_signer_with_cancel(
     """
     Of type CustomPrivateKeySign - Callable[[bytes, SignatureAlgorithm], bytes]
     Takes in data_to_sign and signs it using the test private key
+    Runs infinitely until cancelled
     """
-    print("GREG: async signer", flush=True)
     cancel_event = threading.Event()
+    handshake_started = threading.Event()
     signer_thread = threading.Thread(
         target=async_signer_worker_until_cancel,
         args=(
@@ -351,21 +320,19 @@ def async_client_private_key_signer_with_cancel(
             on_complete,
             completion_data,
             cancel_event,
+            handshake_started,
         ),
     ).start()
     # Add something where we put something cancellable on this handle
-    handle = _cygrpc.create_async_signing_handle()
+    handle = grpc.create_async_handle_for_custom_signer()
     handle.cancel_event = cancel_event
+    handle.handshake_started = handshake_started
     handle.thread = signer_thread
     return handle
 
 
 def cancel_async(handle):
-    print("GREG IN CANCEL_ASYNC", flush=True)
-    print("GREG: handle: ", handle, flush=True)
-    print("GREG: cancel event: ", handle.cancel_event, flush=True)
     handle.cancel_event.set()
-    print("cancel_event set", flush=True)
 
 
 def parse_bool(value):

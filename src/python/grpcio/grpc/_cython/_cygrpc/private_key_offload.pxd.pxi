@@ -14,7 +14,7 @@
 # distutils: language=c++
 
 from libcpp.string cimport string
-from libcpp.memory cimport shared_ptr, make_shared, static_pointer_cast
+from libcpp.memory cimport shared_ptr
 
 cdef extern from "absl/status/status.h" namespace "absl":
     cdef enum AbslStatusCode "absl::StatusCode":
@@ -68,17 +68,6 @@ cdef extern from "grpc/private_key_signer.h":
 
 cdef class PyAsyncSigningHandle:
     pass
-
-    # def __cinit__(self):
-    #     self.c_instance = AsyncSigningHandle()
-    #     if self.c_instance == NULL:
-    #         raise MemoryError("Failed to create MyCClass instance")
-
-    # def __dealloc__(self):
-    #     if self.c_instance != NULL:
-    #         # destroy_my_c_class(self.c_instance)
-    #         self.c_instance = NULL
-
 
 cpdef enum SignatureAlgorithm:
     RSA_PKCS1_SHA256 = <int>CSignatureAlgorithm.kRsaPkcs1Sha256

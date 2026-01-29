@@ -22,6 +22,9 @@ faulthandler.enable()
 _SERVER_HOST_OVERRIDE = "foo.test.google.fr"
 
 class SecurityTest(unittest.TestCase):
+    """setUp and tearDown start and stop a test server with valid server credentials.
+    This server can be called by each `def test_*` function in this class.
+    Each test tests a variety of different security configurations."""
     def setUp(self):
         self.server = test_common.test_server()
         test_pb2_grpc.add_TestServiceServicer_to_server(
@@ -41,8 +44,10 @@ class SecurityTest(unittest.TestCase):
     def tearDown(self):
         self.server.stop(None)
 
-    # @unittest.skip(reason="temp")
     def test_success_sync(self):
+        """
+        Successfully use a custom sync private key signer.
+        """
         self.stub = test_pb2_grpc.TestServiceStub(
             grpc.secure_channel(
                 "localhost:{}".format(self.port),
@@ -63,6 +68,9 @@ class SecurityTest(unittest.TestCase):
         self.assertIsInstance(response, empty_pb2.Empty)
 
     def test_success_async(self):
+        """
+        Successfully use a custom async private key signer.
+        """
         self.stub = test_pb2_grpc.TestServiceStub(
             grpc.secure_channel(
                 "localhost:{}".format(self.port),
@@ -82,8 +90,10 @@ class SecurityTest(unittest.TestCase):
         response = self.stub.EmptyCall(empty_pb2.Empty())
         self.assertIsInstance(response, empty_pb2.Empty)
 
-    # @unittest.skip(reason="temp")
     def test_bad_sync_signer(self):
+        """
+        Expect failure using a custom sync private key signer.
+        """
         self.stub = test_pb2_grpc.TestServiceStub(
             grpc.secure_channel(
                 "localhost:{}".format(self.port),
@@ -104,8 +114,10 @@ class SecurityTest(unittest.TestCase):
             response = self.stub.EmptyCall(empty_pb2.Empty())
             # Check result better
 
-    # @unittest.skip(reason="temp")
     def test_bad_async_signer(self):
+        """
+        Expect failure using a custom async private key signer.
+        """
         self.stub = test_pb2_grpc.TestServiceStub(
             grpc.secure_channel(
                 "localhost:{}".format(self.port),
@@ -127,9 +139,13 @@ class SecurityTest(unittest.TestCase):
             # TODO check result better
 
     def test_async_signer_with_cancel(self):
-        # test_handle = _cygrpc.create_async_signing_test_handle()
+        """
+        Test cancellation of an async signer
+        """
+        # Create a handle with a cancellation event and pass it to the signing function..
         test_handle = grpc.create_async_handle_for_custom_signer()
         test_handle.cancel_event = threading.Event()
+        test_handle.handshake_started = threading.Event()
         bound_signing_fn = partial(resources.async_signer_with_test_handle, test_handle)
         channel = grpc.secure_channel(
             "localhost:{}".format(self.port),
@@ -148,18 +164,20 @@ class SecurityTest(unittest.TestCase):
         )
         self.stub = test_pb2_grpc.TestServiceStub(channel)
         future = self.stub.EmptyCall.future(empty_pb2.Empty())
-        # Let it get into the handshake
-        time.sleep(1)
+        # Let it get into the handshake where it should loop infinitely
+        self.assertTrue(test_handle.handshake_started.wait(timeout=1))
+        # Ensure it's not cancelled yet
         self.assertFalse(test_handle.cancel_event.is_set())
+        # Cancel
         future.cancel()
         channel.close()
-        # Wait until cancel_event is set with a timeout of 1 second for failure
+        # Ensure the cancel event is set
         self.assertTrue(test_handle.cancel_event.wait(timeout=1))
 
-    # @unittest.skip(
-    #     reason="This is the test that is failing right now, if we timeout and don't call channel.cancel() Python segfaults when going to call the cancel fn."
-    # )
     def test_async_signer_test_times_out(self):
+        """
+        Similar to the test where we manually cancel, but just let things timeout
+        """
         # We should have a timeout here
         with self.assertRaises(Exception) as context:
             with grpc.secure_channel(
@@ -179,8 +197,8 @@ class SecurityTest(unittest.TestCase):
             ) as channel:
                 self.stub = test_pb2_grpc.TestServiceStub(channel)
                 # Let it timeout and just go out of scope
-                response = self.stub.EmptyCall(empty_pb2.Empty(), timeout=2)
-                # We segfault as the stack tries to call cancel on the async signer during shutdown
+                response = self.stub.EmptyCall(empty_pb2.Empty(), timeout=1)
+                # As everything goes out of scope, we just want to make sure we don't segfault or anything
 
 
 if __name__ == "__main__":
