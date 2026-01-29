@@ -22,7 +22,8 @@ echo "Kokoro pool: ${KOKORO_JOB_POOL:-undefined}"
 if [[ -f /GRPC_IMAGE_NAME ]]; then
   echo "gRPC custom VM image: $(cat /GRPC_IMAGE_NAME)"
 fi
-echo -e "System: $(uname -a)\n"
+echo -e "System: $(uname -a)"
+echo -e "Python: $(python3 -VV)\n"
 echo -e "-- OS --\n$(lsb_release -a 2>/dev/null)\n"
 echo -e "-- CPU --\n$(lscpu)\n"
 echo -e "-- Memory --\n$(lsmem --summary)\n$(free -h --si)\n"

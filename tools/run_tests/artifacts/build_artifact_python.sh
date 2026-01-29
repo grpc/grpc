@@ -265,9 +265,9 @@ then
   # Build xds_protos source distribution
   # build_xds_protos.py is invoked as part of generate_projects.
   ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation \
-    "tools/distrib/python/xds_protos"
+    "py_xds_protos"
 
-  cp -r tools/distrib/python/xds_protos/dist/* "$ARTIFACT_DIR"
+  cp -r py_xds_protos/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_testing source distribution
   # TODO(ssreenithi): find pyproject.toml/nox equivalent

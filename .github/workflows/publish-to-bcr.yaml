@@ -20,9 +20,14 @@ on:
 
 jobs:
   publish:
-    uses: bazel-contrib/publish-to-bcr/.github/workflows/publish.yaml@v1.0.0
+    uses: bazel-contrib/publish-to-bcr/.github/workflows/publish.yaml@v1.1.0
     with:
       attest: false
+      # Mark the created PR as ready for review, since it can't be marked ready by gRPC maintainers and subsequently
+      # can't be auto-merged by BCR reviewer bot.
+      #
+      # See https://github.com/bazel-contrib/publish-to-bcr/blob/748dc7186bc60d0e24a81ee30aba8aa543794767/.github/workflows/publish.yaml#L76
+      draft: false
       tag_name: ${{ inputs.tag_name }}
       # GitHub repository which is a fork of the upstream where the Pull Request will be opened.
       registry_fork: grpc/bazel-central-registry

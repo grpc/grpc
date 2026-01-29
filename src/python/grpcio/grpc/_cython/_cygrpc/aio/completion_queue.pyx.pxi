@@ -131,14 +131,20 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
         for loop in self._loops:
             self._loops.get(loop).close()
 
+        # Close the read socket to prevent the `_poller_thread` from blocking on a `write` syscall
+        # when the Unix-domain socket buffer is full. Once the loops above are closed, the read
+        # socket is no longer being read, so close it to avoid `write` syscall hangs.
+        #
+        # See `sock_alloc_send_pskb` for more details about these `write` syscall hangs.
+        self._read_socket.close()
+
         # TODO(https://github.com/grpc/grpc/issues/22365) perform graceful shutdown
         grpc_completion_queue_shutdown(self._cq)
         while not self._shutdown:
             self._poller_thread.join(timeout=_POLL_AWAKE_INTERVAL_S)
         grpc_completion_queue_destroy(self._cq)
 
-        # Clean up socket resources
-        self._read_socket.close()
+        # Clean up the write socket
         self._write_socket.close()
 
     def _handle_events(self, object context_loop):

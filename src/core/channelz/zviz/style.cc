@@ -50,6 +50,8 @@ body {
   margin-top: 0;
 }
 .zviz-data {
+  white-space: pre-wrap;
+  font-family: monospace;
 }
 .zviz-key {
   font-weight: bold;

@@ -42,6 +42,11 @@ UPB_INLINE const upb_MessageDef *envoy_extensions_filters_network_http_connectio
   return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.SetCurrentClientCertDetails");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_ForwardClientCertConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_extensions_filters_network_http_connection_manager_v3_http_connection_manager_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.ForwardClientCertConfig");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_UpgradeConfig_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_extensions_filters_network_http_connection_manager_v3_http_connection_manager_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.UpgradeConfig");

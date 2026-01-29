@@ -243,7 +243,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   //    end_stream set. If the stream needs to be half closed, the client should
   //    enqueue a half close message.
 
-  struct EnqueueResult {
+  struct StreamWritabilityUpdate {
     bool became_writable;
     WritableStreamPriority priority;
   };
@@ -253,7 +253,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // 2. This MUST be called before any messages are enqueued.
   // 3. MUST not be called after trailing metadata is enqueued.
   // 4. This function is thread safe.
-  absl::StatusOr<EnqueueResult> EnqueueInitialMetadata(
+  absl::StatusOr<StreamWritabilityUpdate> EnqueueInitialMetadata(
       MetadataHandle&& metadata) {
     MutexLock lock(&mu_);
     GRPC_DCHECK(!is_initial_metadata_queued_);
@@ -278,7 +278,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // 1. MUST be called at most once.
   // 2. MUST be called only for a server.
   // 3. This function is thread safe.
-  absl::StatusOr<EnqueueResult> EnqueueTrailingMetadata(
+  absl::StatusOr<StreamWritabilityUpdate> EnqueueTrailingMetadata(
       MetadataHandle&& metadata) {
     MutexLock lock(&mu_);
     GRPC_DCHECK(metadata != nullptr);
@@ -287,8 +287,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
 
     if (GPR_UNLIKELY(IsEnqueueClosed())) {
       GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueue closed.";
-      return EnqueueResult{/*became_writable=*/false,
-                           WritableStreamPriority::kStreamClosed};
+      return StreamWritabilityUpdate{/*became_writable=*/false,
+                                     WritableStreamPriority::kStreamClosed};
     }
 
     is_trailing_metadata_or_half_close_queued_ = true;
@@ -321,12 +321,12 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     const uint32_t tokens =
         message->payload()->Length() + kGrpcHeaderSizeInBytes;
     return [self = this->Ref(), entry = QueueEntry{std::move(message)},
-            tokens]() mutable -> Poll<absl::StatusOr<EnqueueResult>> {
+            tokens]() mutable -> Poll<absl::StatusOr<StreamWritabilityUpdate>> {
       MutexLock lock(&self->mu_);
       if (GPR_UNLIKELY(self->IsEnqueueClosed())) {
         GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueue closed";
-        return EnqueueResult{/*became_writable=*/false,
-                             WritableStreamPriority::kStreamClosed};
+        return StreamWritabilityUpdate{/*became_writable=*/false,
+                                       WritableStreamPriority::kStreamClosed};
       }
       Poll<bool> result = self->queue_.Enqueue(entry, tokens);
       if (result.ready()) {
@@ -346,7 +346,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // 1. MUST be called at most once.
   // 2. MUST be called only for a client.
   // 3. This function is thread safe.
-  absl::StatusOr<EnqueueResult> EnqueueHalfClosed() {
+  absl::StatusOr<StreamWritabilityUpdate> EnqueueHalfClosed() {
     MutexLock lock(&mu_);
     GRPC_DCHECK(is_initial_metadata_queued_);
     GRPC_DCHECK(is_client_);
@@ -357,8 +357,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
           << "Enqueue closed or trailing metadata/half close queued "
           << " is_trailing_metadata_or_half_close_queued_ = "
           << is_trailing_metadata_or_half_close_queued_;
-      return EnqueueResult{/*became_writable=*/false,
-                           WritableStreamPriority::kStreamClosed};
+      return StreamWritabilityUpdate{/*became_writable=*/false,
+                                     WritableStreamPriority::kStreamClosed};
     }
 
     is_trailing_metadata_or_half_close_queued_ = true;
@@ -378,7 +378,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // Enqueue Reset Stream.
   // 1. MUST be called at most once.
   // 3. This function is thread safe.
-  absl::StatusOr<EnqueueResult> EnqueueResetStream(const uint32_t error_code) {
+  absl::StatusOr<StreamWritabilityUpdate> EnqueueResetStream(
+      const uint32_t error_code) {
     MutexLock lock(&mu_);
     GRPC_DCHECK(is_initial_metadata_queued_);
 
@@ -386,8 +387,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     // stream is cancelled from the call stack.
     if (GPR_UNLIKELY(IsEnqueueClosed())) {
       GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueue closed";
-      return EnqueueResult{/*became_writable=*/false,
-                           WritableStreamPriority::kStreamClosed};
+      return StreamWritabilityUpdate{/*became_writable=*/false,
+                                     WritableStreamPriority::kStreamClosed};
     }
 
     GRPC_STREAM_DATA_QUEUE_DEBUG
@@ -516,12 +517,17 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // Needs to be invoked when the peer sends stream flow control window update.
   // stream_fc_tokens represents the stream flow control (delta) window +
   // intial_window_size.
-  bool ReceivedFlowControlWindowUpdate(const uint32_t stream_fc_tokens) {
+  StreamWritabilityUpdate ReceivedFlowControlWindowUpdate(
+      const uint32_t stream_fc_tokens) {
     MutexLock lock(&mu_);
     GRPC_STREAM_DATA_QUEUE_DEBUG
         << "Received flow control window update. stream_fc_tokens: "
         << stream_fc_tokens;
-    return UpdateWritableStateDequeueLocked(stream_fc_tokens);
+    const bool old_writable_state = is_writable_;
+    const bool new_writable_state =
+        UpdateWritableStateDequeueLocked(stream_fc_tokens);
+    return {/*became_writable=*/(!old_writable_state && new_writable_state),
+            priority_};
   }
 
   // Returns true if the queue is empty. This function is thread safe.
@@ -706,7 +712,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // always available for an enqueue operation. This can cause a stream to be
   // marked as writable when it is not but this will correct itself in the next
   // dequeue operation (which returns an accurate is_writable).
-  EnqueueResult UpdateWritableStateAndPriorityEnqueueLocked(
+  StreamWritabilityUpdate UpdateWritableStateAndPriorityEnqueueLocked(
       const bool became_non_empty, const WritableStreamPriority priority)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     // Update priority.
@@ -718,14 +724,14 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
       GRPC_STREAM_DATA_QUEUE_DEBUG
           << "UpdateWritableStateLocked became writable with priority: "
           << GetWritableStreamPriorityString(priority_);
-      return EnqueueResult{/*became_writable=*/true, priority_};
+      return StreamWritabilityUpdate{/*became_writable=*/true, priority_};
     }
 
     GRPC_STREAM_DATA_QUEUE_DEBUG
         << "UpdateWritableStateAndPriorityEnqueueLocked with priority: "
         << GetWritableStreamPriorityString(priority_)
         << " is_writable: " << is_writable_;
-    return EnqueueResult{/*became_writable=*/false, priority_};
+    return StreamWritabilityUpdate{/*became_writable=*/false, priority_};
   }
 
   // Updates the writable state of the stream. Returns true if the

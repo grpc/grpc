@@ -404,6 +404,18 @@ FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
   return action;
 }
 
+void StreamFlowControl::IncomingUpdateContext::HackIncrementPendingSize(
+    int64_t pending_size) {
+  GRPC_CHECK_GE(pending_size, 0);
+  if (sfc_->pending_size_.has_value()) {
+    int64_t final_size = Clamp(sfc_->pending_size_.value() + pending_size,
+                               int64_t{0}, kMaxWindowUpdateSize);
+    *sfc_->pending_size_ = final_size;
+  } else {
+    sfc_->pending_size_ = pending_size;
+  }
+}
+
 void StreamFlowControl::IncomingUpdateContext::SetPendingSize(
     int64_t pending_size) {
   GRPC_CHECK_GE(pending_size, 0);

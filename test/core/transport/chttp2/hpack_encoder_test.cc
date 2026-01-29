@@ -20,24 +20,39 @@
 
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/slice_buffer.h>
+#include <grpc/status.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
+#include <utility>
 
+#include "src/core/call/metadata_batch.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/shared_bit_gen.h"
+#include "src/core/util/status_helper.h"
 #include "test/core/test_util/parse_hexstring.h"
 #include "test/core/test_util/slice_splitter.h"
 #include "test/core/test_util/test_config.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 grpc_core::HPackCompressor* g_compressor;
 grpc_core::Http2ZTraceCollector* g_ztrace_collector =
@@ -157,7 +172,12 @@ class FakeCallTracer final : public CallTracerInterface {
   void RecordOutgoingBytes(
       const TransportByteSize& transport_byte_size) override {}
   void RecordSendInitialMetadata(
-      grpc_metadata_batch* send_initial_metadata) override {}
+      grpc_metadata_batch* send_initial_metadata) override {
+    GRPC_CHECK(!IsCallTracerSendInitialMetadataIsAnAnnotationEnabled());
+    MutateSendInitialMetadata(send_initial_metadata);
+  }
+  void MutateSendInitialMetadata(
+      grpc_metadata_batch* /*send_initial_metadata*/) override {}
   void RecordSendTrailingMetadata(
       grpc_metadata_batch* send_trailing_metadata) override {}
   void RecordSendMessage(const Message& send_message) override {}
@@ -411,6 +431,229 @@ TEST(HpackEncoderTest, EncodeBinaryAsTrueBinary) {
   grpc_slice_buffer_destroy(&output);
 
   EXPECT_EQ(compressor.test_only_table_size(), 114);
+}
+
+namespace {
+void CreateHeaderFrame(grpc_core::RawEncoder encoder,
+                       grpc_slice_buffer* output) {
+  uint32_t len = encoder.Length();
+  grpc_slice_buffer body;
+  grpc_slice_buffer_init(&body);
+  std::move(encoder).Flush(&body);
+
+  grpc_slice hdr = GRPC_SLICE_MALLOC(9);
+  uint8_t* p = GRPC_SLICE_START_PTR(hdr);
+  *p++ = static_cast<uint8_t>(len >> 16);
+  *p++ = static_cast<uint8_t>(len >> 8);
+  *p++ = static_cast<uint8_t>(len);
+  *p++ = GRPC_CHTTP2_FRAME_HEADER;
+  *p++ = GRPC_CHTTP2_DATA_FLAG_END_STREAM | GRPC_CHTTP2_DATA_FLAG_END_HEADERS;
+  *p++ = 0;
+  *p++ = 0;
+  *p++ = 0;
+  *p++ = 1;  // Stream ID 1
+
+  grpc_slice_buffer_add(output, hdr);
+  grpc_slice_buffer_move_into(&body, output);
+  grpc_slice_buffer_destroy(&body);
+  verify_frames(*output, /*header_is_eof=*/true);
+}
+
+void ParseHeaderFrame(grpc_slice_buffer* frame, grpc_metadata_batch* batch,
+                      const bool is_client = true) {
+  grpc_core::HPackParser parser;
+  grpc_core::HPackParser::LogInfo log_info{
+      /*stream_id=*/1, grpc_core::HPackParser::LogInfo::kHeaders, is_client};
+  parser.BeginFrame(batch, /*metadata_size_soft_limit=*/1024u * 1024u,
+                    /*metadata_size_hard_limit=*/1024u * 1024u,
+                    grpc_core::HPackParser::Boundary::EndOfStream,
+                    grpc_core::HPackParser::Priority::None, log_info);
+
+  grpc_slice_buffer header_trash;
+  grpc_slice_buffer_init(&header_trash);
+  if (frame->length >= 9) {
+    grpc_slice_buffer_move_first(frame, 9, &header_trash);
+  } else {
+    // Should fail
+    FAIL() << "Frame too short";
+  }
+  grpc_slice_buffer_destroy(&header_trash);
+
+  for (size_t i = 0; i < frame->count; i++) {
+    grpc_error_handle err =
+        parser.Parse(frame->slices[i], i == frame->count - 1,
+                     grpc_core::SharedBitGen(), nullptr);
+    EXPECT_TRUE(err.ok()) << grpc_core::StatusToString(err);
+  }
+  parser.FinishFrame();
+}
+constexpr absl::string_view kMetadataValue = "value";
+constexpr absl::string_view kMetadatakey = "key";
+constexpr absl::string_view kMetadatabinarykey = "key-bin";
+
+void EncodeAndParse(grpc_core::RawEncoder&& encoder, grpc_metadata_batch* b) {
+  grpc_slice_buffer frame;
+  grpc_slice_buffer_init(&frame);
+  CreateHeaderFrame(std::move(encoder), &frame);
+  ParseHeaderFrame(&frame, b);
+  grpc_slice_buffer_destroy(&frame);
+}
+
+}  // namespace
+
+class RawEncoderTest : public ::testing::Test {
+ protected:
+  void Verify(absl::AnyInvocable<void(grpc_core::RawEncoder&)> encode_actions,
+              absl::AnyInvocable<void(grpc_metadata_batch&)> verify_actions,
+              bool use_true_binary_metadata = false) {
+    grpc_core::RawEncoder encoder(use_true_binary_metadata);
+    encode_actions(encoder);
+    grpc_metadata_batch b;
+    EncodeAndParse(std::move(encoder), &b);
+    verify_actions(b);
+  }
+};
+
+// Test basic encoding of a regular metadata key-value pair.
+TEST_F(RawEncoderTest, BasicMetadata) {
+  Verify(
+      [](grpc_core::RawEncoder& encoder) {
+        encoder.Encode(grpc_core::Slice::FromStaticString(kMetadatakey),
+                       grpc_core::Slice::FromStaticString(kMetadataValue));
+      },
+      [](grpc_metadata_batch& b) {
+        std::string value;
+        EXPECT_EQ(b.GetStringValue(kMetadatakey, &value), kMetadataValue);
+      });
+}
+
+class RawEncoderBinaryTest : public RawEncoderTest,
+                             public ::testing::WithParamInterface<bool> {};
+
+// Test encoding of a binary metadata key-value pair with both true-binary
+// enabled and disabled.
+TEST_P(RawEncoderBinaryTest, BinaryMetadata) {
+  Verify(
+      [](grpc_core::RawEncoder& encoder) {
+        encoder.Encode(grpc_core::Slice::FromStaticString(kMetadatabinarykey),
+                       grpc_core::Slice::FromStaticString(kMetadataValue));
+      },
+      [](grpc_metadata_batch& b) {
+        std::string value;
+        EXPECT_EQ(b.GetStringValue(kMetadatabinarykey, &value), kMetadataValue);
+      },
+      /*use_true_binary_metadata=*/GetParam());
+}
+
+INSTANTIATE_TEST_SUITE_P(RawEncoder, RawEncoderBinaryTest, ::testing::Bool());
+
+// Test encoding of the grpc-status header.
+TEST_F(RawEncoderTest, Status) {
+  grpc_status_code status = GRPC_STATUS_OK;
+  Verify(
+      [status](grpc_core::RawEncoder& encoder) {
+        encoder.Encode(grpc_core::GrpcStatusMetadata(), status);
+      },
+      [status](grpc_metadata_batch& b) {
+        EXPECT_EQ(b.get(grpc_core::GrpcStatusMetadata()).value(), status);
+      });
+}
+
+// Test encoding of the grpc-message header.
+TEST_F(RawEncoderTest, Message) {
+  Verify(
+      [](grpc_core::RawEncoder& encoder) {
+        encoder.Encode(grpc_core::GrpcMessageMetadata(),
+                       grpc_core::Slice::FromStaticString(kMetadataValue));
+      },
+      [](grpc_metadata_batch& b) {
+        const auto* message = b.get_pointer(grpc_core::GrpcMessageMetadata());
+        ASSERT_NE(message, nullptr);
+        EXPECT_EQ(*message, grpc_core::Slice::FromStaticString(kMetadataValue));
+      });
+}
+
+// Test that only the first encoded grpc-status and grpc-message headers are
+// preserved if multiple are encoded.
+TEST_F(RawEncoderTest, IgnoresMultipleStatusAndMessage) {
+  Verify(
+      [](grpc_core::RawEncoder& encoder) {
+        encoder.Encode(grpc_core::GrpcStatusMetadata(), GRPC_STATUS_OK);
+        encoder.Encode(grpc_core::GrpcStatusMetadata(), GRPC_STATUS_UNKNOWN);
+        encoder.Encode(grpc_core::GrpcMessageMetadata(),
+                       grpc_core::Slice::FromStaticString("msg1"));
+        encoder.Encode(grpc_core::GrpcMessageMetadata(),
+                       grpc_core::Slice::FromStaticString("msg2"));
+      },
+      [](grpc_metadata_batch& b) {
+        EXPECT_EQ(b.get(grpc_core::GrpcStatusMetadata()).value(),
+                  GRPC_STATUS_OK);
+        const auto* message = b.get_pointer(grpc_core::GrpcMessageMetadata());
+        ASSERT_NE(message, nullptr);
+        EXPECT_EQ(*message, grpc_core::Slice::FromStaticString("msg1"));
+      });
+}
+
+// Test encoding of multiple different headers in a single batch.
+TEST_F(RawEncoderTest, EncodeMultipleHeaders) {
+  grpc_status_code status = GRPC_STATUS_OK;
+  Verify(
+      [&](grpc_core::RawEncoder& encoder) {
+        encoder.Encode(grpc_core::Slice::FromStaticString(kMetadatakey),
+                       grpc_core::Slice::FromStaticString(kMetadataValue));
+        encoder.Encode(grpc_core::Slice::FromStaticString(kMetadatabinarykey),
+                       grpc_core::Slice::FromStaticString(kMetadataValue));
+        encoder.Encode(grpc_core::GrpcStatusMetadata(), status);
+        encoder.Encode(grpc_core::GrpcMessageMetadata(),
+                       grpc_core::Slice::FromStaticString("message"));
+      },
+      [&](grpc_metadata_batch& b) {
+        std::string value;
+        EXPECT_EQ(b.GetStringValue(kMetadatakey, &value), kMetadataValue);
+        EXPECT_EQ(b.GetStringValue(kMetadatabinarykey, &value), kMetadataValue);
+        EXPECT_EQ(b.get(grpc_core::GrpcStatusMetadata()).value(), status);
+        const auto* message = b.get_pointer(grpc_core::GrpcMessageMetadata());
+        ASSERT_NE(message, nullptr);
+        EXPECT_EQ(*message, grpc_core::Slice::FromStaticString("message"));
+      });
+}
+
+// Test that a single header pair exceeding the size limit is rejected.
+TEST_F(RawEncoderTest, SizeLimitExceededSinglePair) {
+  Verify(
+      [](grpc_core::RawEncoder& encoder) {
+        // Limit is 2048 (2 * 1024).
+        // Create a value larger than 2048.
+        std::string value(2050, 'a');
+        encoder.Encode(grpc_core::Slice::FromStaticString(kMetadatakey),
+                       grpc_core::Slice::FromCopiedString(value));
+      },
+      [](grpc_metadata_batch& b) {
+        std::string value;
+        EXPECT_EQ(b.GetStringValue(kMetadatakey, &value), std::nullopt);
+      });
+}
+
+// Test that adding headers is stopped when the total size limit is exceeded.
+TEST_F(RawEncoderTest, SizeLimitExceededTotal) {
+  Verify(
+      [](grpc_core::RawEncoder& encoder) {
+        // Limit is 16384 (1 << 14).
+        // Encode multiple pairs.
+        // Use 1000 which fits in 2048 limit, but 20 of them exceed 16384 total.
+        std::string value(1000, 'a');
+        for (int i = 0; i < 20; ++i) {
+          encoder.Encode(
+              grpc_core::Slice::FromCopiedString(absl::StrCat(kMetadatakey, i)),
+              grpc_core::Slice::FromCopiedString(value));
+        }
+        EXPECT_LE(encoder.Length(), 16384);
+        EXPECT_GT(encoder.Length(), 0);
+      },
+      [](grpc_metadata_batch& b) {
+        EXPECT_GT(b.count(), 0);
+        EXPECT_LT(b.count(), 20);
+      });
 }
 
 int main(int argc, char** argv) {

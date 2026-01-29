@@ -39,9 +39,9 @@ class MetadataMap {
   std::string GetBinaryErrorDetails() {
     // if filled_, extract from the multimap for O(log(n))
     if (filled_) {
-      auto iter = map_.find(kBinaryErrorDetailsKey);
-      if (iter != map_.end()) {
-        return std::string(iter->second.begin(), iter->second.length());
+      auto [it, end] = map_.equal_range(kBinaryErrorDetailsKey);
+      if (it != end) {
+        return std::string(it->second.begin(), it->second.length());
       }
     }
     // if not yet filled, take the O(n) lookup to avoid allocating the

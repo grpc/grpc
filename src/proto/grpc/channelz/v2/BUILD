@@ -24,8 +24,13 @@ load(
 
 licenses(["notice"])
 
+# TODO(rishesh): Enable parse_headers once when internal build system limitations are resolved.
 grpc_package(
     name = "src/proto/grpc/channelz/v2",
+    features = [
+        "layering_check",
+        # "parse_headers",
+    ],
     visibility = "grpc",
 )
 

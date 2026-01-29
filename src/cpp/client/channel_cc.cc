@@ -163,7 +163,7 @@ grpc::internal::Call Channel::CreateCallInternal(
       interceptor_creators_, interceptor_pos);
   context->set_call(c_call, shared_from_this());
 
-  return grpc::internal::Call(c_call, this, cq, info);
+  return grpc::internal::Call(c_call, cq, info);
 }
 
 grpc::internal::Call Channel::CreateCall(
@@ -172,11 +172,8 @@ grpc::internal::Call Channel::CreateCall(
   return CreateCallInternal(method, context, cq, 0);
 }
 
-void Channel::PerformOpsOnCall(grpc::internal::CallOpSetInterface* ops,
-                               grpc::internal::Call* call) {
-  ops->FillOps(
-      call);  // Make a copy of call. It's fine since Call just has pointers
-}
+void Channel::PerformOpsOnCall(grpc::internal::CallOpSetInterface*,
+                               grpc::internal::Call*) {}
 
 void* Channel::RegisterMethod(const char* method) {
   return grpc_channel_register_call(

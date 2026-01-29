@@ -70,6 +70,7 @@
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/test_lb_policies.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/credentials.h"
 #include "xds/data/orca/v3/orca_load_report.pb.h"
@@ -313,6 +314,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
       const FakeResolverResponseGeneratorWrapper& response_generator,
       ChannelArguments args = ChannelArguments(),
       std::shared_ptr<ChannelCredentials> channel_creds = nullptr) {
+    ApplyCommonChannelArguments(args);
     if (!lb_policy_name.empty()) {
       args.SetLoadBalancingPolicyName(lb_policy_name);
     }  // else, default to pick first
@@ -3133,7 +3135,11 @@ TEST_F(ControlPlaneStatusRewritingTest, RewritesFromConfigSelector) {
     bool Equals(const ConfigSelector* other) const override {
       return status_ == static_cast<const FailConfigSelector*>(other)->status_;
     }
-    absl::Status GetCallConfig(GetCallConfigArgs /*args*/) override {
+    void BuildFilterChains(grpc_core::FilterChainBuilder&,
+                           const grpc_core::Blackboard*,
+                           grpc_core::Blackboard*) override {}
+    absl::StatusOr<grpc_core::RefCountedPtr<const grpc_core::FilterChain>>
+    GetCallConfig(GetCallConfigArgs /*args*/) override {
       return status_;
     }
 

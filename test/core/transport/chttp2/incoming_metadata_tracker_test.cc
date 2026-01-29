@@ -19,8 +19,10 @@
 #include "src/core/ext/transport/chttp2/transport/incoming_metadata_tracker.h"
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/util/grpc_check.h"
 #include "test/core/transport/chttp2/http2_common_test_inputs.h"
+#include "test/core/transport/util/mock_promise_endpoint.h"
 #include "gtest/gtest.h"
 #include "absl/log/log.h"
 
@@ -34,13 +36,13 @@ namespace testing {
 TEST(IncomingMetadataTrackerTest, InitialState) {
   // Verifies that a newly created tracker is not waiting for continuation
   // frames.
-  IncomingMetadataTracker tracker;
+  IncomingMetadataTracker tracker(Slice::FromCopiedString("test"));
   EXPECT_FALSE(tracker.IsWaitingForContinuationFrame());
 }
 
 TEST(IncomingMetadataTrackerTest, HeaderWithEndHeaders) {
   // Verifies state after receiving a HEADERS frame with END_HEADERS=true.
-  IncomingMetadataTracker tracker;
+  IncomingMetadataTracker tracker(Slice::FromCopiedString("test"));
   Http2HeaderFrame header = GenerateHeaderFrame(
       "", /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/false);
   tracker.OnHeaderReceived(header);
@@ -52,7 +54,7 @@ TEST(IncomingMetadataTrackerTest, HeaderWithEndHeaders) {
 TEST(IncomingMetadataTrackerTest, HeaderWithEndHeadersAndEndStream) {
   // Verifies state after receiving a HEADERS frame with END_HEADERS=true and
   // END_STREAM=true.
-  IncomingMetadataTracker tracker;
+  IncomingMetadataTracker tracker(Slice::FromCopiedString("test"));
   Http2HeaderFrame header = GenerateHeaderFrame(
       "", /*stream_id=*/1, /*end_headers=*/true, /*end_stream=*/true);
   tracker.OnHeaderReceived(header);
@@ -63,7 +65,7 @@ TEST(IncomingMetadataTrackerTest, HeaderWithEndHeadersAndEndStream) {
 
 TEST(IncomingMetadataTrackerTest, HeaderWithoutEndHeaders) {
   // Verifies state after receiving a HEADERS frame with END_HEADERS=false.
-  IncomingMetadataTracker tracker;
+  IncomingMetadataTracker tracker(Slice::FromCopiedString("test"));
   Http2HeaderFrame header = GenerateHeaderFrame(
       "", /*stream_id=*/3, /*end_headers=*/false, /*end_stream=*/false);
   tracker.OnHeaderReceived(header);
@@ -75,7 +77,7 @@ TEST(IncomingMetadataTrackerTest, HeaderWithoutEndHeaders) {
 TEST(IncomingMetadataTrackerTest, HeaderWithoutEndHeadersWithEndStream) {
   // Verifies state after receiving a HEADERS frame with END_HEADERS=false and
   // END_STREAM=true.
-  IncomingMetadataTracker tracker;
+  IncomingMetadataTracker tracker(Slice::FromCopiedString("test"));
   Http2HeaderFrame header = GenerateHeaderFrame(
       "", /*stream_id=*/3, /*end_headers=*/false, /*end_stream=*/true);
   tracker.OnHeaderReceived(header);
@@ -87,7 +89,7 @@ TEST(IncomingMetadataTrackerTest, HeaderWithoutEndHeadersWithEndStream) {
 TEST(IncomingMetadataTrackerTest, HeaderThenContinuationWithEndHeaders) {
   // Verifies state transition from HEADERS(END_HEADERS=false) to
   // CONTINUATION(END_HEADERS=true).
-  IncomingMetadataTracker tracker;
+  IncomingMetadataTracker tracker(Slice::FromCopiedString("test"));
   Http2HeaderFrame header = GenerateHeaderFrame(
       "", /*stream_id=*/5, /*end_headers=*/false, /*end_stream=*/false);
   tracker.OnHeaderReceived(header);
@@ -103,7 +105,7 @@ TEST(IncomingMetadataTrackerTest, HeaderThenContinuationWithEndHeaders) {
 
 TEST(IncomingMetadataTrackerTest, HeaderThenContinuationWithoutEndHeaders) {
   // Verifies state remains in-progress when CONTINUATION has END_HEADERS=false.
-  IncomingMetadataTracker tracker;
+  IncomingMetadataTracker tracker(Slice::FromCopiedString("test"));
   Http2HeaderFrame header = GenerateHeaderFrame(
       "", /*stream_id=*/7, /*end_headers=*/false, /*end_stream=*/false);
   tracker.OnHeaderReceived(header);
@@ -120,7 +122,7 @@ TEST(IncomingMetadataTrackerTest,
      HeaderThenTwoContinuationsWithEndHeadersAtEnd) {
   // Verifies state transition over HEADERS -> CONTINUATION ->
   // CONTINUATION(END_HEADERS=true).
-  IncomingMetadataTracker tracker;
+  IncomingMetadataTracker tracker(Slice::FromCopiedString("test"));
   Http2HeaderFrame header = GenerateHeaderFrame(
       "", /*stream_id=*/9, /*end_headers=*/false, /*end_stream=*/false);
   tracker.OnHeaderReceived(header);
@@ -141,7 +143,7 @@ TEST(IncomingMetadataTrackerTest,
 TEST(IncomingMetadataTrackerTest, NewHeaderFrameAfterContinuationSequence) {
   // Verifies that after a sequence of HEADERS and CONTINUATION frames,
   // processing of a new HEADERS frame resets the tracker state.
-  IncomingMetadataTracker tracker;
+  IncomingMetadataTracker tracker(Slice::FromCopiedString("test"));
   Http2HeaderFrame header = GenerateHeaderFrame(
       "", /*stream_id=*/9, /*end_headers=*/false, /*end_stream=*/false);
   tracker.OnHeaderReceived(header);
@@ -167,7 +169,7 @@ TEST(IncomingMetadataTrackerTest, NewHeaderFrameAfterContinuationSequence) {
 
 TEST(IncomingMetadataTrackerTest, ClientReceivedDuplicateMetadataChecks) {
   // Verifies ClientReceivedDuplicateMetadata logic.
-  IncomingMetadataTracker tracker;
+  IncomingMetadataTracker tracker(Slice::FromCopiedString("test"));
 
   // Scenario 1: Initial metadata frame (end_stream=false)
   Http2HeaderFrame header_initial = GenerateHeaderFrame(
@@ -194,6 +196,18 @@ TEST(IncomingMetadataTrackerTest, ClientReceivedDuplicateMetadataChecks) {
   EXPECT_TRUE(tracker.ClientReceivedDuplicateMetadata(
       /*did_receive_initial_metadata=*/true,
       /*did_receive_trailing_metadata=*/true));
+}
+
+TEST(IncomingMetadataTrackerTest, GetPeerString) {
+  util::testing::MockPromiseEndpoint mock_endpoint(1234);
+  EXPECT_EQ(
+      IncomingMetadataTracker::GetPeerString(mock_endpoint.promise_endpoint),
+      Slice::FromCopiedString("ipv4:127.0.0.1:1234"));
+}
+
+TEST(IncomingMetadataTrackerTest, PeerString) {
+  IncomingMetadataTracker tracker(Slice::FromCopiedString("test"));
+  EXPECT_EQ(tracker.peer_string(), Slice::FromCopiedString("test"));
 }
 
 }  // namespace testing

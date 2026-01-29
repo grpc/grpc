@@ -26,6 +26,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/byte_buffer.h>
+#include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/status.h>
 
 #include <memory>
@@ -37,6 +38,7 @@
 #include "src/proto/grpc/testing/xds/v3/orca_service.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/log/log.h"
@@ -140,7 +142,10 @@ class OrcaServiceEnd2endTest : public ::testing::Test {
     builder.RegisterService(&orca_service_);
     server_ = builder.BuildAndStart();
     LOG(INFO) << "server started on " << server_address;
-    channel_ = CreateChannel(server_address, InsecureChannelCredentials());
+    ChannelArguments args;
+    ApplyCommonChannelArguments(args);
+    channel_ =
+        CreateCustomChannel(server_address, InsecureChannelCredentials(), args);
   }
 
   ~OrcaServiceEnd2endTest() override { server_->Shutdown(); }

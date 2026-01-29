@@ -17,30 +17,31 @@
 //
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
 
+#include <cstdint>
 #include <memory>
+#include <optional>
 #include <utility>
+#include <vector>
 
+#include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/map.h"
-#include "src/core/lib/promise/party.h"
-#include "src/core/lib/promise/race.h"
-#include "src/core/lib/promise/sleep.h"
-#include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
 #include "src/core/util/time.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 namespace http2 {
 using Callback = absl::AnyInvocable<void()>;
 using grpc_event_engine::experimental::EventEngine;
-
-#define GRPC_HTTP2_PING_LOG                                \
-  LOG_IF(INFO, (GRPC_TRACE_FLAG_ENABLED(http) ||           \
-                GRPC_TRACE_FLAG_ENABLED(bdp_estimator) ||  \
-                GRPC_TRACE_FLAG_ENABLED(http_keepalive) || \
-                GRPC_TRACE_FLAG_ENABLED(http2_ping)))
 
 Promise<absl::Status> PingManager::PingPromiseCallbacks::RequestPing(
     Callback on_initiate, bool important) {
@@ -68,28 +69,10 @@ PingManager::PingManager(const ChannelArgs& channel_args, Duration ping_timeout,
       ping_interface_(std::move(ping_interface)),
       ping_timeout_(ping_timeout) {}
 
-void PingManager::TriggerDelayedPing(const Duration wait) {
-  // Spawn at most once.
-  if (delayed_ping_spawned_) {
-    return;
-  }
-  delayed_ping_spawned_ = true;
-  GetContext<Party>()->Spawn(
-      "DelayedPing",
-      // TODO(akshitpatel) : [PH2][P2] : Verify if we need a RefCountedPtr for
-      // ping_manager.
-      [this, wait]() mutable {
-        GRPC_HTTP2_PING_LOG << "Scheduling delayed ping after wait=" << wait;
-        return AssertResultType<absl::Status>(TrySeq(
-            Sleep(wait),
-            [this]() mutable { return ping_interface_->TriggerWrite(); }));
-      },
-      [this](auto) { delayed_ping_spawned_ = false; });
-}
-
-bool PingManager::NeedToPing(const Duration next_allowed_ping_interval) {
+PingManager::TriggerPingArgs PingManager::NeedToPing(
+    const Duration next_allowed_ping_interval) {
   if (!ping_callbacks_.PingRequested()) {
-    return false;
+    return TriggerPingArgs(std::nullopt, /*need_to_ping=*/false);
   }
 
   return Match(
@@ -100,13 +83,13 @@ bool PingManager::NeedToPing(const Duration next_allowed_ping_interval) {
         GRPC_HTTP2_PING_LOG << "CLIENT" << "[" << "PH2"
                             << "]: Ping sent"
                             << ping_rate_policy_.GetDebugString();
-        return true;
+        return TriggerPingArgs(std::nullopt, /*need_to_ping=*/true);
       },
       [this](Chttp2PingRatePolicy::TooManyRecentPings) {
         GRPC_HTTP2_PING_LOG << "CLIENT" << "[" << "PH2"
                             << "]: Ping delayed too many recent pings: "
                             << ping_rate_policy_.GetDebugString();
-        return false;
+        return TriggerPingArgs(std::nullopt, /*need_to_ping=*/false);
       },
       [this](Chttp2PingRatePolicy::TooSoon too_soon) mutable {
         GRPC_HTTP2_PING_LOG
@@ -115,37 +98,15 @@ bool PingManager::NeedToPing(const Duration next_allowed_ping_interval) {
             << too_soon.last_ping
             << ", minimum wait:" << too_soon.next_allowed_ping_interval
             << ", need to wait:" << too_soon.wait;
-        TriggerDelayedPing(too_soon.wait);
-        return false;
+        std::optional<Duration> delayed_ping_wait;
+        if (!std::exchange(delayed_ping_spawned_, true)) {
+          delayed_ping_wait = too_soon.wait;
+        }
+        return TriggerPingArgs(delayed_ping_wait, /*need_to_ping=*/false);
       });
 }
 
-void PingManager::SpawnTimeout(const Duration ping_timeout,
-                               const uint64_t opaque_data) {
-  GetContext<Party>()->Spawn(
-      "PingTimeout",
-      // TODO(akshitpatel) : [PH2][P2] : Verify if we need a RefCountedPtr for
-      // ping_manager.
-      [this, ping_timeout, opaque_data]() {
-        return AssertResultType<absl::Status>(Race(
-            TrySeq(ping_callbacks_.PingTimeout(ping_timeout),
-                   [this, opaque_data](bool trigger_ping_timeout) mutable {
-                     return If(
-                         trigger_ping_timeout,
-                         [this, opaque_data]() {
-                           GRPC_HTTP2_PING_LOG
-                               << " Ping ack not received for id="
-                               << opaque_data << ". Ping timeout triggered.";
-                           return ping_interface_->PingTimeout();
-                         },
-                         []() { return absl::OkStatus(); });
-                   }),
-            ping_callbacks_.WaitForPingAck()));
-      },
-      [](auto) {});
-}
-
-void PingManager::MaybeGetSerializedPingFrames(
+std::optional<Duration> PingManager::MaybeGetSerializedPingFrames(
     SliceBuffer& output_buffer, const Duration next_allowed_ping_interval) {
   GRPC_HTTP2_PING_LOG << "PingManager MaybeGetSerializedPingFrames "
                          "pending_ping_acks_ size: "
@@ -163,7 +124,8 @@ void PingManager::MaybeGetSerializedPingFrames(
   pending_ping_acks_.clear();
 
   // Get the serialized ping frame if needed.
-  if (NeedToPing(next_allowed_ping_interval)) {
+  TriggerPingArgs trigger_ping_args = NeedToPing(next_allowed_ping_interval);
+  if (trigger_ping_args.need_to_ping) {
     const uint64_t opaque_data = ping_callbacks_.StartPing();
     frames.emplace_back(GetHttp2PingFrame(/*ack=*/false, opaque_data));
     opaque_data_ = opaque_data;
@@ -174,14 +136,17 @@ void PingManager::MaybeGetSerializedPingFrames(
   if (!frames.empty()) {
     Serialize(absl::Span<Http2Frame>(frames), output_buffer);
   }
+
+  return trigger_ping_args.delayed_ping_wait;
 }
 
-void PingManager::NotifyPingSent() {
+std::optional<uint64_t> PingManager::NotifyPingSent() {
   if (opaque_data_.has_value()) {
-    SpawnTimeout(ping_timeout_, opaque_data_.value());
     SentPing();
-    opaque_data_.reset();
+    return std::exchange(opaque_data_, std::nullopt);
   }
+
+  return std::nullopt;
 }
 
 void PingManager::AddPendingPingAck(const uint64_t opaque_data) {

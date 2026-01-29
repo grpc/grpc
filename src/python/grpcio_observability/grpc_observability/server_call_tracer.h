@@ -79,6 +79,8 @@ class PythonOpenCensusServerCallTracer
   // It's not a requirement to have this metric thus left unimplemented.
   void RecordSendInitialMetadata(
       grpc_metadata_batch* send_initial_metadata) override;
+  void MutateSendInitialMetadata(
+      grpc_metadata_batch* send_initial_metadata) override;
 
   void RecordSendTrailingMetadata(
       grpc_metadata_batch* send_trailing_metadata) override;

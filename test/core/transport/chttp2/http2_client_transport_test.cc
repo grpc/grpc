@@ -73,6 +73,9 @@ using util::testing::MockPromiseEndpoint;
 using util::testing::TransportTest;
 
 constexpr absl::string_view kConnectionClosed = "Connection closed";
+constexpr absl::string_view kPeerString =
+    "PeerString: ipv4:127.0.0.1:1000, :path: "
+    "/demo.Service/Step, GrpcStatusFromWire: true";
 
 static uint64_t Read8b(const uint8_t* input) {
   return static_cast<uint64_t>(input[0]) << 56 |
@@ -726,8 +729,7 @@ TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
         initator.PullServerInitialMetadata(),
         [](std::optional<ServerMetadataHandle> header) {
           EXPECT_TRUE(header.has_value());
-          EXPECT_EQ((*header)->DebugString(),
-                    ":path: /demo.Service/Step, GrpcStatusFromWire: true");
+          EXPECT_EQ((*header)->DebugString(), kPeerString);
           LOG(INFO) << "PullServerInitialMetadata Resolved";
         },
         initator.PullMessage(),

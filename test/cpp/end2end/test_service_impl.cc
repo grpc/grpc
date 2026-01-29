@@ -90,8 +90,8 @@ int GetIntValueFromMetadataHelper(
     const char* key,
     const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
     int default_value) {
-  if (metadata.find(key) != metadata.end()) {
-    std::istringstream iss(ToString(metadata.find(key)->second));
+  if (auto [it, end] = metadata.equal_range(key); it != end) {
+    std::istringstream iss(ToString(it->second));
     iss >> default_value;
     LOG(INFO) << key << " : " << default_value;
   }

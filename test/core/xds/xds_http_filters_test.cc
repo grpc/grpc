@@ -287,7 +287,7 @@ TEST_F(XdsFaultInjectionFilterTest, Accessors) {
   EXPECT_EQ(filter_->ConfigProtoName(),
             "envoy.extensions.filters.http.fault.v3.HTTPFault");
   EXPECT_EQ(filter_->OverrideConfigProtoName(), "");
-  EXPECT_EQ(filter_->channel_filter(), &FaultInjectionFilter::kFilter);
+  EXPECT_EQ(filter_->channel_filter(), &FaultInjectionFilter::kFilterVtable);
   EXPECT_TRUE(filter_->IsSupportedOnClients());
   EXPECT_FALSE(filter_->IsSupportedOnServers());
   EXPECT_FALSE(filter_->IsTerminalFilter());
@@ -1140,7 +1140,7 @@ TEST_F(XdsStatefulSessionFilterTest, Accessors) {
   EXPECT_EQ(filter_->OverrideConfigProtoName(),
             "envoy.extensions.filters.http.stateful_session.v3"
             ".StatefulSessionPerRoute");
-  EXPECT_EQ(filter_->channel_filter(), &StatefulSessionFilter::kFilter);
+  EXPECT_EQ(filter_->channel_filter(), &StatefulSessionFilter::kFilterVtable);
   EXPECT_TRUE(filter_->IsSupportedOnClients());
   EXPECT_FALSE(filter_->IsSupportedOnServers());
   EXPECT_FALSE(filter_->IsTerminalFilter());
@@ -1494,7 +1494,7 @@ TEST_F(XdsGcpAuthnFilterTest, Accessors) {
   EXPECT_EQ(filter_->ConfigProtoName(),
             "envoy.extensions.filters.http.gcp_authn.v3.GcpAuthnFilterConfig");
   EXPECT_EQ(filter_->OverrideConfigProtoName(), "");
-  EXPECT_EQ(filter_->channel_filter(), &GcpAuthenticationFilter::kFilter);
+  EXPECT_EQ(filter_->channel_filter(), &GcpAuthenticationFilter::kFilterVtable);
   EXPECT_TRUE(filter_->IsSupportedOnClients());
   EXPECT_FALSE(filter_->IsSupportedOnServers());
   EXPECT_FALSE(filter_->IsTerminalFilter());
