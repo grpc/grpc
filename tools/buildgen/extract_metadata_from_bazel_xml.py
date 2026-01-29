@@ -53,27 +53,26 @@ class ExternalProtoLibrary:
     Fields:
     - destination(int): The relative path of this proto library should be.
         Preferably, it should match the submodule path.
-    - proto_prefix(str): The prefix to remove in order to insure the proto import
-        is correct. For more info, see description of
+    - proto_prefix(str): The prefix to remove in order to insure the proto
+        import is correct. For more info, see description of
         https://github.com/grpc/grpc/pull/25272.
-    - urls(List[str]): Following 3 fields should be filled by build metadata from
-        Bazel.
-    - hash(str): The hash of the downloaded archive
-    - strip_prefix(str): The path to be stripped from the extracted directory, see
-        http_archive in Bazel.
+    - strip_path_prefix(str): Prefix to strip off of path after the
+        proto_prefix to get to the proto import path.
+    - urls(List[str]): Download URL, same as in http_archive in Bazel.
+    - hash(str): The hash of the downloaded archive, same as in http_archive
+        in Bazel.
+    - strip_prefix(str): The path to be stripped from the extracted directory,
+        see http_archive in Bazel.
     """
 
-    def __init__(
-        self, destination, proto_prefix, urls=None, hash="", strip_prefix=""
-    ):
+    def __init__(self, destination, proto_prefix, strip_path_prefix=""):
         self.destination = destination
         self.proto_prefix = proto_prefix
-        if urls is None:
-            self.urls = []
-        else:
-            self.urls = urls
-        self.hash = hash
-        self.strip_prefix = strip_prefix
+        self.strip_path_prefix = strip_path_prefix
+        # These are filled in later by _parse_http_archives().
+        self.urls = []
+        self.hash = ""
+        self.strip_prefix = ""
 
 
 EXTERNAL_PROTO_LIBRARIES = {
@@ -99,6 +98,7 @@ EXTERNAL_PROTO_LIBRARIES = {
     "dev_cel": ExternalProtoLibrary(
         destination="third_party/cel-spec",
         proto_prefix="third_party/cel-spec/",
+        strip_path_prefix="proto/",
     ),
 }
 

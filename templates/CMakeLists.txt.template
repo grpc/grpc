@@ -27,8 +27,6 @@
   proto_re = re.compile('(.*)\\.proto')
   lib_map = {lib.name: lib for lib in libs}
 
-  third_party_proto_prefixes = {lib.proto_prefix for lib in external_proto_libraries}
-
   gpr_libs = ['gpr']
   grpc_libs = ['grpc', 'grpc_unsecure']
   grpcxx_libs = ['grpc++', 'grpc++_unsecure']
@@ -36,14 +34,10 @@
 
   def third_party_proto_import_path(path):
     """Removes third_party prefix to match ProtoBuf's relative import path."""
-    for prefix in third_party_proto_prefixes:
-      if path.startswith(prefix):
-        path = path[len(prefix):]
-        # Hack for cel-spec protos: They are in the proto/ subdirectory
-        # in their repo, but the expected proto import path does not
-        # include that directory, so we need to strip it off here.
-        if prefix == "third_party/cel-spec/":
-          path = path.removeprefix("proto/")
+    for lib in external_proto_libraries:
+      if path.startswith(lib.proto_prefix):
+        path = path[len(lib.proto_prefix):]
+        path = path.removeprefix(lib.strip_path_prefix)
         break
     return path
 
