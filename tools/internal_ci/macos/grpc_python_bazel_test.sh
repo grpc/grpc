@@ -42,7 +42,7 @@ BAZEL_REMOTE_CACHE_ARGS=(
 
 # Test targets mirrored from tools/internal_ci/linux/grpc_python_bazel_test_in_docker.sh
 # Exclude all grpcio_tests and examples/python tests as requested
-TEST_TARGETS="//src/python/... -//src/python/grpcio_tests/..."
+TEST_TARGETS="//src/python/... -//src/python/grpcio_tests/tests/admin:admin_test -//src/python/grpcio_tests/tests/csds:csds_test -//src/python/grpcio_tests/tests/interop:_insecure_intraop_test -//src/python/grpcio_tests/tests/interop:_secure_intraop_test -//src/python/grpcio_tests/tests_aio/interop:local_interop_test -//src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client_test"
 BAZEL_FLAGS="--test_output=errors --config=python"
 
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests
@@ -54,6 +54,7 @@ python_bazel_tests/bazel_wrapper \
   --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \
   "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
   ${BAZEL_FLAGS} \
+  -- \
   ${TEST_TARGETS}
 
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_single_threaded_unary_streams
@@ -67,6 +68,7 @@ python_bazel_tests_single_threaded_unary_streams/bazel_wrapper \
   "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
   --config=python_single_threaded_unary_stream \
   ${BAZEL_FLAGS} \
+  -- \
   ${TEST_TARGETS}
 
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_poller_engine
@@ -79,6 +81,7 @@ python_bazel_tests_poller_engine/bazel_wrapper \
   "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
   --config=python_poller_engine \
   ${BAZEL_FLAGS} \
+  -- \
   ${TEST_TARGETS}
 
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_fork_support
