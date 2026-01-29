@@ -1725,14 +1725,6 @@ def ssl_channel_credentials(
 # Note: SignatureAlgorithm corresponds to C-core's enum class SignatureAlgorithm.
 # A function for a user to implement
 # Returns signed bytes and accepts bytes to sign and a signature algorithm.
-CustomPrivateKeySign = Callable[
-    [
-        bytes,
-        _cygrpc.SignatureAlgorithm,
-    ],
-    bytes,
-]
-
 CustomPrivateKeySignWithHandle = Callable[
     [
         bytes,
@@ -1743,34 +1735,19 @@ CustomPrivateKeySignWithHandle = Callable[
     Union[bytes, _cygrpc.PyAsyncSigningHandle],
 ]
 
+PrivateKeySignCancel = Callable[[_cygrpc.AsyncSignHandle]]
+
 
 def ssl_channel_credentials_with_custom_signer(
     *,
     private_key_sign_fn: CustomPrivateKeySignWithHandle,
     root_certificates: Optional[bytes] = None,
     certificate_chain: bytes,
+    cancel_fn: PrivateKeySignCancel = None,
 ) -> ChannelCredentials:
     return ChannelCredentials(
         _cygrpc.SSLChannelCredentials(
-            root_certificates, None, certificate_chain, private_key_sign_fn
-        )
-    )
-
-
-def ssl_channel_credentials_with_custom_signer_with_cancellation(
-    *,
-    private_key_sign_fn: CustomPrivateKeySignWithHandle,
-    root_certificates: Optional[bytes] = None,
-    certificate_chain: bytes,
-    cancel_fn,
-) -> ChannelCredentials:
-    return ChannelCredentials(
-        _cygrpc.SSLChannelCredentials(
-            root_certificates,
-            None,
-            certificate_chain,
-            private_key_sign_fn,
-            cancel_fn,
+            root_certificates, None, certificate_chain, private_key_sign_fn, cancel_fn
         )
     )
 

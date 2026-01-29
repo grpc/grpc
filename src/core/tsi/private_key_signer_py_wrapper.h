@@ -72,7 +72,6 @@ class PrivateKeySignerPyWrapper
        OnSignComplete on_sign_complete) override;
 
   void Cancel(std::shared_ptr<AsyncSigningHandle> handle) override;
-  ~PrivateKeySignerPyWrapper() override;
 
  private:
   // This is a function provided by the Cython implementation of Private Key
@@ -80,7 +79,10 @@ class PrivateKeySignerPyWrapper
   SignWrapperForPy sign_py_wrapper_;
   // This will hold the Python callable object
   void* sign_user_data_;
+  // This is a function provided by the Cython implementation of Private Key
+  // Offloading.
   CancelWrapperForPy cancel_py_wrapper_;
+  // THis will hold the Python callable object
   void* cancel_user_data_;
 };
 
@@ -94,6 +96,7 @@ std::shared_ptr<PrivateKeySigner> BuildPrivateKeySignerWithCancellation(
 
 class AsyncSigningHandlePyWrapper : public AsyncSigningHandle {
  public:
+  // The Python object that the user creates in their implementation
   void* python_handle;
 };
 }  // namespace grpc_core

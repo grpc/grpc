@@ -24,9 +24,6 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography import x509
 import threading
 from grpc._cython import cygrpc as _cygrpc
-import faulthandler
-
-faulthandler.enable()
 
 _ROOT_CERTIFICATES_RESOURCE_PATH = "credentials/ca.pem"
 _PRIVATE_KEY_RESOURCE_PATH = "credentials/server1.key"

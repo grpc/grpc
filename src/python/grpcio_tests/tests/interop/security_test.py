@@ -133,7 +133,7 @@ class SecurityTest(unittest.TestCase):
         bound_signing_fn = partial(resources.async_signer_with_test_handle, test_handle)
         channel = grpc.secure_channel(
             "localhost:{}".format(self.port),
-            grpc.ssl_channel_credentials_with_custom_signer_with_cancellation(
+            grpc.ssl_channel_credentials_with_custom_signer(
                 private_key_sign_fn=bound_signing_fn,
                 root_certificates=resources.test_root_certificates(),
                 certificate_chain=resources.client_certificate_chain(),
@@ -160,24 +160,27 @@ class SecurityTest(unittest.TestCase):
     #     reason="This is the test that is failing right now, if we timeout and don't call channel.cancel() Python segfaults when going to call the cancel fn."
     # )
     def test_async_signer_test_times_out(self):
-        channel = grpc.secure_channel(
-            "localhost:{}".format(self.port),
-            grpc.ssl_channel_credentials_with_custom_signer_with_cancellation(
-                private_key_sign_fn=resources.async_client_private_key_signer_with_cancel,
-                root_certificates=resources.test_root_certificates(),
-                certificate_chain=resources.client_certificate_chain(),
-                cancel_fn=resources.cancel_async,
-            ),
-            (
-                (
-                    "grpc.ssl_target_name_override",
-                    _SERVER_HOST_OVERRIDE,
+        # We should have a timeout here
+        with self.assertRaises(Exception) as context:
+            with grpc.secure_channel(
+                "localhost:{}".format(self.port),
+                grpc.ssl_channel_credentials_with_custom_signer(
+                    private_key_sign_fn=resources.async_client_private_key_signer_with_cancel,
+                    root_certificates=resources.test_root_certificates(),
+                    certificate_chain=resources.client_certificate_chain(),
+                    cancel_fn=resources.cancel_async,
                 ),
-            ),
-        )
-        self.stub = test_pb2_grpc.TestServiceStub(channel)
-        # Let it timeout and just go out of scope
-        response = self.stub.EmptyCall(empty_pb2.Empty(), timeout=2)
+                (
+                    (
+                        "grpc.ssl_target_name_override",
+                        _SERVER_HOST_OVERRIDE,
+                    ),
+                ),
+            ) as channel:
+                self.stub = test_pb2_grpc.TestServiceStub(channel)
+                # Let it timeout and just go out of scope
+                response = self.stub.EmptyCall(empty_pb2.Empty(), timeout=2)
+                # We segfault as the stack tries to call cancel on the async signer during shutdown
 
 
 if __name__ == "__main__":

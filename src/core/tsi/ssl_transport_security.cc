@@ -368,10 +368,6 @@ void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
   }
   ctx->status = TlsPrivateKeyOffloadContext::kSignatureCompleted;
   if (!ctx->signed_bytes.ok()) {
-    // TODO(gregorycooke) We lost the bad status information when passing to
-    // notify_cb. Handle this better
-    LOG(ERROR) << "Private Key Sign Callback Erroring with "
-               << ctx->signed_bytes.status() << "\n";
     // Notify the TSI layer to re-enter the handshake.
     // This call is thread-safe as per TSI requirements for the callback.
     if (ctx->notify_cb) {
