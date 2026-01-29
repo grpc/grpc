@@ -3024,7 +3024,7 @@ def create_instance_template(
     gcp.instance_template = GcpResource(config["name"], result["targetLink"])
 
 
-def add_instance_group(gcp: GcpState, zone, name, size):
+def add_instance_group(gcp, zone, name, size):
     config = {
         "resource_id": name,
         "instanceTemplate": gcp.instance_template.url,
