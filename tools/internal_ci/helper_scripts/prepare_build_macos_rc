@@ -261,7 +261,11 @@ then
     rm composer-setup.php
 
     # Install PHP test dependencies.
-    php /tmp/composer.phar global require phpunit/phpunit:9.5.9
+    # Using --no-security-blocking to install in spite of security advisory
+    # PKSA-z3gr-8qht-p93v which impacts the function cleanupForCoverage()
+    # TODO(pawbhard): Remove --no-security-blocking once the dependency is
+    # updated to a newer version.
+    php /tmp/composer.phar global require phpunit/phpunit:9.5.9 --no-security-blocking
   else
     # Workaround for https://github.com/Homebrew/homebrew-core/issues/41081
     mkdir -p /usr/local/lib/php/pecl
