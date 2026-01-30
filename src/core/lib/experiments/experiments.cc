@@ -240,6 +240,10 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
+const char* const description_wildcard_ip_expansion_restriction =
+    "If set, adds optional restriction on when to expand wildcard IPs.";
+const char* const additional_constraints_wildcard_ip_expansion_restriction =
+    "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -407,6 +411,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
+     false, true},
+    {"wildcard_ip_expansion_restriction",
+     description_wildcard_ip_expansion_restriction,
+     additional_constraints_wildcard_ip_expansion_restriction, nullptr, 0,
      false, true},
 };
 
@@ -631,6 +639,10 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
+const char* const description_wildcard_ip_expansion_restriction =
+    "If set, adds optional restriction on when to expand wildcard IPs.";
+const char* const additional_constraints_wildcard_ip_expansion_restriction =
+    "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -798,6 +810,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
+     false, true},
+    {"wildcard_ip_expansion_restriction",
+     description_wildcard_ip_expansion_restriction,
+     additional_constraints_wildcard_ip_expansion_restriction, nullptr, 0,
      false, true},
 };
 
@@ -1022,6 +1038,10 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
+const char* const description_wildcard_ip_expansion_restriction =
+    "If set, adds optional restriction on when to expand wildcard IPs.";
+const char* const additional_constraints_wildcard_ip_expansion_restriction =
+    "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -1189,6 +1209,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
+     false, true},
+    {"wildcard_ip_expansion_restriction",
+     description_wildcard_ip_expansion_restriction,
+     additional_constraints_wildcard_ip_expansion_restriction, nullptr, 0,
      false, true},
 };
 

@@ -2875,6 +2875,7 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_tcp_socket_utils",
+        "experiments",
         "grpc_check",
         "iomgr_port",
         "posix_event_engine_posix_interface",
