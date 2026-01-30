@@ -66,6 +66,7 @@ EXCLUDED_TARGETS=(
   # repo, which isn't what gets used here, so the dependencies don't
   # work right.
   "-//third_party/cel-spec/proto/cel/expr/conformance/..."
+  "-//third_party/cel-spec/conformance/..."
 
   # Exclude bazelified tests as they contain some bazel hackery
   "-//tools/bazelify_tests/..."
