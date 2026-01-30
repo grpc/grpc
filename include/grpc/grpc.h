@@ -367,6 +367,10 @@ typedef struct grpc_call_credentials grpc_call_credentials;
 GRPCAPI grpc_call_error grpc_call_set_credentials(grpc_call* call,
                                                   grpc_call_credentials* creds);
 
+/** Sets a custom label for applications to define their own dimension for per-call
+metrics */
+GRPCAPI void grpc_call_context_set_telemetry_label(grpc_call* call, const char* label, size_t len);
+
 /** Request notification of a new call.
     Once a call is received, a notification tagged with \a tag_new is added to
     \a cq_for_notification. \a call, \a details and \a request_metadata are
