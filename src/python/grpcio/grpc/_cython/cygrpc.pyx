@@ -61,10 +61,7 @@ include "_cygrpc/grpc_gevent.pyx.pxi"
 
 include "_cygrpc/thread.pyx.pxi"
 
-IF UNAME_SYSNAME == "Windows":
-    include "_cygrpc/fork_windows.pyx.pxi"
-ELSE:
-    include "_cygrpc/fork_posix.pyx.pxi"
+include "_cygrpc/fork.pyx.pxi"
 
 # Following pxi files are part of the Aio module
 include "_cygrpc/aio/common.pyx.pxi"
