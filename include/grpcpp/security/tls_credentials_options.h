@@ -142,8 +142,8 @@ class TlsCredentialsOptions {
   grpc_tls_credentials_options* c_credentials_options() const;
 
  protected:
-  // Returns the internal c options. The caller does not take ownership of the
-  // returned pointer.
+  // Returns the internal c options. The caller does not take ownership of
+  // the returned pointer.
   grpc_tls_credentials_options* mutable_c_credentials_options() {
     return c_credentials_options_;
   }
@@ -154,6 +154,8 @@ class TlsCredentialsOptions {
   std::shared_ptr<CertificateProviderInterface> identity_certificate_provider_;
   std::shared_ptr<CertificateVerifier> certificate_verifier_;
   grpc_tls_credentials_options* c_credentials_options_ = nullptr;
+  bool is_watching_roots_ = false;
+  bool is_watching_identity_ = false;
 };
 
 // Contains configurable options on the client side.
