@@ -141,3 +141,10 @@ archive_override(
         "https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.35.0.tar.gz",
     ],
 )
+
+# --- Python headers
+# TODO(weizheyuan): Maybe replace this with python header exposed by rules_python.
+# See also https://github.com/grpc/grpc/issues/24665
+python_configure = use_repo_rule("//third_party/py:python_configure.bzl", "python_configure")
+
+python_configure(name = "local_config_python")

@@ -14,6 +14,7 @@
 """Load dependencies needed to compile and test the grpc python library as a 3rd-party consumer."""
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@com_github_grpc_grpc//third_party/py:python_configure.bzl", "python_configure")
 
 # buildifier: disable=unnamed-macro
 def grpc_python_deps():
@@ -25,6 +26,13 @@ def grpc_python_deps():
             strip_prefix = "rules_python-1.6.3",
             url = "https://github.com/bazel-contrib/rules_python/releases/download/1.6.3/rules_python-1.6.3.tar.gz",
         )
+
+    python_configure(name = "local_config_python")
+
+    native.bind(
+        name = "python_headers",
+        actual = "@local_config_python//:python_headers",
+    )
 
     # This version should be same as that in G3
     http_archive(
