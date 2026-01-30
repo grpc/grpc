@@ -33,7 +33,7 @@ from typing import (
 )
 
 import grpc
-from grpc import _typing as grpc_typing
+from grpc import typing as grpc_typing
 import grpc_admin
 from grpc_channelz.v1 import channelz
 from grpc_csm_observability import CsmOpenTelemetryPlugin
