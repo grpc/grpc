@@ -428,7 +428,12 @@ if BUILD_WITH_BORING_SSL_ASM and not BUILD_WITH_SYSTEM_OPENSSL:
             boringssl_asm_platform,
         )
 if asm_key:
-    asm_files = grpc_core_dependencies.ASM_SOURCE_FILES[asm_key]
+    if (os.getenv("GRPC_PYTHON_PREBUILT_CORE_PATH")) and (
+        "linux" in sys.platform or "darwin" in sys.platform
+    ):
+        asm_files = []
+    else:
+        asm_files = grpc_core_dependencies.ASM_SOURCE_FILES[asm_key]
 else:
     DEFINE_MACROS += (("OPENSSL_NO_ASM", 1),)
 
@@ -503,6 +508,12 @@ def cython_extensions_and_necessity():
             prefix + "libgpr.a",
             prefix + "libgrpc.a",
         ]
+        core_c_files = []
+    elif (
+        os.environ.get("GRPC_PYTHON_PREBUILT_CORE_PATH")
+        and "win32" not in sys.platform
+    ):
+        extra_objects = [os.getenv("GRPC_PYTHON_PREBUILT_CORE_PATH")]
         core_c_files = []
     else:
         core_c_files = list(CORE_C_FILES)

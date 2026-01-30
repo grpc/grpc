@@ -18,6 +18,7 @@ set -ex
 cd "$(dirname "$0")/../../.."
 
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
+
 export PYTHON=${PYTHON:-python}
 export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
 
@@ -46,6 +47,14 @@ fi
 # by enabling a monkeypatch. It speeds up the build a lot.
 # Use externally provided GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS value if set.
 export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=${GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS:-2}
+
+# Build the static libraries for gRPC Core
+if [ ! -f "libs/opt/libgrpc.a" ]; then
+  make static_c EMBED_ZLIB=true CONFIG=opt -j"$(nproc)"
+fi
+
+# Tell setup.py to use the pre-built libraries
+export GRPC_PYTHON_PREBUILT_CORE_PATH="$PWD/libs/opt/libgrpc.a"
 
 mkdir -p "${ARTIFACTS_OUT}"
 ARTIFACT_DIR="$PWD/${ARTIFACTS_OUT}"
