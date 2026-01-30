@@ -16,14 +16,14 @@
 # seems to use a relative path that's not available on windows test machines.
 # Adding `local = true` force generating header files from local.
 diff --git a/BUILD.bazel b/BUILD.bazel
-index 8fdcf44..4c56063 100644
+index 8fdcf44..56dda01 100644
 --- a/BUILD.bazel
 +++ b/BUILD.bazel
 @@ -78,6 +78,7 @@ genrule(
          ["@copy /Y \"$(location %s)\" \"$(@D)\\zlib\\include\\\"  >NUL" %
           s for s in _ZLIB_HEADERS],
      ),
-+    local = true,
++    local = True,
  )
  
  config_setting(
