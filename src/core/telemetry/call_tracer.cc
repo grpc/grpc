@@ -56,6 +56,21 @@ void SendInitialMetadataAnnotation::ForEachKeyValue(
   });
 }
 
+std::string SendTrailingMetadataAnnotation::ToString() const {
+  return "SendTrailingMetadata";
+}
+
+void SendTrailingMetadataAnnotation::ForEachKeyValue(
+    absl::FunctionRef<void(absl::string_view, ValueType)> f) const {
+  metadata_->Log([f](absl::string_view key, absl::string_view value) {
+    if (IsMetadataKeyAllowedInDebugOutput(key)) {
+      f(key, value);
+    } else {
+      f(key, "[REDACTED]");
+    }
+  });
+}
+
 CallTracerInterface::TransportByteSize&
 CallTracerInterface::TransportByteSize::operator+=(
     const CallTracerInterface::TransportByteSize& other) {
@@ -131,6 +146,12 @@ class DelegatingClientCallTracer : public ClientCallTracerInterface {
         grpc_metadata_batch* send_trailing_metadata) override {
       for (auto* tracer : tracers_) {
         tracer->RecordSendTrailingMetadata(send_trailing_metadata);
+      }
+    }
+    void MutateSendTrailingMetadata(
+        grpc_metadata_batch* send_trailing_metadata) override {
+      for (auto* tracer : tracers_) {
+        tracer->MutateSendTrailingMetadata(send_trailing_metadata);
       }
     }
     void RecordSendMessage(const Message& send_message) override {
@@ -293,6 +314,12 @@ class DelegatingServerCallTracer : public ServerCallTracerInterface {
       tracer->RecordSendTrailingMetadata(send_trailing_metadata);
     }
   }
+  void MutateSendTrailingMetadata(
+      grpc_metadata_batch* send_trailing_metadata) override {
+    for (auto* tracer : tracers_) {
+      tracer->MutateSendTrailingMetadata(send_trailing_metadata);
+    }
+  }
   void RecordSendMessage(const Message& send_message) override {
     for (auto* tracer : tracers_) {
       tracer->RecordSendMessage(send_message);
@@ -384,6 +411,16 @@ void CallTracer::RecordSendInitialMetadata(
     interface_->MutateSendInitialMetadata(send_initial_metadata);
   } else {
     interface_->RecordSendInitialMetadata(send_initial_metadata);
+  }
+}
+
+void CallTracer::RecordSendTrailingMetadata(
+    grpc_metadata_batch* send_trailing_metadata) {
+  if (IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled()) {
+    RecordAnnotation(SendTrailingMetadataAnnotation(send_trailing_metadata));
+    interface_->MutateSendTrailingMetadata(send_trailing_metadata);
+  } else {
+    interface_->RecordSendTrailingMetadata(send_trailing_metadata);
   }
 }
 
