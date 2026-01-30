@@ -1706,6 +1706,7 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx pre_stop_hook_server_test)
   add_dependencies(buildtests_cxx prioritized_race_test)
+  add_dependencies(buildtests_cxx private_key_offload_test)
   add_dependencies(buildtests_cxx promise_endpoint_test)
   add_dependencies(buildtests_cxx promise_factory_test)
   add_dependencies(buildtests_cxx promise_map_test)
@@ -1874,6 +1875,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx timer_test)
   add_dependencies(buildtests_cxx tls_certificate_verifier_test)
   add_dependencies(buildtests_cxx tls_key_export_test)
+  add_dependencies(buildtests_cxx tls_private_key_signer_end2end_test)
   add_dependencies(buildtests_cxx tls_security_connector_test)
   add_dependencies(buildtests_cxx too_many_pings_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -3221,6 +3223,7 @@ foreach(_hdr
   include/grpc/impl/slice_type.h
   include/grpc/load_reporting.h
   include/grpc/passive_listener.h
+  include/grpc/private_key_signer.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
@@ -3956,6 +3959,7 @@ foreach(_hdr
   include/grpc/impl/slice_type.h
   include/grpc/load_reporting.h
   include/grpc/passive_listener.h
+  include/grpc/private_key_signer.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
@@ -5094,6 +5098,7 @@ foreach(_hdr
   include/grpcpp/security/tls_certificate_verifier.h
   include/grpcpp/security/tls_credentials_options.h
   include/grpcpp/security/tls_crl_provider.h
+  include/grpcpp/security/tls_private_key_signer.h
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
   include/grpcpp/server_context.h
@@ -5835,6 +5840,7 @@ foreach(_hdr
   include/grpcpp/security/tls_certificate_verifier.h
   include/grpcpp/security/tls_credentials_options.h
   include/grpcpp/security/tls_crl_provider.h
+  include/grpcpp/security/tls_private_key_signer.h
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
   include/grpcpp/server_context.h
@@ -6292,6 +6298,7 @@ foreach(_hdr
   include/grpc/impl/slice_type.h
   include/grpc/load_reporting.h
   include/grpc/passive_listener.h
+  include/grpc/private_key_signer.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
@@ -28017,6 +28024,49 @@ target_link_libraries(prioritized_race_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(private_key_offload_test
+  test/core/tsi/private_key_offload_test.cc
+  test/core/tsi/transport_security_test_lib.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(private_key_offload_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(private_key_offload_test PUBLIC cxx_std_17)
+target_include_directories(private_key_offload_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(private_key_offload_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(promise_endpoint_test
   test/core/transport/promise_endpoint_test.cc
 )
@@ -35354,6 +35404,82 @@ target_include_directories(tls_key_export_test
 )
 
 target_link_libraries(tls_key_export_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc++_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(tls_private_key_signer_end2end_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
+  test/cpp/end2end/test_service_impl.cc
+  test/cpp/end2end/tls_private_key_signer_end2end_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(tls_private_key_signer_end2end_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(tls_private_key_signer_end2end_test PUBLIC cxx_std_17)
+target_include_directories(tls_private_key_signer_end2end_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(tls_private_key_signer_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc++_test_util

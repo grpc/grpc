@@ -29,7 +29,6 @@
 #include <utility>
 
 #include "src/core/config/core_configuration.h"
-#include "src/core/credentials/call/call_credentials.h"
 #include "src/core/credentials/transport/channel_creds_registry.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/credentials/transport/google_default/google_default_credentials.h"  // IWYU pragma: keep
@@ -89,14 +88,15 @@ class TlsChannelCredsFactory : public ChannelCredsFactory<> {
         !config->ca_certificate_file().empty()) {
       // TODO(gtcooke94): Expose the spiffe_bundle_map option in the XDS
       // bootstrap config to use here.
-      options->set_certificate_provider(
-          MakeRefCounted<FileWatcherCertificateProvider>(
-              config->private_key_file(), config->certificate_file(),
-              config->ca_certificate_file(), /*spiffe_bundle_map_file=*/"",
-              config->refresh_interval().millis() / GPR_MS_PER_SEC));
+      auto provider = MakeRefCounted<FileWatcherCertificateProvider>(
+          config->private_key_file(), config->certificate_file(),
+          config->ca_certificate_file(), /*spiffe_bundle_map_file=*/"",
+          config->refresh_interval().millis() / GPR_MS_PER_SEC);
+      options->set_root_certificates_provider(
+          config->ca_certificate_file().empty() ? nullptr : provider);
+      options->set_identity_credentials_provider(
+          config->certificate_file().empty() ? nullptr : provider);
     }
-    options->set_watch_root_cert(!config->ca_certificate_file().empty());
-    options->set_watch_identity_pair(!config->certificate_file().empty());
     options->set_certificate_verifier(
         MakeRefCounted<HostNameCertificateVerifier>());
     return MakeRefCounted<TlsCredentials>(std::move(options));

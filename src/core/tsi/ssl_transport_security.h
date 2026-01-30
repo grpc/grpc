@@ -21,10 +21,12 @@
 
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security_constants.h>
+#include <grpc/private_key_signer.h>
 #include <grpc/support/port_platform.h>
 #include <openssl/x509.h>
 
 #include <memory>
+#include <string>
 
 #include "src/core/credentials/transport/tls/spiffe_utils.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
@@ -52,6 +54,9 @@
   "x509_verified_root_cert_subject"
 
 using RootCertInfo = std::variant<std::string, grpc_core::SpiffeBundleMap>;
+
+using PrivateKey =
+    std::variant<std::string, std::shared_ptr<grpc_core::PrivateKeySigner>>;
 
 // --- tsi_ssl_root_certs_store object ---
 
@@ -105,13 +110,17 @@ typedef struct tsi_ssl_client_handshaker_factory
 
 // Object that holds a private key / certificate chain pair in PEM format.
 struct tsi_ssl_pem_key_cert_pair {
-  // private_key is the NULL-terminated string containing the PEM encoding of
-  // the client's private key.
-  const char* private_key;
+  // private_key is either NULL-terminated string containing the PEM encoding of
+  // the client's private key or an implementation of PrivateKeySigner.
+  PrivateKey private_key;
 
   // cert_chain is the NULL-terminated string containing the PEM encoding of
   // the client's certificate chain.
-  const char* cert_chain;
+  std::string cert_chain;
+
+  tsi_ssl_pem_key_cert_pair() = default;
+  tsi_ssl_pem_key_cert_pair(PrivateKey pk, std::string cert)
+      : private_key(std::move(pk)), cert_chain(std::move(cert)) {}
 };
 // TO BE DEPRECATED.
 // Creates a client handshaker factory.
@@ -262,7 +271,6 @@ typedef struct tsi_ssl_server_handshaker_factory
 // Creates a server handshaker factory.
 // - pem_key_cert_pairs is an array private key / certificate chains of the
 //   server.
-// - num_key_cert_pairs is the number of items in the pem_key_cert_pairs array.
 // - pem_root_certs is the NULL-terminated string containing the PEM encoding
 //   of the client root certificates. This parameter may be NULL if the server
 //   does not want the client to be authenticated with SSL.
@@ -281,11 +289,10 @@ typedef struct tsi_ssl_server_handshaker_factory
 // - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
 //   where a parameter is invalid.
 tsi_result tsi_create_ssl_server_handshaker_factory(
-    const tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs,
-    size_t num_key_cert_pairs, const char* pem_client_root_certs,
-    int force_client_auth, const char* cipher_suites,
-    const char** alpn_protocols, uint16_t num_alpn_protocols,
-    tsi_ssl_server_handshaker_factory** factory);
+    std::vector<tsi_ssl_pem_key_cert_pair> pem_key_cert_pairs,
+    const char* pem_client_root_certs, int force_client_auth,
+    const char* cipher_suites, const char** alpn_protocols,
+    uint16_t num_alpn_protocols, tsi_ssl_server_handshaker_factory** factory);
 
 // TO BE DEPRECATED.
 // Same as tsi_create_ssl_server_handshaker_factory method except uses
@@ -295,8 +302,8 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
 //   authenticate with an SSL cert. Note that this option is ignored if
 //   pem_client_root_certs is NULL or pem_client_roots_certs_size is 0
 tsi_result tsi_create_ssl_server_handshaker_factory_ex(
-    const tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs,
-    size_t num_key_cert_pairs, const char* pem_client_root_certs,
+    std::vector<tsi_ssl_pem_key_cert_pair> pem_key_cert_pairs,
+    const char* pem_client_root_certs,
     tsi_client_certificate_request_type client_certificate_request,
     const char* cipher_suites, const char** alpn_protocols,
     uint16_t num_alpn_protocols, tsi_ssl_server_handshaker_factory** factory);
@@ -304,10 +311,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_ex(
 struct tsi_ssl_server_handshaker_options {
   // pem_key_cert_pairs is an array private key / certificate chains of the
   // server.
-  const tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs;
-  // num_key_cert_pairs is the number of items in the pem_key_cert_pairs
-  // array.
-  size_t num_key_cert_pairs;
+  std::vector<tsi_ssl_pem_key_cert_pair> pem_key_cert_pairs;
   // client_certificate_request, if set to non-zero will force the client to
   // authenticate with an SSL cert. Note that this option is ignored if
   // root_cert_info is NULL
@@ -369,9 +373,7 @@ struct tsi_ssl_server_handshaker_options {
   // TODO(gtcooke94) this ctor is not needed
   // https://github.com/grpc/grpc/pull/39708/files#r2143735662
   tsi_ssl_server_handshaker_options()
-      : pem_key_cert_pairs(nullptr),
-        num_key_cert_pairs(0),
-        client_certificate_request(TSI_DONT_REQUEST_CLIENT_CERTIFICATE),
+      : client_certificate_request(TSI_DONT_REQUEST_CLIENT_CERTIFICATE),
         cipher_suites(nullptr),
         alpn_protocols(nullptr),
         num_alpn_protocols(0),
