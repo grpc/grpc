@@ -188,4 +188,9 @@ absl::StatusOr<URI> ValidateStsCredentialsOptions(
     const grpc_sts_credentials_options* options);
 }  // namespace grpc_core
 
+// Creates a compute engine credentials object for connecting to Google.
+grpc_call_credentials* grpc_google_compute_engine_credentials_create(
+    const grpc_google_compute_engine_credentials_options* options,
+    const char* regional_access_boundary);
+
 #endif  // GRPC_SRC_CORE_CREDENTIALS_CALL_OAUTH2_OAUTH2_CREDENTIALS_H

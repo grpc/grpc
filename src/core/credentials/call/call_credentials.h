@@ -64,6 +64,8 @@ typedef enum {
 #define GRPC_COMPUTE_ENGINE_METADATA_HOST "metadata.google.internal."
 #define GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH \
   "/computeMetadata/v1/instance/service-accounts/default/token"
+#define GRPC_COMPUTE_ENGINE_METADATA_EMAIL_PATH \
+  "/computeMetadata/v1/instance/service-accounts/default/email"
 
 #define GRPC_GOOGLE_OAUTH2_SERVICE_HOST "oauth2.googleapis.com"
 #define GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH "/token"

@@ -528,6 +528,14 @@ typedef struct {
 GRPCAPI grpc_call_credentials* grpc_google_compute_engine_credentials_create(
     grpc_google_compute_engine_credentials_options* options);
 
+/** Same as grpc_google_compute_engine_credentials_create, but with
+   regional_access_boundary to pre-populate the regional access boundary cache.
+ */
+GRPCAPI grpc_call_credentials*
+grpc_google_compute_engine_credentials_create_with_regional_access_boundary(
+    grpc_google_compute_engine_credentials_options* options,
+    const char* regional_access_boundary);
+
 /** Creates a composite channel credentials object. The security level of
  * resulting connection is determined by channel_creds. */
 GRPCAPI grpc_channel_credentials* grpc_composite_channel_credentials_create(
