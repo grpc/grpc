@@ -48,12 +48,12 @@ grpc_ssl_credentials::grpc_ssl_credentials(
   // Use default (e.g. OS) root certificates if the user did not pass any root
   // certificates.
   if (config_.pem_root_certs.empty()) {
-    std::string pem_root_certs =
+    absl::string_view pem_root_certs =
         grpc_core::DefaultSslRootStore::GetPemRootCerts();
     if (pem_root_certs.empty()) {
       LOG(ERROR) << "Could not get default pem root certs.";
     } else {
-      config_.pem_root_certs = std::move(pem_root_certs);
+      config_.pem_root_certs = std::string(pem_root_certs);
       root_store_ = grpc_core::DefaultSslRootStore::GetRootStore();
     }
   } else {

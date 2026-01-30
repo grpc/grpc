@@ -490,8 +490,7 @@ class StsTokenFetcherCredentials : public Oauth2TokenFetcherCredentials {
     *body = nullptr;
     std::vector<std::string> body_parts;
 
-    auto cleanup = [&body, &body_length, &body_parts, &subject_token,
-                    &actor_token, &err](absl::Status err) {
+    auto cleanup = [&body, &body_length, &body_parts](absl::Status err) {
       if (err.ok()) {
         std::string body_str = absl::StrJoin(body_parts, "");
         *body = gpr_strdup(body_str.c_str());
@@ -516,7 +515,7 @@ class StsTokenFetcherCredentials : public Oauth2TokenFetcherCredentials {
       MaybeAddToBody("actor_token", actor_token->as_string_view(), &body_parts);
       MaybeAddToBody("actor_token_type", actor_token_type_.get(), &body_parts);
     }
-    return cleanup();
+    return cleanup(absl::OkStatus());
   }
 
   URI sts_url_;

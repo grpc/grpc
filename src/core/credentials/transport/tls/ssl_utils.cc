@@ -435,7 +435,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     const char* crl_directory,
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
     tsi_ssl_client_handshaker_factory** handshaker_factory) {
-  const char* root_certs = nullptr;
+  absl::string_view root_certs;
   const tsi_ssl_root_certs_store* root_store = nullptr;
   tsi_ssl_client_handshaker_options options;
   bool roots_are_configured = root_cert_info != nullptr;
@@ -445,12 +445,13 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
            "default locations instead";
     // Use default root certificates.
     root_certs = grpc_core::DefaultSslRootStore::GetPemRootCerts();
-    if (root_certs == nullptr) {
+    if (root_certs.empty()) {
       LOG(ERROR) << "Could not get default pem root certs.";
       return GRPC_SECURITY_ERROR;
     }
     root_store = grpc_core::DefaultSslRootStore::GetRootStore();
-    options.root_cert_info = std::make_shared<RootCertInfo>(root_certs);
+    options.root_cert_info =
+        std::make_shared<RootCertInfo>(std::string(root_certs));
   } else {
     options.root_cert_info = std::move(root_cert_info);
   }
