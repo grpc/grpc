@@ -21,6 +21,8 @@ echo "!TIME!: prepare_build_windows.bat started"
 echo ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDB7sHC/Q5G62eTAQKwTl6D5Gw7Bq/o+O2/WI8Svs92EWWgmL0YE7p+XcxzbN4N4OWhQTjqRJ7uEGS3sFHl+2yIfD5MQ3EepUP+aGC3ODVkbtXVFfDoL9GQ7+0z2sT5VO4v933bR3yIxv3OpfJKHclv0y6KzLB7WkMea2WBRE4F1fIF2Aph0niapWNQvoDCDg/K46WnhVGKcri1YIsHT0XhTsB1HOrmBy+h7GN9BTRCjnR0OrqqOTXk7IP1QQURo1VfhYjPDvDMZuO1nCDnPxBeby7ARDKF82aOas2b4bthUGlNrWgCKRKJ89zKDYMU5ZZJEiDrYFGt9YtePMY9xekrjkVYyXrrvN0gNLfRLsSypHr/fuxxTqOxbUzF2cLMlsRnC88lGJn6fhodP7oa0QxfHxxBNWGJnDuWq9PavAanTBMSiwgq3nQ6Dt07HhRZ8HhdmIEZVfH8FfGwAi+LHuEEdCS1dOsV7RM9oXET2rlA2jhV+aFIz94zm7PN8EQooxU= weizheyuan@wei-desktop.svl.corp.google.com >> %HOME%\.ssh\authorized_keys
 type %HOME%\.ssh\authorized_keys
 set PATH=C:\tools\msys64\usr\bin;C:\Python39;C:\Program Files\CMake\bin;%PATH%
+echo ===========IP============
+curl -s -H "Metadata-Flavor: Google" http://metadata/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip
 
 @rem Print image ID of the windows kokoro image being used.
 cat C:\image_id.txt
