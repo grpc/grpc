@@ -74,13 +74,8 @@ namespace Grpc.Tools.Tests
             {
                 _cpuMatched++;
 
-                // On macosx arm64, x64 is used until a native protoc is shipped
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                {
-                    Assert.AreEqual("x64", _task.Cpu);
-                }
                 // On windows arm64, x86 is used until a native protoc is shipped
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
                     Assert.AreEqual("x86", _task.Cpu);
                 }
