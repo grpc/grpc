@@ -91,15 +91,12 @@ class Metadata(abc.Collection):  # noqa: PLW1641
                 yield (key, value)
 
     def keys(self) -> abc.KeysView:
-        """Return a view of the keys in the Metadata."""
         return abc.KeysView(self._metadata)
 
     def values(self) -> abc.ValuesView:
-        """Return a view of the values in the Metadata."""
         return abc.ValuesView(self._metadata)
 
     def items(self) -> abc.ItemsView:
-        """Return a view of the items in the Metadata."""
         return abc.ItemsView(self._metadata)
 
     def get(
