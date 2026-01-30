@@ -42,7 +42,5 @@ call bazel_rbe/bazel_wrapper.bat ^
   %BAZEL_FLAGS% ^
   --define=protobuf_allow_msvc=true ^
   -- ^
-  //test/...
-
-sleep 9999
-@rem  || exit /b 1
+  //test/... ^
+  || exit /b 1
