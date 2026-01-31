@@ -227,6 +227,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/client_channel/subchannel_pool_interface.h )
   s.files += %w( src/core/client_channel/subchannel_stream_client.cc )
   s.files += %w( src/core/client_channel/subchannel_stream_client.h )
+  s.files += %w( src/core/client_channel/subchannel_stream_limiter.cc )
+  s.files += %w( src/core/client_channel/subchannel_stream_limiter.h )
   s.files += %w( src/core/config/config_vars.cc )
   s.files += %w( src/core/config/config_vars.h )
   s.files += %w( src/core/config/config_vars_non_generated.cc )
