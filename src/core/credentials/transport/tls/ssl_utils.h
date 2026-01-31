@@ -126,7 +126,7 @@ class DefaultSslRootStore {
   static const tsi_ssl_root_certs_store* GetRootStore();
 
   // Gets the default PEM root certificate.
-  static const char* GetPemRootCerts();
+  static absl::string_view GetPemRootCerts();
 
  protected:
   // Returns default PEM root certificates in nullptr terminated grpc_slice.
