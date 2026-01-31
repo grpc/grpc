@@ -331,7 +331,7 @@ struct cq_next_data {
   std::atomic<intptr_t> pending_events{1};
 
   /// 0 initially. 1 once we initiated shutdown
-  bool shutdown_called = false;
+  std::atomic<bool> shutdown_called{false};
 };
 
 struct cq_pluck_data {
@@ -369,7 +369,7 @@ struct cq_pluck_data {
   std::atomic<bool> shutdown{false};
 
   /// 0 initially. 1 once we initiated shutdown
-  bool shutdown_called = false;
+  std::atomic<bool> shutdown_called{false};
 
   int num_pluckers = 0;
   plucker pluckers[GRPC_MAX_COMPLETION_QUEUE_PLUCKERS];
@@ -396,7 +396,7 @@ struct cq_callback_data {
   std::atomic<intptr_t> pending_events{1};
 
   /// 0 initially. 1 once we initiated shutdown
-  bool shutdown_called = false;
+  std::atomic<bool> shutdown_called{false};
 
   /// A callback that gets invoked when the CQ completes shutdown
   grpc_completion_queue_functor* shutdown_callback;
@@ -1115,7 +1115,7 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
 static void cq_finish_shutdown_next(grpc_completion_queue* cq) {
   cq_next_data* cqd = static_cast<cq_next_data*> DATA_FROM_CQ(cq);
 
-  GRPC_CHECK(cqd->shutdown_called);
+  GRPC_CHECK(cqd->shutdown_called.load(std::memory_order_relaxed));
   GRPC_CHECK_EQ(cqd->pending_events.load(std::memory_order_relaxed), 0);
 
   cq->poller_vtable->shutdown(POLLSET_FROM_CQ(cq), &cq->pollset_shutdown_done);
@@ -1132,12 +1132,12 @@ static void cq_shutdown_next(grpc_completion_queue* cq) {
   // this function is still active
   GRPC_CQ_INTERNAL_REF(cq, "shutting_down");
   gpr_mu_lock(cq->mu);
-  if (cqd->shutdown_called) {
+  if (cqd->shutdown_called.load(std::memory_order_relaxed)) {
     gpr_mu_unlock(cq->mu);
     GRPC_CQ_INTERNAL_UNREF(cq, "shutting_down");
     return;
   }
-  cqd->shutdown_called = true;
+  cqd->shutdown_called.store(true, std::memory_order_relaxed);
   // Doing acq/release fetch_sub here to match with
   // cq_begin_op_for_next and cq_end_op_for_next functions which read/write
   // on this counter without necessarily holding a lock on cq
@@ -1340,7 +1340,7 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq, void* tag,
 static void cq_finish_shutdown_pluck(grpc_completion_queue* cq) {
   cq_pluck_data* cqd = static_cast<cq_pluck_data*> DATA_FROM_CQ(cq);
 
-  GRPC_CHECK(cqd->shutdown_called);
+  GRPC_CHECK(cqd->shutdown_called.load(std::memory_order_relaxed));
   GRPC_CHECK(!cqd->shutdown.load(std::memory_order_relaxed));
   cqd->shutdown.store(true, std::memory_order_relaxed);
 
@@ -1360,12 +1360,12 @@ static void cq_shutdown_pluck(grpc_completion_queue* cq) {
   // this function is still active
   GRPC_CQ_INTERNAL_REF(cq, "shutting_down (pluck cq)");
   gpr_mu_lock(cq->mu);
-  if (cqd->shutdown_called) {
+  if (cqd->shutdown_called.load(std::memory_order_relaxed)) {
     gpr_mu_unlock(cq->mu);
     GRPC_CQ_INTERNAL_UNREF(cq, "shutting_down (pluck cq)");
     return;
   }
-  cqd->shutdown_called = true;
+  cqd->shutdown_called.store(true, std::memory_order_relaxed);
   if (cqd->pending_events.fetch_sub(1, std::memory_order_acq_rel) == 1) {
     cq_finish_shutdown_pluck(cq);
   }
@@ -1377,7 +1377,7 @@ static void cq_finish_shutdown_callback(grpc_completion_queue* cq) {
   cq_callback_data* cqd = static_cast<cq_callback_data*> DATA_FROM_CQ(cq);
   auto* callback = cqd->shutdown_callback;
 
-  GRPC_CHECK(cqd->shutdown_called);
+  GRPC_CHECK(cqd->shutdown_called.load(std::memory_order_relaxed));
 
   cq->poller_vtable->shutdown(POLLSET_FROM_CQ(cq), &cq->pollset_shutdown_done);
 
@@ -1398,12 +1398,12 @@ static void cq_shutdown_callback(grpc_completion_queue* cq) {
   // this function is still active
   GRPC_CQ_INTERNAL_REF(cq, "shutting_down (callback cq)");
   gpr_mu_lock(cq->mu);
-  if (cqd->shutdown_called) {
+  if (cqd->shutdown_called.load(std::memory_order_relaxed)) {
     gpr_mu_unlock(cq->mu);
     GRPC_CQ_INTERNAL_UNREF(cq, "shutting_down (callback cq)");
     return;
   }
-  cqd->shutdown_called = true;
+  cqd->shutdown_called.store(true, std::memory_order_relaxed);
   if (cqd->pending_events.fetch_sub(1, std::memory_order_acq_rel) == 1) {
     gpr_mu_unlock(cq->mu);
     cq_finish_shutdown_callback(cq);
