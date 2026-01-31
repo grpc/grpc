@@ -9035,6 +9035,7 @@ grpc_cc_library(
         "chaotic_good_pending_connection",
         "chaotic_good_tcp_frame_transport",
         "event_engine_extensions",
+        "experiments",
     ],
 )
 
