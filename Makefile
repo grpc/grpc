@@ -833,6 +833,8 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/writing.cc \
     src/core/ext/transport/inproc/inproc_transport.cc \
     src/core/ext/transport/inproc/legacy_inproc_transport.cc \
+    src/core/ext/upb-gen/cel/expr/checked.upb_minitable.c \
+    src/core/ext/upb-gen/cel/expr/syntax.upb_minitable.c \
     src/core/ext/upb-gen/envoy/admin/v3/certs.upb_minitable.c \
     src/core/ext/upb-gen/envoy/admin/v3/clusters.upb_minitable.c \
     src/core/ext/upb-gen/envoy/admin/v3/config_dump.upb_minitable.c \
@@ -1007,6 +1009,8 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/xds/type/v3/cel.upb_minitable.c \
     src/core/ext/upb-gen/xds/type/v3/range.upb_minitable.c \
     src/core/ext/upb-gen/xds/type/v3/typed_struct.upb_minitable.c \
+    src/core/ext/upbdefs-gen/cel/expr/checked.upbdefs.c \
+    src/core/ext/upbdefs-gen/cel/expr/syntax.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/admin/v3/certs.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/admin/v3/clusters.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/admin/v3/config_dump.upbdefs.c \
