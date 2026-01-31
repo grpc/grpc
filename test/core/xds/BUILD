@@ -376,6 +376,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:config",
         "//:envoy_extensions_transport_sockets_tls_upb",
         "//:gpr",
         "//:grpc",
