@@ -33,6 +33,7 @@
 #include "src/core/credentials/call/external/file_external_account_credentials.h"
 #include "src/core/credentials/call/external/url_external_account_credentials.h"
 #include "src/core/credentials/call/json_util.h"
+#include "src/core/credentials/call/regional_access_boundary_util.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/util/grpc_check.h"
@@ -82,6 +83,18 @@ ExternalAccountCredentials::NoOpFetchBody::NoOpFetchBody(
     ExecCtx exec_ctx;
     self->Finish(std::move(result));
   });
+}
+
+grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
+ExternalAccountCredentials::GetRequestMetadata(
+    grpc_core::ClientMetadataHandle initial_metadata,
+    const grpc_call_credentials::GetRequestMetadataArgs* args) {
+  return TrySeq(TokenFetcherCredentials::GetRequestMetadata(
+                    std::move(initial_metadata), args),
+                [this](ClientMetadataHandle updated_metadata) {
+                  return grpc_core::FetchRegionalAccessBoundary(
+                      this->Ref(), std::move(updated_metadata));
+                });
 }
 
 //
@@ -443,8 +456,36 @@ bool ExternalAccountCredentials::ExternalFetchRequest::MaybeFailLocked(
 namespace {
 
 // Expression to match:
+// //iam.googleapis.com/projects/<project>/locations/global/workloadIdentityPools/<pool-id>/providers/.+
+bool MatchWorkloadIdentityPoolAudience(absl::string_view audience,
+                                       std::string* project,
+                                       std::string* pool_id) {
+  // Match "//iam.googleapis.com/projects/"
+  if (!absl::ConsumePrefix(&audience, "//iam.googleapis.com/projects/")) {
+    return false;
+  }
+  // Match "<project>/locations/global/workloadIdentityPools/"
+  auto location_pos = audience.find("/locations/global/workloadIdentityPools/");
+  if (location_pos == absl::string_view::npos) return false;
+  *project = std::string(audience.substr(0, location_pos));
+  if (project->empty()) return false;
+
+  audience.remove_prefix(location_pos +
+                         strlen("/locations/global/workloadIdentityPools/"));
+
+  // Match "<pool-id>/providers/"
+  auto provider_pos = audience.find("/providers/");
+  if (provider_pos == absl::string_view::npos) return false;
+  *pool_id = std::string(audience.substr(0, provider_pos));
+  if (pool_id->empty()) return false;
+
+  return true;
+}
+
+// Expression to match:
 // //iam.googleapis.com/locations/[^/]+/workforcePools/[^/]+/providers/.+
-bool MatchWorkforcePoolAudience(absl::string_view audience) {
+bool MatchWorkforcePoolAudience(absl::string_view audience,
+                                std::string* workforce_pool_id) {
   // Match "//iam.googleapis.com/locations/"
   if (!absl::ConsumePrefix(&audience, "//iam.googleapis.com")) return false;
   if (!absl::ConsumePrefix(&audience, "/locations/")) return false;
@@ -456,7 +497,9 @@ bool MatchWorkforcePoolAudience(absl::string_view audience) {
   std::pair<absl::string_view, absl::string_view> providers_split_result =
       absl::StrSplit(workforce_pools_split_result.second,
                      absl::MaxSplits("/providers/", 1));
-  return !absl::StrContains(providers_split_result.first, '/');
+  if (absl::StrContains(providers_split_result.first, '/')) return false;
+  *workforce_pool_id = std::string(providers_split_result.first);
+  return true;
 }
 
 }  // namespace
@@ -464,10 +507,12 @@ bool MatchWorkforcePoolAudience(absl::string_view audience) {
 absl::StatusOr<RefCountedPtr<ExternalAccountCredentials>>
 ExternalAccountCredentials::Create(
     const Json& json, std::vector<std::string> scopes,
+    std::string regional_access_boundary,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine>
         event_engine) {
   Options options;
   options.type = GRPC_AUTH_JSON_TYPE_INVALID;
+  options.regional_access_boundary = std::move(regional_access_boundary);
   if (json.type() != Json::Type::kObject) {
     return GRPC_ERROR_CREATE("Invalid json to construct credentials options.");
   }
@@ -518,6 +563,9 @@ ExternalAccountCredentials::Create(
   if (it == json.object().end()) {
     return GRPC_ERROR_CREATE("credential_source field not present.");
   }
+  if (it->second.type() != Json::Type::kObject) {
+    return GRPC_ERROR_CREATE("credential_source field must be a JSON object.");
+  }
   options.credential_source = it->second;
   it = json.object().find("quota_project_id");
   if (it != json.object().end()) {
@@ -533,7 +581,8 @@ ExternalAccountCredentials::Create(
   }
   it = json.object().find("workforce_pool_user_project");
   if (it != json.object().end()) {
-    if (MatchWorkforcePoolAudience(options.audience)) {
+    if (MatchWorkforcePoolAudience(options.audience,
+                                   &options.workforce_pool_id)) {
       options.workforce_pool_user_project = it->second.string();
     } else {
       return GRPC_ERROR_CREATE(
@@ -541,6 +590,9 @@ ExternalAccountCredentials::Create(
           "pool credentials");
     }
   }
+  MatchWorkloadIdentityPoolAudience(options.audience,
+                                    &options.workload_pool_project,
+                                    &options.workload_pool_id);
   it = json.object().find("service_account_impersonation");
   options.service_account_impersonation.token_lifetime_seconds =
       IMPERSONATED_CRED_DEFAULT_LIFETIME_IN_SECONDS;
@@ -600,6 +652,37 @@ ExternalAccountCredentials::ExternalAccountCredentials(
     scopes.push_back(GOOGLE_CLOUD_PLATFORM_DEFAULT_SCOPE);
   }
   scopes_ = std::move(scopes);
+  if (!options_.regional_access_boundary.empty()) {
+    auto json = grpc_core::JsonParse(options_.regional_access_boundary);
+    if (json.ok() && json->type() == grpc_core::Json::Type::kObject) {
+      std::string encoded_locations;
+      std::vector<std::string> locations;
+      auto it_encoded = json->object().find("encodedLocations");
+      if (it_encoded != json->object().end() &&
+          it_encoded->second.type() == grpc_core::Json::Type::kString) {
+        encoded_locations = it_encoded->second.string();
+      }
+      auto it_locations = json->object().find("locations");
+      if (it_locations != json->object().end() &&
+          it_locations->second.type() == grpc_core::Json::Type::kArray) {
+        for (const auto& loc : it_locations->second.array()) {
+          if (loc.type() == grpc_core::Json::Type::kString) {
+            locations.push_back(loc.string());
+          }
+        }
+      }
+      if (!encoded_locations.empty()) {
+        gpr_timespec ttl = gpr_time_from_seconds(
+            GRPC_REGIONAL_ACCESS_BOUNDARY_CACHE_DURATION_SECS, GPR_TIMESPAN);
+        regional_access_boundary_cache = {
+            std::move(encoded_locations), std::move(locations),
+            gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), ttl)};
+      }
+    } else {
+      LOG(ERROR) << "Failed to parse regional access boundary JSON: "
+                 << options_.regional_access_boundary;
+    }
+  }
 }
 
 ExternalAccountCredentials::~ExternalAccountCredentials() {}
@@ -630,6 +713,14 @@ ExternalAccountCredentials::FetchToken(
 
 grpc_call_credentials* grpc_external_account_credentials_create(
     const char* json_string, const char* scopes_string) {
+  return grpc_external_account_credentials_create_with_regional_access_boundary(
+      json_string, scopes_string, nullptr);
+}
+
+grpc_call_credentials*
+grpc_external_account_credentials_create_with_regional_access_boundary(
+    const char* json_string, const char* scopes_string,
+    const char* regional_access_boundary) {
   auto json = grpc_core::JsonParse(json_string);
   if (!json.ok()) {
     LOG(ERROR) << "External account credentials creation failed. Error: "
@@ -637,8 +728,9 @@ grpc_call_credentials* grpc_external_account_credentials_create(
     return nullptr;
   }
   std::vector<std::string> scopes = absl::StrSplit(scopes_string, ',');
-  auto creds =
-      grpc_core::ExternalAccountCredentials::Create(*json, std::move(scopes));
+  auto creds = grpc_core::ExternalAccountCredentials::Create(
+      *json, std::move(scopes),
+      regional_access_boundary == nullptr ? "" : regional_access_boundary);
   if (!creds.ok()) {
     LOG(ERROR) << "External account credentials creation failed. Error: "
                << grpc_core::StatusToString(creds.status());

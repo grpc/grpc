@@ -35,6 +35,8 @@
 #include <memory>
 #include <vector>
 
+#include "src/core/credentials/call/call_credentials.h"
+
 struct grpc_call;
 
 namespace grpc {
@@ -209,7 +211,8 @@ constexpr long kMaxAuthTokenLifetimeSecs = 3600;
 /// \a kMaxAuthTokenLifetimeSecs or will be cropped to this value.
 std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
     const grpc::string& json_key,
-    long token_lifetime_seconds = kMaxAuthTokenLifetimeSecs);
+    long token_lifetime_seconds = kMaxAuthTokenLifetimeSecs,
+    const grpc::string& regional_access_boundary = "");
 
 /// Builds refresh token credentials.
 /// json_refresh_token is the JSON string containing the refresh token along
@@ -291,7 +294,8 @@ std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
 /// json_string is the JSON string containing the credentials options.
 /// scopes contains the scopes to be binded with the credentials.
 std::shared_ptr<CallCredentials> ExternalAccountCredentials(
-    const grpc::string& json_string, const std::vector<grpc::string>& scopes);
+    const grpc::string& json_string, const std::vector<grpc::string>& scopes,
+    const grpc::string& regional_access_boundary = "");
 
 namespace experimental {
 
