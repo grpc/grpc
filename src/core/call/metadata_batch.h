@@ -450,6 +450,9 @@ struct GrpcStatusMetadata {
       on_error("out of range", value);
       return GRPC_STATUS_UNKNOWN;
     }
+    if (wire_value > 16) {
+      return GRPC_STATUS_UNKNOWN;
+    }
     return static_cast<grpc_status_code>(wire_value);
   }
 };
