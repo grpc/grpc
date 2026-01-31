@@ -69,6 +69,10 @@ def pyx_library(name, deps = [], py_deps = [], srcs = [], **kwargs):
 
     shared_objects = []
     defines = kwargs.pop("defines", [])
+    linkopts = select({
+        "@platforms//os:osx": ["-undefined", "dynamic_lookup"],
+        "//conditions:default": [],
+    })
     for src in pyx_srcs:
         stem = src.split(".")[0]
         shared_object_name = stem + ".so"
@@ -78,6 +82,7 @@ def pyx_library(name, deps = [], py_deps = [], srcs = [], **kwargs):
             deps = deps + ["@local_config_python//:python_headers"],
             defines = defines,
             linkshared = 1,
+            linkopts = linkopts,
         )
         shared_objects.append(shared_object_name)
 
