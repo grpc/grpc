@@ -34,13 +34,15 @@ python -VV
 pip install --upgrade pip==25.2
 # Note that these are only test driver's dependencies. gRPC version
 # shouldn't matter, as it's only used for getting the LB stats from the client.
+# TODO(sergiitk): we need to migrate off of oauth2client: https://google-auth.readthedocs.io/en/latest/oauth2client-deprecation.html
 pip install --upgrade \
     grpcio-tools==1.74.0 \
     grpcio==1.74.0 \
     xds-protos==1.74.0 \
     google-api-python-client==2.179.0 \
     google-auth-httplib2==0.2.0 \
-    oauth2client==4.1.3
+    oauth2client==4.1.3 \
+    "pyOpenSSL>=23.2.0"
 pip list
 
 # Prepare generated Python code.

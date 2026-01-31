@@ -569,8 +569,8 @@ XdsHttpRbacFilter::GenerateFilterConfigOverride(
   return FilterConfig{OverrideConfigProtoName(), std::move(rbac_json)};
 }
 
-void XdsHttpRbacFilter::AddFilter(InterceptionChainBuilder& builder) const {
-  builder.Add<RbacFilter>(nullptr);
+void XdsHttpRbacFilter::AddFilter(FilterChainBuilder& builder) const {
+  builder.AddFilter<RbacFilter>(nullptr);
 }
 
 const grpc_channel_filter* XdsHttpRbacFilter::channel_filter() const {

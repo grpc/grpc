@@ -264,7 +264,7 @@ std::string FaultInjectionFilter::InjectionDecision::ToString() const {
                       " abort=", abort_request_.has_value());
 }
 
-const grpc_channel_filter FaultInjectionFilter::kFilter =
+const grpc_channel_filter FaultInjectionFilter::kFilterVtable =
     MakePromiseBasedFilter<FaultInjectionFilter, FilterEndpoint::kClient>();
 
 void FaultInjectionFilterRegister(CoreConfiguration::Builder* builder) {

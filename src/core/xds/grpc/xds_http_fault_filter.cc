@@ -214,12 +214,12 @@ XdsHttpFaultFilter::GenerateFilterConfigOverride(
                               errors);
 }
 
-void XdsHttpFaultFilter::AddFilter(InterceptionChainBuilder& builder) const {
-  builder.Add<FaultInjectionFilter>(nullptr);
+void XdsHttpFaultFilter::AddFilter(FilterChainBuilder& builder) const {
+  builder.AddFilter<FaultInjectionFilter>(nullptr);
 }
 
 const grpc_channel_filter* XdsHttpFaultFilter::channel_filter() const {
-  return &FaultInjectionFilter::kFilter;
+  return &FaultInjectionFilter::kFilterVtable;
 }
 
 ChannelArgs XdsHttpFaultFilter::ModifyChannelArgs(

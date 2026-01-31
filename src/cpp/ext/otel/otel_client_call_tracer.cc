@@ -376,10 +376,12 @@ template <typename UnrefBehavior>
 void OpenTelemetryPluginImpl::ClientCallTracerInterface::CallAttemptTracer<
     UnrefBehavior>::RecordAnnotation(const Annotation& annotation) {
   if (annotation.type() == grpc_core::CallTracerAnnotationInterface::
-                               AnnotationType::kSendInitialMetadata) {
-    // Otel does not have any immutable tracing for send initial metadata.
-    // All Otel work for send initial metadata is mutation, which is handled in
-    // MutateSendInitialMetadata.
+                               AnnotationType::kSendInitialMetadata ||
+      annotation.type() == grpc_core::CallTracerAnnotationInterface::
+                               AnnotationType::kSendTrailingMetadata) {
+    // Otel does not have any immutable tracing for send initial/trailing
+    // metadata. All Otel work for send initial/trailing metadata is mutation,
+    // which is handled in MutateSendInitialMetadata/MutateSendTrailingMetadata.
     return;
   }
   RecordAnnotation(annotation.ToString());

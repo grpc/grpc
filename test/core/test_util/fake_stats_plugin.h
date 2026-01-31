@@ -73,6 +73,11 @@ class FakeClientCallTracer : public ClientCallTracerInterface {
     void MutateSendInitialMetadata(
         grpc_metadata_batch* /*send_initial_metadata*/) override {}
     void RecordSendTrailingMetadata(
+        grpc_metadata_batch* send_trailing_metadata) override {
+      GRPC_CHECK(!IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled());
+      MutateSendTrailingMetadata(send_trailing_metadata);
+    }
+    void MutateSendTrailingMetadata(
         grpc_metadata_batch* /*send_trailing_metadata*/) override {}
     void RecordSendMessage(const Message& /*send_message*/) override {}
     void RecordSendCompressedMessage(
@@ -178,6 +183,11 @@ class FakeServerCallTracer : public ServerCallTracerInterface {
   void MutateSendInitialMetadata(
       grpc_metadata_batch* /*send_initial_metadata*/) override {}
   void RecordSendTrailingMetadata(
+      grpc_metadata_batch* send_trailing_metadata) override {
+    GRPC_CHECK(!IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled());
+    MutateSendTrailingMetadata(send_trailing_metadata);
+  }
+  void MutateSendTrailingMetadata(
       grpc_metadata_batch* /*send_trailing_metadata*/) override {}
   void RecordSendMessage(const Message& /*send_message*/) override {}
   void RecordSendCompressedMessage(

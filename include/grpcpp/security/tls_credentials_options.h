@@ -52,7 +52,14 @@ class TlsCredentialsOptions {
 
   // ---- Setters for member fields ----
   // Sets the certificate provider used to store root certs and identity certs.
+  [[deprecated(
+      "Use set_root_certificate_provider() or "
+      "set_identity_certificate_provider() instead.")]]
   void set_certificate_provider(
+      std::shared_ptr<CertificateProviderInterface> certificate_provider);
+  void set_root_certificate_provider(
+      std::shared_ptr<CertificateProviderInterface> certificate_provider);
+  void set_identity_certificate_provider(
       std::shared_ptr<CertificateProviderInterface> certificate_provider);
   // Watches the updates of root certificates with name |root_cert_name|.
   // If used in TLS credentials, setting this field is optional for both the
@@ -64,6 +71,7 @@ class TlsCredentialsOptions {
   // certificate updates, and assume no root certificates needed for the server
   // (in the one-side TLS scenario, the server is not required to provide root
   // certs). We don't support default root certs on server side.
+  [[deprecated("Use set_root_certificate_provider()")]]
   void watch_root_certs();
   // Sets the name of root certificates being watched, if |watch_root_certs| is
   // called. If not set, an empty string will be used as the name.
@@ -74,6 +82,7 @@ class TlsCredentialsOptions {
   // |identity_cert_name|. If used in TLS credentials, it is required to be set
   // on the server side, and optional for the client side(in the one-side
   // TLS scenario, the client is not required to provide identity certs).
+  [[deprecated("Use set_identity_certificate_provider()")]]
   void watch_identity_key_cert_pairs();
   // Sets the name of identity key-cert pairs being watched, if
   // |watch_identity_key_cert_pairs| is called. If not set, an empty string will
@@ -133,16 +142,20 @@ class TlsCredentialsOptions {
   grpc_tls_credentials_options* c_credentials_options() const;
 
  protected:
-  // Returns the internal c options. The caller does not take ownership of the
-  // returned pointer.
+  // Returns the internal c options. The caller does not take ownership of
+  // the returned pointer.
   grpc_tls_credentials_options* mutable_c_credentials_options() {
     return c_credentials_options_;
   }
 
  private:
-  std::shared_ptr<CertificateProviderInterface> certificate_provider_;
+  std::shared_ptr<CertificateProviderInterface> legacy_certificate_provider_;
+  std::shared_ptr<CertificateProviderInterface> root_certificate_provider_;
+  std::shared_ptr<CertificateProviderInterface> identity_certificate_provider_;
   std::shared_ptr<CertificateVerifier> certificate_verifier_;
   grpc_tls_credentials_options* c_credentials_options_ = nullptr;
+  bool is_watching_roots_ = false;
+  bool is_watching_identity_ = false;
 };
 
 // Contains configurable options on the client side.
@@ -169,8 +182,22 @@ class TlsChannelCredentialsOptions final : public TlsCredentialsOptions {
 // It is used for experimental purposes for now and it is subject to change.
 class TlsServerCredentialsOptions final : public TlsCredentialsOptions {
  public:
-  // Server side is required to use a provider, because server always needs to
-  // use identity certs.
+  // Server side is required to use an identity provider, because server always
+  // needs to use identity certs.
+  static absl::StatusOr<TlsServerCredentialsOptions> Create(
+      std::shared_ptr<CertificateProviderInterface>
+          identity_certificate_provider) {
+    if (identity_certificate_provider == nullptr) {
+      return absl::InvalidArgumentError(
+          "identity certificate provider must be non-null");
+    }
+    TlsServerCredentialsOptions options;
+    options.set_identity_certificate_provider(
+        std::move(identity_certificate_provider));
+    return options;
+  }
+
+  [[deprecated("Use Create() instead.")]]
   explicit TlsServerCredentialsOptions(
       std::shared_ptr<CertificateProviderInterface> certificate_provider)
       : TlsCredentialsOptions() {
@@ -196,6 +223,8 @@ class TlsServerCredentialsOptions final : public TlsCredentialsOptions {
   void set_send_client_ca_list(bool send_client_ca_list);
 
  private:
+  // Default ctor, to be used by Create().
+  TlsServerCredentialsOptions() = default;
 };
 
 }  // namespace experimental

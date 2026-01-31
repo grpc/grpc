@@ -21,3 +21,5 @@ build --build_tag_filters=-no_mac
 build --dynamic_mode=off
 
 import %workspace%/tools/remote_build/include/test_config_common.bazelrc
+# TODO(weizheyuan): Fix test failures. See https://github.com/grpc/grpc/issues/41487
+import %workspace%/tools/remote_build/include/disable_bzlmod.bazelrc
