@@ -228,10 +228,14 @@ int main(int argc, char** argv) {
           factories.emplace_back(
               new grpc::testing::MetadataAndStatusLoggerInterceptorFactory());
         }
-        std::string service_config_json =
-            absl::GetFlag(FLAGS_service_config_json);
-        if (!service_config_json.empty()) {
-          arguments.SetServiceConfigJSON(service_config_json);
+        if (test_case == "mcs_cs") {
+          arguments.SetServiceConfigJSON("{\"connection_scaling\":{\"max_connections_per_subchannel\": 2}}");
+        } else {
+          std::string service_config_json =
+              absl::GetFlag(FLAGS_service_config_json);
+          if (!service_config_json.empty()) {
+            arguments.SetServiceConfigJSON(service_config_json);
+          }
         }
         return CreateChannelForTestCase(test_case, std::move(factories),
                                         arguments);
@@ -279,6 +283,9 @@ int main(int argc, char** argv) {
       std::bind(&grpc::testing::InteropClient::DoOrcaPerRpc, &client);
   actions["orca_oob"] =
       std::bind(&grpc::testing::InteropClient::DoOrcaOob, &client);
+  actions["mcs_cs"] =
+      std::bind(&grpc::testing::InteropClient::DoMcsConnectionScaling, &client);
+
   if (absl::GetFlag(FLAGS_use_tls)) {
     actions["compute_engine_creds"] =
         std::bind(&grpc::testing::InteropClient::DoComputeEngineCreds, &client,
