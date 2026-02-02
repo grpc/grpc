@@ -42,7 +42,7 @@
 #include "absl/strings/str_cat.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/credentials/call/call_creds_util.h"
-#include "src/core/credentials/call/regional_access_boundary_util.h"
+#include "src/core/credentials/call/regional_access_boundary_fetcher.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/promise.h"
@@ -118,7 +118,7 @@ grpc_service_account_jwt_access_credentials::GetRequestMetadata(
       GRPC_AUTHORIZATION_METADATA_KEY, std::move(*jwt_value),
       [](absl::string_view, const grpc_core::Slice&) { abort(); });
 
-  return grpc_core::FetchRegionalAccessBoundary(this->Ref(), std::move(initial_metadata));
+  return regional_access_boundary_fetcher_->Fetch(this->Ref(), std::move(initial_metadata));
 }
 
 grpc_service_account_jwt_access_credentials::
@@ -159,16 +159,15 @@ grpc_service_account_jwt_access_credentials::
       if (!encoded_locations.empty()) {
         gpr_timespec ttl = gpr_time_from_seconds(
             GRPC_REGIONAL_ACCESS_BOUNDARY_CACHE_DURATION_SECS, GPR_TIMESPAN);
-        regional_access_boundary_cache = {
+        regional_access_boundary_fetcher_->UpdateCache(
             std::move(encoded_locations), std::move(locations),
-            gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), ttl)};
+            gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), ttl));
       }
     } else {
       LOG(ERROR) << "Failed to parse regional access boundary JSON: "
                  << regional_access_boundary;
     }
   }
-  gpr_mu_init(&cache_mu_);
 }
 
 grpc_core::UniqueTypeName grpc_service_account_jwt_access_credentials::Type() {

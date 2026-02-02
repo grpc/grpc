@@ -4907,9 +4907,8 @@ TEST_F(CredentialsTest, InvalidateRegionalAccessBoundaryCache) {
   RefCountedPtr<grpc_call_credentials> creds =
       MakeRefCounted<fake_call_creds>();
   {
-    MutexLockForGprMu lock(&creds->regional_access_boundary_fetcher_->cache_mu_);
-    creds->regional_access_boundary_fetcher_->cache_ = RegionalAccessBoundary{
-        "us-west1", {"us-west1"}, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(100, GPR_TIMESPAN))};
+    creds->regional_access_boundary_fetcher_->UpdateCache(
+        "us-west1", {"us-west1"}, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(100, GPR_TIMESPAN)));
   }
   EXPECT_TRUE(creds->regional_access_boundary_fetcher_->cache_.has_value());
   

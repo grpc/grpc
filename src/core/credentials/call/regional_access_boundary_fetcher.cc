@@ -262,6 +262,12 @@ void RegionalAccessBoundaryFetcher::InvalidateCache() {
   gpr_mu_unlock(&cache_mu_);
 }
 
+void RegionalAccessBoundaryFetcher::UpdateCache(std::string encoded_locations, std::vector<std::string> locations, gpr_timespec expiration) {
+  gpr_mu_lock(&cache_mu_);
+  cache_ = RegionalAccessBoundary{std::move(encoded_locations), std::move(locations), expiration};
+  gpr_mu_unlock(&cache_mu_);
+}
+
 ArenaPromise<absl::StatusOr<ClientMetadataHandle>> RegionalAccessBoundaryFetcher::Fetch(
     RefCountedPtr<grpc_call_credentials> creds,
     ClientMetadataHandle initial_metadata) {

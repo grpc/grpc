@@ -37,7 +37,7 @@
 
 #include "src/core/call/metadata_batch.h"
 #include "src/core/credentials/call/json_util.h"
-#include "src/core/credentials/call/regional_access_boundary_util.h"
+#include "src/core/credentials/call/regional_access_boundary_fetcher.h"
 #include "src/core/credentials/call/token_fetcher/token_fetcher_credentials.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/debug/trace.h"
@@ -287,7 +287,7 @@ class grpc_compute_engine_token_fetcher_credentials
               grpc_core::Oauth2TokenFetcherCredentials::GetRequestMetadata(
                   std::move(initial_metadata), args),
               [this](grpc_core::ClientMetadataHandle new_metadata) {
-                return grpc_core::FetchRegionalAccessBoundary(
+                return regional_access_boundary_fetcher_->Fetch(
                     Ref(), std::move(new_metadata));
               });
         });
@@ -469,12 +469,9 @@ grpc_google_compute_engine_credentials_create_with_regional_access_boundary(
       if (!encoded_locations.empty()) {
         gpr_timespec ttl = gpr_time_from_seconds(
             GRPC_REGIONAL_ACCESS_BOUNDARY_CACHE_DURATION_SECS, GPR_TIMESPAN);
-        gpr_mu_lock(&creds->regional_access_boundary_cache_mu);
-        creds->regional_access_boundary_cache = {
+        creds->regional_access_boundary_fetcher_->UpdateCache(
             std::move(encoded_locations), std::move(locations),
-            gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), ttl)
-        };
-        gpr_mu_unlock(&creds->regional_access_boundary_cache_mu);
+            gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), ttl));
       }
     } else {
       LOG(ERROR) << "Failed to parse regional access boundary JSON: "

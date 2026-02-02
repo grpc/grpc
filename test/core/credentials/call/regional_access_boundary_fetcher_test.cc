@@ -102,9 +102,8 @@ TEST_F(RegionalAccessBoundaryFetcherTest, CacheMissTriggersFetch) {
 
 TEST_F(RegionalAccessBoundaryFetcherTest, CacheHitDoesNotTriggerFetch) {
   {
-    MutexLockForGprMu lock(&creds_->regional_access_boundary_fetcher_->cache_mu_);
-    creds_->regional_access_boundary_fetcher_->cache_ = RegionalAccessBoundary{
-        "us-west1", {"us-west1"}, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(100, GPR_TIMESPAN))};
+    creds_->regional_access_boundary_fetcher_->UpdateCache(
+        "us-west1", {"us-west1"}, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(100, GPR_TIMESPAN)));
   }
 
   auto promise = creds_->regional_access_boundary_fetcher_->Fetch(creds_, std::move(metadata_));
@@ -147,9 +146,8 @@ TEST_F(RegionalAccessBoundaryFetcherTest, NonGoogleApisEndpointIgnored) {
 
 TEST_F(RegionalAccessBoundaryFetcherTest, ExpiredCacheTriggersFetch) {
   {
-    MutexLockForGprMu lock(&creds_->regional_access_boundary_fetcher_->cache_mu_);
-    creds_->regional_access_boundary_fetcher_->cache_ = RegionalAccessBoundary{
-        "us-west1", {"us-west1"}, gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(100, GPR_TIMESPAN))};
+    creds_->regional_access_boundary_fetcher_->UpdateCache(
+        "us-west1", {"us-west1"}, gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(100, GPR_TIMESPAN)));
   }
   
   auto promise = creds_->regional_access_boundary_fetcher_->Fetch(creds_, std::move(metadata_));

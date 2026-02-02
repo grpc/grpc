@@ -33,7 +33,7 @@
 #include "src/core/credentials/call/external/file_external_account_credentials.h"
 #include "src/core/credentials/call/external/url_external_account_credentials.h"
 #include "src/core/credentials/call/json_util.h"
-#include "src/core/credentials/call/regional_access_boundary_util.h"
+#include "src/core/credentials/call/regional_access_boundary_fetcher.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/util/grpc_check.h"
@@ -92,7 +92,7 @@ ExternalAccountCredentials::GetRequestMetadata(
   return TrySeq(TokenFetcherCredentials::GetRequestMetadata(
                     std::move(initial_metadata), args),
                 [this](ClientMetadataHandle updated_metadata) {
-                  return grpc_core::FetchRegionalAccessBoundary(
+                  return regional_access_boundary_fetcher_->Fetch(
                       this->Ref(), std::move(updated_metadata));
                 });
 }
@@ -674,9 +674,9 @@ ExternalAccountCredentials::ExternalAccountCredentials(
       if (!encoded_locations.empty()) {
         gpr_timespec ttl = gpr_time_from_seconds(
             GRPC_REGIONAL_ACCESS_BOUNDARY_CACHE_DURATION_SECS, GPR_TIMESPAN);
-        regional_access_boundary_cache = {
+        regional_access_boundary_fetcher_->UpdateCache(
             std::move(encoded_locations), std::move(locations),
-            gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), ttl)};
+            gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), ttl));
       }
     } else {
       LOG(ERROR) << "Failed to parse regional access boundary JSON: "

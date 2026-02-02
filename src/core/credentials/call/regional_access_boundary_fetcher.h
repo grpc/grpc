@@ -65,9 +65,13 @@ class RegionalAccessBoundaryFetcher {
 
   void InvalidateCache();
 
+  void UpdateCache(std::string encoded_locations, std::vector<std::string> locations, gpr_timespec expiration);
+
  private:
   friend class RegionalAccessBoundaryFetcherTest;
   friend class CredentialsTest;
+  friend class grpc_service_account_jwt_access_credentials;
+  friend class ExternalAccountCredentials;
   friend struct RegionalAccessBoundaryRequest;
   friend void RetryFetchRegionalAccessBoundary(void* arg, grpc_error_handle error);
   friend void OnRegionalAccessBoundaryResponse(void* arg, grpc_error_handle error);
