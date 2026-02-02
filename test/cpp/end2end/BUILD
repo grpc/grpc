@@ -483,6 +483,7 @@ grpc_cc_test(
     # iOS. Figure out why.
     tags = [
         "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
         # b/117517566.
         "grpc:no-internal-poller",
         "no_test_ios",
@@ -534,6 +535,7 @@ grpc_cc_test(
     # iOS. Figure out why.
     tags = [
         "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
         # b/117517566.
         "grpc:no-internal-poller",
         "no_test_ios",
