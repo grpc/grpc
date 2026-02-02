@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_test")
 
 py_test(
@@ -23,5 +24,6 @@ py_test(
     deps = [
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_csds/grpc_csds",
+        requirement("googleapis-common-protos"),
     ],
 )
