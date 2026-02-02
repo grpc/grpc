@@ -38,28 +38,23 @@ std::variant<absl::StatusOr<std::string>, std::shared_ptr<AsyncSigningHandle>>
 PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
                                 SignatureAlgorithm signature_algorithm,
                                 OnSignComplete on_sign_complete) {
-  LOG(INFO) << "GREG: In sign\n";
   auto* completion_context = new CompletionContext{std::move(on_sign_complete)};
   PrivateKeySignerPyWrapperResult result =
       sign_py_wrapper_(data_to_sign, signature_algorithm, sign_user_data_,
                        CompletionCallbackForPy, completion_context);
   if (result.is_sync) {
-    LOG(INFO) << "GREG: In Sync Return\n";
     return result.sync_result;
   } else {
-    LOG(INFO) << "GREG: In new cancel return\n";
     auto handle = std::make_shared<AsyncSigningHandlePyWrapper>();
     handle->cancel_py_wrapper_ = result.async_result.cancel_wrapper;
     handle->python_callable = result.async_result.python_callable;
     handle->python_callable_decref = result.async_result.python_callable_decref;
-    LOG(INFO) << "GREG: Returning Async handle\n";
     return handle;
   }
 }
 
 void PrivateKeySignerPyWrapper::Cancel(
     std::shared_ptr<AsyncSigningHandle> handle) {
-  LOG(INFO) << "GREG: In PyWrapper::Cancel\n";
   auto handle_impl =
       std::static_pointer_cast<AsyncSigningHandlePyWrapper>(handle);
   if (handle == nullptr || handle_impl->cancel_py_wrapper_ == nullptr) {

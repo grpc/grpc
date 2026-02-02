@@ -1722,6 +1722,7 @@ def ssl_channel_credentials(
         )
     )
 
+# A Callable to return in the async case
 PrivateKeySignCancel = Callable[[], None]
 
 # Note: SignatureAlgorithm corresponds to C-core's enum class SignatureAlgorithm.
@@ -1743,43 +1744,33 @@ def ssl_channel_credentials_with_custom_signer(
     private_key_sign_fn: CustomPrivateKeySignWithHandle,
     root_certificates: Optional[bytes] = None,
     certificate_chain: bytes,
-    cancel_fn: Optional[PrivateKeySignCancel] = None,
 ) -> ChannelCredentials:
     """Creates a ChannelCredentials for use with an SSL-enabled Channel with a custom signer.
 
     Args:
       private_key_sign_fn: a function with the signature of
         `CustomPrivateKeySignWithHandle`. This function can return synchronoulsy
-        or asynchronously.  To return synchronously, return the signed bytes.  To
-        return asynchronously, return a handle created with
-        `create_async_handle_for_custom_signer`. This handle gets passed to the
-        optional cancellation function. The implementation MUST return this handle
-        synchronously and quickly, then call the passed in `on_complete` when the
-        async signing operation is complete.
+        or asynchronously.  To return synchronously, return the signed bytes.
+        To return asynchronously, return a PrivateKeySignCancel callable. This
+        can be a no-op function if no cancellation is needed. It can also be a
+        Python object with __call__(self) implemented for the implementer to
+        store async state and cancellation logic on.  synchronously and quickly,
+        then call the passed in `on_complete` when the async signing operation
+        is complete.
       root_certificates: The PEM-encoded root certificates as a byte string,
         or None to retrieve them from a default location chosen by gRPC
         runtime.
       certificate_chain: The PEM-encoded certificate chain as a byte string
         to use or None if no certificate chain should be used.
-      cancel_fn: a function with the signature of `PrivateKeySignCancel`. This
-        function will be called in the case that gRPC cancels the request while
-        the signing operation is in progress. The handle returned by
-        `private_key_sign_fn` will be passed to this cancel fn, and the
-        implementer should clean up any outstanding operations per their
-        implementation. None if no cancellation implementation is needed.
 
     Returns:
       A ChannelCredentials for use with an SSL-enabled Channel.
     """
     return ChannelCredentials(
         _cygrpc.SSLChannelCredentials(
-            root_certificates, None, certificate_chain, private_key_sign_fn, cancel_fn
+            root_certificates, None, certificate_chain, private_key_sign_fn
         )
     )
-
-
-# def create_async_handle_for_custom_signer():
-#     return _cygrpc.create_async_signing_handle()
 
 
 def xds_channel_credentials(fallback_credentials=None):

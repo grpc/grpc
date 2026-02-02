@@ -79,11 +79,6 @@ class PrivateKeySignerPyWrapper
   SignWrapperForPy sign_py_wrapper_;
   // This will hold the Python callable object
   void* sign_user_data_;
-  // // This is a function provided by the Cython implementation of Private Key
-  // // Offloading.
-  // CancelWrapperForPy cancel_py_wrapper_;
-  // // This will hold the Python callable object
-  // void* cancel_user_data_;
 };
 
 // The entry point for Cython to build a PrivateKeySigner.
@@ -101,6 +96,7 @@ class AsyncSigningHandlePyWrapper : public AsyncSigningHandle {
   CancelWrapperForPy cancel_py_wrapper_;
   // This will hold the Python callable object
   void* python_callable;
+  // This will decrememnt the python_callable on object destruction
   PythonCallableDecref python_callable_decref;
   ~AsyncSigningHandlePyWrapper() override;
 };

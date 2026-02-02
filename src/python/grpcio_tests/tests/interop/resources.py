@@ -24,9 +24,6 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography import x509
 import threading
 import grpc
-import faulthandler
-
-faulthandler.enable()
 
 _ROOT_CERTIFICATES_RESOURCE_PATH = "credentials/ca.pem"
 _PRIVATE_KEY_RESOURCE_PATH = "credentials/server1.key"
@@ -78,7 +75,6 @@ def sync_client_private_key_signer(
     Of type CustomPrivateKeySign - Callable[[bytes, SignatureAlgorithm], bytes]
     Takes in data_to_sign and signs it using the test private key with a sync return
     """
-    print("GREG: In sign impl", flush=True)
     private_key_bytes = client_private_key()
     # Determine the key type and apply appropriate padding and algorithm.
     # This example assumes an RSA key. Different logic is needed for other key types (e.g., EC).
@@ -105,7 +101,6 @@ def sync_client_private_key_signer(
             )
 
             signature = private_key.sign(data_to_sign, pss_padding, hasher)
-            print("GREG: sign_impl returning signature", flush=True)
             return signature
         except Exception as e:
             raise
@@ -205,13 +200,11 @@ def async_signer_worker(data_to_sign, signature_algorithm, on_complete):
 def no_op_cancel():
     pass
 
-
 def async_client_private_key_signer(data_to_sign, signature_algorithm, on_complete):
     """
     Of type CustomPrivateKeySign - Callable[[bytes, SignatureAlgorithm], bytes]
     Takes in data_to_sign and signs it using the test private key
     """
-    print("GREG: async signer", flush=True)
     signer_thread = threading.Thread(
         target=async_signer_worker,
         args=(data_to_sign, signature_algorithm, on_complete),
@@ -264,7 +257,6 @@ class CancelCallable:
         self.handshake_started_event = threading.Event()
 
     def __call__(self):
-        print("GREG: in CancelCallable __call__", flush=True)
         self.cancel_event.set()
 
 

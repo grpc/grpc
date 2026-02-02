@@ -47,8 +47,6 @@ cdef extern from "absl/strings/string_view.h" namespace "absl":
 cdef extern from "grpc/private_key_signer.h" namespace "grpc_core":
     cdef cppclass PrivateKeySigner:
         pass
-    cdef cppclass AsyncSigningHandle:
-        AsyncSigningHandle()
     cdef enum class CSignatureAlgorithm "grpc_core::PrivateKeySigner::SignatureAlgorithm":
         kRsaPkcs1Sha256,
         kRsaPkcs1Sha384,
@@ -65,9 +63,6 @@ cdef extern from "grpc/private_key_signer.h":
         grpc_tls_identity_pairs* pairs,
         shared_ptr[PrivateKeySigner] private_key_signer,
         const char* cert_chain)
-
-cdef class PyAsyncSigningHandle:
-    pass
 
 cpdef enum SignatureAlgorithm:
     RSA_PKCS1_SHA256 = <int>CSignatureAlgorithm.kRsaPkcs1Sha256
@@ -93,12 +88,8 @@ cdef extern from "src/core/tsi/private_key_signer_py_wrapper.h" namespace "grpc_
         StatusOr[string] sync_result
         AsyncResult async_result
         bint is_sync
-        # shared_ptr[AsyncSigningHandle] async_handle
     ctypedef void (*CompletionFunctionPyWrapper)(StatusOr[string], void*)
     ctypedef PrivateKeySignerPyWrapperResult(*SignWrapperForPy)(string_view, CSignatureAlgorithm, void*, CompletionFunctionPyWrapper, void*) noexcept nogil
     shared_ptr[PrivateKeySigner] BuildPrivateKeySigner(SignWrapperForPy, void*)
     shared_ptr[PrivateKeySigner] BuildPrivateKeySignerWithCancellation(SignWrapperForPy, void*, CancelWrapperForPy, void*)
-    # cdef cppclass AsyncSigningHandlePyWrapper:
-    #     AsyncSigningHandlePyWrapper()
-    #     void* python_handle
 
