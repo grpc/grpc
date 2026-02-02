@@ -35,6 +35,7 @@ py_library(
         "//src/proto/grpc/testing:py_test_proto",
         "//src/python/grpcio/grpc:grpcio",
         requirement("absl-py"),
+        requirement("google-auth"),
     ],
 )
 
@@ -56,6 +57,7 @@ py_library(
         "//src/proto/grpc/testing:test_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
+        requirement("google-auth"),
         requirement("requests"),
         requirement("urllib3"),
         requirement("chardet"),
