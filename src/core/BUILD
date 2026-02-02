@@ -34,20 +34,20 @@ package(
     ],
 )
 
-grpc_cc_library(
-    name = "private_key_signer_py_wrapper",
-    srcs = ["tsi/private_key_signer_py_wrapper.cc"],
-    hdrs = ["tsi/private_key_signer_py_wrapper.h"],
-    external_deps = [
-        "absl/status",
-        "absl/status:statusor",
-    ],
-    deps = [
-        "//:exec_ctx",
-        "//:gpr",
-        "//:grpc_base",
-    ],
-)
+# grpc_cc_library(
+#     name = "private_key_signer_py_wrapper",
+#     srcs = ["tsi/private_key_signer_py_wrapper.cc"],
+#     hdrs = ["tsi/private_key_signer_py_wrapper.h"],
+#     external_deps = [
+#         "absl/status",
+#         "absl/status:statusor",
+#     ],
+#     deps = [
+#         "//:exec_ctx",
+#         "//:gpr",
+#         "//:grpc_base",
+#     ],
+# )
 
 
 config_setting(
