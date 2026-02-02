@@ -40,6 +40,8 @@ BAZEL_REMOTE_CACHE_ARGS=(
   --remote_default_exec_properties="grpc_cache_silo_key2=${KOKORO_IMAGE_VERSION}"
 )
 
+python3 -m pip install -r requirements.bazel.lock
+
 # Test targets mirrored from tools/internal_ci/linux/grpc_python_bazel_test_in_docker.sh
 # Exclude all grpcio_tests and examples/python tests as requested
 TEST_TARGETS="//src/python/..."
