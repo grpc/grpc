@@ -1921,6 +1921,16 @@ void Http2ClientTransport::AddData(channelz::DataSink sink) {
   });
 }
 
+RefCountedPtr<channelz::SocketNode> Http2ClientTransport::GetSocketNode()
+    const {
+  const channelz::BaseNode* node = channelz::DataSource::channelz_node();
+  if (node == nullptr) {
+    return nullptr;
+  }
+  return const_cast<channelz::BaseNode*>(node)
+      ->RefAsSubclass<channelz::SocketNode>();
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Stream Related Operations
 
