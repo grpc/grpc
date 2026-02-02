@@ -42,7 +42,7 @@ BAZEL_REMOTE_CACHE_ARGS=(
 
 # Test targets mirrored from tools/internal_ci/linux/grpc_python_bazel_test_in_docker.sh
 # Exclude all grpcio_tests and examples/python tests as requested
-TEST_TARGETS="//src/python/... -//src/python/grpcio_tests/tests/admin:admin_test -//src/python/grpcio_tests/tests/csds:csds_test -//src/python/grpcio_tests/tests/interop:_insecure_intraop_test -//src/python/grpcio_tests/tests/interop:_secure_intraop_test -//src/python/grpcio_tests/tests_aio/interop:local_interop_test -//src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client_test"
+TEST_TARGETS="//src/python/..."
 BAZEL_FLAGS="--test_output=errors --config=python"
 
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests
