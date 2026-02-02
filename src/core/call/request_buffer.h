@@ -168,11 +168,13 @@ class RequestBuffer {
   void WakeupAsyncAllPullersExcept(Reader* except_reader)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  void AddReader(Reader* reader) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+  void AddReader(Reader* reader) {
+    MutexLock lock(&mu_);
     readers_.insert(reader);
   }
 
-  void RemoveReader(Reader* reader) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+  void RemoveReader(Reader* reader) {
+    MutexLock lock(&mu_);
     readers_.erase(reader);
   }
 
