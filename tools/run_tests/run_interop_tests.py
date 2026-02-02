@@ -1436,11 +1436,11 @@ argp.add_argument(
     help="Upload test results to a specified BQ table.",
 )
 argp.add_argument(
-    "--mcs",
+    "--mcs_cs",
     default=False,
     action="store_const",
     const=True,
-    help="Enable MCS testing",
+    help="Enable MCS connection scaling testing",
 )
 
 args = argp.parse_args()
@@ -1811,20 +1811,23 @@ try:
                     )
                     jobs.append(test_job)
 
-    if args.mcs:
-        languages_for_mcs = set(
+    if args.mcs_cs:
+        languages_for_mcs_cs = set(
             _LANGUAGES[l]
             for l in _LANGUAGES_WITH_HTTP2_CLIENTS_FOR_HTTP2_SERVER_TEST_CASES
             if "all" in args.language or l in args.language
         )
-        if len(languages_for_mcs) > 0:          
+        if len(languages_for_mcs_cs) > 0:          
             mcs_server_jobspec = server_jobspec(
-                'java',
+                _LANGUAGES['java'],
                 docker_images.get('java'),
                 args.transport_security,
                 manual_cmd_log=server_manual_cmd_log,
                 use_mcs=True,
             )
+            if mcs_server_jobspec is None:
+              print('Got None from server_jobspec call for mcs.', True)
+
             mcs_server_job = dockerjob.DockerJob(mcs_server_jobspec)
             jobs.append(mcs_server_job)
         
@@ -1841,7 +1844,7 @@ try:
                 )
                 jobs.append(test_job)
         else:
-            print('MCS tests will be skipped since noen of the supported client languages for MCS testcases was specified')
+            print('MCS connection scaling tests will be skipped since noen of the supported client languages for MCS connection scaling testcases was specified')
         
     if not jobs:
         print("No jobs to run.")
