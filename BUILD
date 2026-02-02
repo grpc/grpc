@@ -983,7 +983,10 @@ grpc_cc_library(
         "avoid_dep",
         "nofixdeps",
     ],
-    visibility = ["//bazel:grpc++_public_hdrs"],
+    visibility = [
+        "//bazel:grpc++_public_hdrs",
+        "//hardware/chips/infra/chipdev/cog_sync:__subpackages__",
+    ],
     deps = [
         "global_callback_hook",
         "gpr",
