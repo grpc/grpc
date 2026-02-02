@@ -70,7 +70,7 @@ def pyx_library(name, deps = [], py_deps = [], srcs = [], **kwargs):
     shared_objects = []
     defines = kwargs.pop("defines", [])
     linkopts = select({
-        "@platforms//os:osx": ["-undefined", "dynamic_lookup"],
+        "@platforms//os:macos": ["-undefined", "dynamic_lookup"],
         "//conditions:default": [],
     })
     for src in pyx_srcs:
