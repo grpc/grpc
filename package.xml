@@ -461,6 +461,12 @@
     <file baseinstalldir="/" name="src/core/ext/transport/inproc/inproc_transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/inproc/legacy_inproc_transport.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/inproc/legacy_inproc_transport.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/cel/expr/checked.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/cel/expr/checked.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/cel/expr/checked.upb_minitable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/cel/expr/syntax.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/cel/expr/syntax.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/cel/expr/syntax.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/admin/v3/certs.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/admin/v3/certs.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/admin/v3/certs.upb_minitable.h" role="src" />
@@ -983,6 +989,10 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/xds/type/v3/typed_struct.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/xds/type/v3/typed_struct.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/xds/type/v3/typed_struct.upb_minitable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/cel/expr/checked.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/cel/expr/checked.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/cel/expr/syntax.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/cel/expr/syntax.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/admin/v3/certs.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/admin/v3/certs.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/admin/v3/clusters.upbdefs.c" role="src" />
