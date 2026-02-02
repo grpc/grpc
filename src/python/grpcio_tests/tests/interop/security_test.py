@@ -142,23 +142,25 @@ class SecurityTest(unittest.TestCase):
             response = self.stub.EmptyCall(empty_pb2.Empty())
             # TODO check result better
 
-    @unittest.skip(reason="temp")
+    # @unittest.skip(reason="temp")
     def test_async_signer_with_cancel(self):
         """
         Test cancellation of an async signer
         """
         # Create a handle with a cancellation event and pass it to the signing function..
-        test_handle = grpc.create_async_handle_for_custom_signer()
-        test_handle.cancel_event = threading.Event()
-        test_handle.handshake_started = threading.Event()
-        bound_signing_fn = partial(resources.async_signer_with_test_handle, test_handle)
+        # test_handle = grpc.create_async_handle_for_custom_signer()
+        # test_handle.cancel_event = threading.Event()
+        # test_handle.handshake_started = threading.Event()
+        cancel_callable = resources.CancelCallable()
+        bound_signing_fn = partial(
+            resources.async_signer_with_cancel_injection, cancel_callable
+        )
         channel = grpc.secure_channel(
             "localhost:{}".format(self.port),
             grpc.ssl_channel_credentials_with_custom_signer(
                 private_key_sign_fn=bound_signing_fn,
                 root_certificates=resources.test_root_certificates(),
                 certificate_chain=resources.client_certificate_chain(),
-                cancel_fn=resources.cancel_async,
             ),
             (
                 (
@@ -170,14 +172,14 @@ class SecurityTest(unittest.TestCase):
         self.stub = test_pb2_grpc.TestServiceStub(channel)
         future = self.stub.EmptyCall.future(empty_pb2.Empty())
         # Let it get into the handshake where it should loop infinitely
-        self.assertTrue(test_handle.handshake_started.wait(timeout=1))
+        self.assertTrue(cancel_callable.handshake_started_event.wait(timeout=1))
         # Ensure it's not cancelled yet
-        self.assertFalse(test_handle.cancel_event.is_set())
+        self.assertFalse(cancel_callable.cancel_event.is_set())
         # Cancel
         future.cancel()
         channel.close()
         # Ensure the cancel event is set
-        self.assertTrue(test_handle.cancel_event.wait(timeout=1))
+        self.assertTrue(cancel_callable.cancel_event.wait(timeout=1))
 
     # @unittest.skip(reason="temp")
     def test_async_signer_test_times_out(self):

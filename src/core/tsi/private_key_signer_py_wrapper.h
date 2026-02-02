@@ -29,9 +29,11 @@
 namespace grpc_core {
 
 typedef void (*CancelWrapperForPy)(void* cancel_data);
+typedef void (*PythonCallableDecref)(void* python_callable);
 struct AsyncResult {
   CancelWrapperForPy cancel_wrapper;
   void* python_callable;
+  PythonCallableDecref python_callable_decref;
 };
 
 struct PrivateKeySignerPyWrapperResult {
@@ -80,7 +82,7 @@ class PrivateKeySignerPyWrapper
   // // This is a function provided by the Cython implementation of Private Key
   // // Offloading.
   // CancelWrapperForPy cancel_py_wrapper_;
-  // // THis will hold the Python callable object
+  // // This will hold the Python callable object
   // void* cancel_user_data_;
 };
 
@@ -99,6 +101,8 @@ class AsyncSigningHandlePyWrapper : public AsyncSigningHandle {
   CancelWrapperForPy cancel_py_wrapper_;
   // This will hold the Python callable object
   void* python_callable;
+  PythonCallableDecref python_callable_decref;
+  ~AsyncSigningHandlePyWrapper() override;
 };
 }  // namespace grpc_core
 

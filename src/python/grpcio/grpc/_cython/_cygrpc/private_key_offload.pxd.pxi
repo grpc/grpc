@@ -84,9 +84,11 @@ cpdef enum SignatureAlgorithm:
 
 cdef extern from "src/core/tsi/private_key_signer_py_wrapper.h" namespace "grpc_core":
     ctypedef void (*CancelWrapperForPy)(void*) noexcept nogil
+    ctypedef void (*PythonCallableDecref)(void*) noexcept nogil
     cdef cppclass AsyncResult:
         CancelWrapperForPy cancel_wrapper
         void* python_callable
+        PythonCallableDecref python_callable_decref
     cdef cppclass PrivateKeySignerPyWrapperResult:
         StatusOr[string] sync_result
         AsyncResult async_result

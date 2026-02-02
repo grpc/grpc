@@ -51,12 +51,15 @@ PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
     auto handle = std::make_shared<AsyncSigningHandlePyWrapper>();
     handle->cancel_py_wrapper_ = result.async_result.cancel_wrapper;
     handle->python_callable = result.async_result.python_callable;
-    return result.async_handle;
+    handle->python_callable_decref = result.async_result.python_callable_decref;
+    LOG(INFO) << "GREG: Returning Async handle\n";
+    return handle;
   }
 }
 
 void PrivateKeySignerPyWrapper::Cancel(
     std::shared_ptr<AsyncSigningHandle> handle) {
+  LOG(INFO) << "GREG: In PyWrapper::Cancel\n";
   auto handle_impl =
       std::static_pointer_cast<AsyncSigningHandlePyWrapper>(handle);
   if (handle == nullptr || handle_impl->cancel_py_wrapper_ == nullptr) {
@@ -76,6 +79,10 @@ std::shared_ptr<PrivateKeySigner> BuildPrivateKeySignerWithCancellation(
     CancelWrapperForPy cancel_py_wrapper_, void* cancel_user_data) {
   return std::make_shared<PrivateKeySignerPyWrapper>(
       sign_py_wrapper, user_data, cancel_py_wrapper_, cancel_user_data);
+}
+
+AsyncSigningHandlePyWrapper::~AsyncSigningHandlePyWrapper() {
+  python_callable_decref(python_callable);
 }
 
 }  // namespace grpc_core

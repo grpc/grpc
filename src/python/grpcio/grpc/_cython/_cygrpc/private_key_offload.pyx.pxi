@@ -37,6 +37,16 @@ cdef StatusOr[string] MakeStringResult(string result):
 #     def __dealloc__(self):
 #       Py_DECREF(self)
 
+cdef void python_object_decref_callback(void* ptr) noexcept nogil:
+    # We are being called from C++, potentially without the GIL.
+  with gil:
+    try:
+      if ptr != NULL:
+        obj = <object>ptr
+        Py_DECREF(obj)
+    except:
+      pass
+
 cdef class OnCompleteWrapper:
   cdef CompletionFunctionPyWrapper c_on_complete
   cdef void* c_completion_data
@@ -98,7 +108,9 @@ cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignat
         # Async handle return
         cpp_result.is_sync = False
         cpp_result.async_result.cancel_wrapper = cancel_wrapper
+        Py_INCREF(py_result)
         cpp_result.async_result.python_callable = <void*> py_result
+        cpp_result.async_result.python_callable_decref = python_object_decref_callback
         # cpp_result.async_handle = async_handle.c_handle
       else:
         print("GREG: result is invalid type", flush=True)
@@ -114,6 +126,7 @@ cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignat
 
 cdef void cancel_wrapper(void* cancel_data) noexcept nogil:
   with gil:
+    print("GREG: in cancel_wrapper", flush=True)
     try:
       py_cancel_func = <object>cancel_data
       py_cancel_func()

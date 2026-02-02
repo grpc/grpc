@@ -24,6 +24,9 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography import x509
 import threading
 import grpc
+import faulthandler
+
+faulthandler.enable()
 
 _ROOT_CERTIFICATES_RESOURCE_PATH = "credentials/ca.pem"
 _PRIVATE_KEY_RESOURCE_PATH = "credentials/server1.key"
@@ -261,6 +264,7 @@ class CancelCallable:
         self.handshake_started_event = threading.Event()
 
     def __call__(self):
+        print("GREG: in CancelCallable __call__", flush=True)
         self.cancel_event.set()
 
 
@@ -299,7 +303,7 @@ def async_signer_with_cancel_injection(
             signature_algorithm,
             on_complete,
             cancel_callable.cancel_event,
-            cancel_callable.handshake_started,
+            cancel_callable.handshake_started_event,
         ),
     ).start()
     return cancel_callable
@@ -321,7 +325,7 @@ def async_client_private_key_signer_with_cancel(
             signature_algorithm,
             on_complete,
             cancel.cancel_event,
-            cancel.handshake_started,
+            cancel.handshake_started_event,
         ),
     ).start()
     # Add something where we put something cancellable on this handle
