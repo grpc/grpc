@@ -35,12 +35,12 @@ const char* const
 const char* const
     additional_constraints_call_tracer_send_initial_metadata_is_an_annotation =
         "{}";
-const char* const description_channelz_use_v2_for_v1_api =
-    "Use the v2 channelz API for the v1 channelz API.";
-const char* const additional_constraints_channelz_use_v2_for_v1_api = "{}";
-const char* const description_channelz_use_v2_for_v1_service =
-    "Use the v2 channelz service for the v1 channelz service.";
-const char* const additional_constraints_channelz_use_v2_for_v1_service = "{}";
+const char* const
+    description_call_tracer_send_trailing_metadata_is_an_annotation =
+        "Use the new annotation-based CallTracer API.";
+const char* const
+    additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation =
+        "{}";
 const char* const description_chaotic_good_connect_deadline =
     "Use the deadline from the connect args in chaotic good connector";
 const char* const additional_constraints_chaotic_good_connect_deadline = "{}";
@@ -259,13 +259,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_tracer_send_initial_metadata_is_an_annotation,
      additional_constraints_call_tracer_send_initial_metadata_is_an_annotation,
      nullptr, 0, true, true},
-    {"channelz_use_v2_for_v1_api", description_channelz_use_v2_for_v1_api,
-     additional_constraints_channelz_use_v2_for_v1_api, nullptr, 0, false,
-     true},
-    {"channelz_use_v2_for_v1_service",
-     description_channelz_use_v2_for_v1_service,
-     additional_constraints_channelz_use_v2_for_v1_service, nullptr, 0, false,
-     true},
+    {"call_tracer_send_trailing_metadata_is_an_annotation",
+     description_call_tracer_send_trailing_metadata_is_an_annotation,
+     additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation,
+     nullptr, 0, false, true},
     {"chaotic_good_connect_deadline", description_chaotic_good_connect_deadline,
      additional_constraints_chaotic_good_connect_deadline, nullptr, 0, true,
      true},
@@ -336,7 +333,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"pick_first_ready_to_connecting",
      description_pick_first_ready_to_connecting,
-     additional_constraints_pick_first_ready_to_connecting, nullptr, 0, false,
+     additional_constraints_pick_first_ready_to_connecting, nullptr, 0, true,
      true},
     {"pipelined_read_secure_endpoint",
      description_pipelined_read_secure_endpoint,
@@ -370,7 +367,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_return_preexisting_errors, nullptr, 0, false, true},
     {"rr_wrr_connect_from_random_index",
      description_rr_wrr_connect_from_random_index,
-     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, false,
+     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, true,
      true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
@@ -439,12 +436,12 @@ const char* const
 const char* const
     additional_constraints_call_tracer_send_initial_metadata_is_an_annotation =
         "{}";
-const char* const description_channelz_use_v2_for_v1_api =
-    "Use the v2 channelz API for the v1 channelz API.";
-const char* const additional_constraints_channelz_use_v2_for_v1_api = "{}";
-const char* const description_channelz_use_v2_for_v1_service =
-    "Use the v2 channelz service for the v1 channelz service.";
-const char* const additional_constraints_channelz_use_v2_for_v1_service = "{}";
+const char* const
+    description_call_tracer_send_trailing_metadata_is_an_annotation =
+        "Use the new annotation-based CallTracer API.";
+const char* const
+    additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation =
+        "{}";
 const char* const description_chaotic_good_connect_deadline =
     "Use the deadline from the connect args in chaotic good connector";
 const char* const additional_constraints_chaotic_good_connect_deadline = "{}";
@@ -663,13 +660,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_tracer_send_initial_metadata_is_an_annotation,
      additional_constraints_call_tracer_send_initial_metadata_is_an_annotation,
      nullptr, 0, true, true},
-    {"channelz_use_v2_for_v1_api", description_channelz_use_v2_for_v1_api,
-     additional_constraints_channelz_use_v2_for_v1_api, nullptr, 0, false,
-     true},
-    {"channelz_use_v2_for_v1_service",
-     description_channelz_use_v2_for_v1_service,
-     additional_constraints_channelz_use_v2_for_v1_service, nullptr, 0, false,
-     true},
+    {"call_tracer_send_trailing_metadata_is_an_annotation",
+     description_call_tracer_send_trailing_metadata_is_an_annotation,
+     additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation,
+     nullptr, 0, false, true},
     {"chaotic_good_connect_deadline", description_chaotic_good_connect_deadline,
      additional_constraints_chaotic_good_connect_deadline, nullptr, 0, true,
      true},
@@ -740,7 +734,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"pick_first_ready_to_connecting",
      description_pick_first_ready_to_connecting,
-     additional_constraints_pick_first_ready_to_connecting, nullptr, 0, false,
+     additional_constraints_pick_first_ready_to_connecting, nullptr, 0, true,
      true},
     {"pipelined_read_secure_endpoint",
      description_pipelined_read_secure_endpoint,
@@ -774,7 +768,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_return_preexisting_errors, nullptr, 0, false, true},
     {"rr_wrr_connect_from_random_index",
      description_rr_wrr_connect_from_random_index,
-     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, false,
+     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, true,
      true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
@@ -843,12 +837,12 @@ const char* const
 const char* const
     additional_constraints_call_tracer_send_initial_metadata_is_an_annotation =
         "{}";
-const char* const description_channelz_use_v2_for_v1_api =
-    "Use the v2 channelz API for the v1 channelz API.";
-const char* const additional_constraints_channelz_use_v2_for_v1_api = "{}";
-const char* const description_channelz_use_v2_for_v1_service =
-    "Use the v2 channelz service for the v1 channelz service.";
-const char* const additional_constraints_channelz_use_v2_for_v1_service = "{}";
+const char* const
+    description_call_tracer_send_trailing_metadata_is_an_annotation =
+        "Use the new annotation-based CallTracer API.";
+const char* const
+    additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation =
+        "{}";
 const char* const description_chaotic_good_connect_deadline =
     "Use the deadline from the connect args in chaotic good connector";
 const char* const additional_constraints_chaotic_good_connect_deadline = "{}";
@@ -1067,13 +1061,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_tracer_send_initial_metadata_is_an_annotation,
      additional_constraints_call_tracer_send_initial_metadata_is_an_annotation,
      nullptr, 0, true, true},
-    {"channelz_use_v2_for_v1_api", description_channelz_use_v2_for_v1_api,
-     additional_constraints_channelz_use_v2_for_v1_api, nullptr, 0, false,
-     true},
-    {"channelz_use_v2_for_v1_service",
-     description_channelz_use_v2_for_v1_service,
-     additional_constraints_channelz_use_v2_for_v1_service, nullptr, 0, false,
-     true},
+    {"call_tracer_send_trailing_metadata_is_an_annotation",
+     description_call_tracer_send_trailing_metadata_is_an_annotation,
+     additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation,
+     nullptr, 0, false, true},
     {"chaotic_good_connect_deadline", description_chaotic_good_connect_deadline,
      additional_constraints_chaotic_good_connect_deadline, nullptr, 0, true,
      true},
@@ -1144,7 +1135,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"pick_first_ready_to_connecting",
      description_pick_first_ready_to_connecting,
-     additional_constraints_pick_first_ready_to_connecting, nullptr, 0, false,
+     additional_constraints_pick_first_ready_to_connecting, nullptr, 0, true,
      true},
     {"pipelined_read_secure_endpoint",
      description_pipelined_read_secure_endpoint,
@@ -1178,7 +1169,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_return_preexisting_errors, nullptr, 0, false, true},
     {"rr_wrr_connect_from_random_index",
      description_rr_wrr_connect_from_random_index,
-     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, false,
+     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, true,
      true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,

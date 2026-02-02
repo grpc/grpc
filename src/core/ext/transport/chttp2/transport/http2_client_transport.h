@@ -123,11 +123,7 @@ class Http2ClientTransport final : public ClientTransport,
 
   void Orphan() override;
 
-  RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
-    return const_cast<channelz::BaseNode*>(
-               channelz::DataSource::channelz_node())
-        ->RefAsSubclass<channelz::SocketNode>();
-  }
+  RefCountedPtr<channelz::SocketNode> GetSocketNode() const override;
 
   std::unique_ptr<channelz::ZTrace> GetZTrace(absl::string_view name) override {
     if (name == "transport_frames") return ztrace_collector_->MakeZTrace();
@@ -428,6 +424,9 @@ class Http2ClientTransport final : public ClientTransport,
     Promise<absl::Status> PingTimeout() override;
 
    private:
+    // Holding a raw pointer to transport works because all the promises
+    // invoking the methods of this class are invoked while holding a ref to the
+    // transport.
     Http2ClientTransport* transport_;
     explicit PingSystemInterfaceImpl(Http2ClientTransport* transport)
         : transport_(transport) {}
@@ -444,7 +443,9 @@ class Http2ClientTransport final : public ClientTransport,
     Promise<absl::Status> SendPingAndWaitForAck() override;
     Promise<absl::Status> OnKeepAliveTimeout() override;
     bool NeedToSendKeepAlivePing() override;
-
+    // Holding a raw pointer to transport works because all the promises
+    // invoking the methods of this class are invoked while holding a ref to the
+    // transport.
     Http2ClientTransport* transport_;
   };
 
@@ -464,7 +465,9 @@ class Http2ClientTransport final : public ClientTransport,
    private:
     explicit GoawayInterfaceImpl(Http2ClientTransport* transport)
         : transport_(transport) {}
-
+    // Holding a raw pointer to transport works because all the promises
+    // invoking the methods of this class are invoked while holding a ref to the
+    // transport.
     Http2ClientTransport* transport_;
   };
 

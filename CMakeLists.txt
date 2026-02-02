@@ -1847,6 +1847,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx string_ref_test)
   add_dependencies(buildtests_cxx string_test)
   add_dependencies(buildtests_cxx subchannel_args_test)
+  add_dependencies(buildtests_cxx subchannel_stream_limiter_test)
   add_dependencies(buildtests_cxx switch_test)
   add_dependencies(buildtests_cxx sync_test)
   add_dependencies(buildtests_cxx system_roots_test)
@@ -2290,6 +2291,7 @@ add_library(grpc
   src/core/client_channel/subchannel.cc
   src/core/client_channel/subchannel_pool_interface.cc
   src/core/client_channel/subchannel_stream_client.cc
+  src/core/client_channel/subchannel_stream_limiter.cc
   src/core/config/core_configuration.cc
   src/core/credentials/call/call_creds_registry_init.cc
   src/core/credentials/call/call_creds_util.cc
@@ -3464,6 +3466,7 @@ add_library(grpc_unsecure
   src/core/client_channel/subchannel.cc
   src/core/client_channel/subchannel_pool_interface.cc
   src/core/client_channel/subchannel_stream_client.cc
+  src/core/client_channel/subchannel_stream_limiter.cc
   src/core/config/core_configuration.cc
   src/core/credentials/call/call_creds_util.cc
   src/core/credentials/call/composite/composite_call_credentials.cc
@@ -12315,6 +12318,14 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(client_lb_end2end_test
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.h
@@ -12360,6 +12371,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/cpp/end2end/client_lb_end2end_test.cc
     test/cpp/end2end/connection_attempt_injector.cc
     test/cpp/end2end/test_service_impl.cc
+    test/cpp/util/channelz_util.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -14141,6 +14153,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/end2end/tests/channelz.cc
     test/core/end2end/tests/client_streaming.cc
     test/core/end2end/tests/compressed_payload.cc
+    test/core/end2end/tests/connection_scaling.cc
     test/core/end2end/tests/connectivity.cc
     test/core/end2end/tests/default_host.cc
     test/core/end2end/tests/disappearing_server.cc
@@ -14539,6 +14552,7 @@ add_executable(end2end_http2_security_test
   test/core/end2end/tests/channelz.cc
   test/core/end2end/tests/client_streaming.cc
   test/core/end2end/tests/compressed_payload.cc
+  test/core/end2end/tests/connection_scaling.cc
   test/core/end2end/tests/connectivity.cc
   test/core/end2end/tests/default_host.cc
   test/core/end2end/tests/disappearing_server.cc
@@ -14730,6 +14744,7 @@ add_executable(end2end_http2_test
   test/core/end2end/tests/channelz.cc
   test/core/end2end/tests/client_streaming.cc
   test/core/end2end/tests/compressed_payload.cc
+  test/core/end2end/tests/connection_scaling.cc
   test/core/end2end/tests/connectivity.cc
   test/core/end2end/tests/default_host.cc
   test/core/end2end/tests/disappearing_server.cc
@@ -15024,6 +15039,7 @@ add_executable(end2end_inproc_test
   test/core/end2end/tests/channelz.cc
   test/core/end2end/tests/client_streaming.cc
   test/core/end2end/tests/compressed_payload.cc
+  test/core/end2end/tests/connection_scaling.cc
   test/core/end2end/tests/connectivity.cc
   test/core/end2end/tests/default_host.cc
   test/core/end2end/tests/disappearing_server.cc
@@ -15318,6 +15334,7 @@ add_executable(end2end_ph2_test
   test/core/end2end/tests/channelz.cc
   test/core/end2end/tests/client_streaming.cc
   test/core/end2end/tests/compressed_payload.cc
+  test/core/end2end/tests/connection_scaling.cc
   test/core/end2end/tests/connectivity.cc
   test/core/end2end/tests/default_host.cc
   test/core/end2end/tests/disappearing_server.cc
@@ -15612,6 +15629,7 @@ add_executable(end2end_posix_test
   test/core/end2end/tests/channelz.cc
   test/core/end2end/tests/client_streaming.cc
   test/core/end2end/tests/compressed_payload.cc
+  test/core/end2end/tests/connection_scaling.cc
   test/core/end2end/tests/connectivity.cc
   test/core/end2end/tests/default_host.cc
   test/core/end2end/tests/disappearing_server.cc
@@ -33140,6 +33158,48 @@ target_include_directories(subchannel_args_test
 )
 
 target_link_libraries(subchannel_args_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(subchannel_stream_limiter_test
+  test/core/client_channel/subchannel_stream_limiter_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(subchannel_stream_limiter_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(subchannel_stream_limiter_test PUBLIC cxx_std_17)
+target_include_directories(subchannel_stream_limiter_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(subchannel_stream_limiter_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_test_util
