@@ -28,16 +28,21 @@
 
 namespace grpc_core {
 
+typedef void (*CancelWrapperForPy)(void* cancel_data);
+struct AsyncResult {
+  CancelWrapperForPy cancel_wrapper;
+  void* python_callable;
+};
+
 struct PrivateKeySignerPyWrapperResult {
   absl::StatusOr<std::string> sync_result;
   std::shared_ptr<AsyncSigningHandle> async_handle;
+  AsyncResult async_result;
+  bool is_sync;
 };
 
 typedef void (*CompletionFunctionPyWrapper)(absl::StatusOr<std::string> result,
                                             void* completion_data);
-
-typedef void (*CancelWrapperForPy)(std::shared_ptr<AsyncSigningHandle>,
-                                   void* cancel_data);
 
 typedef PrivateKeySignerPyWrapperResult (*SignWrapperForPy)(
     absl::string_view data_to_sign,
@@ -59,10 +64,7 @@ class PrivateKeySignerPyWrapper
   PrivateKeySignerPyWrapper(SignWrapperForPy sign_py_wrapper, void* user_data,
                             CancelWrapperForPy cancel_py_wrapper,
                             void* cancel_data)
-      : sign_py_wrapper_(sign_py_wrapper),
-        sign_user_data_(user_data),
-        cancel_py_wrapper_(cancel_py_wrapper),
-        cancel_user_data_(cancel_data) {}
+      : sign_py_wrapper_(sign_py_wrapper), sign_user_data_(user_data) {}
   std::variant<absl::StatusOr<std::string>, std::shared_ptr<AsyncSigningHandle>>
   Sign(absl::string_view data_to_sign, SignatureAlgorithm signature_algorithm,
        OnSignComplete on_sign_complete) override;
@@ -75,11 +77,11 @@ class PrivateKeySignerPyWrapper
   SignWrapperForPy sign_py_wrapper_;
   // This will hold the Python callable object
   void* sign_user_data_;
-  // This is a function provided by the Cython implementation of Private Key
-  // Offloading.
-  CancelWrapperForPy cancel_py_wrapper_;
-  // THis will hold the Python callable object
-  void* cancel_user_data_;
+  // // This is a function provided by the Cython implementation of Private Key
+  // // Offloading.
+  // CancelWrapperForPy cancel_py_wrapper_;
+  // // THis will hold the Python callable object
+  // void* cancel_user_data_;
 };
 
 // The entry point for Cython to build a PrivateKeySigner.
@@ -92,8 +94,11 @@ std::shared_ptr<PrivateKeySigner> BuildPrivateKeySignerWithCancellation(
 
 class AsyncSigningHandlePyWrapper : public AsyncSigningHandle {
  public:
-  // The Python object that the user creates in their implementation
-  void* python_handle;
+  // This is a function provided by the Cython implementation of Private Key
+  // Offloading.
+  CancelWrapperForPy cancel_py_wrapper_;
+  // This will hold the Python callable object
+  void* python_callable;
 };
 }  // namespace grpc_core
 

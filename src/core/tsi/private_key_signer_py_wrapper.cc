@@ -20,6 +20,8 @@
 
 #include <grpc/support/log.h>
 
+#include <memory>
+
 #include "grpc/private_key_signer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
@@ -36,23 +38,31 @@ std::variant<absl::StatusOr<std::string>, std::shared_ptr<AsyncSigningHandle>>
 PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
                                 SignatureAlgorithm signature_algorithm,
                                 OnSignComplete on_sign_complete) {
+  LOG(INFO) << "GREG: In sign\n";
   auto* completion_context = new CompletionContext{std::move(on_sign_complete)};
   PrivateKeySignerPyWrapperResult result =
       sign_py_wrapper_(data_to_sign, signature_algorithm, sign_user_data_,
                        CompletionCallbackForPy, completion_context);
-  if (result.async_handle != nullptr) {
-    return result.async_handle;
-  } else {
+  if (result.is_sync) {
+    LOG(INFO) << "GREG: In Sync Return\n";
     return result.sync_result;
+  } else {
+    LOG(INFO) << "GREG: In new cancel return\n";
+    auto handle = std::make_shared<AsyncSigningHandlePyWrapper>();
+    handle->cancel_py_wrapper_ = result.async_result.cancel_wrapper;
+    handle->python_callable = result.async_result.python_callable;
+    return result.async_handle;
   }
 }
 
 void PrivateKeySignerPyWrapper::Cancel(
     std::shared_ptr<AsyncSigningHandle> handle) {
-  if (cancel_py_wrapper_ == nullptr || handle == nullptr) {
+  auto handle_impl =
+      std::static_pointer_cast<AsyncSigningHandlePyWrapper>(handle);
+  if (handle == nullptr || handle_impl->cancel_py_wrapper_ == nullptr) {
     return;
   }
-  cancel_py_wrapper_(handle, cancel_user_data_);
+  handle_impl->cancel_py_wrapper_(handle_impl->python_callable);
 }
 
 std::shared_ptr<PrivateKeySigner> BuildPrivateKeySigner(

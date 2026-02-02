@@ -67,12 +67,15 @@ def check_key_cert_match(key_bytes, cert_bytes):
 
 
 def sync_client_private_key_signer(
-    data_to_sign, signature_algorithm, on_complete, completion_data
+    data_to_sign,
+    signature_algorithm,
+    on_complete,
 ):
     """
     Of type CustomPrivateKeySign - Callable[[bytes, SignatureAlgorithm], bytes]
     Takes in data_to_sign and signs it using the test private key with a sync return
     """
+    print("GREG: In sign impl", flush=True)
     private_key_bytes = client_private_key()
     # Determine the key type and apply appropriate padding and algorithm.
     # This example assumes an RSA key. Different logic is needed for other key types (e.g., EC).
@@ -99,6 +102,7 @@ def sync_client_private_key_signer(
             )
 
             signature = private_key.sign(data_to_sign, pss_padding, hasher)
+            print("GREG: sign_impl returning signature", flush=True)
             return signature
         except Exception as e:
             raise
@@ -108,9 +112,7 @@ def sync_client_private_key_signer(
         )
 
 
-def bad_async_signer_worker(
-    data_to_sign, signature_algorithm, on_complete, completion_data
-):
+def bad_async_signer_worker(data_to_sign, signature_algorithm, on_complete):
     """
     A signing function that uses a mismatched private key and certificate.
     Specifically, this is used on the client side and should use the client.key
@@ -147,24 +149,20 @@ def bad_async_signer_worker(
         )
 
 
-def bad_async_client_private_key_signer(
-    data_to_sign, signature_algorithm, on_complete, completion_data
-):
+def bad_async_client_private_key_signer(data_to_sign, signature_algorithm, on_complete):
     """
     Of type CustomPrivateKeySign - Callable[[bytes, SignatureAlgorithm], bytes]
     Takes in data_to_sign and signs it using the wrong private key, resulting in handshake failure
     """
     signer_thread = threading.Thread(
         target=bad_async_signer_worker,
-        args=(data_to_sign, signature_algorithm, on_complete, completion_data),
+        args=(data_to_sign, signature_algorithm, on_complete),
     ).start()
     # Add something where we put something cancellable on this handle
-    return grpc.create_async_handle_for_custom_signer()
+    return no_op_cancel
 
 
-def async_signer_worker(
-    data_to_sign, signature_algorithm, on_complete, completion_data
-):
+def async_signer_worker(data_to_sign, signature_algorithm, on_complete):
     """
     Meant to be used as an async function for a thread, for example
     """
@@ -201,9 +199,11 @@ def async_signer_worker(
         )
 
 
-def async_client_private_key_signer(
-    data_to_sign, signature_algorithm, on_complete, completion_data
-):
+def no_op_cancel():
+    pass
+
+
+def async_client_private_key_signer(data_to_sign, signature_algorithm, on_complete):
     """
     Of type CustomPrivateKeySign - Callable[[bytes, SignatureAlgorithm], bytes]
     Takes in data_to_sign and signs it using the test private key
@@ -211,15 +211,13 @@ def async_client_private_key_signer(
     print("GREG: async signer", flush=True)
     signer_thread = threading.Thread(
         target=async_signer_worker,
-        args=(data_to_sign, signature_algorithm, on_complete, completion_data),
+        args=(data_to_sign, signature_algorithm, on_complete),
     ).start()
     # Add something where we put something cancellable on this handle
-    return grpc.create_async_handle_for_custom_signer()
+    return no_op_cancel
 
 
-def sync_bad_client_private_key_signer(
-    data_to_sign, signature_algorithm, on_complete, completion_data
-):
+def sync_bad_client_private_key_signer(data_to_sign, signature_algorithm, on_complete):
     """
     Of type CustomPrivateKeySign - Callable[[bytes, SignatureAlgorithm], bytes]
     Takes in data_to_sign and signs it using the wrong private key and returns synchronously
@@ -257,11 +255,19 @@ def sync_bad_client_private_key_signer(
         )
 
 
+class CancelCallable:
+    def __init__(self):
+        self.cancel_event = threading.Event()
+        self.handshake_started_event = threading.Event()
+
+    def __call__(self):
+        self.cancel_event.set()
+
+
 def async_signer_worker_until_cancel(
     data_to_sign,
     signature_algorithm,
     on_complete,
-    completion_data,
     cancellation_event,
     handshake_started_event,
 ):
@@ -277,8 +283,8 @@ def async_signer_worker_until_cancel(
             raise
 
 
-def async_signer_with_test_handle(
-    handle, data_to_sign, signature_algorithm, on_complete, completion_data
+def async_signer_with_cancel_injection(
+    cancel_callable, data_to_sign, signature_algorithm, on_complete
 ):
     """
     A helper for an async signer that uses a handle provided by the test.
@@ -286,53 +292,40 @@ def async_signer_with_test_handle(
     Runs infinitely until cancelled, and the passed handle should then have the
     handle.cancel_event set
     """
-    # cancel_event = threading.Event()
     signer_thread = threading.Thread(
         target=async_signer_worker_until_cancel,
         args=(
             data_to_sign,
             signature_algorithm,
             on_complete,
-            completion_data,
-            handle.cancel_event,
-            handle.handshake_started,
+            cancel_callable.cancel_event,
+            cancel_callable.handshake_started,
         ),
     ).start()
-    handle.thread = signer_thread
-    return handle
+    return cancel_callable
 
 
 def async_client_private_key_signer_with_cancel(
-    data_to_sign, signature_algorithm, on_complete, completion_data
+    data_to_sign, signature_algorithm, on_complete
 ):
     """
     Of type CustomPrivateKeySign - Callable[[bytes, SignatureAlgorithm], bytes]
     Takes in data_to_sign and signs it using the test private key
     Runs infinitely until cancelled
     """
-    cancel_event = threading.Event()
-    handshake_started = threading.Event()
+    cancel = CancelCallable()
     signer_thread = threading.Thread(
         target=async_signer_worker_until_cancel,
         args=(
             data_to_sign,
             signature_algorithm,
             on_complete,
-            completion_data,
-            cancel_event,
-            handshake_started,
+            cancel.cancel_event,
+            cancel.handshake_started,
         ),
     ).start()
     # Add something where we put something cancellable on this handle
-    handle = grpc.create_async_handle_for_custom_signer()
-    handle.cancel_event = cancel_event
-    handle.handshake_started = handshake_started
-    handle.thread = signer_thread
-    return handle
-
-
-def cancel_async(handle):
-    handle.cancel_event.set()
+    return cancel
 
 
 def parse_bool(value):
