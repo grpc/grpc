@@ -34,22 +34,6 @@ package(
     ],
 )
 
-# grpc_cc_library(
-#     name = "private_key_signer_py_wrapper",
-#     srcs = ["tsi/private_key_signer_py_wrapper.cc"],
-#     hdrs = ["tsi/private_key_signer_py_wrapper.h"],
-#     external_deps = [
-#         "absl/status",
-#         "absl/status:statusor",
-#     ],
-#     deps = [
-#         "//:exec_ctx",
-#         "//:gpr",
-#         "//:grpc_base",
-#     ],
-# )
-
-
 config_setting(
     name = "disable_latent_see",
     values = {"define": "GRPC_LATENT_SEE=none"},
@@ -11304,33 +11288,6 @@ grpc_cc_library(
         "status_flag",
         "transport_common",
         "try_seq",
-    ],
-)
-
-grpc_cc_library(
-    name = "private_key_offload_py",
-    srcs = [
-        "tsi/private_key_signer_py_wrapper.cc",
-    ],
-    hdrs = [
-        "tsi/private_key_signer_py_wrapper.h",
-    ],
-    external_deps = [
-        "absl/functional:bind_front",
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-        "absl/strings:str_format",
-        "libcrypto",
-        "libssl",
-    ],
-    deps = [
-        "grpc_check",
-        "match",
-        "ssl_transport_security_utils",
-        "//:grpc_base",
-        "//:tsi_base",
-        # ":private_key_offload_util"
     ],
 )
 
