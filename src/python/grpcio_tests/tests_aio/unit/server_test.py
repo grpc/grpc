@@ -615,6 +615,73 @@ class TestServer(AioTestBase):
         await channel.close()
         await server.stop(0)
 
+    async def test_maximum_concurrent_rpcs_not_underflow(self):
+        """Test that the concurrent RPC counter doesn't underflow.
+
+        This is a regression test for a bug where rejected requests would
+        still decrement the counter when they finished, causing the counter
+        to go negative and effectively disabling the limit for subsequent
+        requests.
+        """
+
+        async def coro_wrapper(awaitable):
+            return await awaitable
+
+        # Use a limit of 1 to make the test deterministic
+        max_concurrent = 1
+        server = aio.server(maximum_concurrent_rpcs=max_concurrent)
+        port = server.add_insecure_port("localhost:0")
+        bind_address = "localhost:%d" % port
+        server.add_generic_rpc_handlers((_GenericHandler(),))
+        await server.start()
+        channel = aio.insecure_channel(bind_address)
+
+        async def send_requests(num_requests):
+            """Send concurrent requests and return (successes, exhausted)."""
+            tasks = []
+            for _ in range(num_requests):
+                task = asyncio.create_task(
+                    coro_wrapper(channel.unary_unary(_BLOCK_BRIEFLY)(_REQUEST))
+                )
+                tasks.append(task)
+            await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
+
+            successes = 0
+            exhausted = 0
+            for task in tasks:
+                exc = task.exception()
+                if exc is None:
+                    successes += 1
+                elif (
+                    isinstance(exc, aio.AioRpcError)
+                    and exc.code() == grpc.StatusCode.RESOURCE_EXHAUSTED
+                ):
+                    exhausted += 1
+            return successes, exhausted
+
+        # Wave 1: Send 3 requests with limit=1
+        # Expected: 1 success, 2 RESOURCE_EXHAUSTED
+        wave1_success, wave1_exhausted = await send_requests(3)
+        self.assertEqual(wave1_success, max_concurrent)
+        self.assertEqual(wave1_exhausted, 2)
+
+        # Wait for all requests to fully complete
+        await asyncio.sleep(test_constants.SHORT_TIMEOUT)
+
+        # Wave 2: If the counter underflowed, more than 1 request would succeed
+        # Expected: 1 success, 2 RESOURCE_EXHAUSTED (same as wave 1)
+        wave2_success, wave2_exhausted = await send_requests(3)
+        self.assertEqual(
+            wave2_success,
+            max_concurrent,
+            "Counter underflow: wave 2 had more successes than the limit",
+        )
+        self.assertEqual(wave2_exhausted, 2)
+
+        # Clean-up
+        await channel.close()
+        await server.stop(0)
+
     async def test_invalid_trailing_metadata(self):
         call = self._channel.unary_unary(_INVALID_TRAILING_METADATA)(_REQUEST)
 
