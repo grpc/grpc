@@ -3814,6 +3814,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "filter_chain",
+    hdrs = [
+        "filter/filter_chain.h",
+    ],
+    deps = [
+        "filter_args",
+        "interception_chain",
+        "ref_counted",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "fused_filters",
     srcs = [
         "filter/fused_filters.cc",
@@ -3903,6 +3916,7 @@ grpc_cc_library(
         "blackboard",
         "channel_fwd",
         "client_channel_internal_header",
+        "filter_chain",
         "grpc_check",
         "grpc_service_config",
         "interception_chain",
@@ -4401,24 +4415,6 @@ grpc_cc_library(
         "util/if_list.h",
     ],
     deps = ["//:gpr_platform"],
-)
-
-grpc_cc_library(
-    name = "tdigest",
-    srcs = [
-        "util/tdigest.cc",
-    ],
-    hdrs = [
-        "util/tdigest.h",
-    ],
-    external_deps = [
-        "absl/log",
-        "absl/status",
-        "absl/strings",
-    ],
-    deps = [
-        "grpc_check",
-    ],
 )
 
 grpc_cc_library(
@@ -6081,7 +6077,7 @@ grpc_cc_library(
         "blackboard",
         "channel_args",
         "channel_fwd",
-        "interception_chain",
+        "filter_chain",
         "json",
         "json_writer",
         "validation_errors",
@@ -6453,7 +6449,6 @@ grpc_cc_library(
         "grpc_tls_credentials",
         "grpc_transport_chttp2_client_connector",
         "init_internally",
-        "interception_chain",
         "iomgr_fwd",
         "json",
         "json_args",

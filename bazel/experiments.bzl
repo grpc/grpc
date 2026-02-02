@@ -20,8 +20,7 @@ EXPERIMENT_ENABLES = {
     "buffer_list_deletion_prep": "buffer_list_deletion_prep",
     "call_tracer_in_transport": "call_tracer_in_transport",
     "call_tracer_send_initial_metadata_is_an_annotation": "call_tracer_send_initial_metadata_is_an_annotation",
-    "channelz_use_v2_for_v1_api": "channelz_use_v2_for_v1_api",
-    "channelz_use_v2_for_v1_service": "channelz_use_v2_for_v1_service",
+    "call_tracer_send_trailing_metadata_is_an_annotation": "call_tracer_send_trailing_metadata_is_an_annotation",
     "chaotic_good_connect_deadline": "chaotic_good_connect_deadline",
     "chaotic_good_framing_layer": "chaotic_good_framing_layer",
     "chttp2_bound_write_size": "chttp2_bound_write_size",
@@ -90,10 +89,6 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "channelz_test": [
-                "channelz_use_v2_for_v1_api",
-                "channelz_use_v2_for_v1_service",
-            ],
             "chttp2_keepalive_tests": [
                 "subchannel_connection_scaling",
             ],
@@ -121,8 +116,6 @@ EXPERIMENTS = {
                 "promise_based_http2_client_transport",
             ],
             "cpp_lb_end2end_test": [
-                "pick_first_ready_to_connecting",
-                "rr_wrr_connect_from_random_index",
                 "subchannel_connection_scaling",
             ],
             "endpoint_test": [
@@ -139,10 +132,6 @@ EXPERIMENTS = {
                 "multiping",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "lb_unit_test": [
-                "pick_first_ready_to_connecting",
-                "rr_wrr_connect_from_random_index",
             ],
             "minimal_stack_test": [
                 "fuse_filters",
@@ -183,11 +172,19 @@ EXPERIMENTS = {
                 "event_engine_listener",
                 "event_engine_secure_endpoint",
             ],
+            "cpp_lb_end2end_test": [
+                "pick_first_ready_to_connecting",
+                "rr_wrr_connect_from_random_index",
+            ],
             "event_engine_client_test": [
                 "event_engine_client",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
+            ],
+            "lb_unit_test": [
+                "pick_first_ready_to_connecting",
+                "rr_wrr_connect_from_random_index",
             ],
             "posix_endpoint_test": [
                 "event_engine_secure_endpoint",
@@ -207,10 +204,6 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "channelz_test": [
-                "channelz_use_v2_for_v1_api",
-                "channelz_use_v2_for_v1_service",
-            ],
             "chttp2_keepalive_tests": [
                 "subchannel_connection_scaling",
             ],
@@ -238,8 +231,6 @@ EXPERIMENTS = {
                 "promise_based_http2_client_transport",
             ],
             "cpp_lb_end2end_test": [
-                "pick_first_ready_to_connecting",
-                "rr_wrr_connect_from_random_index",
                 "subchannel_connection_scaling",
             ],
             "endpoint_test": [
@@ -256,10 +247,6 @@ EXPERIMENTS = {
                 "multiping",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "lb_unit_test": [
-                "pick_first_ready_to_connecting",
-                "rr_wrr_connect_from_random_index",
             ],
             "minimal_stack_test": [
                 "fuse_filters",
@@ -300,11 +287,19 @@ EXPERIMENTS = {
                 "event_engine_listener",
                 "event_engine_secure_endpoint",
             ],
+            "cpp_lb_end2end_test": [
+                "pick_first_ready_to_connecting",
+                "rr_wrr_connect_from_random_index",
+            ],
             "event_engine_client_test": [
                 "event_engine_client",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
+            ],
+            "lb_unit_test": [
+                "pick_first_ready_to_connecting",
+                "rr_wrr_connect_from_random_index",
             ],
             "posix_endpoint_test": [
                 "event_engine_secure_endpoint",
@@ -324,10 +319,6 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "channelz_test": [
-                "channelz_use_v2_for_v1_api",
-                "channelz_use_v2_for_v1_service",
-            ],
             "chttp2_keepalive_tests": [
                 "subchannel_connection_scaling",
             ],
@@ -355,8 +346,6 @@ EXPERIMENTS = {
                 "promise_based_http2_client_transport",
             ],
             "cpp_lb_end2end_test": [
-                "pick_first_ready_to_connecting",
-                "rr_wrr_connect_from_random_index",
                 "subchannel_connection_scaling",
             ],
             "endpoint_test": [
@@ -373,10 +362,6 @@ EXPERIMENTS = {
                 "multiping",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "lb_unit_test": [
-                "pick_first_ready_to_connecting",
-                "rr_wrr_connect_from_random_index",
             ],
             "minimal_stack_test": [
                 "fuse_filters",
@@ -417,11 +402,19 @@ EXPERIMENTS = {
                 "event_engine_listener",
                 "event_engine_secure_endpoint",
             ],
+            "cpp_lb_end2end_test": [
+                "pick_first_ready_to_connecting",
+                "rr_wrr_connect_from_random_index",
+            ],
             "event_engine_client_test": [
                 "event_engine_client",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
+            ],
+            "lb_unit_test": [
+                "pick_first_ready_to_connecting",
+                "rr_wrr_connect_from_random_index",
             ],
             "posix_endpoint_test": [
                 "event_engine_secure_endpoint",

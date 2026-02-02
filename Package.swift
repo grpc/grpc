@@ -1323,6 +1323,7 @@ let package = Package(
         "src/core/filter/blackboard.cc",
         "src/core/filter/blackboard.h",
         "src/core/filter/filter_args.h",
+        "src/core/filter/filter_chain.h",
         "src/core/filter/fused_filters.cc",
         "src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc",
         "src/core/handshaker/endpoint_info/endpoint_info_handshaker.h",
