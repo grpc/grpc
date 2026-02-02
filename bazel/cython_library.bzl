@@ -84,7 +84,7 @@ def pyx_library(name, deps = [], py_deps = [], srcs = [], **kwargs):
                 # This is necessary for Python extensions on macOS to access Python C API symbols.
                 "@platforms//os:macos": ["-undefined", "dynamic_lookup"],
                 "//conditions:default": [],
-            })
+            }),
         )
         shared_objects.append(shared_object_name)
 
