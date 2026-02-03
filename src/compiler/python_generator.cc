@@ -934,7 +934,7 @@ bool PrivateGenerator::PrintStubPyi(
     const grpc_generator::Service* service, grpc_generator::Printer* out) {
   StringMap dict;
   dict["Service"] = service->name();
-  out->Print(dict, "class $Service$Stub:\n");
+  out->Print(dict, "class $Service$Stub(object):\n");
   {
     IndentScope raii_class_indent(out);
     StringVector service_comments = service->GetAllComments();
@@ -989,7 +989,7 @@ bool PrivateGenerator::PrintServicerPyi(const grpc_generator::Service* service,
   StringMap service_dict;
   service_dict["Service"] = service->name();
   out->Print("\n");
-  out->Print(service_dict, "class $Service$Servicer:\n");
+  out->Print(service_dict, "class $Service$Servicer(object):\n");
   {
     IndentScope raii_class_indent(out);
     StringVector service_comments = service->GetAllComments();
@@ -1068,7 +1068,7 @@ bool PrivateGenerator::PrintServiceClassPyi(
   dict["Service"] = service->name();
   out->Print("\n");
   out->Print("# This class is part of an EXPERIMENTAL API.\n");
-  out->Print(dict, "class $Service$:\n");
+  out->Print(dict, "class $Service$(object):\n");
   {
     IndentScope class_indent(out);
     StringVector service_comments = service->GetAllComments();
