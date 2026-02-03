@@ -20,6 +20,7 @@ EXPERIMENT_ENABLES = {
     "buffer_list_deletion_prep": "buffer_list_deletion_prep",
     "call_tracer_in_transport": "call_tracer_in_transport",
     "call_tracer_send_initial_metadata_is_an_annotation": "call_tracer_send_initial_metadata_is_an_annotation",
+    "call_tracer_send_trailing_metadata_is_an_annotation": "call_tracer_send_trailing_metadata_is_an_annotation",
     "chaotic_good_connect_deadline": "chaotic_good_connect_deadline",
     "chaotic_good_framing_layer": "chaotic_good_framing_layer",
     "chttp2_bound_write_size": "chttp2_bound_write_size",
@@ -69,6 +70,7 @@ EXPERIMENT_ENABLES = {
     "track_zero_copy_allocations_in_resource_quota": "track_zero_copy_allocations_in_resource_quota",
     "tsi_frame_protector_without_locks": "tsi_frame_protector_without_locks",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
+    "use_call_event_engine_in_completion_queue": "use_call_event_engine_in_completion_queue",
 }
 
 EXPERIMENT_POLLERS = [
@@ -105,6 +107,8 @@ EXPERIMENTS = {
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
+                "subchannel_connection_scaling",
+                "use_call_event_engine_in_completion_queue",
             ],
             "cpp_end2end_test": [
                 "error_flatten",
@@ -216,6 +220,8 @@ EXPERIMENTS = {
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
+                "subchannel_connection_scaling",
+                "use_call_event_engine_in_completion_queue",
             ],
             "cpp_end2end_test": [
                 "error_flatten",
@@ -327,6 +333,8 @@ EXPERIMENTS = {
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
+                "subchannel_connection_scaling",
+                "use_call_event_engine_in_completion_queue",
             ],
             "cpp_end2end_test": [
                 "error_flatten",

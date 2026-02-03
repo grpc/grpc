@@ -9,7 +9,6 @@
 #include <stddef.h>
 #include "upb/generated_code_support.h"
 #include "xds/type/matcher/v3/cel.upb_minitable.h"
-#include "xds/annotations/v3/status.upb_minitable.h"
 #include "xds/type/v3/cel.upb_minitable.h"
 #include "validate/validate.upb_minitable.h"
 
