@@ -307,7 +307,9 @@ CYTHON_EXTENSION_PACKAGE_NAMES = ()
 
 CYTHON_EXTENSION_MODULE_NAMES = ("grpc._cython.cygrpc",)
 
-CYTHON_HELPER_C_FILES = (
+CYTHON_HELPER_C_FILES = ()
+
+_PRIVATE_KEY_SIGNING_FILES = (
     os.path.join(
         PYTHON_STEM,
         "grpc",
@@ -317,6 +319,8 @@ CYTHON_HELPER_C_FILES = (
         "private_key_signer_py_wrapper.cc",
     ),
 )
+
+CYTHON_HELPER_C_FILES += _PRIVATE_KEY_SIGNING_FILES
 
 CORE_C_FILES = tuple(grpc_core_dependencies.CORE_SOURCE_FILES)
 if "win32" in sys.platform:
