@@ -70,6 +70,7 @@ EXPERIMENT_ENABLES = {
     "track_zero_copy_allocations_in_resource_quota": "track_zero_copy_allocations_in_resource_quota",
     "tsi_frame_protector_without_locks": "tsi_frame_protector_without_locks",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
+    "use_call_event_engine_in_completion_queue": "use_call_event_engine_in_completion_queue",
 }
 
 EXPERIMENT_POLLERS = [
@@ -107,6 +108,7 @@ EXPERIMENTS = {
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
                 "subchannel_connection_scaling",
+                "use_call_event_engine_in_completion_queue",
             ],
             "cpp_end2end_test": [
                 "error_flatten",
@@ -219,6 +221,7 @@ EXPERIMENTS = {
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
                 "subchannel_connection_scaling",
+                "use_call_event_engine_in_completion_queue",
             ],
             "cpp_end2end_test": [
                 "error_flatten",
@@ -331,6 +334,7 @@ EXPERIMENTS = {
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
                 "subchannel_connection_scaling",
+                "use_call_event_engine_in_completion_queue",
             ],
             "cpp_end2end_test": [
                 "error_flatten",

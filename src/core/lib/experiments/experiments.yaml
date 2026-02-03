@@ -381,3 +381,8 @@
   expiry: 2026/05/01
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
+- name: use_call_event_engine_in_completion_queue
+  description: Use the call event engine to run callbacks in completion queue.
+  expiry: 2026/06/01
+  owner: aananthv@google.com
+  test_tags: ["core_end2end_test"]

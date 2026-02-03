@@ -131,6 +131,7 @@ inline bool IsTrackWritesInResourceQuotaEnabled() { return false; }
 inline bool IsTrackZeroCopyAllocationsInResourceQuotaEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
+inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
 inline bool IsBufferListDeletionPrepEnabled() { return false; }
@@ -207,6 +208,7 @@ inline bool IsTrackWritesInResourceQuotaEnabled() { return false; }
 inline bool IsTrackZeroCopyAllocationsInResourceQuotaEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
+inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
 
 #else
 inline bool IsBufferListDeletionPrepEnabled() { return false; }
@@ -283,6 +285,7 @@ inline bool IsTrackWritesInResourceQuotaEnabled() { return false; }
 inline bool IsTrackZeroCopyAllocationsInResourceQuotaEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
+inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
 #endif
 
 #else
@@ -340,6 +343,7 @@ enum ExperimentIds {
   kExperimentIdTrackZeroCopyAllocationsInResourceQuota,
   kExperimentIdTsiFrameProtectorWithoutLocks,
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
+  kExperimentIdUseCallEventEngineInCompletionQueue,
   kNumExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_BUFFER_LIST_DELETION_PREP
@@ -556,6 +560,11 @@ inline bool IsTsiFrameProtectorWithoutLocksEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_UNCONSTRAINED_MAX_QUOTA_BUFFER_SIZE
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
   return IsExperimentEnabled<kExperimentIdUnconstrainedMaxQuotaBufferSize>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_USE_CALL_EVENT_ENGINE_IN_COMPLETION_QUEUE
+inline bool IsUseCallEventEngineInCompletionQueueEnabled() {
+  return IsExperimentEnabled<
+      kExperimentIdUseCallEventEngineInCompletionQueue>();
 }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
