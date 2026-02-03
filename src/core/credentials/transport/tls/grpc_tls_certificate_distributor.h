@@ -27,20 +27,22 @@
 #include <string>
 #include <utility>
 
-#include "src/core/credentials/transport/tls/spiffe_utils.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/sync.h"
 #include "absl/base/thread_annotations.h"
-#include "absl/strings/string_view.h"
 
 struct grpc_tls_identity_pairs {
   grpc_core::PemKeyCertPairList pem_key_cert_pairs;
 };
 
 // TLS certificate distributor.
+// TODO(anasalazar): Since there are no use-cases where we need to update root
+// and identity certs as an atomic unit, the flow of the certs through the cert
+// providers and to the TLS security connector can be greatly simplified. We may
+// even be able to remove the distributor code completely.
 struct grpc_tls_certificate_distributor
     : public grpc_core::RefCounted<grpc_tls_certificate_distributor> {
  public:

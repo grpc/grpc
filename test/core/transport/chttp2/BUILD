@@ -466,6 +466,7 @@ grpc_cc_test(
         "//:ref_counted_ptr",
         "//src/core:arena",
         "//src/core:event_engine_memory_allocator",
+        "//src/core:experiments",
         "//src/core:grpc_check",
         "//src/core:memory_quota",
         "//src/core:metadata_batch",
