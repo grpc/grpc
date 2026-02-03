@@ -246,6 +246,10 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
+const char* const description_use_call_event_engine_in_completion_queue =
+    "Use the call event engine to run callbacks in completion queue.";
+const char* const
+    additional_constraints_use_call_event_engine_in_completion_queue = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -418,6 +422,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
+    {"use_call_event_engine_in_completion_queue",
+     description_use_call_event_engine_in_completion_queue,
+     additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
+     0, false, true},
 };
 
 }  // namespace grpc_core
@@ -647,6 +655,10 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
+const char* const description_use_call_event_engine_in_completion_queue =
+    "Use the call event engine to run callbacks in completion queue.";
+const char* const
+    additional_constraints_use_call_event_engine_in_completion_queue = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -819,6 +831,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
+    {"use_call_event_engine_in_completion_queue",
+     description_use_call_event_engine_in_completion_queue,
+     additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
+     0, false, true},
 };
 
 }  // namespace grpc_core
@@ -1048,6 +1064,10 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
+const char* const description_use_call_event_engine_in_completion_queue =
+    "Use the call event engine to run callbacks in completion queue.";
+const char* const
+    additional_constraints_use_call_event_engine_in_completion_queue = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -1220,6 +1240,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
+    {"use_call_event_engine_in_completion_queue",
+     description_use_call_event_engine_in_completion_queue,
+     additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
+     0, false, true},
 };
 
 }  // namespace grpc_core
