@@ -1200,6 +1200,7 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
         # TODO(b/264692543): Re-enable after fixing
         "grpc:broken-internally",
         "no_test_ios",
