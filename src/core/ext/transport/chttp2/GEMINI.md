@@ -246,5 +246,6 @@ that we use in the transport.
 | AddData | Misc | ChannelZ AddData | 1 | On demand | Immediate | Immediate |
 | CloseTransport | Misc | Close transport | 1 | While closing transport. Only once in the life of a transport | As long as it takes to close the transport | Transport Close |
 | WaitForSettingsTimeout | Timeout | Settings Timeout | 1 | When we write SETTINGS | Settings timeout | Settings Ack Received or Settings Timeout |
-|`TODO(akshitpatel) [PH2][P4] Fill this out for Ping, Keepalive etc. Also update the total.` |
-| | | **Total** | ** 7 + Ping ** | | | |
+| Keepalive | Loop | Keepalive Loop | 1 | If Keepalive is enabled, after constructor | Lifetime of the transport | Transport Close
+| Ping | Timeout + Misc | | 4 | Sending a ping request | Timeout or a specific duration |
+| | | **Total** | 12 | | | |

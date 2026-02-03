@@ -67,4 +67,4 @@ class BuildPackageProtos(setuptools.Command):
         from grpc_tools import command
 
         # find and build all protos in the current package
-        command.build_package_protos(ROOT_REL_DIR)
+        command.build_package_protos(ROOT_REL_DIR, strict_mode=True)

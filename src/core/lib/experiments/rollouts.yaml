@@ -82,6 +82,8 @@
   default: true
 - name: monitoring_experiment
   default: true
+- name: pick_first_ready_to_connecting
+  default: true
 - name: pollset_alternative
   default: false
 - name: prioritize_finished_requests
@@ -92,6 +94,8 @@
   default: false
 - name: promise_filter_send_cancel_metadata
   default: false
+- name: rr_wrr_connect_from_random_index
+  default: true
 - name: schedule_cancellation_over_write
   default: false
 - name: skip_clear_peer_on_cancellation
@@ -111,4 +115,6 @@
 - name: tsi_frame_protector_without_locks
   default: false
 - name: unconstrained_max_quota_buffer_size
+  default: false
+- name: use_call_event_engine_in_completion_queue
   default: false
