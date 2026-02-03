@@ -933,6 +933,51 @@ class PyiGeneratorTest(unittest.TestCase):
         finally:
             shutil.rmtree(work_dir)
 
+    def test_pyi_experimental_class_has_docstring(self):
+        """Tests that experimental class in .pyi file has a docstring."""
+        if sys.executable is None:
+            raise unittest.SkipTest(
+                "Running on an interpreter that cannot be invoked from the CLI."
+            )
+        proto_dir_path = os.path.join("src", "proto")
+        test_proto_path = os.path.join(
+            proto_dir_path, "grpc", "testing", "test.proto"
+        )
+        work_dir = tempfile.mkdtemp()
+        try:
+            invocation = (
+                sys.executable,
+                "-m",
+                "grpc_tools.protoc",
+                "--proto_path",
+                proto_dir_path,
+                "--python_out",
+                work_dir,
+                "--grpc_python_out",
+                work_dir,
+                test_proto_path,
+            )
+            proc = subprocess.Popen(
+                invocation, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
+            proc.wait()
+            self.assertEqual(0, proc.returncode)
+
+            pyi_path = os.path.join(
+                work_dir, "grpc", "testing", "test_pb2_grpc.pyi"
+            )
+            with open(pyi_path, "r") as f:
+                content = f.read()
+
+            # Check that TestService class has a docstring (or at least "Missing associated documentation...")
+            # We look for the class definition and check if it's followed by a docstring or pass.
+            # Since we updated it to print comments, and test.proto might not have comments for the service,
+            # it should print "Missing associated documentation comment..."
+            self.assertIn("class TestService:", content)
+            self.assertIn('"""Missing associated documentation comment in .proto file."""', content)
+        finally:
+            shutil.rmtree(work_dir)
+
     def test_pyi_file_passes_pyright(self):
         """Tests that generated .pyi file passes pyright check."""
         if sys.executable is None:

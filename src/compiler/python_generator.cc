@@ -937,11 +937,8 @@ bool PrivateGenerator::PrintStubPyi(
   out->Print(dict, "class $Service$Stub:\n");
   {
     IndentScope raii_class_indent(out);
-    out->Print(
-        "\"\"\"Stub for the $Service$ service.\n"
-        "\n"
-        "Missing associated documentation comment in .proto file.\n"
-        "\"\"\"\n");
+    StringVector service_comments = service->GetAllComments();
+    PrintAllComments(service_comments, out);
     out->Print("\n");
     out->Print("def __init__(self, channel: Union[grpc.Channel, grpc.aio.Channel]) -> None: ...\n");
 
@@ -995,11 +992,8 @@ bool PrivateGenerator::PrintServicerPyi(const grpc_generator::Service* service,
   out->Print(service_dict, "class $Service$Servicer:\n");
   {
     IndentScope raii_class_indent(out);
-    out->Print(
-        "\"\"\"Servicer for the $Service$ service.\n"
-        "\n"
-        "Missing associated documentation comment in .proto file.\n"
-        "\"\"\"\n");
+    StringVector service_comments = service->GetAllComments();
+    PrintAllComments(service_comments, out);
 
     for (int i = 0; i < service->method_count(); ++i) {
       auto method = service->method(i);
@@ -1077,6 +1071,8 @@ bool PrivateGenerator::PrintServiceClassPyi(
   out->Print(dict, "class $Service$:\n");
   {
     IndentScope class_indent(out);
+    StringVector service_comments = service->GetAllComments();
+    PrintAllComments(service_comments, out);
     for (int i = 0; i < service->method_count(); ++i) {
       const auto& method = service->method(i);
       std::string request_module_and_class;
