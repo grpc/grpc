@@ -1303,12 +1303,12 @@ bool PythonGrpcGenerator::Generate(const FileDescriptor* file,
   PrivateGenerator generator(extended_config, &pbfile);
   if (!success) return false;
   if (grpc_version == "grpc_2_0") {
-    return GenerateGrpc(context, generator, pb2_grpc_file_name, true) &&
-           GenerateGrpcPyi(context, generator, pb2_grpc_pyi_file_name);
+    return GenerateGrpcPyi(context, generator, pb2_grpc_pyi_file_name) &&
+           GenerateGrpc(context, generator, pb2_grpc_file_name, true);
   } else if (grpc_version == "grpc_1_0") {
-    return GenerateGrpc(context, generator, pb2_grpc_file_name, true) &&
-           GenerateGrpc(context, generator, pb2_file_name, false) &&
-           GenerateGrpcPyi(context, generator, pb2_grpc_pyi_file_name);
+    return GenerateGrpcPyi(context, generator, pb2_grpc_pyi_file_name) &&
+           GenerateGrpc(context, generator, pb2_grpc_file_name, true) &&
+           GenerateGrpc(context, generator, pb2_file_name, false);
   } else {
     *error = "Invalid grpc version '" + grpc_version + "'.";
     return false;
