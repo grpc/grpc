@@ -26,6 +26,7 @@
 #include "src/core/call/call_state.h"
 #include "src/core/call/message.h"
 #include "src/core/call/metadata.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
@@ -53,6 +54,7 @@
 // - OnClientToServerHalfClose - no value
 // - OnServerTrailingMetadata - $VALUE_TYPE = ServerMetadata
 // - OnFinalize               - special, see below
+// - ChannelzProperties       - special, see below
 // These members define an interception point for a particular event in
 // the call lifecycle.
 //
@@ -89,7 +91,7 @@
 // It's also acceptable to return a promise that resolves to the
 // relevant return type listed above.
 //
-// Finally, OnFinalize is added to intecept call finalization.
+// OnFinalize is added to intecept call finalization.
 // It must have one of the signatures:
 // - static inline const NoInterceptor OnFinalize:
 //   the filter does not intercept call finalization.
@@ -97,6 +99,11 @@
 //   the filter intercepts call finalization.
 // - void OnFinalize(const grpc_call_final_info*, FilterType*):
 //   the filter intercepts call finalization.
+//
+// ChannelzProperties is added to provide channelz data.
+// It must have one of the signatures:
+// - channelz::PropertyList ChannelzProperties();
+// - channelz::PropertyList ChannelzProperties(FilterType*);
 //
 // The constructor of the Call object can either take a pointer to the channel
 // object, or not take any arguments.
@@ -1042,6 +1049,14 @@ struct ChannelDataDestructor {
   void* channel_data;
 };
 
+struct FilterMetadata {
+  absl::string_view name;
+  void* channel_data;
+  size_t call_data_offset;
+  channelz::PropertyList (*channelz_properties)(void* channel_data,
+                                                void* call_data);
+};
+
 // StackData contains the main datastructures built up by this module.
 // It's a complete representation of all the code that needs to be invoked
 // to execute a call for a given set of filters.
@@ -1071,6 +1086,79 @@ struct StackData {
   // A list of functions to call when this stack data is destroyed
   // (to capture ownership of channel data)
   std::vector<ChannelDataDestructor> channel_data_destructors;
+  // A list of metadata about filters for this stack.
+  std::vector<FilterMetadata> filter_metadata;
+
+  channelz::PropertyList ChannelzProperties(void* call_data) const {
+    absl::flat_hash_map<void*, const FilterMetadata*>
+        channel_data_to_filter_metadata;
+    for (const auto& filter_metadata : filter_metadata) {
+      channel_data_to_filter_metadata[filter_metadata.channel_data] =
+          &filter_metadata;
+    }
+    auto filter_chain =
+        [&channel_data_to_filter_metadata](const auto& container) {
+          std::vector<absl::string_view> filter_names;
+          for (const auto& filter : container) {
+            void* channel_data = filter.channel_data;
+            auto it = channel_data_to_filter_metadata.find(channel_data);
+            if (it != channel_data_to_filter_metadata.end()) {
+              filter_names.push_back(it->second->name);
+            } else {
+              filter_names.push_back("unknown_filter");
+            }
+          }
+          return absl::StrJoin(filter_names, ", ");
+        };
+    auto layout_properties = [&](const auto& layout) {
+      return channelz::PropertyList()
+          .Set("promise_size", layout.promise_size)
+          .Set("promise_alignment", layout.promise_alignment)
+          .Set("filters", filter_chain(layout.ops));
+    };
+    return channelz::PropertyList()
+        .Set("call_data_alignment", call_data_alignment)
+        .Set("call_data_size", call_data_size)
+        .Set("filters",
+             [&, this]() {
+               channelz::PropertyTable table;
+               for (const auto& filter : filter_metadata) {
+                 table.AppendRow(
+                     channelz::PropertyList()
+                         .Set("name", filter.name)
+                         .Set("call_data_offset", filter.call_data_offset)
+                         .Merge([&]() {
+                           if (call_data == nullptr) {
+                             return channelz::PropertyList();
+                           }
+                           if (filter.channelz_properties == nullptr) {
+                             return channelz::PropertyList();
+                           }
+                           return filter.channelz_properties(
+                               filter.channel_data,
+                               Offset(call_data, filter.call_data_offset));
+                         }()));
+               }
+               return table;
+             }())
+        .Set("constructors", filter_chain(filter_constructor))
+        // TODO(ctiller): Add the list of destructors (need to figure out how to
+        // map them).
+        .Set("client_initial_metadata",
+             layout_properties(client_initial_metadata))
+        .Set("server_initial_metadata",
+             layout_properties(server_initial_metadata))
+        .Set("client_to_server_messages",
+             layout_properties(client_to_server_messages))
+        .Set("client_to_server_half_close",
+             filter_chain(client_to_server_half_close))
+        .Set("server_to_client_messages",
+             layout_properties(server_to_client_messages))
+        .Set("server_trailing_metadata", filter_chain(server_trailing_metadata))
+        .Set("finalizers", filter_chain(finalizers))
+        .Set("channel_data_destructors",
+             filter_chain(channel_data_destructors));
+  }
 
   bool empty() const {
     return filter_constructor.empty() && filter_destructor.empty() &&
@@ -1253,6 +1341,69 @@ struct StackData {
         },
     });
   }
+
+  template <typename FilterType>
+  void AddFilterMetadata(FilterType* channel_data, size_t call_offset,
+                         channelz::PropertyList (FilterType::Call::*p)()
+                             const) {
+    GRPC_DCHECK(p == &FilterType::Call::ChannelzProperties);
+    filter_metadata.push_back(FilterMetadata{
+        TypeName<FilterType>(),
+        channel_data,
+        call_offset,
+        [](void* /*channel_data*/, void* call_data) {
+          return static_cast<typename FilterType::Call*>(call_data)
+              ->ChannelzProperties();
+        },
+    });
+  }
+
+  template <typename FilterType>
+  void AddFilterMetadata(FilterType* channel_data, size_t call_offset,
+                         channelz::PropertyList (FilterType::Call::*p)()) {
+    GRPC_DCHECK(p == &FilterType::Call::ChannelzProperties);
+    filter_metadata.push_back(FilterMetadata{
+        TypeName<FilterType>(),
+        channel_data,
+        call_offset,
+        [](void* /*channel_data*/, void* call_data) {
+          return static_cast<typename FilterType::Call*>(call_data)
+              ->ChannelzProperties();
+        },
+    });
+  }
+
+  template <typename FilterType>
+  void AddFilterMetadata(
+      FilterType* channel_data, size_t call_offset,
+      channelz::PropertyList (FilterType::Call::*p)(FilterType*) const) {
+    GRPC_DCHECK(p == &FilterType::Call::ChannelzProperties);
+    filter_metadata.push_back(FilterMetadata{
+        TypeName<FilterType>(),
+        channel_data,
+        call_offset,
+        [](void* channel_data, void* call_data) {
+          return static_cast<typename FilterType::Call*>(call_data)
+              ->ChannelzProperties(static_cast<FilterType*>(channel_data));
+        },
+    });
+  }
+
+  template <typename FilterType>
+  void AddFilterMetadata(
+      FilterType* channel_data, size_t call_offset,
+      channelz::PropertyList (FilterType::Call::*p)(FilterType*)) {
+    GRPC_DCHECK(p == &FilterType::Call::ChannelzProperties);
+    filter_metadata.push_back(FilterMetadata{
+        TypeName<FilterType>(),
+        channel_data,
+        call_offset,
+        [](void* channel_data, void* call_data) {
+          return static_cast<typename FilterType::Call*>(call_data)
+              ->ChannelzProperties(static_cast<FilterType*>(channel_data));
+        },
+    });
+  }
 };
 
 // OperationExecutor is a helper class to execute a sequence of operations
@@ -1400,6 +1551,9 @@ class ServerTrailingMetadataInterceptor {
                                   ServerTrailingMetadataInterceptor* filter) {
       filter->fn_(md);
     }
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList();
+    }
   };
 
   explicit ServerTrailingMetadataInterceptor(Fn fn) : fn_(std::move(fn)) {}
@@ -1423,6 +1577,10 @@ class ClientInitialMetadataInterceptor {
     static const inline NoInterceptor OnServerToClientMessage;
     static const inline NoInterceptor OnServerTrailingMetadata;
     static const inline NoInterceptor OnFinalize;
+
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList();
+    }
   };
 
   explicit ClientInitialMetadataInterceptor(Fn fn) : fn_(std::move(fn)) {}
@@ -1577,6 +1735,8 @@ class CallFilters {
       data_.AddServerToClientMessageOp(filter, call_offset);
       data_.AddServerTrailingMetadataOp(filter, call_offset);
       data_.AddFinalizer(filter, call_offset, &FilterType::Call::OnFinalize);
+      data_.AddFilterMetadata(filter, call_offset,
+                              &FilterType::Call::ChannelzProperties);
     }
 
     void AddOwnedObject(void (*destroy)(void* p), void* p) {
@@ -1644,6 +1804,20 @@ class CallFilters {
   // Access client initial metadata before it's processed
   ClientMetadata* unprocessed_client_initial_metadata() {
     return push_client_initial_metadata_.get();
+  }
+
+  channelz::PropertyTable ChannelzProperties() {
+    channelz::PropertyTable properties;
+    for (size_t i = 0; i < stacks_.size(); ++i) {
+      void* stack_call_offset =
+          filters_detail::Offset(call_data_, stacks_[i].call_data_offset);
+      properties.AppendRow(
+          channelz::PropertyList()
+              .Set("call_data_offset", stacks_[i].call_data_offset)
+              .Merge(stacks_[i].stack->data_.ChannelzProperties(
+                  stack_call_offset)));
+    }
+    return properties;
   }
 
  private:

@@ -132,6 +132,13 @@ OpenCensusCallTracer::OpenCensusCallAttemptTracer::OpenCensusCallAttemptTracer(
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
     RecordSendInitialMetadata(grpc_metadata_batch* send_initial_metadata) {
+  GRPC_CHECK(
+      !grpc_core::IsCallTracerSendInitialMetadataIsAnAnnotationEnabled());
+  MutateSendInitialMetadata(send_initial_metadata);
+}
+
+void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
+    MutateSendInitialMetadata(grpc_metadata_batch* send_initial_metadata) {
   if (parent_->tracing_enabled_) {
     char tracing_buf[kMaxTraceContextLen];
     size_t tracing_len = TraceContextSerialize(context_.Context(), tracing_buf,
@@ -292,6 +299,12 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordAnnotation(
   }
 
   switch (annotation.type()) {
+    case grpc_core::CallTracerAnnotationInterface::AnnotationType::
+        kSendInitialMetadata:
+      // Census does not have any immutable tracing for send initial metadata.
+      // All Census work for send initial metadata is mutation, which is handled
+      // in MutateSendInitialMetadata.
+      break;
     // Annotations are expensive to create. We should only create it if the
     // call is being sampled by default.
     default:

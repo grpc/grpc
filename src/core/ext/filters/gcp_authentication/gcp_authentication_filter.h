@@ -58,7 +58,7 @@ class GcpAuthenticationFilter
         cache_ ABSL_GUARDED_BY(&mu_);
   };
 
-  static const grpc_channel_filter kFilter;
+  static const grpc_channel_filter kFilterVtable;
 
   static absl::string_view TypeName() { return "gcp_authentication_filter"; }
 
@@ -75,6 +75,9 @@ class GcpAuthenticationFilter
     static inline const NoInterceptor OnServerToClientMessage;
     static inline const NoInterceptor OnServerTrailingMetadata;
     static inline const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList();
+    }
   };
 
  private:

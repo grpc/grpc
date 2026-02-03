@@ -113,9 +113,23 @@ class SpiffeSslTransportSecurityTest
         CHECK(client_map.ok());
         client_spiffe_bundle_map_ = std::make_shared<RootCertInfo>(*client_map);
       }
+      // In TLS 1.3, the client-side handshake succeeds even if the client sends
+      // a bad certificate. In such a case, the server would fail the TLS
+      // handshake and send an alert to the client as the first application data
+      // message. In TLS 1.2, the client-side handshake will fail if the client
+      // sends a bad certificate.
+      //
+      // For OpenSSL versions < 1.1, TLS 1.3 is not supported, so the
+      // client-side handshake should succeed precisely when the server-side
+      // handshake succeeds. Thus, the expect_client_success_1_3_ is set to
+      // expect_client_success_1_2 in this case.
       expect_server_success_ = expect_server_success;
       expect_client_success_1_2_ = expect_client_success_1_2;
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
       expect_client_success_1_3_ = expect_client_success_1_3;
+#else
+      expect_client_success_1_3_ = expect_client_success_1_2;
+#endif
 
       server_pem_key_cert_pairs_ = static_cast<tsi_ssl_pem_key_cert_pair*>(
           gpr_malloc(sizeof(tsi_ssl_pem_key_cert_pair)));
@@ -200,18 +214,9 @@ class SpiffeSslTransportSecurityTest
 
     void CheckHandshakerPeers() {
       bool expect_server_success = expect_server_success_;
-      bool expect_client_success = false;
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
-      expect_client_success = GetParam() == tsi_tls_version::TSI_TLS1_2
-                                  ? expect_client_success_1_2_
-                                  : expect_client_success_1_3_;
-#else
-      //  If using OpenSSL version < 1.1, the CRL revocation won't
-      //  be enabled anyways, so we always expect the connection to
-      //  be successful.
-      expect_server_success = true;
-      expect_client_success = expect_server_success;
-#endif
+      bool expect_client_success = GetParam() == tsi_tls_version::TSI_TLS1_2
+                                       ? expect_client_success_1_2_
+                                       : expect_client_success_1_3_;
       tsi_peer peer;
       if (expect_client_success) {
         ASSERT_EQ(
@@ -410,15 +415,8 @@ TEST_P(SpiffeSslTransportSecurityTest, InvalidUTF8Fails) {
   auto* fixture_pass = new SslTsiTestFixture(
       kServerKeyPath, kServerCertPath, kInvalidUtf8SanKeyPath,
       kInvalidUtf8SanCertPath, "", "", kCaPemPath,
-  // OpenSSL3 and above will fail the handshake because of the invalid
-  // UTF-8 URI SAN.
-#if OPENSSL_VERSION_NUMBER >= 0x30000000L
-      /*expect_server_success=*/false,
-      /*expect_client_success_1_2=*/false,
-#else
       /*expect_server_success=*/true,
       /*expect_client_success_1_2=*/true,
-#endif
       /*expect_client_success_1_3=*/true);
   fixture_pass->Run();
   // Should fail SPIFFE verification because of multiple URI SANs.
