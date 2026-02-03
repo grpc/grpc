@@ -263,7 +263,7 @@ grpc_build_artifact_task(
 grpc_build_artifact_task(
     name = "artifact_protoc_linux_aarch64",
     build_script = "build_artifact_protoc_linux_aarch64.sh",
-    docker_image_version = "tools/dockerfile/grpc_artifact_manylinux2014_aarch64.current_version",
+    docker_image_version = "tools/dockerfile/grpc_artifact_linux_aarch64.current_version",
 )
 
 # PHP artifact build tasks
