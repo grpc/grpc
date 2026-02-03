@@ -68,3 +68,24 @@ where = ["src/python/grpcio"]
     "*.pxd",
     "*.pxi",
 ]
+
+[tool.pyright]
+include = ["src/python/grpcio"]
+
+typeCheckingMode = "basic"
+exclude = [
+    "**/third_party",
+    "**/build",
+    "**/grpc_root",
+    "**/__pycache__",
+    "**/.git",
+    "src/python/grpcio/commands.py",
+    "src/python/grpcio/_spawn_patch.py"
+]
+
+[[tool.pyright.executionEnvironments]]
+root = "src/python/grpcio"
+
+[[tool.pyright.executionEnvironments]]
+root = "src/python/grpcio_tests"
+extraPaths = ["src/python/grpcio"]
