@@ -21,6 +21,7 @@
 #include <string>
 
 #include "src/core/credentials/transport/fake/fake_credentials.h"
+#include "src/core/telemetry/instrument.h"
 #include "src/core/telemetry/metrics.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/fake_stats_plugin.h"
@@ -28,9 +29,8 @@
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
-#include "gtest/gtest.h"
-#include "src/core/telemetry/instrument.h"
 #include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc {
 namespace testing {
@@ -102,10 +102,13 @@ TEST_F(SubchannelMetricsTest, SubchannelMetricsBasic) {
   builder.RegisterService(service.get());
   auto server = builder.BuildAndStart();
   ASSERT_NE(server, nullptr);
-  EXPECT_EQ(stats_plugin_->GetUInt64MetricValueByName(
-                "grpc.subchannel.connection_attempts_succeeded", {target, "", ""}), std::nullopt);
+  EXPECT_EQ(
+      stats_plugin_->GetUInt64MetricValueByName(
+          "grpc.subchannel.connection_attempts_succeeded", {target, "", ""}),
+      std::nullopt);
   EXPECT_EQ(stats_plugin_->GetInt64MetricValueByName(
-                  "grpc.subchannel.open_connections", {target, "none", "", ""}), std::nullopt);
+                "grpc.subchannel.open_connections", {target, "none", "", ""}),
+            std::nullopt);
   auto channel =
       grpc::CreateChannel(target, grpc::InsecureChannelCredentials());
   auto stub = grpc::testing::EchoTestService::NewStub(channel);
@@ -125,16 +128,18 @@ TEST_F(SubchannelMetricsTest, SubchannelMetricsBasic) {
                        std::chrono::seconds(1));
   grpc::Status status = stub->Echo(&context, request, &response);
   ASSERT_TRUE(status.ok()) << "RPC failed: " << status.error_message();
-  EXPECT_THAT(stats_plugin_->GetUInt64MetricValueByName(
-                  "grpc.subchannel.connection_attempts_succeeded", {target, "", ""}),
-              ::testing::Optional(1));
+  EXPECT_THAT(
+      stats_plugin_->GetUInt64MetricValueByName(
+          "grpc.subchannel.connection_attempts_succeeded", {target, "", ""}),
+      ::testing::Optional(1));
   EXPECT_THAT(stats_plugin_->GetInt64MetricValueByName(
                   "grpc.subchannel.open_connections", {target, "none", "", ""}),
               ::testing::Optional(1));
   server->Shutdown();
-  EXPECT_THAT(stats_plugin_->GetUInt64MetricValueByName(
-                  "grpc.subchannel.disconnections", {target, "", "", "unknown"}),
-              ::testing::Optional(1));
+  EXPECT_THAT(
+      stats_plugin_->GetUInt64MetricValueByName(
+          "grpc.subchannel.disconnections", {target, "", "", "unknown"}),
+      ::testing::Optional(1));
   EXPECT_THAT(stats_plugin_->GetInt64MetricValueByName(
                   "grpc.subchannel.open_connections", {target, "none", "", ""}),
               ::testing::Optional(0));
@@ -153,9 +158,10 @@ TEST_F(SubchannelMetricsTest, ConnectionAttemptsFailed) {
       WaitForChannelState(channel.get(), [](grpc_connectivity_state state) {
         return state == GRPC_CHANNEL_TRANSIENT_FAILURE;
       }));
-  EXPECT_THAT(stats_plugin_->GetUInt64MetricValueByName(
-                  "grpc.subchannel.connection_attempts_failed", {target, "", ""}),
-              ::testing::Optional(1));
+  EXPECT_THAT(
+      stats_plugin_->GetUInt64MetricValueByName(
+          "grpc.subchannel.connection_attempts_failed", {target, "", ""}),
+      ::testing::Optional(1));
 }
 
 TEST_F(SubchannelMetricsTest, MultipleConnectionAttemptsFailed) {
@@ -174,9 +180,10 @@ TEST_F(SubchannelMetricsTest, MultipleConnectionAttemptsFailed) {
     hold->Fail(absl::UnavailableError("test failure"));
   }
   absl::SleepFor(absl::Milliseconds(50));
-  EXPECT_THAT(stats_plugin_->GetUInt64MetricValueByName(
-                  "grpc.subchannel.connection_attempts_failed", {target, "", ""}),
-              ::testing::Optional(kConnecionAttempts));
+  EXPECT_THAT(
+      stats_plugin_->GetUInt64MetricValueByName(
+          "grpc.subchannel.connection_attempts_failed", {target, "", ""}),
+      ::testing::Optional(kConnecionAttempts));
 }
 
 TEST_F(SubchannelMetricsTest, SecurityLevelsPrivacyAndIntegrity) {

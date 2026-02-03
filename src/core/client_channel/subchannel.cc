@@ -564,14 +564,16 @@ class OldSubchannel::ConnectedSubchannelStateWatcher final
           absl::string_view disconnect_reason =
               c->shutdown_ ? "subchannel shutdown" : "unknown";
           auto scope = GlobalCollectionScope();
-          SubchannelMetricsDomainDisconnections::GetStorage(scope,
-            c->target_, c->backend_service_, c->locality_,
-            disconnect_reason)->Increment(
-               SubchannelMetricsDomainDisconnections::kDisconnections);
-          SubchannelConnectionsDomainOpenConnections::GetStorage(scope,
-            c->target_, connected_subchannel->security_level(), c->backend_service_,
-            c->locality_)->Decrement(
-            SubchannelConnectionsDomainOpenConnections::kOpenConnections);
+          SubchannelMetricsDomainDisconnections::GetStorage(
+              scope, c->target_, c->backend_service_, c->locality_,
+              disconnect_reason)
+              ->Increment(
+                  SubchannelMetricsDomainDisconnections::kDisconnections);
+          SubchannelConnectionsDomainOpenConnections::GetStorage(
+              scope, c->target_, connected_subchannel->security_level(),
+              c->backend_service_, c->locality_)
+              ->Decrement(
+                  SubchannelConnectionsDomainOpenConnections::kOpenConnections);
         }
         // If the subchannel was created from an endpoint, then we report
         // TRANSIENT_FAILURE here instead of IDLE. The subchannel will never
@@ -976,9 +978,10 @@ void OldSubchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
                                grpc_error_to_absl_status(error));
     // Record failed connection attempt
     if (stats_plugin_group_ != nullptr) {
-      SubchannelMetricsDomainAttempts::GetStorage(GlobalCollectionScope(),
-        target_, backend_service_, locality_)->Increment(
-            SubchannelMetricsDomainAttempts::kConnectionAttemptsFailed);
+      SubchannelMetricsDomainAttempts::GetStorage(
+          GlobalCollectionScope(), target_, backend_service_, locality_)
+          ->Increment(
+              SubchannelMetricsDomainAttempts::kConnectionAttemptsFailed);
     }
     if (created_from_endpoint_) return;
     retry_timer_handle_ = event_engine_->RunAfter(
@@ -1083,12 +1086,15 @@ bool OldSubchannel::PublishTransportLocked() {
   // Record successful connection attempt
   if (stats_plugin_group_ != nullptr) {
     auto scope = GlobalCollectionScope();
-    SubchannelMetricsDomainAttempts::GetStorage(scope,
-      target_, backend_service_, locality_)->Increment(
-      SubchannelMetricsDomainAttempts::kConnectionAttemptsSucceeded);
-    SubchannelConnectionsDomainOpenConnections::GetStorage(scope,
-      target_, connected_subchannel_->security_level(), backend_service_, locality_)->Increment(
-      SubchannelConnectionsDomainOpenConnections::kOpenConnections);
+    SubchannelMetricsDomainAttempts::GetStorage(scope, target_,
+                                                backend_service_, locality_)
+        ->Increment(
+            SubchannelMetricsDomainAttempts::kConnectionAttemptsSucceeded);
+    SubchannelConnectionsDomainOpenConnections::GetStorage(
+        scope, target_, connected_subchannel_->security_level(),
+        backend_service_, locality_)
+        ->Increment(
+            SubchannelConnectionsDomainOpenConnections::kOpenConnections);
   }
   // Report initial state.
   SetConnectivityStateLocked(GRPC_CHANNEL_READY, absl::Status());
@@ -1515,14 +1521,15 @@ class NewSubchannel::ConnectionStateWatcher final
         }
       }
       auto scope = GlobalCollectionScope();
-      SubchannelMetricsDomainDisconnections::GetStorage(scope,
-        subchannel_->target_, subchannel_->backend_service_, subchannel_->locality_,
-        disconnect_reason)->Increment(
-            SubchannelMetricsDomainDisconnections::kDisconnections);
-      SubchannelConnectionsDomainOpenConnections::GetStorage(scope,
-        subchannel_->target_, connected_subchannel->security_level(), subchannel_->backend_service_,
-        subchannel_->locality_)->Decrement(
-        SubchannelConnectionsDomainOpenConnections::kOpenConnections);
+      SubchannelMetricsDomainDisconnections::GetStorage(
+          scope, subchannel_->target_, subchannel_->backend_service_,
+          subchannel_->locality_, disconnect_reason)
+          ->Increment(SubchannelMetricsDomainDisconnections::kDisconnections);
+      SubchannelConnectionsDomainOpenConnections::GetStorage(
+          scope, subchannel_->target_, connected_subchannel->security_level(),
+          subchannel_->backend_service_, subchannel_->locality_)
+          ->Decrement(
+              SubchannelConnectionsDomainOpenConnections::kOpenConnections);
     }
     GRPC_TRACE_LOG(subchannel, INFO)
         << "subchannel " << subchannel_.get() << " "
@@ -1897,9 +1904,10 @@ void NewSubchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
                                grpc_error_to_absl_status(error));
     // Record failed connection attempt
     if (stats_plugin_group_ != nullptr) {
-      SubchannelMetricsDomainAttempts::GetStorage(GlobalCollectionScope(),
-        target_, backend_service_, locality_)->Increment(
-            SubchannelMetricsDomainAttempts::kConnectionAttemptsFailed);
+      SubchannelMetricsDomainAttempts::GetStorage(
+          GlobalCollectionScope(), target_, backend_service_, locality_)
+          ->Increment(
+              SubchannelMetricsDomainAttempts::kConnectionAttemptsFailed);
     }
     if (created_from_endpoint_) return;
     retry_timer_handle_ = event_engine_->RunAfter(
@@ -2004,12 +2012,15 @@ bool NewSubchannel::PublishTransportLocked() {
   // Record successful connection attempt
   if (stats_plugin_group_ != nullptr) {
     auto scope = GlobalCollectionScope();
-    SubchannelMetricsDomainAttempts::GetStorage(scope,
-      target_, backend_service_, locality_)->Increment(
-      SubchannelMetricsDomainAttempts::kConnectionAttemptsSucceeded);
-    SubchannelConnectionsDomainOpenConnections::GetStorage(scope,
-      target_, connected_subchannel_->security_level(), backend_service_, locality_)->Increment(
-      SubchannelConnectionsDomainOpenConnections::kOpenConnections);
+    SubchannelMetricsDomainAttempts::GetStorage(scope, target_,
+                                                backend_service_, locality_)
+        ->Increment(
+            SubchannelMetricsDomainAttempts::kConnectionAttemptsSucceeded);
+    SubchannelConnectionsDomainOpenConnections::GetStorage(
+        scope, target_, connected_subchannel_->security_level(),
+        backend_service_, locality_)
+        ->Increment(
+            SubchannelConnectionsDomainOpenConnections::kOpenConnections);
   }
   // Report initial state.
   SetConnectivityStateLocked(GRPC_CHANNEL_READY, absl::Status());

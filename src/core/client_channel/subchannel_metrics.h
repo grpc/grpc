@@ -43,8 +43,8 @@ class SubchannelMetricsDomainDisconnections final
   using Backend = LowContentionBackend;
   static constexpr absl::string_view kName = "subchannel";
   static constexpr auto kLabels =
-      Labels("grpc.target", "grpc.lb.backend_service",
-             "grpc.lb.locality", "grpc.disconnect_error");
+      Labels("grpc.target", "grpc.lb.backend_service", "grpc.lb.locality",
+             "grpc.disconnect_error");
 
   static inline const auto kDisconnections = RegisterCounter(
       "grpc.subchannel.disconnections",

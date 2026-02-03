@@ -210,13 +210,11 @@ GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
   return nullptr;
 }
 
-template<typename T>
+template <typename T>
 std::optional<T> FakeStatsPlugin::GetMetricValueByNameImpl(
-    absl::string_view name,
-    absl::Span<const absl::string_view> labels) {
+    absl::string_view name, absl::Span<const absl::string_view> labels) {
   const auto* desc = instrument_detail::InstrumentIndex::Get().Find(name);
-  if (desc == nullptr)
-      return std::nullopt;
+  if (desc == nullptr) return std::nullopt;
   const auto& names = desc->domain->label_names();
   std::vector<std::string> keys(names.begin(), names.end());
   std::vector<std::string> values(labels.begin(), labels.end());
