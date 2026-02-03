@@ -20,7 +20,7 @@ on:
 
 jobs:
   publish:
-    uses: bazel-contrib/publish-to-bcr/.github/workflows/publish.yaml@v1.0.0
+    uses: bazel-contrib/publish-to-bcr/.github/workflows/publish.yaml@v1.1.0
     with:
       attest: false
       # Mark the created PR as ready for review, since it can't be marked ready by gRPC maintainers and subsequently

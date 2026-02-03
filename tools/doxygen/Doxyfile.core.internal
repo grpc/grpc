@@ -818,6 +818,7 @@ include/grpc/census.h \
 include/grpc/compression.h \
 include/grpc/create_channel_from_endpoint.h \
 include/grpc/credentials.h \
+include/grpc/credentials_cpp.h \
 include/grpc/event_engine/endpoint_config.h \
 include/grpc/event_engine/event_engine.h \
 include/grpc/event_engine/extensible.h \
@@ -1333,6 +1334,9 @@ src/core/ext/upb-gen/envoy/config/cluster/v3/outlier_detection.upb_minitable.h \
 src/core/ext/upb-gen/envoy/config/common/matcher/v3/matcher.upb.h \
 src/core/ext/upb-gen/envoy/config/common/matcher/v3/matcher.upb_minitable.c \
 src/core/ext/upb-gen/envoy/config/common/matcher/v3/matcher.upb_minitable.h \
+src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb.h \
+src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb_minitable.c \
+src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb_minitable.h \
 src/core/ext/upb-gen/envoy/config/core/v3/address.upb.h \
 src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.c \
 src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.h \
@@ -1342,6 +1346,9 @@ src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb_minitable.h \
 src/core/ext/upb-gen/envoy/config/core/v3/base.upb.h \
 src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.c \
 src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.h \
+src/core/ext/upb-gen/envoy/config/core/v3/cel.upb.h \
+src/core/ext/upb-gen/envoy/config/core/v3/cel.upb_minitable.c \
+src/core/ext/upb-gen/envoy/config/core/v3/cel.upb_minitable.h \
 src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb.h \
 src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.c \
 src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.h \
@@ -1829,12 +1836,16 @@ src/core/ext/upbdefs-gen/envoy/config/cluster/v3/outlier_detection.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/config/cluster/v3/outlier_detection.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/config/common/matcher/v3/matcher.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/config/common/matcher/v3/matcher.upbdefs.h \
+src/core/ext/upbdefs-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upbdefs.c \
+src/core/ext/upbdefs-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/address.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/address.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/backoff.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/backoff.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/base.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/base.upbdefs.h \
+src/core/ext/upbdefs-gen/envoy/config/core/v3/cel.upbdefs.c \
+src/core/ext/upbdefs-gen/envoy/config/core/v3/cel.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/config_source.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/config_source.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/event_service_config.upbdefs.c \
@@ -2114,6 +2125,7 @@ src/core/filter/auth/server_auth_filter.cc \
 src/core/filter/blackboard.cc \
 src/core/filter/blackboard.h \
 src/core/filter/filter_args.h \
+src/core/filter/filter_chain.h \
 src/core/filter/fused_filters.cc \
 src/core/handshaker/GEMINI.md \
 src/core/handshaker/endpoint_info/GEMINI.md \
@@ -2125,8 +2137,8 @@ src/core/handshaker/handshaker_factory.h \
 src/core/handshaker/handshaker_registry.cc \
 src/core/handshaker/handshaker_registry.h \
 src/core/handshaker/http_connect/GEMINI.md \
-src/core/handshaker/http_connect/http_connect_handshaker.cc \
-src/core/handshaker/http_connect/http_connect_handshaker.h \
+src/core/handshaker/http_connect/http_connect_client_handshaker.cc \
+src/core/handshaker/http_connect/http_connect_client_handshaker.h \
 src/core/handshaker/http_connect/http_proxy_mapper.cc \
 src/core/handshaker/http_connect/http_proxy_mapper.h \
 src/core/handshaker/http_connect/xds_http_proxy_mapper.cc \
