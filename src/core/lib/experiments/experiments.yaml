@@ -73,11 +73,7 @@
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
   allow_in_fuzzing_config: false
-- name: chttp2_bound_write_size
-  description: Fix a bug where chttp2 can generate very large writes
-  expiry: 2026/02/01
-  owner: ctiller@google.com
-  test_tags: [core_end2end_test]
+
 - name: error_flatten
   description: Flatten errors to ordinary absl::Status form.
   expiry: 2026/04/01

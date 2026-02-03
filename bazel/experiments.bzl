@@ -23,7 +23,6 @@ EXPERIMENT_ENABLES = {
     "call_tracer_send_trailing_metadata_is_an_annotation": "call_tracer_send_trailing_metadata_is_an_annotation",
     "chaotic_good_connect_deadline": "chaotic_good_connect_deadline",
     "chaotic_good_framing_layer": "chaotic_good_framing_layer",
-    "chttp2_bound_write_size": "chttp2_bound_write_size",
     "error_flatten": "error_flatten",
     "event_engine_client": "event_engine_client",
     "event_engine_dns": "event_engine_dns",
@@ -95,7 +94,6 @@ EXPERIMENTS = {
             ],
             "core_end2end_test": [
                 "buffer_list_deletion_prep",
-                "chttp2_bound_write_size",
                 "error_flatten",
                 "event_engine_fork",
                 "local_connector_secure",
@@ -208,7 +206,6 @@ EXPERIMENTS = {
             ],
             "core_end2end_test": [
                 "buffer_list_deletion_prep",
-                "chttp2_bound_write_size",
                 "error_flatten",
                 "event_engine_fork",
                 "local_connector_secure",
@@ -321,7 +318,6 @@ EXPERIMENTS = {
             ],
             "core_end2end_test": [
                 "buffer_list_deletion_prep",
-                "chttp2_bound_write_size",
                 "error_flatten",
                 "event_engine_fork",
                 "local_connector_secure",
