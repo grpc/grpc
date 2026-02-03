@@ -738,7 +738,7 @@ class PyiGeneratorTest(unittest.TestCase):
 
     def _generate_stubs(self, work_dir):
         """Helper to generate stubs.
-        
+
         Copies protos to work_dir/grpc/testing, fixes imports to remove 'src/proto/',
         and runs protoc with work_dir as proto_path.
         """
@@ -753,7 +753,9 @@ class PyiGeneratorTest(unittest.TestCase):
             with open(src, "r") as f:
                 content = f.read()
             # Fix imports: src/proto/grpc/testing -> grpc/testing
-            content = content.replace('import "src/proto/grpc/testing/', 'import "grpc/testing/')
+            content = content.replace(
+                'import "src/proto/grpc/testing/', 'import "grpc/testing/'
+            )
             with open(dst, "w") as f:
                 f.write(content)
 
@@ -767,13 +769,13 @@ class PyiGeneratorTest(unittest.TestCase):
             "--grpc_python_out=grpc_2_0:" + work_dir,
             os.path.join(pkg_dir, "test.proto"),
         ]
-        
+
         proc = subprocess.Popen(
             args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         proc.wait()
         if proc.returncode != 0:
-             print(f"Protoc failed: {proc.stderr.read().decode()}")
+            print(f"Protoc failed: {proc.stderr.read().decode()}")
         self.assertEqual(0, proc.returncode)
 
     def test_pyi_file_generated(self):
@@ -974,7 +976,10 @@ class PyiGeneratorTest(unittest.TestCase):
             # Since we updated it to print comments, and test.proto might not have comments for the service,
             # it should print "Missing associated documentation comment..."
             self.assertIn("class TestService:", content)
-            self.assertIn('"""Missing associated documentation comment in .proto file."""', content)
+            self.assertIn(
+                '"""Missing associated documentation comment in .proto file."""',
+                content,
+            )
         finally:
             shutil.rmtree(work_dir)
 
@@ -1036,4 +1041,3 @@ reportAttributeAccessIssue = false
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
-
