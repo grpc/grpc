@@ -990,11 +990,8 @@ class PyiGeneratorTest(unittest.TestCase):
                 "Running on an interpreter that cannot be invoked from the CLI."
             )
         # Check if pyright is installed
-        try:
-            subprocess.check_output(
-                ["pyright", "--version"], stderr=subprocess.STDOUT
-            )
-        except (subprocess.CalledProcessError, FileNotFoundError):
+        pyright_path = shutil.which("pyright")
+        if pyright_path is None:
             raise unittest.SkipTest("pyright is not installed.")
 
         work_dir = tempfile.mkdtemp()
