@@ -46,5 +46,6 @@ grpc_cc_library(
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_base",
+        "@local_config_python//:python_headers",
     ],
 )

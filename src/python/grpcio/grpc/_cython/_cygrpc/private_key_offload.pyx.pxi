@@ -20,16 +20,6 @@ cdef StatusOr[string] MakeInternalError(string message):
 cdef StatusOr[string] MakeStringResult(string result):
   return StatusOr[string](result)
 
-cdef void python_object_decref_callback(void* ptr) noexcept nogil:
-    # We are being called from C++, potentially without the GIL.
-  with gil:
-    try:
-      if ptr != NULL:
-        obj = <object>ptr
-        Py_DECREF(obj)
-    except:
-      pass
-
 cdef class OnCompleteWrapper:
   cdef CompletionFunctionPyWrapper c_on_complete
   cdef void* c_completion_data
@@ -86,13 +76,10 @@ cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignat
         cpp_result.sync_result = MakeInternalError(cpp_string)
       elif callable(py_result):
         # Cancellation func
-        # Async handle return
         cpp_result.is_sync = False
-        cpp_result.async_result.cancel_wrapper = cancel_wrapper
         Py_INCREF(py_result)
         cpp_result.async_result.python_callable = <void*> py_result
-        cpp_result.async_result.python_callable_decref = python_object_decref_callback
-        # cpp_result.async_handle = async_handle.c_handle
+        cpp_result.async_result.cancel_wrapper = cancel_wrapper
       else:
         # Any other return type is not valid
         cpp_string = f"Invalid result type: {type(py_result)}".encode('utf-8')
@@ -116,8 +103,4 @@ cdef void cancel_wrapper(void* cancel_data) noexcept nogil:
 # To be called from the python layer when the user provides a signer function.
 cdef shared_ptr[PrivateKeySigner] build_private_key_signer(py_user_func):
   py_private_key_signer = BuildPrivateKeySigner(async_sign_wrapper, <void*>py_user_func)
-  return py_private_key_signer
-
-cdef shared_ptr[PrivateKeySigner] build_private_key_signer_with_cancellation(py_user_func, py_cancellation_func):
-  py_private_key_signer = BuildPrivateKeySignerWithCancellation(async_sign_wrapper, <void*>py_user_func, cancel_wrapper, <void*>py_cancellation_func)
   return py_private_key_signer

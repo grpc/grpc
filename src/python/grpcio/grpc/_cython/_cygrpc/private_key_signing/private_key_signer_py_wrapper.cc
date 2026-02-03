@@ -22,6 +22,7 @@
 
 #include <memory>
 
+#include "Python.h"
 #include "grpc/private_key_signer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
@@ -69,15 +70,10 @@ std::shared_ptr<PrivateKeySigner> BuildPrivateKeySigner(
                                                      user_data);
 }
 
-std::shared_ptr<PrivateKeySigner> BuildPrivateKeySignerWithCancellation(
-    SignWrapperForPy sign_py_wrapper, void* user_data,
-    CancelWrapperForPy cancel_py_wrapper_, void* cancel_user_data) {
-  return std::make_shared<PrivateKeySignerPyWrapper>(
-      sign_py_wrapper, user_data, cancel_py_wrapper_, cancel_user_data);
-}
-
 AsyncSigningHandlePyWrapper::~AsyncSigningHandlePyWrapper() {
-  python_callable_decref(python_callable);
+  PyGILState_STATE state = PyGILState_Ensure();
+  Py_DECREF(python_callable);
+  PyGILState_Release(state);
 }
 
 }  // namespace grpc_core

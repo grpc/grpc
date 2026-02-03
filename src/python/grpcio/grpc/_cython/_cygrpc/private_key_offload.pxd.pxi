@@ -81,6 +81,7 @@ cdef extern from "src/python/grpcio/grpc/_cython/_cygrpc/private_key_signing/pri
     ctypedef void (*CancelWrapperForPy)(void*) noexcept nogil
     ctypedef void (*PythonCallableDecref)(void*) noexcept nogil
     cdef cppclass AsyncResult:
+        AsyncResult(CancelWrapperForPy, void*)
         CancelWrapperForPy cancel_wrapper
         void* python_callable
         PythonCallableDecref python_callable_decref
@@ -91,5 +92,4 @@ cdef extern from "src/python/grpcio/grpc/_cython/_cygrpc/private_key_signing/pri
     ctypedef void (*CompletionFunctionPyWrapper)(StatusOr[string], void*)
     ctypedef PrivateKeySignerPyWrapperResult(*SignWrapperForPy)(string_view, CSignatureAlgorithm, void*, CompletionFunctionPyWrapper, void*) noexcept nogil
     shared_ptr[PrivateKeySigner] BuildPrivateKeySigner(SignWrapperForPy, void*)
-    shared_ptr[PrivateKeySigner] BuildPrivateKeySignerWithCancellation(SignWrapperForPy, void*, CancelWrapperForPy, void*)
 

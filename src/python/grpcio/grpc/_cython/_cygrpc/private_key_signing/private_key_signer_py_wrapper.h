@@ -85,10 +85,6 @@ class PrivateKeySignerPyWrapper
 std::shared_ptr<PrivateKeySigner> BuildPrivateKeySigner(SignWrapperForPy sign,
                                                         void* user_data);
 
-std::shared_ptr<PrivateKeySigner> BuildPrivateKeySignerWithCancellation(
-    SignWrapperForPy sign_py_wrapper, void* user_data,
-    CancelWrapperForPy cancel_py_wrapper_, void* cancel_user_data);
-
 class AsyncSigningHandlePyWrapper : public AsyncSigningHandle {
  public:
   // This is a function provided by the Cython implementation of Private Key
