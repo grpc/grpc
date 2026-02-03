@@ -83,8 +83,7 @@ cdef extern from "src/python/grpcio/grpc/_cython/_cygrpc/private_key_signing/pri
     cdef cppclass AsyncResult:
         AsyncResult(CancelWrapperForPy, void*)
         CancelWrapperForPy cancel_wrapper
-        void* python_callable
-        PythonCallableDecref python_callable_decref
+        void* py_user_cancel_fn
     cdef cppclass PrivateKeySignerPyWrapperResult:
         StatusOr[string] sync_result
         AsyncResult async_result

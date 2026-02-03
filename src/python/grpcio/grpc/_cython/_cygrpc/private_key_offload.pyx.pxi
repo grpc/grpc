@@ -21,14 +21,14 @@ cdef StatusOr[string] MakeStringResult(string result):
   return StatusOr[string](result)
 
 cdef class OnCompleteWrapper:
-  cdef CompletionFunctionPyWrapper c_on_complete
-  cdef void* c_completion_data
+  cdef CompletionFunctionPyWrapper on_complete_wrapper
+  cdef void* c_on_complete_fn
 
   # Makes this class callable
   def __call__(self, result):
     cdef StatusOr[string] cpp_result
     cdef string cpp_string
-    if self.c_on_complete != NULL:
+    if self.on_complete_wrapper != NULL:
       if isinstance(result, bytes):
         # We got a signature
         cpp_string = result
@@ -41,22 +41,22 @@ cdef class OnCompleteWrapper:
         # Any other return type is not valid
         cpp_string = f"Invalid result type: {type(result)}".encode('utf-8')
         cpp_result = MakeInternalError(cpp_string)
-      self.c_on_complete(cpp_result, <void*> self.c_completion_data)
+      self.on_complete_wrapper(cpp_result, <void*> self.c_on_complete_fn)
       # # Don't call multiple types
       # self.c_on_complete = NULL
 
-cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignatureAlgorithm algorithm, void* user_data, CompletionFunctionPyWrapper on_complete, void* completion_data) noexcept nogil:
+cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignatureAlgorithm algorithm, void* py_user_sign_fn, CompletionFunctionPyWrapper on_complete_wrapper, void* c_on_complete_fn) noexcept nogil:
   cdef string cpp_string
   cdef const char* data
   cdef size_t size
   cdef PrivateKeySignerPyWrapperResult cpp_result
   with gil:
     # Cast the void* pointer holding the user's python sign impl
-    py_user_func = <object>user_data
+    py_user_func = <object>py_user_sign_fn
 
-    on_complete_wrapper = OnCompleteWrapper()
-    on_complete_wrapper.c_on_complete = on_complete
-    on_complete_wrapper.c_completion_data = completion_data
+    py_on_complete_wrapper = OnCompleteWrapper()
+    py_on_complete_wrapper.on_complete_wrapper = on_complete_wrapper
+    py_on_complete_wrapper.c_on_complete_fn = c_on_complete_fn 
 
     # Call the user's Python function and handle results
     py_result = None
@@ -64,7 +64,7 @@ cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignat
       data = inp.data()
       size = inp.length()
       py_bytes = PyBytes_FromStringAndSize(data, size)
-      py_result = py_user_func(py_bytes, algorithm, on_complete_wrapper)
+      py_result = py_user_func(py_bytes, algorithm, py_on_complete_wrapper)
       cpp_result.is_sync = True
       if isinstance(py_result, bytes):
         # We got a signature
@@ -78,7 +78,7 @@ cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignat
         # Cancellation func
         cpp_result.is_sync = False
         Py_INCREF(py_result)
-        cpp_result.async_result.python_callable = <void*> py_result
+        cpp_result.async_result.py_user_cancel_fn = <void*> py_result
         cpp_result.async_result.cancel_wrapper = cancel_wrapper
       else:
         # Any other return type is not valid
@@ -90,10 +90,10 @@ cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignat
       cpp_result.sync_result = MakeInternalError(f"Exception in user function: {e}".encode('utf-8'))
       return cpp_result
 
-cdef void cancel_wrapper(void* cancel_data) noexcept nogil:
+cdef void cancel_wrapper(void* py_cancel_user_fn) noexcept nogil:
   with gil:
     try:
-      py_cancel_func = <object>cancel_data
+      py_cancel_func = <object>py_cancel_user_fn
       py_cancel_func()
     except Exception as e:
       # Exceptions in cancellation

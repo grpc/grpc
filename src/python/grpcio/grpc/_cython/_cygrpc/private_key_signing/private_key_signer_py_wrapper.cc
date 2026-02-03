@@ -29,8 +29,12 @@
 namespace grpc_core {
 
 void CompletionCallbackForPy(absl::StatusOr<std::string> result,
-                             void* completion_data) {
-  CompletionContext* context = static_cast<CompletionContext*>(completion_data);
+                             void* c_on_complete_fn) {
+  if (c_on_complete_fn == nullptr) {
+    return;
+  }
+  CompletionContext* context =
+      static_cast<CompletionContext*>(c_on_complete_fn);
   context->on_complete(result);
   delete context;
 }
@@ -41,15 +45,14 @@ PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
                                 OnSignComplete on_sign_complete) {
   auto* completion_context = new CompletionContext{std::move(on_sign_complete)};
   PrivateKeySignerPyWrapperResult result =
-      sign_py_wrapper_(data_to_sign, signature_algorithm, sign_user_data_,
+      sign_py_wrapper_(data_to_sign, signature_algorithm, py_user_sign_fn,
                        CompletionCallbackForPy, completion_context);
   if (result.is_sync) {
     return result.sync_result;
   } else {
     auto handle = std::make_shared<AsyncSigningHandlePyWrapper>();
     handle->cancel_py_wrapper_ = result.async_result.cancel_wrapper;
-    handle->python_callable = result.async_result.python_callable;
-    handle->python_callable_decref = result.async_result.python_callable_decref;
+    handle->py_user_cancel_fn = result.async_result.py_user_cancel_fn;
     return handle;
   }
 }
@@ -61,18 +64,18 @@ void PrivateKeySignerPyWrapper::Cancel(
   if (handle == nullptr || handle_impl->cancel_py_wrapper_ == nullptr) {
     return;
   }
-  handle_impl->cancel_py_wrapper_(handle_impl->python_callable);
+  handle_impl->cancel_py_wrapper_(handle_impl->py_user_cancel_fn);
 }
 
 std::shared_ptr<PrivateKeySigner> BuildPrivateKeySigner(
-    SignWrapperForPy sign_py_wrapper, void* user_data) {
+    SignWrapperForPy sign_py_wrapper, void* py_user_sign_fn) {
   return std::make_shared<PrivateKeySignerPyWrapper>(sign_py_wrapper,
-                                                     user_data);
+                                                     py_user_sign_fn);
 }
 
 AsyncSigningHandlePyWrapper::~AsyncSigningHandlePyWrapper() {
   PyGILState_STATE state = PyGILState_Ensure();
-  Py_DECREF(python_callable);
+  Py_DECREF(py_user_cancel_fn);
   PyGILState_Release(state);
 }
 

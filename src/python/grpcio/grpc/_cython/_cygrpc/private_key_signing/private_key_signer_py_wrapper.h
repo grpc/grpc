@@ -29,11 +29,10 @@
 namespace grpc_core {
 
 typedef void (*CancelWrapperForPy)(void* cancel_data);
-typedef void (*PythonCallableDecref)(void* python_callable);
+typedef void (*PythonCallableDecref)(void* py_user_cancel_fn);
 struct AsyncResult {
   CancelWrapperForPy cancel_wrapper;
-  void* python_callable;
-  PythonCallableDecref python_callable_decref;
+  void* py_user_cancel_fn;
 };
 
 struct PrivateKeySignerPyWrapperResult {
@@ -44,13 +43,13 @@ struct PrivateKeySignerPyWrapperResult {
 };
 
 typedef void (*CompletionFunctionPyWrapper)(absl::StatusOr<std::string> result,
-                                            void* completion_data);
+                                            void* c_on_complete_fn);
 
 typedef PrivateKeySignerPyWrapperResult (*SignWrapperForPy)(
     absl::string_view data_to_sign,
     grpc_core::PrivateKeySigner::SignatureAlgorithm signature_algorithm,
-    void* user_data, CompletionFunctionPyWrapper on_complete,
-    void* completion_data);
+    void* py_user_sign_fn, CompletionFunctionPyWrapper on_complete,
+    void* c_on_complete_fn);
 
 struct CompletionContext {
   grpc_core::PrivateKeySigner::OnSignComplete on_complete;
@@ -61,12 +60,9 @@ class PrivateKeySignerPyWrapper
     : public PrivateKeySigner,
       public std::enable_shared_from_this<PrivateKeySignerPyWrapper> {
  public:
-  PrivateKeySignerPyWrapper(SignWrapperForPy sign_py_wrapper, void* user_data)
-      : sign_py_wrapper_(sign_py_wrapper), sign_user_data_(user_data) {}
-  PrivateKeySignerPyWrapper(SignWrapperForPy sign_py_wrapper, void* user_data,
-                            CancelWrapperForPy cancel_py_wrapper,
-                            void* cancel_data)
-      : sign_py_wrapper_(sign_py_wrapper), sign_user_data_(user_data) {}
+  PrivateKeySignerPyWrapper(SignWrapperForPy sign_py_wrapper,
+                            void* py_user_sign_fn)
+      : sign_py_wrapper_(sign_py_wrapper), py_user_sign_fn(py_user_sign_fn) {}
   std::variant<absl::StatusOr<std::string>, std::shared_ptr<AsyncSigningHandle>>
   Sign(absl::string_view data_to_sign, SignatureAlgorithm signature_algorithm,
        OnSignComplete on_sign_complete) override;
@@ -78,12 +74,12 @@ class PrivateKeySignerPyWrapper
   // Offloading.
   SignWrapperForPy sign_py_wrapper_;
   // This will hold the Python callable object
-  void* sign_user_data_;
+  void* py_user_sign_fn;
 };
 
 // The entry point for Cython to build a PrivateKeySigner.
 std::shared_ptr<PrivateKeySigner> BuildPrivateKeySigner(SignWrapperForPy sign,
-                                                        void* user_data);
+                                                        void* py_user_sign_fn);
 
 class AsyncSigningHandlePyWrapper : public AsyncSigningHandle {
  public:
@@ -91,9 +87,8 @@ class AsyncSigningHandlePyWrapper : public AsyncSigningHandle {
   // Offloading.
   CancelWrapperForPy cancel_py_wrapper_;
   // This will hold the Python callable object
-  void* python_callable;
-  // This will decrememnt the python_callable on object destruction
-  PythonCallableDecref python_callable_decref;
+  void* py_user_cancel_fn;
+  // This will decrememnt the py_user_cancel_fn on object destruction
   ~AsyncSigningHandlePyWrapper() override;
 };
 }  // namespace grpc_core
