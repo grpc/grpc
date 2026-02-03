@@ -1,4 +1,5 @@
 <?php
+
 /*
  *
  * Copyright 2015 gRPC authors.
@@ -29,8 +30,11 @@ class ChannelCredentialsTest extends \PHPUnit\Framework\TestCase
 
     public function testCreateSslWith3Null()
     {
-        $channel_credentials = Grpc\ChannelCredentials::createSsl(null, null,
-                                                                  null);
+        $channel_credentials = Grpc\ChannelCredentials::createSsl(
+            null,
+            null,
+            null
+        );
         $this->assertNotNull($channel_credentials);
     }
 
@@ -66,6 +70,8 @@ class ChannelCredentialsTest extends \PHPUnit\Framework\TestCase
     {
         $this->expectException(\InvalidArgumentException::class);
         $channel_credentials = Grpc\ChannelCredentials::createComposite(
-            'something', 'something');
+            'something',
+            'something'
+        );
     }
 }

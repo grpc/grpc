@@ -1,4 +1,5 @@
 <?php
+
 /*
  *
  * Copyright 2015 gRPC authors.
@@ -22,7 +23,7 @@ namespace Grpc;
 /**
  * Represents an active call that sends a single message and then gets a
  * single response.
- * 
+ *
  * @template T of \Google\Protobuf\Internal\Message
  */
 class UnaryCall extends AbstractCall
