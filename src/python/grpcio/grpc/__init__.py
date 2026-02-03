@@ -24,6 +24,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Generic,
     Iterable,
     Iterator,
     List,
@@ -33,7 +34,6 @@ from typing import (
     Tuple,
     Type,
     Union,
-    Generic,
 )
 
 from grpc._cython import cygrpc as _cygrpc  # type: ignore # noqa: PGH003
