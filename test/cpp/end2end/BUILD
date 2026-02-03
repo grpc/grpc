@@ -824,6 +824,7 @@ grpc_cc_test(
     flaky = True,  # TODO(b/151315347)
     tags = [
         "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
         "cpp_lb_end2end_test",
         # b/117575949.
         "grpc:no-internal-poller",
