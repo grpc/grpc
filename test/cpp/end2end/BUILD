@@ -1004,6 +1004,7 @@ grpc_cc_test(
     shard_count = 20,
     tags = [
         "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
         "cpp_lb_end2end_test",
         "no_windows",
     ],  # TODO(jtattermusch): fix test on windows
