@@ -1015,7 +1015,7 @@ reportAttributeAccessIssue = false
 
             # Run pyright on the generated files
             # We run from work_dir so it picks up pyproject.toml
-            pyright_invocation = ["pyright"]
+            pyright_invocation = [pyright_path]
             proc = subprocess.Popen(
                 pyright_invocation,
                 stdout=subprocess.PIPE,
