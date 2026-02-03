@@ -736,35 +736,55 @@ class ModuleMainTest(unittest.TestCase):
 class PyiGeneratorTest(unittest.TestCase):
     """Test case for verifying .pyi type stub file generation."""
 
+    def _generate_stubs(self, work_dir):
+        """Helper to generate stubs.
+        
+        Copies protos to work_dir/grpc/testing, fixes imports to remove 'src/proto/',
+        and runs protoc with work_dir as proto_path.
+        """
+        # Prepare directory structure
+        pkg_dir = os.path.join(work_dir, "grpc", "testing")
+        os.makedirs(pkg_dir, exist_ok=True)
+
+        protos = ["test.proto", "empty.proto", "messages.proto"]
+        for proto in protos:
+            src = os.path.join("src", "proto", "grpc", "testing", proto)
+            dst = os.path.join(pkg_dir, proto)
+            with open(src, "r") as f:
+                content = f.read()
+            # Fix imports: src/proto/grpc/testing -> grpc/testing
+            content = content.replace('import "src/proto/grpc/testing/', 'import "grpc/testing/')
+            with open(dst, "w") as f:
+                f.write(content)
+
+        # Compile test.proto (dependencies will be resolved via proto_path)
+        args = [
+            sys.executable,
+            "-m",
+            "grpc_tools.protoc",
+            "--proto_path=" + work_dir,
+            "--python_out=" + work_dir,
+            "--grpc_python_out=grpc_2_0:" + work_dir,
+            os.path.join(pkg_dir, "test.proto"),
+        ]
+        
+        proc = subprocess.Popen(
+            args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        proc.wait()
+        if proc.returncode != 0:
+             print(f"Protoc failed: {proc.stderr.read().decode()}")
+        self.assertEqual(0, proc.returncode)
+
     def test_pyi_file_generated(self):
         """Tests that .pyi file is generated alongside .py file."""
         if sys.executable is None:
             raise unittest.SkipTest(
                 "Running on an interpreter that cannot be invoked from the CLI."
             )
-        proto_dir_path = os.path.join("src", "proto")
-        test_proto_path = os.path.join(
-            proto_dir_path, "grpc", "testing", "test.proto"
-        )
         work_dir = tempfile.mkdtemp()
         try:
-            invocation = (
-                sys.executable,
-                "-m",
-                "grpc_tools.protoc",
-                "--proto_path",
-                proto_dir_path,
-                "--python_out",
-                work_dir,
-                "--grpc_python_out",
-                work_dir,
-                test_proto_path,
-            )
-            proc = subprocess.Popen(
-                invocation, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-            proc.wait()
-            self.assertEqual(0, proc.returncode)
+            self._generate_stubs(work_dir)
 
             # Check that both .py and .pyi files are generated
             expected_py = os.path.join(
@@ -790,29 +810,9 @@ class PyiGeneratorTest(unittest.TestCase):
             raise unittest.SkipTest(
                 "Running on an interpreter that cannot be invoked from the CLI."
             )
-        proto_dir_path = os.path.join("src", "proto")
-        test_proto_path = os.path.join(
-            proto_dir_path, "grpc", "testing", "test.proto"
-        )
         work_dir = tempfile.mkdtemp()
         try:
-            invocation = (
-                sys.executable,
-                "-m",
-                "grpc_tools.protoc",
-                "--proto_path",
-                proto_dir_path,
-                "--python_out",
-                work_dir,
-                "--grpc_python_out",
-                work_dir,
-                test_proto_path,
-            )
-            proc = subprocess.Popen(
-                invocation, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-            proc.wait()
-            self.assertEqual(0, proc.returncode)
+            self._generate_stubs(work_dir)
 
             pyi_path = os.path.join(
                 work_dir, "grpc", "testing", "test_pb2_grpc.pyi"
@@ -838,29 +838,9 @@ class PyiGeneratorTest(unittest.TestCase):
             raise unittest.SkipTest(
                 "Running on an interpreter that cannot be invoked from the CLI."
             )
-        proto_dir_path = os.path.join("src", "proto")
-        test_proto_path = os.path.join(
-            proto_dir_path, "grpc", "testing", "test.proto"
-        )
         work_dir = tempfile.mkdtemp()
         try:
-            invocation = (
-                sys.executable,
-                "-m",
-                "grpc_tools.protoc",
-                "--proto_path",
-                proto_dir_path,
-                "--python_out",
-                work_dir,
-                "--grpc_python_out",
-                work_dir,
-                test_proto_path,
-            )
-            proc = subprocess.Popen(
-                invocation, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-            proc.wait()
-            self.assertEqual(0, proc.returncode)
+            self._generate_stubs(work_dir)
 
             pyi_path = os.path.join(
                 work_dir, "grpc", "testing", "test_pb2_grpc.pyi"
@@ -889,29 +869,9 @@ class PyiGeneratorTest(unittest.TestCase):
             raise unittest.SkipTest(
                 "Running on an interpreter that cannot be invoked from the CLI."
             )
-        proto_dir_path = os.path.join("src", "proto")
-        test_proto_path = os.path.join(
-            proto_dir_path, "grpc", "testing", "test.proto"
-        )
         work_dir = tempfile.mkdtemp()
         try:
-            invocation = (
-                sys.executable,
-                "-m",
-                "grpc_tools.protoc",
-                "--proto_path",
-                proto_dir_path,
-                "--python_out",
-                work_dir,
-                "--grpc_python_out",
-                work_dir,
-                test_proto_path,
-            )
-            proc = subprocess.Popen(
-                invocation, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-            proc.wait()
-            self.assertEqual(0, proc.returncode)
+            self._generate_stubs(work_dir)
 
             pyi_path = os.path.join(
                 work_dir, "grpc", "testing", "test_pb2_grpc.pyi"
@@ -933,29 +893,9 @@ class PyiGeneratorTest(unittest.TestCase):
             raise unittest.SkipTest(
                 "Running on an interpreter that cannot be invoked from the CLI."
             )
-        proto_dir_path = os.path.join("src", "proto")
-        test_proto_path = os.path.join(
-            proto_dir_path, "grpc", "testing", "test.proto"
-        )
         work_dir = tempfile.mkdtemp()
         try:
-            invocation = (
-                sys.executable,
-                "-m",
-                "grpc_tools.protoc",
-                "--proto_path",
-                proto_dir_path,
-                "--python_out",
-                work_dir,
-                "--grpc_python_out",
-                work_dir,
-                test_proto_path,
-            )
-            proc = subprocess.Popen(
-                invocation, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-            proc.wait()
-            self.assertEqual(0, proc.returncode)
+            self._generate_stubs(work_dir)
 
             pyi_path = os.path.join(
                 work_dir, "grpc", "testing", "test_pb2_grpc.pyi"
@@ -978,29 +918,9 @@ class PyiGeneratorTest(unittest.TestCase):
             raise unittest.SkipTest(
                 "Running on an interpreter that cannot be invoked from the CLI."
             )
-        proto_dir_path = os.path.join("src", "proto")
-        test_proto_path = os.path.join(
-            proto_dir_path, "grpc", "testing", "test.proto"
-        )
         work_dir = tempfile.mkdtemp()
         try:
-            invocation = (
-                sys.executable,
-                "-m",
-                "grpc_tools.protoc",
-                "--proto_path",
-                proto_dir_path,
-                "--python_out",
-                work_dir,
-                "--grpc_python_out",
-                work_dir,
-                test_proto_path,
-            )
-            proc = subprocess.Popen(
-                invocation, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-            proc.wait()
-            self.assertEqual(0, proc.returncode)
+            self._generate_stubs(work_dir)
 
             pyi_path = os.path.join(
                 work_dir, "grpc", "testing", "test_pb2_grpc.pyi"
@@ -1010,6 +930,61 @@ class PyiGeneratorTest(unittest.TestCase):
 
             # Check for Iterator in type hints (used for streaming)
             self.assertIn("Iterator", content)
+        finally:
+            shutil.rmtree(work_dir)
+
+    def test_pyi_file_passes_pyright(self):
+        """Tests that generated .pyi file passes pyright check."""
+        if sys.executable is None:
+            raise unittest.SkipTest(
+                "Running on an interpreter that cannot be invoked from the CLI."
+            )
+        # Check if pyright is installed
+        try:
+            subprocess.check_output(
+                ["pyright", "--version"], stderr=subprocess.STDOUT
+            )
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            raise unittest.SkipTest("pyright is not installed.")
+
+        work_dir = tempfile.mkdtemp()
+        try:
+            self._generate_stubs(work_dir)
+
+            # Create a pyproject.toml to configure pyright for strict checking
+            # We only want to check the generated .pyi files, not the .py files
+            # (which might have issues that are not the responsibility of this test).
+            pyproject_path = os.path.join(work_dir, "pyproject.toml")
+            with open(pyproject_path, "w") as f:
+                f.write(
+                    """
+[tool.pyright]
+include = ["**/*.pyi"]
+reportMissingImports = false
+reportMissingTypeStubs = false
+reportAttributeAccessIssue = false
+"""
+                )
+
+            # Run pyright on the generated files
+            # We run from work_dir so it picks up pyproject.toml
+            pyright_invocation = ["pyright"]
+            proc = subprocess.Popen(
+                pyright_invocation,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                cwd=work_dir,
+            )
+            stdout, stderr = proc.communicate()
+
+            # If pyright fails, print output for debugging
+            if proc.returncode != 0:
+                print(f"Pyright stdout: {stdout.decode('utf-8')}")
+                print(f"Pyright stderr: {stderr.decode('utf-8')}")
+
+            self.assertEqual(
+                0, proc.returncode, "Generated .pyi file failed pyright check"
+            )
         finally:
             shutil.rmtree(work_dir)
 
