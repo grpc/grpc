@@ -35,6 +35,5 @@ pyx_library(
     defines = ["GRPC_PYTHON_BUILD=1"],
     deps = [
         "//:grpc",
-        "@com_google_absl//absl/log:initialize",
     ],
 )

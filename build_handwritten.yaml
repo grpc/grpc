@@ -198,7 +198,6 @@ python_dependencies:
   - boringssl
   - re2
   - z
-  - abseil-cpp
 ruby_gem:
   deps:
   - grpc
