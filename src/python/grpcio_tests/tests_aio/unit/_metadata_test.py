@@ -220,6 +220,12 @@ class TestTypeMetadata(unittest.TestCase):
             ],
         )
 
+        # Test with empty metadata
+        empty_metadata = Metadata()
+        self.assertEqual(list(empty_metadata.keys()), [])
+        self.assertEqual(list(empty_metadata.values()), [])
+        self.assertEqual(list(empty_metadata.items()), [])
+
 
 class TestMetadataWithServer(AioTestBase):
     async def setUp(self):
