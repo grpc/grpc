@@ -42,6 +42,7 @@
 #include "absl/functional/function_ref.h"
 #include "absl/hash/hash.h"
 #include "absl/log/log.h"
+#include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
@@ -74,7 +75,7 @@ InstrumentLabel::InstrumentLabel(absl::string_view label) {
     auto* current_value = labels[i].load(std::memory_order_acquire);
     while (current_value == nullptr) {
       if (label_copy == nullptr) {
-        label_copy.reset(new std::string(label));
+        label_copy = absl::make_unique<std::string>(label);
       }
       if (!labels[i].compare_exchange_weak(current_value, label_copy.get(),
                                            std::memory_order_acq_rel)) {
