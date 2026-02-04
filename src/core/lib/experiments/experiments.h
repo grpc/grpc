@@ -131,6 +131,7 @@ inline bool IsTrackZeroCopyAllocationsInResourceQuotaEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
+inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
 inline bool IsXdsChannelFilterChainPerRouteEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
@@ -208,6 +209,7 @@ inline bool IsTrackZeroCopyAllocationsInResourceQuotaEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
+inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
 inline bool IsXdsChannelFilterChainPerRouteEnabled() { return false; }
 
 #else
@@ -285,6 +287,7 @@ inline bool IsTrackZeroCopyAllocationsInResourceQuotaEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
+inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
 inline bool IsXdsChannelFilterChainPerRouteEnabled() { return false; }
 #endif
 
@@ -343,6 +346,7 @@ enum ExperimentIds {
   kExperimentIdTsiFrameProtectorWithoutLocks,
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
   kExperimentIdUseCallEventEngineInCompletionQueue,
+  kExperimentIdWildcardIpExpansionRestriction,
   kExperimentIdXdsChannelFilterChainPerRoute,
   kNumExperiments
 };
@@ -561,6 +565,10 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
 inline bool IsUseCallEventEngineInCompletionQueueEnabled() {
   return IsExperimentEnabled<
       kExperimentIdUseCallEventEngineInCompletionQueue>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_WILDCARD_IP_EXPANSION_RESTRICTION
+inline bool IsWildcardIpExpansionRestrictionEnabled() {
+  return IsExperimentEnabled<kExperimentIdWildcardIpExpansionRestriction>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_XDS_CHANNEL_FILTER_CHAIN_PER_ROUTE
 inline bool IsXdsChannelFilterChainPerRouteEnabled() {

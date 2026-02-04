@@ -70,6 +70,7 @@ EXPERIMENT_ENABLES = {
     "tsi_frame_protector_without_locks": "tsi_frame_protector_without_locks",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
     "use_call_event_engine_in_completion_queue": "use_call_event_engine_in_completion_queue",
+    "wildcard_ip_expansion_restriction": "wildcard_ip_expansion_restriction",
     "xds_channel_filter_chain_per_route": "xds_channel_filter_chain_per_route",
 }
 
@@ -108,6 +109,7 @@ EXPERIMENTS = {
                 "secure_endpoint_offload_large_writes",
                 "subchannel_connection_scaling",
                 "use_call_event_engine_in_completion_queue",
+                "wildcard_ip_expansion_restriction",
             ],
             "cpp_end2end_test": [
                 "error_flatten",
@@ -224,6 +226,7 @@ EXPERIMENTS = {
                 "secure_endpoint_offload_large_writes",
                 "subchannel_connection_scaling",
                 "use_call_event_engine_in_completion_queue",
+                "wildcard_ip_expansion_restriction",
             ],
             "cpp_end2end_test": [
                 "error_flatten",
@@ -340,6 +343,7 @@ EXPERIMENTS = {
                 "secure_endpoint_offload_large_writes",
                 "subchannel_connection_scaling",
                 "use_call_event_engine_in_completion_queue",
+                "wildcard_ip_expansion_restriction",
             ],
             "cpp_end2end_test": [
                 "error_flatten",

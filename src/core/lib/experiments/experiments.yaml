@@ -382,6 +382,12 @@
   expiry: 2026/06/01
   owner: aananthv@google.com
   test_tags: ["core_end2end_test"]
+- name: wildcard_ip_expansion_restriction
+  description:
+    If set, adds optional restriction on when to expand wildcard IPs.
+  expiry: 2026/07/01
+  owner: alishananda@google.com
+  test_tags: ["core_end2end_test"]
 - name: xds_channel_filter_chain_per_route
   description: xDS channels use a separate filter chain for each route.
   expiry: 2026/06/01

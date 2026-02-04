@@ -61,8 +61,7 @@ class XdsHttpGcpAuthnFilter final : public XdsHttpFilterImpl {
       absl::string_view instance_name,
       const XdsResourceType::DecodeContext& context,
       const XdsExtension& extension, ValidationErrors* errors) const override;
-  void UpdateBlackboard(const Json& config,
-                        const Blackboard* old_blackboard,
+  void UpdateBlackboard(const Json& config, const Blackboard* old_blackboard,
                         Blackboard* new_blackboard) const override;
   void UpdateBlackboard(const FilterConfig& config,
                         const Blackboard* old_blackboard,
