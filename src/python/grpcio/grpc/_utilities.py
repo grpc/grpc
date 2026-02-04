@@ -172,7 +172,7 @@ class _ChannelReadyFuture(grpc.Future):
     def add_done_callback(self, fn: _DoneCallbackType):
         with self._condition:
             if (
-                self._done_callbacks
+                self._done_callbacks is not None
                 and not self._cancelled
                 and not self._matured
             ):
