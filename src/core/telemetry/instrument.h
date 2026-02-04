@@ -232,7 +232,7 @@ class InstrumentLabel {
 
   InstrumentLabel() : index_(kSentinelIndex) {}
   explicit InstrumentLabel(absl::string_view label);
-  InstrumentLabel(const char* label)
+  explicit InstrumentLabel(const char* label)
       : InstrumentLabel(absl::string_view(label)) {}
 
   static InstrumentLabel FromIndex(uint8_t index) {
