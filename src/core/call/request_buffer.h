@@ -36,11 +36,14 @@ class RequestBuffer {
   // One reader of the request buffer.
   class Reader {
    public:
-    explicit Reader(RequestBuffer* buffer) ABSL_LOCKS_EXCLUDED(buffer->mu_)
-        : buffer_(buffer) {
+    explicit Reader(RequestBuffer* buffer) : buffer_(buffer) {
+      MutexLock lock(&buffer->mu_);
       buffer->AddReader(this);
     }
-    ~Reader() ABSL_LOCKS_EXCLUDED(buffer_->mu_) { buffer_->RemoveReader(this); }
+    ~Reader() {
+      MutexLock lock(&buffer_->mu_);
+      buffer_->RemoveReader(this);
+    }
 
     Reader(const Reader&) = delete;
     Reader& operator=(const Reader&) = delete;
