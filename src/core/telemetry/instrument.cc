@@ -21,7 +21,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
-#include <mutex>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -75,13 +74,14 @@ InstrumentLabel::InstrumentLabel(absl::string_view label) {
     auto* current_value = labels[i].load(std::memory_order_acquire);
     while (current_value == nullptr) {
       if (label_copy == nullptr) {
-        label_copy.reset(new std::string(label));
+        label_copy = std::make_unique<std::string>(label);
       }
       if (!labels[i].compare_exchange_weak(current_value, label_copy.get(),
                                            std::memory_order_acq_rel)) {
         continue;
       }
-      label_copy.release();
+      // Pointer owned by current_value now.
+      std::ignore = label_copy.release();
       index_ = i;
       return;
     }

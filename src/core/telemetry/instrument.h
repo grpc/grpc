@@ -232,7 +232,7 @@ class InstrumentLabel {
 
   InstrumentLabel() : index_(kSentinelIndex) {}
   explicit InstrumentLabel(absl::string_view label);
-  InstrumentLabel(const char* label)
+  explicit InstrumentLabel(const char* label)
       : InstrumentLabel(absl::string_view(label)) {}
 
   static InstrumentLabel FromIndex(uint8_t index) {
@@ -634,7 +634,7 @@ class QueryableDomain {
  protected:
   QueryableDomain(std::string name, InstrumentLabelList label_names,
                   size_t map_shards_size)
-      : label_names_(std::move(label_names)),
+      : label_names_(label_names),
         map_shards_size_(label_names_.empty() ? 1 : map_shards_size),
         map_shards_(std::make_unique<MapShard[]>(map_shards_size_)),
         name_(std::move(name)) {}
@@ -881,7 +881,6 @@ class MetricsQuery {
   void Apply(InstrumentLabelList label_names,
              absl::FunctionRef<void(MetricsSink&)> fn, MetricsSink& sink) const;
 
- private:
   void ApplyLabelChecks(InstrumentLabelList label_names,
                         absl::FunctionRef<void(MetricsSink&)> fn,
                         MetricsSink& sink) const;
@@ -1162,7 +1161,7 @@ class InstrumentDomain {
 
  protected:
   template <typename... Label>
-  static const FixedInstrumentLabelList<sizeof...(Label)> MakeLabels(
+  static FixedInstrumentLabelList<sizeof...(Label)> MakeLabels(
       Label... labels) {
     InstrumentLabel l[] = {InstrumentLabel(labels)...};
     for (size_t i = 0; i < sizeof...(Label); ++i) {
