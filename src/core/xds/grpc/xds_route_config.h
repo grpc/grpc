@@ -40,7 +40,7 @@ namespace grpc_core {
 struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
   struct FilterConfigOverride {
     absl::string_view config_proto_type;
-    XdsHttpFilterImpl::FilterConfig config;
+    Json config;
 
     bool operator==(const FilterConfigOverride& other) const {
       return config_proto_type == other.config_proto_type &&

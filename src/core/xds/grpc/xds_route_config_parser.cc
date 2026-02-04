@@ -405,7 +405,7 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
     }
     auto& entry = typed_per_filter_config[std::string(key)];
     entry.config_proto_type = filter_impl->OverrideConfigProtoName();
-    std::optional<XdsHttpFilterImpl::FilterConfig> filter_config =
+    std::optional<Json> filter_config =
         filter_impl->GenerateFilterConfigOverride(
             key, context, std::move(*extension_to_use), errors);
     if (filter_config.has_value()) {

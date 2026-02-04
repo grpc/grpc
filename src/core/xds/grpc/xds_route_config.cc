@@ -37,7 +37,7 @@ namespace grpc_core {
 
 std::string XdsRouteConfigResource::FilterConfigOverride::ToString() const {
   return absl::StrCat("{config_proto_type=", config_proto_type,
-                      ", config=", config.ToString(), "}");
+                      ", config=", JsonDump(config), "}");
 }
 
 //

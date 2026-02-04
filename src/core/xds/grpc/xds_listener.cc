@@ -59,7 +59,7 @@ std::string XdsListenerResource::HttpConnectionManager::ToString() const {
 std::string XdsListenerResource::HttpConnectionManager::HttpFilter::ToString()
     const {
   return absl::StrCat("{name=", name, ", config_proto_type=", config_proto_type,
-                      ", config=", config.ToString(), "}");
+                      ", config=", JsonDump(config), "}");
 }
 
 //

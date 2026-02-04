@@ -192,7 +192,7 @@ std::optional<absl::string_view> XdsRouting::GetHeaderValue(
 
 namespace {
 
-const XdsHttpFilterImpl::FilterConfig* FindFilterConfigOverride(
+const Json* FindFilterConfigOverride(
     const std::string& instance_name,
     const XdsRouteConfigResource::VirtualHost& vhost,
     const XdsRouteConfigResource::Route& route,
@@ -276,9 +276,8 @@ XdsRouting::GeneratePerHTTPFilterConfigsForMethodConfig(
       [&](const XdsHttpFilterImpl& filter_impl,
           const XdsListenerResource::HttpConnectionManager::HttpFilter&
               http_filter) {
-        const XdsHttpFilterImpl::FilterConfig* config_override =
-            FindFilterConfigOverride(http_filter.name, vhost, route,
-                                     cluster_weight);
+        const Json* config_override = FindFilterConfigOverride(
+            http_filter.name, vhost, route, cluster_weight);
         // Generate service config for filter.
         return filter_impl.GenerateMethodConfig(http_filter.config,
                                                 config_override);

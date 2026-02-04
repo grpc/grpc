@@ -216,8 +216,7 @@ TEST_F(XdsRouterFilterTest, GenerateFilterConfig) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
-  EXPECT_EQ(config->config, Json()) << JsonDump(config->config);
+  EXPECT_EQ(*config, Json()) << JsonDump(*config);
 }
 
 TEST_F(XdsRouterFilterTest, GenerateFilterConfigTypedStruct) {
@@ -302,8 +301,7 @@ TEST_F(XdsFaultInjectionFilterTest, ModifyChannelArgs) {
 }
 
 TEST_F(XdsFaultInjectionFilterTest, GenerateMethodConfigTopLevelConfig) {
-  XdsHttpFilterImpl::FilterConfig config;
-  config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
+  Json config = Json::FromObject({{"foo", Json::FromString("bar")}});
   auto service_config = filter_->GenerateMethodConfig(config, nullptr);
   ASSERT_TRUE(service_config.ok()) << service_config.status();
   EXPECT_EQ(service_config->service_config_field_name, "faultInjectionPolicy");
@@ -311,11 +309,8 @@ TEST_F(XdsFaultInjectionFilterTest, GenerateMethodConfigTopLevelConfig) {
 }
 
 TEST_F(XdsFaultInjectionFilterTest, GenerateMethodConfigOverrideConfig) {
-  XdsHttpFilterImpl::FilterConfig top_config;
-  top_config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
-  XdsHttpFilterImpl::FilterConfig override_config;
-  override_config.config =
-      Json::FromObject({{"baz", Json::FromString("quux")}});
+  Json top_config = Json::FromObject({{"foo", Json::FromString("bar")}});
+  Json override_config = Json::FromObject({{"baz", Json::FromString("quux")}});
   auto service_config =
       filter_->GenerateMethodConfig(top_config, &override_config);
   ASSERT_TRUE(service_config.ok()) << service_config.status();
@@ -324,8 +319,7 @@ TEST_F(XdsFaultInjectionFilterTest, GenerateMethodConfigOverrideConfig) {
 }
 
 TEST_F(XdsFaultInjectionFilterTest, GenerateServiceConfig) {
-  XdsHttpFilterImpl::FilterConfig config;
-  config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
+  Json config = Json::FromObject({{"foo", Json::FromString("bar")}});
   auto service_config = filter_->GenerateServiceConfig(config);
   ASSERT_TRUE(service_config.ok()) << service_config.status();
   EXPECT_EQ(service_config->service_config_field_name, "");
@@ -339,8 +333,7 @@ class XdsFaultInjectionFilterConfigTest
     : public XdsFaultInjectionFilterTest,
       public ::testing::WithParamInterface<bool> {
  protected:
-  std::optional<XdsHttpFilterImpl::FilterConfig> GenerateConfig(
-      XdsExtension extension) {
+  std::optional<Json> GenerateConfig(XdsExtension extension) {
     if (GetParam()) {
       return filter_->GenerateFilterConfigOverride(
           "", decode_context_, std::move(extension), &errors_);
@@ -359,8 +352,7 @@ TEST_P(XdsFaultInjectionFilterConfigTest, EmptyConfig) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
-  EXPECT_EQ(config->config, Json::FromObject({})) << JsonDump(config->config);
+  EXPECT_EQ(*config, Json::FromObject({})) << JsonDump(*config);
 }
 
 TEST_P(XdsFaultInjectionFilterConfigTest, BasicConfig) {
@@ -379,8 +371,7 @@ TEST_P(XdsFaultInjectionFilterConfigTest, BasicConfig) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
-  EXPECT_EQ(JsonDump(config->config),
+  EXPECT_EQ(JsonDump(*config),
             "{\"abortCode\":\"UNAVAILABLE\","
             "\"abortPercentageDenominator\":100,"
             "\"abortPercentageNumerator\":75,"
@@ -399,8 +390,7 @@ TEST_P(XdsFaultInjectionFilterConfigTest, HttpAbortCode) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
-  EXPECT_EQ(JsonDump(config->config), "{\"abortCode\":\"UNIMPLEMENTED\"}");
+  EXPECT_EQ(JsonDump(*config), "{\"abortCode\":\"UNIMPLEMENTED\"}");
 }
 
 TEST_P(XdsFaultInjectionFilterConfigTest, HeaderAbortAndDelay) {
@@ -412,9 +402,8 @@ TEST_P(XdsFaultInjectionFilterConfigTest, HeaderAbortAndDelay) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
   EXPECT_EQ(
-      JsonDump(config->config),
+      JsonDump(*config),
       "{\"abortCode\":\"OK\","
       "\"abortCodeHeader\":\"x-envoy-fault-abort-grpc-request\","
       "\"abortPercentageHeader\":\"x-envoy-fault-abort-percentage\","
@@ -523,8 +512,7 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfig) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
-  EXPECT_EQ(config->config, Json::FromObject({})) << JsonDump(config->config);
+  EXPECT_EQ(*config, Json::FromObject({})) << JsonDump(*config);
 }
 
 TEST_F(XdsRbacFilterTest, GenerateFilterConfigTypedStruct) {
@@ -567,8 +555,7 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverride) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name, filter_->OverrideConfigProtoName());
-  EXPECT_EQ(config->config, Json::FromObject({})) << JsonDump(config->config);
+  EXPECT_EQ(*config, Json::FromObject({})) << JsonDump(*config);
 }
 
 TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverrideTypedStruct) {
@@ -603,9 +590,7 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverrideUnparsable) {
 }
 
 TEST_F(XdsRbacFilterTest, GenerateMethodConfig) {
-  XdsHttpFilterImpl::FilterConfig hcm_config = {
-      filter_->ConfigProtoName(),
-      Json::FromObject({{"name", Json::FromString("foo")}})};
+  Json hcm_config = Json::FromObject({{"name", Json::FromString("foo")}});
   auto config = filter_->GenerateMethodConfig(hcm_config, nullptr);
   ASSERT_TRUE(config.ok()) << config.status();
   EXPECT_EQ(config->service_config_field_name, "rbacPolicy");
@@ -614,8 +599,7 @@ TEST_F(XdsRbacFilterTest, GenerateMethodConfig) {
 }
 
 TEST_F(XdsRbacFilterTest, GenerateServiceConfig) {
-  XdsHttpFilterImpl::FilterConfig config;
-  config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
+  Json config = Json::FromObject({{"foo", Json::FromString("bar")}});
   auto service_config = filter_->GenerateServiceConfig(config);
   ASSERT_TRUE(service_config.ok()) << service_config.status();
   EXPECT_EQ(service_config->service_config_field_name, "");
@@ -628,7 +612,7 @@ TEST_F(XdsRbacFilterTest, GenerateServiceConfig) {
 class XdsRbacFilterConfigTest : public XdsRbacFilterTest,
                                 public ::testing::WithParamInterface<bool> {
  protected:
-  std::optional<XdsHttpFilterImpl::FilterConfig> GenerateConfig(RBAC rbac) {
+  std::optional<Json> GenerateConfig(RBAC rbac) {
     if (GetParam()) {
       RBACPerRoute rbac_per_route;
       *rbac_per_route.mutable_rbac() = rbac;
@@ -657,10 +641,7 @@ TEST_P(XdsRbacFilterConfigTest, EmptyConfig) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name,
-            GetParam() ? filter_->OverrideConfigProtoName()
-                       : filter_->ConfigProtoName());
-  EXPECT_EQ(config->config, Json::FromObject({})) << JsonDump(config->config);
+  EXPECT_EQ(*config, Json::FromObject({})) << JsonDump(*config);
 }
 
 TEST_P(XdsRbacFilterConfigTest, AllPermissionTypes) {
@@ -744,10 +725,7 @@ TEST_P(XdsRbacFilterConfigTest, AllPermissionTypes) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name,
-            GetParam() ? filter_->OverrideConfigProtoName()
-                       : filter_->ConfigProtoName());
-  EXPECT_EQ(JsonDump(config->config),
+  EXPECT_EQ(JsonDump(*config),
             "{\"rules\":{"
             "\"action\":0,"
             "\"policies\":{"
@@ -871,10 +849,7 @@ TEST_P(XdsRbacFilterConfigTest, AllPrincipalTypes) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name,
-            GetParam() ? filter_->OverrideConfigProtoName()
-                       : filter_->ConfigProtoName());
-  EXPECT_EQ(JsonDump(config->config),
+  EXPECT_EQ(JsonDump(*config),
             "{\"rules\":{"
             "\"action\":0,"
             "\"policies\":{"
@@ -928,10 +903,7 @@ TEST_P(XdsRbacFilterConfigTest, AuditLoggingOptionsIgnoredWithFeatureDisabled) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name,
-            GetParam() ? filter_->OverrideConfigProtoName()
-                       : filter_->ConfigProtoName());
-  EXPECT_EQ(JsonDump(config->config), "{\"rules\":{\"action\":0}}");
+  EXPECT_EQ(JsonDump(*config), "{\"rules\":{\"action\":0}}");
 }
 
 TEST_P(XdsRbacFilterConfigTest, AuditLoggingOptions) {
@@ -952,10 +924,7 @@ TEST_P(XdsRbacFilterConfigTest, AuditLoggingOptions) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name,
-            GetParam() ? filter_->OverrideConfigProtoName()
-                       : filter_->ConfigProtoName());
-  EXPECT_EQ(JsonDump(config->config),
+  EXPECT_EQ(JsonDump(*config),
             "{\"rules\":{\"action\":0,"
             "\"audit_condition\":1,"
             "\"audit_loggers\":[{\"stdout_logger\":{}}]"
@@ -1163,14 +1132,11 @@ TEST_F(XdsStatefulSessionFilterTest, OverrideConfigDisabled) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name, filter_->OverrideConfigProtoName());
-  EXPECT_EQ(config->config, Json::FromObject({})) << JsonDump(config->config);
+  EXPECT_EQ(*config, Json::FromObject({})) << JsonDump(*config);
 }
 
 TEST_F(XdsStatefulSessionFilterTest, GenerateMethodConfigNoOverride) {
-  XdsHttpFilterImpl::FilterConfig hcm_config = {
-      filter_->ConfigProtoName(),
-      Json::FromObject({{"name", Json::FromString("foo")}})};
+  Json hcm_config = Json::FromObject({{"name", Json::FromString("foo")}});
   auto config = filter_->GenerateMethodConfig(hcm_config, nullptr);
   ASSERT_TRUE(config.ok()) << config.status();
   EXPECT_EQ(config->service_config_field_name, "stateful_session");
@@ -1179,12 +1145,8 @@ TEST_F(XdsStatefulSessionFilterTest, GenerateMethodConfigNoOverride) {
 }
 
 TEST_F(XdsStatefulSessionFilterTest, GenerateMethodConfigWithOverride) {
-  XdsHttpFilterImpl::FilterConfig hcm_config = {
-      filter_->ConfigProtoName(),
-      Json::FromObject({{"name", Json::FromString("foo")}})};
-  XdsHttpFilterImpl::FilterConfig override_config = {
-      filter_->OverrideConfigProtoName(),
-      Json::FromObject({{"name", Json::FromString("bar")}})};
+  Json hcm_config = Json::FromObject({{"name", Json::FromString("foo")}});
+  Json override_config = Json::FromObject({{"name", Json::FromString("bar")}});
   auto config = filter_->GenerateMethodConfig(hcm_config, &override_config);
   ASSERT_TRUE(config.ok()) << config.status();
   EXPECT_EQ(config->service_config_field_name, "stateful_session");
@@ -1193,8 +1155,7 @@ TEST_F(XdsStatefulSessionFilterTest, GenerateMethodConfigWithOverride) {
 }
 
 TEST_F(XdsStatefulSessionFilterTest, GenerateServiceConfig) {
-  XdsHttpFilterImpl::FilterConfig config;
-  config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
+  Json config = Json::FromObject({{"foo", Json::FromString("bar")}});
   auto service_config = filter_->GenerateServiceConfig(config);
   ASSERT_TRUE(service_config.ok()) << service_config.status();
   EXPECT_EQ(service_config->service_config_field_name, "");
@@ -1278,8 +1239,7 @@ class XdsStatefulSessionFilterConfigTest
     : public XdsStatefulSessionFilterTest,
       public ::testing::WithParamInterface<bool> {
  protected:
-  std::optional<XdsHttpFilterImpl::FilterConfig> GenerateConfig(
-      StatefulSession stateful_session) {
+  std::optional<Json> GenerateConfig(StatefulSession stateful_session) {
     if (GetParam()) {
       StatefulSessionPerRoute stateful_session_per_route;
       *stateful_session_per_route.mutable_stateful_session() = stateful_session;
@@ -1313,12 +1273,8 @@ TEST_P(XdsStatefulSessionFilterConfigTest, MinimalConfig) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name,
-            GetParam() ? filter_->OverrideConfigProtoName()
-                       : filter_->ConfigProtoName());
-  EXPECT_EQ(config->config,
-            Json::FromObject({{"name", Json::FromString("foo")}}))
-      << JsonDump(config->config);
+  EXPECT_EQ(*config, Json::FromObject({{"name", Json::FromString("foo")}}))
+      << JsonDump(*config);
 }
 
 TEST_P(XdsStatefulSessionFilterConfigTest, PathAndTtl) {
@@ -1334,15 +1290,12 @@ TEST_P(XdsStatefulSessionFilterConfigTest, PathAndTtl) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name,
-            GetParam() ? filter_->OverrideConfigProtoName()
-                       : filter_->ConfigProtoName());
-  EXPECT_EQ(config->config, Json::FromObject({
-                                {"name", Json::FromString("foo")},
-                                {"path", Json::FromString("/service/method")},
-                                {"ttl", Json::FromString("3.000000000s")},
-                            }))
-      << JsonDump(config->config);
+  EXPECT_EQ(*config, Json::FromObject({
+                         {"name", Json::FromString("foo")},
+                         {"path", Json::FromString("/service/method")},
+                         {"ttl", Json::FromString("3.000000000s")},
+                     }))
+      << JsonDump(*config);
 }
 
 TEST_P(XdsStatefulSessionFilterConfigTest, SessionStateUnset) {
@@ -1350,10 +1303,7 @@ TEST_P(XdsStatefulSessionFilterConfigTest, SessionStateUnset) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name,
-            GetParam() ? filter_->OverrideConfigProtoName()
-                       : filter_->ConfigProtoName());
-  EXPECT_EQ(config->config, Json::FromObject({})) << JsonDump(config->config);
+  EXPECT_EQ(*config, Json::FromObject({})) << JsonDump(*config);
 }
 
 TEST_P(XdsStatefulSessionFilterConfigTest, CookieNotPresent) {
@@ -1508,11 +1458,9 @@ TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigEmpty) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
-  EXPECT_EQ(config->config,
-            Json::FromObject(
-                {{"filter_instance_name", Json::FromString("enterprise")}}))
-      << JsonDump(config->config);
+  EXPECT_EQ(*config, Json::FromObject({{"filter_instance_name",
+                                        Json::FromString("enterprise")}}))
+      << JsonDump(*config);
 }
 
 TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigCacheSizeDefault) {
@@ -1524,12 +1472,11 @@ TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigCacheSizeDefault) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
   EXPECT_EQ(
-      config->config,
+      *config,
       Json::FromObject({{"filter_instance_name", Json::FromString("yorktown")},
                         {"cache_size", Json::FromNumber(10)}}))
-      << JsonDump(config->config);
+      << JsonDump(*config);
 }
 
 TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigCacheSize) {
@@ -1541,12 +1488,10 @@ TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigCacheSize) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
-  EXPECT_EQ(
-      config->config,
-      Json::FromObject({{"filter_instance_name", Json::FromString("hornet")},
-                        {"cache_size", Json::FromNumber(6)}}))
-      << JsonDump(config->config);
+  EXPECT_EQ(*config, Json::FromObject(
+                         {{"filter_instance_name", Json::FromString("hornet")},
+                          {"cache_size", Json::FromNumber(6)}}))
+      << JsonDump(*config);
 }
 
 TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigCacheSizeZero) {
@@ -1616,8 +1561,7 @@ TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigOverride) {
 }
 
 TEST_F(XdsGcpAuthnFilterTest, GenerateMethodConfig) {
-  XdsHttpFilterImpl::FilterConfig config;
-  config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
+  Json config = Json::FromObject({{"foo", Json::FromString("bar")}});
   auto service_config = filter_->GenerateMethodConfig(config, nullptr);
   ASSERT_TRUE(service_config.ok()) << service_config.status();
   EXPECT_EQ(service_config->service_config_field_name, "");
@@ -1625,8 +1569,7 @@ TEST_F(XdsGcpAuthnFilterTest, GenerateMethodConfig) {
 }
 
 TEST_F(XdsGcpAuthnFilterTest, GenerateServiceConfig) {
-  XdsHttpFilterImpl::FilterConfig config;
-  config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
+  Json config = Json::FromObject({{"foo", Json::FromString("bar")}});
   auto service_config = filter_->GenerateServiceConfig(config);
   ASSERT_TRUE(service_config.ok()) << service_config.status();
   EXPECT_EQ(service_config->service_config_field_name, "gcp_authentication");
