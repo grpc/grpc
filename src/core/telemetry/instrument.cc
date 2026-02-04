@@ -21,6 +21,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -30,6 +31,7 @@
 #include "src/core/channelz/channelz.h"
 #include "src/core/channelz/property_list.h"
 #include "src/core/telemetry/histogram.h"
+#include "src/core/util/bitset.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -45,8 +47,70 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
-
 namespace grpc_core {
+
+std::atomic<const std::string*>* InstrumentLabel::GetLabels() {
+  static std::atomic<const std::string*>* static_labels = new std::atomic<
+      const std::string*>[InstrumentLabel::kMaxLabelsPerProcess] {};
+  return static_labels;
+}
+
+std::string InstrumentLabel::RegistrationDebugString() {
+  return absl::StrJoin(
+      absl::MakeSpan(GetLabels(), kMaxLabelsPerProcess), ", ",
+      [](std::string* s, const std::atomic<const std::string*>& p) {
+        auto* loaded_p = p.load(std::memory_order_acquire);
+        if (loaded_p == nullptr) {
+          s->append("<null>");
+        } else {
+          s->append(*loaded_p);
+        }
+      });
+}
+
+InstrumentLabel::InstrumentLabel(absl::string_view label) {
+  auto* labels = GetLabels();
+  std::unique_ptr<std::string> label_copy;
+  for (size_t i = 0; i < InstrumentLabel::kMaxLabelsPerProcess; ++i) {
+    auto* current_value = labels[i].load(std::memory_order_acquire);
+    while (current_value == nullptr) {
+      if (label_copy == nullptr) {
+        label_copy.reset(new std::string(label));
+      }
+      if (!labels[i].compare_exchange_weak(current_value, label_copy.get(),
+                                           std::memory_order_acq_rel)) {
+        continue;
+      }
+      label_copy.release();
+      index_ = i;
+      return;
+    }
+    GRPC_CHECK(current_value != nullptr);
+    if (*current_value == label) {
+      index_ = i;
+      return;
+    }
+  }
+  GRPC_CHECK(false) << "Too many instrument labels registered";
+}
+
+InstrumentLabelList InstrumentLabelSet::ToList() const {
+  InstrumentLabelList list;
+  for (size_t i = 0; i < InstrumentLabel::kMaxLabelsPerProcess; ++i) {
+    if (set_.is_set(i)) list.Append(InstrumentLabel::FromIndex(i));
+  }
+  return list;
+}
+
+std::string InstrumentLabelList::DebugString() const {
+  return absl::StrJoin(absl::MakeSpan(labels_, count_), ", ",
+                       [](std::string* s, const InstrumentLabel& label) {
+                         s->append(label.label());
+                         s->append("[idx=");
+                         s->append(std::to_string(label.index()));
+                         s->append("]");
+                       });
+}
 
 namespace {
 struct Hook {
@@ -81,12 +145,14 @@ void CallHistogramCollectionHooks(
 
 namespace {
 std::vector<std::string> FilterLabels(
-    absl::Span<const std::string> domain_label_names,
-    const absl::flat_hash_set<std::string>& scope_labels_of_interest,
+    InstrumentLabelList domain_label_names,
+    InstrumentLabelSet scope_labels_of_interest,
     absl::Span<const std::string> full_label_values) {
   std::vector<std::string> result;
   result.reserve(domain_label_names.size());
   for (size_t i = 0; i < domain_label_names.size(); ++i) {
+    VLOG(1) << "Checking label " << domain_label_names[i].label() << " index "
+            << (int)domain_label_names[i].index() << " in scope labels";
     if (scope_labels_of_interest.contains(domain_label_names[i])) {
       result.push_back(full_label_values[i]);
     } else {
@@ -99,10 +165,10 @@ std::vector<std::string> FilterLabels(
 
 CollectionScope::CollectionScope(
     std::vector<RefCountedPtr<CollectionScope>> parents,
-    absl::Span<const std::string> labels, size_t child_shards_count,
+    InstrumentLabelSet labels_of_interest, size_t child_shards_count,
     size_t storage_shards_count)
     : parents_(std::move(parents)),
-      labels_of_interest_(labels.begin(), labels.end()),
+      labels_of_interest_(labels_of_interest),
       child_shards_(child_shards_count),
       storage_shards_(storage_shards_count) {
   // Sort parents (by address) and then remove any duplicates.
@@ -110,11 +176,12 @@ CollectionScope::CollectionScope(
   parents_.erase(std::unique(parents_.begin(), parents_.end()), parents_.end());
   for (const auto& parent : parents_) {
     if (parent != nullptr) {
-      labels_of_interest_.insert(parent->labels_of_interest_.begin(),
-                                 parent->labels_of_interest_.end());
+      labels_of_interest_.Merge(parent->labels_of_interest_);
       auto& shard = parent->child_shard(this);
       MutexLock lock(&shard.mu);
       shard.children.insert(this);
+      VLOG(1) << "Registered child scope " << this << " with parent "
+              << parent.get();
     }
   }
 }
@@ -173,6 +240,7 @@ void CollectionScope::ForEachUniqueStorage(
   for (auto& shard : child_shards_) {
     MutexLock lock(&shard.mu);
     for (auto* child : shard.children) {
+      VLOG(1) << "Visiting child scope " << child << " from parent " << this;
       child->ForEachUniqueStorage(cb, visited);
     }
   }
@@ -191,7 +259,7 @@ void CollectionScope::TestOnlyReset() {
 
 RefCountedPtr<CollectionScope> CreateCollectionScope(
     std::vector<RefCountedPtr<CollectionScope>> parents,
-    absl::Span<const std::string> labels, size_t child_shards_count,
+    InstrumentLabelSet labels, size_t child_shards_count,
     size_t storage_shards_count) {
   return MakeRefCounted<CollectionScope>(
       std::move(parents), labels, child_shards_count, storage_shards_count);
@@ -227,9 +295,9 @@ MetricsQuery& MetricsQuery::WithLabelEq(absl::string_view label,
 }
 
 MetricsQuery& MetricsQuery::CollapseLabels(
-    absl::Span<const std::string> labels) {
+    absl::Span<const InstrumentLabel> labels) {
   for (const auto& label : labels) {
-    collapsed_labels_.insert(label);
+    collapsed_labels_.Set(label);
   }
   return *this;
 }
@@ -336,7 +404,7 @@ void MetricsQuery::Run(RefCountedPtr<CollectionScope> scope,
   }
 }
 
-void MetricsQuery::Apply(absl::Span<const std::string> label_names,
+void MetricsQuery::Apply(InstrumentLabelList label_names,
                          absl::FunctionRef<void(MetricsSink&)> fn,
                          MetricsSink& sink) const {
   if (collapsed_labels_.empty()) {
@@ -344,11 +412,11 @@ void MetricsQuery::Apply(absl::Span<const std::string> label_names,
     return;
   }
   std::vector<size_t> include_labels;
-  std::vector<std::string> label_keys;
+  InstrumentLabelList label_keys;
   for (size_t i = 0; i < label_names.size(); ++i) {
     if (!collapsed_labels_.contains(label_names[i])) {
       include_labels.push_back(i);
-      label_keys.push_back(label_names[i]);
+      label_keys.Append(label_names[i]);
     }
   }
   if (include_labels.size() == label_names.size()) {
@@ -358,22 +426,22 @@ void MetricsQuery::Apply(absl::Span<const std::string> label_names,
   class Filter final : public MetricsSink {
    public:
     explicit Filter(absl::Span<const size_t> include_labels,
-                    absl::Span<const std::string> label_keys)
+                    InstrumentLabelList label_keys)
         : include_labels_(include_labels), label_keys_(label_keys) {}
 
-    void Counter(absl::Span<const std::string> /* label_keys */,
+    void Counter(InstrumentLabelList /* label_keys */,
                  absl::Span<const std::string> label_values,
                  absl::string_view name, uint64_t value) override {
       uint64_counters_[ConstructKey(label_values, name)] += value;
     }
 
-    void UpDownCounter(absl::Span<const std::string> /* label_keys */,
+    void UpDownCounter(InstrumentLabelList /* label_keys */,
                        absl::Span<const std::string> label_values,
                        absl::string_view name, uint64_t value) override {
       uint64_up_down_counters_[ConstructKey(label_values, name)] += value;
     }
 
-    void Histogram(absl::Span<const std::string> /* label_keys */,
+    void Histogram(InstrumentLabelList /* label_keys */,
                    absl::Span<const std::string> label_values,
                    absl::string_view name, HistogramBuckets bounds,
                    absl::Span<const uint64_t> counts) override {
@@ -395,17 +463,17 @@ void MetricsQuery::Apply(absl::Span<const std::string> label_names,
       }
     }
 
-    void DoubleGauge(absl::Span<const std::string> /* label_keys */,
+    void DoubleGauge(InstrumentLabelList /* label_keys */,
                      absl::Span<const std::string>, absl::string_view,
                      double) override {
       // Not aggregatable
     }
-    void IntGauge(absl::Span<const std::string> /* label_keys */,
+    void IntGauge(InstrumentLabelList /* label_keys */,
                   absl::Span<const std::string>, absl::string_view,
                   int64_t) override {
       // Not aggregatable
     }
-    void UintGauge(absl::Span<const std::string> /* label_keys */,
+    void UintGauge(InstrumentLabelList /* label_keys */,
                    absl::Span<const std::string>, absl::string_view,
                    uint64_t) override {
       // Not aggregatable
@@ -438,7 +506,7 @@ void MetricsQuery::Apply(absl::Span<const std::string> label_names,
     }
 
     absl::Span<const size_t> include_labels_;
-    absl::Span<const std::string> label_keys_;
+    InstrumentLabelList label_keys_;
     absl::flat_hash_map<std::tuple<std::vector<std::string>, absl::string_view>,
                         uint64_t>
         uint64_counters_;
@@ -460,7 +528,7 @@ void MetricsQuery::Apply(absl::Span<const std::string> label_names,
   filter.Publish(sink);
 }
 
-void MetricsQuery::ApplyLabelChecks(absl::Span<const std::string> label_names,
+void MetricsQuery::ApplyLabelChecks(InstrumentLabelList label_names,
                                     absl::FunctionRef<void(MetricsSink&)> fn,
                                     MetricsSink& sink) const {
   if (label_eqs_.empty()) {
@@ -486,21 +554,21 @@ void MetricsQuery::ApplyLabelChecks(absl::Span<const std::string> label_names,
                     absl::Span<const LabelEq> inclusion_checks)
         : inclusion_checks_(inclusion_checks), sink_(sink) {}
 
-    void Counter(absl::Span<const std::string> label_keys,
+    void Counter(InstrumentLabelList label_keys,
                  absl::Span<const std::string> label_values,
                  absl::string_view name, uint64_t value) override {
       if (!Matches(label_values)) return;
       sink_.Counter(label_keys, label_values, name, value);
     }
 
-    void UpDownCounter(absl::Span<const std::string> label_keys,
+    void UpDownCounter(InstrumentLabelList label_keys,
                        absl::Span<const std::string> label_values,
                        absl::string_view name, uint64_t value) override {
       if (!Matches(label_values)) return;
       sink_.UpDownCounter(label_keys, label_values, name, value);
     }
 
-    void Histogram(absl::Span<const std::string> label_keys,
+    void Histogram(InstrumentLabelList label_keys,
                    absl::Span<const std::string> label_values,
                    absl::string_view name, HistogramBuckets bounds,
                    absl::Span<const uint64_t> counts) override {
@@ -508,19 +576,19 @@ void MetricsQuery::ApplyLabelChecks(absl::Span<const std::string> label_names,
       sink_.Histogram(label_keys, label_values, name, bounds, counts);
     }
 
-    void DoubleGauge(absl::Span<const std::string> label_keys,
+    void DoubleGauge(InstrumentLabelList label_keys,
                      absl::Span<const std::string> label_values,
                      absl::string_view name, double value) override {
       if (!Matches(label_values)) return;
       sink_.DoubleGauge(label_keys, label_values, name, value);
     }
-    void IntGauge(absl::Span<const std::string> label_keys,
+    void IntGauge(InstrumentLabelList label_keys,
                   absl::Span<const std::string> label_values,
                   absl::string_view name, int64_t value) override {
       if (!Matches(label_values)) return;
       sink_.IntGauge(label_keys, label_values, name, value);
     }
-    void UintGauge(absl::Span<const std::string> label_keys,
+    void UintGauge(InstrumentLabelList label_keys,
                    absl::Span<const std::string> label_values,
                    absl::string_view name, uint64_t value) override {
       if (!Matches(label_values)) return;
@@ -599,7 +667,7 @@ void DomainStorage::AddData(channelz::DataSink sink) {
                  channelz::PropertyGrid grid;
                  for (size_t i = 0; i < label_.size(); ++i) {
                    grid.SetRow(
-                       domain_->label_names()[i],
+                       domain_->label_names()[i].label(),
                        channelz::PropertyList().Set("value", label_[i]));
                  }
                  return grid;
@@ -828,9 +896,12 @@ RefCountedPtr<DomainStorage> QueryableDomain::GetDomainStorage(
     auto parent_key_labels = FilterLabels(
         label_names_, scope->parents_[0]->labels_of_interest_, label_values);
     if (key_labels == parent_key_labels) {
+      VLOG(1) << "Redirecting storage creation to parent scope for " << this;
       return GetDomainStorage(scope->parents_[0], label_values);
     }
   }
+  VLOG(1) << "Creating storage in scope " << scope.get() << " for " << this
+          << " with labels " << absl::StrJoin(key_labels, ", ");
   size_t shard_idx = absl::HashOf(key_labels) % scope->storage_shards_.size();
   auto& shard = scope->storage_shards_[shard_idx];
   MutexLock lock(&shard.mu);
@@ -893,9 +964,9 @@ class GlobalCollectionScopeManager {
     return *manager;
   }
 
-  RefCountedPtr<CollectionScope> CreateRootScope(
-      absl::Span<const std::string> labels, size_t child_shards_count,
-      size_t storage_shards_count) {
+  RefCountedPtr<CollectionScope> CreateRootScope(InstrumentLabelSet labels,
+                                                 size_t child_shards_count,
+                                                 size_t storage_shards_count) {
     MutexLock lock(&mu_);
     if (auto* building = std::get_if<Building>(&state_); building != nullptr) {
       auto scope = CreateCollectionScope({}, labels, child_shards_count,
@@ -905,15 +976,15 @@ class GlobalCollectionScopeManager {
     } else {
       // Global scope is already created, we can no longer subset labels.
       auto& published = std::get<Published>(state_);
-      std::vector<std::string> missing_labels;
-      for (const auto& label : labels) {
+      std::vector<absl::string_view> missing_labels;
+      for (const auto& label : labels.ToList()) {
         if (!published.global_scope->ObservesLabel(label)) {
-          missing_labels.push_back(label);
+          missing_labels.push_back(label.label());
         }
       }
       if (missing_labels.empty()) {
         LOG(ERROR) << "Attempt to create a root scope with labels ["
-                   << absl::StrJoin(labels, ", ")
+                   << absl::StrJoin(labels.ToList(), ", ")
                    << "] after the global scope was already created.  "
                       "All requested labels are collected by the global scope, "
                       "so this scope will be returned instead.  "
@@ -922,7 +993,7 @@ class GlobalCollectionScopeManager {
                       "to GlobalCollectionScope().";
       } else {
         LOG(ERROR) << "Attempt to create a root scope with labels ["
-                   << absl::StrJoin(labels, ", ")
+                   << absl::StrJoin(labels.ToList(), ", ")
                    << "] after the global scope was already created.  "
                       "The following labels are not collected by the global "
                       "scope, and so will not be available: ["
@@ -939,8 +1010,8 @@ class GlobalCollectionScopeManager {
   RefCountedPtr<CollectionScope> GetGlobalScope() {
     MutexLock lock(&mu_);
     if (auto* building = std::get_if<Building>(&state_); building != nullptr) {
-      auto global_scope =
-          CreateCollectionScope(building->root_scopes, {}, 32, 32);
+      auto global_scope = CreateCollectionScope(building->root_scopes,
+                                                InstrumentLabelSet(), 32, 32);
       state_ = Published{global_scope};
       return global_scope;
     } else {
@@ -974,7 +1045,7 @@ class GlobalCollectionScopeManager {
 };
 
 RefCountedPtr<CollectionScope> CreateRootCollectionScope(
-    absl::Span<const std::string> labels, size_t child_shards_count,
+    InstrumentLabelSet labels, size_t child_shards_count,
     size_t storage_shards_count) {
   return GlobalCollectionScopeManager::Get().CreateRootScope(
       labels, child_shards_count, storage_shards_count);

@@ -82,7 +82,7 @@ struct EndpointWriteMetricsTrace {
     return channelz::PropertyList()
         .Set("metadata_type",
              grpc_event_engine::experimental::WriteEventToString(write_event))
-        .Set("fathom_timestamp", timestamp)
+        .Set("fathom_timestamp", absl::FormatTime(timestamp))
         .Merge([this]() {
           channelz::PropertyList props;
           for (const auto& [name, value] : metrics) {

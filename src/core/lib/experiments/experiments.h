@@ -71,7 +71,6 @@ inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
 inline bool IsChaoticGoodConnectDeadlineEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
-inline bool IsChttp2BoundWriteSizeEnabled() { return false; }
 inline bool IsErrorFlattenEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
@@ -131,6 +130,7 @@ inline bool IsTrackWritesInResourceQuotaEnabled() { return false; }
 inline bool IsTrackZeroCopyAllocationsInResourceQuotaEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
+inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
 inline bool IsXdsChannelFilterChainPerRouteEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
@@ -148,7 +148,6 @@ inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
 inline bool IsChaoticGoodConnectDeadlineEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
-inline bool IsChttp2BoundWriteSizeEnabled() { return false; }
 inline bool IsErrorFlattenEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
@@ -208,6 +207,7 @@ inline bool IsTrackWritesInResourceQuotaEnabled() { return false; }
 inline bool IsTrackZeroCopyAllocationsInResourceQuotaEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
+inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
 inline bool IsXdsChannelFilterChainPerRouteEnabled() { return false; }
 
 #else
@@ -225,7 +225,6 @@ inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
 inline bool IsChaoticGoodConnectDeadlineEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
-inline bool IsChttp2BoundWriteSizeEnabled() { return false; }
 inline bool IsErrorFlattenEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
@@ -285,6 +284,7 @@ inline bool IsTrackWritesInResourceQuotaEnabled() { return false; }
 inline bool IsTrackZeroCopyAllocationsInResourceQuotaEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
+inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
 inline bool IsXdsChannelFilterChainPerRouteEnabled() { return false; }
 #endif
 
@@ -296,7 +296,6 @@ enum ExperimentIds {
   kExperimentIdCallTracerSendTrailingMetadataIsAnAnnotation,
   kExperimentIdChaoticGoodConnectDeadline,
   kExperimentIdChaoticGoodFramingLayer,
-  kExperimentIdChttp2BoundWriteSize,
   kExperimentIdErrorFlatten,
   kExperimentIdEventEngineClient,
   kExperimentIdEventEngineDns,
@@ -343,6 +342,7 @@ enum ExperimentIds {
   kExperimentIdTrackZeroCopyAllocationsInResourceQuota,
   kExperimentIdTsiFrameProtectorWithoutLocks,
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
+  kExperimentIdUseCallEventEngineInCompletionQueue,
   kExperimentIdXdsChannelFilterChainPerRoute,
   kNumExperiments
 };
@@ -371,10 +371,6 @@ inline bool IsChaoticGoodConnectDeadlineEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() {
   return IsExperimentEnabled<kExperimentIdChaoticGoodFramingLayer>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BOUND_WRITE_SIZE
-inline bool IsChttp2BoundWriteSizeEnabled() {
-  return IsExperimentEnabled<kExperimentIdChttp2BoundWriteSize>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
 inline bool IsErrorFlattenEnabled() {
@@ -560,6 +556,11 @@ inline bool IsTsiFrameProtectorWithoutLocksEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_UNCONSTRAINED_MAX_QUOTA_BUFFER_SIZE
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
   return IsExperimentEnabled<kExperimentIdUnconstrainedMaxQuotaBufferSize>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_USE_CALL_EVENT_ENGINE_IN_COMPLETION_QUEUE
+inline bool IsUseCallEventEngineInCompletionQueueEnabled() {
+  return IsExperimentEnabled<
+      kExperimentIdUseCallEventEngineInCompletionQueue>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_XDS_CHANNEL_FILTER_CHAIN_PER_ROUTE
 inline bool IsXdsChannelFilterChainPerRouteEnabled() {

@@ -3762,6 +3762,7 @@ grpc_cc_library(
     external_deps = [
         "absl/functional:any_invocable",
     ],
+    visibility = ["//bazel:client_channel_internal_header"],
     deps = [
         "arena",
         "call_destination",
@@ -10639,6 +10640,7 @@ grpc_cc_library(
     ],
     deps = [
         "avl",
+        "bitset",
         "channelz_property_list",
         "dual_ref_counted",
         "grpc_check",

@@ -36,12 +36,13 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'bundler',            '>= 1.9'
   s.add_development_dependency 'facter',             '~> 2.4'
   s.add_development_dependency 'logging',            '~> 2.0'
+  s.add_development_dependency 'syslog',             '~> 0.3.0'
   s.add_development_dependency 'simplecov',          '~> 0.22'
   s.add_development_dependency 'rake',               '~> 13.0'
-  s.add_development_dependency 'rake-compiler',      '~> 1.2.1'
-  s.add_development_dependency 'rake-compiler-dock', '= 1.9.1'
+  s.add_development_dependency 'rake-compiler',      '~> 1.3.1'
+  s.add_development_dependency 'rake-compiler-dock', '~> 1.11.1'
   s.add_development_dependency 'rspec',              '~> 3.6'
-  s.add_development_dependency 'rubocop',            '~> 1.41.0'
+  s.add_development_dependency 'rubocop',            '~> 1.82.0'
   s.add_development_dependency 'signet',             '~> 0.7'
   s.add_development_dependency 'googleauth',         '~> 1.0'
 
@@ -227,6 +228,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/client_channel/subchannel_pool_interface.h )
   s.files += %w( src/core/client_channel/subchannel_stream_client.cc )
   s.files += %w( src/core/client_channel/subchannel_stream_client.h )
+  s.files += %w( src/core/client_channel/subchannel_stream_limiter.cc )
+  s.files += %w( src/core/client_channel/subchannel_stream_limiter.h )
   s.files += %w( src/core/config/config_vars.cc )
   s.files += %w( src/core/config/config_vars.h )
   s.files += %w( src/core/config/config_vars_non_generated.cc )
@@ -477,6 +480,12 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/inproc/inproc_transport.h )
   s.files += %w( src/core/ext/transport/inproc/legacy_inproc_transport.cc )
   s.files += %w( src/core/ext/transport/inproc/legacy_inproc_transport.h )
+  s.files += %w( src/core/ext/upb-gen/cel/expr/checked.upb.h )
+  s.files += %w( src/core/ext/upb-gen/cel/expr/checked.upb_minitable.c )
+  s.files += %w( src/core/ext/upb-gen/cel/expr/checked.upb_minitable.h )
+  s.files += %w( src/core/ext/upb-gen/cel/expr/syntax.upb.h )
+  s.files += %w( src/core/ext/upb-gen/cel/expr/syntax.upb_minitable.c )
+  s.files += %w( src/core/ext/upb-gen/cel/expr/syntax.upb_minitable.h )
   s.files += %w( src/core/ext/upb-gen/envoy/admin/v3/certs.upb.h )
   s.files += %w( src/core/ext/upb-gen/envoy/admin/v3/certs.upb_minitable.c )
   s.files += %w( src/core/ext/upb-gen/envoy/admin/v3/certs.upb_minitable.h )
@@ -999,6 +1008,10 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-gen/xds/type/v3/typed_struct.upb.h )
   s.files += %w( src/core/ext/upb-gen/xds/type/v3/typed_struct.upb_minitable.c )
   s.files += %w( src/core/ext/upb-gen/xds/type/v3/typed_struct.upb_minitable.h )
+  s.files += %w( src/core/ext/upbdefs-gen/cel/expr/checked.upbdefs.c )
+  s.files += %w( src/core/ext/upbdefs-gen/cel/expr/checked.upbdefs.h )
+  s.files += %w( src/core/ext/upbdefs-gen/cel/expr/syntax.upbdefs.c )
+  s.files += %w( src/core/ext/upbdefs-gen/cel/expr/syntax.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-gen/envoy/admin/v3/certs.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-gen/envoy/admin/v3/certs.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-gen/envoy/admin/v3/clusters.upbdefs.c )

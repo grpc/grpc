@@ -116,3 +116,5 @@
   default: false
 - name: unconstrained_max_quota_buffer_size
   default: false
+- name: use_call_event_engine_in_completion_queue
+  default: false
