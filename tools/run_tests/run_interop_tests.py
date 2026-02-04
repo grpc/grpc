@@ -14,8 +14,6 @@
 # limitations under the License.
 """Run interop (cross-language) tests in parallel."""
 
-from __future__ import print_function
-
 import argparse
 import atexit
 import itertools
@@ -25,12 +23,8 @@ import os
 import re
 import subprocess
 import sys
-import tempfile
 import time
-import traceback
 import uuid
-
-import six
 
 import python_utils.dockerjob as dockerjob
 import python_utils.jobset as jobset
@@ -1488,7 +1482,7 @@ if not args.use_docker and servers:
 
 # we want to include everything but objc in 'all'
 # because objc won't run on non-mac platforms
-all_but_objc = set(six.iterkeys(_LANGUAGES)) - set(["objc"])
+all_but_objc = set(_LANGUAGES) - set(["objc"])
 languages = set(
     _LANGUAGES[l]
     for l in itertools.chain.from_iterable(
@@ -1564,7 +1558,7 @@ if args.use_docker:
                 "Failed to build interop docker images.",
                 do_newline=True,
             )
-            for image in six.itervalues(docker_images):
+            for image in docker_images.values():
                 dockerjob.remove_image(image, skip_nonexistent=True)
             sys.exit(1)
 
@@ -1854,7 +1848,7 @@ try:
         
     if not jobs:
         print("No jobs to run.")
-        for image in six.itervalues(docker_images):
+        for image in docker_images.values():
             dockerjob.remove_image(image, skip_nonexistent=True)
         sys.exit(1)
 
@@ -1901,9 +1895,9 @@ finally:
         if not job.is_running():
             print('Server "%s" has exited prematurely.' % server)
 
-    dockerjob.finish_jobs([j for j in six.itervalues(server_jobs)])
+    dockerjob.finish_jobs([j for j in server_jobs.values()])
 
-    for image in six.itervalues(docker_images):
+    for image in docker_images.values():
         if not args.manual_run:
             print("Removing docker image %s" % image)
             dockerjob.remove_image(image)

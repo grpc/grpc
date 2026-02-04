@@ -3762,6 +3762,7 @@ grpc_cc_library(
     external_deps = [
         "absl/functional:any_invocable",
     ],
+    visibility = ["//bazel:client_channel_internal_header"],
     deps = [
         "arena",
         "call_destination",
@@ -3808,6 +3809,19 @@ grpc_cc_library(
         "match",
         "ref_counted",
         "unique_type_name",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "filter_chain",
+    hdrs = [
+        "filter/filter_chain.h",
+    ],
+    deps = [
+        "filter_args",
+        "interception_chain",
+        "ref_counted",
         "//:ref_counted_ptr",
     ],
 )
@@ -3902,6 +3916,7 @@ grpc_cc_library(
         "blackboard",
         "channel_fwd",
         "client_channel_internal_header",
+        "filter_chain",
         "grpc_check",
         "grpc_service_config",
         "interception_chain",
@@ -6062,7 +6077,7 @@ grpc_cc_library(
         "blackboard",
         "channel_args",
         "channel_fwd",
-        "interception_chain",
+        "filter_chain",
         "json",
         "json_writer",
         "validation_errors",
@@ -6434,7 +6449,6 @@ grpc_cc_library(
         "grpc_tls_credentials",
         "grpc_transport_chttp2_client_connector",
         "init_internally",
-        "interception_chain",
         "iomgr_fwd",
         "json",
         "json_args",
@@ -10620,6 +10634,7 @@ grpc_cc_library(
     ],
     deps = [
         "avl",
+        "bitset",
         "channelz_property_list",
         "dual_ref_counted",
         "grpc_check",

@@ -35,21 +35,18 @@ const char* const
 const char* const
     additional_constraints_call_tracer_send_initial_metadata_is_an_annotation =
         "{}";
-const char* const description_channelz_use_v2_for_v1_api =
-    "Use the v2 channelz API for the v1 channelz API.";
-const char* const additional_constraints_channelz_use_v2_for_v1_api = "{}";
-const char* const description_channelz_use_v2_for_v1_service =
-    "Use the v2 channelz service for the v1 channelz service.";
-const char* const additional_constraints_channelz_use_v2_for_v1_service = "{}";
+const char* const
+    description_call_tracer_send_trailing_metadata_is_an_annotation =
+        "Use the new annotation-based CallTracer API.";
+const char* const
+    additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation =
+        "{}";
 const char* const description_chaotic_good_connect_deadline =
     "Use the deadline from the connect args in chaotic good connector";
 const char* const additional_constraints_chaotic_good_connect_deadline = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
-const char* const description_chttp2_bound_write_size =
-    "Fix a bug where chttp2 can generate very large writes";
-const char* const additional_constraints_chttp2_bound_write_size = "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
@@ -246,6 +243,10 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
+const char* const description_use_call_event_engine_in_completion_queue =
+    "Use the call event engine to run callbacks in completion queue.";
+const char* const
+    additional_constraints_use_call_event_engine_in_completion_queue = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -259,21 +260,16 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_tracer_send_initial_metadata_is_an_annotation,
      additional_constraints_call_tracer_send_initial_metadata_is_an_annotation,
      nullptr, 0, true, true},
-    {"channelz_use_v2_for_v1_api", description_channelz_use_v2_for_v1_api,
-     additional_constraints_channelz_use_v2_for_v1_api, nullptr, 0, false,
-     true},
-    {"channelz_use_v2_for_v1_service",
-     description_channelz_use_v2_for_v1_service,
-     additional_constraints_channelz_use_v2_for_v1_service, nullptr, 0, false,
-     true},
+    {"call_tracer_send_trailing_metadata_is_an_annotation",
+     description_call_tracer_send_trailing_metadata_is_an_annotation,
+     additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation,
+     nullptr, 0, false, true},
     {"chaotic_good_connect_deadline", description_chaotic_good_connect_deadline,
      additional_constraints_chaotic_good_connect_deadline, nullptr, 0, true,
      true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
-    {"chttp2_bound_write_size", description_chttp2_bound_write_size,
-     additional_constraints_chttp2_bound_write_size, nullptr, 0, false, true},
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
@@ -336,7 +332,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"pick_first_ready_to_connecting",
      description_pick_first_ready_to_connecting,
-     additional_constraints_pick_first_ready_to_connecting, nullptr, 0, false,
+     additional_constraints_pick_first_ready_to_connecting, nullptr, 0, true,
      true},
     {"pipelined_read_secure_endpoint",
      description_pipelined_read_secure_endpoint,
@@ -370,7 +366,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_return_preexisting_errors, nullptr, 0, false, true},
     {"rr_wrr_connect_from_random_index",
      description_rr_wrr_connect_from_random_index,
-     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, false,
+     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, true,
      true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
@@ -421,6 +417,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
+    {"use_call_event_engine_in_completion_queue",
+     description_use_call_event_engine_in_completion_queue,
+     additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
+     0, false, true},
 };
 
 }  // namespace grpc_core
@@ -439,21 +439,18 @@ const char* const
 const char* const
     additional_constraints_call_tracer_send_initial_metadata_is_an_annotation =
         "{}";
-const char* const description_channelz_use_v2_for_v1_api =
-    "Use the v2 channelz API for the v1 channelz API.";
-const char* const additional_constraints_channelz_use_v2_for_v1_api = "{}";
-const char* const description_channelz_use_v2_for_v1_service =
-    "Use the v2 channelz service for the v1 channelz service.";
-const char* const additional_constraints_channelz_use_v2_for_v1_service = "{}";
+const char* const
+    description_call_tracer_send_trailing_metadata_is_an_annotation =
+        "Use the new annotation-based CallTracer API.";
+const char* const
+    additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation =
+        "{}";
 const char* const description_chaotic_good_connect_deadline =
     "Use the deadline from the connect args in chaotic good connector";
 const char* const additional_constraints_chaotic_good_connect_deadline = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
-const char* const description_chttp2_bound_write_size =
-    "Fix a bug where chttp2 can generate very large writes";
-const char* const additional_constraints_chttp2_bound_write_size = "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
@@ -650,6 +647,10 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
+const char* const description_use_call_event_engine_in_completion_queue =
+    "Use the call event engine to run callbacks in completion queue.";
+const char* const
+    additional_constraints_use_call_event_engine_in_completion_queue = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -663,21 +664,16 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_tracer_send_initial_metadata_is_an_annotation,
      additional_constraints_call_tracer_send_initial_metadata_is_an_annotation,
      nullptr, 0, true, true},
-    {"channelz_use_v2_for_v1_api", description_channelz_use_v2_for_v1_api,
-     additional_constraints_channelz_use_v2_for_v1_api, nullptr, 0, false,
-     true},
-    {"channelz_use_v2_for_v1_service",
-     description_channelz_use_v2_for_v1_service,
-     additional_constraints_channelz_use_v2_for_v1_service, nullptr, 0, false,
-     true},
+    {"call_tracer_send_trailing_metadata_is_an_annotation",
+     description_call_tracer_send_trailing_metadata_is_an_annotation,
+     additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation,
+     nullptr, 0, false, true},
     {"chaotic_good_connect_deadline", description_chaotic_good_connect_deadline,
      additional_constraints_chaotic_good_connect_deadline, nullptr, 0, true,
      true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
-    {"chttp2_bound_write_size", description_chttp2_bound_write_size,
-     additional_constraints_chttp2_bound_write_size, nullptr, 0, false, true},
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
@@ -740,7 +736,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"pick_first_ready_to_connecting",
      description_pick_first_ready_to_connecting,
-     additional_constraints_pick_first_ready_to_connecting, nullptr, 0, false,
+     additional_constraints_pick_first_ready_to_connecting, nullptr, 0, true,
      true},
     {"pipelined_read_secure_endpoint",
      description_pipelined_read_secure_endpoint,
@@ -774,7 +770,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_return_preexisting_errors, nullptr, 0, false, true},
     {"rr_wrr_connect_from_random_index",
      description_rr_wrr_connect_from_random_index,
-     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, false,
+     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, true,
      true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
@@ -825,6 +821,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
+    {"use_call_event_engine_in_completion_queue",
+     description_use_call_event_engine_in_completion_queue,
+     additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
+     0, false, true},
 };
 
 }  // namespace grpc_core
@@ -843,21 +843,18 @@ const char* const
 const char* const
     additional_constraints_call_tracer_send_initial_metadata_is_an_annotation =
         "{}";
-const char* const description_channelz_use_v2_for_v1_api =
-    "Use the v2 channelz API for the v1 channelz API.";
-const char* const additional_constraints_channelz_use_v2_for_v1_api = "{}";
-const char* const description_channelz_use_v2_for_v1_service =
-    "Use the v2 channelz service for the v1 channelz service.";
-const char* const additional_constraints_channelz_use_v2_for_v1_service = "{}";
+const char* const
+    description_call_tracer_send_trailing_metadata_is_an_annotation =
+        "Use the new annotation-based CallTracer API.";
+const char* const
+    additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation =
+        "{}";
 const char* const description_chaotic_good_connect_deadline =
     "Use the deadline from the connect args in chaotic good connector";
 const char* const additional_constraints_chaotic_good_connect_deadline = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
-const char* const description_chttp2_bound_write_size =
-    "Fix a bug where chttp2 can generate very large writes";
-const char* const additional_constraints_chttp2_bound_write_size = "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
@@ -1054,6 +1051,10 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
+const char* const description_use_call_event_engine_in_completion_queue =
+    "Use the call event engine to run callbacks in completion queue.";
+const char* const
+    additional_constraints_use_call_event_engine_in_completion_queue = "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -1067,21 +1068,16 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_tracer_send_initial_metadata_is_an_annotation,
      additional_constraints_call_tracer_send_initial_metadata_is_an_annotation,
      nullptr, 0, true, true},
-    {"channelz_use_v2_for_v1_api", description_channelz_use_v2_for_v1_api,
-     additional_constraints_channelz_use_v2_for_v1_api, nullptr, 0, false,
-     true},
-    {"channelz_use_v2_for_v1_service",
-     description_channelz_use_v2_for_v1_service,
-     additional_constraints_channelz_use_v2_for_v1_service, nullptr, 0, false,
-     true},
+    {"call_tracer_send_trailing_metadata_is_an_annotation",
+     description_call_tracer_send_trailing_metadata_is_an_annotation,
+     additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation,
+     nullptr, 0, false, true},
     {"chaotic_good_connect_deadline", description_chaotic_good_connect_deadline,
      additional_constraints_chaotic_good_connect_deadline, nullptr, 0, true,
      true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
-    {"chttp2_bound_write_size", description_chttp2_bound_write_size,
-     additional_constraints_chttp2_bound_write_size, nullptr, 0, false, true},
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
@@ -1144,7 +1140,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"pick_first_ready_to_connecting",
      description_pick_first_ready_to_connecting,
-     additional_constraints_pick_first_ready_to_connecting, nullptr, 0, false,
+     additional_constraints_pick_first_ready_to_connecting, nullptr, 0, true,
      true},
     {"pipelined_read_secure_endpoint",
      description_pipelined_read_secure_endpoint,
@@ -1178,7 +1174,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_return_preexisting_errors, nullptr, 0, false, true},
     {"rr_wrr_connect_from_random_index",
      description_rr_wrr_connect_from_random_index,
-     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, false,
+     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, true,
      true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
@@ -1229,6 +1225,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
+    {"use_call_event_engine_in_completion_queue",
+     description_use_call_event_engine_in_completion_queue,
+     additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
+     0, false, true},
 };
 
 }  // namespace grpc_core
