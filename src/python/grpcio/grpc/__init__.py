@@ -1724,6 +1724,8 @@ def ssl_channel_credentials(
 
 # A Callable to return in the async case
 PrivateKeySignCancel = Callable[[], None]
+PrivateKeySignatureAlgorithm = _cygrpc.SignatureAlgorithm
+PrivateKeyOnComplete = _cygrpc.OnCompleteWrapper
 
 # Note: SignatureAlgorithm corresponds to C-core's enum class SignatureAlgorithm.
 # A function for a user to implement
@@ -1731,9 +1733,8 @@ PrivateKeySignCancel = Callable[[], None]
 CustomPrivateKeySignWithHandle = Callable[
     [
         bytes,
-        _cygrpc.SignatureAlgorithm,
-        _cygrpc.OnCompleteWrapper,
-        object,
+        PrivateKeySignatureAlgorithm,
+        PrivateKeyOnComplete,
     ],
     Union[bytes, PrivateKeySignCancel],
 ]

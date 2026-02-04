@@ -66,16 +66,7 @@ def check_key_cert_match(key_bytes, cert_bytes):
         return False
 
 
-def sync_client_private_key_signer(
-    data_to_sign,
-    signature_algorithm,
-    on_complete,
-):
-    """
-    Of type CustomPrivateKeySign - Callable[[bytes, SignatureAlgorithm], bytes]
-    Takes in data_to_sign and signs it using the test private key with a sync return
-    """
-    private_key_bytes = client_private_key()
+def sign_private_key(data_to_sign, private_key_bytes, signature_algorithm):
     # Determine the key type and apply appropriate padding and algorithm.
     # This example assumes an RSA key. Different logic is needed for other key types (e.g., EC).
     try:
@@ -88,12 +79,18 @@ def sync_client_private_key_signer(
             backend=default_backend(),
         )
         if not isinstance(private_key, rsa.RSAPrivateKey):
-            raise ValueError("The provided key is not an RSA private key.")
+            return ValueError("The provided key is not an RSA private key.")
     except Exception as e:
-        raise
+        return
 
     if isinstance(private_key, rsa.RSAPrivateKey):
         try:
+            if (
+                signature_algorithm
+                != grpc.PrivateKeySignatureAlgorithm.RSA_PSS_RSAE_SHA256
+            ):
+                return ValueError("Expect the private key to be PSS SHA256")
+            print("GREG: alg ", signature_algorithm, flush=True)
             hasher = hashes.SHA256()
             pss_padding = padding.PSS(
                 mgf=padding.MGF1(hasher),
@@ -103,11 +100,25 @@ def sync_client_private_key_signer(
             signature = private_key.sign(data_to_sign, pss_padding, hasher)
             return signature
         except Exception as e:
-            raise
+            return e
     else:
         return ValueError(
             "Unsupported private key type. This example only supports RSA."
         )
+
+
+def sync_client_private_key_signer(
+    data_to_sign,
+    signature_algorithm,
+    on_complete,
+):
+    """
+    Of type CustomPrivateKeySign - Callable[[bytes, SignatureAlgorithm], bytes]
+    Takes in data_to_sign and signs it using the test private key with a sync return
+    """
+    private_key_bytes = client_private_key()
+    signature = sign_private_key(data_to_sign, private_key_bytes, signature_algorithm)
+    return signature
 
 
 def bad_async_signer_worker(data_to_sign, signature_algorithm, on_complete):
@@ -118,33 +129,8 @@ def bad_async_signer_worker(data_to_sign, signature_algorithm, on_complete):
     """
     # Use the server private key and expect failure
     private_key_bytes = server_private_key()
-    try:
-        private_key = serialization.load_pem_private_key(
-            private_key_bytes,
-            password=None,
-            backend=default_backend(),
-        )
-        if not isinstance(private_key, rsa.RSAPrivateKey):
-            raise ValueError("The provided key is not an RSA private key.")
-    except Exception as e:
-        raise
-
-    if isinstance(private_key, rsa.RSAPrivateKey):
-        try:
-            hasher = hashes.SHA256()
-            pss_padding = padding.PSS(
-                mgf=padding.MGF1(hasher),
-                salt_length=hasher.digest_size,
-            )
-
-            signature = private_key.sign(data_to_sign, pss_padding, hasher)
-            on_complete(signature)
-        except Exception as e:
-            raise
-    else:
-        on_complete(
-            ValueError("Unsupported private key type. This example only supports RSA.")
-        )
+    signature = sign_private_key(data_to_sign, private_key_bytes, signature_algorithm)
+    on_complete(signature)
 
 
 def bad_async_client_private_key_signer(data_to_sign, signature_algorithm, on_complete):
@@ -165,37 +151,8 @@ def async_signer_worker(data_to_sign, signature_algorithm, on_complete):
     Meant to be used as an async function for a thread, for example
     """
     private_key_bytes = client_private_key()
-    try:
-        success = check_key_cert_match(client_private_key(), client_certificate_chain())
-        if not success:
-            on_complete(ValueError("provided key and certificate do not match."))
-        private_key = serialization.load_pem_private_key(
-            private_key_bytes,
-            password=None,  # Pass password as bytes if the key is encrypted
-            backend=default_backend(),
-        )
-        if not isinstance(private_key, rsa.RSAPrivateKey):
-            on_complete(ValueError("The provided key is not an RSA private key."))
-    except Exception as e:
-        raise
-
-    if isinstance(private_key, rsa.RSAPrivateKey):
-        try:
-            hasher = hashes.SHA256()
-            pss_padding = padding.PSS(
-                mgf=padding.MGF1(hasher),
-                salt_length=hasher.digest_size,
-            )
-
-            signature = private_key.sign(data_to_sign, pss_padding, hasher)
-            on_complete(signature)
-        except Exception as e:
-            raise
-    else:
-        on_complete(
-            ValueError("Unsupported private key type. This example only supports RSA.")
-        )
-
+    signature = sign_private_key(data_to_sign, private_key_bytes, signature_algorithm)
+    on_complete(signature)
 
 def no_op_cancel():
     pass
@@ -220,36 +177,8 @@ def sync_bad_client_private_key_signer(data_to_sign, signature_algorithm, on_com
     """
     # use the server's private key
     private_key_bytes = server_private_key()
-    # Determine the key type and apply appropriate padding and algorithm.
-    # This example assumes an RSA key. Different logic is needed for other key types (e.g., EC).
-    try:
-        private_key = serialization.load_pem_private_key(
-            private_key_bytes,
-            password=None,  # Pass password as bytes if the key is encrypted
-            backend=default_backend(),
-        )
-        if not isinstance(private_key, rsa.RSAPrivateKey):
-            raise ValueError("The provided key is not an RSA private key.")
-    except Exception as e:
-        raise
-
-    if isinstance(private_key, rsa.RSAPrivateKey):
-        try:
-            hasher = hashes.SHA256()
-            pss_padding = padding.PSS(
-                mgf=padding.MGF1(hasher),
-                salt_length=hasher.digest_size,
-            )
-
-            signature = private_key.sign(data_to_sign, pss_padding, hasher)
-            return signature
-        except Exception as e:
-            raise
-    else:
-        return ValueError(
-            "Unsupported private key type. This example only supports RSA."
-        )
-
+    signature = sign_private_key(data_to_sign, private_key_bytes, signature_algorithm)
+    return signature
 
 class CancelCallable:
     def __init__(self):
