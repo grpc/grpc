@@ -1058,6 +1058,7 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
         # b/117623310.
         "grpc:no-internal-poller",
     ],
@@ -1289,6 +1290,7 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
+        "cpp_end2end_test_client_ph2",
         "no_windows",
     ],
     deps = [
