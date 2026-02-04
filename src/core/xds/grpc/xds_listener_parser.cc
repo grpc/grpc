@@ -264,21 +264,24 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
           }
           continue;
         }
-        std::optional<XdsHttpFilterImpl::XdsFilterConfig> filter_config =
-            filter_impl->GenerateFilterConfig(name, context, *extension,
-                                              errors);
-        RefCountedPtr<const FilterConfig> config =
-            filter_impl->ParseTopLevelConfig(name, context, *extension, errors);
-        if (filter_config.has_value() || config != nullptr) {
-          http_connection_manager.http_filters.emplace_back();
-          auto& entry = http_connection_manager.http_filters.back();
-          entry.name = std::string(name);
-          entry.config_proto_type = filter_impl->ConfigProtoName();
-          if (filter_config.has_value()) {
-            entry.config = std::move(*filter_config);
-          }
-          if (config != nullptr) entry.filter_config = std::move(config);
+        std::optional<XdsHttpFilterImpl::XdsFilterConfig> filter_config;
+        if (!is_client || !IsXdsChannelFilterChainPerRouteEnabled()) {
+          filter_config = filter_impl->GenerateFilterConfig(
+              name, context, *extension, errors);
         }
+        RefCountedPtr<const FilterConfig> config;
+        if (IsXdsChannelFilterChainPerRouteEnabled()) {
+          config = filter_impl->ParseTopLevelConfig(name, context, *extension,
+                                                    errors);
+        }
+        http_connection_manager.http_filters.emplace_back();
+        auto& entry = http_connection_manager.http_filters.back();
+        entry.name = std::string(name);
+        entry.config_proto_type = filter_impl->ConfigProtoName();
+        if (filter_config.has_value()) {
+          entry.config = std::move(*filter_config);
+        }
+        if (config != nullptr) entry.filter_config = std::move(config);
       }
     }
     if (errors->size() == original_error_size &&

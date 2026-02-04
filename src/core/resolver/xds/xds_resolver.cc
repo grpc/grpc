@@ -952,7 +952,7 @@ void XdsResolver::XdsConfigSelector::BuildFilterChains(
       // at config validation time.
       const XdsHttpFilterImpl* filter_impl =
           http_filter_registry.GetFilterForTopLevelType(
-              http_filter.config.config_proto_type_name);
+              http_filter.config_proto_type);
       GRPC_CHECK_NE(filter_impl, nullptr);
       filter_impl->AddFilter(builder, nullptr);
       filter_impl->UpdateBlackboard(http_filter.config, old_blackboard,

@@ -411,10 +411,9 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
     if (filter_config.has_value()) {
       entry.old_config = std::move(*filter_config);
     }
-    RefCountedPtr<const FilterConfig> config = filter_impl->ParseOverrideConfig(
-        key, context, *extension_to_use, errors);
-    if (config != nullptr) {
-      entry.config = std::move(config);
+    if (IsXdsChannelFilterChainPerRouteEnabled()) {
+      entry.config = filter_impl->ParseOverrideConfig(
+          key, context, *extension_to_use, errors);
     }
   }
   return typed_per_filter_config;
