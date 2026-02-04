@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2024 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ruby_version_dirname = /(\d+\.\d+)/.match(RUBY_VERSION).to_s
-distrib_lib_dir = File.expand_path(ruby_version_dirname,
-                                   File.dirname(__FILE__))
-if !Dir.glob("#{distrib_lib_dir}/grpc_c*").empty?
-  require "#{distrib_lib_dir}/grpc_c"
-else
-  require 'grpc/grpc_c'
-end
+FROM debian:11
+
+{% include "../../apt_get_basic.include" %}
+{% include "../../ruby_4_0_deps.include" %}
+{% include "../../rvm_mkdir_workaround.include" %}
+
+# Define the default command.
+CMD ["bash"]
