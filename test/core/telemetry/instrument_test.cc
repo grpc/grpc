@@ -1057,6 +1057,7 @@ TEST_F(InstrumentLabelTest, CopyAndMove) {
   EXPECT_EQ(label1, label2);
   EXPECT_EQ(label1.index(), label2.index());
 
+  // NOLINTNEXTLINE(performance-move-const-arg)
   InstrumentLabel label3(std::move(label1));
   EXPECT_EQ(label2, label3);
   EXPECT_EQ(label2.index(), label3.index());
@@ -1067,6 +1068,7 @@ TEST_F(InstrumentLabelTest, CopyAndMove) {
   EXPECT_EQ(label2.index(), label4.index());
 
   InstrumentLabel label5("baz");
+  // NOLINTNEXTLINE(performance-move-const-arg)
   label5 = std::move(label2);
   EXPECT_EQ(label3, label5);
   EXPECT_EQ(label3.index(), label5.index());
@@ -1114,6 +1116,7 @@ TEST_F(InstrumentLabelListTest, CopyAndMove) {
   EXPECT_EQ(list2[0].label(), "foo");
   EXPECT_EQ(list2[1].label(), "bar");
 
+  // NOLINTNEXTLINE(performance-move-const-arg)
   InstrumentLabelList list3(std::move(list1));
   EXPECT_EQ(list3.size(), 2);
   EXPECT_EQ(list3[0].label(), "foo");
@@ -1126,6 +1129,7 @@ TEST_F(InstrumentLabelListTest, CopyAndMove) {
   EXPECT_EQ(list4[1].label(), "bar");
 
   InstrumentLabelList list5;
+  // NOLINTNEXTLINE(performance-move-const-arg)
   list5 = std::move(list2);
   EXPECT_EQ(list5.size(), 2);
   EXPECT_EQ(list5[0].label(), "foo");

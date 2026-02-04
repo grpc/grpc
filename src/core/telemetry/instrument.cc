@@ -80,7 +80,8 @@ InstrumentLabel::InstrumentLabel(absl::string_view label) {
                                            std::memory_order_acq_rel)) {
         continue;
       }
-      label_copy.release();
+      // Pointer owned by current_value now.
+      std::ignore = label_copy.release();
       index_ = i;
       return;
     }
