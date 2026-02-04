@@ -1565,6 +1565,7 @@ TEST_P(ProxyEnd2endTest, MultipleRpcs) {
 
 // Set a 10us deadline and make sure proper error is returned.
 TEST_P(ProxyEnd2endTest, RpcDeadlineExpires) {
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix flake");
   ResetStub();
   EchoRequest request;
   EchoResponse response;

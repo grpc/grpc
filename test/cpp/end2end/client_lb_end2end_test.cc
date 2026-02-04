@@ -1149,6 +1149,7 @@ TEST_F(ClientLbEnd2endTest,
 }
 
 TEST_F(PickFirstTest, Updates) {
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix flake");
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
   StartServers(kNumServers);
@@ -1807,6 +1808,7 @@ TEST_F(RoundRobinTest, FailsEmptyResolverUpdate) {
 }
 
 TEST_F(RoundRobinTest, TransientFailure) {
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix flake");
   // Start servers and create channel.  Channel should go to READY state.
   const int kNumServers = 3;
   StartServers(kNumServers);

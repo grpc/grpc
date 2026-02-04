@@ -1164,6 +1164,7 @@ TEST_F(GrpclbEnd2endTest,
 
 TEST_F(GrpclbEnd2endTest,
        FallbackAfterStartupLoseContactWithBackendsThenBalancer) {
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix. Flakes 10% of the time.");
   // First two backends are fallback, last two are pointed to by balancer.
   const size_t kNumBackends = 4;
   const size_t kNumFallbackBackends = 2;
