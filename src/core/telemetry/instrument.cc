@@ -74,7 +74,7 @@ InstrumentLabel::InstrumentLabel(absl::string_view label) {
     auto* current_value = labels[i].load(std::memory_order_acquire);
     while (current_value == nullptr) {
       if (label_copy == nullptr) {
-        label_copy = absl::make_unique<std::string>(label);
+        label_copy = std::make_unique<std::string>(label);
       }
       if (!labels[i].compare_exchange_weak(current_value, label_copy.get(),
                                            std::memory_order_acq_rel)) {
