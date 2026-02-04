@@ -440,7 +440,7 @@ RefCountedPtr<const FilterConfig> GetOverrideConfig(
   if (it->second.config_proto_type != filter_impl->OverrideConfigProtoName()) {
     return nullptr;
   }
-  return it->second.config;
+  return it->second.filter_config;
 }
 
 void XdsResolver::RouteConfigData::BuildFilterChains(

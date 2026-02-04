@@ -53,7 +53,7 @@ struct XdsListenerResource : public XdsResourceType::ResourceData {
     struct HttpFilter {
       std::string name;
       absl::string_view config_proto_type;
-      XdsHttpFilterImpl::XdsFilterConfig config;
+      Json config;
       RefCountedPtr<const FilterConfig> filter_config;
 
       bool operator==(const HttpFilter& other) const {

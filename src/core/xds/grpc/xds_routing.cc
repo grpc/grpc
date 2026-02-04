@@ -192,7 +192,7 @@ std::optional<absl::string_view> XdsRouting::GetHeaderValue(
 
 namespace {
 
-const XdsHttpFilterImpl::XdsFilterConfig* FindFilterConfigOverride(
+const Json* FindFilterConfigOverride(
     const std::string& instance_name,
     const XdsRouteConfigResource::VirtualHost& vhost,
     const XdsRouteConfigResource::Route& route,
@@ -202,15 +202,19 @@ const XdsHttpFilterImpl::XdsFilterConfig* FindFilterConfigOverride(
   if (cluster_weight != nullptr) {
     auto it = cluster_weight->typed_per_filter_config.find(instance_name);
     if (it != cluster_weight->typed_per_filter_config.end()) {
-      return &it->second.old_config;
+      return &it->second.config;
     }
   }
   // Check Route.
   auto it = route.typed_per_filter_config.find(instance_name);
-  if (it != route.typed_per_filter_config.end()) return &it->second.old_config;
+  if (it != route.typed_per_filter_config.end()) {
+    return &it->second.config;
+  }
   // Check VirtualHost.
   it = vhost.typed_per_filter_config.find(instance_name);
-  if (it != vhost.typed_per_filter_config.end()) return &it->second.old_config;
+  if (it != vhost.typed_per_filter_config.end()) {
+    return &it->second.config;
+  }
   // Not found.
   return nullptr;
 }
@@ -272,9 +276,8 @@ XdsRouting::GeneratePerHTTPFilterConfigsForMethodConfig(
       [&](const XdsHttpFilterImpl& filter_impl,
           const XdsListenerResource::HttpConnectionManager::HttpFilter&
               http_filter) {
-        const XdsHttpFilterImpl::XdsFilterConfig* config_override =
-            FindFilterConfigOverride(http_filter.name, vhost, route,
-                                     cluster_weight);
+        const Json* config_override = FindFilterConfigOverride(
+            http_filter.name, vhost, route, cluster_weight);
         // Generate service config for filter.
         return filter_impl.GenerateMethodConfig(http_filter.config,
                                                 config_override);
