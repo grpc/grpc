@@ -79,23 +79,29 @@ class XdsHttpFilterRegistry final {
   // Movable.
   XdsHttpFilterRegistry(XdsHttpFilterRegistry&& other) noexcept
       : owning_list_(std::move(other.owning_list_)),
-        registry_map_(std::move(other.registry_map_)) {}
+        top_level_config_map_(std::move(other.top_level_config_map_)),
+        override_config_map_(std::move(other.override_config_map_)) {}
   XdsHttpFilterRegistry& operator=(XdsHttpFilterRegistry&& other) noexcept {
     owning_list_ = std::move(other.owning_list_);
-    registry_map_ = std::move(other.registry_map_);
+    top_level_config_map_ = std::move(other.top_level_config_map_);
+    override_config_map_ = std::move(other.override_config_map_);
     return *this;
   }
 
   void RegisterFilter(std::unique_ptr<XdsHttpFilterImpl> filter);
 
-  const XdsHttpFilterImpl* GetFilterForType(
+  const XdsHttpFilterImpl* GetFilterForTopLevelType(
+      absl::string_view proto_type_name) const;
+
+  const XdsHttpFilterImpl* GetFilterForOverrideType(
       absl::string_view proto_type_name) const;
 
   void PopulateSymtab(upb_DefPool* symtab) const;
 
  private:
   std::vector<std::unique_ptr<XdsHttpFilterImpl>> owning_list_;
-  std::map<absl::string_view, XdsHttpFilterImpl*> registry_map_;
+  std::map<absl::string_view, XdsHttpFilterImpl*> top_level_config_map_;
+  std::map<absl::string_view, XdsHttpFilterImpl*> override_config_map_;
 };
 
 }  // namespace grpc_core

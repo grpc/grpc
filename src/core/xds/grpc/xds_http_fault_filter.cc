@@ -76,7 +76,7 @@ absl::string_view XdsHttpFaultFilter::ConfigProtoName() const {
 }
 
 absl::string_view XdsHttpFaultFilter::OverrideConfigProtoName() const {
-  return "";
+  return "envoy.extensions.filters.http.fault.v3.HTTPFault";
 }
 
 void XdsHttpFaultFilter::PopulateSymtab(upb_DefPool* symtab) const {

@@ -32,6 +32,15 @@
 namespace grpc_core {
 
 //
+// XdsRouteConfigResource::FilterConfigOverride
+//
+
+std::string XdsRouteConfigResource::FilterConfigOverride::ToString() const {
+  return absl::StrCat("{config_proto_type=", config_proto_type,
+                      ", config=", config.ToString(), "}");
+}
+
+//
 // XdsRouteConfigResource::RetryPolicy
 //
 

@@ -38,8 +38,17 @@
 namespace grpc_core {
 
 struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
-  using TypedPerFilterConfig =
-      std::map<std::string, XdsHttpFilterImpl::FilterConfig>;
+  struct FilterConfigOverride {
+    absl::string_view config_proto_type;
+    XdsHttpFilterImpl::FilterConfig config;
+
+    bool operator==(const FilterConfigOverride& other) const {
+      return config_proto_type == other.config_proto_type &&
+             config == other.config;
+    }
+    std::string ToString() const;
+  };
+  using TypedPerFilterConfig = std::map<std::string, FilterConfigOverride>;
 
   using ClusterSpecifierPluginMap =
       std::map<std::string /*cluster_specifier_plugin_name*/,

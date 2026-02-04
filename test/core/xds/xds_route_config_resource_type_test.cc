@@ -417,9 +417,9 @@ TEST_P(TypedPerFilterConfigTest, Basic) {
   ASSERT_NE(it, typed_per_filter_config.end());
   EXPECT_EQ("fault", it->first);
   const auto& filter_config = it->second;
-  EXPECT_EQ(filter_config.config_proto_type_name,
+  EXPECT_EQ(filter_config.config_proto_type,
             "envoy.extensions.filters.http.fault.v3.HTTPFault");
-  EXPECT_EQ(JsonDump(filter_config.config),
+  EXPECT_EQ(JsonDump(filter_config.config.config),
             "{\"abortCode\":\"PERMISSION_DENIED\"}");
 }
 
@@ -528,9 +528,9 @@ TEST_P(TypedPerFilterConfigTest, FilterConfigWrapper) {
   ASSERT_NE(it, typed_per_filter_config.end());
   EXPECT_EQ("fault", it->first);
   const auto& filter_config = it->second;
-  EXPECT_EQ(filter_config.config_proto_type_name,
+  EXPECT_EQ(filter_config.config_proto_type,
             "envoy.extensions.filters.http.fault.v3.HTTPFault");
-  EXPECT_EQ(JsonDump(filter_config.config),
+  EXPECT_EQ(JsonDump(filter_config.config.config),
             "{\"abortCode\":\"PERMISSION_DENIED\"}");
 }
 

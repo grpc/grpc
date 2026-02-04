@@ -140,7 +140,7 @@ class XdsHttpFilterTest : public ::testing::Test {
   }
 
   const XdsHttpFilterImpl* GetFilter(absl::string_view type) {
-    return registry_.GetFilterForType(
+    return registry_.GetFilterForTopLevelType(
         absl::StripPrefix(type, "type.googleapis.com/"));
   }
 
@@ -286,7 +286,8 @@ class XdsFaultInjectionFilterTest : public XdsHttpFilterTest {
 TEST_F(XdsFaultInjectionFilterTest, Accessors) {
   EXPECT_EQ(filter_->ConfigProtoName(),
             "envoy.extensions.filters.http.fault.v3.HTTPFault");
-  EXPECT_EQ(filter_->OverrideConfigProtoName(), "");
+  EXPECT_EQ(filter_->OverrideConfigProtoName(),
+            "envoy.extensions.filters.http.fault.v3.HTTPFault");
   EXPECT_EQ(filter_->channel_filter(), &FaultInjectionFilter::kFilterVtable);
   EXPECT_TRUE(filter_->IsSupportedOnClients());
   EXPECT_FALSE(filter_->IsSupportedOnServers());

@@ -51,10 +51,13 @@ struct XdsListenerResource : public XdsResourceType::ResourceData {
 
     struct HttpFilter {
       std::string name;
+      absl::string_view config_proto_type;
       XdsHttpFilterImpl::FilterConfig config;
 
       bool operator==(const HttpFilter& other) const {
-        return name == other.name && config == other.config;
+        return name == other.name &&
+               config_proto_type == other.config_proto_type &&
+               config == other.config;
       }
 
       std::string ToString() const;

@@ -201,14 +201,20 @@ const XdsHttpFilterImpl::FilterConfig* FindFilterConfigOverride(
   // Check ClusterWeight, if any.
   if (cluster_weight != nullptr) {
     auto it = cluster_weight->typed_per_filter_config.find(instance_name);
-    if (it != cluster_weight->typed_per_filter_config.end()) return &it->second;
+    if (it != cluster_weight->typed_per_filter_config.end()) {
+      return &it->second.config;
+    }
   }
   // Check Route.
   auto it = route.typed_per_filter_config.find(instance_name);
-  if (it != route.typed_per_filter_config.end()) return &it->second;
+  if (it != route.typed_per_filter_config.end()) {
+    return &it->second.config;
+  }
   // Check VirtualHost.
   it = vhost.typed_per_filter_config.find(instance_name);
-  if (it != vhost.typed_per_filter_config.end()) return &it->second;
+  if (it != vhost.typed_per_filter_config.end()) {
+    return &it->second.config;
+  }
   // Not found.
   return nullptr;
 }
@@ -229,8 +235,8 @@ GeneratePerHTTPFilterConfigs(
     // Find filter.  This is guaranteed to succeed, because it's checked
     // at config validation time in the listener parsing code.
     const XdsHttpFilterImpl* filter_impl =
-        http_filter_registry.GetFilterForType(
-            http_filter.config.config_proto_type_name);
+        http_filter_registry.GetFilterForTopLevelType(
+            http_filter.config_proto_type);
     GRPC_CHECK_NE(filter_impl, nullptr);
     // If there is not actually any C-core filter associated with this
     // xDS filter, then it won't need any config, so skip it.
