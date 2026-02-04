@@ -694,6 +694,7 @@ def run(
         max_time,
     )
     for cmdline, remaining in tag_remaining(cmdlines):
+        print('jobset.run calling start on cmdline, shortname being: ' + cmdline.shortname)
         if not js.start(cmdline):
             break
         if remaining is not None:

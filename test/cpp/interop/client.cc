@@ -229,7 +229,7 @@ int main(int argc, char** argv) {
               new grpc::testing::MetadataAndStatusLoggerInterceptorFactory());
         }
         if (test_case == "mcs_cs") {
-          arguments.SetServiceConfigJSON("{\"connection_scaling\":{\"max_connections_per_subchannel\": 2}}");
+          arguments.SetServiceConfigJSON("{\"connectionScaling\":{\"maxConnectionsPerSubchannel\": 2}}");
         } else {
           std::string service_config_json =
               absl::GetFlag(FLAGS_service_config_json);

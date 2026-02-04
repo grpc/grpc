@@ -1157,6 +1157,12 @@ def server_jobspec(
     if use_mcs:
         server_cmd += ["--use_mcs=true"]
     cmdline = bash_cmdline(language.server_cmd(server_cmd))
+    for cmd in cmdline:
+      print('server_jobspec: cmd: ' + cmd)
+      if hasattr(cmd, 'shortname'):
+          print('cmd has shortname: ' + cmd.shortname)
+      else:
+          print('cmd doesnt have shortname.')
     environ = language.global_env()
     docker_args = ["--name=%s" % container_name]
     if language.safename == "http2":
@@ -1829,14 +1835,12 @@ try:
                     manual_cmd_log=server_manual_cmd_log,
                     use_mcs=True,
                 )
-                print('mcs_server_jobspec shortname: ' + mcs_server_jobspec.shortname)
                 mcs_server_job = dockerjob.DockerJob(mcs_server_jobspec)
-                jobs.append(mcs_server_job)
             
                 for language in languages_for_mcs_cs:
                     test_job = cloud_to_cloud_jobspec(
                         language,
-                        'mcs',
+                        'mcs_cs',
                         'java-mcs',
                         'localhost',
                         mcs_server_job.mapped_port(_DEFAULT_SERVER_PORT),
@@ -1844,7 +1848,6 @@ try:
                         transport_security=args.transport_security,
                         manual_cmd_log=client_manual_cmd_log,
                     )
-                    print('mcs test job shortname: ' + test_job.shortname)
                     jobs.append(test_job)
             else:
                 print('MCS connection scaling tests will be skipped since none of the supported client languages for MCS connection scaling testcases was specified')
@@ -1859,7 +1862,7 @@ try:
         print("All tests will skipped --manual_run option is active.")
 
     if args.verbose:
-        print("Jobs to run: \n%s\n" % "\n".join(str(job) for job in jobs))
+        print(str(len(jobs)) + " jobs to run: \n%s\n" % "\n".join(str(job) for job in jobs))
 
     num_failures, resultset = jobset.run(
         jobs,
@@ -1867,6 +1870,7 @@ try:
         maxjobs=args.jobs,
         skip_jobs=args.manual_run,
     )
+    print('num_failures from jobset.run: ' + str(num_failures))
     if args.bq_result_table and resultset:
         upload_interop_results_to_bq(resultset, args.bq_result_table)
     if num_failures:
