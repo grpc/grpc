@@ -28,33 +28,16 @@
 
 namespace grpc_core {
 
-void CompletionCallbackForPy(absl::StatusOr<std::string> result,
-                             void* c_on_complete_fn) {
-  if (c_on_complete_fn == nullptr) {
-    return;
-  }
-  CompletionContext* context =
-      static_cast<CompletionContext*>(c_on_complete_fn);
-  context->on_complete(result);
-  delete context;
-}
-
 std::variant<absl::StatusOr<std::string>, std::shared_ptr<AsyncSigningHandle>>
 PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
                                 SignatureAlgorithm signature_algorithm,
                                 OnSignComplete on_sign_complete) {
-  // Can I make CompletionContext also just have a method that is essentially
-  // CompletionCallbackForPy instead of having both args, then it's one thing
-  // that holds everything it needs
-  // auto* completion_context = new
-  // CompletionContext{std::move(on_sign_complete)};
-  auto completion_context2 =
-      std::make_unique<CompletionContext2>(std::move(on_sign_complete));
-  // completion_context2.on_complete = std::move(on_sign_complete);
+  auto completion_context =
+      std::make_unique<CompletionContext>(std::move(on_sign_complete));
 
   PrivateKeySignerPyWrapperResult result =
       sign_py_wrapper_(data_to_sign, signature_algorithm, py_user_sign_fn,
-                       std::move(completion_context2));
+                       std::move(completion_context));
   if (result.is_sync) {
     return result.sync_result;
   } else {
