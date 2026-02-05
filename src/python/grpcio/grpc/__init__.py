@@ -18,7 +18,6 @@ import contextlib
 import enum
 import logging
 import sys
-from typing import Callable, Optional, Union
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
