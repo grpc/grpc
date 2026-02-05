@@ -42,7 +42,7 @@ BAZEL_REMOTE_CACHE_ARGS=(
 
 # This is added to resolve imports not found errors like
 # ImportError: cannot import name 'auth' from 'google'
-# Tests which fails when workaround is not executed are listed below-
+# Tests which fails when workaround is not executed are listed below -
 # //src/python/grpcio_tests/tests/admin:admin_test
 # //src/python/grpcio_tests/tests/csds:csds_test
 # //src/python/grpcio_tests/tests/interop:_insecure_intraop_test
