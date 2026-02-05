@@ -150,7 +150,7 @@ class XdsHttpAddHeaderFilterFactory final : public XdsHttpFilterImpl {
   bool IsSupportedOnServers() const override { return false; }
   bool IsTerminalFilter() const override { return false; }
 
-  std::optional<XdsFilterConfig> GenerateFilterConfig(
+  std::optional<Json> GenerateFilterConfig(
       absl::string_view /*instance_name*/,
       const XdsResourceType::DecodeContext& /*context*/,
       const XdsExtension& /*extension*/,
@@ -158,7 +158,7 @@ class XdsHttpAddHeaderFilterFactory final : public XdsHttpFilterImpl {
     errors->AddError("legacy filter config not supported");
     return std::nullopt;
   }
-  std::optional<XdsFilterConfig> GenerateFilterConfigOverride(
+  std::optional<Json> GenerateFilterConfigOverride(
       absl::string_view /*instance_name*/,
       const XdsResourceType::DecodeContext& /*context*/,
       const XdsExtension& /*extension*/,
@@ -168,12 +168,12 @@ class XdsHttpAddHeaderFilterFactory final : public XdsHttpFilterImpl {
   }
   const grpc_channel_filter* channel_filter() const override { return nullptr; }
   absl::StatusOr<ServiceConfigJsonEntry> GenerateMethodConfig(
-      const XdsFilterConfig& /*hcm_filter_config*/,
-      const XdsFilterConfig* /*filter_config_override*/) const override {
+      const Json& /*hcm_filter_config*/,
+      const Json* /*filter_config_override*/) const override {
     return absl::UnimplementedError("legacy filter config not supported");
   }
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
-      const XdsFilterConfig& /*hcm_filter_config*/) const override {
+      const Json& /*hcm_filter_config*/) const override {
     return absl::UnimplementedError("legacy filter config not supported");
   }
 };
