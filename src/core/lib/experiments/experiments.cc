@@ -35,15 +35,18 @@ const char* const
 const char* const
     additional_constraints_call_tracer_send_initial_metadata_is_an_annotation =
         "{}";
+const char* const
+    description_call_tracer_send_trailing_metadata_is_an_annotation =
+        "Use the new annotation-based CallTracer API.";
+const char* const
+    additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation =
+        "{}";
 const char* const description_chaotic_good_connect_deadline =
     "Use the deadline from the connect args in chaotic good connector";
 const char* const additional_constraints_chaotic_good_connect_deadline = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
-const char* const description_chttp2_bound_write_size =
-    "Fix a bug where chttp2 can generate very large writes";
-const char* const additional_constraints_chttp2_bound_write_size = "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
@@ -240,6 +243,14 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
+const char* const description_use_call_event_engine_in_completion_queue =
+    "Use the call event engine to run callbacks in completion queue.";
+const char* const
+    additional_constraints_use_call_event_engine_in_completion_queue = "{}";
+const char* const description_wildcard_ip_expansion_restriction =
+    "If set, adds optional restriction on when to expand wildcard IPs.";
+const char* const additional_constraints_wildcard_ip_expansion_restriction =
+    "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -253,14 +264,16 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_tracer_send_initial_metadata_is_an_annotation,
      additional_constraints_call_tracer_send_initial_metadata_is_an_annotation,
      nullptr, 0, true, true},
+    {"call_tracer_send_trailing_metadata_is_an_annotation",
+     description_call_tracer_send_trailing_metadata_is_an_annotation,
+     additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation,
+     nullptr, 0, false, true},
     {"chaotic_good_connect_deadline", description_chaotic_good_connect_deadline,
      additional_constraints_chaotic_good_connect_deadline, nullptr, 0, true,
      true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
-    {"chttp2_bound_write_size", description_chttp2_bound_write_size,
-     additional_constraints_chttp2_bound_write_size, nullptr, 0, false, true},
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
@@ -407,6 +420,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
+     false, true},
+    {"use_call_event_engine_in_completion_queue",
+     description_use_call_event_engine_in_completion_queue,
+     additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
+     0, false, true},
+    {"wildcard_ip_expansion_restriction",
+     description_wildcard_ip_expansion_restriction,
+     additional_constraints_wildcard_ip_expansion_restriction, nullptr, 0,
      false, true},
 };
 
@@ -426,15 +447,18 @@ const char* const
 const char* const
     additional_constraints_call_tracer_send_initial_metadata_is_an_annotation =
         "{}";
+const char* const
+    description_call_tracer_send_trailing_metadata_is_an_annotation =
+        "Use the new annotation-based CallTracer API.";
+const char* const
+    additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation =
+        "{}";
 const char* const description_chaotic_good_connect_deadline =
     "Use the deadline from the connect args in chaotic good connector";
 const char* const additional_constraints_chaotic_good_connect_deadline = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
-const char* const description_chttp2_bound_write_size =
-    "Fix a bug where chttp2 can generate very large writes";
-const char* const additional_constraints_chttp2_bound_write_size = "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
@@ -631,6 +655,14 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
+const char* const description_use_call_event_engine_in_completion_queue =
+    "Use the call event engine to run callbacks in completion queue.";
+const char* const
+    additional_constraints_use_call_event_engine_in_completion_queue = "{}";
+const char* const description_wildcard_ip_expansion_restriction =
+    "If set, adds optional restriction on when to expand wildcard IPs.";
+const char* const additional_constraints_wildcard_ip_expansion_restriction =
+    "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -644,14 +676,16 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_tracer_send_initial_metadata_is_an_annotation,
      additional_constraints_call_tracer_send_initial_metadata_is_an_annotation,
      nullptr, 0, true, true},
+    {"call_tracer_send_trailing_metadata_is_an_annotation",
+     description_call_tracer_send_trailing_metadata_is_an_annotation,
+     additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation,
+     nullptr, 0, false, true},
     {"chaotic_good_connect_deadline", description_chaotic_good_connect_deadline,
      additional_constraints_chaotic_good_connect_deadline, nullptr, 0, true,
      true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
-    {"chttp2_bound_write_size", description_chttp2_bound_write_size,
-     additional_constraints_chttp2_bound_write_size, nullptr, 0, false, true},
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
@@ -798,6 +832,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
+     false, true},
+    {"use_call_event_engine_in_completion_queue",
+     description_use_call_event_engine_in_completion_queue,
+     additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
+     0, false, true},
+    {"wildcard_ip_expansion_restriction",
+     description_wildcard_ip_expansion_restriction,
+     additional_constraints_wildcard_ip_expansion_restriction, nullptr, 0,
      false, true},
 };
 
@@ -817,15 +859,18 @@ const char* const
 const char* const
     additional_constraints_call_tracer_send_initial_metadata_is_an_annotation =
         "{}";
+const char* const
+    description_call_tracer_send_trailing_metadata_is_an_annotation =
+        "Use the new annotation-based CallTracer API.";
+const char* const
+    additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation =
+        "{}";
 const char* const description_chaotic_good_connect_deadline =
     "Use the deadline from the connect args in chaotic good connector";
 const char* const additional_constraints_chaotic_good_connect_deadline = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
-const char* const description_chttp2_bound_write_size =
-    "Fix a bug where chttp2 can generate very large writes";
-const char* const additional_constraints_chttp2_bound_write_size = "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
@@ -1022,6 +1067,14 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
+const char* const description_use_call_event_engine_in_completion_queue =
+    "Use the call event engine to run callbacks in completion queue.";
+const char* const
+    additional_constraints_use_call_event_engine_in_completion_queue = "{}";
+const char* const description_wildcard_ip_expansion_restriction =
+    "If set, adds optional restriction on when to expand wildcard IPs.";
+const char* const additional_constraints_wildcard_ip_expansion_restriction =
+    "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -1035,14 +1088,16 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_tracer_send_initial_metadata_is_an_annotation,
      additional_constraints_call_tracer_send_initial_metadata_is_an_annotation,
      nullptr, 0, true, true},
+    {"call_tracer_send_trailing_metadata_is_an_annotation",
+     description_call_tracer_send_trailing_metadata_is_an_annotation,
+     additional_constraints_call_tracer_send_trailing_metadata_is_an_annotation,
+     nullptr, 0, false, true},
     {"chaotic_good_connect_deadline", description_chaotic_good_connect_deadline,
      additional_constraints_chaotic_good_connect_deadline, nullptr, 0, true,
      true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
-    {"chttp2_bound_write_size", description_chttp2_bound_write_size,
-     additional_constraints_chttp2_bound_write_size, nullptr, 0, false, true},
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
@@ -1189,6 +1244,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
+     false, true},
+    {"use_call_event_engine_in_completion_queue",
+     description_use_call_event_engine_in_completion_queue,
+     additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
+     0, false, true},
+    {"wildcard_ip_expansion_restriction",
+     description_wildcard_ip_expansion_restriction,
+     additional_constraints_wildcard_ip_expansion_restriction, nullptr, 0,
      false, true},
 };
 

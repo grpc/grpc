@@ -173,6 +173,7 @@ std::pair<std::string, std::string> GetExternalLink(const std::string& file) {
       {"@com_google_googleapis//", ""},
       {"@com_github_cncf_xds//", ""},
       {"@com_envoyproxy_protoc_gen_validate//", ""},
+      {"@dev_cel//", "proto/"},
       {"@envoy_api//", ""},
       {"@opencensus_proto//", ""},
   };
@@ -191,11 +192,19 @@ std::string GetBazelBinRootPath(
     std::string name_part = std::filesystem::path(file).stem().string();
     // For upb generated files, we need to strip two extensions.
     name_part = std::filesystem::path(name_part).stem().string();
-
     return absl::StrCat(
         kBazelBinRoot, "external/",
         absl::StrReplaceAll(elink.first, {{"@", ""}, {"//", ""}}),
         "/src/google/protobuf/_virtual_imports/", name_part, "_proto/", file);
+  }
+  if (elink.first == "@dev_cel//") {
+    std::string name_part = std::filesystem::path(file).stem().string();
+    // For upb generated files, we need to strip two extensions.
+    name_part = std::filesystem::path(name_part).stem().string();
+    return absl::StrCat(
+        kBazelBinRoot, "external/",
+        absl::StrReplaceAll(elink.first, {{"@", ""}, {"//", ""}}),
+        "/proto/cel/expr/_virtual_imports/", name_part, "_proto/", file);
   }
   if (absl::StartsWith(elink.first, "@")) {
     return absl::StrCat(

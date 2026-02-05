@@ -294,6 +294,9 @@ stream_refcount:
 subchannel:
   default: false
   description: Connectivity state of subchannels.
+subchannel_call:
+  default: false
+  description: Call handling in the subchannel.
 subchannel_pool:
   default: false
   description: Subchannel pool.
