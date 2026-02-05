@@ -83,8 +83,7 @@ void XdsHttpFaultFilter::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_fault_v3_HTTPFault_getmsgdef(symtab);
 }
 
-std::optional<XdsHttpFilterImpl::XdsFilterConfig>
-XdsHttpFaultFilter::GenerateFilterConfig(
+std::optional<Json> XdsHttpFaultFilter::GenerateFilterConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context,
     const XdsExtension& extension, ValidationErrors* errors) const {
@@ -199,13 +198,10 @@ XdsHttpFaultFilter::GenerateFilterConfig(
     fault_injection_policy_json["maxFaults"] =
         Json::FromNumber(*max_fault_wrapper);
   }
-  return XdsFilterConfig{
-      ConfigProtoName(),
-      Json::FromObject(std::move(fault_injection_policy_json))};
+  return Json::FromObject(std::move(fault_injection_policy_json));
 }
 
-std::optional<XdsHttpFilterImpl::XdsFilterConfig>
-XdsHttpFaultFilter::GenerateFilterConfigOverride(
+std::optional<Json> XdsHttpFaultFilter::GenerateFilterConfigOverride(
     absl::string_view instance_name,
     const XdsResourceType::DecodeContext& context,
     const XdsExtension& extension, ValidationErrors* errors) const {
@@ -231,18 +227,17 @@ ChannelArgs XdsHttpFaultFilter::ModifyChannelArgs(
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpFaultFilter::GenerateMethodConfig(
-    const XdsFilterConfig& hcm_filter_config,
-    const XdsFilterConfig* filter_config_override) const {
-  Json policy_json = filter_config_override != nullptr
-                         ? filter_config_override->config
-                         : hcm_filter_config.config;
+    const Json& hcm_filter_config, const Json* filter_config_override) const {
+  const Json& policy_json = filter_config_override != nullptr
+                                ? *filter_config_override
+                                : hcm_filter_config;
   // The policy JSON may be empty, that's allowed.
   return ServiceConfigJsonEntry{"faultInjectionPolicy", JsonDump(policy_json)};
 }
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpFaultFilter::GenerateServiceConfig(
-    const XdsFilterConfig& /*hcm_filter_config*/) const {
+    const Json& /*hcm_filter_config*/) const {
   return ServiceConfigJsonEntry{"", ""};
 }
 

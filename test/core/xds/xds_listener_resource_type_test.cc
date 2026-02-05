@@ -287,9 +287,7 @@ TEST_P(HttpConnectionManagerTest, MinimumValidConfig) {
   EXPECT_EQ(router.name, "router");
   EXPECT_EQ(router.config_proto_type,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config_proto_type_name,
-            "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
+  EXPECT_EQ(router.config, Json()) << JsonDump(router.config);
   EXPECT_EQ(http_connection_manager->http_max_stream_duration,
             Duration::Zero());
 }
@@ -322,9 +320,9 @@ TEST_P(HttpConnectionManagerTest, RdsConfigSourceUsesAds) {
   ASSERT_EQ(http_connection_manager->http_filters.size(), 1UL);
   auto& router = http_connection_manager->http_filters[0];
   EXPECT_EQ(router.name, "router");
-  EXPECT_EQ(router.config.config_proto_type_name,
+  EXPECT_EQ(router.config_proto_type,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
+  EXPECT_EQ(router.config, Json()) << JsonDump(router.config);
   EXPECT_EQ(http_connection_manager->http_max_stream_duration,
             Duration::Zero());
 }
@@ -436,9 +434,9 @@ TEST_P(HttpConnectionManagerTest, SetsMaxStreamDuration) {
   ASSERT_EQ(http_connection_manager->http_filters.size(), 1UL);
   auto& router = http_connection_manager->http_filters[0];
   EXPECT_EQ(router.name, "router");
-  EXPECT_EQ(router.config.config_proto_type_name,
+  EXPECT_EQ(router.config_proto_type,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
+  EXPECT_EQ(router.config, Json()) << JsonDump(router.config);
   EXPECT_EQ(http_connection_manager->http_max_stream_duration,
             Duration::Milliseconds(5005));
 }
@@ -638,9 +636,9 @@ TEST_P(HttpConnectionManagerTest, HttpFilterTypeNotSupportedButOptional) {
   ASSERT_EQ(http_connection_manager->http_filters.size(), 1UL);
   auto& router = http_connection_manager->http_filters[0];
   EXPECT_EQ(router.name, "router");
-  EXPECT_EQ(router.config.config_proto_type_name,
+  EXPECT_EQ(router.config_proto_type,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
+  EXPECT_EQ(router.config, Json()) << JsonDump(router.config);
 }
 
 TEST_P(HttpConnectionManagerTest, NoHttpFilters) {
@@ -777,9 +775,9 @@ TEST_F(HttpConnectionManagerClientOrServerOnlyTest,
   ASSERT_EQ(api_listener->http_filters.size(), 1UL);
   auto& router = api_listener->http_filters[0];
   EXPECT_EQ(router.name, "router");
-  EXPECT_EQ(router.config.config_proto_type_name,
+  EXPECT_EQ(router.config_proto_type,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
+  EXPECT_EQ(router.config, Json()) << JsonDump(router.config);
 }
 
 TEST_F(HttpConnectionManagerClientOrServerOnlyTest,
@@ -863,9 +861,9 @@ TEST_F(HttpConnectionManagerClientOrServerOnlyTest,
   ASSERT_EQ(http_connection_manager.http_filters.size(), 1UL);
   auto& router = http_connection_manager.http_filters[0];
   EXPECT_EQ(router.name, "router");
-  EXPECT_EQ(router.config.config_proto_type_name,
+  EXPECT_EQ(router.config_proto_type,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
+  EXPECT_EQ(router.config, Json()) << JsonDump(router.config);
 }
 
 //
@@ -983,9 +981,9 @@ TEST_F(TcpListenerTest, MinimumValidConfig) {
   ASSERT_EQ(http_connection_manager.http_filters.size(), 1UL);
   auto& router = http_connection_manager.http_filters[0];
   EXPECT_EQ(router.name, "router");
-  EXPECT_EQ(router.config.config_proto_type_name,
+  EXPECT_EQ(router.config_proto_type,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
+  EXPECT_EQ(router.config, Json()) << JsonDump(router.config);
   EXPECT_EQ(http_connection_manager.http_max_stream_duration, Duration::Zero());
 }
 
@@ -1061,9 +1059,9 @@ TEST_F(TcpListenerTest, FilterChainMatchCriteria) {
   ASSERT_EQ(http_connection_manager.http_filters.size(), 1UL);
   auto& router = http_connection_manager.http_filters[0];
   EXPECT_EQ(router.name, "router");
-  EXPECT_EQ(router.config.config_proto_type_name,
+  EXPECT_EQ(router.config_proto_type,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
+  EXPECT_EQ(router.config, Json()) << JsonDump(router.config);
   EXPECT_EQ(http_connection_manager.http_max_stream_duration, Duration::Zero());
 }
 

@@ -440,7 +440,7 @@ RefCountedPtr<const FilterConfig> GetOverrideConfig(
   if (it->second.config_proto_type != filter_impl->OverrideConfigProtoName()) {
     return nullptr;
   }
-  return it->second.config;
+  return it->second.filter_config;
 }
 
 void XdsResolver::RouteConfigData::BuildFilterChains(
@@ -952,7 +952,7 @@ void XdsResolver::XdsConfigSelector::BuildFilterChains(
       // at config validation time.
       const XdsHttpFilterImpl* filter_impl =
           http_filter_registry.GetFilterForTopLevelType(
-              http_filter.config.config_proto_type_name);
+              http_filter.config_proto_type);
       GRPC_CHECK_NE(filter_impl, nullptr);
       filter_impl->AddFilter(builder, nullptr);
       filter_impl->UpdateBlackboard(http_filter.config, old_blackboard,

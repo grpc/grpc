@@ -32,6 +32,17 @@
 namespace grpc_core {
 
 //
+// XdsRouteConfigResource::FilterConfigOverride
+//
+
+std::string XdsRouteConfigResource::FilterConfigOverride::ToString() const {
+  return absl::StrCat(
+      "{config_proto_type=", config_proto_type, ", config=", JsonDump(config),
+      ", filter_config=",
+      filter_config == nullptr ? "null" : filter_config->ToString(), "}");
+}
+
+//
 // XdsRouteConfigResource::RetryPolicy
 //
 
@@ -148,39 +159,6 @@ std::string XdsRouteConfigResource::Route::RouteAction::HashPolicy::ToString()
 // XdsRouteConfigResource::Route::RouteAction::ClusterWeight
 //
 
-namespace {
-
-bool TypedPerFilterConfigsAreEqual(
-    const XdsRouteConfigResource::TypedPerFilterConfig& a,
-    const XdsRouteConfigResource::TypedPerFilterConfig& b) {
-  auto b_it = b.begin();
-  for (const auto& [a_name, a_config] : a) {
-    if (b_it == b.end()) return false;
-    const auto& [b_name, b_config] = *b_it;
-    if (a_name != b_name) return false;
-    if (a_config.config_proto_type != b_config.config_proto_type) return false;
-    if (a_config.old_config != b_config.old_config) return false;
-    if (a_config.config == nullptr) {
-      if (b_config.config != nullptr) return false;
-    } else {
-      if (b_config.config == nullptr) return false;
-      if (*a_config.config != *b_config.config) return false;
-    }
-    ++b_it;
-  }
-  return b_it == b.end();
-}
-
-}  // namespace
-
-bool XdsRouteConfigResource::Route::RouteAction::ClusterWeight::operator==(
-    const XdsRouteConfigResource::Route::RouteAction::ClusterWeight& other)
-    const {
-  return name == other.name && weight == other.weight &&
-         TypedPerFilterConfigsAreEqual(typed_per_filter_config,
-                                       other.typed_per_filter_config);
-}
-
 std::string
 XdsRouteConfigResource::Route::RouteAction::ClusterWeight::ToString() const {
   std::vector<std::string> contents;
@@ -189,10 +167,7 @@ XdsRouteConfigResource::Route::RouteAction::ClusterWeight::ToString() const {
   if (!typed_per_filter_config.empty()) {
     std::vector<std::string> parts;
     for (const auto& [key, config] : typed_per_filter_config) {
-      parts.push_back(absl::StrCat(
-          key, "={config_proto_type=", config.config_proto_type,
-          ", old_config=", config.old_config.ToString(), ", config=",
-          config.config == nullptr ? "null" : config.config->ToString(), "}"));
+      parts.push_back(absl::StrCat(key, "=", config.ToString()));
     }
     contents.push_back(absl::StrCat("typed_per_filter_config={",
                                     absl::StrJoin(parts, ", "), "}"));
@@ -241,12 +216,6 @@ std::string XdsRouteConfigResource::Route::RouteAction::ToString() const {
 // XdsRouteConfigResource::Route
 //
 
-bool XdsRouteConfigResource::Route::operator==(const Route& other) const {
-  return matchers == other.matchers && action == other.action &&
-         TypedPerFilterConfigsAreEqual(typed_per_filter_config,
-                                       other.typed_per_filter_config);
-}
-
 std::string XdsRouteConfigResource::Route::ToString() const {
   std::vector<std::string> contents;
   contents.push_back(matchers.ToString());
@@ -263,10 +232,7 @@ std::string XdsRouteConfigResource::Route::ToString() const {
   if (!typed_per_filter_config.empty()) {
     contents.push_back("typed_per_filter_config={");
     for (const auto& [name, config] : typed_per_filter_config) {
-      contents.push_back(absl::StrCat(
-          "  ", name, "={old_config=", config.old_config.ToString(),
-          ", config=",
-          config.config == nullptr ? "null" : config.config->ToString(), "}"));
+      contents.push_back(absl::StrCat("  ", name, "=", config.ToString()));
     }
     contents.push_back("}");
   }
@@ -274,15 +240,8 @@ std::string XdsRouteConfigResource::Route::ToString() const {
 }
 
 //
-// XdsRouteConfigResource::Route
+// XdsRouteConfigResource::VirtualHost
 //
-
-bool XdsRouteConfigResource::VirtualHost::operator==(
-    const VirtualHost& other) const {
-  return domains == other.domains && routes == other.routes &&
-         TypedPerFilterConfigsAreEqual(typed_per_filter_config,
-                                       other.typed_per_filter_config);
-}
 
 std::string XdsRouteConfigResource::VirtualHost::ToString() const {
   std::vector<std::string> parts;
@@ -300,10 +259,7 @@ std::string XdsRouteConfigResource::VirtualHost::ToString() const {
   parts.push_back("  ]\n");
   parts.push_back("  typed_per_filter_config={\n");
   for (const auto& [name, config] : typed_per_filter_config) {
-    parts.push_back(absl::StrCat(
-        "    ", name, "={old_config=", config.old_config.ToString(),
-        ", config=",
-        config.config == nullptr ? "null" : config.config->ToString(), "}\n"));
+    parts.push_back(absl::StrCat("    ", name, "=", config.ToString(), "\n"));
   }
   parts.push_back("  }\n");
   parts.push_back("}\n");

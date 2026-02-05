@@ -405,16 +405,15 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
     }
     auto& entry = typed_per_filter_config[std::string(key)];
     entry.config_proto_type = filter_impl->OverrideConfigProtoName();
-    std::optional<XdsHttpFilterImpl::XdsFilterConfig> filter_config =
+    std::optional<Json> filter_config =
         filter_impl->GenerateFilterConfigOverride(key, context,
                                                   *extension_to_use, errors);
     if (filter_config.has_value()) {
-      entry.old_config = std::move(*filter_config);
+      entry.config = std::move(*filter_config);
     }
-    RefCountedPtr<const FilterConfig> config = filter_impl->ParseOverrideConfig(
-        key, context, *extension_to_use, errors);
-    if (config != nullptr) {
-      entry.config = std::move(config);
+    if (IsXdsChannelFilterChainPerRouteEnabled()) {
+      entry.filter_config = filter_impl->ParseOverrideConfig(
+          key, context, *extension_to_use, errors);
     }
   }
   return typed_per_filter_config;
