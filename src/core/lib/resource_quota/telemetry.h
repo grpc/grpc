@@ -21,9 +21,9 @@ namespace grpc_core {
 
 class ResourceQuotaDomain final : public InstrumentDomain<ResourceQuotaDomain> {
  public:
-  GRPC_INSTRUMENT_DOMAIN_LABELS("grpc.resource_quota");
   using Backend = HighContentionBackend;
   static constexpr absl::string_view kName = "resource_quota";
+  static constexpr auto kLabels = Labels("grpc.resource_quota");
 
   static inline const auto kCallsDropped = RegisterCounter(
       "grpc.resource_quota.calls_dropped",
