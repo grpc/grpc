@@ -4116,26 +4116,31 @@ TEST_F(ConnectionScalingTest, IdleConnectionsClosed) {
   EXPECT_TRUE(WaitFor([&]() {
     return servers_[0]->service_.RpcsWaitingForClientCancel() == 0;
   })) << "timeout waiting for server to see RPCs cancelled";
-  // Send normal, short-lived RPCs in a loop.  These should all go on
-  // the first connection, so after the idle timeout, the server should
-  // close the second connection, and channelz should show only one
-  // connection.  We add a fudge factor to account for timing.
-  LOG(INFO) << "Sending short-lived RPCs until second connection closes...";
+  // Send RPCs in a loop.  These should all go on the first connection, so
+  // after the idle timeout, the server should close the second connection,
+  // and channelz should show only one connection.  We add a fudge factor
+  // to account for timing.
+  LOG(INFO) << "Sending RPCs until second connection closes...";
   absl::Time deadline =
       absl::Now() +
       absl::Milliseconds(kIdleTimeoutMs * 3 * grpc_test_slowdown_factor());
   while (true) {
     ASSERT_LT(absl::Now(), deadline)
         << "timed out waiting for connection to close";
-    CheckRpcSendOk(DEBUG_LOCATION, stub);
+    // Use a long-running RPC here that stays alive while we're grabbing
+    // channelz data, to make sure the second connection doesn't get
+    // closed while we're getting the channelz data.
+    auto rpc = StartLongRunningRpc(stub.get());
     socket_nodes =
         ChannelzUtil::GetSubchannelConnections(subchannel_nodes.front().id());
+    rpc.reset();
     LOG(INFO) << "Channelz socket nodes:";
     for (auto& socket_node : socket_nodes) {
       LOG(INFO) << "  Socket node: " << socket_node.DebugString();
     }
-    if (socket_nodes.size() == 1) break;
+    if (socket_nodes.size() < 2) break;
   }
+  EXPECT_EQ(socket_nodes.size(), 1);
 }
 
 }  // namespace
