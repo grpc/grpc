@@ -992,6 +992,7 @@ TEST_F(PickFirstTest, SelectsReadyAtStartup) {
 }
 
 TEST_F(PickFirstTest, BackOffInitialReconnect) {
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Flake less than 1 in 100 times");
   StartServers(1);
   ChannelArguments args;
   constexpr int kInitialBackOffMs = 100;
