@@ -270,7 +270,7 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
         entry.config_proto_type = filter_impl->ConfigProtoName();
         if (!is_client || !IsXdsChannelFilterChainPerRouteEnabled()) {
           std::optional<Json> filter_config = filter_impl->GenerateFilterConfig(
-              name, context, std::move(*extension), errors);
+              name, context, *extension, errors);
           if (filter_config.has_value()) {
             entry.config = std::move(*filter_config);
           }
