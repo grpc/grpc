@@ -24,6 +24,14 @@ load(
 
 licenses(["notice"])
 
+exports_files(
+    [
+        "service.proto",
+        "channelz.proto",
+    ],
+    visibility = ["//third_party/py/grpc_channelz:__subpackages__"],
+)
+
 # TODO(rishesh): Enable parse_headers once when internal build system limitations are resolved.
 grpc_package(
     name = "src/proto/grpc/channelz/v2",
@@ -37,6 +45,7 @@ grpc_package(
 grpc_internal_proto_library(
     name = "channelz_proto",
     srcs = ["channelz.proto"],
+    visibility = ["//third_party/py/grpc_channelz:__subpackages__"],
     deps = [
         "@com_google_protobuf//:any_proto",
         "@com_google_protobuf//:timestamp_proto",
