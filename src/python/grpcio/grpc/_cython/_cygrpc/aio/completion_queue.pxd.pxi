@@ -32,7 +32,7 @@ cdef extern from *:
     #endif
     }
     """
-    void _unified_socket_write_impl(int fd) nogil
+    inline void _unified_socket_write_impl(int fd) nogil
 
 
 cdef void _unified_socket_write(int fd) noexcept nogil
