@@ -111,12 +111,12 @@ XdsHttpGcpAuthnFilter::GenerateFilterConfigOverride(
   return std::nullopt;
 }
 
-void XdsHttpGcpAuthnFilter::AddFilter(InterceptionChainBuilder& builder) const {
-  builder.Add<GcpAuthenticationFilter>(nullptr);
+void XdsHttpGcpAuthnFilter::AddFilter(FilterChainBuilder& builder) const {
+  builder.AddFilter<GcpAuthenticationFilter>(nullptr);
 }
 
 const grpc_channel_filter* XdsHttpGcpAuthnFilter::channel_filter() const {
-  return &GcpAuthenticationFilter::kFilter;
+  return &GcpAuthenticationFilter::kFilterVtable;
 }
 
 ChannelArgs XdsHttpGcpAuthnFilter::ModifyChannelArgs(

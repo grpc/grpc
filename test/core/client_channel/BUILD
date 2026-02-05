@@ -264,3 +264,15 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "subchannel_stream_limiter_test",
+    srcs = ["subchannel_stream_limiter_test.cc"],
+    external_deps = ["gtest"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:grpc_client_channel",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
