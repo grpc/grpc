@@ -46,6 +46,8 @@ _fork_handler_failed = False
 # These cdef functions are always compiled, even on Windows, to satisfy the
 # declarations in fork.pxd.pxi. On Windows they are effectively unused
 # because _GRPC_ENABLE_FORK_SUPPORT is forced to False.
+# In simple terms, they are not run on Windows because
+# we don't register them on fork.
 
 cdef void __prefork() noexcept nogil:
     with gil:
