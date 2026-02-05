@@ -630,7 +630,7 @@ class TestServer(AioTestBase):
         # Use a limit of 1 to make the test deterministic
         max_concurrent = 1
         server = aio.server(maximum_concurrent_rpcs=max_concurrent)
-        port = server.add_insecure_port("localhost:0")
+        port = server.add_insecure_port("[::]:0")
         bind_address = "localhost:%d" % port
         server.add_generic_rpc_handlers((_GenericHandler(),))
         await server.start()
