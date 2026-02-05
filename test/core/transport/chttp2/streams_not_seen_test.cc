@@ -516,10 +516,8 @@ TEST_F(StreamsNotSeenTest, StartStreamBeforeGoaway) {
   cqv_->Verify();
   // Verify status and metadata
   EXPECT_EQ(status, GRPC_STATUS_UNAVAILABLE);
-  ASSERT_TRUE(TrailingMetadataRecordingFilter::trailing_metadata_available());
-  ASSERT_TRUE(
-      TrailingMetadataRecordingFilter::stream_network_state().has_value());
-  EXPECT_EQ(TrailingMetadataRecordingFilter::stream_network_state().value(),
+  EXPECT_TRUE(TrailingMetadataRecordingFilter::trailing_metadata_available());
+  EXPECT_EQ(TrailingMetadataRecordingFilter::stream_network_state(),
             GrpcStreamNetworkState::kNotSeenByServer);
   grpc_slice_unref(details);
   gpr_free(const_cast<char*>(error_string));
@@ -654,10 +652,8 @@ TEST_F(StreamsNotSeenTest, StartStreamAfterGoaway) {
   cqv_->Verify();
   // Verify status and metadata
   EXPECT_EQ(status, GRPC_STATUS_UNAVAILABLE);
-  ASSERT_TRUE(TrailingMetadataRecordingFilter::trailing_metadata_available());
-  ASSERT_TRUE(
-      TrailingMetadataRecordingFilter::stream_network_state().has_value());
-  EXPECT_EQ(TrailingMetadataRecordingFilter::stream_network_state().value(),
+  EXPECT_TRUE(TrailingMetadataRecordingFilter::trailing_metadata_available());
+  EXPECT_EQ(TrailingMetadataRecordingFilter::stream_network_state(),
             GrpcStreamNetworkState::kNotSentOnWire);
   grpc_slice_unref(details);
   gpr_free(const_cast<char*>(error_string));
@@ -732,10 +728,8 @@ TEST_F(ZeroConcurrencyTest, StartStreamBeforeGoaway) {
   cqv_->Verify();
   // Verify status and metadata
   EXPECT_EQ(status, GRPC_STATUS_UNAVAILABLE);
-  ASSERT_TRUE(TrailingMetadataRecordingFilter::trailing_metadata_available());
-  ASSERT_TRUE(
-      TrailingMetadataRecordingFilter::stream_network_state().has_value());
-  EXPECT_EQ(TrailingMetadataRecordingFilter::stream_network_state().value(),
+  EXPECT_TRUE(TrailingMetadataRecordingFilter::trailing_metadata_available());
+  EXPECT_EQ(TrailingMetadataRecordingFilter::stream_network_state(),
             GrpcStreamNetworkState::kNotSentOnWire);
   grpc_slice_unref(details);
   gpr_free(const_cast<char*>(error_string));
@@ -797,10 +791,8 @@ TEST_F(ZeroConcurrencyTest, TransportDestroyed) {
   cqv_->Verify();
   // Verify status and metadata
   EXPECT_EQ(status, GRPC_STATUS_UNAVAILABLE);
-  ASSERT_TRUE(TrailingMetadataRecordingFilter::trailing_metadata_available());
-  ASSERT_TRUE(
-      TrailingMetadataRecordingFilter::stream_network_state().has_value());
-  EXPECT_EQ(TrailingMetadataRecordingFilter::stream_network_state().value(),
+  EXPECT_TRUE(TrailingMetadataRecordingFilter::trailing_metadata_available());
+  EXPECT_EQ(TrailingMetadataRecordingFilter::stream_network_state(),
             GrpcStreamNetworkState::kNotSentOnWire);
   grpc_slice_unref(details);
   gpr_free(const_cast<char*>(error_string));
