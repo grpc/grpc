@@ -2,6 +2,7 @@ import sys
 import unittest
 
 import grpc
+import grpc.experimental
 
 from src.proto.grpc.testing import test_pb2_grpc
 from src.proto.grpc.testing import empty_pb2
@@ -51,7 +52,7 @@ class SecurityTest(unittest.TestCase):
         self.stub = test_pb2_grpc.TestServiceStub(
             grpc.secure_channel(
                 "localhost:{}".format(self.port),
-                grpc.ssl_channel_credentials_with_custom_signer(
+                grpc.experimental.ssl_channel_credentials_with_custom_signer(
                     private_key_sign_fn=resources.sync_client_private_key_signer,
                     root_certificates=resources.test_root_certificates(),
                     certificate_chain=resources.client_certificate_chain(),
@@ -74,7 +75,7 @@ class SecurityTest(unittest.TestCase):
         self.stub = test_pb2_grpc.TestServiceStub(
             grpc.secure_channel(
                 "localhost:{}".format(self.port),
-                grpc.ssl_channel_credentials_with_custom_signer(
+                grpc.experimental.ssl_channel_credentials_with_custom_signer(
                     private_key_sign_fn=resources.async_client_private_key_signer,
                     root_certificates=resources.test_root_certificates(),
                     certificate_chain=resources.client_certificate_chain(),
@@ -97,7 +98,7 @@ class SecurityTest(unittest.TestCase):
         self.stub = test_pb2_grpc.TestServiceStub(
             grpc.secure_channel(
                 "localhost:{}".format(self.port),
-                grpc.ssl_channel_credentials_with_custom_signer(
+                grpc.experimental.ssl_channel_credentials_with_custom_signer(
                     private_key_sign_fn=resources.sync_bad_client_private_key_signer,
                     root_certificates=resources.test_root_certificates(),
                     certificate_chain=resources.client_certificate_chain(),
@@ -121,7 +122,7 @@ class SecurityTest(unittest.TestCase):
         self.stub = test_pb2_grpc.TestServiceStub(
             grpc.secure_channel(
                 "localhost:{}".format(self.port),
-                grpc.ssl_channel_credentials_with_custom_signer(
+                grpc.experimental.ssl_channel_credentials_with_custom_signer(
                     private_key_sign_fn=resources.bad_async_client_private_key_signer,
                     root_certificates=resources.test_root_certificates(),
                     certificate_chain=resources.client_certificate_chain(),
@@ -152,7 +153,7 @@ class SecurityTest(unittest.TestCase):
         )
         channel = grpc.secure_channel(
             "localhost:{}".format(self.port),
-            grpc.ssl_channel_credentials_with_custom_signer(
+            grpc.experimental.ssl_channel_credentials_with_custom_signer(
                 private_key_sign_fn=bound_signing_fn,
                 root_certificates=resources.test_root_certificates(),
                 certificate_chain=resources.client_certificate_chain(),
@@ -184,7 +185,7 @@ class SecurityTest(unittest.TestCase):
         with self.assertRaises(Exception) as context:
             with grpc.secure_channel(
                 "localhost:{}".format(self.port),
-                grpc.ssl_channel_credentials_with_custom_signer(
+                grpc.experimental.ssl_channel_credentials_with_custom_signer(
                     private_key_sign_fn=resources.async_client_private_key_signer_with_cancel,
                     root_certificates=resources.test_root_certificates(),
                     certificate_chain=resources.client_certificate_chain(),

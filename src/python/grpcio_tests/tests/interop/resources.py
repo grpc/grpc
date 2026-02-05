@@ -87,7 +87,7 @@ def sign_private_key(data_to_sign, private_key_bytes, signature_algorithm):
         try:
             if (
                 signature_algorithm
-                != grpc.PrivateKeySignatureAlgorithm.RSA_PSS_RSAE_SHA256
+                != grpc.experimental.PrivateKeySignatureAlgorithm.RSA_PSS_RSAE_SHA256
             ):
                 return ValueError("Expect the private key to be PSS SHA256")
             print("GREG: alg ", signature_algorithm, flush=True)
@@ -118,6 +118,7 @@ def sync_client_private_key_signer(
     """
     private_key_bytes = client_private_key()
     signature = sign_private_key(data_to_sign, private_key_bytes, signature_algorithm)
+    print("GREG: signature: ", signature, flush=True)
     return signature
 
 
