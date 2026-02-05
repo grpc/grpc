@@ -631,7 +631,6 @@ grpc_cc_library(
         "avoid_dep",
         "nofixdeps",
     ],
-    visibility = ["//visibility:public"],
     deps = [
         "channel_arg_names",
         "channel_stack_builder",
@@ -1234,7 +1233,7 @@ grpc_cc_library(
         "avoid_dep",
         "nofixdeps",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//bazel:grpc++_unsecure"],
     deps = [
         "channel_arg_names",
         "global_callback_hook",
@@ -2031,8 +2030,8 @@ grpc_cc_library(
         "absl/time",
         "absl/types:span",
         "absl/utility",
-        "madler_zlib",
         "@com_google_protobuf//upb/mem",
+        "madler_zlib",
     ],
     linkopts = select({
         "systemd": ["-lsystemd"],
