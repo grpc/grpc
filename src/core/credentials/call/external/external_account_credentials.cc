@@ -29,6 +29,7 @@
 #include <memory>
 #include <utility>
 
+#include "src/core/credentials/call/regional_access_boundary_fetcher.h"
 #include "src/core/credentials/call/external/aws_external_account_credentials.h"
 #include "src/core/credentials/call/external/file_external_account_credentials.h"
 #include "src/core/credentials/call/external/url_external_account_credentials.h"
@@ -83,6 +84,18 @@ ExternalAccountCredentials::NoOpFetchBody::NoOpFetchBody(
     self->Finish(std::move(result));
   });
 }
+
+grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
+ExternalAccountCredentials::GetRequestMetadata(
+    grpc_core::ClientMetadataHandle initial_metadata,
+    const grpc_call_credentials::GetRequestMetadataArgs* args) {
+  return TrySeq(TokenFetcherCredentials::GetRequestMetadata(
+                    std::move(initial_metadata), args),
+                [this](ClientMetadataHandle updated_metadata) {
+                  return regional_access_boundary_fetcher_.Fetch(build_regional_access_boundary_url(), std::move(updated_metadata));
+                });
+}
+
 
 //
 // ExternalAccountCredentials::HttpFetchBody
@@ -443,8 +456,36 @@ bool ExternalAccountCredentials::ExternalFetchRequest::MaybeFailLocked(
 namespace {
 
 // Expression to match:
+// //iam.googleapis.com/projects/<project>/locations/global/workloadIdentityPools/<pool-id>/providers/.+
+bool MatchWorkloadIdentityPoolAudience(absl::string_view audience,
+                                       std::string* project,
+                                       std::string* pool_id) {
+  // Match "//iam.googleapis.com/projects/"
+  if (!absl::ConsumePrefix(&audience, "//iam.googleapis.com/projects/")) {
+    return false;
+  }
+  // Match "<project>/locations/global/workloadIdentityPools/"
+  auto location_pos = audience.find("/locations/global/workloadIdentityPools/");
+  if (location_pos == absl::string_view::npos) return false;
+  *project = std::string(audience.substr(0, location_pos));
+  if (project->empty()) return false;
+
+  audience.remove_prefix(location_pos +
+                         strlen("/locations/global/workloadIdentityPools/"));
+
+  // Match "<pool-id>/providers/"
+  auto provider_pos = audience.find("/providers/");
+  if (provider_pos == absl::string_view::npos) return false;
+  *pool_id = std::string(audience.substr(0, provider_pos));
+  if (pool_id->empty()) return false;
+
+  return true;
+}
+
+// Expression to match:
 // //iam.googleapis.com/locations/[^/]+/workforcePools/[^/]+/providers/.+
-bool MatchWorkforcePoolAudience(absl::string_view audience) {
+bool MatchWorkforcePoolAudience(absl::string_view audience,
+                                std::string* workforce_pool_id) {
   // Match "//iam.googleapis.com/locations/"
   if (!absl::ConsumePrefix(&audience, "//iam.googleapis.com")) return false;
   if (!absl::ConsumePrefix(&audience, "/locations/")) return false;
@@ -456,7 +497,9 @@ bool MatchWorkforcePoolAudience(absl::string_view audience) {
   std::pair<absl::string_view, absl::string_view> providers_split_result =
       absl::StrSplit(workforce_pools_split_result.second,
                      absl::MaxSplits("/providers/", 1));
-  return !absl::StrContains(providers_split_result.first, '/');
+  if (absl::StrContains(providers_split_result.first, '/')) return false;
+  *workforce_pool_id = std::string(providers_split_result.first);
+  return true;
 }
 
 }  // namespace
@@ -518,6 +561,9 @@ ExternalAccountCredentials::Create(
   if (it == json.object().end()) {
     return GRPC_ERROR_CREATE("credential_source field not present.");
   }
+  if (it->second.type() != Json::Type::kObject) {
+    return GRPC_ERROR_CREATE("credential_source field must be a JSON object.");
+  }
   options.credential_source = it->second;
   it = json.object().find("quota_project_id");
   if (it != json.object().end()) {
@@ -533,7 +579,8 @@ ExternalAccountCredentials::Create(
   }
   it = json.object().find("workforce_pool_user_project");
   if (it != json.object().end()) {
-    if (MatchWorkforcePoolAudience(options.audience)) {
+    if (MatchWorkforcePoolAudience(options.audience,
+                                   &options.workforce_pool_id)) {
       options.workforce_pool_user_project = it->second.string();
     } else {
       return GRPC_ERROR_CREATE(
@@ -541,6 +588,9 @@ ExternalAccountCredentials::Create(
           "pool credentials");
     }
   }
+  MatchWorkloadIdentityPoolAudience(options.audience,
+                                    &options.workload_pool_project,
+                                    &options.workload_pool_id);
   it = json.object().find("service_account_impersonation");
   options.service_account_impersonation.token_lifetime_seconds =
       IMPERSONATED_CRED_DEFAULT_LIFETIME_IN_SECONDS;

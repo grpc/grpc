@@ -1,0 +1,7 @@
+{
+  "type": "external_account_authorized_user_login_config",
+  "audience": "//iam.googleapis.com/locations/global/workforcePools/e2e-test-pool-52173/providers/test-saml-provider-7162",
+  "auth_url": "https://auth.cloud.google/authorize",
+  "token_url": "https://sts.googleapis.com/v1/oauthtoken",
+  "token_info_url": "https://sts.googleapis.com/v1/introspect"
+}

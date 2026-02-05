@@ -126,6 +126,8 @@ struct grpc_call_credentials
     return min_security_level_;
   }
 
+  virtual void InvalidateRegionalAccessBoundaryCache() {};
+
   // Compares this grpc_call_credentials object with \a other.
   // If this method returns 0, it means that gRPC can treat the two call
   // credentials as effectively the same..

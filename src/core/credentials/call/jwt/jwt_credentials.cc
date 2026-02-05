@@ -40,6 +40,7 @@
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/credentials/call/regional_access_boundary_fetcher.h"
 #include "src/core/util/uri.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
@@ -49,6 +50,9 @@ using grpc_core::Json;
 
 grpc_service_account_jwt_access_credentials::
     ~grpc_service_account_jwt_access_credentials() {
+  if (regional_access_boundary_fetcher_ != nullptr) {
+    regional_access_boundary_fetcher_->Cancel();
+  }
   grpc_auth_json_key_destruct(&key_);
   gpr_mu_destroy(&cache_mu_);
 }
@@ -104,13 +108,20 @@ grpc_service_account_jwt_access_credentials::GetRequestMetadata(
   initial_metadata->Append(
       GRPC_AUTHORIZATION_METADATA_KEY, std::move(*jwt_value),
       [](absl::string_view, const grpc_core::Slice&) { abort(); });
-  return grpc_core::Immediate(std::move(initial_metadata));
+  return regional_access_boundary_fetcher_->Fetch(absl::StrFormat("https://iamcredentials.googleapis.com/v1/projects/-/"
+                     "serviceAccounts/%s/allowedLocations", key_.client_email), std::move(initial_metadata));
+}
+
+void grpc_service_account_jwt_access_credentials::InvalidateRegionalAccessBoundaryCache() {
+  regional_access_boundary_fetcher_->InvalidateCache();
 }
 
 grpc_service_account_jwt_access_credentials::
     grpc_service_account_jwt_access_credentials(grpc_auth_json_key key,
                                                 gpr_timespec token_lifetime)
-    : key_(key) {
+    : key_(key),
+      regional_access_boundary_fetcher_(
+          grpc_core::MakeRefCounted<grpc_core::RegionalAccessBoundaryFetcher>()) {
   gpr_timespec max_token_lifetime = grpc_max_auth_token_lifetime();
   if (gpr_time_cmp(token_lifetime, max_token_lifetime) > 0) {
     VLOG(2) << "Cropping token lifetime to maximum allowed value ("

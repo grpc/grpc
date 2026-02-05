@@ -4362,6 +4362,7 @@ grpc_cc_library(
         "iomgr",
         "orphanable",
         "promise",
+        "//src/core:regional_access_boundary_fetcher",
         "ref_counted_ptr",
         "transport_auth_context",
         "uri",

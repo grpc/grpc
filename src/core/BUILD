@@ -5052,6 +5052,59 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "regional_access_boundary_fetcher",
+    srcs = [
+        "credentials/call/regional_access_boundary_fetcher.cc",
+        "util/http_client/format_request.cc",
+        "util/http_client/httpcli.cc",
+        "util/http_client/parser.cc",
+    ],
+    hdrs = [
+        "credentials/call/regional_access_boundary_fetcher.h",
+        "util/http_client/format_request.h",
+        "util/http_client/httpcli.h",
+        "util/http_client/parser.h",
+    ],
+    external_deps = [
+        "absl/functional:bind_front",
+        "absl/log",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    deps = [
+        "//:backoff",
+        "//:config",
+        "//:debug_location",
+        "error",
+        "error_utils",
+        "event_engine_common",
+        "event_engine_shim",
+        "event_engine_tcp_socket_utils",
+        "//:exec_ctx",
+        "handshaker_registry",
+        "httpcli_ssl_credentials",
+        "iomgr_fwd",
+        "json",
+        "json_reader",
+        "metadata",
+        "pollset_set",
+        "resource_quota",
+        "slice",
+        "status_helper",
+        "tcp_connect_handshaker",
+        "//:uri",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_public_hdrs",
+        "//:grpc_security_base",
+        "//:promise",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_oauth2_credentials",
     srcs = [
         "credentials/call/oauth2/oauth2_credentials.cc",
@@ -5144,6 +5197,7 @@ grpc_cc_library(
         "load_file",
         "slice",
         "slice_refcount",
+        "regional_access_boundary_fetcher",
         "status_conversion",
         "status_helper",
         "time",

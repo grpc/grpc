@@ -37,6 +37,7 @@ using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerUnaryReactor;
 using grpc::Status;
+using grpc::StatusCode;
 using helloworld::Greeter;
 using helloworld::HelloReply;
 using helloworld::HelloRequest;
@@ -46,8 +47,29 @@ class GreeterServiceImpl final : public Greeter::CallbackService {
   ServerUnaryReactor* SayHello(CallbackServerContext* context,
                                const HelloRequest* request,
                                HelloReply* reply) override {
+    // Get the client's initial metadata
+    std::cout << "Client metadata: " << std::endl;
+    const std::multimap<grpc::string_ref, grpc::string_ref> metadata =
+        context->client_metadata();
+    for (auto iter = metadata.begin(); iter != metadata.end(); ++iter) {
+      std::cout << "Header key: " << iter->first << ", value: ";
+      // Check for binary value
+      size_t isbin = iter->first.find("-bin");
+      if ((isbin != std::string::npos) && (isbin + 4 == iter->first.size())) {
+        std::cout << std::hex;
+        for (auto c : iter->second) {
+          std::cout << static_cast<unsigned int>(c);
+        }
+        std::cout << std::dec;
+      } else {
+        std::cout << iter->second;
+      }
+      std::cout << std::endl;
+    }
+
     std::string prefix("Hello ");
     reply->set_message(prefix + request->name());
+    std::cout << "Sending message " << prefix + request->name() << std::endl;
 
     ServerUnaryReactor* reactor = context->DefaultReactor();
     reactor->Finish(Status::OK);
@@ -65,7 +87,8 @@ constexpr char kServerKeyPath[] = "credentials/localhost.key";
 #endif
 
 void RunServer(uint16_t port) {
-  std::string server_address = absl::StrFormat("0.0.0.0:%d", port);
+  
+  std::string server_address = absl::StrFormat("127.0.0.1:%d", port);
   GreeterServiceImpl service;
   ServerBuilder builder;
   // Load SSL credentials and build a SSL credential options
