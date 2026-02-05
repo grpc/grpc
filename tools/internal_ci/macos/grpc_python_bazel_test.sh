@@ -42,6 +42,13 @@ BAZEL_REMOTE_CACHE_ARGS=(
 
 # This is added to resolve imports not found errors like
 # ImportError: cannot import name 'auth' from 'google'
+# Tests which fails when workaround is not executed are listed below-
+# //src/python/grpcio_tests/tests/admin:admin_test
+# //src/python/grpcio_tests/tests/csds:csds_test
+# //src/python/grpcio_tests/tests/interop:_insecure_intraop_test
+# //src/python/grpcio_tests/tests/interop:_secure_intraop_test
+# //src/python/grpcio_tests/tests_aio/interop:local_interop_test
+# //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client_test"
 # TODO(asheshvidyut): figure out proper fix instead of workaround below
 python3 -m pip install -r requirements.bazel.lock
 
