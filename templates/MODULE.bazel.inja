@@ -71,6 +71,9 @@ single_version_override(
     version = "1.3.1.bcr.5",
 )
 
+# --- libpfm
+# Not directly used, but is requested by google_benchmark
+
 # Development dependencies
 # ========================
 bazel_dep(name = "google_benchmark", version = "1.9.0", dev_dependency = True, repo_name = "com_github_google_benchmark")
@@ -150,6 +153,27 @@ archive_override(
     urls = [
         "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.35.0.tar.gz",
         "https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.35.0.tar.gz",
+    ],
+)
+
+# --- libpfm 4.11.0
+#
+# Not directly used, depended on by google_benchmark.
+# We need to override because the BCR uses a broken URL.
+#
+# See also https://github.com/bazelbuild/bazel-central-registry/blob/c83ac4d4bac24aeebf1b99f8b8d21166e0886397/modules/libpfm/4.11.0.bcr.1/source.json
+bazel_dep(name = "libpfm", version = "4.11.0.bcr.1", dev_dependency = True)
+archive_override(
+    module_name = "libpfm",
+    integrity = "sha256-XaX4hyveFLNjTJaI2YD2i9ootRAmhyPMEpc+7bq5/sw=",
+    patch_strip = 1,
+    patches = [
+        "//bazel:libpfm.patch",
+    ],
+    strip_prefix = "libpfm-4.11.0",
+    urls = [
+        "https://storage.googleapis.com/grpc-bazel-mirror/psychz.dl.sourceforge.net/project/perfmon2/libpfm4/libpfm-4.11.0.tar.gz",
+        "https://psychz.dl.sourceforge.net/projects/perfmon2/files/libpfm4/libpfm-4.11.0.tar.gz",
     ],
 )
 

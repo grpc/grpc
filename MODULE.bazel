@@ -159,11 +159,14 @@ archive_override(
 # --- libpfm 4.11.0
 #
 # Not directly used, depended on by google_benchmark.
-# We need to override because the BCR source.json uses a broken URL link.
-bazel_dep(name = "libpfm", dev_dependency = True)
+# We need to override because the BCR uses a broken URL.
+#
+# See also https://github.com/bazelbuild/bazel-central-registry/blob/c83ac4d4bac24aeebf1b99f8b8d21166e0886397/modules/libpfm/4.11.0.bcr.1/source.json
+bazel_dep(name = "libpfm", version = "4.11.0.bcr.1", dev_dependency = True)
 archive_override(
     module_name = "libpfm",
     integrity = "sha256-XaX4hyveFLNjTJaI2YD2i9ootRAmhyPMEpc+7bq5/sw=",
+    patch_strip = 1,
     patches = [
         "//bazel:libpfm.patch",
     ],
