@@ -77,6 +77,8 @@ class OrcaProducer::ConnectivityWatcher final
     producer_->OnConnectivityStateChange(state);
   }
 
+  void OnKeepaliveUpdate(Duration) override {}
+
   uint32_t max_connections_per_subchannel() const override { return 1; }
 
   grpc_pollset_set* interested_parties() override {
@@ -205,7 +207,6 @@ class OrcaProducer::OrcaStreamEventHandler final
 
 void OrcaProducer::Start(WeakRefCountedPtr<Subchannel> subchannel) {
   subchannel_ = std::move(subchannel);
-  connected_subchannel_ = subchannel_->connected_subchannel();
   auto connectivity_watcher =
       MakeRefCounted<ConnectivityWatcher>(WeakRefAsSubclass<OrcaProducer>());
   connectivity_watcher_ = connectivity_watcher.get();
@@ -258,9 +259,8 @@ Duration OrcaProducer::GetMinIntervalLocked() const {
 }
 
 void OrcaProducer::MaybeStartStreamLocked() {
-  if (connected_subchannel_ == nullptr) return;
   stream_client_ = MakeOrphanable<SubchannelStreamClient>(
-      connected_subchannel_, subchannel_->pollset_set(),
+      subchannel_,
       std::make_unique<OrcaStreamEventHandler>(
           WeakRefAsSubclass<OrcaProducer>(), report_interval_),
       GRPC_TRACE_FLAG_ENABLED(orca_client) ? "OrcaClient" : nullptr);
@@ -279,10 +279,8 @@ void OrcaProducer::NotifyWatchers(
 void OrcaProducer::OnConnectivityStateChange(grpc_connectivity_state state) {
   MutexLock lock(&mu_);
   if (state == GRPC_CHANNEL_READY) {
-    connected_subchannel_ = subchannel_->connected_subchannel();
     if (!watchers_.empty()) MaybeStartStreamLocked();
   } else {
-    connected_subchannel_.reset();
     stream_client_.reset();
   }
 }

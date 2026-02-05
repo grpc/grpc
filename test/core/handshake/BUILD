@@ -55,9 +55,14 @@ grpc_fuzz_test(
     external_deps = [
         "fuzztest",
         "fuzztest_main",
+        "gtest",
     ],
     deps = [
         "test_handshake",
+        "//:grpc",
+        "//:grpc_security_base",
+        "//:ref_counted_ptr",
+        "//:transport_auth_context",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
         "//test/core/test_util:fuzzing_channel_args",
@@ -166,7 +171,7 @@ grpc_cc_test(
         "//:channel_arg_names",
         "//:gpr",
         "//:grpc",
-        "//:http_connect_handshaker",
+        "//:http_connect_client_handshaker",
         "//:parse_address",
         "//:sockaddr_utils",
         "//src/core:channel_args",

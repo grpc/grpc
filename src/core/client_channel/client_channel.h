@@ -166,7 +166,7 @@ class ClientChannel : public Channel {
 
   // Applies service config settings from config_selector to the call.
   // May modify call context and client_initial_metadata.
-  absl::Status ApplyServiceConfigToCall(
+  absl::StatusOr<RefCountedPtr<const FilterChain>> ApplyServiceConfigToCall(
       ConfigSelector& config_selector,
       ClientMetadata& client_initial_metadata) const;
 
@@ -192,11 +192,8 @@ class ClientChannel : public Channel {
   //
   // Fields related to name resolution.
   //
-  struct ResolverDataForCalls {
-    RefCountedPtr<ConfigSelector> config_selector;
-    RefCountedPtr<UnstartedCallDestination> call_destination;
-  };
-  Observable<absl::StatusOr<ResolverDataForCalls>> resolver_data_for_calls_;
+  Observable<absl::StatusOr<RefCountedPtr<ConfigSelector>>>
+      resolver_data_for_calls_;
 
   //
   // Fields related to LB picks.
@@ -227,7 +224,7 @@ class ClientChannel : public Channel {
   // work_serializer when the SubchannelWrappers are created and destroyed.
   absl::flat_hash_map<Subchannel*, absl::flat_hash_set<SubchannelWrapper*>>
       subchannel_map_ ABSL_GUARDED_BY(*work_serializer_);
-  int keepalive_time_ ABSL_GUARDED_BY(*work_serializer_) = -1;
+  Duration keepalive_time_ ABSL_GUARDED_BY(*work_serializer_);
   absl::Status disconnect_error_ ABSL_GUARDED_BY(*work_serializer_);
 
   //

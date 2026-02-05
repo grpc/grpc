@@ -72,7 +72,7 @@ void UnaryRunHandlerHelper(const MethodHandler::HandlerParameter& param,
     status = ops.SendMessagePtr(rsp, param.server_context->memory_allocator());
   }
   ops.ServerSendStatus(&param.server_context->trailing_metadata_, status);
-  param.call->PerformOps(&ops);
+  ops.FillOps(param.call);
   param.call->cq()->Pluck(&ops);
 }
 
@@ -174,7 +174,7 @@ class ClientStreamingHandler : public grpc::internal::MethodHandler {
           ops.SendMessagePtr(&rsp, param.server_context->memory_allocator());
     }
     ops.ServerSendStatus(&param.server_context->trailing_metadata_, status);
-    param.call->PerformOps(&ops);
+    ops.FillOps(param.call);
     param.call->cq()->Pluck(&ops);
   }
 
@@ -220,7 +220,7 @@ class ServerStreamingHandler : public grpc::internal::MethodHandler {
       }
     }
     ops.ServerSendStatus(&param.server_context->trailing_metadata_, status);
-    param.call->PerformOps(&ops);
+    ops.FillOps(param.call);
     if (param.server_context->has_pending_ops_) {
       param.call->cq()->Pluck(&param.server_context->pending_ops_);
     }
@@ -288,7 +288,7 @@ class TemplatedBidiStreamingHandler : public grpc::internal::MethodHandler {
       }
     }
     ops.ServerSendStatus(&param.server_context->trailing_metadata_, status);
-    param.call->PerformOps(&ops);
+    ops.FillOps(param.call);
     if (param.server_context->has_pending_ops_) {
       param.call->cq()->Pluck(&param.server_context->pending_ops_);
     }
@@ -377,7 +377,7 @@ class ErrorMethodHandler : public grpc::internal::MethodHandler {
                               grpc::internal::CallOpServerSendStatus>
         ops;
     FillOps(param.server_context, message_, &ops);
-    param.call->PerformOps(&ops);
+    ops.FillOps(param.call);
     param.call->cq()->Pluck(&ops);
   }
 

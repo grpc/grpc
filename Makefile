@@ -367,8 +367,8 @@ E = @echo
 Q = @
 endif
 
-CORE_VERSION = 51.0.0
-CPP_VERSION = 1.77.0-dev
+CORE_VERSION = 52.0.0
+CPP_VERSION = 1.79.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -404,7 +404,7 @@ SHARED_EXT_CORE = dll
 SHARED_EXT_CPP = dll
 
 SHARED_PREFIX =
-SHARED_VERSION_CORE = -51
+SHARED_VERSION_CORE = -52
 SHARED_VERSION_CPP = -1
 else ifeq ($(SYSTEM),Darwin)
 EXECUTABLE_SUFFIX =
@@ -710,6 +710,7 @@ LIBGRPC_SRC = \
     src/core/client_channel/subchannel.cc \
     src/core/client_channel/subchannel_pool_interface.cc \
     src/core/client_channel/subchannel_stream_client.cc \
+    src/core/client_channel/subchannel_stream_limiter.cc \
     src/core/config/config_vars.cc \
     src/core/config/config_vars_non_generated.cc \
     src/core/config/core_configuration.cc \
@@ -833,6 +834,8 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/writing.cc \
     src/core/ext/transport/inproc/inproc_transport.cc \
     src/core/ext/transport/inproc/legacy_inproc_transport.cc \
+    src/core/ext/upb-gen/cel/expr/checked.upb_minitable.c \
+    src/core/ext/upb-gen/cel/expr/syntax.upb_minitable.c \
     src/core/ext/upb-gen/envoy/admin/v3/certs.upb_minitable.c \
     src/core/ext/upb-gen/envoy/admin/v3/clusters.upb_minitable.c \
     src/core/ext/upb-gen/envoy/admin/v3/config_dump.upb_minitable.c \
@@ -853,9 +856,11 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/envoy/config/cluster/v3/filter.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/cluster/v3/outlier_detection.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/common/matcher/v3/matcher.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/core/v3/cel.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/event_service_config.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/extension.upb_minitable.c \
@@ -906,6 +911,9 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/envoy/extensions/filters/http/router/v3/router.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/tls/v3/tls_credentials.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/xds/v3/xds_credentials.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/common/v3/common.upb_minitable.c \
@@ -1005,6 +1013,8 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/xds/type/v3/cel.upb_minitable.c \
     src/core/ext/upb-gen/xds/type/v3/range.upb_minitable.c \
     src/core/ext/upb-gen/xds/type/v3/typed_struct.upb_minitable.c \
+    src/core/ext/upbdefs-gen/cel/expr/checked.upbdefs.c \
+    src/core/ext/upbdefs-gen/cel/expr/syntax.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/admin/v3/certs.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/admin/v3/clusters.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/admin/v3/config_dump.upbdefs.c \
@@ -1025,9 +1035,11 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-gen/envoy/config/cluster/v3/filter.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/cluster/v3/outlier_detection.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/common/matcher/v3/matcher.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/address.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/backoff.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/base.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/core/v3/cel.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/config_source.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/event_service_config.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/extension.upbdefs.c \
@@ -1171,7 +1183,7 @@ LIBGRPC_SRC = \
     src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc \
     src/core/handshaker/handshaker.cc \
     src/core/handshaker/handshaker_registry.cc \
-    src/core/handshaker/http_connect/http_connect_handshaker.cc \
+    src/core/handshaker/http_connect/http_connect_client_handshaker.cc \
     src/core/handshaker/http_connect/http_proxy_mapper.cc \
     src/core/handshaker/http_connect/xds_http_proxy_mapper.cc \
     src/core/handshaker/proxy_mapper_registry.cc \
@@ -1330,6 +1342,7 @@ LIBGRPC_SRC = \
     src/core/lib/resource_quota/memory_quota.cc \
     src/core/lib/resource_quota/periodic_update.cc \
     src/core/lib/resource_quota/resource_quota.cc \
+    src/core/lib/resource_quota/stream_quota.cc \
     src/core/lib/resource_quota/thread_quota.cc \
     src/core/lib/resource_tracker/resource_tracker.cc \
     src/core/lib/security/authorization/audit_logging.cc \
@@ -1812,6 +1825,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/compression.h \
     include/grpc/create_channel_from_endpoint.h \
     include/grpc/credentials.h \
+    include/grpc/credentials_cpp.h \
     include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \
     include/grpc/event_engine/extensible.h \
@@ -1889,8 +1903,8 @@ $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.51 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.51
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.52 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.52
 	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so
 endif
 endif

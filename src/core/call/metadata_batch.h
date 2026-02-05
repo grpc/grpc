@@ -326,6 +326,22 @@ struct XEnvoyPeerMetadata : public SimpleSliceBasedMetadata {
   static absl::string_view key() { return "x-envoy-peer-metadata"; }
 };
 
+// x-forwarded-for metadata trait for HTTP connect.
+struct XForwardedForMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
+  using CompressionTraits = StableValueCompressor;
+  static absl::string_view key() { return "x-forwarded-for"; }
+};
+
+// x-forwarded-host metadata trait for HTTP connect.
+struct XForwardedHostMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
+  using CompressionTraits = StableValueCompressor;
+  static absl::string_view key() { return "x-forwarded-host"; }
+};
+
 // :authority metadata trait.
 struct HttpAuthorityMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
@@ -630,6 +646,8 @@ struct GrpcTarPit {
   static absl::string_view DisplayValue(Empty) { return "tarpit"; }
 };
 
+bool IsMetadataKeyAllowedInDebugOutput(absl::string_view key);
+
 namespace metadata_detail {
 
 // Build a key/value formatted debug string.
@@ -646,7 +664,6 @@ class DebugStringBuilder {
   std::string TakeOutput() { return std::move(out_); }
 
  private:
-  bool IsAllowListed(absl::string_view key) const;
   void Add(absl::string_view key, absl::string_view value);
   std::string out_;
 };
@@ -1651,7 +1668,8 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     grpc_core::GrpcServerStatsBinMetadata, grpc_core::GrpcTraceBinMetadata,
     grpc_core::GrpcTagsBinMetadata, grpc_core::GrpcLbClientStatsMetadata,
     grpc_core::LbCostBinMetadata, grpc_core::LbTokenMetadata,
-    grpc_core::XEnvoyPeerMetadata, grpc_core::W3CTraceParentMetadata,
+    grpc_core::XEnvoyPeerMetadata, grpc_core::XForwardedForMetadata,
+    grpc_core::XForwardedHostMetadata, grpc_core::W3CTraceParentMetadata,
     // Non-encodable things
     grpc_core::GrpcStreamNetworkState, grpc_core::PeerString,
     grpc_core::GrpcStatusContext, grpc_core::GrpcStatusFromWire,

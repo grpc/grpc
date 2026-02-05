@@ -28,7 +28,6 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/call.h>
-#include <grpcpp/impl/call_hook.h>
 #include <grpcpp/impl/call_op_set_interface.h>
 #include <grpcpp/impl/codegen/intercepted_channel.h>
 #include <grpcpp/impl/completion_queue_tag.h>
@@ -50,7 +49,6 @@ namespace grpc {
 
 namespace internal {
 class Call;
-class CallHook;
 
 // TODO(yangg) if the map is changed before we send, the pointers will be a
 // mess. Make sure it does not happen.
