@@ -53,7 +53,7 @@ BAZEL_REMOTE_CACHE_ARGS=(
 python3 -m pip install -r requirements.bazel.lock
 
 # Test targets mirrored from tools/internal_ci/linux/grpc_python_bazel_test_in_docker.sh
-# Exclude all grpcio_tests and examples/python tests as requested
+# Exclude all grpcio_tests and examples/python tests
 TEST_TARGETS="//src/python/..."
 BAZEL_FLAGS="--test_output=errors --config=python"
 
