@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from cpython.bytes cimport PyBytes_FromStringAndSize
-from libcpp.memory cimport make_shared, static_pointer_cast, unique_ptr
 from libcpp.utility cimport move
 
 cdef StatusOr[string] MakeInternalError(string message):

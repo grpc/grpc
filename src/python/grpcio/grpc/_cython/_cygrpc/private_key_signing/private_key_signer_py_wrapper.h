@@ -37,7 +37,6 @@ struct AsyncResult {
 
 struct PrivateKeySignerPyWrapperResult {
   absl::StatusOr<std::string> sync_result;
-  std::shared_ptr<grpc_core::AsyncSigningHandle> async_handle;
   AsyncResult async_result;
   bool is_sync;
 };
