@@ -43,10 +43,18 @@ std::variant<absl::StatusOr<std::string>, std::shared_ptr<AsyncSigningHandle>>
 PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
                                 SignatureAlgorithm signature_algorithm,
                                 OnSignComplete on_sign_complete) {
-  auto* completion_context = new CompletionContext{std::move(on_sign_complete)};
+  // Can I make CompletionContext also just have a method that is essentially
+  // CompletionCallbackForPy instead of having both args, then it's one thing
+  // that holds everything it needs
+  // auto* completion_context = new
+  // CompletionContext{std::move(on_sign_complete)};
+  auto completion_context2 =
+      std::make_unique<CompletionContext2>(std::move(on_sign_complete));
+  // completion_context2.on_complete = std::move(on_sign_complete);
+
   PrivateKeySignerPyWrapperResult result =
       sign_py_wrapper_(data_to_sign, signature_algorithm, py_user_sign_fn,
-                       CompletionCallbackForPy, completion_context);
+                       std::move(completion_context2));
   if (result.is_sync) {
     return result.sync_result;
   } else {

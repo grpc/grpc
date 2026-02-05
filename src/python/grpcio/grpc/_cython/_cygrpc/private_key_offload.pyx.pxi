@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from cpython.bytes cimport PyBytes_FromStringAndSize
-from libcpp.memory cimport make_shared, static_pointer_cast
+from libcpp.memory cimport make_shared, static_pointer_cast, unique_ptr
+from libcpp.utility cimport move
 
 cdef StatusOr[string] MakeInternalError(string message):
     return StatusOr[string](Status(AbslStatusCode.kUnknown, message))
@@ -23,29 +24,40 @@ cdef StatusOr[string] MakeStringResult(string result):
 cdef class OnCompleteWrapper:
   cdef CompletionFunctionPyWrapper on_complete_wrapper
   cdef void* c_on_complete_fn
+  cdef unique_ptr[CompletionContext2] completion_context
+  
+  # cdef move_completion_context(self, CompletionContext2 completion_context):
+  #   self.CompletionContext2 = move(completion_context)
+
+  # def __cinit__(self, completion_context):
+  #   completion_context = move(completion_context)
 
   # Makes this class callable
   def __call__(self, result):
     cdef StatusOr[string] cpp_result
     cdef string cpp_string
-    if self.on_complete_wrapper != NULL:
-      if isinstance(result, bytes):
-        # We got a signature
-        cpp_string = result
-        cpp_result = MakeStringResult(cpp_string)
-      elif isinstance(result, Exception):
-        # If python returns an exception, convert to absl::Status
-        cpp_string = str(result).encode('utf-8')
-        cpp_result = MakeInternalError(cpp_string)
-      else:
-        # Any other return type is not valid
-        cpp_string = f"Invalid result type: {type(result)}".encode('utf-8')
-        cpp_result = MakeInternalError(cpp_string)
-      self.on_complete_wrapper(cpp_result, <void*> self.c_on_complete_fn)
-      # # Don't call multiple types
-      # self.c_on_complete = NULL
+    if isinstance(result, bytes):
+      # We got a signature
+      cpp_string = result
+      cpp_result = MakeStringResult(cpp_string)
+    elif isinstance(result, Exception):
+      # If python returns an exception, convert to absl::Status
+      cpp_string = str(result).encode('utf-8')
+      cpp_result = MakeInternalError(cpp_string)
+    else:
+      # Any other return type is not valid
+      cpp_string = f"Invalid result type: {type(result)}".encode('utf-8')
+      cpp_result = MakeInternalError(cpp_string)
+    self.completion_context.get().OnComplete(cpp_result)
 
-cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignatureAlgorithm algorithm, void* py_user_sign_fn, CompletionFunctionPyWrapper on_complete_wrapper, void* c_on_complete_fn) noexcept nogil:
+  # @staticmethod
+  # def create(completion_context):
+    
+  # self.on_complete_wrapper(cpp_result, <void*> self.c_on_complete_fn)
+    # # Don't call multiple types
+    # self.c_on_complete = NULL
+
+cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignatureAlgorithm algorithm, void* py_user_sign_fn, unique_ptr[CompletionContext2] completion_context) noexcept nogil:
   cdef string cpp_string
   cdef const char* data
   cdef size_t size
@@ -55,8 +67,9 @@ cdef PrivateKeySignerPyWrapperResult async_sign_wrapper(string_view inp, CSignat
     py_user_func = <object>py_user_sign_fn
 
     py_on_complete_wrapper = OnCompleteWrapper()
-    py_on_complete_wrapper.on_complete_wrapper = on_complete_wrapper
-    py_on_complete_wrapper.c_on_complete_fn = c_on_complete_fn 
+    # py_on_complete_wrapper.on_complete_wrapper = on_complete_wrapper
+    # py_on_complete_wrapper.c_on_complete_fn = c_on_complete_fn 
+    py_on_complete_wrapper.completion_context = move(completion_context)
 
     # Call the user's Python function and handle results
     py_result = None

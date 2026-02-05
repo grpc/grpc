@@ -45,11 +45,27 @@ struct PrivateKeySignerPyWrapperResult {
 typedef void (*CompletionFunctionPyWrapper)(absl::StatusOr<std::string> result,
                                             void* c_on_complete_fn);
 
+// typedef PrivateKeySignerPyWrapperResult (*SignWrapperForPy)(
+//     absl::string_view data_to_sign,
+//     grpc_core::PrivateKeySigner::SignatureAlgorithm signature_algorithm,
+//     void* py_user_sign_fn, CompletionFunctionPyWrapper on_complete,
+//     void* c_on_complete_fn);
+class CompletionContext2 {
+ public:
+  explicit CompletionContext2(
+      grpc_core::PrivateKeySigner::OnSignComplete on_complete)
+      : on_complete_(std::move(on_complete)) {}
+  void OnComplete(absl::StatusOr<std::string> result) { on_complete_(result); };
+
+ private:
+  grpc_core::PrivateKeySigner::OnSignComplete on_complete_;
+};
+
 typedef PrivateKeySignerPyWrapperResult (*SignWrapperForPy)(
     absl::string_view data_to_sign,
     grpc_core::PrivateKeySigner::SignatureAlgorithm signature_algorithm,
-    void* py_user_sign_fn, CompletionFunctionPyWrapper on_complete,
-    void* c_on_complete_fn);
+    void* py_user_sign_fn,
+    std::unique_ptr<CompletionContext2> completion_context);
 
 struct CompletionContext {
   grpc_core::PrivateKeySigner::OnSignComplete on_complete;

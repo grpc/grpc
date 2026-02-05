@@ -327,7 +327,6 @@ grpc_cc_test(
         "//:tsi_base",
         "//:tsi_ssl_credentials",
         "//src/core:default_event_engine",
-        "//src/core:private_key_signer_py_wrapper",
         "//test/core/test_util:grpc_test_util",
     ],
 )
