@@ -72,6 +72,9 @@ py_library(
     data = [
         "//src/python/grpcio_tests/tests/interop/credentials",
     ],
+    deps = [
+        requirement("cryptography"),
+    ],
 )
 
 py_library(
