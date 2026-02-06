@@ -15,60 +15,60 @@
 #include "src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
 #include <cstdint>
+#include <limits>
 #include <memory>
+#include <string>
 #include <utility>
 
-#include "src/core/client_channel/client_channel_factory.h"
-#include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
 #include "src/core/ext/transport/chaotic_good/client_transport.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
+#include "src/core/ext/transport/chaotic_good/pending_connection.h"
+#include "src/core/ext/transport/chaotic_good/tcp_frame_header.h"
+#include "src/core/ext/transport/chaotic_good/tcp_frame_transport.h"
 #include "src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h"
 #include "src/core/handshaker/handshaker.h"
+#include "src/core/handshaker/handshaker_registry.h"
 #include "src/core/handshaker/tcp_connect/tcp_connect_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/event_engine/extensions/chaotic_good_extension.h"
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/all_ok.h"
-#include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/event_engine_wakeup_scheduler.h"
-#include "src/core/lib/promise/latch.h"
-#include "src/core/lib/promise/race.h"
-#include "src/core/lib/promise/sleep.h"
+#include "src/core/lib/promise/inter_activity_latch.h"
+#include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/try_seq.h"
-#include "src/core/lib/promise/wait_for_callback.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_create.h"
-#include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/promise_endpoint.h"
-#include "src/core/telemetry/metrics.h"
 #include "src/core/transport/endpoint_transport_client_channel_factory.h"
-#include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
-#include "src/core/util/no_destruct.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "absl/log/log.h"
-#include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 using grpc_event_engine::experimental::EventEngine;
 
@@ -249,17 +249,11 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
               auto socket_node = TcpFrameTransport::MakeSocketNode(
                   result_notifier_ptr->args.channel_args,
                   result.connect_result.endpoint);
-              auto frame_transport = MakeOrphanable<TcpFrameTransport>(
-                  result_notifier_ptr->config.MakeTcpFrameTransportOptions(),
-                  std::move(result.connect_result.endpoint),
-                  result_notifier_ptr->config.TakePendingDataEndpoints(),
-                  MakeRefCounted<TransportContext>(
-                      result_notifier_ptr->args.channel_args,
-                      std::move(socket_node)));
               auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
                   result_notifier_ptr->args.channel_args,
-                  std::move(frame_transport),
-                  result_notifier_ptr->config.MakeMessageChunker());
+                  result_notifier_ptr->config,
+                  std::move(result.connect_result.endpoint),
+                  std::move(socket_node));
               result_notifier_ptr->result->transport = transport.release();
               result_notifier_ptr->result->channel_args =
                   result.connect_result.channel_args;
