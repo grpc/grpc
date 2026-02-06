@@ -58,7 +58,7 @@ void PrivateKeySignerPyWrapper::Cancel(
 }
 
 std::shared_ptr<PrivateKeySigner> BuildPrivateKeySigner(
-  SignWrapperForPy sign_py_wrapper, void* py_user_sign_fn) {
+    SignWrapperForPy sign_py_wrapper, void* py_user_sign_fn) {
   PyGILState_STATE state = PyGILState_Ensure();
   Py_INCREF(static_cast<PyObject*>(py_user_sign_fn));
   PyGILState_Release(state);
