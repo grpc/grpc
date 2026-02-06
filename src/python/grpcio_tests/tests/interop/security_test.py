@@ -212,13 +212,13 @@ class SecurityTest(unittest.TestCase):
       def create_channel():
         signer = TrackedSigner()
         ref = weakref.ref(signer)
-        creds = grpc.ssl_channel_credentials(
-          private_key_signer=signer,
-          root_certificates=resources.test_root_certificates(),
-          certificate_chain=resources.client_certificate_chain(),
-        )
+        creds = grpc.experimental.ssl_channel_credentials_with_custom_signer(
+            private_key_sign_fn=resources.sync_bad_client_private_key_signer,
+            root_certificates=resources.test_root_certificates(),
+            certificate_chain=resources.client_certificate_chain(),
+        ),
 
-        secure_channel = grpc.experimental.secure_channel_with_custom_signer("localhost:12345", creds)
+        secure_channel = grpc.secure_channel("localhost:12345", creds)
         return secure_channel, ref
 
       channel, signer_ref = create_channel()
