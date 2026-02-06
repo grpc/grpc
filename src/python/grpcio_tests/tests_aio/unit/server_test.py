@@ -649,14 +649,14 @@ class TestServer(AioTestBase):
             successes = 0
             exhausted = 0
             for task in tasks:
-                exc = task.exception()
-                if exc is None:
+                try:
+                    task.result()
                     successes += 1
-                elif (
-                    isinstance(exc, aio.AioRpcError)
-                    and exc.code() == grpc.StatusCode.RESOURCE_EXHAUSTED
-                ):
-                    exhausted += 1
+                except aio.AioRpcError as e:
+                    if e.code() == grpc.StatusCode.RESOURCE_EXHAUSTED:
+                        exhausted += 1
+                    else:
+                        raise
             return successes, exhausted
 
         # Wave 1: Send 3 requests with limit=1
