@@ -113,10 +113,8 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "error_flatten",
-                "subchannel_wrapper_cleanup_on_orphan",
-            ],
-            "cpp_end2end_test_client_ph2": [
                 "promise_based_http2_client_transport",
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "subchannel_connection_scaling",
@@ -230,10 +228,8 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "error_flatten",
-                "subchannel_wrapper_cleanup_on_orphan",
-            ],
-            "cpp_end2end_test_client_ph2": [
                 "promise_based_http2_client_transport",
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "subchannel_connection_scaling",
@@ -347,10 +343,8 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "error_flatten",
-                "subchannel_wrapper_cleanup_on_orphan",
-            ],
-            "cpp_end2end_test_client_ph2": [
                 "promise_based_http2_client_transport",
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "subchannel_connection_scaling",

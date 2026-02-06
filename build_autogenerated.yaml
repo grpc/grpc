@@ -15085,7 +15085,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/transport/chttp2/hpack_encoder_test_helper.h
   src:
   - test/core/transport/chttp2/hpack_encoder_test.cc
   deps:
