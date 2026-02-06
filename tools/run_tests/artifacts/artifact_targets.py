@@ -402,7 +402,7 @@ def targets():
             ProtocArtifact("linux", "x64", presubmit=True),
             ProtocArtifact("linux", "x86", presubmit=True),
             ProtocArtifact("linux", "aarch64", presubmit=True),
-            ProtocArtifact("macos", "x64", presubmit=True),
+            ProtocArtifact("macos", "x64", presubmit=True),  # builds universal binary (x64 + arm64)
             ProtocArtifact("windows", "x64", presubmit=True),
             ProtocArtifact("windows", "x86", presubmit=True),
             PythonArtifact("manylinux2014", "x64", "cp39-cp39", presubmit=True),
