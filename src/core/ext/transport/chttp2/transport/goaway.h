@@ -19,6 +19,9 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_GOAWAY_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_GOAWAY_H
 
+#include <cstdint>
+#include <optional>
+
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/promise/activity.h"
@@ -338,6 +341,12 @@ class GoawayManager {
   // GOAWAY frame may have been sent. If a GOAWAY frame is sent in current
   // write cycle, this function handles the needed state transition.
   void NotifyGoawaySent();
+
+  static bool IsGracefulGoaway(Http2GoawayFrame& frame) {
+    return frame.error_code ==
+               static_cast<uint32_t>(Http2ErrorCode::kNoError) &&
+           frame.last_stream_id == RFC9113::kMaxStreamId31Bit;
+  }
 
   // Returns the current GOAWAY state.
   GoawayState TestOnlyGetGoawayState() const { return context_->goaway_state; }
