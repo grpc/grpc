@@ -213,7 +213,7 @@ class SecurityTest(unittest.TestCase):
         signer = TrackedSigner()
         ref = weakref.ref(signer)
         creds = grpc.experimental.ssl_channel_credentials_with_custom_signer(
-            private_key_sign_fn=resources.sync_bad_client_private_key_signer,
+            private_key_sign_fn=signer,
             root_certificates=resources.test_root_certificates(),
             certificate_chain=resources.client_certificate_chain(),
         )
