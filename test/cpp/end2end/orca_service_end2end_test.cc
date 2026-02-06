@@ -157,7 +157,7 @@ class OrcaServiceEnd2endTest : public ::testing::Test {
 };
 
 TEST_F(OrcaServiceEnd2endTest, Basic) {
-  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix bug (Timeout)");
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P3][Client] Fix bug (Timeout)");
   constexpr char kMetricName1[] = "foo";
   constexpr char kMetricName2[] = "bar";
   constexpr char kMetricName3[] = "baz";

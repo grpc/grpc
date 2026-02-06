@@ -164,8 +164,8 @@ TEST_F(ProtoServerReflectionTest, CheckResponseWithLocalDescriptorPool) {
 
 TEST_F(ProtoServerReflectionTest, V1AlphaApiInstalled) {
   SKIP_TEST_FOR_PH2(
-      "TODO(tjagtap) [PH2][P1] Fix memory leak. The leak is flaky (4/10 "
-      "times)");
+      "TODO(tjagtap) [PH2][P3][Client] Fix memory leak. The leak is flaky "
+      "(4/10 times)");
   ResetStub();
   using Service = reflection::v1alpha::ServerReflection;
   using Request = reflection::v1alpha::ServerReflectionRequest;
@@ -193,8 +193,8 @@ TEST_F(ProtoServerReflectionTest, V1AlphaApiInstalled) {
 
 TEST_F(ProtoServerReflectionTest, V1ApiInstalled) {
   SKIP_TEST_FOR_PH2(
-      "TODO(tjagtap) [PH2][P1] Fix memory leak. The leak is flaky (3/10 "
-      "times)");
+      "TODO(tjagtap) [PH2][P3][Client] Fix memory leak. The leak is flaky "
+      "(3/10 times)");
   ResetStub();
   using Service = reflection::v1::ServerReflection;
   using Request = reflection::v1::ServerReflectionRequest;
