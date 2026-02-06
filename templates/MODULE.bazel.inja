@@ -53,7 +53,7 @@ single_version_override(
 )
 
 bazel_dep(name = "protoc-gen-validate", version = "1.2.1.bcr.1", repo_name = "com_envoyproxy_protoc_gen_validate")  # Not needed directly
-bazel_dep(name = "re2", version = "2024-07-02.bcr.1", repo_name = "com_googlesource_code_re2")  # mismached 2022-04-01
+bazel_dep(name = "re2", version = "2024-07-02.bcr.1", repo_name = "com_googlesource_code_re2")  # mismatched 2022-04-01
 bazel_dep(name = "rules_apple", version = "3.16.0", repo_name = "build_bazel_rules_apple")
 bazel_dep(name = "rules_cc", version = "0.1.1")
 bazel_dep(name = "rules_proto", version = "7.0.2")
@@ -115,7 +115,7 @@ http_archive(
 )
 
 # --- Provide repo @com_google_fuzztest.
-bazel_dep(name = "fuzztest", version = "20250805.0", dev_dependency = True, repo_name = "com_google_fuzztest")  # mismached 2023-05-16
+bazel_dep(name = "fuzztest", version = "20250805.0", dev_dependency = True, repo_name = "com_google_fuzztest")  # mismatched 2023-05-16
 
 # This package is not directly used by grpc, but requested by fuzztest.
 #
