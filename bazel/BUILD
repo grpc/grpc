@@ -138,6 +138,11 @@ package_group(
 )
 
 package_group(
+    name = "grpc++_unsecure",
+    packages = [],
+)
+
+package_group(
     name = "grpc_resolver_fake",
     packages = [],
 )
