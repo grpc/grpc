@@ -154,6 +154,9 @@ GRPCAPI void grpc_completion_queue_shutdown(grpc_completion_queue* cq);
     drained and no threads are executing grpc_completion_queue_next */
 GRPCAPI void grpc_completion_queue_destroy(grpc_completion_queue* cq);
 
+GRPCAPI void grpc_completion_queue_set_event_engine(
+    grpc_completion_queue* cq, void* event_engine_shared_ptr_ptr);
+
 /*********** EXPERIMENTAL API ************/
 /** Initializes a thread local cache for \a cq.
  * grpc_flush_cq_tls_cache() MUST be called on the same thread,
@@ -312,6 +315,10 @@ GRPCAPI void grpc_server_credentials_release(grpc_server_credentials* creds);
 GRPCAPI grpc_channel* grpc_channel_create(const char* target,
                                           grpc_channel_credentials* creds,
                                           const grpc_channel_args* args);
+
+/** Register a completion queue with the channel. */
+GRPCAPI void grpc_channel_init_completion_queue(grpc_channel* channel,
+                                                grpc_completion_queue* cq);
 
 /** Create a lame client: this client fails every operation attempted on it. */
 GRPCAPI grpc_channel* grpc_lame_client_channel_create(
@@ -540,6 +547,10 @@ GRPCAPI grpc_slice grpc_dump_xds_configs(void);
 /** Fetch a vtable for a grpc_channel_arg that points to a grpc_resource_quota
  */
 GRPCAPI const grpc_arg_pointer_vtable* grpc_resource_quota_arg_vtable(void);
+
+/** Fetch a vtable for a grpc_channel_arg that points to a grpc_event_engine
+ */
+GRPCAPI const grpc_arg_pointer_vtable* grpc_event_engine_arg_vtable(void);
 
 /************* CHANNELZ API *************/
 /** Channelz is under active development. The following APIs will see some

@@ -17,6 +17,7 @@
 #include "src/core/server/server.h"
 
 #include <grpc/byte_buffer.h>
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
@@ -1408,6 +1409,15 @@ void Server::RegisterCompletionQueue(grpc_completion_queue* cq) {
     if (queue == cq) return;
   }
   GRPC_CQ_INTERNAL_REF(cq, "server");
+  if (channel_args_
+          .ContainsObject<grpc_event_engine::experimental::EventEngine>()) {
+    // Most likely this is the default EventEngine, in which case this operation
+    // is a no-op.
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine =
+        channel_args_
+            .GetObjectRef<grpc_event_engine::experimental::EventEngine>();
+    grpc_completion_queue_set_event_engine(cq, &event_engine);
+  }
   cqs_.push_back(cq);
 }
 

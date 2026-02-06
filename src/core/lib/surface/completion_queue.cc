@@ -512,6 +512,15 @@ static const cq_vtable g_cq_vtable[] = {
 
 static void on_pollset_shutdown_done(void* arg, grpc_error_handle error);
 
+void grpc_completion_queue_set_event_engine(grpc_completion_queue* cq,
+                                            void* event_engine_shared_ptr_ptr) {
+  cq_callback_data* cqd = static_cast<cq_callback_data*>(DATA_FROM_CQ(cq));
+  auto* event_engine = static_cast<
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>*>(
+      event_engine_shared_ptr_ptr);
+  cqd->event_engine = std::move(*event_engine);
+}
+
 void grpc_completion_queue_thread_local_cache_init(grpc_completion_queue* cq) {
   if (g_cached_cq == nullptr) {
     g_cached_event = nullptr;

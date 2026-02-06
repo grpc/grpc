@@ -17,10 +17,13 @@
 #include "src/core/lib/surface/channel.h"
 
 #include <grpc/compression.h>
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
+
+#include <memory>
 
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/channelz/channelz.h"
@@ -84,11 +87,29 @@ Channel::RegisteredCall* Channel::RegisterCall(const char* method,
   return &insertion_result.first->second;
 }
 
+void Channel::InitCompletionQueue(grpc_completion_queue* cq) {
+  grpc_event_engine::experimental::EventEngine* ee = event_engine();
+  if (ee != nullptr) {
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> ee_ptr =
+        ee->shared_from_this();
+    grpc_completion_queue_set_event_engine(cq, &ee_ptr);
+  }
+}
+
 }  // namespace grpc_core
 
 //
 // C-core API
 //
+
+void grpc_channel_init_completion_queue(grpc_channel* channel,
+                                        grpc_completion_queue* cq) {
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_channel_init_completion_queue(channel=" << channel
+      << ", cq=" << cq << ")";
+  grpc_core::ExecCtx exec_ctx;
+  grpc_core::Channel::FromC(channel)->InitCompletionQueue(cq);
+}
 
 void grpc_channel_destroy(grpc_channel* channel) {
   grpc_core::ExecCtx exec_ctx;
