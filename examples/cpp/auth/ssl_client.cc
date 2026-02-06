@@ -19,15 +19,20 @@
 #include <grpcpp/grpcpp.h>
 
 #include <condition_variable>
+#include <fstream>
 #include <iostream>
 #include <memory>
 #include <mutex>
+#include <sstream>
 #include <string>
+#include <thread>
+#include <chrono>
 
-#include "helper.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/log/initialize.h"
+#include "helper.h"
+#include "src/core/credentials/call/call_credentials.h"
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
@@ -101,6 +106,13 @@ constexpr char kRootCertificate[] = "examples/cpp/auth/credentials/root.crt";
 constexpr char kRootCertificate[] = "credentials/root.crt";
 #endif
 
+std::string ReadFile(const std::string& path) {
+    std::ifstream t(path);
+    std::stringstream buffer;
+    buffer << t.rdbuf();
+    return buffer.str();
+}
+
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
   absl::InitializeLog();
@@ -112,12 +124,54 @@ int main(int argc, char** argv) {
   // Build a SSL options for the channel
   grpc::SslCredentialsOptions ssl_options;
   ssl_options.pem_root_certs = LoadStringFromFile(kRootCertificate);
+
+  auto channel_creds = grpc::SslCredentials(ssl_options);
+  
+  // 1. Load the JSON key string
+  // std::string json_key = ReadFile("/usr/local/google/home/mcastelaz/creds/service-acct-key.json");
+  // std::string json_key = ReadFile("/usr/local/google/home/mcastelaz/azure_credentials.json");
+  std::string json_key = ReadFile("/usr/local/google/home/mcastelaz/aws-credentials.json");
+    // std::string json_key = ReadFile("/usr/local/google/home/mcastelaz/saml-credentials.json");
+  // std::string json_key = ReadFile("/usr/local/google/home/mcastelaz/credentials.json");
+  // std::string json_key = ReadFile("/usr/local/google/home/mcastelaz/.config/gcloud/application_default_credentials.json");
+
+
+  std::vector<std::string> scopes;
+  scopes.push_back("https://www.googleapis.com/auth/cloud-platform");
+  // scopes.push_back("https://www.googleapis.com/auth/userinfo.email");
+
+  // 2. Create Service Account JWT credentials
+  // The second argument is the token lifetime (usually 3600 seconds)
+  auto call_creds = grpc::ExternalAccountCredentials(json_key, scopes);
+  // auto call_creds = grpc::AwsExternalAccountCredentials(json_key, scopes);
+  // auto call_creds = grpc::ServiceAccountJWTAccessCredentials(json_key, 3600);
+  // auto call_creds = grpc::GoogleComputeEngineCredentials();
+
+  // 3. Combine them into Composite Credentials
+  auto composite_creds = grpc::CompositeChannelCredentials(channel_creds, call_creds);
+
   // Create a channel with SSL credentials
   GreeterClient greeter(
-      grpc::CreateChannel(target_str, grpc::SslCredentials(ssl_options)));
+      grpc::CreateChannel(target_str, composite_creds));
   std::string user("world");
+  std::cout << "Maiking first request without location header" << std::endl;
   std::string reply = greeter.SayHello(user);
   std::cout << "Greeter received: " << reply << std::endl;
-
+  std::this_thread::sleep_for(std::chrono::seconds(5));
+  std::cout << "Maiking second request - should include header and fail initially but retry without header" << std::endl;
+  reply = greeter.SayHello(user);
+  std::cout << "Greeter received: " << reply << " in the second call " << std::endl;
+  // std::this_thread::sleep_for(std::chrono::seconds(20));
+  // std::cout << "Maiking third request - cooldown period expired so should trigger RAB" << std::endl;
+  // reply = greeter.SayHello(user);
+  // std::cout << "Greeter received: " << reply << " in the third call " << std::endl;
+  // std::this_thread::sleep_for(std::chrono::seconds(25));
+  //   std::cout << "Maiking fourth request - cooldown period doubled now so this should not trigger RAB" << std::endl;
+  // reply = greeter.SayHello(user);
+  // std::cout << "Greeter received: " << reply << " in the fourth call " << std::endl;
+  // std::this_thread::sleep_for(std::chrono::seconds(90));
+  // std::cout << "Maiking fourth request" << std::endl;
+  // reply = greeter.SayHello(user);
+  // std::cout << "Greeter received: " << reply << " in the fourth call " << std::endl;
   return 0;
 }

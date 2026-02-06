@@ -29,6 +29,7 @@
 #include <optional>
 #include <string>
 
+#include "src/core/credentials/call/regional_access_boundary_fetcher.h"
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/credentials/call/jwt/json_token.h"
 #include "src/core/lib/promise/arena_promise.h"
@@ -69,7 +70,11 @@ class grpc_service_account_jwt_access_credentials
 
   grpc_core::UniqueTypeName type() const override { return Type(); }
 
+  void InvalidateRegionalAccessBoundaryCache() override;
+
  private:
+  grpc_core::RefCountedPtr<grpc_core::RegionalAccessBoundaryFetcher> regional_access_boundary_fetcher_;
+
   int cmp_impl(const grpc_call_credentials* other) const override {
     // TODO(yashykt): Check if we can do something better here
     return grpc_core::QsortCompare(
