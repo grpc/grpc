@@ -1484,8 +1484,6 @@ TEST_P(End2endTest, BinaryTrailerTest) {
 }
 
 TEST_P(End2endTest, ExpectErrorTest) {
-  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix bug");
-
   ResetStub();
 
   std::vector<ErrorStatus> expected_status;
@@ -1520,7 +1518,11 @@ TEST_P(End2endTest, ExpectErrorTest) {
     EXPECT_EQ(iter->code(), s.error_code());
     EXPECT_EQ(iter->error_message(), s.error_message());
     EXPECT_EQ(iter->binary_error_details(), s.error_details());
-    if (grpc_core::IsErrorFlattenEnabled()) {
+    if (grpc_core::IsErrorFlattenEnabled() ||
+        (grpc_core::IsPromiseBasedHttp2ClientTransportEnabled() &&
+         !GetParam().inproc())) {
+      // TODO(tjagtap) [PH2][P4] Address this before enabling PH2 experiments
+      // for OSS users.
       EXPECT_THAT(context.debug_error_string(),
                   ::testing::HasSubstr("INTERNAL"));
     } else {
