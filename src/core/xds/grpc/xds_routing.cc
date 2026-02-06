@@ -192,7 +192,7 @@ std::optional<absl::string_view> XdsRouting::GetHeaderValue(
 
 namespace {
 
-const Json* FindFilterConfigOverride(
+const XdsRouteConfigResource::FilterConfigOverride* FindFilterConfigOverride(
     const std::string& instance_name,
     const XdsRouteConfigResource::VirtualHost& vhost,
     const XdsRouteConfigResource::Route& route,
@@ -201,20 +201,14 @@ const Json* FindFilterConfigOverride(
   // Check ClusterWeight, if any.
   if (cluster_weight != nullptr) {
     auto it = cluster_weight->typed_per_filter_config.find(instance_name);
-    if (it != cluster_weight->typed_per_filter_config.end()) {
-      return &it->second.config;
-    }
+    if (it != cluster_weight->typed_per_filter_config.end()) return &it->second;
   }
   // Check Route.
   auto it = route.typed_per_filter_config.find(instance_name);
-  if (it != route.typed_per_filter_config.end()) {
-    return &it->second.config;
-  }
+  if (it != route.typed_per_filter_config.end()) return &it->second;
   // Check VirtualHost.
   it = vhost.typed_per_filter_config.find(instance_name);
-  if (it != vhost.typed_per_filter_config.end()) {
-    return &it->second.config;
-  }
+  if (it != vhost.typed_per_filter_config.end()) return &it->second;
   // Not found.
   return nullptr;
 }
@@ -276,8 +270,16 @@ XdsRouting::GeneratePerHTTPFilterConfigsForMethodConfig(
       [&](const XdsHttpFilterImpl& filter_impl,
           const XdsListenerResource::HttpConnectionManager::HttpFilter&
               http_filter) {
-        const Json* config_override = FindFilterConfigOverride(
-            http_filter.name, vhost, route, cluster_weight);
+        // Find override config, if any.
+        const XdsRouteConfigResource::FilterConfigOverride*
+            filter_config_override = FindFilterConfigOverride(
+                http_filter.name, vhost, route, cluster_weight);
+        const Json* config_override = nullptr;
+        if (filter_config_override != nullptr &&
+            filter_config_override->config_proto_type ==
+                filter_impl.OverrideConfigProtoName()) {
+          config_override = &filter_config_override->config;
+        }
         // Generate service config for filter.
         return filter_impl.GenerateMethodConfig(http_filter.config,
                                                 config_override);
