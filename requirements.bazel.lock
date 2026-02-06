@@ -16,12 +16,16 @@ certifi==2025.1.31
     # via
     #   -r requirements.bazel.txt
     #   requests
+cffi==2.0.0
+    # via cryptography
 chardet==5.2.0
     # via -r requirements.bazel.txt
 charset-normalizer==3.4.1
     # via requests
 constantly==23.10.4
     # via twisted
+cryptography==45.0.7
+    # via -r requirements.bazel.txt
 deprecated==1.2.18
     # via
     #   opentelemetry-api
@@ -77,6 +81,8 @@ pyasn1==0.6.1
     #   rsa
 pyasn1-modules==0.4.1
     # via google-auth
+pycparser==2.23
+    # via cffi
 pyyaml==6.0.3
     # via -r requirements.bazel.txt
 requests==2.32.3
@@ -121,5 +127,3 @@ setuptools==77.0.1
     #   incremental
     #   zope-event
     #   zope-interface
-
-cryptography

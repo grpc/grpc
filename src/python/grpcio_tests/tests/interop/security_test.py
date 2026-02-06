@@ -17,6 +17,7 @@ import time
 import faulthandler
 from functools import partial
 import threading
+import weakref
 
 faulthandler.enable()
 
@@ -202,6 +203,28 @@ class SecurityTest(unittest.TestCase):
                 response = self.stub.EmptyCall(empty_pb2.Empty(), timeout=1)
                 # As everything goes out of scope, we just want to make sure we don't segfault or anything
 
+    def test_signer_lifetime(self):
+      class TrackedSigner:
+
+        def __call__(self, data, algo, cb):
+          return b"signature"
+
+      def create_channel():
+        signer = TrackedSigner()
+        ref = weakref.ref(signer)
+        creds = grpc.experimental.ssl_channel_credentials_with_custom_signer(
+            private_key_sign_fn=signer,
+            root_certificates=resources.test_root_certificates(),
+            certificate_chain=resources.client_certificate_chain(),
+        )
+
+        secure_channel = grpc.secure_channel("localhost:{}".format(self.port), creds)
+        return secure_channel, ref
+
+      channel, signer_ref = create_channel()
+
+      self.assertIsNotNone(signer_ref(),
+                           "Signer was garbage collected prematurely!")
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
