@@ -268,8 +268,6 @@ XdsRouting::PerRouteFilterChainBuilder::BuildFilterChainForRoute(
     const XdsRouteConfigResource::Route& route) {
   GRPC_TRACE_LOG(xds_resolver, INFO)
       << "Building filter chain for route:" << route.ToString();
-  const auto& route_action =
-      std::get<XdsRouteConfigResource::Route::RouteAction>(route.action);
   // If there are no per-route overrides, use the default filter chain.
   if (route.typed_per_filter_config.empty()) return GetDefaultFilterChain();
   // Otherwise, build a new filter chain for the route.
