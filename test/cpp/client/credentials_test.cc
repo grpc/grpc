@@ -91,6 +91,45 @@ TEST(CredentialsTest, InvalidGoogleRefreshToken) {
   EXPECT_EQ(static_cast<CallCredentials*>(nullptr), bad1.get());
 }
 
+TEST(CredentialsTest,
+     ServiceAccountJWTAccessCredentialsWithRegionalAccessBoundary) {
+  std::string json_key =
+      "{ \"private_key\": \"-----BEGIN PRIVATE KEY-----"
+      "\\nMIICeAIBADANBgkqhkiG9w0BAQEFAASCAmIwggJeAgEAAoGBAOEvJsnoHnyHkXcp\\n7m"
+      "JE"
+      "qg"
+      "WGjiw71NfXByguekSKho65FxaGbsnSM9SMQAqVk7Q2rG+I0OpsT0LrWQtZ\\nyjSeg/"
+      "rWBQvS4hle4LfijkP3J5BG+"
+      "IXDMP8RfziNRQsenAXDNPkY4kJCvKux2xdD\\nOnVF6N7dL3nTYZg+"
+      "uQrNsMTz9UxVAgMBAAECgYEAzbLewe1xe9vy+2GoSsfib+28\\nDZgSE6Bu/"
+      "zuFoPrRc6qL9p2SsnV7txrunTyJkkOnPLND9ABAXybRTlcVKP/sGgza\\n/"
+      "8HpCqFYM9V8f34SBWfD4fRFT+n/"
+      "73cfRUtGXdXpseva2lh8RilIQfPhNZAncenU\\ngqXjDvpkypEusgXAykECQQD+"
+      "53XxNVnxBHsYb+AYEfklR96yVi8HywjVHP34+OQZ\\nCslxoHQM8s+"
+      "dBnjfScLu22JqkPv04xyxmt0QAKm9+vTdAkEA4ib7YvEAn2jXzcCI\\nEkoy2L/"
+      "XydR1GCHoacdfdAwiL2npOdnbvi4ZmdYRPY1LSTO058tQHKVXV7NLeCa3\\nAARh2QJBAMKe"
+      "DA"
+      "G"
+      "W303SQv2cZTdbeaLKJbB5drz3eo3j7dDKjrTD9JupixFbzcGw\\n8FZi5c8idxiwC36kbAL6"
+      "Hz"
+      "A"
+      "ZoX+ofI0CQE6KCzPJTtYNqyShgKAZdJ8hwOcvCZtf\\n6z8RJm0+"
+      "6YBd38lfh5j8mZd7aHFf6I17j5AQY7oPEc47TjJj/"
+      "5nZ68ECQQDvYuI3\\nLyK5fS8g0SYbmPOL9TlcHDOqwG0mrX9qpg5DC2fniXNSrrZ64GTDKd"
+      "zZ"
+      "Y"
+      "Ap6LI9W\\nIqv4vr6y38N79TTC\\n-----END PRIVATE KEY-----\\n\", "
+      "\"private_key_id\": \"e6b5137873db8d2ef81e06a47289e6434ec8a165\", "
+      "\"client_email\": "
+      "\"777-abaslkan11hlb6nmim3bpspl31ud@developer.gserviceaccount."
+      "com\", \"client_id\": "
+      "\"777-abaslkan11hlb6nmim3bpspl31ud.apps.googleusercontent."
+      "com\", \"type\": \"service_account\" }";
+  std::shared_ptr<CallCredentials> creds = ServiceAccountJWTAccessCredentials(
+      json_key, 3600, "{\"encodedLocations\": \"encoded_locations_string\"}");
+  EXPECT_NE(creds, nullptr);
+}
+
 TEST(CredentialsTest, DefaultCredentials) {
   // Simulate a successful detection of metadata server.
   grpc_core::HttpRequest::SetOverride(MockSuccessfulMetadataServiceResponse,
@@ -158,6 +197,25 @@ TEST(CredentialsTest, ExternalAccountCredentials) {
   auto aws_creds = grpc::ExternalAccountCredentials(aws_options_string,
                                                     {"scope1", "scope2"});
   EXPECT_TRUE(aws_creds != nullptr);
+}
+
+TEST(CredentialsTest, ExternalAccountCredentialsWithRegionalAccessBoundary) {
+  // url credentials
+  std::string url_options_string(
+      "{\"type\":\"external_account\",\"audience\":\"audience\",\"subject_"
+      "token_type\":\"subject_token_type\",\"service_account_impersonation_"
+      "url\":\"service_account_impersonation_url\",\"token_url\":\"https://"
+      "foo.com:5555/token\",\"token_info_url\":\"https://foo.com:5555/"
+      "token_info\",\"credential_source\":{\"url\":\"https://foo.com:5555/"
+      "generate_subject_token_format_json\",\"headers\":{\"Metadata-Flavor\":"
+      "\"Google\"},\"format\":{\"type\":\"json\",\"subject_token_field_name\":"
+      "\"access_token\"}},\"quota_project_id\":\"quota_"
+      "project_id\",\"client_id\":\"client_id\",\"client_secret\":\"client_"
+      "secret\"}");
+  auto creds = grpc::ExternalAccountCredentials(
+      url_options_string, {"scope1", "scope2"},
+      "{\"encodedLocations\": \"encoded_locations_string\"}");
+  EXPECT_TRUE(creds != nullptr);
 }
 
 TEST(CredentialsTest, StsCredentialsOptionsCppToCore) {

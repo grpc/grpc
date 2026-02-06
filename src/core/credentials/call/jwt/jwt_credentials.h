@@ -31,6 +31,7 @@
 
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/credentials/call/jwt/json_token.h"
+#include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/transport.h"
@@ -46,7 +47,8 @@ class grpc_service_account_jwt_access_credentials
     : public grpc_call_credentials {
  public:
   grpc_service_account_jwt_access_credentials(grpc_auth_json_key key,
-                                              gpr_timespec token_lifetime);
+                                              gpr_timespec token_lifetime,
+                                              const char* regional_access_boundary);
   ~grpc_service_account_jwt_access_credentials() override;
 
   void Orphaned() override {}
@@ -64,6 +66,11 @@ class grpc_service_account_jwt_access_credentials
         absl::FormatTime(absl::FromUnixMicros(
             static_cast<int64_t>(gpr_timespec_to_micros(jwt_lifetime_)))));
   };
+
+  std::string build_regional_access_boundary_url() override {
+    return absl::StrFormat("https://iamcredentials.googleapis.com/v1/projects/-/"
+                     "serviceAccounts/%s/allowedLocations", key_.client_email);
+  }
 
   static grpc_core::UniqueTypeName Type();
 
@@ -88,13 +95,15 @@ class grpc_service_account_jwt_access_credentials
 
   grpc_auth_json_key key_;
   gpr_timespec jwt_lifetime_;
+  grpc_polling_entity pollent_;
 };
 
 // Private constructor for jwt credentials from an already parsed json key.
 // Takes ownership of the key.
 grpc_core::RefCountedPtr<grpc_call_credentials>
 grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
-    grpc_auth_json_key key, gpr_timespec token_lifetime);
+    grpc_auth_json_key key, gpr_timespec token_lifetime,
+    const char* regional_access_boundary = nullptr);
 
 namespace grpc_core {
 
