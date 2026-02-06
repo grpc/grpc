@@ -218,7 +218,7 @@ class SecurityTest(unittest.TestCase):
           certificate_chain=resources.client_certificate_chain(),
         )
 
-        secure_channel = grpc.secure_channel("localhost:12345", creds)
+        secure_channel = grpc.experimental.secure_channel_with_custom_signer("localhost:12345", creds)
         return secure_channel, ref
 
       channel, signer_ref = create_channel()
