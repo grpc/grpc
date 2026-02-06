@@ -251,6 +251,10 @@ const char* const description_wildcard_ip_expansion_restriction =
     "If set, adds optional restriction on when to expand wildcard IPs.";
 const char* const additional_constraints_wildcard_ip_expansion_restriction =
     "{}";
+const char* const description_xds_channel_filter_chain_per_route =
+    "xDS channels use a separate filter chain for each route.";
+const char* const additional_constraints_xds_channel_filter_chain_per_route =
+    "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -428,6 +432,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"wildcard_ip_expansion_restriction",
      description_wildcard_ip_expansion_restriction,
      additional_constraints_wildcard_ip_expansion_restriction, nullptr, 0,
+     false, true},
+    {"xds_channel_filter_chain_per_route",
+     description_xds_channel_filter_chain_per_route,
+     additional_constraints_xds_channel_filter_chain_per_route, nullptr, 0,
      false, true},
 };
 
@@ -663,6 +671,10 @@ const char* const description_wildcard_ip_expansion_restriction =
     "If set, adds optional restriction on when to expand wildcard IPs.";
 const char* const additional_constraints_wildcard_ip_expansion_restriction =
     "{}";
+const char* const description_xds_channel_filter_chain_per_route =
+    "xDS channels use a separate filter chain for each route.";
+const char* const additional_constraints_xds_channel_filter_chain_per_route =
+    "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -840,6 +852,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"wildcard_ip_expansion_restriction",
      description_wildcard_ip_expansion_restriction,
      additional_constraints_wildcard_ip_expansion_restriction, nullptr, 0,
+     false, true},
+    {"xds_channel_filter_chain_per_route",
+     description_xds_channel_filter_chain_per_route,
+     additional_constraints_xds_channel_filter_chain_per_route, nullptr, 0,
      false, true},
 };
 
@@ -1075,6 +1091,10 @@ const char* const description_wildcard_ip_expansion_restriction =
     "If set, adds optional restriction on when to expand wildcard IPs.";
 const char* const additional_constraints_wildcard_ip_expansion_restriction =
     "{}";
+const char* const description_xds_channel_filter_chain_per_route =
+    "xDS channels use a separate filter chain for each route.";
+const char* const additional_constraints_xds_channel_filter_chain_per_route =
+    "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -1252,6 +1272,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"wildcard_ip_expansion_restriction",
      description_wildcard_ip_expansion_restriction,
      additional_constraints_wildcard_ip_expansion_restriction, nullptr, 0,
+     false, true},
+    {"xds_channel_filter_chain_per_route",
+     description_xds_channel_filter_chain_per_route,
+     additional_constraints_xds_channel_filter_chain_per_route, nullptr, 0,
      false, true},
 };
 

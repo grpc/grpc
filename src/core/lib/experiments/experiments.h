@@ -132,6 +132,7 @@ inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
 inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
+inline bool IsXdsChannelFilterChainPerRouteEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
 inline bool IsBufferListDeletionPrepEnabled() { return false; }
@@ -209,6 +210,7 @@ inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
 inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
+inline bool IsXdsChannelFilterChainPerRouteEnabled() { return false; }
 
 #else
 inline bool IsBufferListDeletionPrepEnabled() { return false; }
@@ -286,6 +288,7 @@ inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
 inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
+inline bool IsXdsChannelFilterChainPerRouteEnabled() { return false; }
 #endif
 
 #else
@@ -344,6 +347,7 @@ enum ExperimentIds {
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
   kExperimentIdUseCallEventEngineInCompletionQueue,
   kExperimentIdWildcardIpExpansionRestriction,
+  kExperimentIdXdsChannelFilterChainPerRoute,
   kNumExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_BUFFER_LIST_DELETION_PREP
@@ -565,6 +569,10 @@ inline bool IsUseCallEventEngineInCompletionQueueEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_WILDCARD_IP_EXPANSION_RESTRICTION
 inline bool IsWildcardIpExpansionRestrictionEnabled() {
   return IsExperimentEnabled<kExperimentIdWildcardIpExpansionRestriction>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_XDS_CHANNEL_FILTER_CHAIN_PER_ROUTE
+inline bool IsXdsChannelFilterChainPerRouteEnabled() {
+  return IsExperimentEnabled<kExperimentIdXdsChannelFilterChainPerRoute>();
 }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];

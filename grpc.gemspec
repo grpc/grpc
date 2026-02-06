@@ -2198,6 +2198,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/xds/grpc/xds_health_status.h )
   s.files += %w( src/core/xds/grpc/xds_http_fault_filter.cc )
   s.files += %w( src/core/xds/grpc/xds_http_fault_filter.h )
+  s.files += %w( src/core/xds/grpc/xds_http_filter.cc )
   s.files += %w( src/core/xds/grpc/xds_http_filter.h )
   s.files += %w( src/core/xds/grpc/xds_http_filter_registry.cc )
   s.files += %w( src/core/xds/grpc/xds_http_filter_registry.h )
