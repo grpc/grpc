@@ -457,15 +457,18 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "hpack_encoder_test_helper",
         "//:chttp2_legacy_frame",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//:grpc_public_hdrs",
         "//:hpack_encoder",
         "//:hpack_parser",
         "//:ref_counted_ptr",
         "//src/core:arena",
         "//src/core:event_engine_memory_allocator",
+        "//src/core:experiments",
         "//src/core:grpc_check",
         "//src/core:memory_quota",
         "//src/core:metadata_batch",
@@ -475,6 +478,39 @@ grpc_cc_test(
         "//src/core:status_helper",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "hpack_encoder_test_helper",
+    testonly = True,
+    hdrs = ["hpack_encoder_test_helper.h"],
+    external_deps = [
+        "gtest",
+        "absl/log:log",
+        "absl/strings:string_view",
+    ],
+    deps = [
+        "//:chttp2_legacy_frame",
+        "//:grpc_public_hdrs",
+        "//:hpack_encoder",
+        "//:hpack_parser",
+        "//src/core:shared_bit_gen",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "hpack_encoder_fuzzer",
+    srcs = ["hpack_encoder_fuzzer.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+    ],
+    deps = [
+        "hpack_encoder_test_helper",
+        "//:hpack_encoder",
+        "//src/core:metadata_batch",
+        "//src/core:slice",
     ],
 )
 
