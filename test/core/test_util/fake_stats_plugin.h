@@ -21,6 +21,7 @@
 
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/instrument.h"
 #include "src/core/telemetry/metrics.h"
 #include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/ref_counted.h"
@@ -251,6 +252,11 @@ class FakeStatsPlugin : public StatsPlugin {
               }
               break;
             }
+            case GlobalInstrumentsRegistry::InstrumentType::kUpDownCounter: {
+              MutexLock lock(&mu_);
+              int64_counters_.emplace(descriptor.index, descriptor);
+              break;
+            }
             case GlobalInstrumentsRegistry::InstrumentType::kHistogram: {
               MutexLock lock(&mu_);
               if (descriptor.value_type ==
@@ -339,6 +345,20 @@ class FakeStatsPlugin : public StatsPlugin {
     if (iter == double_counters_.end()) return;
     iter->second.Add(value, label_values, optional_values);
   }
+  void AddCounter(
+      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle, int64_t value,
+      absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_values) override {
+    VLOG(2) << "FakeStatsPlugin[" << this
+            << "]::AddCounter(index=" << handle.index
+            << ", value(int64_t)=" << value << ", label_values={"
+            << absl::StrJoin(label_values, ", ") << "}, optional_label_values={"
+            << absl::StrJoin(optional_values, ", ") << "}";
+    MutexLock lock(&mu_);
+    auto iter = int64_counters_.find(handle.index);
+    if (iter == int64_counters_.end()) return;
+    iter->second.Add(value, label_values, optional_values);
+  }
   void RecordHistogram(
       GlobalInstrumentsRegistry::GlobalInstrumentHandle handle, uint64_t value,
       absl::Span<const absl::string_view> label_values,
@@ -418,6 +438,17 @@ class FakeStatsPlugin : public StatsPlugin {
     }
     return iter->second.GetValue(label_values, optional_values);
   }
+  std::optional<uint64_t> GetInt64UpDownCounterValue(
+      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
+      absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_values) {
+    MutexLock lock(&mu_);
+    auto iter = int64_counters_.find(handle.index);
+    if (iter == int64_counters_.end()) {
+      return std::nullopt;
+    }
+    return iter->second.GetValue(label_values, optional_values);
+  }
   std::optional<std::vector<uint64_t>> GetUInt64HistogramValue(
       GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
       absl::Span<const absl::string_view> label_values,
@@ -472,7 +503,77 @@ class FakeStatsPlugin : public StatsPlugin {
     return iter->second.GetValue(label_values, optional_values);
   }
 
+  template <typename T>
+  std::optional<T> GetMetricValueByNameImpl(
+      absl::string_view name, absl::Span<const absl::string_view> labels);
+
+  std::optional<uint64_t> GetUInt64MetricValueByName(
+      absl::string_view name, absl::Span<const absl::string_view> labels);
+
+  std::optional<int64_t> GetInt64MetricValueByName(
+      absl::string_view name, absl::Span<const absl::string_view> labels);
+
  private:
+  template <typename T>
+  class DomainMetricsSink : public MetricsSink {
+   public:
+    DomainMetricsSink(absl::string_view target_name,
+                      absl::Span<const std::string> label_keys,
+                      absl::Span<const std::string> label_values)
+        : target_name_(target_name),
+          target_label_keys_(label_keys.begin(), label_keys.end()),
+          target_label_values_(label_values.begin(), label_values.end()) {}
+
+    void Counter(absl::Span<const std::string> label_keys,
+                 absl::Span<const std::string> label_values,
+                 absl::string_view name, uint64_t value) override {
+      if (name != target_name_) return;
+      if (label_keys.size() != target_label_keys_.size() ||
+          label_values.size() != target_label_values_.size())
+        return;
+      for (size_t i = 0; i < label_keys.size(); ++i) {
+        if (label_keys[i] != target_label_keys_[i] ||
+            label_values[i] != target_label_values_[i])
+          return;
+      }
+      captured_value_ = static_cast<T>(value);
+    }
+    void UpDownCounter(absl::Span<const std::string> label_keys,
+                       absl::Span<const std::string> label_values,
+                       absl::string_view name, uint64_t value) override {
+      if (name != target_name_) return;
+      if (label_keys.size() != target_label_keys_.size() ||
+          label_values.size() != target_label_values_.size())
+        return;
+      for (size_t i = 0; i < label_keys.size(); ++i) {
+        if (label_keys[i] != target_label_keys_[i] ||
+            label_values[i] != target_label_values_[i])
+          return;
+      }
+      captured_value_ = static_cast<T>(value);
+    }
+    void Histogram(absl::Span<const std::string> /*label_keys*/,
+                   absl::Span<const std::string> /*label_values*/,
+                   absl::string_view /*name*/, HistogramBuckets /*bounds*/,
+                   absl::Span<const uint64_t> /*counts*/) override {}
+    void DoubleGauge(absl::Span<const std::string> /*label_keys*/,
+                     absl::Span<const std::string> /*label_values*/,
+                     absl::string_view /*name*/, double /*value*/) override {}
+    void IntGauge(absl::Span<const std::string> /*label_keys*/,
+                  absl::Span<const std::string> /*label_values*/,
+                  absl::string_view /*name*/, int64_t /*value*/) override {}
+    void UintGauge(absl::Span<const std::string> /*label_keys*/,
+                   absl::Span<const std::string> /*label_values*/,
+                   absl::string_view /*name*/, uint64_t /*value*/) override {}
+
+    std::optional<T> captured_value() const { return captured_value_; }
+
+   private:
+    absl::string_view target_name_;
+    std::vector<std::string> target_label_keys_;
+    std::vector<std::string> target_label_values_;
+    std::optional<T> captured_value_;
+  };
   class Reporter : public CallbackMetricReporter {
    public:
     explicit Reporter(FakeStatsPlugin& plugin) : plugin_(plugin) {}
@@ -553,6 +654,49 @@ class FakeStatsPlugin : public StatsPlugin {
     std::vector<absl::string_view> label_keys_;
     std::vector<absl::string_view> optional_label_keys_;
     // Aggregation of the same key attributes.
+    absl::flat_hash_map<std::string, T> storage_;
+  };
+
+  template <class T>
+  class UpDownCounter {
+   public:
+    explicit UpDownCounter(
+        GlobalInstrumentsRegistry::GlobalInstrumentDescriptor u)
+        : name_(u.name),
+          description_(u.description),
+          unit_(u.unit),
+          label_keys_(std::move(u.label_keys)),
+          optional_label_keys_(std::move(u.optional_label_keys)) {}
+
+    void Add(T t, absl::Span<const absl::string_view> label_values,
+             absl::Span<const absl::string_view> optional_values) {
+      auto iter = storage_.find(MakeLabelString(
+          label_keys_, label_values, optional_label_keys_, optional_values));
+      if (iter != storage_.end()) {
+        iter->second += t;
+      } else {
+        storage_[MakeLabelString(label_keys_, label_values,
+                                 optional_label_keys_, optional_values)] = t;
+      }
+    }
+
+    std::optional<T> GetValue(
+        absl::Span<const absl::string_view> label_values,
+        absl::Span<const absl::string_view> optional_values) {
+      auto iter = storage_.find(MakeLabelString(
+          label_keys_, label_values, optional_label_keys_, optional_values));
+      if (iter == storage_.end()) {
+        return std::nullopt;
+      }
+      return iter->second;
+    }
+
+   private:
+    absl::string_view name_;
+    absl::string_view description_;
+    absl::string_view unit_;
+    std::vector<absl::string_view> label_keys_;
+    std::vector<absl::string_view> optional_label_keys_;
     absl::flat_hash_map<std::string, T> storage_;
   };
 
@@ -644,6 +788,8 @@ class FakeStatsPlugin : public StatsPlugin {
       ABSL_GUARDED_BY(&mu_);
   absl::flat_hash_map<uint32_t, Counter<double>> double_counters_
       ABSL_GUARDED_BY(&mu_);
+  absl::flat_hash_map<uint32_t, UpDownCounter<int64_t>> int64_counters_
+      ABSL_GUARDED_BY(&mu_);
   absl::flat_hash_map<uint32_t, Histogram<uint64_t>> uint64_histograms_
       ABSL_GUARDED_BY(&mu_);
   absl::flat_hash_map<uint32_t, Histogram<double>> double_histograms_
@@ -698,6 +844,8 @@ class GlobalInstrumentsRegistryTestPeer {
   FindUInt64CounterHandleByName(absl::string_view name);
   static std::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
   FindDoubleCounterHandleByName(absl::string_view name);
+  static std::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
+  FindInt64UpDownCounterHandleByName(absl::string_view name);
   static std::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
   FindUInt64HistogramHandleByName(absl::string_view name);
   static std::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
