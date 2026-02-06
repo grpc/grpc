@@ -73,6 +73,8 @@ class PrivateKeySignerPyWrapper
   Sign(absl::string_view data_to_sign, SignatureAlgorithm signature_algorithm,
        OnSignComplete on_sign_complete) override;
 
+  ~PrivateKeySignerPyWrapper() override;
+
   void Cancel(std::shared_ptr<AsyncSigningHandle> handle) override;
 
  private:
