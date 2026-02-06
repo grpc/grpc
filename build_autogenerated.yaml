@@ -15181,6 +15181,8 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_server_transport.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/promise/poll_matcher.h
+  - test/core/test_util/postmortem.h
   - test/core/transport/chttp2/http2_frame_test_helper.h
   - test/core/transport/util/mock_promise_endpoint.h
   - test/core/transport/util/transport_test.h
