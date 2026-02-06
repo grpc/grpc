@@ -106,6 +106,10 @@ class PublishToAppEncoder {
     Append(W3CTraceParentMetadata::key(), slice);
   }
 
+  void Encode(W3CTraceStateMetadata, const Slice& slice) {
+    Append(W3CTraceStateMetadata::key(), slice);
+  }
+
   void Encode(XForwardedForMetadata, const Slice& slice) {
     Append(XForwardedForMetadata::key(), slice);
   }
