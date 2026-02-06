@@ -250,6 +250,9 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upb-gen\\envoy\\extensions\\filters\\http\\router\\v3\\router.upb_minitable.c " +
     "src\\core\\ext\\upb-gen\\envoy\\extensions\\filters\\http\\stateful_session\\v3\\stateful_session.upb_minitable.c " +
     "src\\core\\ext\\upb-gen\\envoy\\extensions\\filters\\network\\http_connection_manager\\v3\\http_connection_manager.upb_minitable.c " +
+    "src\\core\\ext\\upb-gen\\envoy\\extensions\\grpc_service\\call_credentials\\access_token\\v3\\access_token_credentials.upb_minitable.c " +
+    "src\\core\\ext\\upb-gen\\envoy\\extensions\\grpc_service\\channel_credentials\\tls\\v3\\tls_credentials.upb_minitable.c " +
+    "src\\core\\ext\\upb-gen\\envoy\\extensions\\grpc_service\\channel_credentials\\xds\\v3\\xds_credentials.upb_minitable.c " +
     "src\\core\\ext\\upb-gen\\envoy\\extensions\\http\\stateful_session\\cookie\\v3\\cookie.upb_minitable.c " +
     "src\\core\\ext\\upb-gen\\envoy\\extensions\\load_balancing_policies\\client_side_weighted_round_robin\\v3\\client_side_weighted_round_robin.upb_minitable.c " +
     "src\\core\\ext\\upb-gen\\envoy\\extensions\\load_balancing_policies\\common\\v3\\common.upb_minitable.c " +
@@ -1588,6 +1591,15 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\envoy\\extensions\\filters\\network");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\envoy\\extensions\\filters\\network\\http_connection_manager");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\envoy\\extensions\\filters\\network\\http_connection_manager\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\envoy\\extensions\\grpc_service");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\envoy\\extensions\\grpc_service\\call_credentials");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\envoy\\extensions\\grpc_service\\call_credentials\\access_token");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\envoy\\extensions\\grpc_service\\call_credentials\\access_token\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\envoy\\extensions\\grpc_service\\channel_credentials");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\envoy\\extensions\\grpc_service\\channel_credentials\\tls");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\envoy\\extensions\\grpc_service\\channel_credentials\\tls\\v3");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\envoy\\extensions\\grpc_service\\channel_credentials\\xds");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\envoy\\extensions\\grpc_service\\channel_credentials\\xds\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\envoy\\extensions\\http");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\envoy\\extensions\\http\\stateful_session");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\envoy\\extensions\\http\\stateful_session\\cookie");

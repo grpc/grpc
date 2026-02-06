@@ -182,12 +182,6 @@ class BitSet {
     return *this;
   }
 
-  void Merge(const BitSet& other) {
-    for (size_t i = 0; i < kUnits; i++) {
-      units_[i] |= other.units_[i];
-    }
-  }
-
  private:
   // Given a bit index, return which unit it's stored in.
   static constexpr size_t unit_for(size_t bit) { return bit / kUnitBits; }

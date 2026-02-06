@@ -245,7 +245,7 @@
     and also help with interop testing.
   expiry: 2026/08/30
   owner: tjagtap@google.com
-  test_tags: ["core_end2end_test", "cpp_end2end_test_client_ph2"]
+  test_tags: ["core_end2end_test", "cpp_end2end_test"]
   allow_in_fuzzing_config: true
 - name: promise_based_http2_server_transport
   description:
@@ -381,4 +381,10 @@
   description: Use the call event engine to run callbacks in completion queue.
   expiry: 2026/06/01
   owner: aananthv@google.com
+  test_tags: ["core_end2end_test"]
+- name: wildcard_ip_expansion_restriction
+  description:
+    If set, adds optional restriction on when to expand wildcard IPs.
+  expiry: 2026/07/01
+  owner: alishananda@google.com
   test_tags: ["core_end2end_test"]

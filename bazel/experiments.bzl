@@ -70,6 +70,7 @@ EXPERIMENT_ENABLES = {
     "tsi_frame_protector_without_locks": "tsi_frame_protector_without_locks",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
     "use_call_event_engine_in_completion_queue": "use_call_event_engine_in_completion_queue",
+    "wildcard_ip_expansion_restriction": "wildcard_ip_expansion_restriction",
 }
 
 EXPERIMENT_POLLERS = [
@@ -107,13 +108,12 @@ EXPERIMENTS = {
                 "secure_endpoint_offload_large_writes",
                 "subchannel_connection_scaling",
                 "use_call_event_engine_in_completion_queue",
+                "wildcard_ip_expansion_restriction",
             ],
             "cpp_end2end_test": [
                 "error_flatten",
-                "subchannel_wrapper_cleanup_on_orphan",
-            ],
-            "cpp_end2end_test_client_ph2": [
                 "promise_based_http2_client_transport",
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "subchannel_connection_scaling",
@@ -219,13 +219,12 @@ EXPERIMENTS = {
                 "secure_endpoint_offload_large_writes",
                 "subchannel_connection_scaling",
                 "use_call_event_engine_in_completion_queue",
+                "wildcard_ip_expansion_restriction",
             ],
             "cpp_end2end_test": [
                 "error_flatten",
-                "subchannel_wrapper_cleanup_on_orphan",
-            ],
-            "cpp_end2end_test_client_ph2": [
                 "promise_based_http2_client_transport",
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "subchannel_connection_scaling",
@@ -331,13 +330,12 @@ EXPERIMENTS = {
                 "secure_endpoint_offload_large_writes",
                 "subchannel_connection_scaling",
                 "use_call_event_engine_in_completion_queue",
+                "wildcard_ip_expansion_restriction",
             ],
             "cpp_end2end_test": [
                 "error_flatten",
-                "subchannel_wrapper_cleanup_on_orphan",
-            ],
-            "cpp_end2end_test_client_ph2": [
                 "promise_based_http2_client_transport",
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "subchannel_connection_scaling",
