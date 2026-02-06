@@ -60,6 +60,12 @@ class GrpcXdsServerTarget final : public GrpcXdsServerInterface {
     return call_creds_configs_;
   }
 
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+  void JsonPostLoad(const Json& json, const JsonArgs& args,
+                    ValidationErrors* errors);
+
+  std::string ToJsonString() const;
+
  private:
   std::string server_uri_;
   RefCountedPtr<const ChannelCredsConfig> channel_creds_config_;

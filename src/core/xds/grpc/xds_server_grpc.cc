@@ -252,4 +252,51 @@ bool GrpcXdsServerTarget::Equals(const XdsServerTarget& other) const {
   return true;
 }
 
+const JsonLoaderInterface* GrpcXdsServerTarget::JsonLoader(const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<GrpcXdsServerTarget>()
+          .OptionalField("server_uri", &GrpcXdsServerTarget::server_uri_)
+          .Finish();
+  return loader;
+}
+
+void GrpcXdsServerTarget::JsonPostLoad(const Json& json, const JsonArgs& args,
+                                       ValidationErrors* errors) {
+  // Parse "channel_creds".
+  channel_creds_config_ = ParseXdsBootstrapChannelCreds(json, args, errors);
+  // Parse "call_creds".
+  call_creds_configs_ = ParseXdsBootstrapCallCreds(json, args, errors);
+}
+
+std::string GrpcXdsServerTarget::ToJsonString() const {
+  Json::Object root;
+  if (!server_uri_.empty()) {
+    root["server_uri"] = Json::FromString(server_uri_);
+  }
+  if (channel_creds_config_ != nullptr) {
+    Json::Object creds;
+    creds["type"] =
+        Json::FromString(std::string(channel_creds_config_->type()));
+    auto config_json = JsonParse(channel_creds_config_->ToString());
+    if (config_json.ok()) {
+      creds["config"] = *config_json;
+    }
+    root["channel_creds"] = Json::FromArray({Json::FromObject(creds)});
+  }
+  if (!call_creds_configs_.empty()) {
+    Json::Array call_creds_array;
+    for (const auto& config : call_creds_configs_) {
+      Json::Object creds;
+      creds["type"] = Json::FromString(std::string(config->type()));
+      auto config_json = JsonParse(config->ToString());
+      if (config_json.ok()) {
+        creds["config"] = *config_json;
+      }
+      call_creds_array.push_back(Json::FromObject(creds));
+    }
+    root["call_creds"] = Json::FromArray(std::move(call_creds_array));
+  }
+  return JsonDump(Json::FromObject(root));
+}
+
 }  // namespace grpc_core

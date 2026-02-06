@@ -16,6 +16,12 @@
 
 #include "src/core/xds/grpc/xds_common_types.h"
 
+#include <cstddef>
+#include <memory>
+#include <string>
+
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/json/json_writer.h"
 #include "src/core/util/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -98,6 +104,103 @@ std::string CommonTlsContext::ToString() const {
 bool CommonTlsContext::Empty() const {
   return tls_certificate_provider_instance.Empty() &&
          certificate_validation_context.Empty();
+}
+
+//
+// XdsGrpcService
+//
+
+namespace {
+
+struct InitialMetadata {
+  std::string key;
+  std::string value;
+
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
+    static const auto* loader = JsonObjectLoader<InitialMetadata>()
+                                    .Field("key", &InitialMetadata::key)
+                                    .Field("value", &InitialMetadata::value)
+                                    .Finish();
+    return loader;
+  }
+};
+
+}  // namespace
+
+std::unique_ptr<GrpcXdsServerTarget> ParseGrpcXdsServerTarget(
+    const Json& json, const JsonArgs& args, ValidationErrors* errors) {
+  auto server_target_itr = json.object().find("server_target");
+  if (server_target_itr != json.object().end()) {
+    ValidationErrors::ScopedField field(errors, ".server_target");
+    if (server_target_itr->second.type() != Json::Type::kObject) {
+      errors->AddError("is not an object");
+    } else {
+      const Json& target_json = server_target_itr->second;
+      std::string server_uri =
+          LoadJsonObjectField<std::string>(target_json.object(), args,
+                                           "server_uri", errors)
+              .value_or("");
+      auto channel_creds_config =
+          ParseXdsBootstrapChannelCreds(target_json, args, errors);
+      auto call_creds_configs =
+          ParseXdsBootstrapCallCreds(target_json, args, errors);
+      return std::make_unique<GrpcXdsServerTarget>(
+          std::move(server_uri), std::move(channel_creds_config),
+          std::move(call_creds_configs));
+    }
+  }
+  return nullptr;
+}
+
+std::vector<std::pair<std::string, std::string>> ParseInitialMetadata(
+    const Json& json, const JsonArgs& args, ValidationErrors* errors) {
+  std::vector<std::pair<std::string, std::string>> initial_metadata;
+  auto md = LoadJsonObjectField<std::vector<InitialMetadata>>(
+      json.object(), args, "initial_metadata", errors);
+  if (md.has_value()) {
+    ValidationErrors::ScopedField field(errors, ".initial_metadata");
+    for (const auto& metadata : md.value()) {
+      initial_metadata.emplace_back(metadata.key, metadata.value);
+    }
+  }
+  return initial_metadata;
+}
+
+const JsonLoaderInterface* XdsGrpcService::JsonLoader(const JsonArgs&) {
+  static const auto* loader = JsonObjectLoader<XdsGrpcService>()
+                                  .Field("timeout", &XdsGrpcService::timeout)
+                                  .Finish();
+  return loader;
+}
+
+void XdsGrpcService::JsonPostLoad(const Json& json, const JsonArgs& args,
+                                  ValidationErrors* errors) {
+  // parse server_target
+  server_target = ParseGrpcXdsServerTarget(json, args, errors);
+  // parse initial_medata
+  initial_metadata = ParseInitialMetadata(json, args, errors);
+}
+
+std::string XdsGrpcService::ToJsonString() const {
+  Json::Object root;
+  if (server_target != nullptr) {
+    auto target_json = JsonParse(server_target->ToJsonString());
+    if (target_json.ok()) {
+      root["server_target"] = *target_json;
+    }
+  }
+  root["timeout"] = Json::FromString(timeout.ToJsonString());
+  if (!initial_metadata.empty()) {
+    Json::Array metadata_array;
+    for (const auto& [key, value] : initial_metadata) {
+      metadata_array.push_back(Json::FromObject({
+          {"key", Json::FromString(key)},
+          {"value", Json::FromString(value)},
+      }));
+    }
+    root["initial_metadata"] = Json::FromArray(std::move(metadata_array));
+  }
+  return JsonDump(Json::FromObject(root));
 }
 
 }  // namespace grpc_core
