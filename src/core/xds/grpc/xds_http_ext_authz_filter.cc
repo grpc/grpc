@@ -23,6 +23,7 @@
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/extensions/filters/http/ext_authz/v3/ext_authz.upb.h"
 #include "envoy/extensions/filters/http/ext_authz/v3/ext_authz.upbdefs.h"
+#include "envoy/type/v3/http_status.upb.h"
 #include "envoy/type/v3/percent.upb.h"
 #include "src/core/ext/filters/ext_authz/ext_authz_filter.h"
 #include "src/core/util/json/json.h"
@@ -150,14 +151,38 @@ XdsExtAuthzFilter::GenerateFilterConfig(
       bool failure_mode_allow =
           envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_failure_mode_allow(
               ext_authz);
-      ext_authz_config["failure_mode_allow"] = Json::FromBool(failure_mode_allow);
+      ext_authz_config["failure_mode_allow"] =
+          Json::FromBool(failure_mode_allow);
     }
     // failure_mode_allow_header_add
     {
       bool failure_mode_allow_header_add =
           envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_failure_mode_allow_header_add(
               ext_authz);
-      ext_authz_config["failure_mode_allow_header_add"] = Json::FromBool(failure_mode_allow_header_add);
+      ext_authz_config["failure_mode_allow_header_add"] =
+          Json::FromBool(failure_mode_allow_header_add);
+    }
+    // status_on_error
+    {
+      const auto* status_on_error_proto =
+          envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_status_on_error(
+              ext_authz);
+      if (status_on_error_proto == nullptr) {
+        ValidationErrors::ScopedField field(
+            errors, ".ext_authz_config.status_on_error");
+        errors->AddError("status_on_error field is not present");
+      } else {
+        ext_authz_config["status_on_error"] = Json::FromNumber(
+            envoy_type_v3_HttpStatus_code(status_on_error_proto));
+      }
+    }
+    // include_peer_certificate
+    {
+      bool include_peer_certificate =
+          envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_include_peer_certificate(
+              ext_authz);
+      ext_authz_config["include_peer_certificate"] =
+          Json::FromBool(include_peer_certificate);
     }
   }
 

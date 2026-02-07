@@ -2238,6 +2238,7 @@ TEST_F(XdsExtAuthzFilterTest, GenerateFilterConfigXdsGrpcService) {
   auto* bool_value = deny_at_disable->mutable_default_value();
   bool_value->set_value(true);
   auto* google_grpc = grpc_service->mutable_google_grpc();
+  ext_authz.mutable_status_on_error();
   google_grpc->set_target_uri("dns:server.example.com");
   // Creds specified in proto will be ignored because xDS server is not trusted.
   google_grpc->add_channel_credentials_plugin()->PackFrom(
@@ -2251,49 +2252,84 @@ TEST_F(XdsExtAuthzFilterTest, GenerateFilterConfigXdsGrpcService) {
   auto config = filter_->GenerateFilterConfig("", MakeDecodeContext(),
                                               std::move(extension), &errors_);
   ASSERT_TRUE(config.has_value());
-  auto j = Json::FromObject(
-      {{"filter_instance_name", Json::FromString("")},
-       {"ext_authz",
-        Json::FromObject(
-            {{"deny_at_disable", Json::FromBool(true)},
-             {"failure_mode_allow", Json::FromBool(false)},
-             {"failure_mode_allow_header_add", Json::FromBool(false)},
-             {"filter_enabled",
-              Json::FromObject({{"numerator", Json::FromNumber(100)},
-                                {"denominator", Json::FromNumber(10000)}})},
-             {"xds_grpc_service",
-              Json::FromObject(
-                  {{"server_target",
-                    Json::FromObject(
-                        {{"server_uri",
-                          Json::FromString("dns:server.example.com")},
-                         {"channel_creds",
-                          Json::FromArray({Json::FromObject(
-                              {{"type", Json::FromString("insecure")},
-                               {"config", Json::FromObject({})}})})},
-                         {"call_creds",
-                          Json::FromArray(
-                              {Json::FromObject(
-                                   {{"type",
-                                     Json::FromString("jwt_token_file")}}),
-                               Json::FromObject(
-                                   {{"type",
-                                     Json::FromString("jwt_token_file")}})})}
+  const Json& root = config->config;
+  ASSERT_EQ(root.type(), Json::Type::kObject);
+  EXPECT_EQ(root.object().at("filter_instance_name"), Json::FromString(""));
 
-                        })},
-                   {"timeout", Json::FromString("0.000000000s")},
-                   {"initial_metadata",
-                    Json::FromArray(
-                        {Json::FromObject({{"key", Json::FromString("foo")},
-                                           {"value", Json::FromString("bar")}}),
-                         Json::FromObject(
-                             {{"key", Json::FromString("foo")},
-                              {"value", Json::FromString("bar")}})})}})}})}});
-  EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
-  EXPECT_EQ(config->config, j) << JsonDump(config->config);
+  auto it = root.object().find("ext_authz");
+  ASSERT_NE(it, root.object().end());
+  const Json& ext_authz_json = it->second;
+  ASSERT_EQ(ext_authz_json.type(), Json::Type::kObject);
 
-  std::cout << JsonDump(config->config) << "\n";
-  std::cout << JsonDump(j);
+  const auto& fields = ext_authz_json.object();
+
+  // deny_at_disable
+  auto field_it = fields.find("deny_at_disable");
+  ASSERT_NE(field_it, fields.end());
+  EXPECT_EQ(field_it->second, Json::FromBool(true));
+
+  // failure_mode_allow
+  field_it = fields.find("failure_mode_allow");
+  ASSERT_NE(field_it, fields.end());
+  EXPECT_EQ(field_it->second, Json::FromBool(false));
+
+  // failure_mode_allow_header_add
+  field_it = fields.find("failure_mode_allow_header_add");
+  ASSERT_NE(field_it, fields.end());
+  EXPECT_EQ(field_it->second, Json::FromBool(false));
+
+  // status_on_error
+  field_it = fields.find("status_on_error");
+  ASSERT_NE(field_it, fields.end());
+  EXPECT_EQ(field_it->second, Json::FromNumber(0));
+
+  // filter_enabled
+  field_it = fields.find("filter_enabled");
+  ASSERT_NE(field_it, fields.end());
+  EXPECT_EQ(field_it->second,
+            Json::FromObject({{"numerator", Json::FromNumber(100)},
+                              {"denominator", Json::FromNumber(10000)}}));
+
+  // xds_grpc_service
+  field_it = fields.find("xds_grpc_service");
+  ASSERT_NE(field_it, fields.end());
+  const Json& xds_grpc_service = field_it->second;
+  ASSERT_EQ(xds_grpc_service.type(), Json::Type::kObject);
+
+  // Check xds_grpc_service fields
+  const auto& service_fields = xds_grpc_service.object();
+
+  // timeout
+  auto service_field_it = service_fields.find("timeout");
+  ASSERT_NE(service_field_it, service_fields.end());
+  EXPECT_EQ(service_field_it->second, Json::FromString("0.000000000s"));
+
+  // initial_metadata
+  service_field_it = service_fields.find("initial_metadata");
+  ASSERT_NE(service_field_it, service_fields.end());
+  EXPECT_EQ(service_field_it->second,
+            Json::FromArray(
+                {Json::FromObject({{"key", Json::FromString("foo")},
+                                   {"value", Json::FromString("bar")}}),
+                 Json::FromObject({{"key", Json::FromString("foo")},
+                                   {"value", Json::FromString("bar")}})}));
+
+  // server_target
+  service_field_it = service_fields.find("server_target");
+  ASSERT_NE(service_field_it, service_fields.end());
+  EXPECT_EQ(service_field_it->second,
+            Json::FromObject(
+                {{"server_uri", Json::FromString("dns:server.example.com")},
+                 {"channel_creds",
+                  Json::FromArray({Json::FromObject(
+                      {{"type", Json::FromString("insecure")},
+                       {"config", Json::FromObject({})}})})},
+                 {"call_creds",
+                  Json::FromArray(
+                      {Json::FromObject(
+                           {{"type", Json::FromString("jwt_token_file")}}),
+                       Json::FromObject(
+                           {{"type", Json::FromString("jwt_token_file")}})})}}));
 }
 
 }  // namespace

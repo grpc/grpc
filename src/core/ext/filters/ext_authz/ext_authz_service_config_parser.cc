@@ -20,6 +20,7 @@
 
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/transport/status_conversion.h"
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 
@@ -204,11 +205,23 @@ const JsonLoaderInterface* ExtAuthz::JsonLoader(const JsonArgs&) {
           .OptionalField("failure_mode_allow", &ExtAuthz::failure_mode_allow)
           .OptionalField("failure_mode_allow_header_add",
                          &ExtAuthz::failure_mode_allow_header_add)
+          .OptionalField("include_peer_certificate",
+                         &ExtAuthz::include_peer_certificate)
           .Finish();
   return loader;
 }
 
-void ExtAuthz::JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors*) {}
+void ExtAuthz::JsonPostLoad(const Json& json, const JsonArgs& args,
+                            ValidationErrors* errors) {
+  auto status =
+      LoadJsonObjectField<int>(json.object(), args, "status_on_error", errors);
+  if (status.has_value()) {
+    status_on_error = grpc_http2_status_to_grpc_status(status.value());
+  } else {
+    ValidationErrors::ScopedField field(errors, ".ext_authz.status_on_error");
+    errors->AddError("status_on_error field is not present");
+  }
+}
 
 //
 // ExtAuthzParsedConfig

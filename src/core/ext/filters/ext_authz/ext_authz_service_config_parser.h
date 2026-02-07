@@ -55,10 +55,10 @@ struct ExtAuthz {
   std::optional<bool> deny_at_disable = true;
   bool failure_mode_allow;
   bool failure_mode_allow_header_add;
-  // grpc_status_code status_on_error = GRPC_STATUS_OK;
+  grpc_status_code status_on_error;
   // std::vector<StringMatcher> allowed_headers;
   // std::vector<StringMatcher> disallowed_headers;
-
+  
   // struct HeaderMutationRules {
   //   bool disallow_all = false;
   //   bool disallow_is_error = false;
@@ -67,7 +67,7 @@ struct ExtAuthz {
   //   bool Check(absl::string_view key, absl::string_view value) const;
   // };
   // std::unique_ptr<HeaderMutationRules> decoder_header_mutation_rules;
-  // bool include_peer_certificate = false;
+  bool include_peer_certificate = false;
 
   // enum class CheckResult {
   //   kSendRequestToExtAuthzService,

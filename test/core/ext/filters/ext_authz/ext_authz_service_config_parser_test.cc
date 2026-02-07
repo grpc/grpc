@@ -31,7 +31,9 @@ TEST_F(ExtAuthzServiceConfigParsingTest, ParseValidConfig) {
       "      \"ext_authz\": {\n"
       "        \"deny_at_disable\": true,\n"
       "        \"failure_mode_allow\": true,\n"
+      "        \"status_on_error\": 404,\n"
       "        \"failure_mode_allow_header_add\": true,\n"
+      "        \"include_peer_certificate\": true,\n"
       "        \"xds_grpc_service\": {\n"
       "          \"initial_metadata\": [\n"
       "            {\n"
@@ -113,6 +115,8 @@ TEST_F(ExtAuthzServiceConfigParsingTest, ParseValidConfig) {
   EXPECT_EQ(config->ext_authz.filter_enabled->numerator, 100);
   EXPECT_EQ(config->ext_authz.filter_enabled->denominator, 10000);
   EXPECT_EQ(config->ext_authz.deny_at_disable, true);
+  EXPECT_EQ(config->ext_authz.include_peer_certificate, true);
+  EXPECT_EQ(config->ext_authz.status_on_error, GRPC_STATUS_UNIMPLEMENTED);
   
 }
 
