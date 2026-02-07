@@ -337,6 +337,7 @@ grpc_fuzz_test(
     deps = [
         ":xds_client_test_peer",
         ":xds_transport_fake",
+        "//:gpr_platform",
         "//:grpc",
         "//:iomgr_timer",
         "//:orphanable",

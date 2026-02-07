@@ -116,6 +116,9 @@ const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
+const char* const description_metadata_publish_to_app_tag =
+    "Publish metadata to the app using the kPublishToApp metadata field.";
+const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
@@ -326,6 +329,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"max_inflight_pings_strict_limit",
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
+     true},
+    {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
+     additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
      true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
@@ -536,6 +542,9 @@ const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
+const char* const description_metadata_publish_to_app_tag =
+    "Publish metadata to the app using the kPublishToApp metadata field.";
+const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
@@ -746,6 +755,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"max_inflight_pings_strict_limit",
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
+     true},
+    {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
+     additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
      true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
@@ -956,6 +968,9 @@ const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
+const char* const description_metadata_publish_to_app_tag =
+    "Publish metadata to the app using the kPublishToApp metadata field.";
+const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
@@ -1166,6 +1181,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"max_inflight_pings_strict_limit",
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
+     true},
+    {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
+     additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
      true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},

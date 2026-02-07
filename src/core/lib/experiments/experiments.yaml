@@ -189,6 +189,11 @@
   expiry: 2026/02/01
   owner: akshitpatel@google.com
   test_tags: []
+- name: metadata_publish_to_app_tag
+  description: Publish metadata to the app using the kPublishToApp metadata field.
+  expiry: 2026/04/01
+  owner: leonzz@google.com
+  test_tags: []
 - name: monitoring_experiment
   description: Placeholder experiment to prove/disprove our monitoring is working
   expiry: never-ever
