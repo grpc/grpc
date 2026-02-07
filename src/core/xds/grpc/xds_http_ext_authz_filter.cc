@@ -128,6 +128,23 @@ XdsExtAuthzFilter::GenerateFilterConfig(
                               {"denominator", Json::FromNumber(denominator)}});
       }
     }
+    // deny_at_disable
+    {
+      const auto* deny_at_disable_proto =
+          envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_deny_at_disable(
+              ext_authz);
+      if (deny_at_disable_proto == nullptr) {
+        ValidationErrors::ScopedField field(
+            errors, ".ext_authz_config.deny_at_disable");
+        errors->AddError("deny_at_disable field is not present");
+      } else {
+        auto* default_value =
+            envoy_config_core_v3_RuntimeFeatureFlag_default_value(
+                deny_at_disable_proto);
+        ext_authz_config["deny_at_disable"] =
+            Json::FromBool(ParseBoolValue(default_value));
+      }
+    }
   }
 
   config["ext_authz"] = Json::FromObject(ext_authz_config);

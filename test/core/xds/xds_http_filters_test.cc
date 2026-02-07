@@ -60,6 +60,7 @@
 #include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/crash.h"
+#include "google/protobuf/wrappers.pb.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -2233,6 +2234,9 @@ TEST_F(XdsExtAuthzFilterTest, GenerateFilterConfigXdsGrpcService) {
   auto* percent = filter->mutable_default_value();
   percent->set_numerator(100);
   percent->set_denominator(envoy::type::v3::FractionalPercent_DenominatorType_TEN_THOUSAND);
+  auto* deny_at_disable = ext_authz.mutable_deny_at_disable();
+  auto* bool_value = deny_at_disable->mutable_default_value();
+  bool_value->set_value(true);
   auto* google_grpc = grpc_service->mutable_google_grpc();
   google_grpc->set_target_uri("dns:server.example.com");
   // Creds specified in proto will be ignored because xDS server is not trusted.
@@ -2251,7 +2255,8 @@ TEST_F(XdsExtAuthzFilterTest, GenerateFilterConfigXdsGrpcService) {
       {{"filter_instance_name", Json::FromString("")},
        {"ext_authz",
         Json::FromObject(
-            {{"filter_enabled",
+            {{"deny_at_disable", Json::FromBool(true)},
+             {"filter_enabled",
               Json::FromObject({{"numerator", Json::FromNumber(100)},
                                 {"denominator", Json::FromNumber(10000)}})},
              {"xds_grpc_service",

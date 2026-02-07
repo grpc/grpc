@@ -199,6 +199,7 @@ const JsonLoaderInterface* ExtAuthz::JsonLoader(const JsonArgs&) {
       JsonObjectLoader<ExtAuthz>()
           .Field("xds_grpc_service", &ExtAuthz::xds_grpc_service)
           .OptionalField("filter_enabled", &ExtAuthz::filter_enabled)
+          .OptionalField("deny_at_disable", &ExtAuthz::deny_at_disable)
           .Finish();
   return loader;
 }

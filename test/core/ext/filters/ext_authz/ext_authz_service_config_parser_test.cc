@@ -29,6 +29,7 @@ TEST_F(ExtAuthzServiceConfigParsingTest, ParseValidConfig) {
       "  \"ext_authz\": [\n"
       "    {\n"
       "      \"ext_authz\": {\n"
+      "        \"deny_at_disable\": true,\n"
       "        \"xds_grpc_service\": {\n"
       "          \"initial_metadata\": [\n"
       "            {\n"
@@ -109,6 +110,8 @@ TEST_F(ExtAuthzServiceConfigParsingTest, ParseValidConfig) {
       "jwt_token_file");
   EXPECT_EQ(config->ext_authz.filter_enabled->numerator, 100);
   EXPECT_EQ(config->ext_authz.filter_enabled->denominator, 10000);
+  EXPECT_EQ(config->ext_authz.deny_at_disable, true);
+  
 }
 
 }  // namespace
