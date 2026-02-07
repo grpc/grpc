@@ -238,28 +238,22 @@ void Http2ClientTransport::NotifyStateWatcherOnDisconnectLocked(
   });
 }
 
-auto Http2ClientTransport::AckPing(uint64_t opaque_data) {
-  bool valid_ping_ack_received = true;
-
-  if (!ping_manager_->AckPing(opaque_data)) {
+absl::Status Http2ClientTransport::AckPing(uint64_t opaque_data) {
+  // It is possible that the PingRatePolicy may decide to not send a ping
+  // request (in cases like the number of inflight pings is too high).
+  // When this happens, it becomes important to ensure that if a ping ack
+  // is received and there is an "important" outstanding ping request, we
+  // should retry to send it out now.
+  if (ping_manager_->AckPing(opaque_data)) {
+    if (ping_manager_->ImportantPingRequested()) {
+      return TriggerWriteCycle();
+    }
+  } else {
     GRPC_HTTP2_CLIENT_DLOG << "Unknown ping response received for ping id="
                            << opaque_data;
-    valid_ping_ack_received = false;
   }
 
-  return If(
-      // It is possible that the PingRatePolicy may decide to not send a ping
-      // request (in cases like the number of inflight pings is too high).
-      // When this happens, it becomes important to ensure that if a ping ack
-      // is received and there is an "important" outstanding ping request, we
-      // should retry to send it out now.
-      valid_ping_ack_received && ping_manager_->ImportantPingRequested(),
-      [self = RefAsSubclass<Http2ClientTransport>()] {
-        return Map(self->TriggerWriteCycle(), [](const absl::Status status) {
-          return ToHttpOkOrConnError(status);
-        });
-      },
-      [] { return Immediate(Http2Status::Ok()); });
+  return absl::OkStatus();
 }
 
 void Http2ClientTransport::Orphan() {
@@ -285,8 +279,10 @@ auto Http2ClientTransport::SecurityFrameLoop() {
                       .terminate) {
                 return Empty{};
               }
-              self->SpawnGuardedTransportParty("WriteSecurityFrame",
-                                               self->TriggerWriteCycle());
+
+              if (!self->TriggerWriteCycleOrHandleError()) {
+                return Empty{};
+              }
               return Continue();
             });
       }));
@@ -526,7 +522,11 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
       return status;
     }
     settings_->BufferPeerSettings(std::move(frame.settings));
-    SpawnGuardedTransportParty("SettingsAck", TriggerWriteCycle());
+    absl::Status trigger_write_status = TriggerWriteCycle();
+    if (!trigger_write_status.ok()) {
+      return ToHttpOkOrConnError(trigger_write_status);
+    }
+
     if (GPR_UNLIKELY(!settings_->IsFirstPeerSettingsApplied())) {
       // Apply the first settings before we read any other frames.
       reader_state_.SetPauseReadLoop();
@@ -549,42 +549,33 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
   return Http2Status::Ok();
 }
 
-auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
+Http2Status Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-ping
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessHttp2PingFrame { ack="
                          << frame.ack << ", opaque=" << frame.opaque << " }";
-  return AssertResultType<Http2Status>(If(
-      frame.ack,
-      [self = RefAsSubclass<Http2ClientTransport>(), opaque = frame.opaque]() {
-        // Received a ping ack.
-        return self->AckPing(opaque);
-      },
-      [self = RefAsSubclass<Http2ClientTransport>(), opaque = frame.opaque]() {
-        return If(
-            self->test_only_ack_pings_,
-            [self, opaque]() {
-              // TODO(akshitpatel) : [PH2][P2] : Have a counter to track number
-              // of pending induced frames (Ping/Settings Ack). This is to
-              // ensure that if write is taking a long time, we can stop reads
-              // and prioritize writes. RFC9113: PING responses SHOULD be given
-              // higher priority than any other frame.
-              self->ping_manager_->AddPendingPingAck(opaque);
-              // TODO(akshitpatel) : [PH2][P2] : This is done assuming that the
-              // other ProcessFrame promises may return stream or connection
-              // failures. If this does not turn out to be true, consider
-              // returning absl::Status here.
-              return Map(self->TriggerWriteCycle(), [](absl::Status status) {
-                return ToHttpOkOrConnError(status);
-              });
-            },
-            []() {
-              GRPC_HTTP2_CLIENT_DLOG
-                  << "Http2ClientTransport ProcessHttp2PingFrame "
-                     "test_only_ack_pings_ is false. Ignoring the ping "
-                     "request.";
-              return Immediate(Http2Status::Ok());
-            });
-      }));
+  if (frame.ack) {
+    return ToHttpOkOrConnError(AckPing(frame.opaque));
+  } else {
+    if (test_only_ack_pings_) {
+      // TODO(akshitpatel) : [PH2][P2] : Have a counter to track number
+      // of pending induced frames (Ping/Settings Ack). This is to
+      // ensure that if write is taking a long time, we can stop reads
+      // and prioritize writes. RFC9113: PING responses SHOULD be given
+      // higher priority than any other frame.
+      ping_manager_->AddPendingPingAck(frame.opaque);
+      // TODO(akshitpatel) : [PH2][P2] : This is done assuming that the
+      // other ProcessFrame promises may return stream or connection
+      // failures. If this does not turn out to be true, consider
+      // returning absl::Status here.
+      return ToHttpOkOrConnError(TriggerWriteCycle());
+    } else {
+      GRPC_HTTP2_CLIENT_DLOG
+          << "Http2ClientTransport ProcessHttp2PingFrame "
+             "test_only_ack_pings_ is false. Ignoring the ping "
+             "request.";
+    }
+  }
+  return Http2Status::Ok();
 }
 
 Http2Status Http2ClientTransport::ProcessHttp2GoawayFrame(
@@ -697,7 +688,7 @@ Http2Status Http2ClientTransport::ProcessHttp2WindowUpdateFrame(
   const bool should_trigger_write =
       ProcessIncomingWindowUpdateFrameFlowControl(frame, flow_control_, stream);
   if (should_trigger_write) {
-    SpawnGuardedTransportParty("TransportTokensAvailable", TriggerWriteCycle());
+    return ToHttpOkOrConnError(TriggerWriteCycle());
   }
   return Http2Status::Ok();
 }
@@ -1033,7 +1024,10 @@ void Http2ClientTransport::ActOnFlowControlAction(
     // updates to the peer, causing the peer to block unnecessarily while
     // waiting for flow control tokens.
     reader_state_.SetPauseReadLoop();
-    SpawnGuardedTransportParty("SendControlFrames", TriggerWriteCycle());
+    if (!TriggerWriteCycleOrHandleError()) {
+      return;
+    }
+
     GRPC_HTTP2_CLIENT_DLOG << "Update Immediately : "
                            << action.ImmediateUpdateReasons();
   }
@@ -1518,7 +1512,9 @@ void Http2ClientTransport::SpawnTransportLoops() {
       "FlowControlPeriodicUpdateLoop",
       UntilTransportClosed(FlowControlPeriodicUpdateLoop()));
 
-  SpawnGuardedTransportParty("FlushInitialFrames", TriggerWriteCycle());
+  if (!TriggerWriteCycleOrHandleError()) {
+    return;
+  }
   SpawnGuardedTransportParty("MultiplexerLoop",
                              UntilTransportClosed(MultiplexerLoop()));
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::SpawnTransportLoops End";
@@ -2261,8 +2257,7 @@ Http2ClientTransport::PingSystemInterfaceImpl::Make(
       PingSystemInterfaceImpl(transport));
 }
 
-Promise<absl::Status>
-Http2ClientTransport::PingSystemInterfaceImpl::TriggerWrite() {
+absl::Status Http2ClientTransport::PingSystemInterfaceImpl::TriggerWrite() {
   return transport_->TriggerWriteCycle();
 }
 
@@ -2293,9 +2288,9 @@ Http2ClientTransport::KeepAliveInterfaceImpl::Make(
 
 Promise<absl::Status>
 Http2ClientTransport::KeepAliveInterfaceImpl::SendPingAndWaitForAck() {
-  return TrySeq(transport_->TriggerWriteCycle(), [transport = transport_] {
-    return transport->WaitForPingAck();
-  });
+  return TrySeq(
+      [transport = transport_] { return transport->TriggerWriteCycle(); },
+      [transport = transport_] { return transport->WaitForPingAck(); });
 }
 
 Promise<absl::Status>
