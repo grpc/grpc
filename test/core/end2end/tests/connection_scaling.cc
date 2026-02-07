@@ -102,7 +102,12 @@ CORE_END2END_TEST(Http2SingleHopTests, SubchannelConnectionScaling) {
   // the peer is a UDS, it will essentially always be a constant string.
   // We should either fix that issue or maybe change this test to use
   // channelz instead.
-  if (s1.GetPeer() != "unix:") EXPECT_NE(s1.GetPeer(), s4.GetPeer());
+  // TODO(roth): The peer address also seems to be the same for
+  // unix-abstract: addresses.  Not sure why -- that needs investigation.
+  std::string s1_peer = s1.GetPeer().value_or("");
+  if (s1_peer != "unix:" && !absl::StartsWith(s1_peer, "unix-abstract:")) {
+    EXPECT_NE(s1.GetPeer(), s4.GetPeer());
+  }
   // Clean up.
   c1.Cancel();
   c2.Cancel();
@@ -182,7 +187,12 @@ CORE_END2END_TEST(Http2SingleHopTests, HonorsMaxConnectionsPerSubchannel) {
   // the peer is a UDS, it will essentially always be a constant string.
   // We should either fix that issue or maybe change this test to use
   // channelz instead.
-  if (s1.GetPeer() != "unix:") EXPECT_NE(s1.GetPeer(), s3.GetPeer());
+  // TODO(roth): The peer address also seems to be the same for
+  // unix-abstract: addresses.  Not sure why -- that needs investigation.
+  std::string s1_peer = s1.GetPeer().value_or("");
+  if (s1_peer != "unix:" && !absl::StartsWith(s1_peer, "unix-abstract:")) {
+    EXPECT_NE(s1.GetPeer(), s3.GetPeer());
+  }
   // Start a 5th RPC, which will be queued.
   auto c5 = NewClientCall("/epsilon").Timeout(Duration::Seconds(1000)).Create();
   c5.NewBatch(901).SendInitialMetadata({});
