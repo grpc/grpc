@@ -19,6 +19,7 @@ from typing import Any, Dict, Optional, Sequence
 import grpc
 from grpc import _common
 from grpc import _compression
+from grpc import _observability
 from grpc._cython import cygrpc
 
 from . import _base_server
@@ -27,10 +28,19 @@ from ._typing import ChannelArgumentType
 
 
 def _augment_channel_arguments(
-    base_options: ChannelArgumentType, compression: Optional[grpc.Compression]
+    base_options: ChannelArgumentType, 
+    compression: Optional[grpc.Compression],
+    xds: bool
 ):
     compression_option = _compression.create_channel_option(compression)
-    return tuple(base_options) + compression_option
+    maybe_server_call_tracer_factory_option = (
+        _observability.create_server_call_tracer_factory_option(xds)
+    )
+    return (
+        tuple(base_options)
+        + compression_option
+        + maybe_server_call_tracer_factory_option
+    )
 
 
 class Server(_base_server.Server):
@@ -44,6 +54,7 @@ class Server(_base_server.Server):
         options: ChannelArgumentType,
         maximum_concurrent_rpcs: Optional[int],
         compression: Optional[grpc.Compression],
+        xds: bool,
     ):
         self._loop = cygrpc.get_working_loop()
         if interceptors:
@@ -65,8 +76,9 @@ class Server(_base_server.Server):
             thread_pool,
             generic_handlers,
             interceptors,
-            _augment_channel_arguments(options, compression),
+            _augment_channel_arguments(options, compression, xds),
             maximum_concurrent_rpcs,
+            xds,
         )
 
     def add_generic_rpc_handlers(
@@ -206,6 +218,7 @@ def server(
     options: Optional[ChannelArgumentType] = None,
     maximum_concurrent_rpcs: Optional[int] = None,
     compression: Optional[grpc.Compression] = None,
+    xds: bool = False,
 ):
     """Creates a Server with which RPCs can be serviced.
 
@@ -227,6 +240,8 @@ def server(
       compression: An element of grpc.compression, e.g.
         grpc.compression.Gzip. This compression algorithm will be used for the
         lifetime of the server unless overridden by set_compression.
+      xds: If set to true, retrieves server configuration via xDS. This is an
+        EXPERIMENTAL API.
 
     Returns:
       A Server object.
@@ -238,4 +253,5 @@ def server(
         () if options is None else options,
         maximum_concurrent_rpcs,
         compression,
+        xds,
     )
