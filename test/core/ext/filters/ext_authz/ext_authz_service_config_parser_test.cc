@@ -29,6 +29,12 @@ TEST_F(ExtAuthzServiceConfigParsingTest, ParseValidConfig) {
       "  \"ext_authz\": [\n"
       "    {\n"
       "      \"ext_authz\": {\n"
+      "        \"allowed_headers\": [\n"
+      "          { \"exact\": \"foo\", \"ignoreCase\": true }\n"
+      "        ],\n"
+      "        \"disallowed_headers\": [\n"
+      "          { \"exact\": \"foo\", \"ignoreCase\": true }\n"
+      "        ],\n"
       "        \"deny_at_disable\": true,\n"
       "        \"failure_mode_allow\": true,\n"
       "        \"status_on_error\": 404,\n"
@@ -117,7 +123,19 @@ TEST_F(ExtAuthzServiceConfigParsingTest, ParseValidConfig) {
   EXPECT_EQ(config->ext_authz.deny_at_disable, true);
   EXPECT_EQ(config->ext_authz.include_peer_certificate, true);
   EXPECT_EQ(config->ext_authz.status_on_error, GRPC_STATUS_UNIMPLEMENTED);
-  
+  ASSERT_EQ(config->ext_authz.allowed_headers.size(), 1);
+  EXPECT_EQ(config->ext_authz.allowed_headers[0].matcher.type(),
+            StringMatcher::Type::kExact);
+  EXPECT_EQ(config->ext_authz.allowed_headers[0].matcher.string_matcher(),
+            "foo");
+  EXPECT_FALSE(config->ext_authz.allowed_headers[0].matcher.case_sensitive());
+  ASSERT_EQ(config->ext_authz.disallowed_headers.size(), 1);
+  EXPECT_EQ(config->ext_authz.disallowed_headers[0].matcher.type(),
+            StringMatcher::Type::kExact);
+  EXPECT_EQ(config->ext_authz.disallowed_headers[0].matcher.string_matcher(),
+            "foo");
+  EXPECT_FALSE(
+      config->ext_authz.disallowed_headers[0].matcher.case_sensitive());
 }
 
 }  // namespace

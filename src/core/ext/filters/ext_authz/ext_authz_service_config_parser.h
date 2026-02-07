@@ -56,9 +56,21 @@ struct ExtAuthz {
   bool failure_mode_allow;
   bool failure_mode_allow_header_add;
   grpc_status_code status_on_error;
-  // std::vector<StringMatcher> allowed_headers;
-  // std::vector<StringMatcher> disallowed_headers;
-  
+  struct StringMatch {
+    StringMatcher matcher;
+
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    void JsonPostLoad(const Json& json, const JsonArgs& args,
+                      ValidationErrors* errors);
+  };
+  struct SafeRegexMatch {
+    std::string regex;
+
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+  };
+  std::vector<StringMatch> allowed_headers;
+  std::vector<StringMatch> disallowed_headers;
+
   // struct HeaderMutationRules {
   //   bool disallow_all = false;
   //   bool disallow_is_error = false;

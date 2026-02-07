@@ -183,6 +183,65 @@ bool ExtAuthz::operator==(const ExtAuthz& other) const {
 //     return loader;
 // }
 
+const JsonLoaderInterface* ExtAuthz::StringMatch::JsonLoader(const JsonArgs&) {
+  // All fields handled in JsonPostLoad().
+  static const auto* loader = JsonObjectLoader<StringMatch>().Finish();
+  return loader;
+}
+
+const JsonLoaderInterface* ExtAuthz::SafeRegexMatch::JsonLoader(
+    const JsonArgs&) {
+  static const auto* loader = JsonObjectLoader<SafeRegexMatch>()
+                                  .Field("regex", &SafeRegexMatch::regex)
+                                  .Finish();
+  return loader;
+}
+
+void ExtAuthz::StringMatch::JsonPostLoad(const Json& json, const JsonArgs& args,
+                                         ValidationErrors* errors) {
+  const size_t original_error_size = errors->size();
+  bool ignore_case =
+      LoadJsonObjectField<bool>(json.object(), args, "ignoreCase", errors,
+                                /*required=*/false)
+          .value_or(false);
+  auto set_string_matcher = [&](absl::StatusOr<StringMatcher> string_matcher) {
+    if (string_matcher.ok()) {
+      matcher = *string_matcher;
+    } else {
+      errors->AddError(string_matcher.status().message());
+    }
+  };
+  auto check_match = [&](absl::string_view field_name,
+                         StringMatcher::Type type) {
+    auto match = LoadJsonObjectField<std::string>(json.object(), args,
+                                                  field_name, errors,
+                                                  /*required=*/false);
+    if (match.has_value()) {
+      set_string_matcher(
+          StringMatcher::Create(type, *match, /*case_sensitive=*/!ignore_case));
+      return true;
+    }
+    return false;
+  };
+  if (check_match("exact", StringMatcher::Type::kExact) ||
+      check_match("prefix", StringMatcher::Type::kPrefix) ||
+      check_match("suffix", StringMatcher::Type::kSuffix) ||
+      check_match("contains", StringMatcher::Type::kContains)) {
+    return;
+  }
+  auto regex_match = LoadJsonObjectField<SafeRegexMatch>(json.object(), args,
+                                                         "safeRegex", errors,
+                                                         /*required=*/false);
+  if (regex_match.has_value()) {
+    set_string_matcher(StringMatcher::Create(StringMatcher::Type::kSafeRegex,
+                                             regex_match->regex));
+    return;
+  }
+  if (errors->size() == original_error_size) {
+    errors->AddError("no valid matcher found");
+  }
+}
+
 const JsonLoaderInterface* ExtAuthz::FilterEnabled::JsonLoader(
     const JsonArgs&) {
   static const auto* loader =
@@ -220,6 +279,18 @@ void ExtAuthz::JsonPostLoad(const Json& json, const JsonArgs& args,
   } else {
     ValidationErrors::ScopedField field(errors, ".ext_authz.status_on_error");
     errors->AddError("status_on_error field is not present");
+  }
+
+  auto allowed_headers_ = LoadJsonObjectField<std::vector<StringMatch>>(
+      json.object(), args, "allowed_headers", errors);
+  if (allowed_headers_.has_value()) {
+    allowed_headers = allowed_headers_.value();
+  }
+
+  auto disallowed_headers_ = LoadJsonObjectField<std::vector<StringMatch>>(
+      json.object(), args, "disallowed_headers", errors);
+  if (disallowed_headers_.has_value()) {
+    disallowed_headers = disallowed_headers_.value();
   }
 }
 

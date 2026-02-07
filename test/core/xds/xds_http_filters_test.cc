@@ -49,6 +49,7 @@
 #include "envoy/type/matcher/v3/string.pb.h"
 #include "envoy/type/v3/percent.pb.h"
 #include "envoy/type/v3/range.pb.h"
+#include "google/protobuf/wrappers.pb.h"
 #include "src/core/ext/filters/ext_authz/ext_authz_filter.h"
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 #include "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h"
@@ -60,7 +61,6 @@
 #include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/crash.h"
-#include "google/protobuf/wrappers.pb.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -2203,7 +2203,14 @@ TEST_F(XdsExtAuthzFilterTest, GenerateFilterConfig) {
   EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
   EXPECT_EQ(config->config,
             Json::FromObject({{"filter_instance_name", Json::FromString("")},
-                              {"ext_authz", Json::FromObject({})}}))
+                              {"ext_authz",
+                               Json::FromObject({
+                                   {"failure_mode_allow", Json::FromBool(false)},
+                                   {"failure_mode_allow_header_add",
+                                    Json::FromBool(false)},
+                                   {"include_peer_certificate",
+                                    Json::FromBool(false)},
+                               })}}))
       << JsonDump(config->config);
 }
 
@@ -2233,10 +2240,18 @@ TEST_F(XdsExtAuthzFilterTest, GenerateFilterConfigXdsGrpcService) {
   auto* filter = ext_authz.mutable_filter_enabled();
   auto* percent = filter->mutable_default_value();
   percent->set_numerator(100);
-  percent->set_denominator(envoy::type::v3::FractionalPercent_DenominatorType_TEN_THOUSAND);
+  percent->set_denominator(
+      envoy::type::v3::FractionalPercent_DenominatorType_TEN_THOUSAND);
   auto* deny_at_disable = ext_authz.mutable_deny_at_disable();
   auto* bool_value = deny_at_disable->mutable_default_value();
   bool_value->set_value(true);
+  auto* allowed_header = ext_authz.mutable_allowed_headers()->add_patterns();
+  allowed_header->set_exact("foo");
+  allowed_header->set_ignore_case(true);
+  auto* disallowed_headers =
+      ext_authz.mutable_disallowed_headers()->add_patterns();
+  disallowed_headers->set_exact("foo");
+  disallowed_headers->set_ignore_case(true);
   auto* google_grpc = grpc_service->mutable_google_grpc();
   ext_authz.mutable_status_on_error();
   google_grpc->set_target_uri("dns:server.example.com");
@@ -2290,6 +2305,19 @@ TEST_F(XdsExtAuthzFilterTest, GenerateFilterConfigXdsGrpcService) {
             Json::FromObject({{"numerator", Json::FromNumber(100)},
                               {"denominator", Json::FromNumber(10000)}}));
 
+  // allowed_headers
+  field_it = fields.find("allowed_headers");
+  ASSERT_NE(field_it, fields.end());
+  EXPECT_EQ(field_it->second, Json::FromArray({Json::FromObject(
+                                  {{"exact", Json::FromString("foo")},
+                                   {"ignoreCase", Json::FromBool(true)}})}));
+  // allowed_headers
+  field_it = fields.find("disallowed_headers");
+  ASSERT_NE(field_it, fields.end());
+  EXPECT_EQ(field_it->second, Json::FromArray({Json::FromObject(
+                                  {{"exact", Json::FromString("foo")},
+                                   {"ignoreCase", Json::FromBool(true)}})}));
+
   // xds_grpc_service
   field_it = fields.find("xds_grpc_service");
   ASSERT_NE(field_it, fields.end());
@@ -2317,19 +2345,21 @@ TEST_F(XdsExtAuthzFilterTest, GenerateFilterConfigXdsGrpcService) {
   // server_target
   service_field_it = service_fields.find("server_target");
   ASSERT_NE(service_field_it, service_fields.end());
-  EXPECT_EQ(service_field_it->second,
-            Json::FromObject(
-                {{"server_uri", Json::FromString("dns:server.example.com")},
-                 {"channel_creds",
-                  Json::FromArray({Json::FromObject(
-                      {{"type", Json::FromString("insecure")},
-                       {"config", Json::FromObject({})}})})},
-                 {"call_creds",
-                  Json::FromArray(
-                      {Json::FromObject(
-                           {{"type", Json::FromString("jwt_token_file")}}),
-                       Json::FromObject(
-                           {{"type", Json::FromString("jwt_token_file")}})})}}));
+  EXPECT_EQ(
+      service_field_it->second,
+      Json::FromObject(
+          {{"server_uri", Json::FromString("dns:server.example.com")},
+           {"channel_creds", Json::FromArray({Json::FromObject(
+                                 {{"type", Json::FromString("insecure")},
+                                  {"config", Json::FromObject({})}})})},
+           {"call_creds",
+            Json::FromArray(
+                {Json::FromObject(
+                     {{"type", Json::FromString("jwt_token_file")}}),
+                 Json::FromObject(
+                     {{"type", Json::FromString("jwt_token_file")}})})}}));
+
+  std::cout << JsonDump(config->config);
 }
 
 }  // namespace
