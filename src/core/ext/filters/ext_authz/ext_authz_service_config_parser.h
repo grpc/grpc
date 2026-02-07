@@ -53,8 +53,8 @@ struct ExtAuthz {
   std::optional<FilterEnabled> filter_enabled;
 
   std::optional<bool> deny_at_disable = true;
-  // bool failure_mode_allow;
-  // bool failure_mode_allow_header_add;
+  bool failure_mode_allow;
+  bool failure_mode_allow_header_add;
   // grpc_status_code status_on_error = GRPC_STATUS_OK;
   // std::vector<StringMatcher> allowed_headers;
   // std::vector<StringMatcher> disallowed_headers;

@@ -30,6 +30,8 @@ TEST_F(ExtAuthzServiceConfigParsingTest, ParseValidConfig) {
       "    {\n"
       "      \"ext_authz\": {\n"
       "        \"deny_at_disable\": true,\n"
+      "        \"failure_mode_allow\": true,\n"
+      "        \"failure_mode_allow_header_add\": true,\n"
       "        \"xds_grpc_service\": {\n"
       "          \"initial_metadata\": [\n"
       "            {\n"

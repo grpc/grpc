@@ -182,7 +182,8 @@ bool ExtAuthz::operator==(const ExtAuthz& other) const {
 //     return loader;
 // }
 
-const JsonLoaderInterface* ExtAuthz::FilterEnabled::JsonLoader(const JsonArgs&) {
+const JsonLoaderInterface* ExtAuthz::FilterEnabled::JsonLoader(
+    const JsonArgs&) {
   static const auto* loader =
       JsonObjectLoader<FilterEnabled>()
           .OptionalField("numerator", &FilterEnabled::numerator)
@@ -200,6 +201,9 @@ const JsonLoaderInterface* ExtAuthz::JsonLoader(const JsonArgs&) {
           .Field("xds_grpc_service", &ExtAuthz::xds_grpc_service)
           .OptionalField("filter_enabled", &ExtAuthz::filter_enabled)
           .OptionalField("deny_at_disable", &ExtAuthz::deny_at_disable)
+          .OptionalField("failure_mode_allow", &ExtAuthz::failure_mode_allow)
+          .OptionalField("failure_mode_allow_header_add",
+                         &ExtAuthz::failure_mode_allow_header_add)
           .Finish();
   return loader;
 }

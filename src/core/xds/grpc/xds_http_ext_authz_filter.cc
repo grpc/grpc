@@ -145,6 +145,20 @@ XdsExtAuthzFilter::GenerateFilterConfig(
             Json::FromBool(ParseBoolValue(default_value));
       }
     }
+    // failure_mode_allow
+    {
+      bool failure_mode_allow =
+          envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_failure_mode_allow(
+              ext_authz);
+      ext_authz_config["failure_mode_allow"] = Json::FromBool(failure_mode_allow);
+    }
+    // failure_mode_allow_header_add
+    {
+      bool failure_mode_allow_header_add =
+          envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_failure_mode_allow_header_add(
+              ext_authz);
+      ext_authz_config["failure_mode_allow_header_add"] = Json::FromBool(failure_mode_allow_header_add);
+    }
   }
 
   config["ext_authz"] = Json::FromObject(ext_authz_config);

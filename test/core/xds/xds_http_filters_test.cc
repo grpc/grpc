@@ -2256,6 +2256,8 @@ TEST_F(XdsExtAuthzFilterTest, GenerateFilterConfigXdsGrpcService) {
        {"ext_authz",
         Json::FromObject(
             {{"deny_at_disable", Json::FromBool(true)},
+             {"failure_mode_allow", Json::FromBool(false)},
+             {"failure_mode_allow_header_add", Json::FromBool(false)},
              {"filter_enabled",
               Json::FromObject({{"numerator", Json::FromNumber(100)},
                                 {"denominator", Json::FromNumber(10000)}})},
