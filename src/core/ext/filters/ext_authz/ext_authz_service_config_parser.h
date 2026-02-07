@@ -40,21 +40,17 @@ namespace grpc_core {
 struct ExtAuthz {
   XdsGrpcService xds_grpc_service;
 
-  // struct FilterEnabled {
-  //   uint32_t numerator;
+  struct FilterEnabled {
+    uint32_t numerator;
+    int32_t denominator;  // 100, 10000, 1000000
 
-  //   enum class Denominator {
-  //     Hundred,
-  //     Thousand,
-  //     Million,
-  //   };
-  //   Denominator denominator;  // 100, 10000, 1000000
-
-  //   bool operator==(const FilterEnabled& other) const {
-  //     return numerator == other.numerator && denominator == other.denominator;
-  //   }
-  // };
-  // std::optional<FilterEnabled> filter_enabled;
+    bool operator==(const FilterEnabled& other) const {
+      return numerator == other.numerator && denominator == other.denominator;
+    }
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    void JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors* errors);
+  };
+  std::optional<FilterEnabled> filter_enabled;
 
   // bool deny_at_disable = true;
   // bool failure_mode_allow;

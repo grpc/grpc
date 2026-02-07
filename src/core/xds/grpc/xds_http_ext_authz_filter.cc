@@ -20,8 +20,10 @@
 
 #include <variant>
 
+#include "envoy/config/core/v3/base.upb.h"
 #include "envoy/extensions/filters/http/ext_authz/v3/ext_authz.upb.h"
 #include "envoy/extensions/filters/http/ext_authz/v3/ext_authz.upbdefs.h"
+#include "envoy/type/v3/percent.upb.h"
 #include "src/core/ext/filters/ext_authz/ext_authz_filter.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
@@ -81,6 +83,49 @@ XdsExtAuthzFilter::GenerateFilterConfig(
       auto target_json = JsonParse(grpc_service.ToJsonString());
       if (target_json.ok()) {
         ext_authz_config["xds_grpc_service"] = *target_json;
+      }
+    }
+  }
+  // FilterEnabled
+  {
+    const auto* filter_enabled_proto =
+        envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_filter_enabled(
+            ext_authz);
+    if (filter_enabled_proto == nullptr) {
+      ValidationErrors::ScopedField field(errors,
+                                          ".ext_authz_config.filter_enabled");
+      errors->AddError("filter_enabled field is not present");
+    } else {
+      auto default_value =
+          envoy_config_core_v3_RuntimeFractionalPercent_default_value(
+              filter_enabled_proto);
+      if (default_value == nullptr) {
+        ValidationErrors::ScopedField field(
+            errors, ".ext_authz_config.filter_enabled.default_value");
+        errors->AddError(
+            "default_value field must be present inside filter_enabled");
+      } else {
+        auto numerator =
+            envoy_type_v3_FractionalPercent_numerator(default_value);
+        auto denominator =
+            envoy_type_v3_FractionalPercent_denominator(default_value);
+        switch (denominator) {
+          case envoy_type_v3_FractionalPercent_HUNDRED:
+            denominator = 100;
+            break;
+          case envoy_type_v3_FractionalPercent_TEN_THOUSAND:
+            denominator = 10000;
+            break;
+          case envoy_type_v3_FractionalPercent_MILLION:
+            denominator = 1000000;
+            break;
+          default:
+            denominator = 100;
+            break;
+        }
+        ext_authz_config["filter_enabled"] =
+            Json::FromObject({{"numerator", Json::FromNumber(numerator)},
+                              {"denominator", Json::FromNumber(denominator)}});
       }
     }
   }

@@ -23,7 +23,6 @@ class ExtAuthzServiceConfigParsingTest : public ::testing::Test {
   size_t parser_index_;
 };
 
-
 TEST_F(ExtAuthzServiceConfigParsingTest, ParseValidConfig) {
   const char* test_json =
       "{\n"
@@ -43,8 +42,10 @@ TEST_F(ExtAuthzServiceConfigParsingTest, ParseValidConfig) {
       "          ],\n"
       "          \"server_target\": {\n"
       "            \"call_creds\": [\n"
-      "              { \"type\": \"jwt_token_file\", \"config\": {\"jwt_token_file\": \"/tmp/token\"} },\n"
-      "              { \"type\": \"jwt_token_file\", \"config\": {\"jwt_token_file\": \"/tmp/token\"} }\n"
+      "              { \"type\": \"jwt_token_file\", \"config\": "
+      "{\"jwt_token_file\": \"/tmp/token\"} },\n"
+      "              { \"type\": \"jwt_token_file\", \"config\": "
+      "{\"jwt_token_file\": \"/tmp/token\"} }\n"
       "            ],\n"
       "            \"channel_creds\": [\n"
       "              {\n"
@@ -55,6 +56,10 @@ TEST_F(ExtAuthzServiceConfigParsingTest, ParseValidConfig) {
       "            \"server_uri\": \"dns:server.example.com\"\n"
       "          },\n"
       "          \"timeout\": \"0.000000000s\"\n"
+      "        },\n"
+      "        \"filter_enabled\": {\n"
+      "          \"denominator\": 10000,\n"
+      "          \"numerator\": 100\n"
       "        }\n"
       "      },\n"
       "      \"filter_instance_name\": \"\"\n"
@@ -74,16 +79,36 @@ TEST_F(ExtAuthzServiceConfigParsingTest, ParseValidConfig) {
   EXPECT_EQ(config->ext_authz.xds_grpc_service.server_target->server_uri(),
             "dns:server.example.com");
   EXPECT_EQ(config->ext_authz.xds_grpc_service.initial_metadata.size(), 2);
-  EXPECT_EQ(config->ext_authz.xds_grpc_service.initial_metadata[0].first, "foo");
-  EXPECT_EQ(config->ext_authz.xds_grpc_service.initial_metadata[0].second, "bar");
-  EXPECT_EQ(config->ext_authz.xds_grpc_service.initial_metadata[1].first, "foo");
-  EXPECT_EQ(config->ext_authz.xds_grpc_service.initial_metadata[1].second, "bar");
+  EXPECT_EQ(config->ext_authz.xds_grpc_service.initial_metadata[0].first,
+            "foo");
+  EXPECT_EQ(config->ext_authz.xds_grpc_service.initial_metadata[0].second,
+            "bar");
+  EXPECT_EQ(config->ext_authz.xds_grpc_service.initial_metadata[1].first,
+            "foo");
+  EXPECT_EQ(config->ext_authz.xds_grpc_service.initial_metadata[1].second,
+            "bar");
   EXPECT_EQ(config->ext_authz.xds_grpc_service.timeout, Duration::Zero());
-  ASSERT_NE(config->ext_authz.xds_grpc_service.server_target->channel_creds_config(), nullptr);
-  EXPECT_EQ(config->ext_authz.xds_grpc_service.server_target->channel_creds_config()->type(), "insecure");
-  ASSERT_EQ(config->ext_authz.xds_grpc_service.server_target->call_creds_configs().size(), 2);
-  EXPECT_EQ(config->ext_authz.xds_grpc_service.server_target->call_creds_configs()[0]->type(), "jwt_token_file");
-  EXPECT_EQ(config->ext_authz.xds_grpc_service.server_target->call_creds_configs()[1]->type(), "jwt_token_file");
+  ASSERT_NE(
+      config->ext_authz.xds_grpc_service.server_target->channel_creds_config(),
+      nullptr);
+  EXPECT_EQ(
+      config->ext_authz.xds_grpc_service.server_target->channel_creds_config()
+          ->type(),
+      "insecure");
+  ASSERT_EQ(
+      config->ext_authz.xds_grpc_service.server_target->call_creds_configs()
+          .size(),
+      2);
+  EXPECT_EQ(
+      config->ext_authz.xds_grpc_service.server_target->call_creds_configs()[0]
+          ->type(),
+      "jwt_token_file");
+  EXPECT_EQ(
+      config->ext_authz.xds_grpc_service.server_target->call_creds_configs()[1]
+          ->type(),
+      "jwt_token_file");
+  EXPECT_EQ(config->ext_authz.filter_enabled->numerator, 100);
+  EXPECT_EQ(config->ext_authz.filter_enabled->denominator, 10000);
 }
 
 }  // namespace

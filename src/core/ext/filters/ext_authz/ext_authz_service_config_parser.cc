@@ -29,73 +29,6 @@ namespace grpc_core {
 // ExtAuthz
 //
 
-namespace {
-
-// struct JsonGoogleGrpc {
-//   std::string target_uri;
-//   std::string authority;
-//   std::shared_ptr<const ChannelCredsConfig> channel_creds;
-//   std::vector<RefCountedPtr<const CallCredsConfig>> call_creds;
-
-//   static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-//   void JsonPostLoad(const Json& json, const JsonArgs& args,
-//                     ValidationErrors* errors);
-// };
-
-// const JsonLoaderInterface* JsonGoogleGrpc::JsonLoader(const JsonArgs&) {
-//   static const auto* loader =
-//       JsonObjectLoader<JsonGoogleGrpc>()
-//           .Field("target_uri", &JsonGoogleGrpc::target_uri)
-//           .OptionalField("stat_prefix",
-//                          &JsonGoogleGrpc::authority)  // mapped to authority?
-//           .Finish();
-//   return loader;
-// }
-
-// void JsonGoogleGrpc::JsonPostLoad(const Json& json, const JsonArgs& args,
-//                                   ValidationErrors* errors) {
-//   // reusing logic from xds_server_grpc.cc but adapted for Service Config if
-//   // needed. actually xds_server_grpc.cc has ParseXdsBootstrapChannelCreds
-//   which
-//   // takes Json. we can use it.
-//   channel_creds = ParseXdsBootstrapChannelCreds(json, args, errors);
-//   call_creds = ParseXdsBootstrapCallCreds(json, args, errors);
-// }
-
-}  // namespace
-
-// const JsonLoaderInterface* ExtAuthz::FilterEnabled::JsonLoader(
-//     const JsonArgs&) {
-//   static const auto* loader =
-//       JsonObjectLoader<FilterEnabled>()
-//           .Field("numerator", &FilterEnabled::numerator)
-//           .OptionalField("denominator", &FilterEnabled::denominator)
-//           .Finish();
-//   return loader;
-// }
-
-// const JsonLoaderInterface* ExtAuthz::DenyAtDisable::JsonLoader(
-//     const JsonArgs&) {
-//   static const auto* loader = JsonObjectLoader<DenyAtDisable>()
-//                                   .OptionalField("message",
-//                                   &DenyAtDisable::message)
-//                                   .OptionalField("status",
-//                                   &DenyAtDisable::status) .Finish();
-//   return loader;
-// }
-
-// const JsonLoaderInterface* ExtAuthz::BufferSettings::JsonLoader(
-//     const JsonArgs&) {
-//   static const auto* loader =
-//       JsonObjectLoader<BufferSettings>()
-//           .Field("max_request_bytes", &BufferSettings::max_request_bytes)
-//           .OptionalField("allow_partial_message",
-//                          &BufferSettings::allow_partial_message)
-//           .OptionalField("pack_as_bytes", &BufferSettings::pack_as_bytes)
-//           .Finish();
-//   return loader;
-// }
-
 // Helper for StringMatcher
 // void ParseStringMatcherList(const Json& json, const std::string& field_name,
 //                             std::vector<StringMatcher>* output,
@@ -249,22 +182,28 @@ bool ExtAuthz::operator==(const ExtAuthz& other) const {
 //     return loader;
 // }
 
-//
-// ExtAuthz
-//
+const JsonLoaderInterface* ExtAuthz::FilterEnabled::JsonLoader(const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<FilterEnabled>()
+          .OptionalField("numerator", &FilterEnabled::numerator)
+          .OptionalField("denominator", &FilterEnabled::denominator)
+          .Finish();
+  return loader;
+}
+
+void ExtAuthz::FilterEnabled::JsonPostLoad(const Json&, const JsonArgs&,
+                                           ValidationErrors*) {}
 
 const JsonLoaderInterface* ExtAuthz::JsonLoader(const JsonArgs&) {
   static const auto* loader =
       JsonObjectLoader<ExtAuthz>()
           .Field("xds_grpc_service", &ExtAuthz::xds_grpc_service)
+          .OptionalField("filter_enabled", &ExtAuthz::filter_enabled)
           .Finish();
   return loader;
 }
 
-void ExtAuthz::JsonPostLoad(const Json&, const JsonArgs&,
-                                                ValidationErrors*) {
-                                                  
-                                                }
+void ExtAuthz::JsonPostLoad(const Json&, const JsonArgs&, ValidationErrors*) {}
 
 //
 // ExtAuthzParsedConfig

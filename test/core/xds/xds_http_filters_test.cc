@@ -95,7 +95,7 @@ using ::envoy::extensions::filters::http::stateful_session::v3::
     StatefulSessionPerRoute;
 using ::envoy::extensions::http::stateful_session::cookie::v3::
     CookieBasedSessionState;
-
+using ::envoy::type::v3::FractionalPercent;
 //
 // base class for filter tests
 //
@@ -2229,6 +2229,10 @@ TEST_F(XdsExtAuthzFilterTest, GenerateFilterConfigXdsGrpcService) {
   md = grpc_service->add_initial_metadata();
   md->set_key("foo");
   md->set_value("bar");
+  auto* filter = ext_authz.mutable_filter_enabled();
+  auto* percent = filter->mutable_default_value();
+  percent->set_numerator(100);
+  percent->set_denominator(envoy::type::v3::FractionalPercent_DenominatorType_TEN_THOUSAND);
   auto* google_grpc = grpc_service->mutable_google_grpc();
   google_grpc->set_target_uri("dns:server.example.com");
   // Creds specified in proto will be ignored because xDS server is not trusted.
@@ -2247,7 +2251,10 @@ TEST_F(XdsExtAuthzFilterTest, GenerateFilterConfigXdsGrpcService) {
       {{"filter_instance_name", Json::FromString("")},
        {"ext_authz",
         Json::FromObject(
-            {{"xds_grpc_service",
+            {{"filter_enabled",
+              Json::FromObject({{"numerator", Json::FromNumber(100)},
+                                {"denominator", Json::FromNumber(10000)}})},
+             {"xds_grpc_service",
               Json::FromObject(
                   {{"server_target",
                     Json::FromObject(
