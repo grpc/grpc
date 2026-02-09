@@ -11360,6 +11360,42 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "regional_access_boundary_fetcher",
+    srcs = ["credentials/call/regional_access_boundary_fetcher.cc"],
+    hdrs = ["credentials/call/regional_access_boundary_fetcher.h"],
+    external_deps = [
+        "absl/log:log",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "activity",
+        "arena_promise",
+        "closure",
+        "context",
+        "env",
+        "error",
+        "grpc_check",
+        "httpcli_ssl_credentials",
+        "json",
+        "json_reader",
+        "metadata_batch",
+        "ref_counted",
+        "slice",
+        "time",
+        "//:backoff",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_security_base",
+        "//:httpcli",
+        "//:iomgr",
+        "//:transport_auth_context",
+        "//:uri",
+    ],
+)
+
 ### UPB Targets
 
 grpc_upb_proto_library(
