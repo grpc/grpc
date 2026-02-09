@@ -38,20 +38,6 @@ namespace grpc_core {
 
 class XdsHttpFilterImpl {
  public:
-  struct FilterConfig {
-    absl::string_view config_proto_type_name;
-    Json config;
-
-    bool operator==(const FilterConfig& other) const {
-      return config_proto_type_name == other.config_proto_type_name &&
-             config == other.config;
-    }
-    std::string ToString() const {
-      return absl::StrCat("{config_proto_type_name=", config_proto_type_name,
-                          " config=", JsonDump(config), "}");
-    }
-  };
-
   // Service config data for the filter, returned by GenerateServiceConfig().
   struct ServiceConfigJsonEntry {
     // The top-level field name in the method config.
@@ -80,14 +66,14 @@ class XdsHttpFilterImpl {
 
   // Generates a Config from the xDS filter config proto.
   // Used for the top-level config in the HCM HTTP filter list.
-  virtual std::optional<FilterConfig> GenerateFilterConfig(
+  virtual std::optional<Json> GenerateFilterConfig(
       absl::string_view instance_name,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const = 0;
 
   // Generates a Config from the xDS filter config proto.
   // Used for the typed_per_filter_config override in VirtualHost and Route.
-  virtual std::optional<FilterConfig> GenerateFilterConfigOverride(
+  virtual std::optional<Json> GenerateFilterConfigOverride(
       absl::string_view instance_name,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const = 0;
@@ -110,19 +96,19 @@ class XdsHttpFilterImpl {
   // Route, or VirtualHost entries that it is found in, or null if
   // there is no override in any of those locations.
   virtual absl::StatusOr<ServiceConfigJsonEntry> GenerateMethodConfig(
-      const FilterConfig& hcm_filter_config,
-      const FilterConfig* filter_config_override) const = 0;
+      const Json& hcm_filter_config,
+      const Json* filter_config_override) const = 0;
 
   // Function to convert the Configs into a JSON string to be added to the
   // top level of the service config.
   // The hcm_filter_config comes from the HttpConnectionManager config.
   // Currently used only on the client side.
   virtual absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
-      const FilterConfig& hcm_filter_config) const = 0;
+      const Json& hcm_filter_config) const = 0;
 
   // Adds state to new_blackboard if needed for the specified filter
   // config.  Copies existing state from old_blackboard as appropriate.
-  virtual void UpdateBlackboard(const FilterConfig& /*hcm_filter_config*/,
+  virtual void UpdateBlackboard(const Json& /*hcm_filter_config*/,
                                 const Blackboard* /*old_blackboard*/,
                                 Blackboard* /*new_blackboard*/) const {}
 
