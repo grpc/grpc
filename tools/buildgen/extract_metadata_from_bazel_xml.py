@@ -662,7 +662,7 @@ def _expand_upb_proto_library_rules(bazel_rules):
                         proto_src = proto_src[len(prefix_to_strip) :]
                         break
                 if proto_src.startswith("@"):
-                    raise Exception('"{0}" is unknown workspace.'.format(name))
+                  print('TODO(weizheyuan): "{0}" is unknown workspace.'.format(name))
                 proto_src_file = _try_extract_source_file_path(proto_src)
                 if not proto_src_file:
                     raise Exception(
