@@ -111,6 +111,7 @@ class OpenTelemetryObservabilityTest(AioTestBase):
     async def tearDown(self):
         await self._server.stop(0)
         self._otel_plugin.deregister_global()
+        self._provider.shutdown()
 
     async def test_record_unary_unary(self):
         await _test_server.unary_unary_call(port=self._port)

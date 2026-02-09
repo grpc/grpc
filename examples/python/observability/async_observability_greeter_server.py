@@ -66,6 +66,7 @@ async def serve():
 
     await server.stop(0)
     otel_plugin.deregister_global()
+    provider.shutdown()
 
 
 if __name__ == "__main__":

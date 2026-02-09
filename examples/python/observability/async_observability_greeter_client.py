@@ -53,8 +53,8 @@ async def run() -> None:
             print("Call failed with code: ", rpc_error.code())
     otel_plugin.deregister_global()
 
-    # Sleep to make sure all metrics are exported.
-    await asyncio.sleep(5)
+    # Shutdown the provider to force a flush of all metrics.
+    provider.shutdown()
 
     print("Metrics exported on client side:")
     for metric in all_metrics:
