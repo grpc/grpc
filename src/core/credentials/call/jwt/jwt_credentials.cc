@@ -51,6 +51,9 @@ grpc_service_account_jwt_access_credentials::
     ~grpc_service_account_jwt_access_credentials() {
   grpc_auth_json_key_destruct(&key_);
   gpr_mu_destroy(&cache_mu_);
+  if (regional_access_boundary_fetcher_ != nullptr) {
+    regional_access_boundary_fetcher_->CancelPendingFetch();
+  }
 }
 
 grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
@@ -101,16 +104,19 @@ grpc_service_account_jwt_access_credentials::GetRequestMetadata(
         absl::UnauthenticatedError("Could not generate JWT."));
   }
 
+  std::string access_token_str(jwt_value->as_string_view());
   initial_metadata->Append(
       GRPC_AUTHORIZATION_METADATA_KEY, std::move(*jwt_value),
       [](absl::string_view, const grpc_core::Slice&) { abort(); });
-  return grpc_core::Immediate(std::move(initial_metadata));
+  return grpc_core::Immediate(
+    regional_access_boundary_fetcher_->Fetch(
+      build_regional_access_boundary_url(), access_token_str, std::move(initial_metadata)));
 }
 
 grpc_service_account_jwt_access_credentials::
     grpc_service_account_jwt_access_credentials(grpc_auth_json_key key,
                                                 gpr_timespec token_lifetime)
-    : key_(key) {
+    : key_(key), regional_access_boundary_fetcher_(grpc_core::MakeRefCounted<grpc_core::RegionalAccessBoundaryFetcher>()) {
   gpr_timespec max_token_lifetime = grpc_max_auth_token_lifetime();
   if (gpr_time_cmp(token_lifetime, max_token_lifetime) > 0) {
     VLOG(2) << "Cropping token lifetime to maximum allowed value ("

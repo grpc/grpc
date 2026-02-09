@@ -4377,6 +4377,7 @@ grpc_cc_library(
         "//src/core:json_reader",
         "//src/core:json_writer",
         "//src/core:metadata_batch",
+        "//src/core:regional_access_boundary_fetcher",
         "//src/core:slice",
         "//src/core:slice_refcount",
         "//src/core:time",
