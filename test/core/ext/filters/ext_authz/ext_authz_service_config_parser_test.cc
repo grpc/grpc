@@ -41,9 +41,9 @@ TEST_F(ExtAuthzServiceConfigParsingTest, ParseValidConfig) {
       "        \"failure_mode_allow_header_add\": true,\n"
       "        \"include_peer_certificate\": true,\n"
       "        \"decoder_header_mutation_rules\": {\n"
-      "          \"allow_expression\": { \"regex\": \"foo\" },\n"
+      "          \"allow_expression\": { \"safeRegex\": { \"regex\": \"foo\" } },\n"
       "          \"disallow_all\": false,\n"
-      "          \"disallow_expression\": { \"regex\": \"bar\" },\n"
+      "          \"disallow_expression\": { \"safeRegex\": { \"regex\": \"bar\" } },\n"
       "          \"disallow_is_error\": false\n"
       "        },\n"
       "        \"xds_grpc_service\": {\n"
@@ -150,13 +150,15 @@ TEST_F(ExtAuthzServiceConfigParsingTest, ParseValidConfig) {
                 .matcher.type(),
             StringMatcher::Type::kSafeRegex);
   EXPECT_EQ(config->ext_authz.decoder_header_mutation_rules->allow_expression
-                .matcher.string_matcher(),
+                .matcher.regex_matcher()
+                ->pattern(),
             "foo");
   EXPECT_EQ(config->ext_authz.decoder_header_mutation_rules->disallow_expression
                 .matcher.type(),
             StringMatcher::Type::kSafeRegex);
   EXPECT_EQ(config->ext_authz.decoder_header_mutation_rules->disallow_expression
-                .matcher.string_matcher(),
+                .matcher.regex_matcher()
+                ->pattern(),
             "bar");
 }
 
