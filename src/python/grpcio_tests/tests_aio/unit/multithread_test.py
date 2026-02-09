@@ -22,6 +22,7 @@ import grpc
 from grpc.experimental import aio
 from tests_aio.unit._test_base import AioTestBase
 
+
 class GenericService:
     @staticmethod
     def UnaryCall(request, context):
@@ -29,10 +30,9 @@ class GenericService:
 
 
 class MultithreadTest(AioTestBase):
-
     results_queue = queue.Queue()
 
-    async def start_server() -> int:
+    async def start_server(self) -> int:
         server = grpc.aio.server()
         rpc_method_handlers = {
             "UnaryCall": grpc.unary_unary_rpc_method_handler(
@@ -48,17 +48,17 @@ class MultithreadTest(AioTestBase):
         await server.wait_for_termination()
         return port
 
-    async def run_client(port):
+    async def run_client(self, port):
         async with aio.insecure_channel(f"localhost:{port}") as channel:
             unary_call = channel.unary_unary("/grpc.testing.TestService/UnaryCall")
             response = await unary_call(b"request")
             return response
 
-    def thread_target(port, q):
+    def thread_target(self, port, q):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
-            response = loop.run_until_complete(run_client(port))
+            response = loop.run_until_complete(self.run_client(port))
             q.put(response)
         except Exception as e:
             q.put(e)
@@ -66,10 +66,10 @@ class MultithreadTest(AioTestBase):
             loop.close()
 
     async def test_multithread(self):
-        port = await start_server()
+        port = await self.start_server()
         threads = []
         for _ in range(10):
-            t = threading.Thread(target=thread_target, args=(port, results_queue))
+            t = threading.Thread(target=self.thread_target, args=(port, self.results_queue))
             t.start()
             threads.append(t)
 
@@ -77,9 +77,9 @@ class MultithreadTest(AioTestBase):
             t.join()
 
         # Verify results
-        self.assertEqual(results_queue.qsize(), 10, "Expected 10 results in queue")
-        while not results_queue.empty():
-            result = results_queue.get()
+        self.assertEqual(self.results_queue.qsize(), 10, "Expected 10 results in queue")
+        while not self.results_queue.empty():
+            result = self.results_queue.get()
             self.assertIsInstance(
                 result, bytes, f"Expected bytes result, got {type(result)}"
             )
