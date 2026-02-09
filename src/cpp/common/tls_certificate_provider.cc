@@ -94,7 +94,6 @@ absl::Status InMemoryCertificateProvider::UpdateRoot(
              c_provider_, root_certificate.c_str())
              ? absl::OkStatus()
              : absl::InternalError("Unable to update root certificate");
-  ;
 }
 
 absl::Status InMemoryCertificateProvider::UpdateIdentityKeyCertPair(

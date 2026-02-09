@@ -896,7 +896,6 @@ TEST_F(GrpcTlsCertificateProviderTest,
   // Watcher watching only identity certs.
   WatcherState* identity_watcher =
       MakeWatcher(provider.distributor(), std::nullopt, kCertName);
-
   // Initial State.
   EXPECT_THAT(
       both_watcher->GetCredentialQueue(),

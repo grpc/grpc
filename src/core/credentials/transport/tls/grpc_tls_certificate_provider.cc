@@ -432,7 +432,6 @@ InMemoryCertificateProvider::InMemoryCertificateProvider()
     if (!info.root_being_watched && !info.identity_being_watched) {
       watcher_info_.erase(cert_name);
     }
-    ExecCtx exec_ctx;
     if (roots != nullptr || pem_key_cert_pairs.has_value()) {
       distributor_->SetKeyMaterials(cert_name, roots, pem_key_cert_pairs);
     }
@@ -469,7 +468,6 @@ absl::Status InMemoryCertificateProvider::Update(
     pem_key_cert_pairs_ = *pem_key_cert_pairs;
   }
   if (root_changed || identity_cert_changed) {
-    ExecCtx exec_ctx;
     grpc_error_handle root_cert_error =
         GRPC_ERROR_CREATE("Unable to get latest root certificates.");
     grpc_error_handle identity_cert_error =
@@ -568,6 +566,7 @@ grpc_tls_certificate_provider_in_memory_create() {
 
 bool grpc_tls_certificate_provider_in_memory_set_root_certificate(
     grpc_tls_certificate_provider* provider, const char* root_cert) {
+  grpc_core::ExecCtx exec_ctx;
   auto in_memory_provider =
       grpc_core::DownCast<grpc_core::InMemoryCertificateProvider*>(provider);
   return in_memory_provider
@@ -578,6 +577,7 @@ bool grpc_tls_certificate_provider_in_memory_set_root_certificate(
 bool grpc_tls_certificate_provider_in_memory_set_identity_certificate(
     grpc_tls_certificate_provider* provider,
     grpc_tls_identity_pairs* pem_key_cert_pairs) {
+  grpc_core::ExecCtx exec_ctx;
   grpc_core::PemKeyCertPairList identity_pairs_core;
   if (pem_key_cert_pairs != nullptr) {
     identity_pairs_core = std::move(pem_key_cert_pairs->pem_key_cert_pairs);

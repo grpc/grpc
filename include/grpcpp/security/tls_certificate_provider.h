@@ -53,8 +53,8 @@ struct GRPCXX_DLL IdentityKeyCertPair {
 // A basic CertificateProviderInterface implementation that will load credential
 // data from static string during initialization. This provider will always
 // return the same cert data for all cert names, and reloading is not supported.
-class GRPCXX_DLL StaticDataCertificateProvider
-    : public CertificateProviderInterface {
+class [[deprecated("Use InMemoryCertificateProvider instead")]] GRPCXX_DLL
+    StaticDataCertificateProvider : public CertificateProviderInterface {
  public:
   StaticDataCertificateProvider(
       const std::string& root_certificate,
