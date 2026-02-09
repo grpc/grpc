@@ -68,16 +68,18 @@ class MultithreadTest(AioTestBase):
         port, server = await self.start_server()
         threads = []
         for _ in range(10):
-            t = threading.Thread(target=self.thread_target, args=(port, self.results_queue))
+            t = threading.Thread(
+                target=self.thread_target, args=(port, self.results_queue)
+            )
             t.start()
             threads.append(t)
 
         def join_threads():
             for t in threads:
                 t.join()
-        
+
         await self.loop.run_in_executor(None, join_threads)
-        
+
         await server.stop(None)
 
         # Verify results
