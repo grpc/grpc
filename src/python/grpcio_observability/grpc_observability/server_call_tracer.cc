@@ -163,8 +163,7 @@ void PythonOpenCensusServerCallTracer::RecordSendMessage(
   attributes.reserve(2);
   const auto sent_message_count_str = absl::StrCat(sent_message_count_++);
   attributes.emplace_back("sequence-number", sent_message_count_str);
-  const auto message_size_str =
-      absl::StrCat(send_message.payload()->Length());
+  const auto message_size_str = absl::StrCat(send_message.payload()->Length());
   attributes.emplace_back("message-size", message_size_str);
   context_.AddSpanEvent("Outbound message", attributes);
 }
@@ -193,13 +192,11 @@ void PythonOpenCensusServerCallTracer::RecordReceivedMessage(
   attributes.reserve(2);
   const auto recv_message_count_str = absl::StrCat(recv_message_count_++);
   attributes.emplace_back("sequence-number", recv_message_count_str);
-  const auto message_size_str =
-      absl::StrCat(recv_message.payload()->Length());
-  attributes.emplace_back(
-      (recv_message.flags() & GRPC_WRITE_INTERNAL_COMPRESS)
-          ? "message-size-compressed"
-          : "message-size",
-      message_size_str);
+  const auto message_size_str = absl::StrCat(recv_message.payload()->Length());
+  attributes.emplace_back((recv_message.flags() & GRPC_WRITE_INTERNAL_COMPRESS)
+                              ? "message-size-compressed"
+                              : "message-size",
+                          message_size_str);
   context_.AddSpanEvent(recv_message.flags() & GRPC_WRITE_INTERNAL_COMPRESS
                             ? "Inbound compressed message"
                             : "Inbound message",
