@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import asyncio
-from concurrent import futures
 import queue
 import threading
 import unittest
@@ -25,14 +24,14 @@ from tests_aio.unit._test_base import AioTestBase
 
 class GenericService:
     @staticmethod
-    def UnaryCall(request, context):
+    async def UnaryCall(request, context):
         return request
 
 
 class MultithreadTest(AioTestBase):
     results_queue = queue.Queue()
 
-    async def start_server(self) -> int:
+    async def start_server(self):
         server = grpc.aio.server()
         rpc_method_handlers = {
             "UnaryCall": grpc.unary_unary_rpc_method_handler(
@@ -45,8 +44,7 @@ class MultithreadTest(AioTestBase):
         server.add_generic_rpc_handlers((generic_handler,))
         port = server.add_insecure_port("[::]:0")
         await server.start()
-        await server.wait_for_termination()
-        return port
+        return port, server
 
     async def run_client(self, port):
         async with aio.insecure_channel(f"localhost:{port}") as channel:
@@ -63,18 +61,24 @@ class MultithreadTest(AioTestBase):
         except Exception as e:
             q.put(e)
         finally:
+            loop.run_until_complete(loop.shutdown_asyncgens())
             loop.close()
 
     async def test_multithread(self):
-        port = await self.start_server()
+        port, server = await self.start_server()
         threads = []
         for _ in range(10):
             t = threading.Thread(target=self.thread_target, args=(port, self.results_queue))
             t.start()
             threads.append(t)
 
-        for t in threads:
-            t.join()
+        def join_threads():
+            for t in threads:
+                t.join()
+        
+        await self.loop.run_in_executor(None, join_threads)
+        
+        await server.stop(None)
 
         # Verify results
         self.assertEqual(self.results_queue.qsize(), 10, "Expected 10 results in queue")
@@ -87,4 +91,5 @@ class MultithreadTest(AioTestBase):
 
 
 if __name__ == "__main__":
+    logging.basicConfig()
     unittest.main(verbosity=2)
