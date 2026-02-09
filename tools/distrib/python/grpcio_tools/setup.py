@@ -23,6 +23,7 @@ import subprocess
 from subprocess import PIPE
 import sys
 import sysconfig
+import tempfile
 
 import setuptools
 from setuptools import Extension
@@ -30,36 +31,20 @@ from setuptools.command import build_ext
 
 # TODO(atash) add flag to disable Cython use
 
-_PACKAGE_PATH = os.path.realpath(os.path.dirname(__file__))
-_README_PATH = os.path.join(_PACKAGE_PATH, "README.rst")
 
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.abspath("."))
 
 import _parallel_compile_patch
 import _spawn_patch
 import protoc_lib_deps
-import python_version
 
 import grpc_version
+import python_version
 
-_EXT_INIT_SYMBOL = None
-if sys.version_info[0] == 2:
-    _EXT_INIT_SYMBOL = "init_protoc_compiler"
-else:
-    _EXT_INIT_SYMBOL = "PyInit__protoc_compiler"
+_EXT_INIT_SYMBOL = "PyInit__protoc_compiler"
 
 _parallel_compile_patch.monkeypatch_compile_maybe()
 _spawn_patch.monkeypatch_spawn()
-
-CLASSIFIERS = [
-    "Development Status :: 5 - Production/Stable",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: Apache Software License",
-]
-
-PY3 = sys.version_info.major == 3
 
 
 def _env_bool_value(env_name, default):
@@ -130,6 +115,20 @@ class BuildExt(build_ext.build_ext):
         return filename
 
     def build_extensions(self):
+
+        # use short temp directory to avoid linker command file errors caused by
+        # exceeding 131071 characters in Windows.
+        # TODO(ssreenithi): Remove once we have a better solution: b/454497076
+        use_short_temp = os.environ.get(
+            "GRPC_PYTHON_BUILD_USE_SHORT_TEMP_DIR_NAME", 0
+        )
+        if use_short_temp == "1":
+            if not os.path.exists("pyb"):
+                os.mkdir("pyb")
+
+            self.build_temp = tempfile.mkdtemp(dir="pyb")
+            print(f"Using temp build directory: {self.build_temp}")
+
         # This is to let UnixCompiler get either C or C++ compiler options depending on the source.
         # Note that this doesn't work for MSVCCompiler and will be handled by _spawn_patch.py.
         old_compile = self.compiler._compile
@@ -204,7 +203,7 @@ if EXTRA_ENV_LINK_ARGS is None:
     # This is needed for protobuf/main.cc
     if "win32" in sys.platform:
         EXTRA_ENV_LINK_ARGS += " Shell32.lib"
-    # NOTE(rbellevi): Clang on Mac OS will make all static symbols (both
+    # NOTE(rbellevi): Clang on MacOS will make all static symbols (both
     # variables and objects) global weak symbols. When a process loads the
     # protobuf wheel's shared object library before loading *this* C extension,
     # the runtime linker will prefer the protobuf module's version of symbols.
@@ -253,6 +252,7 @@ CC_INCLUDES = [
     os.path.normpath(include_dir) for include_dir in protoc_lib_deps.CC_INCLUDES
 ]
 PROTO_INCLUDE = os.path.normpath(protoc_lib_deps.PROTO_INCLUDE)
+PROTO_PATH_PREFIX = os.path.normpath("google/protobuf")
 
 GRPC_PYTHON_TOOLS_PACKAGE = "grpc_tools"
 GRPC_PYTHON_PROTO_RESOURCES_NAME = "_proto"
@@ -277,10 +277,11 @@ def package_data():
     )
     proto_files = []
     for proto_file in PROTO_FILES:
+        proto_file_path = proto_file[proto_file.find(PROTO_PATH_PREFIX) :]
         source = os.path.join(PROTO_INCLUDE, proto_file)
-        target = os.path.join(proto_resources_path, proto_file)
+        target = os.path.join(proto_resources_path, proto_file_path)
         relative_target = os.path.join(
-            GRPC_PYTHON_PROTO_RESOURCES_NAME, proto_file
+            GRPC_PYTHON_PROTO_RESOURCES_NAME, proto_file_path
         )
         try:
             os.makedirs(os.path.dirname(target))
@@ -328,36 +329,17 @@ def extension_modules():
         return extensions
 
 
-setuptools.setup(
-    name="grpcio-tools",
-    version=grpc_version.VERSION,
-    description="Protobuf code generator for gRPC",
-    long_description_content_type="text/x-rst",
-    long_description=open(_README_PATH, "r").read(),
-    author="The gRPC Authors",
-    author_email="grpc-io@googlegroups.com",
-    url="https://grpc.io",
-    project_urls={
-        "Source Code": "https://github.com/grpc/grpc/tree/master/tools/distrib/python/grpcio_tools",
-        "Bug Tracker": "https://github.com/grpc/grpc/issues",
-    },
-    license="Apache License 2.0",
-    classifiers=CLASSIFIERS,
-    ext_modules=extension_modules(),
-    packages=setuptools.find_packages("."),
-    python_requires=f">={python_version.MIN_PYTHON_VERSION}",
-    install_requires=[
-        "protobuf>=6.31.1,<7.0.0",
-        "grpcio>={version}".format(version=grpc_version.VERSION),
-        "setuptools",
-    ],
-    package_data=package_data(),
-    cmdclass={
-        "build_ext": BuildExt,
-    },
-    entry_points={
-        "console_scripts": [
-            "python-grpc-tools-protoc = grpc_tools.protoc:entrypoint",
+if __name__ == "__main__":
+    setuptools.setup(
+        ext_modules=extension_modules(),
+        python_requires=f">={python_version.MIN_PYTHON_VERSION}",
+        install_requires=[
+            "protobuf>=6.31.1,<7.0.0",
+            "grpcio>={version}".format(version=grpc_version.VERSION),
+            "setuptools>=77.0.1",
         ],
-    },
-)
+        package_data=package_data(),
+        cmdclass={
+            "build_ext": BuildExt,
+        },
+    )

@@ -1047,6 +1047,7 @@ class Server::TransportConnectivityWatcher
     MutexLock lock(&server_->mu_global_);
     server_->connections_.erase(transport_.get());
     --server_->connections_open_;
+    server_->stream_quota_->DecrementOpenChannels();
     server_->MaybeFinishShutdown();
   }
 
@@ -1201,7 +1202,8 @@ Server::Server(const ChannelArgs& args)
       max_time_in_pending_queue_(Duration::Seconds(
           channel_args_
               .GetInt(GRPC_ARG_SERVER_MAX_UNREQUESTED_TIME_IN_SERVER_SECONDS)
-              .value_or(30))) {
+              .value_or(30))),
+      stream_quota_(channel_args_.GetObject<ResourceQuota>()->stream_quota()) {
   SourceConstructed();
 }
 
@@ -1340,6 +1342,7 @@ grpc_error_handle Server::SetupTransport(Transport* transport,
     GRPC_TRACE_LOG(server_channel, INFO) << "Adding connection";
     connections_.emplace(std::move(t));
     ++connections_open_;
+    stream_quota_->IncrementOpenChannels();
   } else {
     GRPC_CHECK(transport->filter_stack_transport() != nullptr);
     absl::StatusOr<RefCountedPtr<Channel>> channel = LegacyChannel::Create(
@@ -1369,9 +1372,12 @@ grpc_error_handle Server::SetupTransport(Transport* transport,
       channelz_socket_uuid = socket_node->uuid();
       socket_node->AddParent(channelz_node_.get());
     }
+
     // Initialize chand.
     chand->InitTransport(Ref(), std::move(*channel), cq_idx, transport,
                          channelz_socket_uuid);
+
+    stream_quota_->IncrementOpenChannels();
   }
   return absl::OkStatus();
 }
@@ -1705,6 +1711,7 @@ class Server::ChannelData::ConnectivityWatcher
                                  const absl::Status& /*status*/) override {
     // Don't do anything until we are being shut down.
     if (new_state != GRPC_CHANNEL_SHUTDOWN) return;
+    chand_->server_->stream_quota_->DecrementOpenChannels();
     // Shut down channel.
     MutexLock lock(&chand_->server_->mu_global_);
     chand_->Destroy();
@@ -1720,6 +1727,7 @@ class Server::ChannelData::ConnectivityWatcher
 
 Server::ChannelData::~ChannelData() {
   if (server_ != nullptr) {
+    server_->stream_quota_->DecrementOpenChannels();
     MutexLock lock(&server_->mu_global_);
     if (list_position_.has_value()) {
       server_->channels_.erase(*list_position_);
@@ -1743,6 +1751,7 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
     server_->channels_.push_front(this);
     list_position_ = server_->channels_.begin();
   }
+
   // Start accept_stream transport op.
   grpc_transport_op* op = grpc_make_transport_op(nullptr);
   GRPC_CHECK(transport->filter_stack_transport() != nullptr);
@@ -1880,12 +1889,20 @@ Server::CallData::CallData(grpc_call_element* elem,
                     elem, grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_, RecvTrailingMetadataReady,
                     elem, grpc_schedule_on_exec_ctx);
+
+  // TODO(snohria): Add the same for Call-V3 as well.
+  server_->stream_quota_->IncrementOutstandingRequests();
 }
 
 Server::CallData::~CallData() {
   GRPC_CHECK(state_.load(std::memory_order_relaxed) != CallState::PENDING);
   grpc_metadata_array_destroy(&initial_metadata_);
   grpc_byte_buffer_destroy(payload_);
+
+  if (server_ != nullptr) {
+    // TODO(snohria): Add the same for Call-V3 as well.
+    server_->stream_quota_->DecrementOutstandingRequests();
+  }
 }
 
 void Server::CallData::SetState(CallState state) {
@@ -2066,7 +2083,11 @@ void Server::CallData::RecvInitialMetadataReady(void* arg,
   auto op_deadline = calld->recv_initial_metadata_->get(GrpcTimeoutMetadata());
   if (op_deadline.has_value()) {
     calld->deadline_ = *op_deadline;
-    Call::FromC(calld->call_)->UpdateDeadline(*op_deadline);
+    if (IsFailRecvMetadataOnDeadlineExceededEnabled()) {
+      error = Call::FromC(calld->call_)->UpdateDeadline(*op_deadline);
+    } else {
+      Call::FromC(calld->call_)->UpdateDeadline(*op_deadline).IgnoreError();
+    }
   }
   if (calld->host_.has_value() && calld->path_.has_value()) {
     // do nothing

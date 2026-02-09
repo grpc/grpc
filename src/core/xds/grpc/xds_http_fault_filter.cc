@@ -76,15 +76,14 @@ absl::string_view XdsHttpFaultFilter::ConfigProtoName() const {
 }
 
 absl::string_view XdsHttpFaultFilter::OverrideConfigProtoName() const {
-  return "";
+  return "envoy.extensions.filters.http.fault.v3.HTTPFault";
 }
 
 void XdsHttpFaultFilter::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_fault_v3_HTTPFault_getmsgdef(symtab);
 }
 
-std::optional<XdsHttpFilterImpl::FilterConfig>
-XdsHttpFaultFilter::GenerateFilterConfig(
+std::optional<Json> XdsHttpFaultFilter::GenerateFilterConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
@@ -199,12 +198,10 @@ XdsHttpFaultFilter::GenerateFilterConfig(
     fault_injection_policy_json["maxFaults"] =
         Json::FromNumber(*max_fault_wrapper);
   }
-  return FilterConfig{ConfigProtoName(),
-                      Json::FromObject(std::move(fault_injection_policy_json))};
+  return Json::FromObject(std::move(fault_injection_policy_json));
 }
 
-std::optional<XdsHttpFilterImpl::FilterConfig>
-XdsHttpFaultFilter::GenerateFilterConfigOverride(
+std::optional<Json> XdsHttpFaultFilter::GenerateFilterConfigOverride(
     absl::string_view instance_name,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
@@ -214,12 +211,12 @@ XdsHttpFaultFilter::GenerateFilterConfigOverride(
                               errors);
 }
 
-void XdsHttpFaultFilter::AddFilter(InterceptionChainBuilder& builder) const {
-  builder.Add<FaultInjectionFilter>();
+void XdsHttpFaultFilter::AddFilter(FilterChainBuilder& builder) const {
+  builder.AddFilter<FaultInjectionFilter>(nullptr);
 }
 
 const grpc_channel_filter* XdsHttpFaultFilter::channel_filter() const {
-  return &FaultInjectionFilter::kFilter;
+  return &FaultInjectionFilter::kFilterVtable;
 }
 
 ChannelArgs XdsHttpFaultFilter::ModifyChannelArgs(
@@ -229,18 +226,17 @@ ChannelArgs XdsHttpFaultFilter::ModifyChannelArgs(
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpFaultFilter::GenerateMethodConfig(
-    const FilterConfig& hcm_filter_config,
-    const FilterConfig* filter_config_override) const {
-  Json policy_json = filter_config_override != nullptr
-                         ? filter_config_override->config
-                         : hcm_filter_config.config;
+    const Json& hcm_filter_config, const Json* filter_config_override) const {
+  const Json& policy_json = filter_config_override != nullptr
+                                ? *filter_config_override
+                                : hcm_filter_config;
   // The policy JSON may be empty, that's allowed.
   return ServiceConfigJsonEntry{"faultInjectionPolicy", JsonDump(policy_json)};
 }
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpFaultFilter::GenerateServiceConfig(
-    const FilterConfig& /*hcm_filter_config*/) const {
+    const Json& /*hcm_filter_config*/) const {
   return ServiceConfigJsonEntry{"", ""};
 }
 

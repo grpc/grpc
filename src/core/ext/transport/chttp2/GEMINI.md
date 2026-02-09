@@ -4,7 +4,7 @@
     *   The legacy CHTTP2 transport.
     *   The newer WIP promise-based HTTP/2 transport (PH2).
 
-See also: [gRPC Transports overview](../GEMINI.md)
+See also: [gRPC Transports overview](../../../transport/GEMINI.md)
 
 ## Overarching Purpose
 
@@ -37,7 +37,7 @@ and the underlying endpoint.
 ## 1. CHTTP2 (Legacy)
 
 *   CHTTP2 is compatible with the Call V1 Stack.
-*   Uses [`combiner`](../../lib/iomgr/combiner.h) for concurrency.
+*   Uses [`combiner`](../../../lib/iomgr/combiner.h) for concurrency.
 *   CHTTP2 was the original default transport.
 *   **Status:** Active and default, but planned for deprecation and removal after PH2 is fully rolled out and stable.
 
@@ -64,7 +64,10 @@ and the underlying endpoint.
 *   PH2 is compatible with the Call V3 Stack.
 *   PH2 utilizes the gRPC promise framework (`src/core/lib/promise`) for asynchronous operations.
 *   **Status:** Under Development.
-*   **Rollout:** Expected to begin in January 2026.
+*   **Rollout:** Expected to begin in July 2026.
+*   **Experiments:**
+    *   Client: `IsPromiseBasedHttp2ClientTransportEnabled()`.
+    *   Server: `IsPromiseBasedHttp2ServerTransportEnabled()`.
 
 ### PH2 Goals
 
@@ -79,6 +82,7 @@ and the underlying endpoint.
 *   **Reference CHTTP2:** When implementing features in PH2, always first check the CHTTP2 implementation in this directory for reference. Use the mapping in the "Key classes in CHTTP2 and their PH2 equivalents" section below to find the PH2 counterparts.
 *   **Asynchronous Operations:** All asynchronous operations *must* use the gRPC Promise library (`src/core/lib/promise`), particularly leveraging `Party` for concurrency. See the `Dependencies for PH2` section.
 *   **Testing:** Any changes to PH2 code should be accompanied by relevant tests. Ensure that existing tests in `test/core/transport/chttp2/http2_client_transport_test.cc` and `test/core/transport/chttp2/http2_server_transport_test.cc` pass. Add new tests as needed to cover new functionality.
+*   **Test Comments:** When writing new tests, include comments within each test explaining its purpose and assertions. For large tests, add comments for each step.
 
 ### Key Differences from CHTTP2
 
@@ -97,34 +101,46 @@ and the underlying endpoint.
 *   Frame Parsers and Validators for PH2:
     *   `frame.{h,cc}`: Newer frame parsing/serialization.
 *   Assemblers:
-    *   `header_assembler.{h,cc}`: Converts gRPC Initial and Trailing Metadata into HTTP2 HEADER and CONTINUATION Frames and back.
-    *   `message_assembler.{h,cc}`: Converts gRPC Messages into HTTP2 DATA Frames and back.
+    *   `header_assembler.h`: Converts gRPC Initial and Trailing Metadata into HTTP2 HEADER and CONTINUATION Frames and back.
+    *   `message_assembler.h`: Converts gRPC Messages into HTTP2 DATA Frames and back.
 *   Error Handling Classes:
     *   `http2_status.h`: Custom HTTP/2 error types (Stream vs Connection).
 *   Ping and Keep Alive Helpers:
     *   `ping_promise.{h,cc}`
     *   `keepalive.{h,cc}`
 *   Helper classes for PH2 writes:
-    *   `stream_data_queue.{h,cc}` Stores gRPC messages and Metadata from the CallV3 stack for each stream in a queue.
-    *   `writable_streams.{h,cc}` Track streams that have some data to send to the peer and have available flow control tokens.
+    *   `stream_data_queue.h` Stores gRPC messages and Metadata from the CallV3 stack for each stream in a queue.
+    *   `writable_streams.h` Track streams that have some data to send to the peer and have available flow control tokens.
 *   Settings Helper : `http2_settings_promises.h`
 *   Flow Control Helper : `flow_control_manager.h`
 *   Stream : `stream.h` representation of each HTTP2 stream in the HTTP2 transport.
 *   GoAway : `goaway.{h,cc}` for implementation of HTTP2 GOAWAY
+*   Metadata: `incoming_metadata_tracker.h`
+*   Security : `security_frame.h`
 
 ## 3. Common Files (Shared by CHTTP2 and PH2)
 
 *   **`alpn`**: Contains code for ALPN (Application-Layer Protocol Negotiation), which is used to select the HTTP/2 protocol during the TLS handshake.
-*   **`client/chttp2_connector.h`, `client/chttp2_connector.cc`**: These files define the client-side connector, which is responsible for creating a new HTTP2 transport.
+*   **`client/chttp2_connector.h`, `client/chttp2_connector.cc`**:
+    *   These files define the client-side connector, which is responsible for creating a new HTTP2 transport.
+    *   This connector creates either PH2 and CHTTP2 transport.
 *   **`server/chttp2_server.h`, `server/chttp2_server.cc`**: These files define the server-side listener, which is responsible for accepting new connections and creating new HTTP2 transports.
-*   HPACK implementation: `hpack_*.{h,cc}` (e.g., `hpack_encoder.cc`, `hpack_parser.cc`)
-*   Flow Control: `flow_control.{h,cc}`
-*   Settings: `http2_settings*.{h,cc}` (e.g., `http2_settings.cc`, `http2_settings_manager.cc`)
-*   Ping policies: `ping_abuse_policy.{h,cc}`, `ping_callbacks.{h,cc}`, `ping_rate_policy.{h,cc}`
-*   Other utilities: `bin_encoder.{h,cc}`, `decode_huff.{h,cc}`, `huffsyms.{h,cc}`, `varint.{h,cc}`
-*   `transport_common.{h,cc}`
-*   `internal_channel_arg_names.h`
-*   `http2_ztrace_collector.h`: Collects events for z-trace debugging.
+*   Files in `transport/`:
+    *   HPACK implementation:
+        *   `hpack_constants.h`
+        *   `hpack_encoder.{h,cc}`
+        *   `hpack_encoder_table.{h,cc}`
+        *   `hpack_parse_result.{h,cc}`
+        *   `hpack_parser.{h,cc}`
+        *   `hpack_parser_table.{h,cc}`
+    *   Flow Control: `flow_control.{h,cc}`
+    *   Settings: `http2_settings.{h,cc}`, `http2_settings_manager.{h,cc}`
+    *   Ping policies: `ping_abuse_policy.{h,cc}`, `ping_callbacks.{h,cc}`, `ping_rate_policy.{h,cc}`
+    *   Other utilities: `bin_encoder.{h,cc}`, `decode_huff.{h,cc}`, `huffsyms.{h,cc}`, `varint.{h,cc}`
+    *   `transport_common.{h,cc}`
+    *   `internal_channel_arg_names.h`
+    *   `http2_ztrace_collector.h`: Collects events for z-trace debugging.
+    *   `write_size_policy.{h,cc}`
 
 ## 4. Unused or TBD Files
 
@@ -133,7 +149,6 @@ and the underlying endpoint.
     *   `call_tracer_wrapper.{h,cc}`
     *   `http2_stats_collector.{h,cc}`
     *   `http2_stats_collector.github.cc`
-    *   `write_size_policy.{h,cc}`
 
 ## Key classes in CHTTP2 and their PH2 equivalents
 
@@ -182,6 +197,8 @@ Key test files include:
     *   `test/core/transport/chttp2/stream_data_queue_test.cc`
     *   `test/core/transport/chttp2/writable_streams_fuzz_test.cc`
     *   `test/core/transport/chttp2/writable_streams_test.cc`
+    *   `test/core/transport/chttp2/incoming_metadata_tracker_test.cc`
+    *   `test/core/transport/chttp2/http2_security_frame_test.cc`
 
 *   **Common Component Tests:**
     *   `test/core/transport/chttp2/flow_control_fuzzer.cc`
@@ -204,13 +221,13 @@ Key test files include:
 ## Dependencies for PH2
 
 *   **gRPC Promise Library:**
-    *   PH2 heavily relies on the gRPC Promise framework [`src/core/lib/promise/`](../lib/promise/GEMINI.md)
-    *   Key components like [`party.h`](../lib/promise/party.h) are fundamental to PH2's async model.
-*   **Call Spine:** PH2 interacts with the V3 Call Spine components located in [`src/core/call/`](../../call/GEMINI.md).
+    *   PH2 heavily relies on the gRPC Promise framework [`src/core/lib/promise/`](../../../lib/promise/GEMINI.md)
+    *   Key components like [`party.h`](../../../lib/promise/party.h) are fundamental to PH2's async model.
+*   **Call Spine:** PH2 interacts with the V3 Call Spine components located in [`src/core/call/`](../../../call/GEMINI.md).
 
 ## Similarities of PH2 and Chaotic Good
 
-PH2 shares several architectural similarities with the [Chaotic Good transport](../../ext/transport/chaotic_good/GEMINI.md) transport:
+PH2 shares several architectural similarities with the [Chaotic Good transport](../chaotic_good/GEMINI.md) transport:
 
 *   **Promise-Based:** Both transports are built upon the gRPC Promise library for managing asynchronous operations. This is a departure from the callback-based system in CHTTP2.
 *   **Call V3 Stack:** Both are designed to work with the newer Call V3 stack.
@@ -218,3 +235,23 @@ PH2 shares several architectural similarities with the [Chaotic Good transport](
 *   **Framing Concepts:** While the specific frame types and serialization differ (HTTP/2 vs. custom proto-based for Chaotic Good), the underlying concepts of defining frame structures (e.g., `frame.h` in both transports) and managing their serialization/deserialization are present in both.
 *   **Endpoint Interaction:** Both transports use the `PromiseEndpoint` abstraction or reading from and writing to the network, making the core transport logic independent of the underlying I/O mechanism.
 *   **Stream Initiation:** In PH2, `Http2ClientTransport::StartCall` initiates a new stream. It acquires a lock, assigns a new stream ID, creates a `Stream` object, and spawns the `CallOutboundLoop` to handle the stream's outgoing messages. Chaotic Good follows a similar pattern in `ChaoticGoodClientTransport::StartCall`, where it calls `StreamDispatch::MakeStream` to allocate a stream ID and create a `Stream` object, and then spawns `CallOutboundLoop` for the stream's lifecycle.
+
+# PH2 Transport Party Slots
+
+The HTTP2 transport uses Promise Party internally to manage scheduling of jobs.
+Since the number of slots in a Party is 16, we need to account for all the slots
+that we use in the transport.
+We need to ensure that our slots do not exceed 16.
+
+| Name | Category | Description | Max Spawns at a time | When is it spawned | Max Duration | Resolution |
+|---|---|---|---|---|---|---|
+| SecurityFrameLoop | Loop | Security Frame | 1 | After Constructor | Lifetime of the transport | Transport Close |
+| ReadLoop | Loop | | 1 | After 1st write | Lifetime of the transport | Transport Close |
+| FlowControlPeriodicUpdateLoop | Loop | | 1 | After Constructor | Lifetime of the transport | Transport Close |
+| MultiplexerLoop | Loop | | 1 | After Constructor | Lifetime of the transport | Transport Close |
+| AddData | Misc | ChannelZ AddData | 1 | On demand | Immediate | Immediate |
+| CloseTransport | Misc | Close transport | 1 | While closing transport. Only once in the life of a transport | As long as it takes to close the transport | Transport Close |
+| WaitForSettingsTimeout | Timeout | Settings Timeout | 1 | When we write SETTINGS | Settings timeout | Settings Ack Received or Settings Timeout |
+| Keepalive | Loop | Keepalive Loop | 1 | If Keepalive is enabled, after constructor | Lifetime of the transport | Transport Close
+| Ping | Timeout + Misc | | 4 | Sending a ping request | Timeout or a specific duration |
+| | | **Total** | 12 | | | |

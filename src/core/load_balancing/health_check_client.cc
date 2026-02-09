@@ -263,8 +263,7 @@ void HealthProducer::HealthChecker::StartHealthStreamLocked() {
       << "HealthProducer " << producer_.get() << " HealthChecker " << this
       << ": creating HealthClient for \"" << health_check_service_name_ << "\"";
   stream_client_ = MakeOrphanable<SubchannelStreamClient>(
-      producer_->connected_subchannel_, producer_->subchannel_->pollset_set(),
-      std::make_unique<HealthStreamEventHandler>(Ref()),
+      producer_->subchannel_, std::make_unique<HealthStreamEventHandler>(Ref()),
       GRPC_TRACE_FLAG_ENABLED(health_check_client) ? "HealthClient" : nullptr);
 }
 
@@ -283,6 +282,10 @@ class HealthProducer::ConnectivityWatcher final
     producer_->OnConnectivityStateChange(state, status);
   }
 
+  void OnKeepaliveUpdate(Duration) override {}
+
+  uint32_t max_connections_per_subchannel() const override { return 1; }
+
   grpc_pollset_set* interested_parties() override {
     return producer_->interested_parties_;
   }
@@ -300,10 +303,6 @@ void HealthProducer::Start(WeakRefCountedPtr<Subchannel> subchannel) {
       << "HealthProducer " << this << ": starting with subchannel "
       << subchannel.get();
   subchannel_ = std::move(subchannel);
-  {
-    MutexLock lock(&mu_);
-    connected_subchannel_ = subchannel_->connected_subchannel();
-  }
   auto connectivity_watcher =
       MakeRefCounted<ConnectivityWatcher>(WeakRefAsSubclass<HealthProducer>());
   connectivity_watcher_ = connectivity_watcher.get();
@@ -365,15 +364,6 @@ void HealthProducer::OnConnectivityStateChange(grpc_connectivity_state state,
       << ": subchannel state update: state=" << ConnectivityStateName(state)
       << " status=" << status;
   MutexLock lock(&mu_);
-  if (state == GRPC_CHANNEL_READY) {
-    connected_subchannel_ = subchannel_->connected_subchannel();
-    // If the subchannel became disconnected again before we got this
-    // notification, then just ignore the READY notification.  We should
-    // get another notification shortly indicating a different state.
-    if (connected_subchannel_ == nullptr) return;
-  } else {
-    connected_subchannel_.reset();
-  }
   state_ = state;
   status_ = status;
   for (const auto& [_, health_checker] : health_checkers_) {

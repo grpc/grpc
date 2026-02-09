@@ -79,8 +79,7 @@ Json::Object ValidateFilterConfig(
 
 }  // namespace
 
-std::optional<XdsHttpFilterImpl::FilterConfig>
-XdsHttpGcpAuthnFilter::GenerateFilterConfig(
+std::optional<Json> XdsHttpGcpAuthnFilter::GenerateFilterConfig(
     absl::string_view instance_name,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
@@ -98,12 +97,11 @@ XdsHttpGcpAuthnFilter::GenerateFilterConfig(
     errors->AddError("could not parse GCP auth filter config");
     return std::nullopt;
   }
-  return FilterConfig{ConfigProtoName(), Json::FromObject(ValidateFilterConfig(
-                                             instance_name, gcp_auth, errors))};
+  return Json::FromObject(
+      ValidateFilterConfig(instance_name, gcp_auth, errors));
 }
 
-std::optional<XdsHttpFilterImpl::FilterConfig>
-XdsHttpGcpAuthnFilter::GenerateFilterConfigOverride(
+std::optional<Json> XdsHttpGcpAuthnFilter::GenerateFilterConfigOverride(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& /*context*/,
     XdsExtension /*extension*/, ValidationErrors* errors) const {
@@ -111,12 +109,12 @@ XdsHttpGcpAuthnFilter::GenerateFilterConfigOverride(
   return std::nullopt;
 }
 
-void XdsHttpGcpAuthnFilter::AddFilter(InterceptionChainBuilder& builder) const {
-  builder.Add<GcpAuthenticationFilter>();
+void XdsHttpGcpAuthnFilter::AddFilter(FilterChainBuilder& builder) const {
+  builder.AddFilter<GcpAuthenticationFilter>(nullptr);
 }
 
 const grpc_channel_filter* XdsHttpGcpAuthnFilter::channel_filter() const {
-  return &GcpAuthenticationFilter::kFilter;
+  return &GcpAuthenticationFilter::kFilterVtable;
 }
 
 ChannelArgs XdsHttpGcpAuthnFilter::ModifyChannelArgs(
@@ -126,24 +124,24 @@ ChannelArgs XdsHttpGcpAuthnFilter::ModifyChannelArgs(
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpGcpAuthnFilter::GenerateMethodConfig(
-    const FilterConfig& /*hcm_filter_config*/,
-    const FilterConfig* /*filter_config_override*/) const {
+    const Json& /*hcm_filter_config*/,
+    const Json* /*filter_config_override*/) const {
   return ServiceConfigJsonEntry{"", ""};
 }
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpGcpAuthnFilter::GenerateServiceConfig(
-    const FilterConfig& hcm_filter_config) const {
+    const Json& hcm_filter_config) const {
   return ServiceConfigJsonEntry{"gcp_authentication",
-                                JsonDump(hcm_filter_config.config)};
+                                JsonDump(hcm_filter_config)};
 }
 
-void XdsHttpGcpAuthnFilter::UpdateBlackboard(
-    const FilterConfig& hcm_filter_config, const Blackboard* old_blackboard,
-    Blackboard* new_blackboard) const {
+void XdsHttpGcpAuthnFilter::UpdateBlackboard(const Json& hcm_filter_config,
+                                             const Blackboard* old_blackboard,
+                                             Blackboard* new_blackboard) const {
   ValidationErrors errors;
   auto config = LoadFromJson<GcpAuthenticationParsedConfig::Config>(
-      hcm_filter_config.config, JsonArgs(), &errors);
+      hcm_filter_config, JsonArgs(), &errors);
   CHECK(errors.ok()) << errors.message("filter config validation failed");
   RefCountedPtr<GcpAuthenticationFilter::CallCredentialsCache> cache;
   if (old_blackboard != nullptr) {

@@ -262,7 +262,7 @@ bool PromiseFormatter(Environment&, google::protobuf::Any value,
                       layout::Element& element) {
   grpc::channelz::v2::Promise promise;
   if (!value.UnpackTo(&promise)) return false;
-  element.AppendText(layout::Intent::kData, grpc_zviz::Format(promise));
+  element.AppendText(layout::Intent::kCode, grpc_zviz::Format(promise));
   return true;
 }
 
