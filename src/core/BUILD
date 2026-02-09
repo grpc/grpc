@@ -6611,6 +6611,52 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "ext_authz_client",
+    srcs = [
+        "ext/filters/ext_authz/ext_authz_client.cc",
+    ],
+    hdrs = [
+        "ext/filters/ext_authz/ext_authz_client.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/cleanup",
+        "absl/log",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+        "@com_google_protobuf//upb/mem",
+        "@com_google_protobuf//upb/reflection",
+    ],
+    deps = [
+        "channel_args",
+        "sync",
+        "dual_ref_counted",
+        "ext_authz_filter",
+        "//:backoff",
+        "//:debug_location",
+        "//:envoy_config_core_upb",
+        "//:envoy_service_auth_v3_attribute_context_upb",
+        "//:envoy_service_auth_v3_external_auth_upb",
+        "//:envoy_type_v3_http_status_upb",
+        "//:exec_ctx",
+        "//:google_rpc_status_upb",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_trace",
+        "//:iomgr",
+        "//:orphanable",
+        "//:protobuf_any_upb",
+        "//:protobuf_timestamp_upb",
+        "//:protobuf_wrappers_upb",
+        "//:ref_counted_ptr",
+        "//:uri",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
     name = "ext_authz_filter",
     srcs = [
         "ext/filters/ext_authz/ext_authz_filter.cc",
