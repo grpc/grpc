@@ -641,7 +641,7 @@ class TestServer(AioTestBase):
             tasks = []
             for _ in range(num_requests):
                 task = asyncio.create_task(
-                    channel.unary_unary(_BLOCK_BRIEFLY)(_REQUEST)
+                    coro_wrapper(channel.unary_unary(_BLOCK_BRIEFLY)(_REQUEST))
                 )
                 tasks.append(task)
             await asyncio.wait(tasks, return_when=asyncio.ALL_COMPLETED)
