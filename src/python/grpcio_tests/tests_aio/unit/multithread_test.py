@@ -19,6 +19,7 @@ import unittest
 
 import grpc
 from grpc.experimental import aio
+
 from tests_aio.unit._test_base import AioTestBase
 
 
@@ -48,7 +49,9 @@ class MultithreadTest(AioTestBase):
 
     async def run_client(self, port):
         async with aio.insecure_channel(f"localhost:{port}") as channel:
-            unary_call = channel.unary_unary("/grpc.testing.TestService/UnaryCall")
+            unary_call = channel.unary_unary(
+                "/grpc.testing.TestService/UnaryCall"
+            )
             response = await unary_call(b"request")
             return response
 
@@ -83,13 +86,17 @@ class MultithreadTest(AioTestBase):
         await server.stop(None)
 
         # Verify results
-        self.assertEqual(self.results_queue.qsize(), 10, "Expected 10 results in queue")
+        self.assertEqual(
+            self.results_queue.qsize(), 10, "Expected 10 results in queue"
+        )
         while not self.results_queue.empty():
             result = self.results_queue.get()
             self.assertIsInstance(
                 result, bytes, f"Expected bytes result, got {type(result)}"
             )
-            self.assertEqual(result, b"request", f"Expected b'request', got {result}")
+            self.assertEqual(
+                result, b"request", f"Expected b'request', got {result}"
+            )
 
 
 if __name__ == "__main__":
