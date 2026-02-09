@@ -1,5 +1,7 @@
 # bazelrc file
 
+#common --noenable_bzlmod
+#common --enable_workspace
 common --enable_bzlmod=true
 common --enable_workspace=false
 
