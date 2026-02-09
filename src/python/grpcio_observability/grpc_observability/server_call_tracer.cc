@@ -156,65 +156,69 @@ void PythonOpenCensusServerCallTracer::MutateSendTrailingMetadata(
 
 void PythonOpenCensusServerCallTracer::RecordSendMessage(
     const grpc_core::Message& send_message) {
-  if (context_.GetSpanContext().IsSampled()) {
-    std::vector<std::pair<absl::string_view, absl::string_view>> attributes{};
-    attributes.reserve(2);
-    const auto sent_message_count_str = absl::StrCat(sent_message_count_++);
-    attributes.emplace_back("sequence-number", sent_message_count_str);
-    const auto message_size_str =
-        absl::StrCat(send_message.payload()->Length());
-    attributes.emplace_back("message-size", message_size_str);
-    context_.AddSpanEvent("Outbound message", attributes);
+  if (!context_.GetSpanContext().IsSampled()) {
+    return;
   }
+  std::vector<std::pair<absl::string_view, absl::string_view>> attributes{};
+  attributes.reserve(2);
+  const auto sent_message_count_str = absl::StrCat(sent_message_count_++);
+  attributes.emplace_back("sequence-number", sent_message_count_str);
+  const auto message_size_str =
+      absl::StrCat(send_message.payload()->Length());
+  attributes.emplace_back("message-size", message_size_str);
+  context_.AddSpanEvent("Outbound message", attributes);
 }
 
 void PythonOpenCensusServerCallTracer::RecordSendCompressedMessage(
     const grpc_core::Message& send_compressed_message) {
-  if (context_.GetSpanContext().IsSampled()) {
-    std::vector<std::pair<absl::string_view, absl::string_view>> attributes{};
-    attributes.reserve(2);
-    const auto sent_message_count_str = absl::StrCat(sent_message_count_ - 1);
-    attributes.emplace_back("sequence-number", sent_message_count_str);
-    const auto message_size_str =
-        absl::StrCat(send_compressed_message.payload()->Length());
-    attributes.emplace_back("message-size-compressed", message_size_str);
-    context_.AddSpanEvent("Outbound message compressed", attributes);
+  if (!context_.GetSpanContext().IsSampled()) {
+    return;
   }
+  std::vector<std::pair<absl::string_view, absl::string_view>> attributes{};
+  attributes.reserve(2);
+  const auto sent_message_count_str = absl::StrCat(sent_message_count_ - 1);
+  attributes.emplace_back("sequence-number", sent_message_count_str);
+  const auto message_size_str =
+      absl::StrCat(send_compressed_message.payload()->Length());
+  attributes.emplace_back("message-size-compressed", message_size_str);
+  context_.AddSpanEvent("Outbound message compressed", attributes);
 }
 
 void PythonOpenCensusServerCallTracer::RecordReceivedMessage(
     const grpc_core::Message& recv_message) {
-  if (context_.GetSpanContext().IsSampled()) {
-    std::vector<std::pair<absl::string_view, absl::string_view>> attributes{};
-    attributes.reserve(2);
-    const auto recv_message_count_str = absl::StrCat(recv_message_count_++);
-    attributes.emplace_back("sequence-number", recv_message_count_str);
-    const auto message_size_str =
-        absl::StrCat(recv_message.payload()->Length());
-    attributes.emplace_back(
-        (recv_message.flags() & GRPC_WRITE_INTERNAL_COMPRESS)
-            ? "message-size-compressed"
-            : "message-size",
-        message_size_str);
-    context_.AddSpanEvent(recv_message.flags() & GRPC_WRITE_INTERNAL_COMPRESS
-                              ? "Inbound compressed message"
-                              : "Inbound message",
-                          attributes);
+  if (!context_.GetSpanContext().IsSampled()) {
+    return;
   }
+  std::vector<std::pair<absl::string_view, absl::string_view>> attributes{};
+  attributes.reserve(2);
+  const auto recv_message_count_str = absl::StrCat(recv_message_count_++);
+  attributes.emplace_back("sequence-number", recv_message_count_str);
+  const auto message_size_str =
+      absl::StrCat(recv_message.payload()->Length());
+  attributes.emplace_back(
+      (recv_message.flags() & GRPC_WRITE_INTERNAL_COMPRESS)
+          ? "message-size-compressed"
+          : "message-size",
+      message_size_str);
+  context_.AddSpanEvent(recv_message.flags() & GRPC_WRITE_INTERNAL_COMPRESS
+                            ? "Inbound compressed message"
+                            : "Inbound message",
+                        attributes);
 }
 
 void PythonOpenCensusServerCallTracer::RecordReceivedDecompressedMessage(
     const grpc_core::Message& recv_decompressed_message) {
-  if (context_.GetSpanContext().IsSampled()) {
-    std::vector<std::pair<absl::string_view, absl::string_view>> attributes{};
-    attributes.reserve(2);
-    const auto recv_message_count_str = absl::StrCat(recv_message_count_ - 1);
-    attributes.emplace_back("sequence-number", recv_message_count_str);
-    const auto message_size_str =
-        absl::StrCat(recv_decompressed_message.payload()->Length());
-    attributes.emplace_back("message-size", message_size_str);
-    context_.AddSpanEvent("Inbound message", attributes);
+  if (!context_.GetSpanContext().IsSampled()) {
+    return;
   }
+  std::vector<std::pair<absl::string_view, absl::string_view>> attributes{};
+  attributes.reserve(2);
+  const auto recv_message_count_str = absl::StrCat(recv_message_count_ - 1);
+  attributes.emplace_back("sequence-number", recv_message_count_str);
+  const auto message_size_str =
+      absl::StrCat(recv_decompressed_message.payload()->Length());
+  attributes.emplace_back("message-size", message_size_str);
+  context_.AddSpanEvent("Inbound message", attributes);
 }
 
 void PythonOpenCensusServerCallTracer::RecordCancel(
@@ -288,9 +292,10 @@ void PythonOpenCensusServerCallTracer::RecordOutgoingBytes(
 
 void PythonOpenCensusServerCallTracer::RecordAnnotation(
     absl::string_view annotation) {
-  if (context_.GetSpanContext().IsSampled()) {
-    context_.AddSpanEvent(annotation);
+  if (!context_.GetSpanContext().IsSampled()) {
+    return;
   }
+  context_.AddSpanEvent(annotation);
 }
 
 void PythonOpenCensusServerCallTracer::RecordAnnotation(
