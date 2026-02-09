@@ -20,6 +20,7 @@
 
 #include <variant>
 
+#include "envoy/config/common/mutation_rules/v3/mutation_rules.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/extensions/filters/http/ext_authz/v3/ext_authz.upb.h"
 #include "envoy/extensions/filters/http/ext_authz/v3/ext_authz.upbdefs.h"
@@ -268,6 +269,58 @@ XdsExtAuthzFilter::GenerateFilterConfig(
           ext_authz_config["disallowed_headers"] = ParseListStringMatcherToJson(
               disallowed_headers_proto, errors,
               ".ext_authz_config.disallowed_headers");
+        }
+      }
+      // HeaderMutationRules
+      {
+        const auto* header_mutation_rules_proto =
+            envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_decoder_header_mutation_rules(
+                ext_authz);
+        if (header_mutation_rules_proto == nullptr) {
+          ValidationErrors::ScopedField field(
+              errors, ".ext_authz_config.header_mutation_rules");
+          errors->AddError("header_mutation_rules field is not present");
+        } else {
+          auto disallow_all =
+              envoy_config_common_mutation_rules_v3_HeaderMutationRules_disallow_all(
+                  header_mutation_rules_proto);
+          auto disallow_is_error =
+              envoy_config_common_mutation_rules_v3_HeaderMutationRules_disallow_is_error(
+                  header_mutation_rules_proto);
+          Json::Object header_mutation_rules_config = {
+              {"disallow_all", Json::FromBool(disallow_all)},
+              {"disallow_is_error", Json::FromBool(disallow_is_error)},
+          };
+          auto parseRegexExpression =
+              [&](const auto* expression_proto,
+                  absl::string_view field_name) -> Json {
+            if (expression_proto == nullptr) {
+              ValidationErrors::ScopedField field(
+                  errors,
+                  absl::StrCat(".ext_authz_config.header_mutation_rules.",
+                               field_name));
+              errors->AddError(
+                  absl::StrCat(field_name, " field is not present"));
+              return {};
+            }
+
+            return ParseRegexMatcherToJson(expression_proto);
+          };
+
+          const auto* disallow_expression_proto =
+              envoy_config_common_mutation_rules_v3_HeaderMutationRules_disallow_expression(
+                  header_mutation_rules_proto);
+          header_mutation_rules_config["disallow_expression"] =
+              parseRegexExpression(disallow_expression_proto,
+                                   "disallow_expression");
+
+          const auto* allow_expression_proto =
+              envoy_config_common_mutation_rules_v3_HeaderMutationRules_allow_expression(
+                  header_mutation_rules_proto);
+          header_mutation_rules_config["allow_expression"] =
+              parseRegexExpression(allow_expression_proto, "allow_expression");
+          ext_authz_config["decoder_header_mutation_rules"] =
+              Json::FromObject(header_mutation_rules_config);
         }
       }
     }

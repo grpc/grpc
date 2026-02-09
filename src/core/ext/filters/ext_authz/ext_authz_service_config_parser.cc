@@ -242,6 +242,24 @@ void ExtAuthz::StringMatch::JsonPostLoad(const Json& json, const JsonArgs& args,
   }
 }
 
+const JsonLoaderInterface* ExtAuthz::HeaderMutationRules::JsonLoader(
+    const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<HeaderMutationRules>()
+          .OptionalField("disallow_is_error",
+                         &HeaderMutationRules::disallow_is_error)
+          .OptionalField("disallow_all", &HeaderMutationRules::disallow_all)
+          .OptionalField("disallow_expression",
+                         &HeaderMutationRules::disallow_expression)
+          .OptionalField("allow_expression",
+                         &HeaderMutationRules::allow_expression)
+          .Finish();
+  return loader;
+}
+
+void ExtAuthz::HeaderMutationRules::JsonPostLoad(const Json&, const JsonArgs&,
+                                                 ValidationErrors*) {}
+
 const JsonLoaderInterface* ExtAuthz::FilterEnabled::JsonLoader(
     const JsonArgs&) {
   static const auto* loader =
@@ -266,6 +284,8 @@ const JsonLoaderInterface* ExtAuthz::JsonLoader(const JsonArgs&) {
                          &ExtAuthz::failure_mode_allow_header_add)
           .OptionalField("include_peer_certificate",
                          &ExtAuthz::include_peer_certificate)
+          .OptionalField("decoder_header_mutation_rules",
+                         &ExtAuthz::decoder_header_mutation_rules)
           .Finish();
   return loader;
 }

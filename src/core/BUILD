@@ -6583,6 +6583,7 @@ grpc_cc_library(
         "//:config",
         "//:debug_location",
         "//:endpoint_addresses",
+        "//:envoy_config_common_mutation_rules_v3_mutation_rules_upb",
         "//:envoy_extensions_filters_http_ext_authz_v3_ext_authz_upb",
         "//:envoy_extensions_filters_http_ext_authz_v3_ext_authz_upbdefs",
         "//:exec_ctx",

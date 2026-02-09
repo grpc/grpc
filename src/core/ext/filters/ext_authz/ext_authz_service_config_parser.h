@@ -71,6 +71,21 @@ struct ExtAuthz {
   std::vector<StringMatch> allowed_headers;
   std::vector<StringMatch> disallowed_headers;
 
+  struct HeaderMutationRules {
+    bool disallow_all;
+    bool disallow_is_error;
+    StringMatch allow_expression;
+    StringMatch disallow_expression;
+
+    bool operator==(const HeaderMutationRules& other) const;
+
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    void JsonPostLoad(const Json& json, const JsonArgs& args,
+                      ValidationErrors* errors);
+  };
+
+  std::optional<HeaderMutationRules> decoder_header_mutation_rules;
+
   // struct HeaderMutationRules {
   //   bool disallow_all = false;
   //   bool disallow_is_error = false;

@@ -40,6 +40,12 @@ TEST_F(ExtAuthzServiceConfigParsingTest, ParseValidConfig) {
       "        \"status_on_error\": 404,\n"
       "        \"failure_mode_allow_header_add\": true,\n"
       "        \"include_peer_certificate\": true,\n"
+      "        \"decoder_header_mutation_rules\": {\n"
+      "          \"allow_expression\": { \"regex\": \"foo\" },\n"
+      "          \"disallow_all\": false,\n"
+      "          \"disallow_expression\": { \"regex\": \"bar\" },\n"
+      "          \"disallow_is_error\": false\n"
+      "        },\n"
       "        \"xds_grpc_service\": {\n"
       "          \"initial_metadata\": [\n"
       "            {\n"
@@ -136,6 +142,22 @@ TEST_F(ExtAuthzServiceConfigParsingTest, ParseValidConfig) {
             "foo");
   EXPECT_FALSE(
       config->ext_authz.disallowed_headers[0].matcher.case_sensitive());
+  ASSERT_TRUE(config->ext_authz.decoder_header_mutation_rules.has_value());
+  EXPECT_FALSE(config->ext_authz.decoder_header_mutation_rules->disallow_all);
+  EXPECT_FALSE(
+      config->ext_authz.decoder_header_mutation_rules->disallow_is_error);
+  EXPECT_EQ(config->ext_authz.decoder_header_mutation_rules->allow_expression
+                .matcher.type(),
+            StringMatcher::Type::kSafeRegex);
+  EXPECT_EQ(config->ext_authz.decoder_header_mutation_rules->allow_expression
+                .matcher.string_matcher(),
+            "foo");
+  EXPECT_EQ(config->ext_authz.decoder_header_mutation_rules->disallow_expression
+                .matcher.type(),
+            StringMatcher::Type::kSafeRegex);
+  EXPECT_EQ(config->ext_authz.decoder_header_mutation_rules->disallow_expression
+                .matcher.string_matcher(),
+            "bar");
 }
 
 }  // namespace

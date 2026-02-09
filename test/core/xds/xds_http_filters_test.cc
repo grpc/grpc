@@ -2202,15 +2202,14 @@ TEST_F(XdsExtAuthzFilterTest, GenerateFilterConfig) {
   ASSERT_TRUE(config.has_value());
   EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
   EXPECT_EQ(config->config,
-            Json::FromObject({{"filter_instance_name", Json::FromString("")},
-                              {"ext_authz",
-                               Json::FromObject({
-                                   {"failure_mode_allow", Json::FromBool(false)},
-                                   {"failure_mode_allow_header_add",
-                                    Json::FromBool(false)},
-                                   {"include_peer_certificate",
-                                    Json::FromBool(false)},
-                               })}}))
+            Json::FromObject(
+                {{"filter_instance_name", Json::FromString("")},
+                 {"ext_authz",
+                  Json::FromObject({
+                      {"failure_mode_allow", Json::FromBool(false)},
+                      {"failure_mode_allow_header_add", Json::FromBool(false)},
+                      {"include_peer_certificate", Json::FromBool(false)},
+                  })}}))
       << JsonDump(config->config);
 }
 
@@ -2263,6 +2262,12 @@ TEST_F(XdsExtAuthzFilterTest, GenerateFilterConfigXdsGrpcService) {
       AccessTokenCredentials call_creds;
   call_creds.set_token("foo");
   google_grpc->add_call_credentials_plugin()->PackFrom(call_creds);
+  // HeaderMutationRules
+  auto* header_mutation_rules =
+      ext_authz.mutable_decoder_header_mutation_rules();
+  header_mutation_rules->mutable_allow_expression()->set_regex("foo");
+  header_mutation_rules->mutable_disallow_expression()->set_regex("bar");
+
   XdsExtension extension = MakeXdsExtension(ext_authz);
   auto config = filter_->GenerateFilterConfig("", MakeDecodeContext(),
                                               std::move(extension), &errors_);
@@ -2317,6 +2322,19 @@ TEST_F(XdsExtAuthzFilterTest, GenerateFilterConfigXdsGrpcService) {
   EXPECT_EQ(field_it->second, Json::FromArray({Json::FromObject(
                                   {{"exact", Json::FromString("foo")},
                                    {"ignoreCase", Json::FromBool(true)}})}));
+
+  // decoder_header_mutation_rules
+  field_it = fields.find("decoder_header_mutation_rules");
+  ASSERT_NE(field_it, fields.end());
+  EXPECT_EQ(field_it->second,
+            Json::FromObject({
+                {"disallow_all", Json::FromBool(false)},
+                {"disallow_is_error", Json::FromBool(false)},
+                {"allow_expression",
+                 Json::FromObject({{"regex", Json::FromString("foo")}})},
+                {"disallow_expression",
+                 Json::FromObject({{"regex", Json::FromString("bar")}})},
+            }));
 
   // xds_grpc_service
   field_it = fields.find("xds_grpc_service");
