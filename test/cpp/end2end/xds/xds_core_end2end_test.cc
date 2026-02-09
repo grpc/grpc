@@ -193,8 +193,8 @@ class XdsServerTlsTest : public XdsEnd2endTest {
     // Add a callback to save the JWT token seen on the xDS server.
     balancer_->ads_service()->SetCallCredsCallback(
         [&](const AdsServiceImpl::ClientMetadataType& md) {
-          auto it = md.find("authorization");
-          ASSERT_TRUE(it != md.end());
+          auto [it, end] = md.equal_range("authorization");
+          ASSERT_TRUE(it != end);
           absl::string_view value(it->second.data(), it->second.size());
           grpc_core::MutexLock lock(&mu_);
           seen_token_ = std::string(absl::StripPrefix(value, "Bearer "));

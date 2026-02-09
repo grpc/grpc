@@ -41,6 +41,8 @@ package(
 exports_files([
     "LICENSE",
     "etc/roots.pem",
+    "copy.bara.sky",
+    "copybara.METADATA",
 ])
 
 exports_files(
@@ -273,11 +275,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gutsy"  # @unused
+g_stands_for = "glimmering"  # @unused
 
-core_version = "51.0.0"  # @unused
+core_version = "52.0.0"  # @unused
 
-version = "1.77.0-dev"  # @unused
+version = "1.79.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -467,7 +469,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/generic/generic_stub_callback.h",
     "include/grpcpp/grpcpp.h",
     "include/grpcpp/health_check_service_interface.h",
-    "include/grpcpp/impl/call_hook.h",
     "include/grpcpp/impl/call_op_set_interface.h",
     "include/grpcpp/impl/call_op_set.h",
     "include/grpcpp/impl/call.h",
@@ -537,7 +538,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpc++/impl/codegen/async_stream.h",
     "include/grpc++/impl/codegen/async_unary_call.h",
     "include/grpc++/impl/codegen/byte_buffer.h",
-    "include/grpc++/impl/codegen/call_hook.h",
     "include/grpc++/impl/codegen/call.h",
     "include/grpc++/impl/codegen/channel_interface.h",
     "include/grpc++/impl/codegen/client_context.h",
@@ -566,7 +566,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/codegen/async_stream.h",
     "include/grpcpp/impl/codegen/async_unary_call.h",
     "include/grpcpp/impl/codegen/byte_buffer.h",
-    "include/grpcpp/impl/codegen/call_hook.h",
     "include/grpcpp/impl/codegen/call_op_set_interface.h",
     "include/grpcpp/impl/codegen/call_op_set.h",
     "include/grpcpp/impl/codegen/call.h",
@@ -646,7 +645,7 @@ grpc_cc_library(
         "grpc_http_filters",
         "grpc_security_base",
         "grpc_trace",
-        "http_connect_handshaker",
+        "http_connect_client_handshaker",
         "iomgr_timer",
         "server",
         "transport_auth_context",
@@ -743,7 +742,7 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_security_base",
         "grpc_trace",
-        "http_connect_handshaker",
+        "http_connect_client_handshaker",
         "httpcli",
         "iomgr_timer",
         "promise",
@@ -1706,8 +1705,10 @@ grpc_cc_library(
         "//src/core:telemetry/call_tracer.h",
     ],
     external_deps = [
+        "absl/functional:function_ref",
         "absl/status",
         "absl/strings",
+        "absl/types:span",
     ],
     visibility = ["//bazel:alt_grpc_base_legacy"],
     deps = [
@@ -1717,6 +1718,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:context",
         "//src/core:error",
+        "//src/core:experiments",
         "//src/core:grpc_check",
         "//src/core:message",
         "//src/core:metadata_batch",
@@ -2516,6 +2518,7 @@ grpc_cc_library(
     name = "grpc_core_credentials_header",
     hdrs = [
         "include/grpc/credentials.h",
+        "include/grpc/credentials_cpp.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -3496,9 +3499,9 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "http_connect_handshaker",
+    name = "http_connect_client_handshaker",
     srcs = [
-        "//src/core:handshaker/http_connect/http_connect_handshaker.cc",
+        "//src/core:handshaker/http_connect/http_connect_client_handshaker.cc",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -3507,7 +3510,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     public_hdrs = [
-        "//src/core:handshaker/http_connect/http_connect_handshaker.h",
+        "//src/core:handshaker/http_connect/http_connect_client_handshaker.h",
     ],
     visibility = ["//bazel:alt_grpc_base_legacy"],
     deps = [
@@ -3991,6 +3994,7 @@ grpc_cc_library(
         "//src/core:client_channel/retry_filter_legacy_call_data.cc",
         "//src/core:client_channel/subchannel.cc",
         "//src/core:client_channel/subchannel_stream_client.cc",
+        "//src/core:client_channel/subchannel_stream_limiter.cc",
     ],
     hdrs = [
         "//src/core:client_channel/buffered_call.h",
@@ -4006,6 +4010,7 @@ grpc_cc_library(
         "//src/core:client_channel/subchannel.h",
         "//src/core:client_channel/subchannel_interface_internal.h",
         "//src/core:client_channel/subchannel_stream_client.h",
+        "//src/core:client_channel/subchannel_stream_limiter.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -4075,6 +4080,7 @@ grpc_cc_library(
         "//src/core:error_utils",
         "//src/core:exec_ctx_wakeup_scheduler",
         "//src/core:experiments",
+        "//src/core:filter_chain",
         "//src/core:gpr_manual_constructor",
         "//src/core:grpc_backend_metric_data",
         "//src/core:grpc_channel_idle_filter",
@@ -5081,6 +5087,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channelz_property_list",
         "//src/core:chttp2_flow_control",
+        "//src/core:client_channel_internal_header",
         "//src/core:closure",
         "//src/core:connectivity_state",
         "//src/core:context_list_entry",
@@ -5105,6 +5112,7 @@ grpc_cc_library(
         "//src/core:json",
         "//src/core:match",
         "//src/core:memory_quota",
+        "//src/core:metadata",
         "//src/core:metadata_batch",
         "//src/core:metadata_info",
         "//src/core:notification",
@@ -5368,6 +5376,21 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_filters_network_http_connection_manager_upbdefs",
     deps = ["@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_grpc_service_call_credentials_access_token_upb",
+    deps = ["@envoy_api//envoy/extensions/grpc_service/call_credentials/access_token/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_grpc_service_channel_credentials_tls_upb",
+    deps = ["@envoy_api//envoy/extensions/grpc_service/channel_credentials/tls/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_grpc_service_channel_credentials_xds_upb",
+    deps = ["@envoy_api//envoy/extensions/grpc_service/channel_credentials/xds/v3:pkg"],
 )
 
 grpc_upb_proto_library(

@@ -44,9 +44,11 @@
 #include <variant>
 #include <vector>
 
+#include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/call/metadata_info.h"
 #include "src/core/channelz/property_list.h"
+#include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
@@ -169,8 +171,9 @@ static void read_action_locked(grpc_core::RefCountedPtr<grpc_chttp2_transport>,
 static void continue_read_action_locked(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t);
 
-static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
-                           grpc_error_handle error, bool tarpit);
+static void close_from_api(
+    grpc_chttp2_transport* t, grpc_chttp2_stream* s, grpc_error_handle error,
+    bool tarpit, grpc_core::ServerMetadataHandle send_trailing_metadata);
 
 // Start new streams that have been created if we can
 static void maybe_start_some_streams(grpc_chttp2_transport* t);
@@ -345,6 +348,17 @@ std::string HttpAnnotation::ToString() const {
     absl::StrAppend(&s, " stream:[", stream_stats_->ToString(), "]");
   }
   return s;
+}
+
+void HttpAnnotation::ForEachKeyValue(
+    absl::FunctionRef<void(absl::string_view, ValueType)> f) const {
+  f("type", static_cast<int64_t>(type_));
+  f("time_sec", static_cast<int64_t>(time_.tv_sec));
+  f("time_nsec", static_cast<int64_t>(time_.tv_nsec));
+  if (write_stats_.has_value()) {
+    f("target_write_size",
+      static_cast<int64_t>(write_stats_->target_write_size));
+  }
 }
 
 }  // namespace grpc_core
@@ -692,6 +706,8 @@ grpc_chttp2_transport::grpc_chttp2_transport(
       memory_owner(channel_args.GetObject<grpc_core::ResourceQuota>()
                        ->memory_quota()
                        ->CreateMemoryOwner()),
+      stream_quota(
+          channel_args.GetObject<grpc_core::ResourceQuota>()->stream_quota()),
       self_reservation(
           memory_owner.MakeReservation(sizeof(grpc_chttp2_transport))),
       // TODO(ctiller): clean this up so we don't need to RefAsSubclass
@@ -1393,7 +1409,7 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
         t->keepalive_time.millis() > max_keepalive_time_millis
             ? INT_MAX
             : t->keepalive_time.millis() * KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
-    if (!grpc_core::IsTransportStateWatcherEnabled()) {
+    if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
       status.SetPayload(grpc_core::kKeepaliveThrottlingKey,
                         absl::Cord(std::to_string(throttled_keepalive_time)));
     }
@@ -1829,8 +1845,10 @@ static void perform_stream_op_locked(void* stream_op,
   }
 
   if (op->cancel_stream) {
-    grpc_chttp2_cancel_stream(t, s, op_payload->cancel_stream.cancel_error,
-                              op_payload->cancel_stream.tarpit);
+    grpc_chttp2_cancel_stream(
+        t, s, op_payload->cancel_stream.cancel_error,
+        op_payload->cancel_stream.tarpit,
+        std::move(op_payload->cancel_stream.send_trailing_metadata));
   }
 
   if (op->send_initial_metadata) {
@@ -2443,14 +2461,22 @@ void MaybeTarpit(grpc_chttp2_transport* t, bool tarpit, F fn) {
 }  // namespace
 }  // namespace grpc_core
 
-void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
-                               grpc_error_handle due_to_error, bool tarpit) {
+void grpc_chttp2_cancel_stream(
+    grpc_chttp2_transport* t, grpc_chttp2_stream* s,
+    grpc_error_handle due_to_error, bool tarpit,
+    grpc_core::ServerMetadataHandle send_trailing_metadata) {
   if (!t->is_client && !s->sent_trailing_metadata &&
       grpc_error_has_clear_grpc_status(due_to_error) &&
       !(s->read_closed && s->write_closed)) {
-    close_from_api(t, s, due_to_error, tarpit);
+    close_from_api(t, s, due_to_error, tarpit,
+                   std::move(send_trailing_metadata));
     return;
   }
+
+  if (grpc_core::IsPromiseFilterSendCancelMetadataEnabled()) {
+    send_trailing_metadata.reset();
+  }
+  GRPC_DCHECK(send_trailing_metadata == nullptr);
 
   if (!due_to_error.ok() && !s->seen_error) {
     s->seen_error = true;
@@ -2637,8 +2663,9 @@ grpc_chttp2_transport::RemovedStreamHandle grpc_chttp2_mark_stream_closed(
   return rsh;
 }
 
-static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
-                           grpc_error_handle error, bool tarpit) {
+static void close_from_api(
+    grpc_chttp2_transport* t, grpc_chttp2_stream* s, grpc_error_handle error,
+    bool tarpit, grpc_core::ServerMetadataHandle send_trailing_metadata) {
   grpc_status_code grpc_status;
   std::string message;
   grpc_error_get_status(error, s->deadline, &grpc_status, &message, nullptr,
@@ -2650,9 +2677,9 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   auto remove_stream_handle = grpc_chttp2_mark_stream_closed(t, s, 1, 1, error);
   grpc_core::MaybeTarpit(
       t, tarpit,
-      [error = std::move(error),
-       sent_initial_metadata = s->sent_initial_metadata, id = s->id,
+      [sent_initial_metadata = s->sent_initial_metadata, id = s->id,
        grpc_status, message = std::move(message),
+       send_trailing_metadata = std::move(send_trailing_metadata),
        remove_stream_handle =
            std::move(remove_stream_handle)](grpc_chttp2_transport* t) mutable {
         grpc_slice hdr;
@@ -2660,6 +2687,9 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
         grpc_slice http_status_hdr;
         grpc_slice content_type_hdr;
         grpc_slice message_pfx;
+        size_t msg_len = message.length();
+        grpc_core::Slice message_slice =
+            grpc_core::Slice::FromCopiedString(std::move(message));
         uint8_t* p;
         uint32_t len = 0;
 
@@ -2726,57 +2756,70 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
           len += static_cast<uint32_t> GRPC_SLICE_LENGTH(content_type_hdr);
         }
 
-        status_hdr = GRPC_SLICE_MALLOC(15 + (grpc_status >= 10));
-        p = GRPC_SLICE_START_PTR(status_hdr);
-        *p++ = 0x00;  // literal header, not indexed
-        *p++ = 11;    // len(grpc-status)
-        *p++ = 'g';
-        *p++ = 'r';
-        *p++ = 'p';
-        *p++ = 'c';
-        *p++ = '-';
-        *p++ = 's';
-        *p++ = 't';
-        *p++ = 'a';
-        *p++ = 't';
-        *p++ = 'u';
-        *p++ = 's';
-        if (grpc_status < 10) {
-          *p++ = 1;
-          *p++ = static_cast<uint8_t>('0' + grpc_status);
-        } else {
-          *p++ = 2;
-          *p++ = static_cast<uint8_t>('0' + (grpc_status / 10));
-          *p++ = static_cast<uint8_t>('0' + (grpc_status % 10));
-        }
-        GRPC_CHECK(p == GRPC_SLICE_END_PTR(status_hdr));
-        len += static_cast<uint32_t> GRPC_SLICE_LENGTH(status_hdr);
+        grpc_core::RawEncoder raw_encoder(
+            t->settings.peer().allow_true_binary_metadata());
 
-        size_t msg_len = message.length();
-        GRPC_CHECK(msg_len <= UINT32_MAX);
-        grpc_core::VarintWriter<1> msg_len_writer(
-            static_cast<uint32_t>(msg_len));
-        message_pfx = GRPC_SLICE_MALLOC(14 + msg_len_writer.length());
-        p = GRPC_SLICE_START_PTR(message_pfx);
-        *p++ = 0x00;  // literal header, not indexed
-        *p++ = 12;    // len(grpc-message)
-        *p++ = 'g';
-        *p++ = 'r';
-        *p++ = 'p';
-        *p++ = 'c';
-        *p++ = '-';
-        *p++ = 'm';
-        *p++ = 'e';
-        *p++ = 's';
-        *p++ = 's';
-        *p++ = 'a';
-        *p++ = 'g';
-        *p++ = 'e';
-        msg_len_writer.Write(0, p);
-        p += msg_len_writer.length();
-        GRPC_CHECK(p == GRPC_SLICE_END_PTR(message_pfx));
-        len += static_cast<uint32_t> GRPC_SLICE_LENGTH(message_pfx);
-        len += static_cast<uint32_t>(msg_len);
+        if (grpc_core::IsPromiseFilterSendCancelMetadataEnabled()) {
+          raw_encoder.Encode(grpc_core::GrpcStatusMetadata(), grpc_status);
+          raw_encoder.Encode(grpc_core::GrpcMessageMetadata(), message_slice);
+          if (send_trailing_metadata != nullptr) {
+            send_trailing_metadata->Encode(&raw_encoder);
+            send_trailing_metadata.reset();
+          }
+          len += raw_encoder.Length();
+        } else {
+          status_hdr = GRPC_SLICE_MALLOC(15 + (grpc_status >= 10));
+          p = GRPC_SLICE_START_PTR(status_hdr);
+          *p++ = 0x00;  // literal header, not indexed
+          *p++ = 11;    // len(grpc-status)
+          *p++ = 'g';
+          *p++ = 'r';
+          *p++ = 'p';
+          *p++ = 'c';
+          *p++ = '-';
+          *p++ = 's';
+          *p++ = 't';
+          *p++ = 'a';
+          *p++ = 't';
+          *p++ = 'u';
+          *p++ = 's';
+          if (grpc_status < 10) {
+            *p++ = 1;
+            *p++ = static_cast<uint8_t>('0' + grpc_status);
+          } else {
+            *p++ = 2;
+            *p++ = static_cast<uint8_t>('0' + (grpc_status / 10));
+            *p++ = static_cast<uint8_t>('0' + (grpc_status % 10));
+          }
+          GRPC_CHECK(p == GRPC_SLICE_END_PTR(status_hdr));
+          len += static_cast<uint32_t> GRPC_SLICE_LENGTH(status_hdr);
+
+          GRPC_CHECK(msg_len <= UINT32_MAX);
+          grpc_core::VarintWriter<1> msg_len_writer(
+              static_cast<uint32_t>(msg_len));
+          message_pfx = GRPC_SLICE_MALLOC(14 + msg_len_writer.length());
+          p = GRPC_SLICE_START_PTR(message_pfx);
+          *p++ = 0x00;  // literal header, not indexed
+          *p++ = 12;    // len(grpc-message)
+          *p++ = 'g';
+          *p++ = 'r';
+          *p++ = 'p';
+          *p++ = 'c';
+          *p++ = '-';
+          *p++ = 'm';
+          *p++ = 'e';
+          *p++ = 's';
+          *p++ = 's';
+          *p++ = 'a';
+          *p++ = 'g';
+          *p++ = 'e';
+          msg_len_writer.Write(0, p);
+          p += msg_len_writer.length();
+          GRPC_CHECK(p == GRPC_SLICE_END_PTR(message_pfx));
+          len += static_cast<uint32_t> GRPC_SLICE_LENGTH(message_pfx);
+          len += static_cast<uint32_t>(msg_len);
+        }
+        GRPC_DCHECK(send_trailing_metadata == nullptr);
 
         hdr = GRPC_SLICE_MALLOC(9);
         p = GRPC_SLICE_START_PTR(hdr);
@@ -2797,10 +2840,13 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
           grpc_slice_buffer_add(&t->qbuf, http_status_hdr);
           grpc_slice_buffer_add(&t->qbuf, content_type_hdr);
         }
-        grpc_slice_buffer_add(&t->qbuf, status_hdr);
-        grpc_slice_buffer_add(&t->qbuf, message_pfx);
-        grpc_slice_buffer_add(&t->qbuf,
-                              grpc_slice_from_cpp_string(std::move(message)));
+        if (grpc_core::IsPromiseFilterSendCancelMetadataEnabled()) {
+          std::move(raw_encoder).Flush(&t->qbuf);
+        } else {
+          grpc_slice_buffer_add(&t->qbuf, status_hdr);
+          grpc_slice_buffer_add(&t->qbuf, message_pfx);
+          grpc_slice_buffer_add(&t->qbuf, message_slice.TakeCSlice());
+        }
         grpc_chttp2_reset_ping_clock(t);
         grpc_chttp2_add_rst_stream_to_next_write(
             t, id, static_cast<intptr_t>(Http2ErrorCode::kNoError), nullptr);

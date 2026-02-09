@@ -1105,13 +1105,15 @@ bool InteropClient::DoCustomMetadata() {
     }
 
     const auto& server_initial_metadata = context.GetServerInitialMetadata();
-    auto iter = server_initial_metadata.find(kEchoInitialMetadataKey);
-    GRPC_CHECK(iter != server_initial_metadata.end());
+    auto [iter, end] =
+        server_initial_metadata.equal_range(kEchoInitialMetadataKey);
+    GRPC_CHECK(iter != end);
     GRPC_CHECK(iter->second == kInitialMetadataValue);
     const auto& server_trailing_metadata = context.GetServerTrailingMetadata();
-    iter = server_trailing_metadata.find(kEchoTrailingBinMetadataKey);
-    GRPC_CHECK(iter != server_trailing_metadata.end());
-    GRPC_CHECK(std::string(iter->second.begin(), iter->second.end()) ==
+    auto [iter2, end2] =
+        server_trailing_metadata.equal_range(kEchoTrailingBinMetadataKey);
+    GRPC_CHECK(iter2 != end2);
+    GRPC_CHECK(std::string(iter2->second.begin(), iter2->second.end()) ==
                kTrailingBinValue);
 
     VLOG(2) << "Done testing RPC with custom metadata";
@@ -1156,13 +1158,15 @@ bool InteropClient::DoCustomMetadata() {
     }
 
     const auto& server_initial_metadata = context.GetServerInitialMetadata();
-    auto iter = server_initial_metadata.find(kEchoInitialMetadataKey);
-    GRPC_CHECK(iter != server_initial_metadata.end());
+    auto [iter, end] =
+        server_initial_metadata.equal_range(kEchoInitialMetadataKey);
+    GRPC_CHECK(iter != end);
     GRPC_CHECK(iter->second == kInitialMetadataValue);
     const auto& server_trailing_metadata = context.GetServerTrailingMetadata();
-    iter = server_trailing_metadata.find(kEchoTrailingBinMetadataKey);
-    GRPC_CHECK(iter != server_trailing_metadata.end());
-    GRPC_CHECK(std::string(iter->second.begin(), iter->second.end()) ==
+    auto [iter2, end2] =
+        server_trailing_metadata.equal_range(kEchoTrailingBinMetadataKey);
+    GRPC_CHECK(iter2 != end2);
+    GRPC_CHECK(std::string(iter2->second.begin(), iter2->second.end()) ==
                kTrailingBinValue);
 
     VLOG(2) << "Done testing stream with custom metadata";

@@ -112,17 +112,17 @@ class Metadata(abc.Collection):  # noqa: PLW1641
 
     def keys(self) -> abc.KeysView:
         """Get all the keys in the metadata object"""
-        return abc.KeysView(self)
+        return abc.KeysView(self._metadata)
 
     def values(self) -> abc.ValuesView:
         """Get all the values in the metadata object"""
-        return abc.ValuesView(self)
+        return abc.ValuesView(self._metadata)
 
     def items(self) -> abc.ItemsView:
         """Get all the key value pairs in the metadata object similar to
         dict.items()
         """
-        return abc.ItemsView(self)
+        return abc.ItemsView(self._metadata)
 
     def get(
         self, key: MetadataKey, default: MetadataValue = None

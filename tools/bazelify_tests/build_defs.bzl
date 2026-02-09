@@ -17,6 +17,7 @@ Contains macros used for running bazelified tests.
 """
 
 load("@bazel_toolchains//rules/exec_properties:exec_properties.bzl", "create_rbe_exec_properties_dict")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load(":dockerimage_current_versions.bzl", "DOCKERIMAGE_CURRENT_VERSIONS")
 
 def _dockerized_sh_test(name, srcs = [], args = [], data = [], size = "medium", timeout = None, tags = [], exec_compatible_with = [], flaky = None, docker_image_version = None, docker_run_as_root = False, env = {}):
@@ -59,7 +60,7 @@ def _dockerized_sh_test(name, srcs = [], args = [], data = [], size = "medium", 
         "exec_properties": exec_properties,
     }
 
-    native.sh_test(
+    sh_test(
         **test_args
     )
 

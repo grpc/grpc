@@ -2,7 +2,7 @@
 name: Request a gRPC ObjC feature
 about: Suggest an idea for this project
 labels: kind/enhancement, priority/P2, lang/ObjC
-assignees: dennycd
+assignees: pawbhard
 
 ---
 
