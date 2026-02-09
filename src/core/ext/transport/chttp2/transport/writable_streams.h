@@ -78,7 +78,7 @@ class WritableStreams {
                               const WritableStreamPriority priority,
                               bool transport_tokens_available) {
     if (transport_tokens_available) {
-      return Enqueue(stream, priority);
+      return Enqueue(std::move(stream), priority);
     } else {
       return BlockedOnTransportFlowControl(stream);
     }
@@ -96,7 +96,7 @@ class WritableStreams {
     GRPC_DCHECK(priority !=
                 WritableStreamPriority::kWaitForTransportFlowControl);
     StatusFlag status = sender_.UnbufferedImmediateSend(
-        StreamIDAndPriority{stream, priority}, /*tokens*/ 1);
+        StreamIDAndPriority{std::move(stream), priority}, /*tokens*/ 1);
     GRPC_WRITABLE_STREAMS_DEBUG
         << "UnbufferedImmediateEnqueue stream with priority "
         << GetWritableStreamPriorityString(priority) << " status " << status;
@@ -111,7 +111,8 @@ class WritableStreams {
   // wait list.
   absl::Status BlockedOnTransportFlowControl(const StreamPtr stream) {
     prioritized_queue_.Push(
-        stream, WritableStreamPriority::kWaitForTransportFlowControl);
+        std::move(stream),
+        WritableStreamPriority::kWaitForTransportFlowControl);
     GRPC_WRITABLE_STREAMS_DEBUG << "Enqueuing a stream with priority "
                                    "kWaitForTransportFlowControl ";
     return absl::OkStatus();

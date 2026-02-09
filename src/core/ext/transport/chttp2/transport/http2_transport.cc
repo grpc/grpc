@@ -292,7 +292,7 @@ void ProcessOutgoingDataFrameFlowControl(
 ValueOrHttp2Status<chttp2::FlowControlAction>
 ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame_header,
                                     chttp2::TransportFlowControl& flow_control,
-                                    RefCountedPtr<Stream> stream) {
+                                    Stream* stream) {
   GRPC_DCHECK_EQ(frame_header.type, 0u);
   if (frame_header.length > 0) {
     if (stream == nullptr) {
@@ -341,7 +341,7 @@ ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame_header,
 
 bool ProcessIncomingWindowUpdateFrameFlowControl(
     const Http2WindowUpdateFrame& frame,
-    chttp2::TransportFlowControl& flow_control, RefCountedPtr<Stream> stream) {
+    chttp2::TransportFlowControl& flow_control, Stream* stream) {
   if (frame.stream_id != 0) {
     if (stream != nullptr) {
       GRPC_HTTP2_COMMON_DLOG
@@ -392,7 +392,7 @@ void MaybeAddTransportWindowUpdateFrame(
   }
 }
 
-void MaybeAddStreamWindowUpdateFrame(RefCountedPtr<Stream> stream,
+void MaybeAddStreamWindowUpdateFrame(Stream* stream,
                                      std::vector<Http2Frame>& frames) {
   GRPC_HTTP2_COMMON_DLOG << "MaybeAddStreamWindowUpdateFrame stream="
                          << ((stream == nullptr)
@@ -420,7 +420,7 @@ void MaybeAddStreamWindowUpdateFrame(RefCountedPtr<Stream> stream,
 
 Http2Status ParseAndDiscardHeaders(HPackParser& parser, SliceBuffer&& buffer,
                                    HeaderAssembler::ParseHeaderArgs args,
-                                   const RefCountedPtr<Stream> stream,
+                                   Stream* stream,
                                    Http2Status&& original_status) {
   GRPC_HTTP2_COMMON_DLOG << "ParseAndDiscardHeaders buffer "
                             "size: "
