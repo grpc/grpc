@@ -516,8 +516,7 @@ void XdsHttpRbacFilter::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_rbac_v3_RBAC_getmsgdef(symtab);
 }
 
-std::optional<XdsHttpFilterImpl::FilterConfig>
-XdsHttpRbacFilter::GenerateFilterConfig(
+std::optional<Json> XdsHttpRbacFilter::GenerateFilterConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
@@ -534,12 +533,10 @@ XdsHttpRbacFilter::GenerateFilterConfig(
     errors->AddError("could not parse HTTP RBAC filter config");
     return std::nullopt;
   }
-  return FilterConfig{ConfigProtoName(),
-                      ParseHttpRbacToJson(context, rbac, errors)};
+  return ParseHttpRbacToJson(context, rbac, errors);
 }
 
-std::optional<XdsHttpFilterImpl::FilterConfig>
-XdsHttpRbacFilter::GenerateFilterConfigOverride(
+std::optional<Json> XdsHttpRbacFilter::GenerateFilterConfigOverride(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
@@ -566,7 +563,7 @@ XdsHttpRbacFilter::GenerateFilterConfigOverride(
     ValidationErrors::ScopedField field(errors, ".rbac");
     rbac_json = ParseHttpRbacToJson(context, rbac, errors);
   }
-  return FilterConfig{OverrideConfigProtoName(), std::move(rbac_json)};
+  return rbac_json;
 }
 
 void XdsHttpRbacFilter::AddFilter(FilterChainBuilder& builder) const {
@@ -584,18 +581,17 @@ ChannelArgs XdsHttpRbacFilter::ModifyChannelArgs(
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpRbacFilter::GenerateMethodConfig(
-    const FilterConfig& hcm_filter_config,
-    const FilterConfig* filter_config_override) const {
+    const Json& hcm_filter_config, const Json* filter_config_override) const {
   const Json& policy_json = filter_config_override != nullptr
-                                ? filter_config_override->config
-                                : hcm_filter_config.config;
+                                ? *filter_config_override
+                                : hcm_filter_config;
   // The policy JSON may be empty and that's allowed.
   return ServiceConfigJsonEntry{"rbacPolicy", JsonDump(policy_json)};
 }
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpRbacFilter::GenerateServiceConfig(
-    const FilterConfig& /*hcm_filter_config*/) const {
+    const Json& /*hcm_filter_config*/) const {
   return ServiceConfigJsonEntry{"", ""};
 }
 

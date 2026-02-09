@@ -33,6 +33,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/log/log.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 
@@ -47,7 +48,7 @@ constexpr Duration kShortInterval = Duration::Seconds(1);
 
 class MockPingInterface : public PingInterface {
  public:
-  MOCK_METHOD(Promise<absl::Status>, TriggerWrite, (), (override));
+  MOCK_METHOD(absl::Status, TriggerWrite, (), (override));
   MOCK_METHOD(Promise<absl::Status>, PingTimeout, (), (override));
 
   void ExpectPingTimeout() {
@@ -58,7 +59,7 @@ class MockPingInterface : public PingInterface {
   }
   void ExpectTriggerWrite() {
     EXPECT_CALL(*this, TriggerWrite).WillOnce(([]() {
-      return Immediate(absl::OkStatus());
+      return absl::OkStatus();
     }));
   }
 };

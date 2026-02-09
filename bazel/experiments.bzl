@@ -40,6 +40,7 @@ EXPERIMENT_ENABLES = {
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
     "max_inflight_pings_strict_limit": "max_inflight_pings_strict_limit",
+    "metadata_publish_to_app_tag": "metadata_publish_to_app_tag",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
     "otel_export_telemetry_domains": "otel_export_telemetry_domains",
@@ -112,10 +113,8 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "error_flatten",
-                "subchannel_wrapper_cleanup_on_orphan",
-            ],
-            "cpp_end2end_test_client_ph2": [
                 "promise_based_http2_client_transport",
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "subchannel_connection_scaling",
@@ -225,10 +224,8 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "error_flatten",
-                "subchannel_wrapper_cleanup_on_orphan",
-            ],
-            "cpp_end2end_test_client_ph2": [
                 "promise_based_http2_client_transport",
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "subchannel_connection_scaling",
@@ -338,10 +335,8 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "error_flatten",
-                "subchannel_wrapper_cleanup_on_orphan",
-            ],
-            "cpp_end2end_test_client_ph2": [
                 "promise_based_http2_client_transport",
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "subchannel_connection_scaling",
