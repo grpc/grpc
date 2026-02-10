@@ -61,7 +61,7 @@
 - name: event_engine_for_all_other_endpoints
   default: true
 - name: event_engine_fork
-  default: false
+  default: true
 - name: event_engine_listener
   default: true
 - name: event_engine_poller_for_python
