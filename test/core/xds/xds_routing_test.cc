@@ -324,8 +324,7 @@ class XdsPerRouteFilterChainBuilderTest : public ::testing::Test {
   Blackboard blackboard_;
 };
 
-TEST_F(XdsPerRouteFilterChainBuilderTest,
-       BuildFilterChainForRouteNoOverrides) {
+TEST_F(XdsPerRouteFilterChainBuilderTest, BuildFilterChainForRouteNoOverrides) {
   std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>
       hcm_filters = {MakeHcmFilter("filter1", "hcm")};
   auto vhost = MakeVirtualHost();
