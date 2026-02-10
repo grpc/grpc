@@ -23,8 +23,10 @@
 #include <stdint.h>
 #include <time.h>
 
-#include <algorithm>
+#include <memory>
+#include <optional>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "src/core/credentials/transport/tls/spiffe_utils.h"
@@ -33,13 +35,12 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/ssl_transport_security_utils.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/load_file.h"
 #include "src/core/util/match.h"
 #include "src/core/util/stat.h"
-#include "src/core/util/status_helper.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
@@ -74,8 +75,10 @@ absl::Status ValidateRootCertificates(const RootCertInfo* root_cert_info) {
 }
 
 absl::Status ValidatePemKeyCertPair(absl::string_view cert_chain,
-                                    absl::string_view private_key) {
-  if (cert_chain.empty() && private_key.empty()) return absl::OkStatus();
+                                    const PrivateKey& private_key) {
+  if (cert_chain.empty() && IsPrivateKeyEmpty(private_key)) {
+    return absl::OkStatus();
+  }
   // Check that the cert chain consists of valid PEM blocks.
   absl::StatusOr<std::vector<X509*>> parsed_certs =
       ParsePemCertificateChain(cert_chain);
@@ -88,9 +91,12 @@ absl::Status ValidatePemKeyCertPair(absl::string_view cert_chain,
   for (X509* x509 : *parsed_certs) {
     X509_free(x509);
   }
+  const std::string* private_key_string =
+      std::get_if<std::string>(&private_key);
+  if (private_key_string == nullptr) return absl::OkStatus();
   // Check that the private key consists of valid PEM blocks.
   absl::StatusOr<EVP_PKEY*> parsed_private_key =
-      ParsePemPrivateKey(private_key);
+      ParsePemPrivateKey(*private_key_string);
   if (!parsed_private_key.ok()) {
     return absl::Status(parsed_private_key.status().code(),
                         absl::StrCat("Failed to parse private key as PEM: ",

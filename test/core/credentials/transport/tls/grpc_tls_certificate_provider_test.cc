@@ -21,12 +21,10 @@
 
 #include <deque>
 #include <list>
+#include <memory>
+#include <utility>
 
-#include "src/core/lib/slice/slice_internal.h"
-#include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
-#include "src/core/util/match.h"
-#include "src/core/util/tmpfile.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "gmock/gmock.h"
@@ -232,7 +230,7 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
       std::optional<std::string> root_cert_name,
       std::optional<std::string> identity_cert_name) {
     MutexLock lock(&mu_);
-    distributor_ = distributor;
+    distributor_ = std::move(distributor);
     watchers_.emplace_back();
     // TlsCertificatesTestWatcher ctor takes a pointer to the WatcherState.
     // It sets WatcherState::watcher to point to itself.

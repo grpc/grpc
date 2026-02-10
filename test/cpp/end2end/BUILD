@@ -1709,3 +1709,42 @@ grpc_cc_test(
         "//test/cpp/util:test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "tls_private_key_signer_end2end_test",
+    srcs = ["tls_private_key_signer_end2end_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:client.key",
+        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/log:check",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/synchronization",
+        "gtest",
+        "libcrypto",
+        "libssl",
+    ],
+    tags = ["tls_private_key_signer_test"],
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc++_base",
+        "//:grpc_base",
+        "//:tsi_ssl_credentials",
+        "//src/core:default_event_engine",
+        "//src/core:grpc_tls_credentials",
+        "//src/core:ssl_transport_security_utils",
+        "//src/proto/grpc/testing:echo_cc_grpc",
+        "//src/proto/grpc/testing:echo_messages_cc_proto",
+        "//test/core/test_util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)

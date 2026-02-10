@@ -139,6 +139,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   auto provider =
       CreateTestingCertificateProvider(root_cert_, PemKeyCertPairList());
   options->set_root_certificate_provider(std::move(provider));
+  options->set_root_certificate_provider(provider);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
   ChannelArgs new_args;

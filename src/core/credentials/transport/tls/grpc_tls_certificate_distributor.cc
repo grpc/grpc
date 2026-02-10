@@ -20,7 +20,6 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/credentials/transport/tls/spiffe_utils.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/util/grpc_check.h"
 #include "absl/status/status.h"
@@ -334,6 +333,17 @@ void grpc_tls_identity_pairs_add_pair(grpc_tls_identity_pairs* pairs,
   GRPC_CHECK_NE(private_key, nullptr);
   GRPC_CHECK_NE(cert_chain, nullptr);
   pairs->pem_key_cert_pairs.emplace_back(private_key, cert_chain);
+}
+
+void grpc_tls_identity_pairs_add_pair_with_signer(
+    grpc_tls_identity_pairs* pairs,
+    std::shared_ptr<grpc_core::PrivateKeySigner> private_key_signer,
+    const char* cert_chain) {
+  GRPC_CHECK_NE(pairs, nullptr);
+  GRPC_CHECK_NE(private_key_signer, nullptr);
+  GRPC_CHECK_NE(cert_chain, nullptr);
+  pairs->pem_key_cert_pairs.emplace_back(std::move(private_key_signer),
+                                         cert_chain);
 }
 
 void grpc_tls_identity_pairs_destroy(grpc_tls_identity_pairs* pairs) {

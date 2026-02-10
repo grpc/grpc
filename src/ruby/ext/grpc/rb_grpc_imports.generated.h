@@ -31,6 +31,7 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
 #include <grpc/grpc_security.h>
+#include <grpc/private_key_signer.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
@@ -585,6 +586,9 @@ extern grpc_authorization_policy_provider_file_watcher_create_type grpc_authoriz
 typedef void(*grpc_authorization_policy_provider_release_type)(grpc_authorization_policy_provider* provider);
 extern grpc_authorization_policy_provider_release_type grpc_authorization_policy_provider_release_import;
 #define grpc_authorization_policy_provider_release grpc_authorization_policy_provider_release_import
+typedef void(*grpc_tls_identity_pairs_add_pair_with_signer_type)(grpc_tls_identity_pairs* pairs, std::shared_ptr<grpc_core::PrivateKeySigner> private_key_signer, const char* cert_chain);
+extern grpc_tls_identity_pairs_add_pair_with_signer_type grpc_tls_identity_pairs_add_pair_with_signer_import;
+#define grpc_tls_identity_pairs_add_pair_with_signer grpc_tls_identity_pairs_add_pair_with_signer_import
 typedef grpc_slice(*grpc_slice_ref_type)(grpc_slice s);
 extern grpc_slice_ref_type grpc_slice_ref_import;
 #define grpc_slice_ref grpc_slice_ref_import
