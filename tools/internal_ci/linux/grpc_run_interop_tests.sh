@@ -29,4 +29,19 @@ source tools/internal_ci/helper_scripts/prepare_build_interop_rc
 # configure ccache
 source tools/internal_ci/helper_scripts/prepare_ccache_rc
 
+in_array() {
+    local target="$1"
+    shift
+    for element; do
+        if [[ "$element" == "$target" ]]; then
+            return 0 # True (found)
+        fi
+    done
+    return 1 # False (not found)
+}
+
+if in_array "--mcs_cs" $RUN_TESTS_FLAGS; then
+  export GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING=true
+  export GRPC_EXPERIMENTS=subchannel_connection_scaling
+fi
 tools/run_tests/run_interop_tests.py $RUN_TESTS_FLAGS
