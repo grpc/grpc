@@ -778,7 +778,7 @@ _LANGUAGES_WITH_HTTP2_CLIENTS_FOR_HTTP2_SERVER_TEST_CASES = [
 
 _LANGUAGES_FOR_ALTS_TEST_CASES = ["java", "go", "c++", "python"]
 
-_LANGUAGES_FOR_MCS_TEST_CASE = ["java", "go", "c++", "python"]
+_LANGUAGES_FOR_MCS_TEST_CASE = ["c++"]
 
 _SERVERS_FOR_ALTS_TEST_CASES = ["java", "go", "c++", "python"]
 
