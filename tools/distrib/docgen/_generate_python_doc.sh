@@ -32,6 +32,7 @@ tools/run_tests/run_tests.py -c opt -l python --compiler python3.9 --newline_on_
 source py39/bin/activate
 pip install --upgrade Sphinx
 pip install pydata_sphinx_theme==0.16.1
+pip install myst-parser sphinxcontrib-mermaid
 
 # Use direct sphinx-build CLI command instead of `python setup.py doc`
 sphinx-build -b html -W --keep-going "$SOURCE_DIR" "$TARGET_DIR"
