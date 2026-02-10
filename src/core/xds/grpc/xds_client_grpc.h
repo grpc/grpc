@@ -32,6 +32,7 @@
 #include "src/core/xds/grpc/certificate_provider_store.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/xds_client/lrs_client.h"
+#include "src/core/ext/filters/ext_authz/ext_authz_client.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_transport.h"
 #include "absl/status/statusor.h"
@@ -90,6 +91,8 @@ class GrpcXdsClient final : public XdsClient {
   }
 
   absl::string_view key() const { return key_; }
+  
+  ExtAuthzClient& ext_authz_client() { return *ext_authz_client_; }
 
   LrsClient& lrs_client() { return *lrs_client_; }
 
@@ -107,6 +110,7 @@ class GrpcXdsClient final : public XdsClient {
   std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
       stats_plugin_group_;
   std::unique_ptr<RegisteredMetricCallback> registered_metric_callback_;
+  RefCountedPtr<ExtAuthzClient> ext_authz_client_;
   RefCountedPtr<LrsClient> lrs_client_;
 };
 
