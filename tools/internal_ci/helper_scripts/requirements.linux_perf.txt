@@ -1,4 +1,4 @@
-cryptography==3.4.6
+cryptography==46.0.5
 PyJWT==2.0.1
 requests==2.32.4
 scipy==1.5.4
