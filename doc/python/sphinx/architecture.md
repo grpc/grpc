@@ -330,7 +330,7 @@ sequenceDiagram
     PyCall->>TempCQ: Destroy CQ
 ```
 
-### Blocking Call Lifecycle (Segregated)
+### Detailed Flow
 1.  **Invocation**: `stub.Method(req)` -> `_UnaryUnaryMultiCallable.__call__`.
 2.  **Blocking**: Calls `self._blocking(...)` in `grpc/_channel.py`.
 3.  **Segregation**: It calls `channel.segregated_call(...)` -> `_segregated_call` (Cython).
