@@ -196,8 +196,8 @@ archive_override(
     ],
     strip_prefix = "libpfm-4.11.0",
     urls = [
-        "https://storage.googleapis.com/grpc-bazel-mirror/psychz.dl.sourceforge.net/project/perfmon2/libpfm4/libpfm-4.11.0.tar.gz",
-        "https://psychz.dl.sourceforge.net/projects/perfmon2/files/libpfm4/libpfm-4.11.0.tar.gz",
+        "https://storage.googleapis.com/grpc-bazel-mirror/sourceforge.net/projects/perfmon2/files/libpfm4/libpfm-4.11.0.tar.gz",
+        "https://sourceforge.net/projects/perfmon2/files/libpfm4/libpfm-4.11.0.tar.gz/download",
     ],
 )
 
