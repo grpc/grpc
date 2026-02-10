@@ -32,6 +32,8 @@
 
 import collections
 import os
+import pprint
+import json
 import subprocess
 from typing import Any, Dict, Iterable, List, Optional
 import xml.etree.ElementTree as ET
@@ -117,12 +119,15 @@ EXTERNAL_SOURCE_PREFIXES = {
     "@zlib//": "third_party/zlib",
 }
 
+_USE_BZLMOD=bool(int(os.environ.get('USE_BZLMOD', 0)))
 
 def _bazel_query_xml_tree(query: str) -> ET.Element:
     """Get xml output of bazel query invocation, parsed as XML tree"""
-    output = subprocess.check_output(
-        ["tools/bazel", "query", "--noimplicit_deps", "--output", "xml", query]
-    )
+    if not _USE_BZLMOD:
+        args = ["tools/bazel", "query", "--noimplicit_deps", "--output", "xml", query]
+    else:
+        args = ["tools/bazel", "query", "--enable_bzlmod", "--noenable_workspace", "--noimplicit_deps", "--output", "xml", query]
+    output = subprocess.check_output(args)
     return ET.fromstring(output)
 
 
@@ -615,6 +620,8 @@ def _expand_upb_proto_library_rules(bazel_rules):
         ("@com_github_cncf_xds//", ""),
         ("@com_envoyproxy_protoc_gen_validate//", ""),
         ("@dev_cel//", "proto/"),
+        # TODO(weizheyuan)
+        #("@@cel-spec+//", "proto/"),
         ("@envoy_api//", ""),
         ("@opencensus_proto//", ""),
     ]
@@ -662,6 +669,7 @@ def _expand_upb_proto_library_rules(bazel_rules):
                         proto_src = proto_src[len(prefix_to_strip) :]
                         break
                 if proto_src.startswith("@"):
+                    # print('TODO(weizheyuan): "name={0}: proto_src={1}" is unknown workspace.'.format(name, proto_src))
                     raise Exception('"{0}" is unknown workspace.'.format(name))
                 proto_src_file = _try_extract_source_file_path(proto_src)
                 if not proto_src_file:
@@ -1079,13 +1087,59 @@ def _parse_http_archives(xml_tree: ET.Element) -> "List[ExternalProtoLibrary]":
         result.append(lib)
     return result
 
+MOCKED_EXTERNAL_DEPS = [{'destination': 'third_party/cel-spec',
+  'hash': 'd6cb6b4ed272500d16546c672a65a7452b241462a200dda3f62a7de413883344',
+  'proto_prefix': 'third_party/cel-spec/',
+  'strip_path_prefix': 'proto/',
+  'strip_prefix': 'cel-spec-9f069b3ee58b02d6f6736c5ebd6587075c1a1b22',
+  'urls': ['https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/cel-spec/archive/9f069b3ee58b02d6f6736c5ebd6587075c1a1b22.tar.gz',
+           'https://github.com/google/cel-spec/archive/9f069b3ee58b02d6f6736c5ebd6587075c1a1b22.tar.gz']},
+ {'destination': 'third_party/envoy-api',
+  'hash': 'ed5e6c319f8ebcdf24a9491f866a599bb9a3c193b859a94ad13bd31f85b46855',
+  'proto_prefix': 'third_party/envoy-api/',
+  'strip_path_prefix': '',
+  'strip_prefix': 'data-plane-api-6ef568cf4a67362849911d1d2a546fd9f35db2ff',
+  'urls': ['https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/6ef568cf4a67362849911d1d2a546fd9f35db2ff.tar.gz',
+           'https://github.com/envoyproxy/data-plane-api/archive/6ef568cf4a67362849911d1d2a546fd9f35db2ff.tar.gz']},
+ {'destination': 'third_party/googleapis',
+  'hash': '3de3a199400eea7a766091aeb96c4b84c86266ad1f933f9933bbb7c359e727fe',
+  'proto_prefix': 'third_party/googleapis/',
+  'strip_path_prefix': '',
+  'strip_prefix': 'googleapis-2193a2bfcecb92b92aad7a4d81baa428cafd7dfd',
+  'urls': ['https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/googleapis/archive/2193a2bfcecb92b92aad7a4d81baa428cafd7dfd.tar.gz',
+           'https://github.com/googleapis/googleapis/archive/2193a2bfcecb92b92aad7a4d81baa428cafd7dfd.tar.gz']},
+ {'destination': 'third_party/opencensus-proto/src',
+  'hash': 'b7e13f0b4259e80c3070b583c2f39e53153085a6918718b1c710caf7037572b0',
+  'proto_prefix': 'third_party/opencensus-proto/src/',
+  'strip_path_prefix': '',
+  'strip_prefix': 'opencensus-proto-0.3.0/src',
+  'urls': ['https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz',
+           'https://github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz']},
+ {'destination': 'third_party/protoc-gen-validate',
+  'hash': 'ab51e978326b87e06be7a12fc6496f3ff6586339043557dbbd31f622332a5d45',
+  'proto_prefix': 'third_party/protoc-gen-validate/',
+  'strip_path_prefix': '',
+  'strip_prefix': 'protoc-gen-validate-1.2.1',
+  'urls': ['https://storage.googleapis.com/grpc-bazel-mirror/github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.zip',
+           'https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.zip']},
+ {'destination': 'third_party/xds',
+  'hash': '49535f3c3370004309da50194c09bbfc528d4702424dd46e7d56a278a3dfc15d',
+  'proto_prefix': 'third_party/xds/',
+  'strip_path_prefix': '',
+  'strip_prefix': 'xds-ee656c7534f5d7dc23d44dd611689568f72017a6',
+  'urls': ['https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/ee656c7534f5d7dc23d44dd611689568f72017a6.tar.gz',
+           'https://github.com/cncf/xds/archive/ee656c7534f5d7dc23d44dd611689568f72017a6.tar.gz']}]
 
 def _generate_external_proto_libraries() -> List[Dict[str, Any]]:
     """Generates the build metadata for external proto libraries"""
-    xml_tree = _bazel_query_xml_tree("kind(http_archive, //external:*)")
-    libraries = _parse_http_archives(xml_tree)
-    libraries.sort(key=lambda x: x.destination)
-    return list(map(lambda x: x.__dict__, libraries))
+    return MOCKED_EXTERNAL_DEPS
+    # xml_tree = _bazel_query_xml_tree("kind(http_archive, //external:*)")
+    # libraries = _parse_http_archives(xml_tree)
+    # libraries.sort(key=lambda x: x.destination)
+
+    # print("TODO(weizheyuan): external protos:{0}".format(repr(list(map(lambda x: x.__dict__, libraries)))))
+
+    # return list(map(lambda x: x.__dict__, libraries))
 
 
 def _detect_and_print_issues(build_yaml_like: BuildYaml) -> None:
@@ -1394,6 +1448,11 @@ _BAZEL_DEPS_QUERIES = [
     'deps("@com_google_protobuf//upb:generated_code_support")',
 ]
 
+def _save_to_file(f, obj):
+    prefix = 'tmp/bzlmod/'if _USE_BZLMOD else 'tmp/workspace/'
+    with open(prefix + f, 'w') as output_file:
+        pprint.pprint(obj, stream=output_file)
+
 # Step 1: run a bunch of "bazel query --output xml" queries to collect
 # the raw build metadata from the bazel build.
 # At the end of this step we will have a dictionary of bazel rules
@@ -1412,16 +1471,24 @@ for query in _BAZEL_DEPS_QUERIES:
         _extract_rules_from_bazel_xml(_bazel_query_xml_tree(query))
     )
 
+_save_to_file("bazel_rules.py", list(bazel_rules.keys()))
+_save_to_file("bazel_rules_full.py", bazel_rules.keys())
+
 # Step 1.5: The sources for UPB protos are pre-generated, so we want
 # to expand the UPB proto library bazel rules into the generated
 # .upb.h and .upb.c files.
 _expand_upb_proto_library_rules(bazel_rules)
+_save_to_file("expand_upb_proto_library_rules.py", list(bazel_rules.keys()))
+
 
 # Step 1.6: Add explicit protobuf dependency to grpc_proto_library rules
 _patch_grpc_proto_library_rules(bazel_rules)
+_save_to_file("patch_grpc_proto_library_rules.py", list(bazel_rules.keys()))
 
 # Step 1.7: Make sure upb descriptor.proto library uses the pre-generated sources.
 _patch_descriptor_upb_proto_library(bazel_rules)
+_save_to_file("patch_descriptor_upb_proto_library.py", list(bazel_rules.keys()))
+raise "abort"
 
 # Step 2: Extract the known bazel cc_test tests. While most tests
 # will be buildable with other build systems just fine, some of these tests
