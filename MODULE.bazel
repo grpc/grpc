@@ -180,6 +180,27 @@ archive_override(
     ],
 )
 
+# --- libpfm 4.11.0
+#
+# Not directly used, depended on by google_benchmark.
+# Override URL with our mirror site because the original link is broken.
+#
+# See also https://github.com/bazelbuild/bazel-central-registry/blob/c83ac4d4bac24aeebf1b99f8b8d21166e0886397/modules/libpfm/4.11.0.bcr.1/source.json
+bazel_dep(name = "libpfm", version = "4.11.0.bcr.1", dev_dependency = True)
+archive_override(
+    module_name = "libpfm",
+    integrity = "sha256-XaX4hyveFLNjTJaI2YD2i9ootRAmhyPMEpc+7bq5/sw=",
+    patch_strip = 1,
+    patches = [
+        "//bazel:libpfm.patch",
+    ],
+    strip_prefix = "libpfm-4.11.0",
+    urls = [
+        "https://storage.googleapis.com/grpc-bazel-mirror/psychz.dl.sourceforge.net/project/perfmon2/libpfm4/libpfm-4.11.0.tar.gz",
+        "https://psychz.dl.sourceforge.net/projects/perfmon2/files/libpfm4/libpfm-4.11.0.tar.gz",
+    ],
+)
+
 # --- Python headers
 # TODO(weizheyuan): Maybe replace this with python header exposed by rules_python.
 # See also https://github.com/grpc/grpc/issues/24665
