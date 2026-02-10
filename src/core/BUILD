@@ -8516,6 +8516,7 @@ grpc_cc_library(
         "absl/status",
     ],
     deps = [
+        "arena",
         "call_spine",
         "grpc_check",
         "header_assembler",
@@ -8781,8 +8782,10 @@ grpc_cc_library(
         "//bazel:transport_common",
     ],
     deps = [
+        "grpc_check",
         ":shared_bit_gen",
         ":time",
+        "//:chttp2_frame",
     ],
 )
 

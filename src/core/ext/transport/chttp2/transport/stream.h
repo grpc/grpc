@@ -61,9 +61,9 @@ enum class HttpStreamState : uint8_t {
 
 // Managing the streams
 struct Stream : public RefCounted<Stream> {
-  explicit Stream(CallHandler call,
+  explicit Stream(CallHandler call_handler,
                   chttp2::TransportFlowControl& transport_flow_control)
-      : call(std::move(call)),
+      : call(std::move(call_handler)),
         is_write_closed(false),
         stream_state(HttpStreamState::kIdle),
         stream_id(kInvalidStreamId),
@@ -71,7 +71,7 @@ struct Stream : public RefCounted<Stream> {
         did_receive_trailing_metadata(false),
         did_push_server_trailing_metadata(false),
         data_queue(MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
-            /*is_client*/ true,
+            call.arena(), /*is_client*/ true,
             /*queue_size*/ kStreamQueueSize)),
         flow_control(&transport_flow_control) {}
 
