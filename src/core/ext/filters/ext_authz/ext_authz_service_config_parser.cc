@@ -260,6 +260,29 @@ const JsonLoaderInterface* ExtAuthz::HeaderMutationRules::JsonLoader(
 void ExtAuthz::HeaderMutationRules::JsonPostLoad(const Json&, const JsonArgs&,
                                                  ValidationErrors*) {}
 
+bool ExtAuthz::isHeaderPresentInAllowedHeaders(std::string key) const {
+  // if the allowed_headers config field is unset or matches the header, the
+  // header will be added to this map.
+  if (allowed_headers.size() > 0) {
+    return true;
+  }
+  for (const auto& allowed_header : allowed_headers) {
+    if (allowed_header.matcher.Match(key)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool ExtAuthz::isHeaderPresentInDisallowedHeaders(std::string key) const {
+  for (const auto& disallowed_header : disallowed_headers) {
+    if (disallowed_header.matcher.Match(key)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 const JsonLoaderInterface* ExtAuthz::FilterEnabled::JsonLoader(
     const JsonArgs&) {
   static const auto* loader =

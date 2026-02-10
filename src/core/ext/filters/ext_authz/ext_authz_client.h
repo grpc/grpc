@@ -91,7 +91,10 @@ class ExtAuthzClient : public DualRefCounted<ExtAuthzClient> {
     OrphanablePtr<RetryableCall<ExtAuthzCall>> ext_authz_call_;
   };
 
-  std::string CreateExtAuthzRequest(bool is_client_call) ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
+  std::string CreateExtAuthzRequest(
+      bool is_client_call,
+      std::vector<std::pair<std::string, std::string>> headers)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
   void RemoveExtAuthzChannel(const std::string& key);
   RefCountedPtr<ExtAuthzChannel> GetOrCreateExtAuthzChannelLocked(

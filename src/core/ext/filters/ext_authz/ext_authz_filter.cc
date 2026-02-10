@@ -31,7 +31,12 @@
 // #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/service_config/service_config_call_data.h"
 // #include "absl/random/random.h"
+#include <string>
+#include <type_traits>
+#include <vector>
+
 #include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -56,9 +61,11 @@ absl::StatusOr<std::unique_ptr<ExtAuthzFilter>> ExtAuthzFilter::Create(
 //   }
 
 //   // TODO(rishesh): Create channel with credentials from config.
-//   // Using Insecure for initial implementation as credentials are not yet part
+//   // Using Insecure for initial implementation as credentials are not yet
+//   part
 //   // of GrpcService struct.
-//   grpc_channel_credentials* creds = grpc_insecure_channel_credentials_create();
+//   grpc_channel_credentials* creds =
+//   grpc_insecure_channel_credentials_create();
 //   // Using internal channel args effectively defaults. We might need to pass
 //   // relevant args.
 //   grpc_channel* c_channel =
@@ -71,8 +78,24 @@ absl::StatusOr<std::unique_ptr<ExtAuthzFilter>> ExtAuthzFilter::Create(
 //   return channel;
 // }
 
-absl::Status ExtAuthzFilter::Call::OnClientInitialMetadata(ClientMetadata& md,
-                                                           ExtAuthzFilter* filter) {
+absl::Status ExtAuthzFilter::Call::OnClientInitialMetadata(
+    ClientMetadata& md, ExtAuthzFilter* filter) {
+  std::vector<std::pair<std::string, std::string>> metadata_list;
+  md.Log([&](absl::string_view key, absl::string_view value) {
+    //  if the header is matched by the disallowed_headers config field, it will
+    //  not be added to this map
+    if (filter->config_->isHeaderPresentInDisallowedHeaders(std::string(key))) {
+      return;
+    }
+    // if the allowed_headers config field is unset or matches the header, the
+    // header will be added to this map.
+    if (filter->config_->isHeaderPresentInAllowedHeaders(std::string(key))) {
+      metadata_list.emplace_back(std::string(key), std::string(value));
+    }
+    // Otherwise, the header will be excluded from this map.
+  });
+
+  // TODO(rishesh): add the loggic to make the ext_authz_call
 
   return absl::OkStatus();
 }

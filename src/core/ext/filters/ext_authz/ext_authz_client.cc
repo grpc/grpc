@@ -22,6 +22,7 @@
 #include <optional>
 #include <string>
 
+#include "envoy/config/core/v3/base.upb.h"
 #include "envoy/service/auth/v3/attribute_context.upb.h"
 #include "envoy/service/auth/v3/external_auth.upb.h"
 #include "google/protobuf/timestamp.upb.h"
@@ -408,7 +409,8 @@ std::string SerializeExtAuthzRequest(
 }  // namespace
 
 envoy_service_auth_v3_AttributeContext_Request* CreateRequest(
-    const ExtAuthzApiContext& context) {
+    const ExtAuthzApiContext& context,
+    std::vector<std::pair<std::string, std::string>> headers) {
   envoy_service_auth_v3_AttributeContext_Request* request =
       envoy_service_auth_v3_AttributeContext_Request_new(context.arena);
   envoy_service_auth_v3_AttributeContext_HttpRequest* http_request =
@@ -434,7 +436,16 @@ envoy_service_auth_v3_AttributeContext_Request* CreateRequest(
       google_protobuf_Timestamp_new(context.arena);
   google_protobuf_Timestamp_set_nanos(
       timestamp, now.milliseconds_after_process_epoch() * 1000000);
-  // TODO(rishesh) add headers logic
+  // set headers
+  auto header_map = envoy_config_core_v3_HeaderMap_new(context.arena);
+  for (auto& [key, value] : headers) {
+    auto* header_to_assign =
+        envoy_config_core_v3_HeaderMap_add_headers(header_map, context.arena);
+    envoy_config_core_v3_HeaderValue_set_key(
+        header_to_assign, upb_StringView_FromString(key.data()));
+    envoy_config_core_v3_HeaderValue_set_value(
+        header_to_assign, upb_StringView_FromString(value.data()));
+  }
   envoy_service_auth_v3_AttributeContext_Request_set_time(request, timestamp);
   return request;
 }
@@ -451,7 +462,9 @@ envoy_service_auth_v3_AttributeContext_Peer* CreateDestination(
   return nullptr;
 }
 
-std::string ExtAuthzClient::CreateExtAuthzRequest(bool is_client_call) {
+std::string ExtAuthzClient::CreateExtAuthzRequest(
+    bool is_client_call,
+    std::vector<std::pair<std::string, std::string>> headers) {
   upb::Arena arena;
   const ExtAuthzApiContext context = {this, def_pool_.ptr(), arena.ptr()};
   envoy_service_auth_v3_AttributeContext* attribute_context =
@@ -463,8 +476,8 @@ std::string ExtAuthzClient::CreateExtAuthzRequest(bool is_client_call) {
     envoy_service_auth_v3_AttributeContext_set_destination(
         attribute_context, CreateDestination(context));
   }
-  envoy_service_auth_v3_AttributeContext_set_request(attribute_context,
-                                                     CreateRequest(context));
+  envoy_service_auth_v3_AttributeContext_set_request(
+      attribute_context, CreateRequest(context, headers));
 
   return SerializeExtAuthzRequest(context, attribute_context);
 }

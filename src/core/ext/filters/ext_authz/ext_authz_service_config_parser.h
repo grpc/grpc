@@ -70,6 +70,9 @@ struct ExtAuthz {
   };
   std::vector<StringMatch> allowed_headers;
   std::vector<StringMatch> disallowed_headers;
+  
+  bool isHeaderPresentInAllowedHeaders(std::string key) const; 
+  bool isHeaderPresentInDisallowedHeaders(std::string key) const;
 
   struct HeaderMutationRules {
     bool disallow_all;
