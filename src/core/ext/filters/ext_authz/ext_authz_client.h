@@ -57,6 +57,23 @@ class ExtAuthzClient : public DualRefCounted<ExtAuthzClient> {
     return engine_.get();
   }
 
+  struct ExtAuthzResponse {
+    struct OkResponse {
+      std::vector<HeaderValueOption> headers;
+      std::vector<std::string> headers_to_remove;
+      std::vector<HeaderValueOption> response_headers_to_add;
+    };
+
+    struct DeniedResponse {
+      grpc_status_code status;
+      std::vector<HeaderValueOption> headers;
+    };
+
+    grpc_status_code status_code;
+    OkResponse ok_response;
+    DeniedResponse denied_response;
+  };
+
  private:
   class ExtAuthzChannel final : public DualRefCounted<ExtAuthzChannel> {
    public:
@@ -95,6 +112,9 @@ class ExtAuthzClient : public DualRefCounted<ExtAuthzClient> {
       bool is_client_call,
       std::vector<std::pair<std::string, std::string>> headers)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
+
+  absl::StatusOr<ExtAuthzResponse> ParseExtAuthzResponse(
+      absl::string_view encoded_response) ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
   void RemoveExtAuthzChannel(const std::string& key);
   RefCountedPtr<ExtAuthzChannel> GetOrCreateExtAuthzChannelLocked(

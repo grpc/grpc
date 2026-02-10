@@ -18,6 +18,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include <cstddef>
 #include <memory>
 #include <optional>
 #include <string>
@@ -25,14 +26,19 @@
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/service/auth/v3/attribute_context.upb.h"
 #include "envoy/service/auth/v3/external_auth.upb.h"
+#include "envoy/type/v3/http_status.upb.h"
 #include "google/protobuf/timestamp.upb.h"
+#include "google/rpc/status.upb.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/transport/status_conversion.h"
 #include "src/core/util/backoff.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "src/core/util/upb_utils.h"
+#include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/xds_client/xds_transport.h"
 #include "upb/base/string_view.h"
 #include "absl/base/thread_annotations.h"
@@ -480,6 +486,84 @@ std::string ExtAuthzClient::CreateExtAuthzRequest(
       attribute_context, CreateRequest(context, headers));
 
   return SerializeExtAuthzRequest(context, attribute_context);
+}
+
+//
+// ExtAuthzClient::ExtAuthzResponse
+//
+
+absl::StatusOr<ExtAuthzClient::ExtAuthzResponse>
+ExtAuthzClient::ParseExtAuthzResponse(absl::string_view encoded_response) {
+  upb::Arena arena;
+  const envoy_service_auth_v3_CheckResponse* decoded_response =
+      envoy_service_auth_v3_CheckResponse_parse(
+          encoded_response.data(), encoded_response.size(), arena.ptr());
+  if (decoded_response == nullptr) {
+    return absl::UnavailableError("Can't decode response.");
+  }
+  // const ExtAuthzApiContext context = {this, def_pool_.ptr(), arena.ptr()};
+  const auto* status =
+      envoy_service_auth_v3_CheckResponse_status(decoded_response);
+  const int32_t status_code = google_rpc_Status_code(status);
+  ExtAuthzResponse result;
+  result.status_code = grpc_http2_status_to_grpc_status(status_code);
+  ValidationErrors errors;
+  if (status_code == 200) {
+    const auto* ok_resp =
+        envoy_service_auth_v3_CheckResponse_ok_response(decoded_response);
+    ExtAuthzResponse::OkResponse ok_struct;
+
+    // Headers
+    size_t size = 0;
+    const auto* const* headers =
+        envoy_service_auth_v3_OkHttpResponse_headers(ok_resp, &size);
+    for (size_t i = 0; i < size; ++i) {
+      ok_struct.headers.push_back(ParseHeaderValueOption(headers[i], &errors));
+    }
+
+    // Headers to remove
+    auto headers_remove =
+        envoy_service_auth_v3_OkHttpResponse_headers_to_remove(ok_resp, &size);
+    for (size_t i = 0; i < size; ++i) {
+      ok_struct.headers_to_remove.push_back(
+          UpbStringToStdString(headers_remove[i]));
+    }
+
+    // Response headers to add
+    const auto* const* resp_headers =
+        envoy_service_auth_v3_OkHttpResponse_response_headers_to_add(ok_resp,
+                                                                     &size);
+    for (size_t i = 0; i < size; ++i) {
+      ok_struct.response_headers_to_add.push_back(
+          ParseHeaderValueOption(resp_headers[i], &errors));
+    }
+
+    result.ok_response = std::move(ok_struct);
+  } else {
+    if (envoy_service_auth_v3_CheckResponse_has_denied_response(
+            decoded_response)) {
+      const auto* denied =
+          envoy_service_auth_v3_CheckResponse_denied_response(decoded_response);
+      ExtAuthzResponse::DeniedResponse denied_struct;
+
+      const auto* http_status =
+          envoy_service_auth_v3_DeniedHttpResponse_status(denied);
+      envoy_type_v3_HttpStatus_code(http_status);
+      denied_struct.status = grpc_http2_status_to_grpc_status(
+          envoy_type_v3_HttpStatus_code(http_status));
+
+      size_t size = 0;
+      const auto* const* headers =
+          envoy_service_auth_v3_DeniedHttpResponse_headers(denied, &size);
+      for (size_t i = 0; i < size; ++i) {
+        denied_struct.headers.push_back(
+            ParseHeaderValueOption(headers[i], &errors));
+      }
+      result.denied_response = std::move(denied_struct);
+    }
+  }
+
+  return result;
 }
 
 //
