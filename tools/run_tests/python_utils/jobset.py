@@ -323,7 +323,6 @@ class Job(object):
             cmdline = ["time", "-p"] + cmdline
         else:
             measure_cpu_costs = False
-        print('Starting subprocess for cmdline: ' + str(cmdline), True)
         try_start = lambda: subprocess.Popen(
             args=cmdline,
             stderr=subprocess.STDOUT,
@@ -694,7 +693,6 @@ def run(
         max_time,
     )
     for cmdline, remaining in tag_remaining(cmdlines):
-        print('jobset.run calling start on cmdline, shortname being: ' + cmdline.shortname)
         if not js.start(cmdline):
             break
         if remaining is not None:

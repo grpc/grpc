@@ -1151,12 +1151,6 @@ def server_jobspec(
     if use_mcs:
         server_cmd += ["--use_mcs=true"]
     cmdline = bash_cmdline(language.server_cmd(server_cmd))
-    for cmd in cmdline:
-      print('server_jobspec: cmd: ' + cmd)
-      if hasattr(cmd, 'shortname'):
-          print('cmd has shortname: ' + cmd.shortname)
-      else:
-          print('cmd doesnt have shortname.')
     environ = language.global_env()
     docker_args = ["--name=%s" % container_name]
     if language.safename == "http2":

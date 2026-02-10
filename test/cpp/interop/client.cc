@@ -216,8 +216,6 @@ int main(int argc, char** argv) {
   }
   grpc::testing::ChannelCreationFunc channel_creation_func =
       [test_case, &additional_metadata](grpc::ChannelArguments arguments) {
-        std::cout << "channel creation function called for testcase " << test_case;
-        std::cout.flush();
         std::vector<std::unique_ptr<
             grpc::experimental::ClientInterceptorFactoryInterface>>
             factories;
