@@ -19,10 +19,10 @@ import shutil
 import setuptools
 
 ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
-CHANNELZ_PROTO = os.path.join(
-    ROOT_DIR, "../../proto/grpc/channelz/channelz.proto"
-)
-LICENSE = os.path.join(ROOT_DIR, "../../../LICENSE")
+GRPC_ROOT_ABS_PATH = os.path.join(ROOT_DIR, "../../..")
+ROOT_REL_DIR = os.path.relpath(ROOT_DIR, start=GRPC_ROOT_ABS_PATH)
+CHANNELZ_PROTO = "src/proto/grpc/channelz/channelz.proto"
+LICENSE = "./LICENSE"
 
 
 class Preprocess(setuptools.Command):
@@ -43,10 +43,10 @@ class Preprocess(setuptools.Command):
         if os.path.isfile(CHANNELZ_PROTO):
             shutil.copyfile(
                 CHANNELZ_PROTO,
-                os.path.join(ROOT_DIR, "grpc_channelz/v1/channelz.proto"),
+                os.path.join(ROOT_REL_DIR, "grpc_channelz/v1/channelz.proto"),
             )
         if os.path.isfile(LICENSE):
-            shutil.copyfile(LICENSE, os.path.join(ROOT_DIR, "LICENSE"))
+            shutil.copyfile(LICENSE, os.path.join(ROOT_REL_DIR, "LICENSE"))
 
 
 class BuildPackageProtos(setuptools.Command):
@@ -62,10 +62,7 @@ class BuildPackageProtos(setuptools.Command):
         pass
 
     def run(self):
-        # due to limitations of the proto generator, we require that only *one*
-        # directory is provided as an 'include' directory. We assume it's the '' key
-        # to `self.distribution.package_dir` (and get a key error if it's not
-        # there).
         from grpc_tools import command
 
-        command.build_package_protos(self.distribution.package_dir[""])
+        # find and build all protos in the current package
+        command.build_package_protos(ROOT_REL_DIR, strict_mode=True)

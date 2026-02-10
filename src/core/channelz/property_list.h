@@ -139,10 +139,17 @@ class PropertyList final : public OtherPropertyValue {
 
   PropertyList& Merge(PropertyList other);
 
+  bool empty() const { return property_list_.empty(); }
+
   // TODO(ctiller): remove soon, switch to just FillUpbProto.
   Json::Object TakeJsonObject() override;
   void FillUpbProto(grpc_channelz_v2_PropertyList* proto, upb_Arena* arena);
   void FillAny(google_protobuf_Any* any, upb_Arena* arena) override;
+
+  const std::vector<std::pair<std::string, PropertyValue>>& property_list()
+      const {
+    return property_list_;
+  }
 
  private:
   void SetInternal(absl::string_view key, std::optional<PropertyValue> value);

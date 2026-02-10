@@ -52,6 +52,7 @@
 #include "src/core/call/metadata_batch.h"
 #include "src/core/call/status_util.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
@@ -116,14 +117,39 @@ using GrpcClosure = Closure;
 // Call
 
 Call::Call(bool is_client, Timestamp send_deadline, RefCountedPtr<Arena> arena)
-    : arena_(std::move(arena)),
+    : channelz::DataSource(ConfigVars::Get().ChannelzCallTracer()
+                               ? MakeRefCounted<channelz::CallNode>()
+                               : nullptr),
+      arena_(std::move(arena)),
       send_deadline_(send_deadline),
       is_client_(is_client) {
   GRPC_DCHECK_NE(arena_.get(), nullptr);
   GRPC_DCHECK_NE(
       arena_->GetContext<grpc_event_engine::experimental::EventEngine>(),
       nullptr);
+  arena_->SetContext<channelz::CallNode>(
+      DownCast<channelz::CallNode*>(channelz_node().get()));
   arena_->SetContext<Call>(this);
+}
+
+void Call::AddData(channelz::DataSink sink) {
+  channelz::PropertyList properties;
+  properties.Set("is_client", is_client_)
+      .Set("send_deadline", send_deadline_)
+      .Set("start_time", Timestamp::FromCycleCounterRoundDown(start_time_))
+      .Set("cancellation_is_inherited", cancellation_is_inherited_)
+      .Set("traced", traced_)
+      .Set("encodings_accepted_by_peer",
+           encodings_accepted_by_peer_.ToString());
+  {
+    MutexLock lock(&peer_mu_);
+    properties.Set("peer_string", peer_string_.as_string_view());
+  }
+  {
+    MutexLock lock(&deadline_mu_);
+    properties.Set("deadline", deadline_);
+  }
+  sink.AddData("call", properties);
 }
 
 Call::ParentCall* Call::GetOrCreateParentCall() {
@@ -337,28 +363,30 @@ void Call::HandleCompressionAlgorithmDisabled(
                                      GRPC_STATUS_UNIMPLEMENTED));
 }
 
-void Call::UpdateDeadline(Timestamp deadline) {
+grpc_error_handle Call::UpdateDeadline(Timestamp deadline) {
   ReleasableMutexLock lock(&deadline_mu_);
   GRPC_TRACE_LOG(call, INFO)
       << "[call " << this << "] UpdateDeadline from=" << deadline_.ToString()
       << " to=" << deadline.ToString();
-  if (deadline >= deadline_) return;
+  if (deadline >= deadline_) return absl::OkStatus();
   if (deadline < Timestamp::Now()) {
     lock.Release();
-    CancelWithError(grpc_error_set_int(
+    grpc_error_handle error = grpc_error_set_int(
         absl::DeadlineExceededError("Deadline Exceeded"),
-        StatusIntProperty::kRpcStatus, GRPC_STATUS_DEADLINE_EXCEEDED));
-    return;
+        StatusIntProperty::kRpcStatus, GRPC_STATUS_DEADLINE_EXCEEDED);
+    CancelWithError(error);
+    return error;
   }
   auto* event_engine =
       arena_->GetContext<grpc_event_engine::experimental::EventEngine>();
   if (deadline_ != Timestamp::InfFuture()) {
-    if (!event_engine->Cancel(deadline_task_)) return;
+    if (!event_engine->Cancel(deadline_task_)) return absl::OkStatus();
   } else {
     InternalRef("deadline");
   }
   deadline_ = deadline;
   deadline_task_ = event_engine->RunAfter(deadline - Timestamp::Now(), this);
+  return absl::OkStatus();
 }
 
 void Call::ResetDeadline() {
@@ -578,4 +606,17 @@ void grpc_call_run_in_event_engine(const grpc_call* call,
       ->arena()
       ->GetContext<grpc_event_engine::experimental::EventEngine>()
       ->Run(std::move(cb));
+}
+
+void grpc_call_run_cq_cb(const grpc_call* call,
+                         absl::AnyInvocable<void()>&& cb) {
+  if (grpc_core::IsUseCallEventEngineInCompletionQueueEnabled()) {
+    grpc_call_run_in_event_engine(
+        call, [cb = std::forward<absl::AnyInvocable<void()>>(cb)]() mutable {
+          grpc_core::ExecCtx exec_ctx;
+          cb();
+        });
+  } else {
+    cb();
+  }
 }

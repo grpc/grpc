@@ -58,6 +58,9 @@ class ServerLoadReportingFilter
     static inline const NoInterceptor OnServerToClientMessage;
     void OnFinalize(const grpc_call_final_info* final_info,
                     ServerLoadReportingFilter* filter);
+    channelz::PropertyList ChannelzProperties() const {
+      return channelz::PropertyList();
+    }
 
    private:
     std::string client_ip_and_lr_token_;

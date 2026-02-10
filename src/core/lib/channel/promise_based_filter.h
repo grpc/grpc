@@ -1248,7 +1248,9 @@ class InvalidChannelFilter : public ChannelFilter {
 };
 
 // Call data shared between all implementations of promise-based filters.
-class BaseCallData : public Activity, private Wakeable {
+class BaseCallData : public Activity,
+                     private Wakeable,
+                     public channelz::DataSource {
  protected:
   // Hook to allow interception of messages on the send/receive path by
   // PipeSender and PipeReceiver, as appropriate according to whether we're
@@ -1292,6 +1294,8 @@ class BaseCallData : public Activity, private Wakeable {
   virtual void StartBatch(grpc_transport_stream_op_batch* batch) = 0;
 
   Call* call() { return arena_->GetContext<Call>(); }
+
+  void AddData(channelz::DataSink sink) final;
 
  protected:
   class ScopedContext : public promise_detail::Context<Arena>,
@@ -1471,6 +1475,10 @@ class BaseCallData : public Activity, private Wakeable {
     // Return true if we've released the message for forwarding down the stack.
     bool IsForwarded() const { return state_ == State::kForwardedBatch; }
 
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList().Set("state", StateString(state_));
+    }
+
    private:
     enum class State : uint8_t {
       // Starting state: no batch started, no outgoing pipe configured.
@@ -1543,6 +1551,10 @@ class BaseCallData : public Activity, private Wakeable {
     void WakeInsideCombiner(Flusher* flusher, bool allow_push_to_pipe);
     // Call is completed, we have trailing metadata. Close things out.
     void Done(const ServerMetadata& metadata, Flusher* flusher);
+
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList().Set("state", StateString(state_));
+    }
 
    private:
     enum class State : uint8_t {
@@ -1626,6 +1638,7 @@ class BaseCallData : public Activity, private Wakeable {
   }
   SendMessage* send_message() const { return send_message_; }
   ReceiveMessage* receive_message() const { return receive_message_; }
+  virtual channelz::PropertyList ChannelzProperties() const;
 
   bool is_last() const {
     return grpc_call_stack_element(call_stack_, call_stack_->count - 1) ==
@@ -1707,6 +1720,7 @@ class ClientCallData : public BaseCallData {
   static const char* StateString(SendInitialState);
   static const char* StateString(RecvTrailingState);
   std::string DebugString() const;
+  channelz::PropertyList ChannelzProperties() const override;
 
   struct RecvInitialMetadata;
   class PollContext;
@@ -1823,13 +1837,15 @@ class ServerCallData : public BaseCallData {
   static const char* StateString(RecvInitialState state);
   static const char* StateString(SendTrailingState state);
   std::string DebugString() const;
+  channelz::PropertyList ChannelzProperties() const override;
 
   class PollContext;
   struct SendInitialMetadata;
 
   // Shut things down when the call completes.
-  void Completed(grpc_error_handle error, bool tarpit_cancellation,
-                 Flusher* flusher);
+  void Completed(grpc_error_handle error,
+                 ServerMetadataHandle trailing_metadata,
+                 bool tarpit_cancellation, Flusher* flusher);
   // Construct a promise that will "call" the next filter.
   // Effectively:
   //   - put the modified initial metadata into the batch being sent up.
@@ -1985,7 +2001,7 @@ struct ChannelFilterWithFlagsMethods {
         F::Create(args->channel_args,
                   ChannelFilter::Args(args->channel_stack, elem,
                                       grpc_channel_stack_filter_instance_number,
-                                      args->blackboard));
+                                      args->config, args->blackboard));
     if (!status.ok()) {
       new (elem->channel_data) F*(nullptr);
       return absl_status_to_grpc_error(status.status());

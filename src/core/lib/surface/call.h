@@ -81,7 +81,11 @@ struct ArenaContextType<census_context> {
 
 class Call : public CppImplOf<Call, grpc_call>,
              public grpc_event_engine::experimental::EventEngine::
-                 Closure /* for deadlines */ {
+                 Closure /* for deadlines */,
+             public channelz::DataSource
+/* for channelz - derived implementations must call
+   SourceConstructed/SourceDestructing */
+{
  public:
   Arena* arena() const { return arena_.get(); }
   bool is_client() const { return is_client_; }
@@ -102,7 +106,8 @@ class Call : public CppImplOf<Call, grpc_call>,
   virtual void InternalRef(const char* reason) = 0;
   virtual void InternalUnref(const char* reason) = 0;
 
-  void UpdateDeadline(Timestamp deadline) ABSL_LOCKS_EXCLUDED(deadline_mu_);
+  grpc_error_handle UpdateDeadline(Timestamp deadline)
+      ABSL_LOCKS_EXCLUDED(deadline_mu_);
   void ResetDeadline() ABSL_LOCKS_EXCLUDED(deadline_mu_);
   Timestamp deadline() {
     MutexLock lock(&deadline_mu_);
@@ -201,6 +206,8 @@ class Call : public CppImplOf<Call, grpc_call>,
 
   virtual void SetIncomingCompressionAlgorithm(
       grpc_compression_algorithm algorithm) = 0;
+
+  void AddData(channelz::DataSink sink) override;
 
  private:
   const RefCountedPtr<Arena> arena_;

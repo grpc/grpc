@@ -2,28 +2,10 @@
     "homepage": "https://github.com/grpc/grpc",
     "maintainers": [
         {
-            "email": "veblush@google.com",
-            "github": "veblush",
-            "name": "Esun Kim",
-            "github_user_id": 2793282
-        },
-        {
             "email": "bpawan@google.com",
             "github": "pawbhard",
             "name": "Pawan Bhardwaj",
             "github_user_id": 13415978
-        },
-        {
-            "email": "eostroukhov@google.com",
-            "github": "eugeneo",
-            "name": "Eugene Ostroukhov",
-            "github_user_id": 287917
-        },
-        {
-            "email": "hork@google.com",
-            "github": "drfloob",
-            "name": "Adam Heller",
-            "github_user_id": 295906
         },
         {
             "email": "rishesh@google.com",
@@ -38,34 +20,28 @@
             "github_user_id": 18664614
         },
         {
-            "email": "yashkt@google.com",
-            "github": "yashykt",
-            "name": "Yash Tibrewal",
-            "github_user_id": 4181124
-        },
-        {
-            "email": "apolcyn@google.com",
-            "github": "apolcyn",
-            "name": "Alexander Polcyn",
-            "github_user_id": 9566254
-        },
-        {
             "email": "sergiitk@google.com",
             "github": "sergiitk",
             "name": "Sergii Tkachenko",
             "github_user_id": 672669
         },
         {
+            "email": "weizheyuan@google.com",
+            "github": "yuanweiz",
+            "name": "Weizhe Yuan",
+            "github_user_id": 5679340
+        },
+        {
+            "email": "asheshvidyut@google.com",
+            "github": "asheshvidyut",
+            "name": "Ashesh Vidyut",
+            "github_user_id": 134911583
+        },
+        {
             "email": "ssreenithi@google.com",
             "github": "sreenithi",
             "name": "Sreenithi Sridharan",
             "github_user_id": 22791051
-        },
-        {
-            "email": "stanleycheung@google.com",
-            "github": "stanley-cheung",
-            "name": "Stanley Cheung",
-            "github_user_id": 11674202
         }
     ],
     "repository": [

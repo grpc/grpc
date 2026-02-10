@@ -18,7 +18,13 @@ Contains build targets used by Starlark files in the bazel/ directory.
 
 licenses(["notice"])
 
-package(default_visibility = ["//:__subpackages__"])
+package(
+    default_visibility = ["//:__subpackages__"],
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 filegroup(
     name = "_single_module_tester",
@@ -87,6 +93,11 @@ package_group(
 )
 
 package_group(
+    name = "client_channel_internal_header",
+    packages = [],
+)
+
+package_group(
     name = "core_credentials",
     packages = [],
 )
@@ -123,6 +134,11 @@ package_group(
 
 package_group(
     name = "grpc++_public_hdrs",
+    packages = [],
+)
+
+package_group(
+    name = "grpc++_unsecure",
     packages = [],
 )
 

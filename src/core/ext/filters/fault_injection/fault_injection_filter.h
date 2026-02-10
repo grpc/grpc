@@ -41,7 +41,7 @@ namespace grpc_core {
 class FaultInjectionFilter
     : public ImplementChannelFilter<FaultInjectionFilter> {
  public:
-  static const grpc_channel_filter kFilter;
+  static const grpc_channel_filter kFilterVtable;
 
   static absl::string_view TypeName() { return "fault_injection_filter"; }
 
@@ -61,6 +61,9 @@ class FaultInjectionFilter
     static inline const NoInterceptor OnClientToServerHalfClose;
     static inline const NoInterceptor OnServerToClientMessage;
     static inline const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList();
+    }
   };
 
  private:

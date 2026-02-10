@@ -16,28 +16,10 @@
 
 FROM quay.io/pypa/musllinux_1_2_aarch64:2025.07.27-1
 
-# TODO: simplify the list of third_party modules list
-# NOTE: git>=2.46 allows leading paths like third_party/* to include all subdirectories
-# current docker base images use git versions lower than 2.46 and hence require separate configs for each submodule
 RUN git config --global protocol.file.allow always && \
   git config --global --add safe.directory /var/local/jenkins/grpc && \
   git config --global --add safe.directory /var/local/jenkins/grpc/.git && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/abseil-cpp && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/benchmark && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/bloaty && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/boringssl-with-bazel && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/cares/cares && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/envoy-api && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/googleapis && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/googletest && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/opencensus-proto && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/opentelemetry && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/opentelemetry-cpp && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/protobuf && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/protoc-gen-validate && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/re2 && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/xds && \
-  git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/zlib
+  git config --global --add safe.directory '/var/local/jenkins/grpc/.git/modules/third_party/*'
 
 
 # Preinstall zstd and hiredis for ccache to avoid *_FROM_INTERNET downloads.

@@ -53,27 +53,26 @@ class ExternalProtoLibrary:
     Fields:
     - destination(int): The relative path of this proto library should be.
         Preferably, it should match the submodule path.
-    - proto_prefix(str): The prefix to remove in order to insure the proto import
-        is correct. For more info, see description of
+    - proto_prefix(str): The prefix to remove in order to insure the proto
+        import is correct. For more info, see description of
         https://github.com/grpc/grpc/pull/25272.
-    - urls(List[str]): Following 3 fields should be filled by build metadata from
-        Bazel.
-    - hash(str): The hash of the downloaded archive
-    - strip_prefix(str): The path to be stripped from the extracted directory, see
-        http_archive in Bazel.
+    - strip_path_prefix(str): Prefix to strip off of path after the
+        proto_prefix to get to the proto import path.
+    - urls(List[str]): Download URL, same as in http_archive in Bazel.
+    - hash(str): The hash of the downloaded archive, same as in http_archive
+        in Bazel.
+    - strip_prefix(str): The path to be stripped from the extracted directory,
+        see http_archive in Bazel.
     """
 
-    def __init__(
-        self, destination, proto_prefix, urls=None, hash="", strip_prefix=""
-    ):
+    def __init__(self, destination, proto_prefix, strip_path_prefix=""):
         self.destination = destination
         self.proto_prefix = proto_prefix
-        if urls is None:
-            self.urls = []
-        else:
-            self.urls = urls
-        self.hash = hash
-        self.strip_prefix = strip_prefix
+        self.strip_path_prefix = strip_path_prefix
+        # These are filled in later by _parse_http_archives().
+        self.urls = []
+        self.hash = ""
+        self.strip_prefix = ""
 
 
 EXTERNAL_PROTO_LIBRARIES = {
@@ -95,6 +94,11 @@ EXTERNAL_PROTO_LIBRARIES = {
     "opencensus_proto": ExternalProtoLibrary(
         destination="third_party/opencensus-proto/src",
         proto_prefix="third_party/opencensus-proto/src/",
+    ),
+    "dev_cel": ExternalProtoLibrary(
+        destination="third_party/cel-spec",
+        proto_prefix="third_party/cel-spec/",
+        strip_path_prefix="proto/",
     ),
 }
 
@@ -310,7 +314,7 @@ def _extract_sources(bazel_rule: BuildMetadata) -> List[str]:
 def _extract_deps(
     bazel_rule: BuildMetadata, bazel_rules: BuildDict
 ) -> List[str]:
-    """Gets list of deps from from a bazel rule"""
+    """Gets list of deps from a bazel rule"""
     deps = set(bazel_rule["deps"])
     for src in bazel_rule["srcs"]:
         if (
@@ -516,7 +520,7 @@ def _compute_transitive_metadata(
                 )
     # This item is a "visited" flag
     bazel_rule["_PROCESSING_DONE"] = True
-    # Following items are described in the docstinrg.
+    # Following items are described in the docstring.
     bazel_rule["_TRANSITIVE_DEPS"] = list(sorted(transitive_deps))
     bazel_rule["_COLLAPSED_DEPS"] = list(sorted(collapsed_deps))
     bazel_rule["_COLLAPSED_SRCS"] = list(sorted(collapsed_srcs))
@@ -560,7 +564,7 @@ def update_test_metadata_with_transitive_metadata(
 ) -> None:
     """Patches test build metadata with transitive metadata."""
     for lib_name, lib_dict in list(all_extra_metadata.items()):
-        # Skip if it isn't not an test
+        # Skip if it isn't a test
         if (
             lib_dict.get("build") != "test"
             and lib_dict.get("build") != "plugin_test"
@@ -610,6 +614,7 @@ def _expand_upb_proto_library_rules(bazel_rules):
         ("@com_google_googleapis//", ""),
         ("@com_github_cncf_xds//", ""),
         ("@com_envoyproxy_protoc_gen_validate//", ""),
+        ("@dev_cel//", "proto/"),
         ("@envoy_api//", ""),
         ("@opencensus_proto//", ""),
     ]
@@ -729,7 +734,7 @@ def _generate_build_metadata(
     # Rename targets marked with "_RENAME" extra metadata.
     # This is mostly a cosmetic change to ensure that we end up with build.yaml target
     # names we're used to from the past (and also to avoid too long target names).
-    # The rename step needs to be made after we're done with most of processing logic
+    # The rename step needs to be made after we're done with most processing logic
     # otherwise the already-renamed libraries will have different names than expected
     for lib_name in lib_names:
         to_name = build_extra_metadata.get(lib_name, {}).get("_RENAME", None)
