@@ -727,8 +727,11 @@ TEST_F(CredentialsTest, TestChannelOauth2GoogleIamCompositeCreds) {
 void validate_compute_engine_http_request(const grpc_http_request* request,
                                           const URI& uri) {
   EXPECT_EQ(uri.authority(), "metadata.google.internal.");
-  EXPECT_EQ(uri.path(),
-            "/computeMetadata/v1/instance/service-accounts/default/token");
+  EXPECT_TRUE(
+      uri.path() ==
+          "/computeMetadata/v1/instance/service-accounts/default/token" ||
+      uri.path() ==
+          "/computeMetadata/v1/instance/service-accounts/default/email");
   ASSERT_EQ(request->hdr_count, 1);
   EXPECT_EQ(absl::string_view(request->hdrs[0].key), "Metadata-Flavor");
   EXPECT_EQ(absl::string_view(request->hdrs[0].value), "Google");
@@ -748,7 +751,12 @@ int compute_engine_httpcli_get_success_override(
     const grpc_http_request* request, const URI& uri, Timestamp /*deadline*/,
     grpc_closure* on_done, grpc_http_response* response) {
   validate_compute_engine_http_request(request, uri);
-  *response = http_response(200, valid_oauth2_json_response);
+  if (uri.path() ==
+      "/computeMetadata/v1/instance/service-accounts/default/email") {
+    *response = http_response(200, "foo@bar.com");
+  } else {
+    *response = http_response(200, valid_oauth2_json_response);
+  }
   ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
@@ -756,7 +764,9 @@ int compute_engine_httpcli_get_success_override(
 int compute_engine_httpcli_get_success_alts_override(
     const grpc_http_request* request, const URI& uri, Timestamp deadline,
     grpc_closure* on_done, grpc_http_response* response) {
-  assert_query_parameters(uri, "transport", "alts");
+  if (uri.path() != "/computeMetadata/v1/instance/service-accounts/default/email") {
+    assert_query_parameters(uri, "transport", "alts");
+  }
   return compute_engine_httpcli_get_success_override(request, uri, deadline,
                                                      on_done, response);
 }
@@ -765,7 +775,12 @@ int compute_engine_httpcli_get_failure_override(
     const grpc_http_request* request, const URI& uri, Timestamp /*deadline*/,
     grpc_closure* on_done, grpc_http_response* response) {
   validate_compute_engine_http_request(request, uri);
-  *response = http_response(403, "Not Authorized.");
+  if (uri.path() ==
+      "/computeMetadata/v1/instance/service-accounts/default/email") {
+    *response = http_response(403, "Not Authorized.");
+  } else {
+    *response = http_response(403, "Not Authorized.");
+  }
   ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
@@ -773,7 +788,9 @@ int compute_engine_httpcli_get_failure_override(
 int compute_engine_httpcli_get_failure_alts_override(
     const grpc_http_request* request, const URI& uri, Timestamp deadline,
     grpc_closure* on_done, grpc_http_response* response) {
-  assert_query_parameters(uri, "transport", "alts");
+  if (uri.path() != "/computeMetadata/v1/instance/service-accounts/default/email") {
+    assert_query_parameters(uri, "transport", "alts");
+  }
   return compute_engine_httpcli_get_failure_override(request, uri, deadline,
                                                      on_done, response);
 }
@@ -893,6 +910,7 @@ TEST_F(CredentialsTest, TestComputeEngineCredsFailure) {
                            httpcli_put_should_not_be_called);
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
+  ExecCtx::Get()->Flush();
   GRPC_CHECK_EQ(
       strcmp(creds->debug_string().c_str(), expected_creds_debug_string), 0);
   creds->Unref();
@@ -916,6 +934,7 @@ TEST_F(CredentialsTest, TestComputeEngineCredsWithAltsFailure) {
                            httpcli_put_should_not_be_called);
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
+  ExecCtx::Get()->Flush();
   CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
            0);
   creds->Unref();
@@ -4813,6 +4832,7 @@ TEST_F(JwtTokenFileCallCredentialsTest, InvalidToken) {
 }
 
 }  // namespace
+
 const char kGoogleTestAuthority[] = "googleapis.com";
 
 int external_account_creds_httpcli_get_rab_success(
@@ -4991,6 +5011,174 @@ TEST_F(ExternalAccountCredentialsTest, SuccessWithRab500_NoHeader) {
                                 kTestPath);
   event_engine_->TickUntilIdle();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+
+int compute_engine_with_rab_httpcli_get_success_override(
+    const grpc_http_request* request, const URI& uri, Timestamp /*deadline*/,
+    grpc_closure* on_done, grpc_http_response* response) {
+  if (uri.path() ==
+      "/computeMetadata/v1/instance/service-accounts/default/email") {
+    *response = http_response(200, "foo@bar.com");
+  } else if (uri.path() ==
+             "/computeMetadata/v1/instance/service-accounts/default/token") {
+    *response = http_response(200, valid_oauth2_json_response);
+  } else if (uri.path().find("allowedLocations") != std::string::npos) {
+    *response = http_response(200,
+                              "{\"encodedLocations\": \"0x08\", "
+                              "\"locations\": [\"europe-west1\"]}");
+  } else {
+    *response = http_response(404, "");
+  }
+  ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
+  return 1;
+}
+
+int compute_engine_with_rab_401_httpcli_get_override(
+    const grpc_http_request* request, const URI& uri, Timestamp /*deadline*/,
+    grpc_closure* on_done, grpc_http_response* response) {
+  if (uri.path() ==
+      "/computeMetadata/v1/instance/service-accounts/default/email") {
+    *response = http_response(200, "foo@bar.com");
+  } else if (uri.path() ==
+             "/computeMetadata/v1/instance/service-accounts/default/token") {
+    *response = http_response(200, valid_oauth2_json_response);
+  } else if (uri.path().find("allowedLocations") != std::string::npos) {
+    *response = http_response(401, "");
+  } else {
+    *response = http_response(404, "");
+  }
+  ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
+  return 1;
+}
+
+TEST_F(CredentialsTest, TestComputeEngineCredsWithRabSuccess) {
+  ExecCtx exec_ctx;
+  std::string emd = "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_, x-allowed-locations: 0x08";
+  grpc_call_credentials* creds =
+      grpc_google_compute_engine_credentials_create(nullptr);
+  
+  auto state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
+  HttpRequest::SetOverride(compute_engine_with_rab_httpcli_get_success_override,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  creds->Unref();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+
+TEST_F(CredentialsTest, TestComputeEngineCredsWithRab401) {
+  ExecCtx exec_ctx;
+  std::string emd = "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_";
+  grpc_call_credentials* creds =
+      grpc_google_compute_engine_credentials_create(nullptr);
+  
+  // Note: 401 returns empty locations, so x-allowed-locations is absent
+  auto state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
+  HttpRequest::SetOverride(compute_engine_with_rab_401_httpcli_get_override,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+  creds->Unref();
+}
+
+static std::atomic<int> g_email_fetch_count{0};
+int compute_engine_concurrent_fetch_override(
+    const grpc_http_request* request, const URI& uri, Timestamp deadline,
+    grpc_closure* on_done, grpc_http_response* response) {
+  if (uri.path().find("email") != std::string::npos) {
+    g_email_fetch_count++;
+  }
+  return compute_engine_with_rab_httpcli_get_success_override(request, uri, deadline, on_done, response);
+}
+
+TEST_F(CredentialsTest, TestComputeEngineCredsConcurrentFetch) {
+  ExecCtx exec_ctx;
+  g_email_fetch_count = 0;
+  std::string emd = "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_, x-allowed-locations: 0x08";
+  grpc_call_credentials* creds =
+      grpc_google_compute_engine_credentials_create(nullptr);
+  
+  auto state1 = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
+  auto state2 = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
+  HttpRequest::SetOverride(compute_engine_concurrent_fetch_override,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state1->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  state2->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  EXPECT_EQ(g_email_fetch_count, 1);
+  ExecCtx::Get()->Flush();
+  creds->Unref();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+bool g_email_request_cancelled = false;
+grpc_closure* g_stalled_email_fetch_on_done = nullptr;
+
+int compute_engine_httpcli_get_stalled_email_override(
+    const grpc_http_request* request, const URI& uri, Timestamp /*deadline*/,
+    grpc_closure* on_done, grpc_http_response* response) {
+  if (uri.path() ==
+      "/computeMetadata/v1/instance/service-accounts/default/email") {
+    g_stalled_email_fetch_on_done = on_done;
+    return 1; // Stall the request
+  } else {
+    *response = http_response(200, valid_oauth2_json_response);
+    ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
+    return 1;
+  }
+}
+
+TEST_F(CredentialsTest, TestComputeEngineCredsEmailFetchCancellation) {
+  g_email_request_cancelled = false;
+  g_stalled_email_fetch_on_done = nullptr;
+
+  ExecCtx exec_ctx;
+  grpc_call_credentials* creds =
+      grpc_google_compute_engine_credentials_create(nullptr);
+      
+  HttpRequest::SetOverride(compute_engine_httpcli_get_stalled_email_override,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  
+  grpc_polling_entity pollent;
+  gpr_mu* mu;
+  grpc_pollset* pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
+  grpc_pollset_init(pollset, &mu);
+  pollent = grpc_polling_entity_create_from_pollset(pollset);
+  
+  grpc_metadata_batch md;
+  grpc_call_credentials::GetRequestMetadataArgs args;
+
+  auto arena = SimpleArenaAllocator()->MakeArena();
+  auto activity = MakeActivity(
+      [&]() {
+        return creds->GetRequestMetadata(
+            ClientMetadataHandle(&md, Arena::PooledDeleter(nullptr)), &args);
+      },
+      ExecCtxWakeupScheduler(),
+      [](absl::StatusOr<ClientMetadataHandle> res) {},
+      arena.get(), &pollent);
+  ExecCtx::Get()->Flush();
+                           
+  EXPECT_NE(g_stalled_email_fetch_on_done, nullptr);
+  
+  activity.reset();
+  creds->Unref();
+
+  if (g_stalled_email_fetch_on_done != nullptr) {
+    ExecCtx::Run(DEBUG_LOCATION, g_stalled_email_fetch_on_done,
+                 absl::CancelledError("cancelled"));
+  }
+  ExecCtx::Get()->Flush();
+
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+  grpc_pollset_destroy(pollset);
 }
 }  // namespace grpc_core
 
