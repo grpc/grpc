@@ -2444,6 +2444,8 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/hash/internal/low_level_hash.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/hash/internal/low_level_hash.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/hash/internal/weakly_mixed_integer.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/absl_check.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/absl_log.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/absl_vlog_is_on.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/check.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/globals.cc" role="src" />
@@ -3237,6 +3239,7 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/p256_32.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/p256_64.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/third_party/fiat/p256_64_msvc.h" role="src" />
+    <file baseinstalldir="/" name="third_party/re2/re2/bitmap256.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/bitmap256.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/bitstate.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/compile.cc" role="src" />
@@ -3264,7 +3267,6 @@
     <file baseinstalldir="/" name="third_party/re2/re2/simplify.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/sparse_array.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/sparse_set.h" role="src" />
-    <file baseinstalldir="/" name="third_party/re2/re2/stringpiece.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/stringpiece.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/tostring.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/unicode_casefold.cc" role="src" />
@@ -3272,14 +3274,10 @@
     <file baseinstalldir="/" name="third_party/re2/re2/unicode_groups.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/unicode_groups.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/re2/walker-inl.h" role="src" />
-    <file baseinstalldir="/" name="third_party/re2/util/logging.h" role="src" />
-    <file baseinstalldir="/" name="third_party/re2/util/mix.h" role="src" />
-    <file baseinstalldir="/" name="third_party/re2/util/mutex.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/rune.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/strutil.cc" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/strutil.h" role="src" />
     <file baseinstalldir="/" name="third_party/re2/util/utf.h" role="src" />
-    <file baseinstalldir="/" name="third_party/re2/util/util.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/base/descriptor_constants.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/base/internal/endian.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/base/internal/log2.h" role="src" />
@@ -3459,7 +3457,11 @@
     <file baseinstalldir="/" name="third_party/zlib/crc32.h" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/deflate.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/deflate.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/gzclose.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/gzguts.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/gzlib.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/gzread.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/gzwrite.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/infback.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/inffast.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/inffast.h" role="src" />
@@ -3473,6 +3475,17 @@
     <file baseinstalldir="/" name="third_party/zlib/uncompr.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/zconf.h" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/zlib.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/zlib/include/crc32.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/zlib/include/deflate.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/zlib/include/gzguts.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/zlib/include/inffast.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/zlib/include/inffixed.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/zlib/include/inflate.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/zlib/include/inftrees.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/zlib/include/trees.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/zlib/include/zconf.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/zlib/include/zlib.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/zlib/include/zutil.h" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/zutil.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/zutil.h" role="src" />
     <file name="LICENSE" role="doc" />
