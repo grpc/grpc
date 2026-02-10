@@ -1056,7 +1056,7 @@ TEST_F(MatcherTest, KeepMatchingWhenNotAllowed) {
   ValidationErrors errors;
   auto matcher = ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
                                  action_registry_, RpcMatchContext::Type(),
-                                 /*keep_matching=*/false, &errors);
+                                 /*allow_keep_matching=*/false, &errors);
   EXPECT_FALSE(errors.ok());
   EXPECT_EQ(errors.status(absl::StatusCode::kInvalidArgument, "").message(),
             ": [field:matcher_list.matchers[0].on_match.keep_matching "
