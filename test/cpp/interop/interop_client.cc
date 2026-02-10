@@ -1384,6 +1384,7 @@ bool InteropClient::DoMcsConnectionScaling() {
     return TransientFailureOrAbort();
   }
   std::string clientSocketAddressInCall1 = response1.payload().body();
+  GRPC_CHECK(clientSocketAddressInCall1.length() > 0);
 
   VLOG(2) << "Sending Mcs connection scaling streaming rpc2 ...";
 
