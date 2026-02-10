@@ -26,8 +26,8 @@
 #include <string>
 #include <vector>
 
+#include "envoy/service/auth/v3/attribute_context.upb.h"
 #include "ext_authz_service_config_parser.h"
-// #include "src/core/ext/filters/ext_authz/ext_authz_request.h"
 #include "src/core/util/dual_ref_counted.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -90,6 +90,8 @@ class ExtAuthzClient : public DualRefCounted<ExtAuthzClient> {
     // The retryable LRS call.
     OrphanablePtr<RetryableCall<ExtAuthzCall>> ext_authz_call_;
   };
+
+  std::string CreateExtAuthzRequest(bool is_client_call) ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
   void RemoveExtAuthzChannel(const std::string& key);
   RefCountedPtr<ExtAuthzChannel> GetOrCreateExtAuthzChannelLocked(

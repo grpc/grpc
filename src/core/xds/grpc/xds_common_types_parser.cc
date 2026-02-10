@@ -25,6 +25,7 @@
 #include <utility>
 
 #include "envoy/config/core/v3/address.upb.h"
+#include "envoy/config/core/v3/base.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/type/matcher/v3/regex.upb.h"
@@ -46,6 +47,7 @@
 #include "upb/mem/arena.h"
 #include "xds/type/matcher/v3/regex.upb.h"
 #include "xds/type/v3/typed_struct.upb.h"
+#include "xds_common_types.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -777,6 +779,61 @@ XdsGrpcService ParseXdsGrpcService(
         std::move(call_creds_configs));
   }
   return xds_grpc_service;
+}
+
+HeaderValueOption::AppendAction
+UpbHeaderAppendActionToHeaderValueOptionAppendAction(
+    int32_t header_value_option_append_action) {
+  switch (header_value_option_append_action) {
+    case envoy_config_core_v3_HeaderValueOption_APPEND_IF_EXISTS_OR_ADD:
+      return HeaderValueOption::AppendAction::kAppendIfExistsOrAdd;
+
+    case envoy_config_core_v3_HeaderValueOption_ADD_IF_ABSENT:
+      return HeaderValueOption::AppendAction::kAddIfAbsent;
+
+    case envoy_config_core_v3_HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD:
+      return HeaderValueOption::AppendAction::kOverwriteIfExistsOrAdd;
+
+    case envoy_config_core_v3_HeaderValueOption_OVERWRITE_IF_EXISTS:
+      return HeaderValueOption::AppendAction::kOverwriteIfExists;
+
+    default:
+      return HeaderValueOption::AppendAction::kDefault;
+  }
+}
+
+HeaderValueOption ParseHeaderValueOption(
+    const envoy_config_core_v3_HeaderValueOption* header_value_option_config,
+    ValidationErrors* errors) {
+  if (header_value_option_config == nullptr) {
+    errors->AddError("field not set");
+    return {};
+  }
+  HeaderValueOption header_value_option;
+  // parse header
+  if (auto* header = envoy_config_core_v3_HeaderValueOption_header(
+          header_value_option_config);
+      header != nullptr) {
+    auto [key, value] = ParseHeader(header, errors);
+    header_value_option.header = {
+        std::move(key),
+        std::move(value),
+    };
+  }
+  // parse header_append_action
+  int32_t header_append_action =
+      envoy_config_core_v3_HeaderValueOption_append_action(
+          header_value_option_config);
+  header_value_option.append_action =
+      UpbHeaderAppendActionToHeaderValueOptionAppendAction(
+          header_append_action);
+  // parse keep_empty_value
+  auto keep_empty_value =
+      envoy_config_core_v3_HeaderValueOption_keep_empty_value(
+          header_value_option_config);
+  header_value_option.keep_empty_value = keep_empty_value;
+
+  return header_value_option;
 }
 
 }  // namespace grpc_core

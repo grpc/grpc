@@ -22,7 +22,9 @@
 #include <optional>
 #include <string>
 
+#include "envoy/service/auth/v3/attribute_context.upb.h"
 #include "envoy/service/auth/v3/external_auth.upb.h"
+#include "google/protobuf/timestamp.upb.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/backoff.h"
@@ -31,6 +33,7 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/xds/xds_client/xds_transport.h"
+#include "upb/base/string_view.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/cleanup/cleanup.h"
 #include "absl/log/log.h"
@@ -379,6 +382,91 @@ void ExtAuthzClient::ExtAuthzChannel::ResetBackoff() {
 
 void ExtAuthzClient::ExtAuthzChannel::StopExtAuthzCallLocked() {
   ext_authz_call_.reset();
+}
+
+//
+// ExtAuthzClient::ExtAuthzRequest
+//
+
+namespace {
+
+struct ExtAuthzApiContext {
+  ExtAuthzClient* client;
+  upb_DefPool* def_pool;
+  upb_Arena* arena;
+};
+
+std::string SerializeExtAuthzRequest(
+    const ExtAuthzApiContext& context,
+    const envoy_service_auth_v3_AttributeContext* request) {
+  size_t output_length;
+  char* output = envoy_service_auth_v3_AttributeContext_serialize(
+      request, context.arena, &output_length);
+  return std::string(output, output_length);
+}
+
+}  // namespace
+
+envoy_service_auth_v3_AttributeContext_Request* CreateRequest(
+    const ExtAuthzApiContext& context) {
+  envoy_service_auth_v3_AttributeContext_Request* request =
+      envoy_service_auth_v3_AttributeContext_Request_new(context.arena);
+  envoy_service_auth_v3_AttributeContext_HttpRequest* http_request =
+      envoy_service_auth_v3_AttributeContext_HttpRequest_new(context.arena);
+  // set method
+  envoy_service_auth_v3_AttributeContext_HttpRequest_set_method(
+      http_request, upb_StringView_FromString("POST"));
+  // TODO(rishesh)
+  // set path
+  envoy_service_auth_v3_AttributeContext_HttpRequest_set_path(
+      http_request, upb_StringView_FromString("PATH"));
+  // set size
+  envoy_service_auth_v3_AttributeContext_HttpRequest_set_size(http_request, -1);
+  // set protocol
+  envoy_service_auth_v3_AttributeContext_HttpRequest_set_protocol(
+      http_request, upb_StringView_FromString("HTTP/2"));
+  // set http_request to request
+  envoy_service_auth_v3_AttributeContext_Request_set_http(request,
+                                                          http_request);
+  // set time
+  const Timestamp now = Timestamp::Now();
+  google_protobuf_Timestamp* timestamp =
+      google_protobuf_Timestamp_new(context.arena);
+  google_protobuf_Timestamp_set_nanos(
+      timestamp, now.milliseconds_after_process_epoch() * 1000000);
+  // TODO(rishesh) add headers logic
+  envoy_service_auth_v3_AttributeContext_Request_set_time(request, timestamp);
+  return request;
+}
+
+envoy_service_auth_v3_AttributeContext_Peer* CreateSource(
+    const ExtAuthzApiContext& context) {
+  // TODO(rishesh): add logic for create source
+  return nullptr;
+}
+
+envoy_service_auth_v3_AttributeContext_Peer* CreateDestination(
+    const ExtAuthzApiContext& context) {
+  // TODO(rishesh): add logic for create destination
+  return nullptr;
+}
+
+std::string ExtAuthzClient::CreateExtAuthzRequest(bool is_client_call) {
+  upb::Arena arena;
+  const ExtAuthzApiContext context = {this, def_pool_.ptr(), arena.ptr()};
+  envoy_service_auth_v3_AttributeContext* attribute_context =
+      envoy_service_auth_v3_AttributeContext_new(arena.ptr());
+
+  if (!is_client_call) {
+    envoy_service_auth_v3_AttributeContext_set_source(attribute_context,
+                                                      CreateSource(context));
+    envoy_service_auth_v3_AttributeContext_set_destination(
+        attribute_context, CreateDestination(context));
+  }
+  envoy_service_auth_v3_AttributeContext_set_request(attribute_context,
+                                                     CreateRequest(context));
+
+  return SerializeExtAuthzRequest(context, attribute_context);
 }
 
 //
