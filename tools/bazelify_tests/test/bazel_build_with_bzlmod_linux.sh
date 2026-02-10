@@ -20,29 +20,39 @@ tools/bazel \
     --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
     build \
     -- \
-    :all \
-    -:grpcpp_csm_observability  # Needs google_cloud_cpp to be added to BCR
+    :all
 
 # Test if examples are buildable without dev dependencies.
 tools/bazel \
     --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
     build \
     -- \
-    //examples/cpp/... \
-    -//examples/cpp/csm/...  # Needs grpcpp_csm_observability
+    //examples/cpp/...
 
 # Test if a few basic tests can pass.
 # This is a temporary sanity check covering essential features,
 # to be replaced by a comprehensive test suite once the bzlmod migration is finished.
-# TODO(weizheyuan): Test //test/core/util:all once we fixed fuzztest.
 tools/bazel \
     --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
     test \
-    --ignore_dev_dependency=false \
     -- \
     //test/core/config:all \
-    //test/core/util:directory_reader_test \
+    //test/core/util:all \
     //test/cpp/common:all
+
+# Use --nobuild flag to trigger bazel dependency analysis but skip C++
+# compilation.
+# TODO(weizheyuan): Re-enable the full build (by removing --nobuild)
+# once it no longer causes CI timeouts.
+tools/bazel \
+    --bazelrc=tools/remote_build/linux_bzlmod.bazelrc \
+    build \
+    --nobuild \
+    --ignore_dev_dependency=false \
+    -- \
+    //test/... \
+    -//test/cpp/ext/... \
+    -//test/cpp/interop/...
 
 # Test if public targets are buildable with openssl and without dev
 # dependencies.
@@ -51,5 +61,4 @@ tools/bazel \
     build \
     --define=//third_party:grpc_use_openssl=true \
     -- \
-    :all \
-    -:grpcpp_csm_observability  # Needs google_cloud_cpp to be added to BCR
+    :all

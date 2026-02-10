@@ -123,11 +123,7 @@ class Http2ClientTransport final : public ClientTransport,
 
   void Orphan() override;
 
-  RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
-    return const_cast<channelz::BaseNode*>(
-               channelz::DataSource::channelz_node())
-        ->RefAsSubclass<channelz::SocketNode>();
-  }
+  RefCountedPtr<channelz::SocketNode> GetSocketNode() const override;
 
   std::unique_ptr<channelz::ZTrace> GetZTrace(absl::string_view name) override {
     if (name == "transport_frames") return ztrace_collector_->MakeZTrace();
@@ -138,9 +134,7 @@ class Http2ClientTransport final : public ClientTransport,
   void SpawnAddChannelzData(RefCountedPtr<Party> party,
                             channelz::DataSink sink);
 
-  auto TestOnlyTriggerWriteCycle() {
-    return Immediate(writable_stream_list_.ForceReadyForWrite());
-  }
+  absl::Status TestOnlyTriggerWriteCycle() { return TriggerWriteCycle(); }
 
   auto TestOnlySendPing(absl::AnyInvocable<void()> on_initiate,
                         bool important = false) {
@@ -165,7 +159,7 @@ class Http2ClientTransport final : public ClientTransport,
   Http2Status ProcessHttp2HeaderFrame(Http2HeaderFrame frame);
   Http2Status ProcessHttp2RstStreamFrame(Http2RstStreamFrame frame);
   Http2Status ProcessHttp2SettingsFrame(Http2SettingsFrame frame);
-  auto ProcessHttp2PingFrame(Http2PingFrame frame);
+  Http2Status ProcessHttp2PingFrame(Http2PingFrame frame);
   Http2Status ProcessHttp2GoawayFrame(Http2GoawayFrame frame);
   Http2Status ProcessHttp2WindowUpdateFrame(Http2WindowUpdateFrame frame);
   Http2Status ProcessHttp2ContinuationFrame(Http2ContinuationFrame frame);
@@ -207,10 +201,25 @@ class Http2ClientTransport final : public ClientTransport,
   auto CallOutboundLoop(CallHandler call_handler, RefCountedPtr<Stream> stream,
                         ClientMetadataHandle metadata);
 
-  // TODO(akshitpatel) : [PH2][P1] : Make this a synchronous function.
   // Force triggers a transport write cycle
-  auto TriggerWriteCycle() {
-    return Immediate(writable_stream_list_.ForceReadyForWrite());
+  absl::Status TriggerWriteCycle(DebugLocation whence = {}) {
+    GRPC_HTTP2_CLIENT_DLOG
+        << "Http2ClientTransport::TriggerWriteCycle invoked from "
+        << whence.file() << ":" << whence.line();
+    return writable_stream_list_.ForceReadyForWrite();
+  }
+
+  // Triggers a write cycle. If successful, returns true.
+  // If failed, calls HandleError and returns false.
+  bool TriggerWriteCycleOrHandleError(DebugLocation whence = {}) {
+    absl::Status status = TriggerWriteCycle(whence);
+    if (GPR_LIKELY(status.ok())) return true;
+    GRPC_HTTP2_CLIENT_DLOG
+        << "TriggerWriteCycleOrHandleError failed with status: " << status
+        << " at " << whence.file() << ":" << whence.line();
+    GRPC_UNUSED absl::Status unused_status =
+        HandleError(std::nullopt, ToHttpOkOrConnError(status), whence);
+    return false;
   }
 
   auto FlowControlPeriodicUpdateLoop();
@@ -389,6 +398,7 @@ class Http2ClientTransport final : public ClientTransport,
   std::optional<KeepaliveManager> keepalive_manager_;
   void MaybeSpawnPingTimeout(std::optional<uint64_t> opaque_data);
   void MaybeSpawnDelayedPing(std::optional<Duration> delayed_ping_wait);
+  void MaybeSpawnKeepaliveLoop();
 
   // Flags
   bool keepalive_permit_without_calls_;
@@ -418,15 +428,18 @@ class Http2ClientTransport final : public ClientTransport,
                : Duration::Seconds(1);
   }
 
-  auto AckPing(uint64_t opaque_data);
+  absl::Status AckPing(uint64_t opaque_data);
 
   class PingSystemInterfaceImpl : public PingInterface {
    public:
     static std::unique_ptr<PingInterface> Make(Http2ClientTransport* transport);
-    Promise<absl::Status> TriggerWrite() override;
+    absl::Status TriggerWrite() override;
     Promise<absl::Status> PingTimeout() override;
 
    private:
+    // Holding a raw pointer to transport works because all the promises
+    // invoking the methods of this class are invoked while holding a ref to the
+    // transport.
     Http2ClientTransport* transport_;
     explicit PingSystemInterfaceImpl(Http2ClientTransport* transport)
         : transport_(transport) {}
@@ -443,7 +456,9 @@ class Http2ClientTransport final : public ClientTransport,
     Promise<absl::Status> SendPingAndWaitForAck() override;
     Promise<absl::Status> OnKeepAliveTimeout() override;
     bool NeedToSendKeepAlivePing() override;
-
+    // Holding a raw pointer to transport works because all the promises
+    // invoking the methods of this class are invoked while holding a ref to the
+    // transport.
     Http2ClientTransport* transport_;
   };
 
@@ -457,13 +472,17 @@ class Http2ClientTransport final : public ClientTransport,
                                                     /*important=*/true);
     }
 
-    void TriggerWriteCycle() override { transport_->TriggerWriteCycle(); }
+    absl::Status TriggerWriteCycle() override {
+      return transport_->TriggerWriteCycle();
+    }
     uint32_t GetLastAcceptedStreamId() override;
 
    private:
     explicit GoawayInterfaceImpl(Http2ClientTransport* transport)
         : transport_(transport) {}
-
+    // Holding a raw pointer to transport works because all the promises
+    // invoking the methods of this class are invoked while holding a ref to the
+    // transport.
     Http2ClientTransport* transport_;
   };
 

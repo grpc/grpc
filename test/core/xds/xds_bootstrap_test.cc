@@ -84,6 +84,20 @@ MATCHER_P6(EqXdsServer, name, channel_creds_config_type, call_creds_matcher,
   return ok;
 }
 
+MATCHER_P2(EqAllowedGrpcService, channel_creds_config_type, call_creds_matcher,
+           "equals AllowedGrpcService") {
+  if (!::testing::ExplainMatchResult(
+          ::testing::Ne(nullptr), arg.channel_creds_config, result_listener)) {
+    return false;
+  }
+  bool ok = ::testing::ExplainMatchResult(channel_creds_config_type,
+                                          arg.channel_creds_config->type(),
+                                          result_listener);
+  ok &= ::testing::ExplainMatchResult(call_creds_matcher,
+                                      arg.call_creds_configs, result_listener);
+  return ok;
+}
+
 MATCHER_P2(EqCredsConfig, type, config, "equals creds config") {
   bool ok = ::testing::ExplainMatchResult(type, arg->type(), result_listener);
   ok &= ::testing::ExplainMatchResult(config, arg->ToString(), result_listener);
@@ -907,6 +921,74 @@ TEST(XdsBootstrapTest, MultipleXdsServers) {
                               ::testing::IsEmpty(), false, false, false),
                   EqXdsServer("fake:///xds_server2", "fake",
                               ::testing::IsEmpty(), false, false, false)));
+}
+
+TEST(XdsBootstrapTest, WithAllowedGrpcServices) {
+  ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT");
+  const char* json_str =
+      "{"
+      "  \"xds_servers\": ["
+      "    {"
+      "      \"server_uri\": \"fake:///lb\","
+      "      \"channel_creds\": [{\"type\": \"insecure\"}]"
+      "    }"
+      "  ],"
+      "  \"allowed_grpc_services\": {"
+      "    \"server.example.com\": {"
+      "      \"channel_creds\": [{\"type\": \"insecure\"}],"
+      "      \"call_creds\": ["
+      "         {\"type\": \"unknown\"},"  // Ignored.
+      "         {\"type\": \"jwt_token_file\","
+      "          \"config\": {\"jwt_token_file\": \"/path/to/file\"}},"
+      "         {\"type\": \"jwt_token_file\","
+      "          \"config\": {\"jwt_token_file\": \"/some/other/path\"}}"
+      "      ]"
+      "    },"
+      "    \"server.other.com\": {"
+      "      \"channel_creds\": [{\"type\": \"google_default\"}]"
+      "    }"
+      "  }"
+      "}";
+  auto bootstrap_or = GrpcXdsBootstrap::Create(json_str);
+  ASSERT_TRUE(bootstrap_or.ok()) << bootstrap_or.status();
+  auto bootstrap = std::move(*bootstrap_or);
+  EXPECT_THAT(
+      bootstrap->allowed_grpc_services(),
+      ::testing::ElementsAre(
+          ::testing::Pair(
+              "server.example.com",
+              EqAllowedGrpcService(
+                  "insecure",
+                  ::testing::ElementsAre(
+                      EqCredsConfig("jwt_token_file",
+                                    "{path=\"/path/to/file\"}"),
+                      EqCredsConfig("jwt_token_file",
+                                    "{path=\"/some/other/path\"}")))),
+          ::testing::Pair("server.other.com",
+                          EqAllowedGrpcService("google_default",
+                                               ::testing::ElementsAre()))));
+}
+
+// TODO(roth): Remove this when env var guard goes away.
+TEST(XdsBootstrapTest, AllowedGrpcServicesIgnoredWithoutEnvVar) {
+  const char* json_str =
+      "{"
+      "  \"xds_servers\": ["
+      "    {"
+      "      \"server_uri\": \"fake:///lb\","
+      "      \"channel_creds\": [{\"type\": \"insecure\"}]"
+      "    }"
+      "  ],"
+      "  \"allowed_grpc_services\": {"
+      "    \"server.example.com\": {"
+      "      \"channel_creds\": [{\"type\": \"insecure\"}]"
+      "    }"
+      "  }"
+      "}";
+  auto bootstrap_or = GrpcXdsBootstrap::Create(json_str);
+  ASSERT_TRUE(bootstrap_or.ok()) << bootstrap_or.status();
+  auto bootstrap = std::move(*bootstrap_or);
+  EXPECT_THAT(bootstrap->allowed_grpc_services(), ::testing::ElementsAre());
 }
 
 }  // namespace

@@ -973,7 +973,6 @@ TEST_F(TlsConfigTest, SystemRootCerts) {
 }
 
 TEST_F(TlsConfigTest, UpstreamTlsContextSni) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_SNI");
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
@@ -1007,6 +1006,7 @@ TEST_F(TlsConfigTest, UpstreamTlsContextSni) {
 }
 
 TEST_F(TlsConfigTest, UpstreamTlsContextSniNoEnv) {
+  testing::ScopedEnvVar env("GRPC_EXPERIMENTAL_XDS_SNI", "false");
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
@@ -1183,7 +1183,6 @@ TEST_F(TlsConfigTest, CaCertProviderUnset) {
 }
 
 TEST_F(TlsConfigTest, SniTooLong) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_SNI");
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);

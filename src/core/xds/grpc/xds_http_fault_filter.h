@@ -38,22 +38,22 @@ class XdsHttpFaultFilter final : public XdsHttpFilterImpl {
   absl::string_view ConfigProtoName() const override;
   absl::string_view OverrideConfigProtoName() const override;
   void PopulateSymtab(upb_DefPool* symtab) const override;
-  std::optional<FilterConfig> GenerateFilterConfig(
+  std::optional<Json> GenerateFilterConfig(
       absl::string_view /*instance_name*/,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const override;
-  std::optional<FilterConfig> GenerateFilterConfigOverride(
+  std::optional<Json> GenerateFilterConfigOverride(
       absl::string_view /*instance_name*/,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const override;
-  void AddFilter(InterceptionChainBuilder& builder) const override;
+  void AddFilter(FilterChainBuilder& builder) const override;
   const grpc_channel_filter* channel_filter() const override;
   ChannelArgs ModifyChannelArgs(const ChannelArgs& args) const override;
   absl::StatusOr<ServiceConfigJsonEntry> GenerateMethodConfig(
-      const FilterConfig& hcm_filter_config,
-      const FilterConfig* filter_config_override) const override;
+      const Json& hcm_filter_config,
+      const Json* filter_config_override) const override;
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
-      const FilterConfig& hcm_filter_config) const override;
+      const Json& hcm_filter_config) const override;
   bool IsSupportedOnClients() const override { return true; }
   bool IsSupportedOnServers() const override { return false; }
 };

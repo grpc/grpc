@@ -18,6 +18,7 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/call.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/support/sync.h>
@@ -641,6 +642,9 @@ class Server::CallbackRequest final
       static_cast<CallbackCallTag*>(cb)->Run(static_cast<bool>(ok));
     }
     void Run(bool ok) {
+      grpc_call_run_cq_cb(req_->call_, [this, ok]() { Proceed(ok); });
+    }
+    void Proceed(bool ok) {
       void* ignored = req_;
       bool new_ok = ok;
       GRPC_CHECK(!req_->FinalizeResult(&ignored, &new_ok));
