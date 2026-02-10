@@ -298,7 +298,7 @@
   test_tags: []
 - name: secure_endpoint_offload_large_reads
   description: If a large read needs to be decrypted, use a separate thread.
-  expiry: 2026/02/01
+  expiry: 2026/06/01
   owner: alishananda@google.com
   test_tags: ["core_end2end_test"]
   requires:
@@ -309,7 +309,7 @@
     ]
 - name: secure_endpoint_offload_large_writes
   description: If a large read write to be encrypted, use a separate thread.
-  expiry: 2026/02/01
+  expiry: 2026/06/01
   owner: alishananda@google.com
   test_tags: ["core_end2end_test"]
   requires:
