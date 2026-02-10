@@ -25,7 +25,8 @@ namespace grpc_core {
 
 // Models grpc metadata (as per the rules for MetadataMap) for a metadata
 // element that consists of a Slice.
-// Use by deriving from this class and adding `kRepeatable` and `key()`.
+// Use by deriving from this class and adding `kPublishToApp`, `kRepeatable` and
+// `key()`.
 struct SimpleSliceBasedMetadata {
   using ValueType = Slice;
   using MementoType = Slice;

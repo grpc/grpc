@@ -156,6 +156,7 @@ class SubchannelTest : public YodelTest {
                  grpc_closure* notify) override {
       result->channel_args = args.channel_args;
       result->transport = MakeOrphanable<TestTransport>(test_).release();
+      result->max_concurrent_streams = std::numeric_limits<uint32_t>::max();
       ExecCtx::Run(DEBUG_LOCATION, notify, absl::OkStatus());
     }
 

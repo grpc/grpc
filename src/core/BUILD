@@ -1729,6 +1729,7 @@ grpc_cc_library(
         "json_args",
         "ref_counted",
         "validation_errors",
+        "xds_certificate_provider_store_interface",
         "//:gpr_platform",
         "//:ref_counted_ptr",
     ],
@@ -2875,6 +2876,7 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_tcp_socket_utils",
+        "experiments",
         "grpc_check",
         "iomgr_port",
         "posix_event_engine_posix_interface",
@@ -3762,6 +3764,7 @@ grpc_cc_library(
     external_deps = [
         "absl/functional:any_invocable",
     ],
+    visibility = ["//bazel:client_channel_internal_header"],
     deps = [
         "arena",
         "call_destination",
@@ -3808,6 +3811,19 @@ grpc_cc_library(
         "match",
         "ref_counted",
         "unique_type_name",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "filter_chain",
+    hdrs = [
+        "filter/filter_chain.h",
+    ],
+    deps = [
+        "filter_args",
+        "interception_chain",
+        "ref_counted",
         "//:ref_counted_ptr",
     ],
 )
@@ -3902,6 +3918,7 @@ grpc_cc_library(
         "blackboard",
         "channel_fwd",
         "client_channel_internal_header",
+        "filter_chain",
         "grpc_check",
         "grpc_service_config",
         "interception_chain",
@@ -4400,24 +4417,6 @@ grpc_cc_library(
         "util/if_list.h",
     ],
     deps = ["//:gpr_platform"],
-)
-
-grpc_cc_library(
-    name = "tdigest",
-    srcs = [
-        "util/tdigest.cc",
-    ],
-    hdrs = [
-        "util/tdigest.h",
-    ],
-    external_deps = [
-        "absl/log",
-        "absl/status",
-        "absl/strings",
-    ],
-    deps = [
-        "grpc_check",
-    ],
 )
 
 grpc_cc_library(
@@ -5947,6 +5946,26 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_certificate_provider_store_interface",
+    hdrs = [
+        "xds/grpc/certificate_provider_store_interface.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "certificate_provider_factory",
+        "json",
+        "json_args",
+        "json_object_loader",
+        "ref_counted",
+        "validation_errors",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_certificate_provider_store",
     srcs = [
         "xds/grpc/certificate_provider_store.cc",
@@ -5971,6 +5990,7 @@ grpc_cc_library(
         "unique_type_name",
         "useful",
         "validation_errors",
+        "xds_certificate_provider_store_interface",
         "//:config",
         "//:gpr",
         "//:grpc_base",
@@ -6062,6 +6082,7 @@ grpc_cc_library(
         "json",
         "match",
         "validation_errors",
+        "xds_server_grpc",
     ],
 )
 
@@ -6080,7 +6101,7 @@ grpc_cc_library(
         "blackboard",
         "channel_args",
         "channel_fwd",
-        "interception_chain",
+        "filter_chain",
         "json",
         "json_writer",
         "validation_errors",
@@ -6452,7 +6473,6 @@ grpc_cc_library(
         "grpc_tls_credentials",
         "grpc_transport_chttp2_client_connector",
         "init_internally",
-        "interception_chain",
         "iomgr_fwd",
         "json",
         "json_args",
@@ -6573,6 +6593,7 @@ grpc_cc_library(
         "sync",
         "time",
         "useful",
+        "xds_certificate_provider_store_interface",
         "xds_server_grpc_interface",
         "//:channel",
         "//:channel_arg_names",
@@ -6687,6 +6708,9 @@ grpc_cc_library(
     external_deps = ["absl/strings"],
     deps = [
         "channel_creds_registry",
+        "envoy_extensions_grpc_service_channel_credentials_tls_upb",
+        "envoy_extensions_grpc_service_channel_credentials_xds_upb",
+        "envoy_extensions_transport_sockets_tls_upb",
         "grpc_fake_credentials",
         "grpc_google_default_credentials",
         "grpc_tls_credentials",
@@ -6714,6 +6738,8 @@ grpc_cc_library(
     deps = [
         "call_creds_registry",
         "down_cast",
+        "envoy_extensions_grpc_service_call_credentials_access_token_upb",
+        "grpc_oauth2_credentials",
         "json",
         "json_args",
         "json_object_loader",
@@ -8569,41 +8595,85 @@ grpc_cc_library(
         "ext/transport/chttp2/transport/http2_server_transport.h",
     ],
     external_deps = [
+        "absl/base:core_headers",
         "absl/container:flat_hash_map",
+        "absl/container:flat_hash_set",
+        "absl/functional:any_invocable",
         "absl/log",
         "absl/status",
         "absl/status:statusor",
+        "absl/strings",
+        "absl/types:span",
+        "absl/strings:cord",
     ],
     deps = [
         "1999",
+        "activity",
         "arena",
         "call_destination",
         "call_spine",
         "channel_args",
         "check_class_size",
+        "closure",
+        "connectivity_state",
+        "context",
+        "flow_control_manager",
+        "for_each",
+        "goaway",
         "grpc_check",
         "grpc_promise_endpoint",
+        "header_assembler",
+        "http2_security_frame",
         "http2_settings",
         "http2_settings_manager",
+        "http2_settings_promises",
         "http2_status",
+        "http2_transport",
+        "http2_ztrace_collector",
+        "if",
+        "incoming_metadata_tracker",
+        "inter_activity_mutex",
+        "internal_channel_arg_names",
+        "iomgr_fwd",
+        "keepalive",
+        "latch",
+        "latent_see",
         "loop",
         "map",
+        "memory_quota",
         "message",
+        "message_assembler",
         "metadata",
+        "metadata_batch",
+        "metadata_info",
         "mpsc",
+        "ph2_stream",
+        "ping_promise",
+        "race",
         "ref_counted",
+        "resource_quota",
+        "sleep",
+        "stream_data_queue",
         "sync",
+        "time",
+        "transport_common",
+        "writable_streams",
+        ":chttp2_flow_control",
         ":match_promise",
         ":poll",
         ":slice",
         ":slice_buffer",
         ":try_seq",
+        "//:channelz",
         "//:chttp2_frame",
+        "//:debug_location",
+        "//:exec_ctx",
         "//:gpr_platform",
         "//:grpc_base",
         "//:grpc_trace",
         "//:hpack_encoder",
         "//:hpack_parser",
+        "//:orphanable",
         "//:promise",
         "//:ref_counted_ptr",
     ],
@@ -11466,6 +11536,21 @@ grpc_upb_proto_reflection_library(
     deps = [
         "@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg",
     ],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_grpc_service_call_credentials_access_token_upb",
+    deps = ["@envoy_api//envoy/extensions/grpc_service/call_credentials/access_token/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_grpc_service_channel_credentials_tls_upb",
+    deps = ["@envoy_api//envoy/extensions/grpc_service/channel_credentials/tls/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_grpc_service_channel_credentials_xds_upb",
+    deps = ["@envoy_api//envoy/extensions/grpc_service/channel_credentials/xds/v3:pkg"],
 )
 
 grpc_upb_proto_library(
