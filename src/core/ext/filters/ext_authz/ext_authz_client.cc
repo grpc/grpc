@@ -297,6 +297,13 @@ void ExtAuthzClient::ExtAuthzChannel::ExtAuthzCall::OnRequestSent() {
   MutexLock lock(&ext_authz_client()->mu_);
   send_message_pending_ = false;
 }
+
+void ExtAuthzClient::ExtAuthzChannel::ExtAuthzCall::SendMessageLocked(
+    std::string payload) {
+  send_message_pending_ = true;
+  streaming_call_->SendMessage(std::move(payload));
+}
+
 void ExtAuthzClient::ExtAuthzChannel::ExtAuthzCall::OnRecvMessage(
     absl::string_view payload) {
   MutexLock lock(&ext_authz_client()->mu_);
