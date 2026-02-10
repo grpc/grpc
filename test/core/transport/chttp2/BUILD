@@ -593,6 +593,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc_base",
+        "//:grpc_client_channel",
         "//:grpc_core_credentials_header",
         "//:grpc_credentials_util",
         "//:grpc_transport_chttp2",
