@@ -325,7 +325,7 @@ class XdsPerRouteFilterChainBuilderTest : public ::testing::Test {
 };
 
 TEST_F(XdsPerRouteFilterChainBuilderTest,
-       BuildFilterChainForRoute_NoOverrides) {
+       BuildFilterChainForRouteNoOverrides) {
   std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>
       hcm_filters = {MakeHcmFilter("filter1", "hcm")};
   auto vhost = MakeVirtualHost();
@@ -341,7 +341,7 @@ TEST_F(XdsPerRouteFilterChainBuilderTest,
 }
 
 TEST_F(XdsPerRouteFilterChainBuilderTest,
-       BuildFilterChainForRoute_VirtualHostOverride) {
+       BuildFilterChainForRouteVirtualHostOverride) {
   std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>
       hcm_filters = {MakeHcmFilter("filter1", "hcm")};
   auto vhost = MakeVirtualHost({{"filter1", MakeOverride("vhost")}});
@@ -357,7 +357,7 @@ TEST_F(XdsPerRouteFilterChainBuilderTest,
 }
 
 TEST_F(XdsPerRouteFilterChainBuilderTest,
-       BuildFilterChainForRoute_RouteOverride) {
+       BuildFilterChainForRouteRouteOverride) {
   std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>
       hcm_filters = {MakeHcmFilter("filter1", "hcm")};
   auto vhost = MakeVirtualHost();
@@ -373,7 +373,7 @@ TEST_F(XdsPerRouteFilterChainBuilderTest,
 }
 
 TEST_F(XdsPerRouteFilterChainBuilderTest,
-       BuildFilterChainForRoute_VirtualHostAndRouteOverride) {
+       BuildFilterChainForRouteVirtualHostAndRouteOverride) {
   std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>
       hcm_filters = {MakeHcmFilter("filter1", "hcm")};
   auto vhost = MakeVirtualHost({{"filter1", MakeOverride("vhost")}});
@@ -389,7 +389,7 @@ TEST_F(XdsPerRouteFilterChainBuilderTest,
 }
 
 TEST_F(XdsPerRouteFilterChainBuilderTest,
-       BuildFilterChainForRouteWithWeightedClusters_NoOverrides) {
+       BuildFilterChainForRouteWithWeightedClustersNoOverrides) {
   std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>
       hcm_filters = {MakeHcmFilter("filter1", "hcm")};
   auto vhost = MakeVirtualHost();
@@ -408,7 +408,7 @@ TEST_F(XdsPerRouteFilterChainBuilderTest,
 }
 
 TEST_F(XdsPerRouteFilterChainBuilderTest,
-       BuildFilterChainForRouteWithWeightedClusters_VirtualHostOverride) {
+       BuildFilterChainForRouteWithWeightedClustersVirtualHostOverride) {
   std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>
       hcm_filters = {MakeHcmFilter("filter1", "hcm")};
   auto vhost = MakeVirtualHost({{"filter1", MakeOverride("vhost")}});
@@ -428,7 +428,7 @@ TEST_F(XdsPerRouteFilterChainBuilderTest,
 }
 
 TEST_F(XdsPerRouteFilterChainBuilderTest,
-       BuildFilterChainForRouteWithWeightedClusters_RouteOverride) {
+       BuildFilterChainForRouteWithWeightedClustersRouteOverride) {
   std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>
       hcm_filters = {MakeHcmFilter("filter1", "hcm")};
   auto vhost = MakeVirtualHost();
@@ -450,7 +450,7 @@ TEST_F(XdsPerRouteFilterChainBuilderTest,
 
 TEST_F(
     XdsPerRouteFilterChainBuilderTest,
-    BuildFilterChainForRouteWithWeightedClusters_VirtualHostAndRouteOverride) {
+    BuildFilterChainForRouteWithWeightedClustersVirtualHostAndRouteOverride) {
   std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>
       hcm_filters = {MakeHcmFilter("filter1", "hcm")};
   auto vhost = MakeVirtualHost({{"filter1", MakeOverride("vhost")}});
@@ -471,7 +471,7 @@ TEST_F(
 }
 
 TEST_F(XdsPerRouteFilterChainBuilderTest,
-       BuildFilterChainForRouteWithWeightedClusters_ClusterWeightOverride) {
+       BuildFilterChainForRouteWithWeightedClustersClusterWeightOverride) {
   std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>
       hcm_filters = {MakeHcmFilter("filter1", "hcm")};
   auto vhost = MakeVirtualHost();
@@ -491,7 +491,7 @@ TEST_F(XdsPerRouteFilterChainBuilderTest,
 
 TEST_F(
     XdsPerRouteFilterChainBuilderTest,
-    BuildFilterChainForRouteWithWeightedClusters_VirtualHostAndClusterWeightOverride) {
+    BuildFilterChainForRouteWithWeightedClustersVirtualHostAndClusterWeightOverride) {
   std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>
       hcm_filters = {MakeHcmFilter("filter1", "hcm")};
   auto vhost = MakeVirtualHost({{"filter1", MakeOverride("vhost")}});
@@ -512,7 +512,7 @@ TEST_F(
 
 TEST_F(
     XdsPerRouteFilterChainBuilderTest,
-    BuildFilterChainForRouteWithWeightedClusters_RouteAndClusterWeightOverride) {
+    BuildFilterChainForRouteWithWeightedClustersRouteAndClusterWeightOverride) {
   std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>
       hcm_filters = {MakeHcmFilter("filter1", "hcm")};
   auto vhost = MakeVirtualHost();
@@ -534,7 +534,7 @@ TEST_F(
 
 TEST_F(
     XdsPerRouteFilterChainBuilderTest,
-    BuildFilterChainForRouteWithWeightedClusters_VirtualHostRouteAndClusterWeightOverride) {
+    BuildFilterChainForRouteWithWeightedClustersVirtualHostRouteAndClusterWeightOverride) {
   std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>
       hcm_filters = {MakeHcmFilter("filter1", "hcm")};
   auto vhost = MakeVirtualHost({{"filter1", MakeOverride("vhost")}});
