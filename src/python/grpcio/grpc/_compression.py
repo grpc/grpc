@@ -14,7 +14,6 @@
 
 from __future__ import annotations
 
-import sys
 from typing import TYPE_CHECKING, Optional, Union
 
 from grpc._cython import cygrpc
