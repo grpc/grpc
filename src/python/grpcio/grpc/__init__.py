@@ -35,6 +35,7 @@ from typing import (
     Union,
 )
 
+from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc  # type: ignore # noqa: PGH003
 from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
@@ -336,9 +337,6 @@ class StatusCode(enum.Enum):
     UNAUTHENTICATED = (_cygrpc.StatusCode.unauthenticated, "unauthenticated")
 
 
-from grpc import (  # pylint: disable=wrong-import-position # noqa: E402
-    _compression,
-)
 
 #############################  gRPC Status  ################################
 

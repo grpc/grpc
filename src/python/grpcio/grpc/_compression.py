@@ -14,12 +14,15 @@
 
 from __future__ import annotations
 
-from typing import Optional, Union
+import sys
+from typing import TYPE_CHECKING, Optional, Union
 
-import grpc
-from grpc import _common
 from grpc._cython import cygrpc
 from grpc.typing import MetadataType
+
+if TYPE_CHECKING:
+    import grpc
+    from grpc import _common
 
 NoCompression = cygrpc.CompressionAlgorithm.none
 Deflate = cygrpc.CompressionAlgorithm.deflate
@@ -33,12 +36,14 @@ _METADATA_STRING_MAPPING = {
 
 
 def _compression_algorithm_to_metadata_value(
-    compression: grpc.Compression,
+    compression: "grpc.Compression",
 ) -> str:
     return _METADATA_STRING_MAPPING[compression]
 
 
-def compression_algorithm_to_metadata(compression: grpc.Compression):
+def compression_algorithm_to_metadata(compression: "grpc.Compression"):
+    from grpc import _common  # pylint: disable=cyclic-import
+
     return (
         _common.decode(cygrpc.GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY),
         _compression_algorithm_to_metadata_value(compression),
