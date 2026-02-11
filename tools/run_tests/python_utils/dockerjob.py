@@ -155,7 +155,7 @@ class DockerJob:
     """Encapsulates a job"""
 
     def __init__(self, spec):
-        print('DockerJob:__init__ called with spec ' + spec, flush=True)
+        print('DockerJob:__init__ called with spec ' + spec.shortname, flush=True)
         self._spec = spec
         self._job = jobset.Job(
             spec, newline_on_success=True, travis=True, add_env={}
