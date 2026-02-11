@@ -1114,6 +1114,7 @@ def _parse_http_archives(xml_tree: ET.Element) -> "List[ExternalProtoLibrary]":
         result.append(lib)
     return result
 
+# TODO(weizheyuan)
 MOCKED_EXTERNAL_DEPS = [{'destination': 'third_party/cel-spec',
   'hash': 'd6cb6b4ed272500d16546c672a65a7452b241462a200dda3f62a7de413883344',
   'proto_prefix': 'third_party/cel-spec/',
