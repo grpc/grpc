@@ -76,6 +76,22 @@ class ExternalProtoLibrary:
         self.hash = ""
         self.strip_prefix = ""
 
+# Mapping from canonical repo name to apparent repo name.
+# See https://bazel.build/external/overview#canonical-repo-name
+REPO_NAME_MAPPING = {
+    "@@cel-spec+": "@dev_cel",
+}
+
+# Mapping from apparent repo name to in-tree file location.
+EXTERNAL_LINKS = {
+    "@com_google_protobuf//": "src/",
+    "@com_google_googleapis//": "",
+    "@com_github_cncf_xds//": "",
+    "@com_envoyproxy_protoc_gen_validate//": "",
+    "@dev_cel//": "proto/",
+    "@envoy_api//": "",
+    "@opencensus_proto//": "",
+}
 
 EXTERNAL_PROTO_LIBRARIES = {
     "envoy_api": ExternalProtoLibrary(
@@ -608,23 +624,23 @@ def _get_transitive_protos(bazel_rules, t):
                     ret.append(src)
     return list(set(ret))
 
+def _prefix_to_strip(proto_src):
+    apparent_repo = None
+    for canonical_repo in REPO_NAME_MAPPING:
+        if proto_src.startswith(canonical_repo):
+            apparent_repo = REPO_NAME_MAPPING[canonical_repo] + '//'
+            return canonical_repo + '//' + EXTERNAL_LINKS[apparent_repo]
+    for repo in EXTERNAL_LINKS:
+        if proto_src.startswith(repo):
+            return repo + EXTERNAL_LINKS[repo]
+    if apparent_repo is None:
+        return None
 
 def _expand_upb_proto_library_rules(bazel_rules):
     # Expand the .proto files from UPB proto library rules into the pre-generated
     # upb files.
     GEN_UPB_ROOT = "//:src/core/ext/upb-gen/"
     GEN_UPBDEFS_ROOT = "//:src/core/ext/upbdefs-gen/"
-    EXTERNAL_LINKS = [
-        ("@com_google_protobuf//", "src/"),
-        ("@com_google_googleapis//", ""),
-        ("@com_github_cncf_xds//", ""),
-        ("@com_envoyproxy_protoc_gen_validate//", ""),
-        ("@dev_cel//", "proto/"),
-        # TODO(weizheyuan)
-        #("@@cel-spec+//", "proto/"),
-        ("@envoy_api//", ""),
-        ("@opencensus_proto//", ""),
-    ]
     for name, bazel_rule in bazel_rules.items():
         gen_func = bazel_rule.get("generator_function", None)
         if gen_func in (
@@ -656,21 +672,18 @@ def _expand_upb_proto_library_rules(bazel_rules):
             srcs = []
             hdrs = []
             for proto_src in protos:
-                for external_link in EXTERNAL_LINKS:
-                    if proto_src.startswith(external_link[0]):
-                        prefix_to_strip = external_link[0] + external_link[1]
-                        if not proto_src.startswith(prefix_to_strip):
-                            raise Exception(
-                                'Source file "{0}" in upb rule {1} does not'
-                                ' have the expected prefix "{2}"'.format(
-                                    proto_src, name, prefix_to_strip
-                                )
+                prefix_to_strip = _prefix_to_strip(proto_src)
+                if prefix_to_strip is not None:
+                    if not proto_src.startswith(prefix_to_strip):
+                        raise Exception(
+                            'Source file "{0}" in upb rule {1} does not'
+                            ' have the expected prefix "{2}"'.format(
+                                proto_src, name, prefix_to_strip
                             )
-                        proto_src = proto_src[len(prefix_to_strip) :]
-                        break
+                        )
+                    proto_src = proto_src[len(prefix_to_strip) :]
                 if proto_src.startswith("@"):
-                    # print('TODO(weizheyuan): "name={0}: proto_src={1}" is unknown workspace.'.format(name, proto_src))
-                    raise Exception('"{0}" is unknown workspace.'.format(name))
+                    raise Exception('"{0}" is unknown workspace. proto_src={1}'.format(name, proto_src))
                 proto_src_file = _try_extract_source_file_path(proto_src)
                 if not proto_src_file:
                     raise Exception(
@@ -1471,8 +1484,8 @@ for query in _BAZEL_DEPS_QUERIES:
         _extract_rules_from_bazel_xml(_bazel_query_xml_tree(query))
     )
 
-_save_to_file("bazel_rules.py", list(bazel_rules.keys()))
-_save_to_file("bazel_rules_full.py", bazel_rules.keys())
+_save_to_file("bazel_rules.py", sorted(list(bazel_rules.keys())))
+_save_to_file("bazel_rules_full.py", bazel_rules)
 
 # Step 1.5: The sources for UPB protos are pre-generated, so we want
 # to expand the UPB proto library bazel rules into the generated
