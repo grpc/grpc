@@ -241,6 +241,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/base/prefetch', abseil_version
     ss.dependency 'abseil/cleanup/cleanup', abseil_version
     ss.dependency 'abseil/container/btree', abseil_version
+    ss.dependency 'abseil/container/fixed_array', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
@@ -1548,12 +1549,8 @@ Pod::Spec.new do |s|
                       'third_party/re2/re2/unicode_casefold.h',
                       'third_party/re2/re2/unicode_groups.h',
                       'third_party/re2/re2/walker-inl.h',
-                      'third_party/re2/util/logging.h',
-                      'third_party/re2/util/mix.h',
-                      'third_party/re2/util/mutex.h',
                       'third_party/re2/util/strutil.h',
                       'third_party/re2/util/utf.h',
-                      'third_party/re2/util/util.h',
                       'third_party/upb/upb/base/descriptor_constants.h',
                       'third_party/upb/upb/base/internal/endian.h',
                       'third_party/upb/upb/base/internal/log2.h',
@@ -1683,6 +1680,17 @@ Pod::Spec.new do |s|
                       'third_party/zlib/trees.h',
                       'third_party/zlib/zconf.h',
                       'third_party/zlib/zlib.h',
+                      'third_party/zlib/zlib/include/crc32.h',
+                      'third_party/zlib/zlib/include/deflate.h',
+                      'third_party/zlib/zlib/include/gzguts.h',
+                      'third_party/zlib/zlib/include/inffast.h',
+                      'third_party/zlib/zlib/include/inffixed.h',
+                      'third_party/zlib/zlib/include/inflate.h',
+                      'third_party/zlib/zlib/include/inftrees.h',
+                      'third_party/zlib/zlib/include/trees.h',
+                      'third_party/zlib/zlib/include/zconf.h',
+                      'third_party/zlib/zlib/include/zlib.h',
+                      'third_party/zlib/zlib/include/zutil.h',
                       'third_party/zlib/zutil.h'
 
     ss.private_header_files = 'src/core/call/call_arena_allocator.h',
@@ -2907,12 +2915,8 @@ Pod::Spec.new do |s|
                               'third_party/re2/re2/unicode_casefold.h',
                               'third_party/re2/re2/unicode_groups.h',
                               'third_party/re2/re2/walker-inl.h',
-                              'third_party/re2/util/logging.h',
-                              'third_party/re2/util/mix.h',
-                              'third_party/re2/util/mutex.h',
                               'third_party/re2/util/strutil.h',
                               'third_party/re2/util/utf.h',
-                              'third_party/re2/util/util.h',
                               'third_party/upb/upb/base/descriptor_constants.h',
                               'third_party/upb/upb/base/internal/endian.h',
                               'third_party/upb/upb/base/internal/log2.h',
@@ -3042,6 +3046,17 @@ Pod::Spec.new do |s|
                               'third_party/zlib/trees.h',
                               'third_party/zlib/zconf.h',
                               'third_party/zlib/zlib.h',
+                              'third_party/zlib/zlib/include/crc32.h',
+                              'third_party/zlib/zlib/include/deflate.h',
+                              'third_party/zlib/zlib/include/gzguts.h',
+                              'third_party/zlib/zlib/include/inffast.h',
+                              'third_party/zlib/zlib/include/inffixed.h',
+                              'third_party/zlib/zlib/include/inflate.h',
+                              'third_party/zlib/zlib/include/inftrees.h',
+                              'third_party/zlib/zlib/include/trees.h',
+                              'third_party/zlib/zlib/include/zconf.h',
+                              'third_party/zlib/zlib/include/zlib.h',
+                              'third_party/zlib/zlib/include/zutil.h',
                               'third_party/zlib/zutil.h'
   end
 
