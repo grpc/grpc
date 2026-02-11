@@ -280,6 +280,7 @@ class Job(object):
     def __init__(
         self, spec, newline_on_success, travis, add_env, quiet_success=False
     ):
+        print('Job called for spec' + spec.shortname, flush=True)
         self._spec = spec
         self._newline_on_success = newline_on_success
         self._travis = travis
