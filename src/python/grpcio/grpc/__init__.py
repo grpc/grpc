@@ -337,7 +337,6 @@ class StatusCode(enum.Enum):
     UNAUTHENTICATED = (_cygrpc.StatusCode.unauthenticated, "unauthenticated")
 
 
-
 #############################  gRPC Status  ################################
 
 
