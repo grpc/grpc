@@ -275,6 +275,19 @@ class ClientContext {
     deadline_ = deadline_tp.raw_time();
   }
 
+  template <typename T>
+  void SetContext(T option) {
+    uint16_t id = grpc::impl::CallContextType<T>::id();
+    
+    if (context_elements_ == nullptr) {
+       uint16_t num_elements = grpc::impl::CallContextRegistry::Count();
+       context_elements_ = new void*[num_elements]();
+    }
+    
+    grpc::impl::CallContextRegistry::Destroy(id, context_elements_[id]);
+    context_elements_[id] = new T(std::move(option));
+  }
+
   /// Trigger wait-for-ready or not on this request.
   /// See https://github.com/grpc/grpc/blob/master/doc/wait-for-ready.md.
   /// If set, if an RPC is made when a channel's connectivity state is
@@ -501,6 +514,7 @@ class ClientContext {
   std::multimap<std::string, std::string> send_initial_metadata_;
   mutable grpc::internal::MetadataMap recv_initial_metadata_;
   mutable grpc::internal::MetadataMap trailing_metadata_;
+  void** context_elements_ = nullptr;
 
   grpc_call* propagate_from_call_;
   PropagationOptions propagation_options_;
