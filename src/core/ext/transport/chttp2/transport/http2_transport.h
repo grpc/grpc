@@ -264,18 +264,18 @@ void ProcessOutgoingDataFrameFlowControl(
 ValueOrHttp2Status<chttp2::FlowControlAction>
 ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame,
                                     chttp2::TransportFlowControl& flow_control,
-                                    RefCountedPtr<Stream> stream);
+                                    Stream* stream);
 
 // Returns true if a write should be triggered
 bool ProcessIncomingWindowUpdateFrameFlowControl(
     const Http2WindowUpdateFrame& frame,
-    chttp2::TransportFlowControl& flow_control, RefCountedPtr<Stream> stream);
+    chttp2::TransportFlowControl& flow_control, Stream* stream);
 
 void MaybeAddTransportWindowUpdateFrame(
     chttp2::TransportFlowControl& flow_control,
     std::vector<Http2Frame>& frames);
 
-void MaybeAddStreamWindowUpdateFrame(RefCountedPtr<Stream> stream,
+void MaybeAddStreamWindowUpdateFrame(Stream* stream,
                                      std::vector<Http2Frame>& frames);
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -313,7 +313,7 @@ void MaybeAddStreamWindowUpdateFrame(RefCountedPtr<Stream> stream,
 // it returns the original status.
 Http2Status ParseAndDiscardHeaders(HPackParser& parser, SliceBuffer&& buffer,
                                    HeaderAssembler::ParseHeaderArgs args,
-                                   RefCountedPtr<Stream> stream,
+                                   Stream* stream,
                                    Http2Status&& original_status);
 
 }  // namespace http2
