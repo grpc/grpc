@@ -449,6 +449,7 @@ grpc_cc_benchmark(
         "//src/core:down_cast",
         "//src/core:grpc_matchers",
         "//src/core:grpc_xds_client",
+        "//src/core:xds_matcher",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -466,6 +467,7 @@ grpc_cc_test(
         "//src/core:down_cast",
         "//src/core:grpc_matchers",
         "//src/core:grpc_xds_client",
+        "//src/core:xds_matcher",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -487,6 +489,8 @@ grpc_cc_test(
         "//src/core:grpc_xds_client",
         "//src/core:upb_utils",
         "//src/core:validation_errors",
+        "//src/core:xds_matcher",
+        "//src/core:xds_matcher_context",
         "//test/core/test_util:grpc_test_util",
         "@com_github_cncf_xds//xds/type/matcher/v3:pkg_cc_proto",
         "@com_github_cncf_xds//xds/type/v3:pkg_cc_proto",
