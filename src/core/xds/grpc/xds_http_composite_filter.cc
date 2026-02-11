@@ -189,8 +189,9 @@ std::unique_ptr<XdsMatcher> ParseMatcher(
   action_registry.AddActionFactory(std::make_unique<SkipFilterActionFactory>());
   action_registry.AddActionFactory(
       std::make_unique<ExecuteFilterActionFactory>());
-  return ParseXdsMatcher(context, matcher, action_registry,
-                         RpcMatchContext::Type(), errors);
+  return ParseXdsMatcher(
+      context, matcher, action_registry, RpcMatchContext::Type(),
+      /*allow_keep_matching=*/false, errors);
 }
 
 }  // namespace
