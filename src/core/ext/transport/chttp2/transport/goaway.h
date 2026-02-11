@@ -50,7 +50,7 @@ class GoawayInterface {
   virtual Promise<absl::Status> SendPingAndWaitForAck() = 0;
 
   // Triggers a transport write cycle.
-  virtual void TriggerWriteCycle() = 0;
+  virtual absl::Status TriggerWriteCycle() = 0;
 
   // Only used for graceful GOAWAY (and by extension relevant only for server).
   // Returns the last accepted stream id by the transport.
@@ -157,6 +157,7 @@ class GoawayManager {
     std::string GoawayStateToString(GoawayState goaway_state);
 
     void SentGoawayTransition();
+    absl::Status TriggerWriteCycle();
 
     GoawayState goaway_state = GoawayState::kIdle;
     std::unique_ptr<GoawayInterface> goaway_interface;
@@ -225,7 +226,10 @@ class GoawayManager {
           /*error_code=*/static_cast<uint32_t>(error_code),
           /*debug_data=*/debug_data.TakeOwned(),
           /*last_good_stream_id=*/last_good_stream_id);
-      ctx->goaway_interface->TriggerWriteCycle();
+      absl::Status status = ctx->TriggerWriteCycle();
+      if (!status.ok()) {
+        return status;
+      }
       return Pending{};
     };
   }
@@ -275,8 +279,11 @@ class GoawayManager {
               /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kNoError),
               /*debug_data=*/debug_data.TakeOwned(),
               /*last_good_stream_id=*/last_good_stream_id);
-          ctx->goaway_interface->TriggerWriteCycle();
-          return TrySeq(ctx->goaway_interface->SendPingAndWaitForAck(),
+
+          return TrySeq([ctx]() { return ctx->TriggerWriteCycle(); },
+                        [ctx]() {
+                          return ctx->goaway_interface->SendPingAndWaitForAck();
+                        },
                         [ctx]() -> Poll<absl::Status> {
                           GRPC_HTTP2_GOAWAY_LOG
                               << "Ping resolved. Current state: "
@@ -290,7 +297,11 @@ class GoawayManager {
                                    "kFinalGracefulGoawayScheduled.";
                             ctx->goaway_state =
                                 GoawayState::kFinalGracefulGoawayScheduled;
-                            ctx->goaway_interface->TriggerWriteCycle();
+                            absl::Status status =
+                                ctx->goaway_interface->TriggerWriteCycle();
+                            if (!status.ok()) {
+                              return status;
+                            }
                           }
                           return Pending{};
                         });

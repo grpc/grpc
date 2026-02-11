@@ -683,6 +683,8 @@ class NewSubchannel final : public Subchannel {
   std::deque<QueuedCall*> queued_calls_ ABSL_GUARDED_BY(mu_);
 };
 
+void TestOnlySetSubchannelAlwaysSendCallsToTransport(bool enabled);
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_CLIENT_CHANNEL_SUBCHANNEL_H
