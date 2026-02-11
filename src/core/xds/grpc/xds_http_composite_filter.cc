@@ -133,31 +133,18 @@ class ExecuteFilterActionFactory final : public XdsMatcherActionFactory {
         DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
             .http_filter_registry();
     std::vector<CompositeFilter::ExecuteFilterAction::Filter> filters;
-    // FIXME: check filter_chain field first
-    const auto* typed_config =
-        envoy_extensions_filters_http_composite_v3_ExecuteFilterAction_typed_config(
-            execute_filter);
-    if (typed_config != nullptr) {
-      absl::string_view name = UpbStringToAbsl(
-          envoy_config_core_v3_TypedExtensionConfig_name(typed_config));
-      const auto* any =
-          envoy_config_core_v3_TypedExtensionConfig_typed_config(typed_config);
-      ValidationErrors::ScopedField field(errors, ".typed_config.typed_config");
-      auto extension = ExtractXdsExtension(context, any, errors);
-      if (extension.has_value()) {
-        const XdsHttpFilterImpl* filter_impl =
-            http_filter_registry.GetFilterForTopLevelType(extension->type);
-        if (filter_impl == nullptr) {
-          errors->AddError("unsupported filter type");
-        } else {
-          // FIXME: can we check is_client to determine if the filter is
-          // supported on the client/server side?
-          RefCountedPtr<const FilterConfig> config =
-              filter_impl->ParseTopLevelConfig(name, context, *extension,
-                                               errors);
-          filters.push_back({filter_impl, std::move(config)});
-        }
-      }
+    if (const auto* filter_chain =
+            envoy_extensions_filters_http_composite_v3_ExecuteFilterAction_filter_chain(
+                execute_filter;
+        filter_chain != nullptr) {
+// FIXME
+      size_t num_filters;
+
+    } else if (const auto* typed_config =
+                   envoy_extensions_filters_http_composite_v3_ExecuteFilterAction_typed_config(
+                       execute_filter;
+               typed_config != nullptr) {
+      filters.push_back(ParseFilter(context, typed_config, errors));
     } else {
       errors->AddError("one of typed_config or filter_chain must be set");
     }
@@ -179,6 +166,34 @@ class ExecuteFilterActionFactory final : public XdsMatcherActionFactory {
     }
     return std::make_unique<CompositeFilter::ExecuteFilterAction>(
         std::move(filters), sample_per_million);
+  }
+
+ private:
+  static CompositeFilter::ExecuteFilterAction::Filter ParseFilter(
+      const XdsResourceType::DecodeContext& context,
+      const envoy_config_core_v3_TypedExtensionConfig* typed_config,
+      ValidationErrors* errors) {
+    absl::string_view name = UpbStringToAbsl(
+        envoy_config_core_v3_TypedExtensionConfig_name(typed_config));
+    const auto* any =
+        envoy_config_core_v3_TypedExtensionConfig_typed_config(typed_config);
+    ValidationErrors::ScopedField field(errors, ".typed_config.typed_config");
+    auto extension = ExtractXdsExtension(context, any, errors);
+    const XdsHttpFilterImpl* filter_impl = nullptr;
+    RefCountedPtr<const FilterConfig> config;
+    if (extension.has_value()) {
+      filter_impl =
+          http_filter_registry.GetFilterForTopLevelType(extension->type);
+      if (filter_impl == nullptr) {
+        errors->AddError("unsupported filter type");
+      } else {
+        // FIXME: can we check is_client to determine if the filter is
+        // supported on the client/server side?
+        config = filter_impl->ParseTopLevelConfig(name, context, *extension,
+                                                  errors);
+      }
+    }
+    return {filter_impl, std::move(config)};
   }
 };
 
