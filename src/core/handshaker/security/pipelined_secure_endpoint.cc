@@ -34,6 +34,7 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/handshaker/security/pipelining_heuristic_selector.h"
 #include "src/core/handshaker/security/secure_endpoint.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -600,11 +601,19 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
         // completed yet), then ContinueUnprotect will just return early and be
         // called again once that read completes.
         if (unprotecting_.value()) {
-          lock.Release();
-          event_engine_->Run([impl = Ref()]() mutable {
-            grpc_core::ExecCtx exec_ctx;
-            ContinueUnprotect(std::move(impl));
-          });
+          if (protected_data_buffer_ != nullptr) {
+            // We have some protected bytes waiting to be unprotected. We need
+            // to kick off unprotecting those bytes.
+            lock.Release();
+            event_engine_->Run([impl = Ref()]() mutable {
+              grpc_core::ExecCtx exec_ctx;
+              ContinueUnprotect(std::move(impl));
+            });
+          } else {
+            // The last read has not completed yet, so we need to wait for it to
+            // complete before we can unprotect anything.
+            unprotecting_ = false;
+          }
         }
         return true;
       }
@@ -615,6 +624,14 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
       pending_output_buffer_ = buffer;
       on_read_ = std::move(on_read);
       last_read_args_ = std::move(args);
+
+      if (!heuristic_selector_.IsPipeliningEnabled() &&
+          !unprotecting_.value()) {
+        unprotecting_ = true;
+        lock.Release();
+        // Unprotect inline since pipelining is disabled.
+        return UnprotectInline();
+      }
       return false;
     }
 
@@ -687,7 +704,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
         MoveStagingIntoProtectedBuffer();
         lock.Release();
         // Unprotect inline since we expect a small number of leftover bytes.
-        ContinueUnprotect(Ref());
+        ContinueUnprotect(Ref(), /*unprotect_inline=*/true);
         return;
       }
 
@@ -699,7 +716,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
         grpc_core::ExecCtx exec_ctx;
         // If the endpoint closed whilst waiting for this callback, then
         // fail out the read and we're done.
-        grpc_core::ReleasableMutexLock lock(impl->frame_protector_.read_mu());
+        grpc_core::ReleasableMutexLock lock(&impl->shutdown_read_mu_);
         if (impl->wrapped_ep_ == nullptr) {
           lock.Release();
           FailReads(std::move(impl),
@@ -709,7 +726,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
         const bool read_finished_immediately = impl->wrapped_ep_->Read(
             [impl = impl->Ref()](absl::Status status) mutable {
               grpc_core::ExecCtx exec_ctx;
-              FinishFirstRead(std::move(impl), status);
+              FinishInlineRead(std::move(impl), status);
             },
             impl->staging_protected_data_buffer_.get(), std::move(args));
         if (read_finished_immediately) {
@@ -726,8 +743,8 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
       });
     }
 
-    static void FinishFirstRead(grpc_core::RefCountedPtr<Impl> impl,
-                                absl::Status status)
+    static void FinishInlineRead(grpc_core::RefCountedPtr<Impl> impl,
+                                 absl::Status status)
         ABSL_LOCKS_EXCLUDED(impl->read_queue_mu_) {
       if (status.ok()) {
         {
@@ -759,7 +776,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
 
     static void FailReads(grpc_core::RefCountedPtr<Impl> impl,
                           absl::Status status)
-        ABSL_LOCKS_EXCLUDED(frame_protector_.read_mu(), read_queue_mu_) {
+        ABSL_LOCKS_EXCLUDED(read_queue_mu_) {
       impl->read_queue_mu_.Lock();
       impl->unprotecting_ = status;
       auto on_read = std::move(impl->on_read_);
@@ -768,13 +785,55 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
       if (on_read != nullptr) on_read(status);
     };
 
-    static void ContinueUnprotect(grpc_core::RefCountedPtr<Impl> impl) {
+    bool UnprotectInline() ABSL_LOCKS_EXCLUDED(read_queue_mu_) {
+      ReadArgs args;
+      args.set_read_hint_bytes(frame_protector_.min_progress_size());
+
+      // If the endpoint closed whilst waiting for this callback, then
+      // fail out the read and we're done.
+      grpc_core::ReleasableMutexLock shutdown_read_lock(&shutdown_read_mu_);
+      if (wrapped_ep_ == nullptr) {
+        shutdown_read_lock.Release();
+        FailReads(Ref(), absl::CancelledError("secure endpoint shutdown"));
+        return false;
+      }
+      const bool read_finished_immediately = wrapped_ep_->Read(
+          [impl = Ref()](absl::Status status) mutable {
+            grpc_core::ExecCtx exec_ctx;
+            FinishInlineRead(std::move(impl), status);
+          },
+          staging_protected_data_buffer_.get(), std::move(args));
+      if (read_finished_immediately) {
+        shutdown_read_lock.Release();
+        {
+          grpc_core::MutexLock read_queue_lock(&read_queue_mu_);
+          frame_protector_.TraceOp(
+              "ReadImm", staging_protected_data_buffer_->c_slice_buffer());
+          MoveStagingIntoProtectedBuffer();
+        }
+        // Unprotected bytes will be stored directly into buffer and returned
+        // inline.
+        ContinueUnprotect(Ref(), /*unprotect_inline=*/true);
+        {
+          // If there was an error, the read will fail asynchronously;
+          // otherwise, we can return the bytes inline.
+          grpc_core::MutexLock read_queue_lock(&read_queue_mu_);
+          return unprotecting_.ok();
+        }
+      }
+      return false;
+    }
+
+    static void ContinueUnprotect(grpc_core::RefCountedPtr<Impl> impl,
+                                  bool unprotect_inline = false) {
       GRPC_LATENT_SEE_SCOPE("secure endpoint continue unprotect");
       ReadArgs args;
       std::unique_ptr<SliceBuffer> source_buffer;
       std::unique_ptr<SliceBuffer> read_buffer;
       absl::Status unprotect_status;
       absl::AnyInvocable<void(absl::Status)> on_read;
+      bool enable_pipelining = false;
+      bool exit_loop = false;
 
       /*
       Data passes through the buffers as follows:
@@ -818,22 +877,28 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
             // Since we start unprotecting after the first read, the min
             // progress size does not account for the bytes we have already read
             // in the previous read, so we need to subtract them here.
-            args.set_read_hint_bytes(
-                std::max<size_t>(1, impl->frame_protector_.min_progress_size() -
-                                        source_buffer->Length()));
+            args.set_read_hint_bytes(std::max<int64_t>(
+                1, impl->frame_protector_.min_progress_size() -
+                       source_buffer->Length()));
           } else if (args.read_hint_bytes() > 0) {
-            args.set_read_hint_bytes(std::max<size_t>(
+            args.set_read_hint_bytes(std::max<int64_t>(
                 1, args.read_hint_bytes() - source_buffer->Length()));
           }
+
+          impl->heuristic_selector_.RecordRead(source_buffer->Length());
+          enable_pipelining = impl->heuristic_selector_.IsPipeliningEnabled();
         }
 
         // Kick off the next read in another thread while we unprotect in this
-        // thread.
-        impl->event_engine_->Run(
-            [impl = impl->Ref(), args = std::move(args)]() mutable {
-              grpc_core::ExecCtx exec_ctx;
-              StartAsyncRead(std::move(impl), std::move(args));
-            });
+        // thread if the frame is large enough or we don't know the frame size
+        // yet.
+        if (enable_pipelining) {
+          impl->event_engine_->Run(
+              [impl = impl->Ref(), args = std::move(args)]() mutable {
+                grpc_core::ExecCtx exec_ctx;
+                StartAsyncRead(std::move(impl), std::move(args));
+              });
+        }
 
         {
           grpc_core::ReleasableMutexLock lock(impl->frame_protector_.read_mu());
@@ -860,15 +925,28 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
               std::move(*impl->unprotected_data_buffer_);
           impl->unprotected_data_buffer_.reset();
           on_read = std::move(impl->on_read_);
+          if (!impl->heuristic_selector_.IsPipeliningEnabled() &&
+              impl->protected_data_buffer_ == nullptr) {
+            // Since pipelining is disabled and there is no more data to
+            // unprotect, we can exit the loop once done.
+            impl->unprotecting_ = false;
+            exit_loop = true;
+          }
           impl->read_queue_mu_.Unlock();
-          impl->event_engine_->Run([on_read = std::move(on_read)]() mutable {
-            on_read(absl::OkStatus());
-          });
+          if (!unprotect_inline) {
+            impl->event_engine_->Run([on_read = std::move(on_read)]() mutable {
+              on_read(absl::OkStatus());
+            });
+          }
         } else {
           // We're waiting on the next read to read this data. We're done
           // for now.
           impl->waiting_for_transport_read_ = true;
           impl->read_queue_mu_.Unlock();
+          exit_loop = true;
+        }
+
+        if (exit_loop) {
           break;
         }
       }
@@ -942,7 +1020,6 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
     // protector mutexes for shutdown purposes.
     grpc_core::Mutex shutdown_read_mu_
         ABSL_ACQUIRED_AFTER(frame_protector_.read_mu());
-    bool waiting_for_transport_read_ ABSL_GUARDED_BY(read_queue_mu_) = false;
     absl::StatusOr<bool> unprotecting_ ABSL_GUARDED_BY(read_queue_mu_) = false;
     std::unique_ptr<SliceBuffer> unprotected_data_buffer_
         ABSL_GUARDED_BY(read_queue_mu_);
@@ -964,6 +1041,9 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
     // don't want any guard annotations on the wrapped_ep_ field.
     std::unique_ptr<EventEngine::Endpoint> wrapped_ep_;
     std::shared_ptr<EventEngine> event_engine_;
+    bool waiting_for_transport_read_ ABSL_GUARDED_BY(read_queue_mu_) = false;
+    grpc_core::PipeliningHeuristicSelector heuristic_selector_
+        ABSL_GUARDED_BY(read_queue_mu_);
   };
 
   grpc_core::RefCountedPtr<Impl> impl_;
