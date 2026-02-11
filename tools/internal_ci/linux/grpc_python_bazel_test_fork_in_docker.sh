@@ -17,6 +17,8 @@ set -ex
 
 RESULTSTORE_RESULTS_FLAG="--bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc"
 BAZEL_FLAGS="--test_output=errors --config=python"
+# TODO(sergiitk): DO NOT MERGE: only for an adhoc CI test
+BAZEL_FLAGS="${BAZEL_FLAGS} --test_env='GRPC_EXPERIMENTS=event_engine_client,event_engine_listener,event_engine_dns,event_engine_fork'"
 
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_fork_support
 

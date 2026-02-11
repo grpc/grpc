@@ -19,6 +19,9 @@ cd "$(dirname "$0")"
 
 shopt -s nullglob
 
+# TODO(sergiitk): DO NOT MERGE: only for an adhoc CI test
+export GRPC_EXPERIMENTS="event_engine_client,event_engine_listener,event_engine_dns,event_engine_fork"
+
 echo "Testing Python packages with input artifacts:"
 ls "$EXTERNAL_GIT_ROOT"/input_artifacts
 
