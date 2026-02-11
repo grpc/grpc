@@ -15,6 +15,11 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CONFIG_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CONFIG_H
 
+#include <algorithm>
+#include <cstdint>
+#include <initializer_list>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
@@ -23,7 +28,11 @@
 #include "src/core/ext/transport/chaotic_good/tcp_frame_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/extensions/tcp_trace.h"
+#include "src/core/util/dump_args.h"
 #include "absl/container/flat_hash_set.h"
+#include "absl/log/check.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -178,6 +187,7 @@ class Config {
   uint32_t inline_payload_size_threshold() const {
     return inline_payload_size_threshold_;
   }
+  std::string scheduler_config() const { return scheduler_config_; }
 
   std::string ToString() const {
     return absl::StrCat(GRPC_DUMP_ARGS(tracing_enabled_, encode_alignment_,
