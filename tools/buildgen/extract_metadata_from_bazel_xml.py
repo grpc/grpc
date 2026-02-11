@@ -80,6 +80,11 @@ class ExternalProtoLibrary:
 # See https://bazel.build/external/overview#canonical-repo-name
 REPO_NAME_MAPPING = {
     "@@cel-spec+": "@dev_cel",
+    "@@googleapis+": "@com_google_googleapis",
+    "@@xds+": "@com_github_cncf_xds",
+    "@@protoc-gen-validate+": "@com_envoyproxy_protoc_gen_validate",
+    "@@opencensus-proto+": "opencensus_proto",
+    "@@envoy_api+": "@envoy_api",
 }
 
 # Mapping from apparent repo name to in-tree file location.
@@ -641,6 +646,7 @@ def _expand_upb_proto_library_rules(bazel_rules):
     # upb files.
     GEN_UPB_ROOT = "//:src/core/ext/upb-gen/"
     GEN_UPBDEFS_ROOT = "//:src/core/ext/upbdefs-gen/"
+    patched_rules = []
     for name, bazel_rule in bazel_rules.items():
         gen_func = bazel_rule.get("generator_function", None)
         if gen_func in (
@@ -708,9 +714,12 @@ def _expand_upb_proto_library_rules(bazel_rules):
                     hdrs.append(root + proto_src_file.replace(".proto", ext))
             bazel_rule["srcs"] = srcs
             bazel_rule["hdrs"] = hdrs
+            patched_rules.append(bazel_rule)
+    return patched_rules
 
 
 def _patch_grpc_proto_library_rules(bazel_rules):
+    patched_rules = []
     for name, bazel_rule in bazel_rules.items():
         generator_func = bazel_rule.get("generator_function", None)
         if name.startswith("//") and (
@@ -719,6 +728,8 @@ def _patch_grpc_proto_library_rules(bazel_rules):
         ):
             # Add explicit protobuf dependency for internal c++ proto targets.
             bazel_rule["deps"].append("//third_party:protobuf")
+            patched_rules.append((name, bazel_rule))
+    return patched_rules
 
 
 def _patch_descriptor_upb_proto_library(bazel_rules):
@@ -734,6 +745,9 @@ def _patch_descriptor_upb_proto_library(bazel_rules):
         bazel_rule["hdrs"].append(
             ":src/core/ext/upb-gen/google/protobuf/descriptor.upb.h"
         )
+        #TODO(weizheyuan)
+        return bazel_rule
+    return None
 
 
 def _generate_build_metadata(
@@ -1145,14 +1159,15 @@ MOCKED_EXTERNAL_DEPS = [{'destination': 'third_party/cel-spec',
 
 def _generate_external_proto_libraries() -> List[Dict[str, Any]]:
     """Generates the build metadata for external proto libraries"""
-    return MOCKED_EXTERNAL_DEPS
-    # xml_tree = _bazel_query_xml_tree("kind(http_archive, //external:*)")
-    # libraries = _parse_http_archives(xml_tree)
-    # libraries.sort(key=lambda x: x.destination)
+    if _USE_BZLMOD:
+        return MOCKED_EXTERNAL_DEPS
+    xml_tree = _bazel_query_xml_tree("kind(http_archive, //external:*)")
+    libraries = _parse_http_archives(xml_tree)
+    libraries.sort(key=lambda x: x.destination)
 
-    # print("TODO(weizheyuan): external protos:{0}".format(repr(list(map(lambda x: x.__dict__, libraries)))))
+    print("TODO(weizheyuan): external protos:{0}".format(repr(list(map(lambda x: x.__dict__, libraries)))))
 
-    # return list(map(lambda x: x.__dict__, libraries))
+    return list(map(lambda x: x.__dict__, libraries))
 
 
 def _detect_and_print_issues(build_yaml_like: BuildYaml) -> None:
@@ -1490,18 +1505,17 @@ _save_to_file("bazel_rules_full.py", bazel_rules)
 # Step 1.5: The sources for UPB protos are pre-generated, so we want
 # to expand the UPB proto library bazel rules into the generated
 # .upb.h and .upb.c files.
-_expand_upb_proto_library_rules(bazel_rules)
-_save_to_file("expand_upb_proto_library_rules.py", list(bazel_rules.keys()))
+patched_rules = _expand_upb_proto_library_rules(bazel_rules)
+_save_to_file("expand_upb_proto_library_rules.py", patched_rules)
 
 
 # Step 1.6: Add explicit protobuf dependency to grpc_proto_library rules
-_patch_grpc_proto_library_rules(bazel_rules)
-_save_to_file("patch_grpc_proto_library_rules.py", list(bazel_rules.keys()))
+patched_rules = _patch_grpc_proto_library_rules(bazel_rules)
+_save_to_file("patch_grpc_proto_library_rules.py", patched_rules)
 
 # Step 1.7: Make sure upb descriptor.proto library uses the pre-generated sources.
-_patch_descriptor_upb_proto_library(bazel_rules)
-_save_to_file("patch_descriptor_upb_proto_library.py", list(bazel_rules.keys()))
-raise "abort"
+patched_rules = _patch_descriptor_upb_proto_library(bazel_rules)
+_save_to_file("patch_descriptor_upb_proto_library.py", patched_rules)
 
 # Step 2: Extract the known bazel cc_test tests. While most tests
 # will be buildable with other build systems just fine, some of these tests
@@ -1557,6 +1571,8 @@ all_extra_metadata.update(
     _generate_build_extra_metadata_for_tests(tests, bazel_rules)
 )
 all_extra_metadata.update(_BUILD_EXTRA_METADATA)
+
+_save_to_file("all_extra_metadata.py", all_extra_metadata)
 
 # Step 4: Compute the build metadata that will be used in the final build.yaml.
 # The final build metadata includes transitive dependencies, and sources/headers
@@ -1629,6 +1645,8 @@ build_yaml_like = _convert_to_build_yaml_like(all_targets_dict)
 build_yaml_like["external_proto_libraries"] = (
     _generate_external_proto_libraries()
 )
+_save_to_file("external_proto_libraries.py", build_yaml_like["external_proto_libraries"])
+raise "abort"
 
 # detect and report some suspicious situations we've seen before
 _detect_and_print_issues(build_yaml_like)
