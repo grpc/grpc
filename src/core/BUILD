@@ -193,6 +193,7 @@ grpc_cc_library(
     ],
     visibility = [
         "//bazel:event_engine_base_hdrs",
+        "//third_party/tensorflow/compiler/xla/pjrt/distributed:__pkg__",
     ],
     deps = [
         "instrument",
