@@ -20,6 +20,7 @@ EXPERIMENT_ENABLES = {
     "buffer_list_deletion_prep": "buffer_list_deletion_prep",
     "call_tracer_in_transport": "call_tracer_in_transport",
     "call_tracer_send_initial_metadata_is_an_annotation": "call_tracer_send_initial_metadata_is_an_annotation",
+    "call_tracer_send_trailing_metadata_is_an_annotation": "call_tracer_send_trailing_metadata_is_an_annotation",
     "chaotic_good_connect_deadline": "chaotic_good_connect_deadline",
     "chaotic_good_framing_layer": "chaotic_good_framing_layer",
     "chttp2_bound_write_size": "chttp2_bound_write_size",
