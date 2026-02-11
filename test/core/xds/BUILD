@@ -337,6 +337,7 @@ grpc_fuzz_test(
     deps = [
         ":xds_client_test_peer",
         ":xds_transport_fake",
+        "//:gpr_platform",
         "//:grpc",
         "//:iomgr_timer",
         "//:orphanable",
@@ -748,5 +749,24 @@ grpc_cc_test(
         "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/endpoint/v3:pkg_cc_proto",
         "@envoy_api//envoy/type/v3:pkg_cc_proto",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_routing_test",
+    srcs = ["xds_routing_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/status:statusor",
+    ],
+    tags = ["xds_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:filter_chain",
+        "//src/core:grpc_xds_client",
+        "//src/core:xds_listener",
+        "//src/core:xds_route_config",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

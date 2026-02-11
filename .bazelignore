@@ -27,6 +27,7 @@ test/distrib/bazel/python
 test/distrib/bazel/python_second_test_repo
 
 # Directories build containing own BUILD files.
+test/bzlmod
 src/python/grpcio_tests/src/
 tools/distrib/python/grpcio_tools/build/
 tools/distrib/python/grpcio_tools/protobuf/

@@ -46,6 +46,7 @@
 #include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/property_list.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/detail/promise_like.h"
@@ -76,45 +77,48 @@ class PublishToAppEncoder {
     Append(key.c_slice(), value.c_slice());
   }
 
-  // Catch anything that is not explicitly handled, and do not publish it to the
-  // application. If new metadata is added to a batch that needs to be
-  // published, it should be called out here.
+  // Publish only metadata traits that have kPublishToApp == true.
   template <typename Which>
-  void Encode(Which, const typename Which::ValueType&) {}
-
-  void Encode(UserAgentMetadata, const Slice& slice) {
-    Append(UserAgentMetadata::key(), slice);
-  }
-
-  void Encode(HostMetadata, const Slice& slice) {
-    Append(HostMetadata::key(), slice);
-  }
-
-  void Encode(GrpcPreviousRpcAttemptsMetadata, uint32_t count) {
-    Append(GrpcPreviousRpcAttemptsMetadata::key(), count);
-  }
-
-  void Encode(GrpcRetryPushbackMsMetadata, Duration count) {
-    Append(GrpcRetryPushbackMsMetadata::key(), count.millis());
-  }
-
-  void Encode(LbTokenMetadata, const Slice& slice) {
-    Append(LbTokenMetadata::key(), slice);
-  }
-
-  void Encode(W3CTraceParentMetadata, const Slice& slice) {
-    Append(W3CTraceParentMetadata::key(), slice);
-  }
-
-  void Encode(XForwardedForMetadata, const Slice& slice) {
-    Append(XForwardedForMetadata::key(), slice);
-  }
-
-  void Encode(XForwardedHostMetadata, const Slice& slice) {
-    Append(XForwardedHostMetadata::key(), slice);
+  void Encode(Which, const typename Which::ValueType& value) {
+    if (IsMetadataPublishToAppTagEnabled()) {
+      if constexpr (Which::kPublishToApp) {
+        Append(Which::key(), value);
+      }
+    } else {
+      if constexpr (std::is_same<UserAgentMetadata, Which>::value) {
+        Append(Which::key(), value);
+      }
+      if constexpr (std::is_same<HostMetadata, Which>::value) {
+        Append(Which::key(), value);
+      }
+      if constexpr (std::is_same<GrpcPreviousRpcAttemptsMetadata,
+                                 Which>::value) {
+        Append(Which::key(), value);
+      }
+      if constexpr (std::is_same<GrpcRetryPushbackMsMetadata, Which>::value) {
+        Append(Which::key(), value);
+      }
+      if constexpr (std::is_same<LbTokenMetadata, Which>::value) {
+        Append(Which::key(), value);
+      }
+      if constexpr (std::is_same<W3CTraceParentMetadata, Which>::value) {
+        Append(Which::key(), value);
+      }
+      if constexpr (std::is_same<XForwardedForMetadata, Which>::value) {
+        Append(Which::key(), value);
+      }
+      if constexpr (std::is_same<XForwardedHostMetadata, Which>::value) {
+        Append(Which::key(), value);
+      }
+    }
   }
 
  private:
+  void Append(absl::string_view key, Duration value) {
+    Append(StaticSlice::FromStaticString(key).c_slice(),
+           Slice::FromInt64(value.millis()).c_slice());
+  }
+
   void Append(absl::string_view key, int64_t value) {
     Append(StaticSlice::FromStaticString(key).c_slice(),
            Slice::FromInt64(value).c_slice());

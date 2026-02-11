@@ -1263,6 +1263,7 @@ TEST_F(GrpclbEnd2endTest, FallbackControlledByBalancerAfterFirstServerlist) {
 }
 
 TEST_F(GrpclbEnd2endTest, BackendsRestart) {
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Flaking 2 out of 100 times.");
   CreateBackends(2);
   SetNextResolutionDefaultBalancer();
   SendBalancerResponse(BuildResponseForBackends(GetBackendPorts(), {}));

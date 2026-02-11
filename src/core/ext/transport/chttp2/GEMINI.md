@@ -4,7 +4,7 @@
     *   The legacy CHTTP2 transport.
     *   The newer WIP promise-based HTTP/2 transport (PH2).
 
-See also: [gRPC Transports overview](../GEMINI.md)
+See also: [gRPC Transports overview](../../../transport/GEMINI.md)
 
 ## Overarching Purpose
 
@@ -37,7 +37,7 @@ and the underlying endpoint.
 ## 1. CHTTP2 (Legacy)
 
 *   CHTTP2 is compatible with the Call V1 Stack.
-*   Uses [`combiner`](../../lib/iomgr/combiner.h) for concurrency.
+*   Uses [`combiner`](../../../lib/iomgr/combiner.h) for concurrency.
 *   CHTTP2 was the original default transport.
 *   **Status:** Active and default, but planned for deprecation and removal after PH2 is fully rolled out and stable.
 
@@ -64,7 +64,10 @@ and the underlying endpoint.
 *   PH2 is compatible with the Call V3 Stack.
 *   PH2 utilizes the gRPC promise framework (`src/core/lib/promise`) for asynchronous operations.
 *   **Status:** Under Development.
-*   **Rollout:** Expected to begin in January 2026.
+*   **Rollout:** Expected to begin in July 2026.
+*   **Experiments:**
+    *   Client: `IsPromiseBasedHttp2ClientTransportEnabled()`.
+    *   Server: `IsPromiseBasedHttp2ServerTransportEnabled()`.
 
 ### PH2 Goals
 
@@ -118,7 +121,9 @@ and the underlying endpoint.
 ## 3. Common Files (Shared by CHTTP2 and PH2)
 
 *   **`alpn`**: Contains code for ALPN (Application-Layer Protocol Negotiation), which is used to select the HTTP/2 protocol during the TLS handshake.
-*   **`client/chttp2_connector.h`, `client/chttp2_connector.cc`**: These files define the client-side connector, which is responsible for creating a new HTTP2 transport.
+*   **`client/chttp2_connector.h`, `client/chttp2_connector.cc`**:
+    *   These files define the client-side connector, which is responsible for creating a new HTTP2 transport.
+    *   This connector creates either PH2 and CHTTP2 transport.
 *   **`server/chttp2_server.h`, `server/chttp2_server.cc`**: These files define the server-side listener, which is responsible for accepting new connections and creating new HTTP2 transports.
 *   Files in `transport/`:
     *   HPACK implementation:
@@ -135,6 +140,7 @@ and the underlying endpoint.
     *   `transport_common.{h,cc}`
     *   `internal_channel_arg_names.h`
     *   `http2_ztrace_collector.h`: Collects events for z-trace debugging.
+    *   `write_size_policy.{h,cc}`
 
 ## 4. Unused or TBD Files
 
@@ -143,7 +149,6 @@ and the underlying endpoint.
     *   `call_tracer_wrapper.{h,cc}`
     *   `http2_stats_collector.{h,cc}`
     *   `http2_stats_collector.github.cc`
-    *   `write_size_policy.{h,cc}`
 
 ## Key classes in CHTTP2 and their PH2 equivalents
 
@@ -216,13 +221,13 @@ Key test files include:
 ## Dependencies for PH2
 
 *   **gRPC Promise Library:**
-    *   PH2 heavily relies on the gRPC Promise framework [`src/core/lib/promise/`](../lib/promise/GEMINI.md)
-    *   Key components like [`party.h`](../lib/promise/party.h) are fundamental to PH2's async model.
-*   **Call Spine:** PH2 interacts with the V3 Call Spine components located in [`src/core/call/`](../../call/GEMINI.md).
+    *   PH2 heavily relies on the gRPC Promise framework [`src/core/lib/promise/`](../../../lib/promise/GEMINI.md)
+    *   Key components like [`party.h`](../../../lib/promise/party.h) are fundamental to PH2's async model.
+*   **Call Spine:** PH2 interacts with the V3 Call Spine components located in [`src/core/call/`](../../../call/GEMINI.md).
 
 ## Similarities of PH2 and Chaotic Good
 
-PH2 shares several architectural similarities with the [Chaotic Good transport](../../ext/transport/chaotic_good/GEMINI.md) transport:
+PH2 shares several architectural similarities with the [Chaotic Good transport](../chaotic_good/GEMINI.md) transport:
 
 *   **Promise-Based:** Both transports are built upon the gRPC Promise library for managing asynchronous operations. This is a departure from the callback-based system in CHTTP2.
 *   **Call V3 Stack:** Both are designed to work with the newer Call V3 stack.
@@ -236,6 +241,7 @@ PH2 shares several architectural similarities with the [Chaotic Good transport](
 The HTTP2 transport uses Promise Party internally to manage scheduling of jobs.
 Since the number of slots in a Party is 16, we need to account for all the slots
 that we use in the transport.
+We need to ensure that our slots do not exceed 16.
 
 | Name | Category | Description | Max Spawns at a time | When is it spawned | Max Duration | Resolution |
 |---|---|---|---|---|---|---|
