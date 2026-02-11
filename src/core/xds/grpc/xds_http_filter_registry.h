@@ -42,24 +42,24 @@ class XdsHttpRouterFilter final : public XdsHttpFilterImpl {
   absl::string_view ConfigProtoName() const override;
   absl::string_view OverrideConfigProtoName() const override;
   void PopulateSymtab(upb_DefPool* symtab) const override;
-  std::optional<FilterConfig> GenerateFilterConfig(
+  std::optional<Json> GenerateFilterConfig(
       absl::string_view /*instance_name*/,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const override;
-  std::optional<FilterConfig> GenerateFilterConfigOverride(
+  std::optional<Json> GenerateFilterConfigOverride(
       absl::string_view /*instance_name*/,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const override;
   void AddFilter(FilterChainBuilder& /*builder*/) const override {}
   const grpc_channel_filter* channel_filter() const override { return nullptr; }
   absl::StatusOr<ServiceConfigJsonEntry> GenerateMethodConfig(
-      const FilterConfig& /*hcm_filter_config*/,
-      const FilterConfig* /*filter_config_override*/) const override {
+      const Json& /*hcm_filter_config*/,
+      const Json* /*filter_config_override*/) const override {
     // This will never be called, since channel_filter() returns null.
     return absl::UnimplementedError("router filter should never be called");
   }
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
-      const FilterConfig& /*hcm_filter_config*/) const override {
+      const Json& /*hcm_filter_config*/) const override {
     // This will never be called, since channel_filter() returns null.
     return absl::UnimplementedError("router filter should never be called");
   }
@@ -79,23 +79,29 @@ class XdsHttpFilterRegistry final {
   // Movable.
   XdsHttpFilterRegistry(XdsHttpFilterRegistry&& other) noexcept
       : owning_list_(std::move(other.owning_list_)),
-        registry_map_(std::move(other.registry_map_)) {}
+        top_level_config_map_(std::move(other.top_level_config_map_)),
+        override_config_map_(std::move(other.override_config_map_)) {}
   XdsHttpFilterRegistry& operator=(XdsHttpFilterRegistry&& other) noexcept {
     owning_list_ = std::move(other.owning_list_);
-    registry_map_ = std::move(other.registry_map_);
+    top_level_config_map_ = std::move(other.top_level_config_map_);
+    override_config_map_ = std::move(other.override_config_map_);
     return *this;
   }
 
   void RegisterFilter(std::unique_ptr<XdsHttpFilterImpl> filter);
 
-  const XdsHttpFilterImpl* GetFilterForType(
+  const XdsHttpFilterImpl* GetFilterForTopLevelType(
+      absl::string_view proto_type_name) const;
+
+  const XdsHttpFilterImpl* GetFilterForOverrideType(
       absl::string_view proto_type_name) const;
 
   void PopulateSymtab(upb_DefPool* symtab) const;
 
  private:
   std::vector<std::unique_ptr<XdsHttpFilterImpl>> owning_list_;
-  std::map<absl::string_view, XdsHttpFilterImpl*> registry_map_;
+  std::map<absl::string_view, XdsHttpFilterImpl*> top_level_config_map_;
+  std::map<absl::string_view, XdsHttpFilterImpl*> override_config_map_;
 };
 
 }  // namespace grpc_core

@@ -192,7 +192,7 @@ std::optional<absl::string_view> XdsRouting::GetHeaderValue(
 
 namespace {
 
-const XdsHttpFilterImpl::FilterConfig* FindFilterConfigOverride(
+const XdsRouteConfigResource::FilterConfigOverride* FindFilterConfigOverride(
     const std::string& instance_name,
     const XdsRouteConfigResource::VirtualHost& vhost,
     const XdsRouteConfigResource::Route& route,
@@ -229,8 +229,8 @@ GeneratePerHTTPFilterConfigs(
     // Find filter.  This is guaranteed to succeed, because it's checked
     // at config validation time in the listener parsing code.
     const XdsHttpFilterImpl* filter_impl =
-        http_filter_registry.GetFilterForType(
-            http_filter.config.config_proto_type_name);
+        http_filter_registry.GetFilterForTopLevelType(
+            http_filter.config_proto_type);
     GRPC_CHECK_NE(filter_impl, nullptr);
     // If there is not actually any C-core filter associated with this
     // xDS filter, then it won't need any config, so skip it.
@@ -270,9 +270,16 @@ XdsRouting::GeneratePerHTTPFilterConfigsForMethodConfig(
       [&](const XdsHttpFilterImpl& filter_impl,
           const XdsListenerResource::HttpConnectionManager::HttpFilter&
               http_filter) {
-        const XdsHttpFilterImpl::FilterConfig* config_override =
-            FindFilterConfigOverride(http_filter.name, vhost, route,
-                                     cluster_weight);
+        // Find override config, if any.
+        const XdsRouteConfigResource::FilterConfigOverride*
+            filter_config_override = FindFilterConfigOverride(
+                http_filter.name, vhost, route, cluster_weight);
+        const Json* config_override = nullptr;
+        if (filter_config_override != nullptr &&
+            filter_config_override->config_proto_type ==
+                filter_impl.OverrideConfigProtoName()) {
+          config_override = &filter_config_override->config;
+        }
         // Generate service config for filter.
         return filter_impl.GenerateMethodConfig(http_filter.config,
                                                 config_override);

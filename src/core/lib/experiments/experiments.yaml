@@ -43,7 +43,7 @@
 # state of each experiment.
 - name: buffer_list_deletion_prep
   description: Gate the removal of old TCP timestamp collection mechanism.
-  expiry: 2026/02/01
+  expiry: 2026/05/01
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
 - name: call_tracer_in_transport
@@ -64,20 +64,16 @@
   test_tags: []
 - name: chaotic_good_connect_deadline
   description: Use the deadline from the connect args in chaotic good connector
-  expiry: 2026/02/01
+  expiry: 2026/05/01
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
 - name: chaotic_good_framing_layer
   description: Enable the chaotic good framing layer.
-  expiry: 2026/02/01
+  expiry: 2026/05/01
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
   allow_in_fuzzing_config: false
-- name: chttp2_bound_write_size
-  description: Fix a bug where chttp2 can generate very large writes
-  expiry: 2026/02/01
-  owner: ctiller@google.com
-  test_tags: [core_end2end_test]
+
 - name: error_flatten
   description: Flatten errors to ordinary absl::Status form.
   expiry: 2026/04/01
@@ -190,8 +186,13 @@
   test_tags: ["core_end2end_test"]
 - name: max_inflight_pings_strict_limit
   description: If set, the max inflight pings limit is strictly enforced.
-  expiry: 2026/02/01
+  expiry: 2026/03/10
   owner: akshitpatel@google.com
+  test_tags: []
+- name: metadata_publish_to_app_tag
+  description: Publish metadata to the app using the kPublishToApp metadata field.
+  expiry: 2026/04/01
+  owner: leonzz@google.com
   test_tags: []
 - name: monitoring_experiment
   description: Placeholder experiment to prove/disprove our monitoring is working
@@ -200,17 +201,17 @@
   test_tags: []
 - name: multiping
   description: Allow more than one ping to be in flight at a time by default.
-  expiry: 2026/02/01
+  expiry: 2026/05/01
   owner: ctiller@google.com
   test_tags: [flow_control_test]
 - name: otel_export_telemetry_domains
   description: Export telemetry domains in OpenTelemetry metrics.
-  expiry: 2026/02/01
+  expiry: 2026/05/01
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
 - name: pick_first_ignore_empty_updates
   description: Ignore empty resolutions in pick_first
-  expiry: 2026/02/02
+  expiry: 2026/05/02
   owner: ctiller@google.com
 - name: pick_first_ready_to_connecting
   description:
@@ -249,7 +250,7 @@
     and also help with interop testing.
   expiry: 2026/08/30
   owner: tjagtap@google.com
-  test_tags: ["core_end2end_test", "cpp_end2end_test_client_ph2"]
+  test_tags: ["core_end2end_test", "cpp_end2end_test"]
   allow_in_fuzzing_config: true
 - name: promise_based_http2_server_transport
   description:
@@ -262,7 +263,7 @@
   allow_in_fuzzing_config: true
 - name: promise_based_inproc_transport
   description: Use promises for the in-process transport.
-  expiry: 2026/02/01
+  expiry: 2026/05/01
   owner: ctiller@google.com
   test_tags: []
   allow_in_fuzzing_config: false # experiment currently crashes if enabled
@@ -275,7 +276,7 @@
   allow_in_fuzzing_config: true
 - name: retry_in_callv3
   description: Support retries with call-v3
-  expiry: 2026/02/01
+  expiry: 2026/05/01
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
 - name: return_preexisting_errors
@@ -297,7 +298,7 @@
   test_tags: []
 - name: secure_endpoint_offload_large_reads
   description: If a large read needs to be decrypted, use a separate thread.
-  expiry: 2026/02/01
+  expiry: 2026/06/01
   owner: alishananda@google.com
   test_tags: ["core_end2end_test"]
   requires:
@@ -308,7 +309,7 @@
     ]
 - name: secure_endpoint_offload_large_writes
   description: If a large read write to be encrypted, use a separate thread.
-  expiry: 2026/02/01
+  expiry: 2026/06/01
   owner: alishananda@google.com
   test_tags: ["core_end2end_test"]
   requires:
@@ -324,19 +325,19 @@
   test_tags: []
 - name: sleep_promise_exec_ctx_removal
   description: If set, polling the sleep promise does not rely on the ExecCtx.
-  expiry: 2026/02/01
+  expiry: 2026/06/01
   owner: akshitpatel@google.com
   test_tags: ["promise_test"]
 - name: sleep_use_non_owning_waker
   description: If set, the sleep promise uses a non-owning waker.
-  expiry: 2026/02/01
+  expiry: 2026/04/01
   owner: akshitpatel@google.com
   test_tags: ["promise_test"]
 - name: subchannel_connection_scaling
   description: Subchannel connection scaling support.
   expiry: 2026/07/01
   owner: roth@google.com
-  test_tags: ["cpp_lb_end2end_test", "chttp2_keepalive_tests"]
+  test_tags: ["core_end2end_test", "cpp_lb_end2end_test", "chttp2_keepalive_tests"]
 - name: subchannel_wrapper_cleanup_on_orphan
   description:
     Fixes the subchannel wrapper to drop any non-cancelled watchers when
@@ -378,6 +379,17 @@
   test_tags: []
 - name: unconstrained_max_quota_buffer_size
   description: Discard the cap on the max free pool size for one memory allocator
-  expiry: 2026/02/01
+  expiry: 2026/05/01
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
+- name: use_call_event_engine_in_completion_queue
+  description: Use the call event engine to run callbacks in completion queue.
+  expiry: 2026/06/01
+  owner: aananthv@google.com
+  test_tags: ["core_end2end_test"]
+- name: wildcard_ip_expansion_restriction
+  description:
+    If set, adds optional restriction on when to expand wildcard IPs.
+  expiry: 2026/07/01
+  owner: alishananda@google.com
+  test_tags: ["core_end2end_test"]

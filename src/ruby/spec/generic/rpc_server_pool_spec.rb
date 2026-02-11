@@ -116,7 +116,7 @@ describe GRPC::Pool do
       p = Pool.new(5)
       o, q = Object.new, Queue.new
       p.start
-      n = 5  # arbitrary
+      n = 5 # arbitrary
       n.times do
         p.schedule(o, &q.method(:push))
         expect(q.pop).to be(o)
