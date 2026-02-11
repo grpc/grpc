@@ -14,9 +14,9 @@
 
 from __future__ import annotations
 
-import grpc
 from typing import TYPE_CHECKING, Optional, Union
 
+import grpc
 from grpc._cython import cygrpc
 from grpc.typing import MetadataType
 
