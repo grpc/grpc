@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import grpc
 from typing import TYPE_CHECKING, Optional, Union
 
 from grpc._cython import cygrpc
@@ -21,8 +22,6 @@ from grpc.typing import MetadataType
 
 if TYPE_CHECKING:
     from grpc import _common
-
-import grpc
 
 NoCompression = cygrpc.CompressionAlgorithm.none
 Deflate = cygrpc.CompressionAlgorithm.deflate
