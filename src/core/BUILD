@@ -6324,6 +6324,46 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "xds_matcher",
+    srcs = [
+        "xds/grpc/xds_matcher.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_matcher.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/container:inlined_vector",
+        "absl/strings",
+    ],
+    tags = ["nofixdeps"],
+    visibility = ["//bazel:xds_client_grpc"],
+    deps = [
+        "down_cast",
+        "grpc_matchers",
+        "match",
+        "trie_lookup",
+        "unique_type_name",
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_matcher_context",
+    srcs = [
+        "xds/grpc/xds_matcher_context.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_matcher_context.h",
+    ],
+    tags = ["nofixdeps"],
+    visibility = ["//bazel:xds_client_grpc"],
+    deps = [
+        "metadata_batch",
+        "xds_matcher",
+    ],
+)
+
 # TODO(roth): Split this up into individual targets.
 grpc_cc_library(
     name = "grpc_xds_client",
@@ -6342,9 +6382,7 @@ grpc_cc_library(
         "xds/grpc/xds_http_stateful_session_filter.cc",
         "xds/grpc/xds_lb_policy_registry.cc",
         "xds/grpc/xds_listener_parser.cc",
-        "xds/grpc/xds_matcher.cc",
         "xds/grpc/xds_matcher_action.cc",
-        "xds/grpc/xds_matcher_context.cc",
         "xds/grpc/xds_matcher_input.cc",
         "xds/grpc/xds_matcher_parse.cc",
         "xds/grpc/xds_metadata_parser.cc",
@@ -6366,9 +6404,7 @@ grpc_cc_library(
         "xds/grpc/xds_http_stateful_session_filter.h",
         "xds/grpc/xds_lb_policy_registry.h",
         "xds/grpc/xds_listener_parser.h",
-        "xds/grpc/xds_matcher.h",
         "xds/grpc/xds_matcher_action.h",
-        "xds/grpc/xds_matcher_context.h",
         "xds/grpc/xds_matcher_input.h",
         "xds/grpc/xds_matcher_parse.h",
         "xds/grpc/xds_metadata_parser.h",
@@ -6526,6 +6562,8 @@ grpc_cc_library(
         "xds_health_status",
         "xds_http_filter",
         "xds_listener",
+        "xds_matcher",
+        "xds_matcher_context",
         "xds_matcher_upb",
         "xds_metadata",
         "xds_route_config",
@@ -8515,6 +8553,7 @@ grpc_cc_library(
         "absl/container:flat_hash_set",
         "absl/functional:any_invocable",
         "absl/log",
+        "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
