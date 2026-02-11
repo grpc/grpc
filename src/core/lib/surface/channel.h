@@ -104,6 +104,8 @@ class Channel : public UnstartedCallDestination,
 
   virtual void ResetConnectionBackoff() = 0;
 
+  void InitCompletionQueue(grpc_completion_queue* cq);
+
   absl::string_view target() const { return target_; }
   channelz::ChannelNode* channelz_node() const { return channelz_node_.get(); }
   grpc_compression_options compression_options() const {
