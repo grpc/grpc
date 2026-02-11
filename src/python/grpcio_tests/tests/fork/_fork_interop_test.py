@@ -68,10 +68,6 @@ _SUBPROCESS_TIMEOUT_S = 80
     sys.platform.startswith("linux") or sys.platform.startswith("darwin"),
     f"not supported on {sys.platform}",
 )
-@unittest.skipUnless(
-    os.getenv("GRPC_ENABLE_FORK_SUPPORT") is not None,
-    "Core must be built with fork support to run this test.",
-)
 class ForkInteropTest(unittest.TestCase):
     def setUp(self):
         self._port = None
@@ -94,6 +90,9 @@ class ForkInteropTest(unittest.TestCase):
             while True:
                 time.sleep(1)
         """
+        grpc_experiments_env = os.environ.get("GRPC_EXPERIMENTS", "")
+        self.assertIn("event_engine_fork", grpc_experiments_env)
+
         self._streams = tuple(tempfile.TemporaryFile() for _ in range(2))
         self._server_process = subprocess.Popen(
             [sys.executable, "-c", start_server_script],

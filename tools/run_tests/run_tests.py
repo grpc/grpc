@@ -57,6 +57,18 @@ _POLLING_STRATEGIES = {
     "linux": ["epoll1", "poll"],
     "mac": ["poll"],
 }
+# TODO(sergiitk): DO NOT MERGE: only for an adhoc CI test
+_PYTHON_EXTRA_ENV = {
+    "GRPC_EXPERIMENTS": ",".join(
+        [
+            "event_engine_client",
+            "event_engine_listener",
+            "event_engine_dns",
+            "event_engine_fork",
+            "event_engine_poller_for_python",
+        ]
+    )
+}
 
 
 def platform_string():
@@ -713,6 +725,9 @@ class PythonLanguage(object):
                 # overrides threading settings in C-Core.
                 if io_platform != "native":
                     environment["GRPC_ENABLE_FORK_SUPPORT"] = "0"
+
+                environment.update(_PYTHON_EXTRA_ENV)
+
                 jobs.extend(
                     [
                         self.config.job_spec(
