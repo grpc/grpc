@@ -63,15 +63,15 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracerInterface {
     }
     void MutateSendTrailingMetadata(
         grpc_metadata_batch* /*send_trailing_metadata*/) override {}
-    void RecordSendMessage(const grpc_core::Message& /*send_message*/) override;
+    void RecordSendMessage(const grpc_core::Message& send_message) override;
     void RecordSendCompressedMessage(
-        const grpc_core::Message& /*send_compressed_message*/) override {}
+        const grpc_core::Message& send_compressed_message) override;
     void RecordReceivedInitialMetadata(
         grpc_metadata_batch* /*recv_initial_metadata*/) override;
     void RecordReceivedMessage(
         const grpc_core::Message& /*recv_message*/) override;
     void RecordReceivedDecompressedMessage(
-        const grpc_core::Message& /*recv_decompressed_message*/) override {}
+        const grpc_core::Message& recv_decompressed_message) override;
     void RecordReceivedTrailingMetadata(
         absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
         const grpc_transport_stream_stats* transport_stream_stats) override;
@@ -139,6 +139,7 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracerInterface {
       bool is_transparent_retry) override;
 
   void RecordAnnotation(absl::string_view annotation) override;
+
   void RecordAnnotation(const Annotation& annotation) override;
 
  private:
