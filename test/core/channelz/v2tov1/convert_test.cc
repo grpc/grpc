@@ -861,6 +861,44 @@ void FuzzConvertListenSocket(const grpc::channelz::v2::Entity& entity_proto,
 }
 FUZZ_TEST(ConvertTest, FuzzConvertListenSocket);
 
+TEST(ConvertTest, ListenSocketWithAddress) {
+  const auto v2 = ParseEntity(R"pb(
+    id: 6
+    kind: "listen_socket"
+    data {
+      name: "v1_compatibility"
+      value {
+        [type.googleapis.com/grpc.channelz.v2.PropertyList] {
+          properties {
+            key: "name"
+            value { string_value: "test-listen-socket-name" }
+          }
+        }
+      }
+    }
+    data {
+      name: "listen_socket"
+      value {
+        [type.googleapis.com/grpc.channelz.v2.PropertyList] {
+          properties {
+            key: "local"
+            value { string_value: "ipv4:127.0.0.1:10000" }
+          }
+        }
+      }
+    }
+  )pb");
+  FakeEntityFetcher fetcher({});
+  auto v1_str = ConvertListenSocket(v2, fetcher, false);
+  ASSERT_TRUE(v1_str.ok());
+  grpc::channelz::v1::Socket v1;
+  ASSERT_TRUE(v1.ParseFromString(*v1_str));
+  EXPECT_EQ(v1.ref().socket_id(), 6);
+  EXPECT_EQ(v1.ref().name(), "test-listen-socket-name");
+  EXPECT_EQ(v1.local().tcpip_address().port(), 10000);
+}
+
+
 TEST(ConvertTest, ListenSocketWrongKind) {
   const auto v2 = ParseEntity(R"pb(
     id: 1 kind: "server"
