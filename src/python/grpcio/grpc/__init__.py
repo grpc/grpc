@@ -2243,7 +2243,7 @@ def alts_server_credentials() -> ServerCredentials:
 
 
 def compute_engine_channel_credentials(
-    call_credentials: Optional[CallCredentials] = None,
+    call_credentials: CallCredentials,
 ) -> ChannelCredentials:
     """Creates a compute engine channel credential.
 
