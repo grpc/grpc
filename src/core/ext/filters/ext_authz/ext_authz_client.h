@@ -97,14 +97,14 @@ class ExtAuthzClient : public DualRefCounted<ExtAuthzClient> {
     void StopExtAuthzCallLocked()
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ExtAuthzClient::mu_);
 
-    // The owning LrsClient.
+    // The owning ExtAuthzClient.
     WeakRefCountedPtr<ExtAuthzClient> ext_authz_client_;
 
     std::shared_ptr<const XdsBootstrap::XdsServerTarget> server_;
 
     RefCountedPtr<XdsTransportFactory::XdsTransport> transport_;
 
-    // The retryable LRS call.
+    // The retryable ExtAuthz call.
     OrphanablePtr<RetryableCall<ExtAuthzCall>> ext_authz_call_;
   };
 
@@ -122,7 +122,7 @@ class ExtAuthzClient : public DualRefCounted<ExtAuthzClient> {
       const char* reason) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
-  std::shared_ptr<XdsBootstrap> bootstrap_;
+  std::shared_ptr<XdsBootstrap> bootstrap_; // not required
   RefCountedPtr<XdsTransportFactory> transport_factory_;
   Mutex mu_;
   upb::DefPool def_pool_ ABSL_GUARDED_BY(mu_);
