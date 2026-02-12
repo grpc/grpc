@@ -38,7 +38,7 @@ namespace {
 // finished, we should be able to do this by injecting a custom EE impl
 // that allows us to intercept connection attempts.
 
-CORE_END2END_TEST(Http2SingleHopTests, SubchannelConnectionScaling) {
+CORE_END2END_TEST(Http2FullstackSingleHopTests, SubchannelConnectionScaling) {
   SKIP_IF_MINSTACK();
   if (!IsSubchannelConnectionScalingEnabled()) {
     GTEST_SKIP()
@@ -120,7 +120,8 @@ CORE_END2END_TEST(Http2SingleHopTests, SubchannelConnectionScaling) {
   Step();
 }
 
-CORE_END2END_TEST(Http2SingleHopTests, HonorsMaxConnectionsPerSubchannel) {
+CORE_END2END_TEST(Http2FullstackSingleHopTests,
+                  HonorsMaxConnectionsPerSubchannel) {
   SKIP_IF_MINSTACK();
   if (!IsSubchannelConnectionScalingEnabled()) {
     GTEST_SKIP()

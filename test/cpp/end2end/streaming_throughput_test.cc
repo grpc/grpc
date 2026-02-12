@@ -167,7 +167,8 @@ static void Drainer(ClientReaderWriter<EchoRequest, EchoResponse>* reader) {
 }
 
 TEST_F(End2endTest, StreamingThroughput) {
-  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1][CPPE2E] Fails 2/100 times ");
+  SKIP_TEST_FOR_PH2(
+      "TODO(tjagtap) [PH2][P3][Client][CPPE2E] Fails 2/100 times ");
   ResetStub();
   grpc::ClientContext context;
   auto stream = stub_->BidiStream(&context);
