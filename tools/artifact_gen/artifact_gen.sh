@@ -24,6 +24,11 @@ tools/bazel query --noimplicit_deps --output=xml 'deps(//src/compiler/...)' > to
 tools/bazel query --noimplicit_deps --output=xml 'kind(alias, "//third_party:*")' > tools/artifact_gen/third_party_alias_deps.xml
 tools/bazel query --noimplicit_deps --output=xml 'deps(kind("^proto_library", @envoy_api//envoy/...))' > tools/artifact_gen/envoy_api_proto_deps.xml
 tools/bazel query --noimplicit_deps --output=xml 'deps("@com_google_protobuf//upb:generated_code_support")' > tools/artifact_gen/upb_deps.xml
+# TODO(weizheyuan): Find a new approach to extract http_archive() metadata.
+#
+# `//external:*` is a pseudo target which is not available in bzlmod.
+# The closest we can do in bazel 8 is `bazel mod show_repo`. Disable bzlmod
+# for this specific command until we find a better solution.
 tools/bazel query --noimplicit_deps --noenable_bzlmod --enable_workspace --output=xml 'kind(http_archive, //external:*)' > tools/artifact_gen/external_http_archive_deps.xml
 
 # PHASE 1: generate artifacts
