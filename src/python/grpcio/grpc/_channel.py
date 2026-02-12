@@ -35,13 +35,13 @@ from typing import (
     cast,
 )
 
-import grpc  # pytype: disable=pyi-error
-from grpc import _common  # pytype: disable=pyi-error
-from grpc import _compression  # pytype: disable=pyi-error
-from grpc import _grpcio_metadata  # pytype: disable=pyi-error
-from grpc import _observability  # pytype: disable=pyi-error
+import grpc
+from grpc import _common
+from grpc import _compression
+from grpc import _grpcio_metadata
+from grpc import _observability
 from grpc._cython import cygrpc
-import grpc.experimental  # pytype: disable=pyi-error
+import grpc.experimental
 from grpc.typing import ChannelArgumentType
 from grpc.typing import DeserializingFunction
 from grpc.typing import MetadataType

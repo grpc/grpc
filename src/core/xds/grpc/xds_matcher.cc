@@ -27,7 +27,7 @@
 namespace grpc_core {
 
 //
-// XdsMatcher
+// XdsMatcher::OnMatch
 //
 
 bool XdsMatcher::OnMatch::operator==(const OnMatch& other) const {
@@ -82,6 +82,15 @@ bool XdsMatcher::OnMatch::FindMatches(const MatchContext& context,
       });
 }
 
+void XdsMatcherList::OnMatch::ForEachAction(
+    absl::FunctionRef<void(const Action&)> func) const {
+  Match(
+      action, [&](const std::unique_ptr<Action>& action) { func(*action); },
+      [&](const std::unique_ptr<XdsMatcher>& matcher) {
+        matcher->ForEachAction(func);
+      });
+}
+
 //
 // XdsMatcherList
 //
@@ -118,6 +127,16 @@ bool XdsMatcherList::FindMatches(const MatchContext& context,
     if (on_no_match_->FindMatches(context, result)) return true;
   }
   return false;
+}
+
+void XdsMatcherList::ForEachAction(
+    absl::FunctionRef<void(const Action&)> func) const {
+  for (const auto& [_, on_match] : matchers_) {
+    on_match.ForEachAction(func);
+  }
+  if (on_no_match_.has_value()) {
+    on_no_match_->ForEachAction(func);
+  }
 }
 
 bool XdsMatcherList::AndPredicate::Equals(const Predicate& other) const {
@@ -213,6 +232,16 @@ bool XdsMatcherExactMap::FindMatches(const MatchContext& context,
   return false;
 }
 
+void XdsMatcherExactMap::ForEachAction(
+    absl::FunctionRef<void(const Action&)> func) const {
+  for (const auto& [_, on_match] : map_) {
+    on_match.ForEachAction(func);
+  }
+  if (on_no_match_.has_value()) {
+    on_no_match_->ForEachAction(func);
+  }
+}
+
 //
 // XdsMatcherPrefixMap
 //
@@ -256,10 +285,6 @@ bool XdsMatcherPrefixMap::FindMatches(const MatchContext& context,
   auto input = input_->GetValue(context);
   std::vector<const OnMatch*> on_match_results;
   root_.ForEachPrefixMatch(input.value_or(""), [&](const OnMatch& on_match) {
-    if (!on_match.keep_matching) {
-      // Don't need previous entries if we can use this one.
-      on_match_results.clear();
-    }
     on_match_results.push_back(&on_match);
   });
   for (auto it = on_match_results.rbegin(); it != on_match_results.rend();
@@ -272,6 +297,16 @@ bool XdsMatcherPrefixMap::FindMatches(const MatchContext& context,
     if (on_no_match_->FindMatches(context, result)) return true;
   }
   return false;
+}
+
+void XdsMatcherPrefixMap::ForEachAction(
+    absl::FunctionRef<void(const Action&)> func) const {
+  root_.ForEach([&](absl::string_view /*key*/, const OnMatch& on_match) {
+    on_match.ForEachAction(func);
+  });
+  if (on_no_match_.has_value()) {
+    on_no_match_->ForEachAction(func);
+  }
 }
 
 }  // namespace grpc_core

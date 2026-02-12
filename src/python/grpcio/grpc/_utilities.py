@@ -19,8 +19,8 @@ import threading
 import time
 from typing import Callable, Dict, List, Optional
 
-import grpc  # pytype: disable=pyi-error
-from grpc import _common  # pytype: disable=pyi-error
+import grpc
+from grpc import _common
 from grpc.typing import _DoneCallbackType
 
 _LOGGER = logging.getLogger(__name__)
@@ -172,7 +172,7 @@ class _ChannelReadyFuture(grpc.Future):
     def add_done_callback(self, fn: _DoneCallbackType):
         with self._condition:
             if (
-                self._done_callbacks
+                self._done_callbacks is not None
                 and not self._cancelled
                 and not self._matured
             ):

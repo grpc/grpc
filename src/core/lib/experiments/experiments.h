@@ -64,11 +64,13 @@ inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
   return true;
 }
+inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
+  return false;
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_CONNECT_DEADLINE
 inline bool IsChaoticGoodConnectDeadlineEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
-inline bool IsChttp2BoundWriteSizeEnabled() { return false; }
 inline bool IsErrorFlattenEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
@@ -95,6 +97,8 @@ inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
 inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
+inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
@@ -128,6 +132,8 @@ inline bool IsTrackWritesInResourceQuotaEnabled() { return false; }
 inline bool IsTrackZeroCopyAllocationsInResourceQuotaEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
+inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
+inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
 inline bool IsBufferListDeletionPrepEnabled() { return false; }
@@ -137,11 +143,13 @@ inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
   return true;
 }
+inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
+  return false;
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_CONNECT_DEADLINE
 inline bool IsChaoticGoodConnectDeadlineEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
-inline bool IsChttp2BoundWriteSizeEnabled() { return false; }
 inline bool IsErrorFlattenEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
@@ -168,6 +176,8 @@ inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
 inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
+inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
@@ -201,6 +211,8 @@ inline bool IsTrackWritesInResourceQuotaEnabled() { return false; }
 inline bool IsTrackZeroCopyAllocationsInResourceQuotaEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
+inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
+inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
 
 #else
 inline bool IsBufferListDeletionPrepEnabled() { return false; }
@@ -210,11 +222,13 @@ inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
   return true;
 }
+inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
+  return false;
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_CONNECT_DEADLINE
 inline bool IsChaoticGoodConnectDeadlineEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
-inline bool IsChttp2BoundWriteSizeEnabled() { return false; }
 inline bool IsErrorFlattenEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
@@ -241,6 +255,8 @@ inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
 inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
+inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
@@ -274,6 +290,8 @@ inline bool IsTrackWritesInResourceQuotaEnabled() { return false; }
 inline bool IsTrackZeroCopyAllocationsInResourceQuotaEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
+inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
+inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
 #endif
 
 #else
@@ -281,9 +299,9 @@ enum ExperimentIds {
   kExperimentIdBufferListDeletionPrep,
   kExperimentIdCallTracerInTransport,
   kExperimentIdCallTracerSendInitialMetadataIsAnAnnotation,
+  kExperimentIdCallTracerSendTrailingMetadataIsAnAnnotation,
   kExperimentIdChaoticGoodConnectDeadline,
   kExperimentIdChaoticGoodFramingLayer,
-  kExperimentIdChttp2BoundWriteSize,
   kExperimentIdErrorFlatten,
   kExperimentIdEventEngineClient,
   kExperimentIdEventEngineDns,
@@ -301,6 +319,7 @@ enum ExperimentIds {
   kExperimentIdKeepAlivePingTimerBatch,
   kExperimentIdLocalConnectorSecure,
   kExperimentIdMaxInflightPingsStrictLimit,
+  kExperimentIdMetadataPublishToAppTag,
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
   kExperimentIdOtelExportTelemetryDomains,
@@ -330,6 +349,8 @@ enum ExperimentIds {
   kExperimentIdTrackZeroCopyAllocationsInResourceQuota,
   kExperimentIdTsiFrameProtectorWithoutLocks,
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
+  kExperimentIdUseCallEventEngineInCompletionQueue,
+  kExperimentIdWildcardIpExpansionRestriction,
   kNumExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_BUFFER_LIST_DELETION_PREP
@@ -345,6 +366,11 @@ inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
   return IsExperimentEnabled<
       kExperimentIdCallTracerSendInitialMetadataIsAnAnnotation>();
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_SEND_TRAILING_METADATA_IS_AN_ANNOTATION
+inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
+  return IsExperimentEnabled<
+      kExperimentIdCallTracerSendTrailingMetadataIsAnAnnotation>();
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_CONNECT_DEADLINE
 inline bool IsChaoticGoodConnectDeadlineEnabled() {
   return IsExperimentEnabled<kExperimentIdChaoticGoodConnectDeadline>();
@@ -352,10 +378,6 @@ inline bool IsChaoticGoodConnectDeadlineEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() {
   return IsExperimentEnabled<kExperimentIdChaoticGoodFramingLayer>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BOUND_WRITE_SIZE
-inline bool IsChttp2BoundWriteSizeEnabled() {
-  return IsExperimentEnabled<kExperimentIdChttp2BoundWriteSize>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
 inline bool IsErrorFlattenEnabled() {
@@ -424,6 +446,10 @@ inline bool IsLocalConnectorSecureEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
 inline bool IsMaxInflightPingsStrictLimitEnabled() {
   return IsExperimentEnabled<kExperimentIdMaxInflightPingsStrictLimit>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
+inline bool IsMetadataPublishToAppTagEnabled() {
+  return IsExperimentEnabled<kExperimentIdMetadataPublishToAppTag>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() {
@@ -541,6 +567,15 @@ inline bool IsTsiFrameProtectorWithoutLocksEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_UNCONSTRAINED_MAX_QUOTA_BUFFER_SIZE
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
   return IsExperimentEnabled<kExperimentIdUnconstrainedMaxQuotaBufferSize>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_USE_CALL_EVENT_ENGINE_IN_COMPLETION_QUEUE
+inline bool IsUseCallEventEngineInCompletionQueueEnabled() {
+  return IsExperimentEnabled<
+      kExperimentIdUseCallEventEngineInCompletionQueue>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_WILDCARD_IP_EXPANSION_RESTRICTION
+inline bool IsWildcardIpExpansionRestrictionEnabled() {
+  return IsExperimentEnabled<kExperimentIdWildcardIpExpansionRestriction>();
 }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];

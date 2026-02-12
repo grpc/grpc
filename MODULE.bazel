@@ -22,10 +22,17 @@ module(
 # Regular dependencies
 # ====================
 
+# -- Abseil library.
+# Pinning version to be consistent with third_party/abseil-cpp
 bazel_dep(name = "abseil-cpp", version = "20250512.1", repo_name = "com_google_absl")
+single_version_override(
+    module_name = "abseil-cpp",
+    version = "20250512.1",
+)
+
 bazel_dep(name = "apple_support", version = "1.17.1", repo_name = "build_bazel_apple_support")
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
-bazel_dep(name = "boringssl", version = "0.20241024.0")  # mistmatched 20241211
+bazel_dep(name = "boringssl", version = "0.20241024.0")  # mismatched 20241211
 bazel_dep(name = "c-ares", version = "1.19.1", repo_name = "com_github_cares_cares")
 bazel_dep(name = "envoy_api", version = "0.0.0-20251216-6ef568c")
 bazel_dep(name = "googleapis-cc", version = "1.0.0")
@@ -36,19 +43,38 @@ bazel_dep(name = "opencensus-cpp", version = "0.0.0-20230502-50eb5de.bcr.2", rep
 bazel_dep(name = "openssl", version = "3.3.1.bcr.1")
 bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opentelemetry_cpp")
 bazel_dep(name = "platforms", version = "0.0.11")
+
+# --- Protobuf related packages.
+# Pinning to 31.1 to avoid xDs breakage until we can upgrade to Protobuf >= 33.0
 bazel_dep(name = "protobuf", version = "31.1", repo_name = "com_google_protobuf")
+single_version_override(
+    module_name = "protobuf",
+    version = "31.1",
+)
+
 bazel_dep(name = "protoc-gen-validate", version = "1.2.1.bcr.1", repo_name = "com_envoyproxy_protoc_gen_validate")  # Not needed directly
-bazel_dep(name = "re2", version = "2024-07-02.bcr.1", repo_name = "com_googlesource_code_re2")  # mistmached 2022-04-01
+bazel_dep(name = "re2", version = "2024-07-02.bcr.1", repo_name = "com_googlesource_code_re2")  # mismatched 2022-04-01
 bazel_dep(name = "rules_apple", version = "3.16.0", repo_name = "build_bazel_rules_apple")
 bazel_dep(name = "rules_cc", version = "0.1.1")
 bazel_dep(name = "rules_proto", version = "7.0.2")
-bazel_dep(name = "xds", version = "0.0.0-20240423-555b57e", repo_name = "com_github_cncf_xds")  # mismatched 20231116
+bazel_dep(name = "rules_shell", version = "0.4.0")
+bazel_dep(name = "xds", version = "0.0.0-20251210-ee656c7", repo_name = "com_github_cncf_xds")
+
+# --- Zlib
+# Patch is needed to for running Windows RBE tests.
 bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
+single_version_override(
+    module_name = "zlib",
+    patch_strip = 1,
+    patches = [
+        "//bazel:zlib.patch",
+    ],
+    version = "1.3.1.bcr.5",
+)
 
 # Development dependencies
 # ========================
 bazel_dep(name = "google_benchmark", version = "1.9.0", dev_dependency = True, repo_name = "com_github_google_benchmark")
-bazel_dep(name = "rules_shell", version = "0.4.0", dev_dependency = True)
 
 # Python dependencies
 # ===================
@@ -99,11 +125,38 @@ http_archive(
     url = "https://github.com/python/typing_extensions/archive/4.12.2.tar.gz",
 )
 
-# Provide repo @com_google_fuzztest.
-include("//bazel:com_google_fuzztest.MODULE.bazel")
+# --- Provide repo @com_google_fuzztest.
+bazel_dep(name = "fuzztest", version = "20250805.0", dev_dependency = True, repo_name = "com_google_fuzztest")  # mismatched 2023-05-16
 
-# Provides repo @grpc_custom_exec_properties.
-include("//bazel:grpc_custom_exec_properties.MODULE.bazel")
+# This package is not directly used by grpc, but requested by fuzztest.
+#
+# The reason for version bump is because bazel resolve this package to riegeli@0.0.0-20240606-973b6f0,
+# which is incompatible with the version of abseil-cpp we use.
+#
+# See also https://bazel.build/external/module#version-selection.
+bazel_dep(name = "riegeli", version = "0.0.0-20250706-c4d1f27", dev_dependency = True)
+
+# --- Provide repo @grpc_custom_exec_properties.
+http_archive(
+    name = "bazel_toolchains",
+    integrity = "sha256-F57AL4Cehqv1Y1bYiYyL10Bp8b18VgRAUMLNPXnQ4CQ=",
+    strip_prefix = "bazel-toolchains-4.1.0",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/releases/download/4.1.0/bazel-toolchains-4.1.0.tar.gz",
+        "https://github.com/bazelbuild/bazel-toolchains/releases/download/4.1.0/bazel-toolchains-4.1.0.tar.gz",
+    ],
+)
+
+exec_properties = use_extension("//bazel:extensions.bzl", "exec_properties")
+exec_properties.custom_exec_properties(
+    name = "grpc_custom_exec_properties",
+    constant = "LARGE_MACHINE",
+    rbe_exec_properties_dict = {
+        "os": "ubuntu",
+        "machine_size": "large",
+    },
+)
+use_repo(exec_properties, "grpc_custom_exec_properties")
 
 # -- google_cloud_cpp 2.35.0 related repos, which requires a modified version of googleapis, hence the version pinning.
 bazel_dep(name = "googleapis", version = "0.0.0-20251003-2193a2bf", repo_name = "com_google_googleapis")
@@ -126,3 +179,10 @@ archive_override(
         "https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.35.0.tar.gz",
     ],
 )
+
+# --- Python headers
+# TODO(weizheyuan): Maybe replace this with python header exposed by rules_python.
+# See also https://github.com/grpc/grpc/issues/24665
+python_configure = use_repo_rule("//third_party/py:python_configure.bzl", "python_configure")
+
+python_configure(name = "local_config_python")

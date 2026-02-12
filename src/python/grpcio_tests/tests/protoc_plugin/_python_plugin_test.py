@@ -724,12 +724,56 @@ class ModuleMainTest(unittest.TestCase):
                 invocation, stdout=streams[0], stderr=streams[1]
             )
             proc.wait()
-            outs = []
             for stream in streams:
                 stream.seek(0)
                 self.assertEqual(0, len(stream.read()))
             self.assertEqual(0, proc.returncode)
-        except Exception:  # pylint: disable=broad-except
+        finally:
+            shutil.rmtree(work_dir)
+
+    def test_features_import(self):
+        if sys.executable is None:
+            raise unittest.SkipTest(
+                "Running on a interpreter that cannot be invoked from the CLI."
+            )
+
+        # Path to the demo.proto file
+        proto_path = os.path.join(
+            "src",
+            "python",
+            "grpcio_tests",
+            "tests",
+            "protoc_plugin",
+            "protos",
+            "features",
+            "test.proto",
+        )
+        # Directory containing the proto file
+        proto_dir = os.path.dirname(proto_path)
+
+        work_dir = tempfile.mkdtemp()
+        try:
+            invocation = (
+                sys.executable,
+                "-m",
+                "grpc_tools.protoc",
+                "--proto_path",
+                proto_dir,
+                "--python_out",
+                work_dir,
+                "--grpc_python_out",
+                work_dir,
+                proto_path,
+            )
+            proc = subprocess.Popen(
+                invocation, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
+            stdout, stderr = proc.communicate()
+            if proc.returncode != 0:
+                print("stdout:", stdout.decode("utf-8"))
+                print("stderr:", stderr.decode("utf-8"))
+            self.assertEqual(0, proc.returncode)
+        finally:
             shutil.rmtree(work_dir)
 
 

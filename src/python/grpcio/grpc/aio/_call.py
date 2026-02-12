@@ -184,7 +184,7 @@ def _create_rpc_error(
     return AioRpcError(
         _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[status.code()],
         Metadata.from_tuple(tuple(initial_metadata)),
-        Metadata.from_tuple(tuple(status.trailing_metadata())),
+        Metadata.from_tuple(status.trailing_metadata()),
         details=status.details(),
         debug_error_string=status.debug_error_string(),
     )
