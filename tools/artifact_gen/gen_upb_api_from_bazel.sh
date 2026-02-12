@@ -59,7 +59,7 @@ BUILD_TARGETS=$(${TMP_DIR}/gen_upb_api_from_bazel \
 
 # Build the upb targets from the root.
 if [[ -n "${BUILD_TARGETS}" ]]; then
-  tools/bazel build ${BUILD_TARGETS}
+  tools/bazel build --bazelrc=tools/fix_absl_linker_error_workaround.bazelrc ${BUILD_TARGETS}
 fi
 
 # Run the C++ program to copy the generated files.
@@ -67,4 +67,4 @@ ${TMP_DIR}/gen_upb_api_from_bazel \
   --mode=generate_and_copy \
   --upb_rules_xml="${UPB_RULES_XML}" \
   --deps_xml="${DEPS_XML}" \
-  "$@" 
+  "$@"
