@@ -898,7 +898,6 @@ TEST(ConvertTest, ListenSocketWithAddress) {
   EXPECT_EQ(v1.local().tcpip_address().port(), 10000);
 }
 
-
 TEST(ConvertTest, ListenSocketWrongKind) {
   const auto v2 = ParseEntity(R"pb(
     id: 1 kind: "server"
