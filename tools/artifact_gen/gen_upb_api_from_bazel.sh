@@ -19,7 +19,7 @@ set -ex
 cd "$(dirname "$0")/../.."
 
 # Build the C++ generator. This must be done from within the sub-workspace.
-(cd tools/artifact_gen && ../../tools/bazel build //:gen_upb_api_from_bazel)
+(cd tools/artifact_gen && ../../tools/bazel --bazelrc ../../tools/fix_absl_linker_error_workaround.bazelrc build //:gen_upb_api_from_bazel)
 
 # Now that the tool is built, we can move the executable to a temporary location
 # to avoid issues with the nested bazel workspaces.
@@ -59,7 +59,7 @@ BUILD_TARGETS=$(${TMP_DIR}/gen_upb_api_from_bazel \
 
 # Build the upb targets from the root.
 if [[ -n "${BUILD_TARGETS}" ]]; then
-  tools/bazel build --bazelrc=tools/fix_absl_linker_error_workaround.bazelrc ${BUILD_TARGETS}
+  tools/bazel --bazelrc=tools/fix_absl_linker_error_workaround.bazelrc build ${BUILD_TARGETS}
 fi
 
 # Run the C++ program to copy the generated files.
