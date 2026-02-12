@@ -27,6 +27,11 @@ UPB_INLINE const upb_MessageDef *envoy_extensions_filters_http_composite_v3_Comp
   return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.http.composite.v3.Composite");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_extensions_filters_http_composite_v3_FilterChainConfiguration_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_extensions_filters_http_composite_v3_composite_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.http.composite.v3.FilterChainConfiguration");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_extensions_filters_http_composite_v3_DynamicConfig_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_extensions_filters_http_composite_v3_composite_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.http.composite.v3.DynamicConfig");
