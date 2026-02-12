@@ -36,12 +36,13 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'bundler',            '>= 1.9'
   s.add_development_dependency 'facter',             '~> 2.4'
   s.add_development_dependency 'logging',            '~> 2.0'
+  s.add_development_dependency 'syslog',             '~> 0.3.0'
   s.add_development_dependency 'simplecov',          '~> 0.22'
   s.add_development_dependency 'rake',               '~> 13.0'
-  s.add_development_dependency 'rake-compiler',      '~> 1.2.1'
-  s.add_development_dependency 'rake-compiler-dock', '= 1.9.1'
+  s.add_development_dependency 'rake-compiler',      '~> 1.3.1'
+  s.add_development_dependency 'rake-compiler-dock', '~> 1.11.1'
   s.add_development_dependency 'rspec',              '~> 3.6'
-  s.add_development_dependency 'rubocop',            '~> 1.41.0'
+  s.add_development_dependency 'rubocop',            '~> 1.82.0'
   s.add_development_dependency 'signet',             '~> 0.7'
   s.add_development_dependency 'googleauth',         '~> 1.0'
 
@@ -710,6 +711,15 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-gen/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h )
   s.files += %w( src/core/ext/upb-gen/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb_minitable.c )
   s.files += %w( src/core/ext/upb-gen/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb_minitable.h )
+  s.files += %w( src/core/ext/upb-gen/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.upb.h )
+  s.files += %w( src/core/ext/upb-gen/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.upb_minitable.c )
+  s.files += %w( src/core/ext/upb-gen/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.upb_minitable.h )
+  s.files += %w( src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/tls/v3/tls_credentials.upb.h )
+  s.files += %w( src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/tls/v3/tls_credentials.upb_minitable.c )
+  s.files += %w( src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/tls/v3/tls_credentials.upb_minitable.h )
+  s.files += %w( src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/xds/v3/xds_credentials.upb.h )
+  s.files += %w( src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/xds/v3/xds_credentials.upb_minitable.c )
+  s.files += %w( src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/xds/v3/xds_credentials.upb_minitable.h )
   s.files += %w( src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.h )
   s.files += %w( src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb_minitable.c )
   s.files += %w( src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb_minitable.h )
@@ -2159,6 +2169,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/util/xxhash_inline.h )
   s.files += %w( src/core/xds/grpc/certificate_provider_store.cc )
   s.files += %w( src/core/xds/grpc/certificate_provider_store.h )
+  s.files += %w( src/core/xds/grpc/certificate_provider_store_interface.h )
   s.files += %w( src/core/xds/grpc/file_watcher_certificate_provider_factory.cc )
   s.files += %w( src/core/xds/grpc/file_watcher_certificate_provider_factory.h )
   s.files += %w( src/core/xds/grpc/xds_audit_logger_registry.cc )

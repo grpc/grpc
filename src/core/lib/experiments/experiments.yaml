@@ -73,11 +73,7 @@
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
   allow_in_fuzzing_config: false
-- name: chttp2_bound_write_size
-  description: Fix a bug where chttp2 can generate very large writes
-  expiry: 2026/02/01
-  owner: ctiller@google.com
-  test_tags: [core_end2end_test]
+
 - name: error_flatten
   description: Flatten errors to ordinary absl::Status form.
   expiry: 2026/04/01
@@ -185,13 +181,18 @@
   test_tags: []
 - name: local_connector_secure
   description: Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP connections.
-  expiry: 2026/02/01
+  expiry: 2026/06/01
   owner: mattstev@google.com
   test_tags: ["core_end2end_test"]
 - name: max_inflight_pings_strict_limit
   description: If set, the max inflight pings limit is strictly enforced.
-  expiry: 2026/02/01
+  expiry: 2026/03/10
   owner: akshitpatel@google.com
+  test_tags: []
+- name: metadata_publish_to_app_tag
+  description: Publish metadata to the app using the kPublishToApp metadata field.
+  expiry: 2026/04/01
+  owner: leonzz@google.com
   test_tags: []
 - name: monitoring_experiment
   description: Placeholder experiment to prove/disprove our monitoring is working
@@ -249,7 +250,7 @@
     and also help with interop testing.
   expiry: 2026/08/30
   owner: tjagtap@google.com
-  test_tags: ["core_end2end_test", "cpp_end2end_test_client_ph2"]
+  test_tags: ["core_end2end_test", "cpp_end2end_test"]
   allow_in_fuzzing_config: true
 - name: promise_based_http2_server_transport
   description:
@@ -297,7 +298,7 @@
   test_tags: []
 - name: secure_endpoint_offload_large_reads
   description: If a large read needs to be decrypted, use a separate thread.
-  expiry: 2026/02/01
+  expiry: 2026/06/01
   owner: alishananda@google.com
   test_tags: ["core_end2end_test"]
   requires:
@@ -308,7 +309,7 @@
     ]
 - name: secure_endpoint_offload_large_writes
   description: If a large read write to be encrypted, use a separate thread.
-  expiry: 2026/02/01
+  expiry: 2026/06/01
   owner: alishananda@google.com
   test_tags: ["core_end2end_test"]
   requires:
@@ -324,12 +325,12 @@
   test_tags: []
 - name: sleep_promise_exec_ctx_removal
   description: If set, polling the sleep promise does not rely on the ExecCtx.
-  expiry: 2026/02/01
+  expiry: 2026/06/01
   owner: akshitpatel@google.com
   test_tags: ["promise_test"]
 - name: sleep_use_non_owning_waker
   description: If set, the sleep promise uses a non-owning waker.
-  expiry: 2026/02/01
+  expiry: 2026/04/01
   owner: akshitpatel@google.com
   test_tags: ["promise_test"]
 - name: subchannel_connection_scaling
@@ -373,7 +374,7 @@
   test_tags: [resource_quota_test]
 - name: tsi_frame_protector_without_locks
   description: Do not hold locks while using the tsi_frame_protector.
-  expiry: 2026/02/01
+  expiry: 2026/06/01
   owner: mattstev@google.com
   test_tags: []
 - name: unconstrained_max_quota_buffer_size
@@ -385,4 +386,10 @@
   description: Use the call event engine to run callbacks in completion queue.
   expiry: 2026/06/01
   owner: aananthv@google.com
+  test_tags: ["core_end2end_test"]
+- name: wildcard_ip_expansion_restriction
+  description:
+    If set, adds optional restriction on when to expand wildcard IPs.
+  expiry: 2026/07/01
+  owner: alishananda@google.com
   test_tags: ["core_end2end_test"]

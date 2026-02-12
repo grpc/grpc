@@ -41,8 +41,10 @@ enum class ValidateMetadataResult : uint8_t {
 
 const char* ValidateMetadataResultToString(ValidateMetadataResult result);
 
-// Returns nullopt if the key is legal, otherwise returns an error message.
 ValidateMetadataResult ValidateHeaderKeyIsLegal(absl::string_view key);
+
+ValidateMetadataResult ValidateNonBinaryHeaderValueIsLegal(
+    absl::string_view value);
 
 }  // namespace grpc_core
 
