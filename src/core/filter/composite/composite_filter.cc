@@ -30,11 +30,20 @@
 namespace grpc_core {
 
 std::string CompositeFilter::ExecuteFilterAction::ToString() const {
-  std::vector<std::string> parts;
+  std::vector<std::string> filters;
   for (const auto& [_, config] : filter_chain_) {
-    parts.push_back(config == nullptr ? "<null>" : config->ToString());
+    filters.push_back(
+        config == nullptr
+            ? "<null>"
+            : absl::StrCat(config->type().name(), "=", config->ToString()));
   }
-  return absl::StrCat("{", absl::StrJoin(parts, ", "), "}");
+  std::vector<std::string> parts;
+  parts.push_back(
+      absl::StrCat("filter_chain=[", absl::StrJoin(filters, ", "), "]"));
+  if (sample_per_million_ < 1000000) {
+    parts.push_back(absl::StrCat("sample_per_million=", sample_per_million_));
+  }
+  return absl::StrCat("ExecuteFilterAction{", absl::StrJoin(parts, ", "), "}");
 }
 
 const grpc_channel_filter CompositeFilter::kFilterVtable =
@@ -88,6 +97,8 @@ CompositeFilter::CompositeFilter(const ChannelArgs& args,
         DownCast<const ExecuteFilterAction&>(action);
     InterceptionChainBuilder builder(args, filter_args.blackboard());
     InterceptionChainBuilderWrapper builder_wrapper(builder);
+// FIXME: check whether any filter is on the wrong side (client vs.
+// server), and if so fail filter chain construction
     for (const auto& [filter_impl, filter_config] :
          execute_filter_action.filter_chain()) {
       filter_impl->AddFilter(builder_wrapper, filter_config);

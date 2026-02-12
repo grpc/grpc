@@ -2156,18 +2156,17 @@ TEST_F(XdsGcpAuthnFilterTest, GenerateServiceConfig) {
 
 class XdsCompositeFilterTest : public XdsHttpFilterTest {
  protected:
-  XdsCompositeFilterTest() : env_("GRPC_EXPERIMENTAL_XDS_COMPOSITE_FILTER") {
-    // Recreate registry now that env var is set.
-    registry_ = XdsHttpFilterRegistry();
-    XdsExtension extension = MakeXdsExtension(ExtensionWithMatcher());
-    filter_ = GetFilter(extension.type);
-    GRPC_CHECK_NE(filter_, nullptr) << extension.type;
-  }
+  XdsCompositeFilterTest() : env_("GRPC_EXPERIMENTAL_XDS_COMPOSITE_FILTER") {}
 
   void SetUp() override {
     if (!IsXdsChannelFilterChainPerRouteEnabled()) {
       GTEST_SKIP() << "requires xds_channel_filter_chain_per_route experiment";
     }
+    // Recreate registry now that env var is set.
+    registry_ = XdsHttpFilterRegistry();
+    XdsExtension extension = MakeXdsExtension(ExtensionWithMatcher());
+    filter_ = GetFilter(extension.type);
+    GRPC_CHECK_NE(filter_, nullptr) << extension.type;
   }
 
   const XdsHttpFilterImpl* filter_;
@@ -2185,7 +2184,7 @@ TEST_F(XdsCompositeFilterTest, Accessors) {
   EXPECT_FALSE(filter_->IsTerminalFilter());
 }
 
-TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigBasic) {
+TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigSkipFilter) {
   ExtensionWithMatcher extension_with_matcher;
   extension_with_matcher.mutable_extension_config()
       ->mutable_typed_config()
@@ -2208,6 +2207,157 @@ TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigBasic) {
   EXPECT_EQ(config->ToString(),
             "XdsMatcherExactMap{input=MetadataInput(key=header_name), map={"
             "{\"header_value\": {action=SkipFilter, keep_matching=false}}}}");
+}
+
+TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigSingleFilter) {
+  ExtensionWithMatcher extension_with_matcher;
+  extension_with_matcher.mutable_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(Composite());
+  auto* matcher_tree =
+      extension_with_matcher.mutable_xds_matcher()->mutable_matcher_tree();
+  HttpRequestHeaderMatchInput input;
+  input.set_header_name("header_name");
+  matcher_tree->mutable_input()->mutable_typed_config()->PackFrom(input);
+  ExecuteFilterAction execute_filter_action;
+  execute_filter_action.mutable_typed_config()->mutable_typed_config()->PackFrom(
+      HTTPFault());
+  auto* map = matcher_tree->mutable_exact_match_map()->mutable_map();
+  (*map)["header_value"].mutable_action()->mutable_typed_config()->PackFrom(
+      execute_filter_action);
+  XdsExtension extension = MakeXdsExtension(extension_with_matcher);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.message("unexpected errors");
+  ASSERT_NE(config, nullptr);
+  ASSERT_EQ(config->type(), CompositeFilter::Config::Type());
+  EXPECT_EQ(config->ToString(),
+            "XdsMatcherExactMap{input=MetadataInput(key=header_name), map={"
+            "{\"header_value\": {action=ExecuteFilterAction{filter_chain=["
+            "fault_injection_filter_config={max_faults=4294967295}]}, "
+            "keep_matching=false}}}}");
+}
+
+TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigFilterChain) {
+  ExtensionWithMatcher extension_with_matcher;
+  extension_with_matcher.mutable_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(Composite());
+  auto* matcher_tree =
+      extension_with_matcher.mutable_xds_matcher()->mutable_matcher_tree();
+  HttpRequestHeaderMatchInput input;
+  input.set_header_name("header_name");
+  matcher_tree->mutable_input()->mutable_typed_config()->PackFrom(input);
+  ExecuteFilterAction execute_filter_action;
+  execute_filter_action.mutable_filter_chain()->add_typed_config()->mutable_typed_config()->PackFrom(
+      HTTPFault());
+  auto* map = matcher_tree->mutable_exact_match_map()->mutable_map();
+  (*map)["header_value"].mutable_action()->mutable_typed_config()->PackFrom(
+      execute_filter_action);
+  XdsExtension extension = MakeXdsExtension(extension_with_matcher);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.message("unexpected errors");
+  ASSERT_NE(config, nullptr);
+  ASSERT_EQ(config->type(), CompositeFilter::Config::Type());
+  EXPECT_EQ(config->ToString(),
+            "XdsMatcherExactMap{input=MetadataInput(key=header_name), map={"
+            "{\"header_value\": {action=ExecuteFilterAction{filter_chain=["
+            "fault_injection_filter_config={max_faults=4294967295}]}, "
+            "keep_matching=false}}}}");
+}
+
+TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigSamplePercentage) {
+  ExtensionWithMatcher extension_with_matcher;
+  extension_with_matcher.mutable_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(Composite());
+  auto* matcher_tree =
+      extension_with_matcher.mutable_xds_matcher()->mutable_matcher_tree();
+  HttpRequestHeaderMatchInput input;
+  input.set_header_name("header_name");
+  matcher_tree->mutable_input()->mutable_typed_config()->PackFrom(input);
+  ExecuteFilterAction execute_filter_action;
+  execute_filter_action.mutable_typed_config()->mutable_typed_config()->PackFrom(
+      HTTPFault());
+  execute_filter_action.mutable_sample_percent()->mutable_default_value()->set_numerator(25);
+  auto* map = matcher_tree->mutable_exact_match_map()->mutable_map();
+  (*map)["header_value"].mutable_action()->mutable_typed_config()->PackFrom(
+      execute_filter_action);
+  XdsExtension extension = MakeXdsExtension(extension_with_matcher);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.message("unexpected errors");
+  ASSERT_NE(config, nullptr);
+  ASSERT_EQ(config->type(), CompositeFilter::Config::Type());
+  EXPECT_EQ(config->ToString(),
+            "XdsMatcherExactMap{input=MetadataInput(key=header_name), map={"
+            "{\"header_value\": {action=ExecuteFilterAction{filter_chain=["
+            "fault_injection_filter_config={max_faults=4294967295}], "
+            "sample_per_million=250000}, keep_matching=false}}}}");
+}
+
+TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigInvalidNestedFilterConfig) {
+  ExtensionWithMatcher extension_with_matcher;
+  extension_with_matcher.mutable_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(Composite());
+  auto* matcher_tree =
+      extension_with_matcher.mutable_xds_matcher()->mutable_matcher_tree();
+  HttpRequestHeaderMatchInput input;
+  input.set_header_name("header_name");
+  matcher_tree->mutable_input()->mutable_typed_config()->PackFrom(input);
+  ExecuteFilterAction execute_filter_action;
+  HTTPFault fault;
+  fault.mutable_abort()->set_grpc_status(17);
+  execute_filter_action.mutable_typed_config()->mutable_typed_config()->PackFrom(
+      fault);
+  auto* map = matcher_tree->mutable_exact_match_map()->mutable_map();
+  (*map)["header_value"].mutable_action()->mutable_typed_config()->PackFrom(
+      execute_filter_action);
+  XdsExtension extension = MakeXdsExtension(extension_with_matcher);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  EXPECT_EQ(errors_.message("errors validating filter config"),
+            "errors validating filter config: "
+            "[field:http_filter.value["
+            "envoy.extensions.common.matching.v3.ExtensionWithMatcher]"
+            ".xds_matcher.matcher_tree.exact_match_map.on_match.action.value["
+            "envoy.extensions.filters.http.composite.v3.ExecuteFilterAction]"
+            ".typed_config.typed_config.value["
+            "envoy.extensions.filters.http.fault.v3.HTTPFault]"
+            ".abort.grpc_status "
+            "error:invalid gRPC status code: 17]");
+}
+
+TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigTerminalFilter) {
+  ExtensionWithMatcher extension_with_matcher;
+  extension_with_matcher.mutable_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(Composite());
+  auto* matcher_tree =
+      extension_with_matcher.mutable_xds_matcher()->mutable_matcher_tree();
+  HttpRequestHeaderMatchInput input;
+  input.set_header_name("header_name");
+  matcher_tree->mutable_input()->mutable_typed_config()->PackFrom(input);
+  ExecuteFilterAction execute_filter_action;
+  execute_filter_action.mutable_typed_config()->mutable_typed_config()->PackFrom(
+      Router());
+  auto* map = matcher_tree->mutable_exact_match_map()->mutable_map();
+  (*map)["header_value"].mutable_action()->mutable_typed_config()->PackFrom(
+      execute_filter_action);
+  XdsExtension extension = MakeXdsExtension(extension_with_matcher);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
+  EXPECT_EQ(errors_.message("errors validating filter config"),
+            "errors validating filter config: "
+            "[field:http_filter.value["
+            "envoy.extensions.common.matching.v3.ExtensionWithMatcher]"
+            ".xds_matcher.matcher_tree.exact_match_map.on_match.action.value["
+            "envoy.extensions.filters.http.composite.v3.ExecuteFilterAction]"
+            ".typed_config.typed_config.value["
+            "envoy.extensions.filters.http.router.v3.Router] "
+            "error:terminal filters may not be used under composite filter]");
 }
 
 TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigTypedStruct) {
