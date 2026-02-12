@@ -1566,6 +1566,9 @@ grpc_cc_library(
         "//src/core:lib/iomgr/ev_epoll1_linux.h",
         "//src/core:lib/iomgr/ev_poll_posix.h",
         "//src/core:lib/iomgr/ev_posix.h",
+        "//src/core:lib/iomgr/event_engine_shims/closure.h",
+        "//src/core:lib/iomgr/event_engine_shims/endpoint.h",
+        "//src/core:lib/iomgr/event_engine_shims/tcp_client.h",
         "//src/core:lib/iomgr/iocp_windows.h",
         "//src/core:lib/iomgr/iomgr.h",
         "//src/core:lib/iomgr/lockfree_event.h",
@@ -1596,14 +1599,6 @@ grpc_cc_library(
         "//src/core:lib/iomgr/wakeup_fd_pipe.h",
         "//src/core:lib/iomgr/wakeup_fd_posix.h",
         "//src/core:util/gethostname.h",
-    ] +
-    # TODO(vigneshbabu): remove these
-    # These headers used to be vended by this target, but they have to be
-    # removed after landing EventEngine.
-    [
-        "//src/core:lib/iomgr/event_engine_shims/closure.h",
-        "//src/core:lib/iomgr/event_engine_shims/endpoint.h",
-        "//src/core:lib/iomgr/event_engine_shims/tcp_client.h",
     ],
     defines = select({
         "systemd": ["HAVE_LIBSYSTEMD"],
