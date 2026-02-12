@@ -72,6 +72,7 @@ class PrivateKeySigner {
   // For asynchronous implementations, returns a handle for the asynchronous
   // signing operation. The function argument on_sign_complete must be called by
   // the implementer when the async signing operation is complete.
+  // on_sign_complete must not be invoked synchronously within Sign().
   virtual std::variant<absl::StatusOr<std::string>,
                        std::shared_ptr<AsyncSigningHandle>>
   Sign(absl::string_view data_to_sign, SignatureAlgorithm signature_algorithm,
@@ -86,13 +87,13 @@ class PrivateKeySigner {
 /**
  * EXPERIMENTAL API - Subject to change
  *
- * Adds a identity private key and a identity certificate chain to
- * grpc_tls_identity_pairs. This function will make an internal copy of
- * |cert_chain| and take ownership of |private_key|.
+ * Adds a identity key signer and a identity certificate chain to
+ * grpc_tls_identity_pairs. This implementation only works with gRPC Binaries
+ * built with BoringSSL.
  */
-GRPCAPI void grpc_tls_identity_pairs_add_pair_with_signer(
+void grpc_tls_identity_pairs_add_pair_with_signer(
     grpc_tls_identity_pairs* pairs,
     std::shared_ptr<grpc_core::PrivateKeySigner> private_key_signer,
-    const char* cert_chain);
+    absl::string_view cert_chain);
 
 #endif /* GRPC_PRIVATE_KEY_SIGNER_H */

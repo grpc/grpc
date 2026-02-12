@@ -45,7 +45,8 @@ class GRPCXX_DLL CertificateProviderInterface {
 // A struct that stores the credential data presented to the peer in handshake
 // to show local identity. The private_key and certificate_chain should always
 // match.
-struct GRPCXX_DLL IdentityKeyCertPair {
+struct [[deprecated("Use IdentityKeyOrSignerCertPair instead")]] GRPCXX_DLL
+    IdentityKeyCertPair {
   std::string private_key;
   std::string certificate_chain;
 };
@@ -68,10 +69,6 @@ class [[deprecated("Use InMemoryCertificateProvider instead")]] GRPCXX_DLL
       const std::string& root_certificate,
       const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs);
 
-  StaticDataCertificateProvider(const std::string& root_certificate,
-                                const std::vector<IdentityKeyOrSignerCertPair>&
-                                    identity_key_or_signer_cert_pairs);
-
   explicit StaticDataCertificateProvider(const std::string& root_certificate)
       : StaticDataCertificateProvider(root_certificate,
                                       std::vector<IdentityKeyCertPair>{}) {}
@@ -79,11 +76,6 @@ class [[deprecated("Use InMemoryCertificateProvider instead")]] GRPCXX_DLL
   explicit StaticDataCertificateProvider(
       const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs)
       : StaticDataCertificateProvider("", identity_key_cert_pairs) {}
-
-  explicit StaticDataCertificateProvider(
-      const std::vector<IdentityKeyOrSignerCertPair>&
-          identity_key_or_signer_cert_pairs)
-      : StaticDataCertificateProvider("", identity_key_or_signer_cert_pairs) {}
 
   ~StaticDataCertificateProvider() override;
 

@@ -110,11 +110,11 @@ typedef struct tsi_ssl_client_handshaker_factory
 
 // Object that holds a private key / certificate chain pair in PEM format.
 struct tsi_ssl_pem_key_cert_pair {
-  // private_key is either NULL-terminated string containing the PEM encoding of
+  // private_key is either the string containing the PEM encoding of
   // the client's private key or an implementation of PrivateKeySigner.
   PrivateKey private_key;
 
-  // cert_chain is the NULL-terminated string containing the PEM encoding of
+  // cert_chain is the string containing the PEM encoding of
   // the client's certificate chain.
   std::string cert_chain;
 

@@ -338,10 +338,9 @@ void grpc_tls_identity_pairs_add_pair(grpc_tls_identity_pairs* pairs,
 void grpc_tls_identity_pairs_add_pair_with_signer(
     grpc_tls_identity_pairs* pairs,
     std::shared_ptr<grpc_core::PrivateKeySigner> private_key_signer,
-    const char* cert_chain) {
+    absl::string_view cert_chain) {
   GRPC_CHECK_NE(pairs, nullptr);
   GRPC_CHECK_NE(private_key_signer, nullptr);
-  GRPC_CHECK_NE(cert_chain, nullptr);
   pairs->pem_key_cert_pairs.emplace_back(std::move(private_key_signer),
                                          cert_chain);
 }

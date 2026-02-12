@@ -77,22 +77,6 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
                                                                    pairs_core);
 };
 
-StaticDataCertificateProvider::StaticDataCertificateProvider(
-    const std::string& root_certificate,
-    const std::vector<IdentityKeyOrSignerCertPair>&
-        identity_key_or_signer_cert_pairs) {
-  GRPC_CHECK(!root_certificate.empty() ||
-             !identity_key_or_signer_cert_pairs.empty());
-  grpc_tls_identity_pairs* pairs_core =
-      CreatePairsCore(identity_key_or_signer_cert_pairs);
-  c_provider_ = grpc_tls_certificate_provider_in_memory_create();
-  GRPC_CHECK_NE(c_provider_, nullptr);
-  grpc_tls_certificate_provider_in_memory_set_root_certificate(
-      c_provider_, root_certificate.c_str());
-  grpc_tls_certificate_provider_in_memory_set_identity_certificate(c_provider_,
-                                                                   pairs_core);
-}
-
 StaticDataCertificateProvider::~StaticDataCertificateProvider() {
   grpc_tls_certificate_provider_release(c_provider_);
 };
