@@ -89,8 +89,6 @@ namespace http2 {
 // http2 rollout is completed.
 class Http2ClientTransport final : public ClientTransport,
                                    public channelz::DataSource {
-  // TODO(akshitpatel) [PH2][P1] : Functions that need a mutex to be held should
-  // have "locked" suffix in function name.
  public:
   Http2ClientTransport(
       PromiseEndpoint endpoint, GRPC_UNUSED const ChannelArgs& channel_args,
