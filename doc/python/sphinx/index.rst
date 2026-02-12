@@ -19,6 +19,7 @@ API Reference
    grpc_status
    grpc_testing
    grpc_observability
+   architecture
    glossary
 
 
