@@ -813,7 +813,6 @@ def _stream_response_in_pool(
 
     def send_response(response: Any) -> None:
         if response is None:
-            # This is actually responsible for sending the response back.
             _status(rpc_event, state, None)
         else:
             serialized_response = _serialize_response(
