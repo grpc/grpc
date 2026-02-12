@@ -992,7 +992,8 @@ TEST_F(PickFirstTest, SelectsReadyAtStartup) {
 }
 
 TEST_F(PickFirstTest, BackOffInitialReconnect) {
-  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Flake less than 1 in 100 times");
+  SKIP_TEST_FOR_PH2(
+      "TODO(tjagtap) [PH2][P3][Client] Flake less than 1 in 100 times");
   StartServers(1);
   ChannelArguments args;
   constexpr int kInitialBackOffMs = 100;
@@ -1150,7 +1151,7 @@ TEST_F(ClientLbEnd2endTest,
 }
 
 TEST_F(PickFirstTest, Updates) {
-  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix flake");
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P3][Client] Fix flake");
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
   StartServers(kNumServers);
@@ -1607,7 +1608,7 @@ TEST_F(RoundRobinTest, ProcessPending) {
 }
 
 TEST_F(RoundRobinTest, Updates) {
-  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix bug");
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   // Start servers.
   const int kNumServers = 3;
   StartServers(kNumServers);
@@ -1809,7 +1810,7 @@ TEST_F(RoundRobinTest, FailsEmptyResolverUpdate) {
 }
 
 TEST_F(RoundRobinTest, TransientFailure) {
-  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix flake");
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P3][Client] Fix flake");
   // Start servers and create channel.  Channel should go to READY state.
   const int kNumServers = 3;
   StartServers(kNumServers);
@@ -1938,7 +1939,7 @@ TEST_F(RoundRobinTest, ReportsLatestStatusInTransientFailure) {
 }
 
 TEST_F(RoundRobinTest, DoesNotFailRpcsUponDisconnection) {
-  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix bug");
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   // Start connection injector.
   ConnectionAttemptInjector injector;
   // Start server.
@@ -1998,7 +1999,7 @@ TEST_F(RoundRobinTest, DoesNotFailRpcsUponDisconnection) {
 }
 
 TEST_F(RoundRobinTest, SingleReconnect) {
-  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix bug (flake)");
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P3][Client] Fix bug (flake)");
   const int kNumServers = 3;
   StartServers(kNumServers);
   const auto ports = GetServersPorts();
@@ -2054,7 +2055,7 @@ TEST_F(RoundRobinTest, SingleReconnect) {
 // If health checking is required by client but health checking service
 // is not running on the server, the channel should be treated as healthy.
 TEST_F(RoundRobinTest, ServersHealthCheckingUnimplementedTreatedAsHealthy) {
-  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix bug");
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   StartServers(1);  // Single server
   ChannelArguments args;
   args.SetServiceConfigJSON(
@@ -2069,7 +2070,7 @@ TEST_F(RoundRobinTest, ServersHealthCheckingUnimplementedTreatedAsHealthy) {
 }
 
 TEST_F(RoundRobinTest, HealthChecking) {
-  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix bug");
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   EnableDefaultHealthCheckService(true);
   // Start servers.
   const int kNumServers = 3;
@@ -2157,7 +2158,7 @@ TEST_F(RoundRobinTest, HealthChecking) {
 }
 
 TEST_F(RoundRobinTest, HealthCheckingHandlesSubchannelFailure) {
-  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix bug");
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   EnableDefaultHealthCheckService(true);
   // Start servers.
   const int kNumServers = 3;
@@ -2185,7 +2186,7 @@ TEST_F(RoundRobinTest, HealthCheckingHandlesSubchannelFailure) {
 }
 
 TEST_F(RoundRobinTest, WithHealthCheckingInhibitPerChannel) {
-  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix bug");
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   EnableDefaultHealthCheckService(true);
   // Start server.
   const int kNumServers = 1;
@@ -2232,7 +2233,7 @@ TEST_F(RoundRobinTest, WithHealthCheckingInhibitPerChannel) {
 }
 
 TEST_F(RoundRobinTest, HealthCheckingServiceNamePerChannel) {
-  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix bug");
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   EnableDefaultHealthCheckService(true);
   // Start server.
   const int kNumServers = 1;
@@ -2286,7 +2287,7 @@ TEST_F(RoundRobinTest, HealthCheckingServiceNamePerChannel) {
 
 TEST_F(RoundRobinTest,
        HealthCheckingServiceNameChangesAfterSubchannelsCreated) {
-  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix bug");
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   EnableDefaultHealthCheckService(true);
   // Start server.
   const int kNumServers = 1;
@@ -2314,7 +2315,7 @@ TEST_F(RoundRobinTest,
 }
 
 TEST_F(RoundRobinTest, HealthCheckingRetryOnStreamEnd) {
-  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix bug");
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   // Start servers.
   const int kNumServers = 2;
   CreateServers(kNumServers);
@@ -2626,7 +2627,7 @@ ClientLbInterceptTrailingMetadataTest*
     ClientLbInterceptTrailingMetadataTest::current_test_instance_ = nullptr;
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, StatusOk) {
-  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix bug");
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   StartServers(1);
   FakeResolverResponseGeneratorWrapper response_generator;
   auto channel =
@@ -2643,7 +2644,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, StatusOk) {
 }
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, StatusFailed) {
-  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix bug");
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   StartServers(1);
   FakeResolverResponseGeneratorWrapper response_generator;
   auto channel =
@@ -2665,7 +2666,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, StatusFailed) {
 
 TEST_F(ClientLbInterceptTrailingMetadataTest,
        StatusCancelledWithoutStartingRecvTrailingMetadata) {
-  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix bug");
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   StartServers(1);
   FakeResolverResponseGeneratorWrapper response_generator;
   auto channel =
@@ -2689,7 +2690,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest,
 }
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesDisabled) {
-  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix bug");
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   const int kNumServers = 1;
   const int kNumRpcs = 10;
   StartServers(kNumServers);
@@ -2762,7 +2763,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesEnabled) {
 }
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, Valid) {
-  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix bug");
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   RunPerRpcMetricReportingTest(OrcaLoadReportBuilder()
                                    .SetApplicationUtilization(0.25)
                                    .SetCpuUtilization(0.5)
@@ -2792,7 +2793,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, Valid) {
 }
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, NegativeValues) {
-  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix bug");
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   RunPerRpcMetricReportingTest(OrcaLoadReportBuilder()
                                    .SetApplicationUtilization(-0.3)
                                    .SetCpuUtilization(-0.1)
@@ -2810,7 +2811,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, NegativeValues) {
 }
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, AboveOneUtilization) {
-  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix bug");
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   RunPerRpcMetricReportingTest(OrcaLoadReportBuilder()
                                    .SetApplicationUtilization(1.9)
                                    .SetCpuUtilization(1.1)
@@ -2828,7 +2829,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, AboveOneUtilization) {
 }
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricDataMerge) {
-  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix bug");
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   const int kNumServers = 1;
   const int kNumRpcs = 10;
   StartServers(kNumServers);
@@ -3052,7 +3053,7 @@ class OobBackendMetricTest : public ClientLbEnd2endTest {
 OobBackendMetricTest* OobBackendMetricTest::current_test_instance_ = nullptr;
 
 TEST_F(OobBackendMetricTest, Basic) {
-  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix bug");
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   StartServers(1);
   // Set initial backend metric data on server.
   constexpr char kMetricName[] = "foo";
@@ -3298,7 +3299,7 @@ class WeightedRoundRobinTest : public ClientLbEnd2endTest {
 };
 
 TEST_F(WeightedRoundRobinTest, CallAndServerMetric) {
-  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix bug");
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   const int kNumServers = 3;
   StartServers(kNumServers);
   // Report server metrics that should give 6:4:3 WRR picks.
@@ -3343,7 +3344,7 @@ TEST_F(WeightedRoundRobinTest, CallAndServerMetric) {
 // all of its subchannels every time it saw an update, thus causing the
 // WRR policy to re-enter the blackout period for that address.
 TEST_F(WeightedRoundRobinTest, WithOutlierDetection) {
-  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix bug");
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   const int kBlackoutPeriodSeconds = 10;
   const int kNumServers = 3;
   StartServers(kNumServers);
@@ -3408,7 +3409,7 @@ INSTANTIATE_TEST_SUITE_P(WeightedRoundRobin, WeightedRoundRobinParamTest,
                                            kServiceConfigOob));
 
 TEST_P(WeightedRoundRobinParamTest, Basic) {
-  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix bug");
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   const int kNumServers = 3;
   StartServers(kNumServers);
   // Report server metrics that should give 1:2:4 WRR picks.
@@ -3512,7 +3513,7 @@ class ConnectionScalingTest : public ClientLbEnd2endTest {
 //   ResourceQuota changes land)
 
 TEST_F(ConnectionScalingTest, SingleConnection) {
-  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P1] Fix bug");
+  SKIP_TEST_FOR_PH2("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   const int kMaxConcurrentStreams = 3;
   // Start a server with MAX_CONCURRENT_STREAMS set.
   StartServers(1, {}, nullptr,
@@ -4117,26 +4118,31 @@ TEST_F(ConnectionScalingTest, IdleConnectionsClosed) {
   EXPECT_TRUE(WaitFor([&]() {
     return servers_[0]->service_.RpcsWaitingForClientCancel() == 0;
   })) << "timeout waiting for server to see RPCs cancelled";
-  // Send normal, short-lived RPCs in a loop.  These should all go on
-  // the first connection, so after the idle timeout, the server should
-  // close the second connection, and channelz should show only one
-  // connection.  We add a fudge factor to account for timing.
-  LOG(INFO) << "Sending short-lived RPCs until second connection closes...";
+  // Send RPCs in a loop.  These should all go on the first connection, so
+  // after the idle timeout, the server should close the second connection,
+  // and channelz should show only one connection.  We add a fudge factor
+  // to account for timing.
+  LOG(INFO) << "Sending RPCs until second connection closes...";
   absl::Time deadline =
       absl::Now() +
       absl::Milliseconds(kIdleTimeoutMs * 3 * grpc_test_slowdown_factor());
   while (true) {
     ASSERT_LT(absl::Now(), deadline)
         << "timed out waiting for connection to close";
-    CheckRpcSendOk(DEBUG_LOCATION, stub);
+    // Use a long-running RPC here that stays alive while we're grabbing
+    // channelz data, to make sure the second connection doesn't get
+    // closed while we're getting the channelz data.
+    auto rpc = StartLongRunningRpc(stub.get());
     socket_nodes =
         ChannelzUtil::GetSubchannelConnections(subchannel_nodes.front().id());
+    rpc.reset();
     LOG(INFO) << "Channelz socket nodes:";
     for (auto& socket_node : socket_nodes) {
       LOG(INFO) << "  Socket node: " << socket_node.DebugString();
     }
-    if (socket_nodes.size() == 1) break;
+    if (socket_nodes.size() < 2) break;
   }
+  EXPECT_EQ(socket_nodes.size(), 1);
 }
 
 }  // namespace

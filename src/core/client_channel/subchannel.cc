@@ -2323,11 +2323,24 @@ RefCountedPtr<UnstartedCallDestination> NewSubchannel::call_destination() {
   return connected_subchannel->unstarted_call_destination();
 }
 
+namespace {
+bool g_test_only_always_send_calls_to_transport = false;
+}  // namespace
+
+void TestOnlySetSubchannelAlwaysSendCallsToTransport(bool enabled) {
+  g_test_only_always_send_calls_to_transport = enabled;
+}
+
 RefCountedPtr<NewSubchannel::ConnectedSubchannel>
 NewSubchannel::ChooseConnectionLocked() {
   // Try to find a connection with quota available for the RPC.
   for (auto& connection : connections_) {
     if (connection->GetQuotaForRpc()) return connection;
+  }
+  // TODO(roth): This is an ugly hack for the chttp2 streams_not_seen test.
+  // Find a better way to do this.
+  if (g_test_only_always_send_calls_to_transport && !connections_.empty()) {
+    return connections_[0];
   }
   // If we didn't find a connection for the RPC, we'll queue it.
   // Trigger a new connection attempt if we need to scale up the number
