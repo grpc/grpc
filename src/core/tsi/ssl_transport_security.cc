@@ -130,7 +130,7 @@ struct tsi_ssl_client_handshaker_factory {
   size_t alpn_protocol_list_length;
   grpc_core::RefCountedPtr<tsi::SslSessionLRUCache> session_cache;
   grpc_core::RefCountedPtr<TlsSessionKeyLogger> key_logger;
-  std::shared_ptr<RootCertInfo> root_cert_info;
+  std::shared_ptr<tsi::RootCertInfo> root_cert_info;
 };
 
 struct tsi_ssl_server_handshaker_factory {
@@ -144,7 +144,7 @@ struct tsi_ssl_server_handshaker_factory {
   unsigned char* alpn_protocol_list;
   size_t alpn_protocol_list_length;
   grpc_core::RefCountedPtr<TlsSessionKeyLogger> key_logger;
-  std::shared_ptr<RootCertInfo> root_cert_info;
+  std::shared_ptr<tsi::RootCertInfo> root_cert_info;
 };
 
 // Tracks the arguments for a pending call to tsi_handshaker_next().
@@ -2881,7 +2881,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
   tsi_ssl_client_handshaker_options options;
   options.pem_key_cert_pair = pem_key_cert_pair;
   if (pem_root_certs != nullptr) {
-    options.root_cert_info = std::make_shared<RootCertInfo>(pem_root_certs);
+    options.root_cert_info = std::make_shared<tsi::RootCertInfo>(pem_root_certs);
   }
   options.cipher_suites = cipher_suites;
   options.alpn_protocols = alpn_protocols;
@@ -3085,7 +3085,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_ex(
   options.pem_key_cert_pairs = pem_key_cert_pairs;
   if (pem_client_root_certs != nullptr) {
     options.root_cert_info =
-        std::make_shared<RootCertInfo>(pem_client_root_certs);
+        std::make_shared<tsi::RootCertInfo>(pem_client_root_certs);
   }
   options.client_certificate_request = client_certificate_request;
   options.cipher_suites = cipher_suites;
@@ -3354,7 +3354,7 @@ int tsi_ssl_peer_matches_name(const tsi_peer* peer, absl::string_view name) {
 }
 
 namespace tsi {
-bool IsRootCertInfoEmpty(const RootCertInfo* root_cert_info) {
+bool IsRootCertInfoEmpty(const tsi::RootCertInfo* root_cert_info) {
   if (root_cert_info == nullptr) return true;
   return grpc_core::Match(
       *root_cert_info,
