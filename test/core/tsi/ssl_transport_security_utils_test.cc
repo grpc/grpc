@@ -18,9 +18,14 @@
 
 using tsi::AkidFromCertificate;
 using tsi::AkidFromCrl;
+using tsi::HasCrlSignBit;
 using tsi::IssuerFromCert;
 using tsi::ParsePemCertificateChain;
 using tsi::ParsePemPrivateKey;
+using tsi::ParseUriString;
+using tsi::SslProtectorProtect;
+using tsi::SslProtectorProtectFlush;
+using tsi::SslProtectorUnprotect;
 using tsi::VerifyCrlCertIssuerNamesMatch;
 using tsi::VerifyCrlSignature;
 
