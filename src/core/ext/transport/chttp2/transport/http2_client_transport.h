@@ -156,16 +156,18 @@ class Http2ClientTransport final : public ClientTransport,
   void SpawnTransportLoops();
 
  private:
-  // Promise factory for processing each type of frame
-  Http2Status ProcessHttp2DataFrame(Http2DataFrame frame);
-  Http2Status ProcessHttp2HeaderFrame(Http2HeaderFrame frame);
-  Http2Status ProcessHttp2RstStreamFrame(Http2RstStreamFrame frame);
-  Http2Status ProcessHttp2SettingsFrame(Http2SettingsFrame frame);
-  Http2Status ProcessHttp2PingFrame(Http2PingFrame frame);
-  Http2Status ProcessHttp2GoawayFrame(Http2GoawayFrame frame);
-  Http2Status ProcessHttp2WindowUpdateFrame(Http2WindowUpdateFrame frame);
-  Http2Status ProcessHttp2ContinuationFrame(Http2ContinuationFrame frame);
-  Http2Status ProcessHttp2SecurityFrame(Http2SecurityFrame frame);
+  // Synchronous functions for processing each type of frame
+  Http2Status ProcessIncomingFrame(Http2DataFrame&& frame);
+  Http2Status ProcessIncomingFrame(Http2HeaderFrame&& frame);
+  Http2Status ProcessIncomingFrame(Http2RstStreamFrame&& frame);
+  Http2Status ProcessIncomingFrame(Http2SettingsFrame&& frame);
+  Http2Status ProcessIncomingFrame(Http2PingFrame&& frame);
+  Http2Status ProcessIncomingFrame(Http2GoawayFrame&& frame);
+  Http2Status ProcessIncomingFrame(Http2WindowUpdateFrame&& frame);
+  Http2Status ProcessIncomingFrame(Http2ContinuationFrame&& frame);
+  Http2Status ProcessIncomingFrame(Http2SecurityFrame&& frame);
+  Http2Status ProcessIncomingFrame(Http2UnknownFrame&& frame);
+  Http2Status ProcessIncomingFrame(Http2EmptyFrame&& frame);
   Http2Status ProcessMetadata(RefCountedPtr<Stream> stream);
 
   // Reading from the endpoint.
@@ -178,7 +180,16 @@ class Http2ClientTransport final : public ClientTransport,
   auto ReadAndProcessOneFrame();
 
   // Returns a promise that will process one HTTP2 frame.
-  auto ProcessOneFrame(Http2Frame frame);
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Http2Status
+  ProcessOneIncomingFrame(Http2Frame&& frame) {
+    GRPC_HTTP2_CLIENT_DLOG
+        << "Http2ClientTransport ProcessOneIncomingFrame Factory";
+    return std::visit(
+        [this](auto&& frame) {
+          return ProcessIncomingFrame(std::forward<decltype(frame)>(frame));
+        },
+        std::forward<Http2Frame>(frame));
+  }
 
   // Writing to the endpoint.
 
