@@ -319,7 +319,7 @@ class SslTransportSecurityTest
       if (key_cert_lib->use_pem_root_certs &&
           key_cert_lib->root_cert != nullptr) {
         client_options.root_cert_info =
-            std::make_shared<RootCertInfo>(key_cert_lib->root_cert);
+            std::make_shared<tsi::RootCertInfo>(key_cert_lib->root_cert);
       }
       if (ssl_fixture->force_client_auth_) {
         client_options.pem_key_cert_pair =
@@ -376,7 +376,7 @@ class SslTransportSecurityTest
       }
       if (key_cert_lib->root_cert != nullptr) {
         server_options.root_cert_info =
-            std::make_shared<RootCertInfo>(key_cert_lib->root_cert);
+            std::make_shared<tsi::RootCertInfo>(key_cert_lib->root_cert);
       }
       if (ssl_fixture->force_client_auth_) {
         server_options.client_certificate_request =
@@ -1170,7 +1170,7 @@ TEST(SslTransportSecurityTest, TestClientHandshakerFactoryRefcounting) {
 
   tsi_ssl_client_handshaker_options options;
   if (cert_chain != nullptr) {
-    options.root_cert_info = std::make_shared<RootCertInfo>(cert_chain);
+    options.root_cert_info = std::make_shared<tsi::RootCertInfo>(cert_chain);
   }
   tsi_ssl_client_handshaker_factory* client_handshaker_factory;
   ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
@@ -1226,7 +1226,7 @@ TEST(SslTransportSecurityTest, TestServerHandshakerFactoryRefcounting) {
   tsi_ssl_server_handshaker_options options;
   options.pem_key_cert_pairs = {cert_pair};
   if (!cert_chain.empty()) {
-    options.root_cert_info = std::make_shared<RootCertInfo>(cert_chain);
+    options.root_cert_info = std::make_shared<tsi::RootCertInfo>(cert_chain);
   }
 
   ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
@@ -1265,7 +1265,7 @@ TEST(SslTransportSecurityTest, TestClientHandshakerFactoryBadParams) {
   tsi_ssl_client_handshaker_factory* client_handshaker_factory;
   tsi_ssl_client_handshaker_options options;
   if (cert_chain != nullptr) {
-    options.root_cert_info = std::make_shared<RootCertInfo>(cert_chain);
+    options.root_cert_info = std::make_shared<tsi::RootCertInfo>(cert_chain);
   }
   ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
                 &options, &client_handshaker_factory),
