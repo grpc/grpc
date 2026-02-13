@@ -498,7 +498,7 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
       });
 }
 
-void PrivateKeyOffloadingContextFree(void* parent, void* ptr,
+void PrivateKeyOffloadingContextFree(void* /*parent*/, void* ptr,
                                      CRYPTO_EX_DATA* /*ad*/, int /*index*/,
                                      long /*argl*/, void* /*argp*/) {
   TlsPrivateKeyOffloadContext* ctx =
@@ -615,9 +615,11 @@ static void init_openssl(void) {
       SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
   GRPC_CHECK_NE(g_ssl_ctx_ex_private_key_function_index, -1);
 
+#if defined(OPENSSL_IS_BORINGSSL)
   g_ssl_ex_private_key_offloading_context_index = SSL_get_ex_new_index(
       0, nullptr, nullptr, nullptr, PrivateKeyOffloadingContextFree);
   GRPC_CHECK_NE(g_ssl_ex_private_key_offloading_context_index, -1);
+#endif
 }
 // --- Ssl utils. ---
 
