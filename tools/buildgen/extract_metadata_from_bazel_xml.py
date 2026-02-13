@@ -120,8 +120,11 @@ EXTERNAL_SOURCE_PREFIXES = {
 }
 
 
-# TODO(weizheyuan): Maybe use a battle-tested library for
-# parsing, so we can use another algorithms than sha256.
+# TODO(weizheyuan): Maybe use a mature library for SRI
+# parsing so we can support other digest algorithms.
+# Supporting only sha256 is fine for now because our
+# cmake counterpart download_archive() doesn't support
+# other algorithms anyway.
 def _integrity_to_sha256(integrity: str) -> str:
     """Convert a SRI to sha256 checksum hex string"""
     matches = re.match("sha256-(.*)", integrity)
