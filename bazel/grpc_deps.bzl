@@ -429,11 +429,10 @@ def grpc_test_only_deps():
     if "yaml-cpp" not in native.existing_rules():
         http_archive(
             name = "yaml-cpp",
-            integrity = "sha256-KYWT2cRA/ZA0uLGT2WMYt21JvJfGzq23sINu3wttdTk=",
-            strip_prefix = "",
+            sha256 = "fbe74bbdcee21d656715688706da3c8becfd946d92cd44705cc6098bb23b3a16",
+            strip_prefix = "yaml-cpp-0.8.0",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/jbeder/yaml-cpp/releases/download/yaml-cpp-0.9.0/yaml-cpp-yaml-cpp-0.9.0.tar.gz",
-                "https://github.com/jbeder/yaml-cpp/releases/download/yaml-cpp-0.9.0/yaml-cpp-yaml-cpp-0.9.0.tar.gz",
+                "https://github.com/jbeder/yaml-cpp/archive/refs/tags/0.8.0.tar.gz",
             ],
         )
 
