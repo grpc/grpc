@@ -74,6 +74,7 @@ class ExternalProtoLibrary:
         self.hash = ""
         self.strip_prefix = ""
 
+
 # Mapping from canonical repo name to apparent repo name.
 # See https://bazel.build/external/overview#canonical-repo-name
 CANONICAL_TO_APPARENT_NAME_MAPPING = {
@@ -84,7 +85,9 @@ CANONICAL_TO_APPARENT_NAME_MAPPING = {
     "@@opencensus-proto+": "opencensus_proto",
     "@@envoy_api+": "@envoy_api",
 }
-APPARENT_TO_CANONICAL_NAME_MAPPING = { v: k for k, v in CANONICAL_TO_APPARENT_NAME_MAPPING.items() }
+APPARENT_TO_CANONICAL_NAME_MAPPING = {
+    v: k for k, v in CANONICAL_TO_APPARENT_NAME_MAPPING.items()
+}
 
 # Mapping from apparent repo name to in-tree file location.
 EXTERNAL_LINKS = {
@@ -139,13 +142,32 @@ EXTERNAL_SOURCE_PREFIXES = {
     "@zlib//": "third_party/zlib",
 }
 
+
 # TODO(weizheyuan): Remove `use_bzlmod` argument once migration is finished.
 def _bazel_query_xml_tree(query: str, use_bzlmod: bool) -> ET.Element:
     """Get xml output of bazel query invocation, parsed as XML tree"""
     if use_bzlmod:
-        args = ["tools/bazel", "query", "--enable_bzlmod", "--noenable_workspace", "--noimplicit_deps", "--output", "xml", query]
+        args = [
+            "tools/bazel",
+            "query",
+            "--enable_bzlmod",
+            "--noenable_workspace",
+            "--noimplicit_deps",
+            "--output",
+            "xml",
+            query,
+        ]
     else:
-        args = ["tools/bazel", "query", "--noenable_bzlmod", "--enable_workspace", "--noimplicit_deps", "--output", "xml", query]
+        args = [
+            "tools/bazel",
+            "query",
+            "--noenable_bzlmod",
+            "--enable_workspace",
+            "--noimplicit_deps",
+            "--output",
+            "xml",
+            query,
+        ]
     output = subprocess.check_output(args)
     return ET.fromstring(output)
 
@@ -276,7 +298,9 @@ def _try_extract_source_file_path(label: str) -> str:
                     external_proto_lib.proto_prefix,
                 ).replace(":", "/")
             else:
-                canonical_repo_maybe = APPARENT_TO_CANONICAL_NAME_MAPPING.get("@" + lib_name)
+                canonical_repo_maybe = APPARENT_TO_CANONICAL_NAME_MAPPING.get(
+                    "@" + lib_name
+                )
                 if canonical_repo_maybe is None:
                     continue
                 canonical_repo_maybe = canonical_repo_maybe + "//"
@@ -638,17 +662,21 @@ def _get_transitive_protos(bazel_rules, t):
                     ret.append(src)
     return list(set(ret))
 
+
 def _prefix_to_strip(proto_src):
     apparent_repo = None
     for canonical_repo in CANONICAL_TO_APPARENT_NAME_MAPPING:
         if proto_src.startswith(canonical_repo):
-            apparent_repo = CANONICAL_TO_APPARENT_NAME_MAPPING[canonical_repo] + '//'
-            return canonical_repo + '//' + EXTERNAL_LINKS[apparent_repo]
+            apparent_repo = (
+                CANONICAL_TO_APPARENT_NAME_MAPPING[canonical_repo] + "//"
+            )
+            return canonical_repo + "//" + EXTERNAL_LINKS[apparent_repo]
     for repo in EXTERNAL_LINKS:
         if proto_src.startswith(repo):
             return repo + EXTERNAL_LINKS[repo]
     if apparent_repo is None:
         return None
+
 
 def _expand_upb_proto_library_rules(bazel_rules):
     # Expand the .proto files from UPB proto library rules into the pre-generated
@@ -697,7 +725,11 @@ def _expand_upb_proto_library_rules(bazel_rules):
                         )
                     proto_src = proto_src[len(prefix_to_strip) :]
                 if proto_src.startswith("@"):
-                    raise Exception('"{0}" is unknown workspace. proto_src={1}'.format(name, proto_src))
+                    raise Exception(
+                        '"{0}" is unknown workspace. proto_src={1}'.format(
+                            name, proto_src
+                        )
+                    )
                 proto_src_file = _try_extract_source_file_path(proto_src)
                 if not proto_src_file:
                     raise Exception(
@@ -1114,6 +1146,7 @@ def _parse_http_archives(xml_tree: ET.Element) -> "List[ExternalProtoLibrary]":
         result.append(lib)
     return result
 
+
 def _generate_external_proto_libraries() -> List[Dict[str, Any]]:
     """Generates the build metadata for external proto libraries"""
     # TODO(weizheyuan): Find a new approach to extract http_archive() metadata.
@@ -1121,7 +1154,9 @@ def _generate_external_proto_libraries() -> List[Dict[str, Any]]:
     # `//external:*` is a pseudo target which is not available in bzlmod.
     # The closest we can do in bazel 8 is `bazel mod show_repo`. Disable bzlmod
     # for this specific command until we find a better solution.
-    xml_tree = _bazel_query_xml_tree("kind(http_archive, //external:*)", use_bzlmod=False)
+    xml_tree = _bazel_query_xml_tree(
+        "kind(http_archive, //external:*)", use_bzlmod=False
+    )
     libraries = _parse_http_archives(xml_tree)
     libraries.sort(key=lambda x: x.destination)
 
@@ -1449,7 +1484,9 @@ _BAZEL_DEPS_QUERIES = [
 bazel_rules = {}
 for query in _BAZEL_DEPS_QUERIES:
     bazel_rules.update(
-        _extract_rules_from_bazel_xml(_bazel_query_xml_tree(query, use_bzlmod=True))
+        _extract_rules_from_bazel_xml(
+            _bazel_query_xml_tree(query, use_bzlmod=True)
+        )
     )
 
 # Step 1.5: The sources for UPB protos are pre-generated, so we want
