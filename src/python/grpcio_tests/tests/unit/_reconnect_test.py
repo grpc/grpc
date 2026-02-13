@@ -25,7 +25,7 @@ import unittest
 import grpc
 from grpc import _channel as grpc_channel_internal
 from grpc import _common as grpc_common_internal
-from grpc import _typing as grpc_typing
+from grpc import typing as grpc_typing
 from grpc.framework.foundation import logging_pool
 
 from tests.unit.framework import common as test_common

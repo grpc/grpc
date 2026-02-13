@@ -15,12 +15,13 @@
 import collections
 import logging
 import threading
-from typing import Callable, Optional, Type
+from typing import AnyStr, Callable, Optional
 
 import grpc
 from grpc import _common
-from grpc._cython import cygrpc
-from grpc._typing import MetadataType
+from grpc._cython import cygrpc  # type: ignore[reportMissingModuleSource]
+from grpc.typing import CygrpcCallCredentials
+from grpc.typing import MetadataType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -42,7 +43,7 @@ class _CallbackState(object):
     def __init__(self):
         self.lock = threading.Lock()
         self.called = False
-        self.exception = None
+        self.exception: Optional[Exception] = None
 
 
 class _AuthMetadataPluginCallback(grpc.AuthMetadataPluginCallback):
@@ -53,9 +54,7 @@ class _AuthMetadataPluginCallback(grpc.AuthMetadataPluginCallback):
         self._state = state
         self._callback = callback
 
-    def __call__(
-        self, metadata: MetadataType, error: Optional[Type[BaseException]]
-    ):
+    def __call__(self, metadata: MetadataType, error: Optional[BaseException]):
         with self._state.lock:
             if self._state.exception is None:
                 if self._state.called:
@@ -96,7 +95,9 @@ class _Plugin(object):
             # Support versions predating contextvars.
             pass
 
-    def __call__(self, service_url: str, method_name: str, callback: Callable):
+    def __call__(
+        self, service_url: AnyStr, method_name: AnyStr, callback: Callable
+    ):
         context = _AuthMetadataContext(
             _common.decode(service_url), _common.decode(method_name)
         )
@@ -130,7 +131,9 @@ def metadata_plugin_call_credentials(
     else:
         effective_name = name
     return grpc.CallCredentials(
-        cygrpc.MetadataPluginCallCredentials(
-            _Plugin(metadata_plugin), _common.encode(effective_name)
+        CygrpcCallCredentials(
+            cygrpc.MetadataPluginCallCredentials(
+                _Plugin(metadata_plugin), _common.encode(effective_name)
+            )
         )
     )
