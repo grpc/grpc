@@ -283,7 +283,7 @@ int main(int argc, char** argv) {
       std::bind(&grpc::testing::InteropClient::DoOrcaPerRpc, &client);
   actions["orca_oob"] =
       std::bind(&grpc::testing::InteropClient::DoOrcaOob, &client);
-  actions["max_concurrent_streams_connection_scaling."] =
+  actions["max_concurrent_streams_connection_scaling"] =
       std::bind(&grpc::testing::InteropClient::DoMcsConnectionScaling, &client);
 
   if (absl::GetFlag(FLAGS_use_tls)) {
