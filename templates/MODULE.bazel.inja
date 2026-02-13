@@ -75,6 +75,7 @@ single_version_override(
 # Development dependencies
 # ========================
 bazel_dep(name = "google_benchmark", version = "1.9.0", dev_dependency = True, repo_name = "com_github_google_benchmark")
+bazel_dep(name = "yaml-cpp", version = "0.9.0", dev_dependency = True)
 
 # Python dependencies
 # ===================
