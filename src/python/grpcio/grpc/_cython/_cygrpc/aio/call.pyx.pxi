@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from grpc import _observability
 
 _EMPTY_FLAGS = 0
 _EMPTY_MASK = 0
@@ -59,6 +60,7 @@ cdef class _AioCall(GrpcCallWrapper):
         self._is_locally_cancelled = False
         self._deadline = deadline
         self._send_initial_metadata_flags = _get_send_initial_metadata_flags(wait_for_ready)
+        self._call_tracer_capsule = None
         self._create_grpc_call(deadline, method, call_credentials)
 
     def __dealloc__(self):
@@ -130,6 +132,20 @@ cdef class _AioCall(GrpcCallWrapper):
                 raise InternalError("Credentials couldn't have been set: {0}".format(set_credentials_error))
 
         grpc_slice_unref(method_slice)
+        self._maybe_set_client_call_tracer_on_call(method)
+
+    cdef void _maybe_set_client_call_tracer_on_call(self, bytes method) except *:
+        # TODO(zgoda): use channel args to exclude those metrics.
+        for exclude_prefix in _observability._SERVICES_TO_EXCLUDE:
+            if exclude_prefix in method:
+                return
+        with _observability.get_plugin() as plugin:
+            if plugin and plugin.observability_enabled:
+                capsule = plugin.create_client_call_tracer(method, self._channel._target)
+                capsule_ptr = cpython.PyCapsule_GetPointer(capsule, CLIENT_CALL_TRACER)
+                _set_call_tracer(self.call, capsule_ptr)
+                self._call_tracer_capsule = capsule
+
 
     cdef void _set_status(self, AioRpcStatus status) except *:
         cdef list waiters
