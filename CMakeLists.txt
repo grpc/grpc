@@ -2309,6 +2309,7 @@ add_library(grpc
   src/core/client_channel/subchannel_pool_interface.cc
   src/core/client_channel/subchannel_stream_client.cc
   src/core/client_channel/subchannel_stream_limiter.cc
+  src/core/client_channel/virtual_channel.cc
   src/core/config/core_configuration.cc
   src/core/credentials/call/call_creds_registry_init.cc
   src/core/credentials/call/call_creds_util.cc
@@ -3052,6 +3053,7 @@ add_library(grpc
   src/core/telemetry/stats_data.cc
   src/core/telemetry/tcp_tracer.cc
   src/core/transport/auth_context.cc
+  src/core/transport/session_endpoint.cc
   src/core/transport/endpoint_transport_client_channel_factory.cc
   src/core/tsi/alts/crypt/aes_gcm.cc
   src/core/tsi/alts/crypt/gsec.cc
@@ -3489,6 +3491,7 @@ add_library(grpc_unsecure
   src/core/client_channel/subchannel_pool_interface.cc
   src/core/client_channel/subchannel_stream_client.cc
   src/core/client_channel/subchannel_stream_limiter.cc
+  src/core/client_channel/virtual_channel.cc
   src/core/config/core_configuration.cc
   src/core/credentials/call/call_creds_util.cc
   src/core/credentials/call/composite/composite_call_credentials.cc
@@ -3860,6 +3863,7 @@ add_library(grpc_unsecure
   src/core/telemetry/stats_data.cc
   src/core/telemetry/tcp_tracer.cc
   src/core/transport/auth_context.cc
+  src/core/transport/session_endpoint.cc
   src/core/transport/endpoint_transport_client_channel_factory.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/tsi/fake_transport_security.cc
@@ -5114,6 +5118,7 @@ foreach(_hdr
   include/grpcpp/impl/delegating_channel.h
   include/grpcpp/impl/generic_serialize.h
   include/grpcpp/impl/generic_stub_internal.h
+  include/grpcpp/impl/generic_stub_session.h
   include/grpcpp/impl/grpc_library.h
   include/grpcpp/impl/intercepted_channel.h
   include/grpcpp/impl/interceptor_common.h
@@ -5855,6 +5860,7 @@ foreach(_hdr
   include/grpcpp/impl/delegating_channel.h
   include/grpcpp/impl/generic_serialize.h
   include/grpcpp/impl/generic_stub_internal.h
+  include/grpcpp/impl/generic_stub_session.h
   include/grpcpp/impl/grpc_library.h
   include/grpcpp/impl/intercepted_channel.h
   include/grpcpp/impl/interceptor_common.h
@@ -6207,6 +6213,7 @@ add_library(grpc_authorization_provider
   src/core/telemetry/stats_data.cc
   src/core/telemetry/tcp_tracer.cc
   src/core/transport/auth_context.cc
+  src/core/transport/session_endpoint.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
