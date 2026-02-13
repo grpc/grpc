@@ -898,6 +898,38 @@ TEST_P(ChannelzServerTest, GetServerListenSocketsTest) {
   }
 }
 
+TEST_P(ChannelzServerTest, GetListenSocketTest) {
+  ResetStubs();
+  ConfigureProxy(1);
+  GetServersRequest get_server_request;
+  GetServersResponse get_server_response;
+  get_server_request.set_start_server_id(0);
+  ClientContext get_server_context;
+  Status s = channelz_stub_->GetServers(&get_server_context, get_server_request,
+                                        &get_server_response);
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
+  EXPECT_EQ(get_server_response.server_size(), 1);
+  // The resolver might return one or two addresses depending on the
+  // configuration, one for ipv4 and one for ipv6.
+  int listen_socket_size = get_server_response.server(0).listen_socket_size();
+  EXPECT_THAT(listen_socket_size, ::testing::AnyOf(1, 2));
+  GetSocketRequest get_socket_request;
+  GetSocketResponse get_socket_response;
+  get_socket_request.set_socket_id(
+      get_server_response.server(0).listen_socket(0).socket_id());
+  ClientContext get_socket_context;
+  s = channelz_stub_->GetSocket(&get_socket_context, get_socket_request,
+                                &get_socket_response);
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
+  EXPECT_EQ(get_socket_response.socket().ref().socket_id(),
+            get_server_response.server(0).listen_socket(0).socket_id());
+  // Listen sockets should have a local address but no remote address.
+  EXPECT_TRUE(ValidateAddress(get_socket_response.socket().local()));
+  EXPECT_FALSE(get_socket_response.socket().has_remote());
+  EXPECT_NE(get_socket_response.socket().local().address_case(),
+            Address::ADDRESS_NOT_SET);
+}
+
 INSTANTIATE_TEST_SUITE_P(ChannelzServer, ChannelzServerTest,
                          ::testing::ValuesIn(std::vector<CredentialsType>(
                              {CredentialsType::kInsecure, CredentialsType::kTls,

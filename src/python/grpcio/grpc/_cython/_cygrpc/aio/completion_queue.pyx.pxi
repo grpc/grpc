@@ -21,14 +21,8 @@ cdef float _POLL_AWAKE_INTERVAL_S = 0.2
 # loop.add_reader method.
 cdef bint _has_fd_monitoring = True
 
-IF UNAME_SYSNAME == "Windows":
-    cdef void _unified_socket_write(int fd) noexcept nogil:
-        win_socket_send(<WIN_SOCKET>fd, b"1", 1, 0)
-ELSE:
-    from posix cimport unistd
-
-    cdef void _unified_socket_write(int fd) noexcept nogil:
-        unistd.write(fd, b"1", 1)
+cdef void _unified_socket_write(int fd) noexcept nogil:
+    _unified_socket_write_impl(fd)
 
 
 def _handle_callback_wrapper(CallbackWrapper callback_wrapper, int success):

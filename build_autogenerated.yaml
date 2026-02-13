@@ -5455,18 +5455,6 @@ libs:
   - grpc++
   - opentelemetry-cpp::api
 targets:
-- name: fd_conservation_posix_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/fd_conservation_posix_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
 - name: multiple_server_queues_test
   build: test
   language: c
@@ -12549,6 +12537,20 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: fd_conservation_posix_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/fd_conservation_posix_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: fd_posix_test
   gtest: true
   build: test
