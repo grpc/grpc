@@ -1984,12 +1984,7 @@ std::optional<RefCountedPtr<Stream>> Http2ClientTransport::MakeStream(
     CallHandler call_handler) {
   // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
   RefCountedPtr<Stream> stream;
-  {
-    // TODO(akshitpatel) : [PH2][P3] : Remove this mutex once settings is in
-    // place.
-    MutexLock lock(&transport_mutex_);
-    stream = MakeRefCounted<Stream>(call_handler, flow_control_);
-  }
+  stream = MakeRefCounted<Stream>(call_handler, flow_control_);
   const bool on_done_added = SetOnDone(call_handler, stream);
   if (!on_done_added) return std::nullopt;
   return stream;
