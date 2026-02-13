@@ -147,8 +147,6 @@ struct tsi_ssl_server_handshaker_factory {
   std::shared_ptr<RootCertInfo> root_cert_info;
 };
 
-namespace {
-
 // Tracks the arguments for a pending call to tsi_handshaker_next().
 struct HandshakerNextArgs {
   // Input args.
@@ -206,6 +204,8 @@ struct tsi_ssl_frame_protector {
   // concurrently.
   gpr_mu mu;
 };
+
+namespace {
 
 // --- Library Initialization. ---
 
