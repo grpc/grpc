@@ -235,6 +235,76 @@ TEST(ProxyForAddressTest, UserInfo) {
             "Proxy-Authorization:Basic dXNlcm5hbWU6cGFzc3dvcmQ=");
 }
 
+// Tests for HTTPS proxy support (TLS connection to proxy)
+TEST(HttpsProxyTest, HttpsSchemeEnablesTls) {
+  auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY,
+                                "https://proxy.google.com:8443");
+  EXPECT_EQ(HttpProxyMapper().MapName("dns:///test.google.com:443", &args),
+            "proxy.google.com:8443");
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER),
+            "test.google.com:443");
+  // Verify TLS is enabled for the proxy connection
+  EXPECT_EQ(args.GetBool(GRPC_ARG_HTTP_PROXY_TLS_ENABLED), true);
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_PROXY_TLS_SERVER_NAME),
+            "proxy.google.com");
+}
+
+TEST(HttpsProxyTest, HttpsSchemeWithUserInfo) {
+  auto args = ChannelArgs().Set(
+      GRPC_ARG_HTTP_PROXY, "https://username:password@proxy.google.com:8443");
+  EXPECT_EQ(HttpProxyMapper().MapName("dns:///test.google.com:443", &args),
+            "proxy.google.com:8443");
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER),
+            "test.google.com:443");
+  // Verify TLS is enabled
+  EXPECT_EQ(args.GetBool(GRPC_ARG_HTTP_PROXY_TLS_ENABLED), true);
+  // Verify auth header is still set (will be sent securely over TLS)
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_HEADERS),
+            "Proxy-Authorization:Basic dXNlcm5hbWU6cGFzc3dvcmQ=");
+}
+
+TEST(HttpsProxyTest, HttpsSchemeWithDefaultPort) {
+  auto args =
+      ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, "https://proxy.google.com");
+  EXPECT_EQ(HttpProxyMapper().MapName("dns:///test.google.com:443", &args),
+            "proxy.google.com:443");
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER),
+            "test.google.com:443");
+  EXPECT_EQ(args.GetBool(GRPC_ARG_HTTP_PROXY_TLS_ENABLED), true);
+}
+
+TEST(HttpsProxyTest, HttpSchemeDoesNotEnableTls) {
+  auto args =
+      ChannelArgs().Set(GRPC_ARG_HTTP_PROXY, "http://proxy.google.com:8080");
+  EXPECT_EQ(HttpProxyMapper().MapName("dns:///test.google.com:443", &args),
+            "proxy.google.com:8080");
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER),
+            "test.google.com:443");
+  // Verify TLS is NOT enabled for http:// scheme
+  EXPECT_EQ(args.GetBool(GRPC_ARG_HTTP_PROXY_TLS_ENABLED), std::nullopt);
+}
+
+TEST(HttpsProxyTest, HttpsProxyEnvVar) {
+  ScopedEnvVar https_proxy("https_proxy", "https://proxy.google.com:8443");
+  ChannelArgs args;
+  EXPECT_EQ(HttpProxyMapper().MapName("dns:///test.google.com:443", &args),
+            "proxy.google.com:8443");
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER),
+            "test.google.com:443");
+  EXPECT_EQ(args.GetBool(GRPC_ARG_HTTP_PROXY_TLS_ENABLED), true);
+}
+
+TEST(HttpsProxyTest, ExplicitTlsConfigOverridesScheme) {
+  // Even with http:// scheme, explicit TLS config can enable TLS
+  auto args = ChannelArgs()
+                  .Set(GRPC_ARG_HTTP_PROXY, "http://proxy.google.com:8080")
+                  .Set(GRPC_ARG_HTTP_PROXY_TLS_ENABLED, true);
+  EXPECT_EQ(HttpProxyMapper().MapName("dns:///test.google.com:443", &args),
+            "proxy.google.com:8080");
+  // The explicit TLS setting should be preserved
+  EXPECT_EQ(args.GetBool(GRPC_ARG_HTTP_PROXY_TLS_ENABLED), true);
+}
+
 TEST(ProxyForAddressTest, PctEncodedUserInfo) {
   auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY,
                                 "http://usern%40me:password@proxy.google.com");

@@ -48,6 +48,10 @@ class HandshakerFactory {
     // Handshakers responsible for the actual TCP connect establishment.
     // Applicable mainly for Client handshakers.
     kTCPConnectHandshakers,
+    // Handshakers responsible for TLS handshake with HTTPS proxy.
+    // Runs after TCP connect but before HTTP CONNECT request.
+    // This allows the HTTP CONNECT request to be sent encrypted to the proxy.
+    kHTTPProxyTLSHandshakers,
     // Handshakers responsible for the actual HTTP connect established.
     // Applicable mainly for Client handshakers.
     kHTTPConnectHandshakers,
