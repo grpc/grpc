@@ -129,11 +129,11 @@ def grpc_deps():
     if "com_googlesource_code_re2" not in native.existing_rules():
         http_archive(
             name = "com_googlesource_code_re2",
-            sha256 = "1ae8ccfdb1066a731bba6ee0881baad5efd2cd661acd9569b689f2586e1a50e9",
-            strip_prefix = "re2-2022-04-01",
+            sha256 = "a835fe55fbdcd8e80f38584ab22d0840662c67f2feb36bd679402da9641dc71e",
+            strip_prefix = "re2-2024-07-02",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/re2/archive/2022-04-01.tar.gz",
-                "https://github.com/google/re2/archive/2022-04-01.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/re2/releases/download/2024-07-02/re2-2024-07-02.zip",
+                "https://github.com/google/re2/releases/download/2024-07-02/re2-2024-07-02.zip",
             ],
         )
 
@@ -426,10 +426,11 @@ def grpc_test_only_deps():
     if "yaml-cpp" not in native.existing_rules():
         http_archive(
             name = "yaml-cpp",
-            sha256 = "fbe74bbdcee21d656715688706da3c8becfd946d92cd44705cc6098bb23b3a16",
-            strip_prefix = "yaml-cpp-0.8.0",
+            integrity = "sha256-KYWT2cRA/ZA0uLGT2WMYt21JvJfGzq23sINu3wttdTk=",
+            strip_prefix = "",
             urls = [
-                "https://github.com/jbeder/yaml-cpp/archive/refs/tags/0.8.0.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/jbeder/yaml-cpp/releases/download/yaml-cpp-0.9.0/yaml-cpp-yaml-cpp-0.9.0.tar.gz",
+                "https://github.com/jbeder/yaml-cpp/releases/download/yaml-cpp-0.9.0/yaml-cpp-yaml-cpp-0.9.0.tar.gz",
             ],
         )
 
