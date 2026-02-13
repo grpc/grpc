@@ -1202,7 +1202,7 @@ def server_jobspec(
         cmdline=docker_cmdline,
         environ=environ,
         shortname="interop_server_%s" % language,
-        timeout_seconds=120 * 60,
+        timeout_seconds=30 * 60,
     )
     server_job.container_name = container_name
     return server_job
@@ -1220,7 +1220,7 @@ def build_interop_image_jobspec(language, tag=None):
         cmdline=["tools/run_tests/dockerize/build_interop_image.sh"],
         environ=env,
         shortname="build_docker_%s" % (language),
-        timeout_seconds=150 * 60,
+        timeout_seconds=45 * 60,
     )
     build_job.tag = tag
     return build_job
@@ -1856,7 +1856,7 @@ try:
         print("All tests will skipped --manual_run option is active.")
 
     if args.verbose:
-        print(str(len(jobs)) + " jobs to run: \n%s\n" % "\n".join(str(job) for job in jobs))
+        print("Jobs to run: \n%s\n" % "\n".join(str(job) for job in jobs))
 
     num_failures, resultset = jobset.run(
         jobs,
@@ -1864,7 +1864,6 @@ try:
         maxjobs=args.jobs,
         skip_jobs=args.manual_run,
     )
-    print('num_failures from jobset.run: ' + str(num_failures))
     if args.bq_result_table and resultset:
         upload_interop_results_to_bq(resultset, args.bq_result_table)
     if num_failures:
