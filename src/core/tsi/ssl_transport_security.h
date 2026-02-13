@@ -119,8 +119,8 @@ struct tsi_ssl_pem_key_cert_pair {
   std::string cert_chain;
 
   tsi_ssl_pem_key_cert_pair() = default;
-  tsi_ssl_pem_key_cert_pair(PrivateKey pk, std::string cert)
-      : private_key(std::move(pk)), cert_chain(std::move(cert)) {}
+  tsi_ssl_pem_key_cert_pair(PrivateKey pk, std::string cert_chain_pem)
+      : private_key(std::move(pk)), cert_chain(std::move(cert_chain_pem)) {}
 };
 // TO BE DEPRECATED.
 // Creates a client handshaker factory.

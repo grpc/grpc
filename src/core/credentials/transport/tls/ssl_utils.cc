@@ -564,8 +564,8 @@ bool IsPrivateKeyEmpty(const PrivateKey& private_key) {
   return Match(
       private_key,
       [&](const std::string& pem_root_certs) { return pem_root_certs.empty(); },
-      [&](const std::shared_ptr<PrivateKeySigner> key_sign) {
-        return key_sign == nullptr;
+      [&](const std::shared_ptr<PrivateKeySigner> key_signer) {
+        return key_signer == nullptr;
       });
 }
 

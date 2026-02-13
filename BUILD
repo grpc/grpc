@@ -4569,6 +4569,7 @@ grpc_cc_library(
     deps = [
         "channel_arg_names",
         "config_vars",
+        "exec_ctx",
         "gpr",
         "grpc_base",
         "grpc_core_credentials_header",
@@ -4580,6 +4581,7 @@ grpc_cc_library(
         "tsi_base",
         "tsi_ssl_session_cache",
         "//src/core:channel_args",
+        "//src/core:default_event_engine",
         "//src/core:env",
         "//src/core:error",
         "//src/core:grpc_check",

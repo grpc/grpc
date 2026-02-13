@@ -31,6 +31,7 @@
 
 namespace grpc_core {
 
+// Implementations of this class must be thread-safe.
 class PrivateKeySigner {
  public:
   // A handle for an asynchronous signing operation.
@@ -61,6 +62,9 @@ class PrivateKeySigner {
     kRsaPssRsaeSha512,
   };
 
+  // A callback that is invoked when an asynchronous signing operation is
+  // complete. The argument should contain the signed bytes on success, or a
+  // non-OK status on failure.
   using OnSignComplete = absl::AnyInvocable<void(absl::StatusOr<std::string>)>;
 
   virtual ~PrivateKeySigner() = default;

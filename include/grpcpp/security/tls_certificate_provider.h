@@ -54,6 +54,8 @@ struct [[deprecated("Use IdentityKeyOrSignerCertPair instead")]] GRPCXX_DLL
 // A struct that stores the credential data presented to the peer in handshake
 // to show local identity. The private_key and certificate_chain should always
 // match. The private_key can be either a PEM string or a PrivateKeySigner.
+// The PrivateKeySigner will only work with gRPC binaries compiled with
+// BoringSSL.
 struct GRPCXX_DLL IdentityKeyOrSignerCertPair {
   std::variant<std::string, std::shared_ptr<PrivateKeySigner>> private_key;
   std::string certificate_chain;
@@ -175,9 +177,9 @@ class GRPCXX_DLL InMemoryCertificateProvider
   // successful.
   absl::Status UpdateRoot(const std::string& root_certificate);
   absl::Status UpdateIdentityKeyCertPair(
-      const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs);
+      std::vector<IdentityKeyCertPair> identity_key_cert_pairs);
   absl::Status UpdateIdentityKeyCertPair(
-      const std::vector<IdentityKeyOrSignerCertPair>&
+      std::vector<IdentityKeyOrSignerCertPair>
           identity_key_or_signer_cert_pairs);
 
   // Returns an OK status if the following conditions hold:
