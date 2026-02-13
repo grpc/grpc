@@ -2019,8 +2019,9 @@ class ServerCallData : public BaseCallData {
   struct SendInitialMetadata;
 
   // Shut things down when the call completes.
-  void Completed(grpc_error_handle error, bool tarpit_cancellation,
-                 Flusher* flusher);
+  void Completed(grpc_error_handle error,
+                 ServerMetadataHandle trailing_metadata,
+                 bool tarpit_cancellation, Flusher* flusher);
   // Construct a promise that will "call" the next filter.
   // Effectively:
   //   - put the modified initial metadata into the batch being sent up.

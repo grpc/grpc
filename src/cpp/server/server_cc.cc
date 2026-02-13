@@ -18,6 +18,7 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/call.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/support/sync.h>
@@ -183,7 +184,7 @@ bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
   if (call_wrapper_.call() == nullptr) {
     // Fill it since it is empty.
     call_wrapper_ = internal::Call(
-        call_, server_, call_cq_, server_->max_receive_message_size(), nullptr);
+        call_, call_cq_, server_->max_receive_message_size(), nullptr);
   }
 
   // just the pointers inside call are copied here
@@ -281,7 +282,7 @@ bool ServerInterface::GenericAsyncRequest::FinalizeResult(void** tag,
   grpc_slice_unref(call_details_.method);
   grpc_slice_unref(call_details_.host);
   call_wrapper_ = internal::Call(
-      call_, server_, call_cq_, server_->max_receive_message_size(),
+      call_, call_cq_, server_->max_receive_message_size(),
       context_->set_server_rpc_info(
           static_cast<GenericServerContext*>(context_)->method_.c_str(),
           internal::RpcMethod::BIDI_STREAMING,
@@ -423,7 +424,7 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
   void Run(bool resources) {
     ctx_.Init(deadline_, &request_metadata_);
     wrapped_call_.Init(
-        call_, server_, &cq_, server_->max_receive_message_size(),
+        call_, &cq_, server_->max_receive_message_size(),
         ctx_->ctx.set_server_rpc_info(method_->name(), method_->method_type(),
                                       server_->interceptor_creators_));
     ctx_->ctx.set_call(call_, server_->call_metric_recording_enabled(),
@@ -641,6 +642,9 @@ class Server::CallbackRequest final
       static_cast<CallbackCallTag*>(cb)->Run(static_cast<bool>(ok));
     }
     void Run(bool ok) {
+      grpc_call_run_cq_cb(req_->call_, [this, ok]() { Proceed(ok); });
+    }
+    void Proceed(bool ok) {
       void* ignored = req_;
       bool new_ok = ok;
       GRPC_CHECK(!req_->FinalizeResult(&ignored, &new_ok));
@@ -667,7 +671,7 @@ class Server::CallbackRequest final
       call_ =
           new (grpc_call_arena_alloc(req_->call_, sizeof(grpc::internal::Call)))
               grpc::internal::Call(
-                  req_->call_, req_->server_, req_->cq_,
+                  req_->call_, req_->cq_,
                   req_->server_->max_receive_message_size(),
                   req_->ctx_->set_server_rpc_info(
                       req_->method_name(),
@@ -1330,11 +1334,6 @@ void Server::Wait() {
   }
 }
 
-void Server::PerformOpsOnCall(grpc::internal::CallOpSetInterface* ops,
-                              grpc::internal::Call* call) {
-  ops->FillOps(call);
-}
-
 bool Server::UnimplementedAsyncRequest::FinalizeResult(void** tag,
                                                        bool* status) {
   if (GenericAsyncRequest::FinalizeResult(tag, status)) {
@@ -1359,7 +1358,7 @@ Server::UnimplementedAsyncResponse::UnimplementedAsyncResponse(
   grpc::Status status(grpc::StatusCode::UNIMPLEMENTED, kUnknownRpcMethod);
   grpc::internal::UnknownMethodHandler::FillOps(request_->context(),
                                                 kUnknownRpcMethod, this);
-  request_->stream()->call_.PerformOps(this);
+  this->FillOps(&request_->stream()->call_);
 }
 
 grpc::ServerInitializer* Server::initializer() {

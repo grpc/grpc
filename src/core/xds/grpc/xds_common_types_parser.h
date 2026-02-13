@@ -20,6 +20,7 @@
 #include <optional>
 
 #include "envoy/config/core/v3/base.upb.h"
+#include "envoy/config/core/v3/grpc_service.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "google/protobuf/any.upb.h"
@@ -82,6 +83,11 @@ absl::StatusOr<Json> ParseProtobufStructToJson(
 std::optional<XdsExtension> ExtractXdsExtension(
     const XdsResourceType::DecodeContext& context,
     const google_protobuf_Any* any, ValidationErrors* errors);
+
+XdsGrpcService ParseXdsGrpcService(
+    const XdsResourceType::DecodeContext& context,
+    const envoy_config_core_v3_GrpcService* grpc_service,
+    ValidationErrors* errors);
 
 }  // namespace grpc_core
 

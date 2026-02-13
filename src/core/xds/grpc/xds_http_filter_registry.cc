@@ -52,8 +52,7 @@ void XdsHttpRouterFilter::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_router_v3_Router_getmsgdef(symtab);
 }
 
-std::optional<XdsHttpFilterImpl::XdsFilterConfig>
-XdsHttpRouterFilter::GenerateFilterConfig(
+std::optional<Json> XdsHttpRouterFilter::GenerateFilterConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context,
     const XdsExtension& extension, ValidationErrors* errors) const {
@@ -69,11 +68,10 @@ XdsHttpRouterFilter::GenerateFilterConfig(
     errors->AddError("could not parse router filter config");
     return std::nullopt;
   }
-  return XdsFilterConfig{ConfigProtoName(), Json()};
+  return Json();
 }
 
-std::optional<XdsHttpFilterImpl::XdsFilterConfig>
-XdsHttpRouterFilter::GenerateFilterConfigOverride(
+std::optional<Json> XdsHttpRouterFilter::GenerateFilterConfigOverride(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& /*context*/,
     const XdsExtension& /*extension*/, ValidationErrors* errors) const {

@@ -36,12 +36,13 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'bundler',            '>= 1.9'
   s.add_development_dependency 'facter',             '~> 2.4'
   s.add_development_dependency 'logging',            '~> 2.0'
+  s.add_development_dependency 'syslog',             '~> 0.3.0'
   s.add_development_dependency 'simplecov',          '~> 0.22'
   s.add_development_dependency 'rake',               '~> 13.0'
-  s.add_development_dependency 'rake-compiler',      '~> 1.2.1'
-  s.add_development_dependency 'rake-compiler-dock', '= 1.9.1'
+  s.add_development_dependency 'rake-compiler',      '~> 1.3.1'
+  s.add_development_dependency 'rake-compiler-dock', '~> 1.11.1'
   s.add_development_dependency 'rspec',              '~> 3.6'
-  s.add_development_dependency 'rubocop',            '~> 1.41.0'
+  s.add_development_dependency 'rubocop',            '~> 1.82.0'
   s.add_development_dependency 'signet',             '~> 0.7'
   s.add_development_dependency 'googleauth',         '~> 1.0'
 
@@ -53,6 +54,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/compression.h )
   s.files += %w( include/grpc/create_channel_from_endpoint.h )
   s.files += %w( include/grpc/credentials.h )
+  s.files += %w( include/grpc/credentials_cpp.h )
   s.files += %w( include/grpc/event_engine/endpoint_config.h )
   s.files += %w( include/grpc/event_engine/event_engine.h )
   s.files += %w( include/grpc/event_engine/extensible.h )
@@ -226,6 +228,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/client_channel/subchannel_pool_interface.h )
   s.files += %w( src/core/client_channel/subchannel_stream_client.cc )
   s.files += %w( src/core/client_channel/subchannel_stream_client.h )
+  s.files += %w( src/core/client_channel/subchannel_stream_limiter.cc )
+  s.files += %w( src/core/client_channel/subchannel_stream_limiter.h )
   s.files += %w( src/core/config/config_vars.cc )
   s.files += %w( src/core/config/config_vars.h )
   s.files += %w( src/core/config/config_vars_non_generated.cc )
@@ -459,7 +463,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/transport/ping_promise.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/ping_rate_policy.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/ping_rate_policy.h )
-  s.files += %w( src/core/ext/transport/chttp2/transport/security_frame.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/security_frame.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/stream.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/stream_data_queue.h )
@@ -477,6 +480,12 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/inproc/inproc_transport.h )
   s.files += %w( src/core/ext/transport/inproc/legacy_inproc_transport.cc )
   s.files += %w( src/core/ext/transport/inproc/legacy_inproc_transport.h )
+  s.files += %w( src/core/ext/upb-gen/cel/expr/checked.upb.h )
+  s.files += %w( src/core/ext/upb-gen/cel/expr/checked.upb_minitable.c )
+  s.files += %w( src/core/ext/upb-gen/cel/expr/checked.upb_minitable.h )
+  s.files += %w( src/core/ext/upb-gen/cel/expr/syntax.upb.h )
+  s.files += %w( src/core/ext/upb-gen/cel/expr/syntax.upb_minitable.c )
+  s.files += %w( src/core/ext/upb-gen/cel/expr/syntax.upb_minitable.h )
   s.files += %w( src/core/ext/upb-gen/envoy/admin/v3/certs.upb.h )
   s.files += %w( src/core/ext/upb-gen/envoy/admin/v3/certs.upb_minitable.c )
   s.files += %w( src/core/ext/upb-gen/envoy/admin/v3/certs.upb_minitable.h )
@@ -537,6 +546,9 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-gen/envoy/config/common/matcher/v3/matcher.upb.h )
   s.files += %w( src/core/ext/upb-gen/envoy/config/common/matcher/v3/matcher.upb_minitable.c )
   s.files += %w( src/core/ext/upb-gen/envoy/config/common/matcher/v3/matcher.upb_minitable.h )
+  s.files += %w( src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb.h )
+  s.files += %w( src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb_minitable.c )
+  s.files += %w( src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb_minitable.h )
   s.files += %w( src/core/ext/upb-gen/envoy/config/core/v3/address.upb.h )
   s.files += %w( src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.c )
   s.files += %w( src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.h )
@@ -546,6 +558,9 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-gen/envoy/config/core/v3/base.upb.h )
   s.files += %w( src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.c )
   s.files += %w( src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.h )
+  s.files += %w( src/core/ext/upb-gen/envoy/config/core/v3/cel.upb.h )
+  s.files += %w( src/core/ext/upb-gen/envoy/config/core/v3/cel.upb_minitable.c )
+  s.files += %w( src/core/ext/upb-gen/envoy/config/core/v3/cel.upb_minitable.h )
   s.files += %w( src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb.h )
   s.files += %w( src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.c )
   s.files += %w( src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.h )
@@ -705,6 +720,15 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-gen/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h )
   s.files += %w( src/core/ext/upb-gen/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb_minitable.c )
   s.files += %w( src/core/ext/upb-gen/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb_minitable.h )
+  s.files += %w( src/core/ext/upb-gen/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.upb.h )
+  s.files += %w( src/core/ext/upb-gen/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.upb_minitable.c )
+  s.files += %w( src/core/ext/upb-gen/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.upb_minitable.h )
+  s.files += %w( src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/tls/v3/tls_credentials.upb.h )
+  s.files += %w( src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/tls/v3/tls_credentials.upb_minitable.c )
+  s.files += %w( src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/tls/v3/tls_credentials.upb_minitable.h )
+  s.files += %w( src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/xds/v3/xds_credentials.upb.h )
+  s.files += %w( src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/xds/v3/xds_credentials.upb_minitable.c )
+  s.files += %w( src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/xds/v3/xds_credentials.upb_minitable.h )
   s.files += %w( src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.h )
   s.files += %w( src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb_minitable.c )
   s.files += %w( src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb_minitable.h )
@@ -1002,6 +1026,10 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-gen/xds/type/v3/typed_struct.upb.h )
   s.files += %w( src/core/ext/upb-gen/xds/type/v3/typed_struct.upb_minitable.c )
   s.files += %w( src/core/ext/upb-gen/xds/type/v3/typed_struct.upb_minitable.h )
+  s.files += %w( src/core/ext/upbdefs-gen/cel/expr/checked.upbdefs.c )
+  s.files += %w( src/core/ext/upbdefs-gen/cel/expr/checked.upbdefs.h )
+  s.files += %w( src/core/ext/upbdefs-gen/cel/expr/syntax.upbdefs.c )
+  s.files += %w( src/core/ext/upbdefs-gen/cel/expr/syntax.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-gen/envoy/admin/v3/certs.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-gen/envoy/admin/v3/certs.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-gen/envoy/admin/v3/clusters.upbdefs.c )
@@ -1042,12 +1070,16 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upbdefs-gen/envoy/config/cluster/v3/outlier_detection.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-gen/envoy/config/common/matcher/v3/matcher.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-gen/envoy/config/common/matcher/v3/matcher.upbdefs.h )
+  s.files += %w( src/core/ext/upbdefs-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upbdefs.c )
+  s.files += %w( src/core/ext/upbdefs-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-gen/envoy/config/core/v3/address.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-gen/envoy/config/core/v3/address.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-gen/envoy/config/core/v3/backoff.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-gen/envoy/config/core/v3/backoff.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-gen/envoy/config/core/v3/base.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-gen/envoy/config/core/v3/base.upbdefs.h )
+  s.files += %w( src/core/ext/upbdefs-gen/envoy/config/core/v3/cel.upbdefs.c )
+  s.files += %w( src/core/ext/upbdefs-gen/envoy/config/core/v3/cel.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-gen/envoy/config/core/v3/config_source.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-gen/envoy/config/core/v3/config_source.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-gen/envoy/config/core/v3/event_service_config.upbdefs.c )
@@ -1343,8 +1375,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/handshaker/handshaker_factory.h )
   s.files += %w( src/core/handshaker/handshaker_registry.cc )
   s.files += %w( src/core/handshaker/handshaker_registry.h )
-  s.files += %w( src/core/handshaker/http_connect/http_connect_handshaker.cc )
-  s.files += %w( src/core/handshaker/http_connect/http_connect_handshaker.h )
+  s.files += %w( src/core/handshaker/http_connect/http_connect_client_handshaker.cc )
+  s.files += %w( src/core/handshaker/http_connect/http_connect_client_handshaker.h )
   s.files += %w( src/core/handshaker/http_connect/http_proxy_mapper.cc )
   s.files += %w( src/core/handshaker/http_connect/http_proxy_mapper.h )
   s.files += %w( src/core/handshaker/http_connect/xds_http_proxy_mapper.cc )
@@ -2154,6 +2186,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/util/xxhash_inline.h )
   s.files += %w( src/core/xds/grpc/certificate_provider_store.cc )
   s.files += %w( src/core/xds/grpc/certificate_provider_store.h )
+  s.files += %w( src/core/xds/grpc/certificate_provider_store_interface.h )
   s.files += %w( src/core/xds/grpc/file_watcher_certificate_provider_factory.cc )
   s.files += %w( src/core/xds/grpc/file_watcher_certificate_provider_factory.h )
   s.files += %w( src/core/xds/grpc/xds_audit_logger_registry.cc )

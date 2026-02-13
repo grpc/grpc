@@ -170,7 +170,7 @@ TEST_F(MatcherTest, MatcherListSinglePredicate) {
   ValidationErrors errors;
   auto matcher =
       ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), &errors);
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
   EXPECT_TRUE(errors.ok())
       << errors.status(absl::StatusCode::kInvalidArgument, "").message();
   EXPECT_NE(matcher, nullptr);
@@ -179,6 +179,38 @@ TEST_F(MatcherTest, MatcherListSinglePredicate) {
       "XdsMatcherList{{predicate=SinglePredicate{input=MetadataInput(key=foo), "
       "matcher=StringMatcher{exact=bar}}, "
       "on_match={action=StringAction{str=foobar}, keep_matching=false}}}");
+}
+
+TEST_F(MatcherTest, KeepMatching) {
+  Matcher matcher_proto;
+  auto* field_matcher = matcher_proto.mutable_matcher_list()->add_matchers();
+  auto* predicate =
+      field_matcher->mutable_predicate()->mutable_single_predicate();
+  auto* input = predicate->mutable_input();
+  input->set_name("foo");
+  HttpRequestHeaderMatchInput http_request_header_match_input;
+  http_request_header_match_input.set_header_name("foo");
+  input->mutable_typed_config()->PackFrom(http_request_header_match_input);
+  predicate->mutable_value_match()->set_exact("bar");
+  auto* on_match = field_matcher->mutable_on_match();
+  on_match->set_keep_matching(true);
+  auto* action = on_match->mutable_action();
+  action->set_name("type.googleapis.com/google.protobuf.StringValue");
+  StringValue string_value;
+  string_value.set_value("foobar");
+  action->mutable_typed_config()->PackFrom(string_value);
+  ValidationErrors errors;
+  auto matcher =
+      ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
+  EXPECT_TRUE(errors.ok())
+      << errors.status(absl::StatusCode::kInvalidArgument, "").message();
+  EXPECT_NE(matcher, nullptr);
+  EXPECT_EQ(
+      matcher->ToString(),
+      "XdsMatcherList{{predicate=SinglePredicate{input=MetadataInput(key=foo), "
+      "matcher=StringMatcher{exact=bar}}, "
+      "on_match={action=StringAction{str=foobar}, keep_matching=true}}}");
 }
 
 TEST_F(MatcherTest, MatcherListWithMultipleMatchers) {
@@ -216,7 +248,7 @@ TEST_F(MatcherTest, MatcherListWithMultipleMatchers) {
   ValidationErrors errors;
   auto matcher =
       ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), &errors);
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
   EXPECT_TRUE(errors.ok())
       << errors.status(absl::StatusCode::kInvalidArgument, "").message();
   EXPECT_NE(matcher, nullptr);
@@ -258,7 +290,7 @@ TEST_F(MatcherTest, MatcherListSinglePredicateWithOnNoMatch) {
   ValidationErrors errors;
   auto matcher =
       ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), &errors);
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
   EXPECT_TRUE(errors.ok())
       << errors.status(absl::StatusCode::kInvalidArgument, "").message();
   EXPECT_NE(matcher, nullptr);
@@ -299,7 +331,7 @@ TEST_F(MatcherTest, MatcherListAndMatcher) {
   ValidationErrors errors;
   auto matcher =
       ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), &errors);
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
   EXPECT_TRUE(errors.ok())
       << errors.status(absl::StatusCode::kInvalidArgument, "").message();
   EXPECT_NE(matcher, nullptr);
@@ -341,7 +373,7 @@ TEST_F(MatcherTest, MatcherListOrMatcher) {
   ValidationErrors errors;
   auto matcher =
       ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), &errors);
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
   EXPECT_TRUE(errors.ok())
       << errors.status(absl::StatusCode::kInvalidArgument, "").message();
   EXPECT_NE(matcher, nullptr);
@@ -374,7 +406,7 @@ TEST_F(MatcherTest, MatcherListNotMatcher) {
   ValidationErrors errors;
   auto matcher =
       ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), &errors);
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
   EXPECT_TRUE(errors.ok())
       << errors.status(absl::StatusCode::kInvalidArgument, "").message();
   EXPECT_NE(matcher, nullptr);
@@ -409,7 +441,7 @@ TEST_F(MatcherTest, MatcherTreeExactMatchMap) {
   ValidationErrors errors;
   auto matcher =
       ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), &errors);
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
   EXPECT_TRUE(errors.ok())
       << errors.status(absl::StatusCode::kInvalidArgument, "").message();
   EXPECT_NE(matcher, nullptr);
@@ -444,7 +476,7 @@ TEST_F(MatcherTest, MatcherTreePrefixMatchMap) {
   ValidationErrors errors;
   auto matcher =
       ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), &errors);
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
   EXPECT_TRUE(errors.ok())
       << errors.status(absl::StatusCode::kInvalidArgument, "").message();
   EXPECT_NE(matcher, nullptr);
@@ -496,7 +528,7 @@ TEST_F(MatcherTest, NestedMatcher) {
   ValidationErrors errors;
   auto matcher =
       ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), &errors);
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
   EXPECT_TRUE(errors.ok())
       << errors.status(absl::StatusCode::kInvalidArgument, "").message();
   EXPECT_NE(matcher, nullptr);
@@ -519,7 +551,7 @@ TEST_F(MatcherTest, UnsetMatcher) {
   Matcher matcher_proto;
   ValidationErrors errors;
   auto matcher = ParseXdsMatcher(decode_context_, nullptr, action_registry_,
-                                 RpcMatchContext::Type(), &errors);
+                                 RpcMatchContext::Type(), true, &errors);
   EXPECT_FALSE(errors.ok());
   EXPECT_EQ(errors.status(absl::StatusCode::kInvalidArgument, "").message(),
             ": [field: error:field not set]");
@@ -530,7 +562,7 @@ TEST_F(MatcherTest, EmptyMatcher) {
   ValidationErrors errors;
   auto matcher =
       ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), &errors);
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
   EXPECT_FALSE(errors.ok());
   EXPECT_EQ(errors.status(absl::StatusCode::kInvalidArgument, "").message(),
             ": [field: error:no matcher_list or matcher_tree specified.]");
@@ -542,7 +574,7 @@ TEST_F(MatcherTest, EmptyMatcherList) {
   ValidationErrors errors;
   auto matcher =
       ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), &errors);
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
   EXPECT_FALSE(errors.ok());
   EXPECT_EQ(errors.status(absl::StatusCode::kInvalidArgument, "").message(),
             ": [field:matcher_list error:matcher_list is empty]");
@@ -554,7 +586,7 @@ TEST_F(MatcherTest, MatchTreeNoInputEmptyMap) {
   ValidationErrors errors;
   auto matcher =
       ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), &errors);
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
   EXPECT_FALSE(errors.ok());
   EXPECT_EQ(errors.status(absl::StatusCode::kInvalidArgument, "").message(),
             ": [field:matcher_tree.exact_match_map error:map is empty; "
@@ -574,7 +606,7 @@ TEST_F(MatcherTest, MatcherTreeUnknown) {
   ValidationErrors errors;
   auto matcher =
       ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), &errors);
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
   EXPECT_FALSE(errors.ok());
   EXPECT_EQ(errors.status(absl::StatusCode::kInvalidArgument, "").message(),
             ": [field:matcher_tree error:no known match tree type specified]");
@@ -586,7 +618,7 @@ TEST_F(MatcherTest, MatcherListFieldMatcherEmpty) {
   ValidationErrors errors;
   auto matcher =
       ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), &errors);
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
   EXPECT_FALSE(errors.ok());
   EXPECT_EQ(
       errors.status(absl::StatusCode::kInvalidArgument, "").message(),
@@ -606,7 +638,7 @@ TEST_F(MatcherTest, MatcherListFieldUnsupportedPredicate) {
   ValidationErrors errors;
   auto matcher =
       ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), &errors);
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
   EXPECT_FALSE(errors.ok());
   EXPECT_EQ(errors.status(absl::StatusCode::kInvalidArgument, "").message(),
             ": [field:matcher_list.matchers[0].predicate error:unsupported "
@@ -627,7 +659,7 @@ TEST_F(MatcherTest, MatcherListEmptyPredicateList) {
   ValidationErrors errors;
   auto matcher =
       ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), &errors);
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
   EXPECT_FALSE(errors.ok());
   EXPECT_EQ(errors.status(absl::StatusCode::kInvalidArgument, "").message(),
             ": [field:matcher_list.matchers[0].predicate.and_matcher "
@@ -649,7 +681,7 @@ TEST_F(MatcherTest, MatcherListSinglePredicateEmpty) {
   ValidationErrors errors;
   auto matcher =
       ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), &errors);
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
   EXPECT_FALSE(errors.ok());
   EXPECT_EQ(
       errors.status(absl::StatusCode::kInvalidArgument, "").message(),
@@ -680,7 +712,7 @@ TEST_F(MatcherTest, MatcherListSinglePredicateInvalidValueMatch) {
   ValidationErrors errors;
   auto matcher =
       ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), &errors);
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
   EXPECT_FALSE(errors.ok());
   EXPECT_EQ(errors.status(absl::StatusCode::kInvalidArgument, "").message(),
             ": "
@@ -709,7 +741,7 @@ TEST_F(MatcherTest, MatcherListSinglePredicateInvalidStringMatcherRegex) {
   ValidationErrors errors;
   auto matcher =
       ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), &errors);
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
   EXPECT_FALSE(errors.ok());
   EXPECT_THAT(
       errors.status(absl::StatusCode::kInvalidArgument, "").message(),
@@ -739,7 +771,7 @@ TEST_F(MatcherTest, MatcherListSinglePredicateInvalidInput) {
   ValidationErrors errors;
   auto matcher =
       ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), &errors);
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
   EXPECT_FALSE(errors.ok());
   EXPECT_EQ(errors.status(absl::StatusCode::kInvalidArgument, "").message(),
             ": "
@@ -768,7 +800,7 @@ TEST_F(MatcherTest, MatcherListSinglePredicateInputTypeNotInRegistry) {
   ValidationErrors errors;
   auto matcher =
       ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), &errors);
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
   EXPECT_FALSE(errors.ok());
   EXPECT_EQ(errors.status(absl::StatusCode::kInvalidArgument, "").message(),
             ": "
@@ -801,7 +833,7 @@ TEST_F(MatcherTest, MatcherListSinglePredicateInputTypedStruct) {
   ValidationErrors errors;
   auto matcher =
       ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), &errors);
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
   EXPECT_FALSE(errors.ok());
   EXPECT_EQ(
       errors.status(absl::StatusCode::kInvalidArgument, "").message(),
@@ -831,7 +863,7 @@ TEST_F(MatcherTest, MatcherListSinglePredicateInputContextDifferent) {
   ValidationErrors errors;
   auto matcher = ParseXdsMatcher(
       decode_context_, ConvertToUpb(matcher_proto), action_registry_,
-      GRPC_UNIQUE_TYPE_NAME_HERE("invalid"), &errors);
+      GRPC_UNIQUE_TYPE_NAME_HERE("invalid"), true, &errors);
   EXPECT_FALSE(errors.ok());
   EXPECT_EQ(errors.status(absl::StatusCode::kInvalidArgument, "").message(),
             ": "
@@ -864,7 +896,7 @@ TEST_F(MatcherTest, MatcherListSinglePredicateActionTypeStruct) {
   ValidationErrors errors;
   auto matcher =
       ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), &errors);
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
   EXPECT_FALSE(errors.ok());
   EXPECT_EQ(errors.status(absl::StatusCode::kInvalidArgument, "").message(),
             ": "
@@ -893,7 +925,7 @@ TEST_F(MatcherTest, MatcherListSinglePredicateActionUnsupported) {
   ValidationErrors errors;
   auto matcher =
       ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), &errors);
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
   EXPECT_FALSE(errors.ok());
   EXPECT_EQ(
       errors.status(absl::StatusCode::kInvalidArgument, "").message(),
@@ -919,7 +951,7 @@ TEST_F(MatcherTest, MatcherListSinglePredicateOnMatchEmpty) {
   ValidationErrors errors;
   auto matcher =
       ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), &errors);
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
   EXPECT_FALSE(errors.ok());
   EXPECT_EQ(errors.status(absl::StatusCode::kInvalidArgument, "").message(),
             ": [field:matcher_list.matchers[0].on_match error:One of action or "
@@ -943,7 +975,7 @@ TEST_F(MatcherTest, MatcherListSinglePredicateOnMatchEmptyMatcher) {
   ValidationErrors errors;
   auto matcher =
       ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), &errors);
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
   EXPECT_FALSE(errors.ok());
   EXPECT_EQ(errors.status(absl::StatusCode::kInvalidArgument, "").message(),
             ": [field:matcher_list.matchers[0].on_match.matcher error:no "
@@ -967,7 +999,7 @@ TEST_F(MatcherTest, MatcherListSinglePredicateOnMatchEmptyAction) {
   ValidationErrors errors;
   auto matcher =
       ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), &errors);
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
   EXPECT_FALSE(errors.ok());
   EXPECT_EQ(errors.status(absl::StatusCode::kInvalidArgument, "").message(),
             ": [field:matcher_list.matchers[0].on_match.action error:field not "
@@ -996,11 +1028,88 @@ TEST_F(MatcherTest, MatcherOnNoMatchError) {
   ValidationErrors errors;
   auto matcher =
       ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
-                      action_registry_, RpcMatchContext::Type(), &errors);
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
   EXPECT_FALSE(errors.ok());
   EXPECT_EQ(
       errors.status(absl::StatusCode::kInvalidArgument, "").message(),
       ": [field:on_no_match error:One of action or matcher should be present]");
+}
+
+TEST_F(MatcherTest, KeepMatchingWhenNotAllowed) {
+  Matcher matcher_proto;
+  auto* field_matcher = matcher_proto.mutable_matcher_list()->add_matchers();
+  auto* predicate =
+      field_matcher->mutable_predicate()->mutable_single_predicate();
+  auto* input = predicate->mutable_input();
+  input->set_name("foo");
+  HttpRequestHeaderMatchInput http_request_header_match_input;
+  http_request_header_match_input.set_header_name("foo");
+  input->mutable_typed_config()->PackFrom(http_request_header_match_input);
+  predicate->mutable_value_match()->set_exact("bar");
+  auto* on_match = field_matcher->mutable_on_match();
+  on_match->set_keep_matching(true);
+  auto* action = on_match->mutable_action();
+  action->set_name("type.googleapis.com/google.protobuf.StringValue");
+  StringValue string_value;
+  string_value.set_value("foobar");
+  action->mutable_typed_config()->PackFrom(string_value);
+  ValidationErrors errors;
+  auto matcher = ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
+                                 action_registry_, RpcMatchContext::Type(),
+                                 /*allow_keep_matching=*/false, &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(errors.status(absl::StatusCode::kInvalidArgument, "").message(),
+            ": [field:matcher_list.matchers[0].on_match.keep_matching "
+            "error:not supported in this component]");
+}
+
+TEST_F(MatcherTest, ExceedsMaxDepth) {
+  // Construct proto.
+  Matcher matcher_proto;
+  auto* tree = matcher_proto.mutable_matcher_tree();
+  auto* input = tree->mutable_input();
+  input->set_name("my-input");
+  HttpRequestHeaderMatchInput header_match_input;
+  header_match_input.set_header_name("my-header");
+  input->mutable_typed_config()->PackFrom(header_match_input);
+  auto* map = tree->mutable_exact_match_map()->mutable_map();
+  auto* on_match = &(*map)["match1"];
+  for (size_t i = 0; i < 16; ++i) {
+    Matcher* next_matcher_proto = on_match->mutable_matcher();
+    tree = next_matcher_proto->mutable_matcher_tree();
+    *tree->mutable_input() = *input;
+    map = tree->mutable_exact_match_map()->mutable_map();
+    on_match = &(*map)["match1"];
+  }
+  auto* action1 = on_match->mutable_action();
+  action1->set_name("type.googleapis.com/google.protobuf.StringValue");
+  StringValue string_value1;
+  string_value1.set_value("matched-1");
+  action1->mutable_typed_config()->PackFrom(string_value1);
+  // Try parsing.
+  ValidationErrors errors;
+  auto matcher =
+      ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
+                      action_registry_, RpcMatchContext::Type(), true, &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(errors.status(absl::StatusCode::kInvalidArgument, "").message(),
+            ": [field:matcher_tree.exact_match_map.on_match.matcher."
+            "matcher_tree.exact_match_map.on_match.matcher."
+            "matcher_tree.exact_match_map.on_match.matcher."
+            "matcher_tree.exact_match_map.on_match.matcher."
+            "matcher_tree.exact_match_map.on_match.matcher."
+            "matcher_tree.exact_match_map.on_match.matcher."
+            "matcher_tree.exact_match_map.on_match.matcher."
+            "matcher_tree.exact_match_map.on_match.matcher."
+            "matcher_tree.exact_match_map.on_match.matcher."
+            "matcher_tree.exact_match_map.on_match.matcher."
+            "matcher_tree.exact_match_map.on_match.matcher."
+            "matcher_tree.exact_match_map.on_match.matcher."
+            "matcher_tree.exact_match_map.on_match.matcher."
+            "matcher_tree.exact_match_map.on_match.matcher."
+            "matcher_tree.exact_match_map.on_match.matcher."
+            "matcher_tree.exact_match_map.on_match.matcher "
+            "error:matcher tree exceeds max recursion depth]");
 }
 
 }  // namespace

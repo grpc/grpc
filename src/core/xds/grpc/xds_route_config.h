@@ -40,8 +40,17 @@ namespace grpc_core {
 struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
   struct FilterConfigOverride {
     absl::string_view config_proto_type;
-    XdsHttpFilterImpl::XdsFilterConfig old_config;
-    RefCountedPtr<const FilterConfig> config;
+    Json config;
+    RefCountedPtr<const FilterConfig> filter_config;
+
+    bool operator==(const FilterConfigOverride& other) const {
+      if (config_proto_type != other.config_proto_type) return false;
+      if (config != other.config) return false;
+      if (filter_config == nullptr) return other.filter_config != nullptr;
+      if (other.filter_config == nullptr) return false;
+      return *filter_config == *other.filter_config;
+    }
+    std::string ToString() const;
   };
   using TypedPerFilterConfig = std::map<std::string, FilterConfigOverride>;
 
@@ -140,7 +149,10 @@ struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
         uint32_t weight;
         TypedPerFilterConfig typed_per_filter_config;
 
-        bool operator==(const ClusterWeight& other) const;
+        bool operator==(const ClusterWeight& other) const {
+          return name == other.name && weight == other.weight &&
+                 typed_per_filter_config == other.typed_per_filter_config;
+        }
         std::string ToString() const;
       };
 
@@ -187,7 +199,10 @@ struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
     std::variant<UnknownAction, RouteAction, NonForwardingAction> action;
     TypedPerFilterConfig typed_per_filter_config;
 
-    bool operator==(const Route& other) const;
+    bool operator==(const Route& other) const {
+      return matchers == other.matchers && action == other.action &&
+             typed_per_filter_config == other.typed_per_filter_config;
+    }
     std::string ToString() const;
   };
 
@@ -196,7 +211,10 @@ struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
     std::vector<Route> routes;
     TypedPerFilterConfig typed_per_filter_config;
 
-    bool operator==(const VirtualHost& other) const;
+    bool operator==(const VirtualHost& other) const {
+      return domains == other.domains && routes == other.routes &&
+             typed_per_filter_config == other.typed_per_filter_config;
+    }
     std::string ToString() const;
   };
 

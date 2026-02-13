@@ -30,11 +30,20 @@
 namespace grpc_core {
 
 std::string CompositeFilter::ExecuteFilterAction::ToString() const {
-  std::vector<std::string> parts;
+  std::vector<std::string> filters;
   for (const auto& [_, config] : filter_chain_) {
-    parts.push_back(config == nullptr ? "<null>" : config->ToString());
+    filters.push_back(
+        config == nullptr
+            ? "<null>"
+            : absl::StrCat(config->type().name(), "=", config->ToString()));
   }
-  return absl::StrCat("{", absl::StrJoin(parts, ", "), "}");
+  std::vector<std::string> parts;
+  parts.push_back(
+      absl::StrCat("filter_chain=[", absl::StrJoin(filters, ", "), "]"));
+  if (sample_per_million_ < 1000000) {
+    parts.push_back(absl::StrCat("sample_per_million=", sample_per_million_));
+  }
+  return absl::StrCat("ExecuteFilterAction{", absl::StrJoin(parts, ", "), "}");
 }
 
 const grpc_channel_filter CompositeFilter::kFilterVtable =
@@ -90,7 +99,31 @@ CompositeFilter::CompositeFilter(const ChannelArgs& args,
     InterceptionChainBuilderWrapper builder_wrapper(builder);
     for (const auto& [filter_impl, filter_config] :
          execute_filter_action.filter_chain()) {
+      // TODO(roth): Currently, this code assumes that it is always
+      // running on the client side, so we'll need to remove this
+      // assumption in order to make this filter work on the server
+      // side.  There are two ways we might do this:
+      // 1. If we finish the v3 migration before we need to support this
+      //    filter on the server side, then any filter impl will
+      //    automatically work fine on both the client and server side,
+      //    in which case this problem will go away, and we can remove
+      //    the IsSupportedOnClients() and IsSupportedOnServers()
+      //    methods from the xDS HTTP filter API.
+      // 2. If we need to support this filter on the server side before
+      //    we finish the v3 migration, then we'll need to add an
+      //    is_client parameter to the xDS HTTP filter AddFilter()
+      //    method, and use that to do this initialization differently
+      //    on client side vs. server side.
+      if (!filter_impl->IsSupportedOnClients()) {
+        filter_chain_map_[&execute_filter_action] =
+            absl::UnavailableError(absl::StrCat(
+                filter_impl->ConfigProtoName(),
+                " filter not supported on clients"));
+        return;
+      }
       filter_impl->AddFilter(builder_wrapper, filter_config);
+      // FIXME: need to call filter_impl->UpdateBlackboard() here, but
+      // we have only the new blackboard, not the new one!
     }
     filter_chain_map_[&execute_filter_action] =
         builder.Build(wrapped_destination());

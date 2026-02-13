@@ -1052,7 +1052,7 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
     // at config validation time in the XdsApi code.
     const XdsHttpFilterImpl* filter_impl =
         http_filter_registry.GetFilterForTopLevelType(
-            http_filter.config.config_proto_type_name);
+            http_filter.config_proto_type);
     GRPC_CHECK_NE(filter_impl, nullptr);
     // Some filters like the router filter are no-op filters and do not have
     // an implementation.
@@ -1120,7 +1120,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
         for (const auto& http_filter : hcm.http_filters) {
           const XdsHttpFilterImpl* filter_impl =
               http_filter_registry.GetFilterForTopLevelType(
-                  http_filter.config.config_proto_type_name);
+                  http_filter.config_proto_type);
           GRPC_CHECK_NE(filter_impl,
                         nullptr);  // Enforced in config validation.
           filter_impl->UpdateBlackboard(http_filter.config, old_blackboard,

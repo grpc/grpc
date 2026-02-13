@@ -148,6 +148,7 @@ libs:
   - include/grpc/compression.h
   - include/grpc/create_channel_from_endpoint.h
   - include/grpc/credentials.h
+  - include/grpc/credentials_cpp.h
   - include/grpc/event_engine/endpoint_config.h
   - include/grpc/event_engine/event_engine.h
   - include/grpc/event_engine/extensible.h
@@ -245,6 +246,7 @@ libs:
   - src/core/client_channel/subchannel_interface_internal.h
   - src/core/client_channel/subchannel_pool_interface.h
   - src/core/client_channel/subchannel_stream_client.h
+  - src/core/client_channel/subchannel_stream_limiter.h
   - src/core/config/core_configuration.h
   - src/core/credentials/call/call_credentials.h
   - src/core/credentials/call/call_creds_registry.h
@@ -370,6 +372,10 @@ libs:
   - src/core/ext/transport/chttp2/transport/write_size_policy.h
   - src/core/ext/transport/inproc/inproc_transport.h
   - src/core/ext/transport/inproc/legacy_inproc_transport.h
+  - src/core/ext/upb-gen/cel/expr/checked.upb.h
+  - src/core/ext/upb-gen/cel/expr/checked.upb_minitable.h
+  - src/core/ext/upb-gen/cel/expr/syntax.upb.h
+  - src/core/ext/upb-gen/cel/expr/syntax.upb_minitable.h
   - src/core/ext/upb-gen/envoy/admin/v3/certs.upb.h
   - src/core/ext/upb-gen/envoy/admin/v3/certs.upb_minitable.h
   - src/core/ext/upb-gen/envoy/admin/v3/clusters.upb.h
@@ -410,12 +416,16 @@ libs:
   - src/core/ext/upb-gen/envoy/config/cluster/v3/outlier_detection.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/common/matcher/v3/matcher.upb.h
   - src/core/ext/upb-gen/envoy/config/common/matcher/v3/matcher.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb.h
+  - src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/address.upb.h
   - src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb.h
   - src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/base.upb.h
   - src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/cel.upb.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/cel.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb.h
   - src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/event_service_config.upb.h
@@ -522,6 +532,12 @@ libs:
   - src/core/ext/upb-gen/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upb_minitable.h
   - src/core/ext/upb-gen/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h
   - src/core/ext/upb-gen/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.upb.h
+  - src/core/ext/upb-gen/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/tls/v3/tls_credentials.upb.h
+  - src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/tls/v3/tls_credentials.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/xds/v3/xds_credentials.upb.h
+  - src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/xds/v3/xds_credentials.upb_minitable.h
   - src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.h
   - src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb_minitable.h
   - src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb.h
@@ -720,6 +736,8 @@ libs:
   - src/core/ext/upb-gen/xds/type/v3/range.upb_minitable.h
   - src/core/ext/upb-gen/xds/type/v3/typed_struct.upb.h
   - src/core/ext/upb-gen/xds/type/v3/typed_struct.upb_minitable.h
+  - src/core/ext/upbdefs-gen/cel/expr/checked.upbdefs.h
+  - src/core/ext/upbdefs-gen/cel/expr/syntax.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/admin/v3/certs.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/admin/v3/clusters.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/admin/v3/config_dump.upbdefs.h
@@ -740,9 +758,11 @@ libs:
   - src/core/ext/upbdefs-gen/envoy/config/cluster/v3/filter.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/cluster/v3/outlier_detection.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/common/matcher/v3/matcher.upbdefs.h
+  - src/core/ext/upbdefs-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/address.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/backoff.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/base.upbdefs.h
+  - src/core/ext/upbdefs-gen/envoy/config/core/v3/cel.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/config_source.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/event_service_config.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/extension.upbdefs.h
@@ -891,7 +911,7 @@ libs:
   - src/core/handshaker/handshaker.h
   - src/core/handshaker/handshaker_factory.h
   - src/core/handshaker/handshaker_registry.h
-  - src/core/handshaker/http_connect/http_connect_handshaker.h
+  - src/core/handshaker/http_connect/http_connect_client_handshaker.h
   - src/core/handshaker/http_connect/http_proxy_mapper.h
   - src/core/handshaker/http_connect/xds_http_proxy_mapper.h
   - src/core/handshaker/proxy_mapper.h
@@ -1302,6 +1322,7 @@ libs:
   - src/core/util/work_serializer.h
   - src/core/util/xxhash_inline.h
   - src/core/xds/grpc/certificate_provider_store.h
+  - src/core/xds/grpc/certificate_provider_store_interface.h
   - src/core/xds/grpc/file_watcher_certificate_provider_factory.h
   - src/core/xds/grpc/xds_audit_logger_registry.h
   - src/core/xds/grpc/xds_bootstrap_grpc.h
@@ -1396,6 +1417,7 @@ libs:
   - src/core/client_channel/subchannel.cc
   - src/core/client_channel/subchannel_pool_interface.cc
   - src/core/client_channel/subchannel_stream_client.cc
+  - src/core/client_channel/subchannel_stream_limiter.cc
   - src/core/config/core_configuration.cc
   - src/core/credentials/call/call_creds_registry_init.cc
   - src/core/credentials/call/call_creds_util.cc
@@ -1509,7 +1531,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/ping_callbacks.cc
   - src/core/ext/transport/chttp2/transport/ping_promise.cc
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
-  - src/core/ext/transport/chttp2/transport/security_frame.cc
   - src/core/ext/transport/chttp2/transport/stream_lists.cc
   - src/core/ext/transport/chttp2/transport/transport_common.cc
   - src/core/ext/transport/chttp2/transport/varint.cc
@@ -1517,6 +1538,8 @@ libs:
   - src/core/ext/transport/chttp2/transport/writing.cc
   - src/core/ext/transport/inproc/inproc_transport.cc
   - src/core/ext/transport/inproc/legacy_inproc_transport.cc
+  - src/core/ext/upb-gen/cel/expr/checked.upb_minitable.c
+  - src/core/ext/upb-gen/cel/expr/syntax.upb_minitable.c
   - src/core/ext/upb-gen/envoy/admin/v3/certs.upb_minitable.c
   - src/core/ext/upb-gen/envoy/admin/v3/clusters.upb_minitable.c
   - src/core/ext/upb-gen/envoy/admin/v3/config_dump.upb_minitable.c
@@ -1537,9 +1560,11 @@ libs:
   - src/core/ext/upb-gen/envoy/config/cluster/v3/filter.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/cluster/v3/outlier_detection.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/common/matcher/v3/matcher.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/core/v3/cel.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/event_service_config.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/extension.upb_minitable.c
@@ -1593,6 +1618,9 @@ libs:
   - src/core/ext/upb-gen/envoy/extensions/filters/http/router/v3/router.upb_minitable.c
   - src/core/ext/upb-gen/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upb_minitable.c
   - src/core/ext/upb-gen/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/tls/v3/tls_credentials.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/xds/v3/xds_credentials.upb_minitable.c
   - src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb_minitable.c
   - src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.upb_minitable.c
   - src/core/ext/upb-gen/envoy/extensions/load_balancing_policies/common/v3/common.upb_minitable.c
@@ -1692,6 +1720,8 @@ libs:
   - src/core/ext/upb-gen/xds/type/v3/cel.upb_minitable.c
   - src/core/ext/upb-gen/xds/type/v3/range.upb_minitable.c
   - src/core/ext/upb-gen/xds/type/v3/typed_struct.upb_minitable.c
+  - src/core/ext/upbdefs-gen/cel/expr/checked.upbdefs.c
+  - src/core/ext/upbdefs-gen/cel/expr/syntax.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/admin/v3/certs.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/admin/v3/clusters.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/admin/v3/config_dump.upbdefs.c
@@ -1712,9 +1742,11 @@ libs:
   - src/core/ext/upbdefs-gen/envoy/config/cluster/v3/filter.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/cluster/v3/outlier_detection.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/common/matcher/v3/matcher.upbdefs.c
+  - src/core/ext/upbdefs-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/address.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/backoff.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/base.upbdefs.c
+  - src/core/ext/upbdefs-gen/envoy/config/core/v3/cel.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/config_source.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/event_service_config.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/extension.upbdefs.c
@@ -1862,7 +1894,7 @@ libs:
   - src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   - src/core/handshaker/handshaker.cc
   - src/core/handshaker/handshaker_registry.cc
-  - src/core/handshaker/http_connect/http_connect_handshaker.cc
+  - src/core/handshaker/http_connect/http_connect_client_handshaker.cc
   - src/core/handshaker/http_connect/http_proxy_mapper.cc
   - src/core/handshaker/http_connect/xds_http_proxy_mapper.cc
   - src/core/handshaker/proxy_mapper_registry.cc
@@ -2374,6 +2406,7 @@ libs:
   - include/grpc/compression.h
   - include/grpc/create_channel_from_endpoint.h
   - include/grpc/credentials.h
+  - include/grpc/credentials_cpp.h
   - include/grpc/event_engine/endpoint_config.h
   - include/grpc/event_engine/event_engine.h
   - include/grpc/event_engine/extensible.h
@@ -2468,6 +2501,7 @@ libs:
   - src/core/client_channel/subchannel_interface_internal.h
   - src/core/client_channel/subchannel_pool_interface.h
   - src/core/client_channel/subchannel_stream_client.h
+  - src/core/client_channel/subchannel_stream_limiter.h
   - src/core/config/core_configuration.h
   - src/core/credentials/call/call_credentials.h
   - src/core/credentials/call/call_creds_registry.h
@@ -2555,8 +2589,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/write_size_policy.h
   - src/core/ext/transport/inproc/inproc_transport.h
   - src/core/ext/transport/inproc/legacy_inproc_transport.h
-  - src/core/ext/upb-gen/google/api/annotations.upb.h
-  - src/core/ext/upb-gen/google/api/annotations.upb_minitable.h
   - src/core/ext/upb-gen/google/api/http.upb.h
   - src/core/ext/upb-gen/google/api/http.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
@@ -2617,7 +2649,7 @@ libs:
   - src/core/handshaker/handshaker.h
   - src/core/handshaker/handshaker_factory.h
   - src/core/handshaker/handshaker_registry.h
-  - src/core/handshaker/http_connect/http_connect_handshaker.h
+  - src/core/handshaker/http_connect/http_connect_client_handshaker.h
   - src/core/handshaker/http_connect/http_proxy_mapper.h
   - src/core/handshaker/proxy_mapper.h
   - src/core/handshaker/proxy_mapper_registry.h
@@ -2983,6 +3015,7 @@ libs:
   - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
   - src/core/util/xxhash_inline.h
+  - src/core/xds/grpc/certificate_provider_store_interface.h
   - third_party/upb/upb/generated_code_support.h
   - third_party/xxhash/xxhash.h
   src:
@@ -3027,6 +3060,7 @@ libs:
   - src/core/client_channel/subchannel.cc
   - src/core/client_channel/subchannel_pool_interface.cc
   - src/core/client_channel/subchannel_stream_client.cc
+  - src/core/client_channel/subchannel_stream_limiter.cc
   - src/core/config/core_configuration.cc
   - src/core/credentials/call/call_creds_util.cc
   - src/core/credentials/call/composite/composite_call_credentials.cc
@@ -3098,7 +3132,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/ping_callbacks.cc
   - src/core/ext/transport/chttp2/transport/ping_promise.cc
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
-  - src/core/ext/transport/chttp2/transport/security_frame.cc
   - src/core/ext/transport/chttp2/transport/stream_lists.cc
   - src/core/ext/transport/chttp2/transport/transport_common.cc
   - src/core/ext/transport/chttp2/transport/varint.cc
@@ -3106,7 +3139,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/writing.cc
   - src/core/ext/transport/inproc/inproc_transport.cc
   - src/core/ext/transport/inproc/legacy_inproc_transport.cc
-  - src/core/ext/upb-gen/google/api/annotations.upb_minitable.c
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
@@ -3144,7 +3176,7 @@ libs:
   - src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   - src/core/handshaker/handshaker.cc
   - src/core/handshaker/handshaker_registry.cc
-  - src/core/handshaker/http_connect/http_connect_handshaker.cc
+  - src/core/handshaker/http_connect/http_connect_client_handshaker.cc
   - src/core/handshaker/http_connect/http_proxy_mapper.cc
   - src/core/handshaker/proxy_mapper_registry.cc
   - src/core/handshaker/security/legacy_secure_endpoint.cc
@@ -3904,7 +3936,6 @@ libs:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -3938,7 +3969,6 @@ libs:
   - include/grpc++/impl/codegen/async_unary_call.h
   - include/grpc++/impl/codegen/byte_buffer.h
   - include/grpc++/impl/codegen/call.h
-  - include/grpc++/impl/codegen/call_hook.h
   - include/grpc++/impl/codegen/channel_interface.h
   - include/grpc++/impl/codegen/client_context.h
   - include/grpc++/impl/codegen/client_unary_call.h
@@ -4010,7 +4040,6 @@ libs:
   - include/grpcpp/grpcpp.h
   - include/grpcpp/health_check_service_interface.h
   - include/grpcpp/impl/call.h
-  - include/grpcpp/impl/call_hook.h
   - include/grpcpp/impl/call_op_set.h
   - include/grpcpp/impl/call_op_set_interface.h
   - include/grpcpp/impl/channel_argument_option.h
@@ -4021,7 +4050,6 @@ libs:
   - include/grpcpp/impl/codegen/async_unary_call.h
   - include/grpcpp/impl/codegen/byte_buffer.h
   - include/grpcpp/impl/codegen/call.h
-  - include/grpcpp/impl/codegen/call_hook.h
   - include/grpcpp/impl/codegen/call_op_set.h
   - include/grpcpp/impl/codegen/call_op_set_interface.h
   - include/grpcpp/impl/codegen/callback_common.h
@@ -4321,7 +4349,6 @@ libs:
   - include/grpc++/impl/codegen/async_unary_call.h
   - include/grpc++/impl/codegen/byte_buffer.h
   - include/grpc++/impl/codegen/call.h
-  - include/grpc++/impl/codegen/call_hook.h
   - include/grpc++/impl/codegen/channel_interface.h
   - include/grpc++/impl/codegen/client_context.h
   - include/grpc++/impl/codegen/client_unary_call.h
@@ -4393,7 +4420,6 @@ libs:
   - include/grpcpp/grpcpp.h
   - include/grpcpp/health_check_service_interface.h
   - include/grpcpp/impl/call.h
-  - include/grpcpp/impl/call_hook.h
   - include/grpcpp/impl/call_op_set.h
   - include/grpcpp/impl/call_op_set_interface.h
   - include/grpcpp/impl/channel_argument_option.h
@@ -4404,7 +4430,6 @@ libs:
   - include/grpcpp/impl/codegen/async_unary_call.h
   - include/grpcpp/impl/codegen/byte_buffer.h
   - include/grpcpp/impl/codegen/call.h
-  - include/grpcpp/impl/codegen/call_hook.h
   - include/grpcpp/impl/codegen/call_op_set.h
   - include/grpcpp/impl/codegen/call_op_set_interface.h
   - include/grpcpp/impl/codegen/callback_common.h
@@ -4581,6 +4606,7 @@ libs:
   - include/grpc/compression.h
   - include/grpc/create_channel_from_endpoint.h
   - include/grpc/credentials.h
+  - include/grpc/credentials_cpp.h
   - include/grpc/event_engine/endpoint_config.h
   - include/grpc/event_engine/event_engine.h
   - include/grpc/event_engine/extensible.h
@@ -4983,6 +5009,7 @@ libs:
   - src/core/util/if_list.h
   - src/core/util/json/json.h
   - src/core/util/json/json_args.h
+  - src/core/util/json/json_object_loader.h
   - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
@@ -5015,6 +5042,7 @@ libs:
   - src/core/util/validation_errors.h
   - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
+  - src/core/xds/grpc/certificate_provider_store_interface.h
   - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/call/call_arena_allocator.cc
@@ -5303,6 +5331,7 @@ libs:
   - src/core/util/grpc_check.cc
   - src/core/util/grpc_if_nametoindex_posix.cc
   - src/core/util/grpc_if_nametoindex_unsupported.cc
+  - src/core/util/json/json_object_loader.cc
   - src/core/util/json/json_reader.cc
   - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
@@ -5736,6 +5765,8 @@ targets:
   - src/cpp/server/csds/csds.h
   - third_party/protoc-gen-validate/validate/validate.h
   src:
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/admin/v3/certs.proto
   - third_party/envoy-api/envoy/admin/v3/clusters.proto
   - third_party/envoy-api/envoy/admin/v3/config_dump.proto
@@ -5756,9 +5787,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
   - third_party/envoy-api/envoy/config/common/matcher/v3/matcher.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -6301,14 +6334,14 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/cpp/end2end/end2end_test_utils.h
   src:
   - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -6812,12 +6845,26 @@ targets:
   language: c++
   headers:
   - test/core/test_util/test_call_creds.h
+  - third_party/protoc-gen-validate/validate/validate.h
   src:
+  - third_party/envoy-api/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/api/httpbody.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/udpa/annotations/migrate.proto
+  - third_party/xds/udpa/annotations/security.proto
+  - third_party/xds/udpa/annotations/sensitive.proto
+  - third_party/xds/udpa/annotations/status.proto
+  - third_party/xds/udpa/annotations/versioning.proto
   - test/core/credentials/call/call_creds_registry_test.cc
   - test/core/test_util/test_call_creds.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
+  uses_polling: false
 - name: call_filters_test
   gtest: true
   build: test
@@ -6885,8 +6932,10 @@ targets:
   - src/core/lib/iomgr/sockaddr_windows.h
   - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/promise/activity.h
+  - src/core/lib/promise/all_ok.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/seq_state.h
@@ -7626,6 +7675,7 @@ targets:
   - src/core/util/if_list.h
   - src/core/util/json/json.h
   - src/core/util/json/json_args.h
+  - src/core/util/json/json_object_loader.h
   - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
@@ -7657,6 +7707,7 @@ targets:
   - src/core/util/validation_errors.h
   - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
+  - src/core/xds/grpc/certificate_provider_store_interface.h
   - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/call/call_arena_allocator.cc
@@ -7911,6 +7962,7 @@ targets:
   - src/core/util/grpc_check.cc
   - src/core/util/grpc_if_nametoindex_posix.cc
   - src/core/util/grpc_if_nametoindex_unsupported.cc
+  - src/core/util/json/json_object_loader.cc
   - src/core/util/json/json_reader.cc
   - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
@@ -8187,16 +8239,24 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/upb-gen/cel/expr/checked.upb.h
+  - src/core/ext/upb-gen/cel/expr/checked.upb_minitable.h
+  - src/core/ext/upb-gen/cel/expr/syntax.upb.h
+  - src/core/ext/upb-gen/cel/expr/syntax.upb_minitable.h
   - src/core/ext/upb-gen/envoy/annotations/deprecation.upb.h
   - src/core/ext/upb-gen/envoy/annotations/deprecation.upb_minitable.h
   - src/core/ext/upb-gen/envoy/annotations/resource.upb.h
   - src/core/ext/upb-gen/envoy/annotations/resource.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb.h
+  - src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/address.upb.h
   - src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb.h
   - src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/base.upb.h
   - src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/cel.upb.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/cel.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb.h
   - src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/event_service_config.upb.h
@@ -8375,11 +8435,15 @@ targets:
   - src/core/lib/security/authorization/mock_cel/evaluator_core.h
   - src/core/lib/security/authorization/mock_cel/flat_expr_builder.h
   src:
+  - src/core/ext/upb-gen/cel/expr/checked.upb_minitable.c
+  - src/core/ext/upb-gen/cel/expr/syntax.upb_minitable.c
   - src/core/ext/upb-gen/envoy/annotations/deprecation.upb_minitable.c
   - src/core/ext/upb-gen/envoy/annotations/resource.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/common/mutation_rules/v3/mutation_rules.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/core/v3/cel.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/event_service_config.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/extension.upb_minitable.c
@@ -8542,7 +8606,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -8579,12 +8642,89 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - third_party/protoc-gen-validate/validate/validate.h
   src:
+  - third_party/envoy-api/envoy/annotations/deprecation.proto
+  - third_party/envoy-api/envoy/annotations/resource.proto
+  - third_party/envoy-api/envoy/config/core/v3/address.proto
+  - third_party/envoy-api/envoy/config/core/v3/backoff.proto
+  - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
+  - third_party/envoy-api/envoy/config/core/v3/config_source.proto
+  - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
+  - third_party/envoy-api/envoy/config/core/v3/extension.proto
+  - third_party/envoy-api/envoy/config/core/v3/grpc_method_list.proto
+  - third_party/envoy-api/envoy/config/core/v3/grpc_service.proto
+  - third_party/envoy-api/envoy/config/core/v3/health_check.proto
+  - third_party/envoy-api/envoy/config/core/v3/http_service.proto
+  - third_party/envoy-api/envoy/config/core/v3/http_uri.proto
+  - third_party/envoy-api/envoy/config/core/v3/protocol.proto
+  - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
+  - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
+  - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
+  - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
+  - third_party/envoy-api/envoy/extensions/grpc_service/channel_credentials/google_default/v3/google_default_credentials.proto
+  - third_party/envoy-api/envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.proto
+  - third_party/envoy-api/envoy/extensions/grpc_service/channel_credentials/tls/v3/tls_credentials.proto
+  - third_party/envoy-api/envoy/extensions/grpc_service/channel_credentials/xds/v3/xds_credentials.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/cert.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/common.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/secret.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls.proto
+  - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/node.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/number.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/path.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/regex.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/status_code_input.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/string.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/struct.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/value.proto
+  - third_party/envoy-api/envoy/type/v3/hash_policy.proto
+  - third_party/envoy-api/envoy/type/v3/http.proto
+  - third_party/envoy-api/envoy/type/v3/http_status.proto
+  - third_party/envoy-api/envoy/type/v3/percent.proto
+  - third_party/envoy-api/envoy/type/v3/range.proto
+  - third_party/envoy-api/envoy/type/v3/ratelimit_strategy.proto
+  - third_party/envoy-api/envoy/type/v3/ratelimit_unit.proto
+  - third_party/envoy-api/envoy/type/v3/semantic_version.proto
+  - third_party/envoy-api/envoy/type/v3/token_bucket.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/api/httpbody.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/udpa/annotations/migrate.proto
+  - third_party/xds/udpa/annotations/security.proto
+  - third_party/xds/udpa/annotations/sensitive.proto
+  - third_party/xds/udpa/annotations/status.proto
+  - third_party/xds/udpa/annotations/versioning.proto
+  - third_party/xds/xds/annotations/v3/migrate.proto
+  - third_party/xds/xds/annotations/v3/security.proto
+  - third_party/xds/xds/annotations/v3/sensitive.proto
+  - third_party/xds/xds/annotations/v3/status.proto
+  - third_party/xds/xds/annotations/v3/versioning.proto
+  - third_party/xds/xds/core/v3/authority.proto
+  - third_party/xds/xds/core/v3/cidr.proto
+  - third_party/xds/xds/core/v3/collection_entry.proto
+  - third_party/xds/xds/core/v3/context_params.proto
+  - third_party/xds/xds/core/v3/extension.proto
+  - third_party/xds/xds/core/v3/resource.proto
+  - third_party/xds/xds/core/v3/resource_locator.proto
+  - third_party/xds/xds/core/v3/resource_name.proto
   - test/core/credentials/transport/channel_creds_registry_test.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
+  uses_polling: false
 - name: channel_init_test
   gtest: true
   build: test
@@ -8649,12 +8789,12 @@ targets:
   language: c++
   headers:
   - test/core/event_engine/event_engine_test_utils.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -8838,12 +8978,12 @@ targets:
   language: c++
   headers:
   - test/core/event_engine/event_engine_test_utils.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -9124,7 +9264,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -9186,13 +9325,13 @@ targets:
   build: test
   language: c++
   headers:
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/interceptors_util.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -9235,7 +9374,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -9255,13 +9393,13 @@ targets:
   build: test
   language: c++
   headers:
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/interceptors_util.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -9280,17 +9418,21 @@ targets:
   headers:
   - src/cpp/server/orca/orca_service.h
   - test/core/test_util/postmortem.h
+  - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_lb_policies.h
   - test/cpp/end2end/connection_attempt_injector.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
+  - test/cpp/util/channelz_util.h
   - third_party/protoc-gen-validate/validate/validate.h
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
@@ -9301,6 +9443,7 @@ targets:
   - test/cpp/end2end/client_lb_end2end_test.cc
   - test/cpp/end2end/connection_attempt_injector.cc
   - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/util/channelz_util.cc
   deps:
   - gtest
   - grpc++_test_util
@@ -9531,7 +9674,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -9761,7 +9903,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -9809,7 +9950,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -9989,6 +10129,7 @@ targets:
   - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
   - test/core/end2end/fixtures/h2_ssl_tls_common.h
   - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_common_secure_fixtures.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/inproc_fixture.h
   - test/core/end2end/fixtures/local_util.h
@@ -10003,6 +10144,7 @@ targets:
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
+  - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -10118,6 +10260,7 @@ targets:
   - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
   - test/core/end2end/fixtures/h2_ssl_tls_common.h
   - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_common_secure_fixtures.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/inproc_fixture.h
   - test/core/end2end/fixtures/local_util.h
@@ -10132,6 +10275,7 @@ targets:
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
+  - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -10184,6 +10328,7 @@ targets:
   - test/core/end2end/tests/channelz.cc
   - test/core/end2end/tests/client_streaming.cc
   - test/core/end2end/tests/compressed_payload.cc
+  - test/core/end2end/tests/connection_scaling.cc
   - test/core/end2end/tests/connectivity.cc
   - test/core/end2end/tests/default_host.cc
   - test/core/end2end/tests/disappearing_server.cc
@@ -10335,6 +10480,7 @@ targets:
   - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
   - test/core/end2end/fixtures/h2_ssl_tls_common.h
   - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_common_secure_fixtures.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/inproc_fixture.h
   - test/core/end2end/fixtures/local_util.h
@@ -10349,6 +10495,7 @@ targets:
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
+  - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -10460,6 +10607,7 @@ targets:
   - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
   - test/core/end2end/fixtures/h2_ssl_tls_common.h
   - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_common_secure_fixtures.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/inproc_fixture.h
   - test/core/end2end/fixtures/local_util.h
@@ -10474,6 +10622,7 @@ targets:
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
+  - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -10585,6 +10734,7 @@ targets:
   - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
   - test/core/end2end/fixtures/h2_ssl_tls_common.h
   - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_common_secure_fixtures.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/inproc_fixture.h
   - test/core/end2end/fixtures/local_util.h
@@ -10599,6 +10749,7 @@ targets:
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
+  - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -10651,6 +10802,7 @@ targets:
   - test/core/end2end/tests/channelz.cc
   - test/core/end2end/tests/client_streaming.cc
   - test/core/end2end/tests/compressed_payload.cc
+  - test/core/end2end/tests/connection_scaling.cc
   - test/core/end2end/tests/connectivity.cc
   - test/core/end2end/tests/default_host.cc
   - test/core/end2end/tests/disappearing_server.cc
@@ -10798,6 +10950,7 @@ targets:
   - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
   - test/core/end2end/fixtures/h2_ssl_tls_common.h
   - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_common_secure_fixtures.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/inproc_fixture.h
   - test/core/end2end/fixtures/local_util.h
@@ -10812,6 +10965,7 @@ targets:
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
+  - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -10864,6 +11018,7 @@ targets:
   - test/core/end2end/tests/channelz.cc
   - test/core/end2end/tests/client_streaming.cc
   - test/core/end2end/tests/compressed_payload.cc
+  - test/core/end2end/tests/connection_scaling.cc
   - test/core/end2end/tests/connectivity.cc
   - test/core/end2end/tests/default_host.cc
   - test/core/end2end/tests/disappearing_server.cc
@@ -11011,6 +11166,7 @@ targets:
   - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
   - test/core/end2end/fixtures/h2_ssl_tls_common.h
   - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_common_secure_fixtures.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/inproc_fixture.h
   - test/core/end2end/fixtures/local_util.h
@@ -11025,6 +11181,7 @@ targets:
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
+  - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -11136,6 +11293,7 @@ targets:
   - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
   - test/core/end2end/fixtures/h2_ssl_tls_common.h
   - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_common_secure_fixtures.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/inproc_fixture.h
   - test/core/end2end/fixtures/local_util.h
@@ -11150,6 +11308,7 @@ targets:
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
+  - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -11202,6 +11361,7 @@ targets:
   - test/core/end2end/tests/channelz.cc
   - test/core/end2end/tests/client_streaming.cc
   - test/core/end2end/tests/compressed_payload.cc
+  - test/core/end2end/tests/connection_scaling.cc
   - test/core/end2end/tests/connectivity.cc
   - test/core/end2end/tests/default_host.cc
   - test/core/end2end/tests/disappearing_server.cc
@@ -11349,6 +11509,7 @@ targets:
   - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
   - test/core/end2end/fixtures/h2_ssl_tls_common.h
   - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_common_secure_fixtures.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/inproc_fixture.h
   - test/core/end2end/fixtures/local_util.h
@@ -11363,6 +11524,7 @@ targets:
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
+  - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -11474,6 +11636,7 @@ targets:
   - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
   - test/core/end2end/fixtures/h2_ssl_tls_common.h
   - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_common_secure_fixtures.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/inproc_fixture.h
   - test/core/end2end/fixtures/local_util.h
@@ -11488,6 +11651,7 @@ targets:
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
+  - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -11540,6 +11704,7 @@ targets:
   - test/core/end2end/tests/channelz.cc
   - test/core/end2end/tests/client_streaming.cc
   - test/core/end2end/tests/compressed_payload.cc
+  - test/core/end2end/tests/connection_scaling.cc
   - test/core/end2end/tests/connectivity.cc
   - test/core/end2end/tests/default_host.cc
   - test/core/end2end/tests/disappearing_server.cc
@@ -11687,6 +11852,7 @@ targets:
   - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
   - test/core/end2end/fixtures/h2_ssl_tls_common.h
   - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_common_secure_fixtures.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/inproc_fixture.h
   - test/core/end2end/fixtures/local_util.h
@@ -11701,6 +11867,7 @@ targets:
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
+  - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -11812,6 +11979,7 @@ targets:
   - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
   - test/core/end2end/fixtures/h2_ssl_tls_common.h
   - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_common_secure_fixtures.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/inproc_fixture.h
   - test/core/end2end/fixtures/local_util.h
@@ -11826,6 +11994,7 @@ targets:
   - test/core/test_util/fuzz_config_vars.h
   - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
+  - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -11878,6 +12047,7 @@ targets:
   - test/core/end2end/tests/channelz.cc
   - test/core/end2end/tests/client_streaming.cc
   - test/core/end2end/tests/compressed_payload.cc
+  - test/core/end2end/tests/connection_scaling.cc
   - test/core/end2end/tests/connectivity.cc
   - test/core/end2end/tests/default_host.cc
   - test/core/end2end/tests/disappearing_server.cc
@@ -11976,6 +12146,7 @@ targets:
   run: false
   language: c++
   headers:
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/interceptors_util.h
   - test/cpp/end2end/test_service_impl.h
   src:
@@ -11983,7 +12154,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -12105,7 +12275,6 @@ targets:
   headers: []
   src:
   - src/proto/grpc/testing/echo_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -12214,7 +12383,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -12858,6 +13026,7 @@ targets:
   - src/core/util/if_list.h
   - src/core/util/json/json.h
   - src/core/util/json/json_args.h
+  - src/core/util/json/json_object_loader.h
   - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
@@ -12889,6 +13058,7 @@ targets:
   - src/core/util/validation_errors.h
   - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
+  - src/core/xds/grpc/certificate_provider_store_interface.h
   - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/call/call_arena_allocator.cc
@@ -13143,6 +13313,7 @@ targets:
   - src/core/util/grpc_check.cc
   - src/core/util/grpc_if_nametoindex_posix.cc
   - src/core/util/grpc_if_nametoindex_unsupported.cc
+  - src/core/util/json/json_object_loader.cc
   - src/core/util/json/json_reader.cc
   - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
@@ -13209,7 +13380,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -14252,13 +14422,13 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/cpp/end2end/end2end_test_utils.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -14392,7 +14562,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -14628,7 +14797,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -14692,6 +14860,7 @@ targets:
   headers:
   - test/core/test_util/test_call_creds.h
   - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/lb/v1/load_balancer.proto
@@ -14699,7 +14868,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -14769,6 +14937,7 @@ targets:
   - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
   - test/core/end2end/fixtures/h2_ssl_tls_common.h
   - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_common_secure_fixtures.h
   - test/core/end2end/fixtures/http_proxy_fixture.h
   - test/core/end2end/fixtures/inproc_fixture.h
   - test/core/end2end/fixtures/local_util.h
@@ -14931,7 +15100,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -14968,7 +15136,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/transport/chttp2/hpack_encoder_test_helper.h
   src:
   - test/core/transport/chttp2/hpack_encoder_test.cc
   deps:
@@ -15034,6 +15203,28 @@ targets:
   - protobuf
   - grpc_test_util
   uses_polling: false
+- name: http2_security_frame_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/promise/poll_matcher.h
+  - test/core/test_util/postmortem.h
+  - test/core/transport/util/mock_promise_endpoint.h
+  - test/core/transport/util/transport_test.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/transport/chttp2/http2_security_frame_test.cc
+  - test/core/transport/util/mock_promise_endpoint.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  uses_polling: false
 - name: http2_server_transport_test
   gtest: true
   build: test
@@ -15042,6 +15233,8 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_server_transport.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/promise/poll_matcher.h
+  - test/core/test_util/postmortem.h
   - test/core/transport/chttp2/http2_frame_test_helper.h
   - test/core/transport/util/mock_promise_endpoint.h
   - test/core/transport/util/transport_test.h
@@ -15371,13 +15564,13 @@ targets:
   build: test
   language: c++
   headers:
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -15604,663 +15797,14 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/call/call_arena_allocator.h
-  - src/core/call/call_destination.h
-  - src/core/call/call_filters.h
-  - src/core/call/call_finalization.h
-  - src/core/call/call_spine.h
-  - src/core/call/call_state.h
-  - src/core/call/channelz_context.h
-  - src/core/call/client_call.h
-  - src/core/call/custom_metadata.h
-  - src/core/call/interception_chain.h
-  - src/core/call/message.h
-  - src/core/call/metadata.h
-  - src/core/call/metadata_batch.h
-  - src/core/call/metadata_compression_traits.h
-  - src/core/call/metadata_info.h
-  - src/core/call/parsed_metadata.h
-  - src/core/call/server_call.h
-  - src/core/call/simple_slice_based_metadata.h
-  - src/core/call/status_util.h
-  - src/core/channelz/channel_trace.h
-  - src/core/channelz/channelz.h
-  - src/core/channelz/channelz_registry.h
-  - src/core/channelz/property_list.h
-  - src/core/channelz/text_encode.h
-  - src/core/config/core_configuration.h
-  - src/core/credentials/call/call_creds_registry.h
-  - src/core/credentials/transport/alts/check_gcp_environment.h
-  - src/core/credentials/transport/alts/grpc_alts_credentials_options.h
-  - src/core/credentials/transport/channel_creds_registry.h
-  - src/core/credentials/transport/tls/certificate_provider_factory.h
-  - src/core/credentials/transport/tls/certificate_provider_registry.h
-  - src/core/ext/transport/chttp2/transport/frame.h
-  - src/core/ext/transport/chttp2/transport/hpack_constants.h
-  - src/core/ext/transport/chttp2/transport/http2_settings.h
-  - src/core/ext/transport/chttp2/transport/http2_status.h
-  - src/core/ext/transport/chttp2/transport/incoming_metadata_tracker.h
-  - src/core/ext/upb-gen/google/protobuf/any.upb.h
-  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
-  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
-  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
-  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
-  - src/core/ext/upb-gen/google/rpc/status.upb.h
-  - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.h
-  - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.h
-  - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h
-  - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.h
-  - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
-  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h
-  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h
-  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
-  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h
-  - src/core/filter/blackboard.h
-  - src/core/filter/filter_args.h
-  - src/core/handshaker/handshaker_factory.h
-  - src/core/handshaker/handshaker_registry.h
-  - src/core/handshaker/proxy_mapper.h
-  - src/core/handshaker/proxy_mapper_registry.h
-  - src/core/lib/address_utils/parse_address.h
-  - src/core/lib/address_utils/sockaddr_utils.h
-  - src/core/lib/channel/channel_args.h
-  - src/core/lib/channel/channel_args_preconditioning.h
-  - src/core/lib/channel/channel_fwd.h
-  - src/core/lib/channel/channel_stack.h
-  - src/core/lib/channel/channel_stack_builder.h
-  - src/core/lib/channel/channel_stack_builder_impl.h
-  - src/core/lib/channel/connected_channel.h
-  - src/core/lib/channel/promise_based_filter.h
-  - src/core/lib/compression/compression_internal.h
-  - src/core/lib/compression/message_compress.h
-  - src/core/lib/debug/trace.h
-  - src/core/lib/debug/trace_flags.h
-  - src/core/lib/debug/trace_impl.h
-  - src/core/lib/event_engine/ares_resolver.h
-  - src/core/lib/event_engine/cf_engine/cf_engine.h
-  - src/core/lib/event_engine/cf_engine/cfsocket_listener.h
-  - src/core/lib/event_engine/cf_engine/cfstream_endpoint.h
-  - src/core/lib/event_engine/cf_engine/cftype_unique_ref.h
-  - src/core/lib/event_engine/cf_engine/dns_service_resolver.h
-  - src/core/lib/event_engine/channel_args_endpoint_config.h
-  - src/core/lib/event_engine/common_closures.h
-  - src/core/lib/event_engine/default_event_engine.h
-  - src/core/lib/event_engine/default_event_engine_factory.h
-  - src/core/lib/event_engine/event_engine_context.h
-  - src/core/lib/event_engine/extensions/blocking_dns.h
-  - src/core/lib/event_engine/extensions/can_track_errors.h
-  - src/core/lib/event_engine/extensions/channelz.h
-  - src/core/lib/event_engine/extensions/chaotic_good_extension.h
-  - src/core/lib/event_engine/extensions/iomgr_compatible.h
-  - src/core/lib/event_engine/extensions/supports_fd.h
-  - src/core/lib/event_engine/extensions/supports_win_sockets.h
-  - src/core/lib/event_engine/extensions/tcp_trace.h
-  - src/core/lib/event_engine/grpc_polled_fd.h
-  - src/core/lib/event_engine/handle_containers.h
-  - src/core/lib/event_engine/memory_allocator_factory.h
-  - src/core/lib/event_engine/nameser.h
-  - src/core/lib/event_engine/poller.h
-  - src/core/lib/event_engine/posix.h
-  - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
-  - src/core/lib/event_engine/posix_engine/ev_poll_posix.h
-  - src/core/lib/event_engine/posix_engine/event_poller.h
-  - src/core/lib/event_engine/posix_engine/event_poller_posix_default.h
-  - src/core/lib/event_engine/posix_engine/file_descriptor_collection.h
-  - src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h
-  - src/core/lib/event_engine/posix_engine/internal_errqueue.h
-  - src/core/lib/event_engine/posix_engine/lockfree_event.h
-  - src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.h
-  - src/core/lib/event_engine/posix_engine/posix_endpoint.h
-  - src/core/lib/event_engine/posix_engine/posix_engine.h
-  - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
-  - src/core/lib/event_engine/posix_engine/posix_engine_listener.h
-  - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
-  - src/core/lib/event_engine/posix_engine/posix_interface.h
-  - src/core/lib/event_engine/posix_engine/posix_write_event_sink.h
-  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
-  - src/core/lib/event_engine/posix_engine/timer.h
-  - src/core/lib/event_engine/posix_engine/timer_heap.h
-  - src/core/lib/event_engine/posix_engine/timer_manager.h
-  - src/core/lib/event_engine/posix_engine/traced_buffer_list.h
-  - src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h
-  - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h
-  - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
-  - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
-  - src/core/lib/event_engine/query_extensions.h
-  - src/core/lib/event_engine/ref_counted_dns_resolver_interface.h
-  - src/core/lib/event_engine/resolved_address_internal.h
-  - src/core/lib/event_engine/shim.h
-  - src/core/lib/event_engine/tcp_socket_utils.h
-  - src/core/lib/event_engine/thread_pool/thread_count.h
-  - src/core/lib/event_engine/thread_pool/thread_pool.h
-  - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h
-  - src/core/lib/event_engine/thready_event_engine/thready_event_engine.h
-  - src/core/lib/event_engine/time_util.h
-  - src/core/lib/event_engine/utils.h
-  - src/core/lib/event_engine/windows/grpc_polled_fd_windows.h
-  - src/core/lib/event_engine/windows/iocp.h
-  - src/core/lib/event_engine/windows/native_windows_dns_resolver.h
-  - src/core/lib/event_engine/windows/win_socket.h
-  - src/core/lib/event_engine/windows/windows_endpoint.h
-  - src/core/lib/event_engine/windows/windows_engine.h
-  - src/core/lib/event_engine/windows/windows_listener.h
-  - src/core/lib/event_engine/work_queue/basic_work_queue.h
-  - src/core/lib/event_engine/work_queue/work_queue.h
-  - src/core/lib/experiments/config.h
-  - src/core/lib/experiments/experiments.h
-  - src/core/lib/iomgr/block_annotate.h
-  - src/core/lib/iomgr/buffer_list.h
-  - src/core/lib/iomgr/call_combiner.h
-  - src/core/lib/iomgr/cfstream_handle.h
-  - src/core/lib/iomgr/closure.h
-  - src/core/lib/iomgr/combiner.h
-  - src/core/lib/iomgr/dynamic_annotations.h
-  - src/core/lib/iomgr/endpoint.h
-  - src/core/lib/iomgr/endpoint_cfstream.h
-  - src/core/lib/iomgr/endpoint_pair.h
-  - src/core/lib/iomgr/error.h
-  - src/core/lib/iomgr/error_cfstream.h
-  - src/core/lib/iomgr/ev_apple.h
-  - src/core/lib/iomgr/ev_epoll1_linux.h
-  - src/core/lib/iomgr/ev_poll_posix.h
-  - src/core/lib/iomgr/ev_posix.h
-  - src/core/lib/iomgr/event_engine_shims/closure.h
-  - src/core/lib/iomgr/event_engine_shims/endpoint.h
-  - src/core/lib/iomgr/event_engine_shims/tcp_client.h
-  - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/internal_errqueue.h
-  - src/core/lib/iomgr/iocp_windows.h
-  - src/core/lib/iomgr/iomgr.h
-  - src/core/lib/iomgr/iomgr_fwd.h
-  - src/core/lib/iomgr/iomgr_internal.h
-  - src/core/lib/iomgr/lockfree_event.h
-  - src/core/lib/iomgr/nameser.h
-  - src/core/lib/iomgr/polling_entity.h
-  - src/core/lib/iomgr/pollset.h
-  - src/core/lib/iomgr/pollset_set.h
-  - src/core/lib/iomgr/pollset_set_windows.h
-  - src/core/lib/iomgr/pollset_windows.h
-  - src/core/lib/iomgr/port.h
-  - src/core/lib/iomgr/resolve_address.h
-  - src/core/lib/iomgr/resolve_address_impl.h
-  - src/core/lib/iomgr/resolve_address_posix.h
-  - src/core/lib/iomgr/resolve_address_windows.h
-  - src/core/lib/iomgr/resolved_address.h
-  - src/core/lib/iomgr/sockaddr.h
-  - src/core/lib/iomgr/sockaddr_posix.h
-  - src/core/lib/iomgr/sockaddr_windows.h
-  - src/core/lib/iomgr/socket_factory_posix.h
-  - src/core/lib/iomgr/socket_mutator.h
-  - src/core/lib/iomgr/socket_utils.h
-  - src/core/lib/iomgr/socket_utils_posix.h
-  - src/core/lib/iomgr/socket_windows.h
-  - src/core/lib/iomgr/systemd_utils.h
-  - src/core/lib/iomgr/tcp_client.h
-  - src/core/lib/iomgr/tcp_client_posix.h
-  - src/core/lib/iomgr/tcp_posix.h
-  - src/core/lib/iomgr/tcp_server.h
-  - src/core/lib/iomgr/tcp_server_utils_posix.h
-  - src/core/lib/iomgr/tcp_windows.h
-  - src/core/lib/iomgr/timer.h
-  - src/core/lib/iomgr/timer_generic.h
-  - src/core/lib/iomgr/timer_heap.h
-  - src/core/lib/iomgr/timer_manager.h
-  - src/core/lib/iomgr/unix_sockets_posix.h
-  - src/core/lib/iomgr/vsock.h
-  - src/core/lib/iomgr/wakeup_fd_pipe.h
-  - src/core/lib/iomgr/wakeup_fd_posix.h
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/all_ok.h
-  - src/core/lib/promise/arena_promise.h
-  - src/core/lib/promise/cancel_callback.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/basic_seq.h
-  - src/core/lib/promise/detail/join_state.h
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/seq_state.h
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
-  - src/core/lib/promise/for_each.h
-  - src/core/lib/promise/if.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/interceptor_list.h
-  - src/core/lib/promise/latch.h
-  - src/core/lib/promise/loop.h
-  - src/core/lib/promise/map.h
-  - src/core/lib/promise/party.h
-  - src/core/lib/promise/pipe.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/prioritized_race.h
-  - src/core/lib/promise/promise.h
-  - src/core/lib/promise/race.h
-  - src/core/lib/promise/seq.h
-  - src/core/lib/promise/status_flag.h
-  - src/core/lib/promise/try_seq.h
-  - src/core/lib/promise/wait_set.h
-  - src/core/lib/resource_quota/api.h
-  - src/core/lib/resource_quota/arena.h
-  - src/core/lib/resource_quota/memory_quota.h
-  - src/core/lib/resource_quota/periodic_update.h
-  - src/core/lib/resource_quota/resource_quota.h
-  - src/core/lib/resource_quota/stream_quota.h
-  - src/core/lib/resource_quota/telemetry.h
-  - src/core/lib/resource_quota/thread_quota.h
-  - src/core/lib/resource_tracker/resource_tracker.h
-  - src/core/lib/slice/percent_encoding.h
-  - src/core/lib/slice/slice.h
-  - src/core/lib/slice/slice_buffer.h
-  - src/core/lib/slice/slice_internal.h
-  - src/core/lib/slice/slice_refcount.h
-  - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/surface/call.h
-  - src/core/lib/surface/call_test_only.h
-  - src/core/lib/surface/call_utils.h
-  - src/core/lib/surface/channel.h
-  - src/core/lib/surface/channel_init.h
-  - src/core/lib/surface/channel_stack_type.h
-  - src/core/lib/surface/completion_queue.h
-  - src/core/lib/surface/completion_queue_factory.h
-  - src/core/lib/surface/event_string.h
-  - src/core/lib/surface/filter_stack_call.h
-  - src/core/lib/surface/init.h
-  - src/core/lib/surface/init_internally.h
-  - src/core/lib/surface/lame_client.h
-  - src/core/lib/surface/validate_metadata.h
-  - src/core/lib/transport/call_final_info.h
-  - src/core/lib/transport/connectivity_state.h
-  - src/core/lib/transport/error_utils.h
-  - src/core/lib/transport/status_conversion.h
-  - src/core/lib/transport/timeout_encoding.h
-  - src/core/lib/transport/transport.h
-  - src/core/lib/transport/transport_fwd.h
-  - src/core/load_balancing/backend_metric_data.h
-  - src/core/load_balancing/lb_policy.h
-  - src/core/load_balancing/lb_policy_factory.h
-  - src/core/load_balancing/lb_policy_registry.h
-  - src/core/load_balancing/subchannel_interface.h
-  - src/core/net/socket_mutator.h
-  - src/core/resolver/endpoint_addresses.h
-  - src/core/resolver/resolver.h
-  - src/core/resolver/resolver_factory.h
-  - src/core/resolver/resolver_registry.h
-  - src/core/resolver/server_address.h
-  - src/core/server/server_interface.h
-  - src/core/service_config/service_config.h
-  - src/core/service_config/service_config_call_data.h
-  - src/core/service_config/service_config_parser.h
-  - src/core/telemetry/call_tracer.h
-  - src/core/telemetry/context_list_entry.h
-  - src/core/telemetry/histogram.h
-  - src/core/telemetry/histogram_view.h
-  - src/core/telemetry/instrument.h
-  - src/core/telemetry/metrics.h
-  - src/core/telemetry/stats.h
-  - src/core/telemetry/stats_data.h
-  - src/core/telemetry/tcp_tracer.h
-  - src/core/transport/auth_context_comparator_registry.h
-  - src/core/transport/endpoint_transport.h
-  - src/core/tsi/alts/handshaker/transport_security_common_api.h
-  - src/core/util/atomic_utils.h
-  - src/core/util/avl.h
-  - src/core/util/backoff.h
-  - src/core/util/bitset.h
-  - src/core/util/check_class_size.h
-  - src/core/util/chunked_vector.h
-  - src/core/util/cpp_impl_of.h
-  - src/core/util/down_cast.h
-  - src/core/util/dual_ref_counted.h
-  - src/core/util/dump_args.h
-  - src/core/util/event_log.h
-  - src/core/util/function_signature.h
-  - src/core/util/gethostname.h
-  - src/core/util/glob.h
-  - src/core/util/grpc_check.h
-  - src/core/util/grpc_if_nametoindex.h
-  - src/core/util/if_list.h
-  - src/core/util/json/json.h
-  - src/core/util/json/json_args.h
-  - src/core/util/json/json_reader.h
-  - src/core/util/json/json_writer.h
-  - src/core/util/latent_see.h
-  - src/core/util/load_file.h
-  - src/core/util/manual_constructor.h
-  - src/core/util/match.h
-  - src/core/util/memory_usage.h
-  - src/core/util/notification.h
-  - src/core/util/orphanable.h
-  - src/core/util/overload.h
-  - src/core/util/packed_table.h
-  - src/core/util/per_cpu.h
-  - src/core/util/postmortem_emit.h
-  - src/core/util/ref_counted.h
-  - src/core/util/ref_counted_ptr.h
-  - src/core/util/ref_counted_string.h
-  - src/core/util/shared_bit_gen.h
-  - src/core/util/single_set_ptr.h
-  - src/core/util/sorted_pack.h
-  - src/core/util/spinlock.h
-  - src/core/util/status_helper.h
-  - src/core/util/table.h
-  - src/core/util/time.h
-  - src/core/util/time_averaged_stats.h
-  - src/core/util/type_list.h
-  - src/core/util/unique_type_name.h
-  - src/core/util/upb_utils.h
-  - src/core/util/uri.h
-  - src/core/util/validation_errors.h
-  - src/core/util/wait_for_single_owner.h
-  - src/core/util/work_serializer.h
   - test/core/transport/chttp2/http2_common_test_inputs.h
-  - third_party/upb/upb/generated_code_support.h
+  - test/core/transport/util/mock_promise_endpoint.h
   src:
-  - src/core/call/call_arena_allocator.cc
-  - src/core/call/call_filters.cc
-  - src/core/call/call_spine.cc
-  - src/core/call/call_state.cc
-  - src/core/call/client_call.cc
-  - src/core/call/interception_chain.cc
-  - src/core/call/message.cc
-  - src/core/call/metadata.cc
-  - src/core/call/metadata_batch.cc
-  - src/core/call/metadata_info.cc
-  - src/core/call/parsed_metadata.cc
-  - src/core/call/server_call.cc
-  - src/core/call/status_util.cc
-  - src/core/channelz/channel_trace.cc
-  - src/core/channelz/channelz.cc
-  - src/core/channelz/channelz_registry.cc
-  - src/core/channelz/property_list.cc
-  - src/core/channelz/text_encode.cc
-  - src/core/config/core_configuration.cc
-  - src/core/credentials/transport/alts/check_gcp_environment.cc
-  - src/core/credentials/transport/alts/check_gcp_environment_linux.cc
-  - src/core/credentials/transport/alts/check_gcp_environment_no_op.cc
-  - src/core/credentials/transport/alts/check_gcp_environment_windows.cc
-  - src/core/credentials/transport/alts/grpc_alts_credentials_client_options.cc
-  - src/core/credentials/transport/alts/grpc_alts_credentials_options.cc
-  - src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
-  - src/core/credentials/transport/tls/certificate_provider_registry.cc
-  - src/core/ext/transport/chttp2/transport/frame.cc
-  - src/core/ext/transport/chttp2/transport/http2_settings.cc
-  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
-  - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
-  - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
-  - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
-  - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
-  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
-  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
-  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
-  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
-  - src/core/filter/blackboard.cc
-  - src/core/handshaker/handshaker_registry.cc
-  - src/core/handshaker/proxy_mapper_registry.cc
-  - src/core/lib/address_utils/parse_address.cc
-  - src/core/lib/address_utils/sockaddr_utils.cc
-  - src/core/lib/channel/channel_args.cc
-  - src/core/lib/channel/channel_args_preconditioning.cc
-  - src/core/lib/channel/channel_stack.cc
-  - src/core/lib/channel/channel_stack_builder.cc
-  - src/core/lib/channel/channel_stack_builder_impl.cc
-  - src/core/lib/channel/connected_channel.cc
-  - src/core/lib/channel/promise_based_filter.cc
-  - src/core/lib/compression/compression.cc
-  - src/core/lib/compression/compression_internal.cc
-  - src/core/lib/compression/message_compress.cc
-  - src/core/lib/debug/trace.cc
-  - src/core/lib/debug/trace_flags.cc
-  - src/core/lib/event_engine/ares_resolver.cc
-  - src/core/lib/event_engine/cf_engine/cf_engine.cc
-  - src/core/lib/event_engine/cf_engine/cfsocket_listener.cc
-  - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
-  - src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
-  - src/core/lib/event_engine/channel_args_endpoint_config.cc
-  - src/core/lib/event_engine/default_event_engine.cc
-  - src/core/lib/event_engine/default_event_engine_factory.cc
-  - src/core/lib/event_engine/event_engine.cc
-  - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
-  - src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
-  - src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
-  - src/core/lib/event_engine/posix_engine/file_descriptor_collection.cc
-  - src/core/lib/event_engine/posix_engine/internal_errqueue.cc
-  - src/core/lib/event_engine/posix_engine/lockfree_event.cc
-  - src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc
-  - src/core/lib/event_engine/posix_engine/posix_endpoint.cc
-  - src/core/lib/event_engine/posix_engine/posix_engine.cc
-  - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
-  - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
-  - src/core/lib/event_engine/posix_engine/posix_interface_posix.cc
-  - src/core/lib/event_engine/posix_engine/posix_interface_windows.cc
-  - src/core/lib/event_engine/posix_engine/posix_write_event_sink.cc
-  - src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc
-  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
-  - src/core/lib/event_engine/posix_engine/timer.cc
-  - src/core/lib/event_engine/posix_engine/timer_heap.cc
-  - src/core/lib/event_engine/posix_engine/timer_manager.cc
-  - src/core/lib/event_engine/posix_engine/traced_buffer_list.cc
-  - src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc
-  - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
-  - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
-  - src/core/lib/event_engine/resolved_address.cc
-  - src/core/lib/event_engine/shim.cc
-  - src/core/lib/event_engine/slice.cc
-  - src/core/lib/event_engine/slice_buffer.cc
-  - src/core/lib/event_engine/tcp_socket_utils.cc
-  - src/core/lib/event_engine/thread_pool/thread_count.cc
-  - src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
-  - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
-  - src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
-  - src/core/lib/event_engine/time_util.cc
-  - src/core/lib/event_engine/utils.cc
-  - src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
-  - src/core/lib/event_engine/windows/iocp.cc
-  - src/core/lib/event_engine/windows/native_windows_dns_resolver.cc
-  - src/core/lib/event_engine/windows/win_socket.cc
-  - src/core/lib/event_engine/windows/windows_endpoint.cc
-  - src/core/lib/event_engine/windows/windows_engine.cc
-  - src/core/lib/event_engine/windows/windows_listener.cc
-  - src/core/lib/event_engine/work_queue/basic_work_queue.cc
-  - src/core/lib/experiments/config.cc
-  - src/core/lib/experiments/experiments.cc
-  - src/core/lib/iomgr/buffer_list.cc
-  - src/core/lib/iomgr/call_combiner.cc
-  - src/core/lib/iomgr/cfstream_handle.cc
-  - src/core/lib/iomgr/closure.cc
-  - src/core/lib/iomgr/combiner.cc
-  - src/core/lib/iomgr/dualstack_socket_posix.cc
-  - src/core/lib/iomgr/endpoint.cc
-  - src/core/lib/iomgr/endpoint_cfstream.cc
-  - src/core/lib/iomgr/endpoint_pair_posix.cc
-  - src/core/lib/iomgr/endpoint_pair_windows.cc
-  - src/core/lib/iomgr/error.cc
-  - src/core/lib/iomgr/error_cfstream.cc
-  - src/core/lib/iomgr/ev_apple.cc
-  - src/core/lib/iomgr/ev_epoll1_linux.cc
-  - src/core/lib/iomgr/ev_poll_posix.cc
-  - src/core/lib/iomgr/ev_posix.cc
-  - src/core/lib/iomgr/event_engine_shims/closure.cc
-  - src/core/lib/iomgr/event_engine_shims/endpoint.cc
-  - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
-  - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/fork_posix.cc
-  - src/core/lib/iomgr/fork_windows.cc
-  - src/core/lib/iomgr/internal_errqueue.cc
-  - src/core/lib/iomgr/iocp_windows.cc
-  - src/core/lib/iomgr/iomgr.cc
-  - src/core/lib/iomgr/iomgr_internal.cc
-  - src/core/lib/iomgr/iomgr_posix.cc
-  - src/core/lib/iomgr/iomgr_posix_cfstream.cc
-  - src/core/lib/iomgr/iomgr_windows.cc
-  - src/core/lib/iomgr/lockfree_event.cc
-  - src/core/lib/iomgr/polling_entity.cc
-  - src/core/lib/iomgr/pollset.cc
-  - src/core/lib/iomgr/pollset_set.cc
-  - src/core/lib/iomgr/pollset_set_windows.cc
-  - src/core/lib/iomgr/pollset_windows.cc
-  - src/core/lib/iomgr/resolve_address.cc
-  - src/core/lib/iomgr/resolve_address_posix.cc
-  - src/core/lib/iomgr/resolve_address_windows.cc
-  - src/core/lib/iomgr/sockaddr_utils_posix.cc
-  - src/core/lib/iomgr/socket_factory_posix.cc
-  - src/core/lib/iomgr/socket_mutator.cc
-  - src/core/lib/iomgr/socket_utils_common_posix.cc
-  - src/core/lib/iomgr/socket_utils_linux.cc
-  - src/core/lib/iomgr/socket_utils_posix.cc
-  - src/core/lib/iomgr/socket_utils_windows.cc
-  - src/core/lib/iomgr/socket_windows.cc
-  - src/core/lib/iomgr/systemd_utils.cc
-  - src/core/lib/iomgr/tcp_client.cc
-  - src/core/lib/iomgr/tcp_client_cfstream.cc
-  - src/core/lib/iomgr/tcp_client_posix.cc
-  - src/core/lib/iomgr/tcp_client_windows.cc
-  - src/core/lib/iomgr/tcp_posix.cc
-  - src/core/lib/iomgr/tcp_server.cc
-  - src/core/lib/iomgr/tcp_server_posix.cc
-  - src/core/lib/iomgr/tcp_server_utils_posix_common.cc
-  - src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc
-  - src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc
-  - src/core/lib/iomgr/tcp_server_windows.cc
-  - src/core/lib/iomgr/tcp_windows.cc
-  - src/core/lib/iomgr/timer.cc
-  - src/core/lib/iomgr/timer_generic.cc
-  - src/core/lib/iomgr/timer_heap.cc
-  - src/core/lib/iomgr/timer_manager.cc
-  - src/core/lib/iomgr/unix_sockets_posix.cc
-  - src/core/lib/iomgr/unix_sockets_posix_noop.cc
-  - src/core/lib/iomgr/vsock.cc
-  - src/core/lib/iomgr/wakeup_fd_eventfd.cc
-  - src/core/lib/iomgr/wakeup_fd_nospecial.cc
-  - src/core/lib/iomgr/wakeup_fd_pipe.cc
-  - src/core/lib/iomgr/wakeup_fd_posix.cc
-  - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/party.cc
-  - src/core/lib/promise/wait_set.cc
-  - src/core/lib/resource_quota/api.cc
-  - src/core/lib/resource_quota/arena.cc
-  - src/core/lib/resource_quota/memory_quota.cc
-  - src/core/lib/resource_quota/periodic_update.cc
-  - src/core/lib/resource_quota/resource_quota.cc
-  - src/core/lib/resource_quota/stream_quota.cc
-  - src/core/lib/resource_quota/thread_quota.cc
-  - src/core/lib/resource_tracker/resource_tracker.cc
-  - src/core/lib/slice/percent_encoding.cc
-  - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/surface/byte_buffer.cc
-  - src/core/lib/surface/byte_buffer_reader.cc
-  - src/core/lib/surface/call.cc
-  - src/core/lib/surface/call_details.cc
-  - src/core/lib/surface/call_log_batch.cc
-  - src/core/lib/surface/call_utils.cc
-  - src/core/lib/surface/channel.cc
-  - src/core/lib/surface/channel_init.cc
-  - src/core/lib/surface/channel_stack_type.cc
-  - src/core/lib/surface/completion_queue.cc
-  - src/core/lib/surface/completion_queue_factory.cc
-  - src/core/lib/surface/event_string.cc
-  - src/core/lib/surface/filter_stack_call.cc
-  - src/core/lib/surface/init_internally.cc
-  - src/core/lib/surface/lame_client.cc
-  - src/core/lib/surface/metadata_array.cc
-  - src/core/lib/surface/validate_metadata.cc
-  - src/core/lib/surface/version.cc
-  - src/core/lib/transport/call_final_info.cc
-  - src/core/lib/transport/connectivity_state.cc
-  - src/core/lib/transport/error_utils.cc
-  - src/core/lib/transport/status_conversion.cc
-  - src/core/lib/transport/timeout_encoding.cc
-  - src/core/lib/transport/transport.cc
-  - src/core/lib/transport/transport_op_string.cc
-  - src/core/load_balancing/lb_policy.cc
-  - src/core/load_balancing/lb_policy_registry.cc
-  - src/core/net/socket_mutator.cc
-  - src/core/resolver/endpoint_addresses.cc
-  - src/core/resolver/resolver.cc
-  - src/core/resolver/resolver_registry.cc
-  - src/core/service_config/service_config_parser.cc
-  - src/core/telemetry/call_tracer.cc
-  - src/core/telemetry/context_list_entry.cc
-  - src/core/telemetry/histogram_view.cc
-  - src/core/telemetry/instrument.cc
-  - src/core/telemetry/metrics.cc
-  - src/core/telemetry/stats.cc
-  - src/core/telemetry/stats_data.cc
-  - src/core/telemetry/tcp_tracer.cc
-  - src/core/tsi/alts/handshaker/transport_security_common_api.cc
-  - src/core/util/backoff.cc
-  - src/core/util/dump_args.cc
-  - src/core/util/event_log.cc
-  - src/core/util/gethostname_fallback.cc
-  - src/core/util/gethostname_host_name_max.cc
-  - src/core/util/gethostname_sysconf.cc
-  - src/core/util/glob.cc
-  - src/core/util/grpc_check.cc
-  - src/core/util/grpc_if_nametoindex_posix.cc
-  - src/core/util/grpc_if_nametoindex_unsupported.cc
-  - src/core/util/json/json_reader.cc
-  - src/core/util/json/json_writer.cc
-  - src/core/util/latent_see.cc
-  - src/core/util/load_file.cc
-  - src/core/util/per_cpu.cc
-  - src/core/util/postmortem_emit.cc
-  - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
-  - src/core/util/status_helper.cc
-  - src/core/util/time.cc
-  - src/core/util/time_averaged_stats.cc
-  - src/core/util/uri.cc
-  - src/core/util/validation_errors.cc
-  - src/core/util/wait_for_single_owner.cc
-  - src/core/util/work_serializer.cc
   - test/core/transport/chttp2/incoming_metadata_tracker_test.cc
+  - test/core/transport/util/mock_promise_endpoint.cc
   deps:
   - gtest
-  - upb_textformat_lib
-  - z
-  - absl/base:no_destructor
-  - absl/container:btree
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/container:node_hash_map
-  - absl/functional:function_ref
-  - absl/hash:hash
-  - absl/meta:type_traits
-  - absl/status:statusor
-  - absl/strings:string_view
-  - absl/types:span
-  - absl/utility:utility
-  - cares
-  - gpr
-  - address_sorting
+  - grpc
 - name: info_tool_test
   gtest: true
   build: test
@@ -16594,6 +16138,7 @@ targets:
   - src/core/util/if_list.h
   - src/core/util/json/json.h
   - src/core/util/json/json_args.h
+  - src/core/util/json/json_object_loader.h
   - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
@@ -16625,6 +16170,7 @@ targets:
   - src/core/util/validation_errors.h
   - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
+  - src/core/xds/grpc/certificate_provider_store_interface.h
   - test/cpp/sleuth/tool.h
   - test/cpp/sleuth/tool_test.h
   - test/cpp/sleuth/version.h
@@ -16882,6 +16428,7 @@ targets:
   - src/core/util/grpc_check.cc
   - src/core/util/grpc_if_nametoindex_posix.cc
   - src/core/util/grpc_if_nametoindex_unsupported.cc
+  - src/core/util/json/json_object_loader.cc
   - src/core/util/json/json_reader.cc
   - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
@@ -19548,7 +19095,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -19645,7 +19191,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -19658,13 +19203,13 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/cpp/end2end/end2end_test_utils.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -19723,7 +19268,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -19982,9 +19526,9 @@ targets:
   language: c++
   headers:
   - src/cpp/server/orca/orca_service.h
+  - test/cpp/end2end/end2end_test_utils.h
   src:
   - src/proto/grpc/testing/xds/v3/orca_service.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -20045,7 +19589,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -20080,7 +19623,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -20116,7 +19658,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -20153,7 +19694,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -20712,7 +20252,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -20869,6 +20408,8 @@ targets:
   - src/proto/grpc/testing/istio_echo.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/admin/v3/certs.proto
   - third_party/envoy-api/envoy/admin/v3/clusters.proto
   - third_party/envoy-api/envoy/admin/v3/config_dump.proto
@@ -20889,9 +20430,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
   - third_party/envoy-api/envoy/config/common/matcher/v3/matcher.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -22040,6 +21583,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/util/proto_reflection_descriptor_database.h
   src:
@@ -22047,7 +21591,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -22707,13 +22250,13 @@ targets:
   build: test
   language: c++
   headers:
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -22851,8 +22394,10 @@ targets:
   - src/core/lib/iomgr/sockaddr_windows.h
   - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/promise/activity.h
+  - src/core/lib/promise/all_ok.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/seq_state.h
@@ -23114,7 +22659,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -23222,7 +22766,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -23519,7 +23062,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -23539,7 +23081,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -23564,7 +23105,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -23625,12 +23165,12 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/cpp/end2end/end2end_test_utils.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -23644,13 +23184,13 @@ targets:
   build: test
   language: c++
   headers:
+  - test/cpp/end2end/end2end_test_utils.h
   - test/cpp/end2end/interceptors_util.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -23684,7 +23224,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -23735,7 +23274,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -23812,7 +23350,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -23950,7 +23487,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -24504,13 +24040,13 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/cpp/end2end/end2end_test_utils.h
   src:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -24565,6 +24101,17 @@ targets:
   headers: []
   src:
   - test/core/client_channel/subchannel_args_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  uses_polling: false
+- name: subchannel_stream_limiter_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/subchannel_stream_limiter_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -24864,187 +24411,6 @@ targets:
   deps:
   - gtest
   - grpc
-  uses_polling: false
-- name: tdigest_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/channelz/channel_trace.h
-  - src/core/channelz/channelz.h
-  - src/core/channelz/channelz_registry.h
-  - src/core/channelz/property_list.h
-  - src/core/channelz/text_encode.h
-  - src/core/ext/transport/chttp2/transport/http2_status.h
-  - src/core/ext/upb-gen/google/protobuf/any.upb.h
-  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
-  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
-  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
-  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
-  - src/core/ext/upb-gen/google/rpc/status.upb.h
-  - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
-  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h
-  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.h
-  - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.h
-  - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h
-  - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.h
-  - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
-  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h
-  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
-  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h
-  - src/core/lib/address_utils/parse_address.h
-  - src/core/lib/address_utils/sockaddr_utils.h
-  - src/core/lib/channel/channel_args.h
-  - src/core/lib/debug/trace.h
-  - src/core/lib/debug/trace_flags.h
-  - src/core/lib/debug/trace_impl.h
-  - src/core/lib/experiments/config.h
-  - src/core/lib/experiments/experiments.h
-  - src/core/lib/iomgr/closure.h
-  - src/core/lib/iomgr/combiner.h
-  - src/core/lib/iomgr/error.h
-  - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/iomgr_internal.h
-  - src/core/lib/iomgr/port.h
-  - src/core/lib/iomgr/resolved_address.h
-  - src/core/lib/iomgr/sockaddr.h
-  - src/core/lib/iomgr/sockaddr_posix.h
-  - src/core/lib/iomgr/sockaddr_windows.h
-  - src/core/lib/iomgr/socket_utils.h
-  - src/core/lib/slice/percent_encoding.h
-  - src/core/lib/slice/slice.h
-  - src/core/lib/slice/slice_buffer.h
-  - src/core/lib/slice/slice_internal.h
-  - src/core/lib/slice/slice_refcount.h
-  - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/surface/channel_stack_type.h
-  - src/core/lib/transport/connectivity_state.h
-  - src/core/lib/transport/status_conversion.h
-  - src/core/telemetry/histogram_view.h
-  - src/core/telemetry/stats.h
-  - src/core/telemetry/stats_data.h
-  - src/core/util/atomic_utils.h
-  - src/core/util/avl.h
-  - src/core/util/backoff.h
-  - src/core/util/bitset.h
-  - src/core/util/down_cast.h
-  - src/core/util/dual_ref_counted.h
-  - src/core/util/function_signature.h
-  - src/core/util/glob.h
-  - src/core/util/grpc_check.h
-  - src/core/util/grpc_if_nametoindex.h
-  - src/core/util/json/json.h
-  - src/core/util/json/json_reader.h
-  - src/core/util/json/json_writer.h
-  - src/core/util/latent_see.h
-  - src/core/util/manual_constructor.h
-  - src/core/util/match.h
-  - src/core/util/memory_usage.h
-  - src/core/util/notification.h
-  - src/core/util/orphanable.h
-  - src/core/util/overload.h
-  - src/core/util/per_cpu.h
-  - src/core/util/postmortem_emit.h
-  - src/core/util/ref_counted.h
-  - src/core/util/ref_counted_ptr.h
-  - src/core/util/ref_counted_string.h
-  - src/core/util/shared_bit_gen.h
-  - src/core/util/single_set_ptr.h
-  - src/core/util/spinlock.h
-  - src/core/util/status_helper.h
-  - src/core/util/tdigest.h
-  - src/core/util/time.h
-  - src/core/util/upb_utils.h
-  - src/core/util/uri.h
-  - src/core/util/work_serializer.h
-  - third_party/upb/upb/generated_code_support.h
-  src:
-  - src/core/channelz/channel_trace.cc
-  - src/core/channelz/channelz.cc
-  - src/core/channelz/channelz_registry.cc
-  - src/core/channelz/property_list.cc
-  - src/core/channelz/text_encode.cc
-  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
-  - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
-  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
-  - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
-  - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
-  - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
-  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
-  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
-  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
-  - src/core/lib/address_utils/parse_address.cc
-  - src/core/lib/address_utils/sockaddr_utils.cc
-  - src/core/lib/channel/channel_args.cc
-  - src/core/lib/debug/trace.cc
-  - src/core/lib/debug/trace_flags.cc
-  - src/core/lib/experiments/config.cc
-  - src/core/lib/experiments/experiments.cc
-  - src/core/lib/iomgr/closure.cc
-  - src/core/lib/iomgr/combiner.cc
-  - src/core/lib/iomgr/error.cc
-  - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/iomgr_internal.cc
-  - src/core/lib/iomgr/sockaddr_utils_posix.cc
-  - src/core/lib/iomgr/socket_utils_windows.cc
-  - src/core/lib/slice/percent_encoding.cc
-  - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/surface/channel_stack_type.cc
-  - src/core/lib/transport/connectivity_state.cc
-  - src/core/lib/transport/status_conversion.cc
-  - src/core/telemetry/histogram_view.cc
-  - src/core/telemetry/stats.cc
-  - src/core/telemetry/stats_data.cc
-  - src/core/util/backoff.cc
-  - src/core/util/glob.cc
-  - src/core/util/grpc_check.cc
-  - src/core/util/grpc_if_nametoindex_posix.cc
-  - src/core/util/grpc_if_nametoindex_unsupported.cc
-  - src/core/util/json/json_reader.cc
-  - src/core/util/json/json_writer.cc
-  - src/core/util/latent_see.cc
-  - src/core/util/per_cpu.cc
-  - src/core/util/postmortem_emit.cc
-  - src/core/util/ref_counted_string.cc
-  - src/core/util/shared_bit_gen.cc
-  - src/core/util/status_helper.cc
-  - src/core/util/tdigest.cc
-  - src/core/util/time.cc
-  - src/core/util/uri.cc
-  - src/core/util/work_serializer.cc
-  - test/core/util/tdigest_test.cc
-  deps:
-  - gtest
-  - upb_textformat_lib
-  - absl/container:btree
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/functional:function_ref
-  - absl/hash:hash
-  - absl/meta:type_traits
-  - absl/status:statusor
-  - absl/strings:string_view
-  - absl/types:span
-  - absl/utility:utility
-  - benchmark
-  - gpr
-  benchmark: true
-  defaults: benchmark
   uses_polling: false
 - name: test_core_credentials_transport_ssl_ssl_credentials_test
   gtest: true
@@ -25508,7 +24874,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -25528,7 +24893,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -25574,6 +24938,17 @@ targets:
   - grpc++_test_config
   - grpc++_test_util
   uses_polling: false
+- name: test_timeout_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/test_util/test_timeout.h
+  src:
+  - test/core/test_util/test_timeout_test.cc
+  deps:
+  - gtest
+  - grpc
 - name: thd_test
   gtest: true
   build: test
@@ -25796,7 +25171,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -25941,7 +25315,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -26309,6 +25682,7 @@ targets:
   - src/core/util/if_list.h
   - src/core/util/json/json.h
   - src/core/util/json/json_args.h
+  - src/core/util/json/json_object_loader.h
   - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
@@ -26340,6 +25714,7 @@ targets:
   - src/core/util/validation_errors.h
   - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
+  - src/core/xds/grpc/certificate_provider_store_interface.h
   - test/cpp/sleuth/tool.h
   - test/cpp/sleuth/tool_test.h
   - third_party/upb/upb/generated_code_support.h
@@ -26596,6 +25971,7 @@ targets:
   - src/core/util/grpc_check.cc
   - src/core/util/grpc_if_nametoindex_posix.cc
   - src/core/util/grpc_if_nametoindex_unsupported.cc
+  - src/core/util/json/json_object_loader.cc
   - src/core/util/json/json_reader.cc
   - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
@@ -27876,7 +27252,6 @@ targets:
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -27907,11 +27282,15 @@ targets:
   - third_party/utf8_range/utf8_validity.h
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -28044,6 +27423,8 @@ targets:
   - third_party/protoc-gen-validate/validate/validate.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/admin/v3/certs.proto
   - third_party/envoy-api/envoy/admin/v3/clusters.proto
   - third_party/envoy-api/envoy/admin/v3/config_dump.proto
@@ -28064,9 +27445,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
   - third_party/envoy-api/envoy/config/common/matcher/v3/matcher.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -28213,6 +27596,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -28220,9 +27605,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -28352,6 +27739,8 @@ targets:
   - test/core/test_util/scoped_env_var.h
   - third_party/protoc-gen-validate/validate/validate.h
   src:
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -28359,9 +27748,12 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/matcher/v3/matcher.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -28502,6 +27894,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -28509,9 +27903,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -28648,6 +28044,8 @@ targets:
   - src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/base.upb.h
   - src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/cel.upb.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/cel.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb.h
   - src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/event_service_config.upb.h
@@ -28790,6 +28188,7 @@ targets:
   - src/core/ext/upb-gen/xds/core/v3/resource_locator.upb_minitable.h
   - src/core/ext/upb-gen/xds/core/v3/resource_name.upb.h
   - src/core/ext/upb-gen/xds/core/v3/resource_name.upb_minitable.h
+  - test/core/test_util/scoped_env_var.h
   - test/cpp/util/cli_call.h
   - test/cpp/util/cli_credentials.h
   - test/cpp/util/config_grpc_cli.h
@@ -28800,11 +28199,14 @@ targets:
   - third_party/utf8_range/utf8_validity.h
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -28820,6 +28222,9 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
   - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
   - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
+  - third_party/envoy-api/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.proto
+  - third_party/envoy-api/envoy/extensions/grpc_service/channel_credentials/google_default/v3/google_default_credentials.proto
+  - third_party/envoy-api/envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/cert.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/common.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/secret.proto
@@ -28880,6 +28285,7 @@ targets:
   - src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/core/v3/cel.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/event_service_config.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/extension.upb_minitable.c
@@ -28973,6 +28379,7 @@ targets:
   language: c++
   headers:
   - test/core/test_util/scoped_env_var.h
+  - test/core/test_util/test_timeout.h
   - test/core/test_util/xds_http_add_header_filter.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
@@ -28994,9 +28401,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
   - third_party/envoy-api/envoy/config/common/matcher/v3/matcher.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -29140,6 +28549,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -29147,9 +28558,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -29280,7 +28693,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -29318,6 +28730,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/admin/v3/certs.proto
   - third_party/envoy-api/envoy/admin/v3/clusters.proto
   - third_party/envoy-api/envoy/admin/v3/config_dump.proto
@@ -29338,9 +28752,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
   - third_party/envoy-api/envoy/config/common/matcher/v3/matcher.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -29490,6 +28906,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -29497,9 +28915,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -29632,6 +29052,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -29726,6 +29147,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -29733,9 +29156,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -29873,6 +29298,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -29880,9 +29307,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -30021,6 +29450,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -30028,9 +29459,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -30170,6 +29603,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -30177,9 +29612,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -30317,13 +29754,17 @@ targets:
   - third_party/utf8_range/utf8_validity.h
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
   - third_party/envoy-api/envoy/config/common/matcher/v3/matcher.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -30457,15 +29898,19 @@ targets:
   - third_party/utf8_range/utf8_validity.h
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/cluster/v3/circuit_breaker.proto
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -30484,6 +29929,9 @@ targets:
   - third_party/envoy-api/envoy/config/endpoint/v3/endpoint.proto
   - third_party/envoy-api/envoy/config/endpoint/v3/endpoint_components.proto
   - third_party/envoy-api/envoy/config/endpoint/v3/load_report.proto
+  - third_party/envoy-api/envoy/config/route/v3/route.proto
+  - third_party/envoy-api/envoy/config/route/v3/route_components.proto
+  - third_party/envoy-api/envoy/config/route/v3/scoped_route.proto
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.proto
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/common/v3/common.proto
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.proto
@@ -30503,6 +29951,7 @@ targets:
   - third_party/envoy-api/envoy/type/matcher/v3/struct.proto
   - third_party/envoy-api/envoy/type/matcher/v3/value.proto
   - third_party/envoy-api/envoy/type/metadata/v3/metadata.proto
+  - third_party/envoy-api/envoy/type/tracing/v3/custom_tag.proto
   - third_party/envoy-api/envoy/type/v3/hash_policy.proto
   - third_party/envoy-api/envoy/type/v3/http.proto
   - third_party/envoy-api/envoy/type/v3/http_status.proto
@@ -30537,6 +29986,14 @@ targets:
   - third_party/xds/xds/core/v3/resource.proto
   - third_party/xds/xds/core/v3/resource_locator.proto
   - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/type/matcher/v3/cel.proto
+  - third_party/xds/xds/type/matcher/v3/domain.proto
+  - third_party/xds/xds/type/matcher/v3/http_inputs.proto
+  - third_party/xds/xds/type/matcher/v3/ip.proto
+  - third_party/xds/xds/type/matcher/v3/matcher.proto
+  - third_party/xds/xds/type/matcher/v3/range.proto
+  - third_party/xds/xds/type/matcher/v3/regex.proto
+  - third_party/xds/xds/type/matcher/v3/string.proto
   - third_party/xds/xds/type/v3/cel.proto
   - third_party/xds/xds/type/v3/range.proto
   - third_party/xds/xds/type/v3/typed_struct.proto
@@ -30570,12 +30027,16 @@ targets:
   - third_party/utf8_range/utf8_validity.h
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -30702,8 +30163,10 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/upb-gen/google/api/annotations.upb.h
-  - src/core/ext/upb-gen/google/api/annotations.upb_minitable.h
+  - src/core/ext/upb-gen/cel/expr/checked.upb.h
+  - src/core/ext/upb-gen/cel/expr/checked.upb_minitable.h
+  - src/core/ext/upb-gen/cel/expr/syntax.upb.h
+  - src/core/ext/upb-gen/cel/expr/syntax.upb_minitable.h
   - src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb.h
   - src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb_minitable.h
   - src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb.h
@@ -30778,12 +30241,16 @@ targets:
   - src/core/ext/upb-gen/xds/type/v3/typed_struct.upb_minitable.h
   - third_party/protoc-gen-validate/validate/validate.h
   src:
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/common/matcher/v3/matcher.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -30861,7 +30328,8 @@ targets:
   - third_party/xds/xds/type/v3/cel.proto
   - third_party/xds/xds/type/v3/range.proto
   - third_party/xds/xds/type/v3/typed_struct.proto
-  - src/core/ext/upb-gen/google/api/annotations.upb_minitable.c
+  - src/core/ext/upb-gen/cel/expr/checked.upb_minitable.c
+  - src/core/ext/upb-gen/cel/expr/syntax.upb_minitable.c
   - src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb_minitable.c
   - src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.c
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
@@ -30927,6 +30395,7 @@ targets:
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -31011,6 +30480,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -31018,9 +30489,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -31160,6 +30633,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -31167,9 +30642,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -31339,6 +30816,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -31346,9 +30825,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -31491,6 +30972,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -31498,9 +30981,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -31643,6 +31128,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -31650,9 +31137,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -31790,11 +31279,15 @@ targets:
   src:
   - src/proto/grpc/lookup/v1/rls_config.proto
   - src/proto/grpc/reflection/v1alpha/reflection.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -31910,6 +31403,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -31917,9 +31412,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -32041,6 +31538,17 @@ targets:
   - linux
   - posix
   - mac
+- name: xds_routing_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/xds/xds_routing_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  uses_polling: false
 - name: xds_security_end2end_test
   gtest: true
   build: test
@@ -32061,6 +31569,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -32068,9 +31578,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -32217,6 +31729,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -32224,9 +31738,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -32367,6 +31883,8 @@ targets:
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/admin/v3/certs.proto
   - third_party/envoy-api/envoy/admin/v3/clusters.proto
   - third_party/envoy-api/envoy/admin/v3/config_dump.proto
@@ -32387,9 +31905,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
   - third_party/envoy-api/envoy/config/common/matcher/v3/matcher.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -32526,6 +32046,8 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -32533,9 +32055,11 @@ targets:
   - third_party/envoy-api/envoy/config/cluster/v3/cluster.proto
   - third_party/envoy-api/envoy/config/cluster/v3/filter.proto
   - third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto
+  - third_party/envoy-api/envoy/config/common/mutation_rules/v3/mutation_rules.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
   - third_party/envoy-api/envoy/config/core/v3/backoff.proto
   - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/cel.proto
   - third_party/envoy-api/envoy/config/core/v3/config_source.proto
   - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
   - third_party/envoy-api/envoy/config/core/v3/extension.proto
@@ -32578,6 +32102,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.proto
+  - third_party/envoy-api/envoy/extensions/load_balancing_policies/common/v3/common.proto
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.proto
   - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
   - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
@@ -32677,23 +32202,34 @@ targets:
   - posix
   - mac
 external_proto_libraries:
+- destination: third_party/cel-spec
+  hash: d6cb6b4ed272500d16546c672a65a7452b241462a200dda3f62a7de413883344
+  proto_prefix: third_party/cel-spec/
+  strip_path_prefix: proto/
+  strip_prefix: cel-spec-9f069b3ee58b02d6f6736c5ebd6587075c1a1b22
+  urls:
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/cel-spec/archive/9f069b3ee58b02d6f6736c5ebd6587075c1a1b22.tar.gz
+  - https://github.com/google/cel-spec/archive/9f069b3ee58b02d6f6736c5ebd6587075c1a1b22.tar.gz
 - destination: third_party/envoy-api
-  hash: cd8b49614408b43bd45d90e3e98d69e24eea632ff42ac3bfb8bca68bc31e377f
+  hash: ed5e6c319f8ebcdf24a9491f866a599bb9a3c193b859a94ad13bd31f85b46855
   proto_prefix: third_party/envoy-api/
-  strip_prefix: data-plane-api-4de3c74cf21a9958c1cf26d8993c55c6e0d28b49
+  strip_path_prefix: ''
+  strip_prefix: data-plane-api-6ef568cf4a67362849911d1d2a546fd9f35db2ff
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/4de3c74cf21a9958c1cf26d8993c55c6e0d28b49.tar.gz
-  - https://github.com/envoyproxy/data-plane-api/archive/4de3c74cf21a9958c1cf26d8993c55c6e0d28b49.tar.gz
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/6ef568cf4a67362849911d1d2a546fd9f35db2ff.tar.gz
+  - https://github.com/envoyproxy/data-plane-api/archive/6ef568cf4a67362849911d1d2a546fd9f35db2ff.tar.gz
 - destination: third_party/googleapis
-  hash: 0513f0f40af63bd05dc789cacc334ab6cec27cc89db596557cb2dfe8919463e4
+  hash: 3de3a199400eea7a766091aeb96c4b84c86266ad1f933f9933bbb7c359e727fe
   proto_prefix: third_party/googleapis/
-  strip_prefix: googleapis-fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0
+  strip_path_prefix: ''
+  strip_prefix: googleapis-2193a2bfcecb92b92aad7a4d81baa428cafd7dfd
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/googleapis/archive/fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0.tar.gz
-  - https://github.com/googleapis/googleapis/archive/fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0.tar.gz
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/googleapis/archive/2193a2bfcecb92b92aad7a4d81baa428cafd7dfd.tar.gz
+  - https://github.com/googleapis/googleapis/archive/2193a2bfcecb92b92aad7a4d81baa428cafd7dfd.tar.gz
 - destination: third_party/opencensus-proto/src
   hash: b7e13f0b4259e80c3070b583c2f39e53153085a6918718b1c710caf7037572b0
   proto_prefix: third_party/opencensus-proto/src/
+  strip_path_prefix: ''
   strip_prefix: opencensus-proto-0.3.0/src
   urls:
   - https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
@@ -32701,15 +32237,17 @@ external_proto_libraries:
 - destination: third_party/protoc-gen-validate
   hash: ab51e978326b87e06be7a12fc6496f3ff6586339043557dbbd31f622332a5d45
   proto_prefix: third_party/protoc-gen-validate/
+  strip_path_prefix: ''
   strip_prefix: protoc-gen-validate-1.2.1
   urls:
   - https://storage.googleapis.com/grpc-bazel-mirror/github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.zip
   - https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.zip
 - destination: third_party/xds
-  hash: dc305e20c9fa80822322271b50aa2ffa917bf4fd3973bcec52bfc28dc32c5927
+  hash: 49535f3c3370004309da50194c09bbfc528d4702424dd46e7d56a278a3dfc15d
   proto_prefix: third_party/xds/
-  strip_prefix: xds-3a472e524827f72d1ad621c4983dd5af54c46776
+  strip_path_prefix: ''
+  strip_prefix: xds-ee656c7534f5d7dc23d44dd611689568f72017a6
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/3a472e524827f72d1ad621c4983dd5af54c46776.tar.gz
-  - https://github.com/cncf/xds/archive/3a472e524827f72d1ad621c4983dd5af54c46776.tar.gz
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/ee656c7534f5d7dc23d44dd611689568f72017a6.tar.gz
+  - https://github.com/cncf/xds/archive/ee656c7534f5d7dc23d44dd611689568f72017a6.tar.gz
 tests: []

@@ -18,6 +18,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 
@@ -37,7 +38,6 @@
 #include "src/core/ext/transport/chttp2/transport/header_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
-#include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
@@ -49,7 +49,8 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "absl/log/log.h"
-#include "absl/types/span.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -103,6 +104,21 @@ void InitLocalSettings(Http2Settings& settings, const bool is_client) {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Channel Args helpers
+
+std::string TransportChannelArgs::DebugString() const {
+  return absl::StrCat(
+      "keepalive_time: ", keepalive_time,
+      " keepalive_timeout: ", keepalive_timeout,
+      " ping_timeout: ", ping_timeout, " settings_timeout: ", settings_timeout,
+      " keepalive_permit_without_calls: ", keepalive_permit_without_calls,
+      " enable_preferred_rx_crypto_frame_advertisement: ",
+      enable_preferred_rx_crypto_frame_advertisement,
+      " max_header_list_size_soft_limit: ", max_header_list_size_soft_limit,
+      " max_usable_hpack_table_size: ", max_usable_hpack_table_size,
+      " initial_sequence_number: ", initial_sequence_number,
+      " test_only_ack_pings: ", test_only_ack_pings);
+}
+
 void ReadChannelArgs(const ChannelArgs& channel_args,
                      TransportChannelArgs& args, Http2Settings& local_settings,
                      chttp2::TransportFlowControl& flow_control,
@@ -360,6 +376,20 @@ bool ProcessIncomingWindowUpdateFrameFlowControl(
     }
   }
   return false;
+}
+
+void MaybeAddTransportWindowUpdateFrame(
+    chttp2::TransportFlowControl& flow_control,
+    std::vector<Http2Frame>& frames) {
+  uint32_t window_size =
+      flow_control.DesiredAnnounceSize(/*writing_anyway=*/true);
+  if (window_size > 0) {
+    GRPC_HTTP2_COMMON_DLOG
+        << "MaybeGetWindowUpdateFrames Transport Window Update : "
+        << window_size;
+    frames.emplace_back(Http2WindowUpdateFrame{/*stream_id=*/0, window_size});
+    flow_control.SentUpdate(window_size);
+  }
 }
 
 void MaybeAddStreamWindowUpdateFrame(RefCountedPtr<Stream> stream,

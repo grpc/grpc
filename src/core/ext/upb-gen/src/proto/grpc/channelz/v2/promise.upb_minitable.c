@@ -15,7 +15,7 @@
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
-static const upb_MiniTableSubInternal grpc_channelz_v2_Promise__submsgs[7] = {
+static const upb_MiniTableSubInternal grpc_channelz_v2_Promise__submsgs[8] = {
   {.UPB_PRIVATE(submsg) = &grpc__channelz__v2__Promise__Custom_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &grpc__channelz__v2__Promise__If_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &grpc__channelz__v2__Promise__Loop_msg_init_ptr},
@@ -23,9 +23,10 @@ static const upb_MiniTableSubInternal grpc_channelz_v2_Promise__submsgs[7] = {
   {.UPB_PRIVATE(submsg) = &grpc__channelz__v2__Promise__Seq_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &grpc__channelz__v2__Promise__Join_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &grpc__channelz__v2__Promise__Map_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &grpc__channelz__v2__Promise__ForEach_msg_init_ptr},
 };
 
-static const upb_MiniTableField grpc_channelz_v2_Promise__fields[8] = {
+static const upb_MiniTableField grpc_channelz_v2_Promise__fields[9] = {
   {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(12, 16), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
@@ -34,12 +35,13 @@ static const upb_MiniTableField grpc_channelz_v2_Promise__fields[8] = {
   {6, UPB_SIZE(12, 16), -9, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {7, UPB_SIZE(12, 16), -9, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {8, UPB_SIZE(12, 16), -9, 6, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {9, UPB_SIZE(12, 16), -9, 7, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable grpc__channelz__v2__Promise_msg_init = {
   &grpc_channelz_v2_Promise__submsgs[0],
   &grpc_channelz_v2_Promise__fields[0],
-  UPB_SIZE(24, 32), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(120), 0,
+  UPB_SIZE(24, 32), 9, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.Promise",
 #endif
@@ -53,7 +55,7 @@ const upb_MiniTable grpc__channelz__v2__Promise_msg_init = {
     {0x0010000806040032, &upb_pom_1bt_max64b},
     {0x001000080705003a, &upb_pom_1bt_max64b},
     {0x0010000808060042, &upb_pom_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x001000080907004a, &upb_pom_1bt_max128b},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -140,6 +142,34 @@ const upb_MiniTable grpc__channelz__v2__Promise__Loop_msg_init = {
 };
 
 const upb_MiniTable* grpc__channelz__v2__Promise__Loop_msg_init_ptr = &grpc__channelz__v2__Promise__Loop_msg_init;
+static const upb_MiniTableSubInternal grpc_channelz_v2_Promise_ForEach__submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &grpc__channelz__v2__Promise_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &grpc__channelz__v2__Promise_msg_init_ptr},
+};
+
+static const upb_MiniTableField grpc_channelz_v2_Promise_ForEach__fields[4] = {
+  {1, UPB_SIZE(20, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(28, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(12, 48), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(16, 56), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+};
+
+const upb_MiniTable grpc__channelz__v2__Promise__ForEach_msg_init = {
+  &grpc_channelz_v2_Promise_ForEach__submsgs[0],
+  &grpc_channelz_v2_Promise_ForEach__fields[0],
+  UPB_SIZE(40, 64), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "grpc.channelz.v2.Promise.ForEach",
+#endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x001000003f00000a, &upb_pss_1bt},
+    {0x002000003f000012, &upb_pss_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+  })
+};
+
+const upb_MiniTable* grpc__channelz__v2__Promise__ForEach_msg_init_ptr = &grpc__channelz__v2__Promise__ForEach_msg_init;
 static const upb_MiniTableSubInternal grpc_channelz_v2_Promise_Race__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &grpc__channelz__v2__Promise_msg_init_ptr},
 };
@@ -286,11 +316,12 @@ const upb_MiniTable grpc__channelz__v2__Promise__Map_msg_init = {
 };
 
 const upb_MiniTable* grpc__channelz__v2__Promise__Map_msg_init_ptr = &grpc__channelz__v2__Promise__Map_msg_init;
-static const upb_MiniTable *messages_layout[10] = {
+static const upb_MiniTable *messages_layout[11] = {
   &grpc__channelz__v2__Promise_msg_init,
   &grpc__channelz__v2__Promise__Custom_msg_init,
   &grpc__channelz__v2__Promise__If_msg_init,
   &grpc__channelz__v2__Promise__Loop_msg_init,
+  &grpc__channelz__v2__Promise__ForEach_msg_init,
   &grpc__channelz__v2__Promise__Race_msg_init,
   &grpc__channelz__v2__Promise__SeqStep_msg_init,
   &grpc__channelz__v2__Promise__Seq_msg_init,
@@ -303,7 +334,7 @@ const upb_MiniTableFile src_proto_grpc_channelz_v2_promise_proto_upb_file_layout
   messages_layout,
   NULL,
   NULL,
-  10,
+  11,
   0,
   0,
 };
