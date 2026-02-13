@@ -21,6 +21,9 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/tsi/ssl_transport_security.h"
+
+using tsi::IsRootCertInfoEmpty;
+using tsi::RootCertInfo;
 #include "src/core/util/grpc_check.h"
 #include "absl/status/status.h"
 
@@ -29,7 +32,7 @@ bool grpc_tls_certificate_distributor::CertificateInfo::AreRootsEmpty() {
 }
 
 void grpc_tls_certificate_distributor::SetKeyMaterials(
-    const std::string& cert_name, std::shared_ptr<RootCertInfo> roots,
+    const std::string& cert_name, std::shared_ptr<tsi::RootCertInfo> roots,
     std::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs) {
   GRPC_CHECK(roots != nullptr || pem_key_cert_pairs.has_value());
   grpc_core::MutexLock lock(&mu_);
@@ -66,7 +69,7 @@ void grpc_tls_certificate_distributor::SetKeyMaterials(
       const auto watcher_it = watchers_.find(watcher_ptr);
       GRPC_CHECK(watcher_it != watchers_.end());
       GRPC_CHECK(watcher_it->second.identity_cert_name.has_value());
-      std::shared_ptr<RootCertInfo> roots_to_report;
+      std::shared_ptr<tsi::RootCertInfo> roots_to_report;
       if (roots != nullptr && watcher_it->second.root_cert_name == cert_name) {
         // In this case, We've already sent the credential updates at the time
         // when checking pem_root_certs, so we will skip here.
@@ -189,7 +192,7 @@ void grpc_tls_certificate_distributor::WatchTlsCertificates(
     GRPC_CHECK(watcher_it == watchers_.end());
     watchers_[watcher_ptr] = {std::move(watcher), root_cert_name,
                               identity_cert_name};
-    std::shared_ptr<RootCertInfo> updated_roots;
+    std::shared_ptr<tsi::RootCertInfo> updated_roots;
     std::optional<grpc_core::PemKeyCertPairList> updated_identity_pairs;
     grpc_error_handle root_error;
     grpc_error_handle identity_error;

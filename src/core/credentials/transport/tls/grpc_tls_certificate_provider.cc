@@ -48,14 +48,14 @@
 namespace grpc_core {
 namespace {
 
-absl::Status ValidateRootCertificates(const RootCertInfo* root_cert_info) {
+absl::Status ValidateRootCertificates(const tsi::RootCertInfo* root_cert_info) {
   if (root_cert_info == nullptr) return absl::OkStatus();
   return Match(
       *root_cert_info,
       [&](const std::string& root_certificates) {
         if (root_certificates.empty()) return absl::OkStatus();
         absl::StatusOr<std::vector<X509*>> parsed_roots =
-            ParsePemCertificateChain(root_certificates);
+            tsi::ParsePemCertificateChain(root_certificates);
         if (!parsed_roots.ok()) {
           return absl::Status(
               parsed_roots.status().code(),
@@ -81,7 +81,7 @@ absl::Status ValidatePemKeyCertPair(absl::string_view cert_chain,
   }
   // Check that the cert chain consists of valid PEM blocks.
   absl::StatusOr<std::vector<X509*>> parsed_certs =
-      ParsePemCertificateChain(cert_chain);
+      tsi::ParsePemCertificateChain(cert_chain);
   if (!parsed_certs.ok()) {
     return absl::Status(
         parsed_certs.status().code(),
@@ -96,7 +96,7 @@ absl::Status ValidatePemKeyCertPair(absl::string_view cert_chain,
   if (private_key_string == nullptr) return absl::OkStatus();
   // Check that the private key consists of valid PEM blocks.
   absl::StatusOr<EVP_PKEY*> parsed_private_key =
-      ParsePemPrivateKey(*private_key_string);
+      tsi::ParsePemPrivateKey(*private_key_string);
   if (!parsed_private_key.ok()) {
     return absl::Status(parsed_private_key.status().code(),
                         absl::StrCat("Failed to parse private key as PEM: ",
@@ -107,8 +107,8 @@ absl::Status ValidatePemKeyCertPair(absl::string_view cert_chain,
 }
 
 bool HasRootCertInfoChanged(
-    const absl::StatusOr<std::shared_ptr<RootCertInfo>>& old,
-    const absl::StatusOr<std::shared_ptr<RootCertInfo>>& updated) {
+    const absl::StatusOr<std::shared_ptr<tsi::RootCertInfo>>& old,
+    const absl::StatusOr<std::shared_ptr<tsi::RootCertInfo>>& updated) {
   if (old.status() != updated.status()) return true;  // Status changed.
   if (!old.ok()) return false;  // Both have same non-OK status.
   // Both have OK status.

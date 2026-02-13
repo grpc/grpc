@@ -16,6 +16,14 @@
 
 #include "src/core/tsi/ssl_transport_security_utils.h"
 
+using tsi::AkidFromCertificate;
+using tsi::AkidFromCrl;
+using tsi::IssuerFromCert;
+using tsi::ParsePemCertificateChain;
+using tsi::ParsePemPrivateKey;
+using tsi::VerifyCrlCertIssuerNamesMatch;
+using tsi::VerifyCrlSignature;
+
 #include <openssl/bio.h>
 #include <openssl/crypto.h>
 #include <openssl/evp.h>

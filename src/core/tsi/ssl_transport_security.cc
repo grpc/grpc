@@ -106,6 +106,9 @@ const size_t kMaxChainLength = 100;
 
 using TlsSessionKeyLogger = tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger;
 
+using tsi::PrivateKey;
+using tsi::RootCertInfo;
+
 // --- Structure definitions. ---
 
 struct tsi_ssl_root_certs_store {
@@ -140,6 +143,8 @@ struct tsi_ssl_server_handshaker_factory {
   grpc_core::RefCountedPtr<TlsSessionKeyLogger> key_logger;
   std::shared_ptr<RootCertInfo> root_cert_info;
 };
+
+namespace {
 
 // Tracks the arguments for a pending call to tsi_handshaker_next().
 struct HandshakerNextArgs {
@@ -202,9 +207,8 @@ struct tsi_ssl_frame_protector {
   // concurrently.
   gpr_mu mu;
 };
-// --- Library Initialization. ---
 
-namespace {
+// --- Library Initialization. ---
 
 #if defined(OPENSSL_IS_BORINGSSL)
 
@@ -1395,12 +1399,12 @@ static absl::StatusOr<X509_CRL*> GetCrlFromProvider(
   if (provider == nullptr) {
     return absl::InvalidArgumentError("CrlProvider is null.");
   }
-  absl::StatusOr<std::string> issuer_name = grpc_core::IssuerFromCert(cert);
+  absl::StatusOr<std::string> issuer_name = tsi::IssuerFromCert(cert);
   if (!issuer_name.ok()) {
     GRPC_TRACE_LOG(tsi, INFO) << "Could not get certificate issuer name";
     return absl::InvalidArgumentError(issuer_name.status().message());
   }
-  absl::StatusOr<std::string> akid = grpc_core::AkidFromCertificate(cert);
+  absl::StatusOr<std::string> akid = tsi::AkidFromCertificate(cert);
   std::string akid_to_use;
   if (!akid.ok()) {
     GRPC_TRACE_LOG(tsi, INFO)
@@ -1435,12 +1439,12 @@ static bool ValidateCrl(X509* cert, X509* issuer, X509_CRL* crl) {
   // RFC5280 6.3.3
   // 6.3.3a we do not support distribution points
   // 6.3.3b verify issuer and scope
-  valid = grpc_core::VerifyCrlCertIssuerNamesMatch(crl, cert);
+  valid = tsi::VerifyCrlCertIssuerNamesMatch(crl, cert);
   if (!valid) {
     VLOG(2) << "CRL and cert issuer names mismatched.";
     return valid;
   }
-  valid = grpc_core::HasCrlSignBit(issuer);
+  valid = tsi::HasCrlSignBit(issuer);
   if (!valid) {
     VLOG(2) << "CRL issuer not allowed to sign CRLs.";
     return valid;
@@ -1451,7 +1455,7 @@ static bool ValidateCrl(X509* cert, X509* issuer, X509_CRL* crl) {
   // 6.3.3f We only support direct CRLs so these paths are by definition the
   // same.
   // 6.3.3g Verify CRL Signature
-  valid = grpc_core::VerifyCrlSignature(crl, issuer);
+  valid = tsi::VerifyCrlSignature(crl, issuer);
   if (!valid) {
     VLOG(2) << "Crl signature check failed.";
   }
@@ -1582,7 +1586,7 @@ static absl::StatusOr<std::string> GetSpiffeUriFromCert(X509* cert) {
               "validation. Must "
               "have exactly one URI SAN that is the SPIFFE ID.");
         }
-        spiffe_uri = grpc_core::ParseUriString(subject_alt_name);
+        spiffe_uri = tsi::ParseUriString(subject_alt_name);
       }
     }
   }
@@ -1804,7 +1808,7 @@ static tsi_result ssl_protector_protect(tsi_frame_protector* self,
   tsi_ssl_frame_protector* impl =
       reinterpret_cast<tsi_ssl_frame_protector*>(self);
   gpr_mu_lock(&impl->mu);
-  tsi_result result = grpc_core::SslProtectorProtect(
+  tsi_result result = tsi::SslProtectorProtect(
       unprotected_bytes, impl->buffer_size, impl->buffer_offset, impl->buffer,
       impl->ssl, impl->network_io, unprotected_bytes_size,
       protected_output_frames, protected_output_frames_size);
@@ -1818,7 +1822,7 @@ static tsi_result ssl_protector_protect_flush(
   tsi_ssl_frame_protector* impl =
       reinterpret_cast<tsi_ssl_frame_protector*>(self);
   gpr_mu_lock(&impl->mu);
-  tsi_result result = grpc_core::SslProtectorProtectFlush(
+  tsi_result result = tsi::SslProtectorProtectFlush(
       impl->buffer_offset, impl->buffer, impl->ssl, impl->network_io,
       protected_output_frames, protected_output_frames_size,
       still_pending_size);
@@ -1833,7 +1837,7 @@ static tsi_result ssl_protector_unprotect(
   tsi_ssl_frame_protector* impl =
       reinterpret_cast<tsi_ssl_frame_protector*>(self);
   gpr_mu_lock(&impl->mu);
-  tsi_result result = grpc_core::SslProtectorUnprotect(
+  tsi_result result = tsi::SslProtectorUnprotect(
       protected_frames_bytes, impl->ssl, impl->network_io,
       protected_frames_bytes_size, unprotected_bytes, unprotected_bytes_size);
   gpr_mu_unlock(&impl->mu);
@@ -2181,10 +2185,10 @@ static tsi_result ssl_handshaker_do_handshake(tsi_ssl_handshaker* impl,
           verify_result_str = absl::StrCat(": ", verify_err);
         }
         LOG(INFO) << "Handshake failed with error "
-                  << grpc_core::SslErrorString(ssl_result) << ": " << err_str
+                  << tsi::SslErrorString(ssl_result) << ": " << err_str
                   << verify_result_str;
         if (error != nullptr) {
-          *error = absl::StrCat(grpc_core::SslErrorString(ssl_result), ": ",
+          *error = absl::StrCat(tsi::SslErrorString(ssl_result), ": ",
                                 err_str, verify_result_str);
         }
         impl->result = TSI_PROTOCOL_FAILURE;
@@ -2605,7 +2609,7 @@ static tsi_result create_tsi_ssl_handshaker(
     if (ssl_result != SSL_ERROR_WANT_READ) {
       LOG(ERROR)
           << "Unexpected error received from first SSL_do_handshake call: "
-          << grpc_core::SslErrorString(ssl_result);
+          << tsi::SslErrorString(ssl_result);
       SSL_free(ssl);
       BIO_free(network_io);
       return TSI_INTERNAL_ERROR;
@@ -2912,7 +2916,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   SSL_CTX_set_options(ssl_context, SSL_OP_NO_RENEGOTIATION);
 #endif
   if (ssl_context == nullptr) {
-    grpc_core::LogSslErrorStack();
+    tsi::LogSslErrorStack();
     LOG(ERROR) << "Could not create ssl context.";
     return TSI_INVALID_ARGUMENT;
   }
@@ -3150,7 +3154,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
       SSL_CTX_set_options(impl->ssl_contexts[i], SSL_OP_NO_RENEGOTIATION);
 #endif
       if (impl->ssl_contexts[i] == nullptr) {
-        grpc_core::LogSslErrorStack();
+        tsi::LogSslErrorStack();
         LOG(ERROR) << "Could not create ssl context.";
         result = TSI_OUT_OF_RESOURCES;
         break;
@@ -3350,15 +3354,17 @@ int tsi_ssl_peer_matches_name(const tsi_peer* peer, absl::string_view name) {
   return 0;  // Not found.
 }
 
+namespace tsi {
 bool IsRootCertInfoEmpty(const RootCertInfo* root_cert_info) {
   if (root_cert_info == nullptr) return true;
-  return Match(
+  return grpc_core::Match(
       *root_cert_info,
       [&](const std::string& pem_root_certs) { return pem_root_certs.empty(); },
       [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
         return spiffe_bundle_map.size() == 0;
       });
 }
+}  // namespace tsi
 
 // --- Testing support. ---
 const tsi_ssl_handshaker_factory_vtable* tsi_ssl_handshaker_factory_swap_vtable(

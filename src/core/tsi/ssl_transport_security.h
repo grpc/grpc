@@ -53,10 +53,12 @@
 #define TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY \
   "x509_verified_root_cert_subject"
 
+namespace tsi {
 using RootCertInfo = std::variant<std::string, grpc_core::SpiffeBundleMap>;
 
 using PrivateKey =
     std::variant<std::string, std::shared_ptr<grpc_core::PrivateKeySigner>>;
+}  // namespace tsi
 
 // --- tsi_ssl_root_certs_store object ---
 
@@ -112,14 +114,14 @@ typedef struct tsi_ssl_client_handshaker_factory
 struct tsi_ssl_pem_key_cert_pair {
   // private_key is either the string containing the PEM encoding of
   // the client's private key or an implementation of PrivateKeySigner.
-  PrivateKey private_key;
+  tsi::PrivateKey private_key;
 
   // cert_chain is the string containing the PEM encoding of
   // the client's certificate chain.
   std::string cert_chain;
 
   tsi_ssl_pem_key_cert_pair() = default;
-  tsi_ssl_pem_key_cert_pair(PrivateKey pk, std::string cert_chain_pem)
+  tsi_ssl_pem_key_cert_pair(tsi::PrivateKey pk, std::string cert_chain_pem)
       : private_key(std::move(pk)), cert_chain(std::move(cert_chain_pem)) {}
 };
 // TO BE DEPRECATED.
@@ -201,7 +203,7 @@ struct tsi_ssl_client_handshaker_options {
 
   // root_cert_info is either the string containing the PEM encoding of the
   // client root certificates or a SPIFFE bundle map.
-  std::shared_ptr<RootCertInfo> root_cert_info;
+  std::shared_ptr<tsi::RootCertInfo> root_cert_info;
 
   // TODO(gtcooke94) this ctor is not needed
   // https://github.com/grpc/grpc/pull/39708/files#r2143735662
@@ -368,7 +370,7 @@ struct tsi_ssl_server_handshaker_options {
   // root_cert_info is either the string containing the PEM encoding of the
   // server root certificates or a SPIFFE bundle map. This parameter may be NULL
   // if the server does not want the client to be authenticated with SSL.
-  std::shared_ptr<RootCertInfo> root_cert_info;
+  std::shared_ptr<tsi::RootCertInfo> root_cert_info;
 
   // TODO(gtcooke94) this ctor is not needed
   // https://github.com/grpc/grpc/pull/39708/files#r2143735662
@@ -450,6 +452,8 @@ tsi_result tsi_ssl_extract_x509_subject_names_from_pem_cert(
 tsi_result tsi_ssl_get_cert_chain_contents(STACK_OF(X509) * peer_chain,
                                            tsi_peer_property* property);
 
+namespace tsi {
 bool IsRootCertInfoEmpty(const RootCertInfo* root_cert_info);
+}  // namespace tsi
 
 #endif  // GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_H

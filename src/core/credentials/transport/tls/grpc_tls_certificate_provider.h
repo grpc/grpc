@@ -160,7 +160,7 @@ class FileWatcherCertificateProvider final
   // - Otherwise, holds either a SpiffeBundleMap or a string root cert
   // TODO(gtcooke94) - refactor the handling for string root cert files such
   // that their failure is a non-ok status rather than a nullptr
-  absl::StatusOr<std::shared_ptr<RootCertInfo>> root_cert_info_
+  absl::StatusOr<std::shared_ptr<tsi::RootCertInfo>> root_cert_info_
       ABSL_GUARDED_BY(mu_) = nullptr;
   // Stores each cert_name we get from the distributor callback and its watcher
   // information.
@@ -189,7 +189,7 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
   // Update the certificate information for this provider.
   // Users should verify the status retuned to confirm that the update was
   // successful.
-  absl::Status UpdateRoot(std::shared_ptr<RootCertInfo> root_certificates);
+  absl::Status UpdateRoot(std::shared_ptr<tsi::RootCertInfo> root_certificates);
   absl::Status UpdateIdentityKeyCertPair(
       const PemKeyCertPairList& pem_key_cert_pairs);
 
@@ -204,7 +204,7 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
                         other);
   }
   absl::Status Update(
-      std::optional<std::shared_ptr<RootCertInfo>> root_cert_info,
+      std::optional<std::shared_ptr<tsi::RootCertInfo>> root_cert_info,
       std::optional<const PemKeyCertPairList> pem_key_cert_pairs);
 
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
@@ -214,7 +214,7 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
   // The most-recent credential data. It will be empty if the most recent read
   // attempt failed.
   PemKeyCertPairList pem_key_cert_pairs_ ABSL_GUARDED_BY(mu_);
-  absl::StatusOr<std::shared_ptr<RootCertInfo>> root_certificates_
+  absl::StatusOr<std::shared_ptr<tsi::RootCertInfo>> root_certificates_
       ABSL_GUARDED_BY(mu_);
   // Stores each cert_name we get from the distributor callback and its watcher
   // information.

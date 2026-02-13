@@ -41,6 +41,8 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/tsi/ssl_transport_security.h"
+
+using tsi::RootCertInfo;
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
@@ -448,7 +450,7 @@ ArenaPromise<absl::Status> TlsChannelSecurityConnector::CheckCallHost(
 }
 
 void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
-    OnCertificatesChanged(std::shared_ptr<RootCertInfo> root_certs,
+    OnCertificatesChanged(std::shared_ptr<tsi::RootCertInfo> root_certs,
                           std::optional<PemKeyCertPairList> key_cert_pairs) {
   GRPC_CHECK_NE(security_connector_, nullptr);
   MutexLock lock(&security_connector_->mu_);
@@ -717,7 +719,7 @@ int TlsServerSecurityConnector::cmp(
 }
 
 void TlsServerSecurityConnector::TlsServerCertificateWatcher::
-    OnCertificatesChanged(std::shared_ptr<RootCertInfo> roots,
+    OnCertificatesChanged(std::shared_ptr<tsi::RootCertInfo> roots,
                           std::optional<PemKeyCertPairList> key_cert_pairs) {
   GRPC_CHECK_NE(security_connector_, nullptr);
   MutexLock lock(&security_connector_->mu_);

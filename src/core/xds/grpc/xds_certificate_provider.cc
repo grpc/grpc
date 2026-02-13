@@ -29,6 +29,8 @@
 #include "src/core/util/grpc_check.h"
 #include "absl/functional/bind_front.h"
 
+using tsi::RootCertInfo;
+
 namespace grpc_core {
 
 namespace {
