@@ -51,7 +51,7 @@ Reference for PH2 and cpp_end2end_test : src/core/lib/experiments/experiments.ya
 
 We have temporarily used SKIP_TEST_FOR_PH2 to mark tests that are failing for
 PH2 experiment, and are WIP.
-ETA to finish : 30-Feb-2026. Owner : tjagtap
+ETA to finish : 30-Aug-2026. Owner : tjagtap
 For more information on PH2 refer file src/core/ext/transport/chttp2/GEMINI.md
 
 ### Retry for PH2
