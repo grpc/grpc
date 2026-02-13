@@ -4194,9 +4194,12 @@ libs:
   - include/grpcpp/support/time.h
   - include/grpcpp/support/validate_service_config.h
   - include/grpcpp/version_info.h
+  - include/grpcpp/virtual_channel.h
   - include/grpcpp/xds_server_builder.h
   headers:
+  - src/core/client_channel/virtual_channel.h
   - src/core/telemetry/telemetry_label.h
+  - src/core/transport/session_endpoint.h
   - src/core/xds/grpc/xds_enabled_server.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
@@ -4210,6 +4213,8 @@ libs:
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
   src:
+  - src/core/client_channel/virtual_channel.cc
+  - src/core/transport/session_endpoint.cc
   - src/cpp/client/call_context_registry.cc
   - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
@@ -4580,8 +4585,11 @@ libs:
   - include/grpcpp/support/time.h
   - include/grpcpp/support/validate_service_config.h
   - include/grpcpp/version_info.h
+  - include/grpcpp/virtual_channel.h
   headers:
+  - src/core/client_channel/virtual_channel.h
   - src/core/telemetry/telemetry_label.h
+  - src/core/transport/session_endpoint.h
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/server/backend_metric_recorder.h
@@ -4591,6 +4599,8 @@ libs:
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
   src:
+  - src/core/client_channel/virtual_channel.cc
+  - src/core/transport/session_endpoint.cc
   - src/cpp/client/call_context_registry.cc
   - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
@@ -23173,6 +23183,20 @@ targets:
   headers: []
   src:
   - test/core/service_config/service_config_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+- name: session_endpoint_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/transport/session_endpoint.h
+  - test/core/end2end/cq_verifier.h
+  src:
+  - src/core/transport/session_endpoint.cc
+  - test/core/end2end/cq_verifier.cc
+  - test/core/transport/session_endpoint_test.cc
   deps:
   - gtest
   - grpc_test_util

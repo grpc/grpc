@@ -167,3 +167,23 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util_base",
     ],
 )
+
+grpc_cc_test(
+    name = "session_endpoint_test",
+    srcs = ["session_endpoint_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/status",
+    ],
+    deps = [
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc",
+        "//src/core:channel_args",
+        "//src/core:grpc_transport_inproc",
+        "//src/core:notification",
+        "//src/core:session_endpoint",
+        "//test/core/end2end:cq_verifier",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
