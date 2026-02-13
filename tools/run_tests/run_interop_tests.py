@@ -1807,7 +1807,7 @@ try:
                     )
                     jobs.append(test_job)
 
-    if args.mcs_cs:
+    if args.max_concurrent_streams_connection_scaling:
         if not args.use_docker:
             print('MCS connection scaling test can only be run with --use-docker')
         else:
