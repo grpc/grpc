@@ -172,7 +172,7 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
                                               bool root_being_watched,
                                               bool identity_being_watched) {
     MutexLock lock(&mu_);
-    absl::StatusOr<std::shared_ptr<RootCertInfo>> roots = nullptr;
+    absl::StatusOr<std::shared_ptr<tsi::RootCertInfo>> roots = nullptr;
     std::optional<PemKeyCertPairList> pem_key_cert_pairs;
     FileWatcherCertificateProvider::WatcherInfo& info =
         watcher_info_[cert_name];
@@ -244,12 +244,12 @@ absl::Status FileWatcherCertificateProvider::ValidateCredentials() const {
 }
 
 void FileWatcherCertificateProvider::ForceUpdate() {
-  absl::StatusOr<std::shared_ptr<RootCertInfo>> root_cert_info = nullptr;
+  absl::StatusOr<std::shared_ptr<tsi::RootCertInfo>> root_cert_info = nullptr;
   std::optional<PemKeyCertPairList> pem_key_cert_pairs;
   if (!spiffe_bundle_map_path_.empty()) {
     auto map = SpiffeBundleMap::FromFile(spiffe_bundle_map_path_);
     if (map.ok()) {
-      root_cert_info = std::make_shared<RootCertInfo>(std::move(*map));
+      root_cert_info = std::make_shared<tsi::RootCertInfo>(std::move(*map));
     } else {
       root_cert_info = absl::InvalidArgumentError(
           absl::StrFormat("spiffe bundle map file %s failed to load: %s",
@@ -260,7 +260,7 @@ void FileWatcherCertificateProvider::ForceUpdate() {
         ReadRootCertificatesFromFile(root_cert_path_);
     if (root_certificate.has_value()) {
       root_cert_info =
-          std::make_shared<RootCertInfo>(std::move(*root_certificate));
+          std::make_shared<tsi::RootCertInfo>(std::move(*root_certificate));
     }
   }
   if (!private_key_path_.empty()) {
@@ -293,7 +293,7 @@ void FileWatcherCertificateProvider::ForceUpdate() {
     for (const auto& p : watcher_info_) {
       const std::string& cert_name = p.first;
       const WatcherInfo& info = p.second;
-      std::shared_ptr<RootCertInfo> root_to_report;
+      std::shared_ptr<tsi::RootCertInfo> root_to_report;
       std::optional<PemKeyCertPairList> identity_to_report;
       // Set key materials to the distributor if their contents changed.
       if (info.root_being_watched && root_changed) {
@@ -422,7 +422,7 @@ InMemoryCertificateProvider::InMemoryCertificateProvider()
                                               bool root_being_watched,
                                               bool identity_being_watched) {
     MutexLock lock(&mu_);
-    std::shared_ptr<RootCertInfo> roots;
+    std::shared_ptr<tsi::RootCertInfo> roots;
     std::optional<PemKeyCertPairList> pem_key_cert_pairs;
     WatcherInfo& info = watcher_info_[cert_name];
     if (!info.root_being_watched && root_being_watched &&
@@ -459,7 +459,7 @@ InMemoryCertificateProvider::InMemoryCertificateProvider()
 }
 
 absl::Status InMemoryCertificateProvider::Update(
-    std::optional<std::shared_ptr<RootCertInfo>> root_cert_info,
+    std::optional<std::shared_ptr<tsi::RootCertInfo>> root_cert_info,
     std::optional<const PemKeyCertPairList> pem_key_cert_pairs) {
   MutexLock lock(&mu_);
   const bool root_changed =
@@ -481,7 +481,7 @@ absl::Status InMemoryCertificateProvider::Update(
     for (const auto& p : watcher_info_) {
       const std::string& cert_name = p.first;
       const WatcherInfo& info = p.second;
-      std::shared_ptr<RootCertInfo> root_to_report;
+      std::shared_ptr<tsi::RootCertInfo> root_to_report;
       std::optional<PemKeyCertPairList> identity_to_report;
       // Set key materials to the distributor if their contents changed.
       if (info.root_being_watched && root_changed) {
@@ -532,7 +532,7 @@ absl::Status InMemoryCertificateProvider::ValidateCredentials() const {
 }
 
 absl::Status InMemoryCertificateProvider::UpdateRoot(
-    std::shared_ptr<RootCertInfo> root_certificates) {
+    std::shared_ptr<tsi::RootCertInfo> root_certificates) {
   return Update(root_certificates, std::nullopt);
 }
 
@@ -576,7 +576,7 @@ bool grpc_tls_certificate_provider_in_memory_set_root_certificate(
   auto in_memory_provider =
       grpc_core::DownCast<grpc_core::InMemoryCertificateProvider*>(provider);
   return in_memory_provider
-      ->UpdateRoot(std::make_shared<RootCertInfo>(root_cert))
+      ->UpdateRoot(std::make_shared<tsi::RootCertInfo>(root_cert))
       .ok();
 }
 
