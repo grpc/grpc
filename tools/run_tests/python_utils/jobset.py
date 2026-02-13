@@ -306,13 +306,12 @@ class Job(object):
             if not os.path.exists(logfile_dir):
                 os.makedirs(logfile_dir)
             self._logfile = open(self._spec.logfilename, "w+")
-            print('Docker stdout logfile from spec for ' + spec.shortname + ' is ' + self._logfile.name)
         else:
             # macOS: a series of quick os.unlink invocation might cause OS
             # error during the creation of temporary file. By using
             # NamedTemporaryFile, we defer the removal of file and directory.
             self._logfile = tempfile.NamedTemporaryFile(delete=False)
-            print('Docker stdout logfile for ' + spec.shortname + ' is ' + self._logfile.name)
+            print('Job ' + self._spec.shortname + ' started with log file ' + self._logfile.name)
         env = dict(os.environ)
         env.update(self._spec.environ)
         env.update(self._add_env)

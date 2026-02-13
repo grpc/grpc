@@ -1213,6 +1213,40 @@ for the entire test case) to receive an OOB load report that matches the
 requested load report in step 3. Similar to step 2.
 5. Client half closes the stream, and asserts the streaming call is successful. 
 
+### max_concurrent_streams_connection_scaling
+
+This test verifies that when the maximum concurrent streams limit has been reached
+on the connection, the subchannel scales connections upto the configured limit.
+
+Server features:
+* [FullDuplexCall][]
+
+Procedure:
+ 1. Client makes 3 FullDuplexCall rpcs with a request to send the client socket address in
+ the response.
+
+    ```
+    {
+      response_parameters:{
+        send_client_socket_address_in_response: true
+      }
+    }
+    ```
+
+ 2. Client waits for reply from each rpc before starting the next one, with the reply expected 
+be of the format
+
+    ```
+    {
+      client_socket_address: <client socket address>
+    }
+    ```
+
+Client asserts:
+* The client socket address received for the first two rpcs are the same.
+
+* The client socket address received for the thrid rpc is different.
+
 ### Experimental Tests
 
 These tests are not yet standardized, and are not yet implemented in all

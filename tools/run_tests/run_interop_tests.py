@@ -1033,6 +1033,7 @@ def cloud_to_cloud_jobspec(
     docker_image=None,
     transport_security="tls",
     manual_cmd_log=None,
+    add_env={}
 ):
     """Creates jobspec for cloud-to-cloud interop test"""
     interop_only_options = [
@@ -1092,6 +1093,7 @@ def cloud_to_cloud_jobspec(
         cwd = language.client_cwd
 
     environ = language.global_env()
+    environ.update(add_env)
     if docker_image and language.safename != "objc":
         # we can't run client in docker for objc.
         container_name = dockerjob.random_name(
@@ -1129,7 +1131,7 @@ def cloud_to_cloud_jobspec(
 
 
 def server_jobspec(
-    language, docker_image, transport_security="tls", manual_cmd_log=None, use_mcs=False
+    language, docker_image, transport_security="tls", manual_cmd_log=None, set_max_concurrent_streams_limit=False
 ):
     """Create jobspec for running a server"""
     container_name = dockerjob.random_name(
@@ -1148,8 +1150,8 @@ def server_jobspec(
             % transport_security
         )
         sys.exit(1)
-    if use_mcs:
-        server_cmd += ["--use_mcs=true"]
+    if set_max_concurrent_streams_limit:
+        server_cmd += ["--set_max_concurrent_streams_limit=true"]
     cmdline = bash_cmdline(language.server_cmd(server_cmd))
     environ = language.global_env()
     docker_args = ["--name=%s" % container_name]
@@ -1430,11 +1432,11 @@ argp.add_argument(
     help="Upload test results to a specified BQ table.",
 )
 argp.add_argument(
-    "--mcs_cs",
+    "--max_concurrent_streams_connection_scaling",
     default=False,
     action="store_const",
     const=True,
-    help="Enable MCS connection scaling testing",
+    help="Enable Max concurrent streams connection scaling testing",
 )
 
 args = argp.parse_args()
@@ -1713,27 +1715,27 @@ try:
         (server_host, server_port) = server[1].split(":")
         server_addresses[server_name] = (server_host, server_port)
 
-    for server_name, server_address in list(server_addresses.items()):
-        (server_host, server_port) = server_address
-        server_language = _LANGUAGES.get(server_name, None)
-        skip_server = []  # test cases unimplemented by server
-        if server_language:
-            skip_server = server_language.unimplemented_test_cases_server()
-        for language in languages:
-            for test_case in _TEST_CASES:
-                if not test_case in language.unimplemented_test_cases():
-                    if not test_case in skip_server:
-                        test_job = cloud_to_cloud_jobspec(
-                            language,
-                            test_case,
-                            server_name,
-                            server_host,
-                            server_port,
-                            docker_image=docker_images.get(str(language)),
-                            transport_security=args.transport_security,
-                            manual_cmd_log=client_manual_cmd_log,
-                        )
-                        jobs.append(test_job)
+#    for server_name, server_address in list(server_addresses.items()):
+#        (server_host, server_port) = server_address
+#        server_language = _LANGUAGES.get(server_name, None)
+#        skip_server = []  # test cases unimplemented by server
+#        if server_language:
+#            skip_server = server_language.unimplemented_test_cases_server()
+#        for language in languages:
+#            for test_case in _TEST_CASES:
+#                if not test_case in language.unimplemented_test_cases():
+#                    if not test_case in skip_server:
+#                        test_job = cloud_to_cloud_jobspec(
+#                            language,
+#                            test_case,
+#                            server_name,
+#                            server_host,
+#                            server_port,
+#                            docker_image=docker_images.get(str(language)),
+#                            transport_security=args.transport_security,
+#                            manual_cmd_log=client_manual_cmd_log,
+#                        )
+#                        jobs.append(test_job)
 
         if args.http2_interop:
             for test_case in _HTTP2_TEST_CASES:
@@ -1821,20 +1823,24 @@ try:
                     docker_images.get('java'),
                     args.transport_security,
                     manual_cmd_log=server_manual_cmd_log,
-                    use_mcs=True,
+                    set_max_concurrent_streams_limit=True,
                 )
                 mcs_server_job = dockerjob.DockerJob(mcs_server_jobspec)
             
                 for language in languages_for_mcs_cs:
                     test_job = cloud_to_cloud_jobspec(
                         language,
-                        'mcs_cs',
+                        'max_concurrent_streams_connection_scaling',
                         'java-mcs',
                         'localhost',
                         mcs_server_job.mapped_port(_DEFAULT_SERVER_PORT),
                         docker_image=docker_images.get(str(language)),
                         transport_security=args.transport_security,
                         manual_cmd_log=client_manual_cmd_log,
+                        add_env={'GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING': 'true',
+                            'GRPC_EXPERIMENTS': 'subchannel_connection_scaling',
+                            'GRPC_VERBOSITY': 'debug',
+                            'GRPC_TRACE': 'all'},
                     )
                     jobs.append(test_job)
             else:

@@ -228,7 +228,7 @@ int main(int argc, char** argv) {
           factories.emplace_back(
               new grpc::testing::MetadataAndStatusLoggerInterceptorFactory());
         }
-        if (test_case == "mcs_cs") {
+        if (test_case == "max_concurrent_streams_connection_scaling") {
           arguments.SetServiceConfigJSON("{\"connectionScaling\":{\"maxConnectionsPerSubchannel\": 2}}");
         } else {
           std::string service_config_json =
