@@ -45,57 +45,57 @@ public static partial class Greeter
   }
 
   [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-  static readonly grpc::Marshaller<global::HelloRequest> __Marshaller_HelloRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::HelloRequest.Parser));
+  static readonly grpc::Marshaller<global::TestAsyncRequest> __Marshaller_TestAsyncRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::TestAsyncRequest.Parser));
   [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-  static readonly grpc::Marshaller<global::HelloReply> __Marshaller_HelloReply = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::HelloReply.Parser));
+  static readonly grpc::Marshaller<global::TestAsyncReply> __Marshaller_TestAsyncReply = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::TestAsyncReply.Parser));
 
   [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-  static readonly grpc::Method<global::HelloRequest, global::HelloReply> __Method_SayHello = new grpc::Method<global::HelloRequest, global::HelloReply>(
+  static readonly grpc::Method<global::TestAsyncRequest, global::TestAsyncReply> __Method_SayHello = new grpc::Method<global::TestAsyncRequest, global::TestAsyncReply>(
       grpc::MethodType.Unary,
       __ServiceName,
       "SayHello",
-      __Marshaller_HelloRequest,
-      __Marshaller_HelloReply);
+      __Marshaller_TestAsyncRequest,
+      __Marshaller_TestAsyncReply);
 
   [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-  static readonly grpc::Method<global::HelloRequest, global::HelloReply> __Method_SayHelloAsync = new grpc::Method<global::HelloRequest, global::HelloReply>(
+  static readonly grpc::Method<global::TestAsyncRequest, global::TestAsyncReply> __Method_SayHelloAsync = new grpc::Method<global::TestAsyncRequest, global::TestAsyncReply>(
       grpc::MethodType.Unary,
       __ServiceName,
       "SayHelloAsync",
-      __Marshaller_HelloRequest,
-      __Marshaller_HelloReply);
+      __Marshaller_TestAsyncRequest,
+      __Marshaller_TestAsyncReply);
 
   [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-  static readonly grpc::Method<global::HelloRequest, global::HelloReply> __Method_LotsOfReplies = new grpc::Method<global::HelloRequest, global::HelloReply>(
+  static readonly grpc::Method<global::TestAsyncRequest, global::TestAsyncReply> __Method_LotsOfReplies = new grpc::Method<global::TestAsyncRequest, global::TestAsyncReply>(
       grpc::MethodType.ServerStreaming,
       __ServiceName,
       "LotsOfReplies",
-      __Marshaller_HelloRequest,
-      __Marshaller_HelloReply);
+      __Marshaller_TestAsyncRequest,
+      __Marshaller_TestAsyncReply);
 
   [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-  static readonly grpc::Method<global::HelloRequest, global::HelloReply> __Method_LotsOfGreetings = new grpc::Method<global::HelloRequest, global::HelloReply>(
+  static readonly grpc::Method<global::TestAsyncRequest, global::TestAsyncReply> __Method_LotsOfGreetings = new grpc::Method<global::TestAsyncRequest, global::TestAsyncReply>(
       grpc::MethodType.ClientStreaming,
       __ServiceName,
       "LotsOfGreetings",
-      __Marshaller_HelloRequest,
-      __Marshaller_HelloReply);
+      __Marshaller_TestAsyncRequest,
+      __Marshaller_TestAsyncReply);
 
   [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-  static readonly grpc::Method<global::HelloRequest, global::HelloReply> __Method_BidiHello = new grpc::Method<global::HelloRequest, global::HelloReply>(
+  static readonly grpc::Method<global::TestAsyncRequest, global::TestAsyncReply> __Method_BidiHello = new grpc::Method<global::TestAsyncRequest, global::TestAsyncReply>(
       grpc::MethodType.DuplexStreaming,
       __ServiceName,
       "BidiHello",
-      __Marshaller_HelloRequest,
-      __Marshaller_HelloReply);
+      __Marshaller_TestAsyncRequest,
+      __Marshaller_TestAsyncReply);
 
   [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-  static readonly grpc::Method<global::HelloRequest, global::HelloReply> __Method_OldHello = new grpc::Method<global::HelloRequest, global::HelloReply>(
+  static readonly grpc::Method<global::TestAsyncRequest, global::TestAsyncReply> __Method_OldHello = new grpc::Method<global::TestAsyncRequest, global::TestAsyncReply>(
       grpc::MethodType.Unary,
       __ServiceName,
       "OldHello",
-      __Marshaller_HelloRequest,
-      __Marshaller_HelloReply);
+      __Marshaller_TestAsyncRequest,
+      __Marshaller_TestAsyncReply);
 
   /// <summary>Service descriptor</summary>
   public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
@@ -114,7 +114,7 @@ public static partial class Greeter
     /// <param name="context">The context of the server-side call handler being invoked.</param>
     /// <returns>The response to send back to the client (wrapped by a task).</returns>
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    public virtual global::System.Threading.Tasks.Task<global::HelloReply> SayHelloAsync(global::HelloRequest request, grpc::ServerCallContext context)
+    public virtual global::System.Threading.Tasks.Task<global::TestAsyncReply> SayHelloAsync(global::TestAsyncRequest request, grpc::ServerCallContext context)
     {
       throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
     }
@@ -126,7 +126,7 @@ public static partial class Greeter
     /// <param name="context">The context of the server-side call handler being invoked.</param>
     /// <returns>The response to send back to the client (wrapped by a task).</returns>
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    public virtual global::System.Threading.Tasks.Task<global::HelloReply> SayHelloAsync(global::HelloRequest request, grpc::ServerCallContext context)
+    public virtual global::System.Threading.Tasks.Task<global::TestAsyncReply> SayHelloAsync(global::TestAsyncRequest request, grpc::ServerCallContext context)
     {
       throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
     }
@@ -139,7 +139,7 @@ public static partial class Greeter
     /// <param name="context">The context of the server-side call handler being invoked.</param>
     /// <returns>A task indicating completion of the handler.</returns>
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    public virtual global::System.Threading.Tasks.Task LotsOfReplies(global::HelloRequest request, grpc::IServerStreamWriter<global::HelloReply> responseStream, grpc::ServerCallContext context)
+    public virtual global::System.Threading.Tasks.Task LotsOfReplies(global::TestAsyncRequest request, grpc::IServerStreamWriter<global::TestAsyncReply> responseStream, grpc::ServerCallContext context)
     {
       throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
     }
@@ -151,7 +151,7 @@ public static partial class Greeter
     /// <param name="context">The context of the server-side call handler being invoked.</param>
     /// <returns>The response to send back to the client (wrapped by a task).</returns>
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    public virtual global::System.Threading.Tasks.Task<global::HelloReply> LotsOfGreetings(grpc::IAsyncStreamReader<global::HelloRequest> requestStream, grpc::ServerCallContext context)
+    public virtual global::System.Threading.Tasks.Task<global::TestAsyncReply> LotsOfGreetings(grpc::IAsyncStreamReader<global::TestAsyncRequest> requestStream, grpc::ServerCallContext context)
     {
       throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
     }
@@ -164,7 +164,7 @@ public static partial class Greeter
     /// <param name="context">The context of the server-side call handler being invoked.</param>
     /// <returns>A task indicating completion of the handler.</returns>
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    public virtual global::System.Threading.Tasks.Task BidiHello(grpc::IAsyncStreamReader<global::HelloRequest> requestStream, grpc::IServerStreamWriter<global::HelloReply> responseStream, grpc::ServerCallContext context)
+    public virtual global::System.Threading.Tasks.Task BidiHello(grpc::IAsyncStreamReader<global::TestAsyncRequest> requestStream, grpc::IServerStreamWriter<global::TestAsyncReply> responseStream, grpc::ServerCallContext context)
     {
       throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
     }
@@ -177,7 +177,7 @@ public static partial class Greeter
     /// <returns>The response to send back to the client (wrapped by a task).</returns>
     [global::System.ObsoleteAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    public virtual global::System.Threading.Tasks.Task<global::HelloReply> OldHelloAsync(global::HelloRequest request, grpc::ServerCallContext context)
+    public virtual global::System.Threading.Tasks.Task<global::TestAsyncReply> OldHelloAsync(global::TestAsyncRequest request, grpc::ServerCallContext context)
     {
       throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
     }
@@ -220,7 +220,7 @@ public static partial class Greeter
     /// <param name="cancellationToken">An optional token for canceling the call.</param>
     /// <returns>The response received from the server.</returns>
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    public virtual global::HelloReply SayHello(global::HelloRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+    public virtual global::TestAsyncReply SayHello(global::TestAsyncRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
     {
       return SayHello(request, new grpc::CallOptions(headers, deadline, cancellationToken));
     }
@@ -231,7 +231,7 @@ public static partial class Greeter
     /// <param name="options">The options for the call.</param>
     /// <returns>The response received from the server.</returns>
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    public virtual global::HelloReply SayHello(global::HelloRequest request, grpc::CallOptions options)
+    public virtual global::TestAsyncReply SayHello(global::TestAsyncRequest request, grpc::CallOptions options)
     {
       return CallInvoker.BlockingUnaryCall(__Method_SayHello, null, options, request);
     }
@@ -244,7 +244,7 @@ public static partial class Greeter
     /// <param name="cancellationToken">An optional token for canceling the call.</param>
     /// <returns>The call object.</returns>
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    public virtual grpc::AsyncUnaryCall<global::HelloReply> SayHelloAsync(global::HelloRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+    public virtual grpc::AsyncUnaryCall<global::TestAsyncReply> SayHelloAsync(global::TestAsyncRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
     {
       return SayHelloAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
     }
@@ -255,7 +255,7 @@ public static partial class Greeter
     /// <param name="options">The options for the call.</param>
     /// <returns>The call object.</returns>
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    public virtual grpc::AsyncUnaryCall<global::HelloReply> SayHelloAsync(global::HelloRequest request, grpc::CallOptions options)
+    public virtual grpc::AsyncUnaryCall<global::TestAsyncReply> SayHelloAsync(global::TestAsyncRequest request, grpc::CallOptions options)
     {
       return CallInvoker.AsyncUnaryCall(__Method_SayHello, null, options, request);
     }
@@ -268,7 +268,7 @@ public static partial class Greeter
     /// <param name="cancellationToken">An optional token for canceling the call.</param>
     /// <returns>The response received from the server.</returns>
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    public virtual global::HelloReply SayHelloAsync(global::HelloRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+    public virtual global::TestAsyncReply SayHelloAsync(global::TestAsyncRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
     {
       return SayHelloAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
     }
@@ -279,7 +279,7 @@ public static partial class Greeter
     /// <param name="options">The options for the call.</param>
     /// <returns>The response received from the server.</returns>
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    public virtual global::HelloReply SayHelloAsync(global::HelloRequest request, grpc::CallOptions options)
+    public virtual global::TestAsyncReply SayHelloAsync(global::TestAsyncRequest request, grpc::CallOptions options)
     {
       return CallInvoker.BlockingUnaryCall(__Method_SayHelloAsync, null, options, request);
     }
@@ -292,7 +292,7 @@ public static partial class Greeter
     /// <param name="cancellationToken">An optional token for canceling the call.</param>
     /// <returns>The call object.</returns>
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    public virtual grpc::AsyncUnaryCall<global::HelloReply> SayHelloAsyncAsync(global::HelloRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+    public virtual grpc::AsyncUnaryCall<global::TestAsyncReply> SayHelloAsyncAsync(global::TestAsyncRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
     {
       return SayHelloAsyncAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
     }
@@ -303,7 +303,7 @@ public static partial class Greeter
     /// <param name="options">The options for the call.</param>
     /// <returns>The call object.</returns>
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    public virtual grpc::AsyncUnaryCall<global::HelloReply> SayHelloAsyncAsync(global::HelloRequest request, grpc::CallOptions options)
+    public virtual grpc::AsyncUnaryCall<global::TestAsyncReply> SayHelloAsyncAsync(global::TestAsyncRequest request, grpc::CallOptions options)
     {
       return CallInvoker.AsyncUnaryCall(__Method_SayHelloAsync, null, options, request);
     }
@@ -316,7 +316,7 @@ public static partial class Greeter
     /// <param name="cancellationToken">An optional token for canceling the call.</param>
     /// <returns>The call object.</returns>
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    public virtual grpc::AsyncServerStreamingCall<global::HelloReply> LotsOfReplies(global::HelloRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+    public virtual grpc::AsyncServerStreamingCall<global::TestAsyncReply> LotsOfReplies(global::TestAsyncRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
     {
       return LotsOfReplies(request, new grpc::CallOptions(headers, deadline, cancellationToken));
     }
@@ -327,7 +327,7 @@ public static partial class Greeter
     /// <param name="options">The options for the call.</param>
     /// <returns>The call object.</returns>
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    public virtual grpc::AsyncServerStreamingCall<global::HelloReply> LotsOfReplies(global::HelloRequest request, grpc::CallOptions options)
+    public virtual grpc::AsyncServerStreamingCall<global::TestAsyncReply> LotsOfReplies(global::TestAsyncRequest request, grpc::CallOptions options)
     {
       return CallInvoker.AsyncServerStreamingCall(__Method_LotsOfReplies, null, options, request);
     }
@@ -339,7 +339,7 @@ public static partial class Greeter
     /// <param name="cancellationToken">An optional token for canceling the call.</param>
     /// <returns>The call object.</returns>
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    public virtual grpc::AsyncClientStreamingCall<global::HelloRequest, global::HelloReply> LotsOfGreetings(grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+    public virtual grpc::AsyncClientStreamingCall<global::TestAsyncRequest, global::TestAsyncReply> LotsOfGreetings(grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
     {
       return LotsOfGreetings(new grpc::CallOptions(headers, deadline, cancellationToken));
     }
@@ -349,7 +349,7 @@ public static partial class Greeter
     /// <param name="options">The options for the call.</param>
     /// <returns>The call object.</returns>
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    public virtual grpc::AsyncClientStreamingCall<global::HelloRequest, global::HelloReply> LotsOfGreetings(grpc::CallOptions options)
+    public virtual grpc::AsyncClientStreamingCall<global::TestAsyncRequest, global::TestAsyncReply> LotsOfGreetings(grpc::CallOptions options)
     {
       return CallInvoker.AsyncClientStreamingCall(__Method_LotsOfGreetings, null, options);
     }
@@ -361,7 +361,7 @@ public static partial class Greeter
     /// <param name="cancellationToken">An optional token for canceling the call.</param>
     /// <returns>The call object.</returns>
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    public virtual grpc::AsyncDuplexStreamingCall<global::HelloRequest, global::HelloReply> BidiHello(grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+    public virtual grpc::AsyncDuplexStreamingCall<global::TestAsyncRequest, global::TestAsyncReply> BidiHello(grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
     {
       return BidiHello(new grpc::CallOptions(headers, deadline, cancellationToken));
     }
@@ -371,7 +371,7 @@ public static partial class Greeter
     /// <param name="options">The options for the call.</param>
     /// <returns>The call object.</returns>
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    public virtual grpc::AsyncDuplexStreamingCall<global::HelloRequest, global::HelloReply> BidiHello(grpc::CallOptions options)
+    public virtual grpc::AsyncDuplexStreamingCall<global::TestAsyncRequest, global::TestAsyncReply> BidiHello(grpc::CallOptions options)
     {
       return CallInvoker.AsyncDuplexStreamingCall(__Method_BidiHello, null, options);
     }
@@ -385,7 +385,7 @@ public static partial class Greeter
     /// <returns>The response received from the server.</returns>
     [global::System.ObsoleteAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    public virtual global::HelloReply OldHello(global::HelloRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+    public virtual global::TestAsyncReply OldHello(global::TestAsyncRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
     {
       return OldHello(request, new grpc::CallOptions(headers, deadline, cancellationToken));
     }
@@ -397,7 +397,7 @@ public static partial class Greeter
     /// <returns>The response received from the server.</returns>
     [global::System.ObsoleteAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    public virtual global::HelloReply OldHello(global::HelloRequest request, grpc::CallOptions options)
+    public virtual global::TestAsyncReply OldHello(global::TestAsyncRequest request, grpc::CallOptions options)
     {
       return CallInvoker.BlockingUnaryCall(__Method_OldHello, null, options, request);
     }
@@ -411,7 +411,7 @@ public static partial class Greeter
     /// <returns>The call object.</returns>
     [global::System.ObsoleteAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    public virtual grpc::AsyncUnaryCall<global::HelloReply> OldHelloAsync(global::HelloRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+    public virtual grpc::AsyncUnaryCall<global::TestAsyncReply> OldHelloAsync(global::TestAsyncRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
     {
       return OldHelloAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
     }
@@ -423,7 +423,7 @@ public static partial class Greeter
     /// <returns>The call object.</returns>
     [global::System.ObsoleteAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    public virtual grpc::AsyncUnaryCall<global::HelloReply> OldHelloAsync(global::HelloRequest request, grpc::CallOptions options)
+    public virtual grpc::AsyncUnaryCall<global::TestAsyncReply> OldHelloAsync(global::TestAsyncRequest request, grpc::CallOptions options)
     {
       return CallInvoker.AsyncUnaryCall(__Method_OldHello, null, options, request);
     }
@@ -456,12 +456,12 @@ public static partial class Greeter
   [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
   public static void BindService(grpc::ServiceBinderBase serviceBinder, GreeterBase serviceImpl)
   {
-    serviceBinder.AddMethod(__Method_SayHello, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::HelloRequest, global::HelloReply>(serviceImpl.SayHelloAsync));
-    serviceBinder.AddMethod(__Method_SayHelloAsync, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::HelloRequest, global::HelloReply>(serviceImpl.SayHelloAsync));
-    serviceBinder.AddMethod(__Method_LotsOfReplies, serviceImpl == null ? null : new grpc::ServerStreamingServerMethod<global::HelloRequest, global::HelloReply>(serviceImpl.LotsOfReplies));
-    serviceBinder.AddMethod(__Method_LotsOfGreetings, serviceImpl == null ? null : new grpc::ClientStreamingServerMethod<global::HelloRequest, global::HelloReply>(serviceImpl.LotsOfGreetings));
-    serviceBinder.AddMethod(__Method_BidiHello, serviceImpl == null ? null : new grpc::DuplexStreamingServerMethod<global::HelloRequest, global::HelloReply>(serviceImpl.BidiHello));
-    serviceBinder.AddMethod(__Method_OldHello, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::HelloRequest, global::HelloReply>(serviceImpl.OldHelloAsync));
+    serviceBinder.AddMethod(__Method_SayHello, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::TestAsyncRequest, global::TestAsyncReply>(serviceImpl.SayHelloAsync));
+    serviceBinder.AddMethod(__Method_SayHelloAsync, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::TestAsyncRequest, global::TestAsyncReply>(serviceImpl.SayHelloAsync));
+    serviceBinder.AddMethod(__Method_LotsOfReplies, serviceImpl == null ? null : new grpc::ServerStreamingServerMethod<global::TestAsyncRequest, global::TestAsyncReply>(serviceImpl.LotsOfReplies));
+    serviceBinder.AddMethod(__Method_LotsOfGreetings, serviceImpl == null ? null : new grpc::ClientStreamingServerMethod<global::TestAsyncRequest, global::TestAsyncReply>(serviceImpl.LotsOfGreetings));
+    serviceBinder.AddMethod(__Method_BidiHello, serviceImpl == null ? null : new grpc::DuplexStreamingServerMethod<global::TestAsyncRequest, global::TestAsyncReply>(serviceImpl.BidiHello));
+    serviceBinder.AddMethod(__Method_OldHello, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::TestAsyncRequest, global::TestAsyncReply>(serviceImpl.OldHelloAsync));
   }
 
 }
