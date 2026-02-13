@@ -120,6 +120,9 @@ struct tsi_ssl_handshaker_factory {
   gpr_refcount refcount;
 };
 
+static void tsi_ssl_handshaker_factory_unref(
+    tsi_ssl_handshaker_factory* factory);
+
 struct tsi_ssl_client_handshaker_factory {
   tsi_ssl_handshaker_factory base;
   SSL_CTX* ssl_context;
@@ -160,10 +163,6 @@ struct HandshakerNextArgs {
   size_t bytes_to_send_size = 0;
   tsi_handshaker_result* handshaker_result = nullptr;
 };
-
-struct tsi_ssl_handshaker_factory;
-static void tsi_ssl_handshaker_factory_unref(
-    tsi_ssl_handshaker_factory* factory);
 
 struct tsi_ssl_handshaker : public tsi_handshaker,
                             public grpc_core::RefCounted<tsi_ssl_handshaker> {
