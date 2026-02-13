@@ -212,6 +212,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/base/no_destructor', abseil_version
     ss.dependency 'abseil/cleanup/cleanup', abseil_version
     ss.dependency 'abseil/container/btree', abseil_version
+    ss.dependency 'abseil/container/fixed_array', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
@@ -222,6 +223,8 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/functional/function_ref', abseil_version
     ss.dependency 'abseil/hash/hash', abseil_version
+    ss.dependency 'abseil/log/absl_check', abseil_version
+    ss.dependency 'abseil/log/absl_log', abseil_version
     ss.dependency 'abseil/log/check', abseil_version
     ss.dependency 'abseil/log/globals', abseil_version
     ss.dependency 'abseil/log/log', abseil_version

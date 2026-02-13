@@ -2441,6 +2441,8 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/abseil-cpp/absl/hash/internal/low_level_hash.cc )
   s.files += %w( third_party/abseil-cpp/absl/hash/internal/low_level_hash.h )
   s.files += %w( third_party/abseil-cpp/absl/hash/internal/weakly_mixed_integer.h )
+  s.files += %w( third_party/abseil-cpp/absl/log/absl_check.h )
+  s.files += %w( third_party/abseil-cpp/absl/log/absl_log.h )
   s.files += %w( third_party/abseil-cpp/absl/log/absl_vlog_is_on.h )
   s.files += %w( third_party/abseil-cpp/absl/log/check.h )
   s.files += %w( third_party/abseil-cpp/absl/log/globals.cc )

@@ -2444,6 +2444,8 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/hash/internal/low_level_hash.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/hash/internal/low_level_hash.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/hash/internal/weakly_mixed_integer.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/absl_check.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/absl_log.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/absl_vlog_is_on.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/check.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/globals.cc" role="src" />

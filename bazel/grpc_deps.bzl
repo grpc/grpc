@@ -135,6 +135,9 @@ def grpc_deps():
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/re2/releases/download/2024-07-02/re2-2024-07-02.zip",
                 "https://github.com/google/re2/releases/download/2024-07-02/re2-2024-07-02.zip",
             ],
+            repo_mapping = {
+                "@abseil-cpp": "@com_google_absl",
+            },
         )
 
     if "com_github_cares_cares" not in native.existing_rules():
