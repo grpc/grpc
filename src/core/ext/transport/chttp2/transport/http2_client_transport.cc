@@ -744,7 +744,7 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
 }
 
 Http2Status Http2ClientTransport::ProcessIncomingFrame(
-    Http2UnknownFrame&& frame) {
+    GRPC_UNUSED Http2UnknownFrame&& frame) {
   // RFC9113: Implementations MUST ignore and discard frames of
   // unknown types.
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessHttp2UnknownFrame ";
@@ -752,7 +752,7 @@ Http2Status Http2ClientTransport::ProcessIncomingFrame(
 }
 
 Http2Status Http2ClientTransport::ProcessIncomingFrame(
-    Http2EmptyFrame&& frame) {
+    GRPC_UNUSED Http2EmptyFrame&& frame) {
   LOG(DFATAL) << "ParseFramePayload should never return a Http2EmptyFrame";
   return Http2Status::Ok();
 }
