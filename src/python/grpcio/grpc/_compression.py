@@ -14,11 +14,14 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import TYPE_CHECKING, Optional, Union
 
 import grpc
 from grpc._cython import cygrpc
-from grpc._typing import MetadataType
+from grpc.typing import MetadataType
+
+if TYPE_CHECKING:
+    from grpc import _common
 
 NoCompression = cygrpc.CompressionAlgorithm.none
 Deflate = cygrpc.CompressionAlgorithm.deflate
@@ -32,19 +35,21 @@ _METADATA_STRING_MAPPING = {
 
 
 def _compression_algorithm_to_metadata_value(
-    compression: grpc.Compression,
+    compression: "grpc.Compression",
 ) -> str:
     return _METADATA_STRING_MAPPING[compression]
 
 
-def compression_algorithm_to_metadata(compression: grpc.Compression):
+def compression_algorithm_to_metadata(compression: "grpc.Compression"):
+    from grpc import _common  # pylint: disable=cyclic-import
+
     return (
-        cygrpc.GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY,
+        _common.decode(cygrpc.GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY),
         _compression_algorithm_to_metadata_value(compression),
     )
 
 
-def create_channel_option(compression: Optional[grpc.Compression]):
+def create_channel_option(compression: Optional["grpc.Compression"]):
     return (
         ((cygrpc.GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, int(compression)),)
         if compression
@@ -53,7 +58,8 @@ def create_channel_option(compression: Optional[grpc.Compression]):
 
 
 def augment_metadata(
-    metadata: Optional[MetadataType], compression: Optional[grpc.Compression]
+    metadata: Optional[Union[MetadataType, "grpc.aio.Metadata"]],
+    compression: Optional["grpc.Compression"],
 ):
     if not metadata and not compression:
         return None
