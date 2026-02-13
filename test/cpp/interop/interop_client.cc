@@ -1370,8 +1370,8 @@ bool InteropClient::DoMcsConnectionScaling() {
       stream1(serviceStub_.Get()->FullDuplexCall(&context1));
 
   StreamingOutputCallRequest request;
-  Payload* payload = request.mutable_payload();
-  payload->set_body("max concurrent streaming connection scaling");
+  ResponseParameters* response_parameter = request.add_response_parameters();
+  response_parameter->mutable_send_client_socket_address_in_response()->set_value(true);
   StreamingOutputCallResponse response1;
 
   if (!stream1->Write(request)) {
@@ -1383,7 +1383,7 @@ bool InteropClient::DoMcsConnectionScaling() {
     LOG(ERROR) << "DoMcsConnectionScaling(): stream1->Read() failed.";
     return TransientFailureOrAbort();
   }
-  std::string clientSocketAddressInCall1 = response1.payload().body();
+  std::string clientSocketAddressInCall1 = response1.client_socket_address();
   GRPC_CHECK(clientSocketAddressInCall1.length() > 0);
 
   VLOG(2) << "Sending Mcs connection scaling streaming rpc2 ...";
@@ -1403,10 +1403,10 @@ bool InteropClient::DoMcsConnectionScaling() {
     LOG(ERROR) << "DoMcsConnectionScaling(): stream2->Read() failed.";
     return TransientFailureOrAbort();
   }  
-  std::string clientSocketAddressInCall2 = response2.payload().body();
+  std::string clientSocketAddressInCall2 = response2.client_socket_address();
 
   // The same connection should have been used for both streams.
-  GRPC_CHECK(response1.payload().body() == response2.payload().body());
+  GRPC_CHECK(clientSocketAddressInCall1 == clientSocketAddressInCall2);
 
   VLOG(2) << "Sending Mcs connection scaling streaming rpc3 ...";
 
@@ -1425,10 +1425,10 @@ bool InteropClient::DoMcsConnectionScaling() {
     LOG(ERROR) << "DoMcsConnectionScaling(): stream3->Read() failed.";
     return TransientFailureOrAbort();
   }  
-  std::string clientSocketAddressInCall3 = response3.payload().body();
+  std::string clientSocketAddressInCall3 = response3.client_socket_address();
 
   // A new connection should have been used for the 3rd stream.
-  GRPC_CHECK(response1.payload().body() != response3.payload().body());
+  GRPC_CHECK(clientSocketAddressInCall3 != clientSocketAddressInCall1);
 
   stream1->WritesDone();
   GRPC_CHECK(!stream1->Read(&response1));
