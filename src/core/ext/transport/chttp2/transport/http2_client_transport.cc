@@ -23,7 +23,6 @@
 #include <grpc/support/port_platform.h>
 #include <limits.h>
 
-#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
@@ -63,7 +62,6 @@
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
-#include "src/core/lib/promise/match_promise.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
@@ -280,7 +278,7 @@ auto Http2ClientTransport::SecurityFrameLoop() {
 ///////////////////////////////////////////////////////////////////////////////
 // Processing each type of frame
 
-Http2Status Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
+Http2Status Http2ClientTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-data
   GRPC_HTTP2_CLIENT_DLOG
       << "Http2ClientTransport ProcessHttp2DataFrame { stream_id="
@@ -369,8 +367,8 @@ Http2Status Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
   return Http2Status::Ok();
 }
 
-Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
-    Http2HeaderFrame frame) {
+Http2Status Http2ClientTransport::ProcessIncomingFrame(
+    Http2HeaderFrame&& frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-headers
   GRPC_HTTP2_CLIENT_DLOG
       << "Http2ClientTransport ProcessHttp2HeaderFrame Promise { stream_id="
@@ -475,8 +473,8 @@ Http2Status Http2ClientTransport::ProcessMetadata(
   return Http2Status::Ok();
 }
 
-Http2Status Http2ClientTransport::ProcessHttp2RstStreamFrame(
-    Http2RstStreamFrame frame) {
+Http2Status Http2ClientTransport::ProcessIncomingFrame(
+    Http2RstStreamFrame&& frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-rst_stream
   GRPC_HTTP2_CLIENT_DLOG
       << "Http2ClientTransport ProcessHttp2RstStreamFrame { stream_id="
@@ -497,8 +495,8 @@ Http2Status Http2ClientTransport::ProcessHttp2RstStreamFrame(
   return Http2Status::Ok();
 }
 
-Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
-    Http2SettingsFrame frame) {
+Http2Status Http2ClientTransport::ProcessIncomingFrame(
+    Http2SettingsFrame&& frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-settings
 
   GRPC_HTTP2_CLIENT_DLOG
@@ -538,7 +536,7 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
   return Http2Status::Ok();
 }
 
-Http2Status Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
+Http2Status Http2ClientTransport::ProcessIncomingFrame(Http2PingFrame&& frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-ping
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessHttp2PingFrame { ack="
                          << frame.ack << ", opaque=" << frame.opaque << " }";
@@ -567,8 +565,8 @@ Http2Status Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
   return Http2Status::Ok();
 }
 
-Http2Status Http2ClientTransport::ProcessHttp2GoawayFrame(
-    Http2GoawayFrame frame) {
+Http2Status Http2ClientTransport::ProcessIncomingFrame(
+    Http2GoawayFrame&& frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-goaway
   GRPC_HTTP2_CLIENT_DLOG
       << "Http2ClientTransport ProcessHttp2GoawayFrame Promise { "
@@ -650,8 +648,8 @@ Http2Status Http2ClientTransport::ProcessHttp2GoawayFrame(
   return Http2Status::Ok();
 }
 
-Http2Status Http2ClientTransport::ProcessHttp2WindowUpdateFrame(
-    Http2WindowUpdateFrame frame) {
+Http2Status Http2ClientTransport::ProcessIncomingFrame(
+    Http2WindowUpdateFrame&& frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-window_update
   GRPC_HTTP2_CLIENT_DLOG
       << "Http2ClientTransport ProcessHttp2WindowUpdateFrame Promise { "
@@ -682,8 +680,8 @@ Http2Status Http2ClientTransport::ProcessHttp2WindowUpdateFrame(
   return Http2Status::Ok();
 }
 
-Http2Status Http2ClientTransport::ProcessHttp2ContinuationFrame(
-    Http2ContinuationFrame frame) {
+Http2Status Http2ClientTransport::ProcessIncomingFrame(
+    Http2ContinuationFrame&& frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-continuation
   GRPC_HTTP2_CLIENT_DLOG
       << "Http2ClientTransport ProcessHttp2ContinuationFrame Promise { "
@@ -736,8 +734,8 @@ Http2Status Http2ClientTransport::ProcessHttp2ContinuationFrame(
   return Http2Status::Ok();
 }
 
-Http2Status Http2ClientTransport::ProcessHttp2SecurityFrame(
-    Http2SecurityFrame frame) {
+Http2Status Http2ClientTransport::ProcessIncomingFrame(
+    Http2SecurityFrame&& frame) {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessHttp2SecurityFrame ";
   if (settings_->IsSecurityFrameExpected()) {
     security_frame_handler_->ProcessPayload(std::move(frame.payload));
@@ -745,50 +743,18 @@ Http2Status Http2ClientTransport::ProcessHttp2SecurityFrame(
   return Http2Status::Ok();
 }
 
-auto Http2ClientTransport::ProcessOneFrame(Http2Frame frame) {
-  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessOneFrame Factory";
-  return AssertResultType<Http2Status>(MatchPromise(
-      std::move(frame),
-      [self = RefAsSubclass<Http2ClientTransport>()](Http2DataFrame frame) {
-        return self->ProcessHttp2DataFrame(std::move(frame));
-      },
-      [self = RefAsSubclass<Http2ClientTransport>()](Http2HeaderFrame frame) {
-        return self->ProcessHttp2HeaderFrame(std::move(frame));
-      },
-      [self =
-           RefAsSubclass<Http2ClientTransport>()](Http2RstStreamFrame frame) {
-        return self->ProcessHttp2RstStreamFrame(frame);
-      },
-      [self = RefAsSubclass<Http2ClientTransport>()](Http2SettingsFrame frame) {
-        return self->ProcessHttp2SettingsFrame(std::move(frame));
-      },
-      [self = RefAsSubclass<Http2ClientTransport>()](Http2PingFrame frame) {
-        return self->ProcessHttp2PingFrame(frame);
-      },
-      [self = RefAsSubclass<Http2ClientTransport>()](Http2GoawayFrame frame) {
-        return self->ProcessHttp2GoawayFrame(std::move(frame));
-      },
-      [self = RefAsSubclass<Http2ClientTransport>()](
-          Http2WindowUpdateFrame frame) {
-        return self->ProcessHttp2WindowUpdateFrame(frame);
-      },
-      [self = RefAsSubclass<Http2ClientTransport>()](
-          Http2ContinuationFrame frame) {
-        return self->ProcessHttp2ContinuationFrame(std::move(frame));
-      },
-      [self = RefAsSubclass<Http2ClientTransport>()](Http2SecurityFrame frame) {
-        return self->ProcessHttp2SecurityFrame(std::move(frame));
-      },
-      [](GRPC_UNUSED Http2UnknownFrame frame) {
-        // RFC9113: Implementations MUST ignore and discard frames of
-        // unknown types.
-        return Http2Status::Ok();
-      },
-      [](GRPC_UNUSED Http2EmptyFrame frame) {
-        LOG(DFATAL)
-            << "ParseFramePayload should never return a Http2EmptyFrame";
-        return Http2Status::Ok();
-      }));
+Http2Status Http2ClientTransport::ProcessIncomingFrame(
+    GRPC_UNUSED Http2UnknownFrame&& frame) {
+  // RFC9113: Implementations MUST ignore and discard frames of
+  // unknown types.
+  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessHttp2UnknownFrame ";
+  return Http2Status::Ok();
+}
+
+Http2Status Http2ClientTransport::ProcessIncomingFrame(
+    GRPC_UNUSED Http2EmptyFrame&& frame) {
+  LOG(DFATAL) << "ParseFramePayload should never return a Http2EmptyFrame";
+  return Http2Status::Ok();
 }
 
 Http2Status Http2ClientTransport::ParseAndDiscardHeaders(
@@ -893,29 +859,26 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
       [this]() {
         GRPC_HTTP2_CLIENT_DLOG
             << "Http2ClientTransport ReadAndProcessOneFrame Read Frame ";
-        return AssertResultType<absl::StatusOr<SliceBuffer>>(
-            EndpointRead(current_frame_header_.length));
-      },
-      // Parse the payload of the frame based on frame type.
-      [this](SliceBuffer payload) -> absl::StatusOr<Http2Frame> {
-        GRPC_HTTP2_CLIENT_DLOG
-            << "Http2ClientTransport ReadAndProcessOneFrame ParseFramePayload "
-            << MaybeTruncatePayload(payload);
-        ValueOrHttp2Status<Http2Frame> frame =
-            ParseFramePayload(current_frame_header_, std::move(payload));
-        if (!frame.IsOk()) {
-          return HandleError(
-              current_frame_header_.stream_id,
-              ValueOrHttp2Status<Http2Frame>::TakeStatus(std::move(frame)));
-        }
-        return TakeValue(std::move(frame));
-      },
-      [this](Http2Frame frame) {
-        GRPC_HTTP2_CLIENT_DLOG
-            << "Http2ClientTransport ReadAndProcessOneFrame ProcessOneFrame";
-        return AssertResultType<absl::Status>(
-            Map(ProcessOneFrame(std::move(frame)), [this](Http2Status status) {
-              if (!status.IsOk()) {
+        return AssertResultType<absl::Status>(Map(
+            EndpointRead(current_frame_header_.length),
+            [this](absl::StatusOr<SliceBuffer> payload) {
+              if (GPR_UNLIKELY(!payload.ok())) {
+                return payload.status();
+              }
+              GRPC_HTTP2_CLIENT_DLOG
+                  << "Http2ClientTransport "
+                     "ReadAndProcessOneFrame ParseFramePayload "
+                  << MaybeTruncatePayload(payload.value());
+              ValueOrHttp2Status<Http2Frame> frame = ParseFramePayload(
+                  current_frame_header_, TakeValue(std::move(payload)));
+              if (GPR_UNLIKELY(!frame.IsOk())) {
+                return HandleError(current_frame_header_.stream_id,
+                                   ValueOrHttp2Status<Http2Frame>::TakeStatus(
+                                       std::move(frame)));
+              }
+              Http2Status status =
+                  ProcessOneIncomingFrame(TakeValue(std::move(frame)));
+              if (GPR_UNLIKELY(!status.IsOk())) {
                 return HandleError(current_frame_header_.stream_id,
                                    std::move(status));
               }
@@ -2021,12 +1984,7 @@ std::optional<RefCountedPtr<Stream>> Http2ClientTransport::MakeStream(
     CallHandler call_handler) {
   // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
   RefCountedPtr<Stream> stream;
-  {
-    // TODO(akshitpatel) : [PH2][P3] : Remove this mutex once settings is in
-    // place.
-    MutexLock lock(&transport_mutex_);
-    stream = MakeRefCounted<Stream>(call_handler, flow_control_);
-  }
+  stream = MakeRefCounted<Stream>(call_handler, flow_control_);
   const bool on_done_added = SetOnDone(call_handler, stream);
   if (!on_done_added) return std::nullopt;
   return stream;
