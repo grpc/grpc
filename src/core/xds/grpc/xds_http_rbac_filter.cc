@@ -518,9 +518,9 @@ void XdsHttpRbacFilter::PopulateSymtab(upb_DefPool* symtab) const {
 
 std::optional<Json> XdsHttpRbacFilter::GenerateFilterConfig(
     absl::string_view /*instance_name*/,
-    const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    ValidationErrors* errors) const {
-  absl::string_view* serialized_filter_config =
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) const {
+  const absl::string_view* serialized_filter_config =
       std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse HTTP RBAC filter config");
@@ -538,9 +538,9 @@ std::optional<Json> XdsHttpRbacFilter::GenerateFilterConfig(
 
 std::optional<Json> XdsHttpRbacFilter::GenerateFilterConfigOverride(
     absl::string_view /*instance_name*/,
-    const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    ValidationErrors* errors) const {
-  absl::string_view* serialized_filter_config =
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) const {
+  const absl::string_view* serialized_filter_config =
       std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse RBACPerRoute");
@@ -566,8 +566,10 @@ std::optional<Json> XdsHttpRbacFilter::GenerateFilterConfigOverride(
   return rbac_json;
 }
 
-void XdsHttpRbacFilter::AddFilter(FilterChainBuilder& builder) const {
-  builder.AddFilter<RbacFilter>(nullptr);
+void XdsHttpRbacFilter::AddFilter(
+    FilterChainBuilder& builder,
+    RefCountedPtr<const FilterConfig> config) const {
+  builder.AddFilter<RbacFilter>(std::move(config));
 }
 
 const grpc_channel_filter* XdsHttpRbacFilter::channel_filter() const {
@@ -593,6 +595,24 @@ absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpRbacFilter::GenerateServiceConfig(
     const Json& /*hcm_filter_config*/) const {
   return ServiceConfigJsonEntry{"", ""};
+}
+
+RefCountedPtr<const FilterConfig> XdsHttpRbacFilter::ParseTopLevelConfig(
+    absl::string_view /*instance_name*/,
+    const XdsResourceType::DecodeContext& /*context*/,
+    const XdsExtension& /*extension*/, ValidationErrors* /*errors*/) const {
+  // TODO(roth): Implement this as part of migrating the server side to
+  // the new approach for passing xDS HTTP filter configs.
+  return nullptr;
+}
+
+RefCountedPtr<const FilterConfig> XdsHttpRbacFilter::ParseOverrideConfig(
+    absl::string_view /*instance_name*/,
+    const XdsResourceType::DecodeContext& /*context*/,
+    const XdsExtension& /*extension*/, ValidationErrors* /*errors*/) const {
+  // TODO(roth): Implement this as part of migrating the server side to
+  // the new approach for passing xDS HTTP filter configs.
+  return nullptr;
 }
 
 }  // namespace grpc_core
