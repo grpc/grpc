@@ -29,6 +29,7 @@
 #include "src/core/util/down_cast.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
+#include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
 #include "src/core/xds/grpc/xds_matcher.h"
 #include "absl/container/flat_hash_map.h"
@@ -39,6 +40,17 @@ namespace grpc_core {
 
 class ExtProcFilter final : public V3InterceptorToV2Bridge<CompositeFilter> {
  public:
+  struct ProcessingMode {
+    // nullopt is DEFAULT, true is SEND, false is SKIP
+    std::optional<bool> send_request_headers;
+    std::optional<bool> send_response_headers;
+    std::optional<bool> send_response_trailers;
+
+    // true is GRPC, false is NONE
+    bool send_request_body;
+    bool send_response_body;
+  };
+
   // Top-level filter config.
   struct Config final : public FilterConfig {
     static UniqueTypeName Type() {
@@ -48,15 +60,27 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<CompositeFilter> {
 
     bool Equals(const FilterConfig& other) const override {
       const auto& o = DownCast<const Config&>(other);
-      if (matcher == nullptr) return o.matcher == nullptr;
-      if (o.matcher == nullptr) return false;
-      return matcher->Equals(*o.matcher);
+// FIXME: other fields
+      return grpc_service == o.grpc_service;
     }
     std::string ToString() const override {
-      if (matcher == nullptr) return "{}";
-      return matcher->ToString();
+// FIXME: other fields
+      return absl::StrCat("{grpc_service=", grpc_service.ToString(), "}");
     }
 
+    XdsGrpcService grpc_service;
+    bool failure_mode_allow;
+    ProcessingMode processing_mode;
+    bool allow_mode_override;
+    std::vector<ProcessingMode> allowed_override_modes;
+    std::vector<std::string> request_attributes;
+    std::vector<std::string> response_attributes;
+    std::optional<XdsHeaderMutationRules> mutation_rules;
+    std::vector<StringMatcher> forwarding_allowed_headers;
+    std::vector<StringMatcher> forwarding_disallowed_headers;
+    bool disable_immediate_response;
+    bool observability_mode;
+    Duration deferred_close_timeout;
   };
 
   static const grpc_channel_filter kFilterVtable;

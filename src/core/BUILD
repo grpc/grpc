@@ -5712,6 +5712,31 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "ext_proc_filter",
+    srcs = [
+        "filter/ext_proc/ext_proc_filter.cc",
+    ],
+    hdrs = [
+        "filter/ext_proc/ext_proc_filter.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/random",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "down_cast",
+        "filter_args",
+        "metadata_batch",
+        "unique_type_name",
+        "xds_http_filter",
+        "//:grpc_base",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_lb_policy_grpclb",
     srcs = [
         "load_balancing/grpclb/client_load_reporting_filter.cc",
@@ -6410,6 +6435,7 @@ grpc_cc_library(
         "xds/grpc/xds_common_types_parser.cc",
         "xds/grpc/xds_endpoint_parser.cc",
         "xds/grpc/xds_http_composite_filter.cc",
+        "xds/grpc/xds_http_ext_proc_filter.cc",
         "xds/grpc/xds_http_fault_filter.cc",
         "xds/grpc/xds_http_filter_registry.cc",
         "xds/grpc/xds_http_gcp_authn_filter.cc",
@@ -6433,6 +6459,7 @@ grpc_cc_library(
         "xds/grpc/xds_common_types_parser.h",
         "xds/grpc/xds_endpoint_parser.h",
         "xds/grpc/xds_http_composite_filter.h",
+        "xds/grpc/xds_http_ext_proc_filter.h",
         "xds/grpc/xds_http_fault_filter.h",
         "xds/grpc/xds_http_filter_registry.h",
         "xds/grpc/xds_http_gcp_authn_filter.h",
@@ -6489,6 +6516,8 @@ grpc_cc_library(
         "envoy_admin_upb",
         "envoy_config_cluster_upb",
         "envoy_config_cluster_upbdefs",
+        "envoy_config_common_mutation_rules_upb",
+        "envoy_config_common_mutation_rules_upbdefs",
         "envoy_config_core_upb",
         "envoy_config_core_upbdefs",
         "envoy_config_endpoint_upb",
@@ -6507,6 +6536,8 @@ grpc_cc_library(
         "envoy_extensions_filters_common_matcher_action_upbdefs",
         "envoy_extensions_filters_http_composite_upb",
         "envoy_extensions_filters_http_composite_upbdefs",
+        "envoy_extensions_filters_http_ext_proc_upb",
+        "envoy_extensions_filters_http_ext_proc_upbdefs",
         "envoy_extensions_filters_http_fault_upb",
         "envoy_extensions_filters_http_fault_upbdefs",
         "envoy_extensions_filters_http_gcp_authn_upb",
@@ -11467,6 +11498,16 @@ grpc_upb_proto_reflection_library(
 )
 
 grpc_upb_proto_library(
+    name = "envoy_config_common_mutation_rules_upb",
+    deps = ["@envoy_api//envoy/config/common/mutation_rules/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_config_common_mutation_rules_upbdefs",
+    deps = ["@envoy_api//envoy/config/common/mutation_rules/v3:pkg"],
+)
+
+grpc_upb_proto_library(
     name = "envoy_config_core_upb",
     deps = ["@envoy_api//envoy/config/core/v3:pkg"],
 )
@@ -11554,6 +11595,16 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_filters_http_composite_upbdefs",
     deps = ["@envoy_api//envoy/extensions/filters/http/composite/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_filters_http_ext_proc_upb",
+    deps = ["@envoy_api//envoy/extensions/filters/http/ext_proc/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_filters_http_ext_proc_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/filters/http/ext_proc/v3:pkg"],
 )
 
 grpc_upb_proto_library(

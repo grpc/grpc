@@ -70,6 +70,15 @@ StringMatcher StringMatcherParse(
     const xds_type_matcher_v3_StringMatcher* matcher_proto,
     ValidationErrors* errors);
 
+std::vector<StringMatcher> ListStringMatcherParse(
+    const XdsResourceType::DecodeContext& context,
+    const envoy_type_matcher_v3_ListStringMatcher* matcher_proto,
+    ValidationErrors* errors);
+std::vector<StringMatcher> ListStringMatcherParse(
+    const XdsResourceType::DecodeContext& context,
+    const xds_type_matcher_v3_ListStringMatcher* matcher_proto,
+    ValidationErrors* errors);
+
 CommonTlsContext CommonTlsContextParse(
     const XdsResourceType::DecodeContext& context,
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*

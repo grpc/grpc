@@ -100,4 +100,46 @@ bool CommonTlsContext::Empty() const {
          certificate_validation_context.Empty();
 }
 
+//
+// XdsGrpcService
+//
+
+std::string XdsGrpcService::ToString() const {
+  std::vector<std::string> parts;
+  if (server_target != nullptr) {
+    parts.push_back(absl::StrCat("server_target=", server_target->Key()));
+  }
+  if (timeout != Duration::Zero()) {
+    parts.push_back(absl::StrCat("timeout=", timeout.ToString()));
+  }
+  if (!initial_metadata.empty()) {
+    std::vector<std::string> headers;
+    for (const auto& [key, value] : initial_metadata) {
+      headers.push_back(absl::StrCat(key, "=", value));
+    }
+    parts.push_back(
+        absl::StrCat("initial_metadata=[", absl::StrJoin(headers, ", "), "]"));
+  }
+  return absl::StrCat("{", absl::StrJoin(parts, ", "), "}");
+}
+
+//
+// XdsHeaderMutationRules
+//
+
+std::string XdsHeaderMutationRules::ToString() const {
+  std::vector<std::string> parts;
+  if (disallow_all) parts.push_back("disallow_all=true");
+  if (disallow_expression != nullptr) {
+    parts.push_back(absl::StrCat(
+        "disallow_expression=\"", disallow_expression->pattern(), "\""));
+  }
+  if (allow_expression != nullptr) {
+    parts.push_back(absl::StrCat(
+        "allow_expression=\"", allow_expression->pattern(), "\""));
+  }
+  if (disallow_is_error) parts.push_back("disallow_is_error=true");
+  return absl::StrCat("{", absl::StrJoin(parts, ", "), "}");
+}
+
 }  // namespace grpc_core
