@@ -72,6 +72,7 @@
 #include "src/core/util/match.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 #include "src/core/util/useful.h"
 #include "absl/functional/bind_front.h"
 #include "absl/log/log.h"
@@ -179,6 +180,7 @@ struct tsi_ssl_handshaker : public tsi_handshaker,
   size_t outgoing_bytes_buffer_size;
   tsi_ssl_handshaker_factory* factory_ref;
   bool is_shutdown = false;
+  grpc_core::Mutex mu;
 
   // Will be set if there is a pending call to tsi_handshaker_next(),
   // or nullopt if not.
@@ -384,33 +386,36 @@ void TlsOffloadSignDoneCallback(
     grpc_core::RefCountedPtr<tsi_ssl_handshaker> handshaker,
     absl::StatusOr<std::string> signed_data) {
   grpc_core::ExecCtx exec_ctx;
-  if (handshaker->is_shutdown) return;
-  if (handshaker->ssl == nullptr) return;
-  TlsPrivateKeyOffloadContext* ctx =
-      GetTlsPrivateKeyOffloadContext(handshaker->ssl);
-  if (ctx == nullptr) return;
-  ctx->signed_bytes = std::move(signed_data);
-  ctx->signature_ready = true;
-  ctx->signing_handle.reset();
-  if (!ctx->signed_bytes.ok()) {
-    // Notify the TSI layer to re-enter the handshake.
-    // This call is thread-safe as per TSI requirements for the callback.
-    if (ctx->handshaker->handshaker_next_args.has_value()) {
-      HandshakerNextArgs next_args =
-          ctx->handshaker->handshaker_next_args.value();
-      if (next_args.error != nullptr) {
-        *next_args.error = ctx->signed_bytes.status().ToString();
+  {
+    grpc_core::MutexLock lock(&handshaker->mu);
+    if (handshaker->is_shutdown) return;
+    if (handshaker->ssl == nullptr) return;
+    TlsPrivateKeyOffloadContext* ctx =
+        GetTlsPrivateKeyOffloadContext(handshaker->ssl);
+    if (ctx == nullptr) return;
+    ctx->signed_bytes = std::move(signed_data);
+    ctx->signature_ready = true;
+    ctx->signing_handle.reset();
+    if (!ctx->signed_bytes.ok()) {
+      // Notify the TSI layer to re-enter the handshake.
+      // This call is thread-safe as per TSI requirements for the callback.
+      if (handshaker->handshaker_next_args.has_value()) {
+        HandshakerNextArgs next_args = handshaker->handshaker_next_args.value();
+        if (next_args.error != nullptr) {
+          *next_args.error = ctx->signed_bytes.status().ToString();
+        }
+        if (next_args.cb) {
+          lock.Unlock();
+          next_args.cb(TSI_INTERNAL_ERROR, next_args.user_data, nullptr, 0,
+                       next_args.handshaker_result);
+        }
       }
-      if (next_args.cb) {
-        next_args.cb(TSI_INTERNAL_ERROR, next_args.user_data, nullptr, 0,
-                     next_args.handshaker_result);
-      }
+      return;
     }
-    return;
   }
   // Once the signed bytes are obtained, tell everything to resume the pending
   // async operation.
-  ssl_handshaker_next_async(ctx->handshaker);
+  ssl_handshaker_next_async(handshaker.get());
 }
 
 enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,
@@ -2408,13 +2413,22 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self) {
 // Wrapper for ssl_handshaker_next_impl() when called from an async callback.
 // For example, this would be called from the key signer's callback.
 static void ssl_handshaker_next_async(tsi_ssl_handshaker* self) {
-  tsi_result result = ssl_handshaker_next_impl(self);
-  if (result != TSI_ASYNC) {
-    // We now have a result to return to the caller via the callback.
-    auto args = *self->handshaker_next_args;
-    self->handshaker_next_args.reset();
-    args.cb(result, args.user_data, args.bytes_to_send, args.bytes_to_send_size,
-            args.handshaker_result);
+  std::optional<HandshakerNextArgs> args;
+  tsi_result result;
+  {
+    grpc_core::MutexLock lock(&self->mu);
+    result = ssl_handshaker_next_impl(self);
+    if (result != TSI_ASYNC) {
+      // We now have a result to return to the caller via the callback.
+      if (self->handshaker_next_args.has_value()) {
+        args = std::move(self->handshaker_next_args);
+        self->handshaker_next_args.reset();
+      }
+    }
+  }
+  if (args.has_value()) {
+    args->cb(result, args->user_data, args->bytes_to_send,
+             args->bytes_to_send_size, args->handshaker_result);
   }
 }
 
@@ -2432,6 +2446,8 @@ static tsi_result ssl_handshaker_next(
     return TSI_INVALID_ARGUMENT;
   }
   tsi_ssl_handshaker* impl = static_cast<tsi_ssl_handshaker*>(self);
+  grpc_core::MutexLock lock(&impl->mu);
+  if (impl->is_shutdown) return TSI_HANDSHAKE_SHUTDOWN;
   // Store args in impl->handshaker_next_args.
   impl->handshaker_next_args.emplace();
   impl->handshaker_next_args->received_bytes = received_bytes;
@@ -2454,7 +2470,10 @@ static tsi_result ssl_handshaker_next(
 static void ssl_handshaker_shutdown(tsi_handshaker* self) {
   tsi_ssl_handshaker* impl = static_cast<tsi_ssl_handshaker*>(self);
   if (impl->ssl == nullptr) return;
-  impl->is_shutdown = true;
+  {
+    grpc_core::MutexLock lock(&impl->mu);
+    impl->is_shutdown = true;
+  }
   TlsPrivateKeyOffloadContext* offload_context =
       GetTlsPrivateKeyOffloadContext(impl->ssl);
   grpc_core::PrivateKeySigner* signer = GetPrivateKeySigner(impl->ssl);
@@ -2462,11 +2481,22 @@ static void ssl_handshaker_shutdown(tsi_handshaker* self) {
       offload_context->signing_handle != nullptr) {
     auto signing_handle = offload_context->signing_handle;
     signer->Cancel(signing_handle);
-    offload_context->signing_handle.reset();
+    {
+      grpc_core::MutexLock lock(&impl->mu);
+      offload_context->signing_handle.reset();
+    }
     grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
         [handshaker = impl->Ref()]() {
-          auto next_args = handshaker->handshaker_next_args;
-          if (next_args.has_value() && next_args->cb) {
+          std::optional<HandshakerNextArgs> next_args;
+          {
+            grpc_core::MutexLock lock(&handshaker->mu);
+            if (handshaker->handshaker_next_args.has_value() &&
+                handshaker->handshaker_next_args->cb) {
+              next_args = handshaker->handshaker_next_args;
+              handshaker->handshaker_next_args.reset();
+            }
+          }
+          if (next_args.has_value()) {
             *next_args->error = "Handshaker shutdown";
             next_args->cb(TSI_INTERNAL_ERROR, next_args->user_data, nullptr, 0,
                           next_args->handshaker_result);
