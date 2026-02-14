@@ -114,3 +114,26 @@ grpc_cc_test(
         "@envoy_api//envoy/extensions/grpc_service/call_credentials/access_token/v3:pkg_cc_proto",
     ],
 )
+
+grpc_cc_test(
+    name = "regional_access_boundary_fetcher_test",
+    srcs = ["regional_access_boundary_fetcher_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//src/core:arena",
+        "//src/core:arena_promise",
+        "//:grpc_security_base",
+        "//src/core:env",
+        "//src/core:metadata_batch",
+        "//src/core:regional_access_boundary_fetcher",
+        "//src/core:resource_quota",
+        "//:httpcli",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)

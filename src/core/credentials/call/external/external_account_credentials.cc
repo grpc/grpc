@@ -33,6 +33,7 @@
 #include "src/core/credentials/call/external/file_external_account_credentials.h"
 #include "src/core/credentials/call/external/url_external_account_credentials.h"
 #include "src/core/credentials/call/json_util.h"
+#include "src/core/credentials/call/regional_access_boundary_fetcher.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/util/grpc_check.h"
@@ -45,6 +46,7 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "src/core/lib/promise/map.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
@@ -67,6 +69,33 @@
 #define IMPERSONATED_CRED_MAX_LIFETIME_IN_SECONDS 43200     // 12 hours
 
 namespace grpc_core {
+
+grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
+ExternalAccountCredentials::GetRequestMetadata(
+    grpc_core::ClientMetadataHandle initial_metadata,
+    const grpc_call_credentials::GetRequestMetadataArgs* args) {
+  return Map(TokenFetcherCredentials::GetRequestMetadata(
+                 std::move(initial_metadata), args),
+             [this](absl::StatusOr<ClientMetadataHandle> updated_metadata)
+                 -> absl::StatusOr<ClientMetadataHandle> {
+               if (!updated_metadata.ok()) return updated_metadata;
+               
+               std::string access_token;
+               auto auth_val = (*updated_metadata)->GetStringValue(
+                   GRPC_AUTHORIZATION_METADATA_KEY, &access_token);
+
+              if (!auth_val.has_value()) {
+                LOG(WARNING) << "No access token was found in the metadata for this credential " 
+                             << "and therefore the lookup would fail. A lookup will not be attempted.";
+                return updated_metadata;
+              }
+
+              return regional_access_boundary_fetcher_->Fetch(
+                   build_regional_access_boundary_url(),
+                   std::string(auth_val.value()),
+                   std::move(*updated_metadata));
+             });
+}
 
 //
 // ExternalAccountCredentials::NoOpFetchBody
@@ -443,8 +472,36 @@ bool ExternalAccountCredentials::ExternalFetchRequest::MaybeFailLocked(
 namespace {
 
 // Expression to match:
+// //iam.googleapis.com/projects/<project>/locations/global/workloadIdentityPools/<pool-id>/providers/.+
+bool MatchWorkloadIdentityPoolAudience(absl::string_view audience,
+                                       std::string* project,
+                                       std::string* pool_id) {
+  // Match "//iam.googleapis.com/projects/"
+  if (!absl::ConsumePrefix(&audience, "//iam.googleapis.com/projects/")) {
+    return false;
+  }
+  // Match "<project>/locations/global/workloadIdentityPools/"
+  auto location_pos = audience.find("/locations/global/workloadIdentityPools/");
+  if (location_pos == absl::string_view::npos) return false;
+  *project = std::string(audience.substr(0, location_pos));
+  if (project->empty()) return false;
+
+  audience.remove_prefix(location_pos +
+                         strlen("/locations/global/workloadIdentityPools/"));
+
+  // Match "<pool-id>/providers/"
+  auto provider_pos = audience.find("/providers/");
+  if (provider_pos == absl::string_view::npos) return false;
+  *pool_id = std::string(audience.substr(0, provider_pos));
+  if (pool_id->empty()) return false;
+
+  return true;
+}
+
+// Expression to match:
 // //iam.googleapis.com/locations/[^/]+/workforcePools/[^/]+/providers/.+
-bool MatchWorkforcePoolAudience(absl::string_view audience) {
+bool MatchWorkforcePoolAudience(absl::string_view audience,
+                                std::string* workforce_pool_id) {
   // Match "//iam.googleapis.com/locations/"
   if (!absl::ConsumePrefix(&audience, "//iam.googleapis.com")) return false;
   if (!absl::ConsumePrefix(&audience, "/locations/")) return false;
@@ -456,7 +513,9 @@ bool MatchWorkforcePoolAudience(absl::string_view audience) {
   std::pair<absl::string_view, absl::string_view> providers_split_result =
       absl::StrSplit(workforce_pools_split_result.second,
                      absl::MaxSplits("/providers/", 1));
-  return !absl::StrContains(providers_split_result.first, '/');
+  if (absl::StrContains(providers_split_result.first, '/')) return false;
+  *workforce_pool_id = std::string(providers_split_result.first);
+  return true;
 }
 
 }  // namespace
@@ -533,7 +592,8 @@ ExternalAccountCredentials::Create(
   }
   it = json.object().find("workforce_pool_user_project");
   if (it != json.object().end()) {
-    if (MatchWorkforcePoolAudience(options.audience)) {
+    if (MatchWorkforcePoolAudience(options.audience,
+                                   &options.workforce_pool_id)) {
       options.workforce_pool_user_project = it->second.string();
     } else {
       return GRPC_ERROR_CREATE(
@@ -541,6 +601,9 @@ ExternalAccountCredentials::Create(
           "pool credentials");
     }
   }
+  MatchWorkloadIdentityPoolAudience(options.audience,
+                                    &options.workload_pool_project,
+                                    &options.workload_pool_id);
   it = json.object().find("service_account_impersonation");
   options.service_account_impersonation.token_lifetime_seconds =
       IMPERSONATED_CRED_DEFAULT_LIFETIME_IN_SECONDS;
@@ -595,14 +658,19 @@ ExternalAccountCredentials::ExternalAccountCredentials(
     Options options, std::vector<std::string> scopes,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
     : TokenFetcherCredentials(std::move(event_engine)),
-      options_(std::move(options)) {
+      options_(std::move(options)),
+      regional_access_boundary_fetcher_(grpc_core::MakeRefCounted<grpc_core::RegionalAccessBoundaryFetcher>()) {
   if (scopes.empty()) {
     scopes.push_back(GOOGLE_CLOUD_PLATFORM_DEFAULT_SCOPE);
   }
   scopes_ = std::move(scopes);
 }
 
-ExternalAccountCredentials::~ExternalAccountCredentials() {}
+ExternalAccountCredentials::~ExternalAccountCredentials() {
+  if (regional_access_boundary_fetcher_ != nullptr) {
+    regional_access_boundary_fetcher_->CancelPendingFetch();
+  }
+}
 
 std::string ExternalAccountCredentials::MetricsHeaderValue() {
   return absl::StrFormat(
