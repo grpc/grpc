@@ -105,13 +105,15 @@ class SpiffeSslTransportSecurityTest
         auto server_map =
             grpc_core::SpiffeBundleMap::FromFile(server_spiffe_bundle_map_path);
         CHECK(server_map.ok());
-        server_spiffe_bundle_map_ = std::make_shared<tsi::RootCertInfo>(*server_map);
+        server_spiffe_bundle_map_ =
+            std::make_shared<tsi::RootCertInfo>(*server_map);
       }
       if (!client_spiffe_bundle_map_path.empty()) {
         auto client_map =
             grpc_core::SpiffeBundleMap::FromFile(client_spiffe_bundle_map_path);
         CHECK(client_map.ok());
-        client_spiffe_bundle_map_ = std::make_shared<tsi::RootCertInfo>(*client_map);
+        client_spiffe_bundle_map_ =
+            std::make_shared<tsi::RootCertInfo>(*client_map);
       }
       // In TLS 1.3, the client-side handshake succeeds even if the client sends
       // a bad certificate. In such a case, the server would fail the TLS
