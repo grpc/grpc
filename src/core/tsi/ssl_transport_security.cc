@@ -362,9 +362,7 @@ static grpc_core::PrivateKeySigner* GetPrivateKeySigner(const SSL* ssl) {
   if (handshaker == nullptr) return nullptr;
   return handshaker->key_signer;
 }
-#endif
 
-#if defined(OPENSSL_IS_BORINGSSL)
 // Invoked by the private key signer when it runs asynchronously.
 void TlsOffloadSignDoneCallback(
     grpc_core::RefCountedPtr<tsi_ssl_handshaker> handshaker,
@@ -467,16 +465,15 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
       });
 }
 
-#if defined(OPENSSL_IS_BORINGSSL)
 const SSL_PRIVATE_KEY_METHOD TlsOffloadPrivateKeyMethod = {
     TlsPrivateKeySignWrapper,
     nullptr,  // decrypt not implemented for this use case
     TlsPrivateKeyOffloadComplete};
-#endif
-
-#if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE)
+#if !defined(OPENSSL_NO_ENGINE)
 static const char kSslEnginePrefix[] = "engine:";
 #endif
+#endif
+
 #if OPENSSL_VERSION_NUMBER >= 0x30000000
 static const int kSslEcCurveNames[] = {NID_X9_62_prime256v1};
 #endif
