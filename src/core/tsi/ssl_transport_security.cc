@@ -2334,7 +2334,7 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self) {
       remaining_bytes_to_write_to_openssl_size -= bytes_written_to_openssl;
       remaining_bytes_to_write_to_openssl += bytes_written_to_openssl;
     }
-  } else if (offload_context != nullptr && offload_context->signature_ready) {
+  } else if (offload_context != nullptr) {
     // During the PrivateKeyOffload signature, an empty call to
     // ssl_handshaker_do_handshake needs to be forced  after the async offload
     // has completed.
