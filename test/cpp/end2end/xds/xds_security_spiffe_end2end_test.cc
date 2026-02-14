@@ -142,11 +142,11 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
         std::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
         if (root_being_watched) {
           if (it->second.spiffe_bundle_map.size() != 0) {
-            root_cert_info =
-                std::make_shared<tsi::RootCertInfo>(it->second.spiffe_bundle_map);
+            root_cert_info = std::make_shared<tsi::RootCertInfo>(
+                it->second.spiffe_bundle_map);
           } else {
-            root_cert_info =
-                std::make_shared<tsi::RootCertInfo>(it->second.root_certificate);
+            root_cert_info = std::make_shared<tsi::RootCertInfo>(
+                it->second.root_certificate);
           }
         }
         if (identity_being_watched) {
