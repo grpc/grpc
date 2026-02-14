@@ -140,6 +140,12 @@ class Http2ServerTransport final : public ServerTransport {
 
  private:
   //////////////////////////////////////////////////////////////////////////////
+  // Spawn Helpers and Promise Helpers
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Endpoint Helpers
+
+  //////////////////////////////////////////////////////////////////////////////
   // Transport Read Path
 
   // Returns a promise to keep reading in a Loop till a fail/close is received.
@@ -166,6 +172,25 @@ class Http2ServerTransport final : public ServerTransport {
   // Returns a promise that will do the cleanup after the WriteLoop ends.
   auto OnWriteLoopEnded();
 
+  absl::Status TriggerWriteCycle(DebugLocation whence = {}) {
+    return absl::OkStatus();
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Settings
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Flow Control
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Stream Creation and Stream Handling
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Ping Keepalive and Goaway
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Error Path and Close Path
+
   // This function MUST be idempotent.
   void CloseStream(uint32_t stream_id, absl::Status status,
                    DebugLocation whence = {}) {
@@ -177,7 +202,7 @@ class Http2ServerTransport final : public ServerTransport {
 
   // This function is supposed to be idempotent.
   void CloseTransport(const Http2Status& status, DebugLocation whence = {}) {
-    LOG(INFO) << "Http2ClientTransport::CloseTransport status=" << status
+    LOG(INFO) << "Http2ServerTransport::CloseTransport status=" << status
               << " location=" << whence.file() << ":" << whence.line();
     // TODO(akshitpatel) : [PH2][P2] : Implement this.
   }
@@ -207,15 +232,65 @@ class Http2ServerTransport final : public ServerTransport {
   }
 
   //////////////////////////////////////////////////////////////////////////////
+  // Misc
+
+  //////////////////////////////////////////////////////////////////////////////
   // Inner Classes and Structs
 
-  struct Stream : public RefCounted<Stream> {
-    explicit Stream(CallInitiator call) : call(std::move(call)) {}
-    // Transport holds one CallHandler object for each Stream.
-    CallInitiator call;
-    // TODO(tjagtap) : [PH2][P2] : Add more members as necessary
-    // TODO(tjagtap) : [PH2][P2] : May be add state of Stream - Idle , Open etc
-    // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
+  class PingSystemInterfaceImpl : public PingInterface {
+   public:
+    static std::unique_ptr<PingInterface> Make(Http2ServerTransport* transport);
+    absl::Status TriggerWrite() override;
+    Promise<absl::Status> PingTimeout() override;
+
+   private:
+    // Holding a raw pointer to transport works because all the promises
+    // invoking the methods of this class are invoked while holding a ref to the
+    // transport.
+    Http2ServerTransport* transport_;
+    explicit PingSystemInterfaceImpl(Http2ServerTransport* transport)
+        : transport_(transport) {}
+  };
+
+  class KeepAliveInterfaceImpl : public KeepAliveInterface {
+   public:
+    static std::unique_ptr<KeepAliveInterface> Make(
+        Http2ServerTransport* transport);
+
+   private:
+    explicit KeepAliveInterfaceImpl(Http2ServerTransport* transport)
+        : transport_(transport) {}
+    Promise<absl::Status> SendPingAndWaitForAck() override;
+    Promise<absl::Status> OnKeepAliveTimeout() override;
+    bool NeedToSendKeepAlivePing() override;
+    // Holding a raw pointer to transport works because all the promises
+    // invoking the methods of this class are invoked while holding a ref to the
+    // transport.
+    Http2ServerTransport* transport_;
+  };
+
+  class GoawayInterfaceImpl : public GoawayInterface {
+   public:
+    static std::unique_ptr<GoawayInterface> Make(
+        Http2ServerTransport* transport);
+
+    Promise<absl::Status> SendPingAndWaitForAck() override {
+      return transport_->ping_manager_->RequestPing(/*on_initiate=*/[] {},
+                                                    /*important=*/true);
+    }
+
+    absl::Status TriggerWriteCycle() override {
+      return transport_->TriggerWriteCycle();
+    }
+    uint32_t GetLastAcceptedStreamId() override;
+
+   private:
+    explicit GoawayInterfaceImpl(Http2ServerTransport* transport)
+        : transport_(transport) {}
+    // Holding a raw pointer to transport works because all the promises
+    // invoking the methods of this class are invoked while holding a ref to the
+    // transport.
+    Http2ServerTransport* transport_;
   };
 
   //////////////////////////////////////////////////////////////////////////////
@@ -237,6 +312,7 @@ class Http2ServerTransport final : public ServerTransport {
   // mapping up in the on_done of the CallInitiator or CallHandler
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list_
       ABSL_GUARDED_BY(transport_mutex_);
+  std::optional<PingManager> ping_manager_;
 };
 
 }  // namespace http2
