@@ -405,7 +405,6 @@ void TlsOffloadSignDoneCallback(
           *next_args.error = ctx->signed_bytes.status().ToString();
         }
         if (next_args.cb) {
-          lock.Unlock();
           next_args.cb(TSI_INTERNAL_ERROR, next_args.user_data, nullptr, 0,
                        next_args.handshaker_result);
         }
