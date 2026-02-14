@@ -78,7 +78,8 @@ class grpc_httpcli_ssl_channel_security_connector final
                                    const tsi_ssl_root_certs_store* root_store) {
     tsi_ssl_client_handshaker_options options;
     if (pem_root_certs != nullptr) {
-      options.root_cert_info = std::make_shared<tsi::RootCertInfo>(pem_root_certs);
+      options.root_cert_info =
+          std::make_shared<tsi::RootCertInfo>(pem_root_certs);
     }
     options.root_store = root_store;
     return tsi_create_ssl_client_handshaker_factory_with_options(

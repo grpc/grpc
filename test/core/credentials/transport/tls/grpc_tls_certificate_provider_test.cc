@@ -118,10 +118,10 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
   // if the status updates are correct.
   struct CredentialInfo {
     PemKeyCertPairList key_cert_pairs;
-    std::shared_ptr<RootCertInfo> root_cert_info;
-    CredentialInfo(const RootCertInfo& roots, PemKeyCertPairList key_cert)
+    std::shared_ptr<tsi::RootCertInfo> root_cert_info;
+    CredentialInfo(const tsi::RootCertInfo& roots, PemKeyCertPairList key_cert)
         : key_cert_pairs(std::move(key_cert)),
-          root_cert_info(std::make_shared<RootCertInfo>(roots)) {}
+          root_cert_info(std::make_shared<tsi::RootCertInfo>(roots)) {}
     bool operator==(const CredentialInfo& other) const {
       return key_cert_pairs == other.key_cert_pairs &&
              root_cert_info == other.root_cert_info;
@@ -175,10 +175,10 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
     ~TlsCertificatesTestWatcher() override { state_->watcher = nullptr; }
 
     void OnCertificatesChanged(
-        std::shared_ptr<RootCertInfo> roots,
+        std::shared_ptr<tsi::RootCertInfo> roots,
         std::optional<PemKeyCertPairList> key_cert_pairs) override {
       MutexLock lock(&state_->mu);
-      RootCertInfo updated_root;
+      tsi::RootCertInfo updated_root;
       if (roots != nullptr) {
         updated_root = *roots;
       }
@@ -845,7 +845,8 @@ TEST_F(
 TEST_F(GrpcTlsCertificateProviderTest, InMemoryCertificateProviderWatchers) {
   InMemoryCertificateProvider provider;
   ASSERT_TRUE(
-      provider.UpdateRoot(std::make_shared<RootCertInfo>(root_cert_)).ok());
+      provider.UpdateRoot(std::make_shared<tsi::RootCertInfo>(root_cert_))
+          .ok());
   ASSERT_TRUE(provider
                   .UpdateIdentityKeyCertPair(MakeCertKeyPairs(
                       private_key_.c_str(), cert_chain_.c_str()))
@@ -880,7 +881,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
        InMemoryCertificateProviderWatchersVerification) {
   InMemoryCertificateProvider provider;
   ASSERT_TRUE(
-      provider.UpdateRoot(std::make_shared<RootCertInfo>(root_cert_)).ok());
+      provider.UpdateRoot(std::make_shared<tsi::RootCertInfo>(root_cert_))
+          .ok());
   ASSERT_TRUE(provider
                   .UpdateIdentityKeyCertPair(MakeCertKeyPairs(
                       private_key_.c_str(), cert_chain_.c_str()))
@@ -909,7 +911,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
                                                    cert_chain_.c_str()))));
   // Update the Root Certificate.
   ASSERT_TRUE(
-      provider.UpdateRoot(std::make_shared<RootCertInfo>(root_cert_2_)).ok());
+      provider.UpdateRoot(std::make_shared<tsi::RootCertInfo>(root_cert_2_))
+          .ok());
   EXPECT_THAT(
       both_watcher->GetCredentialQueue(),
       ::testing::ElementsAre(MatchesCredentialInfo(
@@ -945,7 +948,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
        InMemoryCertificateProviderWithGoodPathsAndCredentialValidation) {
   InMemoryCertificateProvider provider;
   ASSERT_TRUE(
-      provider.UpdateRoot(std::make_shared<RootCertInfo>(root_cert_)).ok());
+      provider.UpdateRoot(std::make_shared<tsi::RootCertInfo>(root_cert_))
+          .ok());
   ASSERT_TRUE(provider
                   .UpdateIdentityKeyCertPair(MakeCertKeyPairs(
                       private_key_.c_str(), cert_chain_.c_str()))
@@ -957,7 +961,7 @@ TEST_F(GrpcTlsCertificateProviderTest,
        InMemoryCertificateProviderWithMalformedRootCertificate) {
   InMemoryCertificateProvider provider;
   ASSERT_TRUE(
-      provider.UpdateRoot(std::make_shared<RootCertInfo>(malformed_cert_))
+      provider.UpdateRoot(std::make_shared<tsi::RootCertInfo>(malformed_cert_))
           .ok());
   ASSERT_TRUE(provider
                   .UpdateIdentityKeyCertPair(MakeCertKeyPairs(
@@ -972,7 +976,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
        InMemoryCertificateProviderWithMalformedIdentityCertificate) {
   InMemoryCertificateProvider provider;
   ASSERT_TRUE(
-      provider.UpdateRoot(std::make_shared<RootCertInfo>(root_cert_)).ok());
+      provider.UpdateRoot(std::make_shared<tsi::RootCertInfo>(root_cert_))
+          .ok());
   ASSERT_TRUE(provider
                   .UpdateIdentityKeyCertPair(MakeCertKeyPairs(
                       private_key_.c_str(), malformed_cert_.c_str()))
@@ -986,7 +991,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
        InMemoryCertificateProviderWithMalformedIdentityKey) {
   InMemoryCertificateProvider provider;
   ASSERT_TRUE(
-      provider.UpdateRoot(std::make_shared<RootCertInfo>(root_cert_)).ok());
+      provider.UpdateRoot(std::make_shared<tsi::RootCertInfo>(root_cert_))
+          .ok());
   ASSERT_TRUE(provider
                   .UpdateIdentityKeyCertPair(MakeCertKeyPairs(
                       malformed_key_.c_str(), cert_chain_.c_str()))

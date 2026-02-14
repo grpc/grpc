@@ -2172,8 +2172,8 @@ static tsi_result ssl_handshaker_do_handshake(tsi_ssl_handshaker* impl,
                   << tsi::SslErrorString(ssl_result) << ": " << err_str
                   << verify_result_str;
         if (error != nullptr) {
-          *error = absl::StrCat(tsi::SslErrorString(ssl_result), ": ",
-                                err_str, verify_result_str);
+          *error = absl::StrCat(tsi::SslErrorString(ssl_result), ": ", err_str,
+                                verify_result_str);
         }
         impl->result = TSI_PROTOCOL_FAILURE;
         return impl->result;
@@ -2863,7 +2863,8 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
   tsi_ssl_client_handshaker_options options;
   options.pem_key_cert_pair = pem_key_cert_pair;
   if (pem_root_certs != nullptr) {
-    options.root_cert_info = std::make_shared<tsi::RootCertInfo>(pem_root_certs);
+    options.root_cert_info =
+        std::make_shared<tsi::RootCertInfo>(pem_root_certs);
   }
   options.cipher_suites = cipher_suites;
   options.alpn_protocols = alpn_protocols;

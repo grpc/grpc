@@ -224,7 +224,8 @@ class PrivateKeyOffloadTest : public ::testing::TestWithParam<tsi_tls_version> {
     void SetupHandshakers() {
       // Create client handshaker factory.
       tsi_ssl_client_handshaker_options client_options;
-      client_options.root_cert_info = std::make_shared<tsi::RootCertInfo>(ca_cert_);
+      client_options.root_cert_info =
+          std::make_shared<tsi::RootCertInfo>(ca_cert_);
       client_options.min_tls_version = GetParam();
       client_options.max_tls_version = GetParam();
       if (offload_party_ == OffloadParty::kClient) {
@@ -239,7 +240,8 @@ class PrivateKeyOffloadTest : public ::testing::TestWithParam<tsi_tls_version> {
 
       // Create server handshaker factory.
       tsi_ssl_server_handshaker_options server_options;
-      server_options.root_cert_info = std::make_shared<tsi::RootCertInfo>(ca_cert_);
+      server_options.root_cert_info =
+          std::make_shared<tsi::RootCertInfo>(ca_cert_);
       server_options.client_certificate_request =
           TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY;
       server_options.min_tls_version = GetParam();
