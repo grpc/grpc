@@ -94,8 +94,9 @@ class PrivateKeySigner {
  * Adds a identity key signer and a identity certificate chain to
  * grpc_tls_identity_pairs. This implementation only works with gRPC Binaries
  * built with BoringSSL.
+ * Returns OK if success, or a non-OK status on failure.
  */
-void grpc_tls_identity_pairs_add_pair_with_signer(
+absl::Status grpc_tls_identity_pairs_add_pair_with_signer(
     grpc_tls_identity_pairs* pairs,
     std::shared_ptr<grpc_core::PrivateKeySigner> private_key_signer,
     absl::string_view cert_chain);

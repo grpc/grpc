@@ -338,14 +338,25 @@ void grpc_tls_identity_pairs_add_pair(grpc_tls_identity_pairs* pairs,
   pairs->pem_key_cert_pairs.emplace_back(private_key, cert_chain);
 }
 
-void grpc_tls_identity_pairs_add_pair_with_signer(
+absl::Status grpc_tls_identity_pairs_add_pair_with_signer(
     grpc_tls_identity_pairs* pairs,
     std::shared_ptr<grpc_core::PrivateKeySigner> private_key_signer,
     absl::string_view cert_chain) {
-  GRPC_CHECK_NE(pairs, nullptr);
-  GRPC_CHECK_NE(private_key_signer, nullptr);
+#ifndef OPENSSL_IS_BORINGSSL
+  return absl::UnimplementedError(
+      "grpc_tls_identity_pairs_add_pair_with_signer is only supported with "
+      "BoringSSL.");
+#else
+  if (pairs == nullptr) {
+    return absl::InvalidArgumentError("pairs must not be null.");
+  }
+  if (private_key_signer == nullptr) {
+    return absl::InvalidArgumentError("private_key_signer must not be null.");
+  }
   pairs->pem_key_cert_pairs.emplace_back(std::move(private_key_signer),
                                          cert_chain);
+  return absl::OkStatus();
+#endif
 }
 
 void grpc_tls_identity_pairs_destroy(grpc_tls_identity_pairs* pairs) {

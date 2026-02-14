@@ -53,9 +53,13 @@ grpc_tls_identity_pairs* CreatePairsCore(
                                            pair.certificate_chain.c_str());
         },
         [&](std::shared_ptr<grpc::experimental::PrivateKeySigner>* key_signer) {
-          grpc_tls_identity_pairs_add_pair_with_signer(
+          absl::Status status = grpc_tls_identity_pairs_add_pair_with_signer(
               pairs_core, std::move(*key_signer),
               pair.certificate_chain.c_str());
+          if (!status.ok()) {
+            LOG(ERROR) << "Failed to add identity pair with signer: "
+                       << status.ToString();
+          }
         });
   }
   return pairs_core;
