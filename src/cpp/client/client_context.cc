@@ -73,6 +73,13 @@ ClientContext::ClientContext()
 }
 
 ClientContext::~ClientContext() {
+  if (context_elements_ != nullptr) {
+    uint16_t n = grpc::impl::CallContextRegistry::Count();
+    for (uint16_t i = 0; i < n; ++i) {
+      grpc::impl::CallContextRegistry::Destroy(i, context_elements_[i]);
+    }
+    delete[] context_elements_; 
+  }
   if (call_) {
     grpc_call_unref(call_);
     call_ = nullptr;
