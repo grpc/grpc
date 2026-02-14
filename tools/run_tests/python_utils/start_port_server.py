@@ -83,12 +83,9 @@ def start_port_server(verbose=False):
             # Working directory of port server needs to be outside of Jenkins
             # workspace to prevent file lock issues.
             tempdir = tempfile.mkdtemp()
-            if sys.version_info.major == 2:
-                creationflags = 0x00000008  # detached process
-            else:
-                creationflags = (
-                    0  # DETACHED_PROCESS doesn't seem to work with python3
-                )
+            creationflags = (
+                0  # 0x00000008 DETACHED_PROCESS doesn't seem to work with python3
+            )
             port_server = subprocess.Popen(
                 args,
                 env=env,
