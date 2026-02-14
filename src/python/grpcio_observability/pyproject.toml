@@ -51,3 +51,6 @@ exclude = [
     "third_party*",
     "grpc_root*",
 ]
+
+[tool.setuptools.package-data]
+"grpc_observability" = ["py.typed"]
