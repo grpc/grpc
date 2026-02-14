@@ -113,7 +113,7 @@ pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 
 use_repo(pip, "grpc_python_dependencies")
 
-bazel_dep(name = "cython", version = "3.0.11-1")
+bazel_dep(name = "cython", version = "3.0.12-1")
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
