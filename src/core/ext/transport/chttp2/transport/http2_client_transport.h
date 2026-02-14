@@ -91,7 +91,7 @@ class Http2ClientTransport final : public ClientTransport,
                                    public channelz::DataSource {
  public:
   Http2ClientTransport(
-      PromiseEndpoint endpoint, GRPC_UNUSED const ChannelArgs& channel_args,
+      PromiseEndpoint endpoint, const ChannelArgs& channel_args,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine,
       absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings);
@@ -465,6 +465,42 @@ class Http2ClientTransport final : public ClientTransport,
 
   absl::Status AckPing(uint64_t opaque_data);
 
+  GoawayManager goaway_manager_;
+
+  WritableStreams<RefCountedPtr<Stream>> writable_stream_list_;
+
+  absl::Status MaybeAddStreamToWritableStreamList(
+      const RefCountedPtr<Stream> stream,
+      const StreamDataQueue<ClientMetadataHandle>::StreamWritabilityUpdate
+          result);
+
+  bool SetOnDone(CallHandler call_handler, RefCountedPtr<Stream> stream);
+  absl::StatusOr<std::vector<Http2Frame>> DequeueStreamFrames(
+      RefCountedPtr<Stream> stream, WriteContext::WriteQuota& write_quota);
+
+  /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
+  /// the peer
+  bool enable_preferred_rx_crypto_frame_advertisement_;
+  RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
+  MemoryOwner memory_owner_;
+  chttp2::TransportFlowControl flow_control_;
+  std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
+
+  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
+  Waker periodic_updates_waker_;
+
+  Http2ReadContext reader_state_;
+  Http2Status ParseAndDiscardHeaders(SliceBuffer&& buffer, bool is_end_headers,
+                                     RefCountedPtr<Stream> stream,
+                                     Http2Status&& original_status,
+                                     DebugLocation whence = {});
+  void ReadChannelArgs(const ChannelArgs& channel_args,
+                       TransportChannelArgs& args);
+  auto SecurityFrameLoop();
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Inner Classes and Structs
+
   class PingSystemInterfaceImpl : public PingInterface {
    public:
     static std::unique_ptr<PingInterface> Make(Http2ClientTransport* transport);
@@ -521,38 +557,9 @@ class Http2ClientTransport final : public ClientTransport,
     Http2ClientTransport* transport_;
   };
 
-  GoawayManager goaway_manager_;
-
-  WritableStreams<RefCountedPtr<Stream>> writable_stream_list_;
-
-  absl::Status MaybeAddStreamToWritableStreamList(
-      const RefCountedPtr<Stream> stream,
-      const StreamDataQueue<ClientMetadataHandle>::StreamWritabilityUpdate
-          result);
-
-  bool SetOnDone(CallHandler call_handler, RefCountedPtr<Stream> stream);
-  absl::StatusOr<std::vector<Http2Frame>> DequeueStreamFrames(
-      RefCountedPtr<Stream> stream, WriteContext::WriteQuota& write_quota);
-
-  /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
-  /// the peer
-  bool enable_preferred_rx_crypto_frame_advertisement_;
-  RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
-  MemoryOwner memory_owner_;
-  chttp2::TransportFlowControl flow_control_;
-  std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
-
-  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
-  Waker periodic_updates_waker_;
-
-  Http2ReadContext reader_state_;
-  Http2Status ParseAndDiscardHeaders(SliceBuffer&& buffer, bool is_end_headers,
-                                     RefCountedPtr<Stream> stream,
-                                     Http2Status&& original_status,
-                                     DebugLocation whence = {});
-  void ReadChannelArgs(const ChannelArgs& channel_args,
-                       TransportChannelArgs& args);
-  auto SecurityFrameLoop();
+  //////////////////////////////////////////////////////////////////////////////
+  // All Data Members
+  // TODO(tjagtap) : [PH2][P4] : Move all data members from above to here.
 };
 
 }  // namespace http2

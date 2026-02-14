@@ -62,6 +62,7 @@
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/race.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -99,6 +100,11 @@ class Http2ServerTransport final : public ServerTransport {
       PromiseEndpoint endpoint, GRPC_UNUSED const ChannelArgs& channel_args,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine);
+
+  Http2ServerTransport(const Http2ServerTransport&) = delete;
+  Http2ServerTransport& operator=(const Http2ServerTransport&) = delete;
+  Http2ServerTransport(Http2ServerTransport&&) = delete;
+  Http2ServerTransport& operator=(Http2ServerTransport&&) = delete;
   ~Http2ServerTransport() override;
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
@@ -133,7 +139,8 @@ class Http2ServerTransport final : public ServerTransport {
   }
 
  private:
-  // Reading from the endpoint.
+  //////////////////////////////////////////////////////////////////////////////
+  // Transport Read Path
 
   // Returns a promise to keep reading in a Loop till a fail/close is received.
   auto ReadLoop();
@@ -147,7 +154,8 @@ class Http2ServerTransport final : public ServerTransport {
   // Returns a promise that will do the cleanup after the ReadLoop ends.
   auto OnReadLoopEnded();
 
-  // Writing to the endpoint.
+  //////////////////////////////////////////////////////////////////////////////
+  // Transport Write Path
 
   // Read from the MPSC queue and write it.
   auto WriteFromQueue();
@@ -157,31 +165,6 @@ class Http2ServerTransport final : public ServerTransport {
 
   // Returns a promise that will do the cleanup after the WriteLoop ends.
   auto OnWriteLoopEnded();
-
-  RefCountedPtr<Party> general_party_;
-
-  PromiseEndpoint endpoint_;
-  Http2SettingsManager settings_;
-
-  Http2FrameHeader current_frame_header_;
-
-  struct Stream : public RefCounted<Stream> {
-    explicit Stream(CallInitiator call) : call(std::move(call)) {}
-    // Transport holds one CallHandler object for each Stream.
-    CallInitiator call;
-    // TODO(tjagtap) : [PH2][P2] : Add more members as necessary
-    // TODO(tjagtap) : [PH2][P2] : May be add state of Stream - Idle , Open etc
-    // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
-  };
-  RefCountedPtr<UnstartedCallDestination> call_destination_;
-
-  MpscReceiver<Http2Frame> outgoing_frames_;
-
-  Mutex transport_mutex_;
-  // TODO(tjagtap) : [PH2][P2] : Add to map in SetCallDestination and clean this
-  // mapping up in the on_done of the CallInitiator or CallHandler
-  absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list_
-      ABSL_GUARDED_BY(transport_mutex_);
 
   // This function MUST be idempotent.
   void CloseStream(uint32_t stream_id, absl::Status status,
@@ -223,17 +206,37 @@ class Http2ServerTransport final : public ServerTransport {
     GPR_UNREACHABLE_CODE(return absl::InternalError("Invalid error type"));
   }
 
-  // TODO(tjagtap) : [PH2][P2] : Either use this in code or delete it.
-  // uint32_t next_stream_id_ ABSL_GUARDED_BY(transport_mutex_) = 1;
-  // TODO(tjagtap) : [PH2][P2] : Either use this in code or delete it. This was
-  // copied from Chaotic Good.
-  // uint32_t last_seen_new_stream_id_ = 0;
+  //////////////////////////////////////////////////////////////////////////////
+  // Inner Classes and Structs
 
-  // TODO(tjagtap) : [PH2][P2] : Implement if needed.
-  // uint32_t MakeStream(CallHandler call_handler);
-  // TODO(tjagtap) : [PH2][P2] : Implement if needed.
-  // RefCountedPtr<Http2ServerTransport::Stream> LookupStream(uint32_t
-  // stream_id);
+  struct Stream : public RefCounted<Stream> {
+    explicit Stream(CallInitiator call) : call(std::move(call)) {}
+    // Transport holds one CallHandler object for each Stream.
+    CallInitiator call;
+    // TODO(tjagtap) : [PH2][P2] : Add more members as necessary
+    // TODO(tjagtap) : [PH2][P2] : May be add state of Stream - Idle , Open etc
+    // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
+  };
+
+  //////////////////////////////////////////////////////////////////////////////
+  // All Data Members
+
+  RefCountedPtr<Party> general_party_;
+
+  PromiseEndpoint endpoint_;
+  Http2SettingsManager settings_;
+
+  Http2FrameHeader current_frame_header_;
+
+  RefCountedPtr<UnstartedCallDestination> call_destination_;
+
+  MpscReceiver<Http2Frame> outgoing_frames_;
+
+  Mutex transport_mutex_;
+  // TODO(tjagtap) : [PH2][P2] : Add to map in SetCallDestination and clean this
+  // mapping up in the on_done of the CallInitiator or CallHandler
+  absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list_
+      ABSL_GUARDED_BY(transport_mutex_);
 };
 
 }  // namespace http2
