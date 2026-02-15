@@ -40,6 +40,21 @@ BAZEL_REMOTE_CACHE_ARGS=(
   --remote_default_exec_properties="grpc_cache_silo_key2=${KOKORO_IMAGE_VERSION}"
 )
 
+# Install Python 3.14 via Homebrew if it is not already available.
+brew install python@3.14 || true
+
+# If python3.14 is available, use it. Otherwise use python3.
+if [ -x "/opt/homebrew/bin/python3.14" ]; then
+  PYTHON3_BIN_PATH="/opt/homebrew/bin/python3.14"
+elif [ -x "$(command -v python3.14)" ]; then
+  PYTHON3_BIN_PATH="$(command -v python3.14)"
+else
+  PYTHON3_BIN_PATH="$(command -v python3)"
+fi
+export PYTHON3_BIN_PATH
+export PYTHON_BIN_PATH="$PYTHON3_BIN_PATH"
+export PATH="$(dirname "$PYTHON3_BIN_PATH"):$PATH"
+
 # This is added to resolve imports not found errors like
 # ImportError: cannot import name 'auth' from 'google'
 # Tests which fails when workaround is not executed are listed below -
@@ -50,13 +65,25 @@ BAZEL_REMOTE_CACHE_ARGS=(
 # //src/python/grpcio_tests/tests_aio/interop:local_interop_test
 # //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client_test"
 # TODO(asheshvidyut): figure out proper fix instead of workaround below
-python3 -m pip install -r requirements.bazel.lock
+"$PYTHON3_BIN_PATH" -m pip install --user --upgrade pip || true
+"$PYTHON3_BIN_PATH" -m pip install -i https://pypi.org/simple/ --user --break-system-packages -r requirements.bazel.lock typing_extensions || "$PYTHON3_BIN_PATH" -m pip install -i https://pypi.org/simple/ --break-system-packages -r requirements.bazel.lock typing_extensions || "$PYTHON3_BIN_PATH" -m pip install -i https://pypi.org/simple/ -r requirements.bazel.lock typing_extensions
 
 # Test targets mirrored from tools/internal_ci/linux/grpc_python_bazel_test_in_docker.sh
 TEST_TARGETS="//src/python/..."
-BAZEL_FLAGS="--test_output=errors --config=python"
+# Disable global pip.conf which overrides PyPI and causes wheel builder EOF errors
+export PIP_CONFIG_FILE=/dev/null
 
-python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests
+echo "=== HOST PYTHON DEBUG INFO ==="
+echo "PYTHON3_BIN_PATH: $PYTHON3_BIN_PATH"
+"$PYTHON3_BIN_PATH" --version
+"$PYTHON3_BIN_PATH" -c "import sys; print('Host sys.version:', sys.version); print('Host sys.executable:', sys.executable)"
+echo "Checking typing_extensions on host..."
+"$PYTHON3_BIN_PATH" -c "import typing_extensions; print('Host typing_extensions path:', typing_extensions.__file__)" || echo "typing_extensions NOT natively installed on host."
+echo "=============================="
+
+BAZEL_FLAGS="--test_output=errors --config=python --action_env=PYTHON_BIN_PATH=$PYTHON_BIN_PATH"
+
+"$PYTHON3_BIN_PATH" tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests
 # Run standard Python Bazel tests
 python_bazel_tests/bazel_wrapper \
   --output_base=.bazel_rbe \
@@ -68,7 +95,7 @@ python_bazel_tests/bazel_wrapper \
   -- \
   ${TEST_TARGETS}
 
-python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_single_threaded_unary_streams
+"$PYTHON3_BIN_PATH" tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_single_threaded_unary_streams
 # Run single-threaded unary stream tests
 # Note: MacOS might differ in threading behavior, but we keep parity with Linux config
 python_bazel_tests_single_threaded_unary_streams/bazel_wrapper \
@@ -82,7 +109,7 @@ python_bazel_tests_single_threaded_unary_streams/bazel_wrapper \
   -- \
   ${TEST_TARGETS}
 
-python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_poller_engine
+"$PYTHON3_BIN_PATH" tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_poller_engine
 # Run tests with poller engine
 python_bazel_tests_poller_engine/bazel_wrapper \
   --output_base=.bazel_rbe \
@@ -95,7 +122,7 @@ python_bazel_tests_poller_engine/bazel_wrapper \
   -- \
   ${TEST_TARGETS}
 
-python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_fork_support
+"$PYTHON3_BIN_PATH" tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_fork_support
 # Run fork support tests
 # Note: Logic mirrored from tools/internal_ci/linux/grpc_python_bazel_test_fork_in_docker.sh
 python_bazel_tests_fork_support/bazel_wrapper \
