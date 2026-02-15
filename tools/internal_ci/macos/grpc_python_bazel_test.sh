@@ -40,14 +40,14 @@ BAZEL_REMOTE_CACHE_ARGS=(
   --remote_default_exec_properties="grpc_cache_silo_key2=${KOKORO_IMAGE_VERSION}"
 )
 
-# Install Python 3.14 via Homebrew if it is not already available.
-brew install python@3.14 || true
+# Install Python 3.9 via Homebrew if it is not already available.
+brew install python@3.9 || true
 
-# If python3.14 is available, use it. Otherwise use python3.
-if [ -x "/opt/homebrew/bin/python3.14" ]; then
-  PYTHON3_BIN_PATH="/opt/homebrew/bin/python3.14"
-elif [ -x "$(command -v python3.14)" ]; then
-  PYTHON3_BIN_PATH="$(command -v python3.14)"
+# If python3.9 is available, use it. Otherwise use python3.
+if [ -x "/opt/homebrew/bin/python3.9" ]; then
+  PYTHON3_BIN_PATH="/opt/homebrew/bin/python3.9"
+elif [ -x "$(command -v python3.9)" ]; then
+  PYTHON3_BIN_PATH="$(command -v python3.9)"
 else
   PYTHON3_BIN_PATH="$(command -v python3)"
 fi
