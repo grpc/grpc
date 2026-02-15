@@ -40,6 +40,16 @@ BAZEL_REMOTE_CACHE_ARGS=(
   --remote_default_exec_properties="grpc_cache_silo_key2=${KOKORO_IMAGE_VERSION}"
 )
 
+# If python3.14 is available, use it. Otherwise use python3.
+if [ -x "$(command -v python3.14)" ]; then
+  PYTHON3_BIN_PATH="$(command -v python3.14)"
+else
+  PYTHON3_BIN_PATH="$(command -v python3)"
+fi
+export PYTHON3_BIN_PATH
+export PYTHON_BIN_PATH="$PYTHON3_BIN_PATH"
+export PATH="$(dirname "$PYTHON3_BIN_PATH"):$PATH"
+
 # This is added to resolve imports not found errors like
 # ImportError: cannot import name 'auth' from 'google'
 # Tests which fails when workaround is not executed are listed below -
@@ -54,7 +64,7 @@ python3 -m pip install -r requirements.bazel.lock
 
 # Test targets mirrored from tools/internal_ci/linux/grpc_python_bazel_test_in_docker.sh
 TEST_TARGETS="//src/python/..."
-BAZEL_FLAGS="--test_output=errors --config=python"
+BAZEL_FLAGS="--test_output=errors --config=python --action_env=PYTHON_BIN_PATH=$PYTHON_BIN_PATH"
 
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests
 # Run standard Python Bazel tests
