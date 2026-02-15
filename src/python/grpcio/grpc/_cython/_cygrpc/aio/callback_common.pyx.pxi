@@ -86,11 +86,18 @@ async def execute_batch(GrpcCallWrapper grpc_call_wrapper,
         future,
         loop,
         CallbackFailureHandler('execute_batch', operations, ExecuteBatchError))
-    cdef grpc_call_error error = grpc_call_start_batch(
-        grpc_call_wrapper.call,
-        batch_operation_tag.c_ops,
-        batch_operation_tag.c_nops,
-        wrapper.c_functor(), NULL)
+    cdef grpc_call *call = grpc_call_wrapper.call
+    cdef grpc_op *ops = batch_operation_tag.c_ops
+    cdef size_t nops = batch_operation_tag.c_nops
+    cdef grpc_completion_queue_functor *functor = wrapper.c_functor()
+    cdef grpc_call_error error
+    with nogil:
+        error = grpc_call_start_batch(
+            call,
+            ops,
+            nops,
+            functor,
+            NULL)
 
     if error != GRPC_CALL_OK:
         grpc_call_error_string = grpc_call_error_to_string(error).decode()
