@@ -137,7 +137,7 @@ class grpc_ssl_server_credentials final : public grpc_server_credentials {
   grpc_ssl_server_certificate_config_fetcher certificate_config_fetcher_;
 };
 
-tsi_ssl_pem_key_cert_pair* grpc_convert_grpc_to_tsi_cert_pairs(
+std::vector<tsi_ssl_pem_key_cert_pair> grpc_convert_grpc_to_tsi_cert_pairs(
     const grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
     size_t num_key_cert_pairs);
 

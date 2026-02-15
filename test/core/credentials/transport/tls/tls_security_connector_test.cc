@@ -18,6 +18,8 @@
 
 #include "src/core/credentials/transport/tls/tls_security_connector.h"
 
+using tsi::RootCertInfo;
+
 #include <grpc/credentials.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
