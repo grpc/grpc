@@ -66,10 +66,21 @@ export PATH="$(dirname "$PYTHON3_BIN_PATH"):$PATH"
 # //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client_test"
 # TODO(asheshvidyut): figure out proper fix instead of workaround below
 "$PYTHON3_BIN_PATH" -m pip install --user --upgrade pip || true
-"$PYTHON3_BIN_PATH" -m pip install --user --break-system-packages -r requirements.bazel.lock typing_extensions || "$PYTHON3_BIN_PATH" -m pip install --break-system-packages -r requirements.bazel.lock typing_extensions || "$PYTHON3_BIN_PATH" -m pip install -r requirements.bazel.lock typing_extensions
+"$PYTHON3_BIN_PATH" -m pip install -i https://pypi.org/simple/ --user --break-system-packages -r requirements.bazel.lock typing_extensions || "$PYTHON3_BIN_PATH" -m pip install -i https://pypi.org/simple/ --break-system-packages -r requirements.bazel.lock typing_extensions || "$PYTHON3_BIN_PATH" -m pip install -i https://pypi.org/simple/ -r requirements.bazel.lock typing_extensions
 
 # Test targets mirrored from tools/internal_ci/linux/grpc_python_bazel_test_in_docker.sh
 TEST_TARGETS="//src/python/..."
+# Disable global pip.conf which overrides PyPI and causes wheel builder EOF errors
+export PIP_CONFIG_FILE=/dev/null
+
+echo "=== HOST PYTHON DEBUG INFO ==="
+echo "PYTHON3_BIN_PATH: $PYTHON3_BIN_PATH"
+"$PYTHON3_BIN_PATH" --version
+"$PYTHON3_BIN_PATH" -c "import sys; print('Host sys.version:', sys.version); print('Host sys.executable:', sys.executable)"
+echo "Checking typing_extensions on host..."
+"$PYTHON3_BIN_PATH" -c "import typing_extensions; print('Host typing_extensions path:', typing_extensions.__file__)" || echo "typing_extensions NOT natively installed on host."
+echo "=============================="
+
 BAZEL_FLAGS="--test_output=errors --config=python --action_env=PYTHON_BIN_PATH=$PYTHON_BIN_PATH"
 
 "$PYTHON3_BIN_PATH" tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests
