@@ -88,7 +88,10 @@ BAZEL_FLAGS="--test_output=errors --config=python --action_env=PYTHON_BIN_PATH=$
 "$PYTHON3_BIN_PATH" tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests
 
 python_bazel_tests/bazel_wrapper --output_base=.bazel_rbe --bazelrc=tools/remote_build/mac.bazelrc fetch @com_google_protobuf//python:protobuf_python || true
-find .bazel_rbe -type f -path "*/python/google/__init__.py" -delete || true
+# Truncate the problematic google/__init__.py to empty instead of deleting.
+# Deleting breaks Bazel symlinks; an empty __init__.py is harmless and allows
+# Python to discover google.auth and google.api from host site-packages via PYTHONPATH.
+find .bazel_rbe -type f -path "*/python/google/__init__.py" -exec sh -c 'echo -n > "$1"' _ {} \; || true
 
 # Run standard Python Bazel tests
 python_bazel_tests/bazel_wrapper \
