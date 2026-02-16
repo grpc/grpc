@@ -93,7 +93,15 @@ python_bazel_tests/bazel_wrapper --output_base=.bazel_rbe --bazelrc=tools/remote
 # This forces Python 3.3+ to treat 'google' as a native namespace package.
 # This is necessary because host-site packages provided via PYTHONPATH
 # might not be visible inside the darwin-sandbox if blocked by __init__.py.
-find .bazel_rbe -type f -path "*/python/google/__init__.py" -delete || true
+# Use chmod to ensure we can delete read-only files in the Bazel cache.
+echo "Running aggressive namespace cleanup..."
+find .bazel_rbe -name "__init__.py" -path "*/google/__init__.py" -print -exec chmod +w {} \; -exec rm -vf {} \; || true
+
+# Verify cleanup
+if find .bazel_rbe -name "__init__.py" -path "*/google/__init__.py" | grep -q .; then
+  echo "WARNING: Aggressive cleanup failed to remove some __init__.py files!"
+  find .bazel_rbe -name "__init__.py" -path "*/google/__init__.py"
+fi
 
 
 # Run standard Python Bazel tests

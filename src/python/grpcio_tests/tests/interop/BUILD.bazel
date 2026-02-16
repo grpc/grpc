@@ -129,6 +129,8 @@ py_test(
         "//src/proto/grpc/testing:py_test_proto",
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_tests/tests/unit:test_common",
+        requirement("google-auth"),
+        requirement("googleapis-common-protos"),
     ],
 )
 
@@ -146,5 +148,7 @@ py_test(
         "//src/proto/grpc/testing:py_test_proto",
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_tests/tests/unit:test_common",
+        requirement("google-auth"),
+        requirement("googleapis-common-protos"),
     ],
 )
