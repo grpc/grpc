@@ -19,19 +19,7 @@ import functools
 import itertools
 import logging
 import os
-import sys
 import unittest
-
-print("=== USER REQUESTED DEBUG LOGS ===", file=sys.stderr)
-print(f"Python Version: {sys.version}", file=sys.stderr)
-print(f"Python Executable: {sys.executable}", file=sys.stderr)
-print(f"PYTHONPATH: {os.environ.get('PYTHONPATH', 'UNSET')}", file=sys.stderr)
-try:
-    import typing_extensions
-    print(f"typing_extensions imported from: {typing_extensions.__file__}", file=sys.stderr)
-except ImportError as e:
-    print(f"Failed to import typing_extensions: {e}", file=sys.stderr)
-print("=================================", file=sys.stderr)
 
 import grpc
 from grpc import _grpcio_metadata
