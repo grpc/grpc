@@ -30,9 +30,7 @@ class GenericService:
 
 
 class MultithreadTest(AioTestBase):
-    results_queue = queue.Queue()
-
-    async def start_server(self):
+    async def _start_server(self):
         server = grpc.aio.server()
         rpc_method_handlers = {
             "UnaryCall": grpc.unary_unary_rpc_method_handler(
@@ -55,24 +53,25 @@ class MultithreadTest(AioTestBase):
             response = await unary_call(b"request")
             return response
 
-    def thread_target(self, port, q):
+    def thread_target(self, port, queue):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
             response = loop.run_until_complete(self.run_client(port))
-            q.put(response)
+            queue.put(response)
         except Exception as e:
-            q.put(e)
+            queue.put(e)
         finally:
             loop.run_until_complete(loop.shutdown_asyncgens())
             loop.close()
 
-    async def test_multithread(self):
+    async def _test_multithread(self, executor=None):
+        results_queue = queue.Queue()
         port, server = await self.start_server()
         threads = []
         for _ in range(10):
             t = threading.Thread(
-                target=self.thread_target, args=(port, self.results_queue)
+                target=self.thread_target, args=(port, results_queue)
             )
             t.start()
             threads.append(t)
@@ -86,18 +85,15 @@ class MultithreadTest(AioTestBase):
         await server.stop(None)
 
         # Verify results
-        self.assertEqual(
-            self.results_queue.qsize(), 10, "Expected 10 results in queue"
-        )
-        while not self.results_queue.empty():
-            result = self.results_queue.get()
-            self.assertIsInstance(
-                result, bytes, f"Expected bytes result, got {type(result)}"
-            )
-            self.assertEqual(
-                result, b"request", f"Expected b'request', got {result}"
-            )
+        self.assertEqual(results_queue.qsize(), 10)
+        while not results_queue.empty():
+            result = results_queue.get()
+            self.assertIsInstance(result, bytes)
+            self.assertEqual(result, b"request")
 
+    async def test_multithread_with_thread_pool(self):
+        with concurrent.futures.ThreadPoolExecutor() as pool:
+            await self._test_multithread(executor=pool)
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
