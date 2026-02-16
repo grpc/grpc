@@ -91,6 +91,9 @@ class MultithreadTest(AioTestBase):
             self.assertIsInstance(result, bytes)
             self.assertEqual(result, b"request")
 
+    async def test_multithread(self):
+        await self._test_multithread(executor=None)
+
     async def test_multithread_with_thread_pool(self):
         with concurrent.futures.ThreadPoolExecutor() as pool:
             await self._test_multithread(executor=pool)
