@@ -42,10 +42,11 @@ BAZEL_REMOTE_CACHE_ARGS=(
 
 # Install Python 3.9 via Homebrew if it is not already available.
 brew install python@3.9 || true
+brew link --force --overwrite python@3.9 || true
 
 # If python3.9 is available, use it. Otherwise use python3.
-if [ -x "/opt/homebrew/opt/python@3.9/bin/python3.9" ]; then
-  PYTHON3_BIN_PATH="/opt/homebrew/opt/python@3.9/bin/python3.9"
+if [ -x "/opt/homebrew/bin/python3.9" ]; then
+  PYTHON3_BIN_PATH="/opt/homebrew/bin/python3.9"
 elif [ -x "$(command -v python3.9)" ]; then
   PYTHON3_BIN_PATH="$(command -v python3.9)"
 else
