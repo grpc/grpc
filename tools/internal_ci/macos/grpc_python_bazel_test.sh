@@ -89,6 +89,13 @@ BAZEL_FLAGS="--test_output=errors --config=python --action_env=PYTHON_BIN_PATH=$
 
 python_bazel_tests/bazel_wrapper --output_base=.bazel_rbe --bazelrc=tools/remote_build/mac.bazelrc test @com_google_protobuf//python:protobuf_python || true
 
+# Aggressively remove problematic google/__init__.py files from the output base.
+# This forces Python 3.3+ to treat 'google' as a native namespace package.
+# This is necessary because host-site packages provided via PYTHONPATH
+# might not be visible inside the darwin-sandbox if blocked by __init__.py.
+find .bazel_rbe -type f -path "*/python/google/__init__.py" -delete || true
+
+
 # Run standard Python Bazel tests
 python_bazel_tests/bazel_wrapper \
   --output_base=.bazel_rbe \
