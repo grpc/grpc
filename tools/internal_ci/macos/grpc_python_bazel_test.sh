@@ -92,7 +92,7 @@ BAZEL_FLAGS="--test_output=errors --config=python --action_env=PYTHON_BIN_PATH=$
 # This breaks PEP 420 implicit namespace packages for any globally installed `google.*` packages (like `google.auth`)
 # because Bazel runfiles are prioritized in sys.path. We fetch the repo and delete the file.
 python_bazel_tests/bazel_wrapper --output_base=.bazel_rbe --bazelrc=tools/remote_build/mac.bazelrc fetch @com_google_protobuf//python:protobuf_python || true
-find .bazel_rbe/external/com_google_protobuf/python -name "__init__.py" -path "*/google/__init__.py" -delete || true
+find .bazel_rbe/external -type f -path "*/python/google/__init__.py" -delete || true
 
 # Run standard Python Bazel tests
 python_bazel_tests/bazel_wrapper \
