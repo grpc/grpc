@@ -81,7 +81,8 @@ echo "Checking typing_extensions on host..."
 "$PYTHON3_BIN_PATH" -c "import typing_extensions; print('Host typing_extensions path:', typing_extensions.__file__)" || echo "typing_extensions NOT natively installed on host."
 echo "=============================="
 
-BAZEL_FLAGS="--test_output=errors --config=python --action_env=PYTHON_BIN_PATH=$PYTHON_BIN_PATH"
+BAZEL_RULES_PYTHON_VERSION=$("$PYTHON_BIN_PATH" -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+BAZEL_FLAGS="--test_output=errors --config=python --action_env=PYTHON_BIN_PATH=$PYTHON_BIN_PATH --@rules_python//python/config_settings:python_version=$BAZEL_RULES_PYTHON_VERSION"
 
 "$PYTHON3_BIN_PATH" tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests
 # Run standard Python Bazel tests
