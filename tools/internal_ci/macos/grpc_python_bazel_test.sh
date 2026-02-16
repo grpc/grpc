@@ -66,7 +66,7 @@ export PATH="$(dirname "$PYTHON3_BIN_PATH"):$PATH"
 # //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client_test"
 # TODO(asheshvidyut): figure out proper fix instead of workaround below
 "$PYTHON3_BIN_PATH" -m pip install --user --upgrade pip || true
-"$PYTHON3_BIN_PATH" -m pip install -i https://pypi.org/simple/ --user --break-system-packages -r requirements.bazel.lock typing_extensions google-auth googleapis-common-protos || "$PYTHON3_BIN_PATH" -m pip install -i https://pypi.org/simple/ --break-system-packages -r requirements.bazel.lock typing_extensions google-auth googleapis-common-protos || "$PYTHON3_BIN_PATH" -m pip install -i https://pypi.org/simple/ -r requirements.bazel.lock typing_extensions google-auth googleapis-common-protos
+"$PYTHON3_BIN_PATH" -m pip install -i https://pypi.org/simple/ --user --break-system-packages -r requirements.bazel.lock setuptools typing_extensions google-auth googleapis-common-protos || "$PYTHON3_BIN_PATH" -m pip install -i https://pypi.org/simple/ --break-system-packages -r requirements.bazel.lock setuptools typing_extensions google-auth googleapis-common-protos || "$PYTHON3_BIN_PATH" -m pip install -i https://pypi.org/simple/ -r requirements.bazel.lock setuptools typing_extensions google-auth googleapis-common-protos
 
 # Test targets mirrored from tools/internal_ci/linux/grpc_python_bazel_test_in_docker.sh
 TEST_TARGETS="//src/python/..."
@@ -87,11 +87,7 @@ BAZEL_FLAGS="--test_output=errors --config=python --action_env=PYTHON_BIN_PATH=$
 
 "$PYTHON3_BIN_PATH" tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests
 
-python_bazel_tests/bazel_wrapper --output_base=.bazel_rbe --bazelrc=tools/remote_build/mac.bazelrc fetch @com_google_protobuf//python:protobuf_python || true
-# Truncate the problematic google/__init__.py to empty instead of deleting.
-# Deleting breaks Bazel symlinks; an empty __init__.py is harmless and allows
-# Python to discover google.auth and google.api from host site-packages via PYTHONPATH.
-find .bazel_rbe -type f -path "*/python/google/__init__.py" -exec sh -c 'echo -n > "$1"' _ {} \; || true
+python_bazel_tests/bazel_wrapper --output_base=.bazel_rbe --bazelrc=tools/remote_build/mac.bazelrc test @com_google_protobuf//python:protobuf_python || true
 
 # Run standard Python Bazel tests
 python_bazel_tests/bazel_wrapper \
