@@ -65,7 +65,7 @@ export PATH="$(dirname "$PYTHON3_BIN_PATH"):$PATH"
 # //src/python/grpcio_tests/tests_aio/interop:local_interop_test
 # //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client_test"
 # TODO(asheshvidyut): figure out proper fix instead of workaround below
-"$PYTHON3_BIN_PATH" -m pip install -r requirements.bazel.lock
+"$PYTHON3_BIN_PATH" -m pip install --break-system-packages -r requirements.bazel.lock
 
 # Test targets mirrored from tools/internal_ci/linux/grpc_python_bazel_test_in_docker.sh
 TEST_TARGETS="//src/python/..."
@@ -74,7 +74,13 @@ export PIP_CONFIG_FILE=/dev/null
 
 BAZEL_RULES_PYTHON_VERSION=$("$PYTHON3_BIN_PATH" -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
 HOST_SITE_PACKAGES=$("$PYTHON3_BIN_PATH" -c 'import os, site; print(os.pathsep.join(site.getsitepackages() + [site.getusersitepackages()]))')
-BAZEL_FLAGS="--test_output=errors --config=python --action_env=PYTHON_BIN_PATH=$PYTHON3_BIN_PATH --action_env=PYTHONPATH=$HOST_SITE_PACKAGES --test_env=PYTHONPATH=$HOST_SITE_PACKAGES --@rules_python//python/config_settings:python_version=$BAZEL_RULES_PYTHON_VERSION"
+BAZEL_FLAGS="--test_output=errors \
+  --config=python \
+  --sandbox_add_mount_pair=/opt/homebrew \
+  --action_env=PYTHON_BIN_PATH=$PYTHON3_BIN_PATH \
+  --action_env=PYTHONPATH=$HOST_SITE_PACKAGES \
+  --test_env=PYTHONPATH=$HOST_SITE_PACKAGES \
+  --@rules_python//python/config_settings:python_version=$BAZEL_RULES_PYTHON_VERSION"
 
 "$PYTHON3_BIN_PATH" tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests
 # Run standard Python Bazel tests
