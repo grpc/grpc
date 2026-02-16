@@ -90,10 +90,6 @@ XdsGrpcService ParseXdsGrpcService(
     const envoy_config_core_v3_GrpcService* grpc_service,
     ValidationErrors* errors);
 
-HeaderValueOption ParseHeaderValueOption(
-    const envoy_config_core_v3_HeaderValueOption* header_value_option_config,
-    ValidationErrors* errors);
-
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_XDS_GRPC_XDS_COMMON_TYPES_PARSER_H
