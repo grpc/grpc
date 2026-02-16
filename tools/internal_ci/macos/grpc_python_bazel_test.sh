@@ -65,8 +65,8 @@ export PATH="$(dirname "$PYTHON3_BIN_PATH"):$PATH"
 # //src/python/grpcio_tests/tests_aio/interop:local_interop_test
 # //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client_test"
 # TODO(asheshvidyut): figure out proper fix instead of workaround below
-"$PYTHON3_BIN_PATH" -m pip install --user --upgrade pip || true
-"$PYTHON3_BIN_PATH" -m pip install -i https://pypi.org/simple/ --user --break-system-packages -r requirements.bazel.lock typing_extensions || "$PYTHON3_BIN_PATH" -m pip install -i https://pypi.org/simple/ --break-system-packages -r requirements.bazel.lock typing_extensions || "$PYTHON3_BIN_PATH" -m pip install -i https://pypi.org/simple/ -r requirements.bazel.lock typing_extensions
+"$PYTHON3_BIN_PATH" -m pip install --upgrade pip --break-system-packages || "$PYTHON3_BIN_PATH" -m pip install --upgrade pip || true
+"$PYTHON3_BIN_PATH" -m pip install -i https://pypi.org/simple/ --break-system-packages -r requirements.bazel.lock || "$PYTHON3_BIN_PATH" -m pip install -i https://pypi.org/simple/ -r requirements.bazel.lock
 
 # Test targets mirrored from tools/internal_ci/linux/grpc_python_bazel_test_in_docker.sh
 TEST_TARGETS="//src/python/..."
