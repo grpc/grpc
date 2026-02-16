@@ -54,8 +54,3 @@ class TestAdmin(unittest.TestCase):
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)
-import subprocess
-try:
-    subprocess.run([sys.executable, "test_bazel_python.py"], check=True)
-except Exception as e:
-    print("subprocess run error:", e, file=sys.stderr)
