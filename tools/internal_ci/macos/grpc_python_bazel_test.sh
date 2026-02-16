@@ -66,7 +66,7 @@ export PATH="$(dirname "$PYTHON3_BIN_PATH"):$PATH"
 # //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client_test"
 # TODO(asheshvidyut): figure out proper fix instead of workaround below
 "$PYTHON3_BIN_PATH" -m pip install --user --upgrade pip || true
-"$PYTHON3_BIN_PATH" -m pip install -i https://pypi.org/simple/ --user --break-system-packages -r requirements.bazel.lock typing_extensions || "$PYTHON3_BIN_PATH" -m pip install -i https://pypi.org/simple/ --break-system-packages -r requirements.bazel.lock typing_extensions || "$PYTHON3_BIN_PATH" -m pip install -i https://pypi.org/simple/ -r requirements.bazel.lock typing_extensions
+"$PYTHON3_BIN_PATH" -m pip install -i https://pypi.org/simple/ --user --break-system-packages -r requirements.bazel.lock typing_extensions google-auth googleapis-common-protos || "$PYTHON3_BIN_PATH" -m pip install -i https://pypi.org/simple/ --break-system-packages -r requirements.bazel.lock typing_extensions google-auth googleapis-common-protos || "$PYTHON3_BIN_PATH" -m pip install -i https://pypi.org/simple/ -r requirements.bazel.lock typing_extensions google-auth googleapis-common-protos
 
 # Test targets mirrored from tools/internal_ci/linux/grpc_python_bazel_test_in_docker.sh
 TEST_TARGETS="//src/python/..."
@@ -92,7 +92,7 @@ BAZEL_FLAGS="--test_output=errors --config=python --action_env=PYTHON_BIN_PATH=$
 # This breaks PEP 420 implicit namespace packages for any globally installed `google.*` packages (like `google.auth`)
 # because Bazel runfiles are prioritized in sys.path. We fetch the repo and delete the file.
 python_bazel_tests/bazel_wrapper --output_base=.bazel_rbe --bazelrc=tools/remote_build/mac.bazelrc fetch @com_google_protobuf//python:protobuf_python || true
-find .bazel_rbe/external -type f -path "*/python/google/__init__.py" -delete || true
+find .bazel_rbe -type f -path "*/python/google/__init__.py" -delete || true
 
 # Run standard Python Bazel tests
 python_bazel_tests/bazel_wrapper \

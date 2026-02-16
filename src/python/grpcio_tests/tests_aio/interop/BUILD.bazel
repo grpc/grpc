@@ -47,7 +47,6 @@ py_test(
         "//src/python/grpcio_tests/tests/interop:resources",
         "//src/python/grpcio_tests/tests_aio/unit:_test_base",
         "//src/python/grpcio_tests/tests_aio/unit:_test_server",
-        requirement("google-auth"),
     ],
 )
 

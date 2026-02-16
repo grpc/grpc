@@ -31,7 +31,6 @@ py_binary(
         "//src/python/grpcio_channelz/grpc_channelz/v1:grpc_channelz",
         "//src/python/grpcio_tests/tests/fork:native_debug",
         requirement("opentelemetry-exporter-prometheus"),
-        requirement("googleapis-common-protos"),
     ],
 )
 
