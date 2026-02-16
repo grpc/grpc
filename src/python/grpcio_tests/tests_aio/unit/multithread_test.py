@@ -13,10 +13,10 @@
 # limitations under the License.
 
 import asyncio
+import concurrent.futures
 import queue
 import threading
 import unittest
-import concurrent.futures
 
 import grpc
 from grpc.experimental import aio
