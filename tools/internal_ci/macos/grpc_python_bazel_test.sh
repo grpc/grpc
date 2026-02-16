@@ -82,7 +82,7 @@ echo "Checking typing_extensions on host..."
 echo "=============================="
 
 BAZEL_RULES_PYTHON_VERSION=$("$PYTHON_BIN_PATH" -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
-HOST_SITE_PACKAGES=$("$PYTHON_BIN_PATH" -c 'import site; print(site.getusersitepackages())')
+HOST_SITE_PACKAGES=$("$PYTHON_BIN_PATH" -c 'import os, site; print(os.pathsep.join(site.getsitepackages() + [site.getusersitepackages()]))')
 BAZEL_FLAGS="--test_output=errors --config=python --action_env=PYTHON_BIN_PATH=$PYTHON_BIN_PATH --action_env=PYTHONPATH=$HOST_SITE_PACKAGES --@rules_python//python/config_settings:python_version=$BAZEL_RULES_PYTHON_VERSION"
 
 "$PYTHON3_BIN_PATH" tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests
