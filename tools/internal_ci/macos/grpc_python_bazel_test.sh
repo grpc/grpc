@@ -87,10 +87,6 @@ BAZEL_FLAGS="--test_output=errors --config=python --action_env=PYTHON_BIN_PATH=$
 
 "$PYTHON3_BIN_PATH" tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests
 
-# Workaround for Protobuf google namespace collision:
-# Bazel's protobuf repo includes an `__init__.py` for the `google` namespace. 
-# This breaks PEP 420 implicit namespace packages for any globally installed `google.*` packages (like `google.auth`)
-# because Bazel runfiles are prioritized in sys.path. We fetch the repo and delete the file.
 python_bazel_tests/bazel_wrapper --output_base=.bazel_rbe --bazelrc=tools/remote_build/mac.bazelrc fetch @com_google_protobuf//python:protobuf_python || true
 find .bazel_rbe -type f -path "*/python/google/__init__.py" -delete || true
 
