@@ -44,8 +44,8 @@ BAZEL_REMOTE_CACHE_ARGS=(
 brew install python@3.14 || true
 
 # If python3.14 is available, use it. Otherwise use python3.
-if [ -x "/opt/homebrew/bin/python3.14" ]; then
-  PYTHON3_BIN_PATH="/opt/homebrew/bin/python3.14"
+if [ -x "/opt/homebrew/opt/python@3.14/bin/python3.14" ]; then
+  PYTHON3_BIN_PATH="/opt/homebrew/opt/python@3.14/bin/python3.14"
 elif [ -x "$(command -v python3.14)" ]; then
   PYTHON3_BIN_PATH="$(command -v python3.14)"
 else
@@ -65,45 +65,19 @@ export PATH="$(dirname "$PYTHON3_BIN_PATH"):$PATH"
 # //src/python/grpcio_tests/tests_aio/interop:local_interop_test
 # //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client_test"
 # TODO(asheshvidyut): figure out proper fix instead of workaround below
-"$PYTHON3_BIN_PATH" -m pip install --user --upgrade pip || true
-"$PYTHON3_BIN_PATH" -m pip install -i https://pypi.org/simple/ --user --break-system-packages -r requirements.bazel.lock setuptools typing_extensions google-auth googleapis-common-protos || "$PYTHON3_BIN_PATH" -m pip install -i https://pypi.org/simple/ --break-system-packages -r requirements.bazel.lock setuptools typing_extensions google-auth googleapis-common-protos || "$PYTHON3_BIN_PATH" -m pip install -i https://pypi.org/simple/ -r requirements.bazel.lock setuptools typing_extensions google-auth googleapis-common-protos
+"$PYTHON3_BIN_PATH" -m pip install --upgrade pip || true
+"$PYTHON3_BIN_PATH" -m pip install --break-system-packages -r requirements.bazel.lock
 
 # Test targets mirrored from tools/internal_ci/linux/grpc_python_bazel_test_in_docker.sh
 TEST_TARGETS="//src/python/..."
 # Disable global pip.conf which overrides PyPI and causes wheel builder EOF errors
 export PIP_CONFIG_FILE=/dev/null
 
-echo "=== HOST PYTHON DEBUG INFO ==="
-echo "PYTHON3_BIN_PATH: $PYTHON3_BIN_PATH"
-"$PYTHON3_BIN_PATH" --version
-"$PYTHON3_BIN_PATH" -c "import sys; print('Host sys.version:', sys.version); print('Host sys.executable:', sys.executable)"
-echo "Checking typing_extensions on host..."
-"$PYTHON3_BIN_PATH" -c "import typing_extensions; print('Host typing_extensions path:', typing_extensions.__file__)" || echo "typing_extensions NOT natively installed on host."
-echo "=============================="
-
-BAZEL_RULES_PYTHON_VERSION=$("$PYTHON_BIN_PATH" -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
-HOST_SITE_PACKAGES=$("$PYTHON_BIN_PATH" -c 'import os, site; print(os.pathsep.join(site.getsitepackages() + [site.getusersitepackages()]))')
-BAZEL_FLAGS="--test_output=errors --config=python --action_env=PYTHON_BIN_PATH=$PYTHON_BIN_PATH --action_env=PYTHONPATH=$HOST_SITE_PACKAGES --test_env=PYTHONPATH=$HOST_SITE_PACKAGES --@rules_python//python/config_settings:python_version=$BAZEL_RULES_PYTHON_VERSION"
+BAZEL_RULES_PYTHON_VERSION=$("$PYTHON3_BIN_PATH" -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+HOST_SITE_PACKAGES=$("$PYTHON3_BIN_PATH" -c 'import os, site; print(os.pathsep.join(site.getsitepackages() + [site.getusersitepackages()]))')
+BAZEL_FLAGS="--test_output=errors --config=python --action_env=PYTHON_BIN_PATH=$PYTHON3_BIN_PATH --action_env=PYTHONPATH=$HOST_SITE_PACKAGES --test_env=PYTHONPATH=$HOST_SITE_PACKAGES --@rules_python//python/config_settings:python_version=$BAZEL_RULES_PYTHON_VERSION"
 
 "$PYTHON3_BIN_PATH" tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests
-
-python_bazel_tests/bazel_wrapper --output_base=.bazel_rbe --bazelrc=tools/remote_build/mac.bazelrc test @com_google_protobuf//python:protobuf_python || true
-
-# Aggressively remove problematic google/__init__.py files from the output base.
-# This forces Python 3.3+ to treat 'google' as a native namespace package.
-# This is necessary because host-site packages provided via PYTHONPATH
-# might not be visible inside the darwin-sandbox if blocked by __init__.py.
-# Use chmod to ensure we can delete read-only files in the Bazel cache.
-echo "Running aggressive namespace cleanup..."
-find .bazel_rbe -name "__init__.py" -path "*/google/__init__.py" -print -exec chmod +w {} \; -exec rm -vf {} \; || true
-
-# Verify cleanup
-if find .bazel_rbe -name "__init__.py" -path "*/google/__init__.py" | grep -q .; then
-  echo "WARNING: Aggressive cleanup failed to remove some __init__.py files!"
-  find .bazel_rbe -name "__init__.py" -path "*/google/__init__.py"
-fi
-
-
 # Run standard Python Bazel tests
 python_bazel_tests/bazel_wrapper \
   --output_base=.bazel_rbe \
