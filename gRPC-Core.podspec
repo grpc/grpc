@@ -2314,6 +2314,7 @@ Pod::Spec.new do |s|
                       'src/core/xds/grpc/xds_health_status.h',
                       'src/core/xds/grpc/xds_http_fault_filter.cc',
                       'src/core/xds/grpc/xds_http_fault_filter.h',
+                      'src/core/xds/grpc/xds_http_filter.cc',
                       'src/core/xds/grpc/xds_http_filter.h',
                       'src/core/xds/grpc/xds_http_filter_registry.cc',
                       'src/core/xds/grpc/xds_http_filter_registry.h',

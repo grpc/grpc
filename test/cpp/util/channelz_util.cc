@@ -62,9 +62,9 @@ std::vector<grpc::channelz::v2::Entity> ChannelzUtil::GetSubchannelsForAddress(
 
 std::vector<grpc::channelz::v2::Entity> ChannelzUtil::GetSubchannelConnections(
     int64_t subchannel_id) {
-  auto subchannel_node = ChannelzRegistry::GetSubchannel(subchannel_id);
-  GRPC_CHECK(subchannel_node != nullptr);
   std::vector<grpc::channelz::v2::Entity> entities;
+  auto subchannel_node = ChannelzRegistry::GetSubchannel(subchannel_id);
+  if (subchannel_node == nullptr) return entities;
   while (true) {
     auto [nodes, done] = ChannelzRegistry::GetChildrenOfType(
         /*start_node=*/0, /*parent=*/subchannel_node.get(),

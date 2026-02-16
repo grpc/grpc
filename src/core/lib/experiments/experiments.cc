@@ -116,6 +116,9 @@ const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
+const char* const description_metadata_publish_to_app_tag =
+    "Publish metadata to the app using the kPublishToApp metadata field.";
+const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
@@ -251,6 +254,10 @@ const char* const description_wildcard_ip_expansion_restriction =
     "If set, adds optional restriction on when to expand wildcard IPs.";
 const char* const additional_constraints_wildcard_ip_expansion_restriction =
     "{}";
+const char* const description_xds_channel_filter_chain_per_route =
+    "xDS channels use a separate filter chain for each route.";
+const char* const additional_constraints_xds_channel_filter_chain_per_route =
+    "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -322,6 +329,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"max_inflight_pings_strict_limit",
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
+     true},
+    {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
+     additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
      true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
@@ -428,6 +438,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"wildcard_ip_expansion_restriction",
      description_wildcard_ip_expansion_restriction,
      additional_constraints_wildcard_ip_expansion_restriction, nullptr, 0,
+     false, true},
+    {"xds_channel_filter_chain_per_route",
+     description_xds_channel_filter_chain_per_route,
+     additional_constraints_xds_channel_filter_chain_per_route, nullptr, 0,
      false, true},
 };
 
@@ -528,6 +542,9 @@ const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
+const char* const description_metadata_publish_to_app_tag =
+    "Publish metadata to the app using the kPublishToApp metadata field.";
+const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
@@ -663,6 +680,10 @@ const char* const description_wildcard_ip_expansion_restriction =
     "If set, adds optional restriction on when to expand wildcard IPs.";
 const char* const additional_constraints_wildcard_ip_expansion_restriction =
     "{}";
+const char* const description_xds_channel_filter_chain_per_route =
+    "xDS channels use a separate filter chain for each route.";
+const char* const additional_constraints_xds_channel_filter_chain_per_route =
+    "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -734,6 +755,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"max_inflight_pings_strict_limit",
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
+     true},
+    {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
+     additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
      true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
@@ -840,6 +864,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"wildcard_ip_expansion_restriction",
      description_wildcard_ip_expansion_restriction,
      additional_constraints_wildcard_ip_expansion_restriction, nullptr, 0,
+     false, true},
+    {"xds_channel_filter_chain_per_route",
+     description_xds_channel_filter_chain_per_route,
+     additional_constraints_xds_channel_filter_chain_per_route, nullptr, 0,
      false, true},
 };
 
@@ -940,6 +968,9 @@ const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
+const char* const description_metadata_publish_to_app_tag =
+    "Publish metadata to the app using the kPublishToApp metadata field.";
+const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
@@ -1075,6 +1106,10 @@ const char* const description_wildcard_ip_expansion_restriction =
     "If set, adds optional restriction on when to expand wildcard IPs.";
 const char* const additional_constraints_wildcard_ip_expansion_restriction =
     "{}";
+const char* const description_xds_channel_filter_chain_per_route =
+    "xDS channels use a separate filter chain for each route.";
+const char* const additional_constraints_xds_channel_filter_chain_per_route =
+    "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -1146,6 +1181,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"max_inflight_pings_strict_limit",
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
+     true},
+    {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
+     additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
      true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
@@ -1252,6 +1290,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"wildcard_ip_expansion_restriction",
      description_wildcard_ip_expansion_restriction,
      additional_constraints_wildcard_ip_expansion_restriction, nullptr, 0,
+     false, true},
+    {"xds_channel_filter_chain_per_route",
+     description_xds_channel_filter_chain_per_route,
+     additional_constraints_xds_channel_filter_chain_per_route, nullptr, 0,
      false, true},
 };
 
