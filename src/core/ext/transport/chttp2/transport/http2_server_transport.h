@@ -173,6 +173,8 @@ class Http2ServerTransport final : public ServerTransport {
   auto OnWriteLoopEnded();
 
   absl::Status TriggerWriteCycle(DebugLocation whence = {}) {
+    LOG(INFO) << "Http2ServerTransport::TriggerWriteCycle location="
+              << whence.file() << ":" << whence.line();
     return absl::OkStatus();
   }
 
