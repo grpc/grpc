@@ -16,6 +16,7 @@ import asyncio
 import queue
 import threading
 import unittest
+import concurrent.futures
 
 import grpc
 from grpc.experimental import aio
@@ -67,7 +68,7 @@ class MultithreadTest(AioTestBase):
 
     async def _test_multithread(self, executor=None):
         results_queue = queue.Queue()
-        port, server = await self.start_server()
+        port, server = await self._start_server()
         threads = []
         for _ in range(10):
             t = threading.Thread(
@@ -97,6 +98,7 @@ class MultithreadTest(AioTestBase):
     async def test_multithread_with_thread_pool(self):
         with concurrent.futures.ThreadPoolExecutor() as pool:
             await self._test_multithread(executor=pool)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
