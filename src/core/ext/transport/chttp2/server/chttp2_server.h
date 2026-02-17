@@ -26,6 +26,7 @@
 
 #include <functional>
 
+#include "src/core/ext/transport/chttp2/transport/http2_server_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
