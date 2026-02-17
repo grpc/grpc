@@ -21,8 +21,6 @@ source $(dirname $0)/../../../tools/internal_ci/helper_scripts/move_src_tree_and
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
-source tools/internal_ci/helper_scripts/prepare_build_macos_rc
-
 # make sure bazel is available
 tools/bazel version
 
@@ -40,22 +38,6 @@ BAZEL_REMOTE_CACHE_ARGS=(
   --remote_default_exec_properties="grpc_cache_silo_key2=${KOKORO_IMAGE_VERSION}"
 )
 
-# Install Python 3.9 via Homebrew if it is not already available.
-brew install python@3.9 || true
-brew link --force --overwrite python@3.9 || true
-
-# If python3.9 is available, use it. Otherwise use python3.
-if [ -x "/opt/homebrew/bin/python3.9" ]; then
-  PYTHON3_BIN_PATH="/opt/homebrew/bin/python3.9"
-elif [ -x "$(command -v python3.9)" ]; then
-  PYTHON3_BIN_PATH="$(command -v python3.9)"
-else
-  PYTHON3_BIN_PATH="$(command -v python3)"
-fi
-export PYTHON3_BIN_PATH
-export PYTHON_BIN_PATH="$PYTHON3_BIN_PATH"
-export PATH="$(dirname "$PYTHON3_BIN_PATH"):$PATH"
-
 # This is added to resolve imports not found errors like
 # ImportError: cannot import name 'auth' from 'google'
 # Tests which fails when workaround is not executed are listed below -
@@ -66,31 +48,13 @@ export PATH="$(dirname "$PYTHON3_BIN_PATH"):$PATH"
 # //src/python/grpcio_tests/tests_aio/interop:local_interop_test
 # //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client_test"
 # TODO(asheshvidyut): figure out proper fix instead of workaround below
-"$PYTHON3_BIN_PATH" -m pip install --break-system-packages -r requirements.bazel.lock
+python3 -m pip install -r requirements.bazel.lock
 
 # Test targets mirrored from tools/internal_ci/linux/grpc_python_bazel_test_in_docker.sh
-TEST_TARGETS="//src/python/... \
-  -//src/python/grpcio_tests/tests/admin:admin_test \
-  -//src/python/grpcio_tests/tests/csds:csds_test \
-  -//src/python/grpcio_tests/tests/interop:_insecure_intraop_test \
-  -//src/python/grpcio_tests/tests/interop:_secure_intraop_test \
-  -//src/python/grpcio_tests/tests_aio/interop:local_interop_test \
-  -//src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client_test"
-# Disable global pip.conf which overrides PyPI and causes wheel builder EOF errors
-export PIP_CONFIG_FILE=/dev/null
+TEST_TARGETS="//src/python/..."
+BAZEL_FLAGS="--test_output=errors --config=python"
 
-BAZEL_RULES_PYTHON_VERSION=$("$PYTHON3_BIN_PATH" -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
-HOST_SITE_PACKAGES=$("$PYTHON3_BIN_PATH" -c 'import os, site; print(os.pathsep.join(site.getsitepackages() + [site.getusersitepackages()]))')
-BAZEL_FLAGS="--test_output=errors \
-  --config=python \
-  --spawn_strategy=local \
-  --test_strategy=standalone \
-  --action_env=PYTHON_BIN_PATH=$PYTHON3_BIN_PATH \
-  --action_env=PYTHONPATH=$HOST_SITE_PACKAGES \
-  --test_env=PYTHONPATH=$HOST_SITE_PACKAGES \
-  --@rules_python//python/config_settings:python_version=$BAZEL_RULES_PYTHON_VERSION"
-
-"$PYTHON3_BIN_PATH" tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests
+python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests
 # Run standard Python Bazel tests
 python_bazel_tests/bazel_wrapper \
   --output_base=.bazel_rbe \
@@ -102,7 +66,7 @@ python_bazel_tests/bazel_wrapper \
   -- \
   ${TEST_TARGETS}
 
-"$PYTHON3_BIN_PATH" tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_single_threaded_unary_streams
+python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_single_threaded_unary_streams
 # Run single-threaded unary stream tests
 # Note: MacOS might differ in threading behavior, but we keep parity with Linux config
 python_bazel_tests_single_threaded_unary_streams/bazel_wrapper \
@@ -116,8 +80,20 @@ python_bazel_tests_single_threaded_unary_streams/bazel_wrapper \
   -- \
   ${TEST_TARGETS}
 
+python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_poller_engine
+# Run tests with poller engine
+python_bazel_tests_poller_engine/bazel_wrapper \
+  --output_base=.bazel_rbe \
+  --bazelrc=tools/remote_build/mac.bazelrc \
+  test \
+  --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \
+  "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
+  --config=python_poller_engine \
+  ${BAZEL_FLAGS} \
+  -- \
+  ${TEST_TARGETS}
 
-"$PYTHON3_BIN_PATH" tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_fork_support
+python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_fork_support
 # Run fork support tests
 # Note: Logic mirrored from tools/internal_ci/linux/grpc_python_bazel_test_fork_in_docker.sh
 python_bazel_tests_fork_support/bazel_wrapper \
