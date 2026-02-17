@@ -3714,7 +3714,7 @@ void grpc_chttp2_transport::MaybeNotifyOnReceiveSettingsLocked(
       [notify_on_receive_settings = std::move(notify_on_receive_settings),
        max_concurrent_streams]() mutable {
         grpc_core::ExecCtx exec_ctx;
-        std::move(notify_on_receive_settings)(max_concurrent_streams);
+        notify_on_receive_settings(max_concurrent_streams);
         // Ensure the captured callback is destroyed while ExecCtx is still
         // alive. Its destructor may trigger work that needs to schedule
         // closures on the ExecCtx.
