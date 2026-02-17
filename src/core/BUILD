@@ -1115,8 +1115,10 @@ grpc_cc_library(
         "grpc_check",
         "poll",
         "promise_like",
+        "upb_utils",
         "//:gpr",
         "//:grpc_trace",
+        "//:promise_upb",
     ],
 )
 
