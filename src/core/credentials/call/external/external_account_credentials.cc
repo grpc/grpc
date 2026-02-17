@@ -90,10 +90,11 @@ ExternalAccountCredentials::GetRequestMetadata(
                 return updated_metadata;
               }
 
-              return regional_access_boundary_fetcher_->Fetch(
+              regional_access_boundary_fetcher_->Fetch(
                    build_regional_access_boundary_url(),
-                   std::string(auth_val.value()),
-                   std::move(*updated_metadata));
+                   auth_val.value(),
+                   *(*updated_metadata));
+              return updated_metadata;
              });
 }
 
@@ -659,17 +660,12 @@ ExternalAccountCredentials::ExternalAccountCredentials(
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
     : TokenFetcherCredentials(std::move(event_engine)),
       options_(std::move(options)),
-      regional_access_boundary_fetcher_(grpc_core::MakeRefCounted<grpc_core::RegionalAccessBoundaryFetcher>()) {
+      regional_access_boundary_fetcher_(
+          MakeOrphanable<RegionalAccessBoundaryFetcher>()) {
   if (scopes.empty()) {
     scopes.push_back(GOOGLE_CLOUD_PLATFORM_DEFAULT_SCOPE);
   }
   scopes_ = std::move(scopes);
-}
-
-ExternalAccountCredentials::~ExternalAccountCredentials() {
-  if (regional_access_boundary_fetcher_ != nullptr) {
-    regional_access_boundary_fetcher_->CancelPendingFetch();
-  }
 }
 
 std::string ExternalAccountCredentials::MetricsHeaderValue() {

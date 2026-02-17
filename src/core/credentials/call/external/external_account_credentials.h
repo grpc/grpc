@@ -83,7 +83,6 @@ class ExternalAccountCredentials : public TokenFetcherCredentials {
       Options options, std::vector<std::string> scopes,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine = nullptr);
-  ~ExternalAccountCredentials() override;
 
  protected:
   // A base class for a cancellable fetch operation.
@@ -209,7 +208,7 @@ class ExternalAccountCredentials : public TokenFetcherCredentials {
   Options options_;
   std::vector<std::string> scopes_;
 
-  grpc_core::RefCountedPtr<grpc_core::RegionalAccessBoundaryFetcher> regional_access_boundary_fetcher_;
+  grpc_core::OrphanablePtr<RegionalAccessBoundaryFetcher> regional_access_boundary_fetcher_;
   std::string build_regional_access_boundary_url() {
     if (!options_.workforce_pool_id.empty()) {
       return absl::StrFormat(

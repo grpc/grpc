@@ -97,7 +97,7 @@ class grpc_service_account_jwt_access_credentials
     return absl::StrFormat("https://iamcredentials.googleapis.com/v1/projects/-/"
                      "serviceAccounts/%s/allowedLocations", key_.client_email);
   }
-  grpc_core::RefCountedPtr<grpc_core::RegionalAccessBoundaryFetcher> regional_access_boundary_fetcher_;
+  grpc_core::OrphanablePtr<grpc_core::RegionalAccessBoundaryFetcher> regional_access_boundary_fetcher_;
 };
 
 // Private constructor for jwt credentials from an already parsed json key.
