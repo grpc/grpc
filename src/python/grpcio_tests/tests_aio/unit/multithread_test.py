@@ -81,7 +81,7 @@ class MultithreadTest(AioTestBase):
             for t in threads:
                 t.join()
 
-        await self.loop.run_in_executor(None, join_threads)
+        await self.loop.run_in_executor(executor, join_threads)
 
         await server.stop(None)
 
