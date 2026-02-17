@@ -1308,7 +1308,7 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
 // Server uses AsyncNotifyWhenDone API to check for cancellation
 TEST_P(AsyncEnd2endTest, ServerCheckCancellation) {
   // TODO(akshitpatel) [PH2][P3][Client] Fix bug.
-  SKIP_TEST_FOR_PH2("WIP Timeout for PH2");
+  SKIP_TEST_FOR_PH2_CLIENT("WIP Timeout for PH2");
   ResetStub();
 
   EchoRequest send_request;
@@ -1910,14 +1910,14 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
 
 TEST_P(AsyncEnd2endServerTryCancelTest, ClientStreamingServerTryCancelBefore) {
   // TODO(akshitpatel) [PH2][P3][Client] Fix bug.
-  SKIP_TEST_FOR_PH2("WIP `Check failed` for PH2");
+  SKIP_TEST_FOR_PH2_CLIENT("WIP `Check failed` for PH2");
   TestClientStreamingServerCancel(CANCEL_BEFORE_PROCESSING);
 }
 
 TEST_P(AsyncEnd2endServerTryCancelTest, ClientStreamingServerTryCancelDuring) {
   // TODO(akshitpatel) [PH2][P3][Client] Fix bug. Likley same bug as
   // ClientStreamingServerTryCancelBefore.
-  SKIP_TEST_FOR_PH2("WIP `Check failed` for PH2");
+  SKIP_TEST_FOR_PH2_CLIENT("WIP `Check failed` for PH2");
   TestClientStreamingServerCancel(CANCEL_DURING_PROCESSING);
 }
 

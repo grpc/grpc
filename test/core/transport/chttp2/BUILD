@@ -1483,3 +1483,22 @@ grpc_fuzz_test(
         "//test/core/call/yodel:yodel_test",
     ],
 )
+
+grpc_cc_test(
+    name = "write_cycle_test",
+    srcs = ["write_cycle_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/strings",
+    ],
+    deps = [
+        "//:chttp2_frame",
+        "//:grpc",
+        "//src/core:http2_settings",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
+        "//src/core:write_cycle",
+        "//src/core:write_size_policy",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
