@@ -82,7 +82,7 @@ def pyx_library(name, deps = [], py_deps = [], srcs = [], **kwargs):
                 # The "-undefined dynamic_lookup" flag allows the shared library to use symbols
                 # that are not defined at link time but will be resolved at runtime.
                 # This is necessary for Python extensions on macOS to access Python C API symbols.
-                "@platforms//os:macos": ["-undefined", "dynamic_lookup"],
+                "@platforms//os:osx": ["-undefined", "dynamic_lookup"],
                 "//conditions:default": [],
             }),
         )
