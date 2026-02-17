@@ -21,7 +21,24 @@ source $(dirname $0)/../../../tools/internal_ci/helper_scripts/move_src_tree_and
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
-source tools/internal_ci/helper_scripts/prepare_build_macos_rc
+if $is_sonoma; then
+  brew install cmake
+  brew install gnupg
+  export PATH="/opt/homebrew/bin::${PATH}"
+  cmake --version
+fi
+
+# Add GCP credentials for BQ access
+pip install --user google-api-python-client oauth2client six==1.16.0
+export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json
+DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+echo $DIR
+pwd
+
+# If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
+if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ]; then
+  export RUN_TESTS_FLAGS="--filter_pr_tests --base_branch origin/$KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH $RUN_TESTS_FLAGS"
+fi
 
 # make sure bazel is available
 tools/bazel version
