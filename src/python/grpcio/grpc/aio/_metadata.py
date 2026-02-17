@@ -42,6 +42,8 @@ class Metadata(abc.Collection):  # noqa: PLW1641
 
     @classmethod
     def from_tuple(cls, raw_metadata: Union[tuple, Self]):
+        if isinstance(raw_metadata, cls):
+            return raw_metadata
         if raw_metadata:
             return cls(*raw_metadata)
         return cls()
