@@ -123,7 +123,7 @@ CompositeFilter::CompositeFilter(const ChannelArgs& args,
       }
       filter_impl->AddFilter(builder_wrapper, filter_config);
       // FIXME: need to call filter_impl->UpdateBlackboard() here, but
-      // we have only the new blackboard, not the new one!
+      // we have only the new blackboard, not the old one!
     }
     filter_chain_map_[&execute_filter_action] =
         builder.Build(wrapped_destination());
