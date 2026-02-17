@@ -23,6 +23,11 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 
+# Force 'python3' alias to point to python3.9
+mkdir -p "$HOME/.local/bin"
+ln -sf "$(command -v python3.9)" "$HOME/.local/bin/python3"
+export PATH="$HOME/.local/bin:$PATH"
+
 # make sure bazel is available
 tools/bazel version
 
