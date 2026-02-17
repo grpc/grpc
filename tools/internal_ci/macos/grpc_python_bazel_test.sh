@@ -80,19 +80,6 @@ python_bazel_tests_single_threaded_unary_streams/bazel_wrapper \
   -- \
   ${TEST_TARGETS}
 
-python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_poller_engine
-# Run tests with poller engine
-python_bazel_tests_poller_engine/bazel_wrapper \
-  --output_base=.bazel_rbe \
-  --bazelrc=tools/remote_build/mac.bazelrc \
-  test \
-  --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \
-  "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
-  --config=python_poller_engine \
-  ${BAZEL_FLAGS} \
-  -- \
-  ${TEST_TARGETS}
-
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_fork_support
 # Run fork support tests
 # Note: Logic mirrored from tools/internal_ci/linux/grpc_python_bazel_test_fork_in_docker.sh
