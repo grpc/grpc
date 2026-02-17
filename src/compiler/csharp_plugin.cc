@@ -62,6 +62,7 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     bool generate_client = true;
     bool generate_server = true;
     bool internal_access = false;
+    bool enable_nrt = false;
     std::string base_namespace = "";
     bool base_namespace_present = false;
 
@@ -83,6 +84,11 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
         // in the future.
         base_namespace = options[i].second;
         base_namespace_present = true;
+      } else if (options[i].first == "enable_nrt") {
+        // Enable null reference types.
+        // Support for enable_nrt option in this plugin is experimental.
+        // The option may be removed in the future.
+        enable_nrt = true;
       } else {
         *error = "Unknown generator option: " + options[i].first;
         return false;
@@ -90,7 +96,7 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     }
 
     std::string code = grpc_csharp_generator::GetServices(
-        file, generate_client, generate_server, internal_access);
+        file, generate_client, generate_server, internal_access, enable_nrt);
     if (code.size() == 0) {
       return true;  // don't generate a file if there are no services
     }
