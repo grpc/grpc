@@ -1394,7 +1394,7 @@ void Http2ClientTransport::MaybeGetWindowUpdateFrames(SliceBuffer& output_buf) {
 // Constructor Destructor
 
 Http2ClientTransport::Http2ClientTransport(
-    PromiseEndpoint endpoint, GRPC_UNUSED const ChannelArgs& channel_args,
+    PromiseEndpoint endpoint, const ChannelArgs& channel_args,
     std::shared_ptr<EventEngine> event_engine,
     absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings)
     : channelz::DataSource(http2::CreateChannelzSocketNode(

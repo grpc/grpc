@@ -268,10 +268,16 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
         auto& entry = http_connection_manager.http_filters.back();
         entry.name = std::string(name);
         entry.config_proto_type = filter_impl->ConfigProtoName();
-        std::optional<Json> filter_config = filter_impl->GenerateFilterConfig(
-            name, context, std::move(*extension), errors);
-        if (filter_config.has_value()) {
-          entry.config = std::move(*filter_config);
+        if (!is_client || !IsXdsChannelFilterChainPerRouteEnabled()) {
+          std::optional<Json> filter_config = filter_impl->GenerateFilterConfig(
+              name, context, *extension, errors);
+          if (filter_config.has_value()) {
+            entry.config = std::move(*filter_config);
+          }
+        }
+        if (IsXdsChannelFilterChainPerRouteEnabled()) {
+          entry.filter_config = filter_impl->ParseTopLevelConfig(
+              name, context, *extension, errors);
         }
       }
     }

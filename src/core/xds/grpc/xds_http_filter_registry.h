@@ -44,13 +44,12 @@ class XdsHttpRouterFilter final : public XdsHttpFilterImpl {
   void PopulateSymtab(upb_DefPool* symtab) const override;
   std::optional<Json> GenerateFilterConfig(
       absl::string_view /*instance_name*/,
-      const XdsResourceType::DecodeContext& context, XdsExtension extension,
-      ValidationErrors* errors) const override;
+      const XdsResourceType::DecodeContext& context,
+      const XdsExtension& extension, ValidationErrors* errors) const override;
   std::optional<Json> GenerateFilterConfigOverride(
       absl::string_view /*instance_name*/,
-      const XdsResourceType::DecodeContext& context, XdsExtension extension,
-      ValidationErrors* errors) const override;
-  void AddFilter(FilterChainBuilder& /*builder*/) const override {}
+      const XdsResourceType::DecodeContext& context,
+      const XdsExtension& extension, ValidationErrors* errors) const override;
   const grpc_channel_filter* channel_filter() const override { return nullptr; }
   absl::StatusOr<ServiceConfigJsonEntry> GenerateMethodConfig(
       const Json& /*hcm_filter_config*/,
@@ -63,6 +62,16 @@ class XdsHttpRouterFilter final : public XdsHttpFilterImpl {
     // This will never be called, since channel_filter() returns null.
     return absl::UnimplementedError("router filter should never be called");
   }
+  void AddFilter(FilterChainBuilder& /*builder*/,
+                 RefCountedPtr<const FilterConfig> /*config*/) const override {}
+  RefCountedPtr<const FilterConfig> ParseTopLevelConfig(
+      absl::string_view instance_name,
+      const XdsResourceType::DecodeContext& context,
+      const XdsExtension& extension, ValidationErrors* errors) const override;
+  RefCountedPtr<const FilterConfig> ParseOverrideConfig(
+      absl::string_view instance_name,
+      const XdsResourceType::DecodeContext& context,
+      const XdsExtension& extension, ValidationErrors* errors) const override;
   bool IsSupportedOnClients() const override { return true; }
   bool IsSupportedOnServers() const override { return true; }
   bool IsTerminalFilter() const override { return true; }

@@ -66,12 +66,11 @@ EXPERIMENT_ENABLES = {
     "subchannel_wrapper_cleanup_on_orphan": "subchannel_wrapper_cleanup_on_orphan",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
-    "track_writes_in_resource_quota": "track_writes_in_resource_quota",
-    "track_zero_copy_allocations_in_resource_quota": "track_zero_copy_allocations_in_resource_quota",
     "tsi_frame_protector_without_locks": "tsi_frame_protector_without_locks",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
     "use_call_event_engine_in_completion_queue": "use_call_event_engine_in_completion_queue",
     "wildcard_ip_expansion_restriction": "wildcard_ip_expansion_restriction",
+    "xds_channel_filter_chain_per_route": "xds_channel_filter_chain_per_route",
 }
 
 EXPERIMENT_POLLERS = [
@@ -145,8 +144,6 @@ EXPERIMENTS = {
             ],
             "resource_quota_test": [
                 "free_large_allocator",
-                "track_writes_in_resource_quota",
-                "track_zero_copy_allocations_in_resource_quota",
                 "unconstrained_max_quota_buffer_size",
             ],
             "secure_endpoint_test": [
@@ -155,6 +152,10 @@ EXPERIMENTS = {
             "xds_end2end_test": [
                 "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
+                "xds_channel_filter_chain_per_route",
+            ],
+            "xds_test": [
+                "xds_channel_filter_chain_per_route",
             ],
         },
         "on": {
@@ -256,8 +257,6 @@ EXPERIMENTS = {
             ],
             "resource_quota_test": [
                 "free_large_allocator",
-                "track_writes_in_resource_quota",
-                "track_zero_copy_allocations_in_resource_quota",
                 "unconstrained_max_quota_buffer_size",
             ],
             "secure_endpoint_test": [
@@ -266,6 +265,10 @@ EXPERIMENTS = {
             "xds_end2end_test": [
                 "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
+                "xds_channel_filter_chain_per_route",
+            ],
+            "xds_test": [
+                "xds_channel_filter_chain_per_route",
             ],
         },
         "on": {
@@ -367,8 +370,6 @@ EXPERIMENTS = {
             ],
             "resource_quota_test": [
                 "free_large_allocator",
-                "track_writes_in_resource_quota",
-                "track_zero_copy_allocations_in_resource_quota",
                 "unconstrained_max_quota_buffer_size",
             ],
             "secure_endpoint_test": [
@@ -377,6 +378,10 @@ EXPERIMENTS = {
             "xds_end2end_test": [
                 "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
+                "xds_channel_filter_chain_per_route",
+            ],
+            "xds_test": [
+                "xds_channel_filter_chain_per_route",
             ],
         },
         "on": {

@@ -5530,6 +5530,8 @@ grpc_cc_library(
         "channel_args",
         "channel_fwd",
         "context",
+        "experiments",
+        "filter_args",
         "grpc_service_config",
         "json",
         "json_args",
@@ -6089,6 +6091,9 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "xds_http_filter",
+    srcs = [
+        "xds/grpc/xds_http_filter.cc",
+    ],
     hdrs = [
         "xds/grpc/xds_http_filter.h",
     ],
@@ -6149,6 +6154,7 @@ grpc_cc_library(
     ],
     tags = ["nofixdeps"],
     deps = [
+        "filter_args",
         "match",
         "resolved_address",
         "time",
@@ -8785,6 +8791,30 @@ grpc_cc_library(
     deps = [
         ":shared_bit_gen",
         ":time",
+    ],
+)
+
+grpc_cc_library(
+    name = "write_cycle",
+    srcs = ["ext/transport/chttp2/transport/write_cycle.cc"],
+    hdrs = ["ext/transport/chttp2/transport/write_cycle.h"],
+    external_deps = [
+        "absl/container:inlined_vector",
+        "absl/strings",
+        "absl/types:span",
+        "absl/log:check",
+    ],
+    deps = [
+        "grpc_check",
+        "grpc_promise_endpoint",
+        "http2_settings",
+        "slice",
+        "slice_buffer",
+        "transport_common",
+        "write_size_policy",
+        "//:chttp2_frame",
+        "//:gpr",
+        "//:gpr_platform",
     ],
 )
 
