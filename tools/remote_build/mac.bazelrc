@@ -21,3 +21,5 @@ build --build_tag_filters=-no_mac
 build --dynamic_mode=off
 
 import %workspace%/tools/remote_build/include/test_config_common.bazelrc
+
+import %workspace%/tools/remote_build/include/disable_bzlmod.bazelrc
