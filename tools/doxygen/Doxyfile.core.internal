@@ -1268,6 +1268,8 @@ src/core/ext/transport/chttp2/transport/transport_common.h \
 src/core/ext/transport/chttp2/transport/varint.cc \
 src/core/ext/transport/chttp2/transport/varint.h \
 src/core/ext/transport/chttp2/transport/writable_streams.h \
+src/core/ext/transport/chttp2/transport/write_cycle.cc \
+src/core/ext/transport/chttp2/transport/write_cycle.h \
 src/core/ext/transport/chttp2/transport/write_size_policy.cc \
 src/core/ext/transport/chttp2/transport/write_size_policy.h \
 src/core/ext/transport/chttp2/transport/writing.cc \
