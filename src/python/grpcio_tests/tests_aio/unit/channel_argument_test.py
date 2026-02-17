@@ -132,7 +132,7 @@ class TestChannelArgument(AioTestBase):
         server = aio.server(options=_TEST_CHANNEL_ARGS)
         await server.stop(None)
 
-    @typeguard.suppress_type_checks # testing negative cases
+    @typeguard.suppress_type_checks  # testing negative cases
     async def test_invalid_client_args(self):
         for invalid_arg in _INVALID_TEST_CHANNEL_ARGS:
             self.assertRaises(

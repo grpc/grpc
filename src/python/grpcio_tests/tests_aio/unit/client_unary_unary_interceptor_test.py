@@ -43,7 +43,7 @@ class TestUnaryUnaryClientInterceptor(AioTestBase):
     async def tearDown(self):
         await self._server.stop(None)
 
-    @typeguard.suppress_type_checks # testing negative cases
+    @typeguard.suppress_type_checks  # testing negative cases
     def test_invalid_interceptor(self):
         class InvalidInterceptor:
             """Just an invalid Interceptor"""
