@@ -264,13 +264,11 @@ class grpc_compute_engine_token_fetcher_credentials
     : public grpc_core::Oauth2TokenFetcherCredentials {
  public:
   grpc_compute_engine_token_fetcher_credentials()
-      : regional_access_boundary_fetcher_(
-            grpc_core::MakeOrphanable<grpc_core::RegionalAccessBoundaryFetcher>()) {}
+      : regional_access_boundary_fetcher_(nullptr) {}
   explicit grpc_compute_engine_token_fetcher_credentials(
       std::vector<grpc_core::URI::QueryParam> query_params)
       : query_params_(std::move(query_params)),
-        regional_access_boundary_fetcher_(
-            grpc_core::MakeOrphanable<grpc_core::RegionalAccessBoundaryFetcher>()) {}
+        regional_access_boundary_fetcher_(nullptr) {}
 
   ~grpc_compute_engine_token_fetcher_credentials() override {
     grpc_core::MutexLock lock(&email_mu_);
@@ -300,10 +298,20 @@ class grpc_compute_engine_token_fetcher_credentials
                               << "and therefore the lookup would fail. A lookup will not be attempted.";
                   return new_metadata;
                 }
-                regional_access_boundary_fetcher_->Fetch(
-                    build_regional_access_boundary_url(),
-                    auth_val.value(),
-                    *(*new_metadata));
+                {
+                  grpc_core::MutexLock lock(&email_mu_);
+                  if (regional_access_boundary_fetcher_ == nullptr && !service_account_email_.empty()) {
+                    regional_access_boundary_fetcher_ = grpc_core::MakeOrphanable<grpc_core::RegionalAccessBoundaryFetcher>(
+                        absl::StrFormat("https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/"
+                                        "%s/allowedLocations",
+                                        service_account_email_));
+                  }
+                  if (regional_access_boundary_fetcher_ != nullptr) {
+                    regional_access_boundary_fetcher_->Fetch(
+                        auth_val.value(),
+                        *(*new_metadata));
+                  }
+                }
                 return new_metadata;
               });
         });
@@ -316,17 +324,7 @@ class grpc_compute_engine_token_fetcher_credentials
   }
 
  private:
-  grpc_core::OrphanablePtr<grpc_core::RegionalAccessBoundaryFetcher> regional_access_boundary_fetcher_;
-  std::string build_regional_access_boundary_url() {
-    grpc_core::MutexLock lock(&email_mu_);
-    if (service_account_email_.empty()) {
-      return "";
-    }
-    return absl::StrFormat(
-        "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/"
-        "%s/allowedLocations",
-        service_account_email_);
-  }
+  grpc_core::OrphanablePtr<grpc_core::RegionalAccessBoundaryFetcher> regional_access_boundary_fetcher_ ABSL_GUARDED_BY(email_mu_);
   
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> StartHttpRequest(
       grpc_polling_entity* pollent, grpc_core::Timestamp deadline,

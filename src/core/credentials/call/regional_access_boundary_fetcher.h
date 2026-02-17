@@ -45,7 +45,7 @@ struct RegionalAccessBoundary {
   grpc_core::Timestamp expiration = grpc_core::Timestamp::Now() + 
     kRegionalAccessBoundaryCacheDuration;
 
-  bool isValid() const {
+  bool IsValid() const {
     return expiration > grpc_core::Timestamp::Now();
   }
 
@@ -58,12 +58,14 @@ class RegionalAccessBoundaryFetcher final : public InternallyRefCounted<Regional
  public:
   friend class RegionalAccessBoundaryFetcherTest;
 
-  RegionalAccessBoundaryFetcher(); 
+  explicit RegionalAccessBoundaryFetcher(absl::string_view lookup_url,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine = nullptr); 
+
    // Attaches regional access boundary header (x-allowed-locations) to the initial metadata 
    // if available, otherwise initiates non-blocking, asynchronous fetch of regional access
    // boundary if not already cached or in flight.
   void Fetch(
-      absl::string_view lookup_url,
       absl::string_view access_token,
       ClientMetadata& initial_metadata);
 
@@ -84,10 +86,10 @@ class RegionalAccessBoundaryFetcher final : public InternallyRefCounted<Regional
 
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ = 
     grpc_event_engine::experimental::GetDefaultEventEngine();
+  const std::string lookup_url_;
   grpc_core::Mutex cache_mu_;
   std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle> retry_timer_handle_ ABSL_GUARDED_BY(&cache_mu_);
   std::optional<RegionalAccessBoundary> cache_ ABSL_GUARDED_BY(&cache_mu_) ;
-  bool fetch_in_flight_ ABSL_GUARDED_BY(&cache_mu_) = false;
   int cooldown_multiplier_ ABSL_GUARDED_BY(&cache_mu_) = 1;
   grpc_core::Timestamp cooldown_deadline_ ABSL_GUARDED_BY(&cache_mu_) = grpc_core::Timestamp::ProcessEpoch();
   grpc_core::BackOff backoff_ ABSL_GUARDED_BY(&cache_mu_);

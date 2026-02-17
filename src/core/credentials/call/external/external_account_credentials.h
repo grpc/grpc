@@ -209,21 +209,6 @@ class ExternalAccountCredentials : public TokenFetcherCredentials {
   std::vector<std::string> scopes_;
 
   grpc_core::OrphanablePtr<RegionalAccessBoundaryFetcher> regional_access_boundary_fetcher_;
-  std::string build_regional_access_boundary_url() {
-    if (!options_.workforce_pool_id.empty()) {
-      return absl::StrFormat(
-          "https://iamcredentials.googleapis.com/v1/locations/global/"
-          "workforcePools/%s/allowedLocations",
-          options_.workforce_pool_id);
-    } else if (!options_.workload_pool_project.empty() &&
-               !options_.workload_pool_id.empty()) {
-      return absl::StrFormat(
-          "https://iamcredentials.googleapis.com/v1/projects/"
-          "%s/locations/global/workloadIdentityPools/%s/allowedLocations",
-          options_.workload_pool_project, options_.workload_pool_id);
-    }
-    return "";
-  }
 };
 
 }  // namespace grpc_core

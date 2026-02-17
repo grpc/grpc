@@ -42,11 +42,20 @@ const int kRetryableStatusCodes[] = {
   kInternalServerErrorCode, kBadGatewayErrorCode,
   kServiceUnavailableErrorCode, kGatewayTimeoutErrorCode};
 
-RegionalAccessBoundaryFetcher::RegionalAccessBoundaryFetcher() : backoff_(BackOff::Options()
-          .set_initial_backoff(Duration::Seconds(1))
-          .set_multiplier(2.0)
-          .set_jitter(0.2)
-          .set_max_backoff(Duration::Seconds(60))) {}
+RegionalAccessBoundaryFetcher::RegionalAccessBoundaryFetcher(
+    absl::string_view lookup_url,
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
+    : event_engine_(std::move(event_engine)),
+      lookup_url_(lookup_url),
+      backoff_(BackOff::Options()
+                   .set_initial_backoff(Duration::Seconds(1))
+                   .set_multiplier(2.0)
+                   .set_jitter(0.2)
+                   .set_max_backoff(Duration::Seconds(60))) {
+  if (event_engine_ == nullptr) {
+    event_engine_ = grpc_event_engine::experimental::GetDefaultEventEngine();
+  }
+}
 
 RegionalAccessBoundaryFetcher::RegionalAccessBoundaryRequest::
     RegionalAccessBoundaryRequest(grpc_core::URI uri,
@@ -55,7 +64,7 @@ RegionalAccessBoundaryFetcher::RegionalAccessBoundaryRequest::
   memset(&response_, 0, sizeof(response_));
   pollent_ =
       grpc_polling_entity_create_from_pollset_set(grpc_pollset_set_create());
-  auto* caller_pollent = MaybeGetContext<grpc_polling_entity>();
+  grpc_polling_entity* caller_pollent = MaybeGetContext<grpc_polling_entity>();
   if (caller_pollent != nullptr) {
     grpc_polling_entity_add_to_pollset_set(
         caller_pollent, grpc_polling_entity_pollset_set(&pollent_));
@@ -65,10 +74,9 @@ RegionalAccessBoundaryFetcher::RegionalAccessBoundaryRequest::
 void RegionalAccessBoundaryFetcher::StartRegionalAccessBoundaryFetch(
     grpc_core::RefCountedPtr<RegionalAccessBoundaryRequest> req) {
   grpc_core::MutexLock lock(&cache_mu_);
-  if (fetch_in_flight_) { 
+  if (pending_request_ != nullptr) { 
     return; 
   }
-  fetch_in_flight_ = true;
   grpc_http_request request;
   memset(&request, 0, sizeof(request));
   grpc_http_header header = {const_cast<char*>("Authorization"),
@@ -82,7 +90,6 @@ void RegionalAccessBoundaryFetcher::StartRegionalAccessBoundaryFetch(
   req->Ref().release();
   GRPC_CLOSURE_INIT(&req->closure_, OnRegionalAccessBoundaryResponseWrapper,
                     req.get(), grpc_schedule_on_exec_ctx);
-
   req->http_request_ = grpc_core::HttpRequest::Get(
       req->uri_,
       nullptr,  // channel_args
@@ -112,18 +119,18 @@ void RegionalAccessBoundaryFetcher::OnRegionalAccessBoundaryResponse(
   std::string encoded_locations;
   std::vector<std::string> locations;
   if (error.ok() && req->response_.status == 200) {
-    auto json = grpc_core::JsonParse(
+    absl::StatusOr<Json> json = grpc_core::JsonParse(
         absl::string_view(req->response_.body, req->response_.body_length));
     if (json.ok() && json->type() == grpc_core::Json::Type::kObject) {
-      auto it_encoded = json->object().find("encodedLocations");
+      Json::Object::const_iterator it_encoded = json->object().find("encodedLocations");
       if (it_encoded != json->object().end() &&
           it_encoded->second.type() == grpc_core::Json::Type::kString) {
         encoded_locations = it_encoded->second.string();
       }
-      auto it_locations = json->object().find("locations");
+      Json::Object::const_iterator it_locations = json->object().find("locations");
       if (it_locations != json->object().end() &&
           it_locations->second.type() == grpc_core::Json::Type::kArray) {
-        for (const auto& loc : it_locations->second.array()) {
+        for (const Json& loc : it_locations->second.array()) {
           if (loc.type() == grpc_core::Json::Type::kString) {
             locations.push_back(loc.string());
           }
@@ -156,7 +163,7 @@ void RegionalAccessBoundaryFetcher::OnRegionalAccessBoundaryResponse(
     // On success, reset the cooldown multiplier.
     cooldown_multiplier_ = 1;
     backoff_.Reset();
-    fetch_in_flight_ = false;
+    pending_request_.reset();
   } else if (should_retry) {
     LOG(WARNING) << "Regional access boundary request will be retried after "
                     "failing with error: "
@@ -172,7 +179,7 @@ void RegionalAccessBoundaryFetcher::OnRegionalAccessBoundaryResponse(
       self->RetryFetchRegionalAccessBoundary(req.get(), absl::OkStatus());
   });
 } else {
-    fetch_in_flight_ = false;
+    pending_request_.reset();
     // Log failure and set cooldown on failure
     if (!success) {
         LOG(WARNING) << "Regional access boundary request failed. Entering "
@@ -203,7 +210,7 @@ void RegionalAccessBoundaryFetcher::RetryFetchRegionalAccessBoundary(
     new_req->SwapPollent(*raw_req);
     StartRegionalAccessBoundaryFetch(std::move(new_req));
   } else {
-    fetch_in_flight_ = false;
+    pending_request_.reset();
     cooldown_deadline_ = grpc_core::Timestamp::Now() + 
         kRegionalAccessBoundaryBaseCooldownDuration * cooldown_multiplier_;
     if (cooldown_multiplier_ *
@@ -214,11 +221,10 @@ void RegionalAccessBoundaryFetcher::RetryFetchRegionalAccessBoundary(
   }
 }
 
-void RegionalAccessBoundaryFetcher::Fetch(
-    absl::string_view lookup_url,
-    absl::string_view access_token,
-    ClientMetadata& initial_metadata) {
-  const Slice* authority_ptr = initial_metadata.get_pointer(HttpAuthorityMetadata());
+void RegionalAccessBoundaryFetcher::Fetch(absl::string_view access_token,
+                                          ClientMetadata& initial_metadata) {
+  const Slice* authority_ptr =
+      initial_metadata.get_pointer(HttpAuthorityMetadata());
   if (authority_ptr == nullptr) {
     return;
   }
@@ -227,45 +233,44 @@ void RegionalAccessBoundaryFetcher::Fetch(
   if (split != absl::string_view::npos) {
     authority = authority.substr(0, split);
   }
-
-  // Regional access boundary is only applicable for non-regional googleapis endpoints.
-  // All other endpoints would not benefit from the regional access boundary metadata.
-  bool is_regional = authority == kRegionalEndpoint || absl::EndsWith(authority, absl::StrCat(".", kRegionalEndpoint));
+  // Regional access boundary is only applicable for non-regional googleapis
+  // endpoints. All other endpoints would not benefit from the regional access
+  // boundary metadata.
+  bool is_regional = authority == kRegionalEndpoint ||
+                     absl::EndsWith(authority, absl::StrCat(".", kRegionalEndpoint));
   if (is_regional) {
     return;
   }
-
-  bool is_googleapis = authority == kGoogleApisEndpoint || absl::EndsWith(authority, absl::StrCat(".", kGoogleApisEndpoint));
+  bool is_googleapis = authority == kGoogleApisEndpoint ||
+                       absl::EndsWith(authority, absl::StrCat(".", kGoogleApisEndpoint));
   if (!is_googleapis) {
     return;
   }
-  if (lookup_url.empty()) {
-    // If we have an empty lookup URL, we cannot fetch the regional access boundary.
-    // This can happen if the credential does not have enough information to construct
-    // the URL, such as a missing workforce/workload pool ID or service account email.
+
+  if (lookup_url_.empty()) {
+    // If we have an empty lookup URL, we cannot fetch the regional access
+    // boundary. This can happen if the credential does not have enough
+    // information to construct the URL, such as a missing workforce/workload pool
+    // ID or service account email.
     return;
   }
-  absl::StatusOr<grpc_core::URI> request_uri = URI::Parse(lookup_url);
+  absl::StatusOr<grpc_core::URI> request_uri = URI::Parse(lookup_url_);
   if (!request_uri.ok()) {
-    LOG(ERROR) << "Unable to create URI for the lookup URL: "
-               << lookup_url;
+    LOG(ERROR) << "Unable to create URI for the lookup URL: " << lookup_url_;
     return;
   }
   {
     grpc_core::MutexLock lock(&cache_mu_);
-    bool has_valid_cache = cache_.has_value() && cache_->isValid();
-    bool should_trigger_async_fetch = false;
+    bool has_valid_cache = cache_.has_value() && cache_->IsValid();
+    bool cache_is_soft_expired = cache_.has_value() && cache_->IsSoftExpired();
     if (has_valid_cache) {
       initial_metadata.Append(
         kAllowedLocationsKey,
         Slice::FromCopiedString(
             cache_->encoded_locations),
         [](absl::string_view, const Slice&) { abort(); });  
-      if (cache_->IsSoftExpired() && !fetch_in_flight_) {
-        should_trigger_async_fetch = true;
-      }
     }
-    bool should_skip_new_lookup = (has_valid_cache && !should_trigger_async_fetch) || fetch_in_flight_ || grpc_core::Timestamp::Now() < cooldown_deadline_;
+    bool should_skip_new_lookup = (has_valid_cache && !cache_is_soft_expired) || pending_request_ != nullptr || grpc_core::Timestamp::Now() < cooldown_deadline_;
     if (should_skip_new_lookup) {
       return;
     }
@@ -290,6 +295,5 @@ void RegionalAccessBoundaryFetcher::Orphan() {
     }
     pending_request_.reset();
   }
-  fetch_in_flight_ = false;
 }
 }  // namespace grpc_core

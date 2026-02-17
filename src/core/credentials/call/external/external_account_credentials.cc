@@ -91,7 +91,6 @@ ExternalAccountCredentials::GetRequestMetadata(
               }
 
               regional_access_boundary_fetcher_->Fetch(
-                   build_regional_access_boundary_url(),
                    auth_val.value(),
                    *(*updated_metadata));
               return updated_metadata;
@@ -655,13 +654,31 @@ ExternalAccountCredentials::Create(
   return creds;
 }
 
+static std::string BuildRegionalAccessBoundaryUrl(
+    const ExternalAccountCredentials::Options& options) {
+  if (!options.workforce_pool_id.empty()) {
+    return absl::StrFormat(
+        "https://iamcredentials.googleapis.com/v1/locations/global/"
+        "workforcePools/%s/allowedLocations",
+        options.workforce_pool_id);
+  } else if (!options.workload_pool_project.empty() &&
+             !options.workload_pool_id.empty()) {
+    return absl::StrFormat(
+        "https://iamcredentials.googleapis.com/v1/projects/"
+        "%s/locations/global/workloadIdentityPools/%s/allowedLocations",
+        options.workload_pool_project, options.workload_pool_id);
+  }
+  return "";
+}
+
 ExternalAccountCredentials::ExternalAccountCredentials(
     Options options, std::vector<std::string> scopes,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
     : TokenFetcherCredentials(std::move(event_engine)),
       options_(std::move(options)),
       regional_access_boundary_fetcher_(
-          MakeOrphanable<RegionalAccessBoundaryFetcher>()) {
+          MakeOrphanable<RegionalAccessBoundaryFetcher>(
+              BuildRegionalAccessBoundaryUrl(options_))) {
   if (scopes.empty()) {
     scopes.push_back(GOOGLE_CLOUD_PLATFORM_DEFAULT_SCOPE);
   }
