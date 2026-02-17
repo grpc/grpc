@@ -38,7 +38,7 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/upb_utils.h"
-#include "src/core/xds/grpc/xds_common_types_parser.h"
+#include "src/core/util/xds_utils.h"
 #include "src/core/xds/xds_client/xds_transport.h"
 #include "upb/base/string_view.h"
 #include "absl/base/thread_annotations.h"
@@ -139,8 +139,7 @@ void ExtAuthzClient::ExtAuthzChannel::RetryableCall<T>::Orphan() {
 
 template <typename T>
 void ExtAuthzClient::ExtAuthzChannel::RetryableCall<T>::OnCallFinishedLocked() {
-  // If we saw a response on the current stream, reset backoff.
-  if (call_->seen_response()) backoff_.Reset();
+  backoff_.Reset();
   call_.reset();
   // Start retry timer.
   StartRetryTimerLocked();
@@ -210,46 +209,17 @@ class ExtAuthzClient::ExtAuthzChannel::ExtAuthzCall final
   ExtAuthzClient* ext_authz_client() const {
     return ext_authz_channel()->ext_authz_client();
   }
-  bool seen_response() const { return seen_response_; }
 
  private:
-  class StreamEventHandler final
-      : public XdsTransportFactory::XdsTransport::StreamingCall::EventHandler {
-   public:
-    explicit StreamEventHandler(RefCountedPtr<ExtAuthzCall> ext_authz_call)
-        : ext_authz_call_(std::move(ext_authz_call)) {}
-
-    void OnRequestSent(bool /*ok*/) override {
-      ext_authz_call_->OnRequestSent();
-    }
-    void OnRecvMessage(absl::string_view payload) override {
-      ext_authz_call_->OnRecvMessage(payload);
-    }
-    void OnStatusReceived(absl::Status status) override {
-      ext_authz_call_->OnStatusReceived(std::move(status));
-    }
-
-   private:
-    RefCountedPtr<ExtAuthzCall> ext_authz_call_;
-  };
-
   void SendMessageLocked(std::string payload)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ExtAuthzClient::mu_);
-
-  void OnRequestSent();
-  void OnRecvMessage(absl::string_view payload);
-  void OnStatusReceived(absl::Status status);
 
   bool IsCurrentCallOnChannel() const;
 
   // The owning RetryableCall<>.
   RefCountedPtr<RetryableCall<ExtAuthzCall>> retryable_call_;
 
-  OrphanablePtr<XdsTransportFactory::XdsTransport::StreamingCall>
-      streaming_call_;
-
-  bool seen_response_ = false;
-  bool send_message_pending_ ABSL_GUARDED_BY(&ExtAuthzClient::mu_) = false;
+  OrphanablePtr<XdsTransportFactory::XdsTransport::UnaryCall> call_;
 };
 
 //
@@ -264,71 +234,28 @@ ExtAuthzClient::ExtAuthzChannel::ExtAuthzCall::ExtAuthzCall(
       retryable_call_(std::move(retryable_call)) {
   GRPC_CHECK_NE(ext_authz_client(), nullptr);
   const char* method = "/envoy.service.auth.v3.Authorization/Check";
-  streaming_call_ = ext_authz_channel()->transport_->CreateStreamingCall(
-      method, std::make_unique<StreamEventHandler>(
-                  // Passing the initial ref here.  This ref will go away when
-                  // the StreamEventHandler is destroyed.
-                  RefCountedPtr<ExtAuthzCall>(this)));
-  GRPC_CHECK(streaming_call_ != nullptr);
+  call_ = ext_authz_channel()->transport_->CreateUnaryCall(method);
+  GRPC_CHECK(call_ != nullptr);
   // Start the call.
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[ext_authz_client " << ext_authz_client() << "] ext_authz server "
       << ext_authz_channel()->server_->server_uri()
       << ": starting ext_authz call (ext_authz_call=" << this
-      << ", streaming_call=" << streaming_call_.get() << ")";
-  // TODO(rishesh): add logic for sending request
-  // Send the initial request.
-  // std::string serialized_payload =
-  // ext_authz_client()->GetOrCreateExtAuthzChannelLocked();
-  // SendMessageLocked(std::move(serialized_payload));
-  // Read initial response.
-  streaming_call_->StartRecvMessage();
+      << ", streaming_call=" << call_.get() << ")";
 }
 
-void ExtAuthzClient::ExtAuthzChannel::ExtAuthzCall::Orphan() {
-  // Note that the initial ref is held by the StreamEventHandler, which
-  // will be destroyed when streaming_call_ is destroyed, which may not happen
-  // here, since there may be other refs held to streaming_call_ by internal
-  // callbacks.
-  streaming_call_.reset();
-}
-
-void ExtAuthzClient::ExtAuthzChannel::ExtAuthzCall::OnRequestSent() {
-  MutexLock lock(&ext_authz_client()->mu_);
-  send_message_pending_ = false;
-}
+void ExtAuthzClient::ExtAuthzChannel::ExtAuthzCall::Orphan() { call_.reset(); }
 
 void ExtAuthzClient::ExtAuthzChannel::ExtAuthzCall::SendMessageLocked(
     std::string payload) {
-  send_message_pending_ = true;
-  streaming_call_->SendMessage(std::move(payload));
-}
-
-void ExtAuthzClient::ExtAuthzChannel::ExtAuthzCall::OnRecvMessage(
-    absl::string_view payload) {
-  MutexLock lock(&ext_authz_client()->mu_);
-  // If we're no longer the current call, ignore the result.
-  if (!IsCurrentCallOnChannel()) return;
-  // Start recv after any code branch
-  auto cleanup = absl::MakeCleanup(
-      [call = streaming_call_.get()]() { call->StartRecvMessage(); });
-  // Parse the response.
-  seen_response_ = true;
-}
-
-void ExtAuthzClient::ExtAuthzChannel::ExtAuthzCall::OnStatusReceived(
-    absl::Status status) {
-  MutexLock lock(&ext_authz_client()->mu_);
-  GRPC_TRACE_LOG(xds_client, INFO)
-      << "[ext_authz_client " << ext_authz_client() << "] ExtAuthz server "
-      << ext_authz_channel()->server_->server_uri()
-      << ": ExtAuthz call status received (ext_authz_channel="
-      << ext_authz_channel() << ", ext_authz_call=" << this
-      << ", streaming_call=" << streaming_call_.get() << "): " << status;
+  auto status = call_->SendMessage(std::move(payload));
   // Ignore status from a stale call.
   if (IsCurrentCallOnChannel()) {
     // Try to restart the call.
     retryable_call_->OnCallFinishedLocked();
+  }
+
+  if (!status.ok()) {
   }
 }
 

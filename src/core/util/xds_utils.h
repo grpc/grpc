@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_UTIL_UPB_UTILS_H
-#define GRPC_SRC_CORE_UTIL_UPB_UTILS_H
+#ifndef GRPC_SRC_CORE_UTIL_XDS_UTILS_H
+#define GRPC_SRC_CORE_UTIL_XDS_UTILS_H
 
 #include "envoy/config/core/v3/base.upb.h"
 #include "src/core/xds/grpc/xds_common_types.h"
@@ -28,4 +28,4 @@ HeaderValueOption ParseHeaderValueOption(
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_UTIL_UPB_UTILS_H
+#endif  // GRPC_SRC_CORE_UTIL_XDS_UTILS_H

@@ -6650,6 +6650,7 @@ grpc_cc_library(
         "absl/strings:str_format",
         "@com_google_protobuf//upb/mem",
         "@com_google_protobuf//upb/reflection",
+        "@com_google_protobuf//upb/base",
     ],
     deps = [
         "channel_args",
@@ -6675,6 +6676,9 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:uri",
         "//:xds_client",
+        "status_conversion",
+        "upb_utils",
+        "xds_utils",
     ],
 )
 
@@ -8150,6 +8154,7 @@ grpc_cc_library(
     ],
     deps = [
         "grpc_check",
+        "ext_authz_client",
         "grpc_lb_xds_channel_args",
         "grpc_xds_client",
         "match",

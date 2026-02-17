@@ -224,6 +224,125 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
 }
 
 //
+// GrpcXdsTransportFactory::GrpcXdsTransport::GrpcUnaryCall
+//
+
+GrpcXdsTransportFactory::GrpcXdsTransport::GrpcUnaryCall::GrpcUnaryCall(
+    WeakRefCountedPtr<GrpcXdsTransportFactory> factory, Channel* channel,
+    const char* method)
+    : factory_(std::move(factory)) {
+  // Create CQ.
+  cq_ = grpc_completion_queue_create_for_next(nullptr);
+  // Create call.
+  call_ = channel->CreateCall(
+      /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS, /*cq=*/cq_,
+      factory_->interested_parties(), Slice::FromStaticString(method),
+      /*authority=*/std::nullopt, Timestamp::InfFuture(),
+      /*registered_method=*/true);
+  GRPC_CHECK_NE(call_, nullptr);
+}
+
+GrpcXdsTransportFactory::GrpcXdsTransport::GrpcUnaryCall::~GrpcUnaryCall() {
+  if (recv_initial_metadata_array_.metadata != nullptr) {
+    grpc_metadata_array_destroy(&recv_initial_metadata_array_);
+  }
+  if (recv_trailing_metadata_array_.metadata != nullptr) {
+    grpc_metadata_array_destroy(&recv_trailing_metadata_array_);
+  }
+  CSliceUnref(recv_status_details_);
+  if (send_message_payload_ != nullptr) {
+    grpc_byte_buffer_destroy(send_message_payload_);
+  }
+  if (recv_message_payload_ != nullptr) {
+    grpc_byte_buffer_destroy(recv_message_payload_);
+  }
+  GRPC_CHECK_NE(call_, nullptr);
+  grpc_call_unref(call_);
+  grpc_completion_queue_shutdown(cq_);
+  while (grpc_completion_queue_next(cq_, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                    nullptr)
+             .type != GRPC_QUEUE_SHUTDOWN) {
+  }
+  grpc_completion_queue_destroy(cq_);
+}
+
+void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcUnaryCall::Orphan() {
+  GRPC_CHECK_NE(call_, nullptr);
+  grpc_call_cancel_internal(call_);
+}
+
+absl::StatusOr<std::string>
+GrpcXdsTransportFactory::GrpcXdsTransport::GrpcUnaryCall::SendMessage(
+    std::string payload) {
+  // Create payload.
+  grpc_slice slice = grpc_slice_from_cpp_string(std::move(payload));
+  send_message_payload_ = grpc_raw_byte_buffer_create(&slice, 1);
+  CSliceUnref(slice);
+
+  // Init data associated with the call.
+  grpc_metadata_array_init(&recv_initial_metadata_array_);
+  grpc_metadata_array_init(&recv_trailing_metadata_array_);
+  memset(ops_, 0, sizeof(ops_));
+  ops_[0].op = GRPC_OP_SEND_INITIAL_METADATA;
+  ops_[0].data.send_initial_metadata.count = 0;
+  ops_[0].flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY |
+                  GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
+  ops_[0].reserved = nullptr;
+
+  ops_[1].op = GRPC_OP_SEND_MESSAGE;
+  ops_[1].data.send_message.send_message = send_message_payload_;
+  ops_[1].flags = 0;
+  ops_[1].reserved = nullptr;
+
+  ops_[2].op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  ops_[2].flags = 0;
+  ops_[2].reserved = nullptr;
+
+  ops_[3].op = GRPC_OP_RECV_INITIAL_METADATA;
+  ops_[3].data.recv_initial_metadata.recv_initial_metadata =
+      &recv_initial_metadata_array_;
+  ops_[3].flags = 0;
+  ops_[3].reserved = nullptr;
+
+  ops_[4].op = GRPC_OP_RECV_MESSAGE;
+  ops_[4].data.recv_message.recv_message = &recv_message_payload_;
+  ops_[4].flags = 0;
+  ops_[4].reserved = nullptr;
+
+  ops_[5].op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  ops_[5].data.recv_status_on_client.trailing_metadata =
+      &recv_trailing_metadata_array_;
+  ops_[5].data.recv_status_on_client.status = &status_code_;
+  ops_[5].data.recv_status_on_client.status_details = &recv_status_details_;
+  ops_[5].flags = 0;
+  ops_[5].reserved = nullptr;
+
+  grpc_call_error error = grpc_call_start_batch(call_, ops_, 6, this, nullptr);
+  GRPC_CHECK_EQ(error, GRPC_CALL_OK);
+
+  grpc_event ev = grpc_completion_queue_next(
+      cq_, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+  GRPC_CHECK_EQ(ev.type, GRPC_OP_COMPLETE);
+  GRPC_CHECK_EQ(ev.tag, this);
+  GRPC_CHECK(ev.success);
+
+  if (status_code_ != GRPC_STATUS_OK) {
+    return absl::Status(static_cast<absl::StatusCode>(status_code_),
+                        StringViewFromSlice(recv_status_details_));
+  }
+  if (recv_message_payload_ == nullptr) {
+    return absl::InternalError("No response message received");
+  }
+  grpc_byte_buffer_reader bbr;
+  grpc_byte_buffer_reader_init(&bbr, recv_message_payload_);
+  grpc_slice response_slice = grpc_byte_buffer_reader_readall(&bbr);
+  grpc_byte_buffer_reader_destroy(&bbr);
+  std::string response = std::string(StringViewFromSlice(response_slice));
+  CSliceUnref(response_slice);
+  return response;
+}
+
+//
 // GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher
 //
 
@@ -359,6 +478,12 @@ GrpcXdsTransportFactory::GrpcXdsTransport::CreateStreamingCall(
   return MakeOrphanable<GrpcStreamingCall>(
       factory_.WeakRef(DEBUG_LOCATION, "StreamingCall"), channel_.get(), method,
       std::move(event_handler));
+}
+
+OrphanablePtr<XdsTransportFactory::XdsTransport::UnaryCall>
+GrpcXdsTransportFactory::GrpcXdsTransport::CreateUnaryCall(const char* method) {
+  return MakeOrphanable<GrpcUnaryCall>(
+      factory_.WeakRef(DEBUG_LOCATION, "UnaryCall"), channel_.get(), method);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::ResetBackoff() {

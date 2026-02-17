@@ -282,6 +282,22 @@ FakeXdsTransportFactory::FakeXdsTransport::CreateStreamingCall(
 }
 
 //
+// FakeXdsTransportFactory::FakeUnaryCall
+//
+
+absl::StatusOr<std::string>
+FakeXdsTransportFactory::FakeUnaryCall::SendMessage(std::string payload) {
+    return absl::UnimplementedError("FakeUnaryCall::SendMessage not implemented");
+}
+
+OrphanablePtr<XdsTransportFactory::XdsTransport::UnaryCall>
+FakeXdsTransportFactory::FakeXdsTransport::CreateUnaryCall(
+    const char* method) {
+  return MakeOrphanable<FakeUnaryCall>(
+      WeakRefAsSubclass<FakeXdsTransport>(), method);
+}
+
+//
 // FakeXdsTransportFactory
 //
 

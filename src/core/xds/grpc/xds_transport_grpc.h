@@ -73,6 +73,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
     : public XdsTransportFactory::XdsTransport {
  public:
   class GrpcStreamingCall;
+  class GrpcUnaryCall;
 
   GrpcXdsTransport(WeakRefCountedPtr<GrpcXdsTransportFactory> factory,
                    const XdsBootstrap::XdsServerTarget& server,
@@ -89,6 +90,8 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
   OrphanablePtr<StreamingCall> CreateStreamingCall(
       const char* method,
       std::unique_ptr<StreamingCall::EventHandler> event_handler) override;
+
+  OrphanablePtr<UnaryCall> CreateUnaryCall(const char* method) override;
 
   void ResetBackoff() override;
 
@@ -148,6 +151,30 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
   grpc_status_code status_code_;
   grpc_slice status_details_;
   grpc_closure on_status_received_;
+};
+
+class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcUnaryCall final
+    : public XdsTransportFactory::XdsTransport::UnaryCall {
+ public:
+  GrpcUnaryCall(WeakRefCountedPtr<GrpcXdsTransportFactory> factory,
+                Channel* channel, const char* method);
+  ~GrpcUnaryCall() override;
+
+  absl::StatusOr<std::string> SendMessage(std::string payload) override;
+  void Orphan() override;
+
+ private:
+  WeakRefCountedPtr<GrpcXdsTransportFactory> factory_;
+  grpc_completion_queue* cq_;
+  grpc_call* call_ = nullptr;
+
+  grpc_op ops_[6];
+  grpc_metadata_array recv_initial_metadata_array_;
+  grpc_metadata_array recv_trailing_metadata_array_;
+  grpc_slice recv_status_details_ = grpc_empty_slice();
+  grpc_status_code status_code_ = GRPC_STATUS_OK;
+  grpc_byte_buffer* send_message_payload_ = nullptr;
+  grpc_byte_buffer* recv_message_payload_ = nullptr;
 };
 
 }  // namespace grpc_core

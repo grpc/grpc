@@ -129,6 +129,19 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     std::deque<std::string> to_client_messages_ ABSL_GUARDED_BY(&mu_);
   };
 
+  class FakeUnaryCall : public XdsTransport::UnaryCall {
+   public:
+    explicit FakeUnaryCall(WeakRefCountedPtr<FakeXdsTransport> transport,
+                           const char* method)
+        : transport_(std::move(transport)), method_(method) {}
+
+    absl::StatusOr<std::string> SendMessage(std::string payload) override;
+
+   private:
+    WeakRefCountedPtr<FakeXdsTransport> transport_;
+    const char* method_;
+  };
+
   explicit FakeXdsTransportFactory(
       std::function<void()> too_many_pending_reads_callback,
       std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
@@ -209,6 +222,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     OrphanablePtr<StreamingCall> CreateStreamingCall(
         const char* method,
         std::unique_ptr<StreamingCall::EventHandler> event_handler) override;
+
+    OrphanablePtr<UnaryCall> CreateUnaryCall(const char* method) override;
 
     void ResetBackoff() override {}
 
