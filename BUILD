@@ -923,6 +923,7 @@ grpc_cc_library(
         "//src/core:grpc_lb_policy_pick_first",
         "//src/core:grpc_lb_policy_priority",
         "//src/core:grpc_lb_policy_ring_hash",
+        "//src/core:grpc_lb_policy_random_subsetting",
         "//src/core:grpc_lb_policy_round_robin",
         "//src/core:grpc_lb_policy_weighted_round_robin",
         "//src/core:grpc_lb_policy_weighted_target",

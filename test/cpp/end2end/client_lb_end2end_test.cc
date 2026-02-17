@@ -4145,6 +4145,118 @@ TEST_F(ConnectionScalingTest, IdleConnectionsClosed) {
   EXPECT_EQ(socket_nodes.size(), 1);
 }
 
+//
+// random_subsetting tests
+//
+
+using RandomSubsettingTest = ClientLbEnd2endTest;
+
+TEST_F(RandomSubsettingTest, Basic) {
+  const int kNumServers = 5;
+  const int kSubsetSize = 3;
+  StartServers(kNumServers);
+  const char* service_config_json =
+      "{\n"
+      "  \"loadBalancingConfig\":[{\n"
+      "    \"random_subsetting\":{\n"
+      "      \"subset_size\": 3,\n"
+      "      \"childPolicy\": [{\"round_robin\": {}}]\n"
+      "    }\n"
+      "  }]\n"
+      "}\n";
+  FakeResolverResponseGeneratorWrapper response_generator;
+  auto channel = BuildChannel("", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts(), service_config_json);
+
+  // Determine which servers are actually in the subset by sending RPCs
+  // and checking which servers receive traffic
+  std::set<int> active_servers;
+  for (int i = 0; i < 100; ++i) {
+    CheckRpcSendOk(DEBUG_LOCATION, stub);
+    for (size_t j = 0; j < servers_.size(); ++j) {
+      if (servers_[j]->service_.request_count() > 0) {
+        active_servers.insert(j);
+      }
+    }
+  }
+
+  // Verify exactly kSubsetSize servers received traffic
+  EXPECT_EQ(active_servers.size(), kSubsetSize);
+  // Verify round-robin distribution among the active servers
+  ResetCounters();
+  for (int i = 0; i < kSubsetSize * 10; ++i) {
+    CheckRpcSendOk(DEBUG_LOCATION, stub);
+  }
+  // Each active server should have received approximately equal traffic
+  for (int server_idx : active_servers) {
+    EXPECT_GT(servers_[server_idx]->service_.request_count(), 0);
+  }
+}
+
+TEST_F(RandomSubsettingTest, AddressUpdates) {
+  const int kNumServers = 5;
+  const int kSubsetSize = 3;
+  StartServers(kNumServers);
+  const char* service_config_json =
+      "{\n"
+      "  \"loadBalancingConfig\":[{\n"
+      "    \"random_subsetting\":{\n"
+      "      \"subset_size\": 3,\n"
+      "      \"childPolicy\": [{\"round_robin\": {}}]\n"
+      "    }\n"
+      "  }]\n"
+      "}\n";
+  FakeResolverResponseGeneratorWrapper response_generator;
+  auto channel = BuildChannel("", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts(), service_config_json);
+
+  // Discover which servers are in the initial subset
+  // Send enough RPCs to ensure all servers in subset receive traffic
+  std::set<int> active_servers;
+  int max_attempts = 100;
+  int attempts = 0;
+  while (active_servers.size() < kSubsetSize && attempts < max_attempts) {
+    CheckRpcSendOk(DEBUG_LOCATION, stub);
+    // Check which servers have received requests
+    active_servers.clear();
+    for (size_t i = 0; i < servers_.size(); ++i) {
+      if (servers_[i]->service_.request_count() > 0) {
+        active_servers.insert(i);
+      }
+    }
+    attempts++;
+  }
+  EXPECT_EQ(active_servers.size(), kSubsetSize);
+  ResetCounters();
+
+  // Update to a different set of servers
+  std::vector<int> new_ports = {servers_[2]->port_, servers_[3]->port_,
+                                servers_[4]->port_};
+  response_generator.SetNextResolution(new_ports, service_config_json);
+  // Discover the new active subset
+  std::set<int> new_active_servers;
+  attempts = 0;
+  while (new_active_servers.size() < kSubsetSize && attempts < max_attempts) {
+    CheckRpcSendOk(DEBUG_LOCATION, stub);
+    new_active_servers.clear();
+    for (size_t i = 0; i < servers_.size(); ++i) {
+      if (servers_[i]->service_.request_count() > 0) {
+        new_active_servers.insert(i);
+      }
+    }
+    attempts++;
+  }
+
+  EXPECT_EQ(new_active_servers.size(), kSubsetSize);
+  // Verify that the new subset only contains servers from the updated list
+  for (int server_idx : new_active_servers) {
+    EXPECT_GE(server_idx, 2);
+    EXPECT_LE(server_idx, 4);
+  }
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
