@@ -31,6 +31,7 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "src/core/call/call_destination.h"
