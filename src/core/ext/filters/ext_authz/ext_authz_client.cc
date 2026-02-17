@@ -547,4 +547,11 @@ void ExtAuthzClient::ResetBackoff() {
   }
 }
 
+void ExtAuthzClient::RemoveExtAuthzChannel(const std::string& key) {
+  auto it = ext_authz_channel_map_.find(key);
+  if (it != ext_authz_channel_map_.end()) {
+    ext_authz_channel_map_.erase(key);
+  }
+}
+
 }  // namespace grpc_core

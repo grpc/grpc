@@ -116,13 +116,14 @@ class ExtAuthzClient : public DualRefCounted<ExtAuthzClient> {
   absl::StatusOr<ExtAuthzResponse> ParseExtAuthzResponse(
       absl::string_view encoded_response) ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
-  void RemoveExtAuthzChannel(const std::string& key);
+  void RemoveExtAuthzChannel(const std::string& key)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
   RefCountedPtr<ExtAuthzChannel> GetOrCreateExtAuthzChannelLocked(
       std::shared_ptr<const XdsBootstrap::XdsServerTarget> server,
       const char* reason) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
-  std::shared_ptr<XdsBootstrap> bootstrap_; // not required
+  std::shared_ptr<XdsBootstrap> bootstrap_;  // not required
   RefCountedPtr<XdsTransportFactory> transport_factory_;
   Mutex mu_;
   upb::DefPool def_pool_ ABSL_GUARDED_BY(mu_);
