@@ -83,8 +83,6 @@ BAZEL_RULES_PYTHON_VERSION=$("$PYTHON3_BIN_PATH" -c 'import sys; print(f"{sys.ve
 HOST_SITE_PACKAGES=$("$PYTHON3_BIN_PATH" -c 'import os, site; print(os.pathsep.join(site.getsitepackages() + [site.getusersitepackages()]))')
 BAZEL_FLAGS="--test_output=errors \
   --config=python \
-  --spawn_strategy=local \
-  --test_strategy=standalone \
   --action_env=PYTHON_BIN_PATH=$PYTHON3_BIN_PATH \
   --action_env=PYTHONPATH=$HOST_SITE_PACKAGES \
   --test_env=PYTHONPATH=$HOST_SITE_PACKAGES" \
