@@ -27005,6 +27005,18 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+- name: write_cycle_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/transport/chttp2/transport/write_cycle.h
+  src:
+  - src/core/ext/transport/chttp2/transport/write_cycle.cc
+  - test/core/transport/chttp2/write_cycle_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: write_size_policy_test
   gtest: true
   build: test
