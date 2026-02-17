@@ -88,7 +88,7 @@ class MultithreadTest(AioTestBase):
         # Verify results
         self.assertEqual(results_queue.qsize(), 10)
         while not results_queue.empty():
-            result = results_queue.get()
+            result = results_queue.get_nowait()
             self.assertIsInstance(result, bytes)
             self.assertEqual(result, b"request")
 
