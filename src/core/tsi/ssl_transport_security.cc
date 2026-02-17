@@ -2420,7 +2420,7 @@ static void ssl_handshaker_next_async(tsi_ssl_handshaker* self) {
     if (result != TSI_ASYNC) {
       // We now have a result to return to the caller via the callback.
       if (self->handshaker_next_args.has_value()) {
-        args = std::move(self->handshaker_next_args);
+        args = self->handshaker_next_args;
         self->handshaker_next_args.reset();
       }
     }
