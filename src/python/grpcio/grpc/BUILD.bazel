@@ -93,8 +93,8 @@ py_library(
 )
 
 py_library(
-    name = "_typing",
-    srcs = ["_typing.py"],
+    name = "typing",
+    srcs = ["typing.py"],
 )
 
 py_library(
@@ -113,7 +113,6 @@ py_library(
         ":_observability",
         ":_runtime_protos",
         ":_simple_stubs",
-        ":_typing",
         ":aio",
         ":auth",
         ":channel",
@@ -121,6 +120,7 @@ py_library(
         ":interceptor",
         ":plugin_wrapping",
         ":server",
+        ":typing",
         ":utilities",
         "//src/python/grpcio/grpc/_cython:cygrpc",
         "//src/python/grpcio/grpc/experimental",

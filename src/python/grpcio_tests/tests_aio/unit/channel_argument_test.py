@@ -22,6 +22,7 @@ import unittest
 
 import grpc
 from grpc.experimental import aio
+import typeguard
 
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
@@ -131,7 +132,11 @@ class TestChannelArgument(AioTestBase):
         server = aio.server(options=_TEST_CHANNEL_ARGS)
         await server.stop(None)
 
+    @typeguard.suppress_type_checks
     async def test_invalid_client_args(self):
+        # This test works on invalid client_args which is expected
+        # to make typeguard fail, hence the decorator
+        # @typeguard.supress_type_checks is used
         for invalid_arg in _INVALID_TEST_CHANNEL_ARGS:
             self.assertRaises(
                 (ValueError, TypeError),
