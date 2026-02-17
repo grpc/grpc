@@ -42,7 +42,6 @@
 #include "src/core/xds/xds_client/xds_transport.h"
 #include "upb/base/string_view.h"
 #include "absl/base/thread_annotations.h"
-#include "absl/cleanup/cleanup.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
@@ -211,7 +210,7 @@ class ExtAuthzClient::ExtAuthzChannel::ExtAuthzCall final
   }
 
  private:
-  void SendMessageLocked(std::string payload)
+  absl::StatusOr<ExtAuthzResponse> SendMessageLocked(std::string payload)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ExtAuthzClient::mu_);
 
   bool IsCurrentCallOnChannel() const;
@@ -246,7 +245,8 @@ ExtAuthzClient::ExtAuthzChannel::ExtAuthzCall::ExtAuthzCall(
 
 void ExtAuthzClient::ExtAuthzChannel::ExtAuthzCall::Orphan() { call_.reset(); }
 
-void ExtAuthzClient::ExtAuthzChannel::ExtAuthzCall::SendMessageLocked(
+absl::StatusOr<ExtAuthzClient::ExtAuthzResponse>
+ExtAuthzClient::ExtAuthzChannel::ExtAuthzCall::SendMessageLocked(
     std::string payload) {
   auto status = call_->SendMessage(std::move(payload));
   // Ignore status from a stale call.
@@ -254,9 +254,10 @@ void ExtAuthzClient::ExtAuthzChannel::ExtAuthzCall::SendMessageLocked(
     // Try to restart the call.
     retryable_call_->OnCallFinishedLocked();
   }
-
   if (!status.ok()) {
+    return status.status();
   }
+  return ext_authz_client()->ParseExtAuthzResponse(*status);
 }
 
 bool ExtAuthzClient::ExtAuthzChannel::ExtAuthzCall::IsCurrentCallOnChannel()
