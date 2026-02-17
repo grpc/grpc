@@ -8794,6 +8794,30 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "write_cycle",
+    srcs = ["ext/transport/chttp2/transport/write_cycle.cc"],
+    hdrs = ["ext/transport/chttp2/transport/write_cycle.h"],
+    external_deps = [
+        "absl/container:inlined_vector",
+        "absl/strings",
+        "absl/types:span",
+        "absl/log:check",
+    ],
+    deps = [
+        "grpc_check",
+        "grpc_promise_endpoint",
+        "http2_settings",
+        "slice",
+        "slice_buffer",
+        "transport_common",
+        "write_size_policy",
+        "//:chttp2_frame",
+        "//:gpr",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "http2_transport",
     srcs = [
         "ext/transport/chttp2/transport/http2_transport.cc",
