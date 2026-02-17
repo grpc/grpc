@@ -69,12 +69,12 @@ export PATH="$(dirname "$PYTHON3_BIN_PATH"):$PATH"
 "$PYTHON3_BIN_PATH" -m pip install --break-system-packages -r requirements.bazel.lock
 
 # Test targets mirrored from tools/internal_ci/linux/grpc_python_bazel_test_in_docker.sh
-TEST_TARGETS="//src/python/... \\
-  -//src/python/grpcio_tests/tests/admin:admin_test \\
-  -//src/python/grpcio_tests/tests/csds:csds_test \\
-  -//src/python/grpcio_tests/tests/interop:_insecure_intraop_test \\
-  -//src/python/grpcio_tests/tests/interop:_secure_intraop_test \\
-  -//src/python/grpcio_tests/tests_aio/interop:local_interop_test \\
+TEST_TARGETS="//src/python/... \
+  -//src/python/grpcio_tests/tests/admin:admin_test \
+  -//src/python/grpcio_tests/tests/csds:csds_test \
+  -//src/python/grpcio_tests/tests/interop:_insecure_intraop_test \
+  -//src/python/grpcio_tests/tests/interop:_secure_intraop_test \
+  -//src/python/grpcio_tests/tests_aio/interop:local_interop_test \
   -//src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client_test"
 # Disable global pip.conf which overrides PyPI and causes wheel builder EOF errors
 export PIP_CONFIG_FILE=/dev/null
