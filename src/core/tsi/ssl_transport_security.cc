@@ -364,9 +364,7 @@ static grpc_core::PrivateKeySigner* GetPrivateKeySigner(const SSL* ssl) {
   if (handshaker == nullptr) return nullptr;
   return handshaker->key_signer;
 }
-#endif
 
-#if defined(OPENSSL_IS_BORINGSSL)
 // Invoked by the private key signer when it runs asynchronously.
 void TlsOffloadSignDoneCallback(
     grpc_core::RefCountedPtr<tsi_ssl_handshaker> handshaker,
@@ -388,7 +386,7 @@ void TlsOffloadSignDoneCallback(
         }
         if (next_args.cb) {
           next_args.cb(TSI_INTERNAL_ERROR, next_args.user_data, nullptr, 0,
-                      next_args.handshaker_result);
+                       next_args.handshaker_result);
         }
       }
       return;
@@ -399,6 +397,7 @@ void TlsOffloadSignDoneCallback(
   ssl_handshaker_next_async(handshaker.get());
 }
 
+// Invoked by BoringSSL to get the result of the private key signing.
 enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,
                                                            uint8_t* out,
                                                            size_t* out_len,
@@ -472,12 +471,11 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
       });
 }
 
-#if defined(OPENSSL_IS_BORINGSSL)
 const SSL_PRIVATE_KEY_METHOD TlsOffloadPrivateKeyMethod = {
     TlsPrivateKeySignWrapper,
     nullptr,  // decrypt not implemented for this use case
     TlsPrivateKeyOffloadComplete};
-#endif
+#endif  // defined(OPENSSL_IS_BORINGSSL)
 
 #if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE)
 static const char kSslEnginePrefix[] = "engine:";
@@ -1161,13 +1159,11 @@ static tsi_result populate_ssl_context(
         key_cert_pair->private_key,
         [&](const std::string& pem_root_certs) {
           tsi_result result = TSI_OK;
-          if (!pem_root_certs.empty()) {
-            result = ssl_ctx_use_private_key(context, pem_root_certs.data(),
-                                             pem_root_certs.length());
-            if (result != TSI_OK || !SSL_CTX_check_private_key(context)) {
-              LOG(ERROR) << "Invalid private key.";
-              return result != TSI_OK ? result : TSI_INVALID_ARGUMENT;
-            }
+          result = ssl_ctx_use_private_key(context, pem_root_certs.data(),
+                                           pem_root_certs.length());
+          if (result != TSI_OK || !SSL_CTX_check_private_key(context)) {
+            LOG(ERROR) << "Invalid private key.";
+            return result != TSI_OK ? result : TSI_INVALID_ARGUMENT;
           }
           return result;
         },
@@ -1186,7 +1182,7 @@ static tsi_result populate_ssl_context(
           return TSI_OK;
 #else
           return TSI_UNIMPLEMENTED;
-#endif  // OPENSSL_IS_BORINGSSL
+#endif  // defined(OPENSSL_IS_BORINGSSL)
         });
     if (result != TSI_OK) {
       return result;
@@ -2406,6 +2402,7 @@ static tsi_result ssl_handshaker_next(
 }
 
 static void ssl_handshaker_shutdown(tsi_handshaker* self) {
+#if defined(OPENSSL_IS_BORINGSSL)
   tsi_ssl_handshaker* impl = static_cast<tsi_ssl_handshaker*>(self);
   if (impl->ssl == nullptr) return;
   {
@@ -2433,7 +2430,7 @@ static void ssl_handshaker_shutdown(tsi_handshaker* self) {
           }
         });
   }
-#endif
+#endif  // defined(OPENSSL_IS_BORINGSSL)
 }
 
 static const tsi_handshaker_vtable handshaker_vtable = {
