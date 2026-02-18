@@ -6082,8 +6082,6 @@ grpc_cc_library(
     deps = [
         "grpc_matchers",
         "json",
-        "json_object_loader",
-        "json_writer",
         "match",
         "validation_errors",
         "xds_server_grpc",

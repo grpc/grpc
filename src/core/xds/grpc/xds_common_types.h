@@ -92,23 +92,11 @@ struct XdsGrpcService {
   std::vector<std::pair<std::string, std::string>> initial_metadata;
 };
 
-struct SafeRegexMatch {
-  std::string regex;
-
-  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-};
-
 struct HeaderMutationRules {
   bool disallow_all;
   bool disallow_is_error;
   StringMatcher allow_expression;
   StringMatcher disallow_expression;
-
-  std::string ToJsonString() const;
-
-  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-  void JsonPostLoad(const Json& json, const JsonArgs& args,
-                    ValidationErrors* errors);
 };
 
 }  // namespace grpc_core
