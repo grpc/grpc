@@ -782,6 +782,7 @@ XdsGrpcService ParseXdsGrpcService(
 //
 // ParseHeaderMutationRules()
 //
+namespace {
 
 StringMatcher ParseRegexMatcher(
     const envoy_type_matcher_v3_RegexMatcher* regex_matcher,
@@ -796,6 +797,8 @@ StringMatcher ParseRegexMatcher(
   }
   return *string_matcher;
 }
+
+}  // namespace
 
 HeaderMutationRules ParseHeaderMutationRules(
     const XdsResourceType::DecodeContext& context,
