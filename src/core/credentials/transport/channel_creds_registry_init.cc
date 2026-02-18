@@ -22,7 +22,6 @@
 #include <grpc/support/json.h>
 #include <grpc/support/time.h>
 
-#include <cstddef>
 #include <map>
 #include <memory>
 #include <string>

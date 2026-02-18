@@ -94,11 +94,9 @@ absl::Status ValidatePemKeyCertPair(absl::string_view cert_chain,
   const std::string* private_key_string =
       std::get_if<std::string>(&private_key);
   if (private_key_string == nullptr) return absl::OkStatus();
-  std::string* private_key_string = std::get_if<std::string>(&private_key);
-  if (private_key_string == nullptr) return absl::OkStatus();
   // Check that the private key consists of valid PEM blocks.
   absl::StatusOr<EVP_PKEY*> parsed_private_key =
-      tsi::ParsePemPrivateKey(**private_key_string_string);
+      tsi::ParsePemPrivateKey(*private_key_string);
   if (!parsed_private_key.ok()) {
     return absl::Status(parsed_private_key.status().code(),
                         absl::StrCat("Failed to parse private key as PEM: ",

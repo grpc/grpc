@@ -58,12 +58,8 @@
 
 #include "src/core/credentials/transport/tls/grpc_tls_crl_provider.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
-<<<<<<< HEAD
-#include "src/core/handshaker/security/security_handshaker.h"
-=======
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
->>>>>>> ana/private_key_signer
 #include "src/core/lib/surface/init.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
@@ -351,137 +347,6 @@ static int g_ssl_ctx_ex_crl_provider_index = -1;
 static int g_ssl_ctx_ex_spiffe_bundle_map_index = -1;
 static const unsigned char kSslSessionIdContext[] = {'g', 'r', 'p', 'c'};
 static int g_ssl_ex_verified_root_cert_index = -1;
-<<<<<<< HEAD
-static int g_ssl_ex_private_key_offloading_context_index = -1;
-static int g_ssl_ctx_ex_private_key_function_index = -1;
-
-absl::StatusOr<grpc_core::PrivateKeySigner::SignatureAlgorithm>
-ToSignatureAlgorithmClass(uint16_t algorithm) {
-#if defined(OPENSSL_IS_BORINGSSL)
-  switch (algorithm) {
-    case SSL_SIGN_RSA_PKCS1_SHA256:
-      return grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha256;
-    case SSL_SIGN_RSA_PKCS1_SHA384:
-      return grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha384;
-    case SSL_SIGN_RSA_PKCS1_SHA512:
-      return grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPkcs1Sha512;
-    case SSL_SIGN_ECDSA_SECP256R1_SHA256:
-      return grpc_core::PrivateKeySigner::SignatureAlgorithm::
-          kEcdsaSecp256r1Sha256;
-    case SSL_SIGN_ECDSA_SECP384R1_SHA384:
-      return grpc_core::PrivateKeySigner::SignatureAlgorithm::
-          kEcdsaSecp384r1Sha384;
-    case SSL_SIGN_ECDSA_SECP521R1_SHA512:
-      return grpc_core::PrivateKeySigner::SignatureAlgorithm::
-          kEcdsaSecp521r1Sha512;
-    case SSL_SIGN_RSA_PSS_RSAE_SHA256:
-      return grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha256;
-    case SSL_SIGN_RSA_PSS_RSAE_SHA384:
-      return grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha384;
-    case SSL_SIGN_RSA_PSS_RSAE_SHA512:
-      return grpc_core::PrivateKeySigner::SignatureAlgorithm::kRsaPssRsaeSha512;
-  }
-#endif  // OPENSSL_IS_BORINGSSL
-  return absl::InvalidArgumentError("Unknown signature algorithm.");
-}
-
-// State associated with an SSL object for async private key operations.
-struct TlsPrivateKeyOffloadContext {
-  enum SignatureStatus {
-    // The signature operation has not yet started.
-    kNotStarted,
-    // The signature operation has been initiated.
-    kStarted,
-    // The signature operation is currently in progress waiting for an
-    // asynchronous operation.
-    kInProgressAsync,
-    // The signature operation has completed, and the signed data is available
-    // on the cached context.
-    kSignatureCompleted,
-    // The entire private key offload process for this signature is finished.
-    kFinished,
-  };
-
-  SignatureStatus status = kNotStarted;
-  // The signed_bytes are populated when the signature process is completed if
-  // the Private Key offload was successful. If there was an error during the
-  // signature, the status will be returned.
-  absl::StatusOr<std::string> signed_bytes;
-  // The handle for an in-flight async signing operation.
-  std::shared_ptr<grpc_core::AsyncSigningHandle> signing_handle;
-
-  // TSI handshake state needed to resume.
-  tsi_handshaker* handshaker;
-  tsi_handshaker_on_next_done_cb notify_cb;
-  tsi_handshaker_result* handshaker_result;
-  void* notify_user_data;
-
-  size_t received_bytes_size;
-  unsigned char* received_bytes;
-  std::string* error;
-};
-
-TlsPrivateKeyOffloadContext* GetTlsPrivateKeyOffloadContext(SSL* ssl) {
-  if (!ssl) {
-    return nullptr;
-  }
-  GRPC_CHECK_NE(g_ssl_ex_private_key_offloading_context_index, -1);
-  return static_cast<TlsPrivateKeyOffloadContext*>(
-      SSL_get_ex_data(ssl, g_ssl_ex_private_key_offloading_context_index));
-}
-
-grpc_core::PrivateKeySigner* GetPrivateKeySigner(SSL* ssl) {
-  if (!ssl) {
-    return nullptr;
-  }
-  SSL_CTX* ssl_ctx = SSL_get_SSL_CTX(ssl);
-  if (ssl_ctx == nullptr) {
-    LOG(ERROR) << "Unexpected error obtaining SSL_CTX object from SSL: ";
-    SSL_CTX_free(ssl_ctx);
-    return nullptr;
-  }
-  GRPC_CHECK_NE(g_ssl_ctx_ex_private_key_function_index, -1);
-  return static_cast<grpc_core::PrivateKeySigner*>(
-      SSL_CTX_get_ex_data(ssl_ctx, g_ssl_ctx_ex_private_key_function_index));
-}
-
-#if defined(OPENSSL_IS_BORINGSSL)
-void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
-                                absl::StatusOr<std::string> signed_data) {
-  ctx->signed_bytes = std::move(signed_data);
-  if (ctx->status != TlsPrivateKeyOffloadContext::kInProgressAsync) {
-    ctx->status = TlsPrivateKeyOffloadContext::kSignatureCompleted;
-    return;
-  }
-  ctx->status = TlsPrivateKeyOffloadContext::kSignatureCompleted;
-  if (!ctx->signed_bytes.ok()) {
-    // Notify the TSI layer to re-enter the handshake.
-    // This call is thread-safe as per TSI requirements for the callback.
-    if (ctx->notify_cb) {
-      ctx->notify_cb(TSI_INTERNAL_ERROR, ctx->notify_user_data, nullptr, 0,
-                     ctx->handshaker_result);
-    }
-    return;
-  }
-  const uint8_t* bytes_to_send = nullptr;
-  size_t bytes_to_send_size = 0;
-  std::string error;
-  // Once the signed bytes are obtained, tell everything to resume the pending
-  // async operation.
-  tsi_result result = ssl_handshaker_next(
-      ctx->handshaker, nullptr, 0, &bytes_to_send, &bytes_to_send_size,
-      &ctx->handshaker_result, ctx->notify_cb, ctx->notify_user_data, &error);
-  if (result != TSI_ASYNC) {
-    // Notify the TSI layer to re-enter the handshake. This call is
-    // thread-safe as per TSI requirements for the callback.
-    if (ctx->notify_cb) {
-      ctx->notify_cb(result, ctx->notify_user_data, bytes_to_send,
-                     bytes_to_send_size, ctx->handshaker_result);
-    }
-  }
-}
-
-=======
 static int g_ssl_ex_handshaker_index = -1;
 static int g_ssl_ctx_ex_private_key_function_index = -1;
 
@@ -532,26 +397,16 @@ void TlsOffloadSignDoneCallback(
 }
 
 // Invoked by BoringSSL to get the result of the private key signing.
->>>>>>> ana/private_key_signer
 enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,
                                                            uint8_t* out,
                                                            size_t* out_len,
                                                            size_t max_out) {
-<<<<<<< HEAD
-  TlsPrivateKeyOffloadContext* ctx = GetTlsPrivateKeyOffloadContext(ssl);
-  if (!ctx->signed_bytes.ok()) {
-    return ssl_private_key_failure;
-  }
-  // Important bit is moving the signed data where it needs to go
-  const std::string& signed_data = *ctx->signed_bytes;
-=======
   auto* handshaker = GetHandshaker(ssl);
   if (handshaker == nullptr || !handshaker->signed_bytes.ok()) {
     return ssl_private_key_failure;
   }
   // Important bit is moving the signed data where it needs to go
   const std::string& signed_data = *handshaker->signed_bytes;
->>>>>>> ana/private_key_signer
   if (signed_data.length() > max_out) {
     // Result is too large.
     return ssl_private_key_failure;
@@ -562,15 +417,6 @@ enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,
   return ssl_private_key_success;
 }
 
-<<<<<<< HEAD
-enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
-    SSL* ssl, uint8_t* out, size_t* out_len, size_t max_out,
-    uint16_t signature_algorithm, const uint8_t* in, size_t in_len) {
-  TlsPrivateKeyOffloadContext* ctx = GetTlsPrivateKeyOffloadContext(ssl);
-  ctx->status = TlsPrivateKeyOffloadContext::kStarted;
-  // Create the completion callback by binding the current context.
-  auto done_callback = absl::bind_front(TlsOffloadSignDoneCallback, ctx);
-=======
 // Invoked by BoringSSL during the handshake to do private key signing.
 enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
     SSL* ssl, uint8_t* out, size_t* out_len, size_t max_out,
@@ -580,7 +426,6 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
   // Create the completion callback by binding the current context.
   auto done_callback =
       absl::bind_front(TlsOffloadSignDoneCallback, handshaker->Ref());
->>>>>>> ana/private_key_signer
   // Call the user's async sign function
   // The contract with the user is that they MUST invoke the callback when
   // complete in their implementation, and their impl MUST not block.
@@ -596,31 +441,6 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
       signer->Sign(absl::string_view(reinterpret_cast<const char*>(in), in_len),
                    *algorithm, done_callback);
   // Handle synchronous return.
-<<<<<<< HEAD
-  if (auto* status_or_string =
-          std::get_if<absl::StatusOr<std::string>>(&result)) {
-    if (status_or_string->ok()) {
-      std::string out_bytes = **status_or_string;
-      if (out_bytes.size() > max_out) {
-        return ssl_private_key_failure;
-      }
-      *out_len = out_bytes.size();
-      memcpy(out, out_bytes.c_str(), *out_len);
-      return ssl_private_key_success;
-    } else {
-      return ssl_private_key_failure;
-    }
-  }
-  // Handle asynchronous return.
-  if (auto* handle =
-          std::get_if<std::shared_ptr<grpc_core::AsyncSigningHandle>>(
-              &result)) {
-    ctx->signing_handle = std::move(*handle);
-    ctx->status = TlsPrivateKeyOffloadContext::kInProgressAsync;
-    return ssl_private_key_retry;
-  }
-  return ssl_private_key_retry;
-=======
   return grpc_core::MatchMutable(
       &result,
       [&](absl::StatusOr<std::string>* status_or_string) {
@@ -648,18 +468,13 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
         handshaker->signing_handle = std::move(*async_handler);
         return ssl_private_key_retry;
       });
->>>>>>> ana/private_key_signer
 }
 
 const SSL_PRIVATE_KEY_METHOD TlsOffloadPrivateKeyMethod = {
     TlsPrivateKeySignWrapper,
     nullptr,  // decrypt not implemented for this use case
     TlsPrivateKeyOffloadComplete};
-<<<<<<< HEAD
-#endif
-=======
 #endif  // defined(OPENSSL_IS_BORINGSSL)
->>>>>>> ana/private_key_signer
 
 #if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE)
 static const char kSslEnginePrefix[] = "engine:";
@@ -691,26 +506,6 @@ static void verified_root_cert_free(void* /*parent*/, void* ptr,
                                     CRYPTO_EX_DATA* /*ad*/, int /*index*/,
                                     long /*argl*/, void* /*argp*/) {
   X509_free(static_cast<X509*>(ptr));
-}
-
-static void private_key_offloading_context_free(void* parent, void* ptr,
-                                                CRYPTO_EX_DATA* /*ad*/,
-                                                int /*index*/, long /*argl*/,
-                                                void* /*argp*/) {
-  TlsPrivateKeyOffloadContext* ctx =
-      static_cast<TlsPrivateKeyOffloadContext*>(ptr);
-  if (ctx == nullptr) {
-    return;
-  }
-  if (ctx->status == TlsPrivateKeyOffloadContext::kInProgressAsync &&
-      ctx->signing_handle != nullptr) {
-    SSL* ssl = static_cast<SSL*>(parent);
-    grpc_core::PrivateKeySigner* signer = GetPrivateKeySigner(ssl);
-    if (signer != nullptr) {
-      signer->Cancel(ctx->signing_handle);
-    }
-  }
-  delete ctx;
 }
 
 static void init_openssl(void) {
@@ -777,15 +572,6 @@ static void init_openssl(void) {
       0, nullptr, nullptr, nullptr, verified_root_cert_free);
   GRPC_CHECK_NE(g_ssl_ex_verified_root_cert_index, -1);
 
-<<<<<<< HEAD
-  g_ssl_ctx_ex_private_key_function_index =
-      SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
-  GRPC_CHECK_NE(g_ssl_ctx_ex_private_key_function_index, -1);
-
-  g_ssl_ex_private_key_offloading_context_index = SSL_get_ex_new_index(
-      0, nullptr, nullptr, nullptr, private_key_offloading_context_free);
-  GRPC_CHECK_NE(g_ssl_ex_private_key_offloading_context_index, -1);
-=======
   g_ssl_ex_handshaker_index =
       SSL_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
   GRPC_CHECK_NE(g_ssl_ex_handshaker_index, -1);
@@ -793,7 +579,6 @@ static void init_openssl(void) {
   g_ssl_ctx_ex_private_key_function_index =
       SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
   GRPC_CHECK_NE(g_ssl_ctx_ex_private_key_function_index, -1);
->>>>>>> ana/private_key_signer
 }
 // --- Ssl utils. ---
 
@@ -1373,21 +1158,11 @@ static tsi_result populate_ssl_context(
         key_cert_pair->private_key,
         [&](const std::string& pem_root_certs) {
           tsi_result result = TSI_OK;
-<<<<<<< HEAD
-          if (!pem_root_certs.empty()) {
-            result = ssl_ctx_use_private_key(context, pem_root_certs.data(),
-                                             pem_root_certs.length());
-            if (result != TSI_OK || !SSL_CTX_check_private_key(context)) {
-              LOG(ERROR) << "Invalid private key.";
-              return TSI_INVALID_ARGUMENT;
-            }
-=======
           result = ssl_ctx_use_private_key(context, pem_root_certs.data(),
                                            pem_root_certs.length());
           if (result != TSI_OK || !SSL_CTX_check_private_key(context)) {
             LOG(ERROR) << "Invalid private key.";
             return result != TSI_OK ? result : TSI_INVALID_ARGUMENT;
->>>>>>> ana/private_key_signer
           }
           return result;
         },
@@ -1403,15 +1178,10 @@ static tsi_result populate_ssl_context(
               return TSI_INTERNAL_ERROR;
             }
           }
-<<<<<<< HEAD
-#endif  // OPENSSL_IS_BORINGSSL
-          return TSI_OK;
-=======
           return TSI_OK;
 #else
           return TSI_UNIMPLEMENTED;
 #endif  // defined(OPENSSL_IS_BORINGSSL)
->>>>>>> ana/private_key_signer
         });
     if (result != TSI_OK) {
       return result;
@@ -2403,17 +2173,8 @@ static tsi_result ssl_handshaker_process_bytes_from_peer(
 }
 
 static void ssl_handshaker_destroy(tsi_handshaker* self) {
-<<<<<<< HEAD
-  tsi_ssl_handshaker* impl = reinterpret_cast<tsi_ssl_handshaker*>(self);
-  SSL_free(impl->ssl);
-  BIO_free(impl->network_io);
-  gpr_free(impl->outgoing_bytes_buffer);
-  tsi_ssl_handshaker_factory_unref(impl->factory_ref);
-  delete impl;
-=======
   tsi_ssl_handshaker* impl = static_cast<tsi_ssl_handshaker*>(self);
   impl->Unref();
->>>>>>> ana/private_key_signer
 }
 
 // Removes the bytes remaining in |impl->SSL|'s read BIO and writes them to
@@ -2476,43 +2237,12 @@ static tsi_result ssl_handshaker_write_output_buffer(tsi_handshaker* self,
   return status;
 }
 
-<<<<<<< HEAD
-static tsi_result ssl_handshaker_next(
-    tsi_handshaker* self, const unsigned char* received_bytes,
-    size_t received_bytes_size, const unsigned char** bytes_to_send,
-    size_t* bytes_to_send_size, tsi_handshaker_result** handshaker_result,
-    tsi_handshaker_on_next_done_cb cb, void* user_data, std::string* error) {
-  tsi_ssl_handshaker* impl = reinterpret_cast<tsi_ssl_handshaker*>(self);
-  TlsPrivateKeyOffloadContext* offload_context =
-      GetTlsPrivateKeyOffloadContext(impl->ssl);
-  // If this is a re-entry from an async private key operation, use the saved
-  // state.
-  if (offload_context != nullptr &&
-      offload_context->status ==
-          TlsPrivateKeyOffloadContext::kSignatureCompleted) {
-    received_bytes = offload_context->received_bytes;
-    received_bytes_size = offload_context->received_bytes_size;
-    error = offload_context->error;
-    // We're re-entering, so we don't need the async_state anymore for saving
-    // arguments. It will be deleted at the end of this function if not
-    // TSI_ASYNC.
-  } else {
-    // Input sanity check.
-    if ((received_bytes_size > 0 && received_bytes == nullptr) ||
-        bytes_to_send == nullptr || bytes_to_send_size == nullptr ||
-        handshaker_result == nullptr) {
-      if (error != nullptr) *error = "invalid argument";
-      return TSI_INVALID_ARGUMENT;
-    }
-  }
-=======
 static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self) {
   tsi_ssl_handshaker* impl = reinterpret_cast<tsi_ssl_handshaker*>(self);
   const unsigned char* received_bytes =
       impl->handshaker_next_args->received_bytes;
   size_t received_bytes_size = impl->handshaker_next_args->received_bytes_size;
   std::string* error = impl->handshaker_next_args->error;
->>>>>>> ana/private_key_signer
   // If there are received bytes, process them first.
   tsi_result status = TSI_OK;
   size_t bytes_written = 0;
@@ -2538,21 +2268,6 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self) {
         status =
             ssl_handshaker_write_output_buffer(self, &bytes_written, error);
         if (status != TSI_OK) {
-<<<<<<< HEAD
-          if (status == TSI_ASYNC) {
-            // Fetch the offload context.
-            GRPC_CHECK_NE(offload_context, nullptr);
-            offload_context->notify_cb = cb;
-            offload_context->notify_user_data = user_data;
-            offload_context->received_bytes =
-                remaining_bytes_to_write_to_openssl + bytes_written_to_openssl;
-            offload_context->received_bytes_size =
-                remaining_bytes_to_write_to_openssl_size -
-                bytes_written_to_openssl;
-            offload_context->error = error;
-          }
-=======
->>>>>>> ana/private_key_signer
           return status;
         }
         status = ssl_handshaker_do_handshake(impl, error);
@@ -2565,56 +2280,24 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self) {
       impl->handshaker_next_args->received_bytes_size -=
           bytes_written_to_openssl;
     }
-<<<<<<< HEAD
-  } else if (offload_context != nullptr &&
-             offload_context->status ==
-                 TlsPrivateKeyOffloadContext::kSignatureCompleted) {
-=======
   } else if (impl->key_signer != nullptr) {
->>>>>>> ana/private_key_signer
     // During the PrivateKeyOffload signature, an empty call to
     // ssl_handshaker_do_handshake needs to be forced  after the async offload
     // has completed.
     status = ssl_handshaker_do_handshake(impl, error);
-<<<<<<< HEAD
-    offload_context->status = TlsPrivateKeyOffloadContext::kFinished;
-  }
-
-  if (status != TSI_OK) {
-    if (status == TSI_ASYNC) {
-      GRPC_CHECK_NE(offload_context, nullptr);
-      offload_context->notify_cb = cb;
-      offload_context->notify_user_data = user_data;
-      offload_context->error = error;
-    }
-=======
     impl->signature_ready = false;
   }
 
   if (status != TSI_OK) {
->>>>>>> ana/private_key_signer
     return status;
   }
   // Get bytes to send to the peer, if available.
   status = ssl_handshaker_write_output_buffer(self, &bytes_written, error);
   if (status != TSI_OK) {
-<<<<<<< HEAD
-    if (status == TSI_ASYNC) {
-      GRPC_CHECK_NE(offload_context, nullptr);
-      offload_context->notify_cb = cb;
-      offload_context->notify_user_data = user_data;
-      offload_context->error = error;
-    }
-    return status;
-  }
-  *bytes_to_send = impl->outgoing_bytes_buffer;
-  *bytes_to_send_size = bytes_written;
-=======
     return status;
   }
   impl->handshaker_next_args->bytes_to_send = impl->outgoing_bytes_buffer;
   impl->handshaker_next_args->bytes_to_send_size = bytes_written;
->>>>>>> ana/private_key_signer
   // If handshake completes, create tsi_handshaker_result.
   if (ssl_handshaker_get_result(impl) == TSI_HANDSHAKE_IN_PROGRESS) {
     impl->handshaker_next_args->handshaker_result = nullptr;
@@ -2622,21 +2305,12 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self) {
     // Any bytes that remain in |impl->ssl|'s read BIO after the handshake is
     // complete must be extracted and set to the unused bytes of the
     // handshaker result. This indicates to the gRPC stack that there are
-    // unconsumed bytes meant for the frame protector.
+    // bytes from the peer that must be processed.
     unsigned char* unused_bytes = nullptr;
     size_t unused_bytes_size = 0;
     status =
         ssl_bytes_remaining(impl, &unused_bytes, &unused_bytes_size, error);
     if (status != TSI_OK) {
-<<<<<<< HEAD
-      if (status == TSI_ASYNC) {
-        GRPC_CHECK_NE(offload_context, nullptr);
-        offload_context->notify_cb = cb;
-        offload_context->notify_user_data = user_data;
-        offload_context->error = error;
-      }
-=======
->>>>>>> ana/private_key_signer
       return status;
     }
     if (unused_bytes_size > received_bytes_size) {
@@ -2669,21 +2343,6 @@ static tsi_result ssl_handshaker_next_impl(tsi_ssl_handshaker* self) {
   return status;
 }
 
-<<<<<<< HEAD
-static void ssl_handshaker_shutdown(tsi_handshaker* self) {
-  tsi_ssl_handshaker* impl = reinterpret_cast<tsi_ssl_handshaker*>(self);
-  TlsPrivateKeyOffloadContext* offload_context =
-      GetTlsPrivateKeyOffloadContext(impl->ssl);
-  grpc_core::PrivateKeySigner* sign_function = GetPrivateKeySigner(impl->ssl);
-  if (offload_context != nullptr && sign_function != nullptr &&
-      offload_context->signing_handle != nullptr &&
-      offload_context->status ==
-          TlsPrivateKeyOffloadContext::kInProgressAsync) {
-    sign_function->Cancel(std::move(offload_context->signing_handle));
-  }
-}
-
-=======
 // Wrapper for ssl_handshaker_next_impl() when called from an async callback.
 // For example, this would be called from the key signer's callback.
 static void ssl_handshaker_next_async(tsi_ssl_handshaker* self) {
@@ -2773,7 +2432,6 @@ static void ssl_handshaker_shutdown(tsi_handshaker* self) {
 #endif  // defined(OPENSSL_IS_BORINGSSL)
 }
 
->>>>>>> ana/private_key_signer
 static const tsi_handshaker_vtable handshaker_vtable = {
     nullptr,  // get_bytes_to_send_to_peer -- deprecated
     nullptr,  // process_bytes_from_peer   -- deprecated
@@ -2782,11 +2440,7 @@ static const tsi_handshaker_vtable handshaker_vtable = {
     nullptr,  // create_frame_protector    -- deprecated
     ssl_handshaker_destroy,
     ssl_handshaker_next,
-<<<<<<< HEAD
-    ssl_handshaker_shutdown,  // shutdown
-=======
     ssl_handshaker_shutdown,
->>>>>>> ana/private_key_signer
 };
 
 // --- tsi_ssl_handshaker_factory common methods. ---

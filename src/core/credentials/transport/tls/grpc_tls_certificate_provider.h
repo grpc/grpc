@@ -23,10 +23,8 @@
 #include <stdint.h>
 
 #include <map>
-#include <memory>
 #include <optional>
 #include <string>
-#include <vector>
 
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
