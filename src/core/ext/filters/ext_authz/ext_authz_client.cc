@@ -29,6 +29,7 @@
 #include "envoy/type/v3/http_status.upb.h"
 #include "google/protobuf/timestamp.upb.h"
 #include "google/rpc/status.upb.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/status_conversion.h"

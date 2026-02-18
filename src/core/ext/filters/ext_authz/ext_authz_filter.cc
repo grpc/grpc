@@ -67,19 +67,20 @@ absl::StatusOr<std::unique_ptr<ExtAuthzFilter>> ExtAuthzFilter::Create(
     return absl::InvalidArgumentError(
         "ext_authz: filter instance ID not found in filter config");
   }
-  std::optional<absl::string_view> server_uri =
-      args.GetString(GRPC_ARG_SERVER_URI);
-  if (!server_uri.has_value()) {
-    return absl::InvalidArgumentError(
-        "ext_authz: no server URI in channel args");
-  }
-  auto xds_client = GrpcXdsClient::GetOrCreate(*server_uri, args,
-                                               "ext_authz_filter_create");
-  if (!xds_client.ok()) {
-    return xds_client.status();
-  }
+  // std::optional<absl::string_view> server_uri =
+  //     args.GetString(GRPC_ARG_SERVER_URI);
+  // if (!server_uri.has_value()) {
+  //   return absl::InvalidArgumentError(
+  //       "ext_authz: no server URI in channel args");
+  // }
+  // auto xds_client = GrpcXdsClient::GetOrCreate(*server_uri, args,
+  //                                              "ext_authz_filter_create");
+  // if (!xds_client.ok()) {
+  //   return xds_client.status();
+  // }
   // auto ext_authz_client = MakeRefCounted<ExtAuthzClient>(
-  //     (*xds_client)->bootstrap_ptr(), (*xds_client)->transport_factory()->Ref(),
+  //     (*xds_client)->bootstrap_ptr(),
+  //     (*xds_client)->transport_factory()->Ref(),
   //     (*xds_client)->engine_ptr());
   // return std::make_unique<ExtAuthzFilter>(filter_config,
   //                                         std::move(ext_authz_client));
@@ -118,12 +119,14 @@ absl::Status ExtAuthzFilter::Call::OnClientInitialMetadata(
   md.Log([&](absl::string_view key, absl::string_view value) {
     //  if the header is matched by the disallowed_headers config field, it will
     //  not be added to this map
-    if (filter->config_->isHeaderPresentInDisallowedHeaders(std::string(key))) {
+    if (filter->filter_config_->ext_authz.isHeaderPresentInDisallowedHeaders(
+            std::string(key))) {
       return;
     }
     // if the allowed_headers config field is unset or matches the header, the
     // header will be added to this map.
-    if (filter->config_->isHeaderPresentInAllowedHeaders(std::string(key))) {
+    if (filter->filter_config_->ext_authz.isHeaderPresentInAllowedHeaders(
+            std::string(key))) {
       metadata_list.emplace_back(std::string(key), std::string(value));
     }
     // Otherwise, the header will be excluded from this map.

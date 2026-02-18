@@ -27,11 +27,12 @@
 #include <vector>
 
 #include "envoy/service/auth/v3/attribute_context.upb.h"
-#include "ext_authz_service_config_parser.h"
+// #include "src/core/ext/filters/ext_authz/ext_authz_service_config_parser.h"
 #include "src/core/util/dual_ref_counted.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_transport.h"
 #include "upb/reflection/def.hpp"
