@@ -87,8 +87,7 @@ BUILD_WITH_STATIC_LIBSTDCXX = _env_bool_value(
 def check_linker_need_libatomic():
     """Test if linker on system needs libatomic."""
     code_test = (
-        b"#include <atomic>\n"
-        + b"int main() { return std::atomic<int64_t>{}; }"
+        b"#include <atomic>\n" + b"int main() { return std::atomic<int64_t>{}; }"
     )
     cxx = shlex.split(os.environ.get("CXX", "c++"))
     cpp_test = subprocess.Popen(
@@ -128,6 +127,34 @@ class BuildExt(build_ext.build_ext):
         if new_ext_suffix and filename.endswith(orig_ext_suffix):
             filename = filename[: -len(orig_ext_suffix)] + new_ext_suffix
         return filename
+
+    def build_extensions(self):
+        # This is to let UnixCompiler get either C or C++ compiler options depending on the source.
+        # Note that this doesn't work for MSVCCompiler and will be handled by _spawn_patch.py.
+        old_compile = self.compiler._compile
+
+        def new_compile(obj, src, ext, cc_args, extra_postargs, pp_opts):
+            # NOTE: keep in sync with setup.py EXTRA_ENV_COMPILE_ARGS.
+            cpp_specific_args = {"-std=c++17", "-stdlib=libc++"}
+            c_specific_args = {"-std=c11"}
+
+            args_to_remove = set()
+            if src.endswith(".c"):
+                # Remove cpp-specific args when compiling c.
+                args_to_remove = cpp_specific_args
+            elif src.endswith((".cc", ".cpp")):
+                # Remove c-specific args when compiling c++.
+                args_to_remove = c_specific_args
+
+            if args_to_remove:
+                extra_postargs = [
+                    arg for arg in extra_postargs if arg not in args_to_remove
+                ]
+
+            return old_compile(obj, src, ext, cc_args, extra_postargs, pp_opts)
+
+        self.compiler._compile = new_compile
+        build_ext.build_ext.build_extensions(self)
 
 
 # When building extensions for macOS on a system running macOS 11.0 or newer,
@@ -188,12 +215,9 @@ EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
 if BUILD_WITH_STATIC_LIBSTDCXX:
     EXTRA_LINK_ARGS.append("-static-libstdc++")
 
-CC_FILES = [
-    os.path.normpath(cc_file) for cc_file in observability_lib_deps.CC_FILES
-]
+CC_FILES = [os.path.normpath(cc_file) for cc_file in observability_lib_deps.CC_FILES]
 CC_INCLUDES = [
-    os.path.normpath(include_dir)
-    for include_dir in observability_lib_deps.CC_INCLUDES
+    os.path.normpath(include_dir) for include_dir in observability_lib_deps.CC_INCLUDES
 ]
 
 DEFINE_MACROS = (("_WIN32_WINNT", 0x600),)
@@ -251,9 +275,7 @@ def extension_modules():
 
     plugin_sources = CC_FILES
 
-    O11Y_CC_PATHS = (
-        os.path.join("grpc_observability", f) for f in O11Y_CC_SRCS
-    )
+    O11Y_CC_PATHS = (os.path.join("grpc_observability", f) for f in O11Y_CC_SRCS)
     plugin_sources += O11Y_CC_PATHS
 
     plugin_sources += cython_module_files
@@ -271,9 +293,7 @@ def extension_modules():
     if BUILD_WITH_CYTHON:
         from Cython import Build
 
-        return Build.cythonize(
-            extensions, compiler_directives={"language_level": "3"}
-        )
+        return Build.cythonize(extensions, compiler_directives={"language_level": "3"})
     else:
         return extensions
 
