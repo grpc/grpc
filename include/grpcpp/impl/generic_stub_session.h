@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #ifndef GRPCPP_IMPL_GENERIC_STUB_SESSION_H
 #define GRPCPP_IMPL_GENERIC_STUB_SESSION_H
 
