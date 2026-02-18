@@ -21,6 +21,7 @@
 
 #include <memory>
 
+#include "src/core/ext/filters/ext_authz/ext_authz_client.h"
 #include "src/core/ext/filters/ext_authz/ext_authz_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
@@ -49,12 +50,14 @@ class ExtAuthzFilter : public ImplementChannelFilter<ExtAuthzFilter> {
 
    private:
     Mutex mu_;
-    std::map<std::string, RefCountedPtr<Channel>> channels_ ABSL_GUARDED_BY(mu_);
+    std::map<std::string, RefCountedPtr<Channel>> channels_
+        ABSL_GUARDED_BY(mu_);
   };
 
   class Call {
    public:
-    absl::Status OnClientInitialMetadata(ClientMetadata& md, ExtAuthzFilter* filter);
+    absl::Status OnClientInitialMetadata(ClientMetadata& md,
+                                         ExtAuthzFilter* filter);
     static inline const NoInterceptor OnClientToServerHalfClose;
     static inline const NoInterceptor OnServerInitialMetadata;
     static inline const NoInterceptor OnServerTrailingMetadata;
@@ -67,12 +70,13 @@ class ExtAuthzFilter : public ImplementChannelFilter<ExtAuthzFilter> {
   };
 
  private:
-  explicit ExtAuthzFilter(const ExtAuthz* config,
-                          RefCountedPtr<ChannelCache> cache)
-      : config_(config), cache_(std::move(cache)) {}
+  explicit ExtAuthzFilter(const ExtAuthzParsedConfig::Config* filter_config,
+                          RefCountedPtr<ExtAuthzClient> ext_authz_client)
+      : filter_config_(filter_config),
+        ext_authz_client_(std::move(ext_authz_client)) {}
 
-  const ExtAuthz* config_;
-  RefCountedPtr<ChannelCache> cache_;
+  const ExtAuthzParsedConfig::Config* filter_config_;
+  RefCountedPtr<ExtAuthzClient> ext_authz_client_;
 };
 
 }  // namespace grpc_core

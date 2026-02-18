@@ -32,7 +32,7 @@
 #include "src/core/xds/grpc/xds_http_rbac_filter.h"
 #include "src/core/xds/grpc/xds_http_stateful_session_filter.h"
 #include "src/core/xds/grpc/xds_metadata_parser.h"
-#include "xds_http_ext_authz_filter.h"
+#include "src/core/xds/grpc/xds_http_ext_authz_filter.h"
 
 namespace grpc_core {
 

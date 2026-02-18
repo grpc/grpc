@@ -358,9 +358,6 @@ GrpcXdsClient::GrpcXdsClient(
             ReportCallbackMetrics(reporter);
           },
           Duration::Seconds(5), kMetricConnected, kMetricResources)),
-      ext_authz_client_(MakeRefCounted<ExtAuthzClient>(
-          bootstrap, transport_factory,
-          grpc_event_engine::experimental::GetDefaultEventEngine())),
       lrs_client_(MakeRefCounted<LrsClient>(
           std::move(bootstrap), UserAgentName(), UserAgentVersion(),
           std::move(transport_factory),
@@ -369,7 +366,6 @@ GrpcXdsClient::GrpcXdsClient(
 void GrpcXdsClient::Orphaned() {
   registered_metric_callback_.reset();
   XdsClient::Orphaned();
-  ext_authz_client_.reset();
   lrs_client_.reset();
   MutexLock lock(g_mu);
   auto it = g_xds_client_map->find(key_);
@@ -381,7 +377,6 @@ void GrpcXdsClient::Orphaned() {
 
 void GrpcXdsClient::ResetBackoff() {
   XdsClient::ResetBackoff();
-  ext_authz_client_->ResetBackoff();
   lrs_client_->ResetBackoff();
 }
 
