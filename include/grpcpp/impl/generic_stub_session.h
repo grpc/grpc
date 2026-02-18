@@ -20,9 +20,7 @@
 #define GRPCPP_IMPL_GENERIC_STUB_SESSION_H
 
 namespace grpc {
-namespace internal {
-
-}  // namespace internal
+namespace internal {}  // namespace internal
 }  // namespace grpc
 
 #endif  // GRPCPP_IMPL_GENERIC_STUB_SESSION_H
