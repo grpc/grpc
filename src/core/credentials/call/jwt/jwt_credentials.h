@@ -91,12 +91,6 @@ class grpc_service_account_jwt_access_credentials
 
   grpc_auth_json_key key_;
   gpr_timespec jwt_lifetime_;
-
-
-  std::string build_regional_access_boundary_url() {
-    return absl::StrFormat("https://iamcredentials.googleapis.com/v1/projects/-/"
-                     "serviceAccounts/%s/allowedLocations", key_.client_email);
-  }
   grpc_core::OrphanablePtr<grpc_core::RegionalAccessBoundaryFetcher> regional_access_boundary_fetcher_;
 };
 
