@@ -117,6 +117,18 @@ std::string GoawayManager::Context::GoawayStateToString(
   }
 }
 
+absl::Status GoawayManager::Context::TriggerWriteCycle() {
+  GRPC_HTTP2_GOAWAY_LOG << "TriggerWriteCycle: current state: "
+                        << GoawayStateToString(goaway_state);
+  absl::Status status = goaway_interface->TriggerWriteCycle();
+  if (!status.ok()) {
+    GRPC_HTTP2_GOAWAY_LOG << "TriggerWriteCycle failed with status: " << status;
+    goaway_state = GoawayState::kDone;
+  }
+
+  return status;
+}
+
 std::optional<Http2Frame> GoawayManager::TestOnlyMaybeGetGoawayFrame() {
   GRPC_HTTP2_GOAWAY_LOG << "TestOnlyMaybeGetGoawayFrame: current state: "
                         << context_->GoawayStateToString(

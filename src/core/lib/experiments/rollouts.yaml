@@ -80,6 +80,8 @@
   default: false
 - name: max_inflight_pings_strict_limit
   default: true
+- name: metadata_publish_to_app_tag
+  default: true
 - name: monitoring_experiment
   default: true
 - name: pick_first_ready_to_connecting
@@ -108,11 +110,9 @@
   default: false
 - name: tcp_rcv_lowat
   default: false
-- name: track_writes_in_resource_quota
-  default: false
-- name: track_zero_copy_allocations_in_resource_quota
-  default: false
 - name: tsi_frame_protector_without_locks
   default: false
 - name: unconstrained_max_quota_buffer_size
+  default: false
+- name: use_call_event_engine_in_completion_queue
   default: false

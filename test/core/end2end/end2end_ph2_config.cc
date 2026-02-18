@@ -99,7 +99,8 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|RetryHttp2Tests.Ping"                                    \
   "|RetryHttp2Tests.BadPing"                                 \
   "|RetryHttp2Tests.RetryTransparentMaxConcurrentStreams"    \
-  "|RetryHttp2Tests.HighInitialSeqno"
+  "|RetryHttp2Tests.HighInitialSeqno"                        \
+  "|RetryHttp2Tests.CancelDuringDelay"
 
 #define LARGE_METADATA_SUITE                                                   \
   "|Http2SingleHopTests.RequestWithLargeMetadataUnderSoftLimit"                \
