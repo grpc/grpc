@@ -369,6 +369,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/transport_common.h
   - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/transport/chttp2/transport/writable_streams.h
+  - src/core/ext/transport/chttp2/transport/write_cycle.h
   - src/core/ext/transport/chttp2/transport/write_size_policy.h
   - src/core/ext/transport/inproc/inproc_transport.h
   - src/core/ext/transport/inproc/legacy_inproc_transport.h
@@ -1523,6 +1524,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/stream_lists.cc
   - src/core/ext/transport/chttp2/transport/transport_common.cc
   - src/core/ext/transport/chttp2/transport/varint.cc
+  - src/core/ext/transport/chttp2/transport/write_cycle.cc
   - src/core/ext/transport/chttp2/transport/write_size_policy.cc
   - src/core/ext/transport/chttp2/transport/writing.cc
   - src/core/ext/transport/inproc/inproc_transport.cc
@@ -2231,6 +2233,7 @@ libs:
   - src/core/xds/grpc/xds_endpoint_parser.cc
   - src/core/xds/grpc/xds_health_status.cc
   - src/core/xds/grpc/xds_http_fault_filter.cc
+  - src/core/xds/grpc/xds_http_filter.cc
   - src/core/xds/grpc/xds_http_filter_registry.cc
   - src/core/xds/grpc/xds_http_gcp_authn_filter.cc
   - src/core/xds/grpc/xds_http_rbac_filter.cc
@@ -2561,6 +2564,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/transport_common.h
   - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/transport/chttp2/transport/writable_streams.h
+  - src/core/ext/transport/chttp2/transport/write_cycle.h
   - src/core/ext/transport/chttp2/transport/write_size_policy.h
   - src/core/ext/transport/inproc/inproc_transport.h
   - src/core/ext/transport/inproc/legacy_inproc_transport.h
@@ -3110,6 +3114,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/stream_lists.cc
   - src/core/ext/transport/chttp2/transport/transport_common.cc
   - src/core/ext/transport/chttp2/transport/varint.cc
+  - src/core/ext/transport/chttp2/transport/write_cycle.cc
   - src/core/ext/transport/chttp2/transport/write_size_policy.cc
   - src/core/ext/transport/chttp2/transport/writing.cc
   - src/core/ext/transport/inproc/inproc_transport.cc
@@ -26756,6 +26761,16 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+- name: write_cycle_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/write_cycle_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: write_size_policy_test
   gtest: true
   build: test
@@ -31055,6 +31070,17 @@ targets:
   - linux
   - posix
   - mac
+- name: xds_routing_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/xds/xds_routing_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  uses_polling: false
 - name: xds_security_end2end_test
   gtest: true
   build: test

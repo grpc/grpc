@@ -243,6 +243,8 @@ Since the number of slots in a Party is 16, we need to account for all the slots
 that we use in the transport.
 We need to ensure that our slots do not exceed 16.
 
+## PH2 Client Party Slots Usage
+
 | Name | Category | Description | Max Spawns at a time | When is it spawned | Max Duration | Resolution |
 |---|---|---|---|---|---|---|
 | SecurityFrameLoop | Loop | Security Frame | 1 | After Constructor | Lifetime of the transport | Transport Close |
@@ -255,3 +257,8 @@ We need to ensure that our slots do not exceed 16.
 | Keepalive | Loop | Keepalive Loop | 1 | If Keepalive is enabled, after constructor | Lifetime of the transport | Transport Close
 | Ping | Timeout + Misc | | 4 | Sending a ping request | Timeout or a specific duration |
 | | | **Total** | 12 | | | |
+
+## PH2 Server Party Slots Usage
+
+| Name | Category | Description | Max Spawns at a time | When is it spawned | Max Duration | Resolution |
+|---|---|---|---|---|---|---|
