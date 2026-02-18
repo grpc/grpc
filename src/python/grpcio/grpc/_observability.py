@@ -19,6 +19,7 @@ import contextlib
 import logging
 import threading
 from typing import (
+    TYPE_CHECKING,
     Any,
     Generator,
     Generic,
@@ -27,7 +28,6 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
-    TYPE_CHECKING,
 )
 
 from grpc._cython import cygrpc as _cygrpc
