@@ -45,107 +45,102 @@ class SecurityTest(unittest.TestCase):
 
     def tearDown(self):
         stopped = self.server.stop(None)
-        stopped.wait(timeout=10)
+        done = stopped.wait(timeout=10)
+        self.assertTrue(done)
         # Without this sleep, the test segfaults on the PyGILState_Ensure in the PrivateKeySignerPyWrapper dtor
-        time.sleep(1)
+        # time.sleep(1)
 
     # @unittest.skip(reason="temp")
     def test_success_sync(self):
         """
         Successfully use a custom sync private key signer.
         """
-        self.stub = test_pb2_grpc.TestServiceStub(
-            grpc.secure_channel(
-                "localhost:{}".format(self.port),
-                grpc.experimental.ssl_channel_credentials_with_custom_signer(
-                    private_key_sign_fn=resources.sync_client_private_key_signer,
-                    root_certificates=resources.test_root_certificates(),
-                    certificate_chain=resources.client_certificate_chain(),
-                ),
+        with grpc.secure_channel(
+            "localhost:{}".format(self.port),
+            grpc.experimental.ssl_channel_credentials_with_custom_signer(
+                private_key_sign_fn=resources.sync_client_private_key_signer,
+                root_certificates=resources.test_root_certificates(),
+                certificate_chain=resources.client_certificate_chain(),
+            ),
+            (
                 (
-                    (
-                        "grpc.ssl_target_name_override",
-                        _SERVER_HOST_OVERRIDE,
-                    ),
+                    "grpc.ssl_target_name_override",
+                    _SERVER_HOST_OVERRIDE,
                 ),
-            )
-        )
-        response = self.stub.EmptyCall(empty_pb2.Empty())
-        self.assertIsInstance(response, empty_pb2.Empty)
+            ),
+        ) as channel:
+            stub = test_pb2_grpc.TestServiceStub(channel)
+            response = stub.EmptyCall(empty_pb2.Empty())
+            self.assertIsInstance(response, empty_pb2.Empty)
 
     # @unittest.skip(reason="temp")
     def test_success_async(self):
         """
         Successfully use a custom async private key signer.
         """
-        self.stub = test_pb2_grpc.TestServiceStub(
-            grpc.secure_channel(
-                "localhost:{}".format(self.port),
-                grpc.experimental.ssl_channel_credentials_with_custom_signer(
-                    private_key_sign_fn=resources.async_client_private_key_signer,
-                    root_certificates=resources.test_root_certificates(),
-                    certificate_chain=resources.client_certificate_chain(),
-                ),
+        with grpc.secure_channel(
+            "localhost:{}".format(self.port),
+            grpc.experimental.ssl_channel_credentials_with_custom_signer(
+                private_key_sign_fn=resources.async_client_private_key_signer,
+                root_certificates=resources.test_root_certificates(),
+                certificate_chain=resources.client_certificate_chain(),
+            ),
+            (
                 (
-                    (
-                        "grpc.ssl_target_name_override",
-                        _SERVER_HOST_OVERRIDE,
-                    ),
+                    "grpc.ssl_target_name_override",
+                    _SERVER_HOST_OVERRIDE,
                 ),
-            )
-        )
-        response = self.stub.EmptyCall(empty_pb2.Empty())
-        self.assertIsInstance(response, empty_pb2.Empty)
+            ),
+        ) as channel:
+            stub = test_pb2_grpc.TestServiceStub(channel)
+            response = stub.EmptyCall(empty_pb2.Empty())
+            self.assertIsInstance(response, empty_pb2.Empty)
 
     # @unittest.skip(reason="segfaulting")
     def test_bad_sync_signer(self):
         """
         Expect failure using a custom sync private key signer.
         """
-        self.stub = test_pb2_grpc.TestServiceStub(
-            grpc.secure_channel(
-                "localhost:{}".format(self.port),
-                grpc.experimental.ssl_channel_credentials_with_custom_signer(
-                    private_key_sign_fn=resources.sync_bad_client_private_key_signer,
-                    root_certificates=resources.test_root_certificates(),
-                    certificate_chain=resources.client_certificate_chain(),
-                ),
+        with grpc.secure_channel(
+            "localhost:{}".format(self.port),
+            grpc.experimental.ssl_channel_credentials_with_custom_signer(
+                private_key_sign_fn=resources.sync_bad_client_private_key_signer,
+                root_certificates=resources.test_root_certificates(),
+                certificate_chain=resources.client_certificate_chain(),
+            ),
+            (
                 (
-                    (
-                        "grpc.ssl_target_name_override",
-                        _SERVER_HOST_OVERRIDE,
-                    ),
+                    "grpc.ssl_target_name_override",
+                    _SERVER_HOST_OVERRIDE,
                 ),
-            )
-        )
-        with self.assertRaises(Exception) as context:
-            response = self.stub.EmptyCall(empty_pb2.Empty())
-            # Check result better
+            ),
+        ) as channel:
+            stub = test_pb2_grpc.TestServiceStub(channel)
+            with self.assertRaises(Exception) as context:
+                stub.EmptyCall(empty_pb2.Empty())
 
     # @unittest.skip(reason="segfaulting")
     def test_bad_async_signer(self):
         """
         Expect failure using a custom async private key signer.
         """
-        self.stub = test_pb2_grpc.TestServiceStub(
-            grpc.secure_channel(
-                "localhost:{}".format(self.port),
-                grpc.experimental.ssl_channel_credentials_with_custom_signer(
-                    private_key_sign_fn=resources.bad_async_client_private_key_signer,
-                    root_certificates=resources.test_root_certificates(),
-                    certificate_chain=resources.client_certificate_chain(),
-                ),
+        with grpc.secure_channel(
+            "localhost:{}".format(self.port),
+            grpc.experimental.ssl_channel_credentials_with_custom_signer(
+                private_key_sign_fn=resources.bad_async_client_private_key_signer,
+                root_certificates=resources.test_root_certificates(),
+                certificate_chain=resources.client_certificate_chain(),
+            ),
+            (
                 (
-                    (
-                        "grpc.ssl_target_name_override",
-                        _SERVER_HOST_OVERRIDE,
-                    ),
+                    "grpc.ssl_target_name_override",
+                    _SERVER_HOST_OVERRIDE,
                 ),
-            )
-        )
-        with self.assertRaises(Exception) as context:
-            response = self.stub.EmptyCall(empty_pb2.Empty())
-            # TODO check result better
+            ),
+        ) as channel:
+            stub = test_pb2_grpc.TestServiceStub(channel)
+            with self.assertRaises(Exception) as context:
+                stub.EmptyCall(empty_pb2.Empty())
 
     # @unittest.skip(reason="temp")
     def test_async_signer_with_cancel(self):
@@ -174,8 +169,8 @@ class SecurityTest(unittest.TestCase):
                 ),
             ),
         )
-        self.stub = test_pb2_grpc.TestServiceStub(channel)
-        future = self.stub.EmptyCall.future(empty_pb2.Empty())
+        stub = test_pb2_grpc.TestServiceStub(channel)
+        future = stub.EmptyCall.future(empty_pb2.Empty())
         # Let it get into the handshake where it should loop infinitely
         self.assertTrue(cancel_callable.handshake_started_event.wait(timeout=1))
         # Ensure it's not cancelled yet
@@ -207,9 +202,9 @@ class SecurityTest(unittest.TestCase):
                     ),
                 ),
             ) as channel:
-                self.stub = test_pb2_grpc.TestServiceStub(channel)
+                stub = test_pb2_grpc.TestServiceStub(channel)
                 # Let it timeout and just go out of scope
-                response = self.stub.EmptyCall(empty_pb2.Empty(), timeout=1)
+                response = stub.EmptyCall(empty_pb2.Empty(), timeout=1)
                 # As everything goes out of scope, we just want to make sure we don't segfault or anything
 
     # @unittest.skip(reason="temp")
