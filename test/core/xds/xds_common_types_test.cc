@@ -46,6 +46,8 @@
 #include "src/core/util/time.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"
+#include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/json/json_reader.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
@@ -1362,6 +1364,29 @@ TEST_F(ParseHeaderMutationRulesTest, InvalidRegex) {
           .message(),
       "validation failed: [field:header_mutation_rules.allow_expression "
       "error:Invalid regex string specified in matcher: missing ]: []");
+}
+
+TEST_F(ParseHeaderMutationRulesTest, JsonConversion) {
+  HeaderMutationRules rules;
+  rules.disallow_all = true;
+  rules.disallow_is_error = true;
+  auto allow_matcher =
+      StringMatcher::Create(StringMatcher::Type::kSafeRegex, "allow");
+  ASSERT_TRUE(allow_matcher.ok());
+  rules.allow_expression = *allow_matcher;
+  auto disallow_matcher =
+      StringMatcher::Create(StringMatcher::Type::kSafeRegex, "disallow");
+  ASSERT_TRUE(disallow_matcher.ok());
+  rules.disallow_expression = *disallow_matcher;
+  std::string json_string = rules.ToJsonString();
+  auto json = JsonParse(json_string);
+  ASSERT_TRUE(json.ok()) << json.status();
+  auto parsed_rules = LoadFromJson<HeaderMutationRules>(*json);
+  ASSERT_TRUE(parsed_rules.ok()) << parsed_rules.status();
+  EXPECT_EQ(parsed_rules->disallow_all, rules.disallow_all);
+  EXPECT_EQ(parsed_rules->disallow_is_error, rules.disallow_is_error);
+  EXPECT_EQ(parsed_rules->allow_expression, rules.allow_expression);
+  EXPECT_EQ(parsed_rules->disallow_expression, rules.disallow_expression);
 }
 
 }  // namespace
