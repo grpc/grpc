@@ -1715,27 +1715,27 @@ try:
         (server_host, server_port) = server[1].split(":")
         server_addresses[server_name] = (server_host, server_port)
 
-#    for server_name, server_address in list(server_addresses.items()):
-#        (server_host, server_port) = server_address
-#        server_language = _LANGUAGES.get(server_name, None)
-#        skip_server = []  # test cases unimplemented by server
-#        if server_language:
-#            skip_server = server_language.unimplemented_test_cases_server()
-#        for language in languages:
-#            for test_case in _TEST_CASES:
-#                if not test_case in language.unimplemented_test_cases():
-#                    if not test_case in skip_server:
-#                        test_job = cloud_to_cloud_jobspec(
-#                            language,
-#                            test_case,
-#                            server_name,
-#                            server_host,
-#                            server_port,
-#                            docker_image=docker_images.get(str(language)),
-#                            transport_security=args.transport_security,
-#                            manual_cmd_log=client_manual_cmd_log,
-#                        )
-#                        jobs.append(test_job)
+    for server_name, server_address in list(server_addresses.items()):
+        (server_host, server_port) = server_address
+        server_language = _LANGUAGES.get(server_name, None)
+        skip_server = []  # test cases unimplemented by server
+        if server_language:
+            skip_server = server_language.unimplemented_test_cases_server()
+        for language in languages:
+            for test_case in _TEST_CASES:
+                if not test_case in language.unimplemented_test_cases():
+                    if not test_case in skip_server:
+                        test_job = cloud_to_cloud_jobspec(
+                            language,
+                            test_case,
+                            server_name,
+                            server_host,
+                            server_port,
+                            docker_image=docker_images.get(str(language)),
+                            transport_security=args.transport_security,
+                            manual_cmd_log=client_manual_cmd_log,
+                        )
+                        jobs.append(test_job)
 
         if args.http2_interop:
             for test_case in _HTTP2_TEST_CASES:
@@ -1817,7 +1817,8 @@ try:
                 if "all" in args.language or l in args.language
             )
             if len(languages_for_mcs_cs) > 0:
-                print('Using java for MCS connection scaling server ignoring any args for server languages')
+                if args.server != 'java':
+                    print('Using java for MCS connection scaling server to be used by all MCS connection scaling clients.')
                 mcs_server_jobspec = server_jobspec(
                     _LANGUAGES['java'],
                     docker_images.get('java'),
@@ -1826,6 +1827,7 @@ try:
                     set_max_concurrent_streams_limit=True,
                 )
                 mcs_server_job = dockerjob.DockerJob(mcs_server_jobspec)
+                time.sleep(30)
             
                 for language in languages_for_mcs_cs:
                     test_job = cloud_to_cloud_jobspec(

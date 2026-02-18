@@ -23,7 +23,7 @@ git submodule update --init
 # Clone repositories for languages tested by the interop test suite
 # Also show the current commit SHA that will be tested.
 git clone --recursive https://github.com/grpc/grpc-go ./../grpc-go && (cd ../grpc-go; git rev-parse HEAD)
-git clone --recursive https://github.com/kannanjgithub/grpc-java --single-branch --branch mcs-interop-tests ./../grpc-java && (cd ../grpc-java; git rev-parse HEAD)
+git clone --recursive https://github.com/grpc/grpc-java ./../grpc-java && (cd ../grpc-java; git rev-parse HEAD)
 git clone --recursive https://github.com/grpc/grpc-node ./../grpc-node && (cd ../grpc-node; git rev-parse HEAD)
 git clone --recursive https://github.com/grpc/grpc-dart ./../grpc-dart && (cd ../grpc-dart; git rev-parse HEAD)
 git clone --recursive https://github.com/grpc/grpc-dotnet ./../grpc-dotnet && (cd ../grpc-dotnet; git rev-parse HEAD)
