@@ -805,7 +805,7 @@ HeaderMutationRules ParseHeaderMutationRules(
   HeaderMutationRules header_mutation_rules_config;
   if (header_mutation_rules == nullptr) {
     ValidationErrors::ScopedField field(
-        errors, ".ext_authz_config.header_mutation_rules");
+        errors, ".header_mutation_rules");
     errors->AddError("header_mutation_rules field is not present");
   } else {
     header_mutation_rules_config.disallow_all =
@@ -820,7 +820,7 @@ HeaderMutationRules ParseHeaderMutationRules(
     if (disallow_expression_proto != nullptr) {
       ValidationErrors::ScopedField field(
           errors,
-          ".ext_authz_config.header_mutation_rules.disallow_expression");
+          ".header_mutation_rules.disallow_expression");
       header_mutation_rules_config.disallow_expression =
           ParseRegexMatcher(disallow_expression_proto, errors);
     }
@@ -829,7 +829,7 @@ HeaderMutationRules ParseHeaderMutationRules(
             header_mutation_rules);
     if (allow_expression_proto != nullptr) {
       ValidationErrors::ScopedField field(
-          errors, ".ext_authz_config.header_mutation_rules.allow_expression");
+          errors, ".header_mutation_rules.allow_expression");
       header_mutation_rules_config.allow_expression =
           ParseRegexMatcher(allow_expression_proto, errors);
     }
