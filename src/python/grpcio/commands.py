@@ -24,6 +24,7 @@ import shutil
 import subprocess
 import sys
 import sysconfig
+import tempfile
 import traceback
 
 from setuptools.command import build_ext
@@ -32,9 +33,11 @@ import support
 
 PYTHON_STEM = os.path.dirname(os.path.abspath(__file__))
 GRPC_STEM = os.path.abspath(PYTHON_STEM + "../../../../")
-PROTO_STEM = os.path.join(GRPC_STEM, "src", "proto")
-PROTO_GEN_STEM = os.path.join(GRPC_STEM, "src", "python", "gens")
-CYTHON_STEM = os.path.join(PYTHON_STEM, "grpc", "_cython")
+GRPC_ROOT = os.path.relpath(GRPC_STEM, start=GRPC_STEM)
+PYTHON_REL_PATH = os.path.relpath(PYTHON_STEM, start=GRPC_STEM)
+PROTO_STEM = os.path.join(GRPC_ROOT, "src", "proto")
+PROTO_GEN_STEM = os.path.join(GRPC_ROOT, "src", "python", "gens")
+CYTHON_STEM = os.path.join(PYTHON_REL_PATH, "grpc", "_cython")
 
 
 class CommandError(Exception):
@@ -100,8 +103,8 @@ class SphinxDocumentation(setuptools.Command):
         # relevant package eggs first.
         import sphinx.cmd.build
 
-        source_dir = os.path.join(GRPC_STEM, "doc", "python", "sphinx")
-        target_dir = os.path.join(GRPC_STEM, "doc", "build")
+        source_dir = os.path.join(GRPC_ROOT, "doc", "python", "sphinx")
+        target_dir = os.path.join(GRPC_ROOT, "doc", "build")
         exit_code = sphinx.cmd.build.build_main(
             ["-b", "html", "-W", "--keep-going", source_dir, target_dir]
         )
@@ -124,12 +127,47 @@ class BuildProjectMetadata(setuptools.Command):
         pass
 
     def run(self):
-        with open(
-            os.path.join(PYTHON_STEM, "grpc/_grpcio_metadata.py"), "w"
-        ) as module_file:
-            module_file.write(
-                '__version__ = """{}"""'.format(self.distribution.get_version())
-            )
+        module_file_path = os.path.join(
+            PYTHON_REL_PATH, "grpc/_grpcio_metadata.py"
+        )
+        version = self.distribution.get_version()
+
+        # TODO(sergiitk): sometime in Nov 2025 - consider removing the env var
+        # and making this the default behavior.
+        skip_metadata_update_on_match = os.environ.get(
+            "GRPC_PYTHON_BUILD_SKIP_METADATA_ON_VERSION_MATCH", "0"
+        )
+        if skip_metadata_update_on_match == "1":
+            with open(module_file_path, "r") as module_file:
+                # prevent replacing the copyright header
+                if self._get_version_in_grpcio_metadata(module_file) == version:
+                    print(
+                        f"Version match in _grpcio_metadata.py: {version},"
+                        " skipping the update"
+                    )
+                    return
+
+        with open(module_file_path, "w") as module_file:
+            module_file.write(f'__version__ = """{version}"""')
+
+    def _get_version_in_grpcio_metadata(self, module_file):
+        try:
+            import ast
+
+            tree = ast.parse(module_file.read())
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Assign):
+                    for target in node.targets:
+                        if isinstance(target, ast.Name):
+                            variable_name = target.id
+                            if variable_name != "__version__":
+                                continue
+                            if isinstance(node.value, ast.Constant):
+                                return node.value.value
+        except:
+            raise
+
+        return "-1"
 
 
 class BuildPy(build_py.build_py):
@@ -142,7 +180,11 @@ class BuildPy(build_py.build_py):
 
 def _poison_extensions(extensions, message):
     """Includes a file that will always fail to compile in all extensions."""
-    poison_filename = os.path.join(PYTHON_STEM, "poison.c")
+
+    # use relative path as setuptools doesn't support absolute path in
+    # extension.sources
+    poison_filename = os.path.join(PYTHON_REL_PATH, "poison.c")
+
     with open(poison_filename, "w") as poison:
         poison.write("#error {}".format(message))
     for extension in extensions:
@@ -248,19 +290,42 @@ class BuildExt(build_ext.build_ext):
         return filename
 
     def build_extensions(self):
+
+        # use short temp directory to avoid linker command file errors caused by
+        # exceeding 131071 characters in Windows.
+        # TODO(ssreenithi): Remove once we have a better solution: b/454497076
+        use_short_temp = os.environ.get(
+            "GRPC_PYTHON_BUILD_USE_SHORT_TEMP_DIR_NAME", 0
+        )
+        if use_short_temp == "1":
+            if not os.path.exists("pyb"):
+                os.mkdir("pyb")
+
+            self.build_temp = tempfile.mkdtemp(dir="pyb")
+            print(f"Using temp build directory: {self.build_temp}")
+
         # This is to let UnixCompiler get either C or C++ compiler options depending on the source.
         # Note that this doesn't work for MSVCCompiler and will be handled by _spawn_patch.py.
         old_compile = self.compiler._compile
 
         def new_compile(obj, src, ext, cc_args, extra_postargs, pp_opts):
+            # NOTE: keep in sync with setup.py EXTRA_ENV_COMPILE_ARGS.
+            cpp_specific_args = {"-std=c++17", "-stdlib=libc++"}
+            c_specific_args = {"-std=c11"}
+
+            args_to_remove = set()
             if src.endswith(".c"):
-                extra_postargs = [
-                    arg for arg in extra_postargs if arg != "-std=c++17"
-                ]
+                # Remove cpp-specific args when compiling c.
+                args_to_remove = cpp_specific_args
             elif src.endswith((".cc", ".cpp")):
+                # Remove c-specific args when compiling c++.
+                args_to_remove = c_specific_args
+
+            if args_to_remove:
                 extra_postargs = [
-                    arg for arg in extra_postargs if arg != "-std=c11"
+                    arg for arg in extra_postargs if arg not in args_to_remove
                 ]
+
             return old_compile(obj, src, ext, cc_args, extra_postargs, pp_opts)
 
         self.compiler._compile = new_compile

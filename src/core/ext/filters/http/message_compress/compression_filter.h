@@ -27,15 +27,16 @@
 #include <cstddef>
 #include <optional>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/transport.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -86,27 +87,21 @@ class ChannelCompression {
   // Compress one message synchronously.
   MessageHandle CompressMessage(MessageHandle message,
                                 grpc_compression_algorithm algorithm,
-                                CallTracerInterface* call_tracer) const;
+                                CallTracer* call_tracer) const;
   // Decompress one message synchronously.
   absl::StatusOr<MessageHandle> DecompressMessage(
       bool is_client, MessageHandle message, DecompressArgs args,
-      CallTracerInterface* call_tracer) const;
+      CallTracer* call_tracer) const;
 
-  Json::Object ToJsonObject() const {
-    Json::Object object;
-    if (max_recv_size_.has_value()) {
-      object["maxRecvSize"] = Json::FromNumber(*max_recv_size_);
-    }
-    const char* algorithm =
-        CompressionAlgorithmAsString(default_compression_algorithm_);
-    if (algorithm != nullptr) {
-      object["defaultCompressionAlgorithm"] = Json::FromString(algorithm);
-    }
-    object["enabledCompressionAlgorithms"] = Json::FromString(
-        std::string(enabled_compression_algorithms_.ToString()));
-    object["enableCompression"] = Json::FromBool(enable_compression_);
-    object["enableDecompression"] = Json::FromBool(enable_decompression_);
-    return object;
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("max_recv_size", max_recv_size_)
+        .Set("default_compression_algorithm",
+             CompressionAlgorithmAsString(default_compression_algorithm_))
+        .Set("enabled_compression_algorithms",
+             enabled_compression_algorithms_.ToString())
+        .Set("enable_compression", enable_compression_)
+        .Set("enable_decompression", enable_decompression_);
   }
 
  private:
@@ -136,12 +131,14 @@ class ClientCompressionFilter final
 
   explicit ClientCompressionFilter(const ChannelArgs& args)
       : channelz::DataSource(args.GetObjectRef<channelz::BaseNode>()),
-        compression_engine_(args) {}
-  ~ClientCompressionFilter() override { ResetDataSource(); }
+        compression_engine_(args) {
+    SourceConstructed();
+  }
+  ~ClientCompressionFilter() override { SourceDestructing(); }
 
   void AddData(channelz::DataSink sink) override {
-    sink.AddAdditionalInfo("clientCompressionFilter",
-                           compression_engine_.ToJsonObject());
+    sink.AddData("clientCompressionFilter",
+                 compression_engine_.ChannelzProperties());
   }
 
   // Construct a promise for one call.
@@ -160,13 +157,22 @@ class ClientCompressionFilter final
     static inline const NoInterceptor OnClientToServerHalfClose;
     static inline const NoInterceptor OnServerTrailingMetadata;
     static inline const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList()
+          .Set("compression_algorithm",
+               CompressionAlgorithmAsString(compression_algorithm_))
+          .Set("max_recv_message_length",
+               decompress_args_.max_recv_message_length.value_or(0))
+          .Set("decompression_algorithm",
+               CompressionAlgorithmAsString(decompress_args_.algorithm));
+    }
 
    private:
     grpc_compression_algorithm compression_algorithm_;
     ChannelCompression::DecompressArgs decompress_args_;
     // TODO(yashykt): Remove call_tracer_ after migration to call v3 stack. (See
     // https://github.com/grpc/grpc/pull/38729 for more information.)
-    CallTracerInterface* call_tracer_ = nullptr;
+    CallTracer* call_tracer_ = nullptr;
   };
 
  private:
@@ -186,12 +192,14 @@ class ServerCompressionFilter final
 
   explicit ServerCompressionFilter(const ChannelArgs& args)
       : channelz::DataSource(args.GetObjectRef<channelz::BaseNode>()),
-        compression_engine_(args) {}
-  ~ServerCompressionFilter() override { ResetDataSource(); }
+        compression_engine_(args) {
+    SourceConstructed();
+  }
+  ~ServerCompressionFilter() override { SourceDestructing(); }
 
   void AddData(channelz::DataSink sink) override {
-    sink.AddAdditionalInfo("serverCompressionFilter",
-                           compression_engine_.ToJsonObject());
+    sink.AddData("serverCompressionFilter",
+                 compression_engine_.ChannelzProperties());
   }
 
   // Construct a promise for one call.
@@ -210,6 +218,16 @@ class ServerCompressionFilter final
     static inline const NoInterceptor OnClientToServerHalfClose;
     static inline const NoInterceptor OnServerTrailingMetadata;
     static inline const NoInterceptor OnFinalize;
+
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList()
+          .Set("compression_algorithm",
+               CompressionAlgorithmAsString(compression_algorithm_))
+          .Set("max_recv_message_length",
+               decompress_args_.max_recv_message_length.value_or(0))
+          .Set("decompression_algorithm",
+               CompressionAlgorithmAsString(decompress_args_.algorithm));
+    }
 
    private:
     ChannelCompression::DecompressArgs decompress_args_;

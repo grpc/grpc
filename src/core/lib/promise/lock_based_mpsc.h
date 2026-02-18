@@ -24,16 +24,16 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/wait_set.h"
 #include "src/core/util/dump_args.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
 
 namespace grpc_core {
 
@@ -186,7 +186,7 @@ class LockBasedMpscSender {
       if (center == nullptr) return Failure{};
       if (batch == 0) {
         batch = center->template Send<kAwaitReceipt>(std::move(t));
-        DCHECK_NE(batch, 0u);
+        GRPC_DCHECK_NE(batch, 0u);
         if (batch == lock_based_mpscpipe_detail::Center<T>::kClosedBatch) {
           return Failure{};
         }
@@ -232,10 +232,10 @@ class LockBasedMpscReceiver {
   // a non-empty buffer during a legal move!
   LockBasedMpscReceiver(LockBasedMpscReceiver&& other) noexcept
       : center_(std::move(other.center_)) {
-    DCHECK(other.buffer_.empty());
+    GRPC_DCHECK(other.buffer_.empty());
   }
   LockBasedMpscReceiver& operator=(LockBasedMpscReceiver&& other) noexcept {
-    DCHECK(other.buffer_.empty());
+    GRPC_DCHECK(other.buffer_.empty());
     center_ = std::move(other.center_);
     return *this;
   }

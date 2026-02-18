@@ -20,8 +20,6 @@
 
 #include <thread>
 
-#include "absl/synchronization/notification.h"
-#include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/insecure/insecure_credentials.h"
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
@@ -35,6 +33,8 @@
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "gtest/gtest.h"
+#include "absl/synchronization/notification.h"
 
 using grpc_event_engine::experimental::EventEngine;
 
@@ -308,13 +308,16 @@ RefCountedPtr<grpc_server_credentials> CreateSecureServerCredentials() {
   grpc_tls_identity_pairs_add_pair(server_pairs, server_key.c_str(),
                                    server_cert.c_str());
   grpc_tls_certificate_provider* server_provider =
-      grpc_tls_certificate_provider_static_data_create(ca_cert.c_str(),
-                                                       server_pairs);
-  grpc_tls_credentials_options_set_certificate_provider(options,
-                                                        server_provider);
+      grpc_tls_certificate_provider_in_memory_create();
+  grpc_tls_certificate_provider_in_memory_set_root_certificate(server_provider,
+                                                               ca_cert.c_str());
+  grpc_tls_certificate_provider_in_memory_set_identity_certificate(
+      server_provider, server_pairs);
+  grpc_tls_credentials_options_set_root_certificate_provider(options,
+                                                             server_provider);
+  grpc_tls_credentials_options_set_identity_certificate_provider(
+      options, server_provider);
   grpc_tls_certificate_provider_release(server_provider);
-  grpc_tls_credentials_options_watch_root_certs(options);
-  grpc_tls_credentials_options_watch_identity_key_cert_pairs(options);
   // Set client certificate request type.
   grpc_tls_credentials_options_set_cert_request_type(
       options, GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);

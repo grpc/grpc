@@ -25,11 +25,11 @@
 #include <thread>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/unique_type_name.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace testing {
@@ -46,7 +46,7 @@ class FakeCertificateProvider : public grpc_tls_certificate_provider {
  public:
   RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
     // never called
-    CHECK(0);
+    GRPC_CHECK(0);
     return nullptr;
   }
 
@@ -135,7 +135,7 @@ TEST_F(CertificateProviderStoreTest, Basic) {
              {"fake1", fake_factory_1->CreateCertificateProviderConfig(
                            Json::FromObject({}), JsonArgs(), nullptr)}},
         };
-        auto store = MakeOrphanable<CertificateProviderStore>(std::move(map));
+        auto store = MakeRefCounted<CertificateProviderStore>(std::move(map));
         // Test for creating certificate providers with known plugin
         // configuration.
         auto cert_provider_1 =
@@ -176,7 +176,7 @@ TEST_F(CertificateProviderStoreTest, Multithreaded) {
             {"fake_plugin_1",
              {"fake1", fake_factory_1->CreateCertificateProviderConfig(
                            Json::FromObject({}), JsonArgs(), nullptr)}}};
-        auto store = MakeOrphanable<CertificateProviderStore>(std::move(map));
+        auto store = MakeRefCounted<CertificateProviderStore>(std::move(map));
         // Test concurrent `CreateOrGetCertificateProvider()` with the same key.
         std::vector<std::thread> threads;
         threads.reserve(1000);

@@ -123,10 +123,8 @@
 /** Channel arg to override the http2 :scheme header. String valued. */
 #define GRPC_ARG_HTTP2_SCHEME "grpc.http2_scheme"
 /** How many pings can the client send before needing to send a data/header
-   frame? (0 indicates that an infinite number of pings can be sent without
-   sending a data frame or header frame).
-   If experiment "max_pings_wo_data_throttle" is enabled, instead of pings being
-   completely blocked, they are throttled.
+   frame, without being throttled? (0 indicates that an infinite number of pings
+  can be sent without sending a data frame or header frame).
   * Integer valued. Defaults to 2. */
 #define GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA \
   "grpc.http2.max_pings_without_data"
@@ -386,6 +384,11 @@
  *  Note that this works only with the "ares" DNS resolver; it isn't supported
  *  by the "native" DNS resolver. Boolean valued. Defaults to false. */
 #define GRPC_ARG_DNS_ENABLE_SRV_QUERIES "grpc.dns_enable_srv_queries"
+/** The cap for max_connections_per_subchannel when set via service
+ *  config.  If the configured value is higher than this, it will be
+ *  capped at this value.  Defaults to 10. */
+#define GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL_CAP \
+  "grpc.max_connections_per_subchannel_cap"
 /** If set, determines an upper bound on the number of milliseconds that the
  * c-ares based DNS resolver will wait on queries before cancelling them.
  * The default value is 120,000ms. Setting this to "0" will disable the
@@ -431,5 +434,7 @@
 /** If non-zero, allow security frames to be sent and received. */
 #define GRPC_ARG_SECURITY_FRAME_ALLOWED "grpc.security_frame_allowed"
 /** \} */
+/** If non-zero, enable TCP tracing and stats collection. */
+#define GRPC_ARG_TCP_TRACING_ENABLED "grpc.tcp_tracing_enabled"
 
 #endif /* GRPC_IMPL_CHANNEL_ARG_NAMES_H */

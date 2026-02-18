@@ -28,9 +28,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/promise/arena_promise.h"
@@ -38,9 +35,12 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 // --- Constants. ---
 
@@ -130,7 +130,7 @@ struct grpc_call_credentials
   // If this method returns 0, it means that gRPC can treat the two call
   // credentials as effectively the same..
   int cmp(const grpc_call_credentials* other) const {
-    CHECK_NE(other, nullptr);
+    GRPC_CHECK_NE(other, nullptr);
     int r = type().Compare(other->type());
     if (r != 0) return r;
     return cmp_impl(other);

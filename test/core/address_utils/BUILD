@@ -19,6 +19,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/core/address_utils",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "private",
 )
 
@@ -28,10 +32,19 @@ grpc_cc_test(
     external_deps = [
         "absl/log:check",
         "gtest",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
     ],
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:parse_address",
+        "//:sockaddr_utils",
+        "//src/core:grpc_check",
+        "//src/core:grpc_sockaddr",
+        "//src/core:iomgr_port",
+        "//src/core:resolved_address",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -43,10 +56,15 @@ grpc_cc_test(
         "absl/log:log",
         "absl/strings",
         "gtest",
+        "absl/status",
     ],
     deps = [
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//:parse_address",
+        "//src/core:grpc_sockaddr",
+        "//src/core:iomgr_port",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -58,10 +76,16 @@ grpc_fuzz_test(
         "absl/log:check",
         "fuzztest",
         "fuzztest_main",
+        "absl/status:statusor",
     ],
     tags = ["no_windows"],
     deps = [
         "//:grpc",
+        "//:iomgr",
+        "//:sockaddr_utils",
+        "//:uri",
+        "//src/core:grpc_check",
+        "//src/core:resolved_address",
         "//test/core/test_util:grpc_test_util",
     ],
 )

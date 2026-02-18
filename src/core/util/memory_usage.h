@@ -23,12 +23,14 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/util/time.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
-#include "src/core/util/time.h"
 
 namespace grpc_core {
 
@@ -89,6 +91,10 @@ constexpr Category kMemoryUsageCategory<std::shared_ptr<T>> =
     Category::kOwnedPointer;
 
 template <typename T>
+constexpr Category kMemoryUsageCategory<absl::StatusOr<T>> =
+    Category::kAbslStatusOr;
+
+template <typename T>
 constexpr Category kMemoryUsageCategory<std::vector<T>> = Category::kVector;
 
 template <typename C, typename Traits, typename Allocator>
@@ -135,6 +141,10 @@ size_t MemoryUsageOf(const T& x) {
     return sizeof(T);
   } else if constexpr (std::is_same_v<T, Duration>) {
     return sizeof(T);
+  } else if constexpr (std::is_same_v<T, Slice>) {
+    return sizeof(T) + x.size();  // may overestimate a bit
+  } else if constexpr (std::is_same_v<T, SliceBuffer>) {
+    return sizeof(T) + x.Length();  // may overestimate a bit
   } else if constexpr (category == Category::kSimple) {
     return sizeof(T);
   } else if constexpr (category == Category::kOwnedPointer) {
@@ -260,7 +270,13 @@ size_t MemoryUsageOf(const T& x) {
 template <typename... Args>
 size_t MemoryUsageOf(const std::tuple<Args...>& t) {
   return std::apply(
-      [](const auto&... args) { return (MemoryUsageOf(args) + ...); }, t);
+      [](const auto&... args) { return (MemoryUsageOf(args) + ... + 0); }, t);
+}
+
+// This does not calculate the overhead of the variant itself.
+template <typename... T>
+size_t MemoryUsageOf(const std::variant<T...>& t) {
+  return std::visit([](const auto& x) { return MemoryUsageOf(x); }, t);
 }
 
 }  // namespace grpc_core

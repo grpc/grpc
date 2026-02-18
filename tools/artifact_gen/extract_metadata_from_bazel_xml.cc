@@ -28,6 +28,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
+#include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "include/nlohmann/json.hpp"
 #include "pugixml.hpp"
@@ -152,12 +153,12 @@ static const char* kBuildExtraMetadata = R"json({
         "build": "all",
         "_RENAME": "address_sorting"
     },
-    "@com_google_protobuf//upb:base": {
+    "@com_google_protobuf//upb/base": {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_base_lib"
     },
-    "@com_google_protobuf//upb:mem": {
+    "@com_google_protobuf//upb/mem": {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_mem_lib"
@@ -167,7 +168,7 @@ static const char* kBuildExtraMetadata = R"json({
         "build": "all",
         "_RENAME": "upb_lex_lib"
     },
-    "@com_google_protobuf//upb:message": {
+    "@com_google_protobuf//upb/message": {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_message_lib"
@@ -435,6 +436,7 @@ class ArtifactGen {
         {"@com_google_googleapis//", ""},
         {"@com_github_cncf_xds//", ""},
         {"@com_envoyproxy_protoc_gen_validate//", ""},
+        {"@dev_cel//", "proto/"},
         {"@envoy_api//", ""},
         {"@opencensus_proto//", ""},
     };
@@ -1099,7 +1101,15 @@ class ArtifactGen {
   }
 
   static std::string GetBazelLabel(std::string target_name) {
-    if (absl::StartsWith(target_name, "@")) return target_name;
+    if (absl::StartsWith(target_name, "@")) {
+      if (absl::StrContains(target_name, ':')) {
+        return target_name;
+      } else {
+        // @foo//bar/baz -> @foo//bar/baz:baz
+        std::vector<std::string> parts = absl::StrSplit(target_name, '/');
+        return absl::StrCat(target_name, ":", parts.back());
+      }
+    }
     if (absl::StrContains(target_name, ":")) {
       return absl::StrCat("//", target_name);
     } else {
@@ -1145,9 +1155,6 @@ class ArtifactGen {
   std::map<std::string, std::string> bazel_label_to_dep_name_;
 
   const std::map<std::string, std::string> external_source_prefixes_ = {
-      // TODO(veblush) : Remove @utf8_range// item once protobuf is upgraded
-      // to 26.x
-      {"@utf8_range//", "third_party/utf8_range"},
       {"@com_googlesource_code_re2//", "third_party/re2"},
       {"@com_google_googletest//", "third_party/googletest"},
       {"@googletest//", "third_party/googletest"},

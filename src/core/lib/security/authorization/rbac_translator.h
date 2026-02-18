@@ -19,9 +19,9 @@
 
 #include <optional>
 
+#include "src/core/lib/security/authorization/rbac_policy.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "src/core/lib/security/authorization/rbac_policy.h"
 
 namespace grpc_core {
 

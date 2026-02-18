@@ -17,7 +17,13 @@ load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/credentials/transport/ssl")
+grpc_package(
+    name = "test/core/credentials/transport/ssl",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_fuzz_test(
     name = "ssl_server_fuzzer",
@@ -31,13 +37,18 @@ grpc_fuzz_test(
         "absl/log:check",
         "fuzztest",
         "fuzztest_main",
+        "absl/synchronization",
     ],
     tags = ["no_windows"],
     deps = [
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc",
+        "//:grpc_core_credentials_header",
+        "//:grpc_security_base",
         "//src/core:default_event_engine",
+        "//src/core:grpc_check",
+        "//src/core:notification",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],
@@ -50,6 +61,8 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:tsi_ssl_credentials",
+        "//src/core:grpc_ssl_credentials",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],

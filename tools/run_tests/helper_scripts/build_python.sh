@@ -87,11 +87,11 @@ function toolchain() {
 }
 
 # When we mount and reuse the existing repo from host machine inside docker
-# container, the `tools/bazel.rc` file is shared to the docker container and 
-# the Bazel override written to `bazel.rc` from tools/.../grpc_build_submodule_at_head.sh 
+# container, the `tools/bazel.rc` file is shared to the docker container and
+# the Bazel override written to `bazel.rc` from tools/.../grpc_build_submodule_at_head.sh
 # (outside docker container) forces bazel to look for the same host location
 # inside the docker container, which doesn't exist.
-# Hence overriding it again with the working directory inside the container 
+# Hence overriding it again with the working directory inside the container
 # should solve this issue
 BAZEL_DEP_PATH="$(pwd)/third_party/protobuf"
 BAZEL_DEP_NAME="com_google_protobuf"
@@ -106,7 +106,6 @@ echo "query --override_repository=${BAZEL_DEP_NAME}=${BAZEL_DEP_PATH}" >> "tools
 PYTHON=${1:-python2.7}
 VENV=${2:-$(venv "$PYTHON")}
 VENV_RELATIVE_PYTHON=${3:-$(venv_relative_python)}
-TOOLCHAIN=${4:-$(toolchain)}
 
 if [ "$(is_msys)" ]; then
   echo "MSYS doesn't directly provide the right compiler(s);"
@@ -147,32 +146,32 @@ pip_install() {
   $VENV_PYTHON -m pip install "$@"
 }
 
-pip_install --upgrade pip
+pip_install --upgrade pip==25.2
 pip_install --upgrade wheel
-pip_install --upgrade setuptools==70.1.1
+pip_install --upgrade setuptools==77.0.1
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.
 pip_install_dir() {
-  PWD=$(pwd)
+  local workdir
+  workdir="$(pwd)"
   cd "$1"
-  ($VENV_PYTHON setup.py build_ext -c "$TOOLCHAIN" || true)
-  $VENV_PYTHON -m pip install --no-deps .
-  cd "$PWD"
+  "${VENV_PYTHON}" -m pip install --no-deps --no-build-isolation .
+  cd "${workdir}"
 }
 
 pip_install_dir_and_deps() {
-  PWD=$(pwd)
+  local workdir
+  workdir="$(pwd)"
   cd "$1"
-  ($VENV_PYTHON setup.py build_ext -c "$TOOLCHAIN" || true)
-  $VENV_PYTHON -m pip install .
-  cd "$PWD"
+  "${VENV_PYTHON}" -m pip install --no-build-isolation .
+  cd "${workdir}"
 }
 
 pip_install -U gevent
 
 pip_install --upgrade 'cython==3.1.1'
-pip_install --upgrade six 'protobuf>=6.30.0,<7.0.0'
+pip_install --upgrade six 'protobuf>=6.31.1,<7.0.0'
 
 if [ "$("$VENV_PYTHON" -c "import sys; print(sys.version_info[0])")" == "2" ]
 then
@@ -216,8 +215,8 @@ pip_install_dir "$ROOT/src/python/grpcio_status"
 
 
 # Build/install status proto mapping
-# build.py is invoked as part of generate_projects.sh
-pip_install_dir "$ROOT/tools/distrib/python/xds_protos"
+# build_xds_protos.py is invoked as part of generate_projects.sh
+pip_install_dir "$ROOT/py_xds_protos"
 
 # Build/install csds
 pip_install_dir "$ROOT/src/python/grpcio_csds"
@@ -229,11 +228,11 @@ pip_install_dir "$ROOT/src/python/grpcio_admin"
 pip_install_dir "$ROOT/src/python/grpcio_testing"
 
 # Build/install tests
-# shellcheck disable=SC2261
-pip_install coverage==7.2.0 oauth2client==4.1.0 \
-            google-auth>=1.35.0 requests==2.31.0 \
+pip_install "coverage>=7.9.0" oauth2client==4.1.0 \
+            "google-auth>=1.35.0" requests==2.31.0 \
             rsa==4.0 absl-py==1.4.0 \
             opentelemetry-sdk==1.21.0
+
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" preprocess
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" build_package_protos
 pip_install_dir "$ROOT/src/python/grpcio_tests"

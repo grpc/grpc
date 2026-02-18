@@ -13,6 +13,9 @@
 # limitations under the License.
 """Custom rules for gRPC Python"""
 
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_python//python:defs.bzl", "py_library")
+
 # Adapted with modifications from
 # tensorflow/tensorflow/core/platform/default/build_config.bzl
 # Native Bazel rules don't exist yet to compile Cython code, but rules have
@@ -69,12 +72,19 @@ def pyx_library(name, deps = [], py_deps = [], srcs = [], **kwargs):
     for src in pyx_srcs:
         stem = src.split(".")[0]
         shared_object_name = stem + ".so"
-        native.cc_binary(
+        cc_binary(
             name = shared_object_name,
             srcs = [stem + ".cpp"],
             deps = deps + ["@local_config_python//:python_headers"],
             defines = defines,
             linkshared = 1,
+            linkopts = select({
+                # The "-undefined dynamic_lookup" flag allows the shared library to use symbols
+                # that are not defined at link time but will be resolved at runtime.
+                # This is necessary for Python extensions on macOS to access Python C API symbols.
+                "@platforms//os:macos": ["-undefined", "dynamic_lookup"],
+                "//conditions:default": [],
+            }),
         )
         shared_objects.append(shared_object_name)
 
@@ -82,7 +92,7 @@ def pyx_library(name, deps = [], py_deps = [], srcs = [], **kwargs):
     data += kwargs.pop("data", [])
 
     # Now create a py_library with these shared objects as data.
-    native.py_library(
+    py_library(
         name = name,
         srcs = py_srcs,
         deps = py_deps,

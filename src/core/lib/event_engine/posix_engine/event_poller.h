@@ -19,21 +19,13 @@
 
 #include <string>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/event_engine/posix_engine/posix_interface.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_event_engine::experimental {
-
-class Scheduler {
- public:
-  virtual void Run(experimental::EventEngine::Closure* closure) = 0;
-  virtual void Run(absl::AnyInvocable<void()>) = 0;
-  virtual ~Scheduler() = default;
-};
 
 class PosixEventPoller;
 

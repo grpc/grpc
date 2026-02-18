@@ -30,15 +30,6 @@
 #include <variant>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/config/route/v3/route.upb.h"
@@ -58,6 +49,7 @@
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/util/down_cast.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/match.h"
@@ -76,6 +68,14 @@
 #include "upb/base/string_view.h"
 #include "upb/message/map.h"
 #include "upb/text/encode.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -219,7 +219,7 @@ std::optional<StringMatcher> RoutePathMatchParse(
   } else if (envoy_config_route_v3_RouteMatch_has_safe_regex(match)) {
     const envoy_type_matcher_v3_RegexMatcher* regex_matcher =
         envoy_config_route_v3_RouteMatch_safe_regex(match);
-    CHECK_NE(regex_matcher, nullptr);
+    GRPC_CHECK_NE(regex_matcher, nullptr);
     type = StringMatcher::Type::kSafeRegex;
     match_string = UpbStringToStdString(
         envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
@@ -237,7 +237,8 @@ std::optional<StringMatcher> RoutePathMatchParse(
   return std::move(*string_matcher);
 }
 
-void RouteHeaderMatchersParse(const envoy_config_route_v3_RouteMatch* match,
+void RouteHeaderMatchersParse(const XdsResourceType::DecodeContext& context,
+                              const envoy_config_route_v3_RouteMatch* match,
                               XdsRouteConfigResource::Route* route,
                               ValidationErrors* errors) {
   size_t size;
@@ -247,9 +248,21 @@ void RouteHeaderMatchersParse(const envoy_config_route_v3_RouteMatch* match,
     ValidationErrors::ScopedField field(errors,
                                         absl::StrCat(".headers[", i, "]"));
     const envoy_config_route_v3_HeaderMatcher* header = headers[i];
-    CHECK_NE(header, nullptr);
+    GRPC_CHECK_NE(header, nullptr);
     const std::string name =
         UpbStringToStdString(envoy_config_route_v3_HeaderMatcher_name(header));
+    const bool invert_match =
+        envoy_config_route_v3_HeaderMatcher_invert_match(header);
+    if (envoy_config_route_v3_HeaderMatcher_has_string_match(header)) {
+      ValidationErrors::ScopedField field(errors, ".string_match");
+      auto string_matcher = StringMatcherParse(
+          context, envoy_config_route_v3_HeaderMatcher_string_match(header),
+          errors);
+      route->matchers.header_matchers.emplace_back(
+          HeaderMatcher::CreateFromStringMatcher(
+              name, std::move(string_matcher), invert_match));
+      continue;
+    }
     HeaderMatcher::Type type;
     std::string match_string;
     int64_t range_start = 0;
@@ -276,7 +289,7 @@ void RouteHeaderMatchersParse(const envoy_config_route_v3_RouteMatch* match,
                    header)) {
       const envoy_type_matcher_v3_RegexMatcher* regex_matcher =
           envoy_config_route_v3_HeaderMatcher_safe_regex_match(header);
-      CHECK_NE(regex_matcher, nullptr);
+      GRPC_CHECK_NE(regex_matcher, nullptr);
       type = HeaderMatcher::Type::kSafeRegex;
       match_string = UpbStringToStdString(
           envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
@@ -284,52 +297,16 @@ void RouteHeaderMatchersParse(const envoy_config_route_v3_RouteMatch* match,
       type = HeaderMatcher::Type::kRange;
       const envoy_type_v3_Int64Range* range_matcher =
           envoy_config_route_v3_HeaderMatcher_range_match(header);
-      CHECK_NE(range_matcher, nullptr);
+      GRPC_CHECK_NE(range_matcher, nullptr);
       range_start = envoy_type_v3_Int64Range_start(range_matcher);
       range_end = envoy_type_v3_Int64Range_end(range_matcher);
     } else if (envoy_config_route_v3_HeaderMatcher_has_present_match(header)) {
       type = HeaderMatcher::Type::kPresent;
       present_match = envoy_config_route_v3_HeaderMatcher_present_match(header);
-    } else if (envoy_config_route_v3_HeaderMatcher_has_string_match(header)) {
-      ValidationErrors::ScopedField field(errors, ".string_match");
-      const auto* matcher =
-          envoy_config_route_v3_HeaderMatcher_string_match(header);
-      CHECK_NE(matcher, nullptr);
-      if (envoy_type_matcher_v3_StringMatcher_has_exact(matcher)) {
-        type = HeaderMatcher::Type::kExact;
-        match_string = UpbStringToStdString(
-            envoy_type_matcher_v3_StringMatcher_exact(matcher));
-      } else if (envoy_type_matcher_v3_StringMatcher_has_prefix(matcher)) {
-        type = HeaderMatcher::Type::kPrefix;
-        match_string = UpbStringToStdString(
-            envoy_type_matcher_v3_StringMatcher_prefix(matcher));
-      } else if (envoy_type_matcher_v3_StringMatcher_has_suffix(matcher)) {
-        type = HeaderMatcher::Type::kSuffix;
-        match_string = UpbStringToStdString(
-            envoy_type_matcher_v3_StringMatcher_suffix(matcher));
-      } else if (envoy_type_matcher_v3_StringMatcher_has_contains(matcher)) {
-        type = HeaderMatcher::Type::kContains;
-        match_string = UpbStringToStdString(
-            envoy_type_matcher_v3_StringMatcher_contains(matcher));
-      } else if (envoy_type_matcher_v3_StringMatcher_has_safe_regex(matcher)) {
-        type = HeaderMatcher::Type::kSafeRegex;
-        const auto* regex_matcher =
-            envoy_type_matcher_v3_StringMatcher_safe_regex(matcher);
-        CHECK_NE(regex_matcher, nullptr);
-        match_string = UpbStringToStdString(
-            envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
-      } else {
-        errors->AddError("invalid string matcher");
-        continue;
-      }
-      case_sensitive =
-          !envoy_type_matcher_v3_StringMatcher_ignore_case(matcher);
     } else {
       errors->AddError("invalid header matcher");
       continue;
     }
-    bool invert_match =
-        envoy_config_route_v3_HeaderMatcher_invert_match(header);
     absl::StatusOr<HeaderMatcher> header_matcher =
         HeaderMatcher::Create(name, type, match_string, range_start, range_end,
                               present_match, invert_match, case_sensitive);
@@ -421,16 +398,22 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
         DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
             .http_filter_registry();
     const XdsHttpFilterImpl* filter_impl =
-        http_filter_registry.GetFilterForType(extension_to_use->type);
+        http_filter_registry.GetFilterForOverrideType(extension_to_use->type);
     if (filter_impl == nullptr) {
       if (!is_optional) errors->AddError("unsupported filter type");
       continue;
     }
-    std::optional<XdsHttpFilterImpl::FilterConfig> filter_config =
-        filter_impl->GenerateFilterConfigOverride(
-            key, context, std::move(*extension_to_use), errors);
+    auto& entry = typed_per_filter_config[std::string(key)];
+    entry.config_proto_type = filter_impl->OverrideConfigProtoName();
+    std::optional<Json> filter_config =
+        filter_impl->GenerateFilterConfigOverride(key, context,
+                                                  *extension_to_use, errors);
     if (filter_config.has_value()) {
-      typed_per_filter_config[std::string(key)] = std::move(*filter_config);
+      entry.config = std::move(*filter_config);
+    }
+    if (IsXdsChannelFilterChainPerRouteEnabled()) {
+      entry.filter_config = filter_impl->ParseOverrideConfig(
+          key, context, *extension_to_use, errors);
     }
   }
   return typed_per_filter_config;
@@ -637,7 +620,7 @@ std::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
     ValidationErrors::ScopedField field(errors, ".weighted_clusters");
     const envoy_config_route_v3_WeightedCluster* weighted_clusters_proto =
         envoy_config_route_v3_RouteAction_weighted_clusters(route_action_proto);
-    CHECK_NE(weighted_clusters_proto, nullptr);
+    GRPC_CHECK_NE(weighted_clusters_proto, nullptr);
     std::vector<XdsRouteConfigResource::Route::RouteAction::ClusterWeight>
         action_weighted_clusters;
     uint64_t total_weight = 0;
@@ -746,7 +729,7 @@ std::optional<XdsRouteConfigResource::Route> ParseRoute(
     auto path_matcher = RoutePathMatchParse(match, errors);
     if (!path_matcher.has_value()) return std::nullopt;
     route.matchers.path_matcher = std::move(*path_matcher);
-    RouteHeaderMatchersParse(match, &route, errors);
+    RouteHeaderMatchersParse(context, match, &route, errors);
     RouteRuntimeFractionParse(match, &route, errors);
   }
   // Parse route action.

@@ -15,13 +15,13 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CONTROL_ENDPOINT_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CONTROL_ENDPOINT_H
 
-#include "absl/cleanup/cleanup.h"
 #include "src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h"
 #include "src/core/ext/transport/chaotic_good/transport_context.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "absl/cleanup/cleanup.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -93,7 +93,10 @@ class ControlEndpoint {
 
   // Write some data to the control endpoint; returns a promise that resolves
   // to Empty{} -- it's not possible to see errors from this api.
-  auto Write(SliceBuffer&& bytes) { return buffer_->Queue(std::move(bytes)); }
+  auto Write(SliceBuffer&& bytes) {
+    return GRPC_LATENT_SEE_PROMISE("CtlEndpointEnqueueWrite",
+                                   buffer_->Queue(std::move(bytes)));
+  }
 
   // Read operations are simply passthroughs to the underlying promise endpoint.
   auto ReadSlice(size_t length) {

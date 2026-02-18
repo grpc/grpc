@@ -25,10 +25,10 @@
 
 #include <algorithm>
 
-#include "gtest/gtest.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/useful.h"
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
+#include "gtest/gtest.h"
 
 const size_t kFrameHandlerTestBufferSize = 1024;
 

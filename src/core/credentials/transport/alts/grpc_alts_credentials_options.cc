@@ -40,6 +40,15 @@ void grpc_alts_credentials_options_destroy(
     if (options->vtable != nullptr && options->vtable->destruct != nullptr) {
       options->vtable->destruct(options);
     }
-    gpr_free(options);
   }
+}
+
+void grpc_alts_credentials_client_options_set_record_protocols(
+    grpc_alts_credentials_options* options,
+    const absl::Span<std::string> record_protocols) {
+  if (options == nullptr) {
+    return;
+  }
+  std::copy(record_protocols.begin(), record_protocols.end(),
+            std::back_inserter(options->record_protocols));
 }

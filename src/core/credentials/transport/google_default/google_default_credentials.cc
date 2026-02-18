@@ -31,17 +31,13 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/credentials/call/external/external_account_credentials.h"
 #include "src/core/credentials/call/jwt/json_token.h"
 #include "src/core/credentials/call/jwt/jwt_credentials.h"
 #include "src/core/credentials/call/oauth2/oauth2_credentials.h"
+#include "src/core/credentials/transport/alts/alts_security_connector.h"
 #include "src/core/credentials/transport/alts/check_gcp_environment.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -59,6 +55,7 @@
 #include "src/core/load_balancing/grpclb/grpclb.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/http_client/httpcli.h"
 #include "src/core/util/http_client/parser.h"
 #include "src/core/util/json/json.h"
@@ -71,6 +68,11 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "src/core/util/uri.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 using grpc_core::Json;
 
@@ -157,12 +159,6 @@ grpc_google_default_channel_credentials::create_security_connector(
   return sc;
 }
 
-grpc_core::ChannelArgs
-grpc_google_default_channel_credentials::update_arguments(
-    grpc_core::ChannelArgs args) {
-  return args.SetIfUnset(GRPC_ARG_DNS_ENABLE_SRV_QUERIES, true);
-}
-
 grpc_core::UniqueTypeName grpc_google_default_channel_credentials::Type() {
   static grpc_core::UniqueTypeName::Factory kFactory("GoogleDefault");
   return kFactory.Create();
@@ -220,7 +216,7 @@ static int is_metadata_server_reachable() {
   auto uri = grpc_core::URI::Create("http", /*user_info=*/"",
                                     GRPC_COMPUTE_ENGINE_DETECTION_HOST, "/",
                                     {} /* query params */, "" /* fragment */);
-  CHECK(uri.ok());  // params are hardcoded
+  GRPC_CHECK(uri.ok());  // params are hardcoded
   auto http_request = grpc_core::HttpRequest::Get(
       std::move(*uri), nullptr /* channel args */, &detector.pollent, &request,
       grpc_core::Timestamp::Now() + max_detection_delay,
@@ -338,24 +334,103 @@ static bool metadata_server_available() {
   return static_cast<bool>(g_metadata_server_available);
 }
 
-static grpc_core::RefCountedPtr<grpc_call_credentials> make_default_call_creds(
-    grpc_error_handle* error) {
+namespace {
+
+// A grpc_call_credentials implementation that uses two
+// underlying credentials: one for TLS and one for ALTS.
+// The implementation will pick the right credentials based on the auth
+// context's GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME property.
+class GoogleDefaultCallCredentialsWrapper : public grpc_call_credentials {
+ public:
+  GoogleDefaultCallCredentialsWrapper(
+      grpc_core::RefCountedPtr<grpc_call_credentials> tls_credentials,
+      grpc_core::RefCountedPtr<grpc_call_credentials> alts_credentials)
+      : tls_credentials_(std::move(tls_credentials)),
+        alts_credentials_(std::move(alts_credentials)) {};
+
+  void Orphaned() override {
+    tls_credentials_.reset();
+    alts_credentials_.reset();
+  }
+
+  static grpc_core::UniqueTypeName Type() {
+    static grpc_core::UniqueTypeName::Factory kFactory("Dual");
+    return kFactory.Create();
+  }
+
+  grpc_core::UniqueTypeName type() const override { return Type(); }
+
+  grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
+  GetRequestMetadata(grpc_core::ClientMetadataHandle initial_metadata,
+                     const GetRequestMetadataArgs* args) override {
+    bool use_alts = false;
+    if (args != nullptr) {
+      auto auth_context = args->auth_context;
+      if (auth_context != nullptr &&
+          grpc_auth_context_peer_is_authenticated(auth_context.get()) == 1) {
+        // This channel is authenticated.
+        grpc_auth_property_iterator property_it =
+            grpc_auth_context_find_properties_by_name(
+                auth_context.get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME);
+        const grpc_auth_property* property =
+            grpc_auth_property_iterator_next(&property_it);
+        use_alts =
+            property != nullptr &&
+            strcmp(property->value, GRPC_ALTS_TRANSPORT_SECURITY_TYPE) == 0;
+      }
+    }
+    return (use_alts ? alts_credentials_ : tls_credentials_)
+        ->GetRequestMetadata(std::move(initial_metadata), args);
+  }
+
+ private:
+  int cmp_impl(const grpc_call_credentials* other) const override {
+    return QsortCompare(static_cast<const grpc_call_credentials*>(this), other);
+  }
+  std::string debug_string() override {
+    return "GoogleDefaultCallCredentialsWrapper";
+  }
+
+  grpc_core::RefCountedPtr<grpc_call_credentials> tls_credentials_;
+  grpc_core::RefCountedPtr<grpc_call_credentials> alts_credentials_;
+};
+
+enum class DefaultCallCredentialsCreationMethod {
+  kNone,
+  kFromEnviromentPathValue,
+  kFromWellKnownFile,
+  kFromDefaultGCE,
+};
+
+absl::StatusOr<std::pair<grpc_core::RefCountedPtr<grpc_call_credentials>,
+                         DefaultCallCredentialsCreationMethod>>
+CreateGoogleDefaultCallCredentials() {
+  DefaultCallCredentialsCreationMethod default_credentials_type;
   grpc_core::RefCountedPtr<grpc_call_credentials> call_creds;
-  grpc_error_handle err;
+  grpc_error_handle return_status;
+  grpc_error_handle child_error;
 
   // First, try the environment variable.
   auto path_from_env = grpc_core::GetEnv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR);
   if (path_from_env.has_value()) {
-    err = create_default_creds_from_path(*path_from_env, &call_creds);
-    if (err.ok()) return call_creds;
-    *error = grpc_error_add_child(*error, err);
+    child_error = create_default_creds_from_path(*path_from_env, &call_creds);
+    if (child_error.ok()) {
+      default_credentials_type =
+          DefaultCallCredentialsCreationMethod::kFromEnviromentPathValue;
+      return std::pair(call_creds, default_credentials_type);
+    }
+    return_status = grpc_error_add_child(return_status, child_error);
   }
 
   // Then the well-known file.
-  err = create_default_creds_from_path(
+  child_error = create_default_creds_from_path(
       grpc_get_well_known_google_credentials_file_path(), &call_creds);
-  if (err.ok()) return call_creds;
-  *error = grpc_error_add_child(*error, err);
+  if (child_error.ok()) {
+    default_credentials_type =
+        DefaultCallCredentialsCreationMethod::kFromWellKnownFile;
+    return std::pair(call_creds, default_credentials_type);
+  }
+  return_status = grpc_error_add_child(return_status, child_error);
 
   update_tenancy();
 
@@ -363,46 +438,84 @@ static grpc_core::RefCountedPtr<grpc_call_credentials> make_default_call_creds(
     call_creds = grpc_core::RefCountedPtr<grpc_call_credentials>(
         grpc_google_compute_engine_credentials_create(nullptr));
     if (call_creds == nullptr) {
-      *error = GRPC_ERROR_CREATE(GRPC_GOOGLE_CREDENTIAL_CREATION_ERROR);
-      *error = grpc_error_add_child(
-          *error, GRPC_ERROR_CREATE("Failed to get credentials from network"));
+      return_status = GRPC_ERROR_CREATE(GRPC_GOOGLE_CREDENTIAL_CREATION_ERROR);
+      return_status = grpc_error_add_child(
+          return_status,
+          GRPC_ERROR_CREATE("Failed to get credentials from network"));
+      return return_status;
     }
+    default_credentials_type =
+        DefaultCallCredentialsCreationMethod::kFromDefaultGCE;
   }
 
-  return call_creds;
+  return std::pair(call_creds, default_credentials_type);
 }
 
+}  // namespace
+
 grpc_channel_credentials* grpc_google_default_credentials_create(
-    grpc_call_credentials* call_credentials) {
+    grpc_call_credentials* call_creds_for_tls,
+    grpc_google_default_credentials_options* options) {
+  DefaultCallCredentialsCreationMethod default_credentials_type =
+      DefaultCallCredentialsCreationMethod::kNone;
   grpc_channel_credentials* result = nullptr;
-  grpc_core::RefCountedPtr<grpc_call_credentials> call_creds(call_credentials);
+  grpc_core::RefCountedPtr<grpc_call_credentials> call_creds(
+      call_creds_for_tls);
   grpc_error_handle error;
   grpc_core::ExecCtx exec_ctx;
 
   GRPC_TRACE_LOG(api, INFO)
-      << "grpc_google_default_credentials_create(" << call_credentials << ")";
+      << "grpc_google_default_credentials_create(" << call_creds_for_tls << ")";
 
   if (call_creds == nullptr) {
-    call_creds = make_default_call_creds(&error);
+    auto create_default_creds_status = CreateGoogleDefaultCallCredentials();
+
+    if (!create_default_creds_status.ok()) {
+      LOG(ERROR) << "Could not create google default credentials: "
+                 << grpc_core::StatusToString(
+                        create_default_creds_status.status());
+    } else {
+      call_creds = create_default_creds_status->first;
+      default_credentials_type = create_default_creds_status->second;
+    }
   }
 
   if (call_creds != nullptr) {
     // Create google default credentials.
     grpc_channel_credentials* ssl_creds =
         grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr);
-    CHECK_NE(ssl_creds, nullptr);
-    grpc_alts_credentials_options* options =
+    GRPC_CHECK_NE(ssl_creds, nullptr);
+    grpc_alts_credentials_options* credentials_options =
         grpc_alts_credentials_client_options_create();
     grpc_channel_credentials* alts_creds =
-        grpc_alts_credentials_create(options);
-    grpc_alts_credentials_options_destroy(options);
+        grpc_alts_credentials_create(credentials_options);
+    grpc_alts_credentials_options_destroy(credentials_options);
     auto creds =
         grpc_core::MakeRefCounted<grpc_google_default_channel_credentials>(
             grpc_core::RefCountedPtr<grpc_channel_credentials>(alts_creds),
             grpc_core::RefCountedPtr<grpc_channel_credentials>(ssl_creds));
+    if (options != nullptr) {
+      if (options->create_hard_bound_credentials &&
+          default_credentials_type ==
+              DefaultCallCredentialsCreationMethod::kFromDefaultGCE) {
+        grpc_google_compute_engine_credentials_options alts_options = {};
+        alts_options.alts_hard_bound = true;
+        grpc_core::RefCountedPtr<grpc_call_credentials> alts_call_creds(
+            grpc_google_compute_engine_credentials_create(&alts_options));
+        call_creds =
+            grpc_core::MakeRefCounted<GoogleDefaultCallCredentialsWrapper>(
+                std::move(call_creds), std::move(alts_call_creds));
+      } else if (options->call_creds_for_alts != nullptr) {
+        grpc_core::RefCountedPtr<grpc_call_credentials> alts_call_creds(
+            options->call_creds_for_alts);
+        call_creds =
+            grpc_core::MakeRefCounted<GoogleDefaultCallCredentialsWrapper>(
+                std::move(call_creds), std::move(alts_call_creds));
+      }
+    }
     result = grpc_composite_channel_credentials_create(
         creds.get(), call_creds.get(), nullptr);
-    CHECK_NE(result, nullptr);
+    GRPC_CHECK_NE(result, nullptr);
   } else {
     LOG(ERROR) << "Could not create google default credentials: "
                << grpc_core::StatusToString(error);
@@ -412,7 +525,6 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
 
 namespace grpc_core {
 namespace internal {
-
 void set_gce_tenancy_checker_for_testing(grpc_gce_tenancy_checker checker) {
   g_gce_tenancy_checker = checker;
 }

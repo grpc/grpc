@@ -22,12 +22,6 @@
 #include <grpc/support/port_platform.h>
 #include <stddef.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/random/distributions.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
@@ -36,8 +30,14 @@
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/status_helper.h"
+#include "absl/log/log.h"
+#include "absl/random/distributions.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 using grpc_core::http2::Http2ErrorCode;
 
@@ -113,7 +113,7 @@ grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
   s->call_tracer_wrapper.RecordIncomingBytes({framing_bytes, 0, 0});
 
   if (p->byte == 4) {
-    CHECK(is_last);
+    GRPC_CHECK(is_last);
     uint32_t reason = ((static_cast<uint32_t>(p->reason_bytes[0])) << 24) |
                       ((static_cast<uint32_t>(p->reason_bytes[1])) << 16) |
                       ((static_cast<uint32_t>(p->reason_bytes[2])) << 8) |

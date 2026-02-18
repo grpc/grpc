@@ -27,9 +27,6 @@
 #include <atomic>
 #include <memory>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/container/flat_hash_set.h"
-#include "absl/functional/any_invocable.h"
 #include "src/core/lib/event_engine/thread_pool/thread_count.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/work_queue/basic_work_queue.h"
@@ -38,6 +35,9 @@
 #include "src/core/util/notification.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/functional/any_invocable.h"
 
 namespace grpc_event_engine::experimental {
 
@@ -58,9 +58,6 @@ class WorkStealingThreadPool final : public ThreadPool {
   // These methods are exposed on the public object to allow for testing.
   void PrepareFork() override;
   void PostFork() override;
-
-  void PreventFork() override;
-  void AllowFork() override;
 #endif  // GRPC_ENABLE_FORK_SUPPORT
 
  private:
@@ -222,11 +219,6 @@ class WorkStealingThreadPool final : public ThreadPool {
   };
 
   const std::shared_ptr<WorkStealingThreadPoolImpl> pool_;
-#if GRPC_ENABLE_FORK_SUPPORT
-  grpc_core::Mutex can_fork_mutex_;
-  bool can_fork_ ABSL_GUARDED_BY(can_fork_mutex_);
-  grpc_core::CondVar can_fork_cond_;
-#endif  // GRPC_ENABLE_FORK_SUPPORT
 };
 
 }  // namespace grpc_event_engine::experimental

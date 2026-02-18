@@ -20,11 +20,11 @@
 
 #include <memory>
 
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 
@@ -79,7 +79,7 @@ CORE_END2END_TEST(CoreClientChannelTests, DisappearingServer) {
   // data structure to broadcast goaways to transports at the appropriate time.
   SKIP_IF_V3();
   OneRequestAndShutdownServer(*this);
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   OneRequestAndShutdownServer(*this);
 }
 

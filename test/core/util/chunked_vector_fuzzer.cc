@@ -21,12 +21,12 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "fuzztest/fuzztest.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/util/chunked_vector.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/util/chunked_vector_fuzzer.pb.h"
 
@@ -45,15 +45,15 @@ struct Comparison {
 
   // Check that both chunked and std are equivalent.
   void AssertOk() const {
-    CHECK(std.size() == chunked.size());
+    GRPC_CHECK(std.size() == chunked.size());
     auto it_chunked = chunked.cbegin();
     auto it_std = std.cbegin();
     while (it_std != std.cend()) {
-      CHECK(**it_std == **it_chunked);
+      GRPC_CHECK(**it_std == **it_chunked);
       ++it_chunked;
       ++it_std;
     }
-    CHECK(it_chunked == chunked.cend());
+    GRPC_CHECK(it_chunked == chunked.cend());
   }
 };
 

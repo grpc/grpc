@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include <grpc/status.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include <functional>
@@ -20,12 +22,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/time.h"
-#include "gtest/gtest.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -49,6 +45,12 @@
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/test_util/fake_stats_plugin.h"
+#include "gtest/gtest.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 
 namespace grpc_core {
 namespace {
@@ -136,7 +138,7 @@ class TestState {
       ABSL_GUARDED_BY(mu_);
 };
 
-class FakeCallTracer : public ClientCallTracer {
+class FakeCallTracer : public ClientCallTracerInterface {
  public:
   class FakeCallAttemptTracer : public CallAttemptTracer {
    public:
@@ -148,8 +150,18 @@ class FakeCallTracer : public ClientCallTracer {
     std::string SpanId() override { return ""; }
     bool IsSampled() override { return false; }
     void RecordSendInitialMetadata(
+        grpc_metadata_batch* send_initial_metadata) override {
+      GRPC_CHECK(!IsCallTracerSendInitialMetadataIsAnAnnotationEnabled());
+      MutateSendInitialMetadata(send_initial_metadata);
+    }
+    void MutateSendInitialMetadata(
         grpc_metadata_batch* /*send_initial_metadata*/) override {}
     void RecordSendTrailingMetadata(
+        grpc_metadata_batch* send_trailing_metadata) override {
+      GRPC_CHECK(!IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled());
+      MutateSendTrailingMetadata(send_trailing_metadata);
+    }
+    void MutateSendTrailingMetadata(
         grpc_metadata_batch* /*send_trailing_metadata*/) override {}
     void RecordSendMessage(const Message& /*send_message*/) override {}
     void RecordSendCompressedMessage(
@@ -224,7 +236,7 @@ class FakeCallTracer : public ClientCallTracer {
   std::shared_ptr<TestState> test_state_;
 };
 
-class FakeServerCallTracer : public ServerCallTracer {
+class FakeServerCallTracer : public ServerCallTracerInterface {
  public:
   explicit FakeServerCallTracer(std::shared_ptr<TestState> test_state)
       : test_state_(test_state) {
@@ -232,8 +244,18 @@ class FakeServerCallTracer : public ServerCallTracer {
   }
   ~FakeServerCallTracer() override {}
   void RecordSendInitialMetadata(
+      grpc_metadata_batch* send_initial_metadata) override {
+    GRPC_CHECK(!IsCallTracerSendInitialMetadataIsAnAnnotationEnabled());
+    MutateSendInitialMetadata(send_initial_metadata);
+  }
+  void MutateSendInitialMetadata(
       grpc_metadata_batch* /*send_initial_metadata*/) override {}
   void RecordSendTrailingMetadata(
+      grpc_metadata_batch* send_trailing_metadata) override {
+    GRPC_CHECK(!IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled());
+    MutateSendTrailingMetadata(send_trailing_metadata);
+  }
+  void MutateSendTrailingMetadata(
       grpc_metadata_batch* /*send_trailing_metadata*/) override {}
   void RecordSendMessage(const Message& /*send_message*/) override {}
   void RecordSendCompressedMessage(
@@ -288,12 +310,12 @@ class NewFakeStatsPlugin : public FakeStatsPlugin {
   explicit NewFakeStatsPlugin(std::shared_ptr<TestState> test_state)
       : test_state_(std::move(test_state)) {}
 
-  ClientCallTracer* GetClientCallTracer(
+  ClientCallTracerInterface* GetClientCallTracer(
       const Slice& /*path*/, bool /*registered_method*/,
       std::shared_ptr<StatsPlugin::ScopeConfig> /*scope_config*/) override {
     return GetContext<Arena>()->ManagedNew<FakeCallTracer>(test_state_);
   }
-  ServerCallTracer* GetServerCallTracer(
+  ServerCallTracerInterface* GetServerCallTracer(
       std::shared_ptr<StatsPlugin::ScopeConfig> /*scope_config*/) override {
     return GetContext<Arena>()->ManagedNew<FakeServerCallTracer>(test_state_);
   }

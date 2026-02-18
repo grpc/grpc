@@ -2,7 +2,6 @@
 - script: tools/run_tests/sanity/banned_functions.py
 - script: tools/run_tests/sanity/check_absl_mutex.sh
 - script: tools/run_tests/sanity/check_bad_dependencies.sh
-- script: tools/run_tests/sanity/check_bazel_workspace.py
 - script: tools/run_tests/sanity/check_banned_filenames.py
 - script: tools/run_tests/sanity/check_buildifier.sh
 - script: tools/run_tests/sanity/check_cache_mk.sh
@@ -36,6 +35,7 @@
 - script: tools/distrib/gen_experiments_and_format.sh --check
   cpu_cost: 1000
 - script: tools/distrib/pylint_code.sh
+- script: tools/distrib/ruff_code.sh
 - script: tools/distrib/python/check_grpcio_tools.py
 - script: tools/distrib/black_code.sh --check
   cpu_cost: 1000

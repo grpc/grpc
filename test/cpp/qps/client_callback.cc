@@ -22,6 +22,7 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 
+#include <atomic>
 #include <list>
 #include <memory>
 #include <mutex>
@@ -31,12 +32,12 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
 #include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/usage_timer.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
 
 namespace grpc {
 namespace testing {
@@ -365,7 +366,196 @@ class CallbackStreamingPingPongClientImpl final
   std::vector<std::unique_ptr<CallbackStreamingPingPongReactor>> reactor_;
 };
 
-// TODO(mhaidry) : Implement Streaming from client, server and both ways
+class CallbackStreamingFromClientReactor final
+    : public grpc::ClientWriteReactor<SimpleRequest> {
+ public:
+  CallbackStreamingFromClientReactor(
+      CallbackStreamingClient* client,
+      std::unique_ptr<CallbackClientRpcContext> ctx)
+      : client_(client), ctx_(std::move(ctx)) {}
+
+  void StartNewRpc() {
+    ctx_->stub_->async()->StreamingFromClient(&ctx_->context_, &ctx_->response_,
+                                              this);
+    write_time_ = UsageTimer::Now();
+    StartWrite(client_->request());
+    writes_done_started_.clear();
+    StartCall();
+  }
+
+  void OnWriteDone(bool ok) override {
+    if (!ok) {
+      LOG(ERROR) << "Error writing RPC";
+    }
+    if ((!ok || client_->ThreadCompleted()) &&
+        !writes_done_started_.test_and_set()) {
+      StartWritesDone();
+    }
+    client_->AddHistogramEntry(write_time_, ok, thread_ptr_);
+    if (!client_->ThreadCompleted() && ok) {
+      IssueNextWrite();
+    }
+  }
+
+  void IssueNextWrite() {
+    if (!client_->IsClosedLoop()) {
+      gpr_timespec next_issue_time = client_->NextRPCIssueTime();
+      ctx_->alarm_->Set(next_issue_time, [this](bool /*ok*/) {
+        write_time_ = UsageTimer::Now();
+        StartWrite(client_->request());
+      });
+    } else {
+      write_time_ = UsageTimer::Now();
+      StartWrite(client_->request());
+    }
+  }
+
+  void OnDone(const Status& s) override {
+    if (client_->ThreadCompleted() || !s.ok()) {
+      client_->NotifyMainThreadOfThreadCompletion();
+      return;
+    }
+    ctx_ = std::make_unique<CallbackClientRpcContext>(ctx_->stub_);
+    ScheduleRpc();
+  }
+
+  void ScheduleRpc() {
+    if (!client_->IsClosedLoop()) {
+      gpr_timespec next_issue_time = client_->NextRPCIssueTime();
+      if (ctx_->alarm_ == nullptr) {
+        ctx_->alarm_ = std::make_unique<Alarm>();
+      }
+      ctx_->alarm_->Set(next_issue_time,
+                        [this](bool /*ok*/) { StartNewRpc(); });
+    } else {
+      StartNewRpc();
+    }
+  }
+
+  void set_thread_ptr(Client::Thread* ptr) { thread_ptr_ = ptr; }
+
+  CallbackStreamingClient* client_;
+  std::unique_ptr<CallbackClientRpcContext> ctx_;
+  std::atomic_flag writes_done_started_;
+  Client::Thread* thread_ptr_;
+  double write_time_;
+};
+
+class CallbackStreamingFromClientClientImpl final
+    : public CallbackStreamingClient {
+ public:
+  explicit CallbackStreamingFromClientClientImpl(const ClientConfig& config)
+      : CallbackStreamingClient(config) {
+    for (size_t i = 0; i < total_outstanding_rpcs_; i++) {
+      reactor_.emplace_back(
+          new CallbackStreamingFromClientReactor(this, std::move(ctx_[i])));
+    }
+  }
+  ~CallbackStreamingFromClientClientImpl() override {}
+
+  bool ThreadFuncImpl(Client::Thread* t, size_t thread_idx) override {
+    for (size_t vector_idx = thread_idx; vector_idx < total_outstanding_rpcs_;
+         vector_idx += num_threads_) {
+      reactor_[vector_idx]->set_thread_ptr(t);
+      reactor_[vector_idx]->ScheduleRpc();
+    }
+    return true;
+  }
+
+  void InitThreadFuncImpl(size_t /*thread_idx*/) override {}
+
+ private:
+  std::vector<std::unique_ptr<CallbackStreamingFromClientReactor>> reactor_;
+};
+
+class CallbackStreamingFromServerReactor final
+    : public grpc::ClientReadReactor<SimpleResponse> {
+ public:
+  CallbackStreamingFromServerReactor(
+      CallbackStreamingClient* client,
+      std::unique_ptr<CallbackClientRpcContext> ctx)
+      : client_(client), ctx_(std::move(ctx)) {}
+
+  void StartNewRpc() {
+    ctx_->stub_->async()->StreamingFromServer(&ctx_->context_,
+                                              client_->request(), this);
+    read_time_ = UsageTimer::Now();
+    StartRead(&ctx_->response_);
+    StartCall();
+  }
+
+  void OnReadDone(bool ok) override {
+    client_->AddHistogramEntry(read_time_, ok, thread_ptr_);
+
+    if (!ok) {
+      return;
+    }
+    if (client_->ThreadCompleted()) {
+      ctx_->context_.TryCancel();
+      return;
+    }
+    read_time_ = UsageTimer::Now();
+    StartRead(&ctx_->response_);
+  }
+
+  void OnDone(const Status& s) override {
+    if (client_->ThreadCompleted() || !s.ok()) {
+      client_->NotifyMainThreadOfThreadCompletion();
+      return;
+    }
+    ctx_ = std::make_unique<CallbackClientRpcContext>(ctx_->stub_);
+    ScheduleRpc();
+  }
+
+  void ScheduleRpc() {
+    if (!client_->IsClosedLoop()) {
+      gpr_timespec next_issue_time = client_->NextRPCIssueTime();
+      if (ctx_->alarm_ == nullptr) {
+        ctx_->alarm_ = std::make_unique<Alarm>();
+      }
+      ctx_->alarm_->Set(next_issue_time,
+                        [this](bool /*ok*/) { StartNewRpc(); });
+    } else {
+      StartNewRpc();
+    }
+  }
+
+  void set_thread_ptr(Client::Thread* ptr) { thread_ptr_ = ptr; }
+
+  CallbackStreamingClient* client_;
+  std::unique_ptr<CallbackClientRpcContext> ctx_;
+  Client::Thread* thread_ptr_;
+  double read_time_;
+};
+
+class CallbackStreamingFromServerClientImpl final
+    : public CallbackStreamingClient {
+ public:
+  explicit CallbackStreamingFromServerClientImpl(const ClientConfig& config)
+      : CallbackStreamingClient(config) {
+    for (size_t i = 0; i < total_outstanding_rpcs_; i++) {
+      reactor_.emplace_back(
+          new CallbackStreamingFromServerReactor(this, std::move(ctx_[i])));
+    }
+  }
+  ~CallbackStreamingFromServerClientImpl() override {}
+
+  bool ThreadFuncImpl(Client::Thread* t, size_t thread_idx) override {
+    for (size_t vector_idx = thread_idx; vector_idx < total_outstanding_rpcs_;
+         vector_idx += num_threads_) {
+      reactor_[vector_idx]->set_thread_ptr(t);
+      reactor_[vector_idx]->ScheduleRpc();
+    }
+    return true;
+  }
+
+  void InitThreadFuncImpl(size_t /*thread_idx*/) override {}
+
+ private:
+  std::vector<std::unique_ptr<CallbackStreamingFromServerReactor>> reactor_;
+};
+
+// TODO(mhaidry) : Implement Streaming both ways
 
 std::unique_ptr<Client> CreateCallbackClient(const ClientConfig& config) {
   switch (config.rpc_type()) {
@@ -375,10 +565,14 @@ std::unique_ptr<Client> CreateCallbackClient(const ClientConfig& config) {
       return std::unique_ptr<Client>(
           new CallbackStreamingPingPongClientImpl(config));
     case STREAMING_FROM_CLIENT:
+      return std::unique_ptr<Client>(
+          new CallbackStreamingFromClientClientImpl(config));
     case STREAMING_FROM_SERVER:
+      return std::unique_ptr<Client>(
+          new CallbackStreamingFromServerClientImpl(config));
     case STREAMING_BOTH_WAYS:
       grpc_core::Crash(
-          "STREAMING_FROM_* scenarios are not supported by the callback "
+          "STREAMING_FROM_BOTH_WAYS scenario is not supported by the callback "
           "API");
     default:
       grpc_core::Crash(absl::StrCat("Unknown RPC type: ", config.rpc_type()));

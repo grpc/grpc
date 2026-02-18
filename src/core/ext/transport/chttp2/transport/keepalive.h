@@ -18,14 +18,17 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_KEEPALIVE_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_KEEPALIVE_H
 
-#include "absl/status/status.h"
+#include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/sleep.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace http2 {
 
-#define KEEPALIVE_LOG VLOG(2)
+#define GRPC_HTTP2_KEEPALIVE_LOG VLOG(2)
 
 class KeepAliveInterface {
  public:
@@ -46,18 +49,14 @@ class KeepaliveManager {
   KeepaliveManager(std::unique_ptr<KeepAliveInterface> keep_alive_interface,
                    Duration keepalive_timeout, Duration keepalive_time);
 
-  // Spawns the keepalive loop on the given party. This MUST be called at most
-  // once during the lifetime of the keepalive manager.
-  void Spawn(Party* party);
-
   // Needs to be called when any data is read from the endpoint.
   void GotData() {
     if (keep_alive_timeout_triggered_) {
-      KEEPALIVE_LOG
+      GRPC_HTTP2_KEEPALIVE_LOG
           << "KeepAlive timeout triggered. Not setting data_received_ to true";
       return;
     }
-    KEEPALIVE_LOG << "Data received. Setting data_received_ to true";
+    GRPC_HTTP2_KEEPALIVE_LOG << "Data received. Setting data_received_ to true";
     data_received_in_last_cycle_ = true;
     auto waker = std::move(waker_);
     // This will only trigger a wakeup if WaitForData() is pending on this
@@ -67,6 +66,12 @@ class KeepaliveManager {
   void SetKeepAliveTimeout(Duration keepalive_timeout) {
     keepalive_timeout_ = keepalive_timeout;
   }
+
+  bool IsKeepAliveLoopNeeded();
+
+  // Returns a promise that processes keepalive pings. This MUST be called at
+  // most once during the lifetime of the keepalive manager.
+  Promise<absl::Status> KeepaliveLoop();
 
  private:
   // Returns a promise that sleeps for the keepalive_timeout_ and triggers the
@@ -93,17 +98,18 @@ class KeepaliveManager {
   auto WaitForData() {
     return [this]() -> Poll<absl::Status> {
       if (data_received_in_last_cycle_) {
-        KEEPALIVE_LOG << "WaitForData: Data received. Poll resolved";
+        GRPC_HTTP2_KEEPALIVE_LOG << "WaitForData: Data received. Poll resolved";
         return absl::OkStatus();
       } else {
-        KEEPALIVE_LOG << "WaitForData: Data not received. Poll pending";
+        GRPC_HTTP2_KEEPALIVE_LOG
+            << "WaitForData: Data not received. Poll pending";
         waker_ = GetContext<Activity>()->MakeNonOwningWaker();
         return Pending{};
       }
     };
   }
   auto SendPingAndWaitForAck() {
-    DCHECK_EQ(data_received_in_last_cycle_, false);
+    GRPC_DCHECK_EQ(data_received_in_last_cycle_, false);
     return keep_alive_interface_->SendPingAndWaitForAck();
   }
 
@@ -120,10 +126,12 @@ class KeepaliveManager {
   }
 
   std::unique_ptr<KeepAliveInterface> keep_alive_interface_;
-  // If the keepalive_timeout_ is set to infinity, then the timeout is dictated
-  // by the ping timeout. Otherwise, this field can be used to set a specific
-  // timeout for keepalive pings.
+  // Duration to wait before triggering a keepalive timeout. If the
+  // keepalive_timeout_ is set to infinity, then the timeout is dictated by the
+  // ping timeout. Otherwise, this field can be used to set a specific timeout
+  // for keepalive pings.
   Duration keepalive_timeout_;
+  // Duration between two consecutive keepalive pings.
   const Duration keepalive_time_;
   bool data_received_in_last_cycle_ = false;
   bool keep_alive_timeout_triggered_ = false;

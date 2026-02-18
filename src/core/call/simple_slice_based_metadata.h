@@ -17,15 +17,16 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/strings/string_view.h"
 #include "src/core/call/parsed_metadata.h"
 #include "src/core/lib/slice/slice.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
 // Models grpc metadata (as per the rules for MetadataMap) for a metadata
 // element that consists of a Slice.
-// Use by deriving from this class and adding `kRepeatable` and `key()`.
+// Use by deriving from this class and adding `kPublishToApp`, `kRepeatable` and
+// `key()`.
 struct SimpleSliceBasedMetadata {
   using ValueType = Slice;
   using MementoType = Slice;

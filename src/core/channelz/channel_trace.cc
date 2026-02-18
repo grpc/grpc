@@ -26,7 +26,7 @@
 #include <memory>
 #include <utility>
 
-#include "absl/strings/str_cat.h"
+#include "google/protobuf/any.upb.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -34,6 +34,10 @@
 #include "src/core/util/string.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
+#include "src/core/util/upb_utils.h"
+#include "src/proto/grpc/channelz/v2/channelz.upb.h"
+#include "upb/base/string_view.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace channelz {
@@ -46,8 +50,7 @@ Json ChannelTrace::RenderJson() const {
   if (max_memory_ == 0) return Json();
   Json::Array array;
   MutexLock lock(&mu_);
-  ForEachTraceEventLocked([&array](gpr_timespec timestamp, Severity,
-                                   std::string line, RefCountedPtr<BaseNode>) {
+  ForEachTraceEventLocked([&array](gpr_timespec timestamp, std::string line) {
     Json::Object object = {
         {"severity", Json::FromString("CT_INFO")},
         {"timestamp", Json::FromString(gpr_format_timespec(timestamp))},
@@ -201,17 +204,13 @@ void ChannelTrace::DropEntryId(uint16_t id) {
 }
 
 void ChannelTrace::ForEachTraceEvent(
-    absl::FunctionRef<void(gpr_timespec, Severity, std::string,
-                           RefCountedPtr<BaseNode>)>
-        callback) const {
+    absl::FunctionRef<void(gpr_timespec, std::string)> callback) const {
   MutexLock lock(&mu_);
   ForEachTraceEventLocked(callback);
 }
 
 void ChannelTrace::ForEachTraceEventLocked(
-    absl::FunctionRef<void(gpr_timespec, Severity, std::string,
-                           RefCountedPtr<BaseNode>)>
-        callback) const {
+    absl::FunctionRef<void(gpr_timespec, std::string)> callback) const {
   uint16_t id = first_entry_;
   while (id != kSentinelId) {
     const Entry& e = entries_[id];
@@ -222,16 +221,14 @@ void ChannelTrace::ForEachTraceEventLocked(
 
 void ChannelTrace::RenderEntry(
     const Entry& entry,
-    absl::FunctionRef<void(gpr_timespec, Severity, std::string,
-                           RefCountedPtr<BaseNode>)>
-        callback,
+    absl::FunctionRef<void(gpr_timespec, std::string)> callback,
     int depth) const {
   if (entry.renderer != nullptr) {
-    callback(entry.when.as_timespec(GPR_CLOCK_REALTIME), Severity::Info,
-             entry.renderer->Render(), nullptr);
+    callback(entry.when.as_timespec(GPR_CLOCK_REALTIME),
+             entry.renderer->Render());
   } else if (entry.first_child != kSentinelId) {
-    callback(entry.when.as_timespec(GPR_CLOCK_REALTIME), Severity::Info,
-             "?unknown parent entry?", nullptr);
+    callback(entry.when.as_timespec(GPR_CLOCK_REALTIME),
+             "?unknown parent entry?");
   }
   if (entry.first_child != kSentinelId) {
     uint16_t id = entry.first_child;
@@ -240,6 +237,46 @@ void ChannelTrace::RenderEntry(
       RenderEntry(e, callback, depth + 1);
       id = e.next_sibling;
     }
+  }
+}
+
+void ChannelTrace::Render(grpc_channelz_v2_Entity* entity,
+                          upb_Arena* arena) const {
+  MutexLock lock(&mu_);
+  uint16_t id = first_entry_;
+  while (id != kSentinelId) {
+    const Entry& e = entries_[id];
+    if (e.parent == kSentinelId) {
+      RenderEntry(e, grpc_channelz_v2_Entity_add_trace(entity, arena), arena);
+    }
+    id = e.next_chronologically;
+  }
+}
+
+void ChannelTrace::RenderEntry(const Entry& entry,
+                               grpc_channelz_v2_TraceEvent* trace_event,
+                               upb_Arena* arena) const {
+  TimestampToUpb(
+      entry.when.as_timespec(GPR_CLOCK_REALTIME),
+      grpc_channelz_v2_TraceEvent_mutable_timestamp(trace_event, arena));
+  if (entry.renderer != nullptr) {
+    grpc_channelz_v2_TraceEvent_set_description(
+        trace_event, CopyStdStringToUpbString(entry.renderer->Render(), arena));
+  }
+  for (uint16_t id = entry.first_child; id != kSentinelId;
+       id = entries_[id].next_sibling) {
+    auto* child = grpc_channelz_v2_TraceEvent_new(arena);
+    RenderEntry(entries_[id], child, arena);
+    size_t length;
+    auto* bytes = grpc_channelz_v2_TraceEvent_serialize(child, arena, &length);
+    auto* data = grpc_channelz_v2_Data_new(arena);
+    grpc_channelz_v2_Data_set_name(data, StdStringToUpbString("child_trace"));
+    auto* any = grpc_channelz_v2_Data_mutable_value(data, arena);
+    google_protobuf_Any_set_value(
+        any, upb_StringView_FromDataAndSize(bytes, length));
+    google_protobuf_Any_set_type_url(
+        any, StdStringToUpbString(
+                 "type.googleapis.com/grpc.channelz.v2.TraceEvent"));
   }
 }
 

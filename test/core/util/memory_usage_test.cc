@@ -88,4 +88,11 @@ TEST(MemoryUsageTest, EscapeHatch) {
   EXPECT_EQ(MemoryUsageOf(Foo()), 12345);
 }
 
+TEST(MemoryUsageTest, Variant) {
+  std::variant<int, std::string> v = 42;
+  std::variant<int, std::string> v2 = "hello";
+  EXPECT_EQ(MemoryUsageOf(v), sizeof(int));
+  EXPECT_GE(MemoryUsageOf(v2), sizeof(std::string) + strlen("hello"));
+}
+
 }  // namespace grpc_core

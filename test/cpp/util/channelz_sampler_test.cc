@@ -37,17 +37,17 @@
 #include <string>
 #include <thread>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "gtest/gtest.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/cpp/server/channelz/channelz_service.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 
 static std::string g_root;
 
@@ -96,7 +96,7 @@ void RunClient(const std::string& client_id, gpr_event* done_ev) {
     Status status = stub->EmptyCall(&context, request, &response);
     if (!status.ok()) {
       LOG(ERROR) << "Client echo failed.";
-      CHECK(0);
+      GRPC_CHECK(0);
     }
   }
 }
@@ -147,11 +147,11 @@ TEST(ChannelzSamplerTest, SimpleTest) {
   } else if (WIFSIGNALED(status)) {
     LOG(ERROR) << "Channelz sampler test test-runner ended from signal "
                << WTERMSIG(status);
-    CHECK(0);
+    GRPC_CHECK(0);
   } else {
     LOG(ERROR) << "Channelz sampler test test-runner ended with unknown status "
                << status;
-    CHECK(0);
+    GRPC_CHECK(0);
   }
   delete test_driver;
   gpr_event_set(&done_ev1, reinterpret_cast<void*>(1));

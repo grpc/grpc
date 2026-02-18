@@ -25,17 +25,17 @@
 #include <utility>
 #include <variant>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/string_view.h"
 #include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/call/message.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/transport/chttp2/http2_common_test_inputs.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -82,7 +82,7 @@ void AssemblerFuzzer(
       VLOG(3) << "      AssemblerFuzzer AppendNewDataFrame result: " << result;
       EXPECT_EQ(payload.Length(), 0);
     } else {
-      CHECK(std::holds_alternative<uint8_t>(step));
+      GRPC_CHECK(std::holds_alternative<uint8_t>(step));
       const uint8_t num_msgs = std::get<uint8_t>(step);
       LOG(INFO) << "    AssemblerFuzzer Extract : { Step:" << count_steps
                 << ", Number of extracts: " << static_cast<int>(num_msgs)
@@ -136,7 +136,7 @@ void AssemblerFuzzer(
   //    std::vector<uint8_t> bytes,
   //    std::vector<size_t> span_lengths1,
   //    std::vector<size_t> span_lengths2) {
-  //        CHECK_EQ(
+  //        GRPC_CHECK_EQ(
   //            PushSegmentsAndPullMessages(Split(bytes, span_lengths1)),
   //            PushSegmentsAndPullMessages(Split(bytes, span_lengths2)));
   //    }

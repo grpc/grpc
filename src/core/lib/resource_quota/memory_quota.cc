@@ -28,19 +28,22 @@
 #include <tuple>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
+#include "src/core/channelz/channelz.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
+#include "src/core/lib/resource_tracker/resource_tracker.h"
 #include "src/core/lib/slice/slice_refcount.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/mpscq.h"
 #include "src/core/util/useful.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
@@ -130,16 +133,20 @@ class SliceRefCount : public grpc_slice_refcount {
   size_t size_;
 };
 
-std::atomic<double> container_memory_pressure{0.0};
-
 }  // namespace
 
-void SetContainerMemoryPressure(double pressure) {
-  container_memory_pressure.store(pressure, std::memory_order_relaxed);
-}
-
 double ContainerMemoryPressure() {
-  return container_memory_pressure.load(std::memory_order_relaxed);
+  auto* tracker = ResourceTracker::Get();
+  if (tracker == nullptr) {
+    return 0.0;
+  }
+  auto value = tracker->GetMetricValue("memory");
+  if (!value.ok()) {
+    LOG(WARNING) << "Failed to get 'memory' metric from ResourceTracker: "
+                 << value.status();
+    return 0.0;
+  }
+  return *value;
 }
 
 //
@@ -270,9 +277,9 @@ GrpcMemoryAllocatorImpl::GrpcMemoryAllocatorImpl(
 }
 
 GrpcMemoryAllocatorImpl::~GrpcMemoryAllocatorImpl() {
-  CHECK_EQ(free_bytes_.load(std::memory_order_acquire) +
-               sizeof(GrpcMemoryAllocatorImpl),
-           taken_bytes_.load(std::memory_order_relaxed));
+  GRPC_CHECK_EQ(free_bytes_.load(std::memory_order_acquire) +
+                    sizeof(GrpcMemoryAllocatorImpl),
+                taken_bytes_.load(std::memory_order_relaxed));
   memory_quota_->Return(taken_bytes_.load(std::memory_order_relaxed));
 }
 
@@ -283,7 +290,7 @@ void GrpcMemoryAllocatorImpl::Shutdown() {
       reclamation_handles[kNumReclamationPasses];
   {
     MutexLock lock(&reclaimer_mu_);
-    CHECK(!shutdown_);
+    GRPC_CHECK(!shutdown_);
     shutdown_ = true;
     memory_quota = memory_quota_;
     for (size_t i = 0; i < kNumReclamationPasses; i++) {
@@ -295,8 +302,8 @@ void GrpcMemoryAllocatorImpl::Shutdown() {
 size_t GrpcMemoryAllocatorImpl::Reserve(MemoryRequest request) {
   // Validate request - performed here so we don't bloat the generated code with
   // inlined asserts.
-  CHECK(request.min() <= request.max());
-  CHECK(request.max() <= MemoryRequest::max_allowed_size());
+  GRPC_CHECK(request.min() <= request.max());
+  GRPC_CHECK(request.max() <= MemoryRequest::max_allowed_size());
   size_t old_free = free_bytes_.load(std::memory_order_relaxed);
 
   while (true) {
@@ -374,7 +381,7 @@ void GrpcMemoryAllocatorImpl::MaybeDonateBack() {
                                           std::memory_order_acquire)) {
       GRPC_TRACE_LOG(resource_quota, INFO)
           << "[" << this << "] Early return " << ret << " bytes";
-      CHECK(taken_bytes_.fetch_sub(ret, std::memory_order_relaxed) >= ret);
+      GRPC_CHECK(taken_bytes_.fetch_sub(ret, std::memory_order_relaxed) >= ret);
       memory_quota_->Return(ret);
       return;
     }
@@ -407,6 +414,20 @@ grpc_slice GrpcMemoryAllocatorImpl::MakeSlice(MemoryRequest request) {
   return slice;
 }
 
+void GrpcMemoryAllocatorImpl::FillChannelzProperties(
+    channelz::PropertyList& list) {
+  list.Set("free_bytes", free_bytes_.load(std::memory_order_relaxed))
+      .Set("taken_bytes", taken_bytes_.load(std::memory_order_relaxed))
+      .Set("chosen_shard_idx",
+           chosen_shard_idx_.load(std::memory_order_relaxed))
+      .Set("donate_back_period", donate_back_.period());
+  donate_back_.Interrupt([&list](Duration so_far) {
+    list.Set("donate_back_period_expired", so_far);
+  });
+  MutexLock lock(&reclaimer_mu_);
+  list.Set("shutdown", shutdown_);
+}
+
 //
 // BasicMemoryQuota
 //
@@ -431,7 +452,20 @@ class BasicMemoryQuota::WaitForSweepPromise {
   uint64_t token_;
 };
 
-BasicMemoryQuota::BasicMemoryQuota(std::string name) : name_(std::move(name)) {}
+BasicMemoryQuota::BasicMemoryQuota(
+    RefCountedPtr<channelz::ResourceQuotaNode> channelz_node,
+    InstrumentStorageRefPtr<ResourceQuotaDomain> telemetry_storage)
+    : channelz::DataSource(channelz_node),
+      GaugeProvider(telemetry_storage),
+      telemetry_storage_(std::move(telemetry_storage)) {
+  ProviderConstructed();
+  channelz::DataSource::SourceConstructed();
+}
+
+BasicMemoryQuota::~BasicMemoryQuota() {
+  ProviderDestructing();
+  channelz::DataSource::SourceDestructing();
+}
 
 void BasicMemoryQuota::Start() {
   auto self = shared_from_this();
@@ -471,7 +505,7 @@ void BasicMemoryQuota::Start() {
           if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
             double free = std::max(intptr_t{0}, self->free_bytes_.load());
             size_t quota_size = self->quota_size_.load();
-            LOG(INFO) << "RQ: " << self->name_ << " perform "
+            LOG(INFO) << "RQ: " << self->name() << " perform "
                       << std::get<0>(arg)
                       << " reclamation. Available free bytes: " << free
                       << ", total quota_size: " << quota_size;
@@ -498,7 +532,7 @@ void BasicMemoryQuota::Start() {
   reclaimer_activity_ =
       MakeActivity(std::move(reclamation_loop), ExecCtxWakeupScheduler(),
                    [](absl::Status status) {
-                     CHECK(status.code() == absl::StatusCode::kCancelled);
+                     GRPC_CHECK(status.code() == absl::StatusCode::kCancelled);
                    });
 }
 
@@ -518,7 +552,7 @@ void BasicMemoryQuota::SetSize(size_t new_size) {
 void BasicMemoryQuota::Take(GrpcMemoryAllocatorImpl* allocator, size_t amount) {
   // If there's a request for nothing, then do nothing!
   if (amount == 0) return;
-  DCHECK(amount <= std::numeric_limits<intptr_t>::max());
+  GRPC_DCHECK(amount <= std::numeric_limits<intptr_t>::max());
   // Grab memory from the quota.
   auto prior = free_bytes_.fetch_sub(amount, std::memory_order_acq_rel);
   // If we push into overcommit, awake the reclaimer.
@@ -555,7 +589,7 @@ void BasicMemoryQuota::FinishReclamation(uint64_t token, Waker waker) {
     if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
       double free = std::max(intptr_t{0}, free_bytes_.load());
       size_t quota_size = quota_size_.load();
-      LOG(INFO) << "RQ: " << name_
+      LOG(INFO) << "RQ: " << name()
                 << " reclamation complete. Available free bytes: " << free
                 << ", total quota_size: " << quota_size;
     }
@@ -678,6 +712,53 @@ BasicMemoryQuota::PressureInfo BasicMemoryQuota::GetPressureInfo() {
   return pressure_info;
 }
 
+void BasicMemoryQuota::PopulateGaugeData(GaugeSink<ResourceQuotaDomain>& sink) {
+  auto pressure_info = GetPressureInfo();
+  sink.Set(ResourceQuotaDomain::kInstantaneousMemoryPressure,
+           pressure_info.instantaneous_pressure);
+  sink.Set(ResourceQuotaDomain::kMemoryPressureControlValue,
+           pressure_info.pressure_control_value);
+}
+
+void BasicMemoryQuota::AddData(channelz::DataSink sink) {
+  sink.AddData(
+      "memory_quota",
+      channelz::PropertyList()
+          .Set("free_bytes", free_bytes_.load(std::memory_order_relaxed))
+          .Set("quota_size", quota_size_.load(std::memory_order_relaxed))
+          .Set("container_memory_pressure", ContainerMemoryPressure())
+          .Merge(pressure_tracker_.ChannelzProperties())
+          .Set("allocators",
+               [this]() {
+                 channelz::PropertyTable table;
+                 for (auto& shard : small_allocators_.shards) {
+                   MutexLock l(&shard.shard_mu);
+                   size_t i = 0;
+                   for (auto& allocator : shard.allocators) {
+                     i++;
+                     channelz::PropertyList list;
+                     list.Set("shard", absl::StrCat("small", i));
+                     allocator->FillChannelzProperties(list);
+                     table.AppendRow(std::move(list));
+                   }
+                 }
+                 for (auto& shard : big_allocators_.shards) {
+                   MutexLock l(&shard.shard_mu);
+                   size_t i = 0;
+                   for (auto& allocator : shard.allocators) {
+                     i++;
+                     channelz::PropertyList list;
+                     list.Set("shard", absl::StrCat("big", i));
+                     allocator->FillChannelzProperties(list);
+                     table.AppendRow(std::move(list));
+                   }
+                 }
+                 return table;
+               }())
+          .Set("reclamation_counter",
+               reclamation_counter_.load(std::memory_order_relaxed)));
+}
+
 //
 // PressureTracker
 //
@@ -757,8 +838,6 @@ std::string PressureController::DebugString() const {
 }
 
 double PressureTracker::AddSampleAndGetControlValue(double sample) {
-  static const double kSetPoint = 0.95;
-
   double max_so_far = max_this_round_.load(std::memory_order_relaxed);
   if (sample > max_so_far) {
     max_this_round_.compare_exchange_weak(max_so_far, sample,
@@ -767,7 +846,7 @@ double PressureTracker::AddSampleAndGetControlValue(double sample) {
   }
   // If memory pressure is almost done, immediately hit the brakes and report
   // full memory usage.
-  if (sample >= 0.99) {
+  if (sample >= memory_pressure_threshold_) {
     report_.store(1.0, std::memory_order_relaxed);
   }
   update_.Tick([&](Duration) {
@@ -775,11 +854,11 @@ double PressureTracker::AddSampleAndGetControlValue(double sample) {
     const double current_estimate =
         max_this_round_.exchange(sample, std::memory_order_relaxed);
     double report;
-    if (current_estimate > 0.99) {
+    if (current_estimate > memory_pressure_threshold_) {
       // Under very high memory pressure we... just max things out.
       report = controller_.Update(1e99);
     } else {
-      report = controller_.Update(current_estimate - kSetPoint);
+      report = controller_.Update(current_estimate - target_memory_pressure_);
     }
     GRPC_TRACE_LOG(resource_quota, INFO)
         << "RQ: pressure:" << current_estimate << " report:" << report
@@ -789,6 +868,35 @@ double PressureTracker::AddSampleAndGetControlValue(double sample) {
   return report_.load(std::memory_order_relaxed);
 }
 
+channelz::PropertyList PressureController::ChannelzProperties() const {
+  return channelz::PropertyList()
+      .Set("ticks_same_pressure", ticks_same_)
+      .Set("max_ticks_same_pressure", max_ticks_same_)
+      .Set("max_pressure_reduction_per_tick", max_reduction_per_tick_ * 0.001)
+      .Set("last_pressure_was_low", last_was_low_)
+      .Set("min_pressure", min_)
+      .Set("max_pressure", max_)
+      .Set("last_control", last_control_);
+}
+
+channelz::PropertyList PressureTracker::ChannelzProperties() {
+  return channelz::PropertyList()
+      .Set("max_pressure_this_round",
+           max_this_round_.load(std::memory_order_relaxed))
+      .Set("pressure_report", report_.load(std::memory_order_relaxed))
+      .Merge([this]() {
+        channelz::PropertyList list;
+        if (!update_.Interrupt([&](Duration duration) {
+              list = controller_.ChannelzProperties();
+              list.Set("time_since_last_pressure_update", duration);
+              list.Set("pressure_update_period", update_.period());
+            })) {
+          list.Set("pressure_controller_busy", true)
+              .Set("pressure_update_period", update_.period());
+        }
+        return list;
+      }());
+}
 }  // namespace memory_quota_detail
 
 //

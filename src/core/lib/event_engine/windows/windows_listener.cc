@@ -15,10 +15,6 @@
 
 #ifdef GPR_WINDOWS
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
 #include "src/core/lib/event_engine/extensions/iomgr_compatible.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
@@ -28,7 +24,11 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc_event_engine::experimental {
 
@@ -47,7 +47,7 @@ WindowsEventEngineListener::SinglePortSocketListener::AsyncIOState::
 
 void WindowsEventEngineListener::SinglePortSocketListener::
     OnAcceptCallbackWrapper::Run() {
-  CHECK_NE(io_state_, nullptr);
+  GRPC_CHECK_NE(io_state_, nullptr);
   grpc_core::ReleasableMutexLock lock(&io_state_->mu);
   if (io_state_->listener_socket->IsShutdown()) {
     GRPC_TRACE_LOG(event_engine, INFO)
@@ -80,15 +80,27 @@ void UnlinkIfUnixDomainSocket(
   if (un->sun_path[0] == '\0' && un->sun_path[1] != '\0') {
     return;
   }
+  // Convert UTF-8 path to Unicode.
+  std::wstring wide_path;
+  int needed = MultiByteToWideChar(CP_UTF8, 0, un->sun_path, -1, NULL, 0);
+  if (needed <= 0) {
+    return;
+  }
+  wide_path.resize(needed, L'\0');
+  if (MultiByteToWideChar(CP_UTF8, 0, un->sun_path, -1, wide_path.data(),
+                          needed) == 0) {
+    // Failed to convert UTF-8 path to wide char.
+    return;
+  }
   // For windows we need to remove the file instead of unlink.
-  DWORD attr = ::GetFileAttributesA(un->sun_path);
+  DWORD attr = ::GetFileAttributesW(wide_path.data());
   if (attr == INVALID_FILE_ATTRIBUTES) {
     return;
   }
   if (attr & FILE_ATTRIBUTE_DIRECTORY || attr & FILE_ATTRIBUTE_READONLY) {
     return;
   }
-  ::DeleteFileA(un->sun_path);
+  ::DeleteFileW(wide_path.data());
 #else
   (void)resolved_addr;
 #endif
@@ -123,7 +135,7 @@ WindowsEventEngineListener::SinglePortSocketListener::Create(
   }
   auto result = SinglePortSocketListener::PrepareListenerSocket(sock, addr);
   GRPC_RETURN_IF_ERROR(result.status());
-  CHECK_GE(result->port, 0);
+  GRPC_CHECK_GE(result->port, 0);
   // Using `new` to access non-public constructor
   return absl::WrapUnique(new SinglePortSocketListener(
       listener, AcceptEx, /*win_socket=*/listener->iocp_->Watch(sock),
@@ -189,8 +201,8 @@ void WindowsEventEngineListener::SinglePortSocketListener::
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(io_state_->mu) {
             if (do_close_socket) closesocket(io_state_->accept_socket);
             io_state_->accept_socket = INVALID_SOCKET;
-            CHECK(GRPC_LOG_IF_ERROR("SinglePortSocketListener::Start",
-                                    StartLocked()));
+            GRPC_CHECK(GRPC_LOG_IF_ERROR("SinglePortSocketListener::Start",
+                                         StartLocked()));
           };
   const auto& overlapped_result =
       io_state_->listener_socket->read_info()->result();
@@ -257,7 +269,7 @@ absl::StatusOr<WindowsEventEngineListener::SinglePortSocketListener::
 WindowsEventEngineListener::SinglePortSocketListener::PrepareListenerSocket(
     SOCKET sock, const EventEngine::ResolvedAddress& addr) {
   auto fail = [&](absl::Status error) -> absl::Status {
-    CHECK(!error.ok());
+    GRPC_CHECK(!error.ok());
     error = GRPC_ERROR_CREATE_REFERENCING("Failed to prepare server socket",
                                           &error, 1);
     if (sock != INVALID_SOCKET) closesocket(sock);
@@ -359,7 +371,7 @@ absl::StatusOr<int> WindowsEventEngineListener::Bind(
 }
 
 absl::Status WindowsEventEngineListener::Start() {
-  CHECK(!started_.exchange(true));
+  GRPC_CHECK(!started_.exchange(true));
   grpc_core::MutexLock lock(&port_listeners_mu_);
   for (auto& port_listener : port_listeners_) {
     GRPC_RETURN_IF_ERROR(port_listener->Start());

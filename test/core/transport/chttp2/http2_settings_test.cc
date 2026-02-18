@@ -14,6 +14,13 @@
 
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 
+#include <cstdint>
+#include <optional>
+#include <utility>
+#include <vector>
+
+#include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -557,6 +564,84 @@ TEST(Http2SettingsManagerTest, AckAfterAckFails) {
               SettingsFrame(KeyValueVec{{4, 100000}}));
   EXPECT_TRUE(settings_manager.AckLastSend());
   EXPECT_FALSE(settings_manager.AckLastSend());
+}
+
+TEST(Http2SettingsManagerTest, ApplyIncomingSettingsEmpty) {
+  Http2SettingsManager settings_manager;
+  std::vector<Http2SettingsFrame::Setting> settings;
+  EXPECT_EQ(settings_manager.ApplyIncomingSettings(settings),
+            Http2ErrorCode::kNoError);
+}
+
+TEST(Http2SettingsManagerTest, ApplyIncomingSettingsValid) {
+  Http2SettingsManager settings_manager;
+  std::vector<Http2SettingsFrame::Setting> settings = {
+      {Http2Settings::kHeaderTableSizeWireId, 1000},
+      {Http2Settings::kMaxConcurrentStreamsWireId, 200}};
+  EXPECT_EQ(settings_manager.ApplyIncomingSettings(settings),
+            Http2ErrorCode::kNoError);
+  EXPECT_EQ(settings_manager.peer().header_table_size(), 1000u);
+  EXPECT_EQ(settings_manager.peer().max_concurrent_streams(), 200u);
+}
+
+TEST(Http2SettingsManagerTest, ApplyIncomingSettingsInvalidValue) {
+  Http2SettingsManager settings_manager;
+  // MaxFrameSize must be between 16384 and 16777215
+  std::vector<Http2SettingsFrame::Setting> settings = {
+      {Http2Settings::kMaxFrameSizeWireId, 16383}};
+  EXPECT_EQ(settings_manager.ApplyIncomingSettings(settings),
+            Http2ErrorCode::kProtocolError);
+  std::vector<Http2SettingsFrame::Setting> settings1 = {
+      {Http2Settings::kMaxFrameSizeWireId, 16777216}};
+  EXPECT_EQ(settings_manager.ApplyIncomingSettings(settings1),
+            Http2ErrorCode::kProtocolError);
+}
+
+TEST(Http2SettingsManagerTest,
+     ApplyIncomingSettingsAllowTrueBinaryMetadataTwice) {
+  Http2SettingsManager settings_manager;
+  std::vector<Http2SettingsFrame::Setting> settings = {
+      {Http2Settings::kGrpcAllowTrueBinaryMetadataWireId, 1}};
+  EXPECT_EQ(settings_manager.ApplyIncomingSettings(settings),
+            Http2ErrorCode::kNoError);
+  EXPECT_EQ(settings_manager.ApplyIncomingSettings(settings),
+            Http2ErrorCode::kNoError);
+}
+
+TEST(Http2SettingsManagerTest,
+     ApplyIncomingSettingsAllowTrueBinaryMetadataTwiceDifferentValue) {
+  Http2SettingsManager settings_manager;
+  std::vector<Http2SettingsFrame::Setting> settings1 = {
+      {Http2Settings::kGrpcAllowTrueBinaryMetadataWireId, 1}};
+  EXPECT_EQ(settings_manager.ApplyIncomingSettings(settings1),
+            Http2ErrorCode::kNoError);
+  std::vector<Http2SettingsFrame::Setting> settings2 = {
+      {Http2Settings::kGrpcAllowTrueBinaryMetadataWireId, 0}};
+  EXPECT_EQ(settings_manager.ApplyIncomingSettings(settings2),
+            Http2ErrorCode::kConnectError);
+}
+
+TEST(Http2SettingsManagerTest, ApplyIncomingSettingsAllowSecurityFrameTwice) {
+  Http2SettingsManager settings_manager;
+  std::vector<Http2SettingsFrame::Setting> settings = {
+      {Http2Settings::kGrpcAllowSecurityFrameWireId, 1}};
+  EXPECT_EQ(settings_manager.ApplyIncomingSettings(settings),
+            Http2ErrorCode::kNoError);
+  EXPECT_EQ(settings_manager.ApplyIncomingSettings(settings),
+            Http2ErrorCode::kNoError);
+}
+
+TEST(Http2SettingsManagerTest,
+     ApplyIncomingSettingsAllowSecurityFrameTwiceDifferentValue) {
+  Http2SettingsManager settings_manager;
+  std::vector<Http2SettingsFrame::Setting> settings1 = {
+      {Http2Settings::kGrpcAllowSecurityFrameWireId, 1}};
+  EXPECT_EQ(settings_manager.ApplyIncomingSettings(settings1),
+            Http2ErrorCode::kNoError);
+  std::vector<Http2SettingsFrame::Setting> settings2 = {
+      {Http2Settings::kGrpcAllowSecurityFrameWireId, 0}};
+  EXPECT_EQ(settings_manager.ApplyIncomingSettings(settings2),
+            Http2ErrorCode::kConnectError);
 }
 
 }  // namespace grpc_core

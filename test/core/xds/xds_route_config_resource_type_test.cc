@@ -30,11 +30,6 @@
 #include <variant>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
 #include "envoy/config/core/v3/base.pb.h"
 #include "envoy/config/core/v3/extension.pb.h"
 #include "envoy/config/route/v3/route.pb.h"
@@ -43,8 +38,6 @@
 #include "envoy/type/matcher/v3/string.pb.h"
 #include "envoy/type/v3/percent.pb.h"
 #include "envoy/type/v3/range.pb.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "re2/re2.h"
 #include "src/core/call/status_util.h"
 #include "src/core/lib/debug/trace.h"
@@ -66,6 +59,13 @@
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
 #include "xds/type/v3/typed_struct.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
 using envoy::config::route::v3::RouteConfiguration;
 using grpc::lookup::v1::RouteLookupClusterSpecifier;
@@ -417,7 +417,7 @@ TEST_P(TypedPerFilterConfigTest, Basic) {
   ASSERT_NE(it, typed_per_filter_config.end());
   EXPECT_EQ("fault", it->first);
   const auto& filter_config = it->second;
-  EXPECT_EQ(filter_config.config_proto_type_name,
+  EXPECT_EQ(filter_config.config_proto_type,
             "envoy.extensions.filters.http.fault.v3.HTTPFault");
   EXPECT_EQ(JsonDump(filter_config.config),
             "{\"abortCode\":\"PERMISSION_DENIED\"}");
@@ -528,7 +528,7 @@ TEST_P(TypedPerFilterConfigTest, FilterConfigWrapper) {
   ASSERT_NE(it, typed_per_filter_config.end());
   EXPECT_EQ("fault", it->first);
   const auto& filter_config = it->second;
-  EXPECT_EQ(filter_config.config_proto_type_name,
+  EXPECT_EQ(filter_config.config_proto_type,
             "envoy.extensions.filters.http.fault.v3.HTTPFault");
   EXPECT_EQ(JsonDump(filter_config.config),
             "{\"abortCode\":\"PERMISSION_DENIED\"}");

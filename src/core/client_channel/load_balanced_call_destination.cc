@@ -14,7 +14,6 @@
 
 #include "src/core/client_channel/load_balanced_call_destination.h"
 
-#include "absl/log/log.h"
 #include "src/core/call/status_util.h"
 #include "src/core/client_channel/client_channel.h"
 #include "src/core/client_channel/client_channel_internal.h"
@@ -23,16 +22,19 @@
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 
 namespace {
 
 void MaybeCreateCallAttemptTracer(bool is_transparent_retry) {
+  auto* arena = MaybeGetContext<Arena>();
+  if (arena == nullptr) return;
   auto* call_tracer = MaybeGetContext<ClientCallTracer>();
   if (call_tracer == nullptr) return;
   auto* tracer = call_tracer->StartNewAttempt(is_transparent_retry);
-  SetContext<CallTracerInterface>(tracer);
+  SetContext<CallAttemptTracer>(WrapCallAttemptTracer(tracer, arena));
 }
 
 class LbCallState : public ClientChannelLbCallState {
@@ -47,8 +49,8 @@ class LbCallState : public ClientChannelLbCallState {
     return service_config_call_data->GetCallAttribute(type);
   }
 
-  ClientCallTracer::CallAttemptTracer* GetCallAttemptTracer() const override {
-    return GetContext<ClientCallTracer::CallAttemptTracer>();
+  CallAttemptTracer* GetCallAttemptTracer() const override {
+    return GetContext<CallAttemptTracer>();
   }
 };
 
@@ -133,11 +135,9 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
                  "pick";
           return Continue{};
         }
-        // If the LB policy returned a call tracker, inform it that the
-        // call is starting and add it to context, so that we can notify
-        // it when the call finishes.
+        // If the LB policy returned a call tracker, add it to context, so
+        // that we can notify it when the call finishes.
         if (complete_pick->subchannel_call_tracker != nullptr) {
-          complete_pick->subchannel_call_tracker->Start();
           SetContext(complete_pick->subchannel_call_tracker.release());
         }
         // Apply metadata mutations, if any.
@@ -239,8 +239,7 @@ void LoadBalancedCallDestination::StartCall(
               }
               // If it was queued, add a trace annotation.
               if (was_queued) {
-                auto* tracer =
-                    MaybeGetContext<ClientCallTracer::CallAttemptTracer>();
+                auto* tracer = MaybeGetContext<CallAttemptTracer>();
                 if (tracer != nullptr) {
                   tracer->RecordAnnotation("Delayed LB pick complete.");
                 }

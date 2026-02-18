@@ -27,7 +27,7 @@ namespace experimental {
 /// Server code needs to create grpc_endpoints after the EventEngine has made
 /// connections.
 grpc_endpoint* grpc_event_engine_endpoint_create(
-    std::unique_ptr<EventEngine::Endpoint> ee_endpoint);
+    absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ee_endpoint);
 
 /// Returns true if the passed endpoint is an event engine shim endpoint.
 bool grpc_is_event_engine_endpoint(grpc_endpoint* ep);

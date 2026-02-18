@@ -66,7 +66,6 @@ CC_FILES=[
     'third_party/abseil-cpp/absl/log/internal/proto.cc',
     'third_party/abseil-cpp/absl/log/internal/structured_proto.cc',
     'third_party/abseil-cpp/absl/log/internal/vlog_config.cc',
-    'third_party/abseil-cpp/absl/log/log_entry.cc',
     'third_party/abseil-cpp/absl/log/log_sink.cc',
     'third_party/abseil-cpp/absl/numeric/int128.cc',
     'third_party/abseil-cpp/absl/profiling/internal/exponential_biased.cc',
@@ -78,7 +77,6 @@ CC_FILES=[
     'third_party/abseil-cpp/absl/strings/charconv.cc',
     'third_party/abseil-cpp/absl/strings/cord.cc',
     'third_party/abseil-cpp/absl/strings/cord_analysis.cc',
-    'third_party/abseil-cpp/absl/strings/cord_buffer.cc',
     'third_party/abseil-cpp/absl/strings/escaping.cc',
     'third_party/abseil-cpp/absl/strings/internal/charconv_bigint.cc',
     'third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc',
@@ -139,8 +137,6 @@ CC_FILES=[
     'third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_posix.cc',
     'third_party/abseil-cpp/absl/time/internal/cctz/src/zone_info_source.cc',
     'third_party/abseil-cpp/absl/time/time.cc',
-    'third_party/abseil-cpp/absl/types/bad_optional_access.cc',
-    'third_party/abseil-cpp/absl/types/bad_variant_access.cc',
     'third_party/protobuf/src/google/protobuf/any.cc',
     'third_party/protobuf/src/google/protobuf/any_lite.cc',
     'third_party/protobuf/src/google/protobuf/arena.cc',
@@ -297,6 +293,7 @@ CC_FILES=[
     'third_party/protobuf/src/google/protobuf/generated_message_util.cc',
     'third_party/protobuf/src/google/protobuf/implicit_weak_message.cc',
     'third_party/protobuf/src/google/protobuf/inlined_string_field.cc',
+    'third_party/protobuf/src/google/protobuf/internal_feature_helper.cc',
     'third_party/protobuf/src/google/protobuf/io/coded_stream.cc',
     'third_party/protobuf/src/google/protobuf/io/gzip_stream.cc',
     'third_party/protobuf/src/google/protobuf/io/io_win32.cc',
@@ -386,18 +383,21 @@ CC_FILES=[
 ]
 
 PROTO_FILES=[
-    'google/protobuf/any.proto',
-    'google/protobuf/api.proto',
-    'google/protobuf/compiler/plugin.proto',
-    'google/protobuf/descriptor.proto',
-    'google/protobuf/duration.proto',
-    'google/protobuf/empty.proto',
-    'google/protobuf/field_mask.proto',
-    'google/protobuf/source_context.proto',
-    'google/protobuf/struct.proto',
-    'google/protobuf/timestamp.proto',
-    'google/protobuf/type.proto',
-    'google/protobuf/wrappers.proto'
+    'go/google/protobuf/go_features.proto',
+    'java/core/src/main/resources/google/protobuf/java_features.proto',
+    'src/google/protobuf/any.proto',
+    'src/google/protobuf/api.proto',
+    'src/google/protobuf/compiler/plugin.proto',
+    'src/google/protobuf/cpp_features.proto',
+    'src/google/protobuf/descriptor.proto',
+    'src/google/protobuf/duration.proto',
+    'src/google/protobuf/empty.proto',
+    'src/google/protobuf/field_mask.proto',
+    'src/google/protobuf/source_context.proto',
+    'src/google/protobuf/struct.proto',
+    'src/google/protobuf/timestamp.proto',
+    'src/google/protobuf/type.proto',
+    'src/google/protobuf/wrappers.proto'
 ]
 
 CC_INCLUDES=[
@@ -409,6 +409,6 @@ CC_INCLUDES=[
     'third_party/protobuf/upb/reflection/cmake',
     'third_party/protobuf/third_party/utf8_range'
 ]
-PROTO_INCLUDE='third_party/protobuf/src'
+PROTO_INCLUDE='third_party/protobuf'
 
-PROTOBUF_SUBMODULE_VERSION="3d4adad5c4c4e6a6f9f038769b8c90716065b0e4"
+PROTOBUF_SUBMODULE_VERSION="74211c0dfc2777318ab53c2cd2c317a2ef9012de"

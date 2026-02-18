@@ -3,14 +3,19 @@
 gRPC depends on several third-party libraries, their source code is available
 (usually as a git submodule) in this directory.
 
-## Guidelines on updating submodules
+## Guidelines on updating dependencies
 
 - IMPORTANT: whenever possible, try to only update to a stable release of a library (= not to master / random commit). Depending on unreleased revisions
   makes gRPC installation harder for users, as it forces them to always build the dependency from source and prevents them from using more
   convenient installation channels (linux packages, package managers etc.)
 
-- bazel BUILD uses a different dependency model - whenever updating a submodule, also update the revision in `grpc_deps.bzl` so that bazel and
-  non-bazel builds stay in sync (this is actually enforced by a sanity check in some cases)
+- To update the dependencies of gRPC, you need to modify the following three key areas.
+  - First, for non-Bazel build, update the Git submodule under the `third_party` directory to point to the new commit.
+  - Next, for the legacy Bazel WORKSPACE, update the `grpc_deps.bzl` with the new version's URL, prefix, and checksum.
+    (This step will be removed once Bazel module migration is complete.)
+  - Finally, for modern Bazel, update the `MODULE.bazel` file to have new version.
+
+- Note that all versions used in three area should point to the same commit. There are CI tests enforcing this.
 
 ## Considerations when adding a new third-party dependency
 
@@ -23,10 +28,10 @@ gRPC depends on several third-party libraries, their source code is available
   We currently support multiple build systems (BAZEL, cmake, make, ...) so adding a new dependency usually requires updates in multiple build systems
   (often not trivial). The installation process also needs to continue to work (we do have distrib tests to test many of the possible installation scenarios,
   but they are not perfect). Adding a new dependency also usually affects the installation instructions that need to be updated.
-  Also keep in mind that adding a new dependency can be quite disruptive 
-  for the users and community - it means that all users will need to update their projects accordingly (for C++ projects often non-trivial) and 
+  Also keep in mind that adding a new dependency can be quite disruptive
+  for the users and community - it means that all users will need to update their projects accordingly (for C++ projects often non-trivial) and
   the community-provided C++ packages (e.g. vcpkg) will need to be updated as well.
-  
+
 ## Checklist for adding a new third-party dependency
 
 **READ THIS BEFORE YOU ADD A NEW DEPENDENCY**
@@ -43,9 +48,17 @@ Usually the process is
 
 1. update the submodule to selected commit (see guidance above)
 2. update the dependency in `grpc_deps.bzl` to the same commit
-3. update `tools/run_tests/sanity/check_submodules.sh` to make the sanity test pass
-4. (when needed) run `tools/buildgen/generate_projects.sh` to regenerate the generated files 
-5. populate the bazel download mirror by running `bazel/update_mirror.sh`
+3. update the dependency in `MODULE.bazel` (generated from `templates/MODULE.bazel.inja`) to the same version.
+   - Bazel modules are versioned by release, not by commit hash. If a specific commit is needed but lacks a corresponding release, you have three options:
+     1. Ask the project's maintainer to create a new release.
+     2. Request a BCR volunteer to add a new release by filing an issue at [Github](https://github.com/bazelbuild/bazel-central-registry/issues).
+        (See [example](https://github.com/bazelbuild/bazel-central-registry/issues/3702))
+     3. Do it yourself. This can often be done by copying the configuration from an existing release.
+        (See [example](https://github.com/bazelbuild/bazel-central-registry/pull/3683))
+
+4. update `tools/run_tests/sanity/check_submodules.sh` to make the sanity test pass
+5. (when needed) run `tools/buildgen/generate_projects.sh` to regenerate the generated files
+6. populate the bazel download mirror by running `bazel/update_mirror.sh`
 
 Updating some dependencies requires extra care.
 
@@ -53,7 +66,7 @@ Updating some dependencies requires extra care.
 
 - Two additional steps should be done before running `generate_projects.sh` above.
   - Running `src/abseil-cpp/preprocessed_builds.yaml.gen.py`.
-  - Updating `abseil_version =` scripts in `templates/gRPC-C++.podspec.template` and 
+  - Updating `abseil_version =` scripts in `templates/gRPC-C++.podspec.template` and
     `templates/gRPC-Core.podspec.template`.
 - You can see an example of previous [upgrade](https://github.com/grpc/grpc/pull/24270).
 
@@ -94,7 +107,7 @@ git commit -m "update submodule boringssl-with-bazel with origin/master-with-baz
 - Run `tools/distrib/generate_boringssl_prefix_header.sh`
     - Commit again `git commit -m "generate boringssl prefix headers"`
 
-- Increment the boringssl podspec version number in 
+- Increment the boringssl podspec version number in
   `templates/src/objective-c/BoringSSL-GRPC.podspec.template` and `templates/gRPC-Core.podspec.template`.
   [example](https://github.com/grpc/grpc/pull/21527/commits/9d4411842f02f167209887f1f3d2b9ab5d14931a)
     - Commit again `git commit -m "Increment podspec version"`
@@ -108,36 +121,41 @@ git commit -m "update submodule boringssl-with-bazel with origin/master-with-baz
 
 ### Updating third_party/protobuf
 
-Updating the protobuf dependency is now part of the internal release process (see [go/grpc-release](http://go/grpc-release)).
+Before running `generate_projects`, you need to complete the following preparations.
 
-### Updating third_party/envoy-api
+1. Update the Protobuf Version
+  - Modify `third_party/protobuf.patch` with the current version.
+  - Update the `protobuf_version` field in `build_handwritten.yaml`.
+
+2. Run Build Scripts
+
+```
+tools/distrib/python/make_grpcio_tools.py --cleanup_third_party
+tools/bazel build @com_google_protobuf//:protoc //src/compiler:all
+src/ruby/pb/generate_proto_ruby.sh
+src/php/bin/generate_proto_php.sh
+```
+
+After `generate_projects` has finished, run the following updates.
+
+1. Update `third_party/upb`
+
+```
+rm -rf third_party/upb/upb
+cp -r third_party/protobuf/upb third_party/upb
+tools/codegen/core/gen_upb_api.sh
+```
+
+2. Update `third_party/utf8_range`
+
+```
+rm -rf third_party/utf8_range
+cp -r third_party/protobuf/third_party/utf8_range third_party/utf8_range/
+```
+
+### Updating third_party/envoy-api or third_party/xds or third_party/cel-spec
 
 Apart from the above steps, please run `tools/codegen/core/gen_upb_api.sh` to regenerate upb files.
-
-### Updating third_party/upb
-
-Since upb is vendored in the gRPC repo, you cannot use submodule to update it. Please follow the steps below;
-1. Update third_party/upb directory by running
-   - `export GRPC_ROOT=~/git/grpc`
-   - `wget https://github.com/protocolbuffers/protobuf/releases/download/v25.1/protobuf-25.1.zip`
-   - `rm -rf $GRPC_ROOT/third_party/upb`
-   - `unzip protobuf-25.1.zip -d /tmp/protobuf`
-   - `cp -r /tmp/protobuf/protobuf-25.1/upb $GRPC_ROOT/third_party/upb`
-2. Update the dependency in `grpc_deps.bzl` to the same commit
-3. Populate the bazel download mirror by running `bazel/update_mirror.sh`
-4. Run `tools/buildgen/generate_projects.sh` to regenerate the generated files
-5. Run `tools/codegen/core/gen_upb_api.sh` to regenerate upb files.
-
-### Updating third_party/utf8_range
-
-```
-# set to wherever your grpc repo lives
-export GRPC_ROOT=~/git/grpc
-wget https://github.com/protocolbuffers/utf8_range/archive/refs/heads/main.zip
-rm -rf $GRPC_ROOT/third_party/utf8_range
-unzip main.zip -d $GRPC_ROOT/third_party
-mv $GRPC_ROOT/third_party/utf8_range-main $GRPC_ROOT/third_party/utf8_range
-```
 
 ### Updating third_party/xxhash
 

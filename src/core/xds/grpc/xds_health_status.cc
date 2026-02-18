@@ -18,9 +18,9 @@
 
 #include <string>
 
+#include "envoy/config/core/v3/health_check.upb.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-#include "envoy/config/core/v3/health_check.upb.h"
 
 namespace grpc_core {
 

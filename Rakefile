@@ -29,9 +29,10 @@ Rake::ExtensionTask.new('grpc_c', spec) do |ext|
   ext.lib_dir = File.join('src', 'ruby', 'lib', 'grpc')
   ext.cross_compile = true
   ext.cross_platform = [
-    'x86-mingw32', 'x64-mingw-ucrt',
-    'x86_64-linux', 'x86-linux', 'aarch64-linux',
-    'x86_64-darwin', 'arm64-darwin',
+    'x86-mingw32', 'x64-mingw32', 'x64-mingw-ucrt',
+    'x86_64-linux-gnu', 'x86_64-linux-musl', 'x86-linux-gnu',
+    'x86-linux-musl', 'aarch64-linux-gnu', 'aarch64-linux-musl',
+    'x86_64-darwin', 'arm64-darwin'
   ]
   ext.cross_compiling do |spec|
     spec.files = spec.files.select {
@@ -142,7 +143,7 @@ task 'gem:native', [:plat] do |t, args|
   verbose = ENV['V'] || '0'
 
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
-  target_ruby_minor_versions = ['3.4', '3.3', '3.2', '3.1']
+  target_ruby_minor_versions = ['4.0', '3.4', '3.3', '3.2', '3.1']
   selected_plat = "#{args[:plat]}"
 
   # use env variable to set artifact build paralellism
@@ -155,8 +156,12 @@ task 'gem:native', [:plat] do |t, args|
   prepare_ccache_cmd += "export PATH=\"$PATH:/usr/local/bin\" && "
   prepare_ccache_cmd += "source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc "
 
-  supported_windows_platforms = ['x86-mingw32', 'x64-mingw-ucrt']
-  supported_unix_platforms = ['x86_64-linux', 'x86-linux', 'aarch64-linux', 'x86_64-darwin', 'arm64-darwin']
+  supported_windows_platforms = ['x86-mingw32', 'x64-mingw32', 'x64-mingw-ucrt']
+  supported_unix_platforms = [
+    'x86_64-linux-gnu', 'x86_64-linux-musl', 'x86-linux-gnu',
+    'x86-linux-musl', 'aarch64-linux-gnu', 'aarch64-linux-musl',
+    'x86_64-darwin', 'arm64-darwin'
+  ]
   supported_platforms = supported_windows_platforms + supported_unix_platforms
 
   if selected_plat.empty?
@@ -185,7 +190,7 @@ task 'gem:native', [:plat] do |t, args|
     run_rake_compiler(plat, <<~EOT)
       #{prepare_ccache_cmd} && \
       gem update --system --no-document && \
-      bundle update && \
+      bundle update --all && \
       bundle exec rake clean && \
       bundle exec rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
         RUBY_CC_VERSION=#{RakeCompilerDock.ruby_cc_version(*target_ruby_minor_versions)} \
@@ -205,7 +210,11 @@ task 'gem:native', [:plat] do |t, args|
   # Currently we hit "objcopy: grpc_c.bundle: file format not recognized"
   # TODO(apolcyn): make debug symbols work on aarch64 linux.
   # Currently we hit "objcopy: Unable to recognise the format of the input file `grpc_c.so'"
-  unix_platforms_without_debug_symbols = ['x86_64-darwin', 'arm64-darwin', 'aarch64-linux']
+  unix_platforms_without_debug_symbols = [
+    'x86_64-linux-musl', 'x86-linux-musl',
+    'aarch64-linux-gnu', 'aarch64-linux-musl', 'x86_64-darwin',
+    'arm64-darwin'
+  ]
 
   unix_platforms.each do |plat|
     if unix_platforms_without_debug_symbols.include?(plat)
@@ -213,24 +222,33 @@ task 'gem:native', [:plat] do |t, args|
     else
       debug_symbols_dir = File.join(Dir.pwd, 'src/ruby/nativedebug/symbols')
     end
+    makefile_system_override = ''
+    if plat =~ /darwin/
+      # When cross-compiling c-core for macos from linux, we need to overwrite
+      # SYSTEM for our Makefile to work. Note this is not needed for mingw b/c
+      # C-core is built in a separate command.
+      makefile_system_override = 'Darwin'
+    end
     run_rake_compiler(plat, <<~EOT)
       #{prepare_ccache_cmd} && \
       gem update --system --no-document && \
-      bundle update && \
+      bundle update --all && \
       bundle exec rake clean && \
       export GRPC_RUBY_DEBUG_SYMBOLS_OUTPUT_DIR=#{debug_symbols_dir} && \
       bundle exec rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
         RUBY_CC_VERSION=#{RakeCompilerDock.ruby_cc_version(*target_ruby_minor_versions)} \
         V=#{verbose} \
         GRPC_CONFIG=#{grpc_config} \
-        GRPC_RUBY_BUILD_PROCS=#{nproc_override}
+        GRPC_RUBY_BUILD_PROCS=#{nproc_override} \
+        SYSTEM=#{makefile_system_override}
     EOT
   end
   # Generate debug symbol packages to complement the native libraries we just built
   unix_platforms.each do |plat|
     unless unix_platforms_without_debug_symbols.include?(plat)
       `bash src/ruby/nativedebug/build_package.sh #{plat}`
-      `cp src/ruby/nativedebug/pkg/*.gem pkg/`
+      # Native debug gems uploaded to GCS, skip pkg/ to avoid RubyGems upload
+      # `cp src/ruby/nativedebug/pkg/*.gem pkg/`
     end
   end
 end

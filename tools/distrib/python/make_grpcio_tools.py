@@ -66,7 +66,7 @@ EXTERNAL_LINKS = [
     ("@utf8_range//", "third_party/protobuf/third_party/utf8_range"),
 ]
 
-PROTOBUF_PROTO_PREFIX = "@com_google_protobuf//src/"
+PROTOBUF_PROTO_PREFIX = "@com_google_protobuf//"
 
 # will be added to include path when building grpcio_tools
 CC_INCLUDES = [
@@ -80,7 +80,7 @@ CC_INCLUDES = [
 ]
 
 # include path for .proto files
-PROTO_INCLUDE = os.path.join("third_party", "protobuf", "src")
+PROTO_INCLUDE = os.path.join("third_party", "protobuf")
 
 # the target directory is relative to the grpcio_tools package root.
 GRPCIO_TOOLS_ROOT_PREFIX = "tools/distrib/python/grpcio_tools/"
@@ -92,6 +92,8 @@ COPY_FILES_SOURCE_TARGET_PAIRS = [
     ("src/compiler", "grpc_root/src/compiler"),
     ("third_party/abseil-cpp/absl", "third_party/abseil-cpp/absl"),
     ("third_party/protobuf/src", "third_party/protobuf/src"),
+    ("third_party/protobuf/go", "third_party/protobuf/go"),
+    ("third_party/protobuf/java", "third_party/protobuf/java"),
     ("third_party/protobuf/upb", "third_party/protobuf/upb"),
     (
         "third_party/protobuf/upb_generator",
@@ -137,6 +139,10 @@ BAZEL_DEPS_COMMON_PROTOS_QUERIES = [
     "@com_google_protobuf//:well_known_type_protos",
     # has both plugin.proto and descriptor.proto
     "@com_google_protobuf//:compiler_plugin_proto",
+    # language features protos
+    "@com_google_protobuf//:cpp_features_proto",
+    "@com_google_protobuf//:java_features_proto",
+    "@com_google_protobuf//:go_features_proto",
 ]
 
 
@@ -200,6 +206,7 @@ def _bazel_name_to_file_path(name):
             if (
                 "/upb_generator/minitable/main.cc" in filepath
                 or "/upb_generator/c/generator.cc" in filepath
+                or "/protobuf/compiler/main_no_generators.cc" in filepath
             ):
                 return None
 

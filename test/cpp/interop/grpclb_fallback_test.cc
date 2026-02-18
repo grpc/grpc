@@ -36,14 +36,10 @@
 #include <string>
 #include <thread>
 
-#include "absl/flags/flag.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_format.h"
-#include "absl/time/time.h"
 #include "src/core/lib/iomgr/port.h"
-#include "src/core/lib/iomgr/socket_mutator.h"
+#include "src/core/net/socket_mutator.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/string.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
@@ -51,6 +47,10 @@
 #include "src/proto/grpc/testing/test.pb.h"
 #include "test/cpp/util/test_config.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "absl/flags/flag.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_format.h"
+#include "absl/time/time.h"
 
 ABSL_FLAG(std::string, custom_credentials_type, "",
           "User provided credentials type.");
@@ -103,10 +103,10 @@ GrpclbRouteType DoRPCAndGetPath(TestService::Stub* stub, int deadline_seconds,
               << s.error_message();
     return GrpclbRouteType::GRPCLB_ROUTE_TYPE_UNKNOWN;
   }
-  CHECK(response.grpclb_route_type() ==
-            GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND ||
-        response.grpclb_route_type() ==
-            GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK);
+  GRPC_CHECK(response.grpclb_route_type() ==
+                 GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND ||
+             response.grpclb_route_type() ==
+                 GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK);
   LOG(INFO) << "DoRPCAndGetPath done. grpclb_route_type:"
             << response.grpclb_route_type();
   return response.grpclb_route_type();
@@ -185,7 +185,7 @@ void WaitForFallbackAndDoRPCs(TestService::Stub* stub) {
     if (grpclb_route_type == GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND) {
       LOG(ERROR) << "Got grpclb route type backend. Backends are "
                     "supposed to be unreachable, so this test is broken";
-      CHECK(0);
+      GRPC_CHECK(0);
     }
     if (grpclb_route_type == GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK) {
       LOG(INFO) << "Made one successful RPC to a fallback. Now expect the same "
@@ -200,11 +200,12 @@ void WaitForFallbackAndDoRPCs(TestService::Stub* stub) {
   }
   if (!fallback) {
     LOG(ERROR) << "Didn't fall back within deadline";
-    CHECK(0);
+    GRPC_CHECK(0);
   }
   for (int i = 0; i < 30; i++) {
     GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(stub, 20);
-    CHECK(grpclb_route_type == GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK);
+    GRPC_CHECK(grpclb_route_type ==
+               GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK);
     std::this_thread::sleep_for(std::chrono::seconds(1));
   }
 }
@@ -218,7 +219,7 @@ void DoFallbackBeforeStartupTest() {
 void DoFallbackAfterStartupTest() {
   std::unique_ptr<TestService::Stub> stub = CreateFallbackTestStub();
   GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(stub.get(), 20);
-  CHECK(grpclb_route_type == GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND);
+  GRPC_CHECK(grpclb_route_type == GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND);
   RunCommand(absl::GetFlag(FLAGS_induce_fallback_cmd));
   WaitForFallbackAndDoRPCs(stub.get());
 }

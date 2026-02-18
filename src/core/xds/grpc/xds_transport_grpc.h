@@ -26,8 +26,6 @@
 #include <memory>
 #include <string>
 
-#include "absl/container/flat_hash_map.h"
-#include "absl/status/status.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -36,8 +34,11 @@
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "src/core/xds/grpc/certificate_provider_store_interface.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_transport.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 
@@ -45,7 +46,9 @@ class GrpcXdsTransportFactory final : public XdsTransportFactory {
  public:
   class GrpcXdsTransport;
 
-  explicit GrpcXdsTransportFactory(const ChannelArgs& args);
+  GrpcXdsTransportFactory(const ChannelArgs& args,
+                          RefCountedPtr<CertificateProviderStoreInterface>
+                              certificate_provider_store);
   ~GrpcXdsTransportFactory() override;
 
   void Orphaned() override {}
@@ -58,6 +61,7 @@ class GrpcXdsTransportFactory final : public XdsTransportFactory {
 
  private:
   ChannelArgs args_;
+  RefCountedPtr<CertificateProviderStoreInterface> certificate_provider_store_;
   grpc_pollset_set* interested_parties_;
 
   Mutex mu_;

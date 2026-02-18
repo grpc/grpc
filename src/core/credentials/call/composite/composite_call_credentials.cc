@@ -22,13 +22,13 @@
 #include <memory>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
 
 grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
 grpc_composite_call_credentials::GetRequestMetadata(
@@ -106,9 +106,9 @@ grpc_call_credentials* grpc_composite_call_credentials_create(
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_composite_call_credentials_create(creds1=" << creds1
       << ", creds2=" << creds2 << ", reserved=" << reserved << ")";
-  CHECK_EQ(reserved, nullptr);
-  CHECK_NE(creds1, nullptr);
-  CHECK_NE(creds2, nullptr);
+  GRPC_CHECK_EQ(reserved, nullptr);
+  GRPC_CHECK_NE(creds1, nullptr);
+  GRPC_CHECK_NE(creds2, nullptr);
   return grpc_core::MakeRefCounted<grpc_composite_call_credentials>(
              creds1->Ref(), creds2->Ref())
       .release();

@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/credentials/transport/tls")
+grpc_package(
+    name = "test/core/credentials/transport/tls",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "tls_credentials_test",
@@ -27,6 +33,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:grpc_tls_credentials",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -41,11 +48,17 @@ grpc_cc_test(
         "//test/core/credentials/transport/tls/test_data:test_roots/cert3.pem",
     ],
     external_deps = [
+        "absl/strings",
         "gtest",
     ],
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:grpc_credentials_util",
+        "//:grpc_security_base",
+        "//:tsi_base",
+        "//:tsi_ssl_credentials",
+        "//src/core:env",
         "//src/core:load_file",
         "//src/core:slice",
         "//test/core/test_util:grpc_test_util",
@@ -64,15 +77,25 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server0.pem",
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
+        "//test/core/credentials/transport/tls/test_data:spiffe/client_spiffebundle.json",
+        "//test/core/credentials/transport/tls/test_data:spiffe/test_bundles/spiffebundle2.json",
+        "//test/core/credentials/transport/tls/test_data:spiffe/test_bundles/spiffebundle_malformed.json",
     ],
     external_deps = [
         "absl/log:check",
         "gtest",
     ],
     deps = [
+        "//:config_vars",
         "//:gpr",
         "//:grpc",
+        "//:grpc_core_credentials_header",
+        "//:transport_auth_context",
+        "//:tsi_base",
         "//src/core:channel_args",
+        "//src/core:grpc_check",
+        "//src/core:grpc_tls_credentials",
+        "//src/core:unique_type_name",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/test_util:test_call_creds",
@@ -93,8 +116,11 @@ grpc_cc_test(
     ],
     external_deps = ["gtest"],
     deps = [
+        "//:config_vars",
         "//:gpr",
         "//:grpc",
+        "//:grpc_core_credentials_header",
+        "//src/core:grpc_tls_credentials",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],
@@ -107,6 +133,9 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:grpc_core_credentials_header",
+        "//src/core:grpc_tls_credentials",
+        "//src/core:xds_credentials",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],
@@ -115,6 +144,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "grpc_tls_certificate_distributor_test",
     srcs = ["grpc_tls_certificate_distributor_test.cc"],
+    data = [
+        "//test/core/credentials/transport/tls/test_data:spiffe/client_spiffebundle.json",
+        "//test/core/credentials/transport/tls/test_data:spiffe/test_bundles/spiffebundle.json",
+    ],
     external_deps = [
         "absl/log:check",
         "gtest",
@@ -122,6 +155,9 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:grpc_check",
+        "//src/core:grpc_tls_credentials",
+        "//src/core:match",
         "//src/core:slice",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
@@ -141,14 +177,22 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server0.pem",
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
+        "//test/core/credentials/transport/tls/test_data:spiffe/client_spiffebundle.json",
+        "//test/core/credentials/transport/tls/test_data:spiffe/test_bundles/spiffebundle2.json",
+        "//test/core/credentials/transport/tls/test_data:spiffe/test_bundles/spiffebundle_malformed.json",
     ],
     external_deps = [
-        "absl/log:check",
         "gtest",
+        "absl/base:no_destructor",
+        "absl/log:check",
+        "absl/status",
     ],
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:grpc_check",
+        "//src/core:grpc_tls_credentials",
+        "//src/core:match",
         "//src/core:slice",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
@@ -165,6 +209,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:grpc_tls_credentials",
         "//src/core:slice",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
@@ -178,6 +223,8 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:certificate_provider_registry",
+        "//src/core:grpc_tls_credentials",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -193,13 +240,19 @@ grpc_cc_test(
         "//test/core/tsi/test_creds/crl_data/crls:current.crl",
         "//test/core/tsi/test_creds/crl_data/crls:intermediate.crl",
     ],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "gtest",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
         "//:iomgr_timer",
         "//src/core:default_event_engine",
         "//src/core:grpc_crl_provider",
+        "//src/core:wait_for_single_owner",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
@@ -237,10 +290,17 @@ grpc_cc_test(
     ],
     external_deps = [
         "gtest",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "libcrypto",
     ],
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:json_object_loader",
+        "//src/core:json_reader",
+        "//src/core:load_file",
         "//src/core:spiffe_utils",
         "//test/core/test_util:grpc_test_util",
     ],

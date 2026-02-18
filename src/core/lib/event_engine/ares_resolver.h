@@ -22,20 +22,22 @@
 
 #if GRPC_ARES == 1
 
-#include <ares.h>
 #include <grpc/event_engine/event_engine.h>
+// ares.h is not self-contained w.r.t. windows headers so pull in
+// event_engine.h first
+#include <ares.h>
 
 #include <list>
 #include <memory>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/container/flat_hash_map.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/ref_counted_dns_resolver_interface.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_event_engine::experimental {
 
@@ -55,7 +57,7 @@ class AresResolver : public RefCountedDNSResolverInterface {
     ReinitHandle(const ReinitHandle& other) = delete;
     void OnResolverGone();
     // Clears resources (such as CARES handles) held by the associated resolver.
-    void Reset();
+    void Reset(const absl::Status& status);
     // Reinitializes the associated resolver after Reset.
     void Restart();
 
@@ -141,7 +143,7 @@ class AresResolver : public RefCountedDNSResolverInterface {
 #ifdef GRPC_ENABLE_FORK_SUPPORT
   // Is executed on fork before the poller is restarted. Cleans up the resources
   // from the previous generation.
-  void Reset();
+  void Reset(const absl::Status& reason);
   // Is executed on fork after the poller is restarted. Makes the resolver
   // usable once more.
   void Restart();

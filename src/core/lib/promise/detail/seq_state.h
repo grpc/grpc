@@ -22,10 +22,6 @@
 
 #include <utility>
 
-#include "absl/base/attributes.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/promise_like.h"
@@ -33,7 +29,10 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/util/construct_destruct.h"
 #include "src/core/util/debug_location.h"
-#include "src/core/util/json/json.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/base/attributes.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 
 // A sequence under some traits for some set of callables P, Fs.
 // P should be a promise-like object that yields a value.
@@ -125,35 +124,39 @@ struct SeqState<Traits, P, F0> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
+    GRPC_DCHECK(state == State::kState0);
     Construct(&prior.current_promise, std::move(other.prior.current_promise));
     Construct(&prior.next_factory, std::move(other.prior.next_factory));
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
-  Json ToJson(absl::string_view type_name) const {
-    Json::Object obj;
-#ifndef NDEBUG
-    obj["source_location"] =
-        Json::FromString(absl::StrCat(whence.file(), ":", whence.line()));
-#endif
-    obj["seq_type"] = Json::FromString(std::string(type_name));
-    Json::Array steps;
-    steps.reserve(2);
-    Json::Object step0;
-    step0["type"] = Json::FromString(std::string(TypeName<P>()));
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* seq_promise =
+        grpc_channelz_v2_Promise_mutable_seq_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Seq_set_kind(seq_promise, kind);
+    auto** steps =
+        grpc_channelz_v2_Promise_Seq_resize_steps(seq_promise, 2, arena);
+    for (int i = 0; i < 2; i++) {
+      steps[i] = grpc_channelz_v2_Promise_SeqStep_new(arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[0], StdStringToUpbString(TypeName<P>()));
     if (state == State::kState0) {
-      step0["polling_state"] = PromiseAsJson(prior.current_promise);
+      PromiseAsProto(prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[0], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step0));
-    Json::Object step1;
-    step1["type"] = Json::FromString(std::string(TypeName<F0>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[1], StdStringToUpbString(TypeName<F0>()));
     if (state == State::kState1) {
-      step1["polling_state"] = PromiseAsJson(current_promise);
+      PromiseAsProto(current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[1], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step1));
-    obj["steps"] = Json::FromArray(steps);
-    return Json::FromObject(obj);
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
@@ -269,7 +272,7 @@ struct SeqState<Traits, P, F0, F1> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
+    GRPC_DCHECK(state == State::kState0);
     Construct(&prior.prior.current_promise,
               std::move(other.prior.prior.current_promise));
     Construct(&prior.prior.next_factory,
@@ -278,35 +281,41 @@ struct SeqState<Traits, P, F0, F1> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
-  Json ToJson(absl::string_view type_name) const {
-    Json::Object obj;
-#ifndef NDEBUG
-    obj["source_location"] =
-        Json::FromString(absl::StrCat(whence.file(), ":", whence.line()));
-#endif
-    obj["seq_type"] = Json::FromString(std::string(type_name));
-    Json::Array steps;
-    steps.reserve(3);
-    Json::Object step0;
-    step0["type"] = Json::FromString(std::string(TypeName<P>()));
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* seq_promise =
+        grpc_channelz_v2_Promise_mutable_seq_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Seq_set_kind(seq_promise, kind);
+    auto** steps =
+        grpc_channelz_v2_Promise_Seq_resize_steps(seq_promise, 3, arena);
+    for (int i = 0; i < 3; i++) {
+      steps[i] = grpc_channelz_v2_Promise_SeqStep_new(arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[0], StdStringToUpbString(TypeName<P>()));
     if (state == State::kState0) {
-      step0["polling_state"] = PromiseAsJson(prior.prior.current_promise);
+      PromiseAsProto(prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[0], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step0));
-    Json::Object step1;
-    step1["type"] = Json::FromString(std::string(TypeName<F0>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[1], StdStringToUpbString(TypeName<F0>()));
     if (state == State::kState1) {
-      step1["polling_state"] = PromiseAsJson(prior.current_promise);
+      PromiseAsProto(prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[1], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step1));
-    Json::Object step2;
-    step2["type"] = Json::FromString(std::string(TypeName<F1>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[2], StdStringToUpbString(TypeName<F1>()));
     if (state == State::kState2) {
-      step2["polling_state"] = PromiseAsJson(current_promise);
+      PromiseAsProto(current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[2], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step2));
-    obj["steps"] = Json::FromArray(steps);
-    return Json::FromObject(obj);
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
@@ -470,7 +479,7 @@ struct SeqState<Traits, P, F0, F1, F2> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
+    GRPC_DCHECK(state == State::kState0);
     Construct(&prior.prior.prior.current_promise,
               std::move(other.prior.prior.prior.current_promise));
     Construct(&prior.prior.prior.next_factory,
@@ -481,41 +490,49 @@ struct SeqState<Traits, P, F0, F1, F2> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
-  Json ToJson(absl::string_view type_name) const {
-    Json::Object obj;
-#ifndef NDEBUG
-    obj["source_location"] =
-        Json::FromString(absl::StrCat(whence.file(), ":", whence.line()));
-#endif
-    obj["seq_type"] = Json::FromString(std::string(type_name));
-    Json::Array steps;
-    steps.reserve(4);
-    Json::Object step0;
-    step0["type"] = Json::FromString(std::string(TypeName<P>()));
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* seq_promise =
+        grpc_channelz_v2_Promise_mutable_seq_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Seq_set_kind(seq_promise, kind);
+    auto** steps =
+        grpc_channelz_v2_Promise_Seq_resize_steps(seq_promise, 4, arena);
+    for (int i = 0; i < 4; i++) {
+      steps[i] = grpc_channelz_v2_Promise_SeqStep_new(arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[0], StdStringToUpbString(TypeName<P>()));
     if (state == State::kState0) {
-      step0["polling_state"] = PromiseAsJson(prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[0], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step0));
-    Json::Object step1;
-    step1["type"] = Json::FromString(std::string(TypeName<F0>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[1], StdStringToUpbString(TypeName<F0>()));
     if (state == State::kState1) {
-      step1["polling_state"] = PromiseAsJson(prior.prior.current_promise);
+      PromiseAsProto(prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[1], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step1));
-    Json::Object step2;
-    step2["type"] = Json::FromString(std::string(TypeName<F1>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[2], StdStringToUpbString(TypeName<F1>()));
     if (state == State::kState2) {
-      step2["polling_state"] = PromiseAsJson(prior.current_promise);
+      PromiseAsProto(prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[2], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step2));
-    Json::Object step3;
-    step3["type"] = Json::FromString(std::string(TypeName<F2>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[3], StdStringToUpbString(TypeName<F2>()));
     if (state == State::kState3) {
-      step3["polling_state"] = PromiseAsJson(current_promise);
+      PromiseAsProto(current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[3], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step3));
-    obj["steps"] = Json::FromArray(steps);
-    return Json::FromObject(obj);
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
@@ -726,7 +743,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
+    GRPC_DCHECK(state == State::kState0);
     Construct(&prior.prior.prior.prior.current_promise,
               std::move(other.prior.prior.prior.prior.current_promise));
     Construct(&prior.prior.prior.prior.next_factory,
@@ -739,48 +756,57 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
-  Json ToJson(absl::string_view type_name) const {
-    Json::Object obj;
-#ifndef NDEBUG
-    obj["source_location"] =
-        Json::FromString(absl::StrCat(whence.file(), ":", whence.line()));
-#endif
-    obj["seq_type"] = Json::FromString(std::string(type_name));
-    Json::Array steps;
-    steps.reserve(5);
-    Json::Object step0;
-    step0["type"] = Json::FromString(std::string(TypeName<P>()));
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* seq_promise =
+        grpc_channelz_v2_Promise_mutable_seq_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Seq_set_kind(seq_promise, kind);
+    auto** steps =
+        grpc_channelz_v2_Promise_Seq_resize_steps(seq_promise, 5, arena);
+    for (int i = 0; i < 5; i++) {
+      steps[i] = grpc_channelz_v2_Promise_SeqStep_new(arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[0], StdStringToUpbString(TypeName<P>()));
     if (state == State::kState0) {
-      step0["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[0], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step0));
-    Json::Object step1;
-    step1["type"] = Json::FromString(std::string(TypeName<F0>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[1], StdStringToUpbString(TypeName<F0>()));
     if (state == State::kState1) {
-      step1["polling_state"] = PromiseAsJson(prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[1], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step1));
-    Json::Object step2;
-    step2["type"] = Json::FromString(std::string(TypeName<F1>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[2], StdStringToUpbString(TypeName<F1>()));
     if (state == State::kState2) {
-      step2["polling_state"] = PromiseAsJson(prior.prior.current_promise);
+      PromiseAsProto(prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[2], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step2));
-    Json::Object step3;
-    step3["type"] = Json::FromString(std::string(TypeName<F2>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[3], StdStringToUpbString(TypeName<F2>()));
     if (state == State::kState3) {
-      step3["polling_state"] = PromiseAsJson(prior.current_promise);
+      PromiseAsProto(prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[3], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step3));
-    Json::Object step4;
-    step4["type"] = Json::FromString(std::string(TypeName<F3>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[4], StdStringToUpbString(TypeName<F3>()));
     if (state == State::kState4) {
-      step4["polling_state"] = PromiseAsJson(current_promise);
+      PromiseAsProto(current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[4], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step4));
-    obj["steps"] = Json::FromArray(steps);
-    return Json::FromObject(obj);
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
@@ -1047,7 +1073,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
+    GRPC_DCHECK(state == State::kState0);
     Construct(&prior.prior.prior.prior.prior.current_promise,
               std::move(other.prior.prior.prior.prior.prior.current_promise));
     Construct(&prior.prior.prior.prior.prior.next_factory,
@@ -1062,55 +1088,65 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
-  Json ToJson(absl::string_view type_name) const {
-    Json::Object obj;
-#ifndef NDEBUG
-    obj["source_location"] =
-        Json::FromString(absl::StrCat(whence.file(), ":", whence.line()));
-#endif
-    obj["seq_type"] = Json::FromString(std::string(type_name));
-    Json::Array steps;
-    steps.reserve(6);
-    Json::Object step0;
-    step0["type"] = Json::FromString(std::string(TypeName<P>()));
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* seq_promise =
+        grpc_channelz_v2_Promise_mutable_seq_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Seq_set_kind(seq_promise, kind);
+    auto** steps =
+        grpc_channelz_v2_Promise_Seq_resize_steps(seq_promise, 6, arena);
+    for (int i = 0; i < 6; i++) {
+      steps[i] = grpc_channelz_v2_Promise_SeqStep_new(arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[0], StdStringToUpbString(TypeName<P>()));
     if (state == State::kState0) {
-      step0["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[0], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step0));
-    Json::Object step1;
-    step1["type"] = Json::FromString(std::string(TypeName<F0>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[1], StdStringToUpbString(TypeName<F0>()));
     if (state == State::kState1) {
-      step1["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[1], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step1));
-    Json::Object step2;
-    step2["type"] = Json::FromString(std::string(TypeName<F1>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[2], StdStringToUpbString(TypeName<F1>()));
     if (state == State::kState2) {
-      step2["polling_state"] = PromiseAsJson(prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[2], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step2));
-    Json::Object step3;
-    step3["type"] = Json::FromString(std::string(TypeName<F2>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[3], StdStringToUpbString(TypeName<F2>()));
     if (state == State::kState3) {
-      step3["polling_state"] = PromiseAsJson(prior.prior.current_promise);
+      PromiseAsProto(prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[3], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step3));
-    Json::Object step4;
-    step4["type"] = Json::FromString(std::string(TypeName<F3>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[4], StdStringToUpbString(TypeName<F3>()));
     if (state == State::kState4) {
-      step4["polling_state"] = PromiseAsJson(prior.current_promise);
+      PromiseAsProto(prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[4], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step4));
-    Json::Object step5;
-    step5["type"] = Json::FromString(std::string(TypeName<F4>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[5], StdStringToUpbString(TypeName<F4>()));
     if (state == State::kState5) {
-      step5["polling_state"] = PromiseAsJson(current_promise);
+      PromiseAsProto(current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[5], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step5));
-    obj["steps"] = Json::FromArray(steps);
-    return Json::FromObject(obj);
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
@@ -1428,7 +1464,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
+    GRPC_DCHECK(state == State::kState0);
     Construct(
         &prior.prior.prior.prior.prior.prior.current_promise,
         std::move(other.prior.prior.prior.prior.prior.prior.current_promise));
@@ -1447,62 +1483,73 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
-  Json ToJson(absl::string_view type_name) const {
-    Json::Object obj;
-#ifndef NDEBUG
-    obj["source_location"] =
-        Json::FromString(absl::StrCat(whence.file(), ":", whence.line()));
-#endif
-    obj["seq_type"] = Json::FromString(std::string(type_name));
-    Json::Array steps;
-    steps.reserve(7);
-    Json::Object step0;
-    step0["type"] = Json::FromString(std::string(TypeName<P>()));
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* seq_promise =
+        grpc_channelz_v2_Promise_mutable_seq_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Seq_set_kind(seq_promise, kind);
+    auto** steps =
+        grpc_channelz_v2_Promise_Seq_resize_steps(seq_promise, 7, arena);
+    for (int i = 0; i < 7; i++) {
+      steps[i] = grpc_channelz_v2_Promise_SeqStep_new(arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[0], StdStringToUpbString(TypeName<P>()));
     if (state == State::kState0) {
-      step0["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[0], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step0));
-    Json::Object step1;
-    step1["type"] = Json::FromString(std::string(TypeName<F0>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[1], StdStringToUpbString(TypeName<F0>()));
     if (state == State::kState1) {
-      step1["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[1], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step1));
-    Json::Object step2;
-    step2["type"] = Json::FromString(std::string(TypeName<F1>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[2], StdStringToUpbString(TypeName<F1>()));
     if (state == State::kState2) {
-      step2["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[2], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step2));
-    Json::Object step3;
-    step3["type"] = Json::FromString(std::string(TypeName<F2>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[3], StdStringToUpbString(TypeName<F2>()));
     if (state == State::kState3) {
-      step3["polling_state"] = PromiseAsJson(prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[3], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step3));
-    Json::Object step4;
-    step4["type"] = Json::FromString(std::string(TypeName<F3>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[4], StdStringToUpbString(TypeName<F3>()));
     if (state == State::kState4) {
-      step4["polling_state"] = PromiseAsJson(prior.prior.current_promise);
+      PromiseAsProto(prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[4], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step4));
-    Json::Object step5;
-    step5["type"] = Json::FromString(std::string(TypeName<F4>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[5], StdStringToUpbString(TypeName<F4>()));
     if (state == State::kState5) {
-      step5["polling_state"] = PromiseAsJson(prior.current_promise);
+      PromiseAsProto(prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[5], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step5));
-    Json::Object step6;
-    step6["type"] = Json::FromString(std::string(TypeName<F5>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[6], StdStringToUpbString(TypeName<F5>()));
     if (state == State::kState6) {
-      step6["polling_state"] = PromiseAsJson(current_promise);
+      PromiseAsProto(current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[6], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step6));
-    obj["steps"] = Json::FromArray(steps);
-    return Json::FromObject(obj);
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
@@ -1871,7 +1918,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
+    GRPC_DCHECK(state == State::kState0);
     Construct(
         &prior.prior.prior.prior.prior.prior.prior.current_promise,
         std::move(
@@ -1895,69 +1942,81 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
-  Json ToJson(absl::string_view type_name) const {
-    Json::Object obj;
-#ifndef NDEBUG
-    obj["source_location"] =
-        Json::FromString(absl::StrCat(whence.file(), ":", whence.line()));
-#endif
-    obj["seq_type"] = Json::FromString(std::string(type_name));
-    Json::Array steps;
-    steps.reserve(8);
-    Json::Object step0;
-    step0["type"] = Json::FromString(std::string(TypeName<P>()));
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* seq_promise =
+        grpc_channelz_v2_Promise_mutable_seq_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Seq_set_kind(seq_promise, kind);
+    auto** steps =
+        grpc_channelz_v2_Promise_Seq_resize_steps(seq_promise, 8, arena);
+    for (int i = 0; i < 8; i++) {
+      steps[i] = grpc_channelz_v2_Promise_SeqStep_new(arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[0], StdStringToUpbString(TypeName<P>()));
     if (state == State::kState0) {
-      step0["polling_state"] = PromiseAsJson(
-          prior.prior.prior.prior.prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[0], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step0));
-    Json::Object step1;
-    step1["type"] = Json::FromString(std::string(TypeName<F0>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[1], StdStringToUpbString(TypeName<F0>()));
     if (state == State::kState1) {
-      step1["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[1], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step1));
-    Json::Object step2;
-    step2["type"] = Json::FromString(std::string(TypeName<F1>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[2], StdStringToUpbString(TypeName<F1>()));
     if (state == State::kState2) {
-      step2["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[2], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step2));
-    Json::Object step3;
-    step3["type"] = Json::FromString(std::string(TypeName<F2>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[3], StdStringToUpbString(TypeName<F2>()));
     if (state == State::kState3) {
-      step3["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[3], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step3));
-    Json::Object step4;
-    step4["type"] = Json::FromString(std::string(TypeName<F3>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[4], StdStringToUpbString(TypeName<F3>()));
     if (state == State::kState4) {
-      step4["polling_state"] = PromiseAsJson(prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[4], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step4));
-    Json::Object step5;
-    step5["type"] = Json::FromString(std::string(TypeName<F4>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[5], StdStringToUpbString(TypeName<F4>()));
     if (state == State::kState5) {
-      step5["polling_state"] = PromiseAsJson(prior.prior.current_promise);
+      PromiseAsProto(prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[5], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step5));
-    Json::Object step6;
-    step6["type"] = Json::FromString(std::string(TypeName<F5>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[6], StdStringToUpbString(TypeName<F5>()));
     if (state == State::kState6) {
-      step6["polling_state"] = PromiseAsJson(prior.current_promise);
+      PromiseAsProto(prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[6], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step6));
-    Json::Object step7;
-    step7["type"] = Json::FromString(std::string(TypeName<F6>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[7], StdStringToUpbString(TypeName<F6>()));
     if (state == State::kState7) {
-      step7["polling_state"] = PromiseAsJson(current_promise);
+      PromiseAsProto(current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[7], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step7));
-    obj["steps"] = Json::FromArray(steps);
-    return Json::FromObject(obj);
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
@@ -2379,7 +2438,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
+    GRPC_DCHECK(state == State::kState0);
     Construct(&prior.prior.prior.prior.prior.prior.prior.prior.current_promise,
               std::move(other.prior.prior.prior.prior.prior.prior.prior.prior
                             .current_promise));
@@ -2405,76 +2464,90 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
-  Json ToJson(absl::string_view type_name) const {
-    Json::Object obj;
-#ifndef NDEBUG
-    obj["source_location"] =
-        Json::FromString(absl::StrCat(whence.file(), ":", whence.line()));
-#endif
-    obj["seq_type"] = Json::FromString(std::string(type_name));
-    Json::Array steps;
-    steps.reserve(9);
-    Json::Object step0;
-    step0["type"] = Json::FromString(std::string(TypeName<P>()));
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* seq_promise =
+        grpc_channelz_v2_Promise_mutable_seq_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Seq_set_kind(seq_promise, kind);
+    auto** steps =
+        grpc_channelz_v2_Promise_Seq_resize_steps(seq_promise, 9, arena);
+    for (int i = 0; i < 9; i++) {
+      steps[i] = grpc_channelz_v2_Promise_SeqStep_new(arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[0], StdStringToUpbString(TypeName<P>()));
     if (state == State::kState0) {
-      step0["polling_state"] = PromiseAsJson(
-          prior.prior.prior.prior.prior.prior.prior.prior.current_promise);
+      PromiseAsProto(
+          prior.prior.prior.prior.prior.prior.prior.prior.current_promise,
+          grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(steps[0],
+                                                                   arena),
+          arena);
     }
-    steps.emplace_back(Json::FromObject(step0));
-    Json::Object step1;
-    step1["type"] = Json::FromString(std::string(TypeName<F0>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[1], StdStringToUpbString(TypeName<F0>()));
     if (state == State::kState1) {
-      step1["polling_state"] = PromiseAsJson(
-          prior.prior.prior.prior.prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[1], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step1));
-    Json::Object step2;
-    step2["type"] = Json::FromString(std::string(TypeName<F1>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[2], StdStringToUpbString(TypeName<F1>()));
     if (state == State::kState2) {
-      step2["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[2], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step2));
-    Json::Object step3;
-    step3["type"] = Json::FromString(std::string(TypeName<F2>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[3], StdStringToUpbString(TypeName<F2>()));
     if (state == State::kState3) {
-      step3["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[3], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step3));
-    Json::Object step4;
-    step4["type"] = Json::FromString(std::string(TypeName<F3>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[4], StdStringToUpbString(TypeName<F3>()));
     if (state == State::kState4) {
-      step4["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[4], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step4));
-    Json::Object step5;
-    step5["type"] = Json::FromString(std::string(TypeName<F4>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[5], StdStringToUpbString(TypeName<F4>()));
     if (state == State::kState5) {
-      step5["polling_state"] = PromiseAsJson(prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[5], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step5));
-    Json::Object step6;
-    step6["type"] = Json::FromString(std::string(TypeName<F5>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[6], StdStringToUpbString(TypeName<F5>()));
     if (state == State::kState6) {
-      step6["polling_state"] = PromiseAsJson(prior.prior.current_promise);
+      PromiseAsProto(prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[6], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step6));
-    Json::Object step7;
-    step7["type"] = Json::FromString(std::string(TypeName<F6>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[7], StdStringToUpbString(TypeName<F6>()));
     if (state == State::kState7) {
-      step7["polling_state"] = PromiseAsJson(prior.current_promise);
+      PromiseAsProto(prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[7], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step7));
-    Json::Object step8;
-    step8["type"] = Json::FromString(std::string(TypeName<F7>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[8], StdStringToUpbString(TypeName<F7>()));
     if (state == State::kState8) {
-      step8["polling_state"] = PromiseAsJson(current_promise);
+      PromiseAsProto(current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[8], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step8));
-    obj["steps"] = Json::FromArray(steps);
-    return Json::FromObject(obj);
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
@@ -2954,7 +3027,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
+    GRPC_DCHECK(state == State::kState0);
     Construct(
         &prior.prior.prior.prior.prior.prior.prior.prior.prior.current_promise,
         std::move(other.prior.prior.prior.prior.prior.prior.prior.prior.prior
@@ -2985,84 +3058,99 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
-  Json ToJson(absl::string_view type_name) const {
-    Json::Object obj;
-#ifndef NDEBUG
-    obj["source_location"] =
-        Json::FromString(absl::StrCat(whence.file(), ":", whence.line()));
-#endif
-    obj["seq_type"] = Json::FromString(std::string(type_name));
-    Json::Array steps;
-    steps.reserve(10);
-    Json::Object step0;
-    step0["type"] = Json::FromString(std::string(TypeName<P>()));
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* seq_promise =
+        grpc_channelz_v2_Promise_mutable_seq_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Seq_set_kind(seq_promise, kind);
+    auto** steps =
+        grpc_channelz_v2_Promise_Seq_resize_steps(seq_promise, 10, arena);
+    for (int i = 0; i < 10; i++) {
+      steps[i] = grpc_channelz_v2_Promise_SeqStep_new(arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[0], StdStringToUpbString(TypeName<P>()));
     if (state == State::kState0) {
-      step0["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.prior.prior.prior.prior.prior
-                            .current_promise);
+      PromiseAsProto(
+          prior.prior.prior.prior.prior.prior.prior.prior.prior.current_promise,
+          grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(steps[0],
+                                                                   arena),
+          arena);
     }
-    steps.emplace_back(Json::FromObject(step0));
-    Json::Object step1;
-    step1["type"] = Json::FromString(std::string(TypeName<F0>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[1], StdStringToUpbString(TypeName<F0>()));
     if (state == State::kState1) {
-      step1["polling_state"] = PromiseAsJson(
-          prior.prior.prior.prior.prior.prior.prior.prior.current_promise);
+      PromiseAsProto(
+          prior.prior.prior.prior.prior.prior.prior.prior.current_promise,
+          grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(steps[1],
+                                                                   arena),
+          arena);
     }
-    steps.emplace_back(Json::FromObject(step1));
-    Json::Object step2;
-    step2["type"] = Json::FromString(std::string(TypeName<F1>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[2], StdStringToUpbString(TypeName<F1>()));
     if (state == State::kState2) {
-      step2["polling_state"] = PromiseAsJson(
-          prior.prior.prior.prior.prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[2], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step2));
-    Json::Object step3;
-    step3["type"] = Json::FromString(std::string(TypeName<F2>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[3], StdStringToUpbString(TypeName<F2>()));
     if (state == State::kState3) {
-      step3["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[3], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step3));
-    Json::Object step4;
-    step4["type"] = Json::FromString(std::string(TypeName<F3>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[4], StdStringToUpbString(TypeName<F3>()));
     if (state == State::kState4) {
-      step4["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[4], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step4));
-    Json::Object step5;
-    step5["type"] = Json::FromString(std::string(TypeName<F4>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[5], StdStringToUpbString(TypeName<F4>()));
     if (state == State::kState5) {
-      step5["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[5], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step5));
-    Json::Object step6;
-    step6["type"] = Json::FromString(std::string(TypeName<F5>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[6], StdStringToUpbString(TypeName<F5>()));
     if (state == State::kState6) {
-      step6["polling_state"] = PromiseAsJson(prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[6], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step6));
-    Json::Object step7;
-    step7["type"] = Json::FromString(std::string(TypeName<F6>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[7], StdStringToUpbString(TypeName<F6>()));
     if (state == State::kState7) {
-      step7["polling_state"] = PromiseAsJson(prior.prior.current_promise);
+      PromiseAsProto(prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[7], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step7));
-    Json::Object step8;
-    step8["type"] = Json::FromString(std::string(TypeName<F7>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[8], StdStringToUpbString(TypeName<F7>()));
     if (state == State::kState8) {
-      step8["polling_state"] = PromiseAsJson(prior.current_promise);
+      PromiseAsProto(prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[8], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step8));
-    Json::Object step9;
-    step9["type"] = Json::FromString(std::string(TypeName<F8>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[9], StdStringToUpbString(TypeName<F8>()));
     if (state == State::kState9) {
-      step9["polling_state"] = PromiseAsJson(current_promise);
+      PromiseAsProto(current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[9], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step9));
-    obj["steps"] = Json::FromArray(steps);
-    return Json::FromObject(obj);
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
@@ -3600,7 +3688,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
+    GRPC_DCHECK(state == State::kState0);
     Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
                    .current_promise,
               std::move(other.prior.prior.prior.prior.prior.prior.prior.prior
@@ -3635,92 +3723,108 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
-  Json ToJson(absl::string_view type_name) const {
-    Json::Object obj;
-#ifndef NDEBUG
-    obj["source_location"] =
-        Json::FromString(absl::StrCat(whence.file(), ":", whence.line()));
-#endif
-    obj["seq_type"] = Json::FromString(std::string(type_name));
-    Json::Array steps;
-    steps.reserve(11);
-    Json::Object step0;
-    step0["type"] = Json::FromString(std::string(TypeName<P>()));
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* seq_promise =
+        grpc_channelz_v2_Promise_mutable_seq_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Seq_set_kind(seq_promise, kind);
+    auto** steps =
+        grpc_channelz_v2_Promise_Seq_resize_steps(seq_promise, 11, arena);
+    for (int i = 0; i < 11; i++) {
+      steps[i] = grpc_channelz_v2_Promise_SeqStep_new(arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[0], StdStringToUpbString(TypeName<P>()));
     if (state == State::kState0) {
-      step0["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.prior.prior.prior.prior.prior
-                            .prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
+                         .current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[0], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step0));
-    Json::Object step1;
-    step1["type"] = Json::FromString(std::string(TypeName<F0>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[1], StdStringToUpbString(TypeName<F0>()));
     if (state == State::kState1) {
-      step1["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.prior.prior.prior.prior.prior
-                            .current_promise);
+      PromiseAsProto(
+          prior.prior.prior.prior.prior.prior.prior.prior.prior.current_promise,
+          grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(steps[1],
+                                                                   arena),
+          arena);
     }
-    steps.emplace_back(Json::FromObject(step1));
-    Json::Object step2;
-    step2["type"] = Json::FromString(std::string(TypeName<F1>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[2], StdStringToUpbString(TypeName<F1>()));
     if (state == State::kState2) {
-      step2["polling_state"] = PromiseAsJson(
-          prior.prior.prior.prior.prior.prior.prior.prior.current_promise);
+      PromiseAsProto(
+          prior.prior.prior.prior.prior.prior.prior.prior.current_promise,
+          grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(steps[2],
+                                                                   arena),
+          arena);
     }
-    steps.emplace_back(Json::FromObject(step2));
-    Json::Object step3;
-    step3["type"] = Json::FromString(std::string(TypeName<F2>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[3], StdStringToUpbString(TypeName<F2>()));
     if (state == State::kState3) {
-      step3["polling_state"] = PromiseAsJson(
-          prior.prior.prior.prior.prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[3], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step3));
-    Json::Object step4;
-    step4["type"] = Json::FromString(std::string(TypeName<F3>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[4], StdStringToUpbString(TypeName<F3>()));
     if (state == State::kState4) {
-      step4["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[4], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step4));
-    Json::Object step5;
-    step5["type"] = Json::FromString(std::string(TypeName<F4>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[5], StdStringToUpbString(TypeName<F4>()));
     if (state == State::kState5) {
-      step5["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[5], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step5));
-    Json::Object step6;
-    step6["type"] = Json::FromString(std::string(TypeName<F5>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[6], StdStringToUpbString(TypeName<F5>()));
     if (state == State::kState6) {
-      step6["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[6], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step6));
-    Json::Object step7;
-    step7["type"] = Json::FromString(std::string(TypeName<F6>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[7], StdStringToUpbString(TypeName<F6>()));
     if (state == State::kState7) {
-      step7["polling_state"] = PromiseAsJson(prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[7], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step7));
-    Json::Object step8;
-    step8["type"] = Json::FromString(std::string(TypeName<F7>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[8], StdStringToUpbString(TypeName<F7>()));
     if (state == State::kState8) {
-      step8["polling_state"] = PromiseAsJson(prior.prior.current_promise);
+      PromiseAsProto(prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[8], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step8));
-    Json::Object step9;
-    step9["type"] = Json::FromString(std::string(TypeName<F8>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[9], StdStringToUpbString(TypeName<F8>()));
     if (state == State::kState9) {
-      step9["polling_state"] = PromiseAsJson(prior.current_promise);
+      PromiseAsProto(prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[9], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step9));
-    Json::Object step10;
-    step10["type"] = Json::FromString(std::string(TypeName<F9>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[10], StdStringToUpbString(TypeName<F9>()));
     if (state == State::kState10) {
-      step10["polling_state"] = PromiseAsJson(current_promise);
+      PromiseAsProto(current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[10], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step10));
-    obj["steps"] = Json::FromArray(steps);
-    return Json::FromObject(obj);
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
@@ -4317,7 +4421,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
+    GRPC_DCHECK(state == State::kState0);
     Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
                    .current_promise,
               std::move(other.prior.prior.prior.prior.prior.prior.prior.prior
@@ -4356,100 +4460,117 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
-  Json ToJson(absl::string_view type_name) const {
-    Json::Object obj;
-#ifndef NDEBUG
-    obj["source_location"] =
-        Json::FromString(absl::StrCat(whence.file(), ":", whence.line()));
-#endif
-    obj["seq_type"] = Json::FromString(std::string(type_name));
-    Json::Array steps;
-    steps.reserve(12);
-    Json::Object step0;
-    step0["type"] = Json::FromString(std::string(TypeName<P>()));
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* seq_promise =
+        grpc_channelz_v2_Promise_mutable_seq_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Seq_set_kind(seq_promise, kind);
+    auto** steps =
+        grpc_channelz_v2_Promise_Seq_resize_steps(seq_promise, 12, arena);
+    for (int i = 0; i < 12; i++) {
+      steps[i] = grpc_channelz_v2_Promise_SeqStep_new(arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[0], StdStringToUpbString(TypeName<P>()));
     if (state == State::kState0) {
-      step0["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.prior.prior.prior.prior.prior
-                            .prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
+                         .prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[0], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step0));
-    Json::Object step1;
-    step1["type"] = Json::FromString(std::string(TypeName<F0>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[1], StdStringToUpbString(TypeName<F0>()));
     if (state == State::kState1) {
-      step1["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.prior.prior.prior.prior.prior
-                            .prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
+                         .current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[1], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step1));
-    Json::Object step2;
-    step2["type"] = Json::FromString(std::string(TypeName<F1>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[2], StdStringToUpbString(TypeName<F1>()));
     if (state == State::kState2) {
-      step2["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.prior.prior.prior.prior.prior
-                            .current_promise);
+      PromiseAsProto(
+          prior.prior.prior.prior.prior.prior.prior.prior.prior.current_promise,
+          grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(steps[2],
+                                                                   arena),
+          arena);
     }
-    steps.emplace_back(Json::FromObject(step2));
-    Json::Object step3;
-    step3["type"] = Json::FromString(std::string(TypeName<F2>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[3], StdStringToUpbString(TypeName<F2>()));
     if (state == State::kState3) {
-      step3["polling_state"] = PromiseAsJson(
-          prior.prior.prior.prior.prior.prior.prior.prior.current_promise);
+      PromiseAsProto(
+          prior.prior.prior.prior.prior.prior.prior.prior.current_promise,
+          grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(steps[3],
+                                                                   arena),
+          arena);
     }
-    steps.emplace_back(Json::FromObject(step3));
-    Json::Object step4;
-    step4["type"] = Json::FromString(std::string(TypeName<F3>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[4], StdStringToUpbString(TypeName<F3>()));
     if (state == State::kState4) {
-      step4["polling_state"] = PromiseAsJson(
-          prior.prior.prior.prior.prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[4], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step4));
-    Json::Object step5;
-    step5["type"] = Json::FromString(std::string(TypeName<F4>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[5], StdStringToUpbString(TypeName<F4>()));
     if (state == State::kState5) {
-      step5["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[5], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step5));
-    Json::Object step6;
-    step6["type"] = Json::FromString(std::string(TypeName<F5>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[6], StdStringToUpbString(TypeName<F5>()));
     if (state == State::kState6) {
-      step6["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[6], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step6));
-    Json::Object step7;
-    step7["type"] = Json::FromString(std::string(TypeName<F6>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[7], StdStringToUpbString(TypeName<F6>()));
     if (state == State::kState7) {
-      step7["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[7], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step7));
-    Json::Object step8;
-    step8["type"] = Json::FromString(std::string(TypeName<F7>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[8], StdStringToUpbString(TypeName<F7>()));
     if (state == State::kState8) {
-      step8["polling_state"] = PromiseAsJson(prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[8], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step8));
-    Json::Object step9;
-    step9["type"] = Json::FromString(std::string(TypeName<F8>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[9], StdStringToUpbString(TypeName<F8>()));
     if (state == State::kState9) {
-      step9["polling_state"] = PromiseAsJson(prior.prior.current_promise);
+      PromiseAsProto(prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[9], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step9));
-    Json::Object step10;
-    step10["type"] = Json::FromString(std::string(TypeName<F9>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[10], StdStringToUpbString(TypeName<F9>()));
     if (state == State::kState10) {
-      step10["polling_state"] = PromiseAsJson(prior.current_promise);
+      PromiseAsProto(prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[10], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step10));
-    Json::Object step11;
-    step11["type"] = Json::FromString(std::string(TypeName<F10>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[11], StdStringToUpbString(TypeName<F10>()));
     if (state == State::kState11) {
-      step11["polling_state"] = PromiseAsJson(current_promise);
+      PromiseAsProto(current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[11], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step11));
-    obj["steps"] = Json::FromArray(steps);
-    return Json::FromObject(obj);
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
@@ -5108,7 +5229,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
+    GRPC_DCHECK(state == State::kState0);
     Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
                    .prior.current_promise,
               std::move(other.prior.prior.prior.prior.prior.prior.prior.prior
@@ -5151,108 +5272,126 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
-  Json ToJson(absl::string_view type_name) const {
-    Json::Object obj;
-#ifndef NDEBUG
-    obj["source_location"] =
-        Json::FromString(absl::StrCat(whence.file(), ":", whence.line()));
-#endif
-    obj["seq_type"] = Json::FromString(std::string(type_name));
-    Json::Array steps;
-    steps.reserve(13);
-    Json::Object step0;
-    step0["type"] = Json::FromString(std::string(TypeName<P>()));
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* seq_promise =
+        grpc_channelz_v2_Promise_mutable_seq_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Seq_set_kind(seq_promise, kind);
+    auto** steps =
+        grpc_channelz_v2_Promise_Seq_resize_steps(seq_promise, 13, arena);
+    for (int i = 0; i < 13; i++) {
+      steps[i] = grpc_channelz_v2_Promise_SeqStep_new(arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[0], StdStringToUpbString(TypeName<P>()));
     if (state == State::kState0) {
-      step0["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.prior.prior.prior.prior.prior
-                            .prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
+                         .prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[0], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step0));
-    Json::Object step1;
-    step1["type"] = Json::FromString(std::string(TypeName<F0>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[1], StdStringToUpbString(TypeName<F0>()));
     if (state == State::kState1) {
-      step1["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.prior.prior.prior.prior.prior
-                            .prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
+                         .prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[1], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step1));
-    Json::Object step2;
-    step2["type"] = Json::FromString(std::string(TypeName<F1>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[2], StdStringToUpbString(TypeName<F1>()));
     if (state == State::kState2) {
-      step2["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.prior.prior.prior.prior.prior
-                            .prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
+                         .current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[2], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step2));
-    Json::Object step3;
-    step3["type"] = Json::FromString(std::string(TypeName<F2>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[3], StdStringToUpbString(TypeName<F2>()));
     if (state == State::kState3) {
-      step3["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.prior.prior.prior.prior.prior
-                            .current_promise);
+      PromiseAsProto(
+          prior.prior.prior.prior.prior.prior.prior.prior.prior.current_promise,
+          grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(steps[3],
+                                                                   arena),
+          arena);
     }
-    steps.emplace_back(Json::FromObject(step3));
-    Json::Object step4;
-    step4["type"] = Json::FromString(std::string(TypeName<F3>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[4], StdStringToUpbString(TypeName<F3>()));
     if (state == State::kState4) {
-      step4["polling_state"] = PromiseAsJson(
-          prior.prior.prior.prior.prior.prior.prior.prior.current_promise);
+      PromiseAsProto(
+          prior.prior.prior.prior.prior.prior.prior.prior.current_promise,
+          grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(steps[4],
+                                                                   arena),
+          arena);
     }
-    steps.emplace_back(Json::FromObject(step4));
-    Json::Object step5;
-    step5["type"] = Json::FromString(std::string(TypeName<F4>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[5], StdStringToUpbString(TypeName<F4>()));
     if (state == State::kState5) {
-      step5["polling_state"] = PromiseAsJson(
-          prior.prior.prior.prior.prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[5], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step5));
-    Json::Object step6;
-    step6["type"] = Json::FromString(std::string(TypeName<F5>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[6], StdStringToUpbString(TypeName<F5>()));
     if (state == State::kState6) {
-      step6["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[6], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step6));
-    Json::Object step7;
-    step7["type"] = Json::FromString(std::string(TypeName<F6>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[7], StdStringToUpbString(TypeName<F6>()));
     if (state == State::kState7) {
-      step7["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[7], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step7));
-    Json::Object step8;
-    step8["type"] = Json::FromString(std::string(TypeName<F7>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[8], StdStringToUpbString(TypeName<F7>()));
     if (state == State::kState8) {
-      step8["polling_state"] =
-          PromiseAsJson(prior.prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[8], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step8));
-    Json::Object step9;
-    step9["type"] = Json::FromString(std::string(TypeName<F8>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[9], StdStringToUpbString(TypeName<F8>()));
     if (state == State::kState9) {
-      step9["polling_state"] = PromiseAsJson(prior.prior.prior.current_promise);
+      PromiseAsProto(prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[9], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step9));
-    Json::Object step10;
-    step10["type"] = Json::FromString(std::string(TypeName<F9>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[10], StdStringToUpbString(TypeName<F9>()));
     if (state == State::kState10) {
-      step10["polling_state"] = PromiseAsJson(prior.prior.current_promise);
+      PromiseAsProto(prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[10], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step10));
-    Json::Object step11;
-    step11["type"] = Json::FromString(std::string(TypeName<F10>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[11], StdStringToUpbString(TypeName<F10>()));
     if (state == State::kState11) {
-      step11["polling_state"] = PromiseAsJson(prior.current_promise);
+      PromiseAsProto(prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[11], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step11));
-    Json::Object step12;
-    step12["type"] = Json::FromString(std::string(TypeName<F11>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[12], StdStringToUpbString(TypeName<F11>()));
     if (state == State::kState12) {
-      step12["polling_state"] = PromiseAsJson(current_promise);
+      PromiseAsProto(current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[12], arena),
+                     arena);
     }
-    steps.emplace_back(Json::FromObject(step12));
-    obj["steps"] = Json::FromArray(steps);
-    return Json::FromObject(obj);
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {

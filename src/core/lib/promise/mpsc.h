@@ -23,12 +23,12 @@
 #include <cstdint>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/status_flag.h"
-#include "src/core/util/json/json.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 
@@ -103,13 +103,12 @@ class Mpsc {
       }
     }
 
-    Json ToJson() const {
+    channelz::PropertyList ChannelzProperties() const {
       auto state = state_.load(std::memory_order_relaxed);
-      Json::Object obj;
-      obj["blocked"] = Json::FromBool(state & Node::kBlockedState);
-      obj["closed"] = Json::FromBool(state & Node::kClosedState);
-      obj["refs"] = Json::FromNumber(state & Node::kRefMask);
-      return Json::FromObject(std::move(obj));
+      return channelz::PropertyList()
+          .Set("blocked", state & Node::kBlockedState)
+          .Set("closed", state & Node::kClosedState)
+          .Set("refs", state & Node::kRefMask);
     }
 
     const uint32_t tokens_;
@@ -152,8 +151,8 @@ class Mpsc {
       return Success{};
     }
 
-    Json ToJson() const {
-      return Json::FromObject({{"mpsc_send_poller", node_->ToJson()}});
+    channelz::PropertyList ChannelzProperties() const {
+      return node_->ChannelzProperties();
     }
 
    private:
@@ -172,7 +171,9 @@ class Mpsc {
       return *this;
     }
     Poll<ValueOrFailure<Node*>> operator()() { return mpsc_->PollNext(); }
-    Json ToJson() const { return mpsc_->PollNextJson(); }
+    channelz::PropertyList ChannelzProperties() const {
+      return mpsc_->PollNextChannelzProperties();
+    }
 
    private:
     Mpsc* mpsc_;
@@ -180,7 +181,7 @@ class Mpsc {
 
  public:
   auto Send(Node* node) {
-    DCHECK(node->waker_.is_unwakeable());
+    GRPC_DCHECK(node->waker_.is_unwakeable());
     // Enqueue the node immediately; this means that Send() must be called
     // from the same activity that will poll the result.
     Enqueue(node);
@@ -202,7 +203,9 @@ class Mpsc {
 
   void Close(bool wake_reader);
 
-  Json::Object ToJson() const;
+  channelz::PropertyList ChannelzProperties() const;
+
+  uint64_t QueuedTokens() const { return queued_tokens_.load(); }
 
  private:
   void Enqueue(Node* node);
@@ -219,7 +222,7 @@ class Mpsc {
   void PushStub();
   void ReleaseActiveTokens(bool wake_reader, uint64_t tokens);
   Poll<ValueOrFailure<Node*>> PollNext();
-  Json PollNextJson() const;
+  channelz::PropertyList PollNextChannelzProperties() const;
 
   // Top two bits of active tokens is used for synchronization of
   // the waker.
@@ -350,7 +353,11 @@ class Center : public RefCounted<Center<T>, NonPolymorphicRefCount> {
 
   void ReceiverClosed(bool wake_reader) { mpsc_.Close(wake_reader); }
 
-  Json::Object ToJson() const { return mpsc_.ToJson(); }
+  uint64_t QueuedTokens() const { return mpsc_.QueuedTokens(); }
+
+  channelz::PropertyList ChannelzProperties() const {
+    return mpsc_.ChannelzProperties();
+  }
 
  private:
   Mpsc mpsc_;
@@ -405,11 +412,29 @@ template <typename T>
 class MpscDebug {
  public:
   MpscDebug() = default;
-  Json::Object ToJson() const { return center_->ToJson(); }
+  channelz::PropertyList ChannelzProperties() const {
+    return center_->ChannelzProperties();
+  }
 
  private:
   friend class MpscReceiver<T>;
   explicit MpscDebug(RefCountedPtr<mpscpipe_detail::Center<T>> center)
+      : center_(std::move(center)) {}
+  RefCountedPtr<mpscpipe_detail::Center<T>> center_;
+};
+
+template <typename T>
+class MpscProbe {
+ public:
+  MpscProbe() = default;
+
+  uint64_t QueuedTokens() const {
+    return center_ == nullptr ? 0 : center_->QueuedTokens();
+  }
+
+ private:
+  friend class MpscReceiver<T>;
+  explicit MpscProbe(RefCountedPtr<mpscpipe_detail::Center<T>> center)
       : center_(std::move(center)) {}
   RefCountedPtr<mpscpipe_detail::Center<T>> center_;
 };
@@ -444,6 +469,7 @@ class MpscReceiver {
   MpscSender<T> MakeSender() { return MpscSender<T>(center_); }
 
   MpscDebug<T> MakeDebug() { return MpscDebug<T>(center_); }
+  MpscProbe<T> MakeProbe() { return MpscProbe<T>(center_); }
 
   // Returns a promise that will resolve to ValueOrFailure<T>.
   // If receiving is closed, the promise will resolve to failure.

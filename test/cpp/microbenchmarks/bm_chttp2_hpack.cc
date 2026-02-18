@@ -20,15 +20,13 @@
 
 #include <benchmark/benchmark.h>
 #include <grpc/slice.h>
-#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <memory>
 #include <sstream>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/random/random.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
@@ -37,10 +35,13 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
+#include "absl/log/log.h"
+#include "absl/random/random.h"
 
 static grpc_slice MakeSlice(const std::vector<uint8_t>& bytes) {
   grpc_slice s = grpc_slice_malloc(bytes.size());
@@ -62,9 +63,20 @@ class FakeCallTracer final : public CallTracerInterface {
   void RecordOutgoingBytes(
       const TransportByteSize& transport_byte_size) override {}
   void RecordSendInitialMetadata(
-      grpc_metadata_batch* send_initial_metadata) override {}
+      grpc_metadata_batch* send_initial_metadata) override {
+    GRPC_CHECK(
+        !grpc_core::IsCallTracerSendInitialMetadataIsAnAnnotationEnabled());
+    MutateSendInitialMetadata(send_initial_metadata);
+  }
+  void MutateSendInitialMetadata(
+      grpc_metadata_batch* /*send_initial_metadata*/) override {}
   void RecordSendTrailingMetadata(
-      grpc_metadata_batch* send_trailing_metadata) override {}
+      grpc_metadata_batch* send_trailing_metadata) override {
+    GRPC_CHECK(!IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled());
+    MutateSendTrailingMetadata(send_trailing_metadata);
+  }
+  void MutateSendTrailingMetadata(
+      grpc_metadata_batch* /*send_trailing_metadata*/) override {}
   void RecordSendMessage(const Message& send_message) override {}
   void RecordSendCompressedMessage(
       const Message& send_compressed_message) override {}
@@ -375,7 +387,7 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
       auto error =
           p.Parse(slices[i], i == slices.size() - 1, absl::BitGenRef(bitgen),
                   /*call_tracer=*/nullptr);
-      CHECK_OK(error);
+      GRPC_CHECK_OK(error);
     }
   };
   parse_vec(init_slices);
@@ -430,8 +442,8 @@ class FromEncoderFixture {
       i++;
     }
     // Remove the HTTP header.
-    CHECK(!out.empty());
-    CHECK_GT(GRPC_SLICE_LENGTH(out[0]), 9);
+    GRPC_CHECK(!out.empty());
+    GRPC_CHECK_GT(GRPC_SLICE_LENGTH(out[0]), 9);
     out[0] = grpc_slice_sub_no_ref(out[0], 9, GRPC_SLICE_LENGTH(out[0]));
     return out;
   }

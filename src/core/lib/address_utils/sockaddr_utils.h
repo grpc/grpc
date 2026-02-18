@@ -24,8 +24,8 @@
 
 #include <string>
 
-#include "absl/status/statusor.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "absl/status/statusor.h"
 
 // Returns true if addr is an IPv4-mapped IPv6 address within the
 // ::ffff:0.0.0.0/96 range, or false otherwise.

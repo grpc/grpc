@@ -20,6 +20,7 @@
 #include <set>
 #include <string>
 
+#include "src/core/credentials/call/call_creds_registry.h"
 #include "src/core/credentials/transport/channel_creds_registry.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
@@ -31,24 +32,38 @@
 
 namespace grpc_core {
 
+RefCountedPtr<const ChannelCredsConfig> ParseXdsBootstrapChannelCreds(
+    const Json& json, const JsonArgs& args, ValidationErrors* errors);
+
+std::vector<RefCountedPtr<const CallCredsConfig>> ParseXdsBootstrapCallCreds(
+    const Json& json, const JsonArgs& args, ValidationErrors* errors);
+
 class GrpcXdsServerTarget final : public GrpcXdsServerInterface {
  public:
   explicit GrpcXdsServerTarget(
       std::string server_uri,
-      RefCountedPtr<ChannelCredsConfig> channel_creds_config)
+      RefCountedPtr<const ChannelCredsConfig> channel_creds_config,
+      std::vector<RefCountedPtr<const CallCredsConfig>> call_creds_configs)
       : server_uri_(std::move(server_uri)),
-        channel_creds_config_(std::move(channel_creds_config)) {}
+        channel_creds_config_(std::move(channel_creds_config)),
+        call_creds_configs_(std::move(call_creds_configs)) {}
 
   bool Equals(const XdsServerTarget& other) const override;
   std::string Key() const override;
   const std::string& server_uri() const override { return server_uri_; }
-  RefCountedPtr<ChannelCredsConfig> channel_creds_config() const override {
+  RefCountedPtr<const ChannelCredsConfig> channel_creds_config()
+      const override {
     return channel_creds_config_;
+  }
+  const std::vector<RefCountedPtr<const CallCredsConfig>>& call_creds_configs()
+      const override {
+    return call_creds_configs_;
   }
 
  private:
   std::string server_uri_;
-  RefCountedPtr<ChannelCredsConfig> channel_creds_config_;
+  RefCountedPtr<const ChannelCredsConfig> channel_creds_config_;
+  std::vector<RefCountedPtr<const CallCredsConfig>> call_creds_configs_;
 };
 
 class GrpcXdsServer final : public XdsBootstrap::XdsServer {

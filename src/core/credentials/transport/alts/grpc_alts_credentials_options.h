@@ -23,7 +23,28 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+#include <string>
+#include <vector>
+
 #include "src/core/tsi/alts/handshaker/transport_security_common_api.h"
+#include "absl/status/statusor.h"
+
+namespace grpc::alts {
+
+// Its implementation must be thread-safe.
+class TokenFetcher {
+ public:
+  virtual ~TokenFetcher() = default;
+
+  // Thread-safe and non-blocking. The returned token must be strongly bound.
+  // Failure to comply with this requirement will result in a serious security
+  // issue. The token must also be valid for at least 9 hours to outlive an
+  // arbitrary ALTS connection.
+  virtual absl::StatusOr<std::string> GetToken() = 0;
+};
+
+}  // namespace grpc::alts
 
 // V-table for grpc_alts_credentials_options
 typedef struct grpc_alts_credentials_options_vtable {
@@ -35,6 +56,7 @@ typedef struct grpc_alts_credentials_options_vtable {
 struct grpc_alts_credentials_options {
   const struct grpc_alts_credentials_options_vtable* vtable;
   grpc_gcp_rpc_protocol_versions rpc_versions;
+  std::vector<std::string> record_protocols;
 };
 
 typedef struct target_service_account {
@@ -50,6 +72,7 @@ typedef struct target_service_account {
 typedef struct grpc_alts_credentials_client_options {
   grpc_alts_credentials_options base;
   target_service_account* target_account_list_head;
+  std::shared_ptr<grpc::alts::TokenFetcher> token_fetcher;
 } grpc_alts_credentials_client_options;
 
 ///
@@ -70,5 +93,13 @@ typedef struct grpc_alts_credentials_server_options {
 ///
 grpc_alts_credentials_options* grpc_alts_credentials_options_copy(
     const grpc_alts_credentials_options* options);
+
+void grpc_alts_credentials_client_options_set_token_fetcher(
+    grpc_alts_credentials_options* options,
+    std::shared_ptr<grpc::alts::TokenFetcher> token_fetcher);
+
+void grpc_alts_credentials_client_options_set_record_protocols(
+    grpc_alts_credentials_options* options,
+    const absl::Span<std::string> record_protocols);
 
 #endif  // GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_ALTS_GRPC_ALTS_CREDENTIALS_OPTIONS_H

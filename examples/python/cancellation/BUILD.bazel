@@ -39,6 +39,7 @@ py_grpc_library(
 py_binary(
     name = "client",
     srcs = ["client.py"],
+    imports = ["."],
     python_version = "PY3",
     srcs_version = "PY2AND3",
     deps = [
@@ -60,6 +61,7 @@ py_library(
 py_binary(
     name = "server",
     srcs = ["server.py"],
+    imports = ["."],
     python_version = "PY3",
     srcs_version = "PY2AND3",
     deps = [

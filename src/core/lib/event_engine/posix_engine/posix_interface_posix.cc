@@ -32,17 +32,17 @@
 #include <cstdint>
 #include <utility>
 
+#include "src/core/lib/event_engine/posix_engine/file_descriptor_collection.h"
+#include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/util/crash.h"  // IWYU pragma: keep
+#include "src/core/util/status_helper.h"
 #include "absl/cleanup/cleanup.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_replace.h"
 #include "absl/strings/string_view.h"
-#include "src/core/lib/event_engine/posix_engine/file_descriptor_collection.h"
-#include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
-#include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/util/crash.h"  // IWYU pragma: keep
-#include "src/core/util/status_helper.h"
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 #include <arpa/inet.h>  // IWYU pragma: keep
@@ -804,12 +804,12 @@ absl::StatusOr<std::string> EventEnginePosixInterface::PeerAddressString(
   return ResolvedAddressToNormalizedString((*status));
 }
 
-absl::StatusOr<EventEngine::ResolvedAddress>
-EventEnginePosixInterface::PrepareListenerSocket(
+absl::Status EventEnginePosixInterface::PrepareListenerSocketOptions(
     const FileDescriptor& fd, const PosixTcpOptions& options,
     const EventEngine::ResolvedAddress& address) {
   if (!IsCorrectGeneration(fd)) {
-    return absl::InternalError("PrepareListenerSocket: wrong generation");
+    return absl::InternalError(
+        "PrepareListenerSocketOptions: wrong generation");
   }
   int f = fd.fd();
   if (IsSocketReusePortSupported() && options.allow_reuse_port &&
@@ -837,6 +837,16 @@ EventEnginePosixInterface::PrepareListenerSocket(
     // it's not fatal, so just log it.
     VLOG(2) << "Node does not support SO_ZEROCOPY, continuing.";
   }
+  return absl::OkStatus();
+}
+
+absl::StatusOr<EventEngine::ResolvedAddress>
+EventEnginePosixInterface::BindListenerSocket(
+    const FileDescriptor& fd, const EventEngine::ResolvedAddress& address) {
+  if (!IsCorrectGeneration(fd)) {
+    return absl::InternalError("BindListenerSocket: wrong generation");
+  }
+  int f = fd.fd();
   if (bind(f, address.address(), address.size()) < 0) {
     auto sockaddr_str = ResolvedAddressToString(address);
     if (!sockaddr_str.ok()) {
@@ -861,6 +871,14 @@ EventEnginePosixInterface::PrepareListenerSocket(
         absl::StrCat("Error in getsockname: ", std::strerror(errno)));
   }
   return sockname_temp;
+}
+
+absl::StatusOr<EventEngine::ResolvedAddress>
+EventEnginePosixInterface::PrepareListenerSocket(
+    const FileDescriptor& fd, const PosixTcpOptions& options,
+    const EventEngine::ResolvedAddress& address) {
+  GRPC_RETURN_IF_ERROR(PrepareListenerSocketOptions(fd, options, address));
+  return BindListenerSocket(fd, address);
 }
 
 // Set a socket using a grpc_socket_mutator

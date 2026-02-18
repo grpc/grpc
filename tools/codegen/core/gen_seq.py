@@ -112,7 +112,7 @@ tail${i}:
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept = delete;
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
+    GRPC_DCHECK(state == State::kState0);
     Construct(&${"prior."*(n-1)}current_promise,
               std::move(other.${"prior."*(n-1)}current_promise));
 % for i in range(0,n-1):
@@ -121,30 +121,23 @@ tail${i}:
 % endfor
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) = delete;
-  Json ToJson(absl::string_view type_name) const {
-    Json::Object obj;
-#ifndef NDEBUG
-    obj["source_location"] = Json::FromString(absl::StrCat(whence.file(), ":", whence.line()));
-#endif
-    obj["seq_type"] = Json::FromString(std::string(type_name));
-    Json::Array steps;
-    steps.reserve(${n});
-    Json::Object step0;
-    step0["type"] = Json::FromString(std::string(TypeName<P>()));
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind, grpc_channelz_v2_Promise* promise_proto, upb_Arena* arena) const {
+    auto* seq_promise = grpc_channelz_v2_Promise_mutable_seq_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Seq_set_kind(seq_promise, kind);
+    auto** steps = grpc_channelz_v2_Promise_Seq_resize_steps(seq_promise, ${n}, arena);
+    for (int i = 0; i < ${n}; i++) {
+        steps[i] = grpc_channelz_v2_Promise_SeqStep_new(arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(steps[0], StdStringToUpbString(TypeName<P>()));
     if (state == State::kState0) {
-      step0["polling_state"] = PromiseAsJson(${"prior."*(n-1)}current_promise);
+        PromiseAsProto(${"prior."*(n-1)}current_promise, grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(steps[0], arena), arena);
     }
-    steps.emplace_back(Json::FromObject(step0));
 % for i in range(1,n):
-    Json::Object step${i};
-    step${i}["type"] = Json::FromString(std::string(TypeName<F${i-1}>()));
+    grpc_channelz_v2_Promise_SeqStep_set_factory(steps[${i}], StdStringToUpbString(TypeName<F${i-1}>()));
     if (state == State::kState${i}) {
-      step${i}["polling_state"] = PromiseAsJson(${"prior."*(n-1-i)}current_promise);
+      PromiseAsProto(${"prior."*(n-1-i)}current_promise, grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(steps[${i}], arena), arena);
     }
-    steps.emplace_back(Json::FromObject(step${i}));
 % endfor
-    obj["steps"] = Json::FromArray(steps);
-    return Json::FromObject(obj);
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
@@ -202,7 +195,6 @@ front_matter = """
 
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/base/attributes.h"
 #include "absl/strings/str_cat.h"
@@ -213,7 +205,6 @@ front_matter = """
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
-#include "src/core/util/json/json.h"
 #include "src/core/lib/promise/promise.h"
 
 // A sequence under some traits for some set of callables P, Fs.
@@ -293,7 +284,13 @@ with open(sys.argv[0]) as my_source:
 
 copyright = [line[2:].rstrip() for line in copyright]
 
-with open("src/core/lib/promise/detail/seq_state.h", "w") as f:
+output_file = (
+    "/".join(sys.argv[0].split("/")[:-4])
+    + "/src/core/lib/promise/detail/seq_state.h"
+)
+print(output_file)
+
+with open(output_file, "w") as f:
     put_banner([f], copyright)
     print(front_matter, file=f)
     for n in range(2, 14):

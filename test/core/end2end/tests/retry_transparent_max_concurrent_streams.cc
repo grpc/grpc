@@ -21,11 +21,11 @@
 #include <memory>
 #include <optional>
 
-#include "gtest/gtest.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace {
@@ -40,7 +40,7 @@ namespace {
 // will be transparently retried after the server starts up again.
 CORE_END2END_TEST(RetryHttp2Tests, RetryTransparentMaxConcurrentStreams) {
   const auto server_args =
-      ChannelArgs()
+      DefaultServerArgs()
           .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1)
           .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION, false);
   InitServer(server_args);

@@ -53,15 +53,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/match.h"
-#include "absl/strings/numbers.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-#include "absl/strings/substitute.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -70,9 +61,18 @@
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
+#include "absl/strings/match.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/substitute.h"
 #ifdef GRPC_POSIX_SOCKET_ARES_EV_DRIVER
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #endif
@@ -229,10 +229,10 @@ void AresResolver::ReinitHandle::OnResolverGone() {
   resolver_ = nullptr;
 }
 
-void AresResolver::ReinitHandle::Reset() {
+void AresResolver::ReinitHandle::Reset(const absl::Status& status) {
   grpc_core::MutexLock lock(&mutex_);
   if (resolver_ != nullptr) {
-    resolver_->Reset();
+    resolver_->Reset(status);
   }
 }
 
@@ -280,8 +280,9 @@ AresResolver::AresResolver(
 }
 
 AresResolver::~AresResolver() {
-  CHECK(fd_node_list_.empty());
-  CHECK(callback_map_.empty());
+  GRPC_CHECK(fd_node_list_.empty());
+  GRPC_CHECK(callback_map_.empty());
+  GRPC_CHECK_NE(channel_, nullptr);
   ares_destroy(channel_);
 }
 
@@ -366,6 +367,7 @@ void AresResolver::LookupHostname(
   grpc_core::MutexLock lock(&mutex_);
   callback_map_.emplace(++id_, std::move(callback));
   auto* resolver_arg = new HostnameQueryArg(this, id_, name, port);
+  GRPC_CHECK_NE(channel_, nullptr);
   if (AresIsIpv6LoopbackAvailable()) {
     // Note that using AF_UNSPEC for both IPv6 and IPv4 queries does not work in
     // all cases, e.g. for localhost:<> it only gets back the IPv6 result (i.e.
@@ -413,6 +415,7 @@ void AresResolver::LookupSRV(
   grpc_core::MutexLock lock(&mutex_);
   callback_map_.emplace(++id_, std::move(callback));
   auto* resolver_arg = new QueryArg(this, id_, host);
+  GRPC_CHECK_NE(channel_, nullptr);
   ares_query(channel_, std::string(host).c_str(), ns_c_in, ns_t_srv,
              &AresResolver::OnSRVQueryDoneLocked, resolver_arg);
   CheckSocketsLocked();
@@ -448,6 +451,7 @@ void AresResolver::LookupTXT(
   grpc_core::MutexLock lock(&mutex_);
   callback_map_.emplace(++id_, std::move(callback));
   auto* resolver_arg = new QueryArg(this, id_, host);
+  GRPC_CHECK_NE(channel_, nullptr);
   ares_search(channel_, std::string(host).c_str(), ns_c_in, ns_t_txt,
               &AresResolver::OnTXTDoneLocked, resolver_arg);
   CheckSocketsLocked();
@@ -456,7 +460,7 @@ void AresResolver::LookupTXT(
 
 void AresResolver::CheckSocketsLocked() {
   FdNodeList new_list;
-  if (!shutting_down_) {
+  if (!shutting_down_ && channel_ != nullptr) {
     ares_socket_t socks[ARES_GETSOCK_MAXNUM] = {};
     int socks_bitmask = ares_getsock(channel_, socks, ARES_GETSOCK_MAXNUM);
     for (size_t i = 0; i < ARES_GETSOCK_MAXNUM; i++) {
@@ -572,14 +576,14 @@ void AresResolver::MaybeStartTimerLocked() {
 
 void AresResolver::OnReadable(FdNode* fd_node, absl::Status status) {
   grpc_core::MutexLock lock(&mutex_);
-  CHECK(fd_node->readable_registered);
+  GRPC_CHECK(fd_node->readable_registered);
   fd_node->readable_registered = false;
   GRPC_TRACE_LOG(cares_resolver, INFO)
       << "(EventEngine c-ares resolver) OnReadable: fd: " << fd_node->as
       << "; request: " << this << "; status: " << status;
-  if (status.ok() && !shutting_down_) {
+  if (status.ok() && !shutting_down_ && channel_ != nullptr) {
     ares_process_fd(channel_, fd_node->as, ARES_SOCKET_BAD);
-  } else if (fd_node->polled_fd->IsCurrent()) {
+  } else if (fd_node->polled_fd->IsCurrent() && channel_ != nullptr) {
     // If error is not absl::OkStatus() or the resolution was cancelled, it
     // means the fd has been shutdown or timed out. The pending lookups made
     // on this request will be cancelled by the following ares_cancel(). The
@@ -594,14 +598,14 @@ void AresResolver::OnReadable(FdNode* fd_node, absl::Status status) {
 
 void AresResolver::OnWritable(FdNode* fd_node, absl::Status status) {
   grpc_core::MutexLock lock(&mutex_);
-  CHECK(fd_node->writable_registered);
+  GRPC_CHECK(fd_node->writable_registered);
   fd_node->writable_registered = false;
   GRPC_TRACE_LOG(cares_resolver, INFO)
       << "(EventEngine c-ares resolver) OnWritable: fd: " << fd_node->as
       << "; request:" << this << "; status: " << status;
-  if (status.ok() && !shutting_down_) {
+  if (status.ok() && !shutting_down_ && channel_ != nullptr) {
     ares_process_fd(channel_, ARES_SOCKET_BAD, fd_node->as);
-  } else {
+  } else if (fd_node->polled_fd->IsCurrent() && channel_ != nullptr) {
     // If error is not absl::OkStatus() or the resolution was cancelled, it
     // means the fd has been shutdown or timed out. The pending lookups made
     // on this request will be cancelled by the following ares_cancel(). The
@@ -626,7 +630,7 @@ void AresResolver::OnAresBackupPollAlarm() {
   GRPC_TRACE_LOG(cares_resolver, INFO)
       << "(EventEngine c-ares resolver) request:" << this
       << " OnAresBackupPollAlarm shutting_down=" << shutting_down_;
-  if (!shutting_down_) {
+  if (!shutting_down_ && channel_ != nullptr) {
     for (const auto& fd_node : fd_node_list_) {
       if (!fd_node->already_shutdown) {
         GRPC_TRACE_LOG(cares_resolver, INFO)
@@ -646,7 +650,7 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
                                           int /*timeouts*/,
                                           struct hostent* hostent) {
   auto* hostname_qa = static_cast<HostnameQueryArg*>(arg);
-  CHECK_GT(hostname_qa->pending_requests--, 0);
+  GRPC_CHECK_GT(hostname_qa->pending_requests--, 0);
   auto* ares_resolver = hostname_qa->ares_resolver;
   if (status != ARES_SUCCESS) {
     std::string error_msg =
@@ -714,9 +718,12 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
   if (hostname_qa->pending_requests == 0) {
     auto nh =
         ares_resolver->callback_map_.extract(hostname_qa->callback_map_id);
-    CHECK(!nh.empty());
-    CHECK(std::holds_alternative<
-          EventEngine::DNSResolver::LookupHostnameCallback>(nh.mapped()));
+    if (nh.empty()) {
+      delete hostname_qa;
+      return;
+    }
+    GRPC_CHECK(std::holds_alternative<
+               EventEngine::DNSResolver::LookupHostnameCallback>(nh.mapped()));
     auto callback = std::get<EventEngine::DNSResolver::LookupHostnameCallback>(
         std::move(nh.mapped()));
     if (!hostname_qa->result.empty() || hostname_qa->error_status.ok()) {
@@ -741,9 +748,12 @@ void AresResolver::OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
   std::unique_ptr<QueryArg> qa(static_cast<QueryArg*>(arg));
   auto* ares_resolver = qa->ares_resolver;
   auto nh = ares_resolver->callback_map_.extract(qa->callback_map_id);
-  CHECK(!nh.empty());
-  CHECK(std::holds_alternative<EventEngine::DNSResolver::LookupSRVCallback>(
-      nh.mapped()));
+  if (nh.empty()) {
+    return;
+  }
+  GRPC_CHECK(
+      std::holds_alternative<EventEngine::DNSResolver::LookupSRVCallback>(
+          nh.mapped()));
   auto callback = std::get<EventEngine::DNSResolver::LookupSRVCallback>(
       std::move(nh.mapped()));
   auto fail = [&](absl::string_view prefix) {
@@ -802,9 +812,12 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
   std::unique_ptr<QueryArg> qa(static_cast<QueryArg*>(arg));
   auto* ares_resolver = qa->ares_resolver;
   auto nh = ares_resolver->callback_map_.extract(qa->callback_map_id);
-  CHECK(!nh.empty());
-  CHECK(std::holds_alternative<EventEngine::DNSResolver::LookupTXTCallback>(
-      nh.mapped()));
+  if (nh.empty()) {
+    return;
+  }
+  GRPC_CHECK(
+      std::holds_alternative<EventEngine::DNSResolver::LookupTXTCallback>(
+          nh.mapped()));
   auto callback = std::get<EventEngine::DNSResolver::LookupTXTCallback>(
       std::move(nh.mapped()));
   auto fail = [&](absl::string_view prefix) {
@@ -868,25 +881,34 @@ std::weak_ptr<AresResolver::ReinitHandle> AresResolver::GetReinitHandle() {
   return reinit_handle_;
 }
 
-void AresResolver::Reset() {
+void AresResolver::Reset(const absl::Status& reason) {
   auto self = RefIfNonZero();
   if (self == nullptr) {
     return;
   }
   grpc_core::MutexLock lock(&mutex_);
-  ShutdownLocked(absl::CancelledError("AresResolver::Reset"), "resolver reset");
-  CheckSocketsLocked();
-  ares_destroy(channel_);
+  for (auto& [_, callback] : callback_map_) {
+    event_engine_->Run(
+        [callback = std::move(callback), reason = reason]() mutable {
+          std::visit([&](auto& cb) { cb(reason); }, callback);
+        });
+  }
   callback_map_.clear();
+  ShutdownLocked(reason, "resolver reset");
+  CheckSocketsLocked();
+  GRPC_CHECK_NE(channel_, nullptr);
+  ares_destroy(channel_);
   channel_ = nullptr;
 }
 
 void AresResolver::Restart() {
+  grpc_core::MutexLock lock(&mutex_);
   polled_fd_factory_ = polled_fd_factory_->NewEmptyInstance();
   polled_fd_factory_->Initialize(&mutex_, event_engine_.get());
+  GRPC_CHECK_EQ(channel_, nullptr);
   absl::Status status =
       InitAresChannel(dns_server_, *polled_fd_factory_, &channel_);
-  CHECK_OK(status);
+  GRPC_CHECK_OK(status);
 }
 
 #endif  // GRPC_ENABLE_FORK_SUPPORT
@@ -902,7 +924,7 @@ void AresResolver::ShutdownLocked(const absl::Status& shutdown_status,
       GRPC_TRACE_LOG(cares_resolver, INFO) << absl::Substitute(
           "(EventEngine c-ares resolver) resolver: $0 shutdown fd: $1 ($2)",
           this, fd_node->polled_fd->GetName(), reason);
-      CHECK(fd_node->polled_fd->ShutdownLocked(shutdown_status));
+      GRPC_CHECK(fd_node->polled_fd->ShutdownLocked(shutdown_status));
       fd_node->already_shutdown = true;
     }
   }

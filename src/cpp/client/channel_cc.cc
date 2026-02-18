@@ -16,6 +16,7 @@
 //
 //
 
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/slice.h>
@@ -39,8 +40,9 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/surface/channel.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc {
 
@@ -64,6 +66,11 @@ Channel::~Channel() {
       CompletionQueue::ReleaseCallbackAlternativeCQ(callback_cq);
     }
   }
+}
+
+grpc_event_engine::experimental::MemoryAllocator* Channel::memory_allocator()
+    const {
+  return grpc_core::Channel::FromC(c_channel_)->memory_allocator();
 }
 
 namespace {
@@ -103,6 +110,12 @@ namespace experimental {
 
 void ChannelResetConnectionBackoff(Channel* channel) {
   grpc_channel_reset_connect_backoff(channel->c_channel_);
+}
+
+int64_t ChannelGetChannelzUuid(Channel* channel) {
+  auto* node = grpc_channel_get_channelz_node(channel->c_channel_);
+  if (node == nullptr) return 0;
+  return node->uuid();
 }
 
 }  // namespace experimental
@@ -150,7 +163,7 @@ grpc::internal::Call Channel::CreateCallInternal(
       interceptor_creators_, interceptor_pos);
   context->set_call(c_call, shared_from_this());
 
-  return grpc::internal::Call(c_call, this, cq, info);
+  return grpc::internal::Call(c_call, cq, info);
 }
 
 grpc::internal::Call Channel::CreateCall(
@@ -159,11 +172,8 @@ grpc::internal::Call Channel::CreateCall(
   return CreateCallInternal(method, context, cq, 0);
 }
 
-void Channel::PerformOpsOnCall(grpc::internal::CallOpSetInterface* ops,
-                               grpc::internal::Call* call) {
-  ops->FillOps(
-      call);  // Make a copy of call. It's fine since Call just has pointers
-}
+void Channel::PerformOpsOnCall(grpc::internal::CallOpSetInterface*,
+                               grpc::internal::Call*) {}
 
 void* Channel::RegisterMethod(const char* method) {
   return grpc_channel_register_call(
@@ -207,7 +217,7 @@ bool Channel::WaitForStateChangeImpl(grpc_connectivity_state last_observed,
   void* tag = nullptr;
   NotifyOnStateChangeImpl(last_observed, deadline, &cq, nullptr);
   cq.Next(&tag, &ok);
-  CHECK_EQ(tag, nullptr);
+  GRPC_CHECK_EQ(tag, nullptr);
   return ok;
 }
 

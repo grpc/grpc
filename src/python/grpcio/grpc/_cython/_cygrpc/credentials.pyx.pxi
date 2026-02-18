@@ -197,27 +197,37 @@ cdef class SSLChannelCredentials(ChannelCredentials):
 
   cdef grpc_channel_credentials *c(self) except *:
     cdef const char *c_pem_root_certificates
-    cdef grpc_ssl_pem_key_cert_pair c_pem_key_certificate_pair
-    if self._pem_root_certificates is None:
-      c_pem_root_certificates = NULL
-    else:
-      c_pem_root_certificates = self._pem_root_certificates
-    if self._private_key is None and self._certificate_chain is None:
-      with nogil:
-        return grpc_ssl_credentials_create(
-            c_pem_root_certificates, NULL, NULL, NULL)
-    else:
-      if self._private_key:
-        c_pem_key_certificate_pair.private_key = self._private_key
-      else:
-        c_pem_key_certificate_pair.private_key = NULL
-      if self._certificate_chain:
-        c_pem_key_certificate_pair.certificate_chain = self._certificate_chain
-      else:
-        c_pem_key_certificate_pair.certificate_chain = NULL
-      with nogil:
-        return grpc_ssl_credentials_create(
-            c_pem_root_certificates, &c_pem_key_certificate_pair, NULL, NULL)
+    cdef const char *c_private_key
+    cdef const char *c_cert_chain
+    cdef grpc_tls_credentials_options* c_tls_credentials_options
+    cdef grpc_tls_identity_pairs* c_tls_identity_pairs = NULL
+    cdef grpc_tls_certificate_provider* c_tls_certificate_provider
+
+    c_tls_credentials_options = grpc_tls_credentials_options_create()
+    c_pem_root_certificates = self._pem_root_certificates or <const char*>NULL
+
+    if self._private_key or self._certificate_chain:
+      c_tls_identity_pairs = grpc_tls_identity_pairs_create()
+      c_private_key = self._private_key or <const char*>NULL
+      c_cert_chain = self._certificate_chain or <const char*>NULL
+      grpc_tls_identity_pairs_add_pair(c_tls_identity_pairs, c_private_key, c_cert_chain)
+
+    if c_pem_root_certificates != NULL or c_tls_identity_pairs != NULL:
+      c_tls_certificate_provider = grpc_tls_certificate_provider_in_memory_create()
+      if c_pem_root_certificates != NULL:
+        grpc_tls_certificate_provider_in_memory_set_root_certificate(
+          c_tls_certificate_provider, c_pem_root_certificates)
+        grpc_tls_credentials_options_set_root_certificate_provider(
+            c_tls_credentials_options, c_tls_certificate_provider)
+      if c_tls_identity_pairs != NULL:
+        grpc_tls_certificate_provider_in_memory_set_identity_certificate(
+          c_tls_certificate_provider, c_tls_identity_pairs)
+        grpc_tls_credentials_options_set_identity_certificate_provider(
+            c_tls_credentials_options, c_tls_certificate_provider)
+      grpc_tls_certificate_provider_release(c_tls_certificate_provider)
+
+    with nogil:
+      return grpc_tls_credentials_create(c_tls_credentials_options)
 
 
 cdef class CompositeChannelCredentials(ChannelCredentials):
@@ -488,7 +498,7 @@ cdef class ComputeEngineChannelCredentials(ChannelCredentials):
 
   cdef grpc_channel_credentials *c(self) except *:
     with nogil:
-      self._c_creds = grpc_google_default_credentials_create(self._call_creds)
+      self._c_creds = grpc_google_default_credentials_create(self._call_creds, NULL)
       return self._c_creds
 
 

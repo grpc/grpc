@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
@@ -59,7 +60,7 @@ class ExperimentDefinition {
 
   bool IsValid(bool check_expiry = false) const;
   bool AddRolloutSpecification(
-      const std::map<std::string, std::string>& defaults,
+      const absl::flat_hash_map<std::string, std::string>& defaults,
       const std::map<std::string, std::string>& platforms_define,
       RolloutSpecification& rollout_attributes);
 
@@ -90,18 +91,19 @@ class ExperimentDefinition {
   bool allow_in_fuzzing_config_;
   std::vector<std::string> test_tags_;
   std::set<std::string> requires_;
-  std::map<std::string, std::string> defaults_;
-  std::map<std::string, std::string> additional_constraints_;
+  absl::flat_hash_map<std::string, std::string> defaults_;
+  absl::flat_hash_map<std::string, std::string> additional_constraints_;
 };
 
 class ExperimentsCompiler {
  public:
   ExperimentsCompiler(
-      const std::map<std::string, std::string>& defaults,
+      const absl::flat_hash_map<std::string, std::string>& defaults,
       const std::map<std::string, std::string>& platforms_define,
-      const std::map<std::string, std::string>& final_return,
-      const std::map<std::string, std::string>& final_define,
-      const std::map<std::string, std::string>& bzl_list_for_defaults)
+      const absl::flat_hash_map<std::string, std::string>& final_return,
+      const absl::flat_hash_map<std::string, std::string>& final_define,
+      const absl::flat_hash_map<std::string, std::string>&
+          bzl_list_for_defaults)
       : defaults_(defaults),
         platforms_define_(platforms_define),
         final_return_(final_return),
@@ -114,7 +116,9 @@ class ExperimentsCompiler {
 
   class ExperimentsOutputGenerator {
    public:
-    ExperimentsOutputGenerator(const ExperimentsCompiler& compiler)
+    // The compiler is not owned by the generator, and will always outlive the
+    // generator.
+    ExperimentsOutputGenerator(const ExperimentsCompiler* compiler)
         : compiler_(compiler) {}
     virtual ~ExperimentsOutputGenerator() = default;
     virtual void GenerateHeader(std::string& output) = 0;
@@ -136,7 +140,7 @@ class ExperimentsCompiler {
                                            std::string& output);
 
    private:
-    const ExperimentsCompiler& compiler_;
+    const ExperimentsCompiler* compiler_;
   };
 
   absl::Status GenerateExperimentsHdr(
@@ -146,19 +150,20 @@ class ExperimentsCompiler {
       const std::string& output_file, const std::string& header_file_path,
       ExperimentsCompiler::ExperimentsOutputGenerator& generator);
 
-  const std::map<std::string, std::string>& defaults() const {
+  const absl::flat_hash_map<std::string, std::string>& defaults() const {
     return defaults_;
   }
   const std::map<std::string, std::string>& platforms_define() const {
     return platforms_define_;
   }
-  const std::map<std::string, std::string>& final_return() const {
+  const absl::flat_hash_map<std::string, std::string>& final_return() const {
     return final_return_;
   }
-  const std::map<std::string, std::string>& final_define() const {
+  const absl::flat_hash_map<std::string, std::string>& final_define() const {
     return final_define_;
   }
-  const std::map<std::string, std::string>& bzl_list_for_defaults() const {
+  const absl::flat_hash_map<std::string, std::string>& bzl_list_for_defaults()
+      const {
     return bzl_list_for_defaults_;
   }
   const std::map<std::string, ExperimentDefinition>& experiment_definitions()
@@ -173,11 +178,21 @@ class ExperimentsCompiler {
   absl::Status WriteToFile(const std::string& output_file,
                            const std::string& contents);
   absl::Status FinalizeExperiments();
-  std::map<std::string, std::string> defaults_;
+  // Unordered map of default definitions. Note that the iterator order is not
+  // guaranteed.
+  absl::flat_hash_map<std::string, std::string> defaults_;
+  // Ordered map of default platforms. The iterator order is guaranteed and
+  // determines the order of platforms in the generated files.
   std::map<std::string, std::string> platforms_define_;
-  std::map<std::string, std::string> final_return_;
-  std::map<std::string, std::string> final_define_;
-  std::map<std::string, std::string> bzl_list_for_defaults_;
+  // Unordered map of default return statements. Note that the iterator order is
+  // not guaranteed.
+  absl::flat_hash_map<std::string, std::string> final_return_;
+  // Unordered map of default define statement. Note that the iterator order is
+  // not guaranteed.
+  absl::flat_hash_map<std::string, std::string> final_define_;
+  // Unordered map of default bzl list. Note that the iterator order is not
+  // guaranteed.
+  absl::flat_hash_map<std::string, std::string> bzl_list_for_defaults_;
   std::map<std::string, ExperimentDefinition> experiment_definitions_;
   std::vector<std::string> sorted_experiment_names_;
 };
@@ -242,7 +257,7 @@ class GrpcOssExperimentsOutputGenerator
     : public ExperimentsCompiler::ExperimentsOutputGenerator {
  public:
   explicit GrpcOssExperimentsOutputGenerator(
-      const ExperimentsCompiler& compiler, const std::string& mode,
+      const ExperimentsCompiler* compiler, const std::string& mode,
       const std::string& header_file_path = "")
       : ExperimentsOutputGenerator(compiler),
         mode_(mode),

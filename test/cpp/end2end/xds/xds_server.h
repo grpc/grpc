@@ -27,25 +27,31 @@
 #include <thread>
 #include <vector>
 
-#include "absl/container/flat_hash_map.h"
-#include "absl/container/flat_hash_set.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "envoy/config/cluster/v3/cluster.pb.h"
 #include "envoy/config/endpoint/v3/endpoint.pb.h"
 #include "envoy/config/listener/v3/listener.pb.h"
 #include "envoy/config/route/v3/route.pb.h"
+#include "envoy/service/discovery/v3/ads.grpc.pb.h"
+#include "envoy/service/discovery/v3/discovery.pb.h"
+#include "envoy/service/load_stats/v3/lrs.grpc.pb.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
-#include "src/proto/grpc/testing/xds/v3/ads.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/discovery.pb.h"
-#include "src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/counted_service.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace testing {
+namespace internal {
+using AggregatedDiscoveryService =
+    envoy::service::discovery::v3::AggregatedDiscoveryService;
+using LoadReportingService =
+    envoy::service::load_stats::v3::LoadReportingService;
+}  // namespace internal
 
 constexpr char kLdsTypeUrl[] =
     "type.googleapis.com/envoy.config.listener.v3.Listener";
@@ -58,8 +64,8 @@ constexpr char kEdsTypeUrl[] =
 
 // An ADS service implementation.
 class AdsServiceImpl
-    : public CountedService<::envoy::service::discovery::v3::
-                                AggregatedDiscoveryService::CallbackService>,
+    : public CountedService<
+          internal::AggregatedDiscoveryService::CallbackService>,
       public std::enable_shared_from_this<AdsServiceImpl> {
  public:
   using DiscoveryRequest = ::envoy::service::discovery::v3::DiscoveryRequest;
@@ -185,6 +191,13 @@ class AdsServiceImpl
     forced_ads_failure_ = std::nullopt;
   }
 
+  using ClientMetadataType = std::multimap<grpc::string_ref, grpc::string_ref>;
+  void SetCallCredsCallback(
+      absl::AnyInvocable<void(const ClientMetadataType&)> cb) {
+    grpc_core::MutexLock lock(&ads_mu_);
+    call_creds_cb_ = std::move(cb);
+  }
+
  private:
   class Reactor
       : public ServerBidiReactor<DiscoveryRequest, DiscoveryResponse> {
@@ -293,14 +306,16 @@ class AdsServiceImpl
   // Wrap resources in a Resource proto wrapper, as configured by tests.
   bool wrap_resources_ ABSL_GUARDED_BY(ads_mu_) = false;
 
+  absl::AnyInvocable<void(const ClientMetadataType&)> call_creds_cb_
+      ABSL_GUARDED_BY(ads_mu_);
+
   grpc_core::Mutex clients_mu_;
   std::set<std::string> clients_ ABSL_GUARDED_BY(clients_mu_);
 };
 
 // An LRS service implementation.
 class LrsServiceImpl
-    : public CountedService<::envoy::service::load_stats::v3::
-                                LoadReportingService::CallbackService>,
+    : public CountedService<internal::LoadReportingService::CallbackService>,
       public std::enable_shared_from_this<LrsServiceImpl> {
  public:
   using LoadStatsRequest = ::envoy::service::load_stats::v3::LoadStatsRequest;
@@ -472,7 +487,9 @@ class LrsServiceImpl
 
     std::shared_ptr<LrsServiceImpl> lrs_service_impl_;
 
-    std::atomic<bool> seen_first_request_{false};
+    grpc_core::Mutex mu_;
+    bool seen_first_request_ ABSL_GUARDED_BY(&mu_) = false;
+    bool finished_ ABSL_GUARDED_BY(&mu_) = false;
 
     LoadStatsRequest request_;
     LoadStatsResponse response_;

@@ -24,9 +24,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/log.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/span.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good/tcp_frame_transport.h"
@@ -42,6 +39,9 @@
 #include "src/core/util/useful.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
 #include "test/core/test_util/mock_endpoint.h"
+#include "absl/log/log.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 using grpc_event_engine::experimental::EventEngine;
 

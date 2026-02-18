@@ -36,8 +36,8 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":internal",
-        "//upb:base",
-        "//upb:mem",
+        "//upb/base",
+        "//upb/mem",
         "//upb:port",
         "//upb/hash",
     ],
@@ -60,8 +60,8 @@ cc_library(
     copts = UPB_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
-        "//upb:base",
-        "//upb:mem",
+        "//upb/base",
+        "//upb/mem",
         "//upb:port",
         "//upb/hash",
         "//upb/message:types",
@@ -80,8 +80,8 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":mini_table",
-        "//upb:base",
-        "//upb:mem",
+        "//upb/base",
+        "//upb/mem",
         "//upb:port",
         "//upb/hash",
     ],

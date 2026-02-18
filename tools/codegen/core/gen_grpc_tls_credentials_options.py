@@ -32,24 +32,28 @@ import tempfile
 class DataMember:
     name: str  # name of the data member without the trailing '_'
     type: str  # Type (eg. std::string, bool)
+
     test_name: str  # The name to use for the associated test
     test_value_1: str  # Test-specific value to use for comparison
     test_value_2: str  # Test-specific value (different from test_value_1)
-    default_initializer: str = (  # If non-empty, this will be used as the default initialization of this field
-        ""
-    )
-    getter_comment: str = ""  # Comment to add before the getter for this field
-    special_getter_return_type: str = (  # Override for the return type of getter (eg. const std::string&)
-        ""
-    )
-    override_getter: str = (  # Override for the entire getter method. Relevant for certificate_verifier and certificate_provider
-        ""
-    )
-    setter_comment: str = ""  # Commend to add before the setter for this field
+
+    # If non-empty, this will be used as the default initialization
+    # of this field.
+    default_initializer: str = ""
+
+    # Comment to add before the getter for this field
+    getter_comment: str = ""
+    # Override for the return type of getter (eg. const std::string&)
+    special_getter_return_type: str = ""
+    # Override for the entire getter method.
+    # Relevant for certificate_verifier and certificate_provider.
+    override_getter: str = ""
+
+    setter_comment: str = ""  # Comment to add before the setter for this field
     setter_move_semantics: bool = False  # Should the setter use move-semantics
-    special_comparator: str = (  # If non-empty, this will be used in `operator==`
-        ""
-    )
+
+    # If non-empty, this will be used in `operator==`
+    special_comparator: str = ""
 
 
 _DATA_MEMBERS = [
@@ -101,56 +105,13 @@ _DATA_MEMBERS = [
         ),
         test_name="DifferentCertificateVerifier",
         test_value_1="MakeRefCounted<HostNameCertificateVerifier>()",
-        test_value_2="MakeRefCounted<XdsCertificateVerifier>(nullptr)",
+        test_value_2='MakeRefCounted<XdsCertificateVerifier>(nullptr, "")',
     ),
     DataMember(
         name="check_call_host",
         type="bool",
         default_initializer="true",
         test_name="DifferentCheckCallHost",
-        test_value_1="false",
-        test_value_2="true",
-    ),
-    DataMember(
-        name="certificate_provider",
-        type="grpc_core::RefCountedPtr<grpc_tls_certificate_provider>",
-        getter_comment=(
-            "Returns the distributor from certificate_provider_ if it is set,"
-            " nullptr otherwise."
-        ),
-        override_getter="""grpc_tls_certificate_distributor* certificate_distributor() {
-    if (certificate_provider_ != nullptr) { return certificate_provider_->distributor().get(); }
-    return nullptr;
-  }""",
-        setter_move_semantics=True,
-        special_comparator=(
-            "(certificate_provider_ == other.certificate_provider_ ||"
-            " (certificate_provider_ != nullptr && other.certificate_provider_"
-            " != nullptr &&"
-            " certificate_provider_->Compare(other.certificate_provider_.get())"
-            " == 0))"
-        ),
-        test_name="DifferentCertificateProvider",
-        test_value_1=(
-            'MakeRefCounted<StaticDataCertificateProvider>("root_cert_1",'
-            " PemKeyCertPairList())"
-        ),
-        test_value_2=(
-            'MakeRefCounted<StaticDataCertificateProvider>("root_cert_2",'
-            " PemKeyCertPairList())"
-        ),
-    ),
-    DataMember(
-        name="watch_root_cert",
-        type="bool",
-        default_initializer="false",
-        setter_comment=(
-            "If need to watch the updates of root certificates with name"
-            " |root_cert_name|. The default value is false. If used in"
-            " tls_credentials, it should always be set to true unless the root"
-            " certificates are not needed."
-        ),
-        test_name="DifferentWatchRootCert",
         test_value_1="false",
         test_value_2="true",
     ),
@@ -167,20 +128,6 @@ _DATA_MEMBERS = [
         test_name="DifferentRootCertName",
         test_value_1='"root_cert_name_1"',
         test_value_2='"root_cert_name_2"',
-    ),
-    DataMember(
-        name="watch_identity_pair",
-        type="bool",
-        default_initializer="false",
-        setter_comment=(
-            "If need to watch the updates of identity certificates with name"
-            " |identity_cert_name|. The default value is false. If used in"
-            " tls_credentials, it should always be set to true unless the"
-            " identity key-cert pairs are not needed."
-        ),
-        test_name="DifferentWatchIdentityPair",
-        test_value_1="false",
-        test_value_2="true",
     ),
     DataMember(
         name="identity_cert_name",
@@ -237,6 +184,65 @@ _DATA_MEMBERS = [
         test_name="DifferentSendClientCaListValues",
         test_value_1="false",
         test_value_2="true",
+    ),
+    DataMember(
+        name="identity_certificate_provider",
+        type="grpc_core::RefCountedPtr<grpc_tls_certificate_provider>",
+        getter_comment=(
+            "Returns the distributor from identity_certificate_provider_ if it"
+            " is set, nullptr otherwise."
+        ),
+        override_getter="""grpc_tls_certificate_distributor* identity_certificate_distributor() {
+    if (identity_certificate_provider_ != nullptr) { return identity_certificate_provider_->distributor().get(); }
+    return nullptr;
+  }""",
+        setter_move_semantics=True,
+        special_comparator=(
+            "(identity_certificate_provider_ =="
+            " other.identity_certificate_provider_ ||"
+            " (identity_certificate_provider_ != nullptr &&"
+            " other.identity_certificate_provider_ != nullptr &&"
+            " identity_certificate_provider_->Compare(other.identity_certificate_provider_.get())"
+            " == 0))"
+        ),
+        test_name="DifferentIdentityCertificateProvider",
+        test_value_1="MakeRefCounted<InMemoryCertificateProvider>()",
+        test_value_2="MakeRefCounted<InMemoryCertificateProvider>()",
+    ),
+    DataMember(
+        name="root_certificate_provider",
+        type="grpc_core::RefCountedPtr<grpc_tls_certificate_provider>",
+        getter_comment=(
+            "Returns the distributor from root_certificate_provider_ if it is"
+            " set, nullptr otherwise."
+        ),
+        override_getter="""grpc_tls_certificate_distributor* root_certificate_distributor() {
+    if (root_certificate_provider_ != nullptr) { return root_certificate_provider_->distributor().get(); }
+    return nullptr;
+  }""",
+        setter_move_semantics=True,
+        special_comparator=(
+            "(root_certificate_provider_ == other.root_certificate_provider_ ||"
+            " (root_certificate_provider_ != nullptr &&"
+            " other.root_certificate_provider_ != nullptr &&"
+            " root_certificate_provider_->Compare(other.root_certificate_provider_.get())"
+            " == 0))"
+        ),
+        test_name="DifferentRootCertificateProvider",
+        test_value_1="MakeRefCounted<InMemoryCertificateProvider>()",
+        test_value_2="MakeRefCounted<InMemoryCertificateProvider>()",
+    ),
+    DataMember(
+        name="sni_override",
+        type="std::optional<std::string>",
+        setter_move_semantics=True,
+        setter_comment=(
+            "If set to nullopt, do not override. If set to empty string, disable sending SNI. Otherwise, override SNI"
+        ),
+        test_name="DifferentSniOverride",
+        test_value_1='"sni_override_1"',
+        test_value_2='"sni_override_2"',
+        special_getter_return_type="const std::optional<std::string>&",
     ),
 ]
 
@@ -337,9 +343,11 @@ for data_member in _DATA_MEMBERS:
         print(
             "  %s %s() const { return %s; }"
             % (
-                data_member.special_getter_return_type
-                if data_member.special_getter_return_type != ""
-                else data_member.type,
+                (
+                    data_member.special_getter_return_type
+                    if data_member.special_getter_return_type != ""
+                    else data_member.type
+                ),
                 data_member.name,
                 data_member.name + "_",
             ),

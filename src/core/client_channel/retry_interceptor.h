@@ -26,6 +26,7 @@
 namespace grpc_core {
 
 namespace retry_detail {
+
 class RetryState {
  public:
   RetryState(const internal::RetryMethodConfig* retry_policy,
@@ -55,8 +56,6 @@ class RetryState {
   BackOff retry_backoff_;
 };
 
-RefCountedPtr<internal::RetryThrottler> RetryThrottlerFromChannelArgs(
-    const ChannelArgs& args, const FilterArgs& filter_args);
 }  // namespace retry_detail
 
 class RetryInterceptor : public Interceptor {
@@ -68,6 +67,10 @@ class RetryInterceptor : public Interceptor {
       const ChannelArgs& args, const FilterArgs& filter_args);
 
   void Orphaned() override {}
+
+  static void UpdateBlackboard(const ServiceConfig& service_config,
+                               const Blackboard* old_blackboard,
+                               Blackboard* new_blackboard);
 
  protected:
   void InterceptCall(UnstartedCallHandler unstarted_call_handler) override;

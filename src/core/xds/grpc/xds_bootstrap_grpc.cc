@@ -24,6 +24,14 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/util/down_cast.h"
+#include "src/core/util/env.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/json/json_writer.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/string.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -31,15 +39,17 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "src/core/util/down_cast.h"
-#include "src/core/util/json/json.h"
-#include "src/core/util/json/json_object_loader.h"
-#include "src/core/util/json/json_reader.h"
-#include "src/core/util/json/json_writer.h"
-#include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/string.h"
 
 namespace grpc_core {
+
+// TODO(roth): Remove this once the feature passes interop tests.
+bool XdsExtProcOnClientEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT");
+  if (!value.has_value()) return false;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
 
 //
 // GrpcXdsBootstrap::GrpcNode::Locality
@@ -84,8 +94,28 @@ const JsonLoaderInterface* GrpcXdsBootstrap::GrpcAuthority::JsonLoader(
               "client_listener_resource_name_template",
               &GrpcAuthority::client_listener_resource_name_template_)
           .OptionalField("xds_servers", &GrpcAuthority::servers_)
+          .OptionalField("fallback_on_reachability_only",
+                         &GrpcAuthority::fallback_on_reachability_only_)
           .Finish();
   return loader;
+}
+
+//
+// GrpcXdsBootstrap::AllowedGrpcService
+//
+
+const JsonLoaderInterface* GrpcXdsBootstrap::AllowedGrpcService::JsonLoader(
+    const JsonArgs&) {
+  static const auto* loader = JsonObjectLoader<AllowedGrpcService>().Finish();
+  return loader;
+};
+
+void GrpcXdsBootstrap::AllowedGrpcService::JsonPostLoad(
+    const Json& json, const JsonArgs& args, ValidationErrors* errors) {
+  // Parse "channel_creds".
+  channel_creds_config = ParseXdsBootstrapChannelCreds(json, args, errors);
+  // Parse "call_creds".
+  call_creds_configs = ParseXdsBootstrapCallCreds(json, args, errors);
 }
 
 //
@@ -104,6 +134,7 @@ absl::StatusOr<std::unique_ptr<GrpcXdsBootstrap>> GrpcXdsBootstrap::Create(
    public:
     bool IsEnabled(absl::string_view key) const override {
       if (key == "federation") return XdsFederationEnabled();
+      if (key == "grpc_service") return XdsExtProcOnClientEnabled();
       return true;
     }
   };
@@ -128,6 +159,9 @@ const JsonLoaderInterface* GrpcXdsBootstrap::JsonLoader(const JsonArgs&) {
                          &GrpcXdsBootstrap::
                              client_default_listener_resource_name_template_,
                          "federation")
+          .OptionalField("allowed_grpc_services",
+                         &GrpcXdsBootstrap::allowed_grpc_services_,
+                         "grpc_service")
           .Finish();
   return loader;
 }
@@ -221,6 +255,22 @@ std::string GrpcXdsBootstrap::ToString() const {
                         "  },\n",
                         name, plugin_definition.plugin_name,
                         plugin_definition.config->ToString()));
+  }
+  parts.push_back("}");
+  parts.push_back("allowed_grpc_services={\n");
+  for (const auto& [target_uri, creds] : allowed_grpc_services_) {
+    parts.push_back(absl::StrCat("  ", target_uri, "={\n"));
+    if (creds.channel_creds_config != nullptr) {
+      parts.push_back(absl::StrCat(
+          "    channel_creds={type=", creds.channel_creds_config->type(),
+          ", config=", creds.channel_creds_config->ToString(), "},\n"));
+    }
+    for (const auto& call_creds_config : creds.call_creds_configs) {
+      parts.push_back(
+          absl::StrCat("    call_creds={type=", call_creds_config->type(),
+                       ", config=", call_creds_config->ToString(), "},\n"));
+    }
+    parts.push_back("  },\n");
   }
   parts.push_back("}");
   return absl::StrJoin(parts, "");

@@ -26,16 +26,16 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/credentials/call/json_util.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "test/core/credentials/call/oauth2/oauth2_utils.h"
 #include "test/core/test_util/cmdline.h"
 #include "test/core/test_util/tls_utils.h"
+#include "absl/log/log.h"
 
 static grpc_call_credentials* create_sts_creds(const char* json_file_path) {
   grpc::experimental::StsCredentialsOptions options;
@@ -132,7 +132,7 @@ int main(int argc, char** argv) {
         << "Missing --gce, --json_sts_options, or --json_refresh_token option.";
     exit(1);
   }
-  CHECK_NE(creds, nullptr);
+  GRPC_CHECK_NE(creds, nullptr);
 
   token = grpc_test_fetch_oauth2_token_with_credentials(creds);
   if (token != nullptr) {

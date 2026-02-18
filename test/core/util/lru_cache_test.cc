@@ -16,11 +16,11 @@
 
 #include "src/core/util/lru_cache.h"
 
-#include "absl/log/check.h"
-#include "absl/strings/numbers.h"
-#include "absl/strings/str_cat.h"
+#include "src/core/util/grpc_check.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
@@ -28,7 +28,7 @@ TEST(LruCache, Basic) {
   std::vector<int> created_list;
   auto create = [&](const std::string& key) {
     int value;
-    CHECK(absl::SimpleAtoi(key, &value));
+    GRPC_CHECK(absl::SimpleAtoi(key, &value));
     created_list.push_back(value);
     return value;
   };
@@ -69,7 +69,7 @@ TEST(LruCache, Basic) {
 TEST(LruCache, SetMaxSize) {
   auto create = [&](const std::string& key) {
     int value;
-    CHECK(absl::SimpleAtoi(key, &value));
+    GRPC_CHECK(absl::SimpleAtoi(key, &value));
     return value;
   };
   // Create a cache with max size 10.

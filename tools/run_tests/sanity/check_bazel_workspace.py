@@ -68,6 +68,7 @@ _GRPC_DEP_NAMES = [
     "com_google_googleapis",
     "com_google_libprotobuf_mutator",
     "com_github_cncf_xds",
+    "dev_cel",
     "google_cloud_cpp",
     "rules_shell",
     "rules_java",
@@ -76,6 +77,7 @@ _GRPC_DEP_NAMES = [
 
 _GRPC_BAZEL_ONLY_DEPS = [
     "platforms",
+    "com_google_googletest",
     "rules_cc",
     "com_google_absl",
     "com_google_fuzztest",

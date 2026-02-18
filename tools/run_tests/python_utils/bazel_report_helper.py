@@ -87,7 +87,7 @@ def _generate_junit_report_string(
             % bazel_invocation_url
         )
     else:
-        # The failure output will be displayes in both resultstore UI and sponge when clicking on the failing testcase.
+        # The failure output will be displayed in both resultstore UI and sponge when clicking on the failing testcase.
         test_output_tag = (
             '<failure message="Failure">FAILED. See bazel invocation results'
             " here: %s</failure>" % bazel_invocation_url

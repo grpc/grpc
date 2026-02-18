@@ -17,11 +17,18 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
+#include <cstddef>
+#include <optional>
+#include <vector>
+
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport_framing_endpoint_extension.h"
+#include "src/core/util/debug_location.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 namespace util {
@@ -104,6 +111,14 @@ class MockTelemetryInfo : public grpc_event_engine::experimental::EventEngine::
               (const override));
   MOCK_METHOD(std::optional<size_t>, GetMetricKey, (absl::string_view name),
               (const override));
+  MOCK_METHOD(
+      std::shared_ptr<
+          grpc_event_engine::experimental::EventEngine::Endpoint::MetricsSet>,
+      GetMetricsSet, (absl::Span<const size_t> keys), (const override));
+  MOCK_METHOD(
+      std::shared_ptr<
+          grpc_event_engine::experimental::EventEngine::Endpoint::MetricsSet>,
+      GetFullMetricsSet, (), (const override));
 };
 
 struct MockTransportFramingEndpointExtension
@@ -114,19 +129,38 @@ struct MockTransportFramingEndpointExtension
 };
 
 struct MockPromiseEndpoint {
-  explicit MockPromiseEndpoint(int port) {
-    if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
-      EXPECT_CALL(*endpoint, GetPeerAddress)
-          .WillRepeatedly(
-              [peer_address =
-                   std::make_shared<grpc_event_engine::experimental::
-                                        EventEngine::ResolvedAddress>(
-                       grpc_event_engine::experimental::URIToResolvedAddress(
-                           absl::StrCat("ipv4:127.0.0.1:", port))
-                           .value())]()
-                  -> const grpc_event_engine::experimental::EventEngine::
-                      ResolvedAddress& { return *peer_address; });
+  explicit MockPromiseEndpoint(
+      int port, int local_port = 6148,
+      std::shared_ptr<MockTelemetryInfo> telemetry_info = nullptr) {
+    if (telemetry_info == nullptr) {
+      telemetry_info = std::make_shared<util::testing::MockTelemetryInfo>();
+      EXPECT_CALL(*telemetry_info, GetMetricKey(::testing::_))
+          .WillRepeatedly([key = std::make_shared<int>(0)](absl::string_view) {
+            return ++(*key);
+          });
     }
+    EXPECT_CALL(*endpoint, GetTelemetryInfo())
+        .WillRepeatedly(::testing::Return(telemetry_info));
+    EXPECT_CALL(*endpoint, GetPeerAddress)
+        .WillRepeatedly(
+            [peer_address = std::make_shared<
+                 grpc_event_engine::experimental::EventEngine::ResolvedAddress>(
+                 grpc_event_engine::experimental::URIToResolvedAddress(
+                     absl::StrCat("ipv4:127.0.0.1:", port))
+                     .value())]() -> const grpc_event_engine::experimental::
+                                      EventEngine::ResolvedAddress& {
+                                        return *peer_address;
+                                      });
+    EXPECT_CALL(*endpoint, GetLocalAddress)
+        .WillRepeatedly(
+            [local_address = std::make_shared<
+                 grpc_event_engine::experimental::EventEngine::ResolvedAddress>(
+                 grpc_event_engine::experimental::URIToResolvedAddress(
+                     absl::StrCat("ipv4:127.0.0.1:", local_port))
+                     .value())]() -> const grpc_event_engine::experimental::
+                                      EventEngine::ResolvedAddress& {
+                                        return *local_address;
+                                      });
   }
   ::testing::StrictMock<MockEndpoint>* endpoint =
       new ::testing::StrictMock<MockEndpoint>();
@@ -137,25 +171,31 @@ struct MockPromiseEndpoint {
   ::testing::Sequence write_sequence;
   void ExpectRead(
       std::initializer_list<grpc_event_engine::experimental::Slice> slices_init,
-      grpc_event_engine::experimental::EventEngine* schedule_on_event_engine);
+      grpc_event_engine::experimental::EventEngine* schedule_on_event_engine,
+      DebugLocation whence = {});
   absl::AnyInvocable<void()> ExpectDelayedRead(
       std::initializer_list<grpc_event_engine::experimental::Slice> slices_init,
-      grpc_event_engine::experimental::EventEngine* schedule_on_event_engine);
+      grpc_event_engine::experimental::EventEngine* schedule_on_event_engine,
+      DebugLocation whence = {});
   void ExpectReadClose(
       absl::Status status,
-      grpc_event_engine::experimental::EventEngine* schedule_on_event_engine);
+      grpc_event_engine::experimental::EventEngine* schedule_on_event_engine,
+      DebugLocation whence = {});
   // Returns a function that will complete an EventEngine::Endpoint::Read call
   // with the given status.
   absl::AnyInvocable<void()> ExpectDelayedReadClose(
       absl::Status status,
-      grpc_event_engine::experimental::EventEngine* schedule_on_event_engine);
+      grpc_event_engine::experimental::EventEngine* schedule_on_event_engine,
+      DebugLocation whence = {});
   void ExpectWrite(
       std::initializer_list<grpc_event_engine::experimental::Slice> slices,
-      grpc_event_engine::experimental::EventEngine* schedule_on_event_engine);
+      grpc_event_engine::experimental::EventEngine* schedule_on_event_engine,
+      DebugLocation whence = {});
   void ExpectWriteWithCallback(
       std::initializer_list<grpc_event_engine::experimental::Slice> slices,
       grpc_event_engine::experimental::EventEngine* schedule_on_event_engine,
-      absl::AnyInvocable<void(SliceBuffer&, SliceBuffer&)> callback);
+      absl::AnyInvocable<void(SliceBuffer&, SliceBuffer&)> callback,
+      DebugLocation whence = {});
   void CaptureWrites(
       SliceBuffer& writes,
       grpc_event_engine::experimental::EventEngine* schedule_on_event_engine);

@@ -21,18 +21,18 @@
 
 #include <memory>
 
-#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 
 static void BinaryMetadata(CoreEnd2endTest& test, bool server_true_binary,
                            bool client_true_binary) {
-  test.InitServer(
-      ChannelArgs().Set(GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY, server_true_binary));
+  test.InitServer(CoreEnd2endTest::DefaultServerArgs().Set(
+      GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY, server_true_binary));
   test.InitClient(
       ChannelArgs().Set(GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY, client_true_binary));
 

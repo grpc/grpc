@@ -21,15 +21,15 @@
 
 #include <utility>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
 #include "src/core/call/call_destination.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/service_config/service_config_call_data.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/down_cast.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/unique_type_name.h"
+#include "absl/functional/any_invocable.h"
 
 //
 // This file contains internal interfaces used to allow various plugins
@@ -40,6 +40,15 @@
 // Channel arg key for health check service name.
 #define GRPC_ARG_HEALTH_CHECK_SERVICE_NAME \
   "grpc.internal.health_check_service_name"
+
+// Max number of connections per subchannel.
+#define GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL \
+  "grpc.internal.max_connections_per_subchannel"
+
+// EXPERIMENTAL: Fail requests at the client if the client is over max
+// concurrent streams, so they may be retried elsewhere.
+#define GRPC_ARG_MAX_CONCURRENT_STREAMS_REJECT_ON_CLIENT \
+  "grpc.http.max_concurrent_streams_reject_on_client"
 
 namespace grpc_core {
 
@@ -54,7 +63,7 @@ class ClientChannelLbCallState : public LoadBalancingPolicy::CallState {
 
   virtual ServiceConfigCallData::CallAttributeInterface* GetCallAttribute(
       UniqueTypeName type) const = 0;
-  virtual ClientCallTracer::CallAttemptTracer* GetCallAttemptTracer() const = 0;
+  virtual CallAttemptTracer* GetCallAttemptTracer() const = 0;
 };
 
 // Internal type for ServiceConfigCallData.  Handles call commits.
@@ -64,7 +73,7 @@ class ClientChannelServiceConfigCallData final : public ServiceConfigCallData {
       : ServiceConfigCallData(arena) {}
 
   void SetOnCommit(absl::AnyInvocable<void()> on_commit) {
-    CHECK(on_commit_ == nullptr);
+    GRPC_CHECK(on_commit_ == nullptr);
     on_commit_ = std::move(on_commit);
   }
 

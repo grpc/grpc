@@ -23,9 +23,6 @@
 #include <new>
 #include <optional>
 
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
-#include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -41,6 +38,9 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc_core {
 namespace {
@@ -48,10 +48,7 @@ namespace {
 // Tests cancellation with multiple send op batches.
 void TestRetryCancelWithMultipleSendBatches(
     CoreEnd2endTest& test, std::unique_ptr<CancellationMode> mode) {
-  // This is a workaround for the flakiness that if the server ever enters
-  // GracefulShutdown for whatever reason while the client has already been
-  // shutdown, the test would not timeout and fail.
-  test.InitServer(ChannelArgs().Set(GRPC_ARG_PING_TIMEOUT_MS, 5000));
+  test.InitServer(CoreEnd2endTest::DefaultServerArgs());
   test.InitClient(
       ChannelArgs()
           .Set(

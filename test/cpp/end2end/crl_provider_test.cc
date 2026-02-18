@@ -34,19 +34,19 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/synchronization/notification.h"
-#include "gtest/gtest.h"
+#include "src/core/util/grpc_check.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/testing/echo_messages.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/synchronization/notification.h"
 
 // CRL Providers not supported for <1.1
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
@@ -100,7 +100,7 @@ class CrlProviderTest : public ::testing::Test {
     options.set_cert_request_type(
         GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
     auto server_credentials = grpc::experimental::TlsServerCredentials(options);
-    CHECK_NE(server_credentials.get(), nullptr);
+    GRPC_CHECK_NE(server_credentials.get(), nullptr);
 
     grpc::ServerBuilder builder;
     TestServiceImpl service_;

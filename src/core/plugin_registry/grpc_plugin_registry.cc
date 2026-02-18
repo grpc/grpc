@@ -21,7 +21,7 @@
 
 #include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/endpoint_info/endpoint_info_handshaker.h"
-#include "src/core/handshaker/http_connect/http_connect_handshaker.h"
+#include "src/core/handshaker/http_connect/http_connect_client_handshaker.h"
 #include "src/core/handshaker/tcp_connect/tcp_connect_handshaker.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/lame_client.h"
@@ -71,6 +71,7 @@ extern void RegisterConnectedChannel(CoreConfiguration::Builder* builder);
 extern void RegisterLoadBalancedCallDestination(
     CoreConfiguration::Builder* builder);
 extern void RegisterChttp2Transport(CoreConfiguration::Builder* builder);
+extern void RegisterFusedFilters(CoreConfiguration::Builder* builder);
 #ifndef GRPC_NO_RLS
 extern void RegisterRlsLbPolicy(CoreConfiguration::Builder* builder);
 #endif  // !GRPC_NO_RLS
@@ -97,16 +98,20 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   // We want TCP connect handshaker to be registered last so that it is added
   // to the start of the handshaker list.
   RegisterEndpointInfoHandshaker(builder);
-  RegisterHttpConnectHandshaker(builder);
+  RegisterHttpConnectClientHandshaker(builder);
   RegisterTCPConnectHandshaker(builder);
   RegisterChttp2Transport(builder);
+#ifndef GRPC_MINIMAL_LB_POLICY
   RegisterPriorityLbPolicy(builder);
   RegisterOutlierDetectionLbPolicy(builder);
   RegisterWeightedTargetLbPolicy(builder);
+#endif
   RegisterPickFirstLbPolicy(builder);
+#ifndef GRPC_MINIMAL_LB_POLICY
   RegisterRoundRobinLbPolicy(builder);
   RegisterRingHashLbPolicy(builder);
   RegisterWeightedRoundRobinLbPolicy(builder);
+#endif
   BuildClientChannelConfiguration(builder);
   SecurityRegisterHandshakerFactories(builder);
   RegisterClientAuthorityFilter(builder);
@@ -131,6 +136,7 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterBackendMetricFilter(builder);
   RegisterSecurityFilters(builder);
   RegisterExtraFilters(builder);
+  RegisterFusedFilters(builder);
   RegisterBuiltins(builder);
 }
 

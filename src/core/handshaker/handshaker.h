@@ -26,8 +26,6 @@
 
 #include <memory>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/container/inlined_vector.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -40,6 +38,8 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/container/inlined_vector.h"
 
 namespace grpc_core {
 
@@ -80,7 +80,7 @@ struct HandshakerArgs {
   // migration?
   grpc_tcp_server_acceptor* acceptor = nullptr;
   // Channelz trace node for the current handshaker
-  channelz::ChannelTrace::Node trace_node;
+  channelz::TraceNode trace_node;
 };
 
 ///

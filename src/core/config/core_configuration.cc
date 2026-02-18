@@ -20,7 +20,7 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 
@@ -43,6 +43,7 @@ CoreConfiguration::CoreConfiguration(Builder* builder)
       channel_init_(builder->channel_init_.Build()),
       handshaker_registry_(builder->handshaker_registry_.Build()),
       channel_creds_registry_(builder->channel_creds_registry_.Build()),
+      call_creds_registry_(builder->call_creds_registry_.Build()),
       service_config_parser_(builder->service_config_parser_.Build()),
       resolver_registry_(builder->resolver_registry_.Build()),
       lb_policy_registry_(builder->lb_policy_registry_.Build()),
@@ -50,20 +51,22 @@ CoreConfiguration::CoreConfiguration(Builder* builder)
       certificate_provider_registry_(
           builder->certificate_provider_registry_.Build()),
       endpoint_transport_registry_(
-          builder->endpoint_transport_registry_.Build()) {}
+          builder->endpoint_transport_registry_.Build()),
+      auth_context_comparator_registry_(
+          builder->auth_context_comparator_registry_.Build()) {}
 
 void CoreConfiguration::RegisterBuilder(
     BuilderScope scope, absl::AnyInvocable<void(Builder*)> builder,
     SourceLocation whence) {
-  CHECK(config_.load(std::memory_order_relaxed) == nullptr)
+  GRPC_CHECK(config_.load(std::memory_order_relaxed) == nullptr)
       << "CoreConfiguration was already instantiated before builder "
          "registration was completed";
   if (scope == BuilderScope::kPersistent) {
-    CHECK(!has_config_ever_been_produced_.load(std::memory_order_relaxed))
+    GRPC_CHECK(!has_config_ever_been_produced_.load(std::memory_order_relaxed))
         << "Persistent builders cannot be registered after the first "
            "CoreConfiguration has been produced";
   }
-  CHECK_NE(scope, BuilderScope::kCount);
+  GRPC_CHECK_NE(scope, BuilderScope::kCount);
   auto& head = builders_[static_cast<size_t>(scope)];
   RegisteredBuilder* n = new RegisteredBuilder();
   VLOG(4) << "Registering " << scope << " builder from " << whence.file() << ":"
@@ -74,7 +77,7 @@ void CoreConfiguration::RegisterBuilder(
   while (!head.compare_exchange_weak(n->next, n, std::memory_order_acq_rel,
                                      std::memory_order_relaxed)) {
   }
-  CHECK(config_.load(std::memory_order_relaxed) == nullptr)
+  GRPC_CHECK(config_.load(std::memory_order_relaxed) == nullptr)
       << "CoreConfiguration was already instantiated before builder "
          "registration was completed";
 }

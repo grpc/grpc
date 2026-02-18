@@ -20,13 +20,13 @@
 #include <memory>
 #include <optional>
 
-#include "absl/strings/str_format.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc_core {
 namespace {
@@ -34,7 +34,7 @@ namespace {
 void TestRetryCancelDuringDelay(
     CoreEnd2endTest& test,
     std::unique_ptr<CancellationMode> cancellation_mode) {
-  test.InitServer(ChannelArgs());
+  test.InitServer(CoreEnd2endTest::DefaultServerArgs());
   test.InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       absl::StrFormat(
@@ -102,7 +102,6 @@ void TestRetryCancelDuringDelay(
 }
 
 CORE_END2END_TEST(RetryTests, CancelDuringDelay) {
-  if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   TestRetryCancelDuringDelay(*this, std::make_unique<CancelCancellationMode>());
 }
 

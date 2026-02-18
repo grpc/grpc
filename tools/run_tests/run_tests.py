@@ -14,12 +14,9 @@
 # limitations under the License.
 """Run tests in parallel."""
 
-from __future__ import print_function
-
 import argparse
 import ast
 import collections
-import glob
 import itertools
 import json
 import logging
@@ -30,21 +27,14 @@ import platform
 import random
 import re
 import shlex
-import socket
 import subprocess
 import sys
-import tempfile
 import time
-import traceback
-import uuid
-
-import six
-from six.moves import urllib
+import urllib
 
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
 import python_utils.start_port_server as start_port_server
-import python_utils.watch_dirs as watch_dirs
 
 try:
     from python_utils.upload_test_results import upload_results_to_bq
@@ -112,7 +102,7 @@ def _print_debug_info_epilogue(dockerfile_dir=None):
 
 
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
-class Config(object):
+class Config:
     def __init__(
         self,
         config,
@@ -166,6 +156,14 @@ class Config(object):
             timeout_retries=1 if flaky or args.allow_flakes else 0,
         )
 
+    def __repr__(self):
+        return (
+            f"<Config build_config={self.build_config}"
+            f" environ={self.environ} tool_prefix={self.tool_prefix}"
+            f" timeout_multiplier={self.timeout_multiplier}"
+            f" iomgr_platform={self.iomgr_platform}>"
+        )
+
 
 def get_c_tests(travis, test_lang):
     out = []
@@ -194,7 +192,7 @@ def _check_arch(arch, supported_archs):
 
 
 def _is_use_docker_child():
-    """Returns True if running running as a --use_docker child."""
+    """Returns True if running as a --use_docker child."""
     return True if os.getenv("DOCKER_RUN_SCRIPT_COMMAND") else False
 
 
@@ -521,15 +519,15 @@ class CLanguage(object):
         environ = {"GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX": self.lang_suffix}
         if self.platform == "windows":
             environ["GRPC_CMAKE_GENERATOR"] = self._cmake_generator_windows
-            environ[
-                "GRPC_CMAKE_ARCHITECTURE"
-            ] = self._cmake_architecture_windows
-            environ[
-                "GRPC_BUILD_ACTIVATE_VS_TOOLS"
-            ] = self._activate_vs_tools_windows
-            environ[
-                "GRPC_BUILD_VS_TOOLS_ARCHITECTURE"
-            ] = self._vs_tools_architecture_windows
+            environ["GRPC_CMAKE_ARCHITECTURE"] = (
+                self._cmake_architecture_windows
+            )
+            environ["GRPC_BUILD_ACTIVATE_VS_TOOLS"] = (
+                self._activate_vs_tools_windows
+            )
+            environ["GRPC_BUILD_VS_TOOLS_ARCHITECTURE"] = (
+                self._vs_tools_architecture_windows
+            )
         elif self.platform == "linux":
             environ["GRPC_RUNTESTS_ARCHITECTURE"] = self.args.arch
         return environ
@@ -694,7 +692,7 @@ class PythonLanguage(object):
                     self.config.job_spec(
                         [
                             python_config.python_path,
-                            "tools/distrib/python/xds_protos/generated_file_import_test.py",
+                            "py_xds_protos/generated_file_import_test.py",
                         ],
                         timeout_seconds=60,
                         environ=_FORCE_ENVIRON_FOR_WRAPPERS,
@@ -845,6 +843,13 @@ class PythonLanguage(object):
             bits=bits,
             config_vars=config_vars,
         )
+        python314_config = _python_config_generator(
+            name="py314",
+            major="3",
+            minor="14",
+            bits=bits,
+            config_vars=config_vars,
+        )
         pypy27_config = _pypy_config_generator(
             name="pypy", major="2", config_vars=config_vars
         )
@@ -869,7 +874,8 @@ class PythonLanguage(object):
                 # Default set tested on master. Test oldest and newest.
                 return (
                     python39_config,
-                    python313_config,
+                    python312_config,
+                    python314_config,
                 )
         elif args.compiler == "python3.9":
             return (python39_config,)
@@ -881,6 +887,8 @@ class PythonLanguage(object):
             return (python312_config,)
         elif args.compiler == "python3.13":
             return (python313_config,)
+        elif args.compiler == "python3.14":
+            return (python314_config,)
         elif args.compiler == "pypy":
             return (pypy27_config,)
         elif args.compiler == "pypy3":
@@ -894,6 +902,7 @@ class PythonLanguage(object):
                 python311_config,
                 python312_config,
                 python313_config,
+                python314_config,
             )
         else:
             raise Exception("Compiler %s not supported." % args.compiler)
@@ -972,6 +981,7 @@ class RubyLanguage(object):
             "src/ruby/end2end/channel_closing_test.rb",
             "src/ruby/end2end/killed_client_thread_test.rb",
             "src/ruby/end2end/forking_client_test.rb",
+            "src/ruby/end2end/fork_test_repro_35489.rb",
             "src/ruby/end2end/multiple_killed_watching_threads_test.rb",
             "src/ruby/end2end/client_memory_usage_test.rb",
             "src/ruby/end2end/package_with_underscore_test.rb",
@@ -984,20 +994,20 @@ class RubyLanguage(object):
             "src/ruby/end2end/call_credentials_timeout_test.rb",
             "src/ruby/end2end/call_credentials_returning_bad_metadata_doesnt_kill_background_thread_test.rb",
         ]:
-            if test in [
-                "src/ruby/end2end/fork_test.rb",
-                "src/ruby/end2end/simple_fork_test.rb",
-                "src/ruby/end2end/secure_fork_test.rb",
-                "src/ruby/end2end/bad_usage_fork_test.rb",
-                "src/ruby/end2end/prefork_without_using_grpc_test.rb",
-                "src/ruby/end2end/prefork_postfork_loop_test.rb",
-                "src/ruby/end2end/fork_test_repro_35489.rb",
-            ]:
-                # Skip fork tests in general until https://github.com/grpc/grpc/issues/34442
-                # is fixed. Otherwise we see too many flakes.
-                # After that's fixed, we should continue to skip on mac
-                # indefinitely, and on "dbg" builds until the Event Engine
-                # migration completes.
+            if (
+                test
+                in [
+                    "src/ruby/end2end/fork_test.rb",
+                    "src/ruby/end2end/simple_fork_test.rb",
+                    "src/ruby/end2end/secure_fork_test.rb",
+                    "src/ruby/end2end/bad_usage_fork_test.rb",
+                    "src/ruby/end2end/prefork_without_using_grpc_test.rb",
+                    "src/ruby/end2end/prefork_postfork_loop_test.rb",
+                    "src/ruby/end2end/fork_test_repro_35489.rb",
+                ]
+                and platform_string() == "mac"
+            ):
+                # Fork support only present on linux
                 continue
             tests.append(
                 self.config.job_spec(
@@ -1078,7 +1088,7 @@ class CSharpLanguage(object):
             else:
                 raise Exception('Illegal runtime "%s" was specified.')
 
-            for assembly in six.iterkeys(tests_by_assembly):
+            for assembly in tests_by_assembly:
                 assembly_file = "src/csharp/%s/%s/%s%s" % (
                     assembly,
                     assembly_subdir,
@@ -1271,7 +1281,7 @@ class Sanity(object):
             return [
                 self.config.job_spec(
                     cmd["script"].split(),
-                    timeout_seconds=45 * 60,
+                    timeout_seconds=90 * 60,
                     environ=environ,
                     cpu_cost=cmd.get("cpu_cost", 1),
                 )
@@ -1523,7 +1533,7 @@ def _build_and_run(
                 )
             )
         )
-        # When running on travis, we want out test runs to be as similar as possible
+        # When running on travis, we want our test runs to be as similar as possible
         # for reproducibility purposes.
         if args.travis and args.max_time <= 0:
             massaged_one_run = sorted(one_run, key=lambda x: x.cpu_cost)
@@ -1730,6 +1740,7 @@ argp.add_argument(
         "python3.11",
         "python3.12",
         "python3.13",
+        "python3.14",
         "pypy",
         "pypy3",
         "python_alpine",

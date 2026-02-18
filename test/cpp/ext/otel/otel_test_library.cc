@@ -23,9 +23,6 @@
 #include <atomic>
 #include <memory>
 
-#include "absl/functional/any_invocable.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "opentelemetry/metrics/provider.h"
 #include "opentelemetry/sdk/metrics/export/metric_producer.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
@@ -38,6 +35,9 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
 
 namespace {
 
@@ -146,25 +146,25 @@ class AddLabelsFilter : public grpc_core::ChannelFilter {
 
   static absl::string_view TypeName() { return "add_service_labels_filter"; }
 
-  explicit AddLabelsFilter(
-      std::map<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
-               grpc_core::RefCountedStringValue>
-          labels_to_inject)
+  explicit AddLabelsFilter(std::map<grpc_core::ClientCallTracerInterface::
+                                        CallAttemptTracer::OptionalLabelKey,
+                                    grpc_core::RefCountedStringValue>
+                               labels_to_inject)
       : labels_to_inject_(std::move(labels_to_inject)) {}
 
   static absl::StatusOr<std::unique_ptr<AddLabelsFilter>> Create(
       const grpc_core::ChannelArgs& args, ChannelFilter::Args /*filter_args*/) {
     return absl::make_unique<AddLabelsFilter>(
-        *args.GetPointer<std::map<
-             grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
-             grpc_core::RefCountedStringValue>>(GRPC_ARG_LABELS_TO_INJECT));
+        *args.GetPointer<std::map<grpc_core::ClientCallTracerInterface::
+                                      CallAttemptTracer::OptionalLabelKey,
+                                  grpc_core::RefCountedStringValue>>(
+            GRPC_ARG_LABELS_TO_INJECT));
   }
 
   grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> MakeCallPromise(
       grpc_core::CallArgs call_args,
       grpc_core::NextPromiseFactory next_promise_factory) override {
-    using CallAttemptTracer = grpc_core::ClientCallTracer::CallAttemptTracer;
-    auto* call_tracer = grpc_core::GetContext<CallAttemptTracer>();
+    auto* call_tracer = grpc_core::GetContext<grpc_core::CallAttemptTracer>();
     EXPECT_NE(call_tracer, nullptr);
     for (const auto& pair : labels_to_inject_) {
       call_tracer->SetOptionalLabel(pair.first, pair.second);
@@ -174,7 +174,7 @@ class AddLabelsFilter : public grpc_core::ChannelFilter {
 
  private:
   const std::map<
-      grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
+      grpc_core::ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey,
       grpc_core::RefCountedStringValue>
       labels_to_inject_;
 };
@@ -230,8 +230,6 @@ OpenTelemetryPluginEnd2EndTest::MetricsCollectorThread::Stop() {
 }
 
 void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
-  grpc_core::CoreConfiguration::
-      ResetEverythingIncludingPersistentBuildersAbsolutelyNotRecommended();
   ChannelArguments channel_args;
   if (!config.labels_to_inject.empty()) {
     labels_to_inject_ = std::move(config.labels_to_inject);
@@ -272,11 +270,14 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
 }
 
 void OpenTelemetryPluginEnd2EndTest::TearDown() {
-  server_->Shutdown();
-  grpc_shutdown_blocking();
+  if (server_ != nullptr) {
+    server_->Shutdown();
+    grpc_shutdown_blocking();
+  }
   grpc_core::ServerCallTracerFactory::TestOnlyReset();
   grpc_core::GlobalStatsPluginRegistryTestPeer::
       ResetGlobalStatsPluginRegistry();
+  grpc_core::CoreConfiguration::Reset();
 }
 
 void OpenTelemetryPluginEnd2EndTest::ResetStub(
@@ -323,6 +324,8 @@ OpenTelemetryPluginEnd2EndTest::ReadCurrentMetricsData(
       data;
   auto deadline = absl::Now() + absl::Seconds(5);
   do {
+    // Give other threads a chance to run and potentially report metrics.
+    std::this_thread::yield();
     reader->Collect([&](opentelemetry::sdk::metrics::ResourceMetrics& rm) {
       for (const opentelemetry::sdk::metrics::ScopeMetrics& smd :
            rm.scope_metric_data_) {

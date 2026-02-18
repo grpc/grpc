@@ -1,0 +1,122 @@
+# See https://docs.astral.sh/ruff/configuration/
+# For a full list of supported rules, see https://docs.astral.sh/ruff/rules/
+# For a full list of options, see https://docs.astral.sh/ruff/settings/
+
+target-version = "py39"
+
+[lint]
+ignore = [
+    "A001",    # Variable {name} is shadowing a Python builtin
+    "A002",    # Function argument {name} is shadowing a Python builtin
+    "ANN001",  # Missing type annotation for function argument {name}
+    "ANN002",  # Missing type annotation for *{name}
+    "ANN003",  # Missing type annotation for **{name}
+    "ANN201",  # Missing return type annotation for public function {name}
+    "ANN202",  # Missing return type annotation for private function {name}
+    "ANN204",  # Missing return type annotation for special method {name}
+    "ANN205",  # Missing return type annotation for staticmethod {name}
+    "ANN206",  # Missing return type annotation for classmethod {name}
+    "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed in {name}
+    "ARG001",  # Unused function argument: {name}
+    "ARG002",  # Unused method argument: {name}
+    "B024",    # {name} is an abstract base class, but it has no abstract methods or properties
+    "B904",    # Within an except* clause, raise exceptions with raise ... from err or raise ... from None to distinguish them from errors in exception handling
+    "BLE001",  # Do not catch blind exception: {name}
+    "C408",    # Unnecessary {kind}() call (rewrite as a literal)
+    "C901",    # {name} is too complex ({complexity} > {max_complexity})
+    "COM812",  # Trailing comma missing
+    "D102",    # Missing docstring in public method
+    "D103",    # Missing docstring in public function
+    "D104",    # Missing docstring in public package
+    "D105",    # Missing docstring in magic method
+    "D106",    # Missing docstring in public nested class
+    "D107",    # Missing docstring in __init__
+    "D200",    # One-line docstring should fit on one line
+    "D203",    # Checks for docstrings on class definitions that are not preceded by a blank line.
+    "D205",    # 1 blank line required between summary line and description
+    "D212",    # Multi-line docstring summary should start at the first line
+    "D213",    # Multi-line docstring summary should start at the second line
+    "D400",    # First line should end with a period
+    "D401",    # First line of docstring should be in imperative mood: "{first_line}"
+    "D413",    # Missing blank line after last section ("{name}")
+    "D415",    # First line should end with a period, question mark, or exclamation point
+    "DTZ005",  # datetime.datetime.now() called without a tz argument
+    "E501",    # Line too long ({width} > {limit})
+    "E731",    # Do not assign a lambda expression, use a def
+    "ERA001",  # Found commented-out code
+    "F401",    # {name} imported but unused; consider using importlib.util.find_spec to test for availability
+    "F403",    # from {name} import * used; unable to detect undefined names
+    "F811",    # Redefinition of unused {name} from {row}
+    "F821",    # Undefined name {name}. {tip}
+    "F841",    # Local variable {name} is assigned to but never used
+    "FBT001",  # Boolean-typed positional argument in function definition
+    "FBT002",  # Boolean default positional argument in function definition
+    "FBT003",  # Boolean positional value in function call
+    "FIX002",  # Line contains TODO, consider resolving the issue
+    "I001",    # Import block is un-sorted or un-formatted
+    "ISC003",  # Explicitly concatenated string should be implicitly concatenated
+    "N802",    # Function name {name} should be lowercase
+    "N818",    # Exception name {name} should be named with an Error suffix
+    "PERF203", # try-except within a loop incurs performance overhead
+    "PLC0415", # import should be at the top-level of a file
+    "PYI006",  # Use < or >= for sys.version_info comparisons
+    "PYI024",  # Use typing.NamedTuple instead of collections.namedtuple
+    "PLR0912", # Too many branches ({branches} > {max_branches})
+    "PLR0913", # Too many arguments in function definition ({c_args} > {max_args})
+    "PLR2004", # Magic value used in comparison, consider replacing {value} with a constant variable
+    "PLW2901", # Outer {outer_kind} variable {name} overwritten by inner {inner_kind} target
+    "PT015",   # Assertion always fails, replace with pytest.fail()
+    "PT017",   # Found assertion on exception {name} in except block, use pytest.raises() instead
+    "PT027",   # Use pytest.raises instead of unittest-style {assertion}
+    "PT028",   # Test function parameter {} has default argument
+    "PTH100",  # os.path.abspath() should be replaced by Path.resolve()
+    "PTH103",  # os.makedirs() should be replaced by Path.mkdir(parents=True)
+    "PTH107",  # os.remove() should be replaced by Path.unlink()
+    "PTH110",  # os.path.exists() should be replaced by Path.exists()
+    "PTH118",  # os.{module}.join() should be replaced by Path with / operator
+    "PTH120",  # os.path.dirname() should be replaced by Path.parent
+    "RET501",  # Do not explicitly return None in function if it is the only possible return value
+    "RET503",  # Missing explicit return at the end of function able to return non-None value
+    "RET504",  # Unnecessary assignment to {name} before return statement
+    "RSE102",  # Unnecessary parentheses on raised exception
+    "RUF005",  # Consider {expression} instead of concatenation
+    "S101",    # Use of assert detected
+    "S105",    # Possible hardcoded password assigned to: "{}"
+    "S110",    # try-except-pass detected, consider logging the exception
+    "SIM105",  # Use contextlib.suppress({exception}) instead of try-except-pass
+    "SLF001",  # Private member accessed: {access}
+    "SLOT002", # Subclasses of {namedtuple_kind} should define __slots__
+    "TC001",   # Move application import {} into a type-checking block
+    "TD003",   # Missing issue link for this TODO
+    "TRY003",  # Avoid specifying long messages outside the exception class
+    "TRY203",  # Remove exception handler; error is immediately re-raised
+    "TRY300",  # Consider moving this statement to an else block
+    "TRY400",  # Use logging.exception instead of logging.error
+    "TRY401",  # Redundant exception object included in logging.exception call
+    "UP004",   # Class {name} inherits from object
+    "UP006",   # Use {to} instead of {from} for type annotation
+    "UP008",   # Use super() instead of super(__class__, self)
+    "UP010",   # Unnecessary __future__ import {import} for target Python version
+    "UP015",   # Unnecessary mode argument
+    "UP018",   # Unnecessary {literal_type} call (rewrite as a literal)
+    "UP024",   # Replace aliased errors with OSError
+    "UP028",   # Replace yield over for loop with yield from
+    "UP030",   # Use implicit references for positional format fields
+    "UP031",   # Use format specifiers instead of percent format
+    "UP032",   # Use f-string instead of format call
+    "UP035",   # Import from {target} instead: {names}
+    "UP036",   # Version block is outdated for minimum Python version
+    "UP037",   # Remove quotes from type annotation
+    "YTT201",  # sys.version_info[0] == 3 referenced (python4), use >=
+    "YTT203",  # sys.version_info[1] compared to integer (python4), compare sys.version_info to tuple
+]
+
+# Select all rules by default, and then ignore the ones we don't want.
+# This is a good way to stay up-to-date with new rules in ruff.
+select = ["ALL"]
+
+# This is to suppress
+# https://docs.astral.sh/ruff/rules/non-pep585-annotation/
+# https://docs.astral.sh/ruff/rules/non-pep604-annotation-union/#non-pep604-annotation-union-up007
+[lint.pyupgrade]
+keep-runtime-typing = true

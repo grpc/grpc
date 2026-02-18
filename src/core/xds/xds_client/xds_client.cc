@@ -29,15 +29,6 @@
 #include <type_traits>
 #include <vector>
 
-#include "absl/cleanup/cleanup.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
-#include "absl/strings/strip.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/service/discovery/v3/discovery.upb.h"
 #include "envoy/service/discovery/v3/discovery.upbdefs.h"
@@ -47,8 +38,11 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/backoff.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/string.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/uri.h"
@@ -59,6 +53,14 @@
 #include "upb/mem/arena.h"
 #include "upb/reflection/def.h"
 #include "upb/text/encode.h"
+#include "absl/cleanup/cleanup.h"
+#include "absl/log/log.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 
 #define GRPC_XDS_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_XDS_RECONNECT_BACKOFF_MULTIPLIER 1.6
@@ -67,6 +69,18 @@
 #define GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS 1000
 
 namespace grpc_core {
+
+namespace {
+
+bool XdsEndpointFallbackEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_ENDPOINT_FALLBACK");
+  if (!value.has_value()) return false;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
+
+}  // namespace
 
 using ::grpc_event_engine::experimental::EventEngine;
 
@@ -409,7 +423,7 @@ XdsClient::XdsChannel::XdsChannel(WeakRefCountedPtr<XdsClient> xds_client,
   absl::Status status;
   transport_ =
       xds_client_->transport_factory_->GetTransport(*server.target(), &status);
-  CHECK(transport_ != nullptr);
+  GRPC_CHECK(transport_ != nullptr);
   if (!status.ok()) {
     SetChannelStatusLocked(std::move(status));
   } else {
@@ -489,13 +503,20 @@ void XdsClient::XdsChannel::UnsubscribeLocked(const XdsResourceType* type,
 
 bool XdsClient::XdsChannel::MaybeFallbackLocked(
     const std::string& authority, AuthorityState& authority_state) {
-  if (!xds_client_->HasUncachedResources(authority_state)) {
-    return false;
-  }
   std::vector<const XdsBootstrap::XdsServer*> xds_servers;
+  bool fallback_on_reachability_only = false;
   if (authority != kOldStyleAuthority) {
-    xds_servers =
-        xds_client_->bootstrap().LookupAuthority(authority)->servers();
+    auto* bootstrap_authority =
+        xds_client_->bootstrap().LookupAuthority(authority);
+    xds_servers = bootstrap_authority->servers();
+    if (XdsEndpointFallbackEnabled()) {
+      fallback_on_reachability_only =
+          bootstrap_authority->FallbackOnReachabilityOnly();
+    }
+  }
+  if (!fallback_on_reachability_only &&
+      !xds_client_->HasUncachedResources(authority_state)) {
+    return false;
   }
   if (xds_servers.empty()) xds_servers = xds_client_->bootstrap().servers();
   for (size_t i = authority_state.xds_channels.size(); i < xds_servers.size();
@@ -641,8 +662,8 @@ void XdsClient::XdsChannel::RetryableCall<T>::OnCallFinishedLocked() {
 template <typename T>
 void XdsClient::XdsChannel::RetryableCall<T>::StartNewCallLocked() {
   if (shutting_down_) return;
-  CHECK(xds_channel_->transport_ != nullptr);
-  CHECK(call_ == nullptr);
+  GRPC_CHECK(xds_channel_->transport_ != nullptr);
+  GRPC_CHECK(call_ == nullptr);
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[xds_client " << xds_channel()->xds_client() << "] xds server "
       << xds_channel()->server_uri() << ": start new call from retryable call "
@@ -711,7 +732,7 @@ XdsClient::XdsChannel::AdsCall::AdsCall(
     : InternallyRefCounted<AdsCall>(
           GRPC_TRACE_FLAG_ENABLED(xds_client_refcount) ? "AdsCall" : nullptr),
       retryable_call_(std::move(retryable_call)) {
-  CHECK_NE(xds_client(), nullptr);
+  GRPC_CHECK_NE(xds_client(), nullptr);
   // Init the ADS call.
   const char* method =
       "/envoy.service.discovery.v3.AggregatedDiscoveryService/"
@@ -721,7 +742,7 @@ XdsClient::XdsChannel::AdsCall::AdsCall(
                   // Passing the initial ref here.  This ref will go away when
                   // the StreamEventHandler is destroyed.
                   RefCountedPtr<AdsCall>(this)));
-  CHECK(streaming_call_ != nullptr);
+  GRPC_CHECK(streaming_call_ != nullptr);
   // Start the call.
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[xds_client " << xds_client() << "] xds server "
@@ -1601,7 +1622,7 @@ XdsClient::XdsClient(
       metrics_reporter_(std::move(metrics_reporter)) {
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[xds_client " << this << "] creating xds client";
-  CHECK(bootstrap_ != nullptr);
+  GRPC_CHECK(bootstrap_ != nullptr);
   if (bootstrap_->node() != nullptr) {
     GRPC_TRACE_LOG(xds_client, INFO)
         << "[xds_client " << this
@@ -1831,7 +1852,7 @@ void XdsClient::MaybeRegisterResourceTypeLocked(
     const XdsResourceType* resource_type) {
   auto it = resource_types_.find(resource_type->type_url());
   if (it != resource_types_.end()) {
-    CHECK(it->second == resource_type);
+    GRPC_CHECK(it->second == resource_type);
     return;
   }
   resource_types_.emplace(resource_type->type_url(), resource_type);
@@ -1882,7 +1903,7 @@ std::string XdsClient::ConstructFullXdsResourceName(
     auto uri = URI::Create("xdstp", /*user_info=*/"", std::string(authority),
                            absl::StrCat("/", resource_type, "/", key.id),
                            key.query_params, /*fragment=*/"");
-    CHECK(uri.ok());
+    GRPC_CHECK(uri.ok());
     return uri->ToString();
   }
   // Old-style name.
