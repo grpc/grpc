@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from collections import defaultdict
 import asyncio
+from collections import defaultdict
 import logging
 import os
 import sys
@@ -53,10 +53,10 @@ class OTelMetricExporter(MetricExporter):
     def __init__(
         self,
         all_metrics: Dict[str, List],
-        preferred_temporality: Dict[type, AggregationTemporality] = None,
-        preferred_aggregation: Dict[
-            type, "opentelemetry.sdk.metrics.view.Aggregation"
-        ] = None,
+        preferred_temporality: Dict[type, AggregationTemporality] | None = None,
+        preferred_aggregation: (
+            Dict[type, "opentelemetry.sdk.metrics.view.Aggregation"] | None
+        ) = None,
     ):
         super().__init__(
             preferred_temporality=preferred_temporality,
@@ -137,7 +137,9 @@ class OpenTelemetryObservabilityTest(AioTestBase):
         await self._validate_metrics_exist(self.all_metrics)
         self._validate_all_metrics_names(self.all_metrics.keys())
 
-    async def _validate_metrics_exist(self, all_metrics: Dict[str, Any]) -> None:
+    async def _validate_metrics_exist(
+        self, all_metrics: Dict[str, Any]
+    ) -> None:
         # Sleep here to make sure we have at least one export from OTel MetricExporter.
         await asyncio.sleep(5)
         self.assertTrue(

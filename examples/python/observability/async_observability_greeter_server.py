@@ -13,11 +13,11 @@
 # limitations under the License.
 """The Python AsyncIO example of the GRPC helloworld.Greeter server with observability enabled."""
 
-from collections import defaultdict
 import asyncio
+from collections import defaultdict
+import faulthandler
 import logging
 
-import faulthandler
 import grpc
 import grpc_observability
 import helloworld_pb2

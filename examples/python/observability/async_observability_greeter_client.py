@@ -13,8 +13,8 @@
 # limitations under the License.
 """gRPC Python AsyncIO helloworld.Greeter client with observability enabled."""
 
-from collections import defaultdict
 import asyncio
+from collections import defaultdict
 import logging
 
 import grpc
