@@ -275,7 +275,6 @@ grpc_cc_test(
     ],
     tags = [
         "grpc:broken-internally",  # remove once converted to gtest
-        "grpc:no-internal-poller",
         "requires-net:ipv4",
         "requires-net:loopback",
     ],
@@ -330,7 +329,6 @@ grpc_cc_test(
     ],
     tags = [
         "grpc:broken-internally",  # remove once converted to gtest
-        "grpc:no-internal-poller",
         "no_windows",
         "requires-net:ipv4",
         "requires-net:loopback",
