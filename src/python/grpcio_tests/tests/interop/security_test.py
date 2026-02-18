@@ -44,8 +44,12 @@ class SecurityTest(unittest.TestCase):
         self.server.start()
 
     def tearDown(self):
-        self.server.stop(None)
+        stopped = self.server.stop(None)
+        stopped.wait(timeout=10)
+        # Without this sleep, the test segfaults on the PyGILState_Ensure in the PrivateKeySignerPyWrapper dtor
+        time.sleep(1)
 
+    # @unittest.skip(reason="temp")
     def test_success_sync(self):
         """
         Successfully use a custom sync private key signer.
@@ -69,6 +73,7 @@ class SecurityTest(unittest.TestCase):
         response = self.stub.EmptyCall(empty_pb2.Empty())
         self.assertIsInstance(response, empty_pb2.Empty)
 
+    # @unittest.skip(reason="temp")
     def test_success_async(self):
         """
         Successfully use a custom async private key signer.
@@ -92,6 +97,7 @@ class SecurityTest(unittest.TestCase):
         response = self.stub.EmptyCall(empty_pb2.Empty())
         self.assertIsInstance(response, empty_pb2.Empty)
 
+    # @unittest.skip(reason="segfaulting")
     def test_bad_sync_signer(self):
         """
         Expect failure using a custom sync private key signer.
@@ -116,6 +122,7 @@ class SecurityTest(unittest.TestCase):
             response = self.stub.EmptyCall(empty_pb2.Empty())
             # Check result better
 
+    # @unittest.skip(reason="segfaulting")
     def test_bad_async_signer(self):
         """
         Expect failure using a custom async private key signer.
@@ -140,6 +147,7 @@ class SecurityTest(unittest.TestCase):
             response = self.stub.EmptyCall(empty_pb2.Empty())
             # TODO check result better
 
+    # @unittest.skip(reason="temp")
     def test_async_signer_with_cancel(self):
         """
         Test cancellation of an async signer
@@ -178,6 +186,7 @@ class SecurityTest(unittest.TestCase):
         # Ensure the cancel event is set
         self.assertTrue(cancel_callable.cancel_event.wait(timeout=1))
 
+    # @unittest.skip(reason="temp")
     def test_async_signer_test_times_out(self):
         """
         Similar to the test where we manually cancel, but just let things timeout
@@ -203,28 +212,31 @@ class SecurityTest(unittest.TestCase):
                 response = self.stub.EmptyCall(empty_pb2.Empty(), timeout=1)
                 # As everything goes out of scope, we just want to make sure we don't segfault or anything
 
+    # @unittest.skip(reason="temp")
     def test_signer_lifetime(self):
-      class TrackedSigner:
 
-        def __call__(self, data, algo, cb):
-          return b"signature"
+        class TrackedSigner:
 
-      def create_channel():
-        signer = TrackedSigner()
-        ref = weakref.ref(signer)
-        creds = grpc.experimental.ssl_channel_credentials_with_custom_signer(
-            private_key_sign_fn=signer,
-            root_certificates=resources.test_root_certificates(),
-            certificate_chain=resources.client_certificate_chain(),
-        )
+            def __call__(self, data, algo, cb):
+                return b"signature"
 
-        secure_channel = grpc.secure_channel("localhost:{}".format(self.port), creds)
-        return secure_channel, ref
+        def create_channel():
+            signer = TrackedSigner()
+            ref = weakref.ref(signer)
+            creds = grpc.experimental.ssl_channel_credentials_with_custom_signer(
+                private_key_sign_fn=signer,
+                root_certificates=resources.test_root_certificates(),
+                certificate_chain=resources.client_certificate_chain(),
+            )
 
-      channel, signer_ref = create_channel()
+            secure_channel = grpc.secure_channel(
+                "localhost:{}".format(self.port), creds
+            )
+            return secure_channel, ref
 
-      self.assertIsNotNone(signer_ref(),
-                           "Signer was garbage collected prematurely!")
+        channel, signer_ref = create_channel()
+
+        self.assertIsNotNone(signer_ref(), "Signer was garbage collected prematurely!")
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -27,7 +27,8 @@
 
 namespace grpc_core {
 
-std::variant<absl::StatusOr<std::string>, std::shared_ptr<AsyncSigningHandle>>
+std::variant<absl::StatusOr<std::string>,
+             std::shared_ptr<PrivateKeySigner::AsyncSigningHandle>>
 PrivateKeySignerPyWrapper::Sign(absl::string_view data_to_sign,
                                 SignatureAlgorithm signature_algorithm,
                                 OnSignComplete on_sign_complete) {

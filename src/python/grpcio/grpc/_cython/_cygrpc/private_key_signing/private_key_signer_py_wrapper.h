@@ -89,7 +89,7 @@ class PrivateKeySignerPyWrapper
 std::shared_ptr<PrivateKeySigner> BuildPrivateKeySigner(SignWrapperForPy sign,
                                                         void* py_user_sign_fn);
 
-class AsyncSigningHandlePyWrapper : public AsyncSigningHandle {
+class AsyncSigningHandlePyWrapper : public PrivateKeySigner::AsyncSigningHandle {
  public:
   // This is a function provided by the Cython implementation of Private Key
   // Offloading.
