@@ -56,47 +56,14 @@ struct ExtAuthz {
   bool failure_mode_allow;
   bool failure_mode_allow_header_add;
   grpc_status_code status_on_error;
-  struct StringMatch {
-    StringMatcher matcher;
 
-    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-    void JsonPostLoad(const Json& json, const JsonArgs& args,
-                      ValidationErrors* errors);
-  };
-  struct SafeRegexMatch {
-    std::string regex;
-
-    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-  };
   std::vector<StringMatch> allowed_headers;
   std::vector<StringMatch> disallowed_headers;
   
   bool isHeaderPresentInAllowedHeaders(std::string key) const; 
   bool isHeaderPresentInDisallowedHeaders(std::string key) const;
 
-  struct HeaderMutationRules {
-    bool disallow_all;
-    bool disallow_is_error;
-    StringMatch allow_expression;
-    StringMatch disallow_expression;
-
-    bool operator==(const HeaderMutationRules& other) const;
-
-    static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-    void JsonPostLoad(const Json& json, const JsonArgs& args,
-                      ValidationErrors* errors);
-  };
-
   std::optional<HeaderMutationRules> decoder_header_mutation_rules;
-
-  // struct HeaderMutationRules {
-  //   bool disallow_all = false;
-  //   bool disallow_is_error = false;
-
-  //   bool operator==(const HeaderMutationRules& other) const;
-  //   bool Check(absl::string_view key, absl::string_view value) const;
-  // };
-  // std::unique_ptr<HeaderMutationRules> decoder_header_mutation_rules;
   bool include_peer_certificate = false;
 
   // enum class CheckResult {

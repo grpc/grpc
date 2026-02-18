@@ -150,6 +150,14 @@ struct SafeRegexMatch {
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
 };
 
+struct StringMatch {
+  StringMatcher matcher;
+
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+  void JsonPostLoad(const Json& json, const JsonArgs& args,
+                    ValidationErrors* errors);
+};
+
 struct HeaderMutationRules {
   bool disallow_all;
   bool disallow_is_error;
