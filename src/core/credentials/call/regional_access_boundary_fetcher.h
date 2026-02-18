@@ -58,7 +58,10 @@ class RegionalAccessBoundaryFetcher final : public InternallyRefCounted<Regional
  public:
   friend class RegionalAccessBoundaryFetcherTest;
 
-  explicit RegionalAccessBoundaryFetcher(absl::string_view lookup_url,
+  using InternallyRefCounted<RegionalAccessBoundaryFetcher>::Ref;
+
+  explicit RegionalAccessBoundaryFetcher(
+      absl::string_view lookup_url,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine = nullptr); 
 

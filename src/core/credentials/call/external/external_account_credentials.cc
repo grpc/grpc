@@ -70,33 +70,6 @@
 
 namespace grpc_core {
 
-grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
-ExternalAccountCredentials::GetRequestMetadata(
-    grpc_core::ClientMetadataHandle initial_metadata,
-    const grpc_call_credentials::GetRequestMetadataArgs* args) {
-  return Map(TokenFetcherCredentials::GetRequestMetadata(
-                 std::move(initial_metadata), args),
-             [this](absl::StatusOr<ClientMetadataHandle> updated_metadata)
-                 -> absl::StatusOr<ClientMetadataHandle> {
-               if (!updated_metadata.ok()) return updated_metadata;
-               
-               std::string access_token;
-               auto auth_val = (*updated_metadata)->GetStringValue(
-                   GRPC_AUTHORIZATION_METADATA_KEY, &access_token);
-
-              if (!auth_val.has_value()) {
-                LOG(WARNING) << "No access token was found in the metadata for this credential " 
-                             << "and therefore the lookup would fail. A lookup will not be attempted.";
-                return updated_metadata;
-              }
-
-              regional_access_boundary_fetcher_->Fetch(
-                   auth_val.value(),
-                   *(*updated_metadata));
-              return updated_metadata;
-             });
-}
-
 //
 // ExternalAccountCredentials::NoOpFetchBody
 //
@@ -440,8 +413,9 @@ void ExternalAccountCredentials::ExternalFetchRequest::FinishTokenFetch(
         GRPC_CREDENTIALS_OK) {
       result = GRPC_ERROR_CREATE("Could not parse oauth token");
     } else {
-      result = MakeRefCounted<Token>(std::move(*token_value),
-                                     Timestamp::Now() + token_lifetime);
+      result = MakeRefCounted<TokenWithRegionalAccessBoundary>(
+          std::move(*token_value), Timestamp::Now() + token_lifetime,
+          creds_->regional_access_boundary_fetcher_->Ref());
     }
   }
   creds_->event_engine().Run([on_done = std::exchange(on_done_, nullptr),

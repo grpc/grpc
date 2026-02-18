@@ -4955,6 +4955,7 @@ grpc_cc_library(
         "sync",
         "time",
         "useful",
+        "regional_access_boundary_fetcher",
         "//:backoff",
         "//:grpc_security_base",
         "//:grpc_trace",
