@@ -445,51 +445,52 @@ bool ExternalAccountCredentials::ExternalFetchRequest::MaybeFailLocked(
 
 namespace {
 
+struct WorkloadIdentityPoolFields {
+  absl::string_view project;
+  absl::string_view pool_id;
+};
+
 // Expression to match:
 // //iam.googleapis.com/projects/<project>/locations/global/workloadIdentityPools/<pool-id>/providers/.+
-bool MatchWorkloadIdentityPoolAudience(absl::string_view audience,
-                                       std::string* project,
-                                       std::string* pool_id) {
+std::optional<WorkloadIdentityPoolFields> MatchWorkloadIdentityPoolAudience(absl::string_view audience) {
   // Match "//iam.googleapis.com/projects/"
   if (!absl::ConsumePrefix(&audience, "//iam.googleapis.com/projects/")) {
-    return false;
+    return std::nullopt;
   }
   // Match "<project>/locations/global/workloadIdentityPools/"
   auto location_pos = audience.find("/locations/global/workloadIdentityPools/");
-  if (location_pos == absl::string_view::npos) return false;
-  *project = std::string(audience.substr(0, location_pos));
-  if (project->empty()) return false;
+  if (location_pos == absl::string_view::npos) return std::nullopt;
+  auto project = audience.substr(0, location_pos);
+  if (project.empty()) return std::nullopt;
 
   audience.remove_prefix(location_pos +
                          strlen("/locations/global/workloadIdentityPools/"));
 
   // Match "<pool-id>/providers/"
   auto provider_pos = audience.find("/providers/");
-  if (provider_pos == absl::string_view::npos) return false;
-  *pool_id = std::string(audience.substr(0, provider_pos));
-  if (pool_id->empty()) return false;
+  if (provider_pos == absl::string_view::npos) return std::nullopt;
+  auto pool_id = audience.substr(0, provider_pos);
+  if (pool_id.empty()) return std::nullopt;
 
-  return true;
+  return WorkloadIdentityPoolFields{project, pool_id};
 }
 
 // Expression to match:
 // //iam.googleapis.com/locations/[^/]+/workforcePools/[^/]+/providers/.+
-bool MatchWorkforcePoolAudience(absl::string_view audience,
-                                std::string* workforce_pool_id) {
+absl::string_view MatchWorkforcePoolAudience(absl::string_view audience) {
   // Match "//iam.googleapis.com/locations/"
-  if (!absl::ConsumePrefix(&audience, "//iam.googleapis.com")) return false;
-  if (!absl::ConsumePrefix(&audience, "/locations/")) return false;
+  if (!absl::ConsumePrefix(&audience, "//iam.googleapis.com")) return "";
+  if (!absl::ConsumePrefix(&audience, "/locations/")) return "";
   // Match "[^/]+/workforcePools/"
   std::pair<absl::string_view, absl::string_view> workforce_pools_split_result =
       absl::StrSplit(audience, absl::MaxSplits("/workforcePools/", 1));
-  if (absl::StrContains(workforce_pools_split_result.first, '/')) return false;
+  if (absl::StrContains(workforce_pools_split_result.first, '/')) return "";
   // Match "[^/]+/providers/.+"
   std::pair<absl::string_view, absl::string_view> providers_split_result =
       absl::StrSplit(workforce_pools_split_result.second,
                      absl::MaxSplits("/providers/", 1));
-  if (absl::StrContains(providers_split_result.first, '/')) return false;
-  *workforce_pool_id = std::string(providers_split_result.first);
-  return true;
+  if (absl::StrContains(providers_split_result.first, '/')) return "";
+  return providers_split_result.first;
 }
 
 }  // namespace
@@ -566,8 +567,10 @@ ExternalAccountCredentials::Create(
   }
   it = json.object().find("workforce_pool_user_project");
   if (it != json.object().end()) {
-    if (MatchWorkforcePoolAudience(options.audience,
-                                   &options.workforce_pool_id)) {
+    if (auto workforce_pool_id =
+            MatchWorkforcePoolAudience(options.audience);
+        !workforce_pool_id.empty()) {
+      options.workforce_pool_id = std::string(workforce_pool_id);
       options.workforce_pool_user_project = it->second.string();
     } else {
       return GRPC_ERROR_CREATE(
@@ -575,9 +578,14 @@ ExternalAccountCredentials::Create(
           "pool credentials");
     }
   }
-  MatchWorkloadIdentityPoolAudience(options.audience,
-                                    &options.workload_pool_project,
-                                    &options.workload_pool_id);
+  if (auto workload_identity_pool_fields =
+          MatchWorkloadIdentityPoolAudience(options.audience);
+      workload_identity_pool_fields.has_value()) {
+    options.workload_pool_project =
+        std::string(workload_identity_pool_fields->project);
+    options.workload_pool_id =
+        std::string(workload_identity_pool_fields->pool_id);
+  }
   it = json.object().find("service_account_impersonation");
   options.service_account_impersonation.token_lifetime_seconds =
       IMPERSONATED_CRED_DEFAULT_LIFETIME_IN_SECONDS;
