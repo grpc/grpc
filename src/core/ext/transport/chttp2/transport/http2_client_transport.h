@@ -125,13 +125,12 @@ class Http2ClientTransport final : public ClientTransport,
 
   void Orphan() override;
 
-  RefCountedPtr<channelz::SocketNode> GetSocketNode() const override;
-
   std::unique_ptr<channelz::ZTrace> GetZTrace(absl::string_view name) override {
     if (name == "transport_frames") return ztrace_collector_->MakeZTrace();
     return nullptr;
   }
 
+  RefCountedPtr<channelz::SocketNode> GetSocketNode() const override;
   void AddData(channelz::DataSink sink) override;
   void SpawnAddChannelzData(RefCountedPtr<Party> party,
                             channelz::DataSink sink);
@@ -168,6 +167,7 @@ class Http2ClientTransport final : public ClientTransport,
   Http2Status ProcessIncomingFrame(Http2SecurityFrame&& frame);
   Http2Status ProcessIncomingFrame(Http2UnknownFrame&& frame);
   Http2Status ProcessIncomingFrame(Http2EmptyFrame&& frame);
+
   Http2Status ProcessMetadata(RefCountedPtr<Stream> stream);
 
   // Reading from the endpoint.
