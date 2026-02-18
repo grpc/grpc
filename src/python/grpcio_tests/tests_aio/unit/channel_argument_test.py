@@ -134,9 +134,6 @@ class TestChannelArgument(AioTestBase):
 
     @typeguard.suppress_type_checks  # testing negative cases
     async def test_invalid_client_args(self):
-        # This test works on invalid client_args which is expected
-        # to make typeguard fail, hence the decorator
-        # @typeguard.supress_type_checks is used
         for invalid_arg in _INVALID_TEST_CHANNEL_ARGS:
             self.assertRaises(
                 (ValueError, TypeError),
