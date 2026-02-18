@@ -260,6 +260,8 @@ Oauth2TokenFetcherCredentials::FetchToken(
 
 namespace {
 
+constexpr char kComputeEngineDefaultSaEmailPath[] = "/computeMetadata/v1/instance/service-accounts/default/email";
+
 class grpc_compute_engine_token_fetcher_credentials
     : public grpc_core::Oauth2TokenFetcherCredentials {
  public:
@@ -397,7 +399,7 @@ class grpc_compute_engine_token_fetcher_credentials
 
     auto uri = grpc_core::URI::Create(
         "http", /*user_info=*/"", GRPC_COMPUTE_ENGINE_METADATA_HOST,
-        GRPC_COMPUTE_ENGINE_METADATA_EMAIL_PATH, {}, "" /* fragment */);
+        kComputeEngineDefaultSaEmailPath, {}, "" /* fragment */);
     GRPC_CHECK(uri.ok());
 
     Ref().release();  // Ref taken for callback
