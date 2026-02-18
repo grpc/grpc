@@ -6453,7 +6453,6 @@ grpc_cc_library(
         "envoy_admin_upb",
         "envoy_config_cluster_upb",
         "envoy_config_cluster_upbdefs",
-        "envoy_config_common_mutation_rules_upb",
         "envoy_config_core_upb",
         "envoy_config_core_upbdefs",
         "envoy_config_endpoint_upb",
@@ -6581,7 +6580,7 @@ grpc_cc_library(
         "//:config",
         "//:debug_location",
         "//:endpoint_addresses",
-        "//:envoy_config_common_mutation_rules_v3_mutation_rules_upb",
+        "//:envoy_config_common_mutation_rules_upb",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_base",
@@ -11716,11 +11715,6 @@ grpc_upb_proto_library(
 grpc_upb_proto_library(
     name = "envoy_common_config_matcher_upb",
     deps = ["@envoy_api//envoy/config/common/matcher/v3:pkg"],
-)
-
-grpc_upb_proto_library(
-    name = "envoy_config_common_mutation_rules_upb",
-    deps = ["@envoy_api//envoy/config/common/mutation_rules/v3:pkg"],
 )
 
 grpc_upb_proto_library(
