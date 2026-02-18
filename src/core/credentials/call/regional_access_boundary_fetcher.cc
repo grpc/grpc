@@ -101,7 +101,6 @@ void RegionalAccessBoundaryFetcher::StartRegionalAccessBoundaryFetch(
           grpc_core::CreateHttpRequestSSLCredentials()));
   pending_request_ = req;
   if (req->http_request_ != nullptr) {
-    std::cout << "Starting regional access boundary fetch" << std::endl;
     req->http_request_->Start();
   }
 }
@@ -265,7 +264,6 @@ void RegionalAccessBoundaryFetcher::Fetch(absl::string_view access_token,
     bool has_valid_cache = cache_.has_value() && cache_->IsValid();
     bool cache_is_soft_expired = cache_.has_value() && cache_->IsSoftExpired();
     if (has_valid_cache) {
-      std::cout << "Adding cache to metadata: " << cache_->encoded_locations << std::endl;
       initial_metadata.Append(
         kAllowedLocationsKey,
         Slice::FromCopiedString(

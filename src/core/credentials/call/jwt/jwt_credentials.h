@@ -32,8 +32,6 @@
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/credentials/call/jwt/json_token.h"
 #include "src/core/credentials/call/regional_access_boundary_fetcher.h"
-#include "src/core/util/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/transport.h"
