@@ -27,6 +27,7 @@
 // #include "src/core/ext/filters/ext_authz/ext_authz_client.h"
 #include "src/core/ext/filters/ext_authz/ext_authz_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"
+// #include "src/core/xds/grpc/xds_client_grpc.h"
 // #include "src/core/lib/promise/seq.h"
 // #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/service_config/service_config_call_data.h"
@@ -49,6 +50,39 @@ const grpc_channel_filter ExtAuthzFilter::kFilterVtable =
 
 absl::StatusOr<std::unique_ptr<ExtAuthzFilter>> ExtAuthzFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args filter_args) {
+  // Get filter config.
+  auto service_config = args.GetObjectRef<ServiceConfig>();
+  if (service_config == nullptr) {
+    return absl::InvalidArgumentError(
+        "ext_authz: no service config in channel args");
+  }
+  auto* config = static_cast<const ExtAuthzParsedConfig*>(
+      service_config->GetGlobalParsedConfig(
+          ExtAuthzServiceConfigParser::ParserIndex()));
+  if (config == nullptr) {
+    return absl::InvalidArgumentError("ext_authz: parsed config not found");
+  }
+  auto* filter_config = config->GetConfig(filter_args.instance_id());
+  if (filter_config == nullptr) {
+    return absl::InvalidArgumentError(
+        "ext_authz: filter instance ID not found in filter config");
+  }
+  std::optional<absl::string_view> server_uri =
+      args.GetString(GRPC_ARG_SERVER_URI);
+  if (!server_uri.has_value()) {
+    return absl::InvalidArgumentError(
+        "ext_authz: no server URI in channel args");
+  }
+  auto xds_client = GrpcXdsClient::GetOrCreate(*server_uri, args,
+                                               "ext_authz_filter_create");
+  if (!xds_client.ok()) {
+    return xds_client.status();
+  }
+  // auto ext_authz_client = MakeRefCounted<ExtAuthzClient>(
+  //     (*xds_client)->bootstrap_ptr(), (*xds_client)->transport_factory()->Ref(),
+  //     (*xds_client)->engine_ptr());
+  // return std::make_unique<ExtAuthzFilter>(filter_config,
+  //                                         std::move(ext_authz_client));
   return nullptr;
 }
 
