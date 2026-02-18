@@ -52,6 +52,9 @@ namespace http2 {
 #define GRPC_HTTP2_CLIENT_DLOG \
   DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
 
+#define GRPC_HTTP2_SERVER_DLOG \
+  DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
+
 #define GRPC_HTTP2_CLIENT_ERROR_DLOG \
   LOG_IF(ERROR, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
 
