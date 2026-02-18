@@ -96,6 +96,17 @@ struct XdsGrpcService {
                     ValidationErrors* errors);
 
   std::string ToJsonString() const;
+
+  bool operator==(const XdsGrpcService& other) const {
+    if ((server_target == nullptr) != (other.server_target == nullptr)) {
+      return false;
+    }
+    if (server_target != nullptr &&
+        !server_target->Equals(*other.server_target)) {
+      return false;
+    }
+    return timeout == other.timeout && initial_metadata == other.initial_metadata;
+  }
 };
 
 struct HeaderValueOption {
@@ -156,6 +167,10 @@ struct StringMatch {
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
   void JsonPostLoad(const Json& json, const JsonArgs& args,
                     ValidationErrors* errors);
+
+  bool operator==(const StringMatch& other) const {
+    return matcher == other.matcher;
+  }
 };
 
 struct HeaderMutationRules {
@@ -165,6 +180,13 @@ struct HeaderMutationRules {
   StringMatcher disallow_expression;
 
   std::string ToJsonString() const;
+
+  bool operator==(const HeaderMutationRules& other) const {
+    return disallow_all == other.disallow_all &&
+           disallow_is_error == other.disallow_is_error &&
+           allow_expression == other.allow_expression &&
+           disallow_expression == other.disallow_expression;
+  }
 
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
   void JsonPostLoad(const Json& json, const JsonArgs& args,

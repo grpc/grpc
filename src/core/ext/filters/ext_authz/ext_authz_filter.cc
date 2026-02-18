@@ -42,6 +42,19 @@
 namespace grpc_core {
 
 //
+// ExtAuthzFilter::Config
+//
+
+bool ExtAuthzFilter::Config::Equals(const FilterConfig& other) const {
+  const auto& o = DownCast<const Config&>(other);
+  return instance_name == o.instance_name && ext_authz == o.ext_authz;
+}
+
+std::string ExtAuthzFilter::Config::ToString() const {
+  return absl::StrCat("{instance_name=\"", instance_name, "\"}");
+}
+
+//
 // ExtAuthzFilter
 //
 

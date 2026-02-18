@@ -48,16 +48,16 @@ void ExtAuthz::FilterEnabled::JsonPostLoad(const Json&, const JsonArgs&,
 //
 
 bool ExtAuthz::operator==(const ExtAuthz& other) const {
-  // return
-  // grpc_service.server_target->Equals(*other.grpc_service.server_target) &&
-  //        // timeout?
-  //        filter_enabled == other.filter_enabled &&
-  //        deny_at_disable == other.deny_at_disable &&
-  //        failure_mode_allow == other.failure_mode_allow &&
-  //        status_on_error == other.status_on_error &&
-  //        include_peer_certificate == other.include_peer_certificate;
-  //  TODO(rishesh): check others
-  return true;
+  return xds_grpc_service == other.xds_grpc_service &&
+         filter_enabled == other.filter_enabled &&
+         deny_at_disable == other.deny_at_disable &&
+         failure_mode_allow == other.failure_mode_allow &&
+         failure_mode_allow_header_add == other.failure_mode_allow_header_add &&
+         status_on_error == other.status_on_error &&
+         allowed_headers == other.allowed_headers &&
+         disallowed_headers == other.disallowed_headers &&
+         decoder_header_mutation_rules == other.decoder_header_mutation_rules &&
+         include_peer_certificate == other.include_peer_certificate;
 }
 
 bool ExtAuthz::isHeaderPresentInAllowedHeaders(std::string key) const {

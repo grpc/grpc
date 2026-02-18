@@ -35,6 +35,19 @@ namespace grpc_core {
 
 class ExtAuthzFilter : public ImplementChannelFilter<ExtAuthzFilter> {
  public:
+  struct Config : public FilterConfig {
+    static UniqueTypeName Type() {
+      return GRPC_UNIQUE_TYPE_NAME_HERE("ext_authz_filter_config");
+    }
+    UniqueTypeName type() const override { return Type(); }
+
+    bool Equals(const FilterConfig& other) const override;
+    std::string ToString() const override;
+
+    std::string instance_name;
+    ExtAuthz ext_authz;
+  };
+
   static const grpc_channel_filter kFilterVtable;
 
   static absl::string_view TypeName() { return "ext_authz_filter"; }

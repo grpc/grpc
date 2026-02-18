@@ -120,7 +120,6 @@ class ExtAuthzParsedConfig : public ServiceConfigParser::ParsedConfig {
  public:
   struct Config {
     std::string filter_instance_name;
-    // std::string serialized_filter_config;  // temporary during load
     ExtAuthz ext_authz;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
