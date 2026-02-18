@@ -26,10 +26,11 @@ from ._interceptor import ServerInterceptor
 from ._typing import ChannelArgumentType
 
 
+# pylint: disable=unused-argument
 def _augment_channel_arguments(
-    base_options: ChannelArgumentType, 
+    base_options: ChannelArgumentType,
     compression: Optional[grpc.Compression],
-    xds: bool
+    xds: bool,
 ):
     compression_option = _compression.create_channel_option(compression)
     return tuple(base_options) + compression_option

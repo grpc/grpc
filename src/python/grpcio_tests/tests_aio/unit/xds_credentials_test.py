@@ -55,16 +55,14 @@ class AioXdsCredentialsTest(AioTestBase):
                 private_key=resources.private_key(),
                 certificate_chain=resources.certificate_chain(),
             )
-            channel_creds = grpc.xds_channel_credentials(
-                channel_fallback_creds
-            )
+            channel_creds = grpc.xds_channel_credentials(channel_fallback_creds)
             async with grpc.aio.secure_channel(
                 f"localhost:{port}", channel_creds, options=override_options
             ) as channel:
                 request = b"abc"
-                response = await channel.unary_unary(
-                    "/test/method"
-                )(request, wait_for_ready=True)
+                response = await channel.unary_unary("/test/method")(
+                    request, wait_for_ready=True
+                )
                 self.assertEqual(response, request)
         finally:
             await server.stop(0)
@@ -90,9 +88,9 @@ class AioXdsCredentialsTest(AioTestBase):
                 f"localhost:{port}", channel_creds
             ) as channel:
                 request = b"abc"
-                response = await channel.unary_unary(
-                    "/test/method"
-                )(request, wait_for_ready=True)
+                response = await channel.unary_unary("/test/method")(
+                    request, wait_for_ready=True
+                )
                 self.assertEqual(response, request)
         finally:
             await server.stop(0)
