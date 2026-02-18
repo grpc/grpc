@@ -6080,11 +6080,11 @@ grpc_cc_library(
         "@com_google_protobuf//upb/mem",
     ],
     deps = [
+        "envoy_config_core_upb",
+        "upb_utils",
+        "xds_common_types",
         "//:gpr",
         "//:grpc_base",
-        "envoy_config_core_upb",
-        "xds_common_types",
-        "upb_utils",
     ],
 )
 
@@ -6654,9 +6654,12 @@ grpc_cc_library(
     ],
     deps = [
         "channel_args",
-        "sync",
         "dual_ref_counted",
         "ext_authz_filter",
+        "status_conversion",
+        "sync",
+        "upb_utils",
+        "xds_utils",
         "//:backoff",
         "//:debug_location",
         "//:envoy_config_core_upb",
@@ -6676,9 +6679,6 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:uri",
         "//:xds_client",
-        "status_conversion",
-        "upb_utils",
-        "xds_utils",
     ],
 )
 
@@ -8153,8 +8153,8 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
-        "grpc_check",
         "ext_authz_client",
+        "grpc_check",
         "grpc_lb_xds_channel_args",
         "grpc_xds_client",
         "match",
