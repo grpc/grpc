@@ -23,7 +23,6 @@
 #include <grpc/support/port_platform.h>
 #include <limits.h>
 
-#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
@@ -31,6 +30,7 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "src/core/call/call_spine.h"
@@ -62,7 +62,6 @@
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
-#include "src/core/lib/promise/match_promise.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
@@ -94,7 +93,7 @@
 namespace grpc_core {
 namespace http2 {
 
-// TODO(akshitpatel)(tjagtap) [PH2][P2] : When settings frame increases incoming
+// TODO(akshitpatel)(tjagtap) [PH2][P1] : When settings frame increases incoming
 // window size, our transport must make the streams that were blocked on stream
 // flow control as writeable.
 
@@ -138,16 +137,6 @@ void Http2ClientTransport::SpawnWithOnDoneTransportParty(absl::string_view name,
                                                          OnDone&& on_done) {
   general_party_->Spawn(name, std::forward<Factory>(factory),
                         std::forward<OnDone>(on_done));
-}
-
-template <typename Promise>
-auto Http2ClientTransport::UntilTransportClosed(Promise promise) {
-  return Race(Map(transport_closed_latch_.Wait(),
-                  [](Empty) {
-                    GRPC_HTTP2_CLIENT_DLOG << "Transport closed";
-                    return absl::CancelledError("Transport closed");
-                  }),
-              std::move(promise));
 }
 
 void Http2ClientTransport::PerformOp(grpc_transport_op* op) {
@@ -238,28 +227,22 @@ void Http2ClientTransport::NotifyStateWatcherOnDisconnectLocked(
   });
 }
 
-auto Http2ClientTransport::AckPing(uint64_t opaque_data) {
-  bool valid_ping_ack_received = true;
-
-  if (!ping_manager_->AckPing(opaque_data)) {
+absl::Status Http2ClientTransport::AckPing(uint64_t opaque_data) {
+  // It is possible that the PingRatePolicy may decide to not send a ping
+  // request (in cases like the number of inflight pings is too high).
+  // When this happens, it becomes important to ensure that if a ping ack
+  // is received and there is an "important" outstanding ping request, we
+  // should retry to send it out now.
+  if (ping_manager_->AckPing(opaque_data)) {
+    if (ping_manager_->ImportantPingRequested()) {
+      return TriggerWriteCycle();
+    }
+  } else {
     GRPC_HTTP2_CLIENT_DLOG << "Unknown ping response received for ping id="
                            << opaque_data;
-    valid_ping_ack_received = false;
   }
 
-  return If(
-      // It is possible that the PingRatePolicy may decide to not send a ping
-      // request (in cases like the number of inflight pings is too high).
-      // When this happens, it becomes important to ensure that if a ping ack
-      // is received and there is an "important" outstanding ping request, we
-      // should retry to send it out now.
-      valid_ping_ack_received && ping_manager_->ImportantPingRequested(),
-      [self = RefAsSubclass<Http2ClientTransport>()] {
-        return Map(self->TriggerWriteCycle(), [](const absl::Status status) {
-          return ToHttpOkOrConnError(status);
-        });
-      },
-      [] { return Immediate(Http2Status::Ok()); });
+  return absl::OkStatus();
 }
 
 void Http2ClientTransport::Orphan() {
@@ -276,26 +259,26 @@ void Http2ClientTransport::Orphan() {
 
 auto Http2ClientTransport::SecurityFrameLoop() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::SecurityFrameLoop Factory";
-  return AssertResultType<Empty>(
-      Loop([self = RefAsSubclass<Http2ClientTransport>()]() {
-        return Map(
-            self->security_frame_handler_->WaitForSecurityFrameSending(),
-            [self](Empty) -> LoopCtl<Empty> {
-              if (self->security_frame_handler_->TriggerWriteSecurityFrame()
-                      .terminate) {
-                return Empty{};
-              }
-              self->SpawnGuardedTransportParty("WriteSecurityFrame",
-                                               self->TriggerWriteCycle());
-              return Continue();
-            });
-      }));
+  return UntilTransportClosed(AssertResultType<Empty>(Loop([this]() {
+    return Map(
+        security_frame_handler_->WaitForSecurityFrameSending(),
+        [this](Empty) -> LoopCtl<Empty> {
+          if (security_frame_handler_->TriggerWriteSecurityFrame().terminate) {
+            return Empty{};
+          }
+
+          if (!TriggerWriteCycleOrHandleError()) {
+            return Empty{};
+          }
+          return Continue();
+        });
+  })));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // Processing each type of frame
 
-Http2Status Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
+Http2Status Http2ClientTransport::ProcessIncomingFrame(Http2DataFrame&& frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-data
   GRPC_HTTP2_CLIENT_DLOG
       << "Http2ClientTransport ProcessHttp2DataFrame { stream_id="
@@ -384,8 +367,8 @@ Http2Status Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
   return Http2Status::Ok();
 }
 
-Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
-    Http2HeaderFrame frame) {
+Http2Status Http2ClientTransport::ProcessIncomingFrame(
+    Http2HeaderFrame&& frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-headers
   GRPC_HTTP2_CLIENT_DLOG
       << "Http2ClientTransport ProcessHttp2HeaderFrame Promise { stream_id="
@@ -490,8 +473,8 @@ Http2Status Http2ClientTransport::ProcessMetadata(
   return Http2Status::Ok();
 }
 
-Http2Status Http2ClientTransport::ProcessHttp2RstStreamFrame(
-    Http2RstStreamFrame frame) {
+Http2Status Http2ClientTransport::ProcessIncomingFrame(
+    Http2RstStreamFrame&& frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-rst_stream
   GRPC_HTTP2_CLIENT_DLOG
       << "Http2ClientTransport ProcessHttp2RstStreamFrame { stream_id="
@@ -512,8 +495,8 @@ Http2Status Http2ClientTransport::ProcessHttp2RstStreamFrame(
   return Http2Status::Ok();
 }
 
-Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
-    Http2SettingsFrame frame) {
+Http2Status Http2ClientTransport::ProcessIncomingFrame(
+    Http2SettingsFrame&& frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-settings
 
   GRPC_HTTP2_CLIENT_DLOG
@@ -526,7 +509,11 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
       return status;
     }
     settings_->BufferPeerSettings(std::move(frame.settings));
-    SpawnGuardedTransportParty("SettingsAck", TriggerWriteCycle());
+    absl::Status trigger_write_status = TriggerWriteCycle();
+    if (!trigger_write_status.ok()) {
+      return ToHttpOkOrConnError(trigger_write_status);
+    }
+
     if (GPR_UNLIKELY(!settings_->IsFirstPeerSettingsApplied())) {
       // Apply the first settings before we read any other frames.
       reader_state_.SetPauseReadLoop();
@@ -549,46 +536,37 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
   return Http2Status::Ok();
 }
 
-auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
+Http2Status Http2ClientTransport::ProcessIncomingFrame(Http2PingFrame&& frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-ping
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessHttp2PingFrame { ack="
                          << frame.ack << ", opaque=" << frame.opaque << " }";
-  return AssertResultType<Http2Status>(If(
-      frame.ack,
-      [self = RefAsSubclass<Http2ClientTransport>(), opaque = frame.opaque]() {
-        // Received a ping ack.
-        return self->AckPing(opaque);
-      },
-      [self = RefAsSubclass<Http2ClientTransport>(), opaque = frame.opaque]() {
-        return If(
-            self->test_only_ack_pings_,
-            [self, opaque]() {
-              // TODO(akshitpatel) : [PH2][P2] : Have a counter to track number
-              // of pending induced frames (Ping/Settings Ack). This is to
-              // ensure that if write is taking a long time, we can stop reads
-              // and prioritize writes. RFC9113: PING responses SHOULD be given
-              // higher priority than any other frame.
-              self->ping_manager_->AddPendingPingAck(opaque);
-              // TODO(akshitpatel) : [PH2][P2] : This is done assuming that the
-              // other ProcessFrame promises may return stream or connection
-              // failures. If this does not turn out to be true, consider
-              // returning absl::Status here.
-              return Map(self->TriggerWriteCycle(), [](absl::Status status) {
-                return ToHttpOkOrConnError(status);
-              });
-            },
-            []() {
-              GRPC_HTTP2_CLIENT_DLOG
-                  << "Http2ClientTransport ProcessHttp2PingFrame "
-                     "test_only_ack_pings_ is false. Ignoring the ping "
-                     "request.";
-              return Immediate(Http2Status::Ok());
-            });
-      }));
+  if (frame.ack) {
+    return ToHttpOkOrConnError(AckPing(frame.opaque));
+  } else {
+    if (test_only_ack_pings_) {
+      // TODO(akshitpatel) : [PH2][P2] : Have a counter to track number
+      // of pending induced frames (Ping/Settings Ack). This is to
+      // ensure that if write is taking a long time, we can stop reads
+      // and prioritize writes. RFC9113: PING responses SHOULD be given
+      // higher priority than any other frame.
+      ping_manager_->AddPendingPingAck(frame.opaque);
+      // TODO(akshitpatel) : [PH2][P2] : This is done assuming that the
+      // other ProcessFrame promises may return stream or connection
+      // failures. If this does not turn out to be true, consider
+      // returning absl::Status here.
+      return ToHttpOkOrConnError(TriggerWriteCycle());
+    } else {
+      GRPC_HTTP2_CLIENT_DLOG
+          << "Http2ClientTransport ProcessHttp2PingFrame "
+             "test_only_ack_pings_ is false. Ignoring the ping "
+             "request.";
+    }
+  }
+  return Http2Status::Ok();
 }
 
-Http2Status Http2ClientTransport::ProcessHttp2GoawayFrame(
-    Http2GoawayFrame frame) {
+Http2Status Http2ClientTransport::ProcessIncomingFrame(
+    Http2GoawayFrame&& frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-goaway
   GRPC_HTTP2_CLIENT_DLOG
       << "Http2ClientTransport ProcessHttp2GoawayFrame Promise { "
@@ -604,8 +582,7 @@ Http2Status Http2ClientTransport::ProcessHttp2GoawayFrame(
   absl::Status status(ErrorCodeToAbslStatusCode(
                           FrameErrorCodeToHttp2ErrorCode(frame.error_code)),
                       frame.debug_data.as_string_view());
-  if (frame.error_code == static_cast<uint32_t>(Http2ErrorCode::kNoError) &&
-      frame.last_stream_id == RFC9113::kMaxStreamId31Bit) {
+  if (GoawayManager::IsGracefulGoaway(frame)) {
     const uint32_t next_stream_id = PeekNextStreamId();
     last_stream_id = (next_stream_id > 1) ? next_stream_id - 2 : 0;
   } else {
@@ -671,8 +648,8 @@ Http2Status Http2ClientTransport::ProcessHttp2GoawayFrame(
   return Http2Status::Ok();
 }
 
-Http2Status Http2ClientTransport::ProcessHttp2WindowUpdateFrame(
-    Http2WindowUpdateFrame frame) {
+Http2Status Http2ClientTransport::ProcessIncomingFrame(
+    Http2WindowUpdateFrame&& frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-window_update
   GRPC_HTTP2_CLIENT_DLOG
       << "Http2ClientTransport ProcessHttp2WindowUpdateFrame Promise { "
@@ -698,13 +675,13 @@ Http2Status Http2ClientTransport::ProcessHttp2WindowUpdateFrame(
   const bool should_trigger_write =
       ProcessIncomingWindowUpdateFrameFlowControl(frame, flow_control_, stream);
   if (should_trigger_write) {
-    SpawnGuardedTransportParty("TransportTokensAvailable", TriggerWriteCycle());
+    return ToHttpOkOrConnError(TriggerWriteCycle());
   }
   return Http2Status::Ok();
 }
 
-Http2Status Http2ClientTransport::ProcessHttp2ContinuationFrame(
-    Http2ContinuationFrame frame) {
+Http2Status Http2ClientTransport::ProcessIncomingFrame(
+    Http2ContinuationFrame&& frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-continuation
   GRPC_HTTP2_CLIENT_DLOG
       << "Http2ClientTransport ProcessHttp2ContinuationFrame Promise { "
@@ -757,8 +734,8 @@ Http2Status Http2ClientTransport::ProcessHttp2ContinuationFrame(
   return Http2Status::Ok();
 }
 
-Http2Status Http2ClientTransport::ProcessHttp2SecurityFrame(
-    Http2SecurityFrame frame) {
+Http2Status Http2ClientTransport::ProcessIncomingFrame(
+    Http2SecurityFrame&& frame) {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessHttp2SecurityFrame ";
   if (settings_->IsSecurityFrameExpected()) {
     security_frame_handler_->ProcessPayload(std::move(frame.payload));
@@ -766,50 +743,18 @@ Http2Status Http2ClientTransport::ProcessHttp2SecurityFrame(
   return Http2Status::Ok();
 }
 
-auto Http2ClientTransport::ProcessOneFrame(Http2Frame frame) {
-  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessOneFrame Factory";
-  return AssertResultType<Http2Status>(MatchPromise(
-      std::move(frame),
-      [self = RefAsSubclass<Http2ClientTransport>()](Http2DataFrame frame) {
-        return self->ProcessHttp2DataFrame(std::move(frame));
-      },
-      [self = RefAsSubclass<Http2ClientTransport>()](Http2HeaderFrame frame) {
-        return self->ProcessHttp2HeaderFrame(std::move(frame));
-      },
-      [self =
-           RefAsSubclass<Http2ClientTransport>()](Http2RstStreamFrame frame) {
-        return self->ProcessHttp2RstStreamFrame(frame);
-      },
-      [self = RefAsSubclass<Http2ClientTransport>()](Http2SettingsFrame frame) {
-        return self->ProcessHttp2SettingsFrame(std::move(frame));
-      },
-      [self = RefAsSubclass<Http2ClientTransport>()](Http2PingFrame frame) {
-        return self->ProcessHttp2PingFrame(frame);
-      },
-      [self = RefAsSubclass<Http2ClientTransport>()](Http2GoawayFrame frame) {
-        return self->ProcessHttp2GoawayFrame(std::move(frame));
-      },
-      [self = RefAsSubclass<Http2ClientTransport>()](
-          Http2WindowUpdateFrame frame) {
-        return self->ProcessHttp2WindowUpdateFrame(frame);
-      },
-      [self = RefAsSubclass<Http2ClientTransport>()](
-          Http2ContinuationFrame frame) {
-        return self->ProcessHttp2ContinuationFrame(std::move(frame));
-      },
-      [self = RefAsSubclass<Http2ClientTransport>()](Http2SecurityFrame frame) {
-        return self->ProcessHttp2SecurityFrame(std::move(frame));
-      },
-      [](GRPC_UNUSED Http2UnknownFrame frame) {
-        // RFC9113: Implementations MUST ignore and discard frames of
-        // unknown types.
-        return Http2Status::Ok();
-      },
-      [](GRPC_UNUSED Http2EmptyFrame frame) {
-        LOG(DFATAL)
-            << "ParseFramePayload should never return a Http2EmptyFrame";
-        return Http2Status::Ok();
-      }));
+Http2Status Http2ClientTransport::ProcessIncomingFrame(
+    GRPC_UNUSED Http2UnknownFrame&& frame) {
+  // RFC9113: Implementations MUST ignore and discard frames of
+  // unknown types.
+  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessHttp2UnknownFrame ";
+  return Http2Status::Ok();
+}
+
+Http2Status Http2ClientTransport::ProcessIncomingFrame(
+    GRPC_UNUSED Http2EmptyFrame&& frame) {
+  LOG(DFATAL) << "ParseFramePayload should never return a Http2EmptyFrame";
+  return Http2Status::Ok();
 }
 
 Http2Status Http2ClientTransport::ParseAndDiscardHeaders(
@@ -846,30 +791,30 @@ Http2Status Http2ClientTransport::ParseAndDiscardHeaders(
 ///////////////////////////////////////////////////////////////////////////////
 // Read Related Promises and Promise Factories
 
+// Callers MUST ensure that the transport is not destroyed till the promise is
+// resolved or cancelled.
 auto Http2ClientTransport::EndpointReadSlice(const size_t num_bytes) {
-  return Map(
-      endpoint_.ReadSlice(num_bytes),
-      [self = RefAsSubclass<Http2ClientTransport>(),
-       num_bytes](absl::StatusOr<Slice> status) {
-        if (status.ok()) {
-          self->keepalive_manager_->GotData();
-          self->ztrace_collector_->Append(PromiseEndpointReadTrace{num_bytes});
-        }
-        return status;
-      });
+  return Map(endpoint_.ReadSlice(num_bytes),
+             [this, num_bytes](absl::StatusOr<Slice> status) {
+               if (status.ok()) {
+                 keepalive_manager_->GotData();
+                 ztrace_collector_->Append(PromiseEndpointReadTrace{num_bytes});
+               }
+               return status;
+             });
 }
 
+// Callers MUST ensure that the transport is not destroyed till the promise is
+// resolved or cancelled.
 auto Http2ClientTransport::EndpointRead(const size_t num_bytes) {
-  return Map(
-      endpoint_.Read(num_bytes),
-      [self = RefAsSubclass<Http2ClientTransport>(),
-       num_bytes](absl::StatusOr<SliceBuffer> status) {
-        if (status.ok()) {
-          self->keepalive_manager_->GotData();
-          self->ztrace_collector_->Append(PromiseEndpointReadTrace{num_bytes});
-        }
-        return status;
-      });
+  return Map(endpoint_.Read(num_bytes),
+             [this, num_bytes](absl::StatusOr<SliceBuffer> status) {
+               if (status.ok()) {
+                 keepalive_manager_->GotData();
+                 ztrace_collector_->Append(PromiseEndpointReadTrace{num_bytes});
+               }
+               return status;
+             });
 }
 
 auto Http2ClientTransport::ReadAndProcessOneFrame() {
@@ -887,82 +832,72 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
         return Http2FrameHeader::Parse(header_bytes.begin());
       },
       // Validate the incoming frame as per the current state of the transport
-      [self = RefAsSubclass<Http2ClientTransport>()](Http2FrameHeader header) {
+      [this](Http2FrameHeader header) {
         Http2Status status = ValidateFrameHeader(
-            /*max_frame_size_setting*/ self->settings_->acked()
-                .max_frame_size(),
+            /*max_frame_size_setting*/ settings_->acked().max_frame_size(),
             /*incoming_header_in_progress*/
-            self->incoming_headers_.IsWaitingForContinuationFrame(),
+            incoming_headers_.IsWaitingForContinuationFrame(),
             /*incoming_header_stream_id*/
-            self->incoming_headers_.GetStreamId(),
+            incoming_headers_.GetStreamId(),
             /*current_frame_header*/ header,
-            /*last_stream_id=*/self->GetLastStreamId(),
+            /*last_stream_id=*/GetLastStreamId(),
             /*is_client=*/true, /*is_first_settings_processed=*/
-            self->settings_->IsFirstPeerSettingsApplied());
+            settings_->IsFirstPeerSettingsApplied());
 
         if (GPR_UNLIKELY(!status.IsOk())) {
           GRPC_DCHECK(status.GetType() ==
                       Http2Status::Http2ErrorType::kConnectionError);
-          return self->HandleError(std::nullopt, std::move(status));
+          return HandleError(std::nullopt, std::move(status));
         }
         GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport ReadAndProcessOneFrame "
                                   "Validated Frame Header:"
                                << header.ToString();
-        self->current_frame_header_ = header;
+        current_frame_header_ = header;
         return absl::OkStatus();
       },
       // Read the payload of the frame.
-      [self = RefAsSubclass<Http2ClientTransport>()]() {
+      [this]() {
         GRPC_HTTP2_CLIENT_DLOG
             << "Http2ClientTransport ReadAndProcessOneFrame Read Frame ";
-        return AssertResultType<absl::StatusOr<SliceBuffer>>(
-            self->EndpointRead(self->current_frame_header_.length));
-      },
-      // Parse the payload of the frame based on frame type.
-      [self = RefAsSubclass<Http2ClientTransport>()](
-          SliceBuffer payload) -> absl::StatusOr<Http2Frame> {
-        GRPC_HTTP2_CLIENT_DLOG
-            << "Http2ClientTransport ReadAndProcessOneFrame ParseFramePayload "
-            << MaybeTruncatePayload(payload);
-        ValueOrHttp2Status<Http2Frame> frame =
-            ParseFramePayload(self->current_frame_header_, std::move(payload));
-        if (!frame.IsOk()) {
-          return self->HandleError(
-              self->current_frame_header_.stream_id,
-              ValueOrHttp2Status<Http2Frame>::TakeStatus(std::move(frame)));
-        }
-        return TakeValue(std::move(frame));
-      },
-      [self = RefAsSubclass<Http2ClientTransport>()](
-          GRPC_UNUSED Http2Frame frame) {
-        GRPC_HTTP2_CLIENT_DLOG
-            << "Http2ClientTransport ReadAndProcessOneFrame ProcessOneFrame";
         return AssertResultType<absl::Status>(Map(
-            self->ProcessOneFrame(std::move(frame)),
-            [self](Http2Status status) {
-              if (!status.IsOk()) {
-                return self->HandleError(self->current_frame_header_.stream_id,
-                                         std::move(status));
+            EndpointRead(current_frame_header_.length),
+            [this](absl::StatusOr<SliceBuffer> payload) {
+              if (GPR_UNLIKELY(!payload.ok())) {
+                return payload.status();
+              }
+              GRPC_HTTP2_CLIENT_DLOG
+                  << "Http2ClientTransport "
+                     "ReadAndProcessOneFrame ParseFramePayload "
+                  << MaybeTruncatePayload(payload.value());
+              ValueOrHttp2Status<Http2Frame> frame = ParseFramePayload(
+                  current_frame_header_, TakeValue(std::move(payload)));
+              if (GPR_UNLIKELY(!frame.IsOk())) {
+                return HandleError(current_frame_header_.stream_id,
+                                   ValueOrHttp2Status<Http2Frame>::TakeStatus(
+                                       std::move(frame)));
+              }
+              Http2Status status =
+                  ProcessOneIncomingFrame(TakeValue(std::move(frame)));
+              if (GPR_UNLIKELY(!status.IsOk())) {
+                return HandleError(current_frame_header_.stream_id,
+                                   std::move(status));
               }
               return absl::OkStatus();
             }));
       },
-      [self = RefAsSubclass<Http2ClientTransport>()]() -> Poll<absl::Status> {
-        return self->reader_state_.MaybePauseReadLoop();
+      [this]() -> Poll<absl::Status> {
+        return reader_state_.MaybePauseReadLoop();
       }));
 }
 
 auto Http2ClientTransport::ReadLoop() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport ReadLoop Factory";
-  return AssertResultType<absl::Status>(
-      Loop([self = RefAsSubclass<Http2ClientTransport>()]() {
-        return TrySeq(self->ReadAndProcessOneFrame(),
-                      []() -> LoopCtl<absl::Status> {
-                        GRPC_HTTP2_CLIENT_DLOG
-                            << "Http2ClientTransport ReadLoop Continue";
-                        return Continue();
-                      });
-      }));
+  return AssertResultType<absl::Status>(UntilTransportClosed(Loop([this]() {
+    return TrySeq(ReadAndProcessOneFrame(), []() -> LoopCtl<absl::Status> {
+      GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport ReadLoop Continue";
+      return Continue();
+    });
+  })));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -971,34 +906,33 @@ auto Http2ClientTransport::ReadLoop() {
 auto Http2ClientTransport::FlowControlPeriodicUpdateLoop() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport PeriodicUpdateLoop Factory";
   return AssertResultType<absl::Status>(
-      Loop([self = RefAsSubclass<Http2ClientTransport>()]() {
+      Loop([this]() {
         GRPC_HTTP2_CLIENT_DLOG
             << "Http2ClientTransport FlowControlPeriodicUpdateLoop Loop";
         return TrySeq(
             // TODO(tjagtap) [PH2][P2][BDP] Remove this static sleep when the
             // BDP code is done.
             Sleep(chttp2::kFlowControlPeriodicUpdateTimer),
-            [self]() -> Poll<absl::Status> {
+            [this]() -> Poll<absl::Status> {
               GRPC_HTTP2_CLIENT_DLOG
                   << "Http2ClientTransport FlowControl PeriodicUpdate()";
-              chttp2::FlowControlAction action =
-                  self->flow_control_.PeriodicUpdate();
+              chttp2::FlowControlAction action = flow_control_.PeriodicUpdate();
               bool is_action_empty = action == chttp2::FlowControlAction();
               // This may trigger a write cycle
-              self->ActOnFlowControlAction(action, nullptr);
+              ActOnFlowControlAction(action, nullptr);
               if (is_action_empty) {
                 // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is
                 // done. We must continue to do PeriodicUpdate once BDP is in
                 // place.
-                MutexLock lock(&self->transport_mutex_);
-                if (self->GetActiveStreamCountLocked() == 0) {
-                  self->AddPeriodicUpdatePromiseWaker();
+                MutexLock lock(&transport_mutex_);
+                if (GetActiveStreamCountLocked() == 0) {
+                  AddPeriodicUpdatePromiseWaker();
                   return Pending{};
                 }
               }
               return absl::OkStatus();
             },
-            [self]() -> LoopCtl<absl::Status> { return Continue{}; });
+            []() -> LoopCtl<absl::Status> { return Continue{}; });
       }));
 }
 
@@ -1034,7 +968,10 @@ void Http2ClientTransport::ActOnFlowControlAction(
     // updates to the peer, causing the peer to block unnecessarily while
     // waiting for flow control tokens.
     reader_state_.SetPauseReadLoop();
-    SpawnGuardedTransportParty("SendControlFrames", TriggerWriteCycle());
+    if (!TriggerWriteCycleOrHandleError()) {
+      return;
+    }
+
     GRPC_HTTP2_CLIENT_DLOG << "Update Immediately : "
                            << action.ImmediateUpdateReasons();
   }
@@ -1051,11 +988,11 @@ auto Http2ClientTransport::EndpointWrite(SliceBuffer&& output_buf) {
   return Map(
       endpoint_.Write(std::move(output_buf),
                       WriteContext::GetWriteArgs(settings_->peer())),
-      [self = RefAsSubclass<Http2ClientTransport>()](absl::Status status) {
+      [this](absl::Status status) {
         GRPC_HTTP2_CLIENT_DLOG
             << "Http2ClientTransport EndpointWrite complete with status = "
             << status;
-        self->write_context_.EndWrite(status.ok());
+        write_context_.EndWrite(status.ok());
         return status;
       });
 }
@@ -1078,7 +1015,7 @@ auto Http2ClientTransport::ProcessAndWriteControlFrames() {
     //
     // Because the client is expected to write before it reads, we spawn the
     // ReadLoop of the client only after the first write is queued.
-    SpawnGuardedTransportParty("ReadLoop", UntilTransportClosed(ReadLoop()));
+    SpawnGuardedTransportParty("ReadLoop", ReadLoop());
     is_first_write_ = false;
   }
 
@@ -1119,13 +1056,12 @@ auto Http2ClientTransport::ProcessAndWriteControlFrames() {
 
   return AssertResultType<absl::Status>(
       If((buffer_length > 0 && apply_status == http2::Http2ErrorCode::kNoError),
-         [self = RefAsSubclass<Http2ClientTransport>(),
-          output_buf = std::move(output_buf)]() mutable {
-           return self->EndpointWrite(std::move(output_buf));
+         [this, output_buf = std::move(output_buf)]() mutable {
+           return EndpointWrite(std::move(output_buf));
          },
-         [self = RefAsSubclass<Http2ClientTransport>(), apply_status]() {
+         [this, apply_status]() {
            if (apply_status != http2::Http2ErrorCode::kNoError) {
-             return self->HandleError(
+             return HandleError(
                  std::nullopt,
                  Http2Status::Http2ConnectionError(
                      apply_status, "Failed to apply incoming settings"));
@@ -1155,9 +1091,8 @@ auto Http2ClientTransport::SerializeAndWrite(std::vector<Http2Frame>&& frames) {
                          << output_buf_length;
   return AssertResultType<absl::Status>(If(
       output_buf_length > 0,
-      [self = RefAsSubclass<Http2ClientTransport>(),
-       output_buf = std::move(output_buf)]() mutable {
-        return self->EndpointWrite(std::move(output_buf));
+      [this, output_buf = std::move(output_buf)]() mutable {
+        return EndpointWrite(std::move(output_buf));
       },
       []() { return absl::OkStatus(); }));
 }
@@ -1259,19 +1194,17 @@ Http2ClientTransport::DequeueStreamFrames(
 // Requests (HTTP2 Streams) and writing them into one common endpoint.
 auto Http2ClientTransport::MultiplexerLoop() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport MultiplexerLoop Factory";
-  return AssertResultType<
-      absl::Status>(Loop([self = RefAsSubclass<Http2ClientTransport>()]() {
+  return AssertResultType<absl::Status>(UntilTransportClosed(Loop([this]() {
     return TrySeq(
-        self->writable_stream_list_.WaitForReady(
-            self->AreTransportFlowControlTokensAvailable()),
-        [self]() {
+        writable_stream_list_.WaitForReady(
+            AreTransportFlowControlTokensAvailable()),
+        [this]() {
           // TODO(akshitpatel) : [PH2][P2] : Return an `important` tag from
           // WriteControlFrames() to indicate if we should do a separate write
           // for the queued control frames or send the queued frames with the
           // data frames(if any).
           return Map(
-              self->ProcessAndWriteControlFrames(),
-              [self](absl::Status status) {
+              ProcessAndWriteControlFrames(), [this](absl::Status status) {
                 if (GPR_UNLIKELY(!status.ok())) {
                   GRPC_HTTP2_CLIENT_DLOG
                       << "Http2ClientTransport MultiplexerLoop Failed to "
@@ -1279,14 +1212,14 @@ auto Http2ClientTransport::MultiplexerLoop() {
                       << status;
                   return status;
                 }
-                self->NotifyControlFramesWriteDone();
+                NotifyControlFramesWriteDone();
                 return absl::OkStatus();
               });
         },
-        [self]() -> absl::StatusOr<std::vector<Http2Frame>> {
+        [this]() -> absl::StatusOr<std::vector<Http2Frame>> {
           std::vector<Http2Frame> frames;
           WriteContext::WriteQuota write_quota =
-              self->write_context_.StartNewWriteAttempt();
+              write_context_.StartNewWriteAttempt();
           GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport MultiplexerLoop "
                                  << write_quota.DebugString();
           // Drain all the writable streams till we have written
@@ -1295,8 +1228,8 @@ auto Http2ClientTransport::MultiplexerLoop() {
           // writing metadata).
           while (write_quota.GetWriteBytesRemaining() > 0) {
             std::optional<RefCountedPtr<Stream>> optional_stream =
-                self->writable_stream_list_.ImmediateNext(
-                    self->AreTransportFlowControlTokensAvailable());
+                writable_stream_list_.ImmediateNext(
+                    AreTransportFlowControlTokensAvailable());
             if (!optional_stream.has_value()) {
               GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport MultiplexerLoop "
                                         "No writable streams available "
@@ -1315,23 +1248,23 @@ auto Http2ClientTransport::MultiplexerLoop() {
               // TODO(akshitpatel) : [PH2][P5] : We will waste a stream id in
               // the rare scenario where the stream is aborted before it can be
               // written to. This is a possible area to optimize in future.
-              absl::Status status = self->InitializeStream(stream);
+              absl::Status status = InitializeStream(stream);
               if (!status.ok()) {
                 GRPC_HTTP2_CLIENT_DLOG
                     << "Http2ClientTransport MultiplexerLoop "
                        "Failed to assign stream id and add to stream list for "
                        "stream: "
                     << stream.get() << " closing this stream.";
-                self->BeginCloseStream(
-                    stream, /*reset_stream_error_code=*/std::nullopt,
-                    CancelledServerMetadataFromStatus(status));
+                BeginCloseStream(stream,
+                                 /*reset_stream_error_code=*/std::nullopt,
+                                 CancelledServerMetadataFromStatus(status));
                 continue;
               }
             }
 
             if (GPR_LIKELY(!stream->IsClosedForWrites())) {
               absl::StatusOr<std::vector<Http2Frame>> stream_frames =
-                  self->DequeueStreamFrames(stream, write_quota);
+                  DequeueStreamFrames(stream, write_quota);
               if (GPR_UNLIKELY(!stream_frames.ok())) {
                 GRPC_HTTP2_CLIENT_DLOG
                     << "Http2ClientTransport MultiplexerLoop "
@@ -1354,19 +1287,19 @@ auto Http2ClientTransport::MultiplexerLoop() {
 
           return std::move(frames);
         },
-        [self](std::vector<Http2Frame> frames) {
-          return self->SerializeAndWrite(std::move(frames));
+        [this](std::vector<Http2Frame> frames) {
+          return SerializeAndWrite(std::move(frames));
         },
-        [self]() -> LoopCtl<absl::Status> {
-          if (self->should_reset_ping_clock_) {
+        [this]() -> LoopCtl<absl::Status> {
+          if (should_reset_ping_clock_) {
             GRPC_HTTP2_CLIENT_DLOG
                 << "Http2ClientTransport MultiplexerLoop ResetPingClock";
-            self->ping_manager_->ResetPingClock(/*is_client=*/true);
-            self->should_reset_ping_clock_ = false;
+            ping_manager_->ResetPingClock(/*is_client=*/true);
+            should_reset_ping_clock_ = false;
           }
           return Continue();
         });
-  }));
+  })));
 }
 
 absl::Status Http2ClientTransport::InitializeStream(
@@ -1461,7 +1394,7 @@ void Http2ClientTransport::MaybeGetWindowUpdateFrames(SliceBuffer& output_buf) {
 // Constructor Destructor
 
 Http2ClientTransport::Http2ClientTransport(
-    PromiseEndpoint endpoint, GRPC_UNUSED const ChannelArgs& channel_args,
+    PromiseEndpoint endpoint, const ChannelArgs& channel_args,
     std::shared_ptr<EventEngine> event_engine,
     absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings)
     : channelz::DataSource(http2::CreateChannelzSocketNode(
@@ -1519,9 +1452,10 @@ void Http2ClientTransport::SpawnTransportLoops() {
       "FlowControlPeriodicUpdateLoop",
       UntilTransportClosed(FlowControlPeriodicUpdateLoop()));
 
-  SpawnGuardedTransportParty("FlushInitialFrames", TriggerWriteCycle());
-  SpawnGuardedTransportParty("MultiplexerLoop",
-                             UntilTransportClosed(MultiplexerLoop()));
+  if (!TriggerWriteCycleOrHandleError()) {
+    return;
+  }
+  SpawnGuardedTransportParty("MultiplexerLoop", MultiplexerLoop());
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::SpawnTransportLoops End";
 }
 
@@ -1921,6 +1855,16 @@ void Http2ClientTransport::AddData(channelz::DataSink sink) {
   });
 }
 
+RefCountedPtr<channelz::SocketNode> Http2ClientTransport::GetSocketNode()
+    const {
+  const channelz::BaseNode* node = channelz::DataSource::channelz_node();
+  if (node == nullptr) {
+    return nullptr;
+  }
+  return const_cast<channelz::BaseNode*>(node)
+      ->RefAsSubclass<channelz::SocketNode>();
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Stream Related Operations
 
@@ -2040,12 +1984,7 @@ std::optional<RefCountedPtr<Stream>> Http2ClientTransport::MakeStream(
     CallHandler call_handler) {
   // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
   RefCountedPtr<Stream> stream;
-  {
-    // TODO(akshitpatel) : [PH2][P3] : Remove this mutex once settings is in
-    // place.
-    MutexLock lock(&transport_mutex_);
-    stream = MakeRefCounted<Stream>(call_handler, flow_control_);
-  }
+  stream = MakeRefCounted<Stream>(call_handler, flow_control_);
   const bool on_done_added = SetOnDone(call_handler, stream);
   if (!on_done_added) return std::nullopt;
   return stream;
@@ -2090,43 +2029,37 @@ auto Http2ClientTransport::CallOutboundLoop(CallHandler call_handler,
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop";
   GRPC_DCHECK(stream != nullptr);
 
-  auto send_message = [self = RefAsSubclass<Http2ClientTransport>(),
-                       stream](MessageHandle&& message) mutable {
-    return TrySeq(stream->EnqueueMessage(std::move(message)),
-                  [self, stream](const StreamWritabilityUpdate result) mutable {
-                    GRPC_HTTP2_CLIENT_DLOG
-                        << "Http2ClientTransport CallOutboundLoop "
-                           "Enqueued Message";
-                    return self->MaybeAddStreamToWritableStreamList(
-                        std::move(stream), result);
-                  });
+  auto send_message = [this, stream](MessageHandle&& message) mutable {
+    return TrySeq(
+        stream->EnqueueMessage(std::move(message)),
+        [this, stream](const StreamWritabilityUpdate result) mutable {
+          GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop "
+                                    "Enqueued Message";
+          return MaybeAddStreamToWritableStreamList(std::move(stream), result);
+        });
   };
 
-  auto send_initial_metadata = [self = RefAsSubclass<Http2ClientTransport>(),
-                                stream,
+  auto send_initial_metadata = [this, stream,
                                 metadata = std::move(metadata)]() mutable {
     return TrySeq(
         [stream, metadata = std::move(metadata)]() mutable {
           return stream->EnqueueInitialMetadata(std::move(metadata));
         },
-        [self, stream](const StreamWritabilityUpdate result) mutable {
+        [this, stream](const StreamWritabilityUpdate result) mutable {
           GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop "
                                     "Enqueued Initial Metadata";
-          return self->MaybeAddStreamToWritableStreamList(std::move(stream),
-                                                          result);
+          return MaybeAddStreamToWritableStreamList(std::move(stream), result);
         });
   };
 
-  auto send_half_closed = [self = RefAsSubclass<Http2ClientTransport>(),
-                           stream]() mutable {
-    return TrySeq([stream]() { return stream->EnqueueHalfClosed(); },
-                  [self, stream](const StreamWritabilityUpdate result) mutable {
-                    GRPC_HTTP2_CLIENT_DLOG
-                        << "Http2ClientTransport CallOutboundLoop "
-                           "Enqueued Half Closed";
-                    return self->MaybeAddStreamToWritableStreamList(
-                        std::move(stream), result);
-                  });
+  auto send_half_closed = [this, stream]() mutable {
+    return TrySeq(
+        [stream]() { return stream->EnqueueHalfClosed(); },
+        [this, stream](const StreamWritabilityUpdate result) mutable {
+          GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop "
+                                    "Enqueued Half Closed";
+          return MaybeAddStreamToWritableStreamList(std::move(stream), result);
+        });
   };
   return GRPC_LATENT_SEE_PROMISE(
       "Ph2CallOutboundLoop",
@@ -2138,8 +2071,7 @@ auto Http2ClientTransport::CallOutboundLoop(CallHandler call_handler,
             // released.
             return ForEach(MessagesFrom(call_handler), send_message);
           },
-          [self = RefAsSubclass<Http2ClientTransport>(),
-           send_half_closed = std::move(send_half_closed)]() mutable {
+          [send_half_closed = std::move(send_half_closed)]() mutable {
             return send_half_closed();
           },
           [call_handler]() mutable {
@@ -2178,12 +2110,12 @@ void Http2ClientTransport::StartCall(CallHandler call_handler) {
                    self->MakeStream(call_handler);
                return If(
                    stream.has_value(),
-                   [self, call_handler, stream,
+                   [self = std::move(self), call_handler, stream,
                     initial_metadata = std::move(metadata)]() mutable {
                      return Map(
                          self->CallOutboundLoop(call_handler, stream.value(),
                                                 std::move(initial_metadata)),
-                         [](absl::Status status) { return status; });
+                         [self](absl::Status status) { return status; });
                    },
                    []() {
                      return absl::InternalError("Failed to make stream");
@@ -2252,8 +2184,7 @@ Http2ClientTransport::PingSystemInterfaceImpl::Make(
       PingSystemInterfaceImpl(transport));
 }
 
-Promise<absl::Status>
-Http2ClientTransport::PingSystemInterfaceImpl::TriggerWrite() {
+absl::Status Http2ClientTransport::PingSystemInterfaceImpl::TriggerWrite() {
   return transport_->TriggerWriteCycle();
 }
 
@@ -2284,9 +2215,9 @@ Http2ClientTransport::KeepAliveInterfaceImpl::Make(
 
 Promise<absl::Status>
 Http2ClientTransport::KeepAliveInterfaceImpl::SendPingAndWaitForAck() {
-  return TrySeq(transport_->TriggerWriteCycle(), [transport = transport_] {
-    return transport->WaitForPingAck();
-  });
+  return TrySeq(
+      [transport = transport_] { return transport->TriggerWriteCycle(); },
+      [transport = transport_] { return transport->WaitForPingAck(); });
 }
 
 Promise<absl::Status>

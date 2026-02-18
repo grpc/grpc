@@ -45,7 +45,7 @@ class StatefulSessionMethodParsedConfig
     : public ServiceConfigParser::ParsedConfig {
  public:
   struct CookieConfig {
-    std::optional<std::string> name;  // Will be unset if disabled.
+    std::string cookie_name;  // Will be empty if disabled.
     std::string path;
     Duration ttl;
 

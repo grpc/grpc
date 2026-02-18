@@ -27,18 +27,20 @@ namespace grpc_core {
 
 const JsonLoaderInterface*
 StatefulSessionMethodParsedConfig::CookieConfig::JsonLoader(const JsonArgs&) {
-  static const auto* loader = JsonObjectLoader<CookieConfig>()
-                                  .OptionalField("name", &CookieConfig::name)
-                                  .OptionalField("path", &CookieConfig::path)
-                                  .OptionalField("ttl", &CookieConfig::ttl)
-                                  .Finish();
+  static const auto* loader =
+      JsonObjectLoader<CookieConfig>()
+          .OptionalField("name", &CookieConfig::cookie_name)
+          .OptionalField("path", &CookieConfig::path)
+          .OptionalField("ttl", &CookieConfig::ttl)
+          .Finish();
   return loader;
 }
 
 void StatefulSessionMethodParsedConfig::CookieConfig::JsonPostLoad(
-    const Json&, const JsonArgs&, ValidationErrors* errors) {
+    const Json& json, const JsonArgs&, ValidationErrors* errors) {
   // Validate that cookie_name is non-empty.
-  if (name.has_value() && name->empty()) {
+  if (json.object().find("name") != json.object().end() &&
+      cookie_name.empty()) {
     ValidationErrors::ScopedField field(errors, ".name");
     errors->AddError("must be non-empty");
   }
