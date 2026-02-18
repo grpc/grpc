@@ -156,6 +156,19 @@ void Http2ServerTransport::AbortWithError() {
 //////////////////////////////////////////////////////////////////////////////
 // Test Only Functions
 
+int64_t Http2ServerTransport::TestOnlyTransportFlowControlWindow() {
+  return flow_control_.remote_window();
+}
+
+int64_t Http2ServerTransport::TestOnlyGetStreamFlowControlWindow(
+    const uint32_t stream_id) {
+  RefCountedPtr<Stream> stream = LookupStream(stream_id);
+  if (stream == nullptr) {
+    return -1;
+  }
+  return stream->flow_control.remote_window_delta();
+}
+
 //////////////////////////////////////////////////////////////////////////////
 // Transport Read Path
 
@@ -425,11 +438,35 @@ auto Http2ServerTransport::OnWriteLoopEnded() {
 //////////////////////////////////////////////////////////////////////////////
 // Settings
 
+// auto WaitForSettingsTimeoutOnDone();
+
+// void MaybeSpawnWaitForSettingsTimeout();
+
+// void EnforceLatestIncomingSettings();
+
 //////////////////////////////////////////////////////////////////////////////
 // Flow Control and BDP
 
+// void ActOnFlowControlAction(...);
+
+// void MaybeGetWindowUpdateFrames(SliceBuffer& output_buf);
+
+// auto FlowControlPeriodicUpdateLoop();
+
 //////////////////////////////////////////////////////////////////////////////
 // Stream List Operations
+
+RefCountedPtr<Stream> Http2ServerTransport::LookupStream(uint32_t stream_id) {
+  MutexLock lock(&transport_mutex_);
+  auto it = stream_list_.find(stream_id);
+  if (it == stream_list_.end()) {
+    GRPC_HTTP2_SERVER_DLOG
+        << "Http2ServerTransport::LookupStream Stream not found stream_id="
+        << stream_id;
+    return nullptr;
+  }
+  return it->second;
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // Stream Operations

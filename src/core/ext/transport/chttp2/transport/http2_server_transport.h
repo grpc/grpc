@@ -180,20 +180,20 @@ class Http2ServerTransport final : public ServerTransport {
   //////////////////////////////////////////////////////////////////////////////
   // Test Only Functions
 
-  // template <typename Factory>
-  // void TestOnlySpawnPromise(absl::string_view name, Factory&& factory) {
-  //   SpawnInfallible(general_party_, name, std::forward<Factory>(factory));
-  // }
+  template <typename Factory>
+  void TestOnlySpawnPromise(absl::string_view name, Factory&& factory) {
+    SpawnInfallible(general_party_, name, std::forward<Factory>(factory));
+  }
 
-  // absl::Status TestOnlyTriggerWriteCycle() { return TriggerWriteCycle(); }
+  absl::Status TestOnlyTriggerWriteCycle() { return TriggerWriteCycle(); }
 
   // auto TestOnlySendPing(absl::AnyInvocable<void()> on_initiate,
   //                       bool important = false) {
   //   return ping_manager_->RequestPing(std::move(on_initiate), important);
   // }
 
-  // int64_t TestOnlyTransportFlowControlWindow();
-  // int64_t TestOnlyGetStreamFlowControlWindow(const uint32_t stream_id);
+  int64_t TestOnlyTransportFlowControlWindow();
+  int64_t TestOnlyGetStreamFlowControlWindow(const uint32_t stream_id);
 
  private:
   //////////////////////////////////////////////////////////////////////////////
@@ -236,7 +236,7 @@ class Http2ServerTransport final : public ServerTransport {
   // Transport Write Path
 
   // absl::Status TriggerWriteCycle(DebugLocation whence = {}) {
-  //   GRPC_HTTP2_CLIENT_DLOG
+  //   GRPC_HTTP2_SERVER_DLOG
   //       << "Http2ServerTransport::TriggerWriteCycle invoked from "
   //       << whence.file() << ":" << whence.line();
   //   return writable_stream_list_.ForceReadyForWrite();
@@ -257,52 +257,56 @@ class Http2ServerTransport final : public ServerTransport {
   // TODO(akshitpatel) : [PH2][P1] : Delete this when write path is implemented.
   auto OnWriteLoopEnded();
 
+  // Force triggers a transport write cycle
   absl::Status TriggerWriteCycle(DebugLocation whence = {}) {
-    LOG(INFO) << "Http2ServerTransport::TriggerWriteCycle location="
-              << whence.file() << ":" << whence.line();
-    return absl::OkStatus();
+    GRPC_HTTP2_SERVER_DLOG
+        << "Http2ServerTransport::TriggerWriteCycle invoked from "
+        << whence.file() << ":" << whence.line();
+    return writable_stream_list_.ForceReadyForWrite();
   }
 
   //////////////////////////////////////////////////////////////////////////////
   // Spawn Helpers and Promise Helpers
 
-  // template <typename Promise,
-  //           std::enable_if_t<std::is_same_v<decltype(std::declval<Promise>()()),
-  //                                           Poll<absl::Status>>,
-  //                            bool> = true>
-  // auto UntilTransportClosed(Promise&& promise) {
-  //   return Race(Map(transport_closed_latch_.Wait(),
-  //                   [self = RefAsSubclass<Http2ServerTransport>()](Empty) {
-  //                     GRPC_HTTP2_CLIENT_DLOG << "Transport closed";
-  //                     return absl::CancelledError("Transport closed");
-  //                   }),
-  //               std::forward<Promise>(promise));
-  // }
+  template <typename Promise,
+            std::enable_if_t<std::is_same_v<decltype(std::declval<Promise>()()),
+                                            Poll<absl::Status>>,
+                             bool> = true>
+  auto UntilTransportClosed(Promise&& promise) {
+    return Race(Map(transport_closed_latch_.Wait(),
+                    [self = RefAsSubclass<Http2ServerTransport>()](Empty) {
+                      GRPC_HTTP2_SERVER_DLOG << "Transport closed";
+                      return absl::CancelledError("Transport closed");
+                    }),
+                std::forward<Promise>(promise));
+  }
 
-  // template <typename Promise,
-  //           std::enable_if_t<std::is_same_v<decltype(std::declval<Promise>()()),
-  //                                           Poll<Empty>>,
-  //                            bool> = true>
-  // auto UntilTransportClosed(Promise&& promise) {
-  //   return Race(Map(transport_closed_latch_.Wait(),
-  //                   [self = RefAsSubclass<Http2ServerTransport>()](Empty) {
-  //                     GRPC_HTTP2_CLIENT_DLOG << "Transport closed";
-  //                     return Empty{};
-  //                   }),
-  //               std::forward<Promise>(promise));
-  // }
+  template <typename Promise,
+            std::enable_if_t<std::is_same_v<decltype(std::declval<Promise>()()),
+                                            Poll<Empty>>,
+                             bool> = true>
+  auto UntilTransportClosed(Promise&& promise) {
+    return Race(Map(transport_closed_latch_.Wait(),
+                    [self = RefAsSubclass<Http2ServerTransport>()](Empty) {
+                      GRPC_HTTP2_SERVER_DLOG << "Transport closed";
+                      return Empty{};
+                    }),
+                std::forward<Promise>(promise));
+  }
 
   // Spawns an infallible promise on the given party.
-  // template <typename Factory>
-  // void SpawnInfallible(RefCountedPtr<Party> party, absl::string_view name,
-  //                      Factory&& factory) {
-  //   party->Spawn(name, std::forward<Factory>(factory), [](Empty) {});
-  // }
+  template <typename Factory>
+  void SpawnInfallible(RefCountedPtr<Party> party, absl::string_view name,
+                       Factory&& factory) {
+    party->Spawn(name, std::forward<Factory>(factory), [](Empty) {});
+  }
 
   // Spawns an infallible promise on the transport party.
-  // template <typename Factory>
-  // void SpawnInfallibleTransportParty(absl::string_view name, Factory&&
-  // factory);
+  template <typename Factory>
+  void SpawnInfallibleTransportParty(absl::string_view name,
+                                     Factory&& factory) {
+    SpawnInfallible(general_party_, name, std::forward<Factory>(factory));
+  }
 
   // Spawns a promise on the transport party. If the promise returns a non-ok
   // status, it is handled by closing the transport with the corresponding
@@ -310,10 +314,12 @@ class Http2ServerTransport final : public ServerTransport {
   // template <typename Factory>
   // void SpawnGuardedTransportParty(absl::string_view name, Factory&& factory);
 
-  // template <typename Factory, typename OnDone>
-  // void SpawnWithOnDoneTransportParty(absl::string_view name, Factory&&
-  // factory,
-  //                                    OnDone&& on_done);
+  template <typename Factory, typename OnDone>
+  void SpawnWithOnDoneTransportParty(absl::string_view name, Factory&& factory,
+                                     OnDone&& on_done) {
+    general_party_->Spawn(name, std::forward<Factory>(factory),
+                          std::forward<OnDone>(on_done));
+  }
 
   //////////////////////////////////////////////////////////////////////////////
   // Endpoint Helpers
@@ -343,17 +349,17 @@ class Http2ServerTransport final : public ServerTransport {
   // auto FlowControlPeriodicUpdateLoop();
 
   // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
-  // void AddPeriodicUpdatePromiseWaker() {
-  //   periodic_updates_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
-  // }
+  void AddPeriodicUpdatePromiseWaker() {
+    periodic_updates_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+  }
 
   // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
-  // void WakeupPeriodicUpdatePromise() { periodic_updates_waker_.Wakeup(); }
+  void WakeupPeriodicUpdatePromise() { periodic_updates_waker_.Wakeup(); }
 
   //////////////////////////////////////////////////////////////////////////////
   // Stream List Operations
 
-  // RefCountedPtr<Stream> LookupStream(uint32_t stream_id);
+  RefCountedPtr<Stream> LookupStream(uint32_t stream_id);
 
   // void AddToStreamList(RefCountedPtr<Stream> stream);
 
