@@ -1979,7 +1979,7 @@ def _augment_options(
         + compression_option
         + (
             (
-                _common.decode(cygrpc.ChannelArgKey.primary_user_agent_string),
+                cygrpc.ChannelArgKey.primary_user_agent_string.decode(),
                 _USER_AGENT,
             ),
         )
