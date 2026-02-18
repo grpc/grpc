@@ -16,6 +16,8 @@
 
 #include "src/core/xds/grpc/xds_common_types.h"
 
+#include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/json/json_writer.h"
 #include "src/core/util/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -98,6 +100,77 @@ std::string CommonTlsContext::ToString() const {
 bool CommonTlsContext::Empty() const {
   return tls_certificate_provider_instance.Empty() &&
          certificate_validation_context.Empty();
+}
+
+//
+// SafeRegexMatch
+//
+
+const JsonLoaderInterface* SafeRegexMatch::JsonLoader(const JsonArgs&) {
+  static const auto* loader = JsonObjectLoader<SafeRegexMatch>()
+                                  .Field("regex", &SafeRegexMatch::regex)
+                                  .Finish();
+  return loader;
+}
+
+//
+// HeaderMutationRules
+//
+
+const JsonLoaderInterface* HeaderMutationRules::JsonLoader(const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<HeaderMutationRules>()
+          .OptionalField("disallow_is_error",
+                         &HeaderMutationRules::disallow_is_error)
+          .OptionalField("disallow_all", &HeaderMutationRules::disallow_all)
+          .Finish();
+  return loader;
+}
+
+void HeaderMutationRules::JsonPostLoad(const Json& json, const JsonArgs& args,
+                                       ValidationErrors* errors) {
+  auto createMatcherFromField =
+      [&](const std::string& field_name) -> StringMatcher {
+    auto expression = LoadJsonObjectField<SafeRegexMatch>(json.object(), args,
+                                                          field_name, errors,
+                                                          /*required=*/false);
+    if (!expression.has_value()) {
+      errors->AddError("no valid matcher found");
+      return StringMatcher();
+    }
+    auto matcher = StringMatcher::Create(StringMatcher::Type::kSafeRegex,
+                                         expression->regex);
+
+    if (matcher.ok()) {
+      return *matcher;
+    }
+    errors->AddError(matcher.status().message());
+    return StringMatcher();
+  };
+  disallow_expression = createMatcherFromField("disallow_expression");
+  allow_expression = createMatcherFromField("allow_expression");
+}
+
+std::string HeaderMutationRules::ToJsonString() const {
+  Json::Object obj;
+  if (disallow_is_error) {
+    obj["disallow_is_error"] = Json::FromBool(disallow_is_error);
+  }
+  if (disallow_all) {
+    obj["disallow_all"] = Json::FromBool(disallow_all);
+  }
+  auto dump_matcher = [&](const std::string& name,
+                          const StringMatcher& matcher) {
+    if (matcher.type() == StringMatcher::Type::kSafeRegex) {
+      Json::Object regex_match;
+      regex_match["regex"] =
+          Json::FromString(matcher.regex_matcher()->pattern());
+      obj[name] = Json::FromObject(std::move(regex_match));
+    }
+  };
+  dump_matcher("allow_expression", allow_expression);
+  dump_matcher("disallow_expression", disallow_expression);
+  return JsonDump(Json::FromObject(std::move(obj)));
 }
 
 }  // namespace grpc_core
