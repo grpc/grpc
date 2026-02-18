@@ -77,10 +77,10 @@ bool XdsHttpConnectEnabled() {
 
 namespace {
 
-// TODO(mlumish): Remove this once the feature passes interop tests.
+// TODO(mlumish): Remove this after the 1.81 release.
 bool XdsSniEnabled() {
   auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_SNI");
-  if (!value.has_value()) return false;
+  if (!value.has_value()) return true;
   bool parsed_value;
   bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
   return parse_succeeded && parsed_value;

@@ -17,6 +17,11 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/private_key_signer.h>
+#include <openssl/digest.h>
+#include <openssl/ec.h>
+#include <openssl/evp.h>
+#include <openssl/rsa.h>
+#include <openssl/ssl.h>
 
 #include <memory>
 #include <string>
@@ -27,15 +32,6 @@
 #include "test/core/tsi/transport_security_test_lib.h"
 #include "gtest/gtest.h"
 #include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
-
-extern "C" {
-#include <openssl/bio.h>
-#include <openssl/crypto.h>
-#include <openssl/evp.h>
-#include <openssl/pem.h>
-#include <openssl/ssl.h>
-}
 
 namespace grpc_core {
 namespace testing {
@@ -228,7 +224,8 @@ class PrivateKeyOffloadTest : public ::testing::TestWithParam<tsi_tls_version> {
     void SetupHandshakers() {
       // Create client handshaker factory.
       tsi_ssl_client_handshaker_options client_options;
-      client_options.root_cert_info = std::make_shared<RootCertInfo>(ca_cert_);
+      client_options.root_cert_info =
+          std::make_shared<tsi::RootCertInfo>(ca_cert_);
       client_options.min_tls_version = GetParam();
       client_options.max_tls_version = GetParam();
       if (offload_party_ == OffloadParty::kClient) {
@@ -243,7 +240,8 @@ class PrivateKeyOffloadTest : public ::testing::TestWithParam<tsi_tls_version> {
 
       // Create server handshaker factory.
       tsi_ssl_server_handshaker_options server_options;
-      server_options.root_cert_info = std::make_shared<RootCertInfo>(ca_cert_);
+      server_options.root_cert_info =
+          std::make_shared<tsi::RootCertInfo>(ca_cert_);
       server_options.client_certificate_request =
           TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY;
       server_options.min_tls_version = GetParam();

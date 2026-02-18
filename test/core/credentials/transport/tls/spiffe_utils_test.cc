@@ -49,7 +49,7 @@ constexpr absl::string_view kCertificateSuffix =
 absl::StatusOr<X509*> ReadCertificate(absl::string_view raw_cert) {
   std::string pem_cert =
       absl::StrCat(kCertificatePrefix, raw_cert, kCertificateSuffix);
-  auto chain = ParsePemCertificateChain(pem_cert);
+  auto chain = tsi::ParsePemCertificateChain(pem_cert);
   GRPC_RETURN_IF_ERROR(chain.status());
   return (*chain)[0];
 }

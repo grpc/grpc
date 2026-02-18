@@ -307,12 +307,12 @@ def grpc_deps():
     if "com_google_googleapis" not in native.existing_rules():
         http_archive(
             name = "com_google_googleapis",
-            sha256 = "0513f0f40af63bd05dc789cacc334ab6cec27cc89db596557cb2dfe8919463e4",
-            strip_prefix = "googleapis-fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0",
+            sha256 = "3de3a199400eea7a766091aeb96c4b84c86266ad1f933f9933bbb7c359e727fe",
+            strip_prefix = "googleapis-2193a2bfcecb92b92aad7a4d81baa428cafd7dfd",
             build_file = Label("//bazel:googleapis.BUILD"),
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/googleapis/archive/fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0.tar.gz",
-                "https://github.com/googleapis/googleapis/archive/fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/googleapis/archive/2193a2bfcecb92b92aad7a4d81baa428cafd7dfd.tar.gz",
+                "https://github.com/googleapis/googleapis/archive/2193a2bfcecb92b92aad7a4d81baa428cafd7dfd.tar.gz",
             ],
         )
 
@@ -351,11 +351,22 @@ def grpc_deps():
     if "com_github_cncf_xds" not in native.existing_rules():
         http_archive(
             name = "com_github_cncf_xds",
-            sha256 = "dc305e20c9fa80822322271b50aa2ffa917bf4fd3973bcec52bfc28dc32c5927",
-            strip_prefix = "xds-3a472e524827f72d1ad621c4983dd5af54c46776",
+            sha256 = "49535f3c3370004309da50194c09bbfc528d4702424dd46e7d56a278a3dfc15d",
+            strip_prefix = "xds-ee656c7534f5d7dc23d44dd611689568f72017a6",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/3a472e524827f72d1ad621c4983dd5af54c46776.tar.gz",
-                "https://github.com/cncf/xds/archive/3a472e524827f72d1ad621c4983dd5af54c46776.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/ee656c7534f5d7dc23d44dd611689568f72017a6.tar.gz",
+                "https://github.com/cncf/xds/archive/ee656c7534f5d7dc23d44dd611689568f72017a6.tar.gz",
+            ],
+        )
+
+    if "dev_cel" not in native.existing_rules():
+        http_archive(
+            name = "dev_cel",
+            sha256 = "d6cb6b4ed272500d16546c672a65a7452b241462a200dda3f62a7de413883344",
+            strip_prefix = "cel-spec-9f069b3ee58b02d6f6736c5ebd6587075c1a1b22",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/cel-spec/archive/9f069b3ee58b02d6f6736c5ebd6587075c1a1b22.tar.gz",
+                "https://github.com/google/cel-spec/archive/9f069b3ee58b02d6f6736c5ebd6587075c1a1b22.tar.gz",
             ],
         )
 
@@ -415,10 +426,11 @@ def grpc_test_only_deps():
     if "yaml-cpp" not in native.existing_rules():
         http_archive(
             name = "yaml-cpp",
-            sha256 = "fbe74bbdcee21d656715688706da3c8becfd946d92cd44705cc6098bb23b3a16",
-            strip_prefix = "yaml-cpp-0.8.0",
+            integrity = "sha256-KYWT2cRA/ZA0uLGT2WMYt21JvJfGzq23sINu3wttdTk=",
+            strip_prefix = "",
             urls = [
-                "https://github.com/jbeder/yaml-cpp/archive/refs/tags/0.8.0.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/jbeder/yaml-cpp/releases/download/yaml-cpp-0.9.0/yaml-cpp-yaml-cpp-0.9.0.tar.gz",
+                "https://github.com/jbeder/yaml-cpp/releases/download/yaml-cpp-0.9.0/yaml-cpp-yaml-cpp-0.9.0.tar.gz",
             ],
         )
 

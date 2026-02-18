@@ -695,6 +695,46 @@ grpc_tls_certificate_provider_in_memory_create();
  *
  * root_certificate can be nullptr, indicating the corresponding credential data
  * is not needed. This function will make a copy of |root_cert|.
+ *
+ * Returns true if the root certificate was successfully updated.
+ */
+GRPCAPI bool grpc_tls_certificate_provider_in_memory_set_root_certificate(
+    grpc_tls_certificate_provider* provider, const char* root_cert);
+
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
+ * Update the identity certificate of a grpc_tls_certificate_provider created
+ * with `grpc_tls_certificate_provider_in_memory_create`.
+ *
+ * pem_key_cert_pairs can be nullptr, indicating the
+ * corresponding credential data is not needed.
+ * The ownership of |pem_key_cert_pairs| is transferred.
+ *
+ * Returns true if the identity certificate was successfully updated.
+ */
+GRPCAPI bool grpc_tls_certificate_provider_in_memory_set_identity_certificate(
+    grpc_tls_certificate_provider* provider,
+    grpc_tls_identity_pairs* pem_key_cert_pairs);
+
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
+ * Creates a grpc_tls_certificate_provider that will load credential data from
+ * memory during initialization. This provider allows updating the identity and
+ * root certificates independently.
+ */
+GRPCAPI grpc_tls_certificate_provider*
+grpc_tls_certificate_provider_in_memory_create();
+
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
+ * Update the root certificate of a grpc_tls_certificate_provider created with
+ * `grpc_tls_certificate_provider_in_memory_create`.
+ *
+ * root_certificate can be nullptr, indicating the corresponding credential data
+ * is not needed. This function will make a copy of |root_cert|.
  */
 GRPCAPI void grpc_tls_certificate_provider_in_memory_set_root_certificate(
     grpc_tls_certificate_provider* provider, const char* root_cert);
@@ -1005,7 +1045,7 @@ typedef struct grpc_tls_certificate_provider grpc_tls_certificate_provider;
 /**
  * EXPERIMENTAL API - Subject to change
  *
- * Sets the identity ceritifcate provider in the options.
+ * Sets the identity certificate provider in the options.
  * The |options| will implicitly take a new ref to the |provider|.
  */
 GRPCAPI void grpc_tls_credentials_options_set_identity_certificate_provider(
@@ -1015,7 +1055,7 @@ GRPCAPI void grpc_tls_credentials_options_set_identity_certificate_provider(
 /**
  * EXPERIMENTAL API - Subject to change
  *
- * Sets the root ceritifcate provider in the options.
+ * Sets the root certificate provider in the options.
  * The |options| will implicitly take a new ref to the |provider|.
  */
 GRPCAPI void grpc_tls_credentials_options_set_root_certificate_provider(

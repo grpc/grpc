@@ -41,6 +41,8 @@ package(
 exports_files([
     "LICENSE",
     "etc/roots.pem",
+    "copy.bara.sky",
+    "copybara.METADATA",
 ])
 
 exports_files(
@@ -631,7 +633,6 @@ grpc_cc_library(
         "avoid_dep",
         "nofixdeps",
     ],
-    visibility = ["//visibility:public"],
     deps = [
         "channel_arg_names",
         "channel_stack_builder",
@@ -1234,7 +1235,7 @@ grpc_cc_library(
         "avoid_dep",
         "nofixdeps",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["//bazel:grpc++_unsecure"],
     deps = [
         "channel_arg_names",
         "global_callback_hook",
@@ -3995,6 +3996,7 @@ grpc_cc_library(
         "//src/core:client_channel/retry_filter_legacy_call_data.cc",
         "//src/core:client_channel/subchannel.cc",
         "//src/core:client_channel/subchannel_stream_client.cc",
+        "//src/core:client_channel/subchannel_stream_limiter.cc",
     ],
     hdrs = [
         "//src/core:client_channel/buffered_call.h",
@@ -4010,6 +4012,7 @@ grpc_cc_library(
         "//src/core:client_channel/subchannel.h",
         "//src/core:client_channel/subchannel_interface_internal.h",
         "//src/core:client_channel/subchannel_stream_client.h",
+        "//src/core:client_channel/subchannel_stream_limiter.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -4079,6 +4082,7 @@ grpc_cc_library(
         "//src/core:error_utils",
         "//src/core:exec_ctx_wakeup_scheduler",
         "//src/core:experiments",
+        "//src/core:filter_chain",
         "//src/core:gpr_manual_constructor",
         "//src/core:grpc_backend_metric_data",
         "//src/core:grpc_channel_idle_filter",
@@ -4565,6 +4569,7 @@ grpc_cc_library(
     deps = [
         "channel_arg_names",
         "config_vars",
+        "exec_ctx",
         "gpr",
         "grpc_base",
         "grpc_core_credentials_header",
@@ -4576,6 +4581,7 @@ grpc_cc_library(
         "tsi_base",
         "tsi_ssl_session_cache",
         "//src/core:channel_args",
+        "//src/core:default_event_engine",
         "//src/core:env",
         "//src/core:error",
         "//src/core:grpc_check",
@@ -5086,6 +5092,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channelz_property_list",
         "//src/core:chttp2_flow_control",
+        "//src/core:client_channel_internal_header",
         "//src/core:closure",
         "//src/core:connectivity_state",
         "//src/core:context_list_entry",
@@ -5110,6 +5117,7 @@ grpc_cc_library(
         "//src/core:json",
         "//src/core:match",
         "//src/core:memory_quota",
+        "//src/core:metadata",
         "//src/core:metadata_batch",
         "//src/core:metadata_info",
         "//src/core:notification",
@@ -5373,6 +5381,21 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_filters_network_http_connection_manager_upbdefs",
     deps = ["@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_grpc_service_call_credentials_access_token_upb",
+    deps = ["@envoy_api//envoy/extensions/grpc_service/call_credentials/access_token/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_grpc_service_channel_credentials_tls_upb",
+    deps = ["@envoy_api//envoy/extensions/grpc_service/channel_credentials/tls/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_extensions_grpc_service_channel_credentials_xds_upb",
+    deps = ["@envoy_api//envoy/extensions/grpc_service/channel_credentials/xds/v3:pkg"],
 )
 
 grpc_upb_proto_library(

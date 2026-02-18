@@ -45,7 +45,18 @@ class GRPCXX_DLL CertificateProviderInterface {
 // A struct that stores the credential data presented to the peer in handshake
 // to show local identity. The private_key and certificate_chain should always
 // match.
-struct GRPCXX_DLL IdentityKeyCertPair {
+struct [[deprecated("Use IdentityKeyOrSignerCertPair instead")]] GRPCXX_DLL
+    IdentityKeyCertPair {
+  std::string private_key;
+  std::string certificate_chain;
+};
+
+// A struct that stores the credential data presented to the peer in handshake
+// to show local identity. The private_key and certificate_chain should always
+// match. The private_key can be either a PEM string or a PrivateKeySigner.
+// The PrivateKeySigner will only work with gRPC binaries compiled with
+// BoringSSL.
+struct GRPCXX_DLL IdentityKeyOrSignerCertPair {
   std::variant<std::string, std::shared_ptr<PrivateKeySigner>> private_key;
   std::string certificate_chain;
 };
@@ -53,15 +64,16 @@ struct GRPCXX_DLL IdentityKeyCertPair {
 // A basic CertificateProviderInterface implementation that will load credential
 // data from static string during initialization. This provider will always
 // return the same cert data for all cert names, and reloading is not supported.
-class GRPCXX_DLL StaticDataCertificateProvider
-    : public CertificateProviderInterface {
+class [[deprecated("Use InMemoryCertificateProvider instead")]] GRPCXX_DLL
+    StaticDataCertificateProvider : public CertificateProviderInterface {
  public:
   StaticDataCertificateProvider(
       const std::string& root_certificate,
       const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs);
 
   explicit StaticDataCertificateProvider(const std::string& root_certificate)
-      : StaticDataCertificateProvider(root_certificate, {}) {}
+      : StaticDataCertificateProvider(root_certificate,
+                                      std::vector<IdentityKeyCertPair>{}) {}
 
   explicit StaticDataCertificateProvider(
       const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs)
@@ -74,7 +86,8 @@ class GRPCXX_DLL StaticDataCertificateProvider
   // Returns an OK status if the following conditions hold:
   // - the root certificates consist of one or more valid PEM blocks, and
   // - every identity key-cert pair has a certificate chain that consists of
-  //   valid PEM blocks and has a private key is a valid PEM block.
+  //   valid PEM blocks and has a private key that is either a valid PEM block
+  //   or a non-null PrivateKeySigner instance.
   absl::Status ValidateCredentials() const;
 
  private:
@@ -139,6 +152,39 @@ class GRPCXX_DLL FileWatcherCertificateProvider final
   // - the currently-loaded root certificates, if any, consist of one or more
   //   valid PEM blocks, and
   // - every currently-loaded identity key-cert pair, if any, has a certificate
+  //   chain that consists of valid PEM blocks and has a private key that is
+  //   either a valid PEM block or a non-null PrivateKeySigner instance.
+  absl::Status ValidateCredentials() const;
+
+ private:
+  grpc_tls_certificate_provider* c_provider_ = nullptr;
+};
+
+// "A CertificateProviderInterface implementation that stores credentials
+// in-memory and allows the user to update credentials on-demand.
+class GRPCXX_DLL InMemoryCertificateProvider
+    : public CertificateProviderInterface {
+ public:
+  InMemoryCertificateProvider();
+
+  ~InMemoryCertificateProvider() override;
+
+  grpc_tls_certificate_provider* c_provider() override { return c_provider_; }
+
+  // TODO(anasalazar): Expose some API for callers to pass in a SPIFFE bundle
+  // map for the root cert.
+  // Users should verify the status retuned to confirm that the update was
+  // successful.
+  absl::Status UpdateRoot(const std::string& root_certificate);
+  absl::Status UpdateIdentityKeyCertPair(
+      std::vector<IdentityKeyCertPair> identity_key_cert_pairs);
+  absl::Status UpdateIdentityKeyCertPair(
+      std::vector<IdentityKeyOrSignerCertPair>
+          identity_key_or_signer_cert_pairs);
+
+  // Returns an OK status if the following conditions hold:
+  // - the root certificates consist of one or more valid PEM blocks, and
+  // - every identity key-cert pair has a certificate chain that consists of
   //   chain that consists of valid PEM blocks and has a private key is a valid
   //   PEM block.
   absl::Status ValidateCredentials() const;

@@ -41,6 +41,8 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/tsi/ssl_transport_security.h"
+
+using tsi::RootCertInfo;
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/debug_location.h"

@@ -31,16 +31,23 @@
 
 namespace grpc_core {
 
-// A base class for a handle for an async signing operation.
-// Implementations that support async signing will need to define
-// their own concrete implementations.
-class AsyncSigningHandle {
- public:
-  virtual ~AsyncSigningHandle() = default;
-};
-
+// Implementations of this class must be thread-safe.
 class PrivateKeySigner {
  public:
+  // A handle for an asynchronous signing operation.
+  //
+  // When `PrivateKeySigner::Sign` is implemented asynchronously, it returns an
+  // instance of a concrete implementation of this class. This handle is used
+  // to manage the asynchronous signing operation and can be used to cancel the
+  // operation via `PrivateKeySigner::Cancel`.
+  //
+  // Users must provide their own concrete implementation of this class. The
+  // handle can store any state needed for the asynchronous operation.
+  class AsyncSigningHandle {
+   public:
+    virtual ~AsyncSigningHandle() = default;
+  };
+
   // Enum class representing TLS signature algorithm identifiers from BoringSSL.
   // The values correspond to the SSL_SIGN_* macros in <openssl/ssl.h>.
   enum class SignatureAlgorithm {
@@ -55,6 +62,9 @@ class PrivateKeySigner {
     kRsaPssRsaeSha512,
   };
 
+  // A callback that is invoked when an asynchronous signing operation is
+  // complete. The argument should contain the signed bytes on success, or a
+  // non-OK status on failure.
   using OnSignComplete = absl::AnyInvocable<void(absl::StatusOr<std::string>)>;
 
   virtual ~PrivateKeySigner() = default;
@@ -63,11 +73,10 @@ class PrivateKeySigner {
   // May return either synchronously or asynchronously.
   // For synchronous returns, directly returns either the signed bytes
   // or a failed status, and the callback will never be invoked.
-  // For asynchronous returns, returns a handle for the asynchronous signing
-  // operation, and the callback will be invoked later. The handle may be
-  // passed to the Cancel() method to cancel the async operation.
-  // Note that implementations must never invoke the callback before this
-  // method returns, since that could lead to a deadlock.
+  // For asynchronous implementations, returns a handle for the asynchronous
+  // signing operation. The function argument on_sign_complete must be called by
+  // the implementer when the async signing operation is complete.
+  // on_sign_complete must not be invoked synchronously within Sign().
   virtual std::variant<absl::StatusOr<std::string>,
                        std::shared_ptr<AsyncSigningHandle>>
   Sign(absl::string_view data_to_sign, SignatureAlgorithm signature_algorithm,
@@ -82,13 +91,14 @@ class PrivateKeySigner {
 /**
  * EXPERIMENTAL API - Subject to change
  *
- * Adds a identity private key and a identity certificate chain to
- * grpc_tls_identity_pairs. This function will make an internal copy of
- * |cert_chain| and take ownership of |private_key|.
+ * Adds a identity key signer and a identity certificate chain to
+ * grpc_tls_identity_pairs. This implementation only works with gRPC Binaries
+ * built with BoringSSL.
+ * Returns OK if success, or a non-OK status on failure.
  */
-GRPCAPI void grpc_tls_identity_pairs_add_pair_with_signer(
+absl::Status grpc_tls_identity_pairs_add_pair_with_signer(
     grpc_tls_identity_pairs* pairs,
     std::shared_ptr<grpc_core::PrivateKeySigner> private_key_signer,
-    const char* cert_chain);
+    absl::string_view cert_chain);
 
 #endif /* GRPC_PRIVATE_KEY_SIGNER_H */

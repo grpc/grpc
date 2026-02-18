@@ -33,6 +33,8 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
 #include "src/core/tsi/ssl_transport_security.h"
+
+using tsi::RootCertInfo;
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/grpc_check.h"
 #include "absl/log/log.h"
@@ -186,7 +188,7 @@ grpc_security_status grpc_ssl_credentials::InitializeClientHandshakerFactory(
                   "be nullptr";
     return GRPC_SECURITY_ERROR;
   }
-  options.root_cert_info = std::make_shared<RootCertInfo>(pem_root_certs);
+  options.root_cert_info = std::make_shared<tsi::RootCertInfo>(pem_root_certs);
   options.root_store = root_store;
   options.alpn_protocols =
       grpc_fill_alpn_protocol_strings(&options.num_alpn_protocols);
