@@ -295,7 +295,11 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
            peer_max_concurrent_streams =
                settings_.peer().max_concurrent_streams()]() mutable {
             ExecCtx exec_ctx;
-            std::move(on_receive_settings)(peer_max_concurrent_streams);
+            on_receive_settings(peer_max_concurrent_streams);
+            // Ensure the captured callback is destroyed while ExecCtx is still
+            // alive. Its destructor may trigger work that needs to schedule
+            // closures on the ExecCtx.
+            on_receive_settings = nullptr;
           });
       GRPC_DCHECK(on_receive_first_settings_ == nullptr);
     }
@@ -311,8 +315,11 @@ class SettingsPromiseManager final : public RefCounted<SettingsPromiseManager> {
       event_engine->Run([on_receive_settings =
                              std::move(on_receive_first_settings_)]() mutable {
         ExecCtx exec_ctx;
-        std::move(on_receive_settings)(
-            absl::UnavailableError("transport closed"));
+        on_receive_settings(absl::UnavailableError("transport closed"));
+        // Ensure the captured callback is destroyed while ExecCtx is still
+        // alive. Its destructor may trigger work that needs to schedule
+        // closures on the ExecCtx.
+        on_receive_settings = nullptr;
       });
       GRPC_DCHECK(on_receive_first_settings_ == nullptr);
     }
