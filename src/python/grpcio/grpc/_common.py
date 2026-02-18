@@ -19,8 +19,8 @@ from typing import Any, AnyStr, Callable, Optional, Union
 
 import grpc
 from grpc._cython import cygrpc
-from grpc._typing import DeserializingFunction
-from grpc._typing import SerializingFunction
+from grpc.typing import DeserializingFunction
+from grpc.typing import SerializingFunction
 
 _LOGGER = logging.getLogger(__name__)
 

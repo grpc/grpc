@@ -62,7 +62,7 @@ class _ChannelReadyFuture(future.Future):
                 self._channel.unsubscribe(self._update)
                 self._condition.notify_all()
                 done_callbacks = tuple(self._done_callbacks)
-                self._done_callbacks = None
+                self._done_callbacks = []
             else:
                 return
 
@@ -78,7 +78,7 @@ class _ChannelReadyFuture(future.Future):
                 self._channel.unsubscribe(self._update)
                 self._condition.notify_all()
                 done_callbacks = tuple(self._done_callbacks)
-                self._done_callbacks = None
+                self._done_callbacks = []
             else:
                 return False
 

@@ -869,6 +869,320 @@ pair<bool, std::string> PrivateGenerator::GetGrpcServices() {
   return pair(true, std::move(output));
 }
 
+// ==================== PYI GENERATION METHODS ====================
+
+bool PrivateGenerator::PrintPreamblePyi(grpc_generator::Printer* out) {
+  StringMap var;
+  var["Package"] = config.grpc_package_root;
+
+  out->Print(
+      "\"\"\"Client and server classes corresponding to protobuf-defined "
+      "services.\"\"\"\n");
+  out->Print("import grpc\n");
+  out->Print("import grpc.aio\n");
+  out->Print("from typing import Iterator, Optional, Sequence, Tuple, Union\n");
+  out->Print("\n");
+
+  // Print imports for message types used in the file
+  StringPairSet imports_set;
+  for (int i = 0; i < file->service_count(); ++i) {
+    auto service = file->service(i);
+    for (int j = 0; j < service->method_count(); ++j) {
+      auto method = service.get()->method(j);
+
+      std::string input_type_file_name = method->get_input_type_name();
+      std::string input_module_name =
+          ModuleName(input_type_file_name, config.import_prefix,
+                     config.prefixes_to_filter);
+      std::string input_module_alias =
+          ModuleAlias(input_type_file_name, config.import_prefix,
+                      config.prefixes_to_filter);
+      imports_set.insert(std::tuple(input_module_name, input_module_alias));
+
+      std::string output_type_file_name = method->get_output_type_name();
+      std::string output_module_name =
+          ModuleName(output_type_file_name, config.import_prefix,
+                     config.prefixes_to_filter);
+      std::string output_module_alias =
+          ModuleAlias(output_type_file_name, config.import_prefix,
+                      config.prefixes_to_filter);
+      imports_set.insert(std::tuple(output_module_name, output_module_alias));
+    }
+  }
+
+  for (StringPairSet::iterator it = imports_set.begin();
+       it != imports_set.end(); ++it) {
+    auto module_name = std::get<0>(*it);
+    var["ModuleAlias"] = std::get<1>(*it);
+    const size_t last_dot_pos = module_name.rfind('.');
+    if (last_dot_pos == std::string::npos) {
+      var["ImportStatement"] = "import " + module_name;
+    } else {
+      var["ImportStatement"] = "from " + module_name.substr(0, last_dot_pos) +
+                               " import " +
+                               module_name.substr(last_dot_pos + 1);
+    }
+    out->Print(var, "$ImportStatement$ as $ModuleAlias$\n");
+  }
+  out->Print("\n");
+
+  return true;
+}
+
+bool PrivateGenerator::PrintStubPyi(
+    const std::string& package_qualified_service_name,
+    const grpc_generator::Service* service, grpc_generator::Printer* out) {
+  StringMap dict;
+  dict["Service"] = service->name();
+  out->Print(dict, "class $Service$Stub(object):\n");
+  {
+    IndentScope raii_class_indent(out);
+    StringVector service_comments = service->GetAllComments();
+    PrintAllComments(service_comments, out);
+    out->Print("\n");
+    out->Print(
+        "def __init__(self, channel: Union[grpc.Channel, grpc.aio.Channel]) -> "
+        "None: ...\n");
+
+    for (int i = 0; i < service->method_count(); ++i) {
+      auto method = service->method(i);
+      std::string request_module_and_class;
+      if (!method->get_module_and_message_path_input(
+              &request_module_and_class, generator_file_name,
+              generate_in_pb2_grpc, config.import_prefix,
+              config.prefixes_to_filter)) {
+        return false;
+      }
+      std::string response_module_and_class;
+      if (!method->get_module_and_message_path_output(
+              &response_module_and_class, generator_file_name,
+              generate_in_pb2_grpc, config.import_prefix,
+              config.prefixes_to_filter)) {
+        return false;
+      }
+
+      StringMap method_dict;
+      method_dict["Method"] = method->name();
+      method_dict["RequestType"] = request_module_and_class;
+      method_dict["ResponseType"] = response_module_and_class;
+
+      // Determine the MultiCallable type based on streaming
+      std::string multi_callable_type;
+      if (!method->ClientStreaming() && !method->ServerStreaming()) {
+        multi_callable_type = "grpc.UnaryUnaryMultiCallable";
+      } else if (!method->ClientStreaming() && method->ServerStreaming()) {
+        multi_callable_type = "grpc.UnaryStreamMultiCallable";
+      } else if (method->ClientStreaming() && !method->ServerStreaming()) {
+        multi_callable_type = "grpc.StreamUnaryMultiCallable";
+      } else {
+        multi_callable_type = "grpc.StreamStreamMultiCallable";
+      }
+      method_dict["MultiCallableType"] = multi_callable_type;
+
+      out->Print(
+          method_dict,
+          "$Method$: $MultiCallableType$[$RequestType$, $ResponseType$]\n");
+    }
+  }
+  return true;
+}
+
+bool PrivateGenerator::PrintServicerPyi(const grpc_generator::Service* service,
+                                        grpc_generator::Printer* out) {
+  StringMap service_dict;
+  service_dict["Service"] = service->name();
+  out->Print("\n");
+  out->Print(service_dict, "class $Service$Servicer(object):\n");
+  {
+    IndentScope raii_class_indent(out);
+    StringVector service_comments = service->GetAllComments();
+    PrintAllComments(service_comments, out);
+
+    for (int i = 0; i < service->method_count(); ++i) {
+      auto method = service->method(i);
+      std::string request_module_and_class;
+      if (!method->get_module_and_message_path_input(
+              &request_module_and_class, generator_file_name,
+              generate_in_pb2_grpc, config.import_prefix,
+              config.prefixes_to_filter)) {
+        return false;
+      }
+      std::string response_module_and_class;
+      if (!method->get_module_and_message_path_output(
+              &response_module_and_class, generator_file_name,
+              generate_in_pb2_grpc, config.import_prefix,
+              config.prefixes_to_filter)) {
+        return false;
+      }
+
+      StringMap method_dict;
+      method_dict["Method"] = method->name();
+      method_dict["RequestType"] = request_module_and_class;
+      method_dict["ResponseType"] = response_module_and_class;
+
+      // Determine parameter and return types based on streaming
+      std::string param_name;
+      std::string param_type;
+      std::string return_type;
+
+      if (method->ClientStreaming()) {
+        param_name = "request_iterator";
+        param_type = "Iterator[" + request_module_and_class + "]";
+      } else {
+        param_name = "request";
+        param_type = request_module_and_class;
+      }
+
+      if (method->ServerStreaming()) {
+        return_type = "Iterator[" + response_module_and_class + "]";
+      } else {
+        return_type = response_module_and_class;
+      }
+
+      method_dict["ParamName"] = param_name;
+      method_dict["ParamType"] = param_type;
+      method_dict["ReturnType"] = return_type;
+
+      out->Print("\n");
+      out->Print(method_dict,
+                 "def $Method$(self, $ParamName$: $ParamType$, "
+                 "context: grpc.ServicerContext) -> $ReturnType$: ...\n");
+    }
+  }
+  return true;
+}
+
+bool PrivateGenerator::PrintAddServicerToServerPyi(
+    const grpc_generator::Service* service, grpc_generator::Printer* out) {
+  StringMap service_dict;
+  service_dict["Service"] = service->name();
+  out->Print("\n");
+  out->Print(
+      service_dict,
+      "def add_$Service$Servicer_to_server("
+      "servicer: $Service$Servicer, server: Union[grpc.Server, grpc.aio.Server]"
+      ") -> None: ...\n");
+  return true;
+}
+
+bool PrivateGenerator::PrintServiceClassPyi(
+    const std::string& package_qualified_service_name,
+    const grpc_generator::Service* service, grpc_generator::Printer* out) {
+  StringMap dict;
+  dict["Service"] = service->name();
+  out->Print("\n");
+  out->Print("# This class is part of an EXPERIMENTAL API.\n");
+  out->Print(dict, "class $Service$(object):\n");
+  {
+    IndentScope class_indent(out);
+    StringVector service_comments = service->GetAllComments();
+    PrintAllComments(service_comments, out);
+    for (int i = 0; i < service->method_count(); ++i) {
+      const auto& method = service->method(i);
+      std::string request_module_and_class;
+      if (!method->get_module_and_message_path_input(
+              &request_module_and_class, generator_file_name,
+              generate_in_pb2_grpc, config.import_prefix,
+              config.prefixes_to_filter)) {
+        return false;
+      }
+      std::string response_module_and_class;
+      if (!method->get_module_and_message_path_output(
+              &response_module_and_class, generator_file_name,
+              generate_in_pb2_grpc, config.import_prefix,
+              config.prefixes_to_filter)) {
+        return false;
+      }
+
+      StringMap method_dict;
+      method_dict["Method"] = method->name();
+      method_dict["RequestType"] = request_module_and_class;
+      method_dict["ResponseType"] = response_module_and_class;
+
+      // Determine parameter type and return type
+      std::string request_param =
+          method->ClientStreaming() ? "request_iterator" : "request";
+      std::string request_type =
+          method->ClientStreaming()
+              ? "Iterator[" + request_module_and_class + "]"
+              : request_module_and_class;
+      std::string return_type;
+
+      if (!method->ClientStreaming() && !method->ServerStreaming()) {
+        return_type = response_module_and_class;
+      } else if (!method->ClientStreaming() && method->ServerStreaming()) {
+        return_type = "Iterator[" + response_module_and_class + "]";
+      } else if (method->ClientStreaming() && !method->ServerStreaming()) {
+        return_type = response_module_and_class;
+      } else {
+        return_type = "Iterator[" + response_module_and_class + "]";
+      }
+
+      method_dict["RequestParam"] = request_param;
+      method_dict["RequestParamType"] = request_type;
+      method_dict["ReturnType"] = return_type;
+
+      out->Print("\n");
+      out->Print("@staticmethod\n");
+      out->Print(method_dict, "def $Method$(\n");
+      {
+        IndentScope args_indent(out);
+        IndentScope args_double_indent(out);
+        out->Print(method_dict, "$RequestParam$: $RequestParamType$,\n");
+        out->Print("target: str,\n");
+        out->Print("options: Sequence[Tuple[str, Union[str, bytes]]] = ...,\n");
+        out->Print(
+            "channel_credentials: Optional[grpc.ChannelCredentials] = ...,\n");
+        out->Print("call_credentials: Optional[grpc.CallCredentials] = ...,\n");
+        out->Print("insecure: bool = ...,\n");
+        out->Print("compression: Optional[grpc.Compression] = ...,\n");
+        out->Print("wait_for_ready: Optional[bool] = ...,\n");
+        out->Print("timeout: Optional[float] = ...,\n");
+        out->Print(
+            "metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = "
+            "...,\n");
+        out->Print(method_dict, ") -> $ReturnType$: ...\n");
+      }
+    }
+  }
+  return true;
+}
+
+bool PrivateGenerator::PrintGAServicesPyi(grpc_generator::Printer* out) {
+  std::string package = file->package();
+  if (!package.empty()) {
+    package = package.append(".");
+  }
+  for (int i = 0; i < file->service_count(); ++i) {
+    auto service = file->service(i);
+    std::string package_qualified_service_name = package + service->name();
+    if (!(PrintStubPyi(package_qualified_service_name, service.get(), out) &&
+          PrintServicerPyi(service.get(), out) &&
+          PrintAddServicerToServerPyi(service.get(), out) &&
+          PrintServiceClassPyi(package_qualified_service_name, service.get(),
+                               out))) {
+      return false;
+    }
+  }
+  return true;
+}
+
+pair<bool, std::string> PrivateGenerator::GetGrpcServicesPyi() {
+  std::string output;
+  {
+    // Scope the output stream so it closes and finalizes output to the string.
+    auto out = file->CreatePrinter(&output);
+    generate_in_pb2_grpc = true;
+    if (!PrintPreamblePyi(out.get())) {
+      return pair(false, "");
+    }
+    if (!PrintGAServicesPyi(out.get())) {
+      return pair(false, "");
+    }
+  }
+  return pair(true, std::move(output));
+}
+
 }  // namespace
 
 GeneratorConfiguration::GeneratorConfiguration()
@@ -914,6 +1228,26 @@ static bool GenerateGrpc(GeneratorContext* context, PrivateGenerator& generator,
   }
 }
 
+static bool GenerateGrpcPyi(GeneratorContext* context,
+                            PrivateGenerator& generator,
+                            std::string file_name) {
+  bool success;
+  std::unique_ptr<ZeroCopyOutputStream> output;
+  std::unique_ptr<CodedOutputStream> coded_output;
+  std::string pyi_code;
+
+  output.reset(context->Open(file_name));
+  coded_output.reset(new CodedOutputStream(output.get()));
+  tie(success, pyi_code) = generator.GetGrpcServicesPyi();
+
+  if (success) {
+    coded_output->WriteRaw(pyi_code.data(), pyi_code.size());
+    return true;
+  } else {
+    return false;
+  }
+}
+
 static bool ParseParameters(const std::string& parameter,
                             std::string* grpc_version,
                             std::vector<std::string>* strip_prefixes,
@@ -944,6 +1278,7 @@ bool PythonGrpcGenerator::Generate(const FileDescriptor* file,
   // Get output file name.
   std::string pb2_file_name;
   std::string pb2_grpc_file_name;
+  std::string pb2_grpc_pyi_file_name;
   static const int proto_suffix_length = strlen(".proto");
   if (file->name().size() > static_cast<size_t>(proto_suffix_length) &&
       file->name().find_last_of(".proto") == file->name().size() - 1) {
@@ -953,6 +1288,7 @@ bool PythonGrpcGenerator::Generate(const FileDescriptor* file,
     std::replace(base.begin(), base.end(), '.', '/');
     pb2_file_name = base + "_pb2.py";
     pb2_grpc_file_name = base + "_pb2_grpc.py";
+    pb2_grpc_pyi_file_name = base + "_pb2_grpc.pyi";
   } else {
     *error = "Invalid proto file name. Proto file must end with .proto";
     return false;
@@ -967,9 +1303,11 @@ bool PythonGrpcGenerator::Generate(const FileDescriptor* file,
   PrivateGenerator generator(extended_config, &pbfile);
   if (!success) return false;
   if (grpc_version == "grpc_2_0") {
-    return GenerateGrpc(context, generator, pb2_grpc_file_name, true);
+    return GenerateGrpcPyi(context, generator, pb2_grpc_pyi_file_name) &&
+           GenerateGrpc(context, generator, pb2_grpc_file_name, true);
   } else if (grpc_version == "grpc_1_0") {
-    return GenerateGrpc(context, generator, pb2_grpc_file_name, true) &&
+    return GenerateGrpcPyi(context, generator, pb2_grpc_pyi_file_name) &&
+           GenerateGrpc(context, generator, pb2_grpc_file_name, true) &&
            GenerateGrpc(context, generator, pb2_file_name, false);
   } else {
     *error = "Invalid grpc version '" + grpc_version + "'.";
