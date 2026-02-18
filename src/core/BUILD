@@ -11810,4 +11810,22 @@ WELL_KNOWN_PROTO_TARGETS = [
 
 grpc_add_well_known_proto_upb_targets(targets = WELL_KNOWN_PROTO_TARGETS)
 
+grpc_cc_library(
+    name = "session_endpoint",
+    srcs = ["transport/session_endpoint.cc"],
+    hdrs = ["transport/session_endpoint.h"],
+    deps = [],
+)
+
+grpc_cc_library(
+    name = "virtual_channel",
+    srcs = [
+        "client_channel/virtual_channel.cc",
+    ],
+    hdrs = [
+        "client_channel/virtual_channel.h",
+    ],
+    deps = [],
+)
+
 grpc_generate_one_off_internal_targets()

@@ -1352,6 +1352,12 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "generic_stub_session_hdrs",
+    hdrs = ["include/grpcpp/impl/generic_stub_session.h"],
+    deps = [],
+)
+
+grpc_cc_library(
     name = "channelz",
     srcs = [
         "//src/core:channelz/channel_trace.cc",
