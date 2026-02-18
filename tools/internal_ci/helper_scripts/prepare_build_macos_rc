@@ -15,13 +15,21 @@
 # Source this rc script to prepare the environment for macos builds
 
 # Print basic info about the mac worker
-echo "kokoro pool: \"$KOKORO_JOB_POOL\""
-echo "OS: $(sw_vers -productName) $(sw_vers -productVersion) $(sw_vers -buildVersion)"
-echo "CPU type: $(sysctl -n machdep.cpu.brand_string)"
+{ set +x; } 2>/dev/null
+echo "-- Kokoro worker info --"
+echo "Kokoro pool: ${KOKORO_JOB_POOL:-undefined}"
+if [[ -f /VERSION ]]; then
+  echo "Kokoro VM image: $(cat /VERSION)"
+fi
+echo "-- System --"
+echo "System: $(uname -a)"
+echo "Python: $(python3 -VV)"
+echo -e "-- OS --\n$(sw_vers -productName) $(sw_vers -productVersion) $(sw_vers -buildVersion)"
+echo "-- CPU --"
 echo "CPU: $(sysctl -n machdep.cpu.vendor) $(uname -m) Family $(sysctl -n machdep.cpu.family) Model $(sysctl -n machdep.cpu.brand_string)"
 echo "CPU Cores: $(sysctl -n hw.ncpu)"
-echo "Memory: $(sysctl -n hw.memsize)"
-echo "Kokoro image version: $(cat /VERSION)"
+echo -e "-- Memory --\n$(sysctl -n hw.memsize)"
+set -x
 
 # Info on disk usage and mounted volumes
 mount
