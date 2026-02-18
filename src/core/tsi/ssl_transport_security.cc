@@ -109,6 +109,7 @@ using TlsSessionKeyLogger = tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger;
 
 using tsi::PrivateKey;
 using tsi::RootCertInfo;
+
 // --- Structure definitions. ---
 
 struct tsi_ssl_root_certs_store {
@@ -2566,20 +2567,6 @@ static tsi_result create_tsi_ssl_handshaker(
       static_cast<unsigned char*>(gpr_zalloc(impl->outgoing_bytes_buffer_size));
   impl->vtable = &handshaker_vtable;
   impl->factory_ref = tsi_ssl_handshaker_factory_ref(factory);
-<<<<<<< HEAD
-  *handshaker = &impl->base;
-
-  grpc_core::PrivateKeySigner* sign_function = GetPrivateKeySigner(ssl);
-  if (sign_function != nullptr) {
-    TlsPrivateKeyOffloadContext* private_key_offload_context =
-        new TlsPrivateKeyOffloadContext();
-    private_key_offload_context->handshaker = *handshaker;
-
-    if (!SSL_set_ex_data(ssl, g_ssl_ex_private_key_offloading_context_index,
-                         private_key_offload_context)) {
-      return TSI_INTERNAL_ERROR;
-    }
-=======
   *handshaker = impl;
 
   if (!SSL_set_ex_data(ssl, g_ssl_ex_handshaker_index, impl)) {
@@ -2590,7 +2577,6 @@ static tsi_result create_tsi_ssl_handshaker(
   if (ssl_ctx != nullptr) {
     impl->key_signer = static_cast<grpc_core::PrivateKeySigner*>(
         SSL_CTX_get_ex_data(ssl_ctx, g_ssl_ctx_ex_private_key_function_index));
->>>>>>> ana/private_key_signer
   }
 
   return TSI_OK;

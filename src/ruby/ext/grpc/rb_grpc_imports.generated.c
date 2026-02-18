@@ -202,8 +202,8 @@ grpc_auth_context_add_cstring_property_type grpc_auth_context_add_cstring_proper
 grpc_auth_context_set_peer_identity_property_name_type grpc_auth_context_set_peer_identity_property_name_import;
 grpc_authorization_policy_provider_static_data_create_type grpc_authorization_policy_provider_static_data_create_import;
 grpc_authorization_policy_provider_file_watcher_create_type grpc_authorization_policy_provider_file_watcher_create_import;
-grpc_authorization_policy_provider_release_type grpc_authorization_policy_provider_release_import;
-grpc_tls_identity_pairs_add_pair_with_signer_type grpc_tls_identity_pairs_add_pair_with_signer_import;
+grpc_authorization_policy_provider_release_type
+    grpc_authorization_policy_provider_release_import;
 grpc_slice_ref_type grpc_slice_ref_import;
 grpc_slice_unref_type grpc_slice_unref_import;
 grpc_slice_copy_type grpc_slice_copy_import;
@@ -491,8 +491,9 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_auth_context_set_peer_identity_property_name_import = (grpc_auth_context_set_peer_identity_property_name_type) GetProcAddress(library, "grpc_auth_context_set_peer_identity_property_name");
   grpc_authorization_policy_provider_static_data_create_import = (grpc_authorization_policy_provider_static_data_create_type) GetProcAddress(library, "grpc_authorization_policy_provider_static_data_create");
   grpc_authorization_policy_provider_file_watcher_create_import = (grpc_authorization_policy_provider_file_watcher_create_type) GetProcAddress(library, "grpc_authorization_policy_provider_file_watcher_create");
-  grpc_authorization_policy_provider_release_import = (grpc_authorization_policy_provider_release_type) GetProcAddress(library, "grpc_authorization_policy_provider_release");
-  grpc_tls_identity_pairs_add_pair_with_signer_import = (grpc_tls_identity_pairs_add_pair_with_signer_type) GetProcAddress(library, "grpc_tls_identity_pairs_add_pair_with_signer");
+  grpc_authorization_policy_provider_release_import =
+      (grpc_authorization_policy_provider_release_type)GetProcAddress(
+          library, "grpc_authorization_policy_provider_release");
   grpc_slice_ref_import = (grpc_slice_ref_type) GetProcAddress(library, "grpc_slice_ref");
   grpc_slice_unref_import = (grpc_slice_unref_type) GetProcAddress(library, "grpc_slice_unref");
   grpc_slice_copy_import = (grpc_slice_copy_type) GetProcAddress(library, "grpc_slice_copy");

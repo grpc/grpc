@@ -50,16 +50,6 @@ using tsi::RootCertInfo;
 #define SERVER_KEY_PATH_1 "src/core/tsi/test_creds/server1.key"
 
 namespace grpc_core {
-namespace {
-RefCountedPtr<grpc_tls_certificate_provider> CreateTestingCertificateProvider(
-    const std::string& root_cert_info,
-    const PemKeyCertPairList& pem_key_cert_pairs) {
-  auto provider = MakeRefCounted<InMemoryCertificateProvider>();
-  provider->UpdateRoot(std::make_shared<RootCertInfo>(root_cert_info));
-  provider->UpdateIdentity(pem_key_cert_pairs);
-  return provider;
-}
-}  // namespace
 namespace testing {
 
 constexpr const char* kRootCertName = "root_cert_name";
