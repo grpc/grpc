@@ -152,10 +152,6 @@ EXPERIMENTS = {
             "xds_end2end_test": [
                 "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
-                "xds_channel_filter_chain_per_route",
-            ],
-            "xds_test": [
-                "xds_channel_filter_chain_per_route",
             ],
         },
         "on": {
@@ -196,6 +192,12 @@ EXPERIMENTS = {
             ],
             "secure_endpoint_test": [
                 "event_engine_secure_endpoint",
+            ],
+            "xds_end2end_test": [
+                "xds_channel_filter_chain_per_route",
+            ],
+            "xds_test": [
+                "xds_channel_filter_chain_per_route",
             ],
         },
     },
@@ -265,10 +267,6 @@ EXPERIMENTS = {
             "xds_end2end_test": [
                 "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
-                "xds_channel_filter_chain_per_route",
-            ],
-            "xds_test": [
-                "xds_channel_filter_chain_per_route",
             ],
         },
         "on": {
@@ -309,6 +307,12 @@ EXPERIMENTS = {
             ],
             "secure_endpoint_test": [
                 "event_engine_secure_endpoint",
+            ],
+            "xds_end2end_test": [
+                "xds_channel_filter_chain_per_route",
+            ],
+            "xds_test": [
+                "xds_channel_filter_chain_per_route",
             ],
         },
     },
@@ -378,10 +382,6 @@ EXPERIMENTS = {
             "xds_end2end_test": [
                 "error_flatten",
                 "subchannel_wrapper_cleanup_on_orphan",
-                "xds_channel_filter_chain_per_route",
-            ],
-            "xds_test": [
-                "xds_channel_filter_chain_per_route",
             ],
         },
         "on": {
@@ -422,6 +422,12 @@ EXPERIMENTS = {
             ],
             "secure_endpoint_test": [
                 "event_engine_secure_endpoint",
+            ],
+            "xds_end2end_test": [
+                "xds_channel_filter_chain_per_route",
+            ],
+            "xds_test": [
+                "xds_channel_filter_chain_per_route",
             ],
         },
     },
