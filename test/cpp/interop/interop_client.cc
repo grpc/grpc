@@ -1384,7 +1384,7 @@ bool InteropClient::DoMcsConnectionScaling() {
     return TransientFailureOrAbort();
   }
   std::string clientSocketAddressInCall1 = response1.client_socket_address();
-  GRPC_CHECK(clientSocketAddressInCall1.length() > 0);
+  GRPC_CHECK(!clientSocketAddressInCall1.empty());
 
   VLOG(2) << "Sending Mcs connection scaling streaming rpc2 ...";
 
@@ -1426,6 +1426,7 @@ bool InteropClient::DoMcsConnectionScaling() {
     return TransientFailureOrAbort();
   }  
   std::string clientSocketAddressInCall3 = response3.client_socket_address();
+  GRPC_CHECK(!clientSocketAddressInCall3.empty());
 
   // A new connection should have been used for the 3rd stream.
   GRPC_CHECK(clientSocketAddressInCall3 != clientSocketAddressInCall1);
