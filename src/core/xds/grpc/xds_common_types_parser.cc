@@ -804,8 +804,7 @@ HeaderMutationRules ParseHeaderMutationRules(
     ValidationErrors* errors) {
   HeaderMutationRules header_mutation_rules_config;
   if (header_mutation_rules == nullptr) {
-    ValidationErrors::ScopedField field(
-        errors, ".header_mutation_rules");
+    ValidationErrors::ScopedField field(errors, ".header_mutation_rules");
     errors->AddError("header_mutation_rules field is not present");
   } else {
     header_mutation_rules_config.disallow_all =
@@ -819,8 +818,7 @@ HeaderMutationRules ParseHeaderMutationRules(
             header_mutation_rules);
     if (disallow_expression_proto != nullptr) {
       ValidationErrors::ScopedField field(
-          errors,
-          ".header_mutation_rules.disallow_expression");
+          errors, ".header_mutation_rules.disallow_expression");
       header_mutation_rules_config.disallow_expression =
           ParseRegexMatcher(disallow_expression_proto, errors);
     }

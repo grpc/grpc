@@ -40437,6 +40437,10 @@ add_executable(xds_common_types_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/resource.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/resource.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/resource.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/common/mutation_rules/v3/mutation_rules.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/common/mutation_rules/v3/mutation_rules.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/common/mutation_rules/v3/mutation_rules.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/envoy/config/common/mutation_rules/v3/mutation_rules.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/address.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/address.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/address.pb.h
