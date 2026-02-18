@@ -24,6 +24,7 @@
 #include <limits.h>
 
 #include <algorithm>
+#include <atomic>
 #include <memory>
 #include <new>
 #include <optional>
@@ -47,6 +48,8 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/promise/cancel_callback.h"
+#include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -1383,10 +1386,28 @@ void NewSubchannel::LegacyConnectedSubchannel::SubchannelCall::
 }
 
 //
+// NewSubchannel::QueuedCallInterface
+//
+
+class NewSubchannel::QueuedCallInterface {
+ public:
+  virtual ~QueuedCallInterface() = default;
+
+  virtual void ResumeOnConnectionLocked(
+      ConnectedSubchannel* connected_subchannel)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&NewSubchannel::mu_) = 0;
+
+  virtual void FailLocked(absl::Status status)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&NewSubchannel::mu_) = 0;
+};
+
+//
 // NewSubchannel::QueuedCall
 //
 
-class NewSubchannel::QueuedCall final : public Subchannel::Call {
+class NewSubchannel::QueuedCall final
+    : public Subchannel::Call,
+      public NewSubchannel::QueuedCallInterface {
  public:
   QueuedCall(WeakRefCountedPtr<NewSubchannel> subchannel, CreateCallArgs args);
   ~QueuedCall() override;
@@ -1407,9 +1428,9 @@ class NewSubchannel::QueuedCall final : public Subchannel::Call {
   }
 
   void ResumeOnConnectionLocked(ConnectedSubchannel* connected_subchannel)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&NewSubchannel::mu_);
+      override ABSL_EXCLUSIVE_LOCKS_REQUIRED(&NewSubchannel::mu_);
 
-  void FailLocked(absl::Status status)
+  void FailLocked(absl::Status status) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&NewSubchannel::mu_);
 
  private:
@@ -1449,7 +1470,7 @@ class NewSubchannel::QueuedCall final : public Subchannel::Call {
   // in the queue, we set this pointer to null.  The queuing code knows to
   // ignore null pointers when draining the queue, which ensures that we
   // don't try to dequeue this call after it's been cancelled.
-  QueuedCall*& queue_entry_;
+  QueuedCallInterface*& queue_entry_;
 
   Canceller* canceller_ ABSL_GUARDED_BY(&NewSubchannel::mu_);
 
@@ -1605,7 +1626,6 @@ void NewSubchannel::QueuedCall::ResumeOnConnectionLocked(
       << "subchannel " << subchannel_.get() << " queued call " << this
       << ": resuming on connected_subchannel " << connected_subchannel;
   canceller_ = nullptr;
-  queue_entry_ = nullptr;
   MutexLock lock(&mu_);
   grpc_error_handle error;
   subchannel_call_ = connected_subchannel->CreateCall(args_, &error);
@@ -1637,7 +1657,6 @@ void NewSubchannel::QueuedCall::FailLocked(absl::Status status) {
       << "subchannel " << subchannel_.get() << " queued call " << this
       << ": failing: " << status;
   canceller_ = nullptr;
-  queue_entry_ = nullptr;
   is_retriable_.store(true);
   MutexLock lock(&mu_);
   cancel_error_ = status;
@@ -1651,42 +1670,60 @@ void NewSubchannel::QueuedCall::FailLocked(absl::Status status) {
 
 class NewSubchannel::NewConnectedSubchannel final : public ConnectedSubchannel {
  public:
-  class TransportCallDestination final : public CallDestination {
-   public:
-    explicit TransportCallDestination(OrphanablePtr<ClientTransport> transport)
-        : transport_(std::move(transport)) {}
-
-    ClientTransport* transport() { return transport_.get(); }
-
-    void HandleCall(CallHandler handler) override {
-      transport_->StartCall(std::move(handler));
+  NewConnectedSubchannel(WeakRefCountedPtr<NewSubchannel> subchannel_in,
+                         OrphanablePtr<ClientTransport> transport,
+                         const ChannelArgs& args,
+                         uint32_t max_concurrent_streams, absl::Status* status)
+      : ConnectedSubchannel(std::move(subchannel_in), args,
+                            max_concurrent_streams) {
+    InterceptionChainBuilder builder(args.SetObject(transport.get()));
+    builder.AddOnServerTrailingMetadata(
+        [self = WeakRefAsSubclass<NewConnectedSubchannel>()](ServerMetadata&) {
+          if (self->ReturnQuotaForRpc()) {
+            self->subchannel()->RetryQueuedRpcs();
+          }
+        });
+    if (subchannel()->channelz_node_ != nullptr) {
+      // TODO(ctiller): If/when we have a good way to access the subchannel
+      // from a filter (maybe GetContext<Subchannel>?), consider replacing
+      // these two hooks with a filter so that we can avoid storing two
+      // separate refs to the channelz node in each connection.
+      builder.AddOnClientInitialMetadata(
+          [channelz_node = subchannel()->channelz_node_](ClientMetadata&) {
+            channelz_node->RecordCallStarted();
+          });
+      builder.AddOnServerTrailingMetadata(
+          [channelz_node =
+               subchannel()->channelz_node_](ServerMetadata& metadata) {
+            if (IsStatusOk(metadata)) {
+              channelz_node->RecordCallSucceeded();
+            } else {
+              channelz_node->RecordCallFailed();
+            }
+          });
     }
-
-    void Orphaned() override { transport_.reset(); }
-
-   private:
-    OrphanablePtr<ClientTransport> transport_;
-  };
-
-  NewConnectedSubchannel(
-      WeakRefCountedPtr<NewSubchannel> subchannel,
-      RefCountedPtr<UnstartedCallDestination> call_destination,
-      RefCountedPtr<TransportCallDestination> transport,
-      const ChannelArgs& args, uint32_t max_concurrent_streams)
-      : ConnectedSubchannel(std::move(subchannel), args,
-                            max_concurrent_streams),
-        call_destination_(std::move(call_destination)),
-        transport_(std::move(transport)) {}
+    CoreConfiguration::Get().channel_init().AddToInterceptionChainBuilder(
+        GRPC_CLIENT_SUBCHANNEL, builder);
+    transport_destination_ =
+        MakeRefCounted<TransportCallDestination>(std::move(transport));
+    auto call_destination = builder.Build(transport_destination_);
+    if (!call_destination.ok()) {
+      *status = call_destination.status();
+    } else {
+      call_destination_ = std::move(*call_destination);
+    }
+  }
 
   void Orphaned() override {
     call_destination_.reset();
-    transport_.reset();
+    transport_destination_.reset();
   }
 
   void StartWatch(
       grpc_pollset_set*,
       OrphanablePtr<TransportConnectivityStateWatcher> watcher) override {
-    transport_->transport()->StartConnectivityWatch(std::move(watcher));
+    transport_destination_->transport()->StartConnectivityWatch(
+        std::move(watcher));
   }
 
   void Ping(absl::AnyInvocable<void(absl::Status)>) override {
@@ -1708,8 +1745,110 @@ class NewSubchannel::NewConnectedSubchannel final : public ConnectedSubchannel {
   }
 
  private:
+  class TransportCallDestination final : public CallDestination {
+   public:
+    explicit TransportCallDestination(OrphanablePtr<ClientTransport> transport)
+        : transport_(std::move(transport)) {}
+
+    ClientTransport* transport() { return transport_.get(); }
+
+    void HandleCall(CallHandler handler) override {
+      transport_->StartCall(std::move(handler));
+    }
+
+    void Orphaned() override { transport_.reset(); }
+
+   private:
+    OrphanablePtr<ClientTransport> transport_;
+  };
+
   RefCountedPtr<UnstartedCallDestination> call_destination_;
-  RefCountedPtr<TransportCallDestination> transport_;
+  RefCountedPtr<TransportCallDestination> transport_destination_;
+};
+
+//
+// NewSubchannel::QueuingUnstartedCallDestination
+//
+
+class NewSubchannel::QueuingUnstartedCallDestination final
+    : public UnstartedCallDestination,
+      public NewSubchannel::QueuedCallInterface {
+ public:
+  explicit QueuingUnstartedCallDestination(
+      WeakRefCountedPtr<NewSubchannel> subchannel)
+      : subchannel_(std::move(subchannel)),
+        queue_entry_(subchannel_->queued_calls_.emplace_back(this)) {
+    GRPC_TRACE_LOG(subchannel_call, INFO)
+        << "subchannel " << subchannel_.get() << ": created queued call "
+        << this << ", queue size=" << subchannel_->queued_calls_.size();
+  }
+
+  void Orphaned() override {
+    MutexLock lock(&subchannel_->mu_);
+    GRPC_TRACE_LOG(subchannel_call, INFO)
+        << "subchannel " << subchannel_.get() << " queued call " << this
+        << ": orphaned, queue_entry_valid_=" << queue_entry_valid_;
+    if (queue_entry_valid_) queue_entry_ = nullptr;
+  }
+
+  void StartCall(UnstartedCallHandler unstarted_call_handler) override {
+    unstarted_call_handler.SpawnInfallible(
+        "subchannel_queue",
+        [unstarted_call_handler,
+         self = RefAsSubclass<QueuingUnstartedCallDestination>()]() mutable {
+          return Map(
+              self->connection_latch_.Wait(),
+              [unstarted_call_handler = std::move(unstarted_call_handler),
+               self](absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>
+                         connection) mutable {
+                if (!connection.ok()) {
+                  GRPC_TRACE_LOG(subchannel_call, INFO)
+                      << "subchannel " << self->subchannel_.get()
+                      << " queued call " << self.get()
+                      << ": failing: " << connection.status();
+                  // Mark the call as eligible for transparent retries.
+                  ServerMetadataHandle trailing_metadata =
+                      ServerMetadataFromStatus(connection.status());
+                  trailing_metadata->Set(
+                      GrpcStreamNetworkState(),
+                      GrpcStreamNetworkState::kNotSentOnWire);
+                  unstarted_call_handler.PushServerTrailingMetadata(
+                      std::move(trailing_metadata));
+                  return;
+                }
+                GRPC_TRACE_LOG(subchannel_call, INFO)
+                    << "subchannel " << self->subchannel_.get()
+                    << " queued call " << self.get()
+                    << ": using connection: " << connection->get();
+                (*connection)->StartCall(std::move(unstarted_call_handler));
+              });
+        });
+  }
+
+  void ResumeOnConnectionLocked(ConnectedSubchannel* connected_subchannel)
+      override ABSL_EXCLUSIVE_LOCKS_REQUIRED(&NewSubchannel::mu_) {
+    GRPC_TRACE_LOG(subchannel_call, INFO)
+        << "subchannel " << subchannel_.get() << " queued call " << this
+        << ": resuming call on connection " << connected_subchannel;
+    queue_entry_valid_ = false;
+    connection_latch_.Set(connected_subchannel->unstarted_call_destination());
+  }
+
+  void FailLocked(absl::Status status) override
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&NewSubchannel::mu_) {
+    GRPC_TRACE_LOG(subchannel_call, INFO)
+        << "subchannel " << subchannel_.get() << " queued call " << this
+        << ": failing call: " << status;
+    queue_entry_valid_ = false;
+    connection_latch_.Set(std::move(status));
+  }
+
+ private:
+  WeakRefCountedPtr<NewSubchannel> subchannel_;
+  bool queue_entry_valid_ ABSL_GUARDED_BY(&NewSubchannel::mu_) = true;
+  QueuedCallInterface*& queue_entry_;
+  Latch<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>>
+      connection_latch_;
 };
 
 //
@@ -2225,43 +2364,16 @@ bool NewSubchannel::PublishTransportLocked() {
     OrphanablePtr<ClientTransport> transport(
         std::exchange(connecting_result_.transport, nullptr)
             ->client_transport());
-    InterceptionChainBuilder builder(
-        connecting_result_.channel_args.SetObject(transport.get()));
-    if (channelz_node_ != nullptr) {
-      // TODO(ctiller): If/when we have a good way to access the subchannel
-      // from a filter (maybe GetContext<Subchannel>?), consider replacing
-      // these two hooks with a filter so that we can avoid storing two
-      // separate refs to the channelz node in each connection.
-      builder.AddOnClientInitialMetadata(
-          [channelz_node = channelz_node_](ClientMetadata&) {
-            channelz_node->RecordCallStarted();
-          });
-      builder.AddOnServerTrailingMetadata(
-          [channelz_node = channelz_node_](ServerMetadata& metadata) {
-            if (IsStatusOk(metadata)) {
-              channelz_node->RecordCallSucceeded();
-            } else {
-              channelz_node->RecordCallFailed();
-            }
-          });
-    }
-    CoreConfiguration::Get().channel_init().AddToInterceptionChainBuilder(
-        GRPC_CLIENT_SUBCHANNEL, builder);
-    auto transport_destination =
-        MakeRefCounted<NewConnectedSubchannel::TransportCallDestination>(
-            std::move(transport));
-    auto call_destination = builder.Build(transport_destination);
-    if (!call_destination.ok()) {
+    absl::Status status;
+    connected_subchannel = MakeRefCounted<NewConnectedSubchannel>(
+        WeakRef().TakeAsSubclass<NewSubchannel>(), std::move(transport), args_,
+        connecting_result_.max_concurrent_streams, &status);
+    if (!status.ok()) {
       connecting_result_.Reset();
       LOG(ERROR) << "subchannel " << this << " " << key_.ToString()
-                 << ": error initializing subchannel stack: "
-                 << call_destination.status();
+                 << ": error initializing subchannel stack: " << status;
       return false;
     }
-    connected_subchannel = MakeRefCounted<NewConnectedSubchannel>(
-        WeakRef().TakeAsSubclass<NewSubchannel>(), std::move(*call_destination),
-        std::move(transport_destination), args_,
-        connecting_result_.max_concurrent_streams);
   }
   connecting_result_.Reset();
   // Publish.
@@ -2313,13 +2425,30 @@ RefCountedPtr<Subchannel::Call> NewSubchannel::CreateCall(
 }
 
 RefCountedPtr<UnstartedCallDestination> NewSubchannel::call_destination() {
-  // TODO(roth): Implement connection scaling for v3.
   RefCountedPtr<ConnectedSubchannel> connected_subchannel;
   {
     MutexLock lock(&mu_);
-    if (!connections_.empty()) connected_subchannel = connections_[0];
+    // If we hit a race condition where the LB picker chose the subchannel
+    // at the same time as the last connection was closed, then tell the
+    // channel to re-queue the pick.
+    if (connections_.empty()) return nullptr;
+    // Otherwise, choose a connection.
+    // Optimization: If the queue is non-empty, then we know there won't be
+    // a connection that we can send this RPC on, so we don't bother looking.
+    if (queued_calls_.empty()) connected_subchannel = ChooseConnectionLocked();
+    // If we don't have a connection to send the RPC on, queue it.
+    if (connected_subchannel == nullptr) {
+      // The QueuingUnstartedCallDestination object adds itself to
+      // queued_calls_.
+      return RefCountedPtr<QueuingUnstartedCallDestination>(
+          GetContext<Arena>()->New<QueuingUnstartedCallDestination>(
+              WeakRef().TakeAsSubclass<NewSubchannel>()));
+    }
   }
-  if (connected_subchannel == nullptr) return nullptr;
+  // Found a connection, so use it.
+  GRPC_TRACE_LOG(subchannel_call, INFO)
+      << "subchannel " << this << " " << key_.ToString()
+      << ": creating call on connection " << connected_subchannel.get();
   return connected_subchannel->unstarted_call_destination();
 }
 
@@ -2367,7 +2496,7 @@ void NewSubchannel::RetryQueuedRpcsLocked() {
   while (!queued_calls_.empty()) {
     GRPC_TRACE_LOG(subchannel_call, INFO)
         << "  retrying first queued RPC, queue size=" << queued_calls_.size();
-    QueuedCall* queued_call = queued_calls_.front();
+    QueuedCallInterface* queued_call = queued_calls_.front();
     if (queued_call == nullptr) {
       GRPC_TRACE_LOG(subchannel_call, INFO) << "  RPC already cancelled";
     } else {
@@ -2404,7 +2533,7 @@ void NewSubchannel::FailAllQueuedRpcsLocked(absl::Status status) {
   GRPC_TRACE_LOG(subchannel_call, INFO)
       << "subchannel " << this << ": failing all queued RPCs: " << status;
   status = PrependAddressToStatusMessage(key_, status);
-  for (QueuedCall* queued_call : queued_calls_) {
+  for (QueuedCallInterface* queued_call : queued_calls_) {
     if (queued_call != nullptr) queued_call->FailLocked(status);
   }
   queued_calls_.clear();

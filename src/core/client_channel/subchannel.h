@@ -570,7 +570,9 @@ class NewSubchannel final : public Subchannel {
 
   class ConnectionStateWatcher;
 
+  class QueuedCallInterface;
   class QueuedCall;
+  class QueuingUnstartedCallDestination;
 
   // Tears down any existing connection, and arranges for destruction
   void Orphaned() override ABSL_LOCKS_EXCLUDED(mu_);
@@ -680,7 +682,7 @@ class NewSubchannel final : public Subchannel {
   // this data structure must guarantee that references to entries are not
   // invalidated as entries are added or removed from the queue (i.e.,
   // std::vector<> would not work).
-  std::deque<QueuedCall*> queued_calls_ ABSL_GUARDED_BY(mu_);
+  std::deque<QueuedCallInterface*> queued_calls_ ABSL_GUARDED_BY(mu_);
 };
 
 void TestOnlySetSubchannelAlwaysSendCallsToTransport(bool enabled);
