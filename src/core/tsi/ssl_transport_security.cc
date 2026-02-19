@@ -225,6 +225,9 @@ namespace {
 
 static void MaybeSetHandshakerNextArgsError(tsi_ssl_handshaker* handshaker,
                                             absl::string_view error) {
+  if (handshaker == nullptr) {
+    return;
+  }
   if (handshaker->handshaker_next_args.has_value()) {
     *handshaker->handshaker_next_args->error = std::string(error);
   }
@@ -428,6 +431,9 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
     SSL* ssl, uint8_t* out, size_t* out_len, size_t max_out,
     uint16_t signature_algorithm, const uint8_t* in, size_t in_len) {
   tsi_ssl_handshaker* handshaker = GetHandshaker(ssl);
+  if (handshaker == nullptr) {
+    return ssl_private_key_failure;
+  }
   if (handshaker->is_shutdown) {
     MaybeSetHandshakerNextArgsError(handshaker, "Handshaker is shuting down");
     return ssl_private_key_failure;
