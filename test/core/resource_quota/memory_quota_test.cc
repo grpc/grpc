@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
@@ -212,6 +213,26 @@ TEST(MemoryQuotaTest, AllMemoryQuotas) {
   EXPECT_EQ(gather(), std::set<std::string>({"m1", "m2"}));
   m1.reset();
   EXPECT_EQ(gather(), std::set<std::string>({"m2"}));
+}
+
+TEST(MemoryQuotaTest, TakeCanRunWithoutExecCtx) {
+  // Confirm that we are indeed running without an ExecCtx.
+  EXPECT_EQ(ExecCtx::Get(), nullptr);
+
+  // Create a resource quota with a small memory limit.
+  auto quota = MakeResourceQuota("test_resource_quota");
+  quota->memory_quota()->SetSize(1024);
+
+  {
+    // Create an allocator from this quota.
+    auto allocator =
+        quota->memory_quota()->CreateMemoryAllocator("test_allocator");
+
+    // Since the quota is 1024 and we ask for 2048, it will enter overcommit.
+    // In overcommit, Take() calls ForceWakeup() on the reclaimer activity.
+    auto slice = allocator.MakeSlice(2048);
+    grpc_slice_unref(slice);
+  }
 }
 
 TEST(MemoryQuotaTest, ContainerMemoryAccountedFor) {
