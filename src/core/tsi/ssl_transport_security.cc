@@ -228,7 +228,8 @@ static void MaybeSetHandshakerNextArgsError(tsi_ssl_handshaker* handshaker,
   if (handshaker == nullptr) {
     return;
   }
-  if (handshaker->handshaker_next_args.has_value()) {
+  if (handshaker->handshaker_next_args.has_value() &&
+      handshaker->handshaker_next_args->error != nullptr) {
     *handshaker->handshaker_next_args->error = std::string(error);
   }
 }
