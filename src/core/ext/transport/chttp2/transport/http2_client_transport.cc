@@ -447,8 +447,6 @@ Http2Status Http2ClientTransport::ProcessMetadata(
     if (read_result.IsOk()) {
       ServerMetadataHandle metadata = TakeValue(std::move(read_result));
       if (incoming_headers_.HeaderHasEndStream()) {
-        // TODO(tjagtap) : [PH2][P1] : Is this the right way to differentiate
-        // between initial and trailing metadata?
         stream->MarkHalfClosedRemote();
         stream->did_receive_trailing_metadata = true;
         BeginCloseStream(stream, /*reset_stream_error_code=*/std::nullopt,
@@ -1160,10 +1158,11 @@ absl::Status Http2ClientTransport::DequeueStreamFrames(
            "stream_id = "
         << stream->GetStreamId();
     stream->MarkHalfClosedLocal();
-    CloseStream(
-        stream,
-        CloseStreamArgs{/*close_reads=*/stream->did_receive_trailing_metadata,
-                        /*close_writes=*/true});
+
+    if (stream->did_receive_trailing_metadata) {
+      CloseStream(stream, CloseStreamArgs{/*close_reads=*/true,
+                                          /*close_writes=*/true});
+    }
   }
   if (result.ResetStreamDequeued()) {
     GRPC_HTTP2_CLIENT_DLOG
@@ -1661,7 +1660,9 @@ void Http2ClientTransport::BeginCloseStream(
   } else {
     // Callers taking this path:
     // 1. Reading Trailing Metadata (MAY send half close from OnDone).
-    if (stream->IsClosedForWrites()) {
+    // If a half close frame has already been sent, we should close the stream
+    // for reads and writes.
+    if (stream->IsHalfClosedLocal() || stream->IsStreamClosed()) {
       close_reads = true;
       close_writes = true;
       GRPC_HTTP2_CLIENT_DLOG
@@ -1941,6 +1942,16 @@ bool Http2ClientTransport::SetOnDone(CallHandler call_handler,
         GRPC_HTTP2_CLIENT_DLOG
             << "PH2: Client call " << self.get() << " id=" << stream_id
             << " done: stream=" << stream.get() << " cancelled=" << cancelled;
+
+        // If the stream is already closed for writes, then we don't need to
+        // enqueue the reset stream or the half closed frame.
+        if (stream->IsClosedForWrites()) {
+          GRPC_HTTP2_CLIENT_DLOG << "PH2: Client call " << self.get()
+                                 << " id=" << stream->GetStreamId()
+                                 << " done: stream already closed for writes";
+          return;
+        }
+
         if (cancelled) {
           // In most of the cases, EnqueueResetStream would be a no-op as
           // BeginCloseStream would have already enqueued the reset stream.

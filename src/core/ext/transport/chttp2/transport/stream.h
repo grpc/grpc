@@ -21,8 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
 #include <cstdint>
-#include <limits>
 #include <string>
 #include <utility>
 
@@ -222,10 +222,22 @@ struct Stream : public RefCounted<Stream> {
   inline bool IsStreamHalfClosedRemote() const {
     return stream_state == HttpStreamState::kHalfClosedRemote;
   }
+  inline bool IsHalfClosedLocal() const {
+    return stream_state == HttpStreamState::kHalfClosedLocal;
+  }
+  inline bool IsStreamClosed() const {
+    return stream_state == HttpStreamState::kClosed;
+  }
+
   inline uint32_t GetStreamId() const { return stream_id; }
 
-  inline bool IsClosedForWrites() const { return is_write_closed; }
-  inline void SetWriteClosed() { is_write_closed = true; }
+  inline bool IsClosedForWrites() const {
+    return is_write_closed.load(std::memory_order_relaxed);
+  }
+
+  inline void SetWriteClosed() {
+    is_write_closed.store(true, std::memory_order_relaxed);
+  }
 
   inline bool CanSendWindowUpdateFrames() const {
     return stream_state == HttpStreamState::kOpen ||
@@ -268,7 +280,7 @@ struct Stream : public RefCounted<Stream> {
   // Similarly if a stream is closed for reads(this is achieved by removing the
   // stream from the transport map), then all the frames read on that stream
   // will be dropped.
-  bool is_write_closed;
+  std::atomic<bool> is_write_closed;
   // This MUST be accessed from the transport party.
   HttpStreamState stream_state;
   uint32_t stream_id;
