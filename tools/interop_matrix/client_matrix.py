@@ -898,6 +898,15 @@ LANG_RELEASE_MATRIX = {
                     runtimes=["python"], testcases_file="python__master"
                 ),
             ),
+            # Python images can't be anymore built without #40959 temporary fix,
+            # or #40833 proper pyproject migration.
+            # TODO(sreenithi): update this once v1.76.1 is out.
+            # (
+            #     "v1.76.0",
+            #     ReleaseInfo(
+            #         runtimes=["python"], testcases_file="python__master"
+            #     ),
+            # ),
             (
                 "v1.78.0",
                 ReleaseInfo(
