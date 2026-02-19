@@ -434,8 +434,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/transport/hpack_parser_table.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/http2_client_transport.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/http2_client_transport.h )
-  s.files += %w( src/core/ext/transport/chttp2/transport/http2_server_transport.cc )
-  s.files += %w( src/core/ext/transport/chttp2/transport/http2_server_transport.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/http2_settings.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/http2_settings.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/http2_settings_manager.cc )
