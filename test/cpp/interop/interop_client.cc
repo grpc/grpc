@@ -1402,7 +1402,7 @@ bool InteropClient::DoMcsConnectionScaling() {
   if (!stream2->Read(&response2)) {
     LOG(ERROR) << "DoMcsConnectionScaling(): stream2->Read() failed.";
     return TransientFailureOrAbort();
-  }  
+  }
   std::string peerSocketAddressInCall2 = response2.peer_socket_address();
 
   // The same connection should have been used for both streams.
@@ -1424,7 +1424,7 @@ bool InteropClient::DoMcsConnectionScaling() {
   if (!stream3->Read(&response3)) {
     LOG(ERROR) << "DoMcsConnectionScaling(): stream3->Read() failed.";
     return TransientFailureOrAbort();
-  }  
+  }
   std::string peerSocketAddressInCall3 = response3.peer_socket_address();
   GRPC_CHECK(!peerSocketAddressInCall3.empty());
 
