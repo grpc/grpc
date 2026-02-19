@@ -606,10 +606,11 @@ class Http2ServerTransport final : public ServerTransport {
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list_
       ABSL_GUARDED_BY(transport_mutex_);
 
-  uint32_t next_stream_id_;
+  GRPC_UNUSED uint32_t next_stream_id_;
   HPackCompressor encoder_;
   HPackParser parser_;
-  bool is_transport_closed_ ABSL_GUARDED_BY(transport_mutex_) = false;
+  GRPC_UNUSED bool is_transport_closed_ ABSL_GUARDED_BY(transport_mutex_) =
+      false;
   Latch<void> transport_closed_latch_;
 
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){
@@ -617,18 +618,18 @@ class Http2ServerTransport final : public ServerTransport {
 
   RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(transport_mutex_);
 
-  bool should_reset_ping_clock_;
-  bool is_first_write_;
+  GRPC_UNUSED bool should_reset_ping_clock_;
+  GRPC_UNUSED bool is_first_write_;
   IncomingMetadataTracker incoming_headers_;
   TransportWriteContext write_context_;
 
   // Tracks the max allowed stream id. Currently this is only set on receiving a
   // graceful GOAWAY frame.
-  uint32_t max_allowed_stream_id_ = RFC9113::kMaxStreamId31Bit;
+  GRPC_UNUSED uint32_t max_allowed_stream_id_ = RFC9113::kMaxStreamId31Bit;
 
   // Duration between two consecutive keepalive pings.
   Duration keepalive_time_;
-  bool test_only_ack_pings_;
+  GRPC_UNUSED bool test_only_ack_pings_;
   std::optional<PingManager> ping_manager_;
   std::optional<KeepaliveManager> keepalive_manager_;
 
@@ -641,8 +642,8 @@ class Http2ServerTransport final : public ServerTransport {
 
   /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
   /// the peer
-  bool enable_preferred_rx_crypto_frame_advertisement_;
-  RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
+  GRPC_UNUSED bool enable_preferred_rx_crypto_frame_advertisement_;
+  GRPC_UNUSED RefCountedPtr<SecurityFrameHandler> security_frame_handler_;
   MemoryOwner memory_owner_;
   chttp2::TransportFlowControl flow_control_;
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
