@@ -72,8 +72,6 @@
   default: false
 - name: fuse_filters
   default: false
-- name: graceful_external_connection_failure
-  default: true
 - name: keep_alive_ping_timer_batch
   default: false
 - name: local_connector_secure

@@ -166,12 +166,6 @@
   owner: vigneshbabu@google.com
   test_tags: ["minimal_stack_test"]
   allow_in_fuzzing_config: false
-- name: graceful_external_connection_failure
-  description: If set, handles external connection failures gracefully
-  expiry: 2026/02/01
-  owner: vigneshbabu@google.com
-  test_tags: []
-  allow_in_fuzzing_config: false
 - name: keep_alive_ping_timer_batch
   description:
     Avoid explicitly cancelling the keepalive timer. Instead adjust the callback to re-schedule
