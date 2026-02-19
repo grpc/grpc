@@ -231,8 +231,11 @@ class TestTypeMetadata(unittest.TestCase):
         l = [("key", "value")]
         self.assertEqual(Metadata._create(l), Metadata(("key", "value")))
 
-        # 5. raw_metadata is empty
+        # 5. raw_metadata is empty list
         self.assertEqual(Metadata._create([]), Metadata())
+
+        # 6. raw_metadata is empty tuple
+        self.assertEqual(Metadata._create(()), Metadata())
 
     def test_keys_values_items(self):
         metadata = Metadata(*self._MULTI_ENTRY_DATA)
