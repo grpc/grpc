@@ -865,7 +865,7 @@ TEST(DataTest, PromiseInData) {
         }
       )pb",
       R"([0] DATA some_promise type.googleapis.com/grpc.channelz.v2.Promise
-[0] APPEND_TEXT data Map(
+[0] APPEND_TEXT code Map(
   Unknown(the_promise),
   the_map_fn
 ))");

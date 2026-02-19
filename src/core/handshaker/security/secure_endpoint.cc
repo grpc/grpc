@@ -100,10 +100,8 @@ class FrameProtector : public RefCounted<FrameProtector> {
       }
     }
     if (zero_copy_protector_ != nullptr) {
-      if (IsTrackZeroCopyAllocationsInResourceQuotaEnabled()) {
-        tsi_zero_copy_grpc_protector_set_allocator(zero_copy_protector_,
-                                                   &AllocSlice, &memory_owner_);
-      }
+      tsi_zero_copy_grpc_protector_set_allocator(zero_copy_protector_,
+                                                 &AllocSlice, &memory_owner_);
       read_staging_buffer_ = grpc_empty_slice();
       write_staging_buffer_ = grpc_empty_slice();
     } else {
