@@ -251,7 +251,7 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
   const auto recv_message_count_str = absl::StrCat(recv_message_count_++);
   attributes.emplace_back("sequence-number", recv_message_count_str);
   const auto message_size_str = absl::StrCat(recv_message.payload()->Length());
-  const bool is_compressed = 
+  const bool is_compressed =
       (recv_message.flags() & GRPC_WRITE_INTERNAL_COMPRESS) != 0;
   attributes.emplace_back(
       is_compressed ? "message-size-compressed" : "message-size",
