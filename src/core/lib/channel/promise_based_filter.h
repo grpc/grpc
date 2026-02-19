@@ -1270,104 +1270,53 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
          next_promise_factory =
              std::move(next_promise_factory)](CallHandler handler) mutable {
           // Intercept all pipes from v2 API.
-          struct PipeOwner {
-            Pipe<MessageHandle> client_to_server_messages;
-            Pipe<ServerMetadataHandle> server_initial_metadata;
-            Pipe<MessageHandle> server_to_client_messages;
-          };
-          auto* pipe_owner = GetContext<Arena>()->ManagedNew<PipeOwner>();
-          auto* client_to_server_messages_receiver =
-              std::exchange(call_args.client_to_server_messages,
-                            &pipe_owner->client_to_server_messages.receiver);
-          auto* server_initial_metadata_sender =
-              std::exchange(call_args.server_initial_metadata,
-                            &pipe_owner->server_initial_metadata.sender);
-          auto* server_to_client_messages_sender =
-              std::exchange(call_args.server_to_client_messages,
-                            &pipe_owner->server_to_client_messages.sender);
-          // Initiator-side promise for client-to-server data.
-          auto initiator_client_to_server_promise =
-              [initiator, client_to_server_messages_receiver]() mutable {
-                return ForEach(std::move(*client_to_server_messages_receiver),
-                               [initiator](MessageHandle message) mutable {
-                                 initiator.SpawnPushMessage(std::move(message));
-                                 return Success{};
-                               });
-              };
-          // Initiator-side promise for server-to-client data.
-          auto initiator_server_to_client_promise =
-              [initiator, server_initial_metadata_sender,
-               server_to_client_messages_sender]() mutable {
-                return TrySeq(
-                    TrySeq(initiator.PullServerInitialMetadata(),
-                           [server_initial_metadata_sender](
-                               std::optional<ServerMetadataHandle>
-                                   metadata) mutable
-                               -> ValueOrFailure<
-                                   PipeSender<ServerMetadataHandle>::PushType> {
-                             if (!metadata.has_value()) return Failure{};
-                             return server_initial_metadata_sender->Push(
-                                 std::move(*metadata));
-                           }),
-                    ForEach(MessagesFrom(initiator),
-                            [server_to_client_messages_sender](
-                                MessageHandle message) {
-                              return Map(server_to_client_messages_sender->Push(
-                                             std::move(message)),
-                                         [](bool x) { return StatusFlag(x); });
-                            }));
-              };
-          // Handler-side promise for client-to-server data.
-          auto handler_client_to_server_promise = [handler,
-                                                   pipe_owner]() mutable {
-            return ForEach(
-                MessagesFrom(handler), [pipe_owner](MessageHandle message) {
-                  return Map(pipe_owner->client_to_server_messages.sender.Push(
-                                 std::move(message)),
-                             [](bool x) { return StatusFlag(x); });
-                });
-          };
-          // Handler-side promise for server-to-client data.
-          auto handler_server_to_client_promise = [handler,
-                                                   pipe_owner]() mutable {
-            return TrySeq(
-                Map(pipe_owner->server_initial_metadata.receiver.Next(),
-                    [handler](NextResult<ServerMetadataHandle> metadata) mutable
-                        -> StatusFlag {
-                      if (!metadata.has_value()) return Failure{};
-                      handler.SpawnPushServerInitialMetadata(
-                          std::move(*metadata));
-                      return Success{};
-                    }),
-                ForEach(
-                    std::move(pipe_owner->server_to_client_messages.receiver),
-                    [handler](MessageHandle message) mutable {
-                      handler.SpawnPushMessage(std::move(message));
-                      return Success{};
-                    }));
-          };
-          // A wrapper for next_promise_factory that pulls client
-          // initial metadata from the V3 handler and injects it into
-          // the next V2 filter via CallArgs.
-          auto next_promise_factory_wrapper =
-              [handler, next_promise_factory = std::move(next_promise_factory),
-               call_args = std::move(call_args)]() mutable {
-                return TrySeq(
-                    handler.PullClientInitialMetadata(),
-                    [next_promise_factory = std::move(next_promise_factory),
-                     call_args = std::move(call_args)](
-                        ClientMetadataHandle metadata) mutable {
-                      call_args.client_initial_metadata = std::move(metadata);
-                      return next_promise_factory(std::move(call_args));
+          call_args.client_to_server_messages->InterceptAndMap(
+              [initiator, handler](MessageHandle message) mutable {
+                initiator.SpawnPushMessage(std::move(message));
+                return Map(handler.PullMessage(),
+                           [](ClientToServerNextMessage message)
+                               -> std::optional<MessageHandle> {
+                             if (!message.ok()) return std::nullopt;
+                             if (!message.has_value()) return std::nullopt;
+                             return message.TakeValue();
+                           });
+              });
+          call_args.server_initial_metadata->InterceptAndMap(
+              [initiator, handler](ServerMetadataHandle metadata) mutable {
+                handler.SpawnPushServerInitialMetadata(std::move(metadata));
+                return initiator.PullServerInitialMetadata();
+              });
+          call_args.server_to_client_messages->InterceptAndMap(
+              [initiator, handler](MessageHandle message) mutable {
+                handler.SpawnPushMessage(std::move(message));
+                return Map(initiator.PullMessage(),
+                           [](ServerToClientNextMessage message)
+                               -> std::optional<MessageHandle> {
+                             if (!message.ok()) return std::nullopt;
+                             if (!message.has_value()) return std::nullopt;
+                             return message.TakeValue();
+                           });
+              });
+          // A wrapper for next_promise_factory that does the following:
+          // - Pulls client initial metadata from the V3 handler and injects
+          //   it into the next V2 filter via CallArgs.
+          // - Polls the next promise to get server trailing metadata
+          //   from the next V2 filter, feeds it into the V3 handler,
+          //   and then gets it out of the V3 initiator.
+          return TrySeq(
+              handler.PullClientInitialMetadata(),
+              [next_promise_factory = std::move(next_promise_factory),
+               call_args = std::move(call_args), handler,
+               initiator](ClientMetadataHandle metadata) mutable {
+                call_args.client_initial_metadata = std::move(metadata);
+                return Seq(
+                    next_promise_factory(std::move(call_args)),
+                    [handler,
+                     initiator](ServerMetadataHandle metadata) mutable {
+                      handler.PushServerTrailingMetadata(std::move(metadata));
+                      return initiator.PullServerTrailingMetadata();
                     });
-              };
-          // Now put it all together.
-          return AllOk<ServerMetadataHandle>(
-              next_promise_factory_wrapper(),
-              initiator_client_to_server_promise(),
-              initiator_server_to_client_promise(),
-              handler_client_to_server_promise(),
-              handler_server_to_client_promise());
+              });
         });
   }
 
