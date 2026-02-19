@@ -211,8 +211,7 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
           }},
   };
 
-  if (IsEventEngineSecureEndpointEnabled() &&
-      IsChaoticGoodFramingLayerEnabled()) {
+  if (IsChaoticGoodFramingLayerEnabled()) {
     std::vector<CoreTestConfiguration> secure_config{
         CoreTestConfiguration{
             "ChaoticGoodSecureFullStack",
