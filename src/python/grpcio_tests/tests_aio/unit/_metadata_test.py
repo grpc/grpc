@@ -213,7 +213,7 @@ class TestTypeMetadata(unittest.TestCase):
         )
         for source, expected in scenarios:
             with self.subTest(raw_metadata=source, expected=expected):
-                self.assertEqual(expected, Metadata.from_tuple(source)) # type: ignore
+                self.assertEqual(expected, Metadata.from_tuple(source))  # type: ignore
 
     def test_create(self):
         # 1. raw_metadata is None
