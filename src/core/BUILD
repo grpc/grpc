@@ -6089,6 +6089,28 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_utils",
+    srcs = ["util/xds_utils.cc"],
+    hdrs = [
+        "util/xds_utils.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+        "@com_google_protobuf//upb/mem",
+    ],
+    deps = [
+        "envoy_config_core_upb",
+        "upb_utils",
+        "xds_common_types",
+        "//:gpr",
+        "//:grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_http_filter",
     srcs = [
         "xds/grpc/xds_http_filter.cc",
