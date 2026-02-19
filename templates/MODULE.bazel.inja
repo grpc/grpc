@@ -200,10 +200,3 @@ archive_override(
         "https://sourceforge.net/projects/perfmon2/files/libpfm4/libpfm-4.11.0.tar.gz/download",
     ],
 )
-
-# --- Python headers
-# TODO(weizheyuan): Maybe replace this with python header exposed by rules_python.
-# See also https://github.com/grpc/grpc/issues/24665
-python_configure = use_repo_rule("//third_party/py:python_configure.bzl", "python_configure")
-
-python_configure(name = "local_config_python")
