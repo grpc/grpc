@@ -344,7 +344,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
   - src/core/ext/transport/chttp2/transport/http2_client_transport.h
-  - src/core/ext/transport/chttp2/transport/http2_server_transport.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/transport/chttp2/transport/http2_settings_manager.h
   - src/core/ext/transport/chttp2/transport/http2_settings_promises.h
@@ -1511,7 +1510,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   - src/core/ext/transport/chttp2/transport/http2_client_transport.cc
-  - src/core/ext/transport/chttp2/transport/http2_server_transport.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
   - src/core/ext/transport/chttp2/transport/http2_settings_manager.cc
   - src/core/ext/transport/chttp2/transport/http2_stats_collector.cc
@@ -2546,7 +2544,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
   - src/core/ext/transport/chttp2/transport/http2_client_transport.h
-  - src/core/ext/transport/chttp2/transport/http2_server_transport.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/transport/chttp2/transport/http2_settings_manager.h
   - src/core/ext/transport/chttp2/transport/http2_settings_promises.h
@@ -3108,7 +3105,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   - src/core/ext/transport/chttp2/transport/http2_client_transport.cc
-  - src/core/ext/transport/chttp2/transport/http2_server_transport.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
   - src/core/ext/transport/chttp2/transport/http2_settings_manager.cc
   - src/core/ext/transport/chttp2/transport/http2_stats_collector.cc
@@ -15189,6 +15185,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chttp2/transport/http2_server_transport.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/promise/poll_matcher.h
@@ -15198,6 +15195,7 @@ targets:
   - test/core/transport/util/transport_test.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - src/core/ext/transport/chttp2/transport/http2_server_transport.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/transport/chttp2/http2_server_transport_test.cc
