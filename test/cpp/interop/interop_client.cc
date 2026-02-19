@@ -1371,14 +1371,15 @@ bool InteropClient::DoMcsConnectionScaling() {
 
   StreamingOutputCallRequest request;
   ResponseParameters* response_parameter = request.add_response_parameters();
-  response_parameter->mutable_send_client_socket_address_in_response()->set_value(true);
+  response_parameter->mutable_send_client_socket_address_in_response()
+      ->set_value(true);
   StreamingOutputCallResponse response1;
 
   if (!stream1->Write(request)) {
     LOG(ERROR) << "DoMcsConnectionScaling(): stream1->Write() failed.";
     return TransientFailureOrAbort();
   }
-  
+
   if (!stream1->Read(&response1)) {
     LOG(ERROR) << "DoMcsConnectionScaling(): stream1->Read() failed.";
     return TransientFailureOrAbort();
@@ -1402,7 +1403,7 @@ bool InteropClient::DoMcsConnectionScaling() {
   if (!stream2->Read(&response2)) {
     LOG(ERROR) << "DoMcsConnectionScaling(): stream2->Read() failed.";
     return TransientFailureOrAbort();
-  }  
+  }
   std::string clientSocketAddressInCall2 = response2.client_socket_address();
 
   // The same connection should have been used for both streams.
@@ -1424,7 +1425,7 @@ bool InteropClient::DoMcsConnectionScaling() {
   if (!stream3->Read(&response3)) {
     LOG(ERROR) << "DoMcsConnectionScaling(): stream3->Read() failed.";
     return TransientFailureOrAbort();
-  }  
+  }
   std::string clientSocketAddressInCall3 = response3.client_socket_address();
   GRPC_CHECK(!clientSocketAddressInCall3.empty());
 
