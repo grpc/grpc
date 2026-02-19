@@ -210,9 +210,9 @@ class Http2ServerTransport final : public ServerTransport {
   // Http2Status ProcessIncomingFrame(Http2GoawayFrame&& frame);
   // Http2Status ProcessIncomingFrame(Http2WindowUpdateFrame&& frame);
   // Http2Status ProcessIncomingFrame(Http2ContinuationFrame&& frame);
-  // Http2Status ProcessIncomingFrame(Http2SecurityFrame&& frame);
-  // Http2Status ProcessIncomingFrame(Http2UnknownFrame&& frame);
-  // Http2Status ProcessIncomingFrame(Http2EmptyFrame&& frame);
+  Http2Status ProcessIncomingFrame(Http2SecurityFrame&& frame);
+  Http2Status ProcessIncomingFrame(Http2UnknownFrame&& frame);
+  Http2Status ProcessIncomingFrame(Http2EmptyFrame&& frame);
 
   // Http2Status ProcessMetadata(RefCountedPtr<Stream> stream);
 
@@ -222,14 +222,12 @@ class Http2ServerTransport final : public ServerTransport {
   //                                    Http2Status&& original_status,
   //                                    DebugLocation whence = {});
 
-  // Returns a promise to keep reading in a Loop till a fail/close is received.
-  auto ReadLoop();
+  auto ProcessOneIncomingFrame(Http2Frame frame);
 
   // Returns a promise that will read and process one HTTP2 frame.
   auto ReadAndProcessOneFrame();
 
-  // Returns a promise that will process one HTTP2 frame.
-  auto ProcessOneIncomingFrame(Http2Frame frame);
+  auto ReadLoop();
 
   // TODO(tjagtap) : [PH2][P1] : Delete this when read path is implemented.
   auto OnReadLoopEnded();
