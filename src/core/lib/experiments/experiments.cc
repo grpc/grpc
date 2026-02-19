@@ -116,6 +116,9 @@ const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
+const char* const description_metadata_publish_to_app_tag =
+    "Publish metadata to the app using the kPublishToApp metadata field.";
+const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
@@ -226,15 +229,6 @@ const char* const additional_constraints_tcp_frame_size_tuning = "{}";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const additional_constraints_tcp_rcv_lowat = "{}";
-const char* const description_track_writes_in_resource_quota =
-    "Track the Write memory in Resource Quota.";
-const char* const additional_constraints_track_writes_in_resource_quota = "{}";
-const char* const description_track_zero_copy_allocations_in_resource_quota =
-    "Track the memory allocattions under the zero copy path in Resource Quota. "
-    "This includes the encryption / decryption for privacy-and-integrity "
-    "payloads.";
-const char* const
-    additional_constraints_track_zero_copy_allocations_in_resource_quota = "{}";
 const char* const description_tsi_frame_protector_without_locks =
     "Do not hold locks while using the tsi_frame_protector.";
 const char* const additional_constraints_tsi_frame_protector_without_locks =
@@ -247,6 +241,14 @@ const char* const description_use_call_event_engine_in_completion_queue =
     "Use the call event engine to run callbacks in completion queue.";
 const char* const
     additional_constraints_use_call_event_engine_in_completion_queue = "{}";
+const char* const description_wildcard_ip_expansion_restriction =
+    "If set, adds optional restriction on when to expand wildcard IPs.";
+const char* const additional_constraints_wildcard_ip_expansion_restriction =
+    "{}";
+const char* const description_xds_channel_filter_chain_per_route =
+    "xDS channels use a separate filter chain for each route.";
+const char* const additional_constraints_xds_channel_filter_chain_per_route =
+    "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -318,6 +320,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"max_inflight_pings_strict_limit",
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
+     true},
+    {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
+     additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
      true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
@@ -401,14 +406,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
-    {"track_writes_in_resource_quota",
-     description_track_writes_in_resource_quota,
-     additional_constraints_track_writes_in_resource_quota, nullptr, 0, false,
-     true},
-    {"track_zero_copy_allocations_in_resource_quota",
-     description_track_zero_copy_allocations_in_resource_quota,
-     additional_constraints_track_zero_copy_allocations_in_resource_quota,
-     nullptr, 0, false, true},
     {"tsi_frame_protector_without_locks",
      description_tsi_frame_protector_without_locks,
      additional_constraints_tsi_frame_protector_without_locks, nullptr, 0,
@@ -421,6 +418,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_use_call_event_engine_in_completion_queue,
      additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
      0, false, true},
+    {"wildcard_ip_expansion_restriction",
+     description_wildcard_ip_expansion_restriction,
+     additional_constraints_wildcard_ip_expansion_restriction, nullptr, 0,
+     false, true},
+    {"xds_channel_filter_chain_per_route",
+     description_xds_channel_filter_chain_per_route,
+     additional_constraints_xds_channel_filter_chain_per_route, nullptr, 0,
+     false, true},
 };
 
 }  // namespace grpc_core
@@ -520,6 +525,9 @@ const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
+const char* const description_metadata_publish_to_app_tag =
+    "Publish metadata to the app using the kPublishToApp metadata field.";
+const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
@@ -630,15 +638,6 @@ const char* const additional_constraints_tcp_frame_size_tuning = "{}";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const additional_constraints_tcp_rcv_lowat = "{}";
-const char* const description_track_writes_in_resource_quota =
-    "Track the Write memory in Resource Quota.";
-const char* const additional_constraints_track_writes_in_resource_quota = "{}";
-const char* const description_track_zero_copy_allocations_in_resource_quota =
-    "Track the memory allocattions under the zero copy path in Resource Quota. "
-    "This includes the encryption / decryption for privacy-and-integrity "
-    "payloads.";
-const char* const
-    additional_constraints_track_zero_copy_allocations_in_resource_quota = "{}";
 const char* const description_tsi_frame_protector_without_locks =
     "Do not hold locks while using the tsi_frame_protector.";
 const char* const additional_constraints_tsi_frame_protector_without_locks =
@@ -651,6 +650,14 @@ const char* const description_use_call_event_engine_in_completion_queue =
     "Use the call event engine to run callbacks in completion queue.";
 const char* const
     additional_constraints_use_call_event_engine_in_completion_queue = "{}";
+const char* const description_wildcard_ip_expansion_restriction =
+    "If set, adds optional restriction on when to expand wildcard IPs.";
+const char* const additional_constraints_wildcard_ip_expansion_restriction =
+    "{}";
+const char* const description_xds_channel_filter_chain_per_route =
+    "xDS channels use a separate filter chain for each route.";
+const char* const additional_constraints_xds_channel_filter_chain_per_route =
+    "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -722,6 +729,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"max_inflight_pings_strict_limit",
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
+     true},
+    {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
+     additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
      true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
@@ -805,14 +815,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
-    {"track_writes_in_resource_quota",
-     description_track_writes_in_resource_quota,
-     additional_constraints_track_writes_in_resource_quota, nullptr, 0, false,
-     true},
-    {"track_zero_copy_allocations_in_resource_quota",
-     description_track_zero_copy_allocations_in_resource_quota,
-     additional_constraints_track_zero_copy_allocations_in_resource_quota,
-     nullptr, 0, false, true},
     {"tsi_frame_protector_without_locks",
      description_tsi_frame_protector_without_locks,
      additional_constraints_tsi_frame_protector_without_locks, nullptr, 0,
@@ -825,6 +827,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_use_call_event_engine_in_completion_queue,
      additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
      0, false, true},
+    {"wildcard_ip_expansion_restriction",
+     description_wildcard_ip_expansion_restriction,
+     additional_constraints_wildcard_ip_expansion_restriction, nullptr, 0,
+     false, true},
+    {"xds_channel_filter_chain_per_route",
+     description_xds_channel_filter_chain_per_route,
+     additional_constraints_xds_channel_filter_chain_per_route, nullptr, 0,
+     false, true},
 };
 
 }  // namespace grpc_core
@@ -924,6 +934,9 @@ const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
+const char* const description_metadata_publish_to_app_tag =
+    "Publish metadata to the app using the kPublishToApp metadata field.";
+const char* const additional_constraints_metadata_publish_to_app_tag = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
@@ -1034,15 +1047,6 @@ const char* const additional_constraints_tcp_frame_size_tuning = "{}";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const additional_constraints_tcp_rcv_lowat = "{}";
-const char* const description_track_writes_in_resource_quota =
-    "Track the Write memory in Resource Quota.";
-const char* const additional_constraints_track_writes_in_resource_quota = "{}";
-const char* const description_track_zero_copy_allocations_in_resource_quota =
-    "Track the memory allocattions under the zero copy path in Resource Quota. "
-    "This includes the encryption / decryption for privacy-and-integrity "
-    "payloads.";
-const char* const
-    additional_constraints_track_zero_copy_allocations_in_resource_quota = "{}";
 const char* const description_tsi_frame_protector_without_locks =
     "Do not hold locks while using the tsi_frame_protector.";
 const char* const additional_constraints_tsi_frame_protector_without_locks =
@@ -1055,6 +1059,14 @@ const char* const description_use_call_event_engine_in_completion_queue =
     "Use the call event engine to run callbacks in completion queue.";
 const char* const
     additional_constraints_use_call_event_engine_in_completion_queue = "{}";
+const char* const description_wildcard_ip_expansion_restriction =
+    "If set, adds optional restriction on when to expand wildcard IPs.";
+const char* const additional_constraints_wildcard_ip_expansion_restriction =
+    "{}";
+const char* const description_xds_channel_filter_chain_per_route =
+    "xDS channels use a separate filter chain for each route.";
+const char* const additional_constraints_xds_channel_filter_chain_per_route =
+    "{}";
 }  // namespace
 
 namespace grpc_core {
@@ -1126,6 +1138,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"max_inflight_pings_strict_limit",
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
+     true},
+    {"metadata_publish_to_app_tag", description_metadata_publish_to_app_tag,
+     additional_constraints_metadata_publish_to_app_tag, nullptr, 0, true,
      true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
@@ -1209,14 +1224,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
-    {"track_writes_in_resource_quota",
-     description_track_writes_in_resource_quota,
-     additional_constraints_track_writes_in_resource_quota, nullptr, 0, false,
-     true},
-    {"track_zero_copy_allocations_in_resource_quota",
-     description_track_zero_copy_allocations_in_resource_quota,
-     additional_constraints_track_zero_copy_allocations_in_resource_quota,
-     nullptr, 0, false, true},
     {"tsi_frame_protector_without_locks",
      description_tsi_frame_protector_without_locks,
      additional_constraints_tsi_frame_protector_without_locks, nullptr, 0,
@@ -1229,6 +1236,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_use_call_event_engine_in_completion_queue,
      additional_constraints_use_call_event_engine_in_completion_queue, nullptr,
      0, false, true},
+    {"wildcard_ip_expansion_restriction",
+     description_wildcard_ip_expansion_restriction,
+     additional_constraints_wildcard_ip_expansion_restriction, nullptr, 0,
+     false, true},
+    {"xds_channel_filter_chain_per_route",
+     description_xds_channel_filter_chain_per_route,
+     additional_constraints_xds_channel_filter_chain_per_route, nullptr, 0,
+     false, true},
 };
 
 }  // namespace grpc_core

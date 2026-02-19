@@ -19,31 +19,83 @@
 #include "src/core/ext/transport/chttp2/transport/http2_server_transport.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
+#include <limits.h>
 
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <iterator>
 #include <memory>
+#include <optional>
+#include <string>
 #include <utility>
+#include <variant>
+#include <vector>
 
 #include "src/core/call/call_destination.h"
+#include "src/core/call/call_spine.h"
+#include "src/core/call/message.h"
+#include "src/core/call/metadata.h"
+#include "src/core/call/metadata_batch.h"
+#include "src/core/channelz/channelz.h"
+#include "src/core/ext/transport/chttp2/transport/flow_control.h"
+#include "src/core/ext/transport/chttp2/transport/flow_control_manager.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/goaway.h"
+#include "src/core/ext/transport/chttp2/transport/header_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
+#include "src/core/ext/transport/chttp2/transport/incoming_metadata_tracker.h"
+#include "src/core/ext/transport/chttp2/transport/keepalive.h"
+#include "src/core/ext/transport/chttp2/transport/message_assembler.h"
+#include "src/core/ext/transport/chttp2/transport/ping_promise.h"
+#include "src/core/ext/transport/chttp2/transport/security_frame.h"
+#include "src/core/ext/transport/chttp2/transport/stream.h"
+#include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
+#include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace_impl.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/promise/for_each.h"
+#include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/loop.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/match_promise.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/race.h"
+#include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/latent_see.h"
+#include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
+#include "absl/container/flat_hash_map.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/strings/cord.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -63,6 +115,9 @@ using grpc_event_engine::experimental::EventEngine;
 // TODO(akshitpatel) : [PH2][P2] : Choose appropriate size later.
 // TODO(tjagtap) : [PH2][P2] : Consider moving to common code.
 constexpr int kMpscSize = 10;
+
+//////////////////////////////////////////////////////////////////////////////
+// Transport Functions
 
 void Http2ServerTransport::SetCallDestination(
     RefCountedPtr<UnstartedCallDestination> call_destination) {
@@ -93,6 +148,31 @@ void Http2ServerTransport::AbortWithError() {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport AbortWithError End";
 }
 
+//////////////////////////////////////////////////////////////////////////////
+// Channelz and ZTrace
+
+//////////////////////////////////////////////////////////////////////////////
+// Watchers
+
+//////////////////////////////////////////////////////////////////////////////
+// Test Only Functions
+
+int64_t Http2ServerTransport::TestOnlyTransportFlowControlWindow() {
+  return flow_control_.remote_window();
+}
+
+int64_t Http2ServerTransport::TestOnlyGetStreamFlowControlWindow(
+    const uint32_t stream_id) {
+  RefCountedPtr<Stream> stream = LookupStream(stream_id);
+  if (stream == nullptr) {
+    return -1;
+  }
+  return stream->flow_control.remote_window_delta();
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// Transport Read Path
+
 Http2Status ProcessHttp2DataFrame(Http2DataFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-data
   GRPC_HTTP2_SERVER_DLOG
@@ -101,7 +181,7 @@ Http2Status ProcessHttp2DataFrame(Http2DataFrame frame) {
   GRPC_HTTP2_SERVER_DLOG
       << "Http2ServerTransport ProcessHttp2DataFrame Promise { stream_id="
       << frame.stream_id << ", end_stream=" << frame.end_stream
-      << ", payload=" << frame.payload.JoinIntoString() << "}";
+      << ", payload length=" << frame.payload.Length() << "}";
   return Http2Status::Ok();
 }
 
@@ -114,7 +194,7 @@ Http2Status ProcessHttp2HeaderFrame(Http2HeaderFrame frame) {
       << "Http2ServerTransport ProcessHttp2HeaderFrame Promise { stream_id="
       << frame.stream_id << ", end_headers=" << frame.end_headers
       << ", end_stream=" << frame.end_stream
-      << ", payload=" << frame.payload.JoinIntoString() << " }";
+      << ", payload length=" << frame.payload.Length() << " }";
   return Http2Status::Ok();
 }
 
@@ -161,8 +241,7 @@ Http2Status ProcessHttp2GoawayFrame(Http2GoawayFrame frame) {
   GRPC_HTTP2_SERVER_DLOG
       << "Http2ServerTransport ProcessHttp2GoawayFrame Promise { "
          "last_stream_id="
-      << frame.last_stream_id << ", error_code=" << frame.error_code
-      << ", debug_data=" << frame.debug_data.as_string_view() << "}";
+      << frame.last_stream_id << ", error_code=" << frame.error_code << "}";
   return Http2Status::Ok();
 }
 
@@ -187,7 +266,7 @@ Http2Status ProcessHttp2ContinuationFrame(Http2ContinuationFrame frame) {
       << "Http2ServerTransport ProcessHttp2ContinuationFrame Promise { "
          "stream_id="
       << frame.stream_id << ", end_headers=" << frame.end_headers
-      << ", payload=" << frame.payload.JoinIntoString() << " }";
+      << ", payload length=" << frame.payload.Length() << " }";
   return Http2Status::Ok();
 }
 
@@ -196,12 +275,13 @@ Http2Status ProcessHttp2SecurityFrame(Http2SecurityFrame frame) {
       << "Http2ServerTransport ProcessHttp2SecurityFrame Factory";
   // TODO(tjagtap) : [PH2][P2] : Implement this.
   GRPC_HTTP2_SERVER_DLOG
-      << "Http2ServerTransport ProcessHttp2SecurityFrame Promise { payload="
-      << frame.payload.JoinIntoString() << " }";
+      << "Http2ServerTransport ProcessHttp2SecurityFrame Promise { payload "
+         "length="
+      << frame.payload.Length() << " }";
   return Http2Status::Ok();
 }
 
-auto Http2ServerTransport::ProcessOneFrame(Http2Frame frame) {
+auto Http2ServerTransport::ProcessOneIncomingFrame(Http2Frame frame) {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport ProcessOneFrame Factory";
   return AssertResultType<Http2Status>(MatchPromise(
       std::move(frame),
@@ -266,9 +346,9 @@ auto Http2ServerTransport::ReadAndProcessOneFrame() {
       },
       // Parse the payload of the frame based on frame type.
       [this](SliceBuffer payload) -> absl::StatusOr<Http2Frame> {
-        GRPC_HTTP2_SERVER_DLOG
-            << "Http2ServerTransport ReadAndProcessOneFrame ParseFramePayload "
-            << payload.JoinIntoString();
+        GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport ReadAndProcessOneFrame "
+                                  "ParseFramePayload payload length: "
+                               << payload.Length();
         ValueOrHttp2Status<Http2Frame> frame =
             ParseFramePayload(current_frame_header_, std::move(payload));
         if (frame.IsOk()) {
@@ -279,10 +359,8 @@ auto Http2ServerTransport::ReadAndProcessOneFrame() {
             ValueOrHttp2Status<Http2Frame>::TakeStatus(std::move(frame)));
       },
       [this](GRPC_UNUSED Http2Frame frame) {
-        GRPC_HTTP2_SERVER_DLOG
-            << "Http2ServerTransport ReadAndProcessOneFrame ProcessOneFrame";
         return Map(
-            ProcessOneFrame(std::move(frame)),
+            ProcessOneIncomingFrame(std::move(frame)),
             [self = RefAsSubclass<Http2ServerTransport>()](Http2Status status) {
               if (status.IsOk()) {
                 return absl::OkStatus();
@@ -314,6 +392,9 @@ auto Http2ServerTransport::OnReadLoopEnded() {
                 status.code(), std::string(status.message())));
       };
 }
+
+//////////////////////////////////////////////////////////////////////////////
+// Transport Write Path
 
 auto Http2ServerTransport::WriteFromQueue() {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport WriteFromQueue Factory";
@@ -349,10 +430,78 @@ auto Http2ServerTransport::OnWriteLoopEnded() {
       };
 }
 
+//////////////////////////////////////////////////////////////////////////////
+// Spawn Helpers and Promise Helpers
+
+//////////////////////////////////////////////////////////////////////////////
+// Endpoint Helpers
+
+//////////////////////////////////////////////////////////////////////////////
+// Settings
+
+// auto WaitForSettingsTimeoutOnDone();
+
+// void MaybeSpawnWaitForSettingsTimeout();
+
+// void EnforceLatestIncomingSettings();
+
+//////////////////////////////////////////////////////////////////////////////
+// Flow Control and BDP
+
+// void ActOnFlowControlAction(...);
+
+// void MaybeGetWindowUpdateFrames(SliceBuffer& output_buf);
+
+// auto FlowControlPeriodicUpdateLoop();
+
+//////////////////////////////////////////////////////////////////////////////
+// Stream List Operations
+
+RefCountedPtr<Stream> Http2ServerTransport::LookupStream(uint32_t stream_id) {
+  MutexLock lock(&transport_mutex_);
+  auto it = stream_list_.find(stream_id);
+  if (it == stream_list_.end()) {
+    GRPC_HTTP2_SERVER_DLOG
+        << "Http2ServerTransport::LookupStream Stream not found stream_id="
+        << stream_id;
+    return nullptr;
+  }
+  return it->second;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// Stream Operations
+
+//////////////////////////////////////////////////////////////////////////////
+// Ping Keepalive and Goaway
+
+//////////////////////////////////////////////////////////////////////////////
+// Error Path and Close Path
+
+//////////////////////////////////////////////////////////////////////////////
+// Misc Transport Stuff
+
+//////////////////////////////////////////////////////////////////////////////
+// Inner Classes and Structs
+
+//////////////////////////////////////////////////////////////////////////////
+// Constructor, Destructor etc.
+
 Http2ServerTransport::Http2ServerTransport(
     PromiseEndpoint endpoint, GRPC_UNUSED const ChannelArgs& channel_args,
     std::shared_ptr<EventEngine> event_engine)
-    : endpoint_(std::move(endpoint)), outgoing_frames_(kMpscSize) {
+    : outgoing_frames_(kMpscSize),
+      endpoint_(std::move(endpoint)),
+      incoming_headers_(IncomingMetadataTracker::GetPeerString(endpoint_)),
+      ping_manager_(std::nullopt),
+      goaway_manager_(Http2ServerTransport::GoawayInterfaceImpl::Make(this)),
+      memory_owner_(channel_args.GetObject<ResourceQuota>()
+                        ->memory_quota()
+                        ->CreateMemoryOwner()),
+      flow_control_(
+          "PH2_Server",
+          channel_args.GetBool(GRPC_ARG_HTTP2_BDP_PROBE).value_or(true),
+          &memory_owner_) {
   // TODO(tjagtap) : [PH2][P2] : Save and apply channel_args.
   // TODO(tjagtap) : [PH2][P2] : Initialize settings_ to appropriate values.
 

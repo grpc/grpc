@@ -35,6 +35,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
+#include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
@@ -216,6 +217,10 @@ class StreamDataQueueFuzzTest : public YodelTest {
     return messages;
   }
 
+  http2::WriteCycle& GetWriteCycle() {
+    return transport_write_context_.GetWriteCycle();
+  }
+
   class AssembleFrames {
    public:
     explicit AssembleFrames(const uint32_t stream_id,
@@ -287,17 +292,35 @@ class StreamDataQueueFuzzTest : public YodelTest {
     Http2Settings default_settings_;
   };
 
+  void MaybeFlushWriteBuffer() {
+    if (GetWriteCycle().CanSerializeRegularFrames()) {
+      bool unused;
+      SliceBuffer discard = GetWriteCycle().SerializeRegularFrames({unused});
+    }
+  }
+
  private:
   void InitCoreConfiguration() override {}
-  void InitTest() override { InitParty(); }
+  void InitTest() override {
+    InitParty();
+    transport_write_context_.StartWriteCycle();
+    bool unused;
+    // Discard the connection preface
+    SliceBuffer discard =
+        transport_write_context_.GetWriteCycle().SerializeRegularFrames(
+            {unused});
+  }
+
   void Shutdown() override {
     party_.reset();
     party2_.reset();
+    transport_write_context_.EndWriteCycle();
   }
 
   RefCountedPtr<Party> party_;
   RefCountedPtr<Party> party2_;
   HPackCompressor encoder_;
+  http2::TransportWriteContext transport_write_context_;
 };
 
 // TODO(akshitpatel) : [PH2][P3] : Add a test for server side.
@@ -386,15 +409,23 @@ YODEL_TEST(StreamDataQueueFuzzTest, EnqueueDequeueMultiParty) {
               return absl::OkStatus();
             },
             [this, &stream_data_queue, &assembler, &dequeued_messages] {
+              http2::FrameSender frame_sender =
+                  GetWriteCycle().GetFrameSender();
+              GRPC_UNUSED
               typename StreamDataQueue<ClientMetadataHandle>::DequeueResult
-                  frames = stream_data_queue.DequeueFrames(
+                  result = stream_data_queue.DequeueFrames(
                       max_tokens, max_frame_length, /*stream_fc_tokens=*/
                       std::numeric_limits<uint32_t>::max(), GetEncoder(),
+                      frame_sender,
                       /*can_send_reset_stream=*/true);
-              for (auto& frame : frames.frames) {
+              for (auto& frame : GetWriteCycle().TestOnlyUrgentFrames()) {
+                std::visit(assembler, std::move(frame));
+              }
+              for (auto& frame : GetWriteCycle().TestOnlyRegularFrames()) {
                 std::visit(assembler, std::move(frame));
               }
               assembler.GetMessages(dequeued_messages);
+              MaybeFlushWriteBuffer();
               return Map(
                   Sleep(Duration::Seconds(1)),
                   [](auto) -> LoopCtl<absl::Status> { return Continue{}; });

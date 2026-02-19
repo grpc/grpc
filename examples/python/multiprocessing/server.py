@@ -109,9 +109,16 @@ def main():
         sys.stdout.flush()
         workers = []
         for _ in range(_PROCESS_COUNT):
-            # NOTE: It is imperative that the worker subprocesses be forked before
-            # any gRPC servers start up. See
+            # NOTE: It is imperative that the parent process fork child processes
+            # BEFORE the parent process starts a gRPC server. See
             # https://github.com/grpc/grpc/issues/16001 for more details.
+            #
+            # In this example, the parent process never starts a gRPC server
+            # for its own use - it only forks worker processes.
+            # Each forked child then independently starts its own server.
+            # Since forked processes have independent address spaces, it doesn't matter
+            # if some children start their servers while others are still being forked.
+            # The crucial point is that THIS (parent) process hasn't started a gRPC server.
             worker = multiprocessing.Process(
                 target=_run_server, args=(bind_address,)
             )
