@@ -181,7 +181,7 @@ Http2Status ProcessHttp2DataFrame(Http2DataFrame frame) {
   GRPC_HTTP2_SERVER_DLOG
       << "Http2ServerTransport ProcessHttp2DataFrame Promise { stream_id="
       << frame.stream_id << ", end_stream=" << frame.end_stream
-      << ", payload=" << frame.payload.JoinIntoString() << "}";
+      << ", payload length=" << frame.payload.Length() << "}";
   return Http2Status::Ok();
 }
 
@@ -194,7 +194,7 @@ Http2Status ProcessHttp2HeaderFrame(Http2HeaderFrame frame) {
       << "Http2ServerTransport ProcessHttp2HeaderFrame Promise { stream_id="
       << frame.stream_id << ", end_headers=" << frame.end_headers
       << ", end_stream=" << frame.end_stream
-      << ", payload=" << frame.payload.JoinIntoString() << " }";
+      << ", payload length=" << frame.payload.Length() << " }";
   return Http2Status::Ok();
 }
 
@@ -241,8 +241,7 @@ Http2Status ProcessHttp2GoawayFrame(Http2GoawayFrame frame) {
   GRPC_HTTP2_SERVER_DLOG
       << "Http2ServerTransport ProcessHttp2GoawayFrame Promise { "
          "last_stream_id="
-      << frame.last_stream_id << ", error_code=" << frame.error_code
-      << ", debug_data=" << frame.debug_data.as_string_view() << "}";
+      << frame.last_stream_id << ", error_code=" << frame.error_code << "}";
   return Http2Status::Ok();
 }
 
@@ -267,7 +266,7 @@ Http2Status ProcessHttp2ContinuationFrame(Http2ContinuationFrame frame) {
       << "Http2ServerTransport ProcessHttp2ContinuationFrame Promise { "
          "stream_id="
       << frame.stream_id << ", end_headers=" << frame.end_headers
-      << ", payload=" << frame.payload.JoinIntoString() << " }";
+      << ", payload length=" << frame.payload.Length() << " }";
   return Http2Status::Ok();
 }
 
@@ -276,8 +275,9 @@ Http2Status ProcessHttp2SecurityFrame(Http2SecurityFrame frame) {
       << "Http2ServerTransport ProcessHttp2SecurityFrame Factory";
   // TODO(tjagtap) : [PH2][P2] : Implement this.
   GRPC_HTTP2_SERVER_DLOG
-      << "Http2ServerTransport ProcessHttp2SecurityFrame Promise { payload="
-      << frame.payload.JoinIntoString() << " }";
+      << "Http2ServerTransport ProcessHttp2SecurityFrame Promise { payload "
+         "length="
+      << frame.payload.Length() << " }";
   return Http2Status::Ok();
 }
 
@@ -346,9 +346,9 @@ auto Http2ServerTransport::ReadAndProcessOneFrame() {
       },
       // Parse the payload of the frame based on frame type.
       [this](SliceBuffer payload) -> absl::StatusOr<Http2Frame> {
-        GRPC_HTTP2_SERVER_DLOG
-            << "Http2ServerTransport ReadAndProcessOneFrame ParseFramePayload "
-            << payload.JoinIntoString();
+        GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport ReadAndProcessOneFrame "
+                                  "ParseFramePayload payload length: "
+                               << payload.Length();
         ValueOrHttp2Status<Http2Frame> frame =
             ParseFramePayload(current_frame_header_, std::move(payload));
         if (frame.IsOk()) {

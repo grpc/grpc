@@ -42,6 +42,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
+#include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -379,21 +380,21 @@ bool ProcessIncomingWindowUpdateFrameFlowControl(
 }
 
 void MaybeAddTransportWindowUpdateFrame(
-    chttp2::TransportFlowControl& flow_control,
-    std::vector<Http2Frame>& frames) {
+    chttp2::TransportFlowControl& flow_control, FrameSender& frame_sender) {
   uint32_t window_size =
       flow_control.DesiredAnnounceSize(/*writing_anyway=*/true);
   if (window_size > 0) {
     GRPC_HTTP2_COMMON_DLOG
         << "MaybeGetWindowUpdateFrames Transport Window Update : "
         << window_size;
-    frames.emplace_back(Http2WindowUpdateFrame{/*stream_id=*/0, window_size});
+    frame_sender.AddRegularFrame(
+        Http2WindowUpdateFrame{/*stream_id=*/0, window_size});
     flow_control.SentUpdate(window_size);
   }
 }
 
 void MaybeAddStreamWindowUpdateFrame(RefCountedPtr<Stream> stream,
-                                     std::vector<Http2Frame>& frames) {
+                                     FrameSender& frame_sender) {
   GRPC_HTTP2_COMMON_DLOG << "MaybeAddStreamWindowUpdateFrame stream="
                          << ((stream == nullptr)
                                  ? "null"
@@ -409,7 +410,7 @@ void MaybeAddStreamWindowUpdateFrame(RefCountedPtr<Stream> stream,
         << (increment == 0 ? ". The frame will NOT be sent for increment 0"
                            : "");
     if (increment > 0) {
-      frames.emplace_back(
+      frame_sender.AddRegularFrame(
           Http2WindowUpdateFrame{stream->GetStreamId(), increment});
     }
   }

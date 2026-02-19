@@ -617,7 +617,7 @@ class Http2ServerTransport final : public ServerTransport {
   bool should_reset_ping_clock_;
   bool is_first_write_;
   IncomingMetadataTracker incoming_headers_;
-  WriteContext write_context_;
+  TransportWriteContext write_context_;
 
   // Tracks the max allowed stream id. Currently this is only set on receiving a
   // graceful GOAWAY frame.
