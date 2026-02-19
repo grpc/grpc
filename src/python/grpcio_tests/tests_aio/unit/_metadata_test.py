@@ -205,7 +205,7 @@ class TestTypeMetadata(unittest.TestCase):
                 self.assertEqual(expected, Metadata.from_tuple(source))
 
     @typeguard.suppress_type_checks
-    def test_metadata_from_tuple_nontuple(self):
+    def test_metadata_from_tuple_non_tuple(self):
         scenarios = (
           (None, Metadata()),
           (Metadata(), Metadata()),
@@ -214,6 +214,25 @@ class TestTypeMetadata(unittest.TestCase):
         for source, expected in scenarios:
           with self.subTest(raw_metadata=source, expected=expected):
             self.assertEqual(expected, Metadata.from_tuple(source))
+
+    def test_create(self):
+        # 1. raw_metadata is None
+        self.assertEqual(Metadata._create(None), Metadata())
+
+        # 2. raw_metadata is Metadata
+        m = Metadata(("key", "value"))
+        self.assertIs(Metadata._create(m), m)
+
+        # 3. raw_metadata is tuple
+        t = (("key", "value"),)
+        self.assertEqual(Metadata._create(t), Metadata(("key", "value")))
+
+        # 4. raw_metadata is list (iterable)
+        l = [("key", "value")]
+        self.assertEqual(Metadata._create(l), Metadata(("key", "value")))
+
+        # 5. raw_metadata is empty
+        self.assertEqual(Metadata._create([]), Metadata())
 
     def test_keys_values_items(self):
         metadata = Metadata(*self._MULTI_ENTRY_DATA)
