@@ -41,9 +41,7 @@ from opentelemetry.context.context import Context
 from opentelemetry.metrics import Counter
 from opentelemetry.metrics import Histogram
 from opentelemetry.metrics import Meter
-from opentelemetry.sdk.trace import IdGenerator
-from opentelemetry.sdk.trace import Tracer
-from opentelemetry.sdk.trace.id_generator import RandomIdGenerator
+from opentelemetry.sdk import trace as sdk_trace
 from opentelemetry.trace.propagation.tracecontext import (
     TraceContextTextMapPropagator,
 )
@@ -89,8 +87,8 @@ GRPC_STATUS_CODE_TO_STRING = {
 }
 
 
-class _FixedIdGenerator(IdGenerator):
-    """IdGenerator child class to handle correctly span ID propagation.
+class _GrpcIdGenerator(sdk_trace.IdGenerator):
+    """Implements IdGenerator interface to handle correctly span ID propagation.
 
     Span IDs are generated in C context anyway. In Python we just need to use those.
     """
@@ -109,7 +107,7 @@ class _FixedIdGenerator(IdGenerator):
 class _OpenTelemetryPlugin:
     _plugin: OpenTelemetryPlugin
     _metric_to_recorder: Dict[MetricsName, Union[Counter, Histogram]]
-    _tracer: Optional[Tracer]
+    _tracer: Optional[sdk_trace.Tracer]
     _trace_ctx: Optional[Context]
     _text_map_propagator: Optional[TraceContextTextMapPropagator]
     _enabled_client_plugin_options: Optional[List[OpenTelemetryPluginOption]]
@@ -222,10 +220,11 @@ class _OpenTelemetryPlugin:
     def _record_tracing_data(self, tracing_data: TracingData) -> None:
         """Exports tracing data gathered in core library in batches.
 
-        We need to transpose from `TracingData` object to `trace.ReadableSpan` object here. However,
-        instantiating objects of `trace.ReadableSpan` type is restricted in OpenTelemetry framework.
-        Therefore, we need to manually create spans and take care of parent-to-child relationships
-        using custom `trace.IdGenerator`. With this approach IDs are propagated correctly to
+        We need to transpose from `TracingData` object to `trace.ReadableSpan`
+        object here. However, instantiating objects of `trace.ReadableSpan` type
+        is restricted in OpenTelemetry framework. Therefore, we need to manually
+        create spans and take care of parent-to-child relationships using custom
+        `trace.IdGenerator`. With this approach IDs are propagated correctly to
         configured exporter instance.
         """
         # this step is needed to propagate parent span ID correctly
@@ -236,7 +235,7 @@ class _OpenTelemetryPlugin:
         )
 
         # this step is needed to propagate span ID correctly
-        self._tracer.id_generator = _FixedIdGenerator(
+        self._tracer.id_generator = _GrpcIdGenerator(
             trace_id=tracing_data.trace_id, span_id=tracing_data.span_id
         )
 
@@ -514,10 +513,17 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
     def _generate_ids(self) -> Tuple[bytes, bytes]:
         """Generates trace ID and parent span ID
 
-        Non empty `parent_span_id` means that:
-        1. We have current thread local span that needs to be used
-        or
-        2. Tracing is enabled for this RPC.
+        If there is an active OpenTelemetry span in the current context, its
+        trace ID is propagated.
+
+        If there is no active span but tracing is enabled, a new trace ID is
+        generated.
+
+        If tracing is disabled, returns a dummy trace ID and an empty parent
+        span ID.
+
+        Returns:
+            A tuple of (trace ID, parent span ID).
         """
         # current span is used to track the trace ID. Since it is preserved across different RPCs,
         # we can safely use just the context of the first plugin.
@@ -525,11 +531,11 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
             context=self._plugins[0]._trace_ctx
         ).get_span_context()
         if current_span.is_valid:
-            generator = RandomIdGenerator()
+            generator = sdk_trace.RandomIdGenerator()
             trace_id = f"{current_span.trace_id:032x}".encode()
             parent_span_id = f"{generator.generate_span_id():016x}".encode()
         elif self._should_enable_tracing():
-            generator = RandomIdGenerator()
+            generator = sdk_trace.RandomIdGenerator()
             trace_id = f"{generator.generate_trace_id():032x}".encode()
             parent_span_id = f"{generator.generate_span_id():016x}".encode()
         else:

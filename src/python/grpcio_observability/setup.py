@@ -285,7 +285,7 @@ if __name__ == "__main__":
         install_requires=[
             "grpcio=={version}".format(version=grpc_version.VERSION),
             "setuptools>=77.0.1",
-            "opentelemetry-api>=1.21.0",
+            "opentelemetry-api>=1.25.0",
         ],
         cmdclass={"build_ext": BuildExt},
     )
