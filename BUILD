@@ -277,7 +277,7 @@ g_stands_for = "gutsy"  # @unused
 
 core_version = "52.0.0"  # @unused
 
-version = "1.78.0"  # @unused
+version = "1.78.1"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
