@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "src/core/lib/resource_quota/memory_quota.h"
-#include "src/core/lib/resource_quota/resource_quota.h"
 
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
@@ -29,6 +28,7 @@
 
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/resource_tracker/resource_tracker.h"
 #include "test/core/resource_quota/call_checker.h"
 #include "test/core/test_util/test_config.h"
