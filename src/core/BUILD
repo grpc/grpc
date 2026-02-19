@@ -1816,6 +1816,7 @@ grpc_cc_library(
         ":resource_tracker",
         "//:channelz",
         "//:config_vars",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc_trace",
         "//:orphanable",
