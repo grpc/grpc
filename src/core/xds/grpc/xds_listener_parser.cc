@@ -21,13 +21,6 @@
 #include <set>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/config_source.upb.h"
@@ -48,6 +41,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/util/down_cast.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/match.h"
 #include "src/core/util/upb_utils.h"
@@ -57,6 +51,12 @@
 #include "src/core/xds/grpc/xds_route_config_parser.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "upb/text/encode.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 
 namespace grpc_core {
 
@@ -251,7 +251,7 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
         auto extension = ExtractXdsExtension(context, typed_config, errors);
         if (!extension.has_value()) continue;
         const XdsHttpFilterImpl* filter_impl =
-            http_filter_registry.GetFilterForType(extension->type);
+            http_filter_registry.GetFilterForTopLevelType(extension->type);
         if (filter_impl == nullptr) {
           if (!is_optional) errors->AddError("unsupported filter type");
           continue;
@@ -264,13 +264,20 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
           }
           continue;
         }
-        std::optional<XdsHttpFilterImpl::FilterConfig> filter_config =
-            filter_impl->GenerateFilterConfig(name, context,
-                                              std::move(*extension), errors);
-        if (filter_config.has_value()) {
-          http_connection_manager.http_filters.emplace_back(
-              XdsListenerResource::HttpConnectionManager::HttpFilter{
-                  std::string(name), std::move(*filter_config)});
+        http_connection_manager.http_filters.emplace_back();
+        auto& entry = http_connection_manager.http_filters.back();
+        entry.name = std::string(name);
+        entry.config_proto_type = filter_impl->ConfigProtoName();
+        if (!is_client || !IsXdsChannelFilterChainPerRouteEnabled()) {
+          std::optional<Json> filter_config = filter_impl->GenerateFilterConfig(
+              name, context, *extension, errors);
+          if (filter_config.has_value()) {
+            entry.config = std::move(*filter_config);
+          }
+        }
+        if (IsXdsChannelFilterChainPerRouteEnabled()) {
+          entry.filter_config = filter_impl->ParseTopLevelConfig(
+              name, context, *extension, errors);
         }
       }
     }
@@ -284,23 +291,21 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
     // out of which only one gets added in the final list.
     for (const auto& http_filter : http_connection_manager.http_filters) {
       const XdsHttpFilterImpl* filter_impl =
-          http_filter_registry.GetFilterForType(
-              http_filter.config.config_proto_type_name);
+          http_filter_registry.GetFilterForTopLevelType(
+              http_filter.config_proto_type);
       if (&http_filter != &http_connection_manager.http_filters.back()) {
         // Filters before the last filter must not be terminal.
         if (filter_impl->IsTerminalFilter()) {
-          errors->AddError(
-              absl::StrCat("terminal filter for config type ",
-                           http_filter.config.config_proto_type_name,
-                           " must be the last filter in the chain"));
+          errors->AddError(absl::StrCat(
+              "terminal filter for config type ", http_filter.config_proto_type,
+              " must be the last filter in the chain"));
         }
       } else {
         // The last filter must be terminal.
         if (!filter_impl->IsTerminalFilter()) {
-          errors->AddError(
-              absl::StrCat("non-terminal filter for config type ",
-                           http_filter.config.config_proto_type_name,
-                           " is the last filter in the chain"));
+          errors->AddError(absl::StrCat("non-terminal filter for config type ",
+                                        http_filter.config_proto_type,
+                                        " is the last filter in the chain"));
         }
       }
     }
@@ -739,8 +744,8 @@ void AddFilterChainDataForSourceType(
     const FilterChain& filter_chain,
     InternalFilterChainMap::DestinationIp* destination_ip,
     ValidationErrors* errors) {
-  CHECK(static_cast<unsigned int>(filter_chain.filter_chain_match.source_type) <
-        3u);
+  GRPC_CHECK(static_cast<unsigned int>(
+                 filter_chain.filter_chain_match.source_type) < 3u);
   AddFilterChainDataForSourceIpRange(
       filter_chain,
       &destination_ip->source_types_array[static_cast<int>(

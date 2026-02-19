@@ -35,15 +35,15 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "src/core/credentials/call/json_util.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/json/json_writer.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
-#include "src/core/credentials/call/json_util.h"
-#include "src/core/lib/iomgr/error.h"
-#include "src/core/util/json/json_reader.h"
-#include "src/core/util/json/json_writer.h"
 
 using grpc_core::Json;
 
@@ -221,8 +221,8 @@ static char* dot_concat_and_free_strings(char* str1, char* str2) {
   *(current++) = '.';
   memcpy(current, str2, str2_len);
   current += str2_len;
-  CHECK(current >= result);
-  CHECK((uintptr_t)(current - result) == result_len);
+  GRPC_CHECK(current >= result);
+  GRPC_CHECK((uintptr_t)(current - result) == result_len);
   *current = '\0';
   gpr_free(str1);
   gpr_free(str2);

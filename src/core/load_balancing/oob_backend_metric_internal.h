@@ -24,8 +24,6 @@
 #include <set>
 #include <utility>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/strings/string_view.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/client_channel/subchannel_stream_client.h"
@@ -36,6 +34,8 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "src/core/util/unique_type_name.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -80,7 +80,6 @@ class OrcaProducer final : public Subchannel::DataProducerInterface {
   void NotifyWatchers(const BackendMetricData& backend_metric_data);
 
   WeakRefCountedPtr<Subchannel> subchannel_;
-  RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   ConnectivityWatcher* connectivity_watcher_;
   Mutex mu_;
   std::set<OrcaWatcher*> watchers_ ABSL_GUARDED_BY(mu_);

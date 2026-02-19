@@ -34,10 +34,7 @@
 #include <utility>
 #include <variant>
 
-#include "absl/container/flat_hash_map.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
+#include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
@@ -68,6 +65,7 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/stream_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/init_internally.h"
@@ -83,6 +81,10 @@
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 // Flag that this closure barrier may be covering a write in a pollset, and so
 //   we should not complete this closure until we can prove that the write got
@@ -115,6 +117,7 @@ typedef enum {
   GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE,
 } grpc_chttp2_write_state;
 
+// Not getting used anywhere AFAIK
 typedef enum {
   GRPC_CHTTP2_OPTIMIZE_FOR_LATENCY,
   GRPC_CHTTP2_OPTIMIZE_FOR_THROUGHPUT,
@@ -287,6 +290,19 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   void WriteSecurityFrame(grpc_core::SliceBuffer* data);
   void WriteSecurityFrameLocked(grpc_core::SliceBuffer* data);
 
+  void StartWatch(grpc_core::RefCountedPtr<StateWatcher> watcher) override;
+  void StopWatch(grpc_core::RefCountedPtr<StateWatcher> watcher) override;
+
+  void NotifyStateWatcherOnDisconnectLocked(
+      absl::Status status, StateWatcher::DisconnectInfo disconnect_info);
+
+  void OnPeerMaxConcurrentStreamsUpdateComplete();
+  void MaybeNotifyStateWatcherOfPeerMaxConcurrentStreamsLocked();
+  void NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked();
+
+  void MaybeNotifyOnReceiveSettingsLocked(
+      absl::StatusOr<uint32_t> max_concurrent_streams);
+
   // We depend on the ep being available for the life of the transport in
   // at least one place - event callback in WriteEventSink. Hence, this should
   // only be orphaned in the destructor.
@@ -299,8 +315,11 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
       transport_framing_endpoint_extension = nullptr;
 
   grpc_core::MemoryOwner memory_owner;
+  grpc_core::StreamQuotaRefPtr stream_quota;
   const grpc_core::MemoryAllocator::Reservation self_reservation;
   grpc_core::ReclamationSweep active_reclamation;
+  grpc_core::InstrumentStorageRefPtr<grpc_core::ResourceQuotaDomain>
+      resource_quota_telemetry_storage;
 
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
   grpc_core::Combiner* combiner;
@@ -313,7 +332,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   // starts a connectivity watch.
   grpc_pollset_set* interested_parties_until_recv_settings = nullptr;
 
-  grpc_closure* notify_on_receive_settings = nullptr;
+  absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> notify_on_receive_settings;
   grpc_closure* notify_on_close = nullptr;
 
   /// has the upper layer closed the transport?
@@ -372,7 +391,12 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
       void* user_data, grpc_core::ServerMetadata* metadata) = nullptr;
   void* accept_stream_cb_user_data;
 
+  // There should be only a single watcher in use at any given time.
+  grpc_core::RefCountedPtr<StateWatcher> watcher;
+  uint32_t last_reported_max_concurrent_streams;
+  bool max_concurrent_streams_notification_in_flight;
   /// connectivity tracking
+  // TODO(roth): Get rid of this in favor of the new state watcher.
   grpc_core::ConnectivityStateTracker state_tracker;
 
   /// data to write now
@@ -590,6 +614,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
 
   std::shared_ptr<grpc_core::Http2StatsCollector> http2_stats;
   grpc_core::Http2ZTraceCollector http2_ztrace_collector;
+  grpc_core::Timestamp last_ztrace_time = grpc_core::Timestamp::InfPast();
 
   GPR_NO_UNIQUE_ADDRESS grpc_core::latent_see::Flow write_flow;
 };
@@ -740,17 +765,6 @@ struct grpc_chttp2_stream {
       grpc_core::Timestamp::InfPast();
 };
 
-// EXPERIMENTAL: provide protection against overloading a server with too many
-// requests: wait for streams to be deallocated before they stop counting
-// against MAX_CONCURRENT_STREAMS
-#define GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION \
-  "grpc.http.overload_protection"
-
-// EXPERIMENTAL: Fail requests at the client if the client is over max
-// concurrent streams, so they may be retried elsewhere.
-#define GRPC_ARG_MAX_CONCURRENT_STREAMS_REJECT_ON_CLIENT \
-  "grpc.http.max_concurrent_streams_reject_on_client"
-
 /// Transport writing call flow:
 /// grpc_chttp2_initiate_write() is called anywhere that we know bytes need to
 /// go out on the wire.
@@ -879,8 +893,10 @@ void grpc_chttp2_reset_ping_clock(grpc_chttp2_transport* t);
 void grpc_chttp2_mark_stream_writable(grpc_chttp2_transport* t,
                                       grpc_chttp2_stream* s);
 
-void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
-                               grpc_error_handle due_to_error, bool tarpit);
+void grpc_chttp2_cancel_stream(
+    grpc_chttp2_transport* t, grpc_chttp2_stream* s,
+    grpc_error_handle due_to_error, bool tarpit,
+    grpc_core::ServerMetadataHandle send_trailing_metadata = nullptr);
 
 void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_chttp2_transport* t,
                                                       grpc_chttp2_stream* s);

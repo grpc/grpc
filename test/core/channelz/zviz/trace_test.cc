@@ -19,14 +19,14 @@
 #include <string>
 #include <vector>
 
-#include "absl/container/flat_hash_map.h"
-#include "absl/log/check.h"
-#include "absl/strings/str_join.h"
 #include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/proto/grpc/channelz/v2/channelz.pb.h"
 #include "test/core/channelz/zviz/environment_fake.h"
 #include "test/core/channelz/zviz/layout_log.h"
+#include "gtest/gtest.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/log/check.h"
+#include "absl/strings/str_join.h"
 
 namespace grpc_zviz {
 namespace {

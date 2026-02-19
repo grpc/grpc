@@ -19,12 +19,12 @@
 #include <atomic>
 #include <cstdint>
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/status_helper.h"
+#include "absl/status/status.h"
 
 //  'state' holds the to call when the fd is readable or writable respectively.
 //    It can contain one of the following values:
@@ -76,7 +76,7 @@ void LockfreeEvent::DestroyEvent() {
     if (curr & kShutdownBit) {
       grpc_core::internal::StatusFreeHeapPtr(curr & ~kShutdownBit);
     } else {
-      CHECK(curr == kClosureNotReady || curr == kClosureReady);
+      GRPC_CHECK(curr == kClosureNotReady || curr == kClosureReady);
     }
     // we CAS in a shutdown, no error value here. If this event is interacted
     // with post-deletion (see the note in the constructor) we want the bit

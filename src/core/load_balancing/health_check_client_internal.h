@@ -27,9 +27,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/client_channel/subchannel_stream_client.h"
@@ -41,6 +38,9 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/work_serializer.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -144,8 +144,6 @@ class HealthProducer final : public Subchannel::DataProducerInterface {
   Mutex mu_;
   std::optional<grpc_connectivity_state> state_ ABSL_GUARDED_BY(&mu_);
   absl::Status status_ ABSL_GUARDED_BY(&mu_);
-  RefCountedPtr<ConnectedSubchannel> connected_subchannel_
-      ABSL_GUARDED_BY(&mu_);
   std::map<std::string /*health_check_service_name*/,
            OrphanablePtr<HealthChecker>>
       health_checkers_ ABSL_GUARDED_BY(&mu_);

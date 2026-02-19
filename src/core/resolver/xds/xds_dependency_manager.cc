@@ -18,18 +18,18 @@
 
 #include <set>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_join.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/fake/fake_resolver.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
 #include "src/core/xds/grpc/xds_cluster_parser.h"
 #include "src/core/xds/grpc/xds_endpoint_parser.h"
 #include "src/core/xds/grpc/xds_listener_parser.h"
 #include "src/core/xds/grpc/xds_route_config_parser.h"
 #include "src/core/xds/grpc/xds_routing.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_join.h"
 
 namespace grpc_core {
 
@@ -608,9 +608,9 @@ void XdsDependencyManager::PopulateDnsUpdate(const std::string& dns_name,
     std::vector<grpc_resolved_address> addresses;
     ChannelArgs address_args = result.addresses->front().args();
     for (const auto& address : *result.addresses) {
-      CHECK_EQ(address.addresses().size(), 1UL);
+      GRPC_CHECK_EQ(address.addresses().size(), 1UL);
       addresses.emplace_back(address.addresses().front());
-      CHECK_EQ(address_args, address.args());
+      GRPC_CHECK_EQ(address_args, address.args());
     }
     locality.endpoints.emplace_back(
         std::move(addresses),
@@ -659,8 +659,8 @@ bool XdsDependencyManager::PopulateClusterConfigMap(
     absl::StatusOr<std::vector<absl::string_view>>* leaf_clusters,
     std::vector<std::string>* resolution_notes) {
   if (depth > 0) {
-    CHECK_NE(leaf_clusters, nullptr);
-    CHECK_NE(resolution_notes, nullptr);
+    GRPC_CHECK_NE(leaf_clusters, nullptr);
+    GRPC_CHECK_NE(resolution_notes, nullptr);
   }
   if (depth == kMaxXdsAggregateClusterRecursionDepth) {
     *leaf_clusters =

@@ -28,21 +28,21 @@
 #include <optional>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "src/core/credentials/transport/transport_credentials.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/http_client/httpcli_ssl_credentials.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/json/json_writer.h"
+#include "src/core/util/uri.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_replace.h"
 #include "absl/strings/string_view.h"
-#include "src/core/credentials/transport/transport_credentials.h"
-#include "src/core/lib/iomgr/closure.h"
-#include "src/core/util/env.h"
-#include "src/core/util/http_client/httpcli_ssl_credentials.h"
-#include "src/core/util/json/json.h"
-#include "src/core/util/json/json_reader.h"
-#include "src/core/util/json/json_writer.h"
-#include "src/core/util/uri.h"
 
 namespace grpc_core {
 
@@ -292,8 +292,8 @@ void AwsExternalAccountCredentials::AwsFetchBody::RetrieveSigningKeys() {
     return;
   }
   if (role_name_.empty()) {
-    AsyncFinish(
-        GRPC_ERROR_CREATE("Missing role name when retrieving signing keys."));
+    AsyncFinish(absl::UnauthenticatedError(
+        "Missing role name when retrieving signing keys."));
     return;
   }
   std::string url_with_role_name = absl::StrCat(creds_->url_, "/", role_name_);
@@ -422,8 +422,8 @@ void AwsExternalAccountCredentials::AwsFetchBody::BuildSubjectToken() {
 void AwsExternalAccountCredentials::AwsFetchBody::AddMetadataRequestHeaders(
     grpc_http_request* request) {
   if (!imdsv2_session_token_.empty()) {
-    CHECK_EQ(request->hdr_count, 0u);
-    CHECK_EQ(request->hdrs, nullptr);
+    GRPC_CHECK_EQ(request->hdr_count, 0u);
+    GRPC_CHECK_EQ(request->hdrs, nullptr);
     grpc_http_header* headers =
         static_cast<grpc_http_header*>(gpr_malloc(sizeof(grpc_http_header)));
     headers[0].key = gpr_strdup("x-aws-ec2-metadata-token");

@@ -24,15 +24,15 @@
 #include <memory>
 #include <sstream>
 
-#include "absl/flags/flag.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_config.h"
+#include "absl/flags/flag.h"
+#include "absl/log/log.h"
 
 ABSL_FLAG(int32_t, server_control_port, 0, "Server port for control rpcs.");
 ABSL_FLAG(int32_t, server_retry_port, 0,
@@ -57,8 +57,8 @@ using grpc::testing::TLS;
 
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
-  CHECK(absl::GetFlag(FLAGS_server_control_port));
-  CHECK(absl::GetFlag(FLAGS_server_retry_port));
+  GRPC_CHECK(absl::GetFlag(FLAGS_server_control_port));
+  GRPC_CHECK(absl::GetFlag(FLAGS_server_retry_port));
 
   std::ostringstream server_address;
   server_address << absl::GetFlag(FLAGS_server_host) << ':'
@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
   Empty empty_response;
   Status start_status =
       control_stub->Start(&start_context, reconnect_params, &empty_response);
-  CHECK(start_status.ok());
+  GRPC_CHECK(start_status.ok());
 
   LOG(INFO) << "Starting connections with retries.";
   server_address.str("");
@@ -98,14 +98,14 @@ int main(int argc, char** argv) {
                              std::chrono::seconds(kDeadlineSeconds));
   Status retry_status =
       retry_stub->Start(&retry_context, reconnect_params, &empty_response);
-  CHECK(retry_status.error_code() == grpc::StatusCode::DEADLINE_EXCEEDED);
+  GRPC_CHECK(retry_status.error_code() == grpc::StatusCode::DEADLINE_EXCEEDED);
   LOG(INFO) << "Done retrying, getting final data from server";
 
   ClientContext stop_context;
   ReconnectInfo response;
   Status stop_status = control_stub->Stop(&stop_context, Empty(), &response);
-  CHECK(stop_status.ok());
-  CHECK(response.passed() == true);
+  GRPC_CHECK(stop_status.ok());
+  GRPC_CHECK(response.passed() == true);
   LOG(INFO) << "Passed";
   return 0;
 }

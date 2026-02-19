@@ -41,7 +41,7 @@
 
 #include <cstring>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #ifdef GPR_WINDOWS

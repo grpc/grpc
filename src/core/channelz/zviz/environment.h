@@ -18,9 +18,9 @@
 #include <string>
 #include <vector>
 
+#include "src/proto/grpc/channelz/v2/channelz.pb.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "src/proto/grpc/channelz/v2/channelz.pb.h"
 
 namespace grpc_zviz {
 
@@ -33,7 +33,9 @@ class Environment {
       int64_t entity_id) = 0;
   struct GetChildrenResult {
     std::vector<grpc::channelz::v2::Entity> entities;
-    bool end;
+    // If >0, this is the first ID of the next page of results.
+    // If 0, this is the last page of results.
+    int64_t next_id_or_end;
   };
   virtual absl::StatusOr<GetChildrenResult> GetChildrenPaginated(
       int64_t /*entity_id*/, absl::string_view /*kind*/, int64_t /*start*/,

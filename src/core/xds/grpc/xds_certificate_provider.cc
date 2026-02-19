@@ -23,11 +23,11 @@
 #include <optional>
 #include <utility>
 
-#include "absl/functional/bind_front.h"
-#include "absl/log/check.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/functional/bind_front.h"
 
 namespace grpc_core {
 
@@ -108,7 +108,8 @@ XdsCertificateProvider::XdsCertificateProvider(
     absl::string_view root_cert_name, bool use_system_root_certs,
     RefCountedPtr<grpc_tls_certificate_provider> identity_cert_provider,
     absl::string_view identity_cert_name,
-    std::vector<StringMatcher> san_matchers)
+    std::vector<StringMatcher> san_matchers, std::string sni,
+    bool auto_host_sni, bool auto_sni_san_validation)
     : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
       root_cert_provider_(std::move(root_cert_provider)),
       root_cert_name_(root_cert_name),
@@ -116,7 +117,9 @@ XdsCertificateProvider::XdsCertificateProvider(
       identity_cert_provider_(std::move(identity_cert_provider)),
       identity_cert_name_(identity_cert_name),
       san_matchers_(std::move(san_matchers)),
-      require_client_certificate_(false) {
+      sni_(std::move(sni)),
+      auto_host_sni_(auto_host_sni),
+      auto_sni_san_validation_(auto_sni_san_validation) {
   distributor_->SetWatchStatusCallback(
       absl::bind_front(&XdsCertificateProvider::WatchStatusCallback, this));
 }
@@ -185,7 +188,7 @@ void XdsCertificateProvider::WatchStatusCallback(std::string cert_name,
     }
   } else if (!root_being_watched && root_cert_watcher_ != nullptr) {
     // Cancel root cert watch.
-    CHECK(root_cert_provider_ != nullptr);
+    GRPC_CHECK(root_cert_provider_ != nullptr);
     root_cert_provider_->distributor()->CancelTlsCertificatesWatch(
         root_cert_watcher_);
     root_cert_watcher_ = nullptr;
@@ -205,7 +208,7 @@ void XdsCertificateProvider::WatchStatusCallback(std::string cert_name,
           std::move(watcher), std::nullopt, identity_cert_name_);
     }
   } else if (!identity_being_watched && identity_cert_watcher_ != nullptr) {
-    CHECK(identity_cert_provider_ != nullptr);
+    GRPC_CHECK(identity_cert_provider_ != nullptr);
     identity_cert_provider_->distributor()->CancelTlsCertificatesWatch(
         identity_cert_watcher_);
     identity_cert_watcher_ = nullptr;

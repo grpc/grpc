@@ -20,11 +20,8 @@
 #include <optional>
 #include <string>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "src/core/call/interception_chain.h"
 #include "src/core/filter/blackboard.h"
+#include "src/core/filter/filter_chain.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/util/json/json.h"
@@ -33,24 +30,73 @@
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "upb/reflection/def.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
 class XdsHttpFilterImpl {
  public:
-  struct FilterConfig {
-    absl::string_view config_proto_type_name;
-    Json config;
+  virtual ~XdsHttpFilterImpl() = default;
 
-    bool operator==(const FilterConfig& other) const {
-      return config_proto_type_name == other.config_proto_type_name &&
-             config == other.config;
-    }
-    std::string ToString() const {
-      return absl::StrCat("{config_proto_type_name=", config_proto_type_name,
-                          " config=", JsonDump(config), "}");
-    }
-  };
+  // Returns the top-level filter config proto message name.
+  virtual absl::string_view ConfigProtoName() const = 0;
+
+  // Returns the override filter config proto message name.
+  // If empty, no override type is supported.
+  virtual absl::string_view OverrideConfigProtoName() const = 0;
+
+  // Loads the proto message into the upb symtab.
+  virtual void PopulateSymtab(upb_DefPool* symtab) const = 0;
+
+  // Adds the filter to the builder.
+  virtual void AddFilter(FilterChainBuilder& builder,
+                         RefCountedPtr<const FilterConfig> config) const = 0;
+
+  // Parses the top-level filter config.
+  virtual RefCountedPtr<const FilterConfig> ParseTopLevelConfig(
+      absl::string_view instance_name,
+      const XdsResourceType::DecodeContext& context,
+      const XdsExtension& extension, ValidationErrors* errors) const = 0;
+
+  // Parses an override config.
+  virtual RefCountedPtr<const FilterConfig> ParseOverrideConfig(
+      absl::string_view instance_name,
+      const XdsResourceType::DecodeContext& context,
+      const XdsExtension& extension, ValidationErrors* errors) const = 0;
+
+  // Returns a new filter config that takes into account any necessary
+  // overrides.  Base class returns the most specific filter config;
+  // subclasses can override if needed.
+  virtual RefCountedPtr<const FilterConfig> MergeConfigs(
+      RefCountedPtr<const FilterConfig> top_level_config,
+      RefCountedPtr<const FilterConfig> virtual_host_override_config,
+      RefCountedPtr<const FilterConfig> route_override_config,
+      RefCountedPtr<const FilterConfig> cluster_weight_override_config) const;
+
+  // Adds state to new_blackboard if needed for the specified filter
+  // config.  Copies existing state from old_blackboard as appropriate.
+  virtual void UpdateBlackboard(const FilterConfig& /*config*/,
+                                const Blackboard* /*old_blackboard*/,
+                                Blackboard* /*new_blackboard*/) const {}
+
+  // Returns true if the filter is supported on clients; false otherwise
+  virtual bool IsSupportedOnClients() const = 0;
+
+  // Returns true if the filter is supported on servers; false otherwise
+  virtual bool IsSupportedOnServers() const = 0;
+
+  // Returns true if the filter must be the last filter in the chain.
+  virtual bool IsTerminalFilter() const { return false; }
+
+  /////////////////////////////////////////////////////////////////////////////
+  //
+  // ALL INTERFACES BELOW ARE DEPRECATED
+  //
+  /////////////////////////////////////////////////////////////////////////////
+  // TODO(roth): Remove these once the server side is migrated to the new
+  // approach for passing xDS HTTP filter configs.
 
   // Service config data for the filter, returned by GenerateServiceConfig().
   struct ServiceConfigJsonEntry {
@@ -66,34 +112,20 @@ class XdsHttpFilterImpl {
     std::string element;
   };
 
-  virtual ~XdsHttpFilterImpl() = default;
-
-  // Returns the top-level filter config proto message name.
-  virtual absl::string_view ConfigProtoName() const = 0;
-
-  // Returns the override filter config proto message name.
-  // If empty, no override type is supported.
-  virtual absl::string_view OverrideConfigProtoName() const = 0;
-
-  // Loads the proto message into the upb symtab.
-  virtual void PopulateSymtab(upb_DefPool* symtab) const = 0;
-
   // Generates a Config from the xDS filter config proto.
   // Used for the top-level config in the HCM HTTP filter list.
-  virtual std::optional<FilterConfig> GenerateFilterConfig(
+  virtual std::optional<Json> GenerateFilterConfig(
       absl::string_view instance_name,
-      const XdsResourceType::DecodeContext& context, XdsExtension extension,
-      ValidationErrors* errors) const = 0;
+      const XdsResourceType::DecodeContext& context,
+      const XdsExtension& extension, ValidationErrors* errors) const = 0;
 
   // Generates a Config from the xDS filter config proto.
   // Used for the typed_per_filter_config override in VirtualHost and Route.
-  virtual std::optional<FilterConfig> GenerateFilterConfigOverride(
+  virtual std::optional<Json> GenerateFilterConfigOverride(
       absl::string_view instance_name,
-      const XdsResourceType::DecodeContext& context, XdsExtension extension,
-      ValidationErrors* errors) const = 0;
+      const XdsResourceType::DecodeContext& context,
+      const XdsExtension& extension, ValidationErrors* errors) const = 0;
 
-  // C-core channel filter implementation.
-  virtual void AddFilter(InterceptionChainBuilder& builder) const = 0;
   // TODO(roth): Remove this once the legacy filter stack goes away.
   virtual const grpc_channel_filter* channel_filter() const = 0;
 
@@ -110,30 +142,21 @@ class XdsHttpFilterImpl {
   // Route, or VirtualHost entries that it is found in, or null if
   // there is no override in any of those locations.
   virtual absl::StatusOr<ServiceConfigJsonEntry> GenerateMethodConfig(
-      const FilterConfig& hcm_filter_config,
-      const FilterConfig* filter_config_override) const = 0;
+      const Json& hcm_filter_config,
+      const Json* filter_config_override) const = 0;
 
   // Function to convert the Configs into a JSON string to be added to the
   // top level of the service config.
   // The hcm_filter_config comes from the HttpConnectionManager config.
   // Currently used only on the client side.
   virtual absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
-      const FilterConfig& hcm_filter_config) const = 0;
+      const Json& hcm_filter_config) const = 0;
 
   // Adds state to new_blackboard if needed for the specified filter
   // config.  Copies existing state from old_blackboard as appropriate.
-  virtual void UpdateBlackboard(const FilterConfig& /*hcm_filter_config*/,
+  virtual void UpdateBlackboard(const Json& /*hcm_filter_config*/,
                                 const Blackboard* /*old_blackboard*/,
                                 Blackboard* /*new_blackboard*/) const {}
-
-  // Returns true if the filter is supported on clients; false otherwise
-  virtual bool IsSupportedOnClients() const = 0;
-
-  // Returns true if the filter is supported on servers; false otherwise
-  virtual bool IsSupportedOnServers() const = 0;
-
-  // Returns true if the filter must be the last filter in the chain.
-  virtual bool IsTerminalFilter() const { return false; }
 };
 
 }  // namespace grpc_core

@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/credentials/call")
+grpc_package(
+    name = "test/core/credentials/call",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "call_credentials_test",
@@ -46,6 +52,7 @@ grpc_cc_test(
         "//src/core:error_utils",
         "//src/core:exec_ctx_wakeup_scheduler",
         "//src/core:gcp_service_account_identity_credentials",
+        "//src/core:grpc_check",
         "//src/core:grpc_external_account_credentials",
         "//src/core:grpc_fake_credentials",
         "//src/core:grpc_google_default_credentials",
@@ -92,14 +99,18 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    uses_event_engine = False,
+    uses_polling = False,
     deps = [
         "//:config",
         "//:gpr",
         "//:grpc",
         "//src/core:call_creds_registry",
+        "//src/core:grpc_oauth2_credentials",
         "//src/core:jwt_token_file_call_credentials",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/test_util:test_call_creds",
+        "@envoy_api//envoy/extensions/grpc_service/call_credentials/access_token/v3:pkg_cc_proto",
     ],
 )

@@ -36,15 +36,6 @@
 #include <variant>
 #include <vector>
 
-#include "absl/cleanup/cleanup.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/cord.h"
-#include "absl/strings/numbers.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/call/client_call.h"
 #include "src/core/call/metadata_batch.h"
@@ -94,6 +85,15 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/useful.h"
 #include "src/core/util/work_serializer.h"
+#include "absl/cleanup/cleanup.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/cord.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -142,7 +142,8 @@ class ClientChannel::SubchannelWrapper
     : public SubchannelInterfaceWithCallDestination {
  public:
   SubchannelWrapper(WeakRefCountedPtr<ClientChannel> client_channel,
-                    RefCountedPtr<Subchannel> subchannel);
+                    RefCountedPtr<Subchannel> subchannel,
+                    uint32_t max_connections_per_subchannel);
   ~SubchannelWrapper() override;
 
   void Orphaned() override;
@@ -165,7 +166,6 @@ class ClientChannel::SubchannelWrapper
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_);
   void CancelDataWatcher(DataWatcherInterface* watcher) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_);
-  void ThrottleKeepaliveTime(int new_keepalive_time);
   std::string address() const override { return subchannel_->address(); }
 
  private:
@@ -191,6 +191,7 @@ class ClientChannel::SubchannelWrapper
 
   WeakRefCountedPtr<ClientChannel> client_channel_;
   RefCountedPtr<Subchannel> subchannel_;
+  const uint32_t max_connections_per_subchannel_;
   // Maps from the address of the watcher passed to us by the LB policy
   // to the address of the WrapperWatcher that we passed to the underlying
   // subchannel.  This is needed so that when the LB policy calls
@@ -242,6 +243,23 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
         });
   }
 
+  void OnKeepaliveUpdate(Duration new_keepalive_time) override {
+    GRPC_TRACE_LOG(client_channel, INFO)
+        << "client_channel=" << subchannel_wrapper_->client_channel_.get()
+        << ": keepalive update for subchannel wrapper "
+        << subchannel_wrapper_.get() << "; hopping into work_serializer";
+    auto self = RefAsSubclass<WatcherWrapper>();
+    subchannel_wrapper_->client_channel_->work_serializer_->Run(
+        [self, new_keepalive_time]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+            *self->subchannel_wrapper_->client_channel_->work_serializer_) {
+          self->ApplyKeepaliveThrottlingInWorkSerializer(new_keepalive_time);
+        });
+  }
+
+  uint32_t max_connections_per_subchannel() const override {
+    return subchannel_wrapper_->max_connections_per_subchannel_;
+  }
+
   grpc_pollset_set* interested_parties() override { return nullptr; }
 
  private:
@@ -257,32 +275,37 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
         << subchannel_wrapper_->subchannel_.get()
         << " watcher=" << watcher_.get()
         << " state=" << ConnectivityStateName(state) << " status=" << status;
-    auto keepalive_throttling = status.GetPayload(kKeepaliveThrottlingKey);
-    if (keepalive_throttling.has_value()) {
-      int new_keepalive_time = -1;
-      if (absl::SimpleAtoi(std::string(keepalive_throttling.value()),
-                           &new_keepalive_time)) {
-        if (new_keepalive_time >
-            subchannel_wrapper_->client_channel_->keepalive_time_) {
-          subchannel_wrapper_->client_channel_->keepalive_time_ =
-              new_keepalive_time;
-          GRPC_TRACE_LOG(client_channel, INFO)
-              << "client_channel=" << subchannel_wrapper_->client_channel_.get()
-              << ": throttling keepalive time to "
-              << subchannel_wrapper_->client_channel_->keepalive_time_;
-          // Propagate the new keepalive time to all subchannels. This is so
-          // that new transports created by any subchannel (and not just the
-          // subchannel that received the GOAWAY), use the new keepalive time.
-          for (auto* subchannel_wrapper :
-               subchannel_wrapper_->client_channel_->subchannel_wrappers_) {
-            subchannel_wrapper->ThrottleKeepaliveTime(new_keepalive_time);
+    if (!IsSubchannelConnectionScalingEnabled()) {
+      auto keepalive_throttling = status.GetPayload(kKeepaliveThrottlingKey);
+      if (keepalive_throttling.has_value()) {
+        int new_keepalive_time_ms = -1;
+        if (absl::SimpleAtoi(std::string(keepalive_throttling.value()),
+                             &new_keepalive_time_ms)) {
+          Duration new_keepalive_time =
+              Duration::Milliseconds(new_keepalive_time_ms);
+          if (new_keepalive_time >
+              subchannel_wrapper_->client_channel_->keepalive_time_) {
+            subchannel_wrapper_->client_channel_->keepalive_time_ =
+                new_keepalive_time;
+            GRPC_TRACE_LOG(client_channel, INFO)
+                << "client_channel="
+                << subchannel_wrapper_->client_channel_.get()
+                << ": throttling keepalive time to "
+                << subchannel_wrapper_->client_channel_->keepalive_time_;
+            // Propagate the new keepalive time to all subchannels. This is so
+            // that new transports created by any subchannel (and not just the
+            // subchannel that received the GOAWAY), use the new keepalive time.
+            for (auto& [subchannel, _] :
+                 subchannel_wrapper_->client_channel_->subchannel_map_) {
+              subchannel->ThrottleKeepaliveTime(new_keepalive_time);
+            }
           }
+        } else {
+          LOG(ERROR) << "client_channel="
+                     << subchannel_wrapper_->client_channel_.get()
+                     << ": Illegal keepalive throttling value "
+                     << std::string(keepalive_throttling.value());
         }
-      } else {
-        LOG(ERROR) << "client_channel="
-                   << subchannel_wrapper_->client_channel_.get()
-                   << ": Illegal keepalive throttling value "
-                   << std::string(keepalive_throttling.value());
       }
     }
     // Propagate status only in state TF.
@@ -294,6 +317,28 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
         state == GRPC_CHANNEL_TRANSIENT_FAILURE ? status : absl::OkStatus());
   }
 
+  void ApplyKeepaliveThrottlingInWorkSerializer(Duration new_keepalive_time)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+          *subchannel_wrapper_->client_channel_->work_serializer_) {
+    if (new_keepalive_time >
+        subchannel_wrapper_->client_channel_->keepalive_time_) {
+      subchannel_wrapper_->client_channel_->keepalive_time_ =
+          new_keepalive_time;
+      GRPC_TRACE_LOG(client_channel, INFO)
+          << "client_channel=" << subchannel_wrapper_->client_channel_.get()
+          << ": throttling keepalive time to "
+          << subchannel_wrapper_->client_channel_->keepalive_time_;
+      // Propagate the new keepalive time to all subchannels. This is so
+      // that new transports created by any subchannel (and not just the
+      // subchannel that received the GOAWAY), use the new keepalive time.
+      for (auto& [subchannel, _] :
+           subchannel_wrapper_->client_channel_->subchannel_map_) {
+        if (subchannel_wrapper_->subchannel_ == subchannel) continue;
+        subchannel->ThrottleKeepaliveTime(new_keepalive_time);
+      }
+    }
+  }
+
   std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
       watcher_;
   WeakRefCountedPtr<SubchannelWrapper> subchannel_wrapper_;
@@ -301,34 +346,32 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
 
 ClientChannel::SubchannelWrapper::SubchannelWrapper(
     WeakRefCountedPtr<ClientChannel> client_channel,
-    RefCountedPtr<Subchannel> subchannel)
+    RefCountedPtr<Subchannel> subchannel,
+    uint32_t max_connections_per_subchannel)
     : SubchannelInterfaceWithCallDestination(
           GRPC_TRACE_FLAG_ENABLED(client_channel) ? "SubchannelWrapper"
                                                   : nullptr),
       client_channel_(std::move(client_channel)),
-      subchannel_(std::move(subchannel)) {
+      subchannel_(std::move(subchannel)),
+      max_connections_per_subchannel_(max_connections_per_subchannel) {
   GRPC_TRACE_LOG(client_channel, INFO)
       << "client_channel=" << client_channel_.get()
       << ": creating subchannel wrapper " << this << " for subchannel "
-      << subchannel_.get();
+      << subchannel_.get()
+      << ", max_connections_per_subchannel=" << max_connections_per_subchannel;
 #ifndef NDEBUG
   DCHECK(client_channel_->work_serializer_->RunningInWorkSerializer());
 #endif
-  if (client_channel_->channelz_node_ != nullptr) {
+  auto& subchannel_wrappers =
+      client_channel_->subchannel_map_[subchannel_.get()];
+  if (subchannel_wrappers.empty() &&
+      client_channel_->channelz_node_ != nullptr) {
     auto* subchannel_node = subchannel_->channelz_node();
     if (subchannel_node != nullptr) {
-      auto it =
-          client_channel_->subchannel_refcount_map_.find(subchannel_.get());
-      if (it == client_channel_->subchannel_refcount_map_.end()) {
-        subchannel_node->AddParent(client_channel_->channelz_node_);
-        it = client_channel_->subchannel_refcount_map_
-                 .emplace(subchannel_.get(), 0)
-                 .first;
-      }
-      ++it->second;
+      subchannel_node->AddParent(client_channel_->channelz_node_);
     }
   }
-  client_channel_->subchannel_wrappers_.insert(this);
+  subchannel_wrappers.insert(this);
 }
 
 ClientChannel::SubchannelWrapper::~SubchannelWrapper() {
@@ -346,20 +389,20 @@ void ClientChannel::SubchannelWrapper::Orphaned() {
   client_channel_->work_serializer_->Run(
       [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
           *self->client_channel_->work_serializer_) {
-        self->client_channel_->subchannel_wrappers_.erase(self.get());
-        if (self->client_channel_->channelz_node_ != nullptr) {
-          auto* subchannel_node = self->subchannel_->channelz_node();
-          if (subchannel_node != nullptr) {
-            auto it = self->client_channel_->subchannel_refcount_map_.find(
-                self->subchannel_.get());
-            CHECK(it != self->client_channel_->subchannel_refcount_map_.end());
-            --it->second;
-            if (it->second == 0) {
+        auto it = self->client_channel_->subchannel_map_.find(
+            self->subchannel_.get());
+        GRPC_CHECK(it != self->client_channel_->subchannel_map_.end());
+        auto& subchannel_wrappers = it->second;
+        subchannel_wrappers.erase(self.get());
+        if (subchannel_wrappers.empty()) {
+          if (self->client_channel_->channelz_node_ != nullptr) {
+            auto* subchannel_node = self->subchannel_->channelz_node();
+            if (subchannel_node != nullptr) {
               subchannel_node->RemoveParent(
                   self->client_channel_->channelz_node_);
-              self->client_channel_->subchannel_refcount_map_.erase(it);
             }
           }
+          self->client_channel_->subchannel_map_.erase(it);
         }
         if (IsSubchannelWrapperCleanupOnOrphanEnabled()) {
           // We need to make sure that the internal subchannel gets unreffed
@@ -411,11 +454,6 @@ void ClientChannel::SubchannelWrapper::CancelDataWatcher(
   if (it != data_watchers_.end()) data_watchers_.erase(it);
 }
 
-void ClientChannel::SubchannelWrapper::ThrottleKeepaliveTime(
-    int new_keepalive_time) {
-  subchannel_->ThrottleKeepaliveTime(new_keepalive_time);
-}
-
 //
 // ClientChannel::ClientChannelControlHelper
 //
@@ -437,6 +475,17 @@ class ClientChannel::ClientChannelControlHelper
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_) {
     // If shutting down, do nothing.
     if (client_channel_->resolver_ == nullptr) return nullptr;
+    // Determine max_connections_per_subchannel.
+    const uint32_t cap =
+        args.GetInt(GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL_CAP).value_or(10);
+    uint32_t max_connections_per_subchannel =
+        args.GetInt(GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL)
+            .value_or(
+                per_address_args.GetInt(GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL)
+                    .value_or(1));
+    max_connections_per_subchannel =
+        std::min(max_connections_per_subchannel, cap);
+    // Modify args for subchannel.
     ChannelArgs subchannel_args = Subchannel::MakeSubchannelArgs(
         args, per_address_args, client_channel_->subchannel_pool_,
         client_channel_->default_authority_);
@@ -448,8 +497,8 @@ class ClientChannel::ClientChannelControlHelper
     // Make sure the subchannel has updated keepalive time.
     subchannel->ThrottleKeepaliveTime(client_channel_->keepalive_time_);
     // Create and return wrapper for the subchannel.
-    return MakeRefCounted<SubchannelWrapper>(client_channel_,
-                                             std::move(subchannel));
+    return MakeRefCounted<SubchannelWrapper>(
+        client_channel_, std::move(subchannel), max_connections_per_subchannel);
   }
 
   void UpdateState(
@@ -630,7 +679,7 @@ ClientChannel::ClientChannel(
       client_channel_factory_(client_channel_factory),
       channelz_node_(channel_args_.GetObject<channelz::ChannelNode>()),
       idle_timeout_(GetClientIdleTimeout(channel_args_)),
-      resolver_data_for_calls_(ResolverDataForCalls{}),
+      resolver_data_for_calls_(nullptr),
       picker_(nullptr),
       call_destination_(
           call_destination_factory->CreateCallDestination(picker_)),
@@ -643,9 +692,7 @@ ClientChannel::ClientChannel(
   // Set initial keepalive time.
   auto keepalive_arg = channel_args_.GetInt(GRPC_ARG_KEEPALIVE_TIME_MS);
   if (keepalive_arg.has_value()) {
-    keepalive_time_ = Clamp(*keepalive_arg, 1, INT_MAX);
-  } else {
-    keepalive_time_ = -1;  // unset
+    keepalive_time_ = Duration::Milliseconds(Clamp(*keepalive_arg, 1, INT_MAX));
   }
 }
 
@@ -859,6 +906,72 @@ grpc_call* ClientChannel::CreateCall(
                         compression_options(), std::move(arena), Ref());
 }
 
+namespace {
+
+class FilterChainImpl final : public FilterChain {
+ public:
+  explicit FilterChainImpl(RefCountedPtr<UnstartedCallDestination> destination)
+      : destination_(std::move(destination)) {}
+
+  UnstartedCallDestination* destination() const { return destination_.get(); }
+
+ private:
+  RefCountedPtr<UnstartedCallDestination> destination_;
+};
+
+class FilterChainBuilderImpl final : public FilterChainBuilder {
+ public:
+  FilterChainBuilderImpl(
+      bool enable_retries, const ChannelArgs& channel_args,
+      Blackboard* blackboard,
+      std::function<void(ServerMetadata&)> on_server_trailing_metadata,
+      RefCountedPtr<UnstartedCallDestination> destination)
+      : enable_retries_(enable_retries),
+        channel_args_(channel_args),
+        blackboard_(blackboard),
+        on_server_trailing_metadata_(std::move(on_server_trailing_metadata)),
+        destination_(std::move(destination)) {}
+
+  absl::StatusOr<RefCountedPtr<FilterChain>> Build() override {
+    if (builder_ == nullptr) InitBuilder();
+    if (enable_retries_) builder_->Add<RetryInterceptor>(nullptr);
+    auto top_of_stack_destination = builder_->Build(destination_);
+    if (!top_of_stack_destination.ok()) {
+      return MaybeRewriteIllegalStatusCode(top_of_stack_destination.status(),
+                                           "channel construction");
+    }
+    builder_.reset();
+    return MakeRefCounted<FilterChainImpl>(
+        std::move(*top_of_stack_destination));
+  }
+
+ private:
+  void AddFilter(const FilterHandle& filter_handle,
+                 RefCountedPtr<const FilterConfig> config) override {
+    if (builder_ == nullptr) InitBuilder();
+    filter_handle.AddToBuilder(builder_.get(), std::move(config));
+  }
+
+  void InitBuilder() {
+    builder_ =
+        std::make_unique<InterceptionChainBuilder>(channel_args_, blackboard_);
+    if (on_server_trailing_metadata_ != nullptr) {
+      builder_->AddOnServerTrailingMetadata(on_server_trailing_metadata_);
+    }
+    CoreConfiguration::Get().channel_init().AddToInterceptionChainBuilder(
+        GRPC_CLIENT_CHANNEL, *builder_);
+  }
+
+  const bool enable_retries_;
+  const ChannelArgs channel_args_;
+  const Blackboard* blackboard_;
+  const std::function<void(ServerMetadata&)> on_server_trailing_metadata_;
+  const RefCountedPtr<UnstartedCallDestination> destination_;
+  std::unique_ptr<InterceptionChainBuilder> builder_;
+};
+
+}  // namespace
+
 void ClientChannel::StartCall(UnstartedCallHandler unstarted_handler) {
   // Increment call count.
   if (idle_timeout_ != Duration::Zero()) idle_state_.IncreaseCallCount();
@@ -877,31 +990,32 @@ void ClientChannel::StartCall(UnstartedCallHandler unstarted_handler) {
             // Wait for the resolver result.
             CheckDelayed(self->resolver_data_for_calls_.NextWhen(
                 [wait_for_ready](
-                    const absl::StatusOr<ResolverDataForCalls> result) {
+                    const absl::StatusOr<RefCountedPtr<ConfigSelector>>
+                        config_selector) {
                   bool got_result = false;
                   // If the resolver reports an error but the call is
                   // wait_for_ready, keep waiting for the next result
                   // instead of failing the call.
-                  if (!result.ok()) {
+                  if (!config_selector.ok()) {
                     got_result = !wait_for_ready;
                   } else {
                     // Not an error.  Make sure we actually have a result.
-                    got_result = result->config_selector != nullptr;
+                    got_result = *config_selector != nullptr;
                   }
                   return got_result;
                 })),
             // Handle resolver result.
             [self, unstarted_handler](
-                std::tuple<absl::StatusOr<ResolverDataForCalls>, bool>
+                std::tuple<absl::StatusOr<RefCountedPtr<ConfigSelector>>, bool>
                     result_and_delayed) mutable {
-              auto& resolver_data = std::get<0>(result_and_delayed);
-              const bool was_queued = std::get<1>(result_and_delayed);
-              if (!resolver_data.ok()) return resolver_data.status();
+              auto& [config_selector, was_queued] = result_and_delayed;
+              if (!config_selector.ok()) return config_selector.status();
               // Apply service config to call.
-              absl::Status status = self->ApplyServiceConfigToCall(
-                  *resolver_data->config_selector,
-                  unstarted_handler.UnprocessedClientInitialMetadata());
-              if (!status.ok()) return status;
+              absl::StatusOr<RefCountedPtr<const FilterChain>> filter_chain =
+                  self->ApplyServiceConfigToCall(
+                      **config_selector,
+                      unstarted_handler.UnprocessedClientInitialMetadata());
+              if (!filter_chain.ok()) return filter_chain.status();
               // If the call was queued, add trace annotation.
               if (was_queued) {
                 auto* call_tracer = MaybeGetContext<CallSpan>();
@@ -912,8 +1026,10 @@ void ClientChannel::StartCall(UnstartedCallHandler unstarted_handler) {
               }
               // Start the call on the destination provided by the
               // resolver.
-              resolver_data->call_destination->StartCall(
-                  std::move(unstarted_handler));
+              auto destination =
+                  DownCast<const FilterChainImpl*>(filter_chain->get())
+                      ->destination();
+              destination->StartCall(std::move(unstarted_handler));
               return absl::OkStatus();
             });
       });
@@ -945,7 +1061,7 @@ void ClientChannel::DestroyResolverAndLbPolicyLocked() {
     resolver_.reset();
     saved_service_config_.reset();
     saved_config_selector_.reset();
-    resolver_data_for_calls_.Set(ResolverDataForCalls{nullptr, nullptr});
+    resolver_data_for_calls_.Set(nullptr);
     // Clear LB policy if set.
     if (lb_policy_ != nullptr) {
       GRPC_TRACE_LOG(client_channel, INFO)
@@ -1112,6 +1228,12 @@ void ClientChannel::OnResolverResultChangedLocked(Resolver::Result result) {
         static_cast<const internal::ClientChannelGlobalParsedConfig*>(
             service_config->GetGlobalParsedConfig(
                 service_config_parser_index_));
+    // Set max_connections_per_subchannel from service config.
+    if (parsed_service_config->max_connections_per_subchannel() != 0) {
+      result.args = result.args.Set(
+          GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL,
+          parsed_service_config->max_connections_per_subchannel());
+    }
     // Choose LB policy config.
     RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config =
         ChooseLbPolicy(result, parsed_service_config);
@@ -1271,35 +1393,26 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked(
   ChannelArgs new_args = args.SetObject(this).SetObject(saved_service_config_);
   // Construct filter stack.
   auto new_blackboard = MakeRefCounted<Blackboard>();
-  InterceptionChainBuilder builder(new_args, new_blackboard.get());
-  if (idle_timeout_ != Duration::Zero()) {
-    builder.AddOnServerTrailingMetadata([this](ServerMetadata&) {
-      if (idle_state_.DecreaseCallCount()) StartIdleTimer();
-    });
-  }
-  CoreConfiguration::Get().channel_init().AddToInterceptionChainBuilder(
-      GRPC_CLIENT_CHANNEL, builder);
-  // Add filters returned by the config selector (e.g., xDS HTTP filters).
-  config_selector->AddFilters(builder, blackboard_.get(), new_blackboard.get());
   const bool enable_retries =
       !channel_args_.WantMinimalStack() &&
       channel_args_.GetBool(GRPC_ARG_ENABLE_RETRIES).value_or(true);
   if (enable_retries) {
     RetryInterceptor::UpdateBlackboard(*saved_service_config_,
                                        blackboard_.get(), new_blackboard.get());
-    builder.Add<RetryInterceptor>();
   }
+  std::function<void(ServerMetadata&)> on_server_trailing_metadata;
+  if (idle_timeout_ != Duration::Zero()) {
+    on_server_trailing_metadata = [this](ServerMetadata&) {
+      if (idle_state_.DecreaseCallCount()) StartIdleTimer();
+    };
+  }
+  FilterChainBuilderImpl filter_chain_builder(
+      enable_retries, new_args, new_blackboard.get(),
+      std::move(on_server_trailing_metadata), call_destination_);
+  config_selector->BuildFilterChains(filter_chain_builder, blackboard_.get(),
+                                     new_blackboard.get());
   blackboard_ = std::move(new_blackboard);
-  // Create call destination.
-  auto top_of_stack_call_destination = builder.Build(call_destination_);
-  // Send result to data plane.
-  if (!top_of_stack_call_destination.ok()) {
-    resolver_data_for_calls_.Set(MaybeRewriteIllegalStatusCode(
-        top_of_stack_call_destination.status(), "channel construction"));
-  } else {
-    resolver_data_for_calls_.Set(ResolverDataForCalls{
-        std::move(config_selector), std::move(*top_of_stack_call_destination)});
-  }
+  resolver_data_for_calls_.Set(std::move(config_selector));
 }
 
 void ClientChannel::UpdateStateLocked(grpc_connectivity_state state,
@@ -1370,7 +1483,8 @@ void ClientChannel::StartIdleTimer() {
       std::move(arena)));
 }
 
-absl::Status ClientChannel::ApplyServiceConfigToCall(
+absl::StatusOr<RefCountedPtr<const FilterChain>>
+ClientChannel::ApplyServiceConfigToCall(
     ConfigSelector& config_selector,
     ClientMetadata& client_initial_metadata) const {
   GRPC_TRACE_LOG(client_channel_call, INFO)
@@ -1385,11 +1499,12 @@ absl::Status ClientChannel::ApplyServiceConfigToCall(
       GetContext<Arena>()->New<ClientChannelServiceConfigCallData>(
           GetContext<Arena>());
   // Use the ConfigSelector to determine the config for the call.
-  absl::Status call_config_status = config_selector.GetCallConfig(
-      {&client_initial_metadata, GetContext<Arena>(),
-       service_config_call_data});
-  if (!call_config_status.ok()) {
-    return MaybeRewriteIllegalStatusCode(call_config_status, "ConfigSelector");
+  auto filter_chain = config_selector.GetCallConfig({&client_initial_metadata,
+                                                     GetContext<Arena>(),
+                                                     service_config_call_data});
+  if (!filter_chain.ok()) {
+    return MaybeRewriteIllegalStatusCode(filter_chain.status(),
+                                         "ConfigSelector");
   }
   // Apply our own method params to the call.
   auto* method_params = DownCast<ClientChannelMethodParsedConfig*>(
@@ -1403,7 +1518,7 @@ absl::Status ClientChannel::ApplyServiceConfigToCall(
       const Timestamp per_method_deadline =
           Timestamp::FromCycleCounterRoundUp(call->start_time()) +
           method_params->timeout();
-      call->UpdateDeadline(per_method_deadline);
+      call->UpdateDeadline(per_method_deadline).IgnoreError();
     }
     // If the service config set wait_for_ready and the application
     // did not explicitly set it, use the value from the service config.
@@ -1414,7 +1529,7 @@ absl::Status ClientChannel::ApplyServiceConfigToCall(
       wait_for_ready->value = method_params->wait_for_ready().value();
     }
   }
-  return absl::OkStatus();
+  return filter_chain;
 }
 
 }  // namespace grpc_core

@@ -16,11 +16,13 @@ from collections import OrderedDict
 from collections import abc
 from typing import Any, Iterator, List, Optional, Tuple, Union
 
+from typing_extensions import Self
+
 MetadataKey = str
 MetadataValue = Union[str, bytes]
 
 
-class Metadata(abc.Collection):
+class Metadata(abc.Collection):  # noqa: PLW1641
     """Metadata abstraction for the asynchronous calls and interceptors.
 
     The metadata is a mapping from str -> List[str]
@@ -39,7 +41,9 @@ class Metadata(abc.Collection):
             self.add(md_key, md_value)
 
     @classmethod
-    def from_tuple(cls, raw_metadata: tuple):
+    def from_tuple(cls, raw_metadata: Union[tuple, Self]):
+        if isinstance(raw_metadata, cls):
+            return raw_metadata
         if raw_metadata:
             return cls(*raw_metadata)
         return cls()
@@ -91,16 +95,16 @@ class Metadata(abc.Collection):
                 yield (key, value)
 
     def keys(self) -> abc.KeysView:
-        return abc.KeysView(self)
+        return abc.KeysView(self._metadata)
 
     def values(self) -> abc.ValuesView:
-        return abc.ValuesView(self)
+        return abc.ValuesView(self._metadata)
 
     def items(self) -> abc.ItemsView:
-        return abc.ItemsView(self)
+        return abc.ItemsView(self._metadata)
 
     def get(
-        self, key: MetadataKey, default: MetadataValue = None
+        self, key: MetadataKey, default: Optional[MetadataValue] = None
     ) -> Optional[MetadataValue]:
         try:
             return self[key]
@@ -119,7 +123,7 @@ class Metadata(abc.Collection):
     def __contains__(self, key: MetadataKey) -> bool:
         return key in self._metadata
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
             return self._metadata == other._metadata
         if isinstance(other, tuple):

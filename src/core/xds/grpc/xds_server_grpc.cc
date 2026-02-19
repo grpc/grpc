@@ -23,13 +23,13 @@
 #include <utility>
 #include <vector>
 
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/util/down_cast.h"
 #include "src/core/util/env.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -109,56 +109,68 @@ bool XdsBootstrapCallCredsEnabled() {
 
 }  // namespace
 
-void GrpcXdsServer::JsonPostLoad(const Json& json, const JsonArgs& args,
-                                 ValidationErrors* errors) {
-  // Parse "channel_creds".
-  RefCountedPtr<ChannelCredsConfig> channel_creds_config;
-  {
-    auto channel_creds_list =
-        LoadJsonObjectField<std::vector<ChannelOrCallCreds>>(
-            json.object(), args, "channel_creds", errors);
-    if (channel_creds_list.has_value()) {
-      ValidationErrors::ScopedField field(errors, ".channel_creds");
-      for (size_t i = 0; i < channel_creds_list->size(); ++i) {
-        ValidationErrors::ScopedField field(errors, absl::StrCat("[", i, "]"));
-        auto& creds = (*channel_creds_list)[i];
-        // Select the first channel creds type that we support, but
-        // validate all entries.
-        if (CoreConfiguration::Get().channel_creds_registry().IsSupported(
-                creds.type)) {
-          ValidationErrors::ScopedField field(errors, ".config");
-          auto config =
-              CoreConfiguration::Get().channel_creds_registry().ParseConfig(
-                  creds.type, Json::FromObject(creds.config), args, errors);
-          if (channel_creds_config == nullptr) {
-            channel_creds_config = std::move(config);
-          }
+RefCountedPtr<const ChannelCredsConfig> ParseXdsBootstrapChannelCreds(
+    const Json& json, const JsonArgs& args, ValidationErrors* errors) {
+  RefCountedPtr<const ChannelCredsConfig> channel_creds_config;
+  auto channel_creds_list =
+      LoadJsonObjectField<std::vector<ChannelOrCallCreds>>(
+          json.object(), args, "channel_creds", errors);
+  if (channel_creds_list.has_value()) {
+    ValidationErrors::ScopedField field(errors, ".channel_creds");
+    for (size_t i = 0; i < channel_creds_list->size(); ++i) {
+      ValidationErrors::ScopedField field(errors, absl::StrCat("[", i, "]"));
+      auto& creds = (*channel_creds_list)[i];
+      // Select the first channel creds type that we support, but
+      // validate all entries.
+      if (CoreConfiguration::Get().channel_creds_registry().IsSupported(
+              creds.type)) {
+        ValidationErrors::ScopedField field(errors, ".config");
+        auto config =
+            CoreConfiguration::Get().channel_creds_registry().ParseConfig(
+                creds.type, Json::FromObject(creds.config), args, errors);
+        if (channel_creds_config == nullptr) {
+          channel_creds_config = std::move(config);
         }
       }
-      if (channel_creds_config == nullptr) {
-        errors->AddError("no known creds type found");
+    }
+    if (channel_creds_config == nullptr) {
+      errors->AddError("no known creds type found");
+    }
+  }
+  return channel_creds_config;
+}
+
+std::vector<RefCountedPtr<const CallCredsConfig>> ParseXdsBootstrapCallCreds(
+    const Json& json, const JsonArgs& args, ValidationErrors* errors) {
+  std::vector<RefCountedPtr<const CallCredsConfig>> call_creds_configs;
+  auto call_creds_list = LoadJsonObjectField<std::vector<ChannelOrCallCreds>>(
+      json.object(), args, "call_creds", errors, /*required=*/false);
+  if (call_creds_list.has_value()) {
+    ValidationErrors::ScopedField field(errors, ".call_creds");
+    for (size_t i = 0; i < call_creds_list->size(); ++i) {
+      ValidationErrors::ScopedField field(errors, absl::StrCat("[", i, "]"));
+      auto& creds = (*call_creds_list)[i];
+      if (CoreConfiguration::Get().call_creds_registry().IsSupported(
+              creds.type)) {
+        ValidationErrors::ScopedField field(errors, ".config");
+        call_creds_configs.push_back(
+            CoreConfiguration::Get().call_creds_registry().ParseConfig(
+                creds.type, Json::FromObject(creds.config), args, errors));
       }
     }
   }
+  return call_creds_configs;
+}
+
+void GrpcXdsServer::JsonPostLoad(const Json& json, const JsonArgs& args,
+                                 ValidationErrors* errors) {
+  // Parse "channel_creds".
+  RefCountedPtr<const ChannelCredsConfig> channel_creds_config =
+      ParseXdsBootstrapChannelCreds(json, args, errors);
   // Parse "call_creds".
-  std::vector<RefCountedPtr<CallCredsConfig>> call_creds_configs;
+  std::vector<RefCountedPtr<const CallCredsConfig>> call_creds_configs;
   if (XdsBootstrapCallCredsEnabled()) {
-    auto call_creds_list = LoadJsonObjectField<std::vector<ChannelOrCallCreds>>(
-        json.object(), args, "call_creds", errors);
-    if (call_creds_list.has_value()) {
-      ValidationErrors::ScopedField field(errors, ".call_creds");
-      for (size_t i = 0; i < call_creds_list->size(); ++i) {
-        ValidationErrors::ScopedField field(errors, absl::StrCat("[", i, "]"));
-        auto& creds = (*call_creds_list)[i];
-        if (CoreConfiguration::Get().call_creds_registry().IsSupported(
-                creds.type)) {
-          ValidationErrors::ScopedField field(errors, ".config");
-          call_creds_configs.push_back(
-              CoreConfiguration::Get().call_creds_registry().ParseConfig(
-                  creds.type, Json::FromObject(creds.config), args, errors));
-        }
-      }
-    }
+    call_creds_configs = ParseXdsBootstrapCallCreds(json, args, errors);
   }
   // Parse "server_features".
   {

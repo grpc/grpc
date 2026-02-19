@@ -327,7 +327,7 @@ class Channel(_base_channel.Channel):
         self,
         target: str,
         options: ChannelArgumentType,
-        credentials: Optional[grpc.ChannelCredentials],
+        credentials: Optional[cygrpc.ChannelCredentials],
         compression: Optional[grpc.Compression],
         interceptors: Optional[Sequence[ClientInterceptor]],
     ):
@@ -358,7 +358,7 @@ class Channel(_base_channel.Channel):
                 elif isinstance(interceptor, StreamStreamClientInterceptor):
                     self._stream_stream_interceptors.append(interceptor)
                 else:
-                    raise ValueError(
+                    raise ValueError(  # noqa: TRY004
                         "Interceptor {} must be ".format(interceptor)
                         + "{} or ".format(UnaryUnaryClientInterceptor.__name__)
                         + "{} or ".format(UnaryStreamClientInterceptor.__name__)
@@ -408,11 +408,10 @@ class Channel(_base_channel.Channel):
                 # the failure. It is fixed by https://github.com/python/cpython/pull/18669,
                 # but not available until 3.9 or 3.8.3. So, we have to keep it
                 # for a while.
-                # TODO(lidiz) drop this hack after 3.8 deprecation
+                # TODO(lidiz): drop this hack after 3.8 deprecation
                 if "frame" in str(attribute_error):
                     continue
-                else:
-                    raise
+                raise
 
             # If the Task is created by a C-extension, the stack will be empty.
             if not stack:
@@ -424,23 +423,22 @@ class Channel(_base_channel.Channel):
             # Explicitly check for a non-null candidate instead of the more pythonic 'if candidate:'
             # because doing 'if candidate:' assumes that the coroutine implements '__bool__' which
             # might not always be the case.
-            if candidate is not None:
-                if isinstance(candidate, _base_call.Call):
-                    if hasattr(candidate, "_channel"):
-                        # For intercepted Call object
-                        if candidate._channel is not self._channel:
-                            continue
-                    elif hasattr(candidate, "_cython_call"):
-                        # For normal Call object
-                        if candidate._cython_call._channel is not self._channel:
-                            continue
-                    else:
-                        # Unidentified Call object
-                        error_msg = f"Unrecognized call object: {candidate}"
-                        raise cygrpc.InternalError(error_msg)
+            if candidate is not None and isinstance(candidate, _base_call.Call):
+                if hasattr(candidate, "_channel"):
+                    # For intercepted Call object
+                    if candidate._channel is not self._channel:
+                        continue
+                elif hasattr(candidate, "_cython_call"):
+                    # For normal Call object
+                    if candidate._cython_call._channel is not self._channel:
+                        continue
+                else:
+                    # Unidentified Call object
+                    error_msg = f"Unrecognized call object: {candidate}"
+                    raise cygrpc.InternalError(error_msg)
 
-                    calls.append(candidate)
-                    call_tasks.append(task)
+                calls.append(candidate)
+                call_tasks.append(task)
 
         # If needed, try to wait for them to finish.
         # Call objects are not always awaitables.
@@ -458,9 +456,8 @@ class Channel(_base_channel.Channel):
         await self._close(grace)
 
     def __del__(self):
-        if hasattr(self, "_channel"):
-            if not self._channel.closed():
-                self._channel.close()
+        if hasattr(self, "_channel") and not self._channel.closed():
+            self._channel.close()
 
     def get_state(
         self, try_to_connect: bool = False

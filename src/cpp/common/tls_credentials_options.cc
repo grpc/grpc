@@ -17,6 +17,7 @@
 //
 
 #include <grpc/credentials.h>
+#include <grpc/credentials_cpp.h>
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
@@ -28,7 +29,7 @@
 #include <memory>
 #include <string>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc {
 namespace experimental {
@@ -49,10 +50,24 @@ TlsCredentialsOptions::TlsCredentialsOptions(
 
 void TlsCredentialsOptions::set_certificate_provider(
     std::shared_ptr<CertificateProviderInterface> certificate_provider) {
-  certificate_provider_ = certificate_provider;
-  if (certificate_provider_ != nullptr) {
-    grpc_tls_credentials_options_set_certificate_provider(
-        c_credentials_options_, certificate_provider_->c_provider());
+  legacy_certificate_provider_ = std::move(certificate_provider);
+}
+
+void TlsCredentialsOptions::set_root_certificate_provider(
+    std::shared_ptr<CertificateProviderInterface> certificate_provider) {
+  root_certificate_provider_ = std::move(certificate_provider);
+  if (root_certificate_provider_ != nullptr) {
+    grpc_tls_credentials_options_set_root_certificate_provider(
+        c_credentials_options_, root_certificate_provider_->c_provider());
+  }
+}
+
+void TlsCredentialsOptions::set_identity_certificate_provider(
+    std::shared_ptr<CertificateProviderInterface> certificate_provider) {
+  identity_certificate_provider_ = std::move(certificate_provider);
+  if (identity_certificate_provider_ != nullptr) {
+    grpc_tls_credentials_options_set_identity_certificate_provider(
+        c_credentials_options_, identity_certificate_provider_->c_provider());
   }
 }
 
@@ -62,9 +77,7 @@ void TlsCredentialsOptions::set_crl_provider(
                                                 crl_provider);
 }
 
-void TlsCredentialsOptions::watch_root_certs() {
-  grpc_tls_credentials_options_watch_root_certs(c_credentials_options_);
-}
+void TlsCredentialsOptions::watch_root_certs() { is_watching_roots_ = true; }
 
 void TlsCredentialsOptions::set_root_cert_name(
     const std::string& root_cert_name) {
@@ -73,8 +86,7 @@ void TlsCredentialsOptions::set_root_cert_name(
 }
 
 void TlsCredentialsOptions::watch_identity_key_cert_pairs() {
-  grpc_tls_credentials_options_watch_identity_key_cert_pairs(
-      c_credentials_options_);
+  is_watching_identity_ = true;
 }
 
 void TlsCredentialsOptions::set_identity_cert_name(
@@ -105,39 +117,56 @@ void TlsCredentialsOptions::set_certificate_verifier(
 
 void TlsCredentialsOptions::set_min_tls_version(grpc_tls_version tls_version) {
   grpc_tls_credentials_options* options = mutable_c_credentials_options();
-  CHECK_NE(options, nullptr);
+  GRPC_CHECK_NE(options, nullptr);
   grpc_tls_credentials_options_set_min_tls_version(options, tls_version);
 }
 
 void TlsCredentialsOptions::set_max_tls_version(grpc_tls_version tls_version) {
   grpc_tls_credentials_options* options = mutable_c_credentials_options();
-  CHECK_NE(options, nullptr);
+  GRPC_CHECK_NE(options, nullptr);
   grpc_tls_credentials_options_set_max_tls_version(options, tls_version);
 }
 
 grpc_tls_credentials_options* TlsCredentialsOptions::c_credentials_options()
     const {
+  if (legacy_certificate_provider_ != nullptr) {
+    if (is_watching_roots_) {
+      grpc_tls_credentials_options_set_root_certificate_provider(
+          c_credentials_options_, legacy_certificate_provider_->c_provider());
+    }
+    if (is_watching_identity_) {
+      grpc_tls_credentials_options_set_identity_certificate_provider(
+          c_credentials_options_, legacy_certificate_provider_->c_provider());
+    }
+  }
   return grpc_tls_credentials_options_copy(c_credentials_options_);
 }
 
 void TlsCredentialsOptions::set_check_call_host(bool check_call_host) {
   grpc_tls_credentials_options* options = mutable_c_credentials_options();
-  CHECK_NE(options, nullptr);
+  GRPC_CHECK_NE(options, nullptr);
   grpc_tls_credentials_options_set_check_call_host(options, check_call_host);
 }
 
 void TlsChannelCredentialsOptions::set_verify_server_certs(
     bool verify_server_certs) {
   grpc_tls_credentials_options* options = mutable_c_credentials_options();
-  CHECK_NE(options, nullptr);
+  GRPC_CHECK_NE(options, nullptr);
   grpc_tls_credentials_options_set_verify_server_cert(options,
                                                       verify_server_certs);
+}
+
+void TlsChannelCredentialsOptions::set_sni_override(
+    std::optional<std::string> sni_override) {
+  grpc_tls_credentials_options* options = mutable_c_credentials_options();
+  GRPC_CHECK_NE(options, nullptr);
+  grpc_tls_credentials_options_set_sni_override(options, sni_override);
 }
 
 void TlsServerCredentialsOptions::set_cert_request_type(
     grpc_ssl_client_certificate_request_type cert_request_type) {
   grpc_tls_credentials_options* options = mutable_c_credentials_options();
-  CHECK_NE(options, nullptr);
+  GRPC_CHECK_NE(options, nullptr);
   grpc_tls_credentials_options_set_cert_request_type(options,
                                                      cert_request_type);
 }
@@ -145,7 +174,7 @@ void TlsServerCredentialsOptions::set_cert_request_type(
 void TlsServerCredentialsOptions::set_send_client_ca_list(
     bool send_client_ca_list) {
   grpc_tls_credentials_options* options = mutable_c_credentials_options();
-  CHECK_NE(options, nullptr);
+  GRPC_CHECK_NE(options, nullptr);
   grpc_tls_credentials_options_set_send_client_ca_list(options,
                                                        send_client_ca_list);
 }

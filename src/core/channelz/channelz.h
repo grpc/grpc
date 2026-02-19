@@ -35,10 +35,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/container/flat_hash_set.h"
-#include "absl/container/inlined_vector.h"
-#include "absl/strings/string_view.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/dual_ref_counted.h"
@@ -53,6 +49,10 @@
 #include "src/core/util/useful.h"
 #include "src/proto/grpc/channelz/v2/channelz.upb.h"
 #include "src/proto/grpc/channelz/v2/service.upb.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/container/inlined_vector.h"
+#include "absl/strings/string_view.h"
 
 // Channel arg key for channelz node.
 #define GRPC_ARG_CHANNELZ_CHANNEL_NODE \
@@ -130,6 +130,8 @@ class BaseNode : public DualRefCounted<BaseNode> {
     kSocket,
     kCall,
     kResourceQuota,
+    kMetricsDomain,
+    kMetricsDomainStorage,
   };
 
   static absl::string_view EntityTypeString(EntityType type) {
@@ -150,6 +152,10 @@ class BaseNode : public DualRefCounted<BaseNode> {
         return "call";
       case EntityType::kResourceQuota:
         return "resource_quota";
+      case EntityType::kMetricsDomain:
+        return "metrics_domain";
+      case EntityType::kMetricsDomainStorage:
+        return "metrics_domain_storage";
     }
     return "unknown";
   }
@@ -172,6 +178,10 @@ class BaseNode : public DualRefCounted<BaseNode> {
         return "call";
       case EntityType::kResourceQuota:
         return "resource_quota";
+      case EntityType::kMetricsDomain:
+        return "metrics_domain";
+      case EntityType::kMetricsDomainStorage:
+        return "metrics_domain_storage";
     }
   }
 
@@ -184,6 +194,10 @@ class BaseNode : public DualRefCounted<BaseNode> {
     if (kind == "socket") return EntityType::kSocket;
     if (kind == "call") return EntityType::kCall;
     if (kind == "resource_quota") return EntityType::kResourceQuota;
+    if (kind == "metrics_domain") return EntityType::kMetricsDomain;
+    if (kind == "metrics_domain_storage") {
+      return EntityType::kMetricsDomainStorage;
+    }
     return std::nullopt;
   }
 
@@ -239,7 +253,7 @@ class BaseNode : public DualRefCounted<BaseNode> {
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine,
       ZTrace::Callback callback);
-  Json::Object AdditionalInfo();
+  Json::Array AdditionalInfo();
 
   const ChannelTrace& trace() const { return trace_; }
   template <typename... Args>
@@ -317,14 +331,17 @@ class DataSinkImplementation {
   };
 
   void AddData(absl::string_view name, std::unique_ptr<Data> data);
-  Json::Object Finalize(bool timed_out);
+  Json::Array Finalize(bool timed_out);
   void Finalize(bool timed_out, grpc_channelz_v2_Entity* entity,
                 upb_Arena* arena);
 
  private:
   Mutex mu_;
-  std::map<std::string, std::unique_ptr<Data>> additional_info_
-      ABSL_GUARDED_BY(mu_);
+  struct Element {
+    std::string name;
+    std::unique_ptr<Data> data;
+  };
+  std::vector<Element> additional_info_ ABSL_GUARDED_BY(mu_);
 };
 
 // Wrapper around absl::AnyInvocable<void()> that is used to notify when the
@@ -788,8 +805,7 @@ class ListenSocketNode final : public BaseNode {
 
 class CallNode final : public BaseNode {
  public:
-  explicit CallNode(std::string name)
-      : BaseNode(EntityType::kCall, 0, std::move(name)) {
+  explicit CallNode() : BaseNode(EntityType::kCall, 0, std::string()) {
     NodeConstructed();
   }
 
@@ -804,6 +820,28 @@ class ResourceQuotaNode final : public BaseNode {
   }
 
   Json RenderJson() override { return Json::FromString("ResourceQuota"); }
+};
+
+class MetricsDomainNode final : public BaseNode {
+ public:
+  explicit MetricsDomainNode(std::string name)
+      : BaseNode(EntityType::kMetricsDomain, 0, std::move(name)) {
+    NodeConstructed();
+  }
+
+  Json RenderJson() override { return Json::FromString("MetricsDomain"); }
+};
+
+class MetricsDomainStorageNode final : public BaseNode {
+ public:
+  explicit MetricsDomainStorageNode(std::string name)
+      : BaseNode(EntityType::kMetricsDomainStorage, 0, std::move(name)) {
+    NodeConstructed();
+  }
+
+  Json RenderJson() override {
+    return Json::FromString("MetricsDomainStorage");
+  }
 };
 
 }  // namespace channelz

@@ -31,8 +31,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/credentials/transport/tls/spiffe_utils.h"
 #include "src/core/lib/iomgr/error.h"
@@ -40,6 +38,8 @@
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 // --- Util ---
 

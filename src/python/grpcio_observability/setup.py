@@ -26,26 +26,18 @@ import setuptools
 from setuptools import Extension
 from setuptools.command import build_ext
 
-PYTHON_STEM = os.path.realpath(os.path.dirname(__file__))
-README_PATH = os.path.join(PYTHON_STEM, "README.rst")
-
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
+# Manually insert the source directory into the Python path for local module
+# imports to succeed
 sys.path.insert(0, os.path.abspath("."))
 
 import _parallel_compile_patch
 import observability_lib_deps
-import python_version
 
 import grpc_version
+import python_version
 
 _parallel_compile_patch.monkeypatch_compile_maybe()
 
-CLASSIFIERS = [
-    "Development Status :: 5 - Production/Stable",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: Apache Software License",
-]
 
 O11Y_CC_SRCS = [
     "client_call_tracer.cc",
@@ -286,32 +278,14 @@ def extension_modules():
         return extensions
 
 
-PACKAGES = setuptools.find_packages(PYTHON_STEM)
-
-setuptools.setup(
-    name="grpcio-observability",
-    version=grpc_version.VERSION,
-    description="gRPC Python observability package",
-    long_description_content_type="text/x-rst",
-    long_description=open(README_PATH, "r").read(),
-    author="The gRPC Authors",
-    author_email="grpc-io@googlegroups.com",
-    url="https://grpc.io",
-    project_urls={
-        "Source Code": "https://github.com/grpc/grpc/tree/master/src/python/grpcio_observability",
-        "Bug Tracker": "https://github.com/grpc/grpc/issues",
-    },
-    license="Apache License 2.0",
-    classifiers=CLASSIFIERS,
-    ext_modules=extension_modules(),
-    packages=list(PACKAGES),
-    python_requires=f">={python_version.MIN_PYTHON_VERSION}",
-    install_requires=[
-        "grpcio=={version}".format(version=grpc_version.VERSION),
-        "setuptools>=59.6.0",
-        "opentelemetry-api>=1.21.0",
-    ],
-    cmdclass={
-        "build_ext": BuildExt,
-    },
-)
+if __name__ == "__main__":
+    setuptools.setup(
+        ext_modules=extension_modules(),
+        python_requires=f">={python_version.MIN_PYTHON_VERSION}",
+        install_requires=[
+            "grpcio=={version}".format(version=grpc_version.VERSION),
+            "setuptools>=77.0.1",
+            "opentelemetry-api>=1.21.0",
+        ],
+        cmdclass={"build_ext": BuildExt},
+    )

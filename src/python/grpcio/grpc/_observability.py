@@ -235,7 +235,7 @@ def set_plugin(observability_plugin: Optional[ObservabilityPlugin]) -> None:
       ValueError: If an ObservabilityPlugin was already registered at the
     time of calling this method.
     """
-    global _OBSERVABILITY_PLUGIN  # pylint: disable=global-statement
+    global _OBSERVABILITY_PLUGIN  # pylint: disable=global-statement # noqa: PLW0603
     with _plugin_lock:
         if observability_plugin and _OBSERVABILITY_PLUGIN:
             error_msg = "observability_plugin was already set!"

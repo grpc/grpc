@@ -35,14 +35,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/meta/type_traits.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
-#include "gtest/gtest.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good.h"
 #include "src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h"
 #include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"
@@ -53,6 +45,7 @@
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/transport/endpoint_transport.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/sync.h"
@@ -70,6 +63,13 @@
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "gtest/gtest.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/meta/type_traits.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
 
 // IWYU pragma: no_include <unistd.h>
 
@@ -163,11 +163,14 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
   }
 
   std::vector<CoreTestConfiguration> config{
+      // TODO(akshitpatel) : [PH2][P4] : Disabling retry for ChaoticGood tests
+      // for now as the retry tests are enabled for PH2. Eventually we should
+      // re-enable retry tests for ChaoticGood too.
       CoreTestConfiguration{
           "ChaoticGoodFullStack",
           FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
               FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
-              FEATURE_MASK_IS_CALL_V3,
+              FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_DOES_NOT_SUPPORT_RETRY,
           nullptr,
           [](const ChannelArgs& /*client_args*/,
              const ChannelArgs& /*server_args*/) {
@@ -208,14 +211,13 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
           }},
   };
 
-  if (IsEventEngineSecureEndpointEnabled() &&
-      IsChaoticGoodFramingLayerEnabled()) {
+  if (IsChaoticGoodFramingLayerEnabled()) {
     std::vector<CoreTestConfiguration> secure_config{
         CoreTestConfiguration{
             "ChaoticGoodSecureFullStack",
             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
                 FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
-                FEATURE_MASK_IS_CALL_V3,
+                FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_DOES_NOT_SUPPORT_RETRY,
             "foo.test.google.fr",
             [](const ChannelArgs& /*client_args*/,
                const ChannelArgs& /*server_args*/) {

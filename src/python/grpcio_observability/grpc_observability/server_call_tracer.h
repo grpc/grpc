@@ -19,14 +19,14 @@
 
 #include <atomic>
 
-#include "absl/strings/string_view.h"
-#include "absl/strings/strip.h"
 #include "constants.h"
 #include "metadata_exchange.h"
 #include "python_observability_context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 
 namespace grpc_observability {
 
@@ -79,8 +79,12 @@ class PythonOpenCensusServerCallTracer
   // It's not a requirement to have this metric thus left unimplemented.
   void RecordSendInitialMetadata(
       grpc_metadata_batch* send_initial_metadata) override;
+  void MutateSendInitialMetadata(
+      grpc_metadata_batch* send_initial_metadata) override;
 
   void RecordSendTrailingMetadata(
+      grpc_metadata_batch* send_trailing_metadata) override;
+  void MutateSendTrailingMetadata(
       grpc_metadata_batch* send_trailing_metadata) override;
 
   void RecordSendMessage(const grpc_core::Message& send_message) override;

@@ -30,15 +30,6 @@
 #include <variant>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/config/route/v3/route.upb.h"
@@ -58,6 +49,7 @@
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/util/down_cast.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/match.h"
@@ -76,6 +68,14 @@
 #include "upb/base/string_view.h"
 #include "upb/message/map.h"
 #include "upb/text/encode.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -219,7 +219,7 @@ std::optional<StringMatcher> RoutePathMatchParse(
   } else if (envoy_config_route_v3_RouteMatch_has_safe_regex(match)) {
     const envoy_type_matcher_v3_RegexMatcher* regex_matcher =
         envoy_config_route_v3_RouteMatch_safe_regex(match);
-    CHECK_NE(regex_matcher, nullptr);
+    GRPC_CHECK_NE(regex_matcher, nullptr);
     type = StringMatcher::Type::kSafeRegex;
     match_string = UpbStringToStdString(
         envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
@@ -248,7 +248,7 @@ void RouteHeaderMatchersParse(const XdsResourceType::DecodeContext& context,
     ValidationErrors::ScopedField field(errors,
                                         absl::StrCat(".headers[", i, "]"));
     const envoy_config_route_v3_HeaderMatcher* header = headers[i];
-    CHECK_NE(header, nullptr);
+    GRPC_CHECK_NE(header, nullptr);
     const std::string name =
         UpbStringToStdString(envoy_config_route_v3_HeaderMatcher_name(header));
     const bool invert_match =
@@ -289,7 +289,7 @@ void RouteHeaderMatchersParse(const XdsResourceType::DecodeContext& context,
                    header)) {
       const envoy_type_matcher_v3_RegexMatcher* regex_matcher =
           envoy_config_route_v3_HeaderMatcher_safe_regex_match(header);
-      CHECK_NE(regex_matcher, nullptr);
+      GRPC_CHECK_NE(regex_matcher, nullptr);
       type = HeaderMatcher::Type::kSafeRegex;
       match_string = UpbStringToStdString(
           envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
@@ -297,7 +297,7 @@ void RouteHeaderMatchersParse(const XdsResourceType::DecodeContext& context,
       type = HeaderMatcher::Type::kRange;
       const envoy_type_v3_Int64Range* range_matcher =
           envoy_config_route_v3_HeaderMatcher_range_match(header);
-      CHECK_NE(range_matcher, nullptr);
+      GRPC_CHECK_NE(range_matcher, nullptr);
       range_start = envoy_type_v3_Int64Range_start(range_matcher);
       range_end = envoy_type_v3_Int64Range_end(range_matcher);
     } else if (envoy_config_route_v3_HeaderMatcher_has_present_match(header)) {
@@ -398,16 +398,22 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
         DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
             .http_filter_registry();
     const XdsHttpFilterImpl* filter_impl =
-        http_filter_registry.GetFilterForType(extension_to_use->type);
+        http_filter_registry.GetFilterForOverrideType(extension_to_use->type);
     if (filter_impl == nullptr) {
       if (!is_optional) errors->AddError("unsupported filter type");
       continue;
     }
-    std::optional<XdsHttpFilterImpl::FilterConfig> filter_config =
-        filter_impl->GenerateFilterConfigOverride(
-            key, context, std::move(*extension_to_use), errors);
+    auto& entry = typed_per_filter_config[std::string(key)];
+    entry.config_proto_type = filter_impl->OverrideConfigProtoName();
+    std::optional<Json> filter_config =
+        filter_impl->GenerateFilterConfigOverride(key, context,
+                                                  *extension_to_use, errors);
     if (filter_config.has_value()) {
-      typed_per_filter_config[std::string(key)] = std::move(*filter_config);
+      entry.config = std::move(*filter_config);
+    }
+    if (IsXdsChannelFilterChainPerRouteEnabled()) {
+      entry.filter_config = filter_impl->ParseOverrideConfig(
+          key, context, *extension_to_use, errors);
     }
   }
   return typed_per_filter_config;
@@ -614,7 +620,7 @@ std::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
     ValidationErrors::ScopedField field(errors, ".weighted_clusters");
     const envoy_config_route_v3_WeightedCluster* weighted_clusters_proto =
         envoy_config_route_v3_RouteAction_weighted_clusters(route_action_proto);
-    CHECK_NE(weighted_clusters_proto, nullptr);
+    GRPC_CHECK_NE(weighted_clusters_proto, nullptr);
     std::vector<XdsRouteConfigResource::Route::RouteAction::ClusterWeight>
         action_weighted_clusters;
     uint64_t total_weight = 0;

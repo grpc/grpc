@@ -17,16 +17,16 @@
 
 #include <string>
 
-#include "absl/types/span.h"
 #include "src/core/channelz/zviz/environment.h"
 #include "src/core/channelz/zviz/layout.h"
 #include "src/proto/grpc/channelz/v2/channelz.pb.h"
+#include "absl/types/span.h"
 
 namespace grpc_zviz {
 
 struct EntityTableColumn {
-  absl::string_view title;
-  absl::string_view property_path;
+  std::string title;
+  std::string property_path;
 };
 
 void FormatEntityList(Environment& env,

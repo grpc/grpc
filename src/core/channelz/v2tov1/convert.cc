@@ -18,12 +18,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/cleanup/cleanup.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/escaping.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/strip.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/timestamp.upb.h"
@@ -43,6 +37,12 @@
 #include "upb/json/encode.h"
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
+#include "absl/cleanup/cleanup.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/escaping.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/strip.h"
 
 namespace grpc_core {
 namespace channelz {
@@ -155,6 +155,17 @@ grpc_channelz_v1_ChannelConnectivityState_State ConnectivityStateFromString(
 void PopulateV1Trace(const grpc_channelz_v2_TraceEvent* const* trace_events,
                      size_t num_events, upb_Arena* arena,
                      grpc_channelz_v1_ChannelTrace* trace) {
+  if (num_events > 0) {
+    const auto* ts = grpc_channelz_v2_TraceEvent_timestamp(trace_events[0]);
+    if (ts != nullptr) {
+      auto* v1_ts = grpc_channelz_v1_ChannelTrace_mutable_creation_timestamp(
+          trace, arena);
+      google_protobuf_Timestamp_set_seconds(
+          v1_ts, google_protobuf_Timestamp_seconds(ts));
+      google_protobuf_Timestamp_set_nanos(v1_ts,
+                                          google_protobuf_Timestamp_nanos(ts));
+    }
+  }
   for (size_t i = 0; i < num_events; ++i) {
     auto* v1_event = grpc_channelz_v1_ChannelTrace_add_events(trace, arena);
     upb_StringView description =
@@ -662,7 +673,7 @@ absl::StatusOr<std::string> ConvertListenSocket(
           v1_ref, CopyStdStringToUpbString(*name, arena.ptr()));
     }
   }
-  if (auto socket_props = GetPropertyList(entity, "socket", arena.ptr());
+  if (auto socket_props = GetPropertyList(entity, "listen_socket", arena.ptr());
       socket_props != nullptr) {
     if (auto local = StringFromPropertyList(socket_props, "local");
         local.has_value()) {

@@ -22,9 +22,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/strings/str_cat.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/util/useful.h"
+#include "absl/strings/str_cat.h"
 
 using grpc_core::http2::Http2ErrorCode;
 
@@ -100,6 +100,7 @@ Http2ErrorCode Http2Settings::Apply(uint16_t key, uint32_t value) {
       enable_push_ = value != 0;
       break;
     case kMaxConcurrentStreamsWireId:
+      initial_max_concurrent_streams_ = value;
       max_concurrent_streams_ = value;
       break;
     case kInitialWindowSizeWireId:

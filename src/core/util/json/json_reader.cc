@@ -26,6 +26,8 @@
 #include <variant>
 #include <vector>
 
+#include "src/core/util/json/json.h"
+#include "src/core/util/match.h"
 #include "absl/base/attributes.h"
 #include "absl/log/check.h"
 #include "absl/status/status.h"
@@ -34,8 +36,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "src/core/util/json/json.h"
-#include "src/core/util/match.h"
 
 #define GRPC_JSON_MAX_DEPTH 255
 #define GRPC_JSON_MAX_ERRORS 16
@@ -242,10 +242,6 @@ uint32_t JsonReader::ReadChar() {
   if (remaining_input_ == 0) return GRPC_JSON_READ_CHAR_EOF;
   const uint32_t r = *input_++;
   --remaining_input_;
-  if (r == 0) {
-    remaining_input_ = 0;
-    return GRPC_JSON_READ_CHAR_EOF;
-  }
   return r;
 }
 

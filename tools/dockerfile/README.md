@@ -26,7 +26,7 @@ as follows:
 us-docker.pkg.dev/grpc-testing/testing-images-public/cxx_debian11_x64:[CURRENT_CHECKSUM]@sha256:[CURRENT_SHA256_DIGEST]
 ```
 This info can be passed directly to `docker run` command to get an environment
-that's identical what what we use when testing on CI.
+that's identical to what we use when testing on CI.
 
 ## Updating the images
 
@@ -49,7 +49,7 @@ that are already in artifact registry)
 
 ```
 # Install qemu, binformat, and configure binfmt interpreters
-sudo apt-get install binfmt-support qemu-user-static
+sudo apt-get install binfmt-support qemu-user-binfmt
 
 # Enable different multi-architecture containers by QEMU with Docker
 docker run --rm --privileged multiarch/qemu-user-static --reset -p yes

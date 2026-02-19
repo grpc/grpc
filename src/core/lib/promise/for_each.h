@@ -21,10 +21,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
@@ -32,6 +28,10 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/util/construct_destruct.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
@@ -145,13 +145,13 @@ class ForEach {
       : reader_(std::move(other.reader_)),
         action_factory_(std::move(other.action_factory_)),
         whence_(other.whence_) {
-    DCHECK(reading_next_);
-    DCHECK(other.reading_next_);
+    GRPC_DCHECK(reading_next_);
+    GRPC_DCHECK(other.reading_next_);
     Construct(&reader_next_, std::move(other.reader_next_));
   }
   ForEach& operator=(ForEach&& other) noexcept {
-    DCHECK(reading_next_);
-    DCHECK(other.reading_next_);
+    GRPC_DCHECK(reading_next_);
+    GRPC_DCHECK(other.reading_next_);
     reader_ = std::move(other.reader_);
     action_factory_ = std::move(other.action_factory_);
     reader_next_ = std::move(other.reader_next_);

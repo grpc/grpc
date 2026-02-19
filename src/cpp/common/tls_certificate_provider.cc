@@ -21,8 +21,8 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc {
 namespace experimental {
@@ -30,15 +30,18 @@ namespace experimental {
 StaticDataCertificateProvider::StaticDataCertificateProvider(
     const std::string& root_certificate,
     const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs) {
-  CHECK(!root_certificate.empty() || !identity_key_cert_pairs.empty());
+  GRPC_CHECK(!root_certificate.empty() || !identity_key_cert_pairs.empty());
   grpc_tls_identity_pairs* pairs_core = grpc_tls_identity_pairs_create();
   for (const IdentityKeyCertPair& pair : identity_key_cert_pairs) {
     grpc_tls_identity_pairs_add_pair(pairs_core, pair.private_key.c_str(),
                                      pair.certificate_chain.c_str());
   }
-  c_provider_ = grpc_tls_certificate_provider_static_data_create(
-      root_certificate.c_str(), pairs_core);
-  CHECK_NE(c_provider_, nullptr);
+  c_provider_ = grpc_tls_certificate_provider_in_memory_create();
+  GRPC_CHECK_NE(c_provider_, nullptr);
+  grpc_tls_certificate_provider_in_memory_set_root_certificate(
+      c_provider_, root_certificate.c_str());
+  grpc_tls_certificate_provider_in_memory_set_identity_certificate(c_provider_,
+                                                                   pairs_core);
 };
 
 StaticDataCertificateProvider::~StaticDataCertificateProvider() {
@@ -47,8 +50,7 @@ StaticDataCertificateProvider::~StaticDataCertificateProvider() {
 
 absl::Status StaticDataCertificateProvider::ValidateCredentials() const {
   auto* provider =
-      grpc_core::DownCast<grpc_core::StaticDataCertificateProvider*>(
-          c_provider_);
+      grpc_core::DownCast<grpc_core::InMemoryCertificateProvider*>(c_provider_);
   return provider->ValidateCredentials();
 }
 
@@ -62,7 +64,7 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
       private_key_path.c_str(), identity_certificate_path.c_str(),
       root_cert_path.c_str(), spiffe_bundle_map_path.c_str(),
       refresh_interval_sec);
-  CHECK_NE(c_provider_, nullptr);
+  GRPC_CHECK_NE(c_provider_, nullptr);
 };
 
 FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
@@ -73,6 +75,44 @@ absl::Status FileWatcherCertificateProvider::ValidateCredentials() const {
   auto* provider =
       grpc_core::DownCast<grpc_core::FileWatcherCertificateProvider*>(
           c_provider_);
+  return provider->ValidateCredentials();
+}
+
+InMemoryCertificateProvider::InMemoryCertificateProvider() {
+  c_provider_ = grpc_tls_certificate_provider_in_memory_create();
+  GRPC_CHECK_NE(c_provider_, nullptr);
+};
+
+InMemoryCertificateProvider::~InMemoryCertificateProvider() {
+  grpc_tls_certificate_provider_release(c_provider_);
+};
+
+absl::Status InMemoryCertificateProvider::UpdateRoot(
+    const std::string& root_certificate) {
+  GRPC_CHECK(!root_certificate.empty());
+  return grpc_tls_certificate_provider_in_memory_set_root_certificate(
+             c_provider_, root_certificate.c_str())
+             ? absl::OkStatus()
+             : absl::InternalError("Unable to update root certificate");
+}
+
+absl::Status InMemoryCertificateProvider::UpdateIdentityKeyCertPair(
+    const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs) {
+  GRPC_CHECK(!identity_key_cert_pairs.empty());
+  grpc_tls_identity_pairs* pairs_core = grpc_tls_identity_pairs_create();
+  for (const IdentityKeyCertPair& pair : identity_key_cert_pairs) {
+    grpc_tls_identity_pairs_add_pair(pairs_core, pair.private_key.c_str(),
+                                     pair.certificate_chain.c_str());
+  }
+  return grpc_tls_certificate_provider_in_memory_set_identity_certificate(
+             c_provider_, pairs_core)
+             ? absl::OkStatus()
+             : absl::InternalError("Unable to update identity certificate");
+}
+
+absl::Status InMemoryCertificateProvider::ValidateCredentials() const {
+  auto* provider =
+      grpc_core::DownCast<grpc_core::InMemoryCertificateProvider*>(c_provider_);
   return provider->ValidateCredentials();
 }
 

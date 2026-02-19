@@ -50,3 +50,6 @@
 [submodule "third_party/opentelemetry-cpp"]
 	path = third_party/opentelemetry-cpp
 	url = https://github.com/open-telemetry/opentelemetry-cpp
+[submodule "third_party/cel-spec"]
+	path = third_party/cel-spec
+	url = https://github.com/google/cel-spec

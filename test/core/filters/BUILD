@@ -17,7 +17,13 @@ load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/filters")
+grpc_package(
+    name = "test/core/filters",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_library(
     name = "filter_test",
@@ -141,6 +147,7 @@ grpc_cc_test(
         "absl/strings",
         "gtest",
     ],
+    tags = ["xds_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [

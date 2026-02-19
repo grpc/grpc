@@ -21,14 +21,14 @@
 #include <atomic>
 #include <string>
 
+#include "metadata_exchange.h"
+#include "python_observability_context.h"
+#include "src/core/telemetry/call_tracer.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
-#include "metadata_exchange.h"
-#include "python_observability_context.h"
-#include "src/core/telemetry/call_tracer.h"
 
 namespace grpc_observability {
 
@@ -53,7 +53,15 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracerInterface {
 
     void RecordSendInitialMetadata(
         grpc_metadata_batch* send_initial_metadata) override;
+    void MutateSendInitialMetadata(
+        grpc_metadata_batch* send_initial_metadata) override;
     void RecordSendTrailingMetadata(
+        grpc_metadata_batch* send_trailing_metadata) override {
+      GRPC_CHECK(
+          !grpc_core::IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled());
+      MutateSendTrailingMetadata(send_trailing_metadata);
+    }
+    void MutateSendTrailingMetadata(
         grpc_metadata_batch* /*send_trailing_metadata*/) override {}
     void RecordSendMessage(const grpc_core::Message& /*send_message*/) override;
     void RecordSendCompressedMessage(

@@ -32,8 +32,7 @@ FUSSED_EMPTY_METADATA = _fuss(())
 def fuss_with_metadata(metadata):
     if metadata is None:
         return FUSSED_EMPTY_METADATA
-    else:
-        return _fuss(tuple(metadata))
+    return _fuss(tuple(metadata))
 
 
 def rpc_names(service_descriptors):

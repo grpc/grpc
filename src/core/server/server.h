@@ -36,13 +36,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/container/flat_hash_map.h"
-#include "absl/container/flat_hash_set.h"
-#include "absl/hash/hash.h"
-#include "absl/random/random.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/filter/blackboard.h"
@@ -58,6 +51,7 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/resource_quota/connection_quota.h"
+#include "src/core/lib/resource_quota/stream_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
@@ -72,6 +66,13 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/hash/hash.h"
+#include "absl/random/random.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 #define GRPC_ARG_SERVER_MAX_PENDING_REQUESTS "grpc.server.max_pending_requests"
 #define GRPC_ARG_SERVER_MAX_PENDING_REQUESTS_HARD_LIMIT \
@@ -728,6 +729,8 @@ class Server : public ServerInterface,
 
   // The last time we printed a shutdown progress message.
   gpr_timespec last_shutdown_message_time_;
+
+  StreamQuotaRefPtr stream_quota_;
 };
 
 }  // namespace grpc_core

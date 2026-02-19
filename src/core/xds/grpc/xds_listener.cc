@@ -16,11 +16,11 @@
 
 #include "src/core/xds/grpc/xds_listener.h"
 
+#include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/util/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-#include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/util/match.h"
 
 namespace grpc_core {
 
@@ -58,7 +58,10 @@ std::string XdsListenerResource::HttpConnectionManager::ToString() const {
 
 std::string XdsListenerResource::HttpConnectionManager::HttpFilter::ToString()
     const {
-  return absl::StrCat("{name=", name, ", config=", config.ToString(), "}");
+  return absl::StrCat(
+      "{name=", name, ", config_proto_type=", config_proto_type,
+      ", config=", JsonDump(config), ", filter_config=",
+      filter_config == nullptr ? "null" : filter_config->ToString(), "}");
 }
 
 //

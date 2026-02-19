@@ -22,8 +22,6 @@
 
 #include <utility>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -33,6 +31,8 @@
 #include "src/core/service_config/service_config_call_data.h"
 #include "src/core/util/ref_counted_string.h"
 #include "src/core/util/unique_type_name.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -70,7 +70,21 @@ class XdsOverrideHostAttribute
 class StatefulSessionFilter
     : public ImplementChannelFilter<StatefulSessionFilter> {
  public:
-  static const grpc_channel_filter kFilter;
+  struct Config : public FilterConfig {
+    static UniqueTypeName Type() {
+      return GRPC_UNIQUE_TYPE_NAME_HERE("stateful_session_filter_config");
+    }
+    UniqueTypeName type() const override { return Type(); }
+
+    bool Equals(const FilterConfig& other) const override;
+    std::string ToString() const override;
+
+    std::string cookie_name;
+    std::string path;
+    Duration ttl;
+  };
+
+  static const grpc_channel_filter kFilterVtable;
 
   static absl::string_view TypeName() { return "stateful_session_filter"; }
 
@@ -83,15 +97,33 @@ class StatefulSessionFilter
    public:
     void OnClientInitialMetadata(ClientMetadata& md,
                                  StatefulSessionFilter* filter);
-    void OnServerInitialMetadata(ServerMetadata& md);
-    void OnServerTrailingMetadata(ServerMetadata& md);
+    void OnServerInitialMetadata(ServerMetadata& md,
+                                 StatefulSessionFilter* filter);
+    void OnServerTrailingMetadata(ServerMetadata& md,
+                                  StatefulSessionFilter* filter);
     static inline const NoInterceptor OnClientToServerMessage;
     static inline const NoInterceptor OnClientToServerHalfClose;
     static inline const NoInterceptor OnServerToClientMessage;
     static inline const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList()
+          .Set("cluster_name", cluster_name_)
+          .Set("override_host_attribute_cookie_address_list",
+               override_host_attribute_->cookie_address_list())
+          .Set("override_host_attribute_actual_address_list",
+               override_host_attribute_->actual_address_list())
+          .Set("cookie_address_list", cookie_address_list_)
+          .Set("cluster_changed", cluster_changed_)
+          .Set("perform_filtering", perform_filtering_);
+    }
 
    private:
+    // TODO(roth): Remove these when removing the
+    // xds_channel_filter_chain_per_route experiment.
+    template <typename T>
+    void OnClientInitialMetadataImpl(ClientMetadata& md, const T& config);
     const StatefulSessionMethodParsedConfig::CookieConfig* cookie_config_;
+
     XdsOverrideHostAttribute* override_host_attribute_;
     absl::string_view cluster_name_;
     absl::string_view cookie_address_list_;
@@ -100,10 +132,14 @@ class StatefulSessionFilter
   };
 
  private:
+  // TODO(roth): Remove these fields when removing the
+  // xds_channel_filter_chain_per_route experiment.
   // The relative index of instances of the same filter.
   const size_t index_;
   // Index of the service config parser.
   const size_t service_config_parser_index_;
+
+  const RefCountedPtr<const Config> config_;
 };
 
 }  // namespace grpc_core

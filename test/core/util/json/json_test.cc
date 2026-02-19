@@ -22,16 +22,16 @@
 #include <string>
 #include <utility>
 
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/json/json_writer.h"
+#include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-#include "src/core/util/json/json_reader.h"
-#include "src/core/util/json/json_writer.h"
-#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 
@@ -197,7 +197,7 @@ TEST(Json, Keywords) {
                  "[true,false,null]");
 }
 
-void RunParseFailureTest(const char* input) {
+void RunParseFailureTest(absl::string_view input) {
   LOG(INFO) << "parsing string \"" << input << "\" - should fail";
   auto json = JsonParse(input);
   EXPECT_FALSE(json.ok()) << "input: \"" << input << "\"";
@@ -215,6 +215,9 @@ TEST(Json, InvalidInput) {
   RunParseFailureTest("[{},]");
   RunParseFailureTest("{\"field\": [],}");
   RunParseFailureTest("[[],]");
+  const char kInputWithNull[] = "{\"a\":1}\0{\"b\":2}";
+  RunParseFailureTest(
+      absl::string_view(kInputWithNull, sizeof(kInputWithNull)));
 }
 
 TEST(Json, UnterminatedString) { RunParseFailureTest("\"\\x"); }

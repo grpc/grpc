@@ -15,14 +15,14 @@
 #include <benchmark/benchmark.h>
 #include <grpc/grpc.h>
 
-#include "absl/memory/memory.h"
-#include "absl/strings/string_view.h"
 #include "src/core/ext/transport/chaotic_good/client_transport.h"
 #include "src/core/ext/transport/chaotic_good/server_transport.h"
 #include "src/core/ext/transport/chaotic_good/tcp_frame_transport.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "test/core/call/call_spine_benchmarks.h"
 #include "test/core/test_util/passthrough_endpoint.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace {
@@ -98,7 +98,8 @@ class ChaoticGoodTraits {
   class FakeServerConnectionFactory
       : public chaotic_good::ServerConnectionFactory {
    public:
-    chaotic_good::PendingConnection RequestDataConnection() override {
+    chaotic_good::PendingConnection RequestDataConnection(
+        const ChannelArgs& handshake_result_args) override {
       Crash("RequestDataConnection not implemented");
     }
     void Orphaned() override {}

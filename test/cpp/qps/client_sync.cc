@@ -32,13 +32,13 @@
 #include <thread>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/qps/usage_timer.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace testing {
@@ -399,7 +399,7 @@ class SynchronousStreamingBothWaysClient final
 };
 
 std::unique_ptr<Client> CreateSynchronousClient(const ClientConfig& config) {
-  CHECK(!config.use_coalesce_api());  // not supported yet.
+  GRPC_CHECK(!config.use_coalesce_api());  // not supported yet.
   switch (config.rpc_type()) {
     case UNARY:
       return std::unique_ptr<Client>(new SynchronousUnaryClient(config));

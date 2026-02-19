@@ -21,10 +21,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/strings/strip.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
+#include "absl/strings/strip.h"
 
 namespace grpc {
 namespace internal {
@@ -56,9 +56,13 @@ class OpenTelemetryPluginImpl::ServerCallTracerInterface
   // arguments.
   void RecordSendInitialMetadata(
       grpc_metadata_batch* send_initial_metadata) override;
+  void MutateSendInitialMetadata(
+      grpc_metadata_batch* send_initial_metadata) override;
 
   void RecordSendTrailingMetadata(
-      grpc_metadata_batch* /*send_trailing_metadata*/) override;
+      grpc_metadata_batch* send_trailing_metadata) override;
+  void MutateSendTrailingMetadata(
+      grpc_metadata_batch* send_trailing_metadata) override;
 
   void RecordSendMessage(const grpc_core::Message& send_message) override;
   void RecordSendCompressedMessage(
@@ -87,9 +91,7 @@ class OpenTelemetryPluginImpl::ServerCallTracerInterface
 
   void RecordAnnotation(absl::string_view annotation) override;
 
-  void RecordAnnotation(const Annotation& /*annotation*/) override {
-    // Not implemented
-  }
+  void RecordAnnotation(const Annotation& annotation) override;
 
   void RecordAnnotation(absl::string_view annotation, absl::Time time);
 

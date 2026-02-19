@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_p
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/tsi/alts/handshaker")
+grpc_package(
+    name = "test/core/tsi/alts/handshaker",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_library(
     name = "alts_handshaker_service_api_test_lib",
@@ -39,6 +45,7 @@ grpc_cc_test(
     ],
     deps = [
         ":alts_handshaker_service_api_test_lib",
+        "//:alts_handshaker_upb_proto",
         "//:exec_ctx",
         "//:grpc",
         "//:grpc_base",
@@ -65,6 +72,7 @@ grpc_cc_test(
         "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//:grpc_base",
         "//:tsi_alts_credentials",
         "//:tsi_base",
         "//test/core/test_util:grpc_test_util",
@@ -124,6 +132,7 @@ grpc_cc_test(
         "//:grpc_core_credentials_header",
         "//:grpc_security_base",
         "//src/core:error",
+        "//src/core:grpc_check",
         "//src/core:slice",
         "//src/core:useful",
         "//test/core/end2end:cq_verifier",

@@ -31,14 +31,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/algorithm/container.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -56,6 +48,7 @@
 #include "src/core/telemetry/metrics.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
@@ -65,6 +58,13 @@
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
 #include "src/core/util/work_serializer.h"
+#include "absl/algorithm/container.h"
+#include "absl/log/log.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -390,13 +390,16 @@ class PickFirst final : public LoadBalancingPolicy {
   // Lateset update args.
   UpdateArgs latest_update_args_;
   // The list of subchannels that we're currently trying to connect to.
-  // Will generally be null when selected_ is set, except when we get a
-  // resolver update and need to check initial connectivity states for
-  // the new list to decide whether we keep using the existing
-  // connection or go IDLE.
+  // Will generally be null when selected_ is set, except for two cases:
+  // - When we get a resolver update and need to check initial connectivity
+  //   states for the new list to decide whether we keep using the existing
+  //   connection or go IDLE.
+  // - When the selected subchannel transitions from READY to CONNECTING
+  //   or TRANSIENT_FAILURE (instead of IDLE), in which case we create a
+  //   new subchannel list and start connecting with a Happy Eyeballs pass.
   OrphanablePtr<SubchannelList> subchannel_list_;
   // Selected subchannel.  Will generally be null when subchannel_list_
-  // is non-null, with the exception mentioned above.
+  // is non-null, with the exceptions mentioned above.
   OrphanablePtr<SubchannelList::SubchannelData::SubchannelState> selected_;
   // Health watcher for the selected subchannel.
   SubchannelInterface::ConnectivityStateWatcherInterface* health_watcher_ =
@@ -428,7 +431,7 @@ PickFirst::PickFirst(Args args)
 
 PickFirst::~PickFirst() {
   GRPC_TRACE_LOG(pick_first, INFO) << "Destroying Pick First " << this;
-  CHECK_EQ(subchannel_list_.get(), nullptr);
+  GRPC_CHECK_EQ(subchannel_list_.get(), nullptr);
 }
 
 void PickFirst::ShutdownLocked() {
@@ -612,10 +615,12 @@ void PickFirst::GoIdle() {
   UnsetSelectedSubchannel();
   // Drop the current subchannel list, if any.
   subchannel_list_.reset();
-  // Request a re-resolution.
-  // TODO(qianchengz): We may want to request re-resolution in
-  // ExitIdleLocked() instead.
-  channel_control_helper()->RequestReresolution();
+  if (!IsPickFirstReadyToConnectingEnabled()) {
+    // Request a re-resolution.
+    // TODO(roth): We may want to request re-resolution in
+    // ExitIdleLocked() instead.
+    channel_control_helper()->RequestReresolution();
+  }
   // Enter idle.
   UpdateState(GRPC_CHANNEL_IDLE, absl::OkStatus(),
               MakeRefCounted<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
@@ -700,7 +705,7 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::Select() {
   GRPC_TRACE_LOG(pick_first, INFO)
       << "Pick First " << pick_first_.get() << " selected subchannel "
       << subchannel_.get();
-  CHECK_NE(subchannel_data_, nullptr);
+  GRPC_CHECK_NE(subchannel_data_, nullptr);
   pick_first_->UnsetSelectedSubchannel();  // Cancel health watch, if any.
   pick_first_->selected_ = std::move(subchannel_data_->subchannel_state_);
   // If health checking is enabled, start the health watch, but don't
@@ -756,8 +761,8 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::
   // If we're still part of a subchannel list trying to connect, check
   // if we're connected.
   if (subchannel_data_ != nullptr) {
-    CHECK_EQ(pick_first_->subchannel_list_.get(),
-             subchannel_data_->subchannel_list_);
+    GRPC_CHECK_EQ(pick_first_->subchannel_list_.get(),
+                  subchannel_data_->subchannel_list_);
     // If the subchannel is READY, use it.
     // Otherwise, tell the subchannel list to keep trying.
     if (new_state == GRPC_CHANNEL_READY) {
@@ -768,7 +773,7 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::
     return;
   }
   // We aren't trying to connect, so we must be the selected subchannel.
-  CHECK_EQ(pick_first_->selected_.get(), this);
+  GRPC_CHECK_EQ(pick_first_->selected_.get(), this);
   GRPC_TRACE_LOG(pick_first, INFO)
       << "Pick First " << pick_first_.get()
       << " selected subchannel connectivity changed to "
@@ -780,8 +785,33 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::
   stats_plugins.AddCounter(kMetricDisconnections, 1,
                            {pick_first_->channel_control_helper()->GetTarget()},
                            {});
-  // Report IDLE.
-  pick_first_->GoIdle();
+  if (IsPickFirstReadyToConnectingEnabled()) {
+    // TODO(roth): We may want to request re-resolution in
+    // ExitIdleLocked() instead, at least if we go IDLE below.
+    pick_first_->channel_control_helper()->RequestReresolution();
+  }
+  // If the subchannel went to CONNECTING or TRANSIENT_FAILURE, we go
+  // back to CONNECTING and start a new Happy Eyeballs pass.
+  // Otherwise, go IDLE.
+  if (IsPickFirstReadyToConnectingEnabled() &&
+      (new_state == GRPC_CHANNEL_CONNECTING ||
+       new_state == GRPC_CHANNEL_TRANSIENT_FAILURE)) {
+    pick_first_->UpdateState(GRPC_CHANNEL_CONNECTING, absl::OkStatus(),
+                             MakeRefCounted<QueuePicker>(nullptr));
+    pick_first_->AttemptToConnectUsingLatestUpdateArgsLocked();
+    // Unset the selected subchannel, so that when we see the initial
+    // connectivity state notifications for the subchannels in the new
+    // subchannel list, we don't think it was caused by a resolver
+    // update and go IDLE if none of the subchannels report READY.
+    //
+    // Note that we do this *after* creating the new subchannel list,
+    // which will have taken a new ref to the originally selected
+    // subchannel.  This ensures that we don't destroy and recreate the
+    // subchannel, thus preserving the backoff state inside the subchannel.
+    pick_first_->UnsetSelectedSubchannel();
+  } else {
+    pick_first_->GoIdle();
+  }
 }
 
 //
@@ -819,12 +849,12 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
       << p->subchannel_list_->shutting_down_;
   if (subchannel_list_->shutting_down_) return;
   // The notification must be for a subchannel in the current list.
-  CHECK_EQ(subchannel_list_, p->subchannel_list_.get());
+  GRPC_CHECK_EQ(subchannel_list_, p->subchannel_list_.get());
   // SHUTDOWN should never happen.
-  CHECK_NE(new_state, GRPC_CHANNEL_SHUTDOWN);
+  GRPC_CHECK_NE(new_state, GRPC_CHANNEL_SHUTDOWN);
   // READY should be caught by SubchannelState, in which case it will
   // not call us in the first place.
-  CHECK_NE(new_state, GRPC_CHANNEL_READY);
+  GRPC_CHECK_NE(new_state, GRPC_CHANNEL_READY);
   // Update state.
   std::optional<grpc_connectivity_state> old_state = connectivity_state_;
   connectivity_state_ = new_state;
@@ -950,11 +980,11 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
 }
 
 void PickFirst::SubchannelList::SubchannelData::RequestConnectionWithTimer() {
-  CHECK(connectivity_state_.has_value());
+  GRPC_CHECK(connectivity_state_.has_value());
   if (connectivity_state_ == GRPC_CHANNEL_IDLE) {
     subchannel_state_->RequestConnection();
   } else {
-    CHECK_EQ(connectivity_state_.value(), GRPC_CHANNEL_CONNECTING);
+    GRPC_CHECK_EQ(connectivity_state_.value(), GRPC_CHANNEL_CONNECTING);
   }
   // If this is not the last subchannel in the list, start the timer.
   if (index_ != subchannel_list_->size() - 1) {
@@ -1009,7 +1039,7 @@ PickFirst::SubchannelList::SubchannelList(RefCountedPtr<PickFirst> policy,
   if (addresses == nullptr) return;
   // Create a subchannel for each address.
   addresses->ForEach([&](const EndpointAddresses& address) {
-    CHECK_EQ(address.addresses().size(), 1u);
+    GRPC_CHECK_EQ(address.addresses().size(), 1u);
     RefCountedPtr<SubchannelInterface> subchannel =
         policy_->channel_control_helper()->CreateSubchannel(
             address.address(), address.args(), args_);
@@ -1038,7 +1068,7 @@ PickFirst::SubchannelList::~SubchannelList() {
 void PickFirst::SubchannelList::Orphan() {
   GRPC_TRACE_LOG(pick_first, INFO)
       << "[PF " << policy_.get() << "] Shutting down subchannel_list " << this;
-  CHECK(!shutting_down_);
+  GRPC_CHECK(!shutting_down_);
   shutting_down_ = true;
   // Shut down subchannels.
   subchannels_.clear();
@@ -1070,7 +1100,7 @@ void PickFirst::SubchannelList::StartConnectingNextSubchannel() {
   // large recursion that could overflow the stack.
   for (; attempting_index_ < size(); ++attempting_index_) {
     SubchannelData* sc = subchannels_[attempting_index_].get();
-    CHECK(sc->connectivity_state().has_value());
+    GRPC_CHECK(sc->connectivity_state().has_value());
     if (sc->connectivity_state() != GRPC_CHANNEL_TRANSIENT_FAILURE) {
       // Found a subchannel not in TRANSIENT_FAILURE, so trigger a
       // connection attempt.

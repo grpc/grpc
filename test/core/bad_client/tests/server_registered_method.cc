@@ -20,11 +20,12 @@
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 
-#include "absl/log/check.h"
 #include "src/core/server/server.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/bad_client/bad_client.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 #define PFX_STR                                               \
   "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"                          \
@@ -55,11 +56,11 @@ static void verifier_succeeds(grpc_server* server, grpc_completion_queue* cq,
   error = grpc_server_request_registered_call(
       server, registered_method, &s, &deadline, &request_metadata_recv,
       &payload, cq, cq, grpc_core::CqVerifier::tag(101));
-  CHECK_EQ(error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(error, GRPC_CALL_OK);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
-  CHECK_NE(payload, nullptr);
+  GRPC_CHECK_NE(payload, nullptr);
 
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_unref(s);
@@ -69,14 +70,15 @@ static void verifier_succeeds(grpc_server* server, grpc_completion_queue* cq,
 static void verifier_fails(grpc_server* server, grpc_completion_queue* cq,
                            void* /*registered_method*/) {
   while (grpc_core::Server::FromC(server)->HasOpenConnections()) {
-    CHECK(grpc_completion_queue_next(
-              cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
-              .type == GRPC_QUEUE_TIMEOUT);
+    GRPC_CHECK(grpc_completion_queue_next(
+                   cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
+                   .type == GRPC_QUEUE_TIMEOUT);
   }
 }
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
 
   // body generated with

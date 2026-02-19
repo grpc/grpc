@@ -19,6 +19,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/core/transport/chaotic_good_legacy",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "tests",
 )
 
@@ -84,6 +88,7 @@ grpc_cc_test(
     deps = [
         "//:channel_create",
         "//src/core:chaotic_good_legacy_frame",
+        "//src/core:grpc_check",
         "//src/core:memory_quota",
         "//src/core:resource_quota",
     ],
@@ -123,6 +128,7 @@ grpc_fuzz_test(
         "//src/core:chaotic_good_legacy_frame",
         "//src/core:chaotic_good_legacy_frame_header",
         "//src/core:event_engine_memory_allocator",
+        "//src/core:grpc_check",
         "//src/core:memory_quota",
         "//src/core:resource_quota",
         "//src/core:slice",
@@ -196,6 +202,7 @@ grpc_cc_test(
         "//src/core:slice_buffer",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
+        "//test/core/transport/util:mock_promise_endpoint",
     ],
 )
 

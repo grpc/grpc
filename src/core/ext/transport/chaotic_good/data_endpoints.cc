@@ -24,12 +24,6 @@
 #include <optional>
 #include <utility>
 
-#include "absl/cleanup/cleanup.h"
-#include "absl/container/inlined_vector.h"
-#include "absl/log/log.h"
-#include "absl/strings/numbers.h"
-#include "absl/strings/str_split.h"
-#include "absl/time/time.h"
 #include "src/core/channelz/property_list.h"
 #include "src/core/ext/transport/chaotic_good/tcp_frame_header.h"
 #include "src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h"
@@ -49,6 +43,12 @@
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/string.h"
+#include "absl/cleanup/cleanup.h"
+#include "absl/container/inlined_vector.h"
+#include "absl/log/log.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/str_split.h"
+#include "absl/time/time.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -57,78 +57,6 @@ namespace data_endpoints_detail {
 
 namespace {
 const uint64_t kSecurityFramePayloadTag = 0;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// SendRate
-
-void SendRate::SetNetworkMetrics(const std::optional<NetworkSend>& network_send,
-                                 const NetworkMetrics& metrics) {
-  bool updated = false;
-  if (metrics.rtt_usec.has_value()) {
-    CHECK_GE(*metrics.rtt_usec, 0u);
-    rtt_usec_ = *metrics.rtt_usec;
-    updated = true;
-  }
-  if (metrics.bytes_per_nanosecond.has_value()) {
-    if (metrics.bytes_per_nanosecond < 0) {
-      LOG_EVERY_N_SEC(ERROR, 10)
-          << "Negative bytes per nanosecond: " << *metrics.bytes_per_nanosecond;
-    } else if (std::isnan(*metrics.bytes_per_nanosecond)) {
-      LOG_EVERY_N_SEC(ERROR, 10)
-          << "NaN bytes per nanosecond: " << *metrics.bytes_per_nanosecond;
-    } else {
-      current_rate_ = *metrics.bytes_per_nanosecond;
-    }
-    updated = true;
-  }
-  if (network_send.has_value() &&
-      network_send->start_time > last_send_started_time_) {
-    last_send_started_time_ = network_send->start_time;
-    last_send_bytes_outstanding_ = network_send->bytes;
-    updated = true;
-  }
-  if (updated) last_rate_measurement_ = Timestamp::Now();
-}
-
-bool SendRate::IsRateMeasurementStale() const {
-  return Timestamp::Now() - last_rate_measurement_ > Duration::Seconds(1);
-}
-
-SendRate::DeliveryData SendRate::GetDeliveryData(uint64_t current_time) const {
-  // start time relative to the current time for this send
-  double start_time = 0.0;
-  if (last_send_started_time_ != 0 && current_rate_ > 0) {
-    // Use integer subtraction to avoid rounding errors, getting everything
-    // with a zero base of 'now' to maximize precision.
-    // Since we have uint64_ts and want a signed double result we need to
-    // care about argument ordering to get a valid result.
-    const double send_start_time_relative_to_now =
-        current_time > last_send_started_time_
-            ? -static_cast<double>(current_time - last_send_started_time_)
-            : static_cast<double>(last_send_started_time_ - current_time);
-    const double predicted_end_time =
-        send_start_time_relative_to_now +
-        last_send_bytes_outstanding_ / current_rate_;
-    if (predicted_end_time > start_time) start_time = predicted_end_time;
-  }
-  if (current_rate_ <= 0) {
-    return DeliveryData{(start_time + rtt_usec_ * 500.0) * 1e-9, 1e14};
-  } else {
-    return DeliveryData{(start_time + rtt_usec_ * 500.0) * 1e-9,
-                        current_rate_ * 1e9};
-  }
-}
-
-channelz::PropertyList SendRate::ChannelzProperties() const {
-  channelz::PropertyList obj;
-  if (last_send_started_time_ != 0) {
-    obj.Set("send_start_time", last_send_started_time_)
-        .Set("send_size", last_send_bytes_outstanding_);
-  }
-  return obj.Set("current_rate", current_rate_)
-      .Set("rtt", rtt_usec_)
-      .Set("last_rate_measurement", last_rate_measurement_);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -144,6 +72,7 @@ void OutputBuffers::Reader::EndReadNext() {
     // critical path anyway.
     auto frames = std::move(frames_);
     frames_.clear();
+    send_rate_.DequeueFromReader(output_buffers_->clock_->Now());
     mu_.Unlock();
     for (auto& frame : frames) {
       output_buffers_->Write(frame.payload_tag, std::move(frame.frame));
@@ -171,6 +100,8 @@ OutputBuffers::Reader::PollReadNext() {
     DCHECK(!reading_);
     auto frames = std::move(frames_);
     frames_.clear();
+    send_rate_.DequeueFromReader(output_buffers_->clock_->Now());
+    output_buffers_->WakeupScheduler(/*async=*/true);
     mu_.Unlock();
     return std::move(frames);
   }
@@ -244,7 +175,7 @@ void OutputBuffers::DestroyReader(uint32_t id) {
   num_readers_.fetch_sub(1, std::memory_order_relaxed);
 }
 
-void OutputBuffers::WakeupScheduler() {
+void OutputBuffers::WakeupScheduler(bool async) {
   GRPC_LATENT_SEE_SCOPE("OutputBuffers::WakeupScheduler");
   auto state = scheduling_state_.load(std::memory_order_acquire);
   // CAS's here-in need to be acq-rel, so that we get an acquire on failure (at
@@ -266,7 +197,11 @@ void OutputBuffers::WakeupScheduler() {
                 state, kSchedulingWorkAvailable, std::memory_order_acq_rel)) {
           continue;
         }
-        waker->Wakeup();
+        if (async) {
+          waker->WakeupAsync();
+        } else {
+          waker->Wakeup();
+        }
         delete waker;
         return;
       }
@@ -327,7 +262,6 @@ void OutputBuffers::Schedule() {
   // hit data endpoints or be inlined on a control channel.
   scheduler_->NewStep(queued_tokens, first_message->frame.tokens());
   const auto now = clock_->Now();
-  bool any_readers = false;
   {
     GRPC_LATENT_SEE_SCOPE("OutputBuffers::Schedule::CollectData2");
     for (size_t i = 0; i < scheduling_data.size(); ++i) {
@@ -336,13 +270,10 @@ void OutputBuffers::Schedule() {
       scheduling.reader->mu_.Lock();
       auto delivery_data = scheduling.reader->send_rate_.GetDeliveryData(now);
       bool reading = scheduling.reader->reading_;
-      if (reading) any_readers = true;
       scheduling.reader->mu_.Unlock();
-      scheduler_->AddChannel(i, reading, delivery_data.start_time,
-                             delivery_data.bytes_per_second);
+      scheduler_->AddChannel(i, reading, delivery_data);
     }
   }
-  if (!any_readers) return;
   {
     GRPC_LATENT_SEE_SCOPE("OutputBuffers::Schedule::MakePlan");
     scheduler_->MakePlan(*ztrace_collector_);
@@ -377,9 +308,8 @@ void OutputBuffers::Schedule() {
       auto& reader = scheduling.reader;
       DCHECK_NE(reader.get(), nullptr);
       reader->mu_.Lock();
-      if (!reader->reading_) {
-        // Frames were assigned to this reader, but it's either not reading
-        // or not allocated anymore.
+      if (reader->dropped_) {
+        // Frames were assigned to this reader, but it's not allocated anymore.
         auto frames = std::move(scheduling.frames);
         scheduling.frames.clear();
         reader->mu_.Unlock();
@@ -388,8 +318,10 @@ void OutputBuffers::Schedule() {
         }
         continue;
       }
-      reader->send_rate_.StartSend(scheduling.queued_bytes);
-      reader->frames_ = std::move(scheduling.frames);
+      reader->send_rate_.EnqueueToReader(scheduling.queued_bytes, now);
+      for (auto& frame : scheduling.frames) {
+        reader->frames_.push_back(std::move(frame));
+      }
       reader->reading_ = false;
       auto waker = std::move(reader->waker_);
       reader->mu_.Unlock();
@@ -576,21 +508,64 @@ class MetricsCollector
     delivery_rate_ = telemetry_info_->GetMetricKey("delivery_rate");
     rtt_ = telemetry_info_->GetMetricKey("net_rtt_usec");
     if (!rtt_.has_value()) rtt_ = telemetry_info_->GetMetricKey("srtt");
+    min_rtt_ = telemetry_info_->GetMetricKey("min_rtt");
     data_notsent_ = telemetry_info_->GetMetricKey("data_notsent");
     byte_offset_ = telemetry_info_->GetMetricKey("byte_offset");
-    absl::InlinedVector<size_t, 4> keys;
-    if (delivery_rate_.has_value()) {
-      keys.push_back(*delivery_rate_);
-    }
+    congestion_window_ = telemetry_info_->GetMetricKey("congestion_window");
+    snd_ssthresh_ = telemetry_info_->GetMetricKey("snd_ssthresh");
+    packet_retx_ = telemetry_info_->GetMetricKey("packet_retx");
+    packet_spurious_retx_ =
+        telemetry_info_->GetMetricKey("packet_spurious_retx");
+    packet_sent_ = telemetry_info_->GetMetricKey("packet_sent");
+    packet_delivered_ = telemetry_info_->GetMetricKey("packet_delivered");
+    packet_delivered_ce_ = telemetry_info_->GetMetricKey("packet_delivered_ce");
+    data_retx_ = telemetry_info_->GetMetricKey("data_retx");
+    data_sent_ = telemetry_info_->GetMetricKey("data_sent");
+    pacing_rate_ = telemetry_info_->GetMetricKey("pacing_rate");
+    reordering_ = telemetry_info_->GetMetricKey("reordering");
+    recurring_retrans_ = telemetry_info_->GetMetricKey("recurring_retrans");
+    busy_usec_ = telemetry_info_->GetMetricKey("busy_usec");
+    rwnd_limited_usec_ = telemetry_info_->GetMetricKey("rwnd_limited_usec");
+    sndbuf_limited_usec_ = telemetry_info_->GetMetricKey("sndbuf_limited_usec");
+    is_delivery_rate_app_limited_ =
+        telemetry_info_->GetMetricKey("is_delivery_rate_app_limited");
+
+    absl::InlinedVector<size_t, 24> keys;
+    if (delivery_rate_.has_value()) keys.push_back(*delivery_rate_);
     if (byte_offset_.has_value()) keys.push_back(*byte_offset_);
     if (rtt_.has_value()) keys.push_back(*rtt_);
+    if (min_rtt_.has_value()) keys.push_back(*min_rtt_);
     if (data_notsent_.has_value()) keys.push_back(*data_notsent_);
+    if (congestion_window_.has_value()) keys.push_back(*congestion_window_);
+    if (snd_ssthresh_.has_value()) keys.push_back(*snd_ssthresh_);
+    if (packet_retx_.has_value()) keys.push_back(*packet_retx_);
+    if (packet_spurious_retx_.has_value()) {
+      keys.push_back(*packet_spurious_retx_);
+    }
+    if (packet_sent_.has_value()) keys.push_back(*packet_sent_);
+    if (packet_delivered_.has_value()) keys.push_back(*packet_delivered_);
+    if (packet_delivered_ce_.has_value()) keys.push_back(*packet_delivered_ce_);
+    if (data_retx_.has_value()) keys.push_back(*data_retx_);
+    if (data_sent_.has_value()) keys.push_back(*data_sent_);
+    if (pacing_rate_.has_value()) keys.push_back(*pacing_rate_);
+    if (reordering_.has_value()) keys.push_back(*reordering_);
+    if (recurring_retrans_.has_value()) keys.push_back(*recurring_retrans_);
+    if (busy_usec_.has_value()) keys.push_back(*busy_usec_);
+    if (rwnd_limited_usec_.has_value()) keys.push_back(*rwnd_limited_usec_);
+    if (sndbuf_limited_usec_.has_value()) keys.push_back(*sndbuf_limited_usec_);
+    if (is_delivery_rate_app_limited_.has_value()) {
+      keys.push_back(*is_delivery_rate_app_limited_);
+    }
     requested_metrics_ = telemetry_info_->GetMetricsSet(keys);
   }
 
   bool HasAnyMetrics() const {
+    // Checking this subset of metrics is sufficient to determine if it has
+    // any metrics
     return delivery_rate_.has_value() || rtt_.has_value() ||
-           data_notsent_.has_value();
+           min_rtt_.has_value() || data_notsent_.has_value() ||
+           byte_offset_.has_value() || congestion_window_.has_value() ||
+           snd_ssthresh_.has_value() || packet_retx_.has_value();
   }
 
   std::shared_ptr<
@@ -680,8 +655,25 @@ class MetricsCollector
   Clock* const clock_;
   std::optional<size_t> delivery_rate_;
   std::optional<size_t> rtt_;
+  std::optional<size_t> min_rtt_;
   std::optional<size_t> data_notsent_;
   std::optional<size_t> byte_offset_;
+  std::optional<size_t> congestion_window_;
+  std::optional<size_t> snd_ssthresh_;
+  std::optional<size_t> packet_retx_;
+  std::optional<size_t> packet_spurious_retx_;
+  std::optional<size_t> packet_sent_;
+  std::optional<size_t> packet_delivered_;
+  std::optional<size_t> packet_delivered_ce_;
+  std::optional<size_t> data_retx_;
+  std::optional<size_t> data_sent_;
+  std::optional<size_t> pacing_rate_;
+  std::optional<size_t> reordering_;
+  std::optional<size_t> recurring_retrans_;
+  std::optional<size_t> busy_usec_;
+  std::optional<size_t> rwnd_limited_usec_;
+  std::optional<size_t> sndbuf_limited_usec_;
+  std::optional<size_t> is_delivery_rate_app_limited_;
   std::shared_ptr<
       grpc_event_engine::experimental::EventEngine::Endpoint::MetricsSet>
       requested_metrics_;
@@ -790,6 +782,10 @@ auto Endpoint::WriteLoop(RefCountedPtr<EndpointContext> ctx) {
                     << "CHAOTIC_GOOD: " << ctx->reader.get() << " "
                     << "Write done to data endpoint #" << ctx->id
                     << " status: " << status;
+                // This acquires the reader lock, but we don't expect too much
+                // contention here. In most cases, only one thread will be
+                // accessing the lock.
+                ctx->reader->FinishEndpointWrite();
                 return status;
               });
         },
@@ -943,7 +939,12 @@ Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
                 auto* epte = grpc_event_engine::experimental::QueryExtension<
                     grpc_event_engine::experimental::TcpTraceExtension>(
                     endpoint->GetEventEngineEndpoint().get());
-                if (epte != nullptr) {
+                if (epte != nullptr &&
+                    ep_ctx->transport_ctx->stats_plugin_group != nullptr) {
+                  epte->EnableTcpTelemetry(
+                      ep_ctx->transport_ctx->stats_plugin_group
+                          ->GetCollectionScope(),
+                      /*is_control_endpoint=*/false);
                   epte->SetTcpTracer(std::make_shared<DefaultTcpTracer>(
                       ep_ctx->transport_ctx->stats_plugin_group));
                 }

@@ -20,21 +20,22 @@
 #include <cstdint>
 #include <limits>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_format.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/latent_see.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_format.h"
 
 #ifdef GRPC_MAXIMIZE_THREADYNESS
-#include "absl/random/random.h"           // IWYU pragma: keep
 #include "src/core/lib/iomgr/exec_ctx.h"  // IWYU pragma: keep
 #include "src/core/util/thd.h"            // IWYU pragma: keep
+#include "absl/random/random.h"           // IWYU pragma: keep
 #endif
 
 namespace grpc_core {
@@ -73,7 +74,7 @@ class Party::Handle final : public Wakeable {
   // Activity is going away... drop its reference and sever the connection back.
   void DropActivity() ABSL_LOCKS_EXCLUDED(mu_) {
     mu_.Lock();
-    CHECK_NE(party_, nullptr);
+    GRPC_CHECK_NE(party_, nullptr);
     party_ = nullptr;
     mu_.Unlock();
     Unref();
@@ -201,14 +202,24 @@ void Party::ToJson(absl::AnyInvocable<void(Json::Object)> f) {
       [](absl::Status) {});
 }
 
-void Party::ExportToChannelz(std::string name, channelz::DataSink sink) {
-  Spawn(
-      "export-to-channelz",
-      [name = std::move(name), sink = std::move(sink), self = Ref()]() mutable {
-        sink.AddData(std::move(name), self->ChannelzPropertiesLocked());
-        return absl::OkStatus();
-      },
-      [](absl::Status) {});
+void Party::ExportToChannelz(
+    std::string name, channelz::DataSink sink,
+    absl::AnyInvocable<channelz::PropertyList()> export_context) {
+  arena()->GetContext<grpc_event_engine::experimental::EventEngine>()->Run(
+      [self = Ref(), name = std::move(name), sink = std::move(sink),
+       export_context = std::move(export_context)]() mutable {
+        ExecCtx exec_ctx;
+        self->Spawn(
+            "export-to-channelz",
+            [name = std::move(name), sink = std::move(sink), self,
+             export_context = std::move(export_context)]() mutable {
+              sink.AddData(
+                  std::move(name),
+                  self->ChannelzPropertiesLocked().Merge(export_context()));
+              return absl::OkStatus();
+            },
+            [](absl::Status) {});
+      });
 }
 
 channelz::PropertyList Party::ChannelzPropertiesLocked() {
@@ -226,7 +237,8 @@ channelz::PropertyList Party::ChannelzPropertiesLocked() {
         for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
           if (auto* p = participants_[i].load(std::memory_order_acquire);
               p != nullptr) {
-            table.AppendRow(p->ChannelzProperties());
+            table.AppendRow(channelz::PropertyList().Set(
+                "participant", p->ChannelzProperties()));
           }
         }
         return table;
@@ -259,13 +271,13 @@ std::string Party::ActivityDebugTag(WakeupMask wakeup_mask) const {
 }
 
 Waker Party::MakeOwningWaker() {
-  DCHECK(currently_polling_ != kNotPolling);
+  GRPC_DCHECK(currently_polling_ != kNotPolling);
   IncrementRefCount();
   return Waker(this, 1u << currently_polling_);
 }
 
 Waker Party::MakeNonOwningWaker() {
-  DCHECK(currently_polling_ != kNotPolling);
+  GRPC_DCHECK(currently_polling_ != kNotPolling);
   return Waker(participants_[currently_polling_]
                    .load(std::memory_order_relaxed)
                    ->MakeNonOwningWakeable(this),
@@ -273,7 +285,7 @@ Waker Party::MakeNonOwningWaker() {
 }
 
 void Party::ForceImmediateRepoll(WakeupMask mask) {
-  DCHECK(is_current());
+  GRPC_DCHECK(is_current());
   wakeup_mask_ |= mask;
 }
 
@@ -306,11 +318,11 @@ void Party::RunLockedAndUnref(Party* party, uint64_t prev_state) {
       g_run_state = this;
       do {
         GRPC_LATENT_SEE_SCOPE("run_one_party");
-        CHECK(first.party != nullptr);
+        GRPC_CHECK(first.party != nullptr);
         first.party->RunPartyAndUnref(first.prev_state);
         first = std::exchange(next, PartyWakeup{});
       } while (first.party != nullptr);
-      DCHECK(g_run_state == this);
+      GRPC_DCHECK(g_run_state == this);
       g_run_state = nullptr;
     }
   };
@@ -338,10 +350,11 @@ void Party::RunLockedAndUnref(Party* party, uint64_t prev_state) {
       auto wakeup =
           std::exchange(g_run_state->next, PartyWakeup{party, prev_state});
       auto arena = wakeup.party->arena_.get();
-      CHECK(arena != nullptr);
+      GRPC_CHECK(arena != nullptr);
       auto* event_engine =
           arena->GetContext<grpc_event_engine::experimental::EventEngine>();
-      CHECK(event_engine != nullptr) << "; " << GRPC_DUMP_ARGS(party, arena);
+      GRPC_CHECK(event_engine != nullptr)
+          << "; " << GRPC_DUMP_ARGS(party, arena);
       GRPC_LATENT_SEE_SCOPE("offload_one_party");
       event_engine->Run([wakeup]() {
         GRPC_LATENT_SEE_SCOPE("Party::RunLocked offload");
@@ -360,11 +373,11 @@ void Party::RunLockedAndUnref(Party* party, uint64_t prev_state) {
 void Party::RunPartyAndUnref(uint64_t prev_state) {
   ScopedActivity activity(this);
   promise_detail::Context<Arena> arena_ctx(arena_.get());
-  DCHECK_EQ(prev_state & kLocked, 0u)
+  GRPC_DCHECK_EQ(prev_state & kLocked, 0u)
       << "Party should be unlocked prior to first wakeup";
-  DCHECK_GE(prev_state & kRefMask, kOneRef);
+  GRPC_DCHECK_GE(prev_state & kRefMask, kOneRef);
   // Now update prev_state to be what we want the CAS to see below.
-  DCHECK_EQ(prev_state & ~(kRefMask | kAllocatedMask), 0u)
+  GRPC_DCHECK_EQ(prev_state & ~(kRefMask | kAllocatedMask), 0u)
       << "Party should have contained no wakeups on lock";
   prev_state |= kLocked;
 #if !TARGET_OS_IPHONE
@@ -432,9 +445,9 @@ void Party::RunPartyAndUnref(uint64_t prev_state) {
     }
     LogStateChange("Run:Continue", prev_state,
                    prev_state & (kRefMask | kLocked | keep_allocated_mask));
-    DCHECK(prev_state & kLocked)
+    GRPC_DCHECK(prev_state & kLocked)
         << "Party should be locked; prev_state=" << prev_state;
-    DCHECK_GE(prev_state & kRefMask, kOneRef);
+    GRPC_DCHECK_GE(prev_state & kRefMask, kOneRef);
     // From the previous state, extract which participants we're to wakeup.
     wakeup_mask_ |= prev_state & kWakeupMask;
     // Now update prev_state to be what we want the CAS to see once wakeups
@@ -457,7 +470,7 @@ uint64_t Party::NextAllocationMask(uint64_t current_allocation_mask) {
 }
 #else
 uint64_t Party::NextAllocationMask(uint64_t current_allocation_mask) {
-  CHECK_EQ(current_allocation_mask & ~kWakeupMask, 0);
+  GRPC_CHECK_EQ(current_allocation_mask & ~kWakeupMask, 0);
   if (current_allocation_mask == kWakeupMask) return kWakeupMask + 1;
   // Count number of unset bits in the wakeup mask
   size_t unset_bits = 0;
@@ -465,7 +478,7 @@ uint64_t Party::NextAllocationMask(uint64_t current_allocation_mask) {
     if (current_allocation_mask & (1ull << i)) continue;
     ++unset_bits;
   }
-  CHECK_GT(unset_bits, 0);
+  GRPC_CHECK_GT(unset_bits, 0);
   absl::BitGen bitgen;
   size_t selected = absl::Uniform<size_t>(bitgen, 0, unset_bits);
   for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
@@ -494,7 +507,7 @@ size_t Party::AddParticipant(Participant* participant) {
     if (GPR_UNLIKELY((wakeup_mask & kWakeupMask) == 0)) {
       return std::numeric_limits<size_t>::max();
     }
-    DCHECK_NE(wakeup_mask & kWakeupMask, 0u)
+    GRPC_DCHECK_NE(wakeup_mask & kWakeupMask, 0u)
         << "No available slots for new participant; allocated=" << allocated
         << " state=" << state << " wakeup_mask=" << wakeup_mask;
     allocated |= wakeup_mask;

@@ -16,4 +16,20 @@
 //
 //
 
-namespace grpc_core {}  // namespace grpc_core
+#include "src/core/ext/transport/chttp2/transport/transport_common.h"
+
+#include <cstdint>
+
+#include "src/core/util/shared_bit_gen.h"
+#include "src/core/util/time.h"
+#include "absl/random/random.h"
+
+namespace grpc_core {
+
+Duration TarpitDuration(const int min_tarpit_duration_ms,
+                        const int max_tarpit_duration_ms) {
+  return Duration::Milliseconds(absl::LogUniform<int>(
+      SharedBitGen(), min_tarpit_duration_ms, max_tarpit_duration_ms));
+}
+
+}  // namespace grpc_core

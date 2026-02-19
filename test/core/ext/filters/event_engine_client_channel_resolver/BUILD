@@ -15,7 +15,13 @@
 load("//bazel:grpc_build_system.bzl", "grpc_cc_proto_library", "grpc_internal_proto_library", "grpc_package")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
-grpc_package(name = "test/core/ext/filters/event_engine_client_channel_resolver")
+grpc_package(
+    name = "test/core/ext/filters/event_engine_client_channel_resolver",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 licenses(["notice"])
 
@@ -65,6 +71,7 @@ grpc_fuzz_test(
         "//src/core:default_event_engine",
         "//src/core:event_engine_tcp_socket_utils",
         "//src/core:experiments",
+        "//src/core:grpc_check",
         "//src/core:grpc_resolver_dns_event_engine",
         "//test/core/event_engine:aborting_event_engine",
         "//test/core/event_engine/fuzzing_event_engine",

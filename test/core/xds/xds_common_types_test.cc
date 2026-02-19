@@ -25,18 +25,18 @@
 #include <utility>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
+#include "envoy/config/core/v3/grpc_service.pb.h"
+#include "envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.pb.h"
+#include "envoy/extensions/grpc_service/channel_credentials/google_default/v3/google_default_credentials.pb.h"
+#include "envoy/extensions/grpc_service/channel_credentials/insecure/v3/insecure_credentials.pb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.pb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/type/matcher/v3/regex.pb.h"
 #include "envoy/type/matcher/v3/string.pb.h"
-#include "gmock/gmock.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
-#include "gtest/gtest.h"
 #include "re2/re2.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/json/json_writer.h"
@@ -50,13 +50,20 @@
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/config_grpc_cli.h"
 #include "udpa/type/v1/typed_struct.pb.h"
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
 #include "xds/type/v3/typed_struct.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 
+using envoy::config::core::v3::GrpcService;
 using CommonTlsContextProto =
     envoy::extensions::transport_sockets::tls::v3::CommonTlsContext;
 using xds::type::v3::TypedStruct;
@@ -67,33 +74,35 @@ namespace {
 
 class XdsCommonTypesTest : public ::testing::Test {
  protected:
-  XdsCommonTypesTest()
-      : xds_client_(MakeXdsClient()),
-        decode_context_{xds_client_.get(),
-                        *xds_client_->bootstrap().servers().front(),
-                        upb_def_pool_.ptr(), upb_arena_.ptr()} {}
+  XdsCommonTypesTest() : xds_client_(MakeXdsClient()) {}
 
-  static RefCountedPtr<XdsClient> MakeXdsClient() {
+  static RefCountedPtr<XdsClient> MakeXdsClient(
+      absl::string_view extra_bootstrap_text = "",
+      bool trusted_xds_server = false) {
     auto bootstrap = GrpcXdsBootstrap::Create(
-        "{\n"
-        "  \"xds_servers\": [\n"
-        "    {\n"
-        "      \"server_uri\": \"xds.example.com\",\n"
-        "      \"channel_creds\": [\n"
-        "        {\"type\": \"google_default\"}\n"
-        "      ]\n"
-        "    }\n"
-        "  ],\n"
-        "  \"certificate_providers\": {\n"
-        "    \"provider1\": {\n"
-        "      \"plugin_name\": \"file_watcher\",\n"
-        "      \"config\": {\n"
-        "        \"certificate_file\": \"/path/to/cert\",\n"
-        "        \"private_key_file\": \"/path/to/key\"\n"
-        "      }\n"
-        "    }\n"
-        "  }\n"
-        "}");
+        absl::StrCat("{\n"
+                     "  \"xds_servers\": [\n"
+                     "    {\n"
+                     "      \"server_uri\": \"xds.example.com\",\n",
+                     trusted_xds_server ? "      \"server_features\": "
+                                          "[\"trusted_xds_server\"],\n"
+                                        : "",
+                     "      \"channel_creds\": [\n"
+                     "        {\"type\": \"google_default\"}\n"
+                     "      ]\n"
+                     "    }\n"
+                     "  ],\n",
+                     extra_bootstrap_text,
+                     "  \"certificate_providers\": {\n"
+                     "    \"provider1\": {\n"
+                     "      \"plugin_name\": \"file_watcher\",\n"
+                     "      \"config\": {\n"
+                     "        \"certificate_file\": \"/path/to/cert\",\n"
+                     "        \"private_key_file\": \"/path/to/key\"\n"
+                     "      }\n"
+                     "    }\n"
+                     "  }\n",
+                     "}"));
     if (!bootstrap.ok()) {
       Crash(absl::StrFormat("Error parsing bootstrap: %s",
                             bootstrap.status().ToString().c_str()));
@@ -105,10 +114,15 @@ class XdsCommonTypesTest : public ::testing::Test {
                                      "foo version");
   }
 
+  XdsResourceType::DecodeContext MakeDecodeContext() {
+    return XdsResourceType::DecodeContext{
+        xds_client_.get(), *xds_client_->bootstrap().servers().front(),
+        upb_def_pool_.ptr(), upb_arena_.ptr()};
+  }
+
   RefCountedPtr<XdsClient> xds_client_;
   upb::DefPool upb_def_pool_;
   upb::Arena upb_arena_;
-  XdsResourceType::DecodeContext decode_context_;
 };
 
 //
@@ -194,7 +208,7 @@ class CommonTlsConfigTest : public XdsCommonTypesTest {
           upb_proto) {
     ValidationErrors errors;
     CommonTlsContext common_tls_context =
-        CommonTlsContextParse(decode_context_, upb_proto, &errors);
+        CommonTlsContextParse(MakeDecodeContext(), upb_proto, &errors);
     if (!errors.ok()) {
       return errors.status(absl::StatusCode::kInvalidArgument,
                            "validation failed");
@@ -609,7 +623,7 @@ TEST_F(ExtractXdsExtensionTest, Basic) {
   google_protobuf_Any_set_type_url(any_proto, StdStringToUpbString(kTypeUrl));
   google_protobuf_Any_set_value(any_proto, StdStringToUpbString(kValue));
   ValidationErrors errors;
-  auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
+  auto extension = ExtractXdsExtension(MakeDecodeContext(), any_proto, &errors);
   ASSERT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
                                             "unexpected errors");
   ASSERT_TRUE(extension.has_value());
@@ -631,7 +645,7 @@ TEST_F(ExtractXdsExtensionTest, TypedStruct) {
   google_protobuf_Any_set_value(any_proto,
                                 StdStringToUpbString(serialized_typed_struct));
   ValidationErrors errors;
-  auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
+  auto extension = ExtractXdsExtension(MakeDecodeContext(), any_proto, &errors);
   ASSERT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
                                             "unexpected errors");
   ASSERT_TRUE(extension.has_value());
@@ -653,7 +667,7 @@ TEST_F(ExtractXdsExtensionTest, UdpaTypedStruct) {
   google_protobuf_Any_set_value(any_proto,
                                 StdStringToUpbString(serialized_typed_struct));
   ValidationErrors errors;
-  auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
+  auto extension = ExtractXdsExtension(MakeDecodeContext(), any_proto, &errors);
   ASSERT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
                                             "unexpected errors");
   ASSERT_TRUE(extension.has_value());
@@ -673,7 +687,7 @@ TEST_F(ExtractXdsExtensionTest, TypedStructWithoutValue) {
   google_protobuf_Any_set_value(any_proto,
                                 StdStringToUpbString(serialized_typed_struct));
   ValidationErrors errors;
-  auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
+  auto extension = ExtractXdsExtension(MakeDecodeContext(), any_proto, &errors);
   ASSERT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
                                             "unexpected errors");
   ASSERT_TRUE(extension.has_value());
@@ -731,7 +745,7 @@ TEST_F(ExtractXdsExtensionTest, TypedStructJsonConversion) {
   google_protobuf_Any_set_value(any_proto,
                                 StdStringToUpbString(serialized_typed_struct));
   ValidationErrors errors;
-  auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
+  auto extension = ExtractXdsExtension(MakeDecodeContext(), any_proto, &errors);
   ASSERT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
                                             "unexpected errors");
   ASSERT_TRUE(extension.has_value());
@@ -750,7 +764,7 @@ TEST_F(ExtractXdsExtensionTest, TypedStructJsonConversion) {
 TEST_F(ExtractXdsExtensionTest, FieldMissing) {
   ValidationErrors errors;
   ValidationErrors::ScopedField field(&errors, "any");
-  auto extension = ExtractXdsExtension(decode_context_, nullptr, &errors);
+  auto extension = ExtractXdsExtension(MakeDecodeContext(), nullptr, &errors);
   ASSERT_FALSE(errors.ok());
   absl::Status status =
       errors.status(absl::StatusCode::kInvalidArgument, "validation errors");
@@ -763,7 +777,7 @@ TEST_F(ExtractXdsExtensionTest, FieldMissing) {
 TEST_F(ExtractXdsExtensionTest, TypeUrlMissing) {
   google_protobuf_Any* any_proto = google_protobuf_Any_new(upb_arena_.ptr());
   ValidationErrors errors;
-  auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
+  auto extension = ExtractXdsExtension(MakeDecodeContext(), any_proto, &errors);
   ASSERT_FALSE(errors.ok());
   absl::Status status =
       errors.status(absl::StatusCode::kInvalidArgument, "validation errors");
@@ -785,7 +799,7 @@ TEST_F(ExtractXdsExtensionTest, TypedStructTypeUrlMissing) {
   google_protobuf_Any_set_value(any_proto,
                                 StdStringToUpbString(serialized_typed_struct));
   ValidationErrors errors;
-  auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
+  auto extension = ExtractXdsExtension(MakeDecodeContext(), any_proto, &errors);
   ASSERT_FALSE(errors.ok());
   absl::Status status =
       errors.status(absl::StatusCode::kInvalidArgument, "validation errors");
@@ -802,7 +816,7 @@ TEST_F(ExtractXdsExtensionTest, TypeUrlNoSlash) {
   google_protobuf_Any* any_proto = google_protobuf_Any_new(upb_arena_.ptr());
   google_protobuf_Any_set_type_url(any_proto, StdStringToUpbString(kTypeUrl));
   ValidationErrors errors;
-  auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
+  auto extension = ExtractXdsExtension(MakeDecodeContext(), any_proto, &errors);
   ASSERT_FALSE(errors.ok());
   absl::Status status =
       errors.status(absl::StatusCode::kInvalidArgument, "validation errors");
@@ -826,7 +840,7 @@ TEST_F(ExtractXdsExtensionTest, TypedStructTypeUrlNoSlash) {
   google_protobuf_Any_set_value(any_proto,
                                 StdStringToUpbString(serialized_typed_struct));
   ValidationErrors errors;
-  auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
+  auto extension = ExtractXdsExtension(MakeDecodeContext(), any_proto, &errors);
   ASSERT_FALSE(errors.ok());
   absl::Status status =
       errors.status(absl::StatusCode::kInvalidArgument, "validation errors");
@@ -843,7 +857,7 @@ TEST_F(ExtractXdsExtensionTest, TypeUrlNothingAfterSlash) {
   google_protobuf_Any* any_proto = google_protobuf_Any_new(upb_arena_.ptr());
   google_protobuf_Any_set_type_url(any_proto, StdStringToUpbString(kTypeUrl));
   ValidationErrors errors;
-  auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
+  auto extension = ExtractXdsExtension(MakeDecodeContext(), any_proto, &errors);
   ASSERT_FALSE(errors.ok());
   absl::Status status =
       errors.status(absl::StatusCode::kInvalidArgument, "validation errors");
@@ -867,7 +881,7 @@ TEST_F(ExtractXdsExtensionTest, TypedStructTypeUrlNothingAfterSlash) {
   google_protobuf_Any_set_value(any_proto,
                                 StdStringToUpbString(serialized_typed_struct));
   ValidationErrors errors;
-  auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
+  auto extension = ExtractXdsExtension(MakeDecodeContext(), any_proto, &errors);
   ASSERT_FALSE(errors.ok());
   absl::Status status =
       errors.status(absl::StatusCode::kInvalidArgument, "validation errors");
@@ -888,7 +902,7 @@ TEST_F(ExtractXdsExtensionTest, TypedStructParseFailure) {
   google_protobuf_Any_set_value(any_proto,
                                 StdStringToUpbString(serialized_type_struct));
   ValidationErrors errors;
-  auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
+  auto extension = ExtractXdsExtension(MakeDecodeContext(), any_proto, &errors);
   ASSERT_FALSE(errors.ok());
   absl::Status status =
       errors.status(absl::StatusCode::kInvalidArgument, "validation errors");
@@ -912,7 +926,7 @@ TEST_F(ExtractXdsExtensionTest, TypedStructWithInvalidProtobufStruct) {
   google_protobuf_Any_set_value(any_proto,
                                 StdStringToUpbString(serialized_typed_struct));
   ValidationErrors errors;
-  auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
+  auto extension = ExtractXdsExtension(MakeDecodeContext(), any_proto, &errors);
   ASSERT_FALSE(errors.ok());
   absl::Status status =
       errors.status(absl::StatusCode::kInvalidArgument, "validation errors");
@@ -923,6 +937,340 @@ TEST_F(ExtractXdsExtensionTest, TypedStructWithInvalidProtobufStruct) {
             "error:error encoding google::Protobuf::Struct as JSON: "
             "No value set in Value proto]")
       << status;
+}
+
+//
+// ParseXdsGrpcService() tests
+//
+
+MATCHER_P3(EqCredsConfig, type, proto_type, config, "equals creds config") {
+  bool ok = ::testing::ExplainMatchResult(type, arg->type(), result_listener);
+  ok &= ::testing::ExplainMatchResult(proto_type, arg->proto_type(),
+                                      result_listener);
+  ok &= ::testing::ExplainMatchResult(config, arg->ToString(), result_listener);
+  return ok;
+}
+
+class ParseXdsGrpcServiceTest : public XdsCommonTypesTest {
+ protected:
+  // For convenience, tests build protos using the protobuf API, and
+  // we convert it to a upb object, which is then passed to
+  // ParseXdsGrpcService() for testing.
+  absl::StatusOr<XdsGrpcService> Parse(const GrpcService& proto) {
+    // Serialize the protobuf proto.
+    std::string serialized_proto;
+    if (!proto.SerializeToString(&serialized_proto)) {
+      return absl::InternalError("protobuf serialization failed");
+    }
+    // Deserialize as upb proto.
+    const auto* upb_proto = envoy_config_core_v3_GrpcService_parse(
+        serialized_proto.data(), serialized_proto.size(), upb_arena_.ptr());
+    if (upb_proto == nullptr) {
+      return absl::InternalError("upb parsing failed");
+    }
+    // Now parse the upb proto.
+    ValidationErrors errors;
+    XdsGrpcService xds_grpc_service =
+        ParseXdsGrpcService(MakeDecodeContext(), upb_proto, &errors);
+    if (!errors.ok()) {
+      return errors.status(absl::StatusCode::kInvalidArgument,
+                           "validation failed");
+    }
+    return xds_grpc_service;
+  }
+};
+
+TEST_F(ParseXdsGrpcServiceTest,
+       NonTrustedXdsServerAndServicePresentInBootstrap) {
+  ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT");
+  xds_client_ = MakeXdsClient(
+      "  \"allowed_grpc_services\": {\n"
+      "    \"dns:server.example.com\": {\n"
+      "      \"channel_creds\": [{\"type\": \"insecure\"}],\n"
+      "      \"call_creds\": [\n"
+      "         {\"type\": \"jwt_token_file\",\n"
+      "          \"config\": {\"jwt_token_file\": \"/path/to/file\"}}\n"
+      "      ]\n"
+      "    }\n"
+      "  },\n");
+  GrpcService grpc_service;
+  auto* google_grpc = grpc_service.mutable_google_grpc();
+  google_grpc->set_target_uri("dns:server.example.com");
+  // Creds specified in proto will be ignored because xDS server is not trusted.
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      envoy::extensions::grpc_service::channel_credentials::google_default::v3::
+          GoogleDefaultCredentials());
+  envoy::extensions::grpc_service::call_credentials::access_token::v3::
+      AccessTokenCredentials call_creds;
+  call_creds.set_token("foo");
+  google_grpc->add_call_credentials_plugin()->PackFrom(call_creds);
+  auto xds_grpc_service = Parse(grpc_service);
+  ASSERT_TRUE(xds_grpc_service.ok()) << xds_grpc_service.status();
+  ASSERT_NE(xds_grpc_service->server_target, nullptr);
+  EXPECT_EQ(xds_grpc_service->server_target->server_uri(),
+            "dns:server.example.com");
+  ASSERT_NE(xds_grpc_service->server_target->channel_creds_config(), nullptr);
+  EXPECT_EQ(xds_grpc_service->server_target->channel_creds_config()->type(),
+            "insecure");
+  EXPECT_THAT(xds_grpc_service->server_target->call_creds_configs(),
+              ::testing::ElementsAre(EqCredsConfig(
+                  "jwt_token_file", "", "{path=\"/path/to/file\"}")));
+}
+
+TEST_F(ParseXdsGrpcServiceTest,
+       NonTrustedXdsServerAndServiceNotPresentInBootstrap) {
+  GrpcService grpc_service;
+  auto* google_grpc = grpc_service.mutable_google_grpc();
+  google_grpc->set_target_uri("dns:server.example.com");
+  auto xds_grpc_service = Parse(grpc_service);
+  EXPECT_EQ(xds_grpc_service.status(),
+            absl::InvalidArgumentError(
+                "validation failed: [field:google_grpc.target_uri "
+                "error:service not present in \"allowed_grpc_services\" in "
+                "bootstrap config]"));
+}
+
+TEST_F(ParseXdsGrpcServiceTest, TrustedXdsServerWithCredentials) {
+  xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
+  GrpcService grpc_service;
+  auto* google_grpc = grpc_service.mutable_google_grpc();
+  google_grpc->set_target_uri("dns:server.example.com");
+  // Unsupported channel creds type, should be ignored.
+  google_grpc->add_channel_credentials_plugin()->PackFrom(GrpcService());
+  // Two supported channel creds types, should use the first one.
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      envoy::extensions::grpc_service::channel_credentials::google_default::v3::
+          GoogleDefaultCredentials());
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      envoy::extensions::grpc_service::channel_credentials::insecure::v3::
+          InsecureCredentials());
+  // Unsupported call creds type, should be ignored.
+  google_grpc->add_call_credentials_plugin()->PackFrom(GrpcService());
+  // Two supported call creds types, should use both.
+  envoy::extensions::grpc_service::call_credentials::access_token::v3::
+      AccessTokenCredentials call_creds;
+  call_creds.set_token("foo");
+  google_grpc->add_call_credentials_plugin()->PackFrom(call_creds);
+  call_creds.set_token("bar");
+  google_grpc->add_call_credentials_plugin()->PackFrom(call_creds);
+  auto xds_grpc_service = Parse(grpc_service);
+  ASSERT_TRUE(xds_grpc_service.ok()) << xds_grpc_service.status();
+  ASSERT_NE(xds_grpc_service->server_target, nullptr);
+  EXPECT_EQ(xds_grpc_service->server_target->server_uri(),
+            "dns:server.example.com");
+  ASSERT_NE(xds_grpc_service->server_target->channel_creds_config(), nullptr);
+  EXPECT_EQ(xds_grpc_service->server_target->channel_creds_config()->type(),
+            "google_default");
+  EXPECT_THAT(xds_grpc_service->server_target->call_creds_configs(),
+              ::testing::ElementsAre(
+                  EqCredsConfig("",
+                                "envoy.extensions.grpc_service.call_credentials"
+                                ".access_token.v3.AccessTokenCredentials",
+                                "{token=\"foo\"}"),
+                  EqCredsConfig("",
+                                "envoy.extensions.grpc_service.call_credentials"
+                                ".access_token.v3.AccessTokenCredentials",
+                                "{token=\"bar\"}")));
+  // Unset fields have default values.
+  EXPECT_EQ(xds_grpc_service->timeout, Duration::Zero());
+  EXPECT_THAT(xds_grpc_service->initial_metadata, ::testing::ElementsAre());
+}
+
+TEST_F(ParseXdsGrpcServiceTest, TrustedXdsServerWithChannelCredsUnset) {
+  xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
+  GrpcService grpc_service;
+  auto* google_grpc = grpc_service.mutable_google_grpc();
+  google_grpc->set_target_uri("dns:server.example.com");
+  auto xds_grpc_service = Parse(grpc_service);
+  EXPECT_EQ(
+      xds_grpc_service.status(),
+      absl::InvalidArgumentError("validation failed: ["
+                                 "field:google_grpc.channel_credentials_plugin "
+                                 "error:field not set]"));
+}
+
+TEST_F(ParseXdsGrpcServiceTest, TrustedXdsServerWithNoSupportedChannelCreds) {
+  xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
+  GrpcService grpc_service;
+  auto* google_grpc = grpc_service.mutable_google_grpc();
+  google_grpc->set_target_uri("dns:server.example.com");
+  google_grpc->add_channel_credentials_plugin()->PackFrom(GrpcService());
+  auto xds_grpc_service = Parse(grpc_service);
+  EXPECT_EQ(xds_grpc_service.status(),
+            absl::InvalidArgumentError(
+                "validation failed: ["
+                "field:google_grpc.channel_credentials_plugin "
+                "error:no supported channel credentials type found]"));
+}
+
+TEST_F(ParseXdsGrpcServiceTest, Timeout) {
+  xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
+  GrpcService grpc_service;
+  grpc_service.mutable_timeout()->set_seconds(5);
+  auto* google_grpc = grpc_service.mutable_google_grpc();
+  google_grpc->set_target_uri("dns:server.example.com");
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      envoy::extensions::grpc_service::channel_credentials::insecure::v3::
+          InsecureCredentials());
+  auto xds_grpc_service = Parse(grpc_service);
+  ASSERT_TRUE(xds_grpc_service.ok()) << xds_grpc_service.status();
+  EXPECT_EQ(xds_grpc_service->timeout, Duration::Seconds(5));
+}
+
+TEST_F(ParseXdsGrpcServiceTest, InvalidTimeout) {
+  xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
+  GrpcService grpc_service;
+  grpc_service.mutable_timeout()->set_seconds(0);
+  auto* google_grpc = grpc_service.mutable_google_grpc();
+  google_grpc->set_target_uri("dns:server.example.com");
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      envoy::extensions::grpc_service::channel_credentials::insecure::v3::
+          InsecureCredentials());
+  auto xds_grpc_service = Parse(grpc_service);
+  EXPECT_EQ(xds_grpc_service.status(),
+            absl::InvalidArgumentError(
+                "validation failed: ["
+                "field:timeout error:duration must be positive]"));
+}
+
+TEST_F(ParseXdsGrpcServiceTest, BasicHeader) {
+  xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
+  GrpcService grpc_service;
+  auto* header_value = grpc_service.add_initial_metadata();
+  header_value->set_key("foo");
+  header_value->set_value("bar");
+  auto* google_grpc = grpc_service.mutable_google_grpc();
+  google_grpc->set_target_uri("dns:server.example.com");
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      envoy::extensions::grpc_service::channel_credentials::google_default::v3::
+          GoogleDefaultCredentials());
+  auto xds_grpc_service = Parse(grpc_service);
+  ASSERT_TRUE(xds_grpc_service.ok()) << xds_grpc_service.status();
+  EXPECT_THAT(xds_grpc_service->initial_metadata,
+              ::testing::ElementsAre(::testing::Pair("foo", "bar")));
+}
+
+TEST_F(ParseXdsGrpcServiceTest, InvalidHeaderKeyAndValue) {
+  xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
+  GrpcService grpc_service;
+  auto* header_value = grpc_service.add_initial_metadata();
+  header_value->set_key("Foo");
+  header_value->set_value("\x1f");
+  auto* google_grpc = grpc_service.mutable_google_grpc();
+  google_grpc->set_target_uri("dns:server.example.com");
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      envoy::extensions::grpc_service::channel_credentials::insecure::v3::
+          InsecureCredentials());
+  auto xds_grpc_service = Parse(grpc_service);
+  EXPECT_EQ(xds_grpc_service.status(),
+            absl::InvalidArgumentError("validation failed: ["
+                                       "field:initial_metadata[0].key "
+                                       "error:Illegal header key; "
+                                       "field:initial_metadata[0].value "
+                                       "error:Illegal header value]"));
+}
+
+TEST_F(ParseXdsGrpcServiceTest, RawHeaderValueForBinaryHeader) {
+  xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
+  GrpcService grpc_service;
+  auto* header_value = grpc_service.add_initial_metadata();
+  header_value->set_key("foo-bin");
+  header_value->set_raw_value("\x1f");
+  auto* google_grpc = grpc_service.mutable_google_grpc();
+  google_grpc->set_target_uri("dns:server.example.com");
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      envoy::extensions::grpc_service::channel_credentials::google_default::v3::
+          GoogleDefaultCredentials());
+  auto xds_grpc_service = Parse(grpc_service);
+  ASSERT_TRUE(xds_grpc_service.ok()) << xds_grpc_service.status();
+  EXPECT_THAT(xds_grpc_service->initial_metadata,
+              ::testing::ElementsAre(::testing::Pair("foo-bin", "\x1f")));
+  ASSERT_NE(xds_grpc_service->server_target, nullptr);
+  EXPECT_EQ(xds_grpc_service->server_target->server_uri(),
+            "dns:server.example.com");
+}
+
+TEST_F(ParseXdsGrpcServiceTest, RawHeaderValueForNonBinaryHeader) {
+  xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
+  GrpcService grpc_service;
+  auto* header_value = grpc_service.add_initial_metadata();
+  header_value->set_key("foo");
+  header_value->set_raw_value("\x1f");
+  auto* google_grpc = grpc_service.mutable_google_grpc();
+  google_grpc->set_target_uri("dns:server.example.com");
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      envoy::extensions::grpc_service::channel_credentials::google_default::v3::
+          GoogleDefaultCredentials());
+  auto xds_grpc_service = Parse(grpc_service);
+  EXPECT_EQ(xds_grpc_service.status(),
+            absl::InvalidArgumentError("validation failed: ["
+                                       "field:initial_metadata[0].value "
+                                       "error:field not set]"));
+}
+
+TEST_F(ParseXdsGrpcServiceTest, NoHeaderValueSetForBinaryHeader) {
+  xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
+  GrpcService grpc_service;
+  auto* header_value = grpc_service.add_initial_metadata();
+  header_value->set_key("foo-bin");
+  auto* google_grpc = grpc_service.mutable_google_grpc();
+  google_grpc->set_target_uri("dns:server.example.com");
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      envoy::extensions::grpc_service::channel_credentials::google_default::v3::
+          GoogleDefaultCredentials());
+  auto xds_grpc_service = Parse(grpc_service);
+  EXPECT_EQ(xds_grpc_service.status(),
+            absl::InvalidArgumentError(
+                "validation failed: ["
+                "field:initial_metadata[0] "
+                "error:either value or raw_value must be set]"));
+}
+
+TEST_F(ParseXdsGrpcServiceTest, NoHeaderValueSetForNonBinaryHeader) {
+  xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
+  GrpcService grpc_service;
+  auto* header_value = grpc_service.add_initial_metadata();
+  header_value->set_key("foo");
+  auto* google_grpc = grpc_service.mutable_google_grpc();
+  google_grpc->set_target_uri("dns:server.example.com");
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      envoy::extensions::grpc_service::channel_credentials::google_default::v3::
+          GoogleDefaultCredentials());
+  auto xds_grpc_service = Parse(grpc_service);
+  EXPECT_EQ(xds_grpc_service.status(),
+            absl::InvalidArgumentError("validation failed: ["
+                                       "field:initial_metadata[0].value "
+                                       "error:field not set]"));
+}
+
+TEST_F(ParseXdsGrpcServiceTest, GoogleGrpcNotSet) {
+  xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
+  auto xds_grpc_service = Parse(GrpcService());
+  EXPECT_EQ(
+      xds_grpc_service.status(),
+      absl::InvalidArgumentError("validation failed: ["
+                                 "field:google_grpc error:field not set]"));
+}
+
+TEST_F(ParseXdsGrpcServiceTest, InvalidTargetUri) {
+  // Avoid using the default DNS URI prefix.
+  CoreConfiguration::WithSubstituteBuilder builder(
+      [](CoreConfiguration::Builder* builder) {
+        BuildCoreConfiguration(builder);
+        builder->resolver_registry()->SetDefaultPrefix("");
+      });
+  xds_client_ = MakeXdsClient("", /*trusted_xds_server=*/true);
+  GrpcService grpc_service;
+  auto* google_grpc = grpc_service.mutable_google_grpc();
+  google_grpc->set_target_uri("/");
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      envoy::extensions::grpc_service::channel_credentials::insecure::v3::
+          InsecureCredentials());
+  auto xds_grpc_service = Parse(grpc_service);
+  EXPECT_EQ(xds_grpc_service.status(),
+            absl::InvalidArgumentError(
+                "validation failed: ["
+                "field:google_grpc.target_uri error:invalid target URI]"));
 }
 
 }  // namespace

@@ -23,10 +23,8 @@
 #include <memory>
 #include <set>
 
-#include "absl/flags/flag.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/qps/benchmark_config.h"
 #include "test/cpp/qps/driver.h"
@@ -35,6 +33,8 @@
 #include "test/cpp/qps/server.h"
 #include "test/cpp/util/test_config.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "absl/flags/flag.h"
+#include "absl/log/log.h"
 
 ABSL_FLAG(std::string, scenarios_file, "",
           "JSON file containing an array of Scenario objects");
@@ -253,12 +253,12 @@ static bool QpsDriver() {
   if (scfile) {
     // Read the json data from disk
     FILE* json_file = fopen(absl::GetFlag(FLAGS_scenarios_file).c_str(), "r");
-    CHECK_NE(json_file, nullptr);
+    GRPC_CHECK_NE(json_file, nullptr);
     fseek(json_file, 0, SEEK_END);
     long len = ftell(json_file);
     char* data = new char[len];
     fseek(json_file, 0, SEEK_SET);
-    CHECK_EQ(len, (long)fread(data, 1, len, json_file));
+    GRPC_CHECK_EQ(len, (long)fread(data, 1, len, json_file));
     fclose(json_file);
     json = std::string(data, data + len);
     delete[] data;
@@ -275,7 +275,7 @@ static bool QpsDriver() {
   bool success = true;
 
   // Make sure that there is at least some valid scenario here
-  CHECK_GT(scenarios.scenarios_size(), 0);
+  GRPC_CHECK_GT(scenarios.scenarios_size(), 0);
 
   for (int i = 0; i < scenarios.scenarios_size(); i++) {
     if (absl::GetFlag(FLAGS_search_param).empty()) {

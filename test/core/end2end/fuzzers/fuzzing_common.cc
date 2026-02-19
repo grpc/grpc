@@ -32,9 +32,6 @@
 #include <new>
 #include <optional>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -43,9 +40,12 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/postmortem_emit.h"
 #include "src/core/util/useful.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
-#include "test/core/test_util/postmortem_emit.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
@@ -60,7 +60,7 @@ int force_experiments = []() {
 namespace testing {
 
 static void free_non_null(void* p) {
-  CHECK_NE(p, nullptr);
+  GRPC_CHECK_NE(p, nullptr);
   gpr_free(p);
 }
 
@@ -94,7 +94,7 @@ class Call : public std::enable_shared_from_this<Call> {
   }
 
   void SetCall(grpc_call* call) {
-    CHECK_EQ(call_, nullptr);
+    GRPC_CHECK_EQ(call_, nullptr);
     call_ = call;
   }
 
@@ -277,10 +277,10 @@ class Call : public std::enable_shared_from_this<Call> {
     ++pending_ops_;
     auto self = shared_from_this();
     return MakeValidator([self](bool success) {
-      CHECK_GT(self->pending_ops_, 0);
+      GRPC_CHECK_GT(self->pending_ops_, 0);
       --self->pending_ops_;
       if (success) {
-        CHECK_NE(self->call_, nullptr);
+        GRPC_CHECK_NE(self->call_, nullptr);
         self->type_ = CallType::SERVER;
       } else {
         self->type_ = CallType::TOMBSTONED;
@@ -339,7 +339,7 @@ Validator* ValidateConnectivityWatch(gpr_timespec deadline, int* counter) {
   return MakeValidator([deadline, counter](bool success) {
     if (!success) {
       auto now = gpr_now(deadline.clock_type);
-      CHECK_GE(gpr_time_cmp(now, deadline), 0);
+      GRPC_CHECK_GE(gpr_time_cmp(now, deadline), 0);
     }
     --*counter;
   });
@@ -351,7 +351,7 @@ using ::grpc_event_engine::experimental::FuzzingEventEngine;
 BasicFuzzer::BasicFuzzer(const fuzzing_event_engine::Actions& actions)
     : engine_(std::make_shared<FuzzingEventEngine>(
           FuzzingEventEngine::Options(), actions)) {
-  CHECK(engine_);
+  GRPC_CHECK(engine_);
   grpc_event_engine::experimental::SetDefaultEventEngine(engine_);
   grpc_timer_manager_set_start_threaded(false);
   grpc_init();
@@ -360,13 +360,13 @@ BasicFuzzer::BasicFuzzer(const fuzzing_event_engine::Actions& actions)
 }
 
 BasicFuzzer::~BasicFuzzer() {
-  CHECK_EQ(ActiveCall(), nullptr);
-  CHECK(calls_.empty());
+  GRPC_CHECK_EQ(ActiveCall(), nullptr);
+  GRPC_CHECK(calls_.empty());
 
   engine_->TickUntilIdle();
 
   grpc_completion_queue_shutdown(cq_);
-  CHECK(PollCq() == Result::kComplete);
+  GRPC_CHECK(PollCq() == Result::kComplete);
   grpc_completion_queue_destroy(cq_);
 
   grpc_shutdown_blocking();
@@ -734,7 +734,7 @@ void BasicFuzzer::TryShutdown() {
   ShutdownCalls();
 
   grpc_timer_manager_tick();
-  CHECK(PollCq() == Result::kPending);
+  GRPC_CHECK(PollCq() == Result::kPending);
 }
 
 void BasicFuzzer::Run(absl::Span<const api_fuzzer::Action* const> actions) {

@@ -31,9 +31,6 @@
 #include <mutex>
 #include <thread>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset.h"
@@ -41,6 +38,7 @@
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
@@ -49,6 +47,8 @@
 #include "test/core/test_util/test_tcp_server.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP_SERVER
 
@@ -316,11 +316,6 @@ std::vector<TestScenario> CreateTestScenarios() {
   std::vector<TestScenario> scenarios;
   std::vector<std::string> credentials_types;
 
-#if TARGET_OS_IPHONE
-  // Workaround Apple CFStream bug
-  grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
-
   credentials_types = GetCredentialsProvider()->GetSecureCredentialsTypeList();
   // Only allow insecure credentials type when it is registered with the
   // provider. User may create providers that do not have insecure.
@@ -329,7 +324,7 @@ std::vector<TestScenario> CreateTestScenarios() {
     credentials_types.push_back(kInsecureCredentialsType);
   }
 
-  CHECK(!credentials_types.empty());
+  GRPC_CHECK(!credentials_types.empty());
   for (const auto& cred : credentials_types) {
     for (auto server_has_port : {true, false}) {
       for (auto queue_pending_data : {true, false}) {

@@ -20,7 +20,13 @@ load(
     "grpc_package",
 )
 
-grpc_package(name = "test/core/call/yodel")
+grpc_package(
+    name = "test/core/call/yodel",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_library(
     name = "yodel_test",
@@ -50,6 +56,7 @@ grpc_cc_library(
         "//src/core:cancel_callback",
         "//src/core:event_engine_context",
         "//src/core:metadata",
+        "//src/core:postmortem",
         "//src/core:promise_factory",
         "//src/core:resource_quota",
         "//src/core:wait_for_single_owner",
@@ -60,7 +67,6 @@ grpc_cc_library(
         "//test/core/test_util:fuzz_config_vars_helpers",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:postmortem",
-        "//test/core/test_util:postmortem_emit",
         "//test/core/test_util:proto_bit_gen",
         "@com_google_protobuf//:protobuf",
     ],

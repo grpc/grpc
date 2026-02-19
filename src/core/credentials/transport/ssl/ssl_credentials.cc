@@ -28,14 +28,14 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
 
 //
 // SSL Channel Credentials.
@@ -143,8 +143,8 @@ void grpc_ssl_credentials::build_config(
     const grpc_ssl_verify_peer_options* verify_options) {
   config_.pem_root_certs = gpr_strdup(pem_root_certs);
   if (pem_key_cert_pair != nullptr) {
-    CHECK_NE(pem_key_cert_pair->private_key, nullptr);
-    CHECK_NE(pem_key_cert_pair->cert_chain, nullptr);
+    GRPC_CHECK_NE(pem_key_cert_pair->private_key, nullptr);
+    GRPC_CHECK_NE(pem_key_cert_pair->cert_chain, nullptr);
     config_.pem_key_cert_pair = static_cast<tsi_ssl_pem_key_cert_pair*>(
         gpr_zalloc(sizeof(tsi_ssl_pem_key_cert_pair)));
     config_.pem_key_cert_pair->cert_chain =
@@ -226,7 +226,7 @@ grpc_channel_credentials* grpc_ssl_credentials_create(
       << ", pem_key_cert_pair=" << pem_key_cert_pair
       << ", verify_options=" << verify_options << ", reserved=" << reserved
       << ")";
-  CHECK_EQ(reserved, nullptr);
+  GRPC_CHECK_EQ(reserved, nullptr);
 
   return new grpc_ssl_credentials(
       pem_root_certs, pem_key_cert_pair,
@@ -241,7 +241,7 @@ grpc_channel_credentials* grpc_ssl_credentials_create_ex(
       << ", pem_key_cert_pair=" << pem_key_cert_pair
       << ", verify_options=" << verify_options << ", reserved=" << reserved
       << ")";
-  CHECK_EQ(reserved, nullptr);
+  GRPC_CHECK_EQ(reserved, nullptr);
 
   return new grpc_ssl_credentials(pem_root_certs, pem_key_cert_pair,
                                   verify_options);
@@ -291,13 +291,13 @@ tsi_ssl_pem_key_cert_pair* grpc_convert_grpc_to_tsi_cert_pairs(
     size_t num_key_cert_pairs) {
   tsi_ssl_pem_key_cert_pair* tsi_pairs = nullptr;
   if (num_key_cert_pairs > 0) {
-    CHECK_NE(pem_key_cert_pairs, nullptr);
+    GRPC_CHECK_NE(pem_key_cert_pairs, nullptr);
     tsi_pairs = static_cast<tsi_ssl_pem_key_cert_pair*>(
         gpr_zalloc(num_key_cert_pairs * sizeof(tsi_ssl_pem_key_cert_pair)));
   }
   for (size_t i = 0; i < num_key_cert_pairs; i++) {
-    CHECK_NE(pem_key_cert_pairs[i].private_key, nullptr);
-    CHECK_NE(pem_key_cert_pairs[i].cert_chain, nullptr);
+    GRPC_CHECK_NE(pem_key_cert_pairs[i].private_key, nullptr);
+    GRPC_CHECK_NE(pem_key_cert_pairs[i].cert_chain, nullptr);
     tsi_pairs[i].cert_chain = gpr_strdup(pem_key_cert_pairs[i].cert_chain);
     tsi_pairs[i].private_key = gpr_strdup(pem_key_cert_pairs[i].private_key);
   }
@@ -334,14 +334,14 @@ grpc_ssl_server_certificate_config* grpc_ssl_server_certificate_config_create(
           gpr_zalloc(sizeof(grpc_ssl_server_certificate_config)));
   config->pem_root_certs = gpr_strdup(pem_root_certs);
   if (num_key_cert_pairs > 0) {
-    CHECK_NE(pem_key_cert_pairs, nullptr);
+    GRPC_CHECK_NE(pem_key_cert_pairs, nullptr);
     config->pem_key_cert_pairs = static_cast<grpc_ssl_pem_key_cert_pair*>(
         gpr_zalloc(num_key_cert_pairs * sizeof(grpc_ssl_pem_key_cert_pair)));
   }
   config->num_key_cert_pairs = num_key_cert_pairs;
   for (size_t i = 0; i < num_key_cert_pairs; i++) {
-    CHECK_NE(pem_key_cert_pairs[i].private_key, nullptr);
-    CHECK_NE(pem_key_cert_pairs[i].cert_chain, nullptr);
+    GRPC_CHECK_NE(pem_key_cert_pairs[i].private_key, nullptr);
+    GRPC_CHECK_NE(pem_key_cert_pairs[i].cert_chain, nullptr);
     config->pem_key_cert_pairs[i].cert_chain =
         gpr_strdup(pem_key_cert_pairs[i].cert_chain);
     config->pem_key_cert_pairs[i].private_key =
@@ -425,7 +425,7 @@ grpc_server_credentials* grpc_ssl_server_credentials_create_ex(
       << ", num_key_cert_pairs=" << (unsigned long)num_key_cert_pairs
       << ", client_certificate_request=" << client_certificate_request
       << ", reserved=" << reserved << ")";
-  CHECK_EQ(reserved, nullptr);
+  GRPC_CHECK_EQ(reserved, nullptr);
 
   grpc_ssl_server_certificate_config* cert_config =
       grpc_ssl_server_certificate_config_create(

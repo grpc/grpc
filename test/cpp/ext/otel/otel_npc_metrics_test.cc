@@ -24,9 +24,6 @@
 #include <ratio>
 #include <type_traits>
 
-#include "absl/functional/any_invocable.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "opentelemetry/common/timestamp.h"
 #include "opentelemetry/metrics/provider.h"
 #include "opentelemetry/nostd/variant.h"
@@ -38,11 +35,15 @@
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/instrument.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/ext/otel/otel_test_library.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
 
 namespace grpc {
 namespace testing {
@@ -50,6 +51,91 @@ namespace {
 
 #define GRPC_ARG_SERVER_SELECTOR_KEY "grpc.testing.server_selector_key"
 #define GRPC_ARG_SERVER_SELECTOR_VALUE "grpc.testing.server_selector_value"
+
+class OpenTelemetryIntegrationTestInstrumentDomain final
+    : public grpc_core::InstrumentDomain<
+          OpenTelemetryIntegrationTestInstrumentDomain> {
+ public:
+  using Backend = grpc_core::LowContentionBackend;
+  GRPC_INSTRUMENT_DOMAIN_LABELS("test_label.1", "test_optional.2");
+  static constexpr auto kName = "open_telemetry_test_instrument_domain";
+
+  static inline const auto kTestMetric = RegisterCounter(
+      "test.otel_uint64_counter", "A simple uint64 counter.", "unit");
+
+  static inline const auto kTestUpDownCounter =
+      RegisterUpDownCounter("test.otel_int64_up_down_counter",
+                            "A simple int64 up down counter.", "unit");
+};
+
+template <typename T>
+std::vector<absl::string_view> RequiredLabelKeys() {
+  std::vector<absl::string_view> result;
+  for (const auto& label : T::Domain()->label_names()) {
+    if (!grpc::internal::IsOpenTelemetryLabelOptional(label.label())) {
+      result.push_back(label.label());
+    }
+  }
+  return result;
+}
+
+template <typename T>
+std::vector<absl::string_view> OptionalLabelKeys() {
+  std::vector<absl::string_view> result;
+  for (const auto& label : T::Domain()->label_names()) {
+    if (grpc::internal::IsOpenTelemetryLabelOptional(label.label())) {
+      result.push_back(label.label());
+    }
+  }
+  return result;
+}
+
+template <typename T>
+std::vector<absl::string_view> RequiredLabelValues(
+    const grpc_core::InstrumentStorage<T>& storage) {
+  auto labels = storage.label();
+  std::vector<absl::string_view> result;
+  int i = 0;
+  for (const auto& label : T::Domain()->label_names()) {
+    if (!grpc::internal::IsOpenTelemetryLabelOptional(label.label())) {
+      result.push_back(labels[i]);
+    }
+    i++;
+  }
+  return result;
+}
+
+template <typename T>
+std::vector<absl::string_view> OptionalLabelValues(
+    const grpc_core::InstrumentStorage<T>& storage) {
+  auto labels = storage.label();
+  std::vector<absl::string_view> result;
+  int i = 0;
+  for (const auto& label : T::Domain()->label_names()) {
+    if (grpc::internal::IsOpenTelemetryLabelOptional(label.label())) {
+      result.push_back(labels[i]);
+    }
+    i++;
+  }
+  return result;
+}
+
+TEST(LabelAccessorTest, CanAccessLabels) {
+  auto scope =
+      grpc_core::CreateCollectionScope({}, {"test_label.1", "test_optional.2"});
+  auto storage = OpenTelemetryIntegrationTestInstrumentDomain::GetStorage(
+      scope, "label_value_1", "label_value_2");
+  EXPECT_THAT(RequiredLabelKeys<OpenTelemetryIntegrationTestInstrumentDomain>(),
+              ::testing::ElementsAre("test_label.1"));
+  EXPECT_THAT(RequiredLabelValues<OpenTelemetryIntegrationTestInstrumentDomain>(
+                  *storage),
+              ::testing::ElementsAre("label_value_1"));
+  EXPECT_THAT(OptionalLabelKeys<OpenTelemetryIntegrationTestInstrumentDomain>(),
+              ::testing::ElementsAre("test_optional.2"));
+  EXPECT_THAT(OptionalLabelValues<OpenTelemetryIntegrationTestInstrumentDomain>(
+                  *storage),
+              ::testing::ElementsAre("label_value_2"));
+}
 
 class OpenTelemetryPluginNPCMetricsTest
     : public OpenTelemetryPluginEnd2EndTest {
@@ -67,6 +153,141 @@ class OpenTelemetryPluginNPCMetricsTest
 
   grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config_;
 };
+
+TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordExportedUInt64Counter) {
+  if (!grpc_core::IsOtelExportTelemetryDomainsEnabled()) {
+    GTEST_SKIP() << "Test requires otel_export_telemetry_domains to be enabled";
+  }
+  constexpr uint64_t kCounterValues[] = {1, 2, 3};
+  constexpr int64_t kCounterResult = 6;
+  Init(std::move(
+      Options()
+          .set_metric_names(
+              {OpenTelemetryIntegrationTestInstrumentDomain::kTestMetric
+                   .name()})
+          .set_channel_scope_filter(
+              [](const OpenTelemetryPluginBuilder::ChannelScope&
+                     channel_scope) {
+                return absl::StartsWith(channel_scope.target(), "dns:///");
+              })));
+  auto stats_plugins =
+      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+          grpc_core::experimental::StatsPluginChannelScope(
+              "dns:///localhost:8080", "", endpoint_config_));
+  auto storage = OpenTelemetryIntegrationTestInstrumentDomain::GetStorage(
+      stats_plugins->GetCollectionScope(), "label_value_1", "label_value_2");
+  for (auto v : kCounterValues) {
+    storage->Increment(
+        OpenTelemetryIntegrationTestInstrumentDomain::kTestMetric, v);
+  }
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) {
+        return !data.contains(
+            OpenTelemetryIntegrationTestInstrumentDomain::kTestMetric.name());
+      });
+  EXPECT_THAT(
+      data,
+      ::testing::ElementsAre(::testing::Pair(
+          OpenTelemetryIntegrationTestInstrumentDomain::kTestMetric.name(),
+          ::testing::ElementsAre(::testing::AllOf(
+              AttributesEq(
+                  RequiredLabelKeys<
+                      OpenTelemetryIntegrationTestInstrumentDomain>(),
+                  RequiredLabelValues<
+                      OpenTelemetryIntegrationTestInstrumentDomain>(*storage),
+                  OptionalLabelKeys<
+                      OpenTelemetryIntegrationTestInstrumentDomain>(),
+                  OptionalLabelValues<
+                      OpenTelemetryIntegrationTestInstrumentDomain>(*storage)),
+              CounterResultEq(::testing::Eq(kCounterResult)))))));
+}
+
+TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordExportedInt64UpDownCounter) {
+  if (!grpc_core::IsOtelExportTelemetryDomainsEnabled()) {
+    GTEST_SKIP() << "Test requires otel_export_telemetry_domains to be enabled";
+  }
+  constexpr int64_t kCounterValues1[] = {10, 5};
+  constexpr int64_t kIntermediateCounterResult = 15;
+  constexpr int64_t kCounterValues2[] = {-3, 2};
+  constexpr int64_t kFinalCounterResult = 14;
+  Init(std::move(
+      Options()
+          .set_metric_names(
+              {OpenTelemetryIntegrationTestInstrumentDomain::kTestUpDownCounter
+                   .name()})
+          .set_channel_scope_filter(
+              [](const OpenTelemetryPluginBuilder::ChannelScope&
+                     channel_scope) {
+                return absl::StartsWith(channel_scope.target(), "dns:///");
+              })));
+  auto stats_plugins =
+      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+          grpc_core::experimental::StatsPluginChannelScope(
+              "dns:///localhost:8080", "", endpoint_config_));
+  auto storage = OpenTelemetryIntegrationTestInstrumentDomain::GetStorage(
+      stats_plugins->GetCollectionScope(), "label_value_1", "label_value_2");
+  for (auto v : kCounterValues1) {
+    storage->Increment(
+        OpenTelemetryIntegrationTestInstrumentDomain::kTestUpDownCounter, v);
+  }
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) {
+        return !data.contains(
+            OpenTelemetryIntegrationTestInstrumentDomain::kTestUpDownCounter
+                .name());
+      });
+  EXPECT_THAT(
+      data,
+      ::testing::ElementsAre(::testing::Pair(
+          OpenTelemetryIntegrationTestInstrumentDomain::kTestUpDownCounter
+              .name(),
+          ::testing::ElementsAre(::testing::AllOf(
+              AttributesEq(
+                  RequiredLabelKeys<
+                      OpenTelemetryIntegrationTestInstrumentDomain>(),
+                  RequiredLabelValues<
+                      OpenTelemetryIntegrationTestInstrumentDomain>(*storage),
+                  OptionalLabelKeys<
+                      OpenTelemetryIntegrationTestInstrumentDomain>(),
+                  OptionalLabelValues<
+                      OpenTelemetryIntegrationTestInstrumentDomain>(*storage)),
+              CounterResultEq(::testing::Eq(kIntermediateCounterResult)))))));
+  for (auto v : kCounterValues2) {
+    storage->Increment(
+        OpenTelemetryIntegrationTestInstrumentDomain::kTestUpDownCounter, v);
+  }
+  data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) {
+        return !data.contains(
+            OpenTelemetryIntegrationTestInstrumentDomain::kTestUpDownCounter
+                .name());
+      });
+  EXPECT_THAT(
+      data,
+      ::testing::ElementsAre(::testing::Pair(
+          OpenTelemetryIntegrationTestInstrumentDomain::kTestUpDownCounter
+              .name(),
+          ::testing::ElementsAre(::testing::AllOf(
+              AttributesEq(
+                  RequiredLabelKeys<
+                      OpenTelemetryIntegrationTestInstrumentDomain>(),
+                  RequiredLabelValues<
+                      OpenTelemetryIntegrationTestInstrumentDomain>(*storage),
+                  OptionalLabelKeys<
+                      OpenTelemetryIntegrationTestInstrumentDomain>(),
+                  OptionalLabelValues<
+                      OpenTelemetryIntegrationTestInstrumentDomain>(*storage)),
+              CounterResultEq(::testing::Eq(kFinalCounterResult)))))));
+}
 
 TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Counter) {
   constexpr absl::string_view kMetricName = "uint64_counter";

@@ -31,9 +31,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "src/core/call/call_finalization.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
@@ -71,9 +68,12 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/alloc.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 typedef struct connected_channel_channel_data {
   grpc_core::Transport* transport;
@@ -220,7 +220,7 @@ static void connected_channel_destroy_call_elem(
 static grpc_error_handle connected_channel_init_channel_elem(
     grpc_channel_element* elem, grpc_channel_element_args* args) {
   channel_data* cd = static_cast<channel_data*>(elem->channel_data);
-  CHECK(args->is_last);
+  GRPC_CHECK(args->is_last);
   cd->transport = args->channel_args.GetObject<grpc_core::Transport>();
   return absl::OkStatus();
 }

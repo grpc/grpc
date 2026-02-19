@@ -25,10 +25,10 @@
 
 #include <utility>
 
-#include "absl/log/log.h"
 #include "src/core/credentials/transport/alts/alts_security_connector.h"
 #include "src/core/credentials/transport/alts/check_gcp_environment.h"
 #include "src/core/credentials/transport/alts/grpc_alts_credentials_options.h"
+#include "absl/log/log.h"
 
 #define GRPC_ALTS_HANDSHAKER_SERVICE_URL "dns:///metadata.google.internal.:8080"
 
@@ -90,8 +90,8 @@ grpc_channel_credentials* grpc_alts_credentials_create_customized(
     const grpc_alts_credentials_options* options,
     const char* handshaker_service_url, bool enable_untrusted_alts) {
   if (!enable_untrusted_alts && !grpc_alts_is_running_on_gcp()) {
-    LOG(ERROR) << "ALTS creds ignored. Not running on GCP and untrusted ALTS "
-                  "is not enabled.";
+    VLOG(2) << "ALTS creds ignored. Not running on GCP and untrusted ALTS "
+               "is not enabled.";
     return nullptr;
   }
   return new grpc_alts_credentials(options, handshaker_service_url);
@@ -101,8 +101,8 @@ grpc_server_credentials* grpc_alts_server_credentials_create_customized(
     const grpc_alts_credentials_options* options,
     const char* handshaker_service_url, bool enable_untrusted_alts) {
   if (!enable_untrusted_alts && !grpc_alts_is_running_on_gcp()) {
-    LOG(ERROR) << "ALTS server creds ignored. Not running on GCP and untrusted "
-                  "ALTS is not enabled.";
+    VLOG(2) << "ALTS server creds ignored. Not running on GCP and untrusted "
+               "ALTS is not enabled.";
     return nullptr;
   }
   return new grpc_alts_server_credentials(options, handshaker_service_url);

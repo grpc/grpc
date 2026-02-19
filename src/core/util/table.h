@@ -23,9 +23,9 @@
 #include <type_traits>
 #include <utility>
 
+#include "src/core/util/bitset.h"
 #include "absl/meta/type_traits.h"
 #include "absl/utility/utility.h"
-#include "src/core/util/bitset.h"
 
 namespace grpc_core {
 

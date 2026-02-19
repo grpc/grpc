@@ -23,13 +23,13 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/construct_destruct.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 namespace promise_detail {
@@ -62,7 +62,7 @@ struct JoinState<Traits, P0, P1> {
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
-    DCHECK(other.ready.none());
+    GRPC_DCHECK(other.ready.none());
     Construct(&promise0, std::move(other.promise0));
     Construct(&promise1, std::move(other.promise1));
   }
@@ -165,7 +165,7 @@ struct JoinState<Traits, P0, P1, P2> {
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
-    DCHECK(other.ready.none());
+    GRPC_DCHECK(other.ready.none());
     Construct(&promise0, std::move(other.promise0));
     Construct(&promise1, std::move(other.promise1));
     Construct(&promise2, std::move(other.promise2));
@@ -305,7 +305,7 @@ struct JoinState<Traits, P0, P1, P2, P3> {
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
-    DCHECK(other.ready.none());
+    GRPC_DCHECK(other.ready.none());
     Construct(&promise0, std::move(other.promise0));
     Construct(&promise1, std::move(other.promise1));
     Construct(&promise2, std::move(other.promise2));
@@ -481,7 +481,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4> {
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
-    DCHECK(other.ready.none());
+    GRPC_DCHECK(other.ready.none());
     Construct(&promise0, std::move(other.promise0));
     Construct(&promise1, std::move(other.promise1));
     Construct(&promise2, std::move(other.promise2));
@@ -693,7 +693,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5> {
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
-    DCHECK(other.ready.none());
+    GRPC_DCHECK(other.ready.none());
     Construct(&promise0, std::move(other.promise0));
     Construct(&promise1, std::move(other.promise1));
     Construct(&promise2, std::move(other.promise2));
@@ -941,7 +941,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6> {
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
-    DCHECK(other.ready.none());
+    GRPC_DCHECK(other.ready.none());
     Construct(&promise0, std::move(other.promise0));
     Construct(&promise1, std::move(other.promise1));
     Construct(&promise2, std::move(other.promise2));
@@ -1225,7 +1225,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
-    DCHECK(other.ready.none());
+    GRPC_DCHECK(other.ready.none());
     Construct(&promise0, std::move(other.promise0));
     Construct(&promise1, std::move(other.promise1));
     Construct(&promise2, std::move(other.promise2));
@@ -1544,7 +1544,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
-    DCHECK(other.ready.none());
+    GRPC_DCHECK(other.ready.none());
     Construct(&promise0, std::move(other.promise0));
     Construct(&promise1, std::move(other.promise1));
     Construct(&promise2, std::move(other.promise2));

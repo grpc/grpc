@@ -529,6 +529,10 @@ GRPCAPI void grpc_resource_quota_resize(grpc_resource_quota* resource_quota,
 GRPCAPI void grpc_resource_quota_set_max_threads(
     grpc_resource_quota* resource_quota, int new_max_threads);
 
+/** Update the size of the maximum number of streams allowed */
+GRPCAPI void grpc_resource_quota_set_max_outstanding_streams(
+    grpc_resource_quota* resource_quota, int new_max_outstanding_streams);
+
 /** EXPERIMENTAL.  Dumps xDS configs as a serialized ClientConfig proto.
     The full name of the proto is envoy.service.status.v3.ClientConfig. */
 GRPCAPI grpc_slice grpc_dump_xds_configs(void);

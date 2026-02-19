@@ -39,18 +39,6 @@
 #include <variant>
 #include <vector>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
-#include "absl/synchronization/notification.h"
-#include "absl/types/span.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
@@ -76,6 +64,7 @@
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/service_config/service_config_call_data.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/match.h"
 #include "src/core/util/orphanable.h"
@@ -89,6 +78,17 @@
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
+#include "absl/synchronization/notification.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 namespace testing {
@@ -141,31 +141,33 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       class WatcherWrapper : public AsyncConnectivityStateWatcherInterface {
        public:
         WatcherWrapper(
-            std::shared_ptr<WorkSerializer> work_serializer,
+            SubchannelState* state,
             std::unique_ptr<
                 SubchannelInterface::ConnectivityStateWatcherInterface>
                 watcher)
-            : AsyncConnectivityStateWatcherInterface(
-                  std::move(work_serializer)),
+            : AsyncConnectivityStateWatcherInterface(state->work_serializer()),
+              state_(state),
               watcher_(std::move(watcher)) {}
 
         WatcherWrapper(
-            std::shared_ptr<WorkSerializer> work_serializer,
+            SubchannelState* state,
             std::shared_ptr<
                 SubchannelInterface::ConnectivityStateWatcherInterface>
                 watcher)
-            : AsyncConnectivityStateWatcherInterface(
-                  std::move(work_serializer)),
+            : AsyncConnectivityStateWatcherInterface(state->work_serializer()),
+              state_(state),
               watcher_(std::move(watcher)) {}
 
         void OnConnectivityStateChange(grpc_connectivity_state new_state,
                                        const absl::Status& status) override {
-          LOG(INFO) << "notifying watcher: state="
-                    << ConnectivityStateName(new_state) << " status=" << status;
+          LOG(INFO) << "notifying watcher for " << state_->address_
+                    << ": state=" << ConnectivityStateName(new_state)
+                    << " status=" << status;
           watcher_->OnConnectivityStateChange(new_state, status);
         }
 
        private:
+        SubchannelState* state_;
         std::shared_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
             watcher_;
       };
@@ -175,8 +177,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
               SubchannelInterface::ConnectivityStateWatcherInterface>
               watcher) override {
         auto* watcher_ptr = watcher.get();
-        auto watcher_wrapper = MakeOrphanable<WatcherWrapper>(
-            state_->work_serializer(), std::move(watcher));
+        auto watcher_wrapper =
+            MakeOrphanable<WatcherWrapper>(state_, std::move(watcher));
         watcher_map_[watcher_ptr] = watcher_wrapper.get();
         state_->state_tracker_.AddWatcher(GRPC_CHANNEL_SHUTDOWN,
                                           std::move(watcher_wrapper));
@@ -203,19 +205,19 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         auto* w =
             static_cast<InternalSubchannelDataWatcherInterface*>(watcher.get());
         if (w->type() == OrcaProducer::Type()) {
-          CHECK(orca_watcher_ == nullptr);
+          GRPC_CHECK(orca_watcher_ == nullptr);
           orca_watcher_.reset(static_cast<OrcaWatcher*>(watcher.release()));
           state_->orca_watchers_.insert(orca_watcher_.get());
         } else if (w->type() == HealthProducer::Type()) {
           // TODO(roth): Support health checking in test framework.
           // For now, we just hard-code this to the raw connectivity state.
-          CHECK(health_watcher_ == nullptr);
-          CHECK_EQ(health_watcher_wrapper_, nullptr);
+          GRPC_CHECK(health_watcher_ == nullptr);
+          GRPC_CHECK_EQ(health_watcher_wrapper_, nullptr);
           health_watcher_.reset(static_cast<HealthWatcher*>(watcher.release()));
           auto connectivity_watcher = health_watcher_->TakeWatcher();
           auto* connectivity_watcher_ptr = connectivity_watcher.get();
           auto watcher_wrapper = MakeOrphanable<WatcherWrapper>(
-              state_->work_serializer(), std::move(connectivity_watcher));
+              state_, std::move(connectivity_watcher));
           health_watcher_wrapper_ = watcher_wrapper.get();
           state_->state_tracker_.AddWatcher(GRPC_CHANNEL_SHUTDOWN,
                                             std::move(watcher_wrapper));
@@ -283,7 +285,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
               << location.file() << ":" << location.line();
           break;
         case GRPC_CHANNEL_READY:
-          ASSERT_EQ(to_state, GRPC_CHANNEL_IDLE)
+          ASSERT_THAT(to_state, ::testing::AnyOf(
+                                    GRPC_CHANNEL_IDLE, GRPC_CHANNEL_CONNECTING,
+                                    GRPC_CHANNEL_TRANSIENT_FAILURE))
               << ConnectivityStateName(from_state) << "=>"
               << ConnectivityStateName(to_state) << "\n"
               << location.file() << ":" << location.line();
@@ -517,7 +521,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       auto it = test_->subchannel_pool_.find(key);
       if (it == test_->subchannel_pool_.end()) {
         auto address_uri = grpc_sockaddr_to_uri(&address);
-        CHECK(address_uri.ok());
+        GRPC_CHECK(address_uri.ok());
         it = test_->subchannel_pool_
                  .emplace(std::piecewise_construct, std::forward_as_tuple(key),
                           std::forward_as_tuple(std::move(*address_uri), test_))
@@ -659,7 +663,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     lb_policy_ =
         CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy(
             lb_policy_name_, std::move(args));
-    CHECK(lb_policy_ != nullptr);
+    GRPC_CHECK(lb_policy_ != nullptr);
   }
 
   void TearDown() override {
@@ -686,7 +690,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   }
 
   LoadBalancingPolicy* lb_policy() const {
-    CHECK(lb_policy_ != nullptr);
+    GRPC_CHECK(lb_policy_ != nullptr);
     return lb_policy_.get();
   }
 
@@ -705,9 +709,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // Converts an address URI into a grpc_resolved_address.
   static grpc_resolved_address MakeAddress(absl::string_view address_uri) {
     auto uri = URI::Parse(address_uri);
-    CHECK(uri.ok());
+    GRPC_CHECK(uri.ok());
     grpc_resolved_address address;
-    CHECK(grpc_parse_uri(*uri, &address));
+    GRPC_CHECK(grpc_parse_uri(*uri, &address));
     return address;
   }
 
@@ -1026,7 +1030,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
           subchannel_call_tracker,
       absl::string_view address, absl::Status status = absl::OkStatus()) {
-    subchannel_call_tracker->Start();
     FakeMetadata metadata({});
     FakeBackendMetricAccessor backend_metric_accessor({});
     LoadBalancingPolicy::SubchannelCallTrackerInterface::FinishArgs args = {
@@ -1149,7 +1152,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> ExpectRoundRobinStartup(
       absl::Span<const EndpointAddresses> endpoints,
       SourceLocation location = SourceLocation()) {
-    CHECK(!endpoints.empty());
+    GRPC_CHECK(!endpoints.empty());
     // There should be a subchannel for every address.
     // We will wind up connecting to the first address for every endpoint.
     std::vector<std::vector<SubchannelState*>> endpoint_subchannels;

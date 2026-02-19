@@ -27,7 +27,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/strings/string_view.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/surface/connection_context.h"
@@ -36,6 +35,7 @@
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/useful.h"
+#include "absl/strings/string_view.h"
 
 // --- grpc_auth_context ---
 
@@ -120,6 +120,7 @@ struct grpc_auth_context
   void ensure_capacity();
   void add_property(const char* name, const char* value, size_t value_length);
   void add_cstring_property(const char* name, const char* value);
+  absl::string_view protocol() const { return protocol_; }
   void set_protocol(absl::string_view protocol);
   // Returns std::nullopt if auth context comparison is not supported.
   std::optional<bool> CompareAuthContext(const grpc_auth_context* other);

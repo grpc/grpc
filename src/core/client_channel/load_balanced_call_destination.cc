@@ -14,7 +14,6 @@
 
 #include "src/core/client_channel/load_balanced_call_destination.h"
 
-#include "absl/log/log.h"
 #include "src/core/call/status_util.h"
 #include "src/core/client_channel/client_channel.h"
 #include "src/core/client_channel/client_channel_internal.h"
@@ -23,6 +22,7 @@
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 
@@ -135,11 +135,9 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
                  "pick";
           return Continue{};
         }
-        // If the LB policy returned a call tracker, inform it that the
-        // call is starting and add it to context, so that we can notify
-        // it when the call finishes.
+        // If the LB policy returned a call tracker, add it to context, so
+        // that we can notify it when the call finishes.
         if (complete_pick->subchannel_call_tracker != nullptr) {
-          complete_pick->subchannel_call_tracker->Start();
           SetContext(complete_pick->subchannel_call_tracker.release());
         }
         // Apply metadata mutations, if any.

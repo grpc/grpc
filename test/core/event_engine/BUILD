@@ -19,6 +19,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/core/event_engine",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "tests",
 )
 
@@ -118,6 +122,7 @@ grpc_cc_test(
         "//:gpr",
         "//:gpr_platform",
         "//src/core:event_engine_common",
+        "//src/core:grpc_check",
         "//src/core:slice",
     ],
 )
@@ -193,6 +198,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:grpc_check",
         "//src/core:grpc_sockaddr",
         "//src/core:iomgr_port",
     ],
@@ -235,6 +241,7 @@ grpc_cc_library(
         "//src/core:event_engine_common",
         "//src/core:event_engine_shim",
         "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:grpc_check",
         "//src/core:memory_quota",
         "//src/core:notification",
         "//src/core:sync",
@@ -276,6 +283,7 @@ grpc_fuzz_test(
         "//:grpc",
         "//:uri",
         "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:grpc_check",
         "//test/core/test_util:grpc_test_util",
     ],
 )

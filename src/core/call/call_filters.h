@@ -23,10 +23,10 @@
 #include <ostream>
 #include <type_traits>
 
-#include "absl/log/check.h"
 #include "src/core/call/call_state.h"
 #include "src/core/call/message.h"
 #include "src/core/call/metadata.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
@@ -37,6 +37,7 @@
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/call_final_info.h"
 #include "src/core/util/dump_args.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 
@@ -53,6 +54,7 @@
 // - OnClientToServerHalfClose - no value
 // - OnServerTrailingMetadata - $VALUE_TYPE = ServerMetadata
 // - OnFinalize               - special, see below
+// - ChannelzProperties       - special, see below
 // These members define an interception point for a particular event in
 // the call lifecycle.
 //
@@ -89,7 +91,7 @@
 // It's also acceptable to return a promise that resolves to the
 // relevant return type listed above.
 //
-// Finally, OnFinalize is added to intecept call finalization.
+// OnFinalize is added to intecept call finalization.
 // It must have one of the signatures:
 // - static inline const NoInterceptor OnFinalize:
 //   the filter does not intercept call finalization.
@@ -97,6 +99,11 @@
 //   the filter intercepts call finalization.
 // - void OnFinalize(const grpc_call_final_info*, FilterType*):
 //   the filter intercepts call finalization.
+//
+// ChannelzProperties is added to provide channelz data.
+// It must have one of the signatures:
+// - channelz::PropertyList ChannelzProperties();
+// - channelz::PropertyList ChannelzProperties(FilterType*);
 //
 // The constructor of the Call object can either take a pointer to the channel
 // object, or not take any arguments.
@@ -146,9 +153,9 @@ class NextMessage {
   NextMessage() = default;
   explicit NextMessage(Failure) : message_(error()), call_state_(nullptr) {}
   NextMessage(MessageHandle message, CallState* call_state) {
-    DCHECK_NE(call_state, nullptr);
-    DCHECK_NE(message.get(), nullptr);
-    DCHECK(message.get_deleter().has_freelist());
+    GRPC_DCHECK_NE(call_state, nullptr);
+    GRPC_DCHECK_NE(message.get(), nullptr);
+    GRPC_DCHECK(message.get_deleter().has_freelist());
     message_ = message.release();
     call_state_ = call_state;
   }
@@ -171,37 +178,37 @@ class NextMessage {
   }
 
   bool ok() const {
-    DCHECK_NE(message_, taken());
+    GRPC_DCHECK_NE(message_, taken());
     return message_ != error();
   }
   bool has_value() const {
-    DCHECK_NE(message_, taken());
-    DCHECK(ok());
+    GRPC_DCHECK_NE(message_, taken());
+    GRPC_DCHECK(ok());
     return message_ != end_of_stream();
   }
   StatusFlag status() const { return StatusFlag(ok()); }
   Message& value() {
-    DCHECK_NE(message_, taken());
-    DCHECK(ok());
-    DCHECK(has_value());
+    GRPC_DCHECK_NE(message_, taken());
+    GRPC_DCHECK(ok());
+    GRPC_DCHECK(has_value());
     return *message_;
   }
   const Message& value() const {
-    DCHECK_NE(message_, taken());
-    DCHECK(ok());
-    DCHECK(has_value());
+    GRPC_DCHECK_NE(message_, taken());
+    GRPC_DCHECK(ok());
+    GRPC_DCHECK(has_value());
     return *message_;
   }
   MessageHandle TakeValue() {
-    DCHECK_NE(message_, taken());
-    DCHECK(ok());
-    DCHECK(has_value());
+    GRPC_DCHECK_NE(message_, taken());
+    GRPC_DCHECK(ok());
+    GRPC_DCHECK(has_value());
     return MessageHandle(std::exchange(message_, taken()),
                          Arena::PooledDeleter());
   }
   bool progressed() const { return call_state_ == nullptr; }
   void Progress() {
-    DCHECK(!progressed());
+    GRPC_DCHECK(!progressed());
     (call_state_->*on_progress)();
     call_state_ = nullptr;
   }
@@ -283,7 +290,7 @@ template <typename T>
 struct ResultOr {
   ResultOr(T ok, ServerMetadataHandle error)
       : ok(std::move(ok)), error(std::move(error)) {
-    CHECK((this->ok == nullptr) ^ (this->error == nullptr));
+    GRPC_CHECK((this->ok == nullptr) ^ (this->error == nullptr));
   }
   T ok;
   ServerMetadataHandle error;
@@ -1042,6 +1049,14 @@ struct ChannelDataDestructor {
   void* channel_data;
 };
 
+struct FilterMetadata {
+  absl::string_view name;
+  void* channel_data;
+  size_t call_data_offset;
+  channelz::PropertyList (*channelz_properties)(void* channel_data,
+                                                void* call_data);
+};
+
 // StackData contains the main datastructures built up by this module.
 // It's a complete representation of all the code that needs to be invoked
 // to execute a call for a given set of filters.
@@ -1071,6 +1086,79 @@ struct StackData {
   // A list of functions to call when this stack data is destroyed
   // (to capture ownership of channel data)
   std::vector<ChannelDataDestructor> channel_data_destructors;
+  // A list of metadata about filters for this stack.
+  std::vector<FilterMetadata> filter_metadata;
+
+  channelz::PropertyList ChannelzProperties(void* call_data) const {
+    absl::flat_hash_map<void*, const FilterMetadata*>
+        channel_data_to_filter_metadata;
+    for (const auto& filter_metadata : filter_metadata) {
+      channel_data_to_filter_metadata[filter_metadata.channel_data] =
+          &filter_metadata;
+    }
+    auto filter_chain =
+        [&channel_data_to_filter_metadata](const auto& container) {
+          std::vector<absl::string_view> filter_names;
+          for (const auto& filter : container) {
+            void* channel_data = filter.channel_data;
+            auto it = channel_data_to_filter_metadata.find(channel_data);
+            if (it != channel_data_to_filter_metadata.end()) {
+              filter_names.push_back(it->second->name);
+            } else {
+              filter_names.push_back("unknown_filter");
+            }
+          }
+          return absl::StrJoin(filter_names, ", ");
+        };
+    auto layout_properties = [&](const auto& layout) {
+      return channelz::PropertyList()
+          .Set("promise_size", layout.promise_size)
+          .Set("promise_alignment", layout.promise_alignment)
+          .Set("filters", filter_chain(layout.ops));
+    };
+    return channelz::PropertyList()
+        .Set("call_data_alignment", call_data_alignment)
+        .Set("call_data_size", call_data_size)
+        .Set("filters",
+             [&, this]() {
+               channelz::PropertyTable table;
+               for (const auto& filter : filter_metadata) {
+                 table.AppendRow(
+                     channelz::PropertyList()
+                         .Set("name", filter.name)
+                         .Set("call_data_offset", filter.call_data_offset)
+                         .Merge([&]() {
+                           if (call_data == nullptr) {
+                             return channelz::PropertyList();
+                           }
+                           if (filter.channelz_properties == nullptr) {
+                             return channelz::PropertyList();
+                           }
+                           return filter.channelz_properties(
+                               filter.channel_data,
+                               Offset(call_data, filter.call_data_offset));
+                         }()));
+               }
+               return table;
+             }())
+        .Set("constructors", filter_chain(filter_constructor))
+        // TODO(ctiller): Add the list of destructors (need to figure out how to
+        // map them).
+        .Set("client_initial_metadata",
+             layout_properties(client_initial_metadata))
+        .Set("server_initial_metadata",
+             layout_properties(server_initial_metadata))
+        .Set("client_to_server_messages",
+             layout_properties(client_to_server_messages))
+        .Set("client_to_server_half_close",
+             filter_chain(client_to_server_half_close))
+        .Set("server_to_client_messages",
+             layout_properties(server_to_client_messages))
+        .Set("server_trailing_metadata", filter_chain(server_trailing_metadata))
+        .Set("finalizers", filter_chain(finalizers))
+        .Set("channel_data_destructors",
+             filter_chain(channel_data_destructors));
+  }
 
   bool empty() const {
     return filter_constructor.empty() && filter_destructor.empty() &&
@@ -1221,13 +1309,13 @@ struct StackData {
 
   template <typename FilterType>
   void AddFinalizer(FilterType*, size_t, const NoInterceptor* p) {
-    DCHECK(p == &FilterType::Call::OnFinalize);
+    GRPC_DCHECK(p == &FilterType::Call::OnFinalize);
   }
 
   template <typename FilterType>
   void AddFinalizer(FilterType* channel_data, size_t call_offset,
                     void (FilterType::Call::*p)(const grpc_call_final_info*)) {
-    DCHECK(p == &FilterType::Call::OnFinalize);
+    GRPC_DCHECK(p == &FilterType::Call::OnFinalize);
     finalizers.push_back(Finalizer{
         channel_data,
         call_offset,
@@ -1242,7 +1330,7 @@ struct StackData {
   void AddFinalizer(FilterType* channel_data, size_t call_offset,
                     void (FilterType::Call::*p)(const grpc_call_final_info*,
                                                 FilterType*)) {
-    DCHECK(p == &FilterType::Call::OnFinalize);
+    GRPC_DCHECK(p == &FilterType::Call::OnFinalize);
     finalizers.push_back(Finalizer{
         channel_data,
         call_offset,
@@ -1250,6 +1338,69 @@ struct StackData {
            const grpc_call_final_info* final_info) {
           static_cast<typename FilterType::Call*>(call_data)->OnFinalize(
               final_info, static_cast<FilterType*>(channel_data));
+        },
+    });
+  }
+
+  template <typename FilterType>
+  void AddFilterMetadata(FilterType* channel_data, size_t call_offset,
+                         channelz::PropertyList (FilterType::Call::*p)()
+                             const) {
+    GRPC_DCHECK(p == &FilterType::Call::ChannelzProperties);
+    filter_metadata.push_back(FilterMetadata{
+        TypeName<FilterType>(),
+        channel_data,
+        call_offset,
+        [](void* /*channel_data*/, void* call_data) {
+          return static_cast<typename FilterType::Call*>(call_data)
+              ->ChannelzProperties();
+        },
+    });
+  }
+
+  template <typename FilterType>
+  void AddFilterMetadata(FilterType* channel_data, size_t call_offset,
+                         channelz::PropertyList (FilterType::Call::*p)()) {
+    GRPC_DCHECK(p == &FilterType::Call::ChannelzProperties);
+    filter_metadata.push_back(FilterMetadata{
+        TypeName<FilterType>(),
+        channel_data,
+        call_offset,
+        [](void* /*channel_data*/, void* call_data) {
+          return static_cast<typename FilterType::Call*>(call_data)
+              ->ChannelzProperties();
+        },
+    });
+  }
+
+  template <typename FilterType>
+  void AddFilterMetadata(
+      FilterType* channel_data, size_t call_offset,
+      channelz::PropertyList (FilterType::Call::*p)(FilterType*) const) {
+    GRPC_DCHECK(p == &FilterType::Call::ChannelzProperties);
+    filter_metadata.push_back(FilterMetadata{
+        TypeName<FilterType>(),
+        channel_data,
+        call_offset,
+        [](void* channel_data, void* call_data) {
+          return static_cast<typename FilterType::Call*>(call_data)
+              ->ChannelzProperties(static_cast<FilterType*>(channel_data));
+        },
+    });
+  }
+
+  template <typename FilterType>
+  void AddFilterMetadata(
+      FilterType* channel_data, size_t call_offset,
+      channelz::PropertyList (FilterType::Call::*p)(FilterType*)) {
+    GRPC_DCHECK(p == &FilterType::Call::ChannelzProperties);
+    filter_metadata.push_back(FilterMetadata{
+        TypeName<FilterType>(),
+        channel_data,
+        call_offset,
+        [](void* channel_data, void* call_data) {
+          return static_cast<typename FilterType::Call*>(call_data)
+              ->ChannelzProperties(static_cast<FilterType*>(channel_data));
         },
     });
   }
@@ -1272,11 +1423,11 @@ class OperationExecutor {
   OperationExecutor(OperationExecutor&& other) noexcept
       : ops_(other.ops_), end_ops_(other.end_ops_) {
     // Movable iff we're not running.
-    DCHECK_EQ(other.promise_data_, nullptr);
+    GRPC_DCHECK_EQ(other.promise_data_, nullptr);
   }
   OperationExecutor& operator=(OperationExecutor&& other) noexcept {
-    DCHECK_EQ(other.promise_data_, nullptr);
-    DCHECK_EQ(promise_data_, nullptr);
+    GRPC_DCHECK_EQ(other.promise_data_, nullptr);
+    GRPC_DCHECK_EQ(promise_data_, nullptr);
     ops_ = other.ops_;
     end_ops_ = other.end_ops_;
     return *this;
@@ -1329,7 +1480,7 @@ OperationExecutor<T>::Start(const Layout<T>* layout, T input, void* call_data) {
   if (layout->promise_size == 0) {
     // No call state ==> instantaneously ready
     auto r = InitStep(std::move(input), call_data);
-    CHECK(r.ready());
+    GRPC_CHECK(r.ready());
     return r;
   }
   promise_data_ =
@@ -1340,7 +1491,7 @@ OperationExecutor<T>::Start(const Layout<T>* layout, T input, void* call_data) {
 template <typename T>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<ResultOr<T>>
 OperationExecutor<T>::InitStep(T input, void* call_data) {
-  CHECK(input != nullptr);
+  GRPC_CHECK(input != nullptr);
   while (true) {
     if (ops_ == end_ops_) {
       return ResultOr<T>{std::move(input), nullptr};
@@ -1364,7 +1515,7 @@ OperationExecutor<T>::InitStep(T input, void* call_data) {
 template <typename T>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<ResultOr<T>>
 OperationExecutor<T>::Step(void* call_data) {
-  DCHECK_NE(promise_data_, nullptr);
+  GRPC_DCHECK_NE(promise_data_, nullptr);
   auto p = ContinueStep(call_data);
   if (p.ready()) {
     gpr_free_aligned(promise_data_);
@@ -1400,6 +1551,9 @@ class ServerTrailingMetadataInterceptor {
                                   ServerTrailingMetadataInterceptor* filter) {
       filter->fn_(md);
     }
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList();
+    }
   };
 
   explicit ServerTrailingMetadataInterceptor(Fn fn) : fn_(std::move(fn)) {}
@@ -1423,6 +1577,10 @@ class ClientInitialMetadataInterceptor {
     static const inline NoInterceptor OnServerToClientMessage;
     static const inline NoInterceptor OnServerTrailingMetadata;
     static const inline NoInterceptor OnFinalize;
+
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList();
+    }
   };
 
   explicit ClientInitialMetadataInterceptor(Fn fn) : fn_(std::move(fn)) {}
@@ -1489,7 +1647,7 @@ struct FailureStatusCastImpl<filters_detail::NextMessage<on_progress>,
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static filters_detail::NextMessage<
       on_progress>
   Cast(StatusFlag flag) {
-    DCHECK_EQ(flag, Failure{});
+    GRPC_DCHECK_EQ(flag, Failure{});
     return filters_detail::NextMessage<on_progress>(Failure{});
   }
 };
@@ -1509,12 +1667,12 @@ struct TrySeqTraitsWithSfinae<filters_detail::NextMessage<on_progress>> {
     return value.ok();
   }
   static const char* ErrorString(const WrappedType& status) {
-    DCHECK(!status.ok());
+    GRPC_DCHECK(!status.ok());
     return "failed";
   }
   template <typename R>
   static R ReturnValue(WrappedType&& status) {
-    DCHECK(!status.ok());
+    GRPC_DCHECK(!status.ok());
     return WrappedType(Failure{});
   }
   template <typename F, typename Elem>
@@ -1577,6 +1735,8 @@ class CallFilters {
       data_.AddServerToClientMessageOp(filter, call_offset);
       data_.AddServerTrailingMetadataOp(filter, call_offset);
       data_.AddFinalizer(filter, call_offset, &FilterType::Call::OnFinalize);
+      data_.AddFilterMetadata(filter, call_offset,
+                              &FilterType::Call::ChannelzProperties);
     }
 
     void AddOwnedObject(void (*destroy)(void* p), void* p) {
@@ -1646,6 +1806,20 @@ class CallFilters {
     return push_client_initial_metadata_.get();
   }
 
+  channelz::PropertyTable ChannelzProperties() {
+    channelz::PropertyTable properties;
+    for (size_t i = 0; i < stacks_.size(); ++i) {
+      void* stack_call_offset =
+          filters_detail::Offset(call_data_, stacks_[i].call_data_offset);
+      properties.AppendRow(
+          channelz::PropertyList()
+              .Set("call_data_offset", stacks_[i].call_data_offset)
+              .Merge(stacks_[i].stack->data_.ChannelzProperties(
+                  stack_call_offset)));
+    }
+    return properties;
+  }
+
  private:
   template <typename Output, typename Input,
             Input(CallFilters::* input_location),
@@ -1658,13 +1832,13 @@ class CallFilters {
         : stack_current_(stack_begin),
           stack_end_(stack_end),
           filters_(filters) {
-      DCHECK_NE((filters_->*input_location).get(), nullptr);
+      GRPC_DCHECK_NE((filters_->*input_location).get(), nullptr);
     }
 
     Poll<ValueOrFailure<Output>> operator()() {
       if ((filters_->*input_location) != nullptr) {
         if (stack_current_ == stack_end_) {
-          DCHECK_NE((filters_->*input_location).get(), nullptr);
+          GRPC_DCHECK_NE((filters_->*input_location).get(), nullptr);
           (filters_->call_state_.*on_done)();
           return Output(std::move(filters_->*input_location));
         }
@@ -1718,13 +1892,13 @@ class CallFilters {
         : stack_current_(stack_begin),
           stack_end_(stack_end),
           filters_(filters) {
-      DCHECK_NE((filters_->*input_location).get(), nullptr);
+      GRPC_DCHECK_NE((filters_->*input_location).get(), nullptr);
     }
 
     Poll<NextMsg> operator()() {
       if ((filters_->*input_location) != nullptr) {
         if (stack_current_ == stack_end_) {
-          DCHECK_NE((filters_->*input_location).get(), nullptr);
+          GRPC_DCHECK_NE((filters_->*input_location).get(), nullptr);
           return NextMsg(std::move(filters_->*input_location),
                          &filters_->call_state_);
         }
@@ -1815,8 +1989,8 @@ class CallFilters {
   // Returns a promise that resolves to a StatusFlag indicating success
   GRPC_MUST_USE_RESULT auto PushClientToServerMessage(MessageHandle message) {
     call_state_.BeginPushClientToServerMessage();
-    DCHECK_NE(message.get(), nullptr);
-    DCHECK_EQ(push_client_to_server_message_.get(), nullptr);
+    GRPC_DCHECK_NE(message.get(), nullptr);
+    GRPC_DCHECK_EQ(push_client_to_server_message_.get(), nullptr);
     push_client_to_server_message_ = std::move(message);
     return [this]() { return call_state_.PollPushClientToServerMessage(); };
   }

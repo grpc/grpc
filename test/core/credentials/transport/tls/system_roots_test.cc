@@ -30,9 +30,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "gtest/gtest.h"
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/credentials/transport/tls/load_system_roots.h"
 #include "src/core/credentials/transport/tls/load_system_roots_supported.h"
@@ -45,6 +42,9 @@
 #include "src/core/util/load_file.h"
 #include "src/core/util/tmpfile.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc {
 namespace {

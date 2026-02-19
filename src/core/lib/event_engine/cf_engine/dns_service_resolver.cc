@@ -18,14 +18,14 @@
 #include <AvailabilityMacros.h>
 #ifdef AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 
-#include "absl/log/check.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/event_engine/cf_engine/dns_service_resolver.h"
 #include "src/core/lib/event_engine/posix_engine/lockfree_event.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc_event_engine::experimental {
 
@@ -148,7 +148,7 @@ void DNSServiceResolverImpl::ResolveCallback(
 
   grpc_core::ReleasableMutexLock lock(&that->request_mu_);
   auto request_it = that->requests_.find(sdRef);
-  CHECK(request_it != that->requests_.end());
+  GRPC_CHECK(request_it != that->requests_.end());
 
   if (errorCode != kDNSServiceErr_NoError &&
       errorCode != kDNSServiceErr_NoSuchRecord) {

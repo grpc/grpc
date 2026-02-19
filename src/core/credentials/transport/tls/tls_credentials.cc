@@ -28,13 +28,13 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/log.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_verifier.h"
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
 #include "src/core/credentials/transport/tls/tls_security_connector.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
 #include "src/core/util/useful.h"
+#include "absl/log/log.h"
 
 namespace {
 
@@ -154,7 +154,7 @@ grpc_core::UniqueTypeName TlsServerCredentials::Type() {
 grpc_channel_credentials* grpc_tls_credentials_create(
     grpc_tls_credentials_options* options) {
   if (!CredentialOptionSanityCheck(options, true /* is_client */)) {
-    LOG(ERROR) << "TLS credentials options sanity check failed.";
+    VLOG(1) << "TLS credentials options sanity check failed.";
     return nullptr;
   }
   return new TlsCredentials(
@@ -164,7 +164,7 @@ grpc_channel_credentials* grpc_tls_credentials_create(
 grpc_server_credentials* grpc_tls_server_credentials_create(
     grpc_tls_credentials_options* options) {
   if (!CredentialOptionSanityCheck(options, false /* is_client */)) {
-    LOG(ERROR) << "TLS server credentials options sanity check failed.";
+    VLOG(1) << "TLS server credentials options sanity check failed.";
     return nullptr;
   }
   return new TlsServerCredentials(

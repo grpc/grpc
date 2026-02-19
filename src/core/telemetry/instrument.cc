@@ -16,6 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <algorithm>
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
@@ -23,16 +24,92 @@
 #include <string>
 #include <tuple>
 #include <utility>
+#include <variant>
 #include <vector>
 
+#include "src/core/channelz/channelz.h"
+#include "src/core/channelz/property_list.h"
+#include "src/core/telemetry/histogram.h"
+#include "src/core/util/bitset.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/match.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/single_set_ptr.h"
+#include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
-#include "absl/log/check.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/functional/function_ref.h"
+#include "absl/hash/hash.h"
 #include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
-
 namespace grpc_core {
+
+std::atomic<const std::string*>* InstrumentLabel::GetLabels() {
+  static std::atomic<const std::string*>* static_labels = new std::atomic<
+      const std::string*>[InstrumentLabel::kMaxLabelsPerProcess] {};
+  return static_labels;
+}
+
+std::string InstrumentLabel::RegistrationDebugString() {
+  return absl::StrJoin(
+      absl::MakeSpan(GetLabels(), kMaxLabelsPerProcess), ", ",
+      [](std::string* s, const std::atomic<const std::string*>& p) {
+        auto* loaded_p = p.load(std::memory_order_acquire);
+        if (loaded_p == nullptr) {
+          s->append("<null>");
+        } else {
+          s->append(*loaded_p);
+        }
+      });
+}
+
+InstrumentLabel::InstrumentLabel(absl::string_view label) {
+  auto* labels = GetLabels();
+  std::unique_ptr<std::string> label_copy;
+  for (size_t i = 0; i < InstrumentLabel::kMaxLabelsPerProcess; ++i) {
+    auto* current_value = labels[i].load(std::memory_order_acquire);
+    while (current_value == nullptr) {
+      if (label_copy == nullptr) {
+        label_copy = std::make_unique<std::string>(label);
+      }
+      if (!labels[i].compare_exchange_weak(current_value, label_copy.get(),
+                                           std::memory_order_acq_rel)) {
+        continue;
+      }
+      std::ignore = label_copy.release();
+      index_ = i;
+      return;
+    }
+    GRPC_CHECK(current_value != nullptr);
+    if (*current_value == label) {
+      index_ = i;
+      return;
+    }
+  }
+  GRPC_CHECK(false) << "Too many instrument labels registered";
+}
+
+InstrumentLabelList InstrumentLabelSet::ToList() const {
+  InstrumentLabelList list;
+  for (size_t i = 0; i < InstrumentLabel::kMaxLabelsPerProcess; ++i) {
+    if (set_.is_set(i)) list.Append(InstrumentLabel::FromIndex(i));
+  }
+  return list;
+}
+
+std::string InstrumentLabelList::DebugString() const {
+  return absl::StrJoin(absl::MakeSpan(labels_, count_), ", ",
+                       [](std::string* s, const InstrumentLabel& label) {
+                         s->append(label.label());
+                         s->append("[idx=");
+                         s->append(std::to_string(label.index()));
+                         s->append("]");
+                       });
+}
 
 namespace {
 struct Hook {
@@ -65,34 +142,121 @@ void CallHistogramCollectionHooks(
 
 }  // namespace instrument_detail
 
+namespace {
+std::vector<std::string> FilterLabels(
+    InstrumentLabelList domain_label_names,
+    InstrumentLabelSet scope_labels_of_interest,
+    absl::Span<const std::string> full_label_values) {
+  std::vector<std::string> result;
+  result.reserve(domain_label_names.size());
+  for (size_t i = 0; i < domain_label_names.size(); ++i) {
+    if (scope_labels_of_interest.contains(domain_label_names[i])) {
+      result.push_back(full_label_values[i]);
+    } else {
+      result.push_back(std::string(kOmittedLabel));
+    }
+  }
+  return result;
+}
+}  // namespace
+
 CollectionScope::CollectionScope(
-    std::vector<std::unique_ptr<instrument_detail::StorageSet>> storage_sets)
-    : storage_sets_(std::move(storage_sets)) {}
+    std::vector<RefCountedPtr<CollectionScope>> parents,
+    InstrumentLabelSet labels_of_interest, size_t child_shards_count,
+    size_t storage_shards_count)
+    : parents_(std::move(parents)),
+      labels_of_interest_(labels_of_interest),
+      child_shards_(child_shards_count),
+      storage_shards_(storage_shards_count) {
+  // Sort parents (by address) and then remove any duplicates.
+  std::sort(parents_.begin(), parents_.end());
+  parents_.erase(std::unique(parents_.begin(), parents_.end()), parents_.end());
+  for (const auto& parent : parents_) {
+    if (parent != nullptr) {
+      labels_of_interest_.Merge(parent->labels_of_interest_);
+      auto& shard = parent->child_shard(this);
+      MutexLock lock(&shard.mu);
+      shard.children.insert(this);
+    }
+  }
+}
+
+CollectionScope::~CollectionScope() {
+  for (const auto& parent : parents_) {
+    if (parent != nullptr) {
+      auto& shard = parent->child_shard(this);
+      MutexLock lock(&shard.mu);
+      shard.children.erase(this);
+    }
+  }
+  for (auto& shard : storage_shards_) {
+    // TODO(ctiller): Consider a different entry point than GetDomainStorage
+    // for this post-aggregation. We ought to be able to do this step without
+    // accessing full_labels.
+    MutexLock lock(&shard.mu);
+    for (auto& storage_pair : shard.storage) {
+      for (const auto& parent : parents_) {
+        if (parent != nullptr) {
+          storage_pair.second->domain()
+              ->GetDomainStorage(parent, storage_pair.second->label())
+              ->Add(storage_pair.second.get());
+        }
+      }
+    }
+  }
+}
 
 size_t CollectionScope::TestOnlyCountStorageHeld() const {
   size_t count = 0;
-  for (const auto& set : storage_sets_) {
-    count += set->TestOnlyCountStorageHeld();
+  for (const auto& shard : storage_shards_) {
+    MutexLock lock(&shard.mu);
+    count += shard.storage.size();
   }
   return count;
 }
 
-std::vector<instrument_detail::StorageSet*> CollectionScope::GetStorageSets() {
-  std::vector<instrument_detail::StorageSet*> result;
-  result.reserve(storage_sets_.size());
-  for (const auto& storage_set : storage_sets_) {
-    result.push_back(storage_set.get());
-  }
-  return result;
+void CollectionScope::ForEachUniqueStorage(
+    absl::FunctionRef<void(instrument_detail::DomainStorage*)> cb) {
+  absl::flat_hash_set<instrument_detail::DomainStorage*> visited;
+  ForEachUniqueStorage(cb, visited);
 }
 
-std::unique_ptr<CollectionScope>
-instrument_detail::QueryableDomain::CreateCollectionScope() {
-  std::vector<std::unique_ptr<instrument_detail::StorageSet>> storage_sets;
-  for (auto* domain = last_; domain != nullptr; domain = domain->prev_) {
-    storage_sets.push_back(domain->CreateStorageSet());
+void CollectionScope::ForEachUniqueStorage(
+    absl::FunctionRef<void(instrument_detail::DomainStorage*)> cb,
+    absl::flat_hash_set<instrument_detail::DomainStorage*>& visited) {
+  for (auto& shard : storage_shards_) {
+    MutexLock lock(&shard.mu);
+    for (const auto& s : shard.storage) {
+      if (visited.insert(s.second.get()).second) {
+        cb(s.second.get());
+      }
+    }
   }
-  return std::make_unique<CollectionScope>(std::move(storage_sets));
+  for (auto& shard : child_shards_) {
+    MutexLock lock(&shard.mu);
+    for (auto* child : shard.children) {
+      child->ForEachUniqueStorage(cb, visited);
+    }
+  }
+}
+
+void CollectionScope::TestOnlyReset() {
+  for (auto& shard : storage_shards_) {
+    MutexLock lock(&shard.mu);
+    shard.storage.clear();
+  }
+  for (auto& shard : child_shards_) {
+    MutexLock lock(&shard.mu);
+    shard.children.clear();
+  }
+}
+
+RefCountedPtr<CollectionScope> CreateCollectionScope(
+    std::vector<RefCountedPtr<CollectionScope>> parents,
+    InstrumentLabelSet labels, size_t child_shards_count,
+    size_t storage_shards_count) {
+  return MakeRefCounted<CollectionScope>(
+      std::move(parents), labels, child_shards_count, storage_shards_count);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -116,102 +280,6 @@ GaugeStorage::GaugeStorage(QueryableDomain* domain)
 }  // namespace instrument_detail
 
 ////////////////////////////////////////////////////////////////////////////////
-// StorageSet
-
-namespace instrument_detail {
-
-StorageSet::StorageSet(QueryableDomain* domain, size_t map_shards_size)
-    : domain_(domain),
-      map_shards_(std::make_unique<MapShard[]>(map_shards_size)),
-      map_shards_size_(map_shards_size) {
-  domain_->RegisterStorageSet(this);
-}
-
-StorageSet::~StorageSet() { domain_->UnregisterStorageSet(this); }
-
-void StorageSet::ExportMetrics(
-    MetricsSink& sink,
-    absl::Span<const InstrumentMetadata::Description* const> metrics) {
-  for (size_t i = 0; i < map_shards_size_; ++i) {
-    MutexLock lock(&map_shards_[i].mu);
-    map_shards_[i].storage_map.ForEach([&](const auto& label,
-                                           const auto& weak_storage) {
-      // It's safe to use `get()` here because the `StorageSet` itself
-      // holds a weak reference, guaranteeing the object's memory is
-      // alive. We can't get a strong ref if the object is orphaned, but
-      // we still need to read its final metric values.
-      DomainStorage* storage = weak_storage.get();
-      GaugeStorage gauge_storage(storage->domain());
-      storage->FillGaugeStorage(gauge_storage);
-      for (const auto* metric : metrics) {
-        Match(
-            metric->shape,
-            [metric, &sink, storage, &label](InstrumentMetadata::CounterShape) {
-              sink.Counter(label, metric->name,
-                           storage->SumCounter(metric->offset));
-            },
-            [metric, &sink, storage,
-             &label](InstrumentMetadata::HistogramShape bounds) {
-              std::vector<uint64_t> counts(bounds.size());
-              for (size_t i = 0; i < bounds.size(); ++i) {
-                counts[i] = storage->SumCounter(metric->offset + i);
-              }
-              sink.Histogram(label, metric->name, bounds, counts);
-            },
-            [metric, &sink, &gauge_storage,
-             &label](InstrumentMetadata::DoubleGaugeShape) {
-              if (auto value = gauge_storage.GetDouble(metric->offset);
-                  value.has_value()) {
-                sink.DoubleGauge(label, metric->name, *value);
-              }
-            },
-            [metric, &sink, &gauge_storage,
-             &label](InstrumentMetadata::IntGaugeShape) {
-              if (auto value = gauge_storage.GetInt(metric->offset);
-                  value.has_value()) {
-                sink.IntGauge(label, metric->name, *value);
-              }
-            },
-            [metric, &sink, &gauge_storage,
-             &label](InstrumentMetadata::UintGaugeShape) {
-              if (auto value = gauge_storage.GetUint(metric->offset);
-                  value.has_value()) {
-                sink.UintGauge(label, metric->name, *value);
-              }
-            });
-      }
-    });
-  }
-}
-
-size_t StorageSet::TestOnlyCountStorageHeld() const {
-  size_t count = 0;
-  for (size_t i = 0; i < map_shards_size_; ++i) {
-    MutexLock lock(&map_shards_[i].mu);
-    map_shards_[i].storage_map.ForEach([&](const auto&, const auto& weak) {
-      count += weak->RefIfNonZero() != nullptr;
-    });
-  }
-  return count;
-}
-
-void StorageSet::AddStorage(WeakRefCountedPtr<DomainStorage> storage) {
-  size_t shard;
-  auto label = storage->label();
-  if (map_shards_size_ == 1) {
-    shard = 0;
-  } else {
-    CHECK(!label.empty());
-    shard = absl::HashOf(label[0], this) % map_shards_size_;
-  }
-  MapShard& map_shard = map_shards_[shard];
-  MutexLock lock(&map_shard.mu);
-  map_shard.storage_map = map_shard.storage_map.Add(label, std::move(storage));
-}
-
-}  // namespace instrument_detail
-
-////////////////////////////////////////////////////////////////////////////////
 // MetricsQuery
 
 MetricsQuery& MetricsQuery::WithLabelEq(absl::string_view label,
@@ -221,52 +289,116 @@ MetricsQuery& MetricsQuery::WithLabelEq(absl::string_view label,
 }
 
 MetricsQuery& MetricsQuery::CollapseLabels(
-    absl::Span<const std::string> labels) {
+    absl::Span<const InstrumentLabel> labels) {
   for (const auto& label : labels) {
-    collapsed_labels_.insert(label);
+    collapsed_labels_.Set(label);
   }
   return *this;
 }
 
-MetricsQuery& MetricsQuery::OnlyMetrics(absl::Span<const std::string> metrics) {
-  only_metrics_.emplace(metrics.begin(), metrics.end());
+MetricsQuery& MetricsQuery::OnlyMetrics(std::vector<std::string> metrics) {
+  only_metrics_.emplace(std::move(metrics));
   return *this;
 }
 
-void MetricsQuery::Run(std::unique_ptr<CollectionScope> scope,
+void MetricsQuery::Run(RefCountedPtr<CollectionScope> scope,
                        MetricsSink& sink) const {
-  CHECK_NE(scope.get(), nullptr);
+  GRPC_CHECK_NE(scope.get(), nullptr);
+  struct DomainInfo {
+    std::vector<const InstrumentMetadata::Description*> metrics;
+    std::vector<RefCountedPtr<instrument_detail::DomainStorage>> storage;
+  };
+  absl::flat_hash_map<instrument_detail::QueryableDomain*, DomainInfo>
+      domain_info_map;
   auto selected_metrics = this->selected_metrics();
-  absl::flat_hash_map<instrument_detail::QueryableDomain*,
-                      std::vector<const InstrumentMetadata::Description*>>
-      metrics_by_domain;
+  // Calculate list of desired metrics, per domain.
   if (selected_metrics.has_value()) {
     for (const auto& metric : *selected_metrics) {
       const auto* desc = instrument_detail::InstrumentIndex::Get().Find(metric);
-      if (desc == nullptr) continue;
-      metrics_by_domain[desc->domain].push_back(desc);
+      GRPC_CHECK_NE(desc, nullptr) << "Metric not found: " << metric;
+      domain_info_map[desc->domain].metrics.push_back(desc);
     }
   } else {
     instrument_detail::QueryableDomain::ForEachInstrument(
         [&](const InstrumentMetadata::Description* desc) {
-          metrics_by_domain[desc->domain].push_back(desc);
+          domain_info_map[desc->domain].metrics.push_back(desc);
         });
   }
-  for (auto* storage_set : scope->GetStorageSets()) {
-    instrument_detail::QueryableDomain* domain = storage_set->domain();
-    if (domain == nullptr) continue;
-    auto it = metrics_by_domain.find(domain);
-    if (it == metrics_by_domain.end()) continue;
+  // Calculate list of storage objects, per domain, that have at least one
+  // desired metric.
+  scope->ForEachUniqueStorage([&](instrument_detail::DomainStorage* storage) {
+    auto it = domain_info_map.find(storage->domain());
+    if (it == domain_info_map.end()) return;
+    it->second.storage.push_back(storage->Ref());
+  });
+  for (const auto& pair : domain_info_map) {
+    instrument_detail::QueryableDomain* domain = pair.first;
+    const auto& metrics = pair.second.metrics;
+    const auto& storages = pair.second.storage;
+    GRPC_CHECK(!metrics.empty());
+    if (storages.empty()) continue;
     this->Apply(
         domain->label_names(),
         [&](MetricsSink& sink) {
-          storage_set->ExportMetrics(sink, it->second);
+          for (auto& storage : storages) {
+            const auto label_values = storage->label();
+            const auto label_keys = domain->label_names();
+            instrument_detail::GaugeStorage gauge_storage(storage->domain());
+            storage->FillGaugeStorage(gauge_storage);
+            for (const auto* metric : metrics) {
+              Match(
+                  metric->shape,
+                  [metric, &sink, storage, &label_values,
+                   &label_keys](InstrumentMetadata::CounterShape) {
+                    sink.Counter(label_keys, label_values, metric->name,
+                                 storage->SumCounter(metric->offset));
+                  },
+                  [metric, &sink, storage, &label_values,
+                   &label_keys](InstrumentMetadata::UpDownCounterShape) {
+                    sink.UpDownCounter(label_keys, label_values, metric->name,
+                                       storage->SumCounter(metric->offset));
+                  },
+                  [metric, &sink, storage, &label_values,
+                   &label_keys](InstrumentMetadata::HistogramShape bounds) {
+                    std::vector<uint64_t> counts(bounds.size());
+                    for (size_t i = 0; i < bounds.size(); ++i) {
+                      counts[i] = storage->SumCounter(metric->offset + i);
+                    }
+                    sink.Histogram(label_keys, label_values, metric->name,
+                                   bounds, counts);
+                  },
+                  [metric, &sink, &gauge_storage, &label_values,
+                   &label_keys](InstrumentMetadata::DoubleGaugeShape) {
+                    if (auto value = gauge_storage.GetDouble(metric->offset);
+                        value.has_value()) {
+                      sink.DoubleGauge(label_keys, label_values, metric->name,
+                                       *value);
+                    }
+                  },
+                  [metric, &sink, &gauge_storage, &label_values,
+                   &label_keys](InstrumentMetadata::IntGaugeShape) {
+                    if (auto value = gauge_storage.GetInt(metric->offset);
+                        value.has_value()) {
+                      sink.IntGauge(label_keys, label_values, metric->name,
+                                    *value);
+                    }
+                  },
+                  [metric, &sink, &gauge_storage, &label_values,
+                   &label_keys](InstrumentMetadata::UintGaugeShape) {
+                    if (auto value = gauge_storage.GetUint(metric->offset);
+                        value.has_value()) {
+                      sink.UintGauge(label_keys, label_values, metric->name,
+                                     *value);
+                    }
+                  });
+            }
+          }
         },
         sink);
   }
 }
 
-void MetricsQuery::Apply(absl::Span<const std::string> label_names,
+void MetricsQuery::Apply(InstrumentLabelList label_names,
                          absl::FunctionRef<void(MetricsSink&)> fn,
                          MetricsSink& sink) const {
   if (collapsed_labels_.empty()) {
@@ -274,9 +406,11 @@ void MetricsQuery::Apply(absl::Span<const std::string> label_names,
     return;
   }
   std::vector<size_t> include_labels;
+  InstrumentLabelList label_keys;
   for (size_t i = 0; i < label_names.size(); ++i) {
     if (!collapsed_labels_.contains(label_names[i])) {
       include_labels.push_back(i);
+      label_keys.Append(label_names[i]);
     }
   }
   if (include_labels.size() == label_names.size()) {
@@ -285,22 +419,31 @@ void MetricsQuery::Apply(absl::Span<const std::string> label_names,
   }
   class Filter final : public MetricsSink {
    public:
-    explicit Filter(absl::Span<const size_t> include_labels)
-        : include_labels_(include_labels) {}
+    explicit Filter(absl::Span<const size_t> include_labels,
+                    InstrumentLabelList label_keys)
+        : include_labels_(include_labels), label_keys_(label_keys) {}
 
-    void Counter(absl::Span<const std::string> label, absl::string_view name,
-                 uint64_t value) override {
-      uint64_counters_[ConstructKey(label, name)] += value;
+    void Counter(InstrumentLabelList /* label_keys */,
+                 absl::Span<const std::string> label_values,
+                 absl::string_view name, uint64_t value) override {
+      uint64_counters_[ConstructKey(label_values, name)] += value;
     }
 
-    void Histogram(absl::Span<const std::string> label, absl::string_view name,
-                   HistogramBuckets bounds,
+    void UpDownCounter(InstrumentLabelList /* label_keys */,
+                       absl::Span<const std::string> label_values,
+                       absl::string_view name, uint64_t value) override {
+      uint64_up_down_counters_[ConstructKey(label_values, name)] += value;
+    }
+
+    void Histogram(InstrumentLabelList /* label_keys */,
+                   absl::Span<const std::string> label_values,
+                   absl::string_view name, HistogramBuckets bounds,
                    absl::Span<const uint64_t> counts) override {
-      CHECK_EQ(counts.size(), bounds.size());
-      auto it = histograms_.find(ConstructKey(label, name));
+      GRPC_CHECK_EQ(counts.size(), bounds.size());
+      auto it = histograms_.find(ConstructKey(label_values, name));
       if (it == histograms_.end()) {
         histograms_.emplace(std::piecewise_construct,
-                            std::tuple(ConstructKey(label, name)),
+                            std::tuple(ConstructKey(label_values, name)),
                             std::tuple(bounds, counts));
       } else {
         if (it->second.bounds != bounds) {
@@ -314,44 +457,56 @@ void MetricsQuery::Apply(absl::Span<const std::string> label_names,
       }
     }
 
-    void DoubleGauge(absl::Span<const std::string>, absl::string_view,
+    void DoubleGauge(InstrumentLabelList /* label_keys */,
+                     absl::Span<const std::string>, absl::string_view,
                      double) override {
       // Not aggregatable
     }
-    void IntGauge(absl::Span<const std::string>, absl::string_view,
+    void IntGauge(InstrumentLabelList /* label_keys */,
+                  absl::Span<const std::string>, absl::string_view,
                   int64_t) override {
       // Not aggregatable
     }
-    void UintGauge(absl::Span<const std::string>, absl::string_view,
+    void UintGauge(InstrumentLabelList /* label_keys */,
+                   absl::Span<const std::string>, absl::string_view,
                    uint64_t) override {
       // Not aggregatable
     }
 
     void Publish(MetricsSink& sink) const {
       for (const auto& [key, value] : uint64_counters_) {
-        sink.Counter(std::get<0>(key), std::get<1>(key), value);
+        sink.Counter(label_keys_, std::get<0>(key), std::get<1>(key), value);
+      }
+      for (const auto& [key, value] : uint64_up_down_counters_) {
+        sink.UpDownCounter(label_keys_, std::get<0>(key), std::get<1>(key),
+                           value);
       }
       for (const auto& [key, value] : histograms_) {
-        sink.Histogram(std::get<0>(key), std::get<1>(key), value.bounds,
-                       value.counts);
+        sink.Histogram(label_keys_, std::get<0>(key), std::get<1>(key),
+                       value.bounds, value.counts);
       }
     }
 
    private:
     std::tuple<std::vector<std::string>, absl::string_view> ConstructKey(
-        absl::Span<const std::string> label, absl::string_view name) const {
+        absl::Span<const std::string> label_values,
+        absl::string_view name) const {
       std::vector<std::string> key;
       key.reserve(include_labels_.size());
       for (auto i : include_labels_) {
-        key.push_back(label[i]);
+        key.push_back(label_values[i]);
       }
       return std::tuple(std::move(key), name);
     }
 
     absl::Span<const size_t> include_labels_;
+    InstrumentLabelList label_keys_;
     absl::flat_hash_map<std::tuple<std::vector<std::string>, absl::string_view>,
                         uint64_t>
         uint64_counters_;
+    absl::flat_hash_map<std::tuple<std::vector<std::string>, absl::string_view>,
+                        uint64_t>
+        uint64_up_down_counters_;
     struct HistogramValue {
       HistogramValue(HistogramBuckets bounds, absl::Span<const uint64_t> counts)
           : bounds(bounds), counts(counts.begin(), counts.end()) {}
@@ -362,12 +517,12 @@ void MetricsQuery::Apply(absl::Span<const std::string> label_names,
                         HistogramValue>
         histograms_;
   };
-  Filter filter(include_labels);
+  Filter filter(include_labels, label_keys);
   ApplyLabelChecks(label_names, fn, filter);
   filter.Publish(sink);
 }
 
-void MetricsQuery::ApplyLabelChecks(absl::Span<const std::string> label_names,
+void MetricsQuery::ApplyLabelChecks(InstrumentLabelList label_names,
                                     absl::FunctionRef<void(MetricsSink&)> fn,
                                     MetricsSink& sink) const {
   if (label_eqs_.empty()) {
@@ -393,39 +548,51 @@ void MetricsQuery::ApplyLabelChecks(absl::Span<const std::string> label_names,
                     absl::Span<const LabelEq> inclusion_checks)
         : inclusion_checks_(inclusion_checks), sink_(sink) {}
 
-    void Counter(absl::Span<const std::string> label, absl::string_view name,
-                 uint64_t value) override {
-      if (!Matches(label)) return;
-      sink_.Counter(label, name, value);
+    void Counter(InstrumentLabelList label_keys,
+                 absl::Span<const std::string> label_values,
+                 absl::string_view name, uint64_t value) override {
+      if (!Matches(label_values)) return;
+      sink_.Counter(label_keys, label_values, name, value);
     }
 
-    void Histogram(absl::Span<const std::string> label, absl::string_view name,
-                   HistogramBuckets bounds,
+    void UpDownCounter(InstrumentLabelList label_keys,
+                       absl::Span<const std::string> label_values,
+                       absl::string_view name, uint64_t value) override {
+      if (!Matches(label_values)) return;
+      sink_.UpDownCounter(label_keys, label_values, name, value);
+    }
+
+    void Histogram(InstrumentLabelList label_keys,
+                   absl::Span<const std::string> label_values,
+                   absl::string_view name, HistogramBuckets bounds,
                    absl::Span<const uint64_t> counts) override {
-      if (!Matches(label)) return;
-      sink_.Histogram(label, name, bounds, counts);
+      if (!Matches(label_values)) return;
+      sink_.Histogram(label_keys, label_values, name, bounds, counts);
     }
 
-    void DoubleGauge(absl::Span<const std::string> label,
+    void DoubleGauge(InstrumentLabelList label_keys,
+                     absl::Span<const std::string> label_values,
                      absl::string_view name, double value) override {
-      if (!Matches(label)) return;
-      sink_.DoubleGauge(label, name, value);
+      if (!Matches(label_values)) return;
+      sink_.DoubleGauge(label_keys, label_values, name, value);
     }
-    void IntGauge(absl::Span<const std::string> label, absl::string_view name,
-                  int64_t value) override {
-      if (!Matches(label)) return;
-      sink_.IntGauge(label, name, value);
+    void IntGauge(InstrumentLabelList label_keys,
+                  absl::Span<const std::string> label_values,
+                  absl::string_view name, int64_t value) override {
+      if (!Matches(label_values)) return;
+      sink_.IntGauge(label_keys, label_values, name, value);
     }
-    void UintGauge(absl::Span<const std::string> label, absl::string_view name,
-                   uint64_t value) override {
-      if (!Matches(label)) return;
-      sink_.UintGauge(label, name, value);
+    void UintGauge(InstrumentLabelList label_keys,
+                   absl::Span<const std::string> label_values,
+                   absl::string_view name, uint64_t value) override {
+      if (!Matches(label_values)) return;
+      sink_.UintGauge(label_keys, label_values, name, value);
     }
 
    private:
-    bool Matches(absl::Span<const std::string> label) const {
+    bool Matches(absl::Span<const std::string> label_values) const {
       for (const auto& check : inclusion_checks_) {
-        if (label[check.offset] != check.value) return false;
+        if (label_values[check.offset] != check.value) return false;
       }
       return true;
     }
@@ -475,15 +642,131 @@ const InstrumentMetadata::Description* InstrumentIndex::Find(
 
 DomainStorage::DomainStorage(QueryableDomain* domain,
                              std::vector<std::string> label)
-    : domain_(domain), label_(std::move(label)) {}
+    : DataSource(MakeRefCounted<channelz::MetricsDomainStorageNode>(
+          absl::StrCat(domain->name(), ":", absl::StrJoin(label, ",")))),
+      domain_(domain),
+      label_(std::move(label)) {
+  channelz_node()->AddParent(domain->channelz_node().get());
+  SourceConstructed();
+}
 
-void DomainStorage::Orphaned() { domain_->DomainStorageOrphaned(this); }
+void DomainStorage::Orphaned() { SourceDestructing(); }
+
+void DomainStorage::AddData(channelz::DataSink sink) {
+  sink.AddData(
+      "domain_storage",
+      channelz::PropertyList()
+          .Set("label",
+               [this]() {
+                 channelz::PropertyGrid grid;
+                 for (size_t i = 0; i < label_.size(); ++i) {
+                   grid.SetRow(
+                       domain_->label_names()[i].label(),
+                       channelz::PropertyList().Set("value", label_[i]));
+                 }
+                 return grid;
+               }())
+          .Set("metrics", [this]() {
+            GaugeStorage storage(domain_);
+            FillGaugeStorage(storage);
+            channelz::PropertyGrid grid;
+            for (const auto* metric : domain_->metrics_) {
+              Match(
+                  metric->shape,
+                  [&, this](InstrumentMetadata::CounterShape) {
+                    grid.SetRow(metric->name,
+                                channelz::PropertyList().Set(
+                                    "value", SumCounter(metric->offset)));
+                  },
+                  [&, this](InstrumentMetadata::UpDownCounterShape) {
+                    grid.SetRow(metric->name,
+                                channelz::PropertyList().Set(
+                                    "value", SumCounter(metric->offset)));
+                  },
+                  [&](InstrumentMetadata::DoubleGaugeShape) {
+                    grid.SetRow(
+                        metric->name,
+                        channelz::PropertyList().Set(
+                            "value", storage.GetDouble(metric->offset)));
+                  },
+                  [&](InstrumentMetadata::IntGaugeShape) {
+                    grid.SetRow(metric->name,
+                                channelz::PropertyList().Set(
+                                    "value", storage.GetInt(metric->offset)));
+                  },
+                  [&](InstrumentMetadata::UintGaugeShape) {
+                    grid.SetRow(metric->name,
+                                channelz::PropertyList().Set(
+                                    "value", storage.GetUint(metric->offset)));
+                  },
+                  [&](const InstrumentMetadata::HistogramShape& h) {
+                    channelz::PropertyTable table;
+                    for (size_t i = 0; i < h.size(); ++i) {
+                      table.AppendRow(
+                          channelz::PropertyList()
+                              .Set("bucket_max", h[i])
+                              .Set("count", SumCounter(metric->offset + i)));
+                    }
+                    grid.SetRow(metric->name, channelz::PropertyList().Set(
+                                                  "value", std::move(table)));
+                  });
+            }
+            return grid;
+          }()));
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // QueryableDomain
 
+void QueryableDomain::AddData(channelz::DataSink sink) {
+  sink.AddData(
+      "domain",
+      channelz::PropertyList()
+          .Set("allocated_counter_slots", allocated_counter_slots_)
+          .Set("allocated_double_gauge_slots", allocated_double_gauge_slots_)
+          .Set("allocated_int_gauge_slots", allocated_int_gauge_slots_)
+          .Set("allocated_uint_gauge_slots", allocated_uint_gauge_slots_)
+          .Set("map_shards", map_shards_size_)
+          .Set("metrics",
+               [this]() {
+                 channelz::PropertyGrid grid;
+                 for (auto* metric : metrics_) {
+                   grid.SetRow(
+                       metric->name,
+                       channelz::PropertyList()
+                           .Set("description", metric->description)
+                           .Set("unit", metric->unit)
+                           .Set("offset", metric->offset)
+                           .Set("shape",
+                                Match(
+                                    metric->shape,
+                                    [](InstrumentMetadata::CounterShape)
+                                        -> std::string { return "counter"; },
+                                    [](InstrumentMetadata::UpDownCounterShape)
+                                        -> std::string {
+                                      return "up_down_counter";
+                                    },
+                                    [](InstrumentMetadata::DoubleGaugeShape)
+                                        -> std::string {
+                                      return "double_gauge";
+                                    },
+                                    [](InstrumentMetadata::IntGaugeShape)
+                                        -> std::string { return "int_gauge"; },
+                                    [](InstrumentMetadata::UintGaugeShape)
+                                        -> std::string { return "uint_gauge"; },
+                                    [](const InstrumentMetadata::HistogramShape&
+                                           h) -> std::string {
+                                      return absl::StrCat(
+                                          "histogram:", absl::StrJoin(h, ","));
+                                    })));
+                 }
+                 return grid;
+               }())
+          .Set("labels", absl::StrJoin(label_names_, ",")));
+}
+
 void QueryableDomain::Constructed() {
-  CHECK_EQ(prev_, nullptr);
+  GRPC_CHECK_EQ(prev_, nullptr);
   prev_ = last_;
   last_ = this;
 }
@@ -507,15 +790,7 @@ size_t QueryableDomain::TestOnlyCountStorageHeld() const {
   return count;
 }
 
-void QueryableDomain::DomainStorageOrphaned(DomainStorage* storage) {
-  auto label = storage->label();
-  auto& map_shard = GetMapShard(label);
-  MutexLock lock(&map_shard.mu);
-  auto* found_storage = map_shard.storage_map.Lookup(label);
-  if (found_storage == nullptr) return;
-  if (found_storage->get() != storage) return;
-  map_shard.storage_map = map_shard.storage_map.Remove(label);
-}
+void QueryableDomain::DomainStorageOrphaned(DomainStorage* /*storage*/) {}
 
 QueryableDomain::MapShard& QueryableDomain::GetMapShard(
     absl::Span<const std::string> label) {
@@ -523,47 +798,16 @@ QueryableDomain::MapShard& QueryableDomain::GetMapShard(
   if (map_shards_size_ == 1) {
     shard = 0;
   } else {
-    CHECK(!label.empty());
+    GRPC_CHECK(!label.empty());
     // Use the first label to shard, all labels to index.
     shard = absl::HashOf(label[0], this) % map_shards_size_;
   }
   return map_shards_[shard];
 }
 
-std::unique_ptr<StorageSet> QueryableDomain::CreateStorageSet() {
-  return std::make_unique<StorageSet>(this, map_shards_size_);
-}
-
-void QueryableDomain::RegisterStorageSet(StorageSet* storage_set) {
-  // Now register the new set.
-  std::vector<RefCountedPtr<DomainStorage>> added_storage;
-  MutexLock lock(&active_storage_sets_mu_);
-  active_storage_sets_.push_back(storage_set);
-  for (size_t i = 0; i < map_shards_size_; ++i) {
-    MutexLock lock(&map_shards_[i].mu);
-    map_shards_[i].storage_map.ForEach(
-        [&](const auto&, const auto& weak_storage) {
-          // Only add storage that is not already orphaned.
-          if (auto storage = weak_storage->RefIfNonZero(); storage != nullptr) {
-            added_storage.emplace_back(storage);
-            storage_set->AddStorage(weak_storage);
-          }
-        });
-  }
-}
-
-void QueryableDomain::UnregisterStorageSet(StorageSet* storage_set) {
-  MutexLock lock(&active_storage_sets_mu_);
-  active_storage_sets_.erase(
-      std::remove(active_storage_sets_.begin(), active_storage_sets_.end(),
-                  storage_set),
-      active_storage_sets_.end());
-}
-
 void QueryableDomain::TestOnlyReset() {
+  channelz_.Reset();
   map_shards_ = std::make_unique<MapShard[]>(map_shards_size_);
-  MutexLock lock(&active_storage_sets_mu_);
-  active_storage_sets_.clear();
 }
 
 const InstrumentMetadata::Description* QueryableDomain::AllocateCounter(
@@ -573,6 +817,17 @@ const InstrumentMetadata::Description* QueryableDomain::AllocateCounter(
   auto* desc =
       InstrumentIndex::Get().Register(this, offset, name, description, unit,
                                       InstrumentMetadata::CounterShape{});
+  metrics_.push_back(desc);
+  return desc;
+}
+
+const InstrumentMetadata::Description* QueryableDomain::AllocateUpDownCounter(
+    absl::string_view name, absl::string_view description,
+    absl::string_view unit) {
+  const size_t offset = allocated_counter_slots_++;
+  auto* desc =
+      InstrumentIndex::Get().Register(this, offset, name, description, unit,
+                                      InstrumentMetadata::UpDownCounterShape{});
   metrics_.push_back(desc);
   return desc;
 }
@@ -627,67 +882,30 @@ void QueryableDomain::TestOnlyResetAll() {
 }
 
 RefCountedPtr<DomainStorage> QueryableDomain::GetDomainStorage(
-    std::vector<std::string> label) {
-  MapShard& map_shard = GetMapShard(label);
-  // First try to get an existing storage.
-  map_shard.mu.Lock();
-  auto storage_map = map_shard.storage_map;
-  map_shard.mu.Unlock();
-  // With an AVL we can search outside the lock.
-  auto* weak_storage = storage_map.Lookup(label);
-  if (weak_storage != nullptr) {
-    // Found a weak pointer, try to upgrade it to a strong pointer.
-    RefCountedPtr<DomainStorage> strong_storage =
-        (*weak_storage)->RefIfNonZero();
-    if (strong_storage != nullptr) {
-      // Upgrade successful, return the strong pointer.
-      return strong_storage;
+    RefCountedPtr<CollectionScope> scope,
+    absl::Span<const std::string> label_values) {
+  auto key_labels =
+      FilterLabels(label_names_, scope->labels_of_interest_, label_values);
+  if (scope->parents_.size() == 1 && scope->parents_[0] != nullptr) {
+    auto parent_key_labels = FilterLabels(
+        label_names_, scope->parents_[0]->labels_of_interest_, label_values);
+    if (key_labels == parent_key_labels) {
+      return GetDomainStorage(scope->parents_[0], label_values);
     }
   }
-  // No hit, or the storage is orphaned: now we lock and search again.
-  RefCountedPtr<DomainStorage> new_storage;
-  {
-    MutexLock lock(&map_shard.mu);
-    storage_map = map_shard.storage_map;
-    // We must look up the storage map again, as it may have been created
-    // by another thread while we were not holding the lock.
-    weak_storage = storage_map.Lookup(label);
-    if (weak_storage != nullptr) {
-      // Found a weak pointer, try to upgrade it to a strong pointer.
-      RefCountedPtr<DomainStorage> strong_storage =
-          (*weak_storage)->RefIfNonZero();
-      if (strong_storage != nullptr) {
-        // Upgrade successful, return the strong pointer.
-        return strong_storage;
-      }
-    }
-    // Still no hit or orphaned: with the lock held we allocate a new storage
-    // and insert it into the map.
-    new_storage = CreateDomainStorage(std::move(label));
-    auto new_weak_storage = new_storage->WeakRef();
-    map_shard.storage_map =
-        map_shard.storage_map.Add(new_weak_storage->label(), new_weak_storage);
+  size_t shard_idx = absl::HashOf(key_labels) % scope->storage_shards_.size();
+  auto& shard = scope->storage_shards_[shard_idx];
+  MutexLock lock(&shard.mu);
+  auto it = shard.storage.find({this, key_labels});
+  if (it != shard.storage.end()) {
+    return it->second;
   }
-  // Add to active storage sets
-  MutexLock lock(&active_storage_sets_mu_);
-  for (auto* storage_set : active_storage_sets_) {
-    storage_set->AddStorage(new_storage->WeakRef());
-  }
-  return new_storage;
+  auto storage = CreateDomainStorage(key_labels);
+  shard.storage.emplace(std::pair(this, key_labels), storage);
+  return storage;
 }
 
 }  // namespace instrument_detail
-
-void TestOnlyResetInstruments() {
-  Hook* hook = hooks.load(std::memory_order_acquire);
-  while (hook != nullptr) {
-    Hook* next = hook->next;
-    delete hook;
-    hook = next;
-  }
-  hooks.store(nullptr, std::memory_order_release);
-  instrument_detail::QueryableDomain::TestOnlyResetAll();
-}
 
 LowContentionBackend::LowContentionBackend(size_t size)
     : counters_(new std::atomic<uint64_t>[size]) {
@@ -702,7 +920,7 @@ uint64_t LowContentionBackend::Sum(size_t index) {
 
 HighContentionBackend::HighContentionBackend(size_t size) {
   for (auto& shard : counters_) {
-    shard = std::make_unique<std::atomic<uint64_t>[]>(size);
+    shard = std::make_unique<std::atomic<int64_t>[]>(size);
     for (size_t i = 0; i < size; ++i) {
       shard[i].store(0, std::memory_order_relaxed);
     }
@@ -710,10 +928,134 @@ HighContentionBackend::HighContentionBackend(size_t size) {
 }
 
 uint64_t HighContentionBackend::Sum(size_t index) {
-  uint64_t sum = 0;
+  uint64_t positive_sum = 0;
+  uint64_t negative_sum = 0;
   for (auto& shard : counters_) {
-    sum += shard[index].load(std::memory_order_relaxed);
+    int64_t value = shard[index].load(std::memory_order_relaxed);
+    if (value > 0) {
+      positive_sum += value;
+    } else if (value < 0) {
+      negative_sum += -value;
+    }
   }
-  return sum;
+  // Every decrement should have a corresponding increment.
+  GRPC_CHECK(positive_sum >= negative_sum);
+  return positive_sum - negative_sum;
 }
+
+class GlobalCollectionScopeManager {
+ public:
+  GlobalCollectionScopeManager(const GlobalCollectionScopeManager&) = delete;
+  GlobalCollectionScopeManager& operator=(const GlobalCollectionScopeManager&) =
+      delete;
+
+  static GlobalCollectionScopeManager& Get() {
+    static GlobalCollectionScopeManager* manager =
+        new GlobalCollectionScopeManager();
+    return *manager;
+  }
+
+  RefCountedPtr<CollectionScope> CreateRootScope(InstrumentLabelSet labels,
+                                                 size_t child_shards_count,
+                                                 size_t storage_shards_count) {
+    MutexLock lock(&mu_);
+    if (auto* building = std::get_if<Building>(&state_); building != nullptr) {
+      auto scope = CreateCollectionScope({}, labels, child_shards_count,
+                                         storage_shards_count);
+      building->root_scopes.push_back(scope);
+      return scope;
+    } else {
+      // Global scope is already created, we can no longer subset labels.
+      auto& published = std::get<Published>(state_);
+      std::vector<absl::string_view> missing_labels;
+      for (const auto& label : labels.ToList()) {
+        if (!published.global_scope->ObservesLabel(label)) {
+          missing_labels.push_back(label.label());
+        }
+      }
+      if (missing_labels.empty()) {
+        LOG(ERROR) << "Attempt to create a root scope with labels ["
+                   << absl::StrJoin(labels.ToList(), ", ")
+                   << "] after the global scope was already created.  "
+                      "All requested labels are collected by the global scope, "
+                      "so this scope will be returned instead.  "
+                      "To eliminate this message, ensure the root scope "
+                      "creation that triggered it occurs before the first call "
+                      "to GlobalCollectionScope().";
+      } else {
+        LOG(ERROR) << "Attempt to create a root scope with labels ["
+                   << absl::StrJoin(labels.ToList(), ", ")
+                   << "] after the global scope was already created.  "
+                      "The following labels are not collected by the global "
+                      "scope, and so will not be available: ["
+                   << absl::StrJoin(missing_labels, ", ")
+                   << "]."
+                      "To eliminate this message, ensure the root scope "
+                      "creation that triggered it occurs before the first call "
+                      "to GlobalCollectionScope().";
+      }
+      return published.global_scope;
+    }
+  }
+
+  RefCountedPtr<CollectionScope> GetGlobalScope() {
+    MutexLock lock(&mu_);
+    if (auto* building = std::get_if<Building>(&state_); building != nullptr) {
+      auto global_scope = CreateCollectionScope(building->root_scopes,
+                                                InstrumentLabelSet(), 32, 32);
+      state_ = Published{global_scope};
+      return global_scope;
+    } else {
+      return std::get<Published>(state_).global_scope;
+    }
+  }
+
+  void TestOnlyReset() {
+    std::variant<Building, Published> state;
+    MutexLock lock(&mu_);
+    state = std::exchange(state_, Building{});
+    if (auto* published = std::get_if<Published>(&state);
+        published != nullptr) {
+      published->global_scope->TestOnlyReset();
+    }
+  }
+
+ private:
+  GlobalCollectionScopeManager() = default;
+
+  struct Building {
+    std::vector<RefCountedPtr<CollectionScope>> root_scopes;
+  };
+
+  struct Published {
+    RefCountedPtr<CollectionScope> global_scope;
+  };
+
+  Mutex mu_;
+  std::variant<Building, Published> state_ ABSL_GUARDED_BY(mu_);
+};
+
+RefCountedPtr<CollectionScope> CreateRootCollectionScope(
+    InstrumentLabelSet labels, size_t child_shards_count,
+    size_t storage_shards_count) {
+  return GlobalCollectionScopeManager::Get().CreateRootScope(
+      labels, child_shards_count, storage_shards_count);
+}
+
+RefCountedPtr<CollectionScope> GlobalCollectionScope() {
+  return GlobalCollectionScopeManager::Get().GetGlobalScope();
+}
+
+void TestOnlyResetInstruments() {
+  Hook* hook = hooks.load(std::memory_order_acquire);
+  while (hook != nullptr) {
+    Hook* next = hook->next;
+    delete hook;
+    hook = next;
+  }
+  hooks.store(nullptr, std::memory_order_release);
+  instrument_detail::QueryableDomain::TestOnlyResetAll();
+  GlobalCollectionScopeManager::Get().TestOnlyReset();
+}
+
 }  // namespace grpc_core

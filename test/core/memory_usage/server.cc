@@ -40,21 +40,21 @@
 #include <string>
 #include <vector>
 
-#include "absl/base/attributes.h"
-#include "absl/flags/flag.h"
-#include "absl/flags/parse.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/transport/endpoint_transport.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/xds/grpc/xds_enabled_server.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/memory_usage/memstats.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "absl/base/attributes.h"
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
 
 ABSL_FLAG(std::string, bind, "", "Bind host:port");
 ABSL_FLAG(bool, secure, false, "Use security");
@@ -110,8 +110,9 @@ static void send_initial_metadata_unary(void* tag) {
   metadata_ops[0].op = GRPC_OP_SEND_INITIAL_METADATA;
   metadata_ops[0].data.send_initial_metadata.count = 0;
 
-  CHECK(GRPC_CALL_OK == grpc_call_start_batch((*(fling_call*)tag).call,
-                                              metadata_ops, 1, tag, nullptr));
+  GRPC_CHECK(GRPC_CALL_OK == grpc_call_start_batch((*(fling_call*)tag).call,
+                                                   metadata_ops, 1, tag,
+                                                   nullptr));
 }
 
 static void send_status(void* tag) {
@@ -121,8 +122,9 @@ static void send_status(void* tag) {
   grpc_slice details = grpc_slice_from_static_string("");
   status_op.data.send_status_from_server.status_details = &details;
 
-  CHECK(GRPC_CALL_OK == grpc_call_start_batch((*(fling_call*)tag).call,
-                                              &status_op, 1, tag, nullptr));
+  GRPC_CHECK(GRPC_CALL_OK == grpc_call_start_batch((*(fling_call*)tag).call,
+                                                   &status_op, 1, tag,
+                                                   nullptr));
 }
 
 static void send_snapshot(void* tag, MemStats* snapshot) {
@@ -154,9 +156,9 @@ static void send_snapshot(void* tag, MemStats* snapshot) {
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
 
-  CHECK(GRPC_CALL_OK ==
-        grpc_call_start_batch((*(fling_call*)tag).call, snapshot_ops,
-                              (size_t)(op - snapshot_ops), tag, nullptr));
+  GRPC_CHECK(GRPC_CALL_OK ==
+             grpc_call_start_batch((*(fling_call*)tag).call, snapshot_ops,
+                                   (size_t)(op - snapshot_ops), tag, nullptr));
 }
 // We have some sort of deadlock, so let's not exit gracefully for now.
 // When that is resolved, please remove the #include <unistd.h> above.
@@ -180,7 +182,7 @@ int main(int argc, char** argv) {
 
   char* fake_argv[1];
 
-  CHECK_GE(argc, 1);
+  GRPC_CHECK_GE(argc, 1);
   fake_argv[0] = argv[0];
   grpc::testing::TestEnvironment env(&argc, argv);
 
@@ -235,10 +237,10 @@ int main(int argc, char** argv) {
                                                     test_server1_cert};
     grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
         nullptr, &pem_key_cert_pair, 1, 0, nullptr);
-    CHECK(grpc_server_add_http2_port(server, addr.c_str(), ssl_creds));
+    GRPC_CHECK(grpc_server_add_http2_port(server, addr.c_str(), ssl_creds));
     grpc_server_credentials_release(ssl_creds);
   } else {
-    CHECK(grpc_server_add_http2_port(
+    GRPC_CHECK(grpc_server_add_http2_port(
         server, addr.c_str(), grpc_insecure_server_credentials_create()));
   }
 
@@ -267,10 +269,10 @@ int main(int argc, char** argv) {
 
       shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
       grpc_server_shutdown_and_notify(server, shutdown_cq, tag(1000));
-      CHECK(grpc_completion_queue_pluck(shutdown_cq, tag(1000),
-                                        grpc_timeout_seconds_to_deadline(5),
-                                        nullptr)
-                .type == GRPC_OP_COMPLETE);
+      GRPC_CHECK(grpc_completion_queue_pluck(
+                     shutdown_cq, tag(1000),
+                     grpc_timeout_seconds_to_deadline(5), nullptr)
+                     .type == GRPC_OP_COMPLETE);
       grpc_completion_queue_destroy(shutdown_cq);
       grpc_completion_queue_shutdown(cq);
       shutdown_started = 1;
@@ -348,7 +350,7 @@ int main(int argc, char** argv) {
         }
         break;
       case GRPC_QUEUE_SHUTDOWN:
-        CHECK(shutdown_started);
+        GRPC_CHECK(shutdown_started);
         shutdown_finished = 1;
         break;
       case GRPC_QUEUE_TIMEOUT:

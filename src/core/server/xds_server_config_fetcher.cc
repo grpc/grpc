@@ -34,17 +34,6 @@
 #include <variant>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/match.h"
-#include "absl/strings/numbers.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_replace.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_distributor.h"
@@ -71,6 +60,7 @@
 #include "src/core/service_config/service_config_impl.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/down_cast.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/match.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -90,6 +80,16 @@
 #include "src/core/xds/grpc/xds_route_config_parser.h"
 #include "src/core/xds/grpc/xds_routing.h"
 #include "src/core/xds/xds_client/xds_client.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/match.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_replace.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace {
@@ -404,7 +404,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
       std::unique_ptr<ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
           watcher) override {
-    CHECK(watcher_ == nullptr);
+    GRPC_CHECK(watcher_ == nullptr);
     watcher_ = std::move(watcher);
     if (!static_resource_.ok()) {
       return static_resource_.status();
@@ -512,7 +512,7 @@ XdsServerConfigFetcher::XdsServerConfigFetcher(
     RefCountedPtr<GrpcXdsClient> xds_client,
     grpc_server_xds_status_notifier notifier)
     : xds_client_(std::move(xds_client)), serving_status_notifier_(notifier) {
-  CHECK(xds_client_ != nullptr);
+  GRPC_CHECK(xds_client_ != nullptr);
 }
 
 std::string ListenerResourceName(absl::string_view resource_name_template,
@@ -1051,9 +1051,9 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
     // Find filter.  This is guaranteed to succeed, because it's checked
     // at config validation time in the XdsApi code.
     const XdsHttpFilterImpl* filter_impl =
-        http_filter_registry.GetFilterForType(
-            http_filter.config.config_proto_type_name);
-    CHECK_NE(filter_impl, nullptr);
+        http_filter_registry.GetFilterForTopLevelType(
+            http_filter.config_proto_type);
+    GRPC_CHECK_NE(filter_impl, nullptr);
     // Some filters like the router filter are no-op filters and do not have
     // an implementation.
     if (filter_impl->channel_filter() != nullptr) {
@@ -1102,7 +1102,7 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
       return result.status();
     }
     xds_certificate_provider = std::move(*result);
-    CHECK(xds_certificate_provider != nullptr);
+    GRPC_CHECK(xds_certificate_provider != nullptr);
     args = args.SetObject(xds_certificate_provider);
   }
   return args;
@@ -1119,9 +1119,10 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
         auto& hcm = filter_chain_data.http_connection_manager;
         for (const auto& http_filter : hcm.http_filters) {
           const XdsHttpFilterImpl* filter_impl =
-              http_filter_registry.GetFilterForType(
-                  http_filter.config.config_proto_type_name);
-          CHECK_NE(filter_impl, nullptr);  // Enforced in config validation.
+              http_filter_registry.GetFilterForTopLevelType(
+                  http_filter.config_proto_type);
+          GRPC_CHECK_NE(filter_impl,
+                        nullptr);  // Enforced in config validation.
           filter_impl->UpdateBlackboard(http_filter.config, old_blackboard,
                                         new_blackboard);
         }
@@ -1240,7 +1241,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       resource_name_(std::move(resource_name)),
       http_filters_(std::move(http_filters)),
       resource_(std::move(initial_resource)) {
-  CHECK(!resource_name_.empty());
+  GRPC_CHECK(!resource_name_.empty());
   // RouteConfigWatcher is being created here instead of in Watch() to avoid
   // deadlocks from invoking XdsRouteConfigResourceType::StartWatch whilst in a
   // critical region.
@@ -1267,7 +1268,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>> resource;
   {
     MutexLock lock(&mu_);
-    CHECK(watcher_ == nullptr);
+    GRPC_CHECK(watcher_ == nullptr);
     watcher_ = std::move(watcher);
     resource = resource_;
   }

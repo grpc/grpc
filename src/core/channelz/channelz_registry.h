@@ -21,16 +21,18 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <map>
 #include <string>
 
-#include "absl/container/btree_map.h"
-#include "absl/functional/function_ref.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "absl/container/btree_map.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/functional/function_ref.h"
 
 namespace grpc_core {
 namespace channelz {
@@ -113,6 +115,11 @@ class ChannelzRegistry final {
                     BaseNode::EntityType type, size_t max_results) {
     return Default()->InternalGetChildrenOfType(start_node, parent, type,
                                                 max_results);
+  }
+
+  static std::vector<WeakRefCountedPtr<BaseNode>> GetDescendants(
+      BaseNode* root, size_t max_results) {
+    return Default()->InternalGetDescendants(root, max_results);
   }
 
   static WeakRefCountedPtr<BaseNode> GetNode(intptr_t uuid) {
@@ -248,6 +255,39 @@ class ChannelzRegistry final {
     return QueryNodes(
         start_node, [type](const BaseNode* n) { return n->type() == type; },
         max_results);
+  }
+
+  std::vector<WeakRefCountedPtr<BaseNode>> InternalGetDescendants(
+      BaseNode* root, size_t max_results) {
+    std::vector<WeakRefCountedPtr<BaseNode>> descendants;
+    if (root == nullptr || max_results == 0) return descendants;
+
+    // To prevent duplicate nodes and to prevent infinite loops.
+    absl::flat_hash_set<intptr_t> visited;
+
+    descendants.reserve(max_results);
+    visited.insert(root->uuid());
+    descendants.push_back(root->WeakRef());
+
+    size_t next_id = 0;
+
+    // BFS to find all descendants.
+    do {
+      BaseNode* current_node = descendants[next_id].get();
+
+      auto [children, _] = InternalGetChildren(
+          current_node, current_node->uuid(), max_results - descendants.size());
+
+      for (const auto& child : children) {
+        if (visited.insert(child->uuid()).second) {
+          descendants.push_back(child);
+        }
+      }
+
+      ++next_id;
+    } while (descendants.size() < max_results && next_id < descendants.size());
+
+    return descendants;
   }
 
   std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool> InternalGetNodes(

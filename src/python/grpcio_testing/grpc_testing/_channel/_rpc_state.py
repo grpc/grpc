@@ -47,8 +47,7 @@ class State(_common.ChannelRpcHandler):
                 self._requests.append(request)
                 self._condition.notify_all()
                 return True
-            else:
-                return False
+            return False
 
     def close_requests(self):
         with self._condition:
@@ -65,21 +64,19 @@ class State(_common.ChannelRpcHandler):
                         return _common.ChannelRpcRead(
                             response, None, None, None
                         )
-                    else:
-                        return _common.ChannelRpcRead(
-                            None,
-                            self._trailing_metadata,
-                            grpc.StatusCode.OK,
-                            self._details,
-                        )
-                elif self._code is None:
+                    return _common.ChannelRpcRead(
+                        None,
+                        self._trailing_metadata,
+                        grpc.StatusCode.OK,
+                        self._details,
+                    )
+                if self._code is None:
                     if self._responses:
                         response = self._responses.pop(0)
                         return _common.ChannelRpcRead(
                             response, None, None, None
                         )
-                    else:
-                        self._condition.wait()
+                    self._condition.wait()
                 else:
                     return _common.ChannelRpcRead(
                         None, self._trailing_metadata, self._code, self._details
@@ -103,31 +100,28 @@ class State(_common.ChannelRpcHandler):
                 self._details = details
                 self._condition.notify_all()
                 return True
-            else:
-                return False
+            return False
 
     def take_invocation_metadata(self):
         with self._condition:
             if self._invocation_metadata is None:
                 error_msg = "Expected invocation metadata!"
                 raise ValueError(error_msg)
-            else:
-                invocation_metadata = self._invocation_metadata
-                self._invocation_metadata = None
-                return invocation_metadata
+            invocation_metadata = self._invocation_metadata
+            self._invocation_metadata = None
+            return invocation_metadata
 
     def take_invocation_metadata_and_request(self):
         with self._condition:
             if self._invocation_metadata is None:
                 error_msg = "Expected invocation metadata!"
                 raise ValueError(error_msg)
-            elif not self._requests:
+            if not self._requests:
                 error_msg = "Expected at least one request!"
                 raise ValueError(error_msg)
-            else:
-                invocation_metadata = self._invocation_metadata
-                self._invocation_metadata = None
-                return invocation_metadata, self._requests.pop(0)
+            invocation_metadata = self._invocation_metadata
+            self._invocation_metadata = None
+            return invocation_metadata, self._requests.pop(0)
 
     def send_initial_metadata(self, initial_metadata):
         with self._condition:
@@ -141,16 +135,14 @@ class State(_common.ChannelRpcHandler):
             while True:
                 if self._requests:
                     return self._requests.pop(0)
-                else:
-                    self._condition.wait()
+                self._condition.wait()
 
     def requests_closed(self):
         with self._condition:
             while True:
                 if self._requests_closed:
                     return
-                else:
-                    self._condition.wait()
+                self._condition.wait()
 
     def send_response(self, response):
         with self._condition:
@@ -188,7 +180,7 @@ class State(_common.ChannelRpcHandler):
             while True:
                 if self._code is grpc.StatusCode.CANCELLED:
                     return
-                elif self._code is None:
+                if self._code is None:
                     self._condition.wait()
                 else:
                     error_msg = f"Status code unexpectedly {self._code}!"

@@ -35,12 +35,6 @@
 #include <utility>
 #include <variant>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/container/flat_hash_map.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good_legacy/config.h"
@@ -71,6 +65,12 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 namespace chaotic_good_legacy {
@@ -90,7 +90,15 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   void PerformOp(grpc_transport_op*) override;
   void Orphan() override;
   RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
-    return nullptr;
+    return socket_node_;
+  }
+  void StartWatch(RefCountedPtr<StateWatcher>) override {
+    // TODO(roth): Implement as part of migrating server side to new
+    // watcher API.
+  }
+  void StopWatch(RefCountedPtr<StateWatcher>) override {
+    // TODO(roth): Implement as part of migrating server side to new
+    // watcher API.
   }
 
   void SetCallDestination(
@@ -104,6 +112,17 @@ class ChaoticGoodServerTransport final : public ServerTransport {
     MessageReassembly message_reassembly;
   };
   using StreamMap = absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>>;
+
+  struct ChannelzDataSource final : public channelz::DataSource {
+    explicit ChannelzDataSource(RefCountedPtr<channelz::BaseNode> socket_node,
+                                ChaoticGoodServerTransport* transport)
+        : channelz::DataSource(std::move(socket_node)), transport_(transport) {
+      SourceConstructed();
+    }
+    ~ChannelzDataSource() { SourceDestructing(); }
+    void AddData(channelz::DataSink sink) override;
+    ChaoticGoodServerTransport* const transport_;
+  };
 
   absl::Status NewStream(uint32_t stream_id, CallInitiator call_initiator);
   RefCountedPtr<Stream> LookupStream(uint32_t stream_id);
@@ -155,6 +174,8 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
       "chaotic_good_server", GRPC_CHANNEL_READY};
   MessageChunker message_chunker_;
+  RefCountedPtr<channelz::SocketNode> socket_node_;
+  std::unique_ptr<ChannelzDataSource> channelz_data_source_;
 };
 
 }  // namespace chaotic_good_legacy

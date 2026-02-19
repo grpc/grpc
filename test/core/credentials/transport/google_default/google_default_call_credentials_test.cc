@@ -17,8 +17,6 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
-#include "absl/status/statusor.h"
-#include "gmock/gmock.h"
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/credentials/transport/alts/alts_security_connector.h"
 #include "src/core/credentials/transport/composite/composite_channel_credentials.h"
@@ -29,6 +27,8 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/test_util/test_call_creds.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 namespace {
@@ -40,14 +40,16 @@ class GoogleDefaultCallCredentialsTest : public ::testing::Test {
   static void TearDownTestSuite() { grpc_shutdown_blocking(); }
 
   void SetUp() override {
+    grpc_google_default_credentials_options alts_options = {};
+    alts_options.call_creds_for_alts = grpc_md_only_test_credentials_create(
+        GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
+        GRPC_ALTS_TRANSPORT_SECURITY_TYPE);
     auto* creds = reinterpret_cast<grpc_composite_channel_credentials*>(
         grpc_google_default_credentials_create(
             grpc_md_only_test_credentials_create(
                 GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
                 GRPC_TLS_TRANSPORT_SECURITY_TYPE),
-            grpc_md_only_test_credentials_create(
-                GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
-                GRPC_ALTS_TRANSPORT_SECURITY_TYPE)));
+            &alts_options));
     channel_creds_ = RefCountedPtr<grpc_composite_channel_credentials>(creds);
     pollent_ =
         grpc_polling_entity_create_from_pollset_set(grpc_pollset_set_create());

@@ -33,11 +33,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_split.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/credentials/transport/tls/load_system_roots.h"
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
@@ -45,10 +40,15 @@
 #include "src/core/transport/auth_context.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/load_file.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/useful.h"
+#include "absl/log/log.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
 
 // -- Constants. --
 
@@ -190,7 +190,7 @@ absl::Status SslCheckCallHost(absl::string_view host,
 }  // namespace grpc_core
 
 const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols) {
-  CHECK_NE(num_alpn_protocols, nullptr);
+  GRPC_CHECK_NE(num_alpn_protocols, nullptr);
   *num_alpn_protocols = grpc_chttp2_num_alpn_versions();
   const char** alpn_protocol_strings = static_cast<const char**>(
       gpr_malloc(sizeof(const char*) * (*num_alpn_protocols)));
@@ -202,7 +202,7 @@ const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols) {
 
 const char** ParseAlpnStringIntoArray(absl::string_view preferred_protocols_raw,
                                       size_t* num_alpn_protocols) {
-  CHECK_NE(num_alpn_protocols, nullptr);
+  GRPC_CHECK_NE(num_alpn_protocols, nullptr);
   std::vector<std::string> preferred_protocols;
   preferred_protocols =
       absl::StrSplit(preferred_protocols_raw, ',', absl::SkipWhitespace());
@@ -271,7 +271,7 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
   const char* peer_identity_property_name = nullptr;
 
   // The caller has checked the certificate type property.
-  CHECK_GE(peer->property_count, 1u);
+  GRPC_CHECK_GE(peer->property_count, 1u);
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
   grpc_auth_context_add_cstring_property(
@@ -338,14 +338,14 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
     }
   }
   if (peer_identity_property_name != nullptr) {
-    CHECK(grpc_auth_context_set_peer_identity_property_name(
-              ctx.get(), peer_identity_property_name) == 1);
+    GRPC_CHECK(grpc_auth_context_set_peer_identity_property_name(
+                   ctx.get(), peer_identity_property_name) == 1);
   }
   // A valid SPIFFE certificate can only have exact one URI SAN field.
   if (has_spiffe_id) {
     if (uri_count == 1) {
-      CHECK_GT(spiffe_length, 0u);
-      CHECK_NE(spiffe_data, nullptr);
+      GRPC_CHECK_GT(spiffe_length, 0u);
+      GRPC_CHECK_NE(spiffe_data, nullptr);
       grpc_auth_context_add_property(ctx.get(),
                                      GRPC_PEER_SPIFFE_ID_PROPERTY_NAME,
                                      spiffe_data, spiffe_length);
@@ -600,13 +600,18 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
       result = std::move(*slice);
     }
   }
+  // Try loading roots from OS trust store if preferred over callback.
+  if (result.empty() &&
+      ConfigVars::Get().UseSystemRootsOverLanguageCallback()) {
+    result = Slice(LoadSystemRootCerts());
+  }
   // Try overridden roots if needed.
   grpc_ssl_roots_override_result ovrd_res = GRPC_SSL_ROOTS_OVERRIDE_FAIL;
   if (result.empty() && ssl_roots_override_cb != nullptr) {
     char* pem_root_certs = nullptr;
     ovrd_res = ssl_roots_override_cb(&pem_root_certs);
     if (ovrd_res == GRPC_SSL_ROOTS_OVERRIDE_OK) {
-      CHECK_NE(pem_root_certs, nullptr);
+      GRPC_CHECK_NE(pem_root_certs, nullptr);
       result = Slice::FromCopiedBuffer(
           pem_root_certs,
           strlen(pem_root_certs) + 1);  // nullptr terminator.

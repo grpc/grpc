@@ -23,13 +23,13 @@
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.pb.h"
 #include "envoy/extensions/filters/http/router/v3/router.pb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/util/http_client/httpcli.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc {
 namespace testing {
@@ -250,10 +250,6 @@ int main(int argc, char** argv) {
   grpc_core::ConfigVars::Overrides overrides;
   overrides.client_channel_backup_poll_interval_ms = 1;
   grpc_core::ConfigVars::SetOverrides(overrides);
-#if TARGET_OS_IPHONE
-  // Workaround Apple CFStream bug
-  grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
   grpc_init();
   const auto result = RUN_ALL_TESTS();
   grpc_shutdown();

@@ -1,5 +1,5 @@
 #=================
-# Install ccache (use slighly older release of ccache that works older compilers and cmake)
+# Install ccache (use slightly older release of ccache that works older compilers and cmake)
 
 # Install ccache from source since ccache 3.x packaged with most linux distributions
 # does not support Redis backend for caching.

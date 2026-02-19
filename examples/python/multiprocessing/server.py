@@ -23,6 +23,7 @@ import datetime
 import logging
 import math
 import multiprocessing
+import platform
 import socket
 import sys
 import time
@@ -92,15 +93,32 @@ def _reserve_port():
 
 
 def main():
+    # Check if we're on macOS and warn about SO_REUSEPORT limitations
+    if platform.system() == "Darwin":
+        warning_message = """
+            ⚠️  WARNING: Running on MacOS (Darwin), SO_REUSEPORT behavior on MacOS is different from
+            Linux. On MacOS, SO_REUSEPORT does not provide true load balancing - all requests from
+            the same connection will be handled by the same process, defeating the purpose of
+            multiprocessing. This is the issue described in GitHub #40444. For true multiprocessing
+            on MacOS, consider using multiple worker processes on different ports.
+        """
+        print(warning_message)
     with _reserve_port() as port:
         bind_address = "localhost:{}".format(port)
         _LOGGER.info("Binding to '%s'", bind_address)
         sys.stdout.flush()
         workers = []
         for _ in range(_PROCESS_COUNT):
-            # NOTE: It is imperative that the worker subprocesses be forked before
-            # any gRPC servers start up. See
+            # NOTE: It is imperative that the parent process fork child processes
+            # BEFORE the parent process starts a gRPC server. See
             # https://github.com/grpc/grpc/issues/16001 for more details.
+            #
+            # In this example, the parent process never starts a gRPC server
+            # for its own use - it only forks worker processes.
+            # Each forked child then independently starts its own server.
+            # Since forked processes have independent address spaces, it doesn't matter
+            # if some children start their servers while others are still being forked.
+            # The crucial point is that THIS (parent) process hasn't started a gRPC server.
             worker = multiprocessing.Process(
                 target=_run_server, args=(bind_address,)
             )

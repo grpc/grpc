@@ -22,26 +22,29 @@
 #include <grpcpp/create_channel_posix.h>
 #include <grpcpp/generic/generic_stub.h>
 #include <grpcpp/impl/proto_utils.h>
+#include <grpcpp/impl/serialization_traits.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/server_posix.h>
+#include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/client_interceptor.h>
 
 #include <memory>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/memory/memory.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/interceptors_util.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
 #include "test/cpp/util/string_ref_helper.h"
+#include "gtest/gtest.h"
+#include "absl/memory/memory.h"
 
 #ifdef GRPC_POSIX_SOCKET
 #include <fcntl.h>
@@ -97,9 +100,7 @@ class HijackingInterceptor : public experimental::Interceptor {
       EchoRequest req;
       auto* buffer = methods->GetSerializedSendMessage();
       auto copied_buffer = *buffer;
-      EXPECT_TRUE(
-          SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
-              .ok());
+      EXPECT_TRUE(Deserialize(&copied_buffer, &req).ok());
       EXPECT_EQ(req.message(), "Hello");
     }
     if (methods->QueryInterceptionHookPoint(
@@ -203,9 +204,7 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
       EchoRequest req;
       auto* buffer = methods->GetSerializedSendMessage();
       auto copied_buffer = *buffer;
-      EXPECT_TRUE(
-          SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
-              .ok());
+      EXPECT_TRUE(Deserialize(&copied_buffer, &req).ok());
       EXPECT_EQ(req.message(), "Hello");
       req_ = req;
       stub_ = grpc::testing::EchoTestService::NewStub(
@@ -318,9 +317,7 @@ class BidiStreamingRpcHijackingInterceptor : public experimental::Interceptor {
       EchoRequest req;
       auto* buffer = methods->GetSerializedSendMessage();
       auto copied_buffer = *buffer;
-      EXPECT_TRUE(
-          SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
-              .ok());
+      EXPECT_TRUE(Deserialize(&copied_buffer, &req).ok());
       EXPECT_EQ(req.message().find("Hello"), 0u);
       msg = req.message();
     }
@@ -455,9 +452,7 @@ class ServerStreamingRpcHijackingInterceptor
       EchoRequest req;
       auto* buffer = methods->GetSerializedSendMessage();
       auto copied_buffer = *buffer;
-      EXPECT_TRUE(
-          SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
-              .ok());
+      EXPECT_TRUE(Deserialize(&copied_buffer, &req).ok());
       EXPECT_EQ(req.message(), "Hello");
     }
     if (methods->QueryInterceptionHookPoint(
@@ -573,9 +568,7 @@ class LoggingInterceptor : public experimental::Interceptor {
         auto* buffer = methods->GetSerializedSendMessage();
         auto copied_buffer = *buffer;
         EchoRequest req;
-        EXPECT_TRUE(
-            SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
-                .ok());
+        EXPECT_TRUE(Deserialize(&copied_buffer, &req).ok());
         EXPECT_EQ(req.message(), "Hello");
       } else {
         EXPECT_EQ(
@@ -584,9 +577,7 @@ class LoggingInterceptor : public experimental::Interceptor {
       }
       auto* buffer = methods->GetSerializedSendMessage();
       auto copied_buffer = *buffer;
-      EXPECT_TRUE(
-          SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
-              .ok());
+      EXPECT_TRUE(Deserialize(&copied_buffer, &req).ok());
       EXPECT_TRUE(req.message().find("Hello") == 0u);
       pre_send_message_count_++;
     }
@@ -754,13 +745,15 @@ class ParameterizedClientInterceptorsEnd2endTest
 #ifdef GRPC_POSIX_SOCKET
     else if (GetParam().channel_type() == ChannelType::kFdChannel) {
       int flags;
-      CHECK_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sv_), 0);
+      GRPC_CHECK_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sv_), 0);
       flags = fcntl(sv_[0], F_GETFL, 0);
-      CHECK_EQ(fcntl(sv_[0], F_SETFL, flags | O_NONBLOCK), 0);
+      GRPC_CHECK_EQ(fcntl(sv_[0], F_SETFL, flags | O_NONBLOCK), 0);
       flags = fcntl(sv_[1], F_GETFL, 0);
-      CHECK_EQ(fcntl(sv_[1], F_SETFL, flags | O_NONBLOCK), 0);
-      CHECK(grpc_set_socket_no_sigpipe_if_possible(sv_[0]) == absl::OkStatus());
-      CHECK(grpc_set_socket_no_sigpipe_if_possible(sv_[1]) == absl::OkStatus());
+      GRPC_CHECK_EQ(fcntl(sv_[1], F_SETFL, flags | O_NONBLOCK), 0);
+      GRPC_CHECK(grpc_set_socket_no_sigpipe_if_possible(sv_[0]) ==
+                 absl::OkStatus());
+      GRPC_CHECK(grpc_set_socket_no_sigpipe_if_possible(sv_[1]) ==
+                 absl::OkStatus());
       server_ = builder.BuildAndStart();
       AddInsecureChannelFromFd(server_.get(), sv_[1]);
     }
@@ -775,15 +768,17 @@ class ParameterizedClientInterceptorsEnd2endTest
       std::vector<std::unique_ptr<
           grpc::experimental::ClientInterceptorFactoryInterface>>
           creators) {
+    ChannelArguments args;
+    ApplyCommonChannelArguments(args);
     if (GetParam().channel_type() == ChannelType::kHttpChannel) {
       return experimental::CreateCustomChannelWithInterceptors(
-          server_address_, InsecureChannelCredentials(), ChannelArguments(),
+          server_address_, InsecureChannelCredentials(), args,
           std::move(creators));
     }
 #ifdef GRPC_POSIX_SOCKET
     else if (GetParam().channel_type() == ChannelType::kFdChannel) {
       return experimental::CreateCustomInsecureChannelWithInterceptorsFromFd(
-          "", sv_[0], ChannelArguments(), std::move(creators));
+          "", sv_[0], args, std::move(creators));
     }
 #endif  // GRPC_POSIX_SOCKET
     return nullptr;
@@ -1037,6 +1032,7 @@ class ClientInterceptorsStreamingEnd2endTest : public ::testing::Test {
 
 TEST_F(ClientInterceptorsStreamingEnd2endTest, ClientStreamingTest) {
   ChannelArguments args;
+  ApplyCommonChannelArguments(args);
   PhonyInterceptor::Reset();
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
@@ -1129,6 +1125,7 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest,
 
 TEST_F(ClientInterceptorsStreamingEnd2endTest, BidiStreamingHijackingTest) {
   ChannelArguments args;
+  ApplyCommonChannelArguments(args);
   PhonyInterceptor::Reset();
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
@@ -1141,6 +1138,7 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest, BidiStreamingHijackingTest) {
 
 TEST_F(ClientInterceptorsStreamingEnd2endTest, BidiStreamingTest) {
   ChannelArguments args;
+  ApplyCommonChannelArguments(args);
   PhonyInterceptor::Reset();
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
@@ -1255,6 +1253,6 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
   // Make sure that gRPC shuts down cleanly
-  CHECK(grpc_wait_until_shutdown(10));
+  GRPC_CHECK(grpc_wait_until_shutdown(10));
   return ret;
 }

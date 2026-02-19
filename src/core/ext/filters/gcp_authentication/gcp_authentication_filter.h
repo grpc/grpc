@@ -20,9 +20,6 @@
 #include <memory>
 #include <string>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.h"
 #include "src/core/filter/blackboard.h"
@@ -34,6 +31,9 @@
 #include "src/core/util/lru_cache.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -42,6 +42,19 @@ namespace grpc_core {
 class GcpAuthenticationFilter
     : public ImplementChannelFilter<GcpAuthenticationFilter> {
  public:
+  struct Config : public FilterConfig {
+    static UniqueTypeName Type() {
+      return GRPC_UNIQUE_TYPE_NAME_HERE("gcp_authentication_filter_config");
+    }
+    UniqueTypeName type() const override { return Type(); }
+
+    bool Equals(const FilterConfig& other) const override;
+    std::string ToString() const override;
+
+    std::string instance_name;
+    uint64_t cache_size = 10;
+  };
+
   class CallCredentialsCache : public Blackboard::Entry {
    public:
     explicit CallCredentialsCache(size_t max_size) : cache_(max_size) {}
@@ -58,7 +71,7 @@ class GcpAuthenticationFilter
         cache_ ABSL_GUARDED_BY(&mu_);
   };
 
-  static const grpc_channel_filter kFilter;
+  static const grpc_channel_filter kFilterVtable;
 
   static absl::string_view TypeName() { return "gcp_authentication_filter"; }
 
@@ -75,19 +88,17 @@ class GcpAuthenticationFilter
     static inline const NoInterceptor OnServerToClientMessage;
     static inline const NoInterceptor OnServerTrailingMetadata;
     static inline const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList();
+    }
   };
 
  private:
-  GcpAuthenticationFilter(
-      RefCountedPtr<ServiceConfig> service_config,
-      const GcpAuthenticationParsedConfig::Config* filter_config,
-      RefCountedPtr<const XdsConfig> xds_config,
-      RefCountedPtr<CallCredentialsCache> cache);
+  GcpAuthenticationFilter(RefCountedPtr<const Config> filter_config,
+                          RefCountedPtr<const XdsConfig> xds_config,
+                          RefCountedPtr<CallCredentialsCache> cache);
 
-  // TODO(roth): Consider having the channel stack hold this ref so that
-  // individual filters don't need to.
-  const RefCountedPtr<ServiceConfig> service_config_;
-  const GcpAuthenticationParsedConfig::Config* filter_config_;
+  const RefCountedPtr<const Config> filter_config_;
   const RefCountedPtr<const XdsConfig> xds_config_;
   const RefCountedPtr<CallCredentialsCache> cache_;
 };

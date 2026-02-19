@@ -30,12 +30,6 @@
 #include <string>
 #include <tuple>
 
-#include "absl/cleanup/cleanup.h"
-#include "absl/log/check.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/escaping.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/strip.h"
 #include "src/core/channelz/channelz_registry.h"
 #include "src/core/channelz/property_list.h"
 #include "src/core/lib/address_utils/parse_address.h"
@@ -52,6 +46,12 @@
 #include "src/core/util/uri.h"
 #include "src/core/util/useful.h"
 #include "src/proto/grpc/channelz/v2/channelz.upb.h"
+#include "absl/cleanup/cleanup.h"
+#include "absl/log/check.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/escaping.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/strip.h"
 
 namespace grpc_core {
 namespace channelz {
@@ -63,14 +63,17 @@ namespace channelz {
 void DataSinkImplementation::AddData(absl::string_view name,
                                      std::unique_ptr<Data> data) {
   MutexLock lock(&mu_);
-  additional_info_.emplace(name, std::move(data));
+  additional_info_.emplace_back(Element{std::string(name), std::move(data)});
 }
 
-Json::Object DataSinkImplementation::Finalize(bool) {
+Json::Array DataSinkImplementation::Finalize(bool) {
   MutexLock lock(&mu_);
-  Json::Object out;
+  Json::Array out;
   for (auto& [name, additional_info] : additional_info_) {
-    out[name] = Json::FromObject(additional_info->ToJson());
+    Json::Object obj;
+    obj["name"] = Json::FromString(name);
+    obj["value"] = Json::FromObject(additional_info->ToJson());
+    out.push_back(Json::FromObject(std::move(obj)));
   }
   return out;
 }
@@ -119,10 +122,10 @@ std::string BaseNode::RenderJsonString() {
 void BaseNode::PopulateJsonFromDataSources(Json::Object& json) {
   auto info = AdditionalInfo();
   if (info.empty()) return;
-  json["additionalInfo"] = Json::FromObject(std::move(info));
+  json["additionalInfo"] = Json::FromArray(std::move(info));
 }
 
-Json::Object BaseNode::AdditionalInfo() {
+Json::Array BaseNode::AdditionalInfo() {
   auto done = std::make_shared<Notification>();
   auto sink_impl = std::make_shared<DataSinkImplementation>();
   {
@@ -177,13 +180,15 @@ void BaseNode::SerializeEntity(grpc_channelz_v2_Entity* entity,
   grpc_channelz_v2_Entity_set_id(entity, uuid());
   grpc_channelz_v2_Entity_set_kind(
       entity, StdStringToUpbString(EntityTypeToKind(type_)));
+  std::vector<WeakRefCountedPtr<BaseNode>> parent_nodes;
   {
     MutexLock lock(&parent_mu_);
-    auto* parents =
-        grpc_channelz_v2_Entity_resize_parents(entity, parents_.size(), arena);
-    for (const auto& parent : parents_) {
-      *parents++ = parent->uuid();
-    }
+    parent_nodes.assign(parents_.begin(), parents_.end());
+  }
+  auto* parents = grpc_channelz_v2_Entity_resize_parents(
+      entity, parent_nodes.size(), arena);
+  for (const auto& parent : parent_nodes) {
+    *parents++ = parent->uuid();
   }
   grpc_channelz_v2_Entity_set_orphaned(entity, orphaned_index_ != 0);
 

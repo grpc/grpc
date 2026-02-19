@@ -28,10 +28,10 @@
 #include <atomic>
 #include <map>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/strings/string_view.h"
 #include "src/core/ext/filters/backend_metrics/backend_metric_provider.h"
 #include "src/core/load_balancing/backend_metric_data.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc {
 namespace experimental {

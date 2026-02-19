@@ -28,20 +28,20 @@
 #include <string>
 #include <utility>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/time.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 
 using ::grpc_event_engine::experimental::EventEngine;
 
@@ -95,7 +95,7 @@ void HandshakeManager::DoHandshake(
   // last ref to this object.
   auto self = Ref();
   MutexLock lock(&mu_);
-  CHECK_EQ(index_, 0u);
+  GRPC_CHECK_EQ(index_, 0u);
   on_handshake_done_ = std::move(on_handshake_done);
   // Construct handshaker args.  These will be passed through all
   // handshakers and eventually be freed by the on_handshake_done callback.
@@ -151,7 +151,7 @@ void HandshakeManager::CallNextHandshakerLocked(absl::Status error) {
       << "CallNextHandshakerLocked: error=" << error
       << " shutdown=" << is_shutdown_ << " index=" << index_
       << ", args=" << HandshakerArgsString(&args_);
-  CHECK(index_ <= handshakers_.size());
+  GRPC_CHECK(index_ <= handshakers_.size());
   // If we got an error or we've been shut down or we're exiting early or
   // we've finished the last handshaker, invoke the on_handshake_done
   // callback.

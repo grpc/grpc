@@ -14,9 +14,23 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
-load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "MONITORING", "grpc_cc_benchmark")
 
-grpc_package(name = "test/core/call")
+grpc_package(
+    name = "test/core/call",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
+
+GRPC_CALL_SPINE_BENCHMARK_LABELS = {
+    "BM_ClientToServerStreaming_CallSpineFixture_:CPU(ns)": {
+        "min_threshold": 300,
+        "max_threshold": 400,
+        "relative_median_threshold": 0.05,
+    },
+}
 
 grpc_fuzz_test(
     name = "client_call_test",
@@ -66,9 +80,18 @@ grpc_cc_test(
     srcs = [
         "call_utils_test.cc",
     ],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/strings",
+        "gtest",
+        "@com_google_protobuf//upb/mem",
+    ],
     deps = [
         "//:grpc_base",
+        "//src/core:grpc_check",
+        "//src/core:poll",
+        "//src/core:upb_utils",
+        "//src/proto/grpc/channelz/v2:promise_upb_proto",
+        "//src/proto/grpc/channelz/v2:property_list_upb_proto",
     ],
 )
 
@@ -203,11 +226,20 @@ grpc_cc_test(
     srcs = ["call_filters_test.cc"],
     external_deps = [
         "gtest",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
+        "@com_google_protobuf//upb/text",
     ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:channelz",
+        "//:channelz_property_list_upb",
+        "//:channelz_property_list_upbdefs",
         "//src/core:call_filters",
+        "//src/core:channelz_property_list",
+        "//src/core:upb_utils",
+        "//src/proto/grpc/channelz/v2:property_list_cc_proto",
         "//test/core/promise:poll_matcher",
     ],
 )
@@ -252,11 +284,13 @@ grpc_cc_library(
 grpc_cc_benchmark(
     name = "bm_call_spine",
     srcs = ["bm_call_spine.cc"],
-    monitoring = HISTORY,
+    labels = GRPC_CALL_SPINE_BENCHMARK_LABELS,
+    monitoring = MONITORING,
     deps = [
         ":call_spine_benchmarks",
         "//:gpr",
         "//:grpc",
+        "//:grpc_base",
         "//src/core:default_event_engine",
         "//src/core:resource_quota",
     ],
@@ -310,6 +344,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:grpc_check",
         "//src/core:metadata_batch",
         "//src/core:parsed_metadata",
         "//test/core/test_util:grpc_test_util",

@@ -27,7 +27,6 @@
 #include <new>
 #include <optional>
 
-#include "absl/log/check.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/client_channel/retry_service_config.h"
 #include "src/core/client_channel/retry_throttle.h"
@@ -36,6 +35,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/useful.h"
 
@@ -43,7 +43,7 @@ namespace grpc_core {
 
 class RetryFilter final {
  public:
-  static const grpc_channel_filter kVtable;
+  static const grpc_channel_filter kFilterVtable;
 
   static void UpdateBlackboard(const ServiceConfig& service_config,
                                const Blackboard* old_blackboard,
@@ -88,8 +88,8 @@ class RetryFilter final {
 
   static grpc_error_handle Init(grpc_channel_element* elem,
                                 grpc_channel_element_args* args) {
-    CHECK(args->is_last);
-    CHECK(elem->filter == &kVtable);
+    GRPC_CHECK(args->is_last);
+    GRPC_CHECK(elem->filter == &kFilterVtable);
     new (elem->channel_data) RetryFilter(*args);
     return absl::OkStatus();
   }

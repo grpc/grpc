@@ -21,11 +21,11 @@
 
 #include <string>
 
-#include "absl/strings/string_view.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/timestamp.upb.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -44,6 +44,11 @@ inline upb_StringView CopyStdStringToUpbString(const T& str, upb_Arena* arena) {
   char* copy = static_cast<char*>(upb_Arena_Malloc(arena, str.size()));
   memcpy(copy, str.data(), str.size());
   return upb_StringView_FromDataAndSize(copy, str.size());
+}
+
+inline upb_StringView CopyStdStringToUpbString(const char* str,
+                                               upb_Arena* arena) {
+  return CopyStdStringToUpbString(absl::string_view(str), arena);
 }
 
 inline absl::string_view UpbStringToAbsl(const upb_StringView& str) {

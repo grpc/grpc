@@ -25,6 +25,7 @@ package(
     default_visibility = ["//visibility:public"],
     features = [
         "layering_check",
+        "parse_headers",
     ],
 )
 
@@ -159,7 +160,6 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
         "absl/log",
-        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
     ],
@@ -182,6 +182,7 @@ grpc_cc_library(
         "//src/core:error",
         "//src/core:event_engine_shim",
         "//src/core:gcp_metadata_query",
+        "//src/core:grpc_check",
         "//src/core:iomgr_fwd",
         "//src/core:load_file",
         "//src/core:slice",

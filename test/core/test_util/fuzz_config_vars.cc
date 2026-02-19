@@ -26,8 +26,19 @@ ConfigVars::Overrides OverridesFromFuzzConfigVars(
   if (vars.has_channelz_max_orphaned_nodes()) {
     overrides.channelz_max_orphaned_nodes = vars.channelz_max_orphaned_nodes();
   }
+  if (vars.has_experimental_target_memory_pressure()) {
+    overrides.experimental_target_memory_pressure =
+        vars.experimental_target_memory_pressure();
+  }
+  if (vars.has_experimental_memory_pressure_threshold()) {
+    overrides.experimental_memory_pressure_threshold =
+        vars.experimental_memory_pressure_threshold();
+  }
   if (vars.has_enable_fork_support()) {
     overrides.enable_fork_support = vars.enable_fork_support();
+  }
+  if (vars.has_channelz_call_tracer()) {
+    overrides.channelz_call_tracer = vars.channelz_call_tracer();
   }
   if (vars.has_dns_resolver()) {
     overrides.dns_resolver = vars.dns_resolver();

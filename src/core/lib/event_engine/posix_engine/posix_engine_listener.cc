@@ -32,11 +32,6 @@
 #include <tuple>
 #include <utility>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
@@ -44,10 +39,16 @@
 #include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/net/socket_mutator.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/strerror.h"
 #include "src/core/util/time.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_event_engine::experimental {
 
@@ -77,7 +78,7 @@ absl::StatusOr<int> PosixEngineListenerImpl::Bind(
   EventEngine::ResolvedAddress res_addr = addr;
   EventEngine::ResolvedAddress addr6_v4mapped;
   int requested_port = ResolvedAddressGetPort(res_addr);
-  CHECK(addr.size() <= EventEngine::ResolvedAddress::MAX_SIZE_BYTES);
+  GRPC_CHECK(addr.size() <= EventEngine::ResolvedAddress::MAX_SIZE_BYTES);
   UnlinkIfUnixDomainSocket(addr);
 
   EventEnginePosixInterface& posix_interface = poller_->posix_interface();
@@ -272,6 +273,7 @@ absl::Status PosixEngineListenerImpl::HandleExternalConnection(
   (void)posix_interface.SetSocketNoSigpipeIfPossible(wrapped);
   auto peer_name = posix_interface.PeerAddressString(wrapped);
   if (!peer_name.ok()) {
+    posix_interface.Close(wrapped);
     return absl::UnknownError(
         absl::StrCat("HandleExternalConnection: peer not connected: ",
                      peer_name.status().ToString()));
@@ -307,7 +309,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::Shutdown() {
 absl::Status PosixEngineListenerImpl::Start() {
   grpc_core::MutexLock lock(&this->mu_);
   // Start each asynchronous acceptor.
-  CHECK(!this->started_);
+  GRPC_CHECK(!this->started_);
   this->started_ = true;
   for (auto it = acceptors_.begin(); it != acceptors_.end(); it++) {
     (*it)->Start();

@@ -30,14 +30,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
-#include "absl/types/span.h"
-#include "gtest/gtest.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/weighted_target/weighted_target.h"
@@ -52,6 +44,14 @@
 #include "test/core/load_balancing/lb_policy_test_lib.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 namespace testing {
@@ -202,7 +202,6 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       const auto& address = picks[i];
       auto& subchannel_call_tracker = subchannel_call_trackers[i];
       if (subchannel_call_tracker != nullptr) {
-        subchannel_call_tracker->Start();
         std::optional<BackendMetricData> backend_metric_data;
         auto it = backend_metrics.find(address);
         if (it != backend_metrics.end()) {

@@ -17,7 +17,13 @@ load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/resource_quota")
+grpc_package(
+    name = "test/core/resource_quota",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "arena_test",
@@ -46,13 +52,21 @@ grpc_cc_library(
     testonly = True,
     hdrs = ["call_checker.h"],
     external_deps = ["absl/log:check"],
-    deps = ["//:gpr"],
+    deps = [
+        "//:gpr",
+        "//src/core:grpc_check",
+    ],
 )
 
 grpc_cc_test(
     name = "memory_quota_test",
     srcs = ["memory_quota_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/time",
+        "gtest",
+    ],
     tags = [
         "cpu:10",
         "resource_quota_test",
@@ -61,9 +75,12 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "call_checker",
+        "//:config_vars",
         "//:exec_ctx",
         "//:gpr",
         "//src/core:memory_quota",
+        "//src/core:resource_quota",
+        "//src/core:resource_tracker",
         "//src/core:slice_refcount",
         "//test/core/test_util:grpc_test_util_unsecure",
     ],
@@ -90,6 +107,18 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = ["//src/core:thread_quota"],
+)
+
+grpc_cc_test(
+    name = "stream_quota_test",
+    srcs = ["stream_quota_test.cc"],
+    external_deps = ["gtest"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:ref_counted_ptr",
+        "//src/core:stream_quota",
+    ],
 )
 
 grpc_cc_test(

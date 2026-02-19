@@ -26,15 +26,15 @@
 #include <tuple>
 #include <vector>
 
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/event_engine/thread_pool/thread_count.h"
 #include "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/thd.h"
 #include "src/core/util/time.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 namespace grpc_event_engine {
 namespace experimental {

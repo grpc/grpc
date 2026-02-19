@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_test", "grpc_pa
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/credentials/call/jwt")
+grpc_package(
+    name = "test/core/credentials/call/jwt",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "json_token_test",
@@ -88,6 +94,7 @@ grpc_cc_binary(
         "//:grpc",
         "//:grpc_jwt_credentials",
         "//:iomgr",
+        "//src/core:grpc_check",
         "//src/core:json_writer",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",

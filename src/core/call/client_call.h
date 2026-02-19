@@ -37,9 +37,6 @@
 #include <cstdint>
 #include <string>
 
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/metadata.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -49,6 +46,9 @@
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/single_set_ptr.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -78,6 +78,7 @@ class ClientCall final
   void InternalUnref(const char*) override { WeakUnref(); }
 
   void Orphaned() override {
+    SourceDestructing();
     if (!saw_trailing_metadata_.load(std::memory_order_relaxed)) {
       CancelWithError(absl::CancelledError());
     }
@@ -117,6 +118,8 @@ class ClientCall final
     auto arena = this->arena()->Ref();
     this->~ClientCall();
   }
+
+  void AddData(channelz::DataSink sink) override;
 
  private:
   struct UnorderedStart {

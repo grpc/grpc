@@ -1,0 +1,53 @@
+# Copyright 2025 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+[build-system]
+requires = [
+    "setuptools>=77.0.1",
+    "wheel",
+    "Cython==3.1.1",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "grpcio-observability"
+license = "Apache-2.0"
+description = "gRPC Python observability package"
+readme = {file = "README.rst", content-type = "text/x-rst"}
+authors = [{name = "The gRPC Authors", email = "grpc-io@googlegroups.com"}]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+
+dynamic = ["dependencies", "version", "requires-python"]
+
+[project.urls]
+Homepage = "https://grpc.io"
+"Source Code" = "https://github.com/grpc/grpc/tree/master/src/python/grpcio_observability"
+"Bug Tracker" = "https://github.com/grpc/grpc/issues"
+Documentation = "https://grpc.github.io/grpc/python/grpc_observability.html"
+
+[tool.setuptools.dynamic]
+version = {attr = "grpc_version.VERSION"}
+
+[tool.setuptools.packages.find]
+where = ["."]
+# Exclude .py files like `third_party/abseil-cpp/absl/copts/copts.py` in
+# `third_party` directory from being included in the wheel
+exclude = [
+    "third_party*",
+    "grpc_root*",
+]

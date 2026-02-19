@@ -16,10 +16,10 @@
 
 #include <memory>
 
-#include "absl/status/statusor.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h"
+#include "gtest/gtest.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_event_engine {
 namespace experimental {

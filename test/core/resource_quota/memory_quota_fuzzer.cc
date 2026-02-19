@@ -25,10 +25,7 @@
 #include <optional>
 #include <utility>
 
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
 #include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -42,6 +39,9 @@
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/fuzz_config_vars_helpers.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace testing {

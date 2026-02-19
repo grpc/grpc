@@ -30,11 +30,11 @@
 #include <grpc/grpc.h>
 #include <string.h>
 
-#include "absl/log/log.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/surface/init_internally.h"
 #include "src/core/util/fork.h"
+#include "absl/log/log.h"
 
 //
 // NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK

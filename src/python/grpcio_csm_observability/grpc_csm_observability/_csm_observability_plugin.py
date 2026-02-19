@@ -21,8 +21,6 @@ from grpc_observability._observability import OptionalLabelType
 from grpc_observability._open_telemetry_plugin import OpenTelemetryLabelInjector
 from grpc_observability._open_telemetry_plugin import OpenTelemetryPlugin
 from grpc_observability._open_telemetry_plugin import OpenTelemetryPluginOption
-
-# pytype: disable=pyi-error
 from opentelemetry.metrics import MeterProvider
 from opentelemetry.resourcedetector.gcp_resource_detector import (
     GoogleCloudResourceDetector,
@@ -91,7 +89,7 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
         # ResourceAttributes.CLOUD_AVAILABILITY_ZONE are called
         # "zones" on Google Cloud.
         location_value = get_str_value_from_resource("cloud.zone", gcp_resource)
-        if UNKNOWN_VALUE == location_value:
+        if location_value == UNKNOWN_VALUE:
             location_value = get_str_value_from_resource(
                 ResourceAttributes.CLOUD_REGION, gcp_resource
             )
@@ -143,14 +141,13 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
     ) -> Dict[str, str]:
         if include_exchange_labels:
             return self._additional_exchange_labels
-        else:
-            return {}
+        return {}
 
     @staticmethod
     def deserialize_labels(labels: Dict[str, AnyStr]) -> Dict[str, AnyStr]:
         deserialized_labels = {}
         for key, value in labels.items():
-            if "XEnvoyPeerMetadata" == key:
+            if key == "XEnvoyPeerMetadata":
                 pb_struct = struct_pb2.Struct()
                 pb_struct.ParseFromString(value)
 
@@ -182,7 +179,7 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
             # If CSM label injector is enabled on server side but client didn't send
             # XEnvoyPeerMetadata, we'll record remote label as unknown.
             else:
-                for _, remote_key in METADATA_EXCHANGE_KEY_FIXED_MAP.items():
+                for remote_key in METADATA_EXCHANGE_KEY_FIXED_MAP.values():
                     deserialized_labels[remote_key] = UNKNOWN_VALUE
                 deserialized_labels[key] = value
 
@@ -217,9 +214,8 @@ class CsmOpenTelemetryPluginOption(OpenTelemetryPluginOption):
         match = re.search(authority_pattern, target)
         if match:
             return TRAFFIC_DIRECTOR_AUTHORITY in match.group(1)
-        else:
-            # Return True if the authority doesn't exist
-            return True
+        # Return True if the authority doesn't exist
+        return True
 
     @staticmethod
     def is_active_on_server(
@@ -299,7 +295,6 @@ def get_resource_type(gcp_resource: Resource) -> str:
     )
     if gcp_resource_type == "gke_container":
         return TYPE_GKE
-    elif gcp_resource_type == "gce_instance":
+    if gcp_resource_type == "gce_instance":
         return TYPE_GCE
-    else:
-        return gcp_resource_type
+    return gcp_resource_type

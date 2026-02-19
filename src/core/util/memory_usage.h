@@ -23,14 +23,14 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/util/time.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
-#include "src/core/lib/slice/slice.h"
-#include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/util/time.h"
 
 namespace grpc_core {
 
@@ -89,6 +89,10 @@ constexpr Category kMemoryUsageCategory<std::unique_ptr<T, D>> =
 template <typename T>
 constexpr Category kMemoryUsageCategory<std::shared_ptr<T>> =
     Category::kOwnedPointer;
+
+template <typename T>
+constexpr Category kMemoryUsageCategory<absl::StatusOr<T>> =
+    Category::kAbslStatusOr;
 
 template <typename T>
 constexpr Category kMemoryUsageCategory<std::vector<T>> = Category::kVector;

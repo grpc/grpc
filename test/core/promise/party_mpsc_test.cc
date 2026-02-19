@@ -21,10 +21,6 @@
 #include <thread>
 #include <vector>
 
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/party.h"
@@ -35,6 +31,10 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/shared_bit_gen.h"
 #include "test/core/promise/poll_matcher.h"
+#include "gtest/gtest.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc_core {
 

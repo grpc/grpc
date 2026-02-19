@@ -17,22 +17,20 @@
 
 #include <memory>
 #include <optional>
-#include <string>
-#include <type_traits>
 #include <vector>
 
+#include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/metrics.h"
+#include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/ref_counted.h"
+#include "gmock/gmock.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
-#include "gmock/gmock.h"
-#include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/telemetry/call_tracer.h"
-#include "src/core/telemetry/metrics.h"
-#include "src/core/telemetry/tcp_tracer.h"
-#include "src/core/util/ref_counted.h"
 
 namespace grpc_core {
 
@@ -68,8 +66,18 @@ class FakeClientCallTracer : public ClientCallTracerInterface {
         std::vector<std::string>* annotation_logger)
         : annotation_logger_(annotation_logger) {}
     void RecordSendInitialMetadata(
+        grpc_metadata_batch* send_initial_metadata) override {
+      GRPC_CHECK(!IsCallTracerSendInitialMetadataIsAnAnnotationEnabled());
+      MutateSendInitialMetadata(send_initial_metadata);
+    }
+    void MutateSendInitialMetadata(
         grpc_metadata_batch* /*send_initial_metadata*/) override {}
     void RecordSendTrailingMetadata(
+        grpc_metadata_batch* send_trailing_metadata) override {
+      GRPC_CHECK(!IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled());
+      MutateSendTrailingMetadata(send_trailing_metadata);
+    }
+    void MutateSendTrailingMetadata(
         grpc_metadata_batch* /*send_trailing_metadata*/) override {}
     void RecordSendMessage(const Message& /*send_message*/) override {}
     void RecordSendCompressedMessage(
@@ -168,8 +176,18 @@ class FakeServerCallTracer : public ServerCallTracerInterface {
       : annotation_logger_(annotation_logger) {}
   ~FakeServerCallTracer() override {}
   void RecordSendInitialMetadata(
+      grpc_metadata_batch* send_initial_metadata) override {
+    GRPC_CHECK(!IsCallTracerSendInitialMetadataIsAnAnnotationEnabled());
+    MutateSendInitialMetadata(send_initial_metadata);
+  }
+  void MutateSendInitialMetadata(
       grpc_metadata_batch* /*send_initial_metadata*/) override {}
   void RecordSendTrailingMetadata(
+      grpc_metadata_batch* send_trailing_metadata) override {
+    GRPC_CHECK(!IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled());
+    MutateSendTrailingMetadata(send_trailing_metadata);
+  }
+  void MutateSendTrailingMetadata(
       grpc_metadata_batch* /*send_trailing_metadata*/) override {}
   void RecordSendMessage(const Message& /*send_message*/) override {}
   void RecordSendCompressedMessage(
@@ -257,6 +275,10 @@ class FakeStatsPlugin : public StatsPlugin {
               Crash("unknown instrument type");
           }
         });
+  }
+
+  RefCountedPtr<CollectionScope> GetCollectionScope() const override {
+    return collection_scope_;
   }
 
   std::pair<bool, std::shared_ptr<StatsPlugin::ScopeConfig>>
@@ -632,6 +654,8 @@ class FakeStatsPlugin : public StatsPlugin {
   absl::flat_hash_map<uint32_t, Gauge<double>> double_callback_gauges_
       ABSL_GUARDED_BY(&callback_mu_);
   std::set<RegisteredMetricCallback*> callbacks_ ABSL_GUARDED_BY(&callback_mu_);
+  RefCountedPtr<CollectionScope> collection_scope_ =
+      CreateCollectionScope({}, {});
 };
 
 class FakeStatsPluginBuilder {

@@ -95,8 +95,7 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
     }
     *handler_data = allocator_state;
     request = allocator_state->request();
-    *status =
-        grpc::SerializationTraits<RequestType>::Deserialize(&buf, request);
+    *status = grpc::Deserialize(&buf, request);
     buf.Release();
     if (status->ok()) {
       return request;
@@ -138,13 +137,14 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
       }
       // The response is dropped if the status is not OK.
       if (s.ok()) {
-        finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_,
-                                     finish_ops_.SendMessagePtr(response()));
+        finish_ops_.ServerSendStatus(
+            &ctx_->trailing_metadata_,
+            finish_ops_.SendMessagePtr(response(), ctx_->memory_allocator()));
       } else {
         finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_, s);
       }
       finish_ops_.set_core_cq_tag(&finish_tag_);
-      call_.PerformOps(&finish_ops_);
+      finish_ops_.FillOps(&call_);
     }
 
     void SendInitialMetadata() override {
@@ -171,7 +171,7 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
       }
       ctx_->sent_initial_metadata_ = true;
       meta_ops_.set_core_cq_tag(&meta_tag_);
-      call_.PerformOps(&meta_ops_);
+      meta_ops_.FillOps(&call_);
     }
 
    private:
@@ -326,13 +326,14 @@ class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
       }
       // The response is dropped if the status is not OK.
       if (s.ok()) {
-        finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_,
-                                     finish_ops_.SendMessagePtr(&resp_));
+        finish_ops_.ServerSendStatus(
+            &ctx_->trailing_metadata_,
+            finish_ops_.SendMessagePtr(&resp_, ctx_->memory_allocator()));
       } else {
         finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_, s);
       }
       finish_ops_.set_core_cq_tag(&finish_tag_);
-      call_.PerformOps(&finish_ops_);
+      finish_ops_.FillOps(&call_);
     }
 
     void SendInitialMetadata() override {
@@ -357,13 +358,13 @@ class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
       }
       ctx_->sent_initial_metadata_ = true;
       meta_ops_.set_core_cq_tag(&meta_tag_);
-      call_.PerformOps(&meta_ops_);
+      meta_ops_.FillOps(&call_);
     }
 
     void Read(RequestType* req) override {
       this->Ref();
       read_ops_.RecvMessage(req);
-      call_.PerformOps(&read_ops_);
+      read_ops_.FillOps(&call_);
     }
 
    private:
@@ -495,8 +496,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
     buf.set_buffer(req);
     auto* request =
         new (grpc_call_arena_alloc(call, sizeof(RequestType))) RequestType();
-    *status =
-        grpc::SerializationTraits<RequestType>::Deserialize(&buf, request);
+    *status = grpc::Deserialize(&buf, request);
     buf.Release();
     if (status->ok()) {
       return request;
@@ -536,7 +536,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
         ctx_->sent_initial_metadata_ = true;
       }
       finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_, s);
-      call_.PerformOps(&finish_ops_);
+      finish_ops_.FillOps(&call_);
     }
 
     void SendInitialMetadata() override {
@@ -561,7 +561,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
       }
       ctx_->sent_initial_metadata_ = true;
       meta_ops_.set_core_cq_tag(&meta_tag_);
-      call_.PerformOps(&meta_ops_);
+      meta_ops_.FillOps(&call_);
     }
 
     void Write(const ResponseType* resp, grpc::WriteOptions options) override {
@@ -578,15 +578,19 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
         ctx_->sent_initial_metadata_ = true;
       }
       // TODO(vjpai): don't assert
-      ABSL_CHECK(write_ops_.SendMessagePtr(resp, options).ok());
-      call_.PerformOps(&write_ops_);
+      ABSL_CHECK(
+          write_ops_.SendMessagePtr(resp, options, ctx_->memory_allocator())
+              .ok());
+      write_ops_.FillOps(&call_);
     }
 
     void WriteAndFinish(const ResponseType* resp, grpc::WriteOptions options,
                         grpc::Status s) override {
       // This combines the write into the finish callback
       // TODO(vjpai): don't assert
-      ABSL_CHECK(finish_ops_.SendMessagePtr(resp, options).ok());
+      ABSL_CHECK(
+          finish_ops_.SendMessagePtr(resp, options, ctx_->memory_allocator())
+              .ok());
       Finish(std::move(s));
     }
 
@@ -748,7 +752,7 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
         ctx_->sent_initial_metadata_ = true;
       }
       finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_, s);
-      call_.PerformOps(&finish_ops_);
+      finish_ops_.FillOps(&call_);
     }
 
     void SendInitialMetadata() override {
@@ -773,7 +777,7 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
       }
       ctx_->sent_initial_metadata_ = true;
       meta_ops_.set_core_cq_tag(&meta_tag_);
-      call_.PerformOps(&meta_ops_);
+      meta_ops_.FillOps(&call_);
     }
 
     void Write(const ResponseType* resp, grpc::WriteOptions options) override {
@@ -790,21 +794,25 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
         ctx_->sent_initial_metadata_ = true;
       }
       // TODO(vjpai): don't assert
-      ABSL_CHECK(write_ops_.SendMessagePtr(resp, options).ok());
-      call_.PerformOps(&write_ops_);
+      ABSL_CHECK(
+          write_ops_.SendMessagePtr(resp, options, ctx_->memory_allocator())
+              .ok());
+      write_ops_.FillOps(&call_);
     }
 
     void WriteAndFinish(const ResponseType* resp, grpc::WriteOptions options,
                         grpc::Status s) override {
       // TODO(vjpai): don't assert
-      ABSL_CHECK(finish_ops_.SendMessagePtr(resp, options).ok());
+      ABSL_CHECK(
+          finish_ops_.SendMessagePtr(resp, options, ctx_->memory_allocator())
+              .ok());
       Finish(std::move(s));
     }
 
     void Read(RequestType* req) override {
       this->Ref();
       read_ops_.RecvMessage(req);
-      call_.PerformOps(&read_ops_);
+      read_ops_.FillOps(&call_);
     }
 
    private:

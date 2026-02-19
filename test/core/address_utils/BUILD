@@ -19,6 +19,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/core/address_utils",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "private",
 )
 
@@ -37,6 +41,7 @@ grpc_cc_test(
         "//:grpc",
         "//:parse_address",
         "//:sockaddr_utils",
+        "//src/core:grpc_check",
         "//src/core:grpc_sockaddr",
         "//src/core:iomgr_port",
         "//src/core:resolved_address",
@@ -79,6 +84,7 @@ grpc_fuzz_test(
         "//:iomgr",
         "//:sockaddr_utils",
         "//:uri",
+        "//src/core:grpc_check",
         "//src/core:resolved_address",
         "//test/core/test_util:grpc_test_util",
     ],

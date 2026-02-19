@@ -15,17 +15,16 @@
 
 #include "src/core/xds/grpc/xds_matcher.h"
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include <memory>
 #include <optional>
 #include <string>
 #include <vector>
 
-#include "absl/strings/string_view.h"
 #include "src/core/util/down_cast.h"
 #include "src/core/util/matchers.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace testing {
@@ -168,6 +167,39 @@ TEST(XdsMatcherListTest, BasicMatchNestedMatcher) {
   XdsMatcherList matcher_list(std::move(matchers), std::nullopt);
   EXPECT_TRUE(matcher_list.FindMatches(context, result));
   EXPECT_THAT(result, ::testing::ElementsAre(IsTestAction("match")));
+}
+
+TEST(XdsMatcherListTest, MatchIgnoredIfNestedMatcherDoesNotMatch) {
+  TestMatchContext context("/foo/bar");
+  XdsMatcher::Result result;
+  std::vector<XdsMatcherList::FieldMatcher> matchers;
+  std::vector<XdsMatcherList::FieldMatcher> nested_matchers;
+  nested_matchers.emplace_back(
+      XdsMatcherList::CreateSinglePredicate(
+          std::make_unique<TestPathInput>(),
+          std::make_unique<XdsMatcherList::StringInputMatcher>(
+              StringMatcher::Create(StringMatcher::Type::kExact, "/other")
+                  .value())),
+      XdsMatcher::OnMatch(std::make_unique<TestAction>("nested"), false));
+  matchers.emplace_back(
+      XdsMatcherList::CreateSinglePredicate(
+          std::make_unique<TestPathInput>(),
+          std::make_unique<XdsMatcherList::StringInputMatcher>(
+              StringMatcher::Create(StringMatcher::Type::kExact, "/foo/bar")
+                  .value())),
+      XdsMatcher::OnMatch(std::make_unique<XdsMatcherList>(
+                              std::move(nested_matchers), std::nullopt),
+                          false));
+  matchers.emplace_back(
+      XdsMatcherList::CreateSinglePredicate(
+          std::make_unique<TestPathInput>(),
+          std::make_unique<XdsMatcherList::StringInputMatcher>(
+              StringMatcher::Create(StringMatcher::Type::kExact, "/foo/bar")
+                  .value())),
+      XdsMatcher::OnMatch(std::make_unique<TestAction>("second"), false));
+  XdsMatcherList matcher_list(std::move(matchers), std::nullopt);
+  EXPECT_TRUE(matcher_list.FindMatches(context, result));
+  EXPECT_THAT(result, ::testing::ElementsAre(IsTestAction("second")));
 }
 
 TEST(XdsMatcherListTest, NoMatch) {
@@ -511,7 +543,7 @@ TEST(XdsMatcherPrefixMapTest, PrefixMatchWithKeepMatching) {
               ::testing::ElementsAre(IsTestAction("prefix_match_action")));
 }
 
-TEST(XdsMatcherPrefixMapTest, PrefixListCheck) {
+TEST(XdsMatcherPrefixMapTest, ChoosesLongestMatchingPrefix) {
   TestMatchContext context("/foo/bar/baz");
   XdsMatcher::Result result;
   absl::flat_hash_map<std::string, XdsMatcher::OnMatch> map;
@@ -542,6 +574,31 @@ TEST(XdsMatcherPrefixMapTest, PrefixMatchKeepMatchingMultipleMatch) {
   EXPECT_TRUE(matcher.FindMatches(context, result));
   EXPECT_THAT(result, ::testing::ElementsAre(IsTestAction("third"),
                                              IsTestAction("second")));
+}
+
+TEST(XdsMatcherPrefixMapTest, MatchIgnoredIfNestedMatcherDoesNotMatch) {
+  TestMatchContext context("/foo/bar/baz");
+  XdsMatcher::Result result;
+  std::vector<XdsMatcherList::FieldMatcher> nested_matchers;
+  nested_matchers.emplace_back(
+      XdsMatcherList::CreateSinglePredicate(
+          std::make_unique<TestPathInput>(),
+          std::make_unique<XdsMatcherList::StringInputMatcher>(
+              StringMatcher::Create(StringMatcher::Type::kExact, "/foo")
+                  .value())),
+      XdsMatcher::OnMatch(std::make_unique<TestAction>("nested"), false));
+  absl::flat_hash_map<std::string, XdsMatcher::OnMatch> map;
+  map.emplace("/foo/bar",
+              XdsMatcher::OnMatch(
+                  std::make_unique<TestAction>("shorter_prefix"), false));
+  map.emplace("/foo/bar/baz",
+              XdsMatcher::OnMatch(std::make_unique<XdsMatcherList>(
+                                      std::move(nested_matchers), std::nullopt),
+                                  false));
+  XdsMatcherPrefixMap matcher(std::make_unique<TestPathInput>(), std::move(map),
+                              std::nullopt);
+  EXPECT_TRUE(matcher.FindMatches(context, result));
+  EXPECT_THAT(result, ::testing::ElementsAre(IsTestAction("shorter_prefix")));
 }
 
 TEST(XdsMatcherPrefixMapTest, NoMatch) {

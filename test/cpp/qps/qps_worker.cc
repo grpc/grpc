@@ -33,8 +33,7 @@
 #include <thread>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/proto/grpc/testing/worker_service.grpc.pb.h"
 #include "test/core/test_util/grpc_profiler.h"
@@ -42,6 +41,7 @@
 #include "test/cpp/qps/qps_server_builder.h"
 #include "test/cpp/qps/server.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace testing {
@@ -176,7 +176,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
 
   void ReleaseInstance() {
     std::lock_guard<std::mutex> g(mu_);
-    CHECK(acquired_);
+    GRPC_CHECK(acquired_);
     acquired_ = false;
   }
 

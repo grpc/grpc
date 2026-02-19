@@ -25,7 +25,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/strings/string_view.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/service_config/service_config_parser.h"
@@ -34,6 +33,7 @@
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
+#include "absl/strings/string_view.h"
 
 // Channel arg key for enabling parsing fault injection via method config.
 #define GRPC_ARG_PARSE_STATEFUL_SESSION_METHOD_CONFIG \
@@ -45,7 +45,7 @@ class StatefulSessionMethodParsedConfig
     : public ServiceConfigParser::ParsedConfig {
  public:
   struct CookieConfig {
-    std::optional<std::string> name;  // Will be unset if disabled.
+    std::string cookie_name;  // Will be empty if disabled.
     std::string path;
     Duration ttl;
 

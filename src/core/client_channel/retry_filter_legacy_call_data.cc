@@ -20,10 +20,6 @@
 #include <memory>
 #include <new>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/call/status_util.h"
 #include "src/core/client_channel/client_channel_internal.h"
@@ -44,12 +40,16 @@
 #include "src/core/util/backoff.h"
 #include "src/core/util/construct_destruct.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
@@ -293,9 +293,8 @@ namespace {
 void StartBatchInCallCombiner(void* arg, grpc_error_handle /*ignored*/) {
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
-  auto* lb_call =
-      static_cast<ClientChannelFilter::FilterBasedLoadBalancedCall*>(
-          batch->handler_private.extra_arg);
+  auto* lb_call = static_cast<ClientChannelFilter::LoadBalancedCall*>(
+      batch->handler_private.extra_arg);
   // Note: This will release the call combiner.
   lb_call->StartTransportStreamOpBatch(batch);
 }
@@ -1502,7 +1501,7 @@ RetryFilter::LegacyCallData::~LegacyCallData() {
   FreeAllCachedSendOpData();
   // Make sure there are no remaining pending batches.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
-    CHECK_EQ(pending_batches_[i].batch, nullptr);
+    GRPC_CHECK_EQ(pending_batches_[i].batch, nullptr);
   }
 }
 
@@ -1626,7 +1625,7 @@ void RetryFilter::LegacyCallData::StartTransportStreamOpBatch(
   call_attempt_->StartRetriableBatches();
 }
 
-OrphanablePtr<ClientChannelFilter::FilterBasedLoadBalancedCall>
+OrphanablePtr<ClientChannelFilter::LoadBalancedCall>
 RetryFilter::LegacyCallData::CreateLoadBalancedCall(
     absl::AnyInvocable<void()> on_commit, bool is_transparent_retry) {
   grpc_call_element_args args = {owning_call_,     nullptr,
@@ -1731,7 +1730,7 @@ RetryFilter::LegacyCallData::PendingBatchesAdd(
   GRPC_TRACE_LOG(retry, INFO) << "chand=" << chand_ << " calld=" << this
                               << ": adding pending batch at index " << idx;
   PendingBatch* pending = &pending_batches_[idx];
-  CHECK_EQ(pending->batch, nullptr);
+  GRPC_CHECK_EQ(pending->batch, nullptr);
   pending->batch = batch;
   pending->send_ops_cached = false;
   // Update state in calld about pending batches.
@@ -1810,7 +1809,7 @@ void RetryFilter::LegacyCallData::FailPendingBatchInCallCombiner(
 
 // This is called via the call combiner, so access to calld is synchronized.
 void RetryFilter::LegacyCallData::PendingBatchesFail(grpc_error_handle error) {
-  CHECK(!error.ok());
+  GRPC_CHECK(!error.ok());
   if (GRPC_TRACE_FLAG_ENABLED(retry)) {
     size_t num_batches = 0;
     for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
@@ -1887,7 +1886,7 @@ void RetryFilter::LegacyCallData::StartRetryTimer(
   // Compute backoff delay.
   Duration next_attempt_timeout;
   if (server_pushback.has_value()) {
-    CHECK(*server_pushback >= Duration::Zero());
+    GRPC_CHECK(*server_pushback >= Duration::Zero());
     next_attempt_timeout = *server_pushback;
     retry_backoff_.Reset();
   } else {

@@ -24,8 +24,6 @@
 
 #include <utility>
 
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolved_address.h"
@@ -33,6 +31,8 @@
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

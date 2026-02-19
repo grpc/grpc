@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/event_engine/test_suite/tools")
+grpc_package(
+    name = "test/core/event_engine/test_suite/tools",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 # -- Implementations --
 
@@ -26,6 +32,7 @@ grpc_cc_binary(
     srcs = ["windows_event_engine_factory.cc"],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "absl/functional:any_invocable",
     ],
     tags = [
@@ -38,6 +45,7 @@ grpc_cc_binary(
         "echo_client",
         "//:event_engine_base_hdrs",
         "//:gpr",
+        "//src/core:grpc_check",
         "//src/core:windows_event_engine",
     ],
 )
@@ -60,6 +68,7 @@ grpc_cc_binary(
         "echo_client",
         "//:event_engine_base_hdrs",
         "//:gpr",
+        "//src/core:grpc_check",
         "//src/core:iomgr_port",
         "//src/core:posix_event_engine",
     ],
@@ -91,6 +100,7 @@ grpc_cc_library(
         "//src/core:common_event_engine_closures",
         "//src/core:default_event_engine",
         "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:grpc_check",
         "//src/core:memory_quota",
         "//src/core:notification",
         "//test/core/event_engine:event_engine_test_utils",

@@ -16,17 +16,17 @@
 
 #include <google/protobuf/text_format.h>
 
-#include "absl/container/flat_hash_map.h"
-#include "absl/log/check.h"
-#include "absl/status/status.h"
 #include "fuzztest/fuzztest.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/proto/grpc/channelz/channelz.pb.h"
 #include "src/proto/grpc/channelz/v2/channelz.pb.h"
 #include "src/proto/grpc/channelz/v2/property_list.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/log/check.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace channelz {
@@ -617,6 +617,36 @@ TEST(ConvertTest, ChannelBasicJson) {
   EXPECT_EQ(state.at("state").string(), "READY");
 }
 
+TEST(ConvertTest, ChannelTraceHasCreationTimestamp) {
+  const auto v2 = ParseEntity(R"pb(
+    id: 4
+    kind: "channel"
+    trace {
+      description: "Channel created"
+      timestamp { seconds: 123, nanos: 456 }
+    }
+    trace {
+      description: "Something else"
+      timestamp { seconds: 789, nanos: 101 }
+    }
+  )pb");
+  FakeEntityFetcher fetcher({});
+  auto v1_str = ConvertChannel(v2, fetcher, false);
+  ASSERT_TRUE(v1_str.ok());
+  grpc::channelz::v1::Channel v1;
+  ASSERT_TRUE(v1.ParseFromString(*v1_str));
+  EXPECT_EQ(v1.ref().channel_id(), 4);
+  EXPECT_EQ(v1.data().trace().creation_timestamp().seconds(), 123);
+  EXPECT_EQ(v1.data().trace().creation_timestamp().nanos(), 456);
+  ASSERT_EQ(v1.data().trace().events().size(), 2);
+  EXPECT_EQ(v1.data().trace().events(0).description(), "Channel created");
+  EXPECT_EQ(v1.data().trace().events(0).timestamp().seconds(), 123);
+  EXPECT_EQ(v1.data().trace().events(0).timestamp().nanos(), 456);
+  EXPECT_EQ(v1.data().trace().events(1).description(), "Something else");
+  EXPECT_EQ(v1.data().trace().events(1).timestamp().seconds(), 789);
+  EXPECT_EQ(v1.data().trace().events(1).timestamp().nanos(), 101);
+}
+
 void FuzzConvertChannel(
     const grpc::channelz::v2::Entity& entity_proto,
     const absl::flat_hash_map<int64_t, grpc::channelz::v2::Entity>&
@@ -830,6 +860,43 @@ void FuzzConvertListenSocket(const grpc::channelz::v2::Entity& entity_proto,
   (void)ConvertListenSocket(entity_proto.SerializeAsString(), fetcher, json);
 }
 FUZZ_TEST(ConvertTest, FuzzConvertListenSocket);
+
+TEST(ConvertTest, ListenSocketWithAddress) {
+  const auto v2 = ParseEntity(R"pb(
+    id: 6
+    kind: "listen_socket"
+    data {
+      name: "v1_compatibility"
+      value {
+        [type.googleapis.com/grpc.channelz.v2.PropertyList] {
+          properties {
+            key: "name"
+            value { string_value: "test-listen-socket-name" }
+          }
+        }
+      }
+    }
+    data {
+      name: "listen_socket"
+      value {
+        [type.googleapis.com/grpc.channelz.v2.PropertyList] {
+          properties {
+            key: "local"
+            value { string_value: "ipv4:127.0.0.1:10000" }
+          }
+        }
+      }
+    }
+  )pb");
+  FakeEntityFetcher fetcher({});
+  auto v1_str = ConvertListenSocket(v2, fetcher, false);
+  ASSERT_TRUE(v1_str.ok());
+  grpc::channelz::v1::Socket v1;
+  ASSERT_TRUE(v1.ParseFromString(*v1_str));
+  EXPECT_EQ(v1.ref().socket_id(), 6);
+  EXPECT_EQ(v1.ref().name(), "test-listen-socket-name");
+  EXPECT_EQ(v1.local().tcpip_address().port(), 10000);
+}
 
 TEST(ConvertTest, ListenSocketWrongKind) {
   const auto v2 = ParseEntity(R"pb(

@@ -15,17 +15,22 @@
 #include "src/core/channelz/zviz/data.h"
 
 #include <algorithm>
+#include <string>
 #include <vector>
 
-#include "absl/container/flat_hash_map.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/span.h"
 #include "src/core/channelz/zviz/environment.h"
 #include "src/core/channelz/zviz/layout.h"
 #include "src/core/util/no_destruct.h"
 #include "src/proto/grpc/channelz/v2/channelz.pb.h"
+#include "src/proto/grpc/channelz/v2/promise.pb.h"
 #include "src/proto/grpc/channelz/v2/property_list.pb.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
+#include "absl/types/span.h"
 
 namespace grpc_zviz {
 
@@ -66,6 +71,199 @@ void Format(Environment& env, const grpc::channelz::v2::PropertyValue& value,
       element.AppendDuration(value.duration_value());
       break;
   }
+}
+
+std::string FormatValue(const grpc::channelz::v2::PropertyValue& value) {
+  switch (value.kind_case()) {
+    case grpc::channelz::v2::PropertyValue::KIND_NOT_SET:
+    case grpc::channelz::v2::PropertyValue::kEmptyValue:
+      return "";
+    case grpc::channelz::v2::PropertyValue::kAnyValue:
+      return std::string(value.any_value().type_url());
+    case grpc::channelz::v2::PropertyValue::kStringValue:
+      return value.string_value();
+    case grpc::channelz::v2::PropertyValue::kInt64Value:
+      return absl::StrCat(value.int64_value());
+    case grpc::channelz::v2::PropertyValue::kUint64Value:
+      return absl::StrCat(value.uint64_value());
+    case grpc::channelz::v2::PropertyValue::kDoubleValue:
+      return absl::StrCat(value.double_value());
+    case grpc::channelz::v2::PropertyValue::kBoolValue:
+      return value.bool_value() ? "true" : "false";
+    case grpc::channelz::v2::PropertyValue::kTimestampValue:
+      return value.timestamp_value().DebugString();
+    case grpc::channelz::v2::PropertyValue::kDurationValue:
+      return value.duration_value().DebugString();
+  }
+}
+
+std::string FormatFactory(absl::string_view factory) {
+  if (absl::ConsumePrefix(&factory, "(lambda at ") &&
+      absl::ConsumeSuffix(&factory, ")")) {
+    std::vector<absl::string_view> parts = absl::StrSplit(factory, ':');
+    if (parts.size() >= 2) {
+      std::vector<absl::string_view> path_parts = absl::StrSplit(parts[0], '/');
+      return absl::StrCat(path_parts.back(), ":", parts[1]);
+    }
+  }
+  return std::string(factory);
+}
+
+void PromiseFormatterImpl(const grpc::channelz::v2::Promise& promise,
+                          std::string& out, int indent) {
+  switch (promise.promise_case()) {
+    case grpc::channelz::v2::Promise::kSeqPromise: {
+      const auto& seq = promise.seq_promise();
+      absl::StrAppend(&out, seq.kind() == grpc::channelz::v2::Promise::TRY
+                                ? "TrySeq(\n"
+                                : "Seq(\n");
+      for (const auto& step : seq.steps()) {
+        if (step.has_polling_promise()) {
+          absl::StrAppend(&out, "🟢", std::string(indent, ' '),
+                          FormatFactory(step.factory()), ",\n");
+          absl::StrAppend(&out, std::string(indent + 2, ' '));
+          PromiseFormatterImpl(step.polling_promise(), out, indent + 2);
+          absl::StrAppend(&out, ",\n");
+        } else {
+          absl::StrAppend(&out, std::string(indent + 2, ' '),
+                          FormatFactory(step.factory()), ",\n");
+        }
+      }
+      absl::StrAppend(&out, std::string(indent, ' '), ")");
+      break;
+    }
+    case grpc::channelz::v2::Promise::kJoinPromise: {
+      const auto& join = promise.join_promise();
+      absl::StrAppend(&out, join.kind() == grpc::channelz::v2::Promise::TRY
+                                ? "TryJoin(\n"
+                                : "Join(\n");
+      for (const auto& branch : join.branches()) {
+        if (branch.has_polling_promise()) {
+          absl::StrAppend(&out, "🟢", std::string(indent, ' '),
+                          FormatFactory(branch.factory()), ",\n");
+          absl::StrAppend(&out, std::string(indent + 2, ' '));
+          PromiseFormatterImpl(branch.polling_promise(), out, indent + 2);
+          absl::StrAppend(&out, ",\n");
+        } else if (branch.has_result()) {
+          absl::StrAppend(&out, "✅", std::string(indent, ' '),
+                          FormatFactory(branch.factory()), ",\n");
+        } else {
+          absl::StrAppend(&out, std::string(indent + 2, ' '),
+                          FormatFactory(branch.factory()), ",\n");
+        }
+      }
+      absl::StrAppend(&out, std::string(indent, ' '), ")");
+      break;
+    }
+    case grpc::channelz::v2::Promise::kMapPromise: {
+      const auto& map = promise.map_promise();
+      absl::StrAppend(&out, "Map(\n", std::string(indent + 2, ' '));
+      PromiseFormatterImpl(map.promise(), out, indent + 2);
+      absl::StrAppend(&out, ",\n", std::string(indent + 2, ' '),
+                      FormatFactory(map.map_fn()), "\n",
+                      std::string(indent, ' '), ")");
+      break;
+    }
+    case grpc::channelz::v2::Promise::kIfPromise: {
+      const auto& if_p = promise.if_promise();
+      absl::StrAppend(&out, "If(", if_p.condition() ? "true" : "false", ", ",
+                      FormatFactory(if_p.true_factory()), ", ",
+                      FormatFactory(if_p.false_factory()), ",\n",
+                      std::string(indent + 2, ' '));
+      PromiseFormatterImpl(if_p.promise(), out, indent + 2);
+      absl::StrAppend(&out, "\n", std::string(indent, ' '), ")");
+      break;
+    }
+    case grpc::channelz::v2::Promise::kLoopPromise: {
+      const auto& loop = promise.loop_promise();
+      std::string loop_factory_str = loop.loop_factory();
+      std::string formatted_loop_factory;
+      if (absl::StrContains(loop_factory_str, "RepeatedPromiseFactory")) {
+        size_t pos = loop_factory_str.find("(lambda at ");
+        if (pos != std::string::npos) {
+          size_t end_pos = pos;
+          while ((end_pos = loop_factory_str.find(')', end_pos + 1)) !=
+                 std::string::npos) {
+            if (end_pos > 0 && loop_factory_str[end_pos - 1] >= '0' &&
+                loop_factory_str[end_pos - 1] <= '9') {
+              formatted_loop_factory = FormatFactory(
+                  loop_factory_str.substr(pos, end_pos - pos + 1));
+              break;
+            }
+          }
+        }
+      }
+      if (formatted_loop_factory.empty()) {
+        formatted_loop_factory = FormatFactory(loop_factory_str);
+      }
+      absl::StrAppend(&out, "Loop(\n", std::string(indent + 2, ' '),
+                      formatted_loop_factory, ",\n",
+                      std::string(indent + 2, ' '));
+      PromiseFormatterImpl(loop.promise(), out, indent + 2);
+      absl::StrAppend(&out, loop.yield() ? ", yield" : "", "\n",
+                      std::string(indent, ' '), ")");
+      break;
+    }
+    case grpc::channelz::v2::Promise::kRacePromise: {
+      const auto& race = promise.race_promise();
+      absl::StrAppend(&out, "Race(\n");
+      for (const auto& child : race.children()) {
+        absl::StrAppend(&out, std::string(indent + 2, ' '));
+        PromiseFormatterImpl(child, out, indent + 2);
+        absl::StrAppend(&out, ",\n");
+      }
+      absl::StrAppend(&out, std::string(indent, ' '), ")");
+      break;
+    }
+    case grpc::channelz::v2::Promise::kCustomPromise: {
+      const auto& custom = promise.custom_promise();
+      bool multiline = custom.properties().properties_size() > 1;
+      if (custom.properties().properties().empty()) {
+        absl::StrAppend(&out, custom.type());
+        break;
+      }
+      if (!multiline) {
+        const auto& prop = custom.properties().properties(0);
+        std::string value = FormatValue(prop.value());
+        if (absl::StrContains(value, '\n') ||
+            custom.type().length() + prop.key().length() + value.length() + 2 >
+                60) {
+          multiline = true;
+        } else {
+          absl::StrAppend(&out, custom.type(), " ", prop.key(), ":", value);
+        }
+      }
+      if (multiline) {
+        absl::StrAppend(&out, custom.type(), " {\n");
+        for (const auto& prop : custom.properties().properties()) {
+          absl::StrAppend(&out, std::string(indent + 4, ' '), prop.key(), ": ",
+                          FormatValue(prop.value()), "\n");
+        }
+        absl::StrAppend(&out, std::string(indent + 2, ' '), "}");
+      }
+      break;
+    }
+    case grpc::channelz::v2::Promise::kUnknownPromise: {
+      std::string formatted = FormatFactory(promise.unknown_promise());
+      if (formatted == promise.unknown_promise()) {
+        absl::StrAppend(&out, "Unknown(", promise.unknown_promise(), ")");
+      } else {
+        absl::StrAppend(&out, formatted);
+      }
+      break;
+    }
+    case grpc::channelz::v2::Promise::PROMISE_NOT_SET:
+      absl::StrAppend(&out, "PromiseNotSet");
+      break;
+  }
+}
+
+bool PromiseFormatter(Environment&, google::protobuf::Any value,
+                      layout::Element& element) {
+  grpc::channelz::v2::Promise promise;
+  if (!value.UnpackTo(&promise)) return false;
+  element.AppendText(layout::Intent::kCode, grpc_zviz::Format(promise));
+  return true;
 }
 
 bool PropertyListFormatter(Environment& env, google::protobuf::Any value,
@@ -131,6 +329,8 @@ const grpc_core::NoDestruct<absl::flat_hash_map<absl::string_view, Formatter>>
                          PropertyGridFormatter);
       formatters.emplace("type.googleapis.com/grpc.channelz.v2.PropertyTable",
                          PropertyTableFormatter);
+      formatters.emplace("type.googleapis.com/grpc.channelz.v2.Promise",
+                         PromiseFormatter);
       return formatters;
     }());
 
@@ -158,6 +358,12 @@ void Format(Environment& env, const grpc::channelz::v2::Data& data,
             layout::Element& element) {
   Format(env, data.value(),
          element.AppendData(data.name(), data.value().type_url()));
+}
+
+std::string Format(const grpc::channelz::v2::Promise& promise) {
+  std::string out;
+  PromiseFormatterImpl(promise, out, 0);
+  return out;
 }
 
 }  // namespace grpc_zviz

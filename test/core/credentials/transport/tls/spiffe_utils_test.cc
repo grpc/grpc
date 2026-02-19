@@ -23,18 +23,18 @@
 
 #include <string>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/load_file.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace testing {
@@ -388,7 +388,7 @@ TEST(SpiffeBundle, WrongKtyFails) {
       absl::InvalidArgumentError(
           "errors validating JSON: "
           "[field:trust_domains[\"example.com\"].keys[0].kty error:value must "
-          "be \"RSA\", got \"EC\"]"));
+          "be one of \"EC\", \"RSA\", got \"DSA\"]"));
 }
 
 TEST(SpiffeBundle, WrongKidFails) {

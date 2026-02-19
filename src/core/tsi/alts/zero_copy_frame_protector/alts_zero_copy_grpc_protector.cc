@@ -25,14 +25,14 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/tsi/alts/crypt/gsec.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h"
 #include "src/core/tsi/transport_security_grpc.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
 
 constexpr size_t kMinFrameLength = 1024;
 constexpr size_t kDefaultFrameLength = 16 * 1024;
@@ -84,7 +84,7 @@ static bool read_frame_size(const grpc_slice_buffer* sb,
       remaining -= slice_length;
     }
   }
-  CHECK_EQ(remaining, 0u);
+  GRPC_CHECK_EQ(remaining, 0u);
   // Gets little-endian frame size.
   uint32_t frame_size = (static_cast<uint32_t>(frame_size_buffer[3]) << 24) |
                         (static_cast<uint32_t>(frame_size_buffer[2]) << 16) |
@@ -256,13 +256,26 @@ static bool alts_zero_copy_grpc_protector_read_frame_size(
   return read_frame_size(protected_slices, frame_size);
 }
 
+static void alts_zero_copy_grpc_protector_set_allocator(
+    tsi_zero_copy_grpc_protector* self,
+    tsi_zero_copy_grpc_protector_allocator_cb alloc_cb, void* user_data) {
+  alts_zero_copy_grpc_protector* impl =
+      reinterpret_cast<alts_zero_copy_grpc_protector*>(self);
+  // Set on both protect and unprotect protocols
+  alts_grpc_record_protocol_set_allocation_callback(impl->record_protocol,
+                                                    alloc_cb, user_data);
+  alts_grpc_record_protocol_set_allocation_callback(impl->unrecord_protocol,
+                                                    alloc_cb, user_data);
+}
+
 static const tsi_zero_copy_grpc_protector_vtable
     alts_zero_copy_grpc_protector_vtable = {
         alts_zero_copy_grpc_protector_protect,
         alts_zero_copy_grpc_protector_unprotect,
         alts_zero_copy_grpc_protector_destroy,
         alts_zero_copy_grpc_protector_max_frame_size,
-        alts_zero_copy_grpc_protector_read_frame_size};
+        alts_zero_copy_grpc_protector_read_frame_size,
+        alts_zero_copy_grpc_protector_set_allocator};
 
 tsi_result alts_zero_copy_grpc_protector_create(
     const grpc_core::GsecKeyFactoryInterface& key_factory, bool is_client,
@@ -300,7 +313,7 @@ tsi_result alts_zero_copy_grpc_protector_create(
       impl->max_unprotected_data_size =
           alts_grpc_record_protocol_max_unprotected_data_size(
               impl->record_protocol, max_protected_frame_size_to_set);
-      CHECK_GT(impl->max_unprotected_data_size, 0u);
+      GRPC_CHECK_GT(impl->max_unprotected_data_size, 0u);
       // Allocates internal slice buffers.
       grpc_slice_buffer_init(&impl->unprotected_staging_sb);
       grpc_slice_buffer_init(&impl->protected_sb);
