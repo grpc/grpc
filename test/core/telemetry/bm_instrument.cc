@@ -26,7 +26,7 @@ class LowContentionDomain : public InstrumentDomain<LowContentionDomain> {
  public:
   using Backend = LowContentionBackend;
   static constexpr absl::string_view kName = "low_contention";
-  static constexpr auto kLabels = Labels();
+  GRPC_INSTRUMENT_DOMAIN_LABELS();
   static inline const auto kCounter =
       RegisterCounter("low_contention", "Desc", "unit");
 };
@@ -35,7 +35,7 @@ class HighContentionDomain : public InstrumentDomain<HighContentionDomain> {
  public:
   using Backend = HighContentionBackend;
   static constexpr absl::string_view kName = "high_contention";
-  static constexpr auto kLabels = Labels();
+  GRPC_INSTRUMENT_DOMAIN_LABELS();
   static inline const auto kCounter =
       RegisterCounter("high_contention", "Desc", "unit");
 };
