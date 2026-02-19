@@ -1227,7 +1227,16 @@ Server features:
   the server will set the client socket address it sees in the response payload.
 
 Procedure:
- 1. Client makes 3 FullDuplexCall rpcs with a request to send the client socket address in
+ 1. Client creates a channel with a service config setting the connection scaling limit per subchannel to 2:
+    ```
+    {
+      connectionScaling:{
+        maxConnectionsPerSubchannel: 2
+      }
+    }
+    ```
+
+ 2.  Client starts 3 FullDuplexCall rpcs with a request to fill the peer socket address in
  the response.
 
     ```
@@ -1238,7 +1247,7 @@ Procedure:
     }
     ```
 
- 2. Client waits for the initial reply from each rpc before starting the next rpc, with the reply 
+ 3. Client waits for the initial reply from each rpc before starting the next rpc, with the reply 
  expected be of the format
 
     ```
@@ -1246,6 +1255,8 @@ Procedure:
       peer_socket_address: <peer socket address>
     }
     ```
+    
+ 4. Client closes the 3 rpcs.
 
 Client asserts:
 * The peer socket address received for the first two rpcs are the same.
