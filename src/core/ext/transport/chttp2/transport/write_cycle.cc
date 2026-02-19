@@ -21,19 +21,66 @@
 #include <grpc/support/port_platform.h>
 
 #include <string>
-#include <utility>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
-#include "src/core/ext/transport/chttp2/transport/transport_common.h"
-#include "src/core/lib/slice/slice.h"
-#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
-#include "src/core/util/grpc_check.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/str_cat.h"
-#include "absl/types/span.h"
 
 namespace grpc_core {
-namespace http2 {}  // namespace http2
+namespace http2 {
+
+// WriteQuota
+
+std::string WriteQuota::DebugString() const {
+  return absl::StrCat("WriteQuota{target=", target_write_size_,
+                      ", consumed=", bytes_consumed_, "}");
+}
+
+// WriteBufferTracker
+std::string WriteBufferTracker::DebugString() const {
+  return absl::StrCat(
+      "WriteBufferTracker{regular_frames_count=", regular_frames_.size(),
+      ", urgent_frames_count=", urgent_frames_.size(),
+      ", is_first_write=", is_first_write_, "}");
+}
+
+// WriteCycle
+
+absl::InlinedVector<Http2Frame, WriteBufferTracker::kInlinedRegularFramesSize>&
+WriteCycle::TestOnlyRegularFrames() {
+  return write_buffer_tracker_.TestOnlyRegularFrames();
+}
+
+absl::InlinedVector<Http2Frame, WriteBufferTracker::kInlinedUrgentFramesSize>&
+WriteCycle::TestOnlyUrgentFrames() {
+  return write_buffer_tracker_.TestOnlyUrgentFrames();
+}
+
+std::string WriteCycle::DebugString() const {
+  return absl::StrCat("WriteCycle{quota=", write_quota_.DebugString(),
+                      ", tracker=", write_buffer_tracker_.DebugString(), "}");
+}
+
+// TransportWriteContext
+
+std::string TransportWriteContext::DebugString() const {
+  return absl::StrCat("TransportWriteContext{is_first_write=", is_first_write_,
+                      "} ",
+                      write_cycle_ ? write_cycle_->DebugString() : "null");
+}
+
+PromiseEndpoint::WriteArgs TransportWriteContext::GetWriteArgs(
+    const Http2Settings& peer_settings) {
+  PromiseEndpoint::WriteArgs args;
+  int max_frame_size = peer_settings.preferred_receive_crypto_message_size();
+  if (max_frame_size == 0) {
+    max_frame_size = INT_MAX;
+  }
+  args.set_max_frame_size(max_frame_size);
+  return args;
+}
+
+}  // namespace http2
 }  // namespace grpc_core

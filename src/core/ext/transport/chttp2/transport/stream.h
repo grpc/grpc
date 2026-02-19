@@ -36,6 +36,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
+#include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -130,12 +131,13 @@ struct Stream : public RefCounted<Stream> {
   // Called from the transport party
   auto DequeueFrames(const uint32_t tokens,
                      const uint32_t stream_flow_control_tokens,
-                     const uint32_t max_frame_length,
-                     HPackCompressor& encoder) {
+                     const uint32_t max_frame_length, HPackCompressor& encoder,
+                     FrameSender& frame_sender) {
     HttpStreamState state = stream_state;
     // Reset stream MUST not be sent if the stream is idle or closed.
     return data_queue->DequeueFrames(tokens, max_frame_length,
                                      stream_flow_control_tokens, encoder,
+                                     frame_sender,
                                      /*can_send_reset_stream=*/
                                      !(state == HttpStreamState::kIdle ||
                                        state == HttpStreamState::kClosed));

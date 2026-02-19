@@ -19,7 +19,6 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_TRANSPORT_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_TRANSPORT_H
 
-#include <cstddef>
 #include <cstdint>
 #include <string>
 
@@ -30,14 +29,12 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
-#include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
+#include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
-#include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -118,103 +115,6 @@ class Http2ReadContext {
   Waker read_loop_waker_;
 };
 
-class WriteContext {
- public:
-  WriteContext() = default;
-  // WriteContext is neither copyable nor movable.
-  WriteContext(const WriteContext&) = delete;
-  WriteContext& operator=(const WriteContext&) = delete;
-  WriteContext(WriteContext&&) = delete;
-  WriteContext& operator=(WriteContext&&) = delete;
-
-  class WriteQuota {
-   public:
-    explicit WriteQuota(size_t target_write_size)
-        : target_write_size_(target_write_size) {}
-
-    // WriteQuota is neither copyable nor movable.
-    WriteQuota(const WriteQuota&) = delete;
-    WriteQuota& operator=(const WriteQuota&) = delete;
-    WriteQuota(WriteQuota&&) = delete;
-    WriteQuota& operator=(WriteQuota&&) = delete;
-
-    // Increments the bytes consumed for the current write attempt.
-    void IncrementBytesConsumed(size_t bytes_consumed) {
-      bytes_consumed_ += bytes_consumed;
-    }
-
-    // Returns the number of bytes remaining that can be written in the current
-    // write attempt.
-    size_t GetWriteBytesRemaining() const {
-      return (target_write_size_ > bytes_consumed_)
-                 ? target_write_size_ - bytes_consumed_
-                 : 0u;
-    }
-
-    // Returns the target write size for the current write attempt.
-    size_t GetTargetWriteSize() const { return target_write_size_; }
-
-    std::string DebugString() const {
-      return absl::StrCat("WriteQuota: target_write_size: ", target_write_size_,
-                          " bytes_consumed: ", bytes_consumed_);
-    }
-
-   private:
-    const size_t target_write_size_;
-    size_t bytes_consumed_ = 0;
-  };
-
-  // Starts a new write attempt.
-  WriteQuota StartNewWriteAttempt() {
-    size_t target_write_size = write_size_policy_.WriteTargetSize();
-    GRPC_HTTP2_COMMON_DLOG
-        << "Http2ClientTransport WriteContext StartNewWriteAttempt "
-           "target_write_size_ = "
-        << target_write_size;
-    return WriteQuota(target_write_size);
-  }
-
-  // Signals that the specified number of bytes are about to be written. Caller
-  // should try to call this as close to the actual write as possible. EndWrite
-  // MUST be called after this.
-  void BeginWrite(size_t bytes_to_write) {
-    write_size_policy_.BeginWrite(bytes_to_write);
-  }
-
-  // Signals that a write has completed with the specified status.
-  void EndWrite(bool write_success) {
-    write_size_policy_.EndWrite(write_success);
-  }
-
-  static inline PromiseEndpoint::WriteArgs GetWriteArgs(
-      const Http2Settings& peer_settings) {
-    PromiseEndpoint::WriteArgs args;
-    int max_frame_size = peer_settings.preferred_receive_crypto_message_size();
-    // Note: max frame size is 0 if the remote peer does not support adjusting
-    // the sending frame size.
-    if (max_frame_size == 0) {
-      max_frame_size = INT_MAX;
-    }
-    // `WriteArgs.max_frame_size` is a suggestion to the endpoint implementation
-    // to group data to be written into frames of the specified max_frame_size.
-    // It is different from HTTP2 SETTINGS_MAX_FRAME_SIZE. That setting limits
-    // HTTP2 frame payload size.
-    args.set_max_frame_size(max_frame_size);
-
-    // TODO(akshitpatel) [PH2][P1] : Currently only the WriteArgs related to
-    // preferred_receive_crypto_message_size have been plumbed. The other write
-    // args may need to be plumbed for PH2.
-    // CHTTP2 : Reference :
-    // File : src/core/ext/transport/chttp2/transport/chttp2_transport.cc
-    // Function : write_action
-
-    return args;
-  }
-
- private:
-  Chttp2WriteSizePolicy write_size_policy_;
-};
-
 ///////////////////////////////////////////////////////////////////////////////
 // Settings helpers
 
@@ -275,11 +175,10 @@ bool ProcessIncomingWindowUpdateFrameFlowControl(
     chttp2::TransportFlowControl& flow_control, RefCountedPtr<Stream> stream);
 
 void MaybeAddTransportWindowUpdateFrame(
-    chttp2::TransportFlowControl& flow_control,
-    std::vector<Http2Frame>& frames);
+    chttp2::TransportFlowControl& flow_control, FrameSender& frame_sender);
 
 void MaybeAddStreamWindowUpdateFrame(RefCountedPtr<Stream> stream,
-                                     std::vector<Http2Frame>& frames);
+                                     FrameSender& frame_sender);
 
 ///////////////////////////////////////////////////////////////////////////////
 // Header and Continuation frame processing helpers
