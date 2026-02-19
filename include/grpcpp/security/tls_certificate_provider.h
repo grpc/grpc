@@ -72,12 +72,7 @@ class [[deprecated("Use InMemoryCertificateProvider instead")]] GRPCXX_DLL
       const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs);
 
   explicit StaticDataCertificateProvider(const std::string& root_certificate)
-      : StaticDataCertificateProvider(root_certificate,
-                                      std::vector<IdentityKeyCertPair>{}) {}
-
-  explicit StaticDataCertificateProvider(
-      const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs)
-      : StaticDataCertificateProvider("", identity_key_cert_pairs) {}
+      : StaticDataCertificateProvider(root_certificate, {}) {}
 
   ~StaticDataCertificateProvider() override;
 

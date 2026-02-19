@@ -33,8 +33,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
 #include "src/core/tsi/ssl_transport_security.h"
-
-using tsi::RootCertInfo;
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/grpc_check.h"
 #include "absl/log/log.h"
