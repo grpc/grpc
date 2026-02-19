@@ -215,9 +215,12 @@ EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
 if BUILD_WITH_STATIC_LIBSTDCXX:
     EXTRA_LINK_ARGS.append("-static-libstdc++")
 
-CC_FILES = [os.path.normpath(cc_file) for cc_file in observability_lib_deps.CC_FILES]
+CC_FILES = [
+    os.path.normpath(cc_file) for cc_file in observability_lib_deps.CC_FILES
+]
 CC_INCLUDES = [
-    os.path.normpath(include_dir) for include_dir in observability_lib_deps.CC_INCLUDES
+    os.path.normpath(include_dir)
+    for include_dir in observability_lib_deps.CC_INCLUDES
 ]
 
 DEFINE_MACROS = (("_WIN32_WINNT", 0x600),)
@@ -275,7 +278,9 @@ def extension_modules():
 
     plugin_sources = CC_FILES
 
-    O11Y_CC_PATHS = (os.path.join("grpc_observability", f) for f in O11Y_CC_SRCS)
+    O11Y_CC_PATHS = (
+        os.path.join("grpc_observability", f) for f in O11Y_CC_SRCS
+    )
     plugin_sources += O11Y_CC_PATHS
 
     plugin_sources += cython_module_files
@@ -293,7 +298,9 @@ def extension_modules():
     if BUILD_WITH_CYTHON:
         from Cython import Build
 
-        return Build.cythonize(extensions, compiler_directives={"language_level": "3"})
+        return Build.cythonize(
+            extensions, compiler_directives={"language_level": "3"}
+        )
     else:
         return extensions
 
