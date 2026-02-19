@@ -95,11 +95,15 @@ class TracingData:
       child_span_count: The number of child span associated with this span.
       span_labels: A dictionary that maps labels tags associated with this
        span to corresponding label value.
-      span_events: A dictionary that contains traced event data. Following keys are used:
-       - "name" - represents event name
-       - "attributes" - represents optional event attibutes in a form of dictionary
-       - "time_stamp" - represents time stamp when event occured. The time stamp have a format which
-         can be converted to Python datetime.datetime, e.g. 2023-05-29 17:07:09.895
+      span_events: A dictionary that contains traced event data.
+        Following keys are used:
+
+        - "name" - represents event name.
+        - "attributes" - represents optional event attributes in a form
+          of dictionary.
+        - "time_stamp" - represents time stamp when event occurred.
+          The time stamp have a format which can be converted to Python
+          datetime.datetime, e.g. 2023-05-29 17:07:09.895.
     """
 
     name: str
