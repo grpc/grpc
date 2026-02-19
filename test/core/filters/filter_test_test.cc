@@ -66,7 +66,7 @@ class DelayStartFilter final : public ChannelFilter {
           GetContext<Activity>()->ForceImmediateRepoll();
           return Pending{};
         },
-        next);
+        std::move(next));
   }
 
   static absl::StatusOr<std::unique_ptr<DelayStartFilter>> Create(
