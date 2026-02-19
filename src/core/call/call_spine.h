@@ -17,6 +17,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <type_traits>
+#include <utility>
+
 #include "src/core/call/call_arena_allocator.h"
 #include "src/core/call/call_filters.h"
 #include "src/core/call/channelz_context.h"
@@ -61,15 +64,15 @@ class CallSpine final : public Party, public channelz::DataSource {
   // Add a callback to be called when server trailing metadata is received and
   // return true.
   // If CallOnDone has already been invoked, does nothing and returns false.
-  GRPC_MUST_USE_RESULT bool OnDone(absl::AnyInvocable<void(bool)> fn) {
+  GRPC_MUST_USE_RESULT bool OnDone(absl::AnyInvocable<void(bool)>&& fn) {
     if (call_filters().WasServerTrailingMetadataPulled()) {
       return false;
     }
     if (on_done_ == nullptr) {
-      on_done_ = std::move(fn);
+      on_done_ = std::forward<absl::AnyInvocable<void(bool)>>(fn);
       return true;
     }
-    on_done_ = [first = std::move(fn),
+    on_done_ = [first = std::forward<absl::AnyInvocable<void(bool)>>(fn),
                 next = std::move(on_done_)](bool cancelled) mutable {
       first(cancelled);
       next(cancelled);
@@ -136,11 +139,11 @@ class CallSpine final : public Party, public channelz::DataSource {
   // the rest of the call.
   // The resulting (returned) promise will resolve to Empty.
   template <typename Promise>
-  auto CancelIfFails(Promise promise) {
+  auto CancelIfFails(Promise&& promise) {
     GRPC_DCHECK(GetContext<Activity>() == this);
-    using P = promise_detail::PromiseLike<Promise>;
+    using P = promise_detail::PromiseLike<std::decay_t<Promise>>;
     using ResultType = typename P::Result;
-    return Map(std::move(promise),
+    return Map(std::forward<Promise>(promise),
                [self = RefAsSubclass<CallSpine>()](ResultType r) {
                  self->CancelIfFailed(r);
                });
@@ -160,48 +163,54 @@ class CallSpine final : public Party, public channelz::DataSource {
   // Spawn a promise that returns Empty{} and save some boilerplate handling
   // that detail.
   template <typename PromiseFactory>
-  void SpawnInfallible(absl::string_view name, PromiseFactory promise_factory) {
-    Spawn(name, std::move(promise_factory), [](Empty) {});
+  void SpawnInfallible(absl::string_view name,
+                       PromiseFactory&& promise_factory) {
+    Spawn(name, std::forward<PromiseFactory>(promise_factory), [](Empty) {});
   }
 
   // Spawn a promise that returns some status-like type; if the status
   // represents failure automatically cancel the rest of the call.
   template <typename PromiseFactory>
-  void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory,
+  void SpawnGuarded(absl::string_view name, PromiseFactory&& promise_factory,
                     DebugLocation whence = {}) {
     using FactoryType =
-        promise_detail::OncePromiseFactory<void, PromiseFactory>;
+        promise_detail::OncePromiseFactory<void, std::decay_t<PromiseFactory>>;
     using PromiseType = typename FactoryType::Promise;
     using ResultType = typename PromiseType::Result;
     static_assert(
         std::is_same<bool,
                      decltype(IsStatusOk(std::declval<ResultType>()))>::value,
         "SpawnGuarded promise must return a status-like object");
-    Spawn(name, std::move(promise_factory), [this, whence](ResultType r) {
-      if (!IsStatusOk(r)) {
-        GRPC_TRACE_LOG(promise_primitives, INFO)
-            << "SpawnGuarded sees failure: " << r
-            << " (source: " << whence.file() << ":" << whence.line() << ")";
-        auto status = StatusCast<ServerMetadataHandle>(std::move(r));
-        status->Set(GrpcCallWasCancelled(), true);
-        PushServerTrailingMetadata(std::move(status));
-      }
-    });
+    Spawn(name, std::forward<PromiseFactory>(promise_factory),
+          [this, whence](ResultType&& r) {
+            if (!IsStatusOk(r)) {
+              GRPC_TRACE_LOG(promise_primitives, INFO)
+                  << "SpawnGuarded sees failure: " << r
+                  << " (source: " << whence.file() << ":" << whence.line()
+                  << ")";
+              auto status =
+                  StatusCast<ServerMetadataHandle>(std::forward<ResultType>(r));
+              status->Set(GrpcCallWasCancelled(), true);
+              PushServerTrailingMetadata(std::move(status));
+            }
+          });
   }
 
   // Wrap a promise so that if the call completes that promise is cancelled.
   template <typename Promise>
-  auto UntilCallCompletes(Promise promise) {
-    using Result = PromiseResult<Promise>;
-    return PrioritizedRace(std::move(promise), Map(WasCancelled(), [](bool) {
+  auto UntilCallCompletes(Promise&& promise) {
+    using Result = PromiseResult<std::decay_t<Promise>>;
+    return PrioritizedRace(std::forward<Promise>(promise),
+                           Map(WasCancelled(), [](bool) {
                              return FailureStatusCast<Result>(Failure{});
                            }));
   }
 
   template <typename PromiseFactory>
   void SpawnGuardedUntilCallCompletes(absl::string_view name,
-                                      PromiseFactory promise_factory) {
-    SpawnGuarded(name, [this, promise_factory]() mutable {
+                                      PromiseFactory&& promise_factory) {
+    SpawnGuarded(name, [this, promise_factory = std::forward<PromiseFactory>(
+                                  promise_factory)]() mutable {
       return UntilCallCompletes(promise_factory());
     });
   }
@@ -353,9 +362,9 @@ class CallInitiator {
   // the rest of the call.
   // The resulting (returned) promise will resolve to Empty.
   template <typename Promise>
-  auto CancelIfFails(Promise promise) {
+  auto CancelIfFails(Promise&& promise) {
     GRPC_DCHECK_NE(spine_.get(), nullptr);
-    return spine_->CancelIfFails(std::move(promise));
+    return spine_->CancelIfFails(std::forward<Promise>(promise));
   }
 
   auto PullServerInitialMetadata() {
@@ -419,40 +428,44 @@ class CallInitiator {
     spine_->SpawnCancel();
   }
 
-  GRPC_MUST_USE_RESULT bool OnDone(absl::AnyInvocable<void(bool)> fn) {
+  GRPC_MUST_USE_RESULT bool OnDone(absl::AnyInvocable<void(bool)>&& fn) {
     GRPC_DCHECK_NE(spine_.get(), nullptr);
-    return spine_->OnDone(std::move(fn));
+    return spine_->OnDone(std::forward<absl::AnyInvocable<void(bool)>>(fn));
   }
 
   template <typename Promise>
-  auto UntilCallCompletes(Promise promise) {
+  auto UntilCallCompletes(Promise&& promise) {
     GRPC_DCHECK_NE(spine_.get(), nullptr);
-    return spine_->UntilCallCompletes(std::move(promise));
+    return spine_->UntilCallCompletes(std::forward<Promise>(promise));
   }
 
   template <typename PromiseFactory>
-  void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory) {
+  void SpawnGuarded(absl::string_view name, PromiseFactory&& promise_factory) {
     GRPC_DCHECK_NE(spine_.get(), nullptr);
-    spine_->SpawnGuarded(name, std::move(promise_factory));
+    spine_->SpawnGuarded(name, std::forward<PromiseFactory>(promise_factory));
   }
 
   template <typename PromiseFactory>
   void SpawnGuardedUntilCallCompletes(absl::string_view name,
-                                      PromiseFactory promise_factory) {
+                                      PromiseFactory&& promise_factory) {
     GRPC_DCHECK_NE(spine_.get(), nullptr);
-    spine_->SpawnGuardedUntilCallCompletes(name, std::move(promise_factory));
+    spine_->SpawnGuardedUntilCallCompletes(
+        name, std::forward<PromiseFactory>(promise_factory));
   }
 
   template <typename PromiseFactory>
-  void SpawnInfallible(absl::string_view name, PromiseFactory promise_factory) {
+  void SpawnInfallible(absl::string_view name,
+                       PromiseFactory&& promise_factory) {
     GRPC_DCHECK_NE(spine_.get(), nullptr);
-    spine_->SpawnInfallible(name, std::move(promise_factory));
+    spine_->SpawnInfallible(name,
+                            std::forward<PromiseFactory>(promise_factory));
   }
 
   template <typename PromiseFactory>
-  auto SpawnWaitable(absl::string_view name, PromiseFactory promise_factory) {
+  auto SpawnWaitable(absl::string_view name, PromiseFactory&& promise_factory) {
     GRPC_DCHECK_NE(spine_.get(), nullptr);
-    return spine_->SpawnWaitable(name, std::move(promise_factory));
+    return spine_->SpawnWaitable(name,
+                                 std::forward<PromiseFactory>(promise_factory));
   }
 
   bool WasCancelledPushed() const {
@@ -501,16 +514,16 @@ class CallHandler {
     spine_->SpawnPushServerTrailingMetadata(std::move(status));
   }
 
-  GRPC_MUST_USE_RESULT bool OnDone(absl::AnyInvocable<void(bool)> fn) {
-    return spine_->OnDone(std::move(fn));
+  GRPC_MUST_USE_RESULT bool OnDone(absl::AnyInvocable<void(bool)>&& fn) {
+    return spine_->OnDone(std::forward<absl::AnyInvocable<void(bool)>>(fn));
   }
 
   // Wrap a promise so that if it returns failure it automatically cancels
   // the rest of the call.
   // The resulting (returned) promise will resolve to Empty.
   template <typename Promise>
-  auto CancelIfFails(Promise promise) {
-    return spine_->CancelIfFails(std::move(promise));
+  auto CancelIfFails(Promise&& promise) {
+    return spine_->CancelIfFails(std::forward<Promise>(promise));
   }
 
   auto PushMessage(MessageHandle message) {
@@ -530,30 +543,35 @@ class CallHandler {
   }
 
   template <typename Promise>
-  auto UntilCallCompletes(Promise promise) {
-    return spine_->UntilCallCompletes(std::move(promise));
+  auto UntilCallCompletes(Promise&& promise) {
+    return spine_->UntilCallCompletes(std::forward<Promise>(promise));
   }
 
   template <typename PromiseFactory>
-  void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory,
+  void SpawnGuarded(absl::string_view name, PromiseFactory&& promise_factory,
                     DebugLocation whence = {}) {
-    spine_->SpawnGuarded(name, std::move(promise_factory), whence);
+    spine_->SpawnGuarded(name, std::forward<PromiseFactory>(promise_factory),
+                         whence);
   }
 
   template <typename PromiseFactory>
   void SpawnGuardedUntilCallCompletes(absl::string_view name,
-                                      PromiseFactory promise_factory) {
-    spine_->SpawnGuardedUntilCallCompletes(name, std::move(promise_factory));
+                                      PromiseFactory&& promise_factory) {
+    spine_->SpawnGuardedUntilCallCompletes(
+        name, std::forward<PromiseFactory>(promise_factory));
   }
 
   template <typename PromiseFactory>
-  void SpawnInfallible(absl::string_view name, PromiseFactory promise_factory) {
-    spine_->SpawnInfallible(name, std::move(promise_factory));
+  void SpawnInfallible(absl::string_view name,
+                       PromiseFactory&& promise_factory) {
+    spine_->SpawnInfallible(name,
+                            std::forward<PromiseFactory>(promise_factory));
   }
 
   template <typename PromiseFactory>
-  auto SpawnWaitable(absl::string_view name, PromiseFactory promise_factory) {
-    return spine_->SpawnWaitable(name, std::move(promise_factory));
+  auto SpawnWaitable(absl::string_view name, PromiseFactory&& promise_factory) {
+    return spine_->SpawnWaitable(name,
+                                 std::forward<PromiseFactory>(promise_factory));
   }
 
   void AddChildCall(const CallInitiator& initiator) {
@@ -577,35 +595,40 @@ class UnstartedCallHandler {
     spine_->PushServerTrailingMetadata(std::move(status));
   }
 
-  GRPC_MUST_USE_RESULT bool OnDone(absl::AnyInvocable<void(bool)> fn) {
-    return spine_->OnDone(std::move(fn));
+  GRPC_MUST_USE_RESULT bool OnDone(absl::AnyInvocable<void(bool)>&& fn) {
+    return spine_->OnDone(std::forward<absl::AnyInvocable<void(bool)>>(fn));
   }
 
   template <typename Promise>
-  auto CancelIfFails(Promise promise) {
-    return spine_->CancelIfFails(std::move(promise));
+  auto CancelIfFails(Promise&& promise) {
+    return spine_->CancelIfFails(std::forward<Promise>(promise));
   }
 
   template <typename PromiseFactory>
-  void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory,
+  void SpawnGuarded(absl::string_view name, PromiseFactory&& promise_factory,
                     DebugLocation whence = {}) {
-    spine_->SpawnGuarded(name, std::move(promise_factory), whence);
+    spine_->SpawnGuarded(name, std::forward<PromiseFactory>(promise_factory),
+                         whence);
   }
 
   template <typename PromiseFactory>
   void SpawnGuardedUntilCallCompletes(absl::string_view name,
-                                      PromiseFactory promise_factory) {
-    spine_->SpawnGuardedUntilCallCompletes(name, std::move(promise_factory));
+                                      PromiseFactory&& promise_factory) {
+    spine_->SpawnGuardedUntilCallCompletes(
+        name, std::forward<PromiseFactory>(promise_factory));
   }
 
   template <typename PromiseFactory>
-  void SpawnInfallible(absl::string_view name, PromiseFactory promise_factory) {
-    spine_->SpawnInfallible(name, std::move(promise_factory));
+  void SpawnInfallible(absl::string_view name,
+                       PromiseFactory&& promise_factory) {
+    spine_->SpawnInfallible(name,
+                            std::forward<PromiseFactory>(promise_factory));
   }
 
   template <typename PromiseFactory>
-  auto SpawnWaitable(absl::string_view name, PromiseFactory promise_factory) {
-    return spine_->SpawnWaitable(name, std::move(promise_factory));
+  auto SpawnWaitable(absl::string_view name, PromiseFactory&& promise_factory) {
+    return spine_->SpawnWaitable(name,
+                                 std::forward<PromiseFactory>(promise_factory));
   }
 
   ClientMetadata& UnprocessedClientInitialMetadata() {
@@ -636,12 +659,12 @@ CallInitiatorAndHandler MakeCallPair(
     ClientMetadataHandle client_initial_metadata, RefCountedPtr<Arena> arena);
 
 template <typename CallHalf>
-auto MessagesFrom(CallHalf h) {
+auto MessagesFrom(CallHalf&& h) {
   struct Wrapper {
-    CallHalf h;
+    std::decay_t<CallHalf> h;
     auto Next() { return h.PullMessage(); }
   };
-  return Wrapper{std::move(h)};
+  return Wrapper{std::forward<CallHalf>(h)};
 }
 
 template <typename CallHalf>
