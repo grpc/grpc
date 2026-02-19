@@ -142,13 +142,6 @@
   owner: mlumish@google.com
   test_tags: []
   uses_polling: true
-- name: event_engine_secure_endpoint
-  description: Use EventEngine secure endpoint wrapper instead of iomgr when available
-  expiry: 2026/05/22
-  owner: alishananda@google.com
-  test_tags: ["core_end2end_test", "secure_endpoint_test", "posix_endpoint_test"]
-  uses_polling: true
-  allow_in_fuzzing_config: false
 - name: fail_recv_metadata_on_deadline_exceeded
   description: Fail recv initial metadata when the deadline is exceeded.
   expiry: 2026/05/01
@@ -219,7 +212,7 @@
   expiry: 2026/03/15
   owner: alishananda@google.com
   test_tags: ["core_end2end_test", "secure_endpoint_test", "posix_endpoint_test"]
-  requires: ["event_engine_client", "event_engine_listener", "event_engine_secure_endpoint"]
+  requires: ["event_engine_client", "event_engine_listener"]
   uses_polling: true
   allow_in_fuzzing_config: false
 - name: pollset_alternative
@@ -299,7 +292,6 @@
     [
       "event_engine_client",
       "event_engine_listener",
-      "event_engine_secure_endpoint",
     ]
 - name: secure_endpoint_offload_large_writes
   description: If a large read write to be encrypted, use a separate thread.
@@ -310,7 +302,6 @@
     [
       "event_engine_client",
       "event_engine_listener",
-      "event_engine_secure_endpoint",
     ]
 - name: skip_clear_peer_on_cancellation
   description: If set, skips clearing of peer string on call cancellation.

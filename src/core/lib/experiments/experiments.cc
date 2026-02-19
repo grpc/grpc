@@ -88,9 +88,6 @@ const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
 const char* const description_event_engine_poller_for_python =
     "Enable event engine poller in gRPC Python";
 const char* const additional_constraints_event_engine_poller_for_python = "{}";
-const char* const description_event_engine_secure_endpoint =
-    "Use EventEngine secure endpoint wrapper instead of iomgr when available";
-const char* const additional_constraints_event_engine_secure_endpoint = "{}";
 const char* const description_fail_recv_metadata_on_deadline_exceeded =
     "Fail recv initial metadata when the deadline is exceeded.";
 const char* const
@@ -136,8 +133,7 @@ const char* const description_pipelined_read_secure_endpoint =
 const char* const additional_constraints_pipelined_read_secure_endpoint = "{}";
 const uint8_t required_experiments_pipelined_read_secure_endpoint[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_pollset_alternative =
     "Code outside iomgr that relies directly on pollsets will use non-pollset "
     "alternatives when enabled.";
@@ -189,16 +185,14 @@ const char* const additional_constraints_secure_endpoint_offload_large_reads =
     "{}";
 const uint8_t required_experiments_secure_endpoint_offload_large_reads[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_secure_endpoint_offload_large_writes =
     "If a large read write to be encrypted, use a separate thread.";
 const char* const additional_constraints_secure_endpoint_offload_large_writes =
     "{}";
 const uint8_t required_experiments_secure_endpoint_offload_large_writes[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_skip_clear_peer_on_cancellation =
     "If set, skips clearing of peer string on call cancellation.";
 const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
@@ -293,9 +287,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_poller_for_python,
      additional_constraints_event_engine_poller_for_python, nullptr, 0, false,
      true},
-    {"event_engine_secure_endpoint", description_event_engine_secure_endpoint,
-     additional_constraints_event_engine_secure_endpoint, nullptr, 0, true,
-     false},
     {"fail_recv_metadata_on_deadline_exceeded",
      description_fail_recv_metadata_on_deadline_exceeded,
      additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
@@ -334,7 +325,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"pipelined_read_secure_endpoint",
      description_pipelined_read_secure_endpoint,
      additional_constraints_pipelined_read_secure_endpoint,
-     required_experiments_pipelined_read_secure_endpoint, 3, false, false},
+     required_experiments_pipelined_read_secure_endpoint, 2, false, false},
     {"pollset_alternative", description_pollset_alternative,
      additional_constraints_pollset_alternative,
      required_experiments_pollset_alternative, 2, false, false},
@@ -372,11 +363,11 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"secure_endpoint_offload_large_reads",
      description_secure_endpoint_offload_large_reads,
      additional_constraints_secure_endpoint_offload_large_reads,
-     required_experiments_secure_endpoint_offload_large_reads, 3, false, true},
+     required_experiments_secure_endpoint_offload_large_reads, 2, false, true},
     {"secure_endpoint_offload_large_writes",
      description_secure_endpoint_offload_large_writes,
      additional_constraints_secure_endpoint_offload_large_writes,
-     required_experiments_secure_endpoint_offload_large_writes, 3, false, true},
+     required_experiments_secure_endpoint_offload_large_writes, 2, false, true},
     {"skip_clear_peer_on_cancellation",
      description_skip_clear_peer_on_cancellation,
      additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
@@ -489,9 +480,6 @@ const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
 const char* const description_event_engine_poller_for_python =
     "Enable event engine poller in gRPC Python";
 const char* const additional_constraints_event_engine_poller_for_python = "{}";
-const char* const description_event_engine_secure_endpoint =
-    "Use EventEngine secure endpoint wrapper instead of iomgr when available";
-const char* const additional_constraints_event_engine_secure_endpoint = "{}";
 const char* const description_fail_recv_metadata_on_deadline_exceeded =
     "Fail recv initial metadata when the deadline is exceeded.";
 const char* const
@@ -537,8 +525,7 @@ const char* const description_pipelined_read_secure_endpoint =
 const char* const additional_constraints_pipelined_read_secure_endpoint = "{}";
 const uint8_t required_experiments_pipelined_read_secure_endpoint[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_pollset_alternative =
     "Code outside iomgr that relies directly on pollsets will use non-pollset "
     "alternatives when enabled.";
@@ -590,16 +577,14 @@ const char* const additional_constraints_secure_endpoint_offload_large_reads =
     "{}";
 const uint8_t required_experiments_secure_endpoint_offload_large_reads[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_secure_endpoint_offload_large_writes =
     "If a large read write to be encrypted, use a separate thread.";
 const char* const additional_constraints_secure_endpoint_offload_large_writes =
     "{}";
 const uint8_t required_experiments_secure_endpoint_offload_large_writes[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_skip_clear_peer_on_cancellation =
     "If set, skips clearing of peer string on call cancellation.";
 const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
@@ -694,9 +679,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_poller_for_python,
      additional_constraints_event_engine_poller_for_python, nullptr, 0, false,
      true},
-    {"event_engine_secure_endpoint", description_event_engine_secure_endpoint,
-     additional_constraints_event_engine_secure_endpoint, nullptr, 0, true,
-     false},
     {"fail_recv_metadata_on_deadline_exceeded",
      description_fail_recv_metadata_on_deadline_exceeded,
      additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
@@ -735,7 +717,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"pipelined_read_secure_endpoint",
      description_pipelined_read_secure_endpoint,
      additional_constraints_pipelined_read_secure_endpoint,
-     required_experiments_pipelined_read_secure_endpoint, 3, false, false},
+     required_experiments_pipelined_read_secure_endpoint, 2, false, false},
     {"pollset_alternative", description_pollset_alternative,
      additional_constraints_pollset_alternative,
      required_experiments_pollset_alternative, 2, false, false},
@@ -773,11 +755,11 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"secure_endpoint_offload_large_reads",
      description_secure_endpoint_offload_large_reads,
      additional_constraints_secure_endpoint_offload_large_reads,
-     required_experiments_secure_endpoint_offload_large_reads, 3, false, true},
+     required_experiments_secure_endpoint_offload_large_reads, 2, false, true},
     {"secure_endpoint_offload_large_writes",
      description_secure_endpoint_offload_large_writes,
      additional_constraints_secure_endpoint_offload_large_writes,
-     required_experiments_secure_endpoint_offload_large_writes, 3, false, true},
+     required_experiments_secure_endpoint_offload_large_writes, 2, false, true},
     {"skip_clear_peer_on_cancellation",
      description_skip_clear_peer_on_cancellation,
      additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
@@ -890,9 +872,6 @@ const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
 const char* const description_event_engine_poller_for_python =
     "Enable event engine poller in gRPC Python";
 const char* const additional_constraints_event_engine_poller_for_python = "{}";
-const char* const description_event_engine_secure_endpoint =
-    "Use EventEngine secure endpoint wrapper instead of iomgr when available";
-const char* const additional_constraints_event_engine_secure_endpoint = "{}";
 const char* const description_fail_recv_metadata_on_deadline_exceeded =
     "Fail recv initial metadata when the deadline is exceeded.";
 const char* const
@@ -938,8 +917,7 @@ const char* const description_pipelined_read_secure_endpoint =
 const char* const additional_constraints_pipelined_read_secure_endpoint = "{}";
 const uint8_t required_experiments_pipelined_read_secure_endpoint[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_pollset_alternative =
     "Code outside iomgr that relies directly on pollsets will use non-pollset "
     "alternatives when enabled.";
@@ -991,16 +969,14 @@ const char* const additional_constraints_secure_endpoint_offload_large_reads =
     "{}";
 const uint8_t required_experiments_secure_endpoint_offload_large_reads[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_secure_endpoint_offload_large_writes =
     "If a large read write to be encrypted, use a separate thread.";
 const char* const additional_constraints_secure_endpoint_offload_large_writes =
     "{}";
 const uint8_t required_experiments_secure_endpoint_offload_large_writes[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_skip_clear_peer_on_cancellation =
     "If set, skips clearing of peer string on call cancellation.";
 const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
@@ -1095,9 +1071,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_poller_for_python,
      additional_constraints_event_engine_poller_for_python, nullptr, 0, false,
      true},
-    {"event_engine_secure_endpoint", description_event_engine_secure_endpoint,
-     additional_constraints_event_engine_secure_endpoint, nullptr, 0, true,
-     false},
     {"fail_recv_metadata_on_deadline_exceeded",
      description_fail_recv_metadata_on_deadline_exceeded,
      additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
@@ -1136,7 +1109,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"pipelined_read_secure_endpoint",
      description_pipelined_read_secure_endpoint,
      additional_constraints_pipelined_read_secure_endpoint,
-     required_experiments_pipelined_read_secure_endpoint, 3, false, false},
+     required_experiments_pipelined_read_secure_endpoint, 2, false, false},
     {"pollset_alternative", description_pollset_alternative,
      additional_constraints_pollset_alternative,
      required_experiments_pollset_alternative, 2, false, false},
@@ -1174,11 +1147,11 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"secure_endpoint_offload_large_reads",
      description_secure_endpoint_offload_large_reads,
      additional_constraints_secure_endpoint_offload_large_reads,
-     required_experiments_secure_endpoint_offload_large_reads, 3, false, true},
+     required_experiments_secure_endpoint_offload_large_reads, 2, false, true},
     {"secure_endpoint_offload_large_writes",
      description_secure_endpoint_offload_large_writes,
      additional_constraints_secure_endpoint_offload_large_writes,
-     required_experiments_secure_endpoint_offload_large_writes, 3, false, true},
+     required_experiments_secure_endpoint_offload_large_writes, 2, false, true},
     {"skip_clear_peer_on_cancellation",
      description_skip_clear_peer_on_cancellation,
      additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
