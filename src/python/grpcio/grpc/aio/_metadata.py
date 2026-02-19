@@ -53,7 +53,7 @@ class Metadata(abc.Collection):  # noqa: PLW1641
       if isinstance(raw_metadata, cls):
         return raw_metadata
       if isinstance(raw_metadata, (tuple, list)):
-        return cls.from_tuple(raw_metadata)
+        return cls.from_tuple(tuple(raw_metadata))
       if raw_metadata:
         return cls(*raw_metadata)
       return cls()
