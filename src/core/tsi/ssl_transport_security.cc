@@ -223,17 +223,6 @@ struct tsi_ssl_frame_protector {
 
 namespace {
 
-static void MaybeSetHandshakerNextArgsError(tsi_ssl_handshaker* handshaker,
-                                            absl::string_view error) {
-  if (handshaker == nullptr) {
-    return;
-  }
-  if (handshaker->handshaker_next_args.has_value() &&
-      handshaker->handshaker_next_args->error != nullptr) {
-    *handshaker->handshaker_next_args->error = std::string(error);
-  }
-}
-
 // --- Library Initialization. ---
 
 #if defined(OPENSSL_IS_BORINGSSL)
@@ -383,8 +372,8 @@ void TlsOffloadSignDoneCallback(
       // Notify the TSI layer to re-enter the handshake.
       // This call is thread-safe as per TSI requirements for the callback.
       next_args = handshaker->handshaker_next_args.value();
-      MaybeSetHandshakerNextArgsError(
-          handshaker.get(), handshaker->signed_bytes.status().ToString());
+      *handshaker->handshaker_next_args->error =
+          handshaker->signed_bytes.status().ToString();
       handshaker->handshaker_next_args.reset();
     }
   }
@@ -409,8 +398,8 @@ enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,
   if (handshaker == nullptr) return ssl_private_key_failure;
   if (!handshaker->signed_bytes.ok() || handshaker->signed_bytes->empty()) {
     if (!handshaker->signed_bytes.ok()) {
-      MaybeSetHandshakerNextArgsError(
-          handshaker, handshaker->signed_bytes.status().ToString());
+      *handshaker->handshaker_next_args->error =
+          handshaker->signed_bytes.status().ToString();
     }
     return ssl_private_key_failure;
   }
@@ -418,7 +407,7 @@ enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,
   const std::string& signed_data = *handshaker->signed_bytes;
   if (signed_data.length() > max_out) {
     // Result is too large.
-    MaybeSetHandshakerNextArgsError(handshaker, "Result exceeds output limit");
+    *handshaker->handshaker_next_args->error = "Result exceeds output limit";
     return ssl_private_key_failure;
   }
   memcpy(out, signed_data.data(), signed_data.length());
@@ -436,7 +425,7 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
     return ssl_private_key_failure;
   }
   if (handshaker->is_shutdown) {
-    MaybeSetHandshakerNextArgsError(handshaker, "Handshaker is shuting down");
+    *handshaker->handshaker_next_args->error = "Handshaker is shuting down";
     return ssl_private_key_failure;
   }
   handshaker->signed_bytes = "";
@@ -448,13 +437,13 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
   // complete in their implementation, and their impl MUST not block.
   auto algorithm = ToSignatureAlgorithmClass(signature_algorithm);
   if (!algorithm.ok()) {
-    MaybeSetHandshakerNextArgsError(handshaker, algorithm.status().ToString());
+    *handshaker->handshaker_next_args->error = algorithm.status().ToString();
     return ssl_private_key_failure;
   }
   grpc_core::PrivateKeySigner* signer =
       handshaker->factory_ref->key_signer.get();
   if (signer == nullptr) {
-    MaybeSetHandshakerNextArgsError(handshaker, "PrivateKeySigner is null");
+    *handshaker->handshaker_next_args->error = "PrivateKeySigner is null";
     return ssl_private_key_failure;
   }
   auto result =
@@ -466,17 +455,20 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
       [&](absl::StatusOr<std::string>* status_or_string) {
         if (status_or_string->ok()) {
           if ((*status_or_string)->size() > max_out) {
-            MaybeSetHandshakerNextArgsError(
-                handshaker,
-                "Private Key Signature exceeds maximum allowed size.");
+            if (handshaker->handshaker_next_args->error != nullptr) {
+              *handshaker->handshaker_next_args->error =
+                  "Private Key Signature exceeds maximum allowed size.";
+            }
             return ssl_private_key_failure;
           }
           handshaker->signed_bytes = std::move(*status_or_string);
           TlsPrivateKeyOffloadComplete(ssl, out, out_len, max_out);
           return ssl_private_key_success;
         } else {
-          MaybeSetHandshakerNextArgsError(
-              handshaker, status_or_string->status().ToString());
+          if (handshaker->handshaker_next_args->error != nullptr) {
+            *handshaker->handshaker_next_args->error =
+                status_or_string->status().ToString();
+          }
           return ssl_private_key_failure;
         }
       },
