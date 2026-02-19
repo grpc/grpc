@@ -190,8 +190,8 @@ message StreamingOutputCallResponse {
   // Payload to increase response size.
   Payload payload = 1;
   
-  // The client's socket address if requested.
-  string client_socket_address = 2;
+  // The peer's socket address if requested.
+  string peer_socket_address = 2;
 }
 
 // For reconnect interop test only.

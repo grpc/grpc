@@ -1383,7 +1383,7 @@ bool InteropClient::DoMcsConnectionScaling() {
     LOG(ERROR) << "DoMcsConnectionScaling(): stream1->Read() failed.";
     return TransientFailureOrAbort();
   }
-  std::string clientSocketAddressInCall1 = response1.client_socket_address();
+  std::string clientSocketAddressInCall1 = response1.peer_socket_address();
   GRPC_CHECK(!clientSocketAddressInCall1.empty());
 
   VLOG(2) << "Sending Mcs connection scaling streaming rpc2 ...";
@@ -1402,8 +1402,8 @@ bool InteropClient::DoMcsConnectionScaling() {
   if (!stream2->Read(&response2)) {
     LOG(ERROR) << "DoMcsConnectionScaling(): stream2->Read() failed.";
     return TransientFailureOrAbort();
-  }
-  std::string clientSocketAddressInCall2 = response2.client_socket_address();
+  }  
+  std::string clientSocketAddressInCall2 = response2.peer_socket_address();
 
   // The same connection should have been used for both streams.
   GRPC_CHECK(clientSocketAddressInCall1 == clientSocketAddressInCall2);
@@ -1424,8 +1424,8 @@ bool InteropClient::DoMcsConnectionScaling() {
   if (!stream3->Read(&response3)) {
     LOG(ERROR) << "DoMcsConnectionScaling(): stream3->Read() failed.";
     return TransientFailureOrAbort();
-  }
-  std::string clientSocketAddressInCall3 = response3.client_socket_address();
+  }  
+  std::string clientSocketAddressInCall3 = response3.peer_socket_address();
   GRPC_CHECK(!clientSocketAddressInCall3.empty());
 
   // A new connection should have been used for the 3rd stream.
