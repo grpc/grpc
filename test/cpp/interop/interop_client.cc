@@ -1371,8 +1371,7 @@ bool InteropClient::DoMcsConnectionScaling() {
 
   StreamingOutputCallRequest request;
   ResponseParameters* response_parameter = request.add_response_parameters();
-  response_parameter->mutable_send_client_socket_address_in_response()
-      ->set_value(true);
+  response_parameter->mutable_fill_peer_socket_address()->set_value(true);
   StreamingOutputCallResponse response1;
 
   if (!stream1->Write(request)) {

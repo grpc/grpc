@@ -1220,6 +1220,11 @@ on the connection, the subchannel scales connections upto the configured limit.
 
 Server features:
 * [FullDuplexCall][]
+* The server should be started with the command line argument --set_max_concurrent_streams_limit=true
+  (only implemented in Java test service) to set the max concurrent stream limit
+  for connections to 2.
+* In response to the response parameter 'fill_peer_socket_address_in_response' in request,
+  the server will set the client socket address it sees in the response payload.
 
 Procedure:
  1. Client makes 3 FullDuplexCall rpcs with a request to send the client socket address in
@@ -1228,24 +1233,24 @@ Procedure:
     ```
     {
       response_parameters:{
-        send_client_socket_address_in_response: true
+        fill_peer_socket_address_in_response: true
       }
     }
     ```
 
- 2. Client waits for reply from each rpc before starting the next one, with the reply expected 
-be of the format
+ 2. Client waits for the initial reply from each rpc before starting the next rpc, with the reply 
+ expected be of the format
 
     ```
     {
-      client_socket_address: <client socket address>
+      peer_socket_address: <peer socket address>
     }
     ```
 
 Client asserts:
-* The client socket address received for the first two rpcs are the same.
+* The peer socket address received for the first two rpcs are the same.
 
-* The client socket address received for the thrid rpc is different.
+* The peer socket address received for the third rpc is different.
 
 ### Experimental Tests
 
