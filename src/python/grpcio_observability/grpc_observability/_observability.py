@@ -118,7 +118,7 @@ class TracingData:
     span_labels: Mapping[str, Union[str, bytes]] = field(default_factory=dict)
     span_events: List[Dict[str, Union[str, Dict[str, Union[str, bytes]]]]] = (
         field(default_factory=list)
-     )
+    )
 
 
 @enum.unique
