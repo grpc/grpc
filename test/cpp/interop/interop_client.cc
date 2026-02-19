@@ -1383,8 +1383,8 @@ bool InteropClient::DoMcsConnectionScaling() {
     LOG(ERROR) << "DoMcsConnectionScaling(): stream1->Read() failed.";
     return TransientFailureOrAbort();
   }
-  std::string clientSocketAddressInCall1 = response1.peer_socket_address();
-  GRPC_CHECK(!clientSocketAddressInCall1.empty());
+  std::string peerSocketAddressInCall1 = response1.peer_socket_address();
+  GRPC_CHECK(!peerSocketAddressInCall1.empty());
 
   VLOG(2) << "Sending Mcs connection scaling streaming rpc2 ...";
 
@@ -1403,10 +1403,10 @@ bool InteropClient::DoMcsConnectionScaling() {
     LOG(ERROR) << "DoMcsConnectionScaling(): stream2->Read() failed.";
     return TransientFailureOrAbort();
   }  
-  std::string clientSocketAddressInCall2 = response2.peer_socket_address();
+  std::string peerSocketAddressInCall2 = response2.peer_socket_address();
 
   // The same connection should have been used for both streams.
-  GRPC_CHECK(clientSocketAddressInCall1 == clientSocketAddressInCall2);
+  GRPC_CHECK(peerSocketAddressInCall1 == peerSocketAddressInCall2);
 
   VLOG(2) << "Sending Mcs connection scaling streaming rpc3 ...";
 
@@ -1425,11 +1425,11 @@ bool InteropClient::DoMcsConnectionScaling() {
     LOG(ERROR) << "DoMcsConnectionScaling(): stream3->Read() failed.";
     return TransientFailureOrAbort();
   }  
-  std::string clientSocketAddressInCall3 = response3.peer_socket_address();
-  GRPC_CHECK(!clientSocketAddressInCall3.empty());
+  std::string peerSocketAddressInCall3 = response3.peer_socket_address();
+  GRPC_CHECK(!peerSocketAddressInCall3.empty());
 
   // A new connection should have been used for the 3rd stream.
-  GRPC_CHECK(clientSocketAddressInCall3 != clientSocketAddressInCall1);
+  GRPC_CHECK(peerSocketAddressInCall3 != peerSocketAddressInCall1);
 
   stream1->WritesDone();
   GRPC_CHECK(!stream1->Read(&response1));
