@@ -14,11 +14,11 @@
 """Tests for the metadata abstraction that's used in the asynchronous driver."""
 import logging
 import unittest
-import typeguard
 
 import grpc
 from grpc.experimental import aio
 from grpc.experimental.aio import Metadata
+import typeguard
 
 from tests_aio.unit import _common
 from tests_aio.unit._test_base import AioTestBase
