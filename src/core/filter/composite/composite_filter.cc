@@ -115,10 +115,9 @@ CompositeFilter::CompositeFilter(const ChannelArgs& args,
       //    method, and use that to do this initialization differently
       //    on client side vs. server side.
       if (!filter_impl->IsSupportedOnClients()) {
-        filter_chain_map_[&execute_filter_action] =
-            absl::UnavailableError(absl::StrCat(
-                filter_impl->ConfigProtoName(),
-                " filter not supported on clients"));
+        filter_chain_map_[&execute_filter_action] = absl::UnavailableError(
+            absl::StrCat(filter_impl->ConfigProtoName(),
+                         " filter not supported on clients"));
         return;
       }
       filter_impl->AddFilter(builder_wrapper, filter_config);
