@@ -5636,6 +5636,49 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "ext_authz_client",
+    srcs = [
+        "ext/filters/ext_authz/ext_authz_client.cc",
+    ],
+    hdrs = [
+        "ext/filters/ext_authz/ext_authz_client.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/log",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
+        "@com_google_protobuf//upb/reflection",
+    ],
+    deps = [
+        "dual_ref_counted",
+        "grpc_check",
+        "status_conversion",
+        "sync",
+        "upb_utils",
+        "xds_common_types",
+        "xds_utils",
+        "//:backoff",
+        "//:debug_location",
+        "//:envoy_config_core_upb",
+        "//:envoy_service_auth_upb",
+        "//:envoy_type_upb",
+        "//:exec_ctx",
+        "//:google_rpc_status_upb",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_trace",
+        "//:orphanable",
+        "//:protobuf_timestamp_upb",
+        "//:ref_counted_ptr",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
     name = "gcp_authentication_filter",
     srcs = [
         "ext/filters/gcp_authentication/gcp_authentication_filter.cc",
