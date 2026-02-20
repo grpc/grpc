@@ -53,7 +53,6 @@ single_version_override(
 )
 
 bazel_dep(name = "protoc-gen-validate", version = "1.2.1.bcr.1", repo_name = "com_envoyproxy_protoc_gen_validate")  # Not needed directly
-bazel_dep(name = "re2", version = "2024-07-02.bcr.1", repo_name = "com_googlesource_code_re2")  # mismatched 2022-04-01
 bazel_dep(name = "rules_apple", version = "3.16.0", repo_name = "build_bazel_rules_apple")
 bazel_dep(name = "rules_cc", version = "0.1.1")
 bazel_dep(name = "rules_proto", version = "7.0.2")
@@ -123,6 +122,18 @@ http_archive(
     sha256 = "bf6f56b36d8bc9156e518eb1cc37a146284082fa53522033f772aefbecfd15fc",
     strip_prefix = "typing_extensions-4.12.2",
     url = "https://github.com/python/typing_extensions/archive/4.12.2.tar.gz",
+)
+
+# TODO(weizheyuan): Upgrade to a version available in a BCR
+# once we figure out how to properly build it with cmake.
+http_archive(
+    name = "com_googlesource_code_re2",
+    sha256 = "1ae8ccfdb1066a731bba6ee0881baad5efd2cd661acd9569b689f2586e1a50e9",
+    strip_prefix = "re2-2022-04-01",
+    urls = [
+        "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/re2/archive/2022-04-01.tar.gz",
+        "https://github.com/google/re2/archive/2022-04-01.tar.gz",
+    ],
 )
 
 # --- Provide repo @com_google_fuzztest.
