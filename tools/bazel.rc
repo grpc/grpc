@@ -1,7 +1,12 @@
 # bazelrc file
 
-common --enable_bzlmod=true
-common --enable_workspace=false
+# Bazel 7 begins to enable module by default which breaks gRPC build.
+# Therefore, this option is disabled until gRPC works with bzlmod.
+common --enable_bzlmod=false
+
+# gRPC build will break under Bazel 8 because Bazel 8 disables workspace by default.
+# To prevent this, we've enabled workspace again until gRPC fully transitions to Bzlmod.
+common --enable_workspace=true
 
 # Bazel 8 needs this
 common --incompatible_disallow_empty_glob=false
