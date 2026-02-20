@@ -61,16 +61,24 @@ bazel_dep(name = "rules_shell", version = "0.4.0")
 bazel_dep(name = "xds", version = "0.0.0-20251210-ee656c7", repo_name = "com_github_cncf_xds")
 
 # --- Zlib
-# Patch is needed to for running Windows RBE tests.
 bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
-single_version_override(
+
+# Use https://github.com/madler/zlib/commit/f1f503da85d52e56aae11557b4d79a42bcaa2b86
+# because it fixes cmake build directory interference issue.
+# The commit is slightly ahead of 1.3.1 so we should be fine.
+archive_override(
     module_name = "zlib",
     patch_strip = 1,
     patches = [
-        "//bazel/zlib:delete_bcr_build_file.patch",
+        "//bazel/zlib:add_module_dot_bazel.patch",
         "//bazel/zlib:add_custom_build_file.patch",
     ],
-    version = "1.3.1.bcr.5",
+    sha256 = "da8937719bb6e9600a671f320934c0db3b8020c9c30fecda60b5a5ebdc9a1ea0",
+    strip_prefix = "zlib-f1f503da85d52e56aae11557b4d79a42bcaa2b86",
+    urls = [
+        "https://storage.googleapis.com/grpc-bazel-mirror/github.com/madler/zlib/archive/f1f503da85d52e56aae11557b4d79a42bcaa2b86.tar.gz",
+        "https://github.com/madler/zlib/archive/f1f503da85d52e56aae11557b4d79a42bcaa2b86.tar.gz",
+    ],
 )
 
 # Development dependencies
