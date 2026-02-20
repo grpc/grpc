@@ -277,7 +277,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "glimmering"  # @unused
 
-core_version = "52.0.0"  # @unused
+core_version = "53.0.0"  # @unused
 
 version = "1.79.0-dev"  # @unused
 
