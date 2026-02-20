@@ -67,7 +67,7 @@ single_version_override(
     module_name = "zlib",
     patch_strip = 1,
     patches = [
-        "//bazel/zlib/fix_windows.patch",
+        "//bazel/zlib:fix_windows.patch",
     ],
     version = "1.3.1.bcr.5",
 )
