@@ -19,6 +19,8 @@
 #include <stdlib.h>
 
 #include <tuple>
+#include <type_traits>
+#include <utility>
 
 #include "src/core/lib/promise/detail/join_state.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
@@ -145,21 +147,22 @@ struct WrapInTuple {
 }  // namespace promise_detail
 
 template <typename... Promise>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline promise_detail::Join<Promise...>
-Join(Promise... promises) {
-  return promise_detail::Join<Promise...>(std::move(promises)...);
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto Join(Promise&&... promises) {
+  return promise_detail::Join<std::decay_t<Promise>...>(
+      std::forward<Promise>(promises)...);
 }
 
 template <typename F>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto Join(F promise) {
-  return Map(std::move(promise), promise_detail::WrapInTuple{});
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto Join(F&& promise) {
+  return Map(std::forward<F>(promise), promise_detail::WrapInTuple{});
 }
 
 template <typename Iter, typename FactoryFn>
-inline auto JoinIter(Iter begin, Iter end, FactoryFn factory_fn) {
+inline auto JoinIter(Iter begin, Iter end, FactoryFn&& factory_fn) {
   using Factory =
-      promise_detail::RepeatedPromiseFactory<decltype(*begin), FactoryFn>;
-  Factory factory(std::move(factory_fn));
+      promise_detail::RepeatedPromiseFactory<decltype(*begin),
+                                             std::decay_t<FactoryFn>>;
+  Factory factory(std::forward<FactoryFn>(factory_fn));
   using Promise = typename Factory::Promise;
   using Result = typename Promise::Result;
   using State = std::variant<Promise, Result>;

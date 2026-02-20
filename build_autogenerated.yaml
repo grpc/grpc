@@ -7163,6 +7163,7 @@ targets:
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/status_flag.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -12395,6 +12396,7 @@ targets:
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_buffer.h
@@ -15619,6 +15621,7 @@ targets:
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/if.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_buffer.h
@@ -17076,6 +17079,7 @@ targets:
   - src/core/lib/promise/join.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/status_flag.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -20757,6 +20761,7 @@ targets:
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_buffer.h
@@ -24124,6 +24129,7 @@ targets:
   - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/if.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/switch.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -26735,6 +26741,7 @@ targets:
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
