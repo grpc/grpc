@@ -262,7 +262,7 @@ class Http2ClientTransport final : public ClientTransport,
 
   // Processes the flow control action and take necessary steps.
   void ActOnFlowControlAction(const chttp2::FlowControlAction& action,
-                              RefCountedPtr<Stream> stream);
+                              Stream* stream);
 
   void NotifyStateWatcherOnDisconnectLocked(
       absl::Status status, StateWatcher::DisconnectInfo disconnect_info)
@@ -317,7 +317,7 @@ class Http2ClientTransport final : public ClientTransport,
     return (next_stream_id > 1) ? (next_stream_id - 2) : 0;
   }
 
-  absl::Status InitializeStream(RefCountedPtr<Stream> stream);
+  absl::Status InitializeStream(Stream& stream);
 
   void AddToStreamList(RefCountedPtr<Stream> stream);
 
@@ -388,7 +388,7 @@ class Http2ClientTransport final : public ClientTransport,
   std::optional<RefCountedPtr<Stream>> MakeStream(CallHandler call_handler);
 
   // This function MUST be idempotent.
-  void CloseStream(RefCountedPtr<Stream> stream, CloseStreamArgs args,
+  void CloseStream(Stream& stream, CloseStreamArgs args,
                    DebugLocation whence = {});
 
   void BeginCloseStream(RefCountedPtr<Stream> stream,
@@ -511,7 +511,7 @@ class Http2ClientTransport final : public ClientTransport,
 
   Http2ReadContext reader_state_;
   Http2Status ParseAndDiscardHeaders(SliceBuffer&& buffer, bool is_end_headers,
-                                     RefCountedPtr<Stream> stream,
+                                     Stream* stream,
                                      Http2Status&& original_status,
                                      DebugLocation whence = {});
   void ReadChannelArgs(const ChannelArgs& channel_args,
