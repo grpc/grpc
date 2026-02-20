@@ -5679,6 +5679,37 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "ext_authz_filter",
+    srcs = [
+        "ext/filters/ext_authz/ext_authz_filter.cc",
+    ],
+    hdrs = [
+        "ext/filters/ext_authz/ext_authz_filter.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/random:bit_gen_ref",
+        "absl/strings",
+    ],
+    deps = [
+        "channel_args",
+        "ext_authz_client",
+        "filter_args",
+        "grpc_matchers",
+        "ref_counted",
+        "shared_bit_gen",
+        "xds_common_types",
+        "//:debug_location",
+        "//:gpr",
+        "//:grpc_base",
+        "//:promise",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "gcp_authentication_filter",
     srcs = [
         "ext/filters/gcp_authentication/gcp_authentication_filter.cc",

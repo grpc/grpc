@@ -340,6 +340,29 @@ auto MapResult(void (Derived::Call::*fn)(ServerMetadata&, Derived*), Promise x,
       });
 }
 
+template <typename Promise, typename Derived>
+auto MapResult(absl::Status (Derived::Call::*fn)(ServerMetadata&, Derived*),
+               Promise x, FilterCallData<Derived>* call_data) {
+  GRPC_DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
+  return OnCancel(Map(std::move(x),
+                      [call_data](ServerMetadataHandle md) {
+                        auto status = call_data->call.OnServerTrailingMetadata(
+                            *md, call_data->channel);
+                        if (!status.ok()) {
+                          return ServerMetadataFromStatus(status);
+                        }
+                        return md;
+                      }),
+                  [call_data]() {
+                    grpc_metadata_batch b;
+                    b.Set(GrpcStatusMetadata(), GRPC_STATUS_CANCELLED);
+                    b.Set(GrpcCallWasCancelled(), true);
+                    call_data->call
+                        .OnServerTrailingMetadata(b, call_data->channel)
+                        .IgnoreError();
+                  });
+}
+
 // For fused filters whose OnServerTrailingMetadata takes pointer to the
 // channel.
 template <typename P, typename Call, typename Derived,
