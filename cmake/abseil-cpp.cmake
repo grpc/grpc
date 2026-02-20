@@ -20,11 +20,9 @@ elseif(gRPC_ABSL_PROVIDER STREQUAL "module")
     set(ABSL_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp)
   endif()
   if(EXISTS "${ABSL_ROOT_DIR}/CMakeLists.txt")
-    if(gRPC_INSTALL)
-      # When gRPC_INSTALL is enabled and Abseil will be built as a module,
-      # Abseil will be installed along with gRPC for convenience.
-      set(ABSL_ENABLE_INSTALL ON)
-    endif()
+    # Turn on ABSL_ENABLE_INSTALL so it can be linked against by
+    # certain dependencies (e.g. re2)
+    set(ABSL_ENABLE_INSTALL ON)
     set(ABSL_PROPAGATE_CXX_STD ON)
     add_subdirectory(${ABSL_ROOT_DIR} third_party/abseil-cpp)
   else()

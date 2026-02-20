@@ -129,12 +129,15 @@ def grpc_deps():
     if "com_googlesource_code_re2" not in native.existing_rules():
         http_archive(
             name = "com_googlesource_code_re2",
-            sha256 = "1ae8ccfdb1066a731bba6ee0881baad5efd2cd661acd9569b689f2586e1a50e9",
-            strip_prefix = "re2-2022-04-01",
+            sha256 = "a835fe55fbdcd8e80f38584ab22d0840662c67f2feb36bd679402da9641dc71e",
+            strip_prefix = "re2-2024-07-02",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/re2/archive/2022-04-01.tar.gz",
-                "https://github.com/google/re2/archive/2022-04-01.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/re2/releases/download/2024-07-02/re2-2024-07-02.zip",
+                "https://github.com/google/re2/releases/download/2024-07-02/re2-2024-07-02.zip",
             ],
+            repo_mapping = {
+                "@abseil-cpp": "@com_google_absl",
+            },
         )
 
     if "com_github_cares_cares" not in native.existing_rules():

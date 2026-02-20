@@ -17,6 +17,7 @@
 # to find header files.
 
 if(gRPC_RE2_PROVIDER STREQUAL "module")
+  set(RE2_BUILD_TESTING OFF)
   if(NOT RE2_ROOT_DIR)
     set(RE2_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/re2)
   endif()
