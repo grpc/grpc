@@ -21,8 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
 #include <cstdint>
-#include <limits>
 #include <string>
 #include <utility>
 
@@ -36,6 +36,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
+#include "src/core/ext/transport/chttp2/transport/write_cycle.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -62,16 +63,18 @@ enum class HttpStreamState : uint8_t {
 // Managing the streams
 struct Stream : public RefCounted<Stream> {
   explicit Stream(CallHandler call,
-                  chttp2::TransportFlowControl& transport_flow_control)
+                  chttp2::TransportFlowControl& transport_flow_control,
+                  const bool is_client)
       : call(std::move(call)),
         is_write_closed(false),
         stream_state(HttpStreamState::kIdle),
         stream_id(kInvalidStreamId),
+        header_assembler(is_client),
         did_receive_initial_metadata(false),
         did_receive_trailing_metadata(false),
         did_push_server_trailing_metadata(false),
         data_queue(MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
-            /*is_client*/ true,
+            /*is_client*/ is_client,
             /*queue_size*/ kStreamQueueSize)),
         flow_control(&transport_flow_control) {}
 
@@ -130,12 +133,13 @@ struct Stream : public RefCounted<Stream> {
   // Called from the transport party
   auto DequeueFrames(const uint32_t tokens,
                      const uint32_t stream_flow_control_tokens,
-                     const uint32_t max_frame_length,
-                     HPackCompressor& encoder) {
+                     const uint32_t max_frame_length, HPackCompressor& encoder,
+                     FrameSender& frame_sender) {
     HttpStreamState state = stream_state;
     // Reset stream MUST not be sent if the stream is idle or closed.
     return data_queue->DequeueFrames(tokens, max_frame_length,
                                      stream_flow_control_tokens, encoder,
+                                     frame_sender,
                                      /*can_send_reset_stream=*/
                                      !(state == HttpStreamState::kIdle ||
                                        state == HttpStreamState::kClosed));
@@ -220,10 +224,22 @@ struct Stream : public RefCounted<Stream> {
   inline bool IsStreamHalfClosedRemote() const {
     return stream_state == HttpStreamState::kHalfClosedRemote;
   }
+  inline bool IsHalfClosedLocal() const {
+    return stream_state == HttpStreamState::kHalfClosedLocal;
+  }
+  inline bool IsStreamClosed() const {
+    return stream_state == HttpStreamState::kClosed;
+  }
+
   inline uint32_t GetStreamId() const { return stream_id; }
 
-  inline bool IsClosedForWrites() const { return is_write_closed; }
-  inline void SetWriteClosed() { is_write_closed = true; }
+  inline bool IsClosedForWrites() const {
+    return is_write_closed.load(std::memory_order_relaxed);
+  }
+
+  inline void SetWriteClosed() {
+    is_write_closed.store(true, std::memory_order_relaxed);
+  }
 
   inline bool CanSendWindowUpdateFrames() const {
     return stream_state == HttpStreamState::kOpen ||
@@ -266,7 +282,7 @@ struct Stream : public RefCounted<Stream> {
   // Similarly if a stream is closed for reads(this is achieved by removing the
   // stream from the transport map), then all the frames read on that stream
   // will be dropped.
-  bool is_write_closed;
+  std::atomic<bool> is_write_closed;
   // This MUST be accessed from the transport party.
   HttpStreamState stream_state;
   uint32_t stream_id;

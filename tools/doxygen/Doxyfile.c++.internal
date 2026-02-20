@@ -1436,6 +1436,8 @@ src/core/ext/transport/chttp2/transport/transport_common.h \
 src/core/ext/transport/chttp2/transport/varint.cc \
 src/core/ext/transport/chttp2/transport/varint.h \
 src/core/ext/transport/chttp2/transport/writable_streams.h \
+src/core/ext/transport/chttp2/transport/write_cycle.cc \
+src/core/ext/transport/chttp2/transport/write_cycle.h \
 src/core/ext/transport/chttp2/transport/write_size_policy.cc \
 src/core/ext/transport/chttp2/transport/write_size_policy.h \
 src/core/ext/transport/chttp2/transport/writing.cc \
@@ -2347,7 +2349,6 @@ src/core/handshaker/http_connect/xds_http_proxy_mapper.h \
 src/core/handshaker/proxy_mapper.h \
 src/core/handshaker/proxy_mapper_registry.cc \
 src/core/handshaker/proxy_mapper_registry.h \
-src/core/handshaker/security/legacy_secure_endpoint.cc \
 src/core/handshaker/security/pipelined_secure_endpoint.cc \
 src/core/handshaker/security/secure_endpoint.cc \
 src/core/handshaker/security/secure_endpoint.h \

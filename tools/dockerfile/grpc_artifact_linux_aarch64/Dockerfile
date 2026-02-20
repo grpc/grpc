@@ -1,4 +1,4 @@
-# Copyright 2023 gRPC authors.
+# Copyright 2021 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,19 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+# On aarch64 the protoc and codegen plugins are built via crosscompilation.
+FROM dockcross/linux-arm64
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_bazel.sh"
-timeout_mins: 240
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.*"
-    regex: "github/grpc/reports/**"
-  }
-}
-
-env_vars {
-  key: "BAZEL_SCRIPT"
-  value: "tools/internal_ci/linux/grpc_python_bazel_test_fork_in_docker.sh"
-}
+RUN git config --global --add safe.directory '*'
+RUN git config --global protocol.file.allow always

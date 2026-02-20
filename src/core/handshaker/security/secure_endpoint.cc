@@ -100,10 +100,8 @@ class FrameProtector : public RefCounted<FrameProtector> {
       }
     }
     if (zero_copy_protector_ != nullptr) {
-      if (IsTrackZeroCopyAllocationsInResourceQuotaEnabled()) {
-        tsi_zero_copy_grpc_protector_set_allocator(zero_copy_protector_,
-                                                   &AllocSlice, &memory_owner_);
-      }
+      tsi_zero_copy_grpc_protector_set_allocator(zero_copy_protector_,
+                                                 &AllocSlice, &memory_owner_);
       read_staging_buffer_ = grpc_empty_slice();
       write_staging_buffer_ = grpc_empty_slice();
     } else {
@@ -1085,11 +1083,6 @@ grpc_core::OrphanablePtr<grpc_endpoint> grpc_secure_endpoint_create(
     grpc_core::OrphanablePtr<grpc_endpoint> to_wrap,
     grpc_slice* leftover_slices, size_t leftover_nslices,
     const grpc_core::ChannelArgs& channel_args) {
-  if (!grpc_core::IsEventEngineSecureEndpointEnabled()) {
-    return grpc_legacy_secure_endpoint_create(
-        protector, zero_copy_protector, std::move(to_wrap), leftover_slices,
-        channel_args.ToC().get(), leftover_nslices);
-  }
   if (grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
           to_wrap.get()) != nullptr) {
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>

@@ -798,13 +798,16 @@ TEST_F(Http2ClientTransportTest, TestCanStreamReceiveDataFrames) {
   auto read_cb = mock_endpoint.ExpectDelayedRead(
       {
           helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
-          helper_.EventEngineSliceFromEmptyHttp2DataFrame(1, false),
+          helper_.EventEngineSliceFromEmptyHttp2DataFrame(/*stream_id=*/1,
+                                                          /*end_stream=*/false),
           helper_.EventEngineSliceFromHttp2GoawayFrame(
               /*debug_data=*/"kthxbye", /*last_stream_id=*/1,
               /*error_code=*/
               static_cast<uint32_t>(Http2ErrorCode::kNoError)),
       },
       event_engine().get());
+  auto read_close_transport = mock_endpoint.ExpectDelayedReadClose(
+      absl::UnavailableError(kConnectionClosed), event_engine().get());
   mock_endpoint.ExpectWriteWithCallback(
       {
           helper_.EventEngineSliceFromHttp2HeaderFrame(
@@ -822,11 +825,6 @@ TEST_F(Http2ClientTransportTest, TestCanStreamReceiveDataFrames) {
           helper_.EventEngineSliceFromHttp2SettingsFrameAck(),
       },
       event_engine().get());
-  mock_endpoint.ExpectWrite(
-      {helper_.EventEngineSliceFromHttp2RstStreamFrame(
-          /*stream_id=*/1, /*error_code=*/
-          static_cast<uint32_t>(Http2ErrorCode::kStreamClosed))},
-      event_engine().get());
 
   mock_endpoint.ExpectWrite(
       {
@@ -835,6 +833,9 @@ TEST_F(Http2ClientTransportTest, TestCanStreamReceiveDataFrames) {
               /*last_stream_id=*/0,
               /*error_code=*/
               static_cast<uint32_t>(Http2ErrorCode::kInternalError)),
+          helper_.EventEngineSliceFromHttp2RstStreamFrame(
+              /*stream_id=*/1, /*error_code=*/
+              static_cast<uint32_t>(Http2ErrorCode::kStreamClosed)),
       },
       event_engine().get());
 
@@ -843,8 +844,6 @@ TEST_F(Http2ClientTransportTest, TestCanStreamReceiveDataFrames) {
       event_engine(), /*on_receive_settings=*/nullptr);
   client_transport->SpawnTransportLoops();
 
-  auto read_close_transport = mock_endpoint.ExpectDelayedReadClose(
-      absl::UnavailableError(kConnectionClosed), event_engine().get());
   auto call = MakeCall(TestInitialMetadata());
   client_transport->StartCall(call.handler.StartCall());
   call.initiator.SpawnInfallible(
