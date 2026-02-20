@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">51.0.0</span>
+   &#160;<span id="projectnumber">52.0.0</span>
    </div>
   </td>
  </tr>
@@ -309,6 +309,9 @@ Macros</h2></td></tr>
 <tr class="memitem:ga247ed6771077938be12ab24790a95732"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga247ed6771077938be12ab24790a95732">GRPC_ARG_DNS_ENABLE_SRV_QUERIES</a>&#160;&#160;&#160;&quot;grpc.dns_enable_srv_queries&quot;</td></tr>
 <tr class="memdesc:ga247ed6771077938be12ab24790a95732"><td class="mdescLeft">&#160;</td><td class="mdescRight">If enabled, the channel's DNS resolver queries for SRV records.  <a href="group__grpc__arg__keys.html#ga247ed6771077938be12ab24790a95732">More...</a><br /></td></tr>
 <tr class="separator:ga247ed6771077938be12ab24790a95732"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga869291df212a1baa407e77cf920d89dd"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga869291df212a1baa407e77cf920d89dd">GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL_CAP</a>&#160;&#160;&#160;&quot;grpc.max_connections_per_subchannel_cap&quot;</td></tr>
+<tr class="memdesc:ga869291df212a1baa407e77cf920d89dd"><td class="mdescLeft">&#160;</td><td class="mdescRight">The cap for max_connections_per_subchannel when set via service config.  <a href="group__grpc__arg__keys.html#ga869291df212a1baa407e77cf920d89dd">More...</a><br /></td></tr>
+<tr class="separator:ga869291df212a1baa407e77cf920d89dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gad0e9ad7630f67bcd1d631435860a53d4"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gad0e9ad7630f67bcd1d631435860a53d4">GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS</a>&#160;&#160;&#160;&quot;grpc.dns_ares_query_timeout&quot;</td></tr>
 <tr class="memdesc:gad0e9ad7630f67bcd1d631435860a53d4"><td class="mdescLeft">&#160;</td><td class="mdescRight">If set, determines an upper bound on the number of milliseconds that the c-ares based DNS resolver will wait on queries before cancelling them.  <a href="group__grpc__arg__keys.html#gad0e9ad7630f67bcd1d631435860a53d4">More...</a><br /></td></tr>
 <tr class="separator:gad0e9ad7630f67bcd1d631435860a53d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -1296,6 +1299,23 @@ Macros</h2></td></tr>
 
 </div>
 </div>
+<a id="ga869291df212a1baa407e77cf920d89dd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga869291df212a1baa407e77cf920d89dd">&#9670;&nbsp;</a></span>GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL_CAP</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL_CAP&#160;&#160;&#160;&quot;grpc.max_connections_per_subchannel_cap&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The cap for max_connections_per_subchannel when set via service config. </p>
+<p>If the configured value is higher than this, it will be capped at this value. Defaults to 10. </p>
+
+</div>
+</div>
 <a id="ga50f37feb7c000a23b3b0edf4c31d4367"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ga50f37feb7c000a23b3b0edf4c31d4367">&#9670;&nbsp;</a></span>GRPC_ARG_MAX_MESSAGE_LENGTH</h2>
 
@@ -1971,7 +1991,7 @@ Macros</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Oct 24 2025 21:46:29 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 20 2026 17:27:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

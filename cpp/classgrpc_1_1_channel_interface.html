@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.76.0</span>
+   &#160;<span id="projectnumber">1.78.1</span>
    </div>
   </td>
  </tr>
@@ -98,6 +98,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a31d360cd218614814d68e01e07ce55cc"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a31d360cd218614814d68e01e07ce55cc">WaitForConnected</a> (T deadline)</td></tr>
 <tr class="memdesc:a31d360cd218614814d68e01e07ce55cc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wait for this channel to be connected.  <a href="classgrpc_1_1_channel_interface.html#a31d360cd218614814d68e01e07ce55cc">More...</a><br /></td></tr>
 <tr class="separator:a31d360cd218614814d68e01e07ce55cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa0b31feb48aad6ccc4c45c9620aed4fc"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html">grpc_event_engine::experimental::MemoryAllocator</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#aa0b31feb48aad6ccc4c45c9620aed4fc">memory_allocator</a> () const</td></tr>
+<tr class="separator:aa0b31feb48aad6ccc4c45c9620aed4fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
@@ -202,6 +204,33 @@ Friends</h2></td></tr>
 <p>If the channel is in IDLE and <em>try_to_connect</em> is set to true, try to connect. </p>
 
 <p>Implemented in <a class="el" href="classgrpc_1_1_channel.html#a646d7a9d01f22037a72092d3a0bf159c">grpc::Channel</a>, <a class="el" href="classgrpc_1_1internal_1_1_intercepted_channel.html#ab7073fa3f0de1369f7201c1ce1630970">grpc::internal::InterceptedChannel</a>, and <a class="el" href="classgrpc_1_1experimental_1_1_delegating_channel.html#ade542e52407601f790dba8ebf4aaa6e3">grpc::experimental::DelegatingChannel</a>.</p>
+
+</div>
+</div>
+<a id="aa0b31feb48aad6ccc4c45c9620aed4fc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa0b31feb48aad6ccc4c45c9620aed4fc">&#9670;&nbsp;</a></span>memory_allocator()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html">grpc_event_engine::experimental::MemoryAllocator</a>* grpc::ChannelInterface::memory_allocator </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Reimplemented in <a class="el" href="classgrpc_1_1_channel.html#a7e867dd7532b1950e5951baf05d6845a">grpc::Channel</a>, <a class="el" href="classgrpc_1_1internal_1_1_intercepted_channel.html#adbc321e7b92ba914729621bb599a313f">grpc::internal::InterceptedChannel</a>, and <a class="el" href="classgrpc_1_1experimental_1_1_delegating_channel.html#a83cf13c056b1debae7dba79a793ea0b5">grpc::experimental::DelegatingChannel</a>.</p>
 
 </div>
 </div>
@@ -710,7 +739,7 @@ template&lt;class W &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Oct 24 2025 21:46:32 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 20 2026 17:27:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

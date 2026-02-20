@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.76.0</span>
+   &#160;<span id="projectnumber">1.78.1</span>
    </div>
   </td>
  </tr>
@@ -302,40 +302,43 @@ $(function() {
 <div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160; </div>
 <div class="line"><a name="l00386"></a><span class="lineno"><a class="line" href="group__grpc__arg__keys.html#ga247ed6771077938be12ab24790a95732">  386</a></span>&#160;<span class="preprocessor">#define GRPC_ARG_DNS_ENABLE_SRV_QUERIES &quot;grpc.dns_enable_srv_queries&quot;</span></div>
 <div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160; </div>
-<div class="line"><a name="l00393"></a><span class="lineno"><a class="line" href="group__grpc__arg__keys.html#gad0e9ad7630f67bcd1d631435860a53d4">  393</a></span>&#160;<span class="preprocessor">#define GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS &quot;grpc.dns_ares_query_timeout&quot;</span></div>
-<div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160; </div>
-<div class="line"><a name="l00396"></a><span class="lineno"><a class="line" href="group__grpc__arg__keys.html#gaa49ebd41af390c78a2c0ed94b74abfbc">  396</a></span>&#160;<span class="preprocessor">#define GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL &quot;grpc.use_local_subchannel_pool&quot;</span></div>
-<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160; </div>
-<div class="line"><a name="l00398"></a><span class="lineno"><a class="line" href="group__grpc__arg__keys.html#ga126793d7d941d79b69b1446fc17989c9">  398</a></span>&#160;<span class="preprocessor">#define GRPC_ARG_CHANNEL_POOL_DOMAIN &quot;grpc.channel_pooling_domain&quot;</span></div>
+<div class="line"><a name="l00390"></a><span class="lineno"><a class="line" href="group__grpc__arg__keys.html#ga869291df212a1baa407e77cf920d89dd">  390</a></span>&#160;<span class="preprocessor">#define GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL_CAP \</span></div>
+<div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;<span class="preprocessor">  &quot;grpc.max_connections_per_subchannel_cap&quot;</span></div>
+<div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160; </div>
+<div class="line"><a name="l00398"></a><span class="lineno"><a class="line" href="group__grpc__arg__keys.html#gad0e9ad7630f67bcd1d631435860a53d4">  398</a></span>&#160;<span class="preprocessor">#define GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS &quot;grpc.dns_ares_query_timeout&quot;</span></div>
 <div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160; </div>
-<div class="line"><a name="l00400"></a><span class="lineno"><a class="line" href="group__grpc__arg__keys.html#ga59dd5c3bc20b4041cf05d513a88ba2ec">  400</a></span>&#160;<span class="preprocessor">#define GRPC_ARG_CHANNEL_ID &quot;grpc.channel_id&quot;</span></div>
-<div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160; </div>
-<div class="line"><a name="l00403"></a><span class="lineno"><a class="line" href="group__grpc__arg__keys.html#ga5008aa6d9780a65318382205bcbfb4aa">  403</a></span>&#160;<span class="preprocessor">#define GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER \</span></div>
-<div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160;<span class="preprocessor">  &quot;grpc.authorization_policy_provider&quot;</span></div>
-<div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160; </div>
-<div class="line"><a name="l00409"></a><span class="lineno"><a class="line" href="group__grpc__arg__keys.html#gae677c8adf046eb6161ba562d2ccc50b3">  409</a></span>&#160;<span class="preprocessor">#define GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS \</span></div>
-<div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;<span class="preprocessor">  &quot;grpc.experimental.server_config_change_drain_grace_time_ms&quot;</span></div>
-<div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160; </div>
-<div class="line"><a name="l00413"></a><span class="lineno"><a class="line" href="group__grpc__arg__keys.html#gabe2bd19481175dba1f79a3d382a8cd91">  413</a></span>&#160;<span class="preprocessor">#define GRPC_ARG_DSCP &quot;grpc.dscp&quot;</span></div>
-<div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160; </div>
-<div class="line"><a name="l00416"></a><span class="lineno"><a class="line" href="group__grpc__arg__keys.html#ga7a2a214214ad1af38b0f67429838b215">  416</a></span>&#160;<span class="preprocessor">#define GRPC_ARG_HAPPY_EYEBALLS_CONNECTION_ATTEMPT_DELAY_MS \</span></div>
-<div class="line"><a name="l00417"></a><span class="lineno">  417</span>&#160;<span class="preprocessor">  &quot;grpc.happy_eyeballs_connection_attempt_delay_ms&quot;</span></div>
-<div class="line"><a name="l00418"></a><span class="lineno">  418</span>&#160; </div>
-<div class="line"><a name="l00421"></a><span class="lineno"><a class="line" href="group__grpc__arg__keys.html#ga7e1a4b301b2e9682abff15ea1cc5b371">  421</a></span>&#160;<span class="preprocessor">#define GRPC_ARG_EVENT_ENGINE_USE_MEMORY_ALLOCATOR_FACTORY \</span></div>
-<div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;<span class="preprocessor">  &quot;grpc.event_engine_use_memory_allocator_factory&quot;</span></div>
+<div class="line"><a name="l00401"></a><span class="lineno"><a class="line" href="group__grpc__arg__keys.html#gaa49ebd41af390c78a2c0ed94b74abfbc">  401</a></span>&#160;<span class="preprocessor">#define GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL &quot;grpc.use_local_subchannel_pool&quot;</span></div>
+<div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160; </div>
+<div class="line"><a name="l00403"></a><span class="lineno"><a class="line" href="group__grpc__arg__keys.html#ga126793d7d941d79b69b1446fc17989c9">  403</a></span>&#160;<span class="preprocessor">#define GRPC_ARG_CHANNEL_POOL_DOMAIN &quot;grpc.channel_pooling_domain&quot;</span></div>
+<div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160; </div>
+<div class="line"><a name="l00405"></a><span class="lineno"><a class="line" href="group__grpc__arg__keys.html#ga59dd5c3bc20b4041cf05d513a88ba2ec">  405</a></span>&#160;<span class="preprocessor">#define GRPC_ARG_CHANNEL_ID &quot;grpc.channel_id&quot;</span></div>
+<div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160; </div>
+<div class="line"><a name="l00408"></a><span class="lineno"><a class="line" href="group__grpc__arg__keys.html#ga5008aa6d9780a65318382205bcbfb4aa">  408</a></span>&#160;<span class="preprocessor">#define GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER \</span></div>
+<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;<span class="preprocessor">  &quot;grpc.authorization_policy_provider&quot;</span></div>
+<div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160; </div>
+<div class="line"><a name="l00414"></a><span class="lineno"><a class="line" href="group__grpc__arg__keys.html#gae677c8adf046eb6161ba562d2ccc50b3">  414</a></span>&#160;<span class="preprocessor">#define GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS \</span></div>
+<div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;<span class="preprocessor">  &quot;grpc.experimental.server_config_change_drain_grace_time_ms&quot;</span></div>
+<div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160; </div>
+<div class="line"><a name="l00418"></a><span class="lineno"><a class="line" href="group__grpc__arg__keys.html#gabe2bd19481175dba1f79a3d382a8cd91">  418</a></span>&#160;<span class="preprocessor">#define GRPC_ARG_DSCP &quot;grpc.dscp&quot;</span></div>
+<div class="line"><a name="l00419"></a><span class="lineno">  419</span>&#160; </div>
+<div class="line"><a name="l00421"></a><span class="lineno"><a class="line" href="group__grpc__arg__keys.html#ga7a2a214214ad1af38b0f67429838b215">  421</a></span>&#160;<span class="preprocessor">#define GRPC_ARG_HAPPY_EYEBALLS_CONNECTION_ATTEMPT_DELAY_MS \</span></div>
+<div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;<span class="preprocessor">  &quot;grpc.happy_eyeballs_connection_attempt_delay_ms&quot;</span></div>
 <div class="line"><a name="l00423"></a><span class="lineno">  423</span>&#160; </div>
-<div class="line"><a name="l00425"></a><span class="lineno"><a class="line" href="group__grpc__arg__keys.html#gabd42b553fb7664f8a0231bec0268089c">  425</a></span>&#160;<span class="preprocessor">#define GRPC_ARG_MAX_ALLOWED_INCOMING_CONNECTIONS \</span></div>
-<div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160;<span class="preprocessor">  &quot;grpc.max_allowed_incoming_connections&quot;</span></div>
-<div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160; </div>
-<div class="line"><a name="l00428"></a><span class="lineno"><a class="line" href="group__grpc__arg__keys.html#gab23d854a0107f74d73e3ab3af604e841">  428</a></span>&#160;<span class="preprocessor">#define GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS &quot;grpc.experimental.stats_plugins&quot;</span></div>
-<div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160; </div>
-<div class="line"><a name="l00430"></a><span class="lineno"><a class="line" href="group__grpc__arg__keys.html#ga0547a6c6a37bc076a5cfff3933746388">  430</a></span>&#160;<span class="preprocessor">#define GRPC_ARG_SECURITY_FRAME_ALLOWED &quot;grpc.security_frame_allowed&quot;</span></div>
-<div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160; </div>
-<div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_IMPL_CHANNEL_ARG_NAMES_H */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00426"></a><span class="lineno"><a class="line" href="group__grpc__arg__keys.html#ga7e1a4b301b2e9682abff15ea1cc5b371">  426</a></span>&#160;<span class="preprocessor">#define GRPC_ARG_EVENT_ENGINE_USE_MEMORY_ALLOCATOR_FACTORY \</span></div>
+<div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160;<span class="preprocessor">  &quot;grpc.event_engine_use_memory_allocator_factory&quot;</span></div>
+<div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160; </div>
+<div class="line"><a name="l00430"></a><span class="lineno"><a class="line" href="group__grpc__arg__keys.html#gabd42b553fb7664f8a0231bec0268089c">  430</a></span>&#160;<span class="preprocessor">#define GRPC_ARG_MAX_ALLOWED_INCOMING_CONNECTIONS \</span></div>
+<div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;<span class="preprocessor">  &quot;grpc.max_allowed_incoming_connections&quot;</span></div>
+<div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160; </div>
+<div class="line"><a name="l00433"></a><span class="lineno"><a class="line" href="group__grpc__arg__keys.html#gab23d854a0107f74d73e3ab3af604e841">  433</a></span>&#160;<span class="preprocessor">#define GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS &quot;grpc.experimental.stats_plugins&quot;</span></div>
+<div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160; </div>
+<div class="line"><a name="l00435"></a><span class="lineno"><a class="line" href="group__grpc__arg__keys.html#ga0547a6c6a37bc076a5cfff3933746388">  435</a></span>&#160;<span class="preprocessor">#define GRPC_ARG_SECURITY_FRAME_ALLOWED &quot;grpc.security_frame_allowed&quot;</span></div>
+<div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160; </div>
+<div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_IMPL_CHANNEL_ARG_NAMES_H */</span><span class="preprocessor"></span></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Oct 24 2025 21:46:31 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 20 2026 17:27:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

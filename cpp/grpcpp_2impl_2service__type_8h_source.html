@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.76.0</span>
+   &#160;<span id="projectnumber">1.78.1</span>
    </div>
   </td>
  </tr>
@@ -302,8 +302,8 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_server_async_streaming_interface_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_server_async_streaming_interface.html">grpc::internal::ServerAsyncStreamingInterface</a></div><div class="ttdef"><b>Definition:</b> service_type.h:38</div></div>
 <div class="ttc" id="aclassgrpc_1_1_service_html_aaf081513fd7de2effe711aee0d5f1d5d"><div class="ttname"><a href="classgrpc_1_1_service.html#aaf081513fd7de2effe711aee0d5f1d5d">grpc::Service::MarkMethodRaw</a></div><div class="ttdeci">void MarkMethodRaw(int index)</div><div class="ttdef"><b>Definition:</b> service_type.h:160</div></div>
 <div class="ttc" id="aclassgrpc_1_1_service_html_aee6aa99200b5c6ef6e4660f54f0ac23e"><div class="ttname"><a href="classgrpc_1_1_service.html#aee6aa99200b5c6ef6e4660f54f0ac23e">grpc::Service::MarkMethodAsync</a></div><div class="ttdeci">void MarkMethodAsync(int index)</div><div class="ttdef"><b>Definition:</b> service_type.h:150</div></div>
-<div class="ttc" id="aclassgrpc_1_1_server_context_html"><div class="ttname"><a href="classgrpc_1_1_server_context.html">grpc::ServerContext</a></div><div class="ttdoc">A ServerContext or CallbackServerContext allows the code implementing a service handler to:</div><div class="ttdef"><b>Definition:</b> server_context.h:578</div></div>
-<div class="ttc" id="aclassgrpc_1_1_server_html"><div class="ttname"><a href="classgrpc_1_1_server.html">grpc::Server</a></div><div class="ttdoc">Represents a gRPC server.</div><div class="ttdef"><b>Definition:</b> server.h:57</div></div>
+<div class="ttc" id="aclassgrpc_1_1_server_context_html"><div class="ttname"><a href="classgrpc_1_1_server_context.html">grpc::ServerContext</a></div><div class="ttdoc">A ServerContext or CallbackServerContext allows the code implementing a service handler to:</div><div class="ttdef"><b>Definition:</b> server_context.h:586</div></div>
+<div class="ttc" id="aclassgrpc_1_1_server_html"><div class="ttname"><a href="classgrpc_1_1_server.html">grpc::Server</a></div><div class="ttdoc">Represents a gRPC server.</div><div class="ttdef"><b>Definition:</b> server.h:58</div></div>
 <div class="ttc" id="anamespacegrpc_html"><div class="ttname"><a href="namespacegrpc.html">grpc</a></div><div class="ttdoc">An Alarm posts the user-provided tag to its associated completion queue or invokes the user-provided ...</div><div class="ttdef"><b>Definition:</b> alarm.h:33</div></div>
 <div class="ttc" id="aclassgrpc_1_1_service_html_ae5f63ce5bdbce27ef32fa29c24dfeeb5"><div class="ttname"><a href="classgrpc_1_1_service.html#ae5f63ce5bdbce27ef32fa29c24dfeeb5">grpc::Service::~Service</a></div><div class="ttdeci">virtual ~Service()</div><div class="ttdef"><b>Definition:</b> service_type.h:60</div></div>
 <div class="ttc" id="aclassgrpc_1_1_service_html_a48acaee5adf6895877a7dbad285610c7"><div class="ttname"><a href="classgrpc_1_1_service.html#a48acaee5adf6895877a7dbad285610c7">grpc::Service::GetHandler</a></div><div class="ttdeci">internal::MethodHandler * GetHandler(int index)</div><div class="ttdef"><b>Definition:</b> service_type.h:219</div></div>
@@ -325,7 +325,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_service_html_a368564696101542a4ed24ab6f5fdc871"><div class="ttname"><a href="classgrpc_1_1_service.html#a368564696101542a4ed24ab6f5fdc871">grpc::Service::RequestAsyncServerStreaming</a></div><div class="ttdeci">void RequestAsyncServerStreaming(int index, grpc::ServerContext *context, Message *request, internal::ServerAsyncStreamingInterface *stream, grpc::CompletionQueue *call_cq, grpc::ServerCompletionQueue *notification_cq, void *tag)</div><div class="ttdef"><b>Definition:</b> service_type.h:127</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_method_handler_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_method_handler.html">grpc::internal::MethodHandler</a></div><div class="ttdoc">Base class for running an RPC handler.</div><div class="ttdef"><b>Definition:</b> rpc_service_method.h:40</div></div>
 <div class="ttc" id="agrpcpp_2impl_2serialization__traits_8h_html"><div class="ttname"><a href="grpcpp_2impl_2serialization__traits_8h.html">serialization_traits.h</a></div></div>
-<div class="ttc" id="aclassgrpc_1_1_server_interface_html_a02f68c7b2a1751eeffcd13bf2177bdf6"><div class="ttname"><a href="classgrpc_1_1_server_interface.html#a02f68c7b2a1751eeffcd13bf2177bdf6">grpc::ServerInterface::RequestAsyncCall</a></div><div class="ttdeci">void RequestAsyncCall(internal::RpcServiceMethod *method, grpc::ServerContext *context, internal::ServerAsyncStreamingInterface *stream, grpc::CompletionQueue *call_cq, grpc::ServerCompletionQueue *notification_cq, void *tag, Message *message)</div><div class="ttdef"><b>Definition:</b> server_interface.h:316</div></div>
+<div class="ttc" id="aclassgrpc_1_1_server_interface_html_a02f68c7b2a1751eeffcd13bf2177bdf6"><div class="ttname"><a href="classgrpc_1_1_server_interface.html#a02f68c7b2a1751eeffcd13bf2177bdf6">grpc::ServerInterface::RequestAsyncCall</a></div><div class="ttdeci">void RequestAsyncCall(internal::RpcServiceMethod *method, grpc::ServerContext *context, internal::ServerAsyncStreamingInterface *stream, grpc::CompletionQueue *call_cq, grpc::ServerCompletionQueue *notification_cq, void *tag, Message *message)</div><div class="ttdef"><b>Definition:</b> server_interface.h:318</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_rpc_service_method_html_ac9413594c874a86ea22f775b46f5032eabe553330beb7b3d994656e0a4e66cd96"><div class="ttname"><a href="classgrpc_1_1internal_1_1_rpc_service_method.html#ac9413594c874a86ea22f775b46f5032eabe553330beb7b3d994656e0a4e66cd96">grpc::internal::RpcServiceMethod::ApiType::ASYNC</a></div><div class="ttdeci">@ ASYNC</div></div>
 <div class="ttc" id="agrpcpp_2support_2config_8h_html"><div class="ttname"><a href="grpcpp_2support_2config_8h.html">config.h</a></div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_completion_queue_html"><div class="ttname"><a href="classgrpc_1_1_server_completion_queue.html">grpc::ServerCompletionQueue</a></div><div class="ttdoc">A specific type of completion queue used by the processing of notifications by servers.</div><div class="ttdef"><b>Definition:</b> completion_queue.h:426</div></div>
@@ -343,7 +343,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_service_html_aacae94e74fed99c259fddd89f94536c8"><div class="ttname"><a href="classgrpc_1_1_service.html#aacae94e74fed99c259fddd89f94536c8">grpc::Service::Service</a></div><div class="ttdeci">Service()</div><div class="ttdef"><b>Definition:</b> service_type.h:59</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Oct 24 2025 21:46:31 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 20 2026 17:27:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.76.0</span>
+   &#160;<span id="projectnumber">1.78.1</span>
    </div>
   </td>
  </tr>
@@ -154,6 +154,8 @@ Protected Member Functions</h2></td></tr>
 <tr class="memitem:a87eac30243473d7f788f3cfc85b7e83e"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server.html#a87eac30243473d7f788f3cfc85b7e83e">health_check_service_disabled</a> () const</td></tr>
 <tr class="memdesc:a87eac30243473d7f788f3cfc85b7e83e"><td class="mdescLeft">&#160;</td><td class="mdescRight">NOTE: This method is not part of the public API for this class.  <a href="classgrpc_1_1_server.html#a87eac30243473d7f788f3cfc85b7e83e">More...</a><br /></td></tr>
 <tr class="separator:a87eac30243473d7f788f3cfc85b7e83e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aedf0915c3f3795d23e9737c7e8377601"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html">grpc_event_engine::experimental::MemoryAllocator</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server.html#aedf0915c3f3795d23e9737c7e8377601">memory_allocator</a> () override</td></tr>
+<tr class="separator:aedf0915c3f3795d23e9737c7e8377601"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_methods_classgrpc_1_1_server_interface"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_classgrpc_1_1_server_interface')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="classgrpc_1_1_server_interface.html">grpc::ServerInterface</a></td></tr>
 <tr class="memitem:a02f68c7b2a1751eeffcd13bf2177bdf6 inherit pro_methods_classgrpc_1_1_server_interface"><td class="memTemplParams" colspan="2">template&lt;class Message &gt; </td></tr>
 <tr class="memitem:a02f68c7b2a1751eeffcd13bf2177bdf6 inherit pro_methods_classgrpc_1_1_server_interface"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#a02f68c7b2a1751eeffcd13bf2177bdf6">RequestAsyncCall</a> (<a class="el" href="classgrpc_1_1internal_1_1_rpc_service_method.html">internal::RpcServiceMethod</a> *method, <a class="el" href="classgrpc_1_1_server_context.html">grpc::ServerContext</a> *context, <a class="el" href="classgrpc_1_1internal_1_1_server_async_streaming_interface.html">internal::ServerAsyncStreamingInterface</a> *stream, <a class="el" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a> *call_cq, <a class="el" href="classgrpc_1_1_server_completion_queue.html">grpc::ServerCompletionQueue</a> *notification_cq, void *tag, Message *message)</td></tr>
@@ -497,6 +499,33 @@ Friends</h2></td></tr>
 
 </div>
 </div>
+<a id="aedf0915c3f3795d23e9737c7e8377601"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aedf0915c3f3795d23e9737c7e8377601">&#9670;&nbsp;</a></span>memory_allocator()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html">grpc_event_engine::experimental::MemoryAllocator</a>* grpc::Server::memory_allocator </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">protected</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Implements <a class="el" href="classgrpc_1_1_server_interface.html#a5565031f9b7b94a60449ee164dbeef96">grpc::ServerInterface</a>.</p>
+
+</div>
+</div>
 <a id="a8fb988b3ce08eef46c059b2ba84b721d"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a8fb988b3ce08eef46c059b2ba84b721d">&#9670;&nbsp;</a></span>RegisterService()</h2>
 
@@ -772,7 +801,7 @@ Friends</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Oct 24 2025 21:46:32 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 20 2026 17:27:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.76.0</span>
+   &#160;<span id="projectnumber">1.78.1</span>
    </div>
   </td>
  </tr>
@@ -92,6 +92,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a89c73b41c78e75f259fd529704e2f13a"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel.html#a89c73b41c78e75f259fd529704e2f13a">GetServiceConfigJSON</a> () const</td></tr>
 <tr class="memdesc:a89c73b41c78e75f259fd529704e2f13a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the service config in JSON form, or the empty string if not available.  <a href="classgrpc_1_1_channel.html#a89c73b41c78e75f259fd529704e2f13a">More...</a><br /></td></tr>
 <tr class="separator:a89c73b41c78e75f259fd529704e2f13a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7e867dd7532b1950e5951baf05d6845a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html">grpc_event_engine::experimental::MemoryAllocator</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel.html#a7e867dd7532b1950e5951baf05d6845a">memory_allocator</a> () const override</td></tr>
+<tr class="separator:a7e867dd7532b1950e5951baf05d6845a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1_channel_interface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1_channel_interface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1_channel_interface.html">grpc::ChannelInterface</a></td></tr>
 <tr class="memitem:a3f5145d4778aa952540dc9983cefe13f inherit pub_methods_classgrpc_1_1_channel_interface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_interface.html#a3f5145d4778aa952540dc9983cefe13f">~ChannelInterface</a> ()</td></tr>
 <tr class="separator:a3f5145d4778aa952540dc9983cefe13f inherit pub_methods_classgrpc_1_1_channel_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -222,6 +224,33 @@ Friends</h2></td></tr>
 <p>If the channel is in IDLE and <em>try_to_connect</em> is set to true, try to connect. </p>
 
 <p>Implements <a class="el" href="classgrpc_1_1_channel_interface.html#a68e987e7b87ca5a2668419736f9ee9b1">grpc::ChannelInterface</a>.</p>
+
+</div>
+</div>
+<a id="a7e867dd7532b1950e5951baf05d6845a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7e867dd7532b1950e5951baf05d6845a">&#9670;&nbsp;</a></span>memory_allocator()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html">grpc_event_engine::experimental::MemoryAllocator</a>* grpc::Channel::memory_allocator </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Reimplemented from <a class="el" href="classgrpc_1_1_channel_interface.html#aa0b31feb48aad6ccc4c45c9620aed4fc">grpc::ChannelInterface</a>.</p>
 
 </div>
 </div>
@@ -394,7 +423,7 @@ template&lt;class InputMessage , class OutputMessage &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Oct 24 2025 21:46:32 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 20 2026 17:27:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
