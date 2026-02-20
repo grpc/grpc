@@ -344,9 +344,9 @@ struct XEnvoyPeerMetadata : public SimpleSliceBasedMetadata {
 
 // x-envoy-auth-failure-mode-allowed metadata trait for ext_authz failure mode allow.
 struct XEnvoyAuthFailureModeAllowedMetadata : public SimpleSliceBasedMetadata {
-  static constexpr bool kPublishToApp = false;
+  static constexpr bool kPublishToApp = true;
   static constexpr bool kRepeatable = false;
-  static constexpr bool kTransferOnTrailersOnly = true;
+  static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = StableValueCompressor;
   static absl::string_view key() { return "x-envoy-auth-failure-mode-allowed"; }
 };
