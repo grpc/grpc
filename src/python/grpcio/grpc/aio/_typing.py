@@ -26,9 +26,9 @@ from typing import (
 
 from grpc._cython.cygrpc import EOF
 
-from ._metadata import Metadata  # type: ignore
-from ._metadata import MetadataKey  # type: ignore
-from ._metadata import MetadataValue  # type: ignore
+from ._metadata import Metadata # pylint: disable=unused-import
+from ._metadata import MetadataKey # pylint: disable=unused-import
+from ._metadata import MetadataValue # pylint: disable=unused-import
 
 RequestType = TypeVar("RequestType")
 ResponseType = TypeVar("ResponseType")
