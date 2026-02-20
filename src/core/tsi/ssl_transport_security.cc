@@ -371,10 +371,14 @@ void TlsOffloadSignDoneCallback(
     if (!handshaker->signed_bytes.ok()) {
       // Notify the TSI layer to re-enter the handshake.
       // This call is thread-safe as per TSI requirements for the callback.
-      next_args = handshaker->handshaker_next_args.value();
-      *handshaker->handshaker_next_args->error =
-          handshaker->signed_bytes.status().ToString();
-      handshaker->handshaker_next_args.reset();
+      if (handshaker->handshaker_next_args.has_value()) {
+        next_args = handshaker->handshaker_next_args.value();
+        if (handshaker->handshaker_next_args->error != nullptr) {
+          *handshaker->handshaker_next_args->error =
+              handshaker->signed_bytes.status().ToString();
+        }
+        handshaker->handshaker_next_args.reset();
+      }
     }
   }
   if (next_args.has_value()) {
@@ -394,14 +398,17 @@ enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,
                                                            uint8_t* out,
                                                            size_t* out_len,
                                                            size_t max_out)
-    ABSL_EXCLUSIVE_LOCKS_REQUIRED(&GetHandshaker(ssl)->mu)  {
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(&GetHandshaker(ssl)->mu) {
   auto* handshaker = GetHandshaker(ssl);
   if (handshaker == nullptr) return ssl_private_key_failure;
   handshaker->mu.AssertHeld();
   if (!handshaker->signed_bytes.ok() || handshaker->signed_bytes->empty()) {
     if (!handshaker->signed_bytes.ok()) {
-      *handshaker->handshaker_next_args->error =
-          handshaker->signed_bytes.status().ToString();
+      if (handshaker->handshaker_next_args.has_value() &&
+          handshaker->handshaker_next_args->error != nullptr) {
+        *handshaker->handshaker_next_args->error =
+            handshaker->signed_bytes.status().ToString();
+      }
     }
     return ssl_private_key_failure;
   }
@@ -409,7 +416,10 @@ enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,
   const std::string& signed_data = *handshaker->signed_bytes;
   if (signed_data.length() > max_out) {
     // Result is too large.
-    *handshaker->handshaker_next_args->error = "Result exceeds output limit";
+    if (handshaker->handshaker_next_args.has_value() &&
+        handshaker->handshaker_next_args->error != nullptr) {
+      *handshaker->handshaker_next_args->error = "Result exceeds output limit";
+    }
     return ssl_private_key_failure;
   }
   memcpy(out, signed_data.data(), signed_data.length());
@@ -429,7 +439,10 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
   }
   handshaker->mu.AssertHeld();
   if (handshaker->is_shutdown) {
-    *handshaker->handshaker_next_args->error = "Handshaker is shuting down";
+    if (handshaker->handshaker_next_args.has_value() &&
+        handshaker->handshaker_next_args->error != nullptr) {
+      *handshaker->handshaker_next_args->error = "Handshaker is shuting down";
+    }
     return ssl_private_key_failure;
   }
   handshaker->signed_bytes = "";
@@ -441,13 +454,19 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
   // complete in their implementation, and their impl MUST not block.
   auto algorithm = ToSignatureAlgorithmClass(signature_algorithm);
   if (!algorithm.ok()) {
-    *handshaker->handshaker_next_args->error = algorithm.status().ToString();
+    if (handshaker->handshaker_next_args.has_value() &&
+        handshaker->handshaker_next_args->error != nullptr) {
+      *handshaker->handshaker_next_args->error = algorithm.status().ToString();
+    }
     return ssl_private_key_failure;
   }
   grpc_core::PrivateKeySigner* signer =
       handshaker->factory_ref->key_signer.get();
   if (signer == nullptr) {
-    *handshaker->handshaker_next_args->error = "PrivateKeySigner is null";
+    if (handshaker->handshaker_next_args.has_value() &&
+        handshaker->handshaker_next_args->error != nullptr) {
+      *handshaker->handshaker_next_args->error = "PrivateKeySigner is null";
+    }
     return ssl_private_key_failure;
   }
   auto result =
@@ -460,7 +479,8 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
         handshaker->mu.AssertHeld();
         if (status_or_string->ok()) {
           if ((*status_or_string)->size() > max_out) {
-            if (handshaker->handshaker_next_args->error != nullptr) {
+            if (handshaker->handshaker_next_args.has_value() &&
+                handshaker->handshaker_next_args->error != nullptr) {
               *handshaker->handshaker_next_args->error =
                   "Private Key Signature exceeds maximum allowed size.";
             }
@@ -470,7 +490,8 @@ enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
           TlsPrivateKeyOffloadComplete(ssl, out, out_len, max_out);
           return ssl_private_key_success;
         } else {
-          if (handshaker->handshaker_next_args->error != nullptr) {
+          if (handshaker->handshaker_next_args.has_value() &&
+              handshaker->handshaker_next_args->error != nullptr) {
             *handshaker->handshaker_next_args->error =
                 status_or_string->status().ToString();
           }
@@ -2243,7 +2264,7 @@ static tsi_result ssl_handshaker_write_output_buffer(tsi_handshaker* self,
 }
 
 static tsi_result ssl_handshaker_next_impl(
-    tsi_ssl_handshaker* self, HandshakerNextArgs* handshaker_next_args) 
+    tsi_ssl_handshaker* self, HandshakerNextArgs* handshaker_next_args)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(&self->mu) {
   tsi_ssl_handshaker* impl = reinterpret_cast<tsi_ssl_handshaker*>(self);
   const unsigned char* received_bytes = handshaker_next_args->received_bytes;

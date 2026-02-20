@@ -25,6 +25,7 @@
 
 #include <memory>
 #include <string>
+#include <thread>
 
 #include "src/core/tsi/ssl_transport_security.h"
 #include "test/core/test_util/test_config.h"
@@ -32,6 +33,7 @@
 #include "test/core/tsi/transport_security_test_lib.h"
 #include "gtest/gtest.h"
 #include "absl/strings/str_cat.h"
+#include "absl/synchronization/notification.h"
 
 namespace grpc_core {
 namespace testing {
@@ -72,94 +74,120 @@ uint16_t GetBoringSslAlgorithm(
   return -1;
 }
 
-class BoringSslPrivateKeySigner
-    : public PrivateKeySigner,
-      public std::enable_shared_from_this<BoringSslPrivateKeySigner> {
+absl::StatusOr<std::string> SignWithBoringSSL(
+    absl::string_view data_to_sign,
+    PrivateKeySigner::SignatureAlgorithm signature_algorithm,
+    EVP_PKEY* private_key) {
+  const uint8_t* in = reinterpret_cast<const uint8_t*>(data_to_sign.data());
+  const size_t in_len = data_to_sign.size();
+
+  uint16_t boring_signature_algorithm =
+      GetBoringSslAlgorithm(signature_algorithm);
+  if (EVP_PKEY_id(private_key) !=
+      SSL_get_signature_algorithm_key_type(boring_signature_algorithm)) {
+    fprintf(stderr, "Key type does not match signature algorithm.\n");
+  }
+
+  // Determine the hash.
+  const EVP_MD* md =
+      SSL_get_signature_algorithm_digest(boring_signature_algorithm);
+  bssl::ScopedEVP_MD_CTX ctx;
+  EVP_PKEY_CTX* pctx;
+  if (!EVP_DigestSignInit(ctx.get(), &pctx, md, nullptr, private_key)) {
+    return absl::InternalError("EVP_DigestSignInit failed");
+  }
+
+  // Configure additional signature parameters.
+  if (SSL_is_signature_algorithm_rsa_pss(boring_signature_algorithm)) {
+    if (!EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PSS_PADDING) ||
+        !EVP_PKEY_CTX_set_rsa_pss_saltlen(pctx, -1)) {
+      return absl::InternalError("EVP_PKEY_CTX failed");
+    }
+  }
+
+  size_t len = 0;
+  if (!EVP_DigestSign(ctx.get(), nullptr, &len, in, in_len)) {
+    return absl::InternalError("EVP_DigestSign failed");
+  }
+  std::vector<uint8_t> private_key_result;
+  private_key_result.resize(len);
+  if (!EVP_DigestSign(ctx.get(), private_key_result.data(), &len, in, in_len)) {
+    return absl::InternalError("EVP_DigestSign failed");
+  }
+  private_key_result.resize(len);
+  return std::string(private_key_result.begin(), private_key_result.end());
+}
+
+class SyncTestPrivateKeySigner final : public PrivateKeySigner {
  public:
-  explicit BoringSslPrivateKeySigner(absl::string_view private_key)
-      : pkey_(LoadPrivateKeyFromString(private_key)) {}
+  enum class Mode { kSuccess, kError, kInvalidSignature };
+
+  explicit SyncTestPrivateKeySigner(absl::string_view private_key,
+                                    Mode mode = Mode::kSuccess)
+      : pkey_(LoadPrivateKeyFromString(private_key)), mode_(mode) {}
+
+  std::variant<absl::StatusOr<std::string>, std::shared_ptr<AsyncSigningHandle>>
+  Sign(absl::string_view data_to_sign, SignatureAlgorithm signature_algorithm,
+       OnSignComplete /*on_sign_complete*/) override {
+    if (mode_ == Mode::kError) {
+      return absl::InternalError("signer error");
+    }
+    if (mode_ == Mode::kInvalidSignature) {
+      return "bad signature";
+    }
+    return SignWithBoringSSL(data_to_sign, signature_algorithm, pkey_.get());
+  }
+
+  void Cancel(std::shared_ptr<AsyncSigningHandle> /*handle*/) override {}
+
+ private:
+  bssl::UniquePtr<EVP_PKEY> pkey_;
+  Mode mode_;
+};
+
+class AsyncTestPrivateKeySigner final
+    : public PrivateKeySigner,
+      public std::enable_shared_from_this<AsyncTestPrivateKeySigner> {
+ public:
+  enum class Mode { kSuccess, kError, kCancellation };
+
+  explicit AsyncTestPrivateKeySigner(absl::string_view private_key,
+                                     Mode mode = Mode::kSuccess)
+      : pkey_(LoadPrivateKeyFromString(private_key)), mode_(mode) {}
 
   std::variant<absl::StatusOr<std::string>, std::shared_ptr<AsyncSigningHandle>>
   Sign(absl::string_view data_to_sign, SignatureAlgorithm signature_algorithm,
        OnSignComplete on_sign_complete) override {
-    return SignWithBoringSSL(data_to_sign, signature_algorithm, pkey_.get());
+    if (mode_ == Mode::kCancellation) {
+      return std::make_shared<AsyncSigningHandle>();
+    }
+    grpc_event_engine::experimental::GetDefaultEventEngine()->Run(
+        [self = shared_from_this(), data_to_sign = std::string(data_to_sign),
+         signature_algorithm,
+         on_sign_complete = std::move(on_sign_complete)]() mutable {
+          if (self->mode_ == Mode::kError) {
+            on_sign_complete(absl::InternalError("async signer error"));
+          } else {
+            on_sign_complete(SignWithBoringSSL(
+                data_to_sign, signature_algorithm, self->pkey_.get()));
+          }
+        });
+    return std::make_shared<AsyncSigningHandle>();
   }
 
-  void Cancel(std::shared_ptr<AsyncSigningHandle> handle) override {}
+  void Cancel(std::shared_ptr<AsyncSigningHandle> /*handle*/) override {
+    if (!was_cancelled_.exchange(true)) {
+      notification_.Notify();
+    }
+  }
+
+  bool WasCancelled() { return was_cancelled_.load(); }
 
  private:
-  absl::StatusOr<std::string> SignWithBoringSSL(
-      absl::string_view data_to_sign,
-      PrivateKeySigner::SignatureAlgorithm signature_algorithm,
-      EVP_PKEY* private_key) {
-    const uint8_t* in = reinterpret_cast<const uint8_t*>(data_to_sign.data());
-    const size_t in_len = data_to_sign.size();
-
-    uint16_t boring_signature_algorithm =
-        GetBoringSslAlgorithm(signature_algorithm);
-    if (EVP_PKEY_id(private_key) !=
-        SSL_get_signature_algorithm_key_type(boring_signature_algorithm)) {
-      fprintf(stderr, "Key type does not match signature algorithm.\n");
-    }
-
-    // Determine the hash.
-    const EVP_MD* md =
-        SSL_get_signature_algorithm_digest(boring_signature_algorithm);
-    bssl::ScopedEVP_MD_CTX ctx;
-    EVP_PKEY_CTX* pctx;
-    if (!EVP_DigestSignInit(ctx.get(), &pctx, md, nullptr, private_key)) {
-      return absl::InternalError("EVP_DigestSignInit failed");
-    }
-
-    // Configure additional signature parameters.
-    if (SSL_is_signature_algorithm_rsa_pss(boring_signature_algorithm)) {
-      if (!EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PSS_PADDING) ||
-          !EVP_PKEY_CTX_set_rsa_pss_saltlen(pctx, -1)) {
-        return absl::InternalError("EVP_PKEY_CTX failed");
-      }
-    }
-
-    size_t len = 0;
-    if (!EVP_DigestSign(ctx.get(), nullptr, &len, in, in_len)) {
-      return absl::InternalError("EVP_DigestSign failed");
-    }
-    std::vector<uint8_t> private_key_result;
-    private_key_result.resize(len);
-    if (!EVP_DigestSign(ctx.get(), private_key_result.data(), &len, in,
-                        in_len)) {
-      return absl::InternalError("EVP_DigestSign failed");
-    }
-    private_key_result.resize(len);
-    std::string private_key_result_str(private_key_result.begin(),
-                                       private_key_result.end());
-    return std::string(private_key_result.begin(), private_key_result.end());
-  }
-
   bssl::UniquePtr<EVP_PKEY> pkey_;
-};
-
-class BadSignatureSigner : public PrivateKeySigner {
- public:
-  std::variant<absl::StatusOr<std::string>, std::shared_ptr<AsyncSigningHandle>>
-  Sign(absl::string_view /*data_to_sign*/,
-       SignatureAlgorithm /*signature_algorithm*/,
-       OnSignComplete on_sign_complete) override {
-    return "bad signature";
-  }
-
-  void Cancel(std::shared_ptr<AsyncSigningHandle> handle) override {}
-};
-
-class ErrorSigner : public PrivateKeySigner {
- public:
-  std::variant<absl::StatusOr<std::string>, std::shared_ptr<AsyncSigningHandle>>
-  Sign(absl::string_view /*data_to_sign*/,
-       SignatureAlgorithm /*signature_algorithm*/,
-       OnSignComplete on_sign_complete) override {
-    return absl::InternalError("signer error");
-  }
-
-  void Cancel(std::shared_ptr<AsyncSigningHandle> handle) override {}
+  Mode mode_;
+  absl::Notification notification_;
+  std::atomic<bool> was_cancelled_{false};
 };
 
 enum class OffloadParty {
@@ -170,6 +198,12 @@ enum class OffloadParty {
 
 class PrivateKeyOffloadTest : public ::testing::TestWithParam<tsi_tls_version> {
  protected:
+  void SetUp() override {
+    event_engine_ = grpc_event_engine::experimental::GetDefaultEventEngine();
+  }
+
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+
   class SslOffloadTsiTestFixture {
    public:
     explicit SslOffloadTsiTestFixture(OffloadParty offload_party,
@@ -190,9 +224,9 @@ class PrivateKeyOffloadTest : public ::testing::TestWithParam<tsi_tls_version> {
           GetFileContents(absl::StrCat(kTestCredsRelativePath, "client.pem"));
       if (signer_ == nullptr) {
         if (offload_party_ == OffloadParty::kClient) {
-          signer_ = std::make_shared<BoringSslPrivateKeySigner>(client_key_);
+          signer_ = std::make_shared<SyncTestPrivateKeySigner>(client_key_);
         } else if (offload_party_ == OffloadParty::kServer) {
-          signer_ = std::make_shared<BoringSslPrivateKeySigner>(server_key_);
+          signer_ = std::make_shared<SyncTestPrivateKeySigner>(server_key_);
         }
       }
       server_pem_key_cert_pairs_.emplace_back(server_key_, server_cert_);
@@ -208,6 +242,11 @@ class PrivateKeyOffloadTest : public ::testing::TestWithParam<tsi_tls_version> {
       expect_success_on_client_ = expect_success_on_client;
       tsi_test_do_handshake(&base_);
       tsi_test_fixture_destroy(&base_);
+    }
+
+    void Shutdown() {
+      tsi_handshaker_shutdown(base_.client_handshaker);
+      tsi_handshaker_shutdown(base_.server_handshaker);
     }
 
     ~SslOffloadTsiTestFixture() {
@@ -321,45 +360,156 @@ struct tsi_test_fixture_vtable
         &PrivateKeyOffloadTest::SslOffloadTsiTestFixture::CheckHandshakerPeers,
         &PrivateKeyOffloadTest::SslOffloadTsiTestFixture::Destruct};
 
+// Verifies that server-side signing offload succeeds.
 TEST_P(PrivateKeyOffloadTest, OffloadOnServerSucceeds) {
   auto* fixture = new SslOffloadTsiTestFixture(OffloadParty::kServer, nullptr);
   fixture->Run(/*expect_success=*/true, /*expect_success_on_client*/ true);
 }
 
+// Verifies that client-side signing offload succeeds.
 TEST_P(PrivateKeyOffloadTest, OffloadOnClientSucceeds) {
   auto* fixture = new SslOffloadTsiTestFixture(OffloadParty::kClient, nullptr);
   fixture->Run(/*expect_success=*/true, /*expect_success_on_client*/ true);
 }
 
+// Verifies that providing a completely malformed signature string on the server
+// fails the handshake.
 TEST_P(PrivateKeyOffloadTest, OffloadFailsWithBadSignatureOnServer) {
   auto* fixture = new SslOffloadTsiTestFixture(
-      OffloadParty::kServer, std::make_shared<BadSignatureSigner>());
+      OffloadParty::kServer,
+      std::make_shared<SyncTestPrivateKeySigner>(
+          "", SyncTestPrivateKeySigner::Mode::kInvalidSignature));
   fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false);
 }
 
+// Verifies that providing a completely malformed signature string on the client
+// fails the handshake.
 TEST_P(PrivateKeyOffloadTest, OffloadFailsWithBadSignatureOnClient) {
   auto* fixture = new SslOffloadTsiTestFixture(
-      OffloadParty::kClient, std::make_shared<BadSignatureSigner>());
-  // When negotiating TLS 1.3, the client-side handshake succeeds
-  //  because server verification of the client certificate occurs after
-  //  the client-side handshake is complete.
-  //  If using OpenSSL version < 1.1, the CRL revocation won't
-  //  be enabled so the result should fail always.
+      OffloadParty::kClient,
+      std::make_shared<SyncTestPrivateKeySigner>(
+          "", SyncTestPrivateKeySigner::Mode::kInvalidSignature));
   fixture->Run(
       /*expect_success=*/false,
       /*expect_success_on_client*/ GetParam() == tsi_tls_version::TSI_TLS1_3);
 }
 
+// Verifies that an error returned by a synchronous signer on the server fails
+// the handshake.
 TEST_P(PrivateKeyOffloadTest, OffloadFailsWithSignerErrorOnServer) {
-  auto* fixture = new SslOffloadTsiTestFixture(OffloadParty::kServer,
-                                               std::make_shared<ErrorSigner>());
+  auto* fixture = new SslOffloadTsiTestFixture(
+      OffloadParty::kServer, std::make_shared<SyncTestPrivateKeySigner>(
+                                 "", SyncTestPrivateKeySigner::Mode::kError));
   fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false);
 }
 
+// Verifies that an error returned by a synchronous signer on the client fails
+// the handshake.
 TEST_P(PrivateKeyOffloadTest, OffloadFailsWithSignerErrorOnClient) {
-  auto* fixture = new SslOffloadTsiTestFixture(OffloadParty::kClient,
-                                               std::make_shared<ErrorSigner>());
+  auto* fixture = new SslOffloadTsiTestFixture(
+      OffloadParty::kClient, std::make_shared<SyncTestPrivateKeySigner>(
+                                 "", SyncTestPrivateKeySigner::Mode::kError));
   fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false);
+}
+
+// Verifies that an error returned by an asynchronous signer on the server fails
+// the handshake.
+TEST_P(PrivateKeyOffloadTest, OffloadFailsWithAsyncSignerErrorOnServer) {
+  auto* fixture = new SslOffloadTsiTestFixture(
+      OffloadParty::kServer, std::make_shared<AsyncTestPrivateKeySigner>(
+                                 "", AsyncTestPrivateKeySigner::Mode::kError));
+  fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false);
+}
+
+// Verifies that an error returned by an asynchronous signer on the client fails
+// the handshake.
+TEST_P(PrivateKeyOffloadTest, OffloadFailsWithAsyncSignerErrorOnClient) {
+  auto* fixture = new SslOffloadTsiTestFixture(
+      OffloadParty::kClient, std::make_shared<AsyncTestPrivateKeySigner>(
+                                 "", AsyncTestPrivateKeySigner::Mode::kError));
+  fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false);
+}
+
+// Verifies that providing a signature from the wrong key synchronously on the
+// server fails the handshake.
+TEST_P(PrivateKeyOffloadTest, OffloadFailsWithInvalidSignatureOnServer) {
+  std::string server_key =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "server0.key"));
+  auto* fixture = new SslOffloadTsiTestFixture(
+      OffloadParty::kServer,
+      std::make_shared<SyncTestPrivateKeySigner>(server_key));
+  fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false);
+}
+
+// Verifies that providing a signature from the wrong key synchronously on the
+// client fails the handshake.
+TEST_P(PrivateKeyOffloadTest, OffloadFailsWithInvalidSignatureOnClient) {
+  std::string client_key =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "client1.key"));
+  auto* fixture = new SslOffloadTsiTestFixture(
+      OffloadParty::kClient,
+      std::make_shared<SyncTestPrivateKeySigner>(client_key));
+  fixture->Run(
+      /*expect_success=*/false,
+      /*expect_success_on_client*/ GetParam() == tsi_tls_version::TSI_TLS1_3);
+}
+
+// Verifies that providing a signature from the wrong key asynchronously on the
+// server fails the handshake.
+TEST_P(PrivateKeyOffloadTest, OffloadFailsWithAsyncInvalidSignatureOnServer) {
+  std::string server_key =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "server0.key"));
+  auto* fixture = new SslOffloadTsiTestFixture(
+      OffloadParty::kServer,
+      std::make_shared<AsyncTestPrivateKeySigner>(server_key));
+  fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false);
+}
+
+// Verifies that providing a signature from the wrong key asynchronously on the
+// client fails the handshake.
+TEST_P(PrivateKeyOffloadTest, OffloadFailsWithAsyncInvalidSignatureOnClient) {
+  std::string client_key =
+      GetFileContents(absl::StrCat(kTestCredsRelativePath, "client1.key"));
+  auto* fixture = new SslOffloadTsiTestFixture(
+      OffloadParty::kClient,
+      std::make_shared<AsyncTestPrivateKeySigner>(client_key));
+  fixture->Run(
+      /*expect_success=*/false,
+      /*expect_success_on_client*/ GetParam() == tsi_tls_version::TSI_TLS1_3);
+}
+
+// Verifies that server-side async signing is correctly cancelled when the
+// handshaker is shut down.
+TEST_P(PrivateKeyOffloadTest, OffloadFailsWithSignCancelledOnServer) {
+  auto signer = std::make_shared<AsyncTestPrivateKeySigner>(
+      "", AsyncTestPrivateKeySigner::Mode::kCancellation);
+  auto* fixture = new SslOffloadTsiTestFixture(
+      OffloadParty::kServer,
+      std::static_pointer_cast<PrivateKeySigner>(signer));
+  std::thread cancellation_thread([fixture]() {
+    absl::SleepFor(absl::Seconds(1));
+    fixture->Shutdown();
+  });
+  fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false);
+  cancellation_thread.join();
+  EXPECT_TRUE(signer->WasCancelled());
+}
+
+// Verifies that client-side async signing is correctly cancelled when the
+// handshaker is shut down.
+TEST_P(PrivateKeyOffloadTest, OffloadFailsWithSignCancelledOnClient) {
+  auto signer = std::make_shared<AsyncTestPrivateKeySigner>(
+      "", AsyncTestPrivateKeySigner::Mode::kCancellation);
+  auto* fixture = new SslOffloadTsiTestFixture(
+      OffloadParty::kClient,
+      std::static_pointer_cast<PrivateKeySigner>(signer));
+  std::thread cancellation_thread([fixture]() {
+    absl::SleepFor(absl::Seconds(1));
+    fixture->Shutdown();
+  });
+  fixture->Run(/*expect_success=*/false, /*expect_success_on_client*/ false);
+  cancellation_thread.join();
+  EXPECT_TRUE(signer->WasCancelled());
 }
 
 std::string TestNameSuffix(
