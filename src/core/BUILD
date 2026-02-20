@@ -405,7 +405,10 @@ grpc_cc_library(
         "absl/strings",
     ],
     tags = ["nofixdeps"],
-    visibility = ["//bazel:grpc_experiments"],
+    visibility = [
+        "//bazel:grpc_experiments",
+        "//net/rpc2/experiments:__subpackages__",
+    ],
     deps = [
         "no_destruct",
         "//:config_vars",
