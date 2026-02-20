@@ -277,7 +277,6 @@ void RegionalAccessBoundaryFetcher::Fetch(absl::string_view access_token,
     }
     // If we have a cached non-expired token, use it.
     if (cache_.has_value() && cache_->expiration > now) {
-      std::cout << "Appending x-allowed-locations header: " << cache_->encoded_locations << std::endl;
       initial_metadata.Append(
           kAllowedLocationsKey,
           Slice::FromCopiedString(

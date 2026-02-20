@@ -4358,6 +4358,7 @@ grpc_cc_library(
         "grpc_core_credentials_header",
         "grpc_credentials_util",
         "grpc_security_base",
+        "//src/core:default_event_engine",
         "grpc_trace",
         "httpcli",
         "iomgr",
