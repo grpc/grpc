@@ -388,6 +388,7 @@ class ExperimentsCompiler(object):
 
     def _GenerateExperimentsHdrForPlatform(self, platform, file_desc):
         for _, exp in self._experiment_definitions.items():
+            print("// %s" % exp.name, file=file_desc)
             define_fmt = self._final_define[exp.default(platform)]
             if define_fmt:
                 print(
@@ -457,10 +458,12 @@ class ExperimentsCompiler(object):
                 experiments_metadata_var_name = "g_experiment_metadata"
             print("enum ExperimentIds {", file=H)
             for exp in self._experiment_definitions.values():
+                print(f"  // {exp.name}", file=H)
                 print(f"  kExperimentId{SnakeToPascal(exp.name)},", file=H)
             print(f"  {num_experiments_var_name}", file=H)
             print("};", file=H)
             for exp in self._experiment_definitions.values():
+                print("// %s" % exp.name, file=H)
                 print(
                     "#define GRPC_EXPERIMENT_IS_INCLUDED_%s" % exp.name.upper(),
                     file=H,
