@@ -444,8 +444,7 @@ class grpc_compute_engine_token_fetcher_credentials
                           "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/%s/allowedLocations",
                           gce_creds->service_account_email_);
                       gce_creds->regional_access_boundary_fetcher_ = 
-                          grpc_core::MakeRefCounted<grpc_core::RegionalAccessBoundaryFetcher>(
-                              rab_url, grpc_event_engine::experimental::GetDefaultEventEngine());
+                          grpc_core::MakeRefCounted<grpc_core::RegionalAccessBoundaryFetcher>(rab_url);
                  }
                  if (gce_creds->regional_access_boundary_fetcher_ != nullptr) {
                       fetcher_ref = gce_creds->regional_access_boundary_fetcher_->Ref();

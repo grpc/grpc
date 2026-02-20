@@ -51,7 +51,7 @@ RegionalAccessBoundaryFetcher::RegionalAccessBoundaryFetcher(
     absl::string_view lookup_url,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
     std::optional<grpc_core::BackOff::Options> backoff_options)
-    : event_engine_(std::move(event_engine)),
+    : event_engine_(event_engine == nullptr ? grpc_event_engine::experimental::GetDefaultEventEngine() : std::move(event_engine)),
       backoff_(
           backoff_options.has_value()
               ? *backoff_options

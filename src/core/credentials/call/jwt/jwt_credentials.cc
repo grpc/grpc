@@ -116,8 +116,7 @@ grpc_service_account_jwt_access_credentials::
                                                 gpr_timespec token_lifetime)
     : key_(key), regional_access_boundary_fetcher_(grpc_core::MakeRefCounted<grpc_core::RegionalAccessBoundaryFetcher>(
         absl::StrFormat("https://iamcredentials.googleapis.com/v1/projects/-/"
-                     "serviceAccounts/%s/allowedLocations", key_.client_email),
-        grpc_event_engine::experimental::GetDefaultEventEngine())) {
+                     "serviceAccounts/%s/allowedLocations", key_.client_email))) {
   gpr_timespec max_token_lifetime = grpc_max_auth_token_lifetime();
   if (gpr_time_cmp(token_lifetime, max_token_lifetime) > 0) {
     VLOG(2) << "Cropping token lifetime to maximum allowed value ("

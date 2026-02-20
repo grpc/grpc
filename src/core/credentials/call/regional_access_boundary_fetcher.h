@@ -42,7 +42,7 @@ class RegionalAccessBoundaryFetcher final : public DualRefCounted<RegionalAccess
 
   explicit RegionalAccessBoundaryFetcher(
       absl::string_view lookup_url,
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine = nullptr,
       std::optional<grpc_core::BackOff::Options> backoff_options = std::nullopt);
 
    // Attaches regional access boundary header (x-allowed-locations) to the initial metadata 

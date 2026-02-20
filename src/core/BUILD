@@ -11383,6 +11383,7 @@ grpc_cc_library(
         "closure",
         "context",
         "dual_ref_counted",
+        "//src/core:default_event_engine",
         "env",
         "error",
         "grpc_check",
