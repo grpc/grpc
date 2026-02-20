@@ -19,12 +19,13 @@ from typing import Generic, Optional
 import grpc
 
 from . import _base_call
+from ._metadata import MetadataType
 from ._typing import DeserializingFunction
 from ._typing import RequestIterableType
 from ._typing import RequestType
 from ._typing import ResponseType
 from ._typing import SerializingFunction
-from ._metadata import MetadataType
+
 
 class UnaryUnaryMultiCallable(Generic[RequestType, ResponseType], abc.ABC):
     """Enables asynchronous invocation of a unary-call RPC."""
