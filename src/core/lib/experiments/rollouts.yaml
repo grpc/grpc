@@ -112,3 +112,5 @@
   default: false
 - name: use_call_event_engine_in_completion_queue
   default: false
+- name: xds_channel_filter_chain_per_route
+  default: true
