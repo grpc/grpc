@@ -1684,6 +1684,17 @@ Pod::Spec.new do |s|
                       'third_party/zlib/trees.h',
                       'third_party/zlib/zconf.h',
                       'third_party/zlib/zlib.h',
+                      'third_party/zlib/zlib/include/crc32.h',
+                      'third_party/zlib/zlib/include/deflate.h',
+                      'third_party/zlib/zlib/include/gzguts.h',
+                      'third_party/zlib/zlib/include/inffast.h',
+                      'third_party/zlib/zlib/include/inffixed.h',
+                      'third_party/zlib/zlib/include/inflate.h',
+                      'third_party/zlib/zlib/include/inftrees.h',
+                      'third_party/zlib/zlib/include/trees.h',
+                      'third_party/zlib/zlib/include/zconf.h',
+                      'third_party/zlib/zlib/include/zlib.h',
+                      'third_party/zlib/zlib/include/zutil.h',
                       'third_party/zlib/zutil.h'
 
     ss.private_header_files = 'src/core/call/call_arena_allocator.h',
@@ -3044,6 +3055,17 @@ Pod::Spec.new do |s|
                               'third_party/zlib/trees.h',
                               'third_party/zlib/zconf.h',
                               'third_party/zlib/zlib.h',
+                              'third_party/zlib/zlib/include/crc32.h',
+                              'third_party/zlib/zlib/include/deflate.h',
+                              'third_party/zlib/zlib/include/gzguts.h',
+                              'third_party/zlib/zlib/include/inffast.h',
+                              'third_party/zlib/zlib/include/inffixed.h',
+                              'third_party/zlib/zlib/include/inflate.h',
+                              'third_party/zlib/zlib/include/inftrees.h',
+                              'third_party/zlib/zlib/include/trees.h',
+                              'third_party/zlib/zlib/include/zconf.h',
+                              'third_party/zlib/zlib/include/zlib.h',
+                              'third_party/zlib/zlib/include/zutil.h',
                               'third_party/zlib/zutil.h'
   end
 
