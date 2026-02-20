@@ -227,7 +227,7 @@ class TestTypeMetadata(unittest.TestCase):
         t = (("key", "value"),)
         self.assertEqual(Metadata._create(t), Metadata(("key", "value")))
 
-        # 4. raw_metadata is list (iterable)
+        # 4. raw_metadata is list
         l = [("key", "value")]
         self.assertEqual(Metadata._create(l), Metadata(("key", "value")))
 

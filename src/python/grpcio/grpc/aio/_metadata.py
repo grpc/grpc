@@ -24,7 +24,6 @@ MetadataValue = Union[str, bytes]
 MetadatumType = Tuple[MetadataKey, MetadataValue]
 MetadataType = Union[Metadata, Sequence[MetadatumType]]
 
-
 class Metadata(abc.Collection):  # noqa: PLW1641
     """Metadata abstraction for the asynchronous calls and interceptors.
 
@@ -38,7 +37,7 @@ class Metadata(abc.Collection):  # noqa: PLW1641
         * Allows partial mutation on the data without recreating the new object from scratch.
     """
 
-    def __init__(self, *args: Tuple[MetadataKey, MetadataValue]) -> None:
+    def __init__(self, *args: MetadatumType) -> None:
         self._metadata = OrderedDict()
         for md_key, md_value in args:
             self.add(md_key, md_value)
