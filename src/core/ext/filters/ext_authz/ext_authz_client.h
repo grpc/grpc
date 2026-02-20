@@ -31,22 +31,12 @@ namespace grpc_core {
 
 class ExtAuthzClient : public DualRefCounted<ExtAuthzClient> {
  public:
-  ExtAuthzClient(
-      std::shared_ptr<XdsBootstrap> bootstrap,
-      RefCountedPtr<XdsTransportFactory> transport_factory,
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine);
+  ExtAuthzClient(RefCountedPtr<XdsTransportFactory> transport_factory,
+                 std::shared_ptr<const XdsBootstrap::XdsServerTarget> server);
   ~ExtAuthzClient() override;
 
   // Resets connection backoff state.
   void ResetBackoff();
-
-  XdsTransportFactory* transport_factory() const {
-    return transport_factory_.get();
-  }
-
-  grpc_event_engine::experimental::EventEngine* engine() {
-    return engine_.get();
-  }
 
   struct ExtAuthzResponse {
     struct OkResponse {
@@ -71,30 +61,14 @@ class ExtAuthzClient : public DualRefCounted<ExtAuthzClient> {
     std::string path;
   };
 
+  absl::StatusOr<ExtAuthzResponse> Check(const ExtAuthzRequestParams& params);
+
+  XdsTransportFactory* transport_factory() const {
+    return transport_factory_.get();
+  }
+
  private:
-  class ExtAuthzChannel final : public DualRefCounted<ExtAuthzChannel> {
-   public:
-    absl::StatusOr<ExtAuthzResponse> Check(const ExtAuthzRequestParams& params);
-
-    ExtAuthzChannel(
-        WeakRefCountedPtr<ExtAuthzClient> ext_authz_client_,
-        std::shared_ptr<const XdsBootstrap::XdsServerTarget> server);
-    ~ExtAuthzChannel() override;
-
-    ExtAuthzClient* ext_authz_client() const { return ext_authz_client_.get(); }
-    absl::string_view server_uri() const { return server_->server_uri(); }
-    void ResetBackoff();
-
-   private:
-    void Orphaned() override;
-
-    // The owning ExtAuthzClient.
-    WeakRefCountedPtr<ExtAuthzClient> ext_authz_client_;
-
-    std::shared_ptr<const XdsBootstrap::XdsServerTarget> server_;
-
-    RefCountedPtr<XdsTransportFactory::XdsTransport> transport_;
-  };
+  void Orphaned() override;
 
   std::string CreateExtAuthzRequest(const ExtAuthzRequestParams& params)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
@@ -102,19 +76,12 @@ class ExtAuthzClient : public DualRefCounted<ExtAuthzClient> {
   absl::StatusOr<ExtAuthzResponse> ParseExtAuthzResponse(
       absl::string_view encoded_response) ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
-  void RemoveExtAuthzChannel(const std::string& key)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
-  RefCountedPtr<ExtAuthzChannel> GetOrCreateExtAuthzChannelLocked(
-      std::shared_ptr<const XdsBootstrap::XdsServerTarget> server,
-      const char* reason) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
-  std::shared_ptr<XdsBootstrap> bootstrap_;  // not required
   RefCountedPtr<XdsTransportFactory> transport_factory_;
+  std::shared_ptr<const XdsBootstrap::XdsServerTarget> server_;
+  RefCountedPtr<XdsTransportFactory::XdsTransport> transport_;
+
   Mutex mu_;
   upb::DefPool def_pool_ ABSL_GUARDED_BY(mu_);
-  std::map<std::string /*XdsServer key*/, ExtAuthzChannel*>
-      ext_authz_channel_map_ ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace grpc_core

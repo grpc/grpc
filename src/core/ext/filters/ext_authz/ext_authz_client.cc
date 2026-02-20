@@ -49,71 +49,55 @@
 
 namespace grpc_core {
 
-using ::grpc_event_engine::experimental::EventEngine;
-
 //
-// Internal class declarations
+// ExtAuthzClient
 //
 
-//
-// ExtAuthzClient::ExtAuthzChannel
-//
-
-ExtAuthzClient::ExtAuthzChannel::ExtAuthzChannel(
-    WeakRefCountedPtr<ExtAuthzClient> ext_authz_client_,
+ExtAuthzClient::ExtAuthzClient(
+    RefCountedPtr<XdsTransportFactory> transport_factory,
     std::shared_ptr<const XdsBootstrap::XdsServerTarget> server)
-    : DualRefCounted<ExtAuthzChannel>(
-          GRPC_TRACE_FLAG_ENABLED(xds_client_refcount) ? "ExtAuthzChannel"
+    : DualRefCounted<ExtAuthzClient>(
+          GRPC_TRACE_FLAG_ENABLED(xds_client_refcount) ? "ExtAuthzClient"
                                                        : nullptr),
-      ext_authz_client_(std::move(ext_authz_client_)),
+      transport_factory_(std::move(transport_factory)),
       server_(std::move(server)) {
   GRPC_TRACE_LOG(xds_client, INFO)
-      << "[ext_authz_client " << ext_authz_client_.get()
-      << "] creating channel " << this << " for server "
-      << server_->server_uri();
+      << "[ext_authz_client " << this << "] creating ext_authz client "
+      << "for server " << server_->server_uri();
   absl::Status status;
-  transport_ =
-      ext_authz_client_->transport_factory_->GetTransport(*server_, &status);
+  transport_ = transport_factory_->GetTransport(*server_, &status);
   GRPC_CHECK(transport_ != nullptr);
   if (!status.ok()) {
-    LOG(ERROR) << "Error creating ExtAuthz channel to " << server_->server_uri()
+    LOG(ERROR) << "Error creating ExtAuthz client to " << server_->server_uri()
                << ": " << status;
   }
 }
 
-ExtAuthzClient::ExtAuthzChannel::~ExtAuthzChannel() {
-  GRPC_TRACE_LOG(xds_client, INFO) << "[ext_authz_client " << ext_authz_client()
-                                   << "] destroying ExtAuthz channel " << this
-                                   << " for server " << server_->server_uri();
-  ext_authz_client_.reset(DEBUG_LOCATION, "ExtAuthzChannel");
+ExtAuthzClient::~ExtAuthzClient() {
+  GRPC_TRACE_LOG(xds_client, INFO)
+      << "[ext_authz_client " << this << "] destroying ext_authz client "
+      << "for server " << server_->server_uri();
 }
 
-// This method should only ever be called when holding the lock, but we can't
-// use a ABSL_EXCLUSIVE_LOCKS_REQUIRED annotation, because Orphan() will be
-// called from DualRefCounted::Unref(), which cannot have a lock annotation for
-// a lock in this subclass.
-void ExtAuthzClient::ExtAuthzChannel::Orphaned()
-    ABSL_NO_THREAD_SAFETY_ANALYSIS {
-  GRPC_TRACE_LOG(xds_client, INFO) << "[ext_authz_client " << ext_authz_client()
-                                   << "] orphaning ExtAuthz channel " << this
-                                   << " for server " << server_->server_uri();
+void ExtAuthzClient::Orphaned() {
+  GRPC_TRACE_LOG(xds_client, INFO)
+      << "[ext_authz_client " << this << "] orphaning ext_authz client "
+      << "for server " << server_->server_uri();
   transport_.reset();
-  // At this time, all strong refs are removed, remove from channel map to
-  // prevent subsequent subscription from trying to use this ExtAuthzChannel as
-  // it is shutting down.
-  ext_authz_client_->ext_authz_channel_map_.erase(server_->Key());
 }
 
-void ExtAuthzClient::ExtAuthzChannel::ResetBackoff() {
-  transport_->ResetBackoff();
+void ExtAuthzClient::ResetBackoff() {
+  if (transport_ != nullptr) {
+    transport_->ResetBackoff();
+  }
 }
 
-absl::StatusOr<ExtAuthzClient::ExtAuthzResponse>
-ExtAuthzClient::ExtAuthzChannel::Check(const ExtAuthzRequestParams& params) {
+absl::StatusOr<ExtAuthzClient::ExtAuthzResponse> ExtAuthzClient::Check(
+    const ExtAuthzRequestParams& params) {
   std::string payload;
   {
-    MutexLock lock(&ext_authz_client()->mu_);
-    payload = ext_authz_client()->CreateExtAuthzRequest(params);
+    MutexLock lock(&mu_);
+    payload = CreateExtAuthzRequest(params);
   }
   const char* method = "/envoy.service.auth.v3.Authorization/Check";
   auto call = transport_->CreateUnaryCall(method);
@@ -122,19 +106,18 @@ ExtAuthzClient::ExtAuthzChannel::Check(const ExtAuthzRequestParams& params) {
   }
   // Start the call.
   GRPC_TRACE_LOG(xds_client, INFO)
-      << "[ext_authz_client " << ext_authz_client() << "] ext_authz server "
+      << "[ext_authz_client " << this << "] ext_authz server "
       << server_->server_uri() << ": starting ext_authz call";
   auto status = call->SendMessage(std::move(payload));
   if (!status.ok()) {
     return status.status();
   }
-  MutexLock lock(&ext_authz_client()->mu_);
-  return ext_authz_client()->ParseExtAuthzResponse(*status);
+  MutexLock lock(&mu_);
+  return ParseExtAuthzResponse(*status);
 }
 
-
 //
-// ExtAuthzClient::ExtAuthzRequest
+// ExtAuthzRequest
 //
 
 namespace {
@@ -185,6 +168,7 @@ envoy_service_auth_v3_AttributeContext_Request* CreateRequest(
   google_protobuf_Timestamp_set_nanos(
       timestamp, now.milliseconds_after_process_epoch() * 1000000);
   // set headers
+  // TODO(rishesh): correct header logic for value and raw-value
   auto header_map = envoy_config_core_v3_HeaderMap_new(context.arena);
   for (auto& [key, value] : params.headers) {
     auto* header_to_assign =
@@ -304,59 +288,6 @@ ExtAuthzClient::ParseExtAuthzResponse(absl::string_view encoded_response) {
     }
   }
   return result;
-}
-
-//
-// ExtAuthzClient
-//
-
-ExtAuthzClient::ExtAuthzClient(
-    std::shared_ptr<XdsBootstrap> bootstrap,
-    RefCountedPtr<XdsTransportFactory> transport_factory,
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine)
-    : DualRefCounted<ExtAuthzClient>(
-          GRPC_TRACE_FLAG_ENABLED(xds_client_refcount) ? "ExtAuthzClient"
-                                                       : nullptr),
-      engine_(std::move(engine)),
-      bootstrap_(std::move(bootstrap)),
-      transport_factory_(std::move(transport_factory)) {
-  GRPC_TRACE_LOG(xds_client, INFO)
-      << "[ext_authz_client " << this << "] creating ext_authz client";
-}
-
-ExtAuthzClient::~ExtAuthzClient() {
-  GRPC_TRACE_LOG(xds_client, INFO)
-      << "[ext_authz_client " << this << "] destroying ext_authz client";
-}
-
-RefCountedPtr<ExtAuthzClient::ExtAuthzChannel>
-ExtAuthzClient::GetOrCreateExtAuthzChannelLocked(
-    std::shared_ptr<const XdsBootstrap::XdsServerTarget> server,
-    const char* reason) {
-  std::string key = server->Key();
-  auto it = ext_authz_channel_map_.find(key);
-  if (it != ext_authz_channel_map_.end()) {
-    return it->second->Ref(DEBUG_LOCATION, reason);
-  }
-  // Channel not found, so create a new one.
-  auto ext_authz_channel = MakeRefCounted<ExtAuthzChannel>(
-      WeakRef(DEBUG_LOCATION, "ExtAuthzChannel"), std::move(server));
-  ext_authz_channel_map_[std::move(key)] = ext_authz_channel.get();
-  return ext_authz_channel;
-}
-
-void ExtAuthzClient::ResetBackoff() {
-  MutexLock lock(&mu_);
-  for (auto& [_, ext_authz_channel] : ext_authz_channel_map_) {
-    ext_authz_channel->ResetBackoff();
-  }
-}
-
-void ExtAuthzClient::RemoveExtAuthzChannel(const std::string& key) {
-  auto it = ext_authz_channel_map_.find(key);
-  if (it != ext_authz_channel_map_.end()) {
-    ext_authz_channel_map_.erase(key);
-  }
 }
 
 }  // namespace grpc_core
