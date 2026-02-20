@@ -180,7 +180,8 @@ inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
 // wildcard_ip_expansion_restriction
 inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
 // xds_channel_filter_chain_per_route
-inline bool IsXdsChannelFilterChainPerRouteEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_XDS_CHANNEL_FILTER_CHAIN_PER_ROUTE
+inline bool IsXdsChannelFilterChainPerRouteEnabled() { return true; }
 
 #elif defined(GPR_WINDOWS)
 // buffer_list_deletion_prep
@@ -306,7 +307,8 @@ inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
 // wildcard_ip_expansion_restriction
 inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
 // xds_channel_filter_chain_per_route
-inline bool IsXdsChannelFilterChainPerRouteEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_XDS_CHANNEL_FILTER_CHAIN_PER_ROUTE
+inline bool IsXdsChannelFilterChainPerRouteEnabled() { return true; }
 
 #else
 // buffer_list_deletion_prep
@@ -432,7 +434,8 @@ inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
 // wildcard_ip_expansion_restriction
 inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
 // xds_channel_filter_chain_per_route
-inline bool IsXdsChannelFilterChainPerRouteEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_XDS_CHANNEL_FILTER_CHAIN_PER_ROUTE
+inline bool IsXdsChannelFilterChainPerRouteEnabled() { return true; }
 #endif
 
 #else
