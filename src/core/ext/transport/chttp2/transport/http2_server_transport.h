@@ -93,7 +93,8 @@ namespace http2 {
 // familiar with the PH2 project (Moving chttp2 to promises.)
 // TODO(tjagtap) : [PH2][P5] : Update the experimental status of the code when
 // http2 rollout is completed.
-class Http2ServerTransport final : public ServerTransport {
+class Http2ServerTransport final : public ServerTransport,
+                                   public channelz::DataSource {
   // TODO(tjagtap) : [PH2][P3] Move the definitions to the header for better
   // inlining. For now definitions are in the cc file to
   // reduce cognitive load in the header.
@@ -134,9 +135,6 @@ class Http2ServerTransport final : public ServerTransport {
 
   void Orphan() override;
 
-  // TODO(tjagtap) : [PH2][P0] : Check if we need this for Server.
-  void AbortWithError();
-
   bool AreTransportFlowControlTokensAvailable() {
     return flow_control_.remote_window() > 0;
   }
@@ -146,19 +144,18 @@ class Http2ServerTransport final : public ServerTransport {
   //////////////////////////////////////////////////////////////////////////////
   // Channelz and ZTrace
 
-  // std::unique_ptr<channelz::ZTrace> GetZTrace(absl::string_view name)
-  // override {
-  //   if (name == "transport_frames") return ztrace_collector_->MakeZTrace();
-  //   return nullptr;
-  // }
+  std::unique_ptr<channelz::ZTrace> GetZTrace(absl::string_view name) override {
+    if (name == "transport_frames") return ztrace_collector_->MakeZTrace();
+    return nullptr;
+  }
 
   RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
     return nullptr;
   }
 
-  // void AddData(channelz::DataSink sink) override;
-  // void SpawnAddChannelzData(RefCountedPtr<Party> party,
-  //                           channelz::DataSink sink);
+  void AddData(channelz::DataSink sink) override;
+  void SpawnAddChannelzData(RefCountedPtr<Party> party,
+                            channelz::DataSink sink);
 
   //////////////////////////////////////////////////////////////////////////////
   // Watchers
@@ -235,14 +232,18 @@ class Http2ServerTransport final : public ServerTransport {
   //////////////////////////////////////////////////////////////////////////////
   // Transport Write Path
 
-  // absl::Status TriggerWriteCycle(DebugLocation whence = {}) {
-  //   GRPC_HTTP2_SERVER_DLOG
-  //       << "Http2ServerTransport::TriggerWriteCycle invoked from "
-  //       << whence.file() << ":" << whence.line();
-  //   return writable_stream_list_.ForceReadyForWrite();
-  // }
-
-  // TriggerWriteCycleOrHandleError
+  // Triggers a write cycle. If successful, returns true.
+  // If failed, calls HandleError and returns false.
+  bool TriggerWriteCycleOrHandleError(DebugLocation whence = {}) {
+    absl::Status status = TriggerWriteCycle(whence);
+    if (GPR_LIKELY(status.ok())) return true;
+    GRPC_HTTP2_SERVER_DLOG
+        << "TriggerWriteCycleOrHandleError failed with status: " << status
+        << " at " << whence.file() << ":" << whence.line();
+    GRPC_UNUSED absl::Status unused_status =
+        HandleError(std::nullopt, ToHttpOkOrConnError(status), whence);
+    return false;
+  }
 
   // auto ProcessAndWriteControlFrames();
   // void NotifyControlFramesWriteDone();
@@ -311,8 +312,17 @@ class Http2ServerTransport final : public ServerTransport {
   // Spawns a promise on the transport party. If the promise returns a non-ok
   // status, it is handled by closing the transport with the corresponding
   // status.
-  // template <typename Factory>
-  // void SpawnGuardedTransportParty(absl::string_view name, Factory&& factory);
+  template <typename Factory>
+  void SpawnGuardedTransportParty(absl::string_view name, Factory&& factory) {
+    general_party_->Spawn(
+        name, std::forward<Factory>(factory),
+        [self = RefAsSubclass<Http2ServerTransport>()](absl::Status status) {
+          if (!status.ok()) {
+            GRPC_UNUSED absl::Status error = self->HandleError(
+                /*stream_id=*/std::nullopt, ToHttpOkOrConnError(status));
+          }
+        });
+  }
 
   template <typename Factory, typename OnDone>
   void SpawnWithOnDoneTransportParty(absl::string_view name, Factory&& factory,
@@ -518,10 +528,10 @@ class Http2ServerTransport final : public ServerTransport {
 
   // bool SetOnDone(CallHandler call_handler, RefCountedPtr<Stream> stream);
 
-  // void ReadChannelArgs(const ChannelArgs& channel_args,
-  //                      TransportChannelArgs& args);
+  void ReadChannelArgs(const ChannelArgs& channel_args,
+                       TransportChannelArgs& args);
 
-  // auto SecurityFrameLoop();
+  auto SecurityFrameLoop();
 
   //////////////////////////////////////////////////////////////////////////////
   // Inner Classes and Structs

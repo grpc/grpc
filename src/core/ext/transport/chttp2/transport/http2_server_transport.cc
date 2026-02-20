@@ -136,20 +136,63 @@ void Http2ServerTransport::PerformOp(GRPC_UNUSED grpc_transport_op*) {
 
 void Http2ServerTransport::Orphan() {
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport Orphan Begin";
+  SourceDestructing();
   // TODO(tjagtap) : [PH2][P2] : Implement the needed cleanup
   general_party_.reset();
   Unref();
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport Orphan End";
 }
 
-void Http2ServerTransport::AbortWithError() {
-  GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport AbortWithError Begin";
-  // TODO(tjagtap) : [PH2][P2] : Implement this function.
-  GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport AbortWithError End";
-}
-
 //////////////////////////////////////////////////////////////////////////////
 // Channelz and ZTrace
+
+void Http2ServerTransport::AddData(channelz::DataSink sink) {
+  GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::AddData Begin";
+
+  event_engine_->Run([self = RefAsSubclass<Http2ServerTransport>(),
+                      sink = std::move(sink)]() mutable {
+    RefCountedPtr<Party> party = nullptr;
+    {
+      MutexLock lock(&self->transport_mutex_);
+      if (GPR_LIKELY(!self->is_transport_closed_)) {
+        GRPC_DCHECK(self->general_party_ != nullptr);
+        party = self->general_party_;
+      } else {
+        GRPC_HTTP2_SERVER_DLOG
+            << "Http2ServerTransport::AddData Transport is closed.";
+      }
+    }
+
+    ExecCtx exec_ctx;
+    if (party != nullptr) {
+      self->SpawnAddChannelzData(std::move(party), std::move(sink));
+    }
+    self.reset();  // Cleanup with exec_ctx in scope
+  });
+}
+
+void Http2ServerTransport::SpawnAddChannelzData(RefCountedPtr<Party> party,
+                                                channelz::DataSink sink) {
+  SpawnInfallible(
+      std::move(party), "AddData",
+      [self = RefAsSubclass<Http2ServerTransport>(),
+       sink = std::move(sink)]() mutable {
+        GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::AddData Promise";
+        sink.AddData(
+            "Http2ServerTransport",
+            channelz::PropertyList()
+                .Set("keepalive_time", self->keepalive_time_)
+                .Set("keepalive_permit_without_calls",
+                     self->keepalive_permit_without_calls_)
+                .Set("settings", self->settings_->ChannelzProperties())
+                .Set("flow_control",
+                     self->flow_control_.stats().ChannelzProperties()));
+        self->general_party_->ExportToChannelz("Http2ServerTransport Party",
+                                               sink);
+        GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::AddData End";
+        return Empty{};
+      });
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // Watchers
@@ -1022,6 +1065,56 @@ RefCountedPtr<Stream> Http2ServerTransport::LookupStream(uint32_t stream_id) {
 //////////////////////////////////////////////////////////////////////////////
 // Misc Transport Stuff
 
+// NotifyStateWatcherOnDisconnectLocked
+
+// ReportDisconnection
+
+// void ReportDisconnectionLocked
+
+// bool SetOnDone
+
+void Http2ServerTransport::ReadChannelArgs(const ChannelArgs& channel_args,
+                                           TransportChannelArgs& args) {
+  http2::ReadChannelArgs(channel_args, args, settings_->mutable_local(),
+                         flow_control_,
+                         /*is_client=*/true);
+
+  // Assign the channel args to the member variables.
+  keepalive_time_ = args.keepalive_time;
+  incoming_headers_.set_soft_limit(args.max_header_list_size_soft_limit);
+  keepalive_permit_without_calls_ = args.keepalive_permit_without_calls;
+  enable_preferred_rx_crypto_frame_advertisement_ =
+      args.enable_preferred_rx_crypto_frame_advertisement;
+  test_only_ack_pings_ = args.test_only_ack_pings;
+
+  if (args.initial_sequence_number > 0) {
+    next_stream_id_ = args.initial_sequence_number;
+  }
+
+  settings_->SetSettingsTimeout(args.settings_timeout);
+  if (args.max_usable_hpack_table_size >= 0) {
+    encoder_.SetMaxUsableSize(args.max_usable_hpack_table_size);
+  }
+}
+
+auto Http2ServerTransport::SecurityFrameLoop() {
+  GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport::SecurityFrameLoop Factory";
+  return UntilTransportClosed(AssertResultType<Empty>(Loop([this]() {
+    return Map(
+        security_frame_handler_->WaitForSecurityFrameSending(),
+        [this](Empty) -> LoopCtl<Empty> {
+          if (security_frame_handler_->TriggerWriteSecurityFrame().terminate) {
+            return Empty{};
+          }
+
+          if (!TriggerWriteCycleOrHandleError()) {
+            return Empty{};
+          }
+          return Continue();
+        });
+  })));
+}
+
 //////////////////////////////////////////////////////////////////////////////
 // Inner Classes and Structs
 
@@ -1107,7 +1200,9 @@ uint32_t Http2ServerTransport::GoawayInterfaceImpl::GetLastAcceptedStreamId() {
 Http2ServerTransport::Http2ServerTransport(
     PromiseEndpoint endpoint, GRPC_UNUSED const ChannelArgs& channel_args,
     std::shared_ptr<EventEngine> event_engine)
-    : outgoing_frames_(kMpscSize),
+    : channelz::DataSource(http2::CreateChannelzSocketNode(
+          endpoint.GetEventEngineEndpoint(), channel_args)),
+      outgoing_frames_(kMpscSize),
       endpoint_(std::move(endpoint)),
       incoming_headers_(IncomingMetadataTracker::GetPeerString(endpoint_)),
       ping_manager_(std::nullopt),
@@ -1123,6 +1218,7 @@ Http2ServerTransport::Http2ServerTransport(
   // TODO(tjagtap) : [PH2][P2] : Initialize settings_ to appropriate values.
 
   GRPC_HTTP2_SERVER_DLOG << "Http2ServerTransport Constructor Begin";
+  SourceConstructed();
 
   // Initialize the general party and write party.
   auto general_party_arena = SimpleArenaAllocator(0)->MakeArena();
