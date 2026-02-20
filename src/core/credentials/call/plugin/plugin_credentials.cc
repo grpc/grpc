@@ -25,6 +25,7 @@
 #include <memory>
 
 #include "src/core/call/metadata_batch.h"
+#include "src/core/call/status_util.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/promise.h"
@@ -129,7 +130,7 @@ void grpc_plugin_credentials::PendingRequest::RequestMetadataReady(
     r->metadata_.push_back(p);
   }
   r->error_details_ = error_details == nullptr ? "" : error_details;
-  r->status_ = status;
+  r->status_ = grpc_status_code_clamp_to_valid(status);
   r->ready_.store(true, std::memory_order_release);
   r->waker_.Wakeup();
 }
@@ -169,6 +170,7 @@ grpc_plugin_credentials::GetRequestMetadata(
         << ": plugin will return asynchronously";
     return [request] { return request->PollAsyncResult(); };
   }
+  status = grpc_status_code_clamp_to_valid(status);
   // Synchronous return.
   GRPC_TRACE_LOG(plugin_credentials, INFO)
       << "plugin_credentials[" << this << "]: request " << request.get()
