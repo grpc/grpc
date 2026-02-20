@@ -1163,26 +1163,22 @@ class InstrumentDomain {
   template <typename... Label>
   static FixedInstrumentLabelList<sizeof...(Label)> MakeLabels(
       Label... labels) {
-    if constexpr (sizeof...(Label) == 0) {
-      return FixedInstrumentLabelList<0>();
-    } else {
-      InstrumentLabel l[] = {InstrumentLabel(labels)...};
-      for (size_t i = 0; i < sizeof...(Label); ++i) {
-        for (size_t j = i + 1; j < sizeof...(Label); ++j) {
-          GRPC_CHECK_NE(l[i], l[j]);
-        }
+    InstrumentLabel l[] = {InstrumentLabel(labels)...};
+    for (size_t i = 0; i < sizeof...(Label); ++i) {
+      for (size_t j = i + 1; j < sizeof...(Label); ++j) {
+        GRPC_CHECK_NE(l[i], l[j]);
       }
-      auto list = FixedInstrumentLabelList<sizeof...(Label)>(
-          std::forward<Label>(labels)...);
-      const std::vector<std::string> label_names{std::string(labels)...};
-      for (size_t i = 0; i < sizeof...(Label); ++i) {
-        CHECK_EQ(label_names[i], list[i].label());
-        for (size_t j = i + 1; j < sizeof...(Label); ++j) {
-          GRPC_CHECK_NE(list[i], list[j]);
-        }
-      }
-      return list;
     }
+    auto list = FixedInstrumentLabelList<sizeof...(Label)>(
+        std::forward<Label>(labels)...);
+    const std::vector<std::string> label_names{std::string(labels)...};
+    for (size_t i = 0; i < sizeof...(Label); ++i) {
+      CHECK_EQ(label_names[i], list[i].label());
+      for (size_t j = i + 1; j < sizeof...(Label); ++j) {
+        GRPC_CHECK_NE(list[i], list[j]);
+      }
+    }
+    return list;
   }
 
   static auto RegisterCounter(absl::string_view name,
