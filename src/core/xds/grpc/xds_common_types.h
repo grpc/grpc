@@ -17,6 +17,7 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_COMMON_TYPES_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_COMMON_TYPES_H
 
+#include <optional>
 #include <string>
 #include <variant>
 #include <vector>
@@ -95,8 +96,10 @@ struct XdsGrpcService {
 struct HeaderMutationRules {
   bool disallow_all;
   bool disallow_is_error;
-  StringMatcher allow_expression;
-  StringMatcher disallow_expression;
+  std::optional<StringMatcher> allow_expression;
+  std::optional<StringMatcher> disallow_expression;
+
+  bool IsHeaderMutationAllowed(std::string key) const;
 
   bool operator==(const HeaderMutationRules& other) const {
     return disallow_all == other.disallow_all &&
@@ -117,23 +120,24 @@ struct HeaderValueOption {
   };
 
   enum class AppendAction {
+    // If the header already exists, this action will result in:
+    //
+    // - Comma-concatenated for predefined inline headers.
+    // - Duplicate header added in the ``HeaderMap`` for other headers.
+    //
     // If the header doesn't exist then this will add new header with
     // specified key and value.
     kAppendIfExistsOrAdd = 0,
     // This action will add the header if it doesn't already exist. If the
-    // header
-    // already exists then this will be a no-op.
+    // header already exists then this will be a no-op.
     kAddIfAbsent = 1,
     // This action will overwrite the specified value by discarding any
-    // existing values if
-    // the header already exists. If the header doesn't exist then this will
-    // add the header
-    // with specified key and value.
+    // existing values if the header already exists. If the header doesn't exist
+    // then this will add the header with specified key and value.
     kOverwriteIfExistsOrAdd = 2,
     // This action will overwrite the specified value by discarding any
-    // existing values if
-    // the header already exists. If the header doesn't exist then this will
-    // be no-op.
+    // existing values if the header already exists. If the header doesn't exist
+    // then this will be no-op.
     kOverwriteIfExists = 3,
     // Default if not specified
     kDefault = kAppendIfExistsOrAdd
@@ -151,7 +155,6 @@ struct HeaderValueOption {
   // headers with empty values are dropped, otherwise they are added.
   bool keep_empty_value;
 };
-
 
 }  // namespace grpc_core
 
