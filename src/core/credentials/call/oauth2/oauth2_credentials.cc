@@ -56,6 +56,7 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/uri.h"
+#include <grpc/event_engine/event_engine.h>
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/numbers.h"
@@ -289,7 +290,7 @@ class grpc_compute_engine_token_fetcher_credentials
   }
 
  private:
-  grpc_core::OrphanablePtr<grpc_core::RegionalAccessBoundaryFetcher> regional_access_boundary_fetcher_ ABSL_GUARDED_BY(email_mu_);
+  grpc_core::RefCountedPtr<grpc_core::RegionalAccessBoundaryFetcher> regional_access_boundary_fetcher_ ABSL_GUARDED_BY(email_mu_);
   
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> StartHttpRequest(
       grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
@@ -443,7 +444,8 @@ class grpc_compute_engine_token_fetcher_credentials
                           "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/%s/allowedLocations",
                           gce_creds->service_account_email_);
                       gce_creds->regional_access_boundary_fetcher_ = 
-                          grpc_core::MakeOrphanable<grpc_core::RegionalAccessBoundaryFetcher>(rab_url);
+                          grpc_core::MakeRefCounted<grpc_core::RegionalAccessBoundaryFetcher>(
+                              rab_url, grpc_event_engine::experimental::GetDefaultEventEngine());
                  }
                  if (gce_creds->regional_access_boundary_fetcher_ != nullptr) {
                       fetcher_ref = gce_creds->regional_access_boundary_fetcher_->Ref();

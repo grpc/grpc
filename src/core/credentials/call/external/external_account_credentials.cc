@@ -656,11 +656,11 @@ static std::string BuildRegionalAccessBoundaryUrl(
 ExternalAccountCredentials::ExternalAccountCredentials(
     Options options, std::vector<std::string> scopes,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
-    : TokenFetcherCredentials(std::move(event_engine)),
+    : TokenFetcherCredentials(event_engine),
       options_(std::move(options)),
       regional_access_boundary_fetcher_(
-          MakeOrphanable<RegionalAccessBoundaryFetcher>(
-              BuildRegionalAccessBoundaryUrl(options_))) {
+          MakeRefCounted<RegionalAccessBoundaryFetcher>(
+              BuildRegionalAccessBoundaryUrl(options_), event_engine)) {
   if (scopes.empty()) {
     scopes.push_back(GOOGLE_CLOUD_PLATFORM_DEFAULT_SCOPE);
   }

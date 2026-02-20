@@ -203,7 +203,7 @@ class ExternalAccountCredentials : public TokenFetcherCredentials {
 
   Options options_;
   std::vector<std::string> scopes_;
-  grpc_core::OrphanablePtr<RegionalAccessBoundaryFetcher>
+  grpc_core::RefCountedPtr<RegionalAccessBoundaryFetcher>
       regional_access_boundary_fetcher_;
 };
 

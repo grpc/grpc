@@ -47,7 +47,13 @@ class FakeCallCredentials : public grpc_call_credentials {
   explicit FakeCallCredentials(absl::string_view url = "https://googleapis.com")
       : grpc_call_credentials(GRPC_SECURITY_NONE),
         regional_access_boundary_fetcher_(
-            MakeOrphanable<RegionalAccessBoundaryFetcher>(url)) {}
+            MakeRefCounted<RegionalAccessBoundaryFetcher>(
+                url, grpc_event_engine::experimental::GetDefaultEventEngine(),
+                BackOff::Options()
+                    .set_initial_backoff(Duration::Milliseconds(1))
+                    .set_multiplier(1.1)
+                    .set_jitter(0.1)
+                    .set_max_backoff(Duration::Milliseconds(10)))) {}
 
   ArenaPromise<absl::StatusOr<ClientMetadataHandle>> GetRequestMetadata(
       ClientMetadataHandle, const GetRequestMetadataArgs*) override {
@@ -63,12 +69,15 @@ class FakeCallCredentials : public grpc_call_credentials {
 
   int cmp_impl(const grpc_call_credentials*) const override { return 0; }
 
-  OrphanablePtr<RegionalAccessBoundaryFetcher> regional_access_boundary_fetcher_;
+  RefCountedPtr<RegionalAccessBoundaryFetcher> regional_access_boundary_fetcher_;
 };
 
 class RegionalAccessBoundaryFetcherTest : public ::testing::Test {
  protected:
+  using RegionalAccessBoundary = RegionalAccessBoundaryFetcher::RegionalAccessBoundary;
+  static constexpr grpc_core::Duration kRegioanlAccessBoundarySoftCacheGraceDuration = grpc_core::Duration::Hours(1);
   bool has_cache() { grpc_core::MutexLock lock(&creds_->regional_access_boundary_fetcher_->cache_mu_); return creds_->regional_access_boundary_fetcher_->cache_.has_value(); }
+  int retry_count() { grpc_core::MutexLock lock(&creds_->regional_access_boundary_fetcher_->cache_mu_); return creds_->regional_access_boundary_fetcher_->num_retries_; }
   std::string cached_encoded_locations() { grpc_core::MutexLock lock(&creds_->regional_access_boundary_fetcher_->cache_mu_); return creds_->regional_access_boundary_fetcher_->cache_->encoded_locations; }
   int cooldown_multiplier() { grpc_core::MutexLock lock(&creds_->regional_access_boundary_fetcher_->cache_mu_); return creds_->regional_access_boundary_fetcher_->cooldown_multiplier_; }
   void set_cache(RegionalAccessBoundary cache) { grpc_core::MutexLock lock(&creds_->regional_access_boundary_fetcher_->cache_mu_); creds_->regional_access_boundary_fetcher_->cache_ = cache; }
@@ -76,20 +85,15 @@ class RegionalAccessBoundaryFetcherTest : public ::testing::Test {
 
   bool fetch_in_flight() { grpc_core::MutexLock lock(&creds_->regional_access_boundary_fetcher_->cache_mu_); return creds_->regional_access_boundary_fetcher_->pending_request_ != nullptr; }
 
-  bool has_retry_timer() { grpc_core::MutexLock lock(&creds_->regional_access_boundary_fetcher_->cache_mu_); return creds_->regional_access_boundary_fetcher_->retry_timer_handle_.has_value(); }
   grpc_core::Timestamp cooldown_deadline() { grpc_core::MutexLock lock(&creds_->regional_access_boundary_fetcher_->cache_mu_); return creds_->regional_access_boundary_fetcher_->cooldown_deadline_; }
 
-  bool has_retry_timer(RegionalAccessBoundaryFetcher* fetcher) { 
-    grpc_core::MutexLock lock(&fetcher->cache_mu_); 
-    return fetcher->retry_timer_handle_.has_value(); 
-  }
   bool fetch_in_flight(RegionalAccessBoundaryFetcher* fetcher) { 
     grpc_core::MutexLock lock(&fetcher->cache_mu_); 
     return fetcher->pending_request_ != nullptr; 
   }
 
-  RefCountedPtr<RegionalAccessBoundaryFetcher> RefFetcher() {
-    return creds_->regional_access_boundary_fetcher_->Ref();
+  WeakRefCountedPtr<RegionalAccessBoundaryFetcher> WeakFetcher() {
+    return creds_->regional_access_boundary_fetcher_->WeakRef();
   }
 
   void SetUp() override {
@@ -362,7 +366,7 @@ TEST_F(RegionalAccessBoundaryFetcherTest, RetryableHttpErrors) {
   ExecCtx::Get()->Flush();
 
   EXPECT_TRUE(fetch_in_flight());
-  EXPECT_TRUE(has_retry_timer());
+  EXPECT_EQ(retry_count(), 1);
   EXPECT_EQ(g_mock_get_count, 1);
   
   EXPECT_EQ(g_mock_get_count, 1);
@@ -381,7 +385,7 @@ TEST_F(RegionalAccessBoundaryFetcherTest, NonRetryableHttpErrors) {
   ExecCtx::Get()->Flush();
 
   EXPECT_FALSE(fetch_in_flight());
-  EXPECT_FALSE(has_retry_timer());
+  EXPECT_EQ(retry_count(), 0);
   EXPECT_GT(cooldown_deadline(), grpc_core::Timestamp::Now());
   EXPECT_EQ(g_mock_get_count, 1);
 }
@@ -396,12 +400,12 @@ TEST_F(RegionalAccessBoundaryFetcherTest, CancelPendingFetch) {
 
   ExecCtx::Get()->Flush();
 
-  EXPECT_TRUE(has_retry_timer());
+  EXPECT_EQ(retry_count(), 1);
   
-  auto fetcher = RefFetcher();
+  auto fetcher = WeakFetcher();
   creds_->regional_access_boundary_fetcher_.reset();
 
-  EXPECT_FALSE(has_retry_timer(fetcher.get()));
+  EXPECT_FALSE(fetch_in_flight(fetcher.operator->()));
 }
 
 static grpc_closure* g_stalled_on_done = nullptr;
@@ -427,7 +431,7 @@ TEST_F(RegionalAccessBoundaryFetcherTest, CancelPendingFetchWithInFlightRequest)
   EXPECT_TRUE(fetch_in_flight());
 
   // Cancel immediately while the HTTP request is still in flight (but stalled).
-  auto fetcher = RefFetcher();
+  auto fetcher = WeakFetcher();
   creds_->regional_access_boundary_fetcher_.reset();
   
   // The fetcher should have cleared the pending request internally. We can verify
@@ -438,7 +442,7 @@ TEST_F(RegionalAccessBoundaryFetcherTest, CancelPendingFetchWithInFlightRequest)
   
   ExecCtx::Get()->Flush();
   // The fetch shouldn't be in flight anymore since it was cleanly aborted.
-  EXPECT_FALSE(fetch_in_flight(fetcher.get()));
+  EXPECT_FALSE(fetch_in_flight(fetcher.operator->()));
 }
 
 TEST_F(RegionalAccessBoundaryFetcherTest, CooldownResetsOnSuccess) {
