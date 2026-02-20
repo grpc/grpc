@@ -277,7 +277,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "glimmering"  # @unused
 
-core_version = "52.0.0"  # @unused
+core_version = "53.0.0"  # @unused
 
 version = "1.79.0-dev"  # @unused
 
@@ -2332,7 +2332,6 @@ grpc_cc_library(
         "//src/core:credentials/transport/transport_credentials.cc",
         "//src/core:filter/auth/client_auth_filter.cc",
         "//src/core:filter/auth/server_auth_filter.cc",
-        "//src/core:handshaker/security/legacy_secure_endpoint.cc",
         "//src/core:handshaker/security/pipelined_secure_endpoint.cc",
         "//src/core:handshaker/security/secure_endpoint.cc",
         "//src/core:handshaker/security/security_handshaker.cc",

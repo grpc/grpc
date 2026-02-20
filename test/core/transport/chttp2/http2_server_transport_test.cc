@@ -111,6 +111,7 @@ TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportObjectCreation) {
   EXPECT_EQ(server_transport->client_transport(), nullptr);
   EXPECT_NE(server_transport->server_transport(), nullptr);
   EXPECT_EQ(server_transport->GetTransportName(), "http2");
+  EXPECT_GT(server_transport->TestOnlyTransportFlowControlWindow(), 0);
 
   // Wait for Http2ServerTransport's internal activities to finish.
   event_engine()->TickUntilIdle();

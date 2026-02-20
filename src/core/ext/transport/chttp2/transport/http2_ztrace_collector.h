@@ -295,9 +295,9 @@ struct PromiseEndpointReadTrace {
 };
 
 struct PromiseEndpointWriteTrace {
-  uint64_t bytes;
+  uint64_t count;
   channelz::PropertyList ChannelzProperties() const {
-    return channelz::PropertyList().Set("written_bytes", bytes);
+    return channelz::PropertyList().Set("frames_count", count);
   }
 };
 

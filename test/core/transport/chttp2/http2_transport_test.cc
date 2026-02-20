@@ -82,7 +82,8 @@ class TestsNeedingStreamObjects : public ::testing::Test {
         std::make_unique<CallInitiatorAndHandler>(
             MakeCallPair(std::move(client_initial_metadata), std::move(arena)));
     RefCountedPtr<Stream> stream = MakeRefCounted<Stream>(
-        call_pair->handler.StartCall(), transport_flow_control_);
+        call_pair->handler.StartCall(), transport_flow_control_,
+        /*is_client=*/true);  // Params
     stream->InitializeStream(stream_id,
                              /*allow_true_binary_metadata_peer=*/true,
                              /*allow_true_binary_metadata_acked=*/true);
@@ -383,7 +384,7 @@ TEST_F(TestsNeedingStreamObjects,
   // First DATA frame of size frame_payload_size
   ValueOrHttp2Status<chttp2::FlowControlAction> action1 =
       ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
-                                          stream);
+                                          stream.get());
   EXPECT_TRUE(action1.IsOk());
   EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             chttp2::kDefaultWindow - frame_payload_size);
@@ -393,7 +394,7 @@ TEST_F(TestsNeedingStreamObjects,
   // 2nd DATA frame of size frame_payload_size
   ValueOrHttp2Status<chttp2::FlowControlAction> action2 =
       ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
-                                          stream);
+                                          stream.get());
   EXPECT_TRUE(action2.IsOk());
   EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             chttp2::kDefaultWindow - 2 * frame_payload_size);
@@ -403,7 +404,7 @@ TEST_F(TestsNeedingStreamObjects,
   // 3rd DATA frame of size frame_payload_size
   ValueOrHttp2Status<chttp2::FlowControlAction> action3 =
       ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
-                                          stream);
+                                          stream.get());
   EXPECT_TRUE(action3.IsOk());
   EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             chttp2::kDefaultWindow - 3 * frame_payload_size);
@@ -414,7 +415,7 @@ TEST_F(TestsNeedingStreamObjects,
   // This will fail because the flow control window is exhausted.
   ValueOrHttp2Status<chttp2::FlowControlAction> action4 =
       ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
-                                          stream);
+                                          stream.get());
   // Invalid operation because flow control window was exceeded.
   EXPECT_FALSE(action4.IsOk());
   EXPECT_EQ(action4.GetErrorType(),
@@ -443,7 +444,7 @@ TEST_F(TestsNeedingStreamObjects,
   // Receive first large DATA frame.
   ValueOrHttp2Status<chttp2::FlowControlAction> action1 =
       ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
-                                          stream);
+                                          stream.get());
   EXPECT_TRUE(action1.IsOk());
   EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             chttp2::kDefaultWindow - frame_payload_size);
@@ -461,7 +462,7 @@ TEST_F(TestsNeedingStreamObjects,
   // This should be fail because stream window is not updated.
   ValueOrHttp2Status<chttp2::FlowControlAction> action2 =
       ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
-                                          stream);
+                                          stream.get());
   EXPECT_FALSE(action2.IsOk());
   EXPECT_EQ(action2.GetErrorType(),
             Http2Status::Http2ErrorType::kConnectionError);
@@ -493,7 +494,7 @@ TEST_F(TestsNeedingStreamObjects,
   // Receive first large DATA frame.
   ValueOrHttp2Status<chttp2::FlowControlAction> action1 =
       ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
-                                          stream);
+                                          stream.get());
   expected_announced_window -= frame_payload_size;
   expected_announced_window_delta -= frame_payload_size;
   EXPECT_TRUE(action1.IsOk());
@@ -525,7 +526,7 @@ TEST_F(TestsNeedingStreamObjects,
   // Receive 2nd large DATA frame.
   ValueOrHttp2Status<chttp2::FlowControlAction> action2 =
       ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
-                                          stream);
+                                          stream.get());
   EXPECT_TRUE(action2.IsOk());
   expected_announced_window -= frame_payload_size;
   expected_announced_window_delta -= frame_payload_size;
@@ -592,14 +593,14 @@ TEST_F(TestsNeedingStreamObjects,
   // should increase.
   frame.stream_id = 1;
   ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
-                                              stream);
+                                              stream.get());
   EXPECT_EQ(transport_flow_control_.remote_window(), chttp2::kDefaultWindow);
   EXPECT_EQ(stream->flow_control.remote_window_delta(), 1000);
 
   // If stream_id == 0, transport flow control window should increase.
   frame.stream_id = 0;
   ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
-                                              stream);
+                                              stream.get());
   EXPECT_EQ(transport_flow_control_.remote_window(),
             chttp2::kDefaultWindow + 1000);
   EXPECT_EQ(stream->flow_control.remote_window_delta(), 1000);
@@ -610,13 +611,13 @@ TEST_F(TestsNeedingStreamObjects,
   frame.increment = 0;
   frame.stream_id = 0;
   ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
-                                              stream);
+                                              stream.get());
   EXPECT_EQ(transport_flow_control_.remote_window(),
             chttp2::kDefaultWindow + 1000);
   EXPECT_EQ(stream->flow_control.remote_window_delta(), 1000);
   frame.stream_id = 1;
   ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
-                                              stream);
+                                              stream.get());
   EXPECT_EQ(transport_flow_control_.remote_window(),
             chttp2::kDefaultWindow + 1000);
   EXPECT_EQ(stream->flow_control.remote_window_delta(), 1000);
@@ -625,7 +626,7 @@ TEST_F(TestsNeedingStreamObjects,
   frame.increment = 10000;
   frame.stream_id = 1;
   ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
-                                              stream);
+                                              stream.get());
   EXPECT_EQ(transport_flow_control_.remote_window(),
             chttp2::kDefaultWindow + 1000);
   EXPECT_EQ(stream->flow_control.remote_window_delta(), 1000 + 10000);
@@ -737,91 +738,6 @@ TEST_F(Http2ReadContextTest, PauseAndWake) {
                ". SetPause Pause Wake _ . SetPause Pause Wake _ . "
                "SetPause Pause Wake _ . SetPause Pause Wake _ . "
                "SetPause Pause Wake _ . EndRead Wake EndWrite ");
-}
-
-TEST(Http2CommonTransportTest, GetWriteArgsTest) {
-  Http2Settings settings;
-  // Default value of preferred_receive_crypto_message_size is 0, yields
-  // INT_MAX for max_frame_size.
-  PromiseEndpoint::WriteArgs args = WriteContext::GetWriteArgs(settings);
-  EXPECT_EQ(args.max_frame_size(), INT_MAX);
-
-  // If we set 0, it's clamped to min_preferred_receive_crypto_message_size.
-  settings.SetPreferredReceiveCryptoMessageSize(0);
-  args = WriteContext::GetWriteArgs(settings);
-  EXPECT_EQ(args.max_frame_size(),
-            Http2Settings::min_preferred_receive_crypto_message_size());
-
-  // If we set 1024, it's clamped to min_preferred_receive_crypto_message_size.
-  settings.SetPreferredReceiveCryptoMessageSize(1024);
-  args = WriteContext::GetWriteArgs(settings);
-  EXPECT_EQ(args.max_frame_size(),
-            Http2Settings::min_preferred_receive_crypto_message_size());
-
-  // If we set min_preferred_receive_crypto_message_size, it's clamped to
-  // min_preferred_receive_crypto_message_size.
-  settings.SetPreferredReceiveCryptoMessageSize(
-      Http2Settings::min_preferred_receive_crypto_message_size());
-  args = WriteContext::GetWriteArgs(settings);
-  EXPECT_EQ(args.max_frame_size(),
-            Http2Settings::min_preferred_receive_crypto_message_size());
-
-  // If we set min_preferred_receive_crypto_message_size + 1, it's within range.
-  settings.SetPreferredReceiveCryptoMessageSize(
-      Http2Settings::min_preferred_receive_crypto_message_size() + 1);
-  args = WriteContext::GetWriteArgs(settings);
-  EXPECT_EQ(args.max_frame_size(),
-            Http2Settings::min_preferred_receive_crypto_message_size() + 1);
-
-  // If we set to max value, it's within range.
-  settings.SetPreferredReceiveCryptoMessageSize(
-      Http2Settings::max_preferred_receive_crypto_message_size());
-  args = WriteContext::GetWriteArgs(settings);
-  EXPECT_EQ(args.max_frame_size(),
-            Http2Settings::max_preferred_receive_crypto_message_size());
-
-  // If we set value > max value, it's clamped to max value.
-  settings.SetPreferredReceiveCryptoMessageSize(
-      Http2Settings::max_preferred_receive_crypto_message_size() + 1u);
-  args = WriteContext::GetWriteArgs(settings);
-  EXPECT_EQ(args.max_frame_size(),
-            Http2Settings::max_preferred_receive_crypto_message_size());
-}
-
-TEST(Http2CommonTransportTest, WriteContextTest) {
-  WriteContext write_context;
-
-  // 1. Initialize
-  WriteContext::WriteQuota write_quota = write_context.StartNewWriteAttempt();
-  size_t initial_target = write_quota.GetTargetWriteSize();
-  EXPECT_GT(initial_target, 0u);
-  EXPECT_EQ(write_quota.GetWriteBytesRemaining(), initial_target);
-
-  // 2. Consume bytes
-  // We consume less than target to verify remaining calculation.
-  size_t bytes_consumed = 1;
-  write_quota.IncrementBytesConsumed(bytes_consumed);
-  EXPECT_EQ(write_quota.GetWriteBytesRemaining(),
-            initial_target - bytes_consumed);
-
-  // 3. Begin Write
-  // This forwards to policy.
-  write_context.BeginWrite(bytes_consumed);
-
-  // 4. End Write (Success)
-  write_context.EndWrite(true);
-
-  // 5. Re-Initialize
-  WriteContext::WriteQuota write_quota2 = write_context.StartNewWriteAttempt();
-  EXPECT_GT(write_quota2.GetTargetWriteSize(), 0u);
-
-  // 6. Test Exceeding target (should clamp remaining to 0)
-  // Note: IncrementBytesConsumed just adds to the counter.
-  write_quota2.IncrementBytesConsumed(write_quota2.GetTargetWriteSize() + 100u);
-  EXPECT_EQ(write_quota2.GetWriteBytesRemaining(), 0u);
-
-  write_context.BeginWrite(100);
-  write_context.EndWrite(false);  // Fail
 }
 
 }  // namespace testing

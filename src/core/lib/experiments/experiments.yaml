@@ -142,16 +142,9 @@
   owner: mlumish@google.com
   test_tags: []
   uses_polling: true
-- name: event_engine_secure_endpoint
-  description: Use EventEngine secure endpoint wrapper instead of iomgr when available
-  expiry: 2026/01/22
-  owner: alishananda@google.com
-  test_tags: ["core_end2end_test", "secure_endpoint_test", "posix_endpoint_test"]
-  uses_polling: true
-  allow_in_fuzzing_config: false
 - name: fail_recv_metadata_on_deadline_exceeded
   description: Fail recv initial metadata when the deadline is exceeded.
-  expiry: 2026/01/22
+  expiry: 2026/05/01
   owner: vigneshbabu@google.com
   test_tags: []
   allow_in_fuzzing_config: false
@@ -162,21 +155,15 @@
   test_tags: [resource_quota_test]
 - name: fuse_filters
   description: If set, individual filters are merged into fused filters
-  expiry: 2026/02/01
+  expiry: 2026/05/01
   owner: vigneshbabu@google.com
   test_tags: ["minimal_stack_test"]
-  allow_in_fuzzing_config: false
-- name: graceful_external_connection_failure
-  description: If set, handles external connection failures gracefully
-  expiry: 2026/02/01
-  owner: vigneshbabu@google.com
-  test_tags: []
   allow_in_fuzzing_config: false
 - name: keep_alive_ping_timer_batch
   description:
     Avoid explicitly cancelling the keepalive timer. Instead adjust the callback to re-schedule
     itself to the next ping interval.
-  expiry: 2026/02/01
+  expiry: 2026/05/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: local_connector_secure
@@ -225,7 +212,7 @@
   expiry: 2026/03/15
   owner: alishananda@google.com
   test_tags: ["core_end2end_test", "secure_endpoint_test", "posix_endpoint_test"]
-  requires: ["event_engine_client", "event_engine_listener", "event_engine_secure_endpoint"]
+  requires: ["event_engine_client", "event_engine_listener"]
   uses_polling: true
   allow_in_fuzzing_config: false
 - name: pollset_alternative
@@ -240,7 +227,7 @@
 - name: prioritize_finished_requests
   description: Prioritize flushing out finished requests over other in-flight
     requests during transport writes.
-  expiry: 2026/02/01
+  expiry: 2026/05/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: promise_based_http2_client_transport
@@ -293,7 +280,7 @@
   test_tags: ["lb_unit_test", "cpp_lb_end2end_test"]
 - name: schedule_cancellation_over_write
   description: Allow cancellation op to be scheduled over a write
-  expiry: 2026/02/01
+  expiry: 2026/05/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: secure_endpoint_offload_large_reads
@@ -305,7 +292,6 @@
     [
       "event_engine_client",
       "event_engine_listener",
-      "event_engine_secure_endpoint",
     ]
 - name: secure_endpoint_offload_large_writes
   description: If a large read write to be encrypted, use a separate thread.
@@ -316,11 +302,10 @@
     [
       "event_engine_client",
       "event_engine_listener",
-      "event_engine_secure_endpoint",
     ]
 - name: skip_clear_peer_on_cancellation
   description: If set, skips clearing of peer string on call cancellation.
-  expiry: 2026/03/01
+  expiry: 2026/05/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: sleep_promise_exec_ctx_removal
@@ -351,27 +336,14 @@
     TCP would not indicate completion of a read operation until a specified
     number of bytes have been read over the socket.
     Buffers are also allocated according to estimated RPC sizes.
-  expiry: 2026/02/01
+  expiry: 2026/08/01
   owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
 - name: tcp_rcv_lowat
   description: Use SO_RCVLOWAT to avoid wakeups on the read path.
-  expiry: 2026/02/01
+  expiry: 2026/08/01
   owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
-- name: track_writes_in_resource_quota
-  description: Track the Write memory in Resource Quota.
-  expiry: 2026/02/01
-  owner: snohria@google.com
-  test_tags: [resource_quota_test]
-- name: track_zero_copy_allocations_in_resource_quota
-  description:
-    Track the memory allocattions under the zero copy path in
-    Resource Quota. This includes the encryption / decryption
-    for privacy-and-integrity payloads.
-  expiry: 2026/05/01
-  owner: snohria@google.com
-  test_tags: [resource_quota_test]
 - name: tsi_frame_protector_without_locks
   description: Do not hold locks while using the tsi_frame_protector.
   expiry: 2026/06/01
