@@ -125,9 +125,19 @@ http_archive(
 )
 
 # TODO(weizheyuan): Upgrade to a version available in a BCR
-# once we figure out how to properly build it with cmake.
-http_archive(
-    name = "com_googlesource_code_re2",
+# once we figure out how to properly use it in cmake setup.
+#
+# Trick bazel by declaring re2 as 2024-07-02.bcr.1 but internally using 2022-04-01,
+# which is the version we use for cmake builds.
+# This override has no effect when grpc is used as a dependency module.
+# See also https://bazel.build/rules/lib/globals/module#archive_override.
+bazel_dep(name = "re2", version = "2024-07-02.bcr.1", repo_name = "com_googlesource_code_re2")  # mismatched 2022-04-01
+archive_override(
+    module_name = "re2",
+    patch_strip = 1,
+    patches = [
+        "//bazel:re2.patch",
+    ],
     sha256 = "1ae8ccfdb1066a731bba6ee0881baad5efd2cd661acd9569b689f2586e1a50e9",
     strip_prefix = "re2-2022-04-01",
     urls = [
