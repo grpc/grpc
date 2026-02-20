@@ -224,7 +224,8 @@ class StreamDataQueueFuzzTest : public YodelTest {
   class AssembleFrames {
    public:
     explicit AssembleFrames(const uint32_t stream_id,
-                            const bool allow_true_binary_metadata) {
+                            const bool allow_true_binary_metadata)
+        : header_assembler_(/*is_client=*/true) {
       header_assembler_.InitializeStream(stream_id, allow_true_binary_metadata);
     }
     void operator()(Http2HeaderFrame frame) {
@@ -265,7 +266,6 @@ class StreamDataQueueFuzzTest : public YodelTest {
       ValueOrHttp2Status<ClientMetadataHandle> status_or_metadata =
           header_assembler_.ReadMetadata(
               parser_, /*is_initial_metadata=*/true,
-              /*is_client=*/true,
               /*max_header_list_size_soft_limit=*/
               default_settings_.max_header_list_size(),
               /*max_header_list_size_hard_limit=*/

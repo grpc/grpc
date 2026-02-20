@@ -115,6 +115,7 @@ using grpc_event_engine::experimental::EventEngine;
 // TODO(akshitpatel) : [PH2][P2] : Choose appropriate size later.
 // TODO(tjagtap) : [PH2][P2] : Consider moving to common code.
 constexpr int kMpscSize = 10;
+constexpr int kIsClient = false;
 
 //////////////////////////////////////////////////////////////////////////////
 // Transport Functions
@@ -695,7 +696,6 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
 //     ValueOrHttp2Status<ServerMetadataHandle> read_result =
 //         assembler.ReadMetadata(parser_,
 //         !incoming_headers_.HeaderHasEndStream(),
-//                                /*is_client=*/true,
 //                                /*max_header_list_size_soft_limit=*/
 //                                incoming_headers_.soft_limit(),
 //                                /*max_header_list_size_hard_limit=*/
@@ -703,8 +703,6 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
 //     if (read_result.IsOk()) {
 //       ServerMetadataHandle metadata = TakeValue(std::move(read_result));
 //       if (incoming_headers_.HeaderHasEndStream()) {
-//         // TODO(tjagtap) : [PH2][P1] : Is this the right way to differentiate
-//         // between initial and trailing metadata?
 //         stream->MarkHalfClosedRemote();
 //         stream->did_receive_trailing_metadata = true;
 //         BeginCloseStream(stream, /*reset_stream_error_code=*/std::nullopt,
@@ -747,7 +745,7 @@ Http2Status Http2ServerTransport::ProcessIncomingFrame(
 //       HeaderAssembler::ParseHeaderArgs{
 //           /*is_initial_metadata=*/is_initial_metadata,
 //           /*is_end_headers=*/is_end_headers,
-//           /*is_client=*/true,
+//           /*is_client=*/kIsClient,
 //           /*max_header_list_size_soft_limit=*/
 //           incoming_headers_.soft_limit(),
 //           /*max_header_list_size_hard_limit=*/
@@ -1077,7 +1075,7 @@ void Http2ServerTransport::ReadChannelArgs(const ChannelArgs& channel_args,
                                            TransportChannelArgs& args) {
   http2::ReadChannelArgs(channel_args, args, settings_->mutable_local(),
                          flow_control_,
-                         /*is_client=*/true);
+                         /*is_client=*/kIsClient);
 
   // Assign the channel args to the member variables.
   keepalive_time_ = args.keepalive_time;

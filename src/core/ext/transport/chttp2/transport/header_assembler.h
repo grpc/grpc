@@ -69,8 +69,8 @@ constexpr uint8_t kMaxHeaderFrames = 2;
 
 // TODO(tjagtap) : [PH2][P3] : Handle the case where a Server receives two
 // header frames. Which means that the client sent trailing metadata. While we
-// dont expect a gRPC C++ peer to behave like this, this might break interop
-// tests and genuine interop cases.
+// dont expect a gRPC C++ peer to send trailing metadata, not handling it might
+// break interop tests and genuine interop cases.
 
 // RFC9113
 // https://www.rfc-editor.org/rfc/rfc9113.html#name-field-section-compression-a
@@ -154,7 +154,7 @@ class HeaderAssembler {
 
   // The caller MUST check using IsReady() before calling this function
   ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> ReadMetadata(
-      HPackParser& parser, bool is_initial_metadata, bool is_client,
+      HPackParser& parser, bool is_initial_metadata,
       const uint32_t max_header_list_size_soft_limit,
       const uint32_t max_header_list_size_hard_limit) {
     ASSEMBLER_LOG << "HeaderAssembler::ReadMetadata " << buffer_.Length()
@@ -185,7 +185,7 @@ class HeaderAssembler {
         ParseHeaderArgs{
             /*is_initial_metadata=*/is_initial_metadata,
             /*is_end_headers=*/is_ready_,
-            /*is_client=*/is_client,
+            /*is_client=*/is_client_,
             /*max_header_list_size_soft_limit=*/max_header_list_size_soft_limit,
             /*max_header_list_size_hard_limit=*/max_header_list_size_hard_limit,
             /*stream_id=*/stream_id_,
@@ -199,13 +199,13 @@ class HeaderAssembler {
   }
 
   Http2Status ParseAndDiscardHeaders(
-      HPackParser& parser, const bool is_initial_metadata, const bool is_client,
+      HPackParser& parser, const bool is_initial_metadata,
       const uint32_t max_header_list_size_soft_limit,
       const uint32_t max_header_list_size_hard_limit) {
     ASSEMBLER_LOG << "HeaderAssembler::ParseAndDiscardHeaders "
                   << buffer_.Length() << " Bytes"
                   << " is_initial_metadata: " << is_initial_metadata
-                  << " is_client: " << is_client
+                  << " is_client: " << is_client_
                   << " max_header_list_size_soft_limit: "
                   << max_header_list_size_soft_limit
                   << "max_header_list_size_hard_limit: "
@@ -215,7 +215,7 @@ class HeaderAssembler {
         ParseHeaderArgs{
             /*is_initial_metadata=*/is_initial_metadata,
             /*is_end_headers=*/is_ready_,
-            /*is_client=*/is_client,
+            /*is_client=*/is_client_,
             /*max_header_list_size_soft_limit=*/max_header_list_size_soft_limit,
             /*max_header_list_size_hard_limit=*/max_header_list_size_hard_limit,
             /*stream_id=*/stream_id_,
@@ -229,10 +229,11 @@ class HeaderAssembler {
   // This value MUST be checked before calling ReadMetadata()
   bool IsReady() const { return is_ready_; }
 
-  explicit HeaderAssembler()
+  explicit HeaderAssembler(const bool is_client)
       : header_in_progress_(false),
         is_ready_(false),
         allow_true_binary_metadata_acked_(true),
+        is_client_(is_client),
         stream_id_(0) {}
 
   ~HeaderAssembler() = default;
@@ -338,6 +339,7 @@ class HeaderAssembler {
   bool header_in_progress_;
   bool is_ready_;
   bool allow_true_binary_metadata_acked_;
+  const bool is_client_;
   uint32_t stream_id_;
   SliceBuffer buffer_;
 };
