@@ -23,6 +23,7 @@
 #include <string>
 #include <variant>
 
+#include "Python.h"
 #include "grpc/private_key_signer.h"
 #include "absl/status/statusor.h"
 
@@ -67,8 +68,10 @@ class PrivateKeySignerPyWrapper
       public std::enable_shared_from_this<PrivateKeySignerPyWrapper> {
  public:
   PrivateKeySignerPyWrapper(SignWrapperForPy sign_py_wrapper,
-                            void* py_user_sign_fn)
-      : sign_py_wrapper_(sign_py_wrapper), py_user_sign_fn(py_user_sign_fn) {}
+                            void* py_user_sign_fn, PyObject* destroy_event)
+      : sign_py_wrapper_(sign_py_wrapper),
+        py_user_sign_fn(py_user_sign_fn),
+        destroy_event_(destroy_event) {}
   std::variant<absl::StatusOr<std::string>, std::shared_ptr<AsyncSigningHandle>>
   Sign(absl::string_view data_to_sign, SignatureAlgorithm signature_algorithm,
        OnSignComplete on_sign_complete) override;
@@ -83,11 +86,14 @@ class PrivateKeySignerPyWrapper
   SignWrapperForPy sign_py_wrapper_;
   // This will hold the Python callable object
   void* py_user_sign_fn;
+  // An event to make sure the python interpreter stays alive until this
+  // destruction is complete
+  PyObject* destroy_event_;
 };
 
 // The entry point for Cython to build a PrivateKeySigner.
-std::shared_ptr<PrivateKeySigner> BuildPrivateKeySigner(SignWrapperForPy sign,
-                                                        void* py_user_sign_fn);
+std::shared_ptr<PrivateKeySigner> BuildPrivateKeySigner(
+    SignWrapperForPy sign, void* py_user_sign_fn, PyObject* destroy_event);
 
 class AsyncSigningHandlePyWrapper : public PrivateKeySigner::AsyncSigningHandle {
  public:

@@ -13,6 +13,10 @@
 # limitations under the License.
 from cpython.bytes cimport PyBytes_FromStringAndSize
 from libcpp.utility cimport move
+from cpython cimport PyObject
+
+import threading
+
 
 cdef StatusOr[string] MakeInternalError(string message):
     return StatusOr[string](Status(AbslStatusCode.kUnknown, message))
@@ -97,5 +101,8 @@ cdef void cancel_wrapper(void* py_cancel_user_fn) noexcept nogil:
 
 # To be called from the python layer when the user provides a signer function.
 cdef shared_ptr[PrivateKeySigner] build_private_key_signer(py_user_func):
-  py_private_key_signer = BuildPrivateKeySigner(async_sign_wrapper, <void*>py_user_func)
+  destroy_event = threading.Event()
+  destroy_lambda = lambda event=destroy_event: event.wait()
+  threading.Thread(target=destroy_lambda, daemon=False).start()
+  py_private_key_signer = BuildPrivateKeySigner(async_sign_wrapper, <void*>py_user_func, <PyObject*>destroy_event)
   return py_private_key_signer

@@ -59,12 +59,13 @@ void PrivateKeySignerPyWrapper::Cancel(
 }
 
 std::shared_ptr<PrivateKeySigner> BuildPrivateKeySigner(
-    SignWrapperForPy sign_py_wrapper, void* py_user_sign_fn) {
+    SignWrapperForPy sign_py_wrapper, void* py_user_sign_fn,
+    PyObject* destroy_event) {
   PyGILState_STATE state = PyGILState_Ensure();
   Py_INCREF(static_cast<PyObject*>(py_user_sign_fn));
   PyGILState_Release(state);
-  return std::make_shared<PrivateKeySignerPyWrapper>(sign_py_wrapper,
-                                                     py_user_sign_fn);
+  return std::make_shared<PrivateKeySignerPyWrapper>(
+      sign_py_wrapper, py_user_sign_fn, destroy_event);
 }
 
 AsyncSigningHandlePyWrapper::~AsyncSigningHandlePyWrapper() {
@@ -76,6 +77,7 @@ AsyncSigningHandlePyWrapper::~AsyncSigningHandlePyWrapper() {
 PrivateKeySignerPyWrapper::~PrivateKeySignerPyWrapper() {
   PyGILState_STATE state = PyGILState_Ensure();
   Py_DECREF(static_cast<PyObject*>(py_user_sign_fn));
+  PyObject_CallMethod(destroy_event_, "set", "()");
   PyGILState_Release(state);
 }
 

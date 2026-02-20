@@ -90,7 +90,6 @@ def sign_private_key(data_to_sign, private_key_bytes, signature_algorithm):
                 != grpc.experimental.PrivateKeySignatureAlgorithm.RSA_PSS_RSAE_SHA256
             ):
                 return ValueError("Expect the private key to be PSS SHA256")
-            print("GREG: alg ", signature_algorithm, flush=True)
             hasher = hashes.SHA256()
             pss_padding = padding.PSS(
                 mgf=padding.MGF1(hasher),
@@ -118,7 +117,6 @@ def sync_client_private_key_signer(
     """
     private_key_bytes = client_private_key()
     signature = sign_private_key(data_to_sign, private_key_bytes, signature_algorithm)
-    print("GREG: signature: ", signature, flush=True)
     return signature
 
 
@@ -143,7 +141,6 @@ def bad_async_client_private_key_signer(data_to_sign, signature_algorithm, on_co
         target=bad_async_signer_worker,
         args=(data_to_sign, signature_algorithm, on_complete),
     ).start()
-    # Add something where we put something cancellable on this handle
     return no_op_cancel
 
 
