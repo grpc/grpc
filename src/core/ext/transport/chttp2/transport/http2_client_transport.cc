@@ -98,6 +98,7 @@ namespace http2 {
 // As a gRPC server never initiates a stream, the last incoming stream id on
 // the client side will always be 0.
 constexpr uint32_t kLastIncomingStreamIdClient = 0;
+const bool kIsClient = true;
 
 using grpc_event_engine::experimental::EventEngine;
 using StreamWritabilityUpdate =
@@ -439,7 +440,6 @@ Http2Status Http2ClientTransport::ProcessMetadata(
   if (assembler.IsReady()) {
     ValueOrHttp2Status<ServerMetadataHandle> read_result =
         assembler.ReadMetadata(parser_, !incoming_headers_.HeaderHasEndStream(),
-                               /*is_client=*/true,
                                /*max_header_list_size_soft_limit=*/
                                incoming_headers_.soft_limit(),
                                /*max_header_list_size_hard_limit=*/
@@ -774,7 +774,7 @@ Http2Status Http2ClientTransport::ParseAndDiscardHeaders(
       HeaderAssembler::ParseHeaderArgs{
           /*is_initial_metadata=*/is_initial_metadata,
           /*is_end_headers=*/is_end_headers,
-          /*is_client=*/true,
+          /*is_client=*/kIsClient,
           /*max_header_list_size_soft_limit=*/
           incoming_headers_.soft_limit(),
           /*max_header_list_size_hard_limit=*/
@@ -837,7 +837,7 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
             incoming_headers_.GetStreamId(),
             /*current_frame_header*/ header,
             /*last_stream_id=*/GetLastStreamId(),
-            /*is_client=*/true, /*is_first_settings_processed=*/
+            /*is_client=*/kIsClient, /*is_first_settings_processed=*/
             settings_->IsFirstPeerSettingsApplied());
 
         if (GPR_UNLIKELY(!status.IsOk())) {
@@ -1112,7 +1112,7 @@ absl::Status Http2ClientTransport::DequeueStreamFrames(
   const uint32_t stream_flow_control_tokens = static_cast<uint32_t>(
       GetStreamFlowControlTokens(stream->flow_control, settings_->peer()));
   stream->flow_control.ReportIfStalled(
-      /*is_client=*/true, stream->GetStreamId(), settings_->peer());
+      /*is_client=*/kIsClient, stream->GetStreamId(), settings_->peer());
   StreamDataQueue<ClientMetadataHandle>::DequeueResult result =
       stream->DequeueFrames(tokens, stream_flow_control_tokens,
                             settings_->peer().max_frame_size(), encoder_,
@@ -1293,7 +1293,7 @@ auto Http2ClientTransport::MultiplexerLoop() {
           if (should_reset_ping_clock_) {
             GRPC_HTTP2_CLIENT_DLOG
                 << "Http2ClientTransport MultiplexerLoop ResetPingClock";
-            ping_manager_->ResetPingClock(/*is_client=*/true);
+            ping_manager_->ResetPingClock(/*is_client=*/kIsClient);
             should_reset_ping_clock_ = false;
           }
           transport_write_context_.EndWriteCycle();
@@ -1419,7 +1419,7 @@ Http2ClientTransport::Http2ClientTransport(
   party_arena->SetContext<EventEngine>(event_engine_.get());
   general_party_ = Party::Make(std::move(party_arena));
 
-  InitLocalSettings(settings_->mutable_local(), /*is_client=*/true);
+  InitLocalSettings(settings_->mutable_local(), /*is_client=*/kIsClient);
   TransportChannelArgs args;
   ReadChannelArgs(channel_args, args);
 
@@ -1457,7 +1457,7 @@ void Http2ClientTransport::ReadChannelArgs(const ChannelArgs& channel_args,
                                            TransportChannelArgs& args) {
   http2::ReadChannelArgs(channel_args, args, settings_->mutable_local(),
                          flow_control_,
-                         /*is_client=*/true);
+                         /*is_client=*/kIsClient);
 
   // Assign the channel args to the member variables.
   keepalive_time_ = args.keepalive_time;
@@ -1537,7 +1537,7 @@ void Http2ClientTransport::CloseStream(Stream& stream, CloseStreamArgs args,
             HeaderAssembler::ParseHeaderArgs{
                 /*is_initial_metadata=*/!incoming_headers_.HeaderHasEndStream(),
                 /*is_end_headers=*/false,
-                /*is_client=*/true,
+                /*is_client=*/kIsClient,
                 /*max_header_list_size_soft_limit=*/
                 incoming_headers_.soft_limit(),
                 /*max_header_list_size_hard_limit=*/
@@ -1987,7 +1987,8 @@ std::optional<RefCountedPtr<Stream>> Http2ClientTransport::MakeStream(
     CallHandler call_handler) {
   // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
   RefCountedPtr<Stream> stream;
-  stream = MakeRefCounted<Stream>(call_handler, flow_control_);
+  stream = MakeRefCounted<Stream>(call_handler, flow_control_,
+                                  /*is_client=*/kIsClient);
   const bool on_done_added = SetOnDone(call_handler, stream);
   if (!on_done_added) return std::nullopt;
   return std::move(stream);

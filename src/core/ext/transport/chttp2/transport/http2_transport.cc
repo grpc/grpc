@@ -431,8 +431,7 @@ Http2Status ParseAndDiscardHeaders(HPackParser& parser, SliceBuffer&& buffer,
   if (stream != nullptr) {
     // Parse all the data in the header assembler
     Http2Status result = stream->header_assembler.ParseAndDiscardHeaders(
-        parser, args.is_initial_metadata, args.is_client,
-        args.max_header_list_size_soft_limit,
+        parser, args.is_initial_metadata, args.max_header_list_size_soft_limit,
         args.max_header_list_size_hard_limit);
     if (!result.IsOk()) {
       GRPC_DCHECK(result.GetType() ==

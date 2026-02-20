@@ -82,7 +82,8 @@ class TestsNeedingStreamObjects : public ::testing::Test {
         std::make_unique<CallInitiatorAndHandler>(
             MakeCallPair(std::move(client_initial_metadata), std::move(arena)));
     RefCountedPtr<Stream> stream = MakeRefCounted<Stream>(
-        call_pair->handler.StartCall(), transport_flow_control_);
+        call_pair->handler.StartCall(), transport_flow_control_,
+        /*is_client=*/true);  // Params
     stream->InitializeStream(stream_id,
                              /*allow_true_binary_metadata_peer=*/true,
                              /*allow_true_binary_metadata_acked=*/true);
