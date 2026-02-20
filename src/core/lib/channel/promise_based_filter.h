@@ -51,10 +51,12 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/all_ok.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_like.h"
+#include "src/core/lib/promise/inter_activity_latch.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
@@ -1218,6 +1220,129 @@ class ImplementChannelFilter : public ChannelFilter,
                 &call->error_latch),
         call);
   }
+};
+
+struct V3InterceptorToV2State {
+  InterActivityLatch<CallHandler> call_handler_latch;
+};
+
+template <>
+struct ArenaContextType<V3InterceptorToV2State> {
+  static void Destroy(V3InterceptorToV2State*) {}
+};
+
+// Allows writing v3 interceptor that works with v2 stacks (and consequently
+// also v1 stacks since we can run v2 filters in v1 stacks).
+//
+// Note that this bridge does not support the full functionality of the
+// v3 interceptor API.  In particular, it assumes that the interceptor
+// will create exactly one child call.
+template <typename Derived>
+class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
+ public:
+  V3InterceptorToV2Bridge() {
+    // Insert CallDestinationToNextV2Filter as the wrapped destination in
+    // Interceptor, so that we can route the server side of the
+    // interceptor back into the v2 filter chain.
+    wrapped_destination_ = MakeRefCounted<CallDestinationToNextV2Filter>();
+  }
+
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args, NextPromiseFactory next_promise_factory) final {
+    // Create a latch to get the call handler, and put a pointer to it
+    // in call context, so that CallDestinationToNextV2Filter can set
+    // it when it starts the call.
+    auto* arena = GetContext<Arena>();
+    auto* state = arena->ManagedNew<V3InterceptorToV2State>();
+    arena->SetContext<V3InterceptorToV2State>(state);
+    // Now we create a new v3 call pair.  The initiator will be the
+    // client side of the v3 interceptor, and the handler will be the
+    // server side.
+    auto [initiator, unstarted_handler] =
+        MakeCallPair(std::move(call_args.client_initial_metadata),
+                     GetContext<Arena>()->Ref());
+    // Inject the unstarted handler into the interceptor.
+    StartCall(std::move(unstarted_handler));
+    // Now return a promise that does all the things.
+    return TrySeq(
+        state->call_handler_latch.Wait(),
+        [initiator = std::move(initiator), call_args = std::move(call_args),
+         next_promise_factory =
+             std::move(next_promise_factory)](CallHandler handler) mutable {
+          // Intercept all pipes from v2 API.
+          call_args.client_to_server_messages->InterceptAndMap(
+              [initiator, handler](MessageHandle message) mutable {
+                initiator.SpawnPushMessage(std::move(message));
+                return Map(handler.PullMessage(),
+                           [](ClientToServerNextMessage message)
+                               -> std::optional<MessageHandle> {
+                             if (!message.ok()) return std::nullopt;
+                             if (!message.has_value()) return std::nullopt;
+                             return message.TakeValue();
+                           });
+              });
+          call_args.server_initial_metadata->InterceptAndMap(
+              [initiator, handler](ServerMetadataHandle metadata) mutable {
+                handler.SpawnPushServerInitialMetadata(std::move(metadata));
+                return initiator.PullServerInitialMetadata();
+              });
+          call_args.server_to_client_messages->InterceptAndMap(
+              [initiator, handler](MessageHandle message) mutable {
+                handler.SpawnPushMessage(std::move(message));
+                return Map(initiator.PullMessage(),
+                           [](ServerToClientNextMessage message)
+                               -> std::optional<MessageHandle> {
+                             if (!message.ok()) return std::nullopt;
+                             if (!message.has_value()) return std::nullopt;
+                             return message.TakeValue();
+                           });
+              });
+          // A wrapper for next_promise_factory that does the following:
+          // - Pulls client initial metadata from the V3 handler and injects
+          //   it into the next V2 filter via CallArgs.
+          // - Polls the next promise to get server trailing metadata
+          //   from the next V2 filter, feeds it into the V3 handler,
+          //   and then gets it out of the V3 initiator.
+          return TrySeq(
+              handler.PullClientInitialMetadata(),
+              [next_promise_factory = std::move(next_promise_factory),
+               call_args = std::move(call_args), handler,
+               initiator](ClientMetadataHandle metadata) mutable {
+                call_args.client_initial_metadata = std::move(metadata);
+                return Seq(
+                    next_promise_factory(std::move(call_args)),
+                    [handler,
+                     initiator](ServerMetadataHandle metadata) mutable {
+                      handler.PushServerTrailingMetadata(std::move(metadata));
+                      return initiator.PullServerTrailingMetadata();
+                    });
+              });
+        });
+  }
+
+ protected:
+  RefCountedPtr<UnstartedCallDestination> wrapped_destination() const {
+    return wrapped_destination_;  // From Interceptor class.
+  }
+
+ private:
+  // A custom UnstartedCallDestination that starts the call and returns
+  // the resulting handler via a latch obtained from call context.
+  class CallDestinationToNextV2Filter final : public UnstartedCallDestination {
+   public:
+    void StartCall(UnstartedCallHandler unstarted_call_handler) override {
+      // Get the latch from call context.
+      auto* arena = GetContext<Arena>();
+      auto* state = arena->GetContext<V3InterceptorToV2State>();
+      arena->SetContext<V3InterceptorToV2State>(nullptr);
+      // Start the call.
+      CallHandler handler = unstarted_call_handler.StartCall();
+      // Pass call handler to the latch.
+      state->call_handler_latch.Set(std::move(handler));
+    }
+
+    void Orphaned() override {}
+  };
 };
 
 // Designator for whether a filter is client side or server side.
