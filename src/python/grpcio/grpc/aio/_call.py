@@ -35,11 +35,11 @@ from grpc._cython import cygrpc
 
 from . import _base_call
 from ._metadata import Metadata
+from ._metadata import MetadataType
 from ._typing import DeserializingFunction
 from ._typing import DoneCallbackType
 from ._typing import EOFType
-from ._typing import MetadataType
-from ._typing import MetadatumType
+from ._metadata import MetadatumType
 from ._typing import RequestIterableType
 from ._typing import RequestType
 from ._typing import ResponseType
