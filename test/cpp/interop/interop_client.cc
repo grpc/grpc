@@ -1432,20 +1432,21 @@ bool InteropClient::DoMcsConnectionScaling() {
   GRPC_CHECK(peerSocketAddressInCall3 != peerSocketAddressInCall1);
 
   stream1->WritesDone();
+  stream2->WritesDone();
+  stream3->WritesDone();
+
   GRPC_CHECK(!stream1->Read(&response1));
   Status s = stream1->Finish();
   if (!AssertStatusOk(s, context1.debug_error_string())) {
     return false;
   }
 
-  stream2->WritesDone();
   GRPC_CHECK(!stream2->Read(&response2));
   s = stream2->Finish();
   if (!AssertStatusOk(s, context2.debug_error_string())) {
     return false;
   }
 
-  stream3->WritesDone();
   GRPC_CHECK(!stream3->Read(&response3));
   s = stream3->Finish();
   if (!AssertStatusOk(s, context3.debug_error_string())) {

@@ -1220,11 +1220,8 @@ on the connection, the subchannel scales connections upto the configured limit.
 
 Server features:
 * [FullDuplexCall][]
-* The server should be started with the command line argument --set_max_concurrent_streams_limit=true
-  (only implemented in Java test service) to set the max concurrent stream limit
-  for connections to 2.
-* In response to the response parameter 'fill_peer_socket_address_in_response' in request,
-  the server will set the client socket address it sees in the response payload.
+* [Max Concurrent Streams Limit][]
+* [Fill Peer Socket Address][]
 
 Procedure:
  1. Client creates a channel with a service config setting the connection scaling limit per subchannel to 2:
@@ -1242,7 +1239,7 @@ Procedure:
     ```
     {
       response_parameters:{
-        fill_peer_socket_address_in_response: true
+        fill_peer_socket_address: true
       }
     }
     ```
@@ -1256,7 +1253,7 @@ Procedure:
     }
     ```
     
- 4. Client closes the 3 rpcs.
+ 4. Client half-closes the 3 rpcs and asserts the streaming calls are successful.
 
 Client asserts:
 * The peer socket address received for the first two rpcs are the same.
@@ -1515,3 +1512,16 @@ will first clear all the previous metrics data, and then add utilization metrics
 from `orca_oob_report` to the `OpenRCAService`.
 The server implementation should use a lock or similar mechanism to allow only
 one client to control the server's out-of-band reports until the end of the RPC.
+
+### Fill peer socket address
+[Fill Peer Socket Address]: #fill-peer-socket-address
+
+If a StreamingInputCallRequest has `fill_peer_socket_address`, then the
+StreamingOutputCallResponse should have peer_socket_address filled with
+the peer address the server sees for the connection.
+
+### Max concurrent streams limit
+[Max Concurrent Streams Limit]: #max-concurrent-streams-limit
+
+If the test server is started with the commandline argument --set_max_concurrent_streams_limit=true,
+a max concurrent streams limit of 2 is imposed. This is only implemented by the Java server.
