@@ -54,8 +54,7 @@ def grpc_deps():
                 "https://github.com/madler/zlib/releases/download/v1.3.1/zlib-1.3.1.tar.gz",
             ],
             patches = [
-                "@com_github_grpc_grpc//bazel/zlib:add_build_file.patch",
-                "@com_github_grpc_grpc//bazel/zlib:fix_windows.patch",
+                "@com_github_grpc_grpc//bazel/zlib:add_custom_build_file.patch",
             ],
         )
 

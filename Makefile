@@ -2361,10 +2361,6 @@ LIBZ_SRC = \
     third_party/zlib/compress.c \
     third_party/zlib/crc32.c \
     third_party/zlib/deflate.c \
-    third_party/zlib/gzclose.c \
-    third_party/zlib/gzlib.c \
-    third_party/zlib/gzread.c \
-    third_party/zlib/gzwrite.c \
     third_party/zlib/infback.c \
     third_party/zlib/inffast.c \
     third_party/zlib/inflate.c \
