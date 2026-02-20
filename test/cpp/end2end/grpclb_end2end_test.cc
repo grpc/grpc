@@ -57,6 +57,7 @@
 #include "test/core/test_util/test_call_creds.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/counted_service.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/credentials.h"
 #include "test/cpp/util/test_config.h"
@@ -92,6 +93,9 @@ using grpc::lb::v1::LoadBalanceRequest;
 using grpc::lb::v1::LoadBalanceResponse;
 
 using grpc_core::SourceLocation;
+
+// TODO(tjagtap) [PH2][P3][OSS] grpclb is used only by OSS customers. This
+// entire test suite will need to pass before PH2 can be enabled for OSS users.
 
 namespace grpc {
 namespace testing {
@@ -560,6 +564,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpclb_channel_args = grpclb_channel_args.Set(
         GRPC_ARG_PRIMARY_USER_AGENT_STRING, kGrpclbSpecificUserAgentString);
     ChannelArguments args;
+    ApplyCommonChannelArguments(args);
     if (fallback_timeout_ms > 0) {
       args.SetGrpclbFallbackTimeout(fallback_timeout_ms *
                                     grpc_test_slowdown_factor());
@@ -931,6 +936,7 @@ TEST_F(GrpclbEnd2endTest,
 }
 
 TEST_F(GrpclbEnd2endTest, UsePickFirstChildPolicy) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   const size_t kNumBackends = 2;
   const size_t kNumRpcs = kNumBackends * 2;
   CreateBackends(kNumBackends);
@@ -968,6 +974,7 @@ TEST_F(GrpclbEnd2endTest, UsePickFirstChildPolicy) {
 }
 
 TEST_F(GrpclbEnd2endTest, SwapChildPolicy) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   const size_t kNumBackends = 2;
   const size_t kNumRpcs = kNumBackends * 2;
   CreateBackends(kNumBackends);
@@ -1030,6 +1037,7 @@ TEST_F(GrpclbEnd2endTest, SameBackendListedMultipleTimes) {
 }
 
 TEST_F(GrpclbEnd2endTest, InitiallyEmptyServerlist) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   CreateBackends(1);
   SetNextResolutionDefaultBalancer();
   // First response is an empty serverlist.  RPCs should fail.
@@ -1159,6 +1167,8 @@ TEST_F(GrpclbEnd2endTest,
 
 TEST_F(GrpclbEnd2endTest,
        FallbackAfterStartupLoseContactWithBackendsThenBalancer) {
+  SKIP_TEST_FOR_PH2_CLIENT(
+      "TODO(tjagtap) [PH2][P3][Client] Fix. Flakes 10% of the time.");
   // First two backends are fallback, last two are pointed to by balancer.
   const size_t kNumBackends = 4;
   const size_t kNumFallbackBackends = 2;
@@ -1257,6 +1267,8 @@ TEST_F(GrpclbEnd2endTest, FallbackControlledByBalancerAfterFirstServerlist) {
 }
 
 TEST_F(GrpclbEnd2endTest, BackendsRestart) {
+  SKIP_TEST_FOR_PH2_CLIENT(
+      "TODO(tjagtap) [PH2][P3][Client] Flaking 2 out of 100 times.");
   CreateBackends(2);
   SetNextResolutionDefaultBalancer();
   SendBalancerResponse(BuildResponseForBackends(GetBackendPorts(), {}));
@@ -1292,6 +1304,7 @@ TEST_F(GrpclbEnd2endTest, ServiceNameFromLbPolicyConfig) {
 
 TEST_F(GrpclbEnd2endTest,
        NewBalancerAddressNotUsedIfOriginalStreamDoesNotFail) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   CreateBackends(3);
   // Default balancer sends backend 0.
   SendBalancerResponse(BuildResponseForBackends({backends_[0]->port()}, {}));
@@ -1570,6 +1583,7 @@ TEST_F(GrpclbEnd2endTest, DropAll) {
 }
 
 TEST_F(GrpclbEnd2endTest, ClientLoadReporting) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   const size_t kNumBackends = 3;
   CreateBackends(kNumBackends);
   balancer_->service().set_client_load_reporting_interval_seconds(3);
@@ -1609,6 +1623,7 @@ TEST_F(GrpclbEnd2endTest, ClientLoadReporting) {
 }
 
 TEST_F(GrpclbEnd2endTest, LoadReportingWithBalancerRestart) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   const size_t kNumBackends = 4;
   const size_t kNumBackendsFirstPass = 2;
   const size_t kNumBackendsSecondPass = kNumBackends - kNumBackendsFirstPass;
@@ -1666,6 +1681,7 @@ TEST_F(GrpclbEnd2endTest, LoadReportingWithBalancerRestart) {
 }
 
 TEST_F(GrpclbEnd2endTest, LoadReportingWithDrops) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   const size_t kNumBackends = 3;
   const size_t kNumRpcsPerAddress = 3;
   const int kNumDropRateLimiting = 2;

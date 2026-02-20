@@ -67,18 +67,16 @@ inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
   return true;
 }
-// channelz_use_v2_for_v1_api
-inline bool IsChannelzUseV2ForV1ApiEnabled() { return false; }
-// channelz_use_v2_for_v1_service
-inline bool IsChannelzUseV2ForV1ServiceEnabled() { return false; }
+// call_tracer_send_trailing_metadata_is_an_annotation
+inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
+  return false;
+}
 // chaotic_good_connect_deadline
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_CONNECT_DEADLINE
 inline bool IsChaoticGoodConnectDeadlineEnabled() { return true; }
 // chaotic_good_framing_layer
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
-// chttp2_bound_write_size
-inline bool IsChttp2BoundWriteSizeEnabled() { return false; }
 // error_flatten
 inline bool IsErrorFlattenEnabled() { return false; }
 // event_engine_client
@@ -103,18 +101,12 @@ inline bool IsEventEngineCallbackCqEnabled() { return true; }
 inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
 // event_engine_poller_for_python
 inline bool IsEventEnginePollerForPythonEnabled() { return false; }
-// event_engine_secure_endpoint
-#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_SECURE_ENDPOINT
-inline bool IsEventEngineSecureEndpointEnabled() { return true; }
 // fail_recv_metadata_on_deadline_exceeded
 inline bool IsFailRecvMetadataOnDeadlineExceededEnabled() { return false; }
 // free_large_allocator
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 // fuse_filters
 inline bool IsFuseFiltersEnabled() { return false; }
-// graceful_external_connection_failure
-#define GRPC_EXPERIMENT_IS_INCLUDED_GRACEFUL_EXTERNAL_CONNECTION_FAILURE
-inline bool IsGracefulExternalConnectionFailureEnabled() { return true; }
 // keep_alive_ping_timer_batch
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 // local_connector_secure
@@ -122,6 +114,9 @@ inline bool IsLocalConnectorSecureEnabled() { return false; }
 // max_inflight_pings_strict_limit
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
 inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
+// metadata_publish_to_app_tag
+#define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
+inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 // monitoring_experiment
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
@@ -132,7 +127,8 @@ inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
 // pick_first_ignore_empty_updates
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
 // pick_first_ready_to_connecting
-inline bool IsPickFirstReadyToConnectingEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_READY_TO_CONNECTING
+inline bool IsPickFirstReadyToConnectingEnabled() { return true; }
 // pipelined_read_secure_endpoint
 inline bool IsPipelinedReadSecureEndpointEnabled() { return false; }
 // pollset_alternative
@@ -152,7 +148,8 @@ inline bool IsRetryInCallv3Enabled() { return false; }
 // return_preexisting_errors
 inline bool IsReturnPreexistingErrorsEnabled() { return false; }
 // rr_wrr_connect_from_random_index
-inline bool IsRrWrrConnectFromRandomIndexEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_RR_WRR_CONNECT_FROM_RANDOM_INDEX
+inline bool IsRrWrrConnectFromRandomIndexEnabled() { return true; }
 // schedule_cancellation_over_write
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 // secure_endpoint_offload_large_reads
@@ -174,14 +171,16 @@ inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 // tcp_rcv_lowat
 inline bool IsTcpRcvLowatEnabled() { return false; }
-// track_writes_in_resource_quota
-inline bool IsTrackWritesInResourceQuotaEnabled() { return false; }
-// track_zero_copy_allocations_in_resource_quota
-inline bool IsTrackZeroCopyAllocationsInResourceQuotaEnabled() { return false; }
 // tsi_frame_protector_without_locks
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 // unconstrained_max_quota_buffer_size
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
+// use_call_event_engine_in_completion_queue
+inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
+// wildcard_ip_expansion_restriction
+inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
+// xds_channel_filter_chain_per_route
+inline bool IsXdsChannelFilterChainPerRouteEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
 // buffer_list_deletion_prep
@@ -194,18 +193,16 @@ inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
   return true;
 }
-// channelz_use_v2_for_v1_api
-inline bool IsChannelzUseV2ForV1ApiEnabled() { return false; }
-// channelz_use_v2_for_v1_service
-inline bool IsChannelzUseV2ForV1ServiceEnabled() { return false; }
+// call_tracer_send_trailing_metadata_is_an_annotation
+inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
+  return false;
+}
 // chaotic_good_connect_deadline
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_CONNECT_DEADLINE
 inline bool IsChaoticGoodConnectDeadlineEnabled() { return true; }
 // chaotic_good_framing_layer
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
-// chttp2_bound_write_size
-inline bool IsChttp2BoundWriteSizeEnabled() { return false; }
 // error_flatten
 inline bool IsErrorFlattenEnabled() { return false; }
 // event_engine_client
@@ -230,18 +227,12 @@ inline bool IsEventEngineCallbackCqEnabled() { return true; }
 inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
 // event_engine_poller_for_python
 inline bool IsEventEnginePollerForPythonEnabled() { return false; }
-// event_engine_secure_endpoint
-#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_SECURE_ENDPOINT
-inline bool IsEventEngineSecureEndpointEnabled() { return true; }
 // fail_recv_metadata_on_deadline_exceeded
 inline bool IsFailRecvMetadataOnDeadlineExceededEnabled() { return false; }
 // free_large_allocator
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 // fuse_filters
 inline bool IsFuseFiltersEnabled() { return false; }
-// graceful_external_connection_failure
-#define GRPC_EXPERIMENT_IS_INCLUDED_GRACEFUL_EXTERNAL_CONNECTION_FAILURE
-inline bool IsGracefulExternalConnectionFailureEnabled() { return true; }
 // keep_alive_ping_timer_batch
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 // local_connector_secure
@@ -249,6 +240,9 @@ inline bool IsLocalConnectorSecureEnabled() { return false; }
 // max_inflight_pings_strict_limit
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
 inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
+// metadata_publish_to_app_tag
+#define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
+inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 // monitoring_experiment
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
@@ -259,7 +253,8 @@ inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
 // pick_first_ignore_empty_updates
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
 // pick_first_ready_to_connecting
-inline bool IsPickFirstReadyToConnectingEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_READY_TO_CONNECTING
+inline bool IsPickFirstReadyToConnectingEnabled() { return true; }
 // pipelined_read_secure_endpoint
 inline bool IsPipelinedReadSecureEndpointEnabled() { return false; }
 // pollset_alternative
@@ -279,7 +274,8 @@ inline bool IsRetryInCallv3Enabled() { return false; }
 // return_preexisting_errors
 inline bool IsReturnPreexistingErrorsEnabled() { return false; }
 // rr_wrr_connect_from_random_index
-inline bool IsRrWrrConnectFromRandomIndexEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_RR_WRR_CONNECT_FROM_RANDOM_INDEX
+inline bool IsRrWrrConnectFromRandomIndexEnabled() { return true; }
 // schedule_cancellation_over_write
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 // secure_endpoint_offload_large_reads
@@ -301,14 +297,16 @@ inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 // tcp_rcv_lowat
 inline bool IsTcpRcvLowatEnabled() { return false; }
-// track_writes_in_resource_quota
-inline bool IsTrackWritesInResourceQuotaEnabled() { return false; }
-// track_zero_copy_allocations_in_resource_quota
-inline bool IsTrackZeroCopyAllocationsInResourceQuotaEnabled() { return false; }
 // tsi_frame_protector_without_locks
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 // unconstrained_max_quota_buffer_size
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
+// use_call_event_engine_in_completion_queue
+inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
+// wildcard_ip_expansion_restriction
+inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
+// xds_channel_filter_chain_per_route
+inline bool IsXdsChannelFilterChainPerRouteEnabled() { return false; }
 
 #else
 // buffer_list_deletion_prep
@@ -321,18 +319,16 @@ inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
   return true;
 }
-// channelz_use_v2_for_v1_api
-inline bool IsChannelzUseV2ForV1ApiEnabled() { return false; }
-// channelz_use_v2_for_v1_service
-inline bool IsChannelzUseV2ForV1ServiceEnabled() { return false; }
+// call_tracer_send_trailing_metadata_is_an_annotation
+inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
+  return false;
+}
 // chaotic_good_connect_deadline
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_CONNECT_DEADLINE
 inline bool IsChaoticGoodConnectDeadlineEnabled() { return true; }
 // chaotic_good_framing_layer
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
-// chttp2_bound_write_size
-inline bool IsChttp2BoundWriteSizeEnabled() { return false; }
 // error_flatten
 inline bool IsErrorFlattenEnabled() { return false; }
 // event_engine_client
@@ -357,18 +353,12 @@ inline bool IsEventEngineCallbackCqEnabled() { return true; }
 inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
 // event_engine_poller_for_python
 inline bool IsEventEnginePollerForPythonEnabled() { return false; }
-// event_engine_secure_endpoint
-#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_SECURE_ENDPOINT
-inline bool IsEventEngineSecureEndpointEnabled() { return true; }
 // fail_recv_metadata_on_deadline_exceeded
 inline bool IsFailRecvMetadataOnDeadlineExceededEnabled() { return false; }
 // free_large_allocator
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 // fuse_filters
 inline bool IsFuseFiltersEnabled() { return false; }
-// graceful_external_connection_failure
-#define GRPC_EXPERIMENT_IS_INCLUDED_GRACEFUL_EXTERNAL_CONNECTION_FAILURE
-inline bool IsGracefulExternalConnectionFailureEnabled() { return true; }
 // keep_alive_ping_timer_batch
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 // local_connector_secure
@@ -376,6 +366,9 @@ inline bool IsLocalConnectorSecureEnabled() { return false; }
 // max_inflight_pings_strict_limit
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
 inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
+// metadata_publish_to_app_tag
+#define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
+inline bool IsMetadataPublishToAppTagEnabled() { return true; }
 // monitoring_experiment
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
@@ -386,7 +379,8 @@ inline bool IsOtelExportTelemetryDomainsEnabled() { return false; }
 // pick_first_ignore_empty_updates
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
 // pick_first_ready_to_connecting
-inline bool IsPickFirstReadyToConnectingEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_READY_TO_CONNECTING
+inline bool IsPickFirstReadyToConnectingEnabled() { return true; }
 // pipelined_read_secure_endpoint
 inline bool IsPipelinedReadSecureEndpointEnabled() { return false; }
 // pollset_alternative
@@ -406,7 +400,8 @@ inline bool IsRetryInCallv3Enabled() { return false; }
 // return_preexisting_errors
 inline bool IsReturnPreexistingErrorsEnabled() { return false; }
 // rr_wrr_connect_from_random_index
-inline bool IsRrWrrConnectFromRandomIndexEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_RR_WRR_CONNECT_FROM_RANDOM_INDEX
+inline bool IsRrWrrConnectFromRandomIndexEnabled() { return true; }
 // schedule_cancellation_over_write
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 // secure_endpoint_offload_large_reads
@@ -428,14 +423,16 @@ inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 // tcp_rcv_lowat
 inline bool IsTcpRcvLowatEnabled() { return false; }
-// track_writes_in_resource_quota
-inline bool IsTrackWritesInResourceQuotaEnabled() { return false; }
-// track_zero_copy_allocations_in_resource_quota
-inline bool IsTrackZeroCopyAllocationsInResourceQuotaEnabled() { return false; }
 // tsi_frame_protector_without_locks
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 // unconstrained_max_quota_buffer_size
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
+// use_call_event_engine_in_completion_queue
+inline bool IsUseCallEventEngineInCompletionQueueEnabled() { return false; }
+// wildcard_ip_expansion_restriction
+inline bool IsWildcardIpExpansionRestrictionEnabled() { return false; }
+// xds_channel_filter_chain_per_route
+inline bool IsXdsChannelFilterChainPerRouteEnabled() { return false; }
 #endif
 
 #else
@@ -446,16 +443,12 @@ enum ExperimentIds {
   kExperimentIdCallTracerInTransport,
   // call_tracer_send_initial_metadata_is_an_annotation
   kExperimentIdCallTracerSendInitialMetadataIsAnAnnotation,
-  // channelz_use_v2_for_v1_api
-  kExperimentIdChannelzUseV2ForV1Api,
-  // channelz_use_v2_for_v1_service
-  kExperimentIdChannelzUseV2ForV1Service,
+  // call_tracer_send_trailing_metadata_is_an_annotation
+  kExperimentIdCallTracerSendTrailingMetadataIsAnAnnotation,
   // chaotic_good_connect_deadline
   kExperimentIdChaoticGoodConnectDeadline,
   // chaotic_good_framing_layer
   kExperimentIdChaoticGoodFramingLayer,
-  // chttp2_bound_write_size
-  kExperimentIdChttp2BoundWriteSize,
   // error_flatten
   kExperimentIdErrorFlatten,
   // event_engine_client
@@ -474,22 +467,20 @@ enum ExperimentIds {
   kExperimentIdEventEngineForAllOtherEndpoints,
   // event_engine_poller_for_python
   kExperimentIdEventEnginePollerForPython,
-  // event_engine_secure_endpoint
-  kExperimentIdEventEngineSecureEndpoint,
   // fail_recv_metadata_on_deadline_exceeded
   kExperimentIdFailRecvMetadataOnDeadlineExceeded,
   // free_large_allocator
   kExperimentIdFreeLargeAllocator,
   // fuse_filters
   kExperimentIdFuseFilters,
-  // graceful_external_connection_failure
-  kExperimentIdGracefulExternalConnectionFailure,
   // keep_alive_ping_timer_batch
   kExperimentIdKeepAlivePingTimerBatch,
   // local_connector_secure
   kExperimentIdLocalConnectorSecure,
   // max_inflight_pings_strict_limit
   kExperimentIdMaxInflightPingsStrictLimit,
+  // metadata_publish_to_app_tag
+  kExperimentIdMetadataPublishToAppTag,
   // monitoring_experiment
   kExperimentIdMonitoringExperiment,
   // multiping
@@ -540,14 +531,16 @@ enum ExperimentIds {
   kExperimentIdTcpFrameSizeTuning,
   // tcp_rcv_lowat
   kExperimentIdTcpRcvLowat,
-  // track_writes_in_resource_quota
-  kExperimentIdTrackWritesInResourceQuota,
-  // track_zero_copy_allocations_in_resource_quota
-  kExperimentIdTrackZeroCopyAllocationsInResourceQuota,
   // tsi_frame_protector_without_locks
   kExperimentIdTsiFrameProtectorWithoutLocks,
   // unconstrained_max_quota_buffer_size
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
+  // use_call_event_engine_in_completion_queue
+  kExperimentIdUseCallEventEngineInCompletionQueue,
+  // wildcard_ip_expansion_restriction
+  kExperimentIdWildcardIpExpansionRestriction,
+  // xds_channel_filter_chain_per_route
+  kExperimentIdXdsChannelFilterChainPerRoute,
   kNumExperiments
 };
 // buffer_list_deletion_prep
@@ -566,15 +559,11 @@ inline bool IsCallTracerSendInitialMetadataIsAnAnnotationEnabled() {
   return IsExperimentEnabled<
       kExperimentIdCallTracerSendInitialMetadataIsAnAnnotation>();
 }
-// channelz_use_v2_for_v1_api
-#define GRPC_EXPERIMENT_IS_INCLUDED_CHANNELZ_USE_V2_FOR_V1_API
-inline bool IsChannelzUseV2ForV1ApiEnabled() {
-  return IsExperimentEnabled<kExperimentIdChannelzUseV2ForV1Api>();
-}
-// channelz_use_v2_for_v1_service
-#define GRPC_EXPERIMENT_IS_INCLUDED_CHANNELZ_USE_V2_FOR_V1_SERVICE
-inline bool IsChannelzUseV2ForV1ServiceEnabled() {
-  return IsExperimentEnabled<kExperimentIdChannelzUseV2ForV1Service>();
+// call_tracer_send_trailing_metadata_is_an_annotation
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_SEND_TRAILING_METADATA_IS_AN_ANNOTATION
+inline bool IsCallTracerSendTrailingMetadataIsAnAnnotationEnabled() {
+  return IsExperimentEnabled<
+      kExperimentIdCallTracerSendTrailingMetadataIsAnAnnotation>();
 }
 // chaotic_good_connect_deadline
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_CONNECT_DEADLINE
@@ -585,11 +574,6 @@ inline bool IsChaoticGoodConnectDeadlineEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() {
   return IsExperimentEnabled<kExperimentIdChaoticGoodFramingLayer>();
-}
-// chttp2_bound_write_size
-#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BOUND_WRITE_SIZE
-inline bool IsChttp2BoundWriteSizeEnabled() {
-  return IsExperimentEnabled<kExperimentIdChttp2BoundWriteSize>();
 }
 // error_flatten
 #define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
@@ -636,11 +620,6 @@ inline bool IsEventEngineForAllOtherEndpointsEnabled() {
 inline bool IsEventEnginePollerForPythonEnabled() {
   return IsExperimentEnabled<kExperimentIdEventEnginePollerForPython>();
 }
-// event_engine_secure_endpoint
-#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_SECURE_ENDPOINT
-inline bool IsEventEngineSecureEndpointEnabled() {
-  return IsExperimentEnabled<kExperimentIdEventEngineSecureEndpoint>();
-}
 // fail_recv_metadata_on_deadline_exceeded
 #define GRPC_EXPERIMENT_IS_INCLUDED_FAIL_RECV_METADATA_ON_DEADLINE_EXCEEDED
 inline bool IsFailRecvMetadataOnDeadlineExceededEnabled() {
@@ -656,11 +635,6 @@ inline bool IsFreeLargeAllocatorEnabled() {
 inline bool IsFuseFiltersEnabled() {
   return IsExperimentEnabled<kExperimentIdFuseFilters>();
 }
-// graceful_external_connection_failure
-#define GRPC_EXPERIMENT_IS_INCLUDED_GRACEFUL_EXTERNAL_CONNECTION_FAILURE
-inline bool IsGracefulExternalConnectionFailureEnabled() {
-  return IsExperimentEnabled<kExperimentIdGracefulExternalConnectionFailure>();
-}
 // keep_alive_ping_timer_batch
 #define GRPC_EXPERIMENT_IS_INCLUDED_KEEP_ALIVE_PING_TIMER_BATCH
 inline bool IsKeepAlivePingTimerBatchEnabled() {
@@ -675,6 +649,11 @@ inline bool IsLocalConnectorSecureEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
 inline bool IsMaxInflightPingsStrictLimitEnabled() {
   return IsExperimentEnabled<kExperimentIdMaxInflightPingsStrictLimit>();
+}
+// metadata_publish_to_app_tag
+#define GRPC_EXPERIMENT_IS_INCLUDED_METADATA_PUBLISH_TO_APP_TAG
+inline bool IsMetadataPublishToAppTagEnabled() {
+  return IsExperimentEnabled<kExperimentIdMetadataPublishToAppTag>();
 }
 // monitoring_experiment
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
@@ -801,17 +780,6 @@ inline bool IsTcpFrameSizeTuningEnabled() {
 inline bool IsTcpRcvLowatEnabled() {
   return IsExperimentEnabled<kExperimentIdTcpRcvLowat>();
 }
-// track_writes_in_resource_quota
-#define GRPC_EXPERIMENT_IS_INCLUDED_TRACK_WRITES_IN_RESOURCE_QUOTA
-inline bool IsTrackWritesInResourceQuotaEnabled() {
-  return IsExperimentEnabled<kExperimentIdTrackWritesInResourceQuota>();
-}
-// track_zero_copy_allocations_in_resource_quota
-#define GRPC_EXPERIMENT_IS_INCLUDED_TRACK_ZERO_COPY_ALLOCATIONS_IN_RESOURCE_QUOTA
-inline bool IsTrackZeroCopyAllocationsInResourceQuotaEnabled() {
-  return IsExperimentEnabled<
-      kExperimentIdTrackZeroCopyAllocationsInResourceQuota>();
-}
 // tsi_frame_protector_without_locks
 #define GRPC_EXPERIMENT_IS_INCLUDED_TSI_FRAME_PROTECTOR_WITHOUT_LOCKS
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() {
@@ -821,6 +789,22 @@ inline bool IsTsiFrameProtectorWithoutLocksEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_UNCONSTRAINED_MAX_QUOTA_BUFFER_SIZE
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
   return IsExperimentEnabled<kExperimentIdUnconstrainedMaxQuotaBufferSize>();
+}
+// use_call_event_engine_in_completion_queue
+#define GRPC_EXPERIMENT_IS_INCLUDED_USE_CALL_EVENT_ENGINE_IN_COMPLETION_QUEUE
+inline bool IsUseCallEventEngineInCompletionQueueEnabled() {
+  return IsExperimentEnabled<
+      kExperimentIdUseCallEventEngineInCompletionQueue>();
+}
+// wildcard_ip_expansion_restriction
+#define GRPC_EXPERIMENT_IS_INCLUDED_WILDCARD_IP_EXPANSION_RESTRICTION
+inline bool IsWildcardIpExpansionRestrictionEnabled() {
+  return IsExperimentEnabled<kExperimentIdWildcardIpExpansionRestriction>();
+}
+// xds_channel_filter_chain_per_route
+#define GRPC_EXPERIMENT_IS_INCLUDED_XDS_CHANNEL_FILTER_CHAIN_PER_ROUTE
+inline bool IsXdsChannelFilterChainPerRouteEnabled() {
+  return IsExperimentEnabled<kExperimentIdXdsChannelFilterChainPerRoute>();
 }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];

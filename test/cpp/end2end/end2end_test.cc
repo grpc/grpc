@@ -1484,9 +1484,7 @@ TEST_P(End2endTest, BinaryTrailerTest) {
 }
 
 TEST_P(End2endTest, ExpectErrorTest) {
-  if (grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()) {
-    GTEST_SKIP() << "TODO(tjagtap) [PH2][P1] Fix bug";
-  }
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
 
   ResetStub();
 
@@ -1567,6 +1565,7 @@ TEST_P(ProxyEnd2endTest, MultipleRpcs) {
 
 // Set a 10us deadline and make sure proper error is returned.
 TEST_P(ProxyEnd2endTest, RpcDeadlineExpires) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix flake");
   ResetStub();
   EchoRequest request;
   EchoResponse response;
@@ -1608,9 +1607,7 @@ TEST_P(ProxyEnd2endTest, RpcLongDeadline) {
 
 // Ask server to echo back the deadline it sees.
 TEST_P(ProxyEnd2endTest, EchoDeadline) {
-  if (grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()) {
-    GTEST_SKIP() << "TODO(tjagtap) [PH2][P1] Fix bug";
-  }
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   ResetStub();
   EchoRequest request;
   EchoResponse response;

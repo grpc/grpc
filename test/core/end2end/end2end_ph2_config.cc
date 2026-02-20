@@ -99,7 +99,8 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|RetryHttp2Tests.Ping"                                    \
   "|RetryHttp2Tests.BadPing"                                 \
   "|RetryHttp2Tests.RetryTransparentMaxConcurrentStreams"    \
-  "|RetryHttp2Tests.HighInitialSeqno"
+  "|RetryHttp2Tests.HighInitialSeqno"                        \
+  "|RetryHttp2Tests.CancelDuringDelay"
 
 #define LARGE_METADATA_SUITE                                                   \
   "|Http2SingleHopTests.RequestWithLargeMetadataUnderSoftLimit"                \
@@ -119,10 +120,7 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|Http2SingleHopTests.ServerMaxConcurrentStreams"          \
   "|Http2Tests.GracefulServerShutdown"                       \
   "|Http2Tests.MaxAgeForciblyClose"                          \
-  "|Http2Tests.MaxAgeGracefullyClose"                        \
-  "|Http2Tests.ServerStreaming"                              \
-  "|Http2Tests.ServerStreamingEmptyStream"                   \
-  "|Http2Tests.ServerStreaming10Messages"
+  "|Http2Tests.MaxAgeGracefullyClose"
 
 #define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE     \
   "|CoreEnd2endTests|CoreDeadlineTests|CoreLargeSendTests|" \
