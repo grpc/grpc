@@ -46,12 +46,16 @@ def grpc_deps():
     if "zlib" not in native.existing_rules():
         http_archive(
             name = "zlib",
-            build_file = "@com_github_grpc_grpc//third_party:zlib.BUILD",
-            sha256 = "da8937719bb6e9600a671f320934c0db3b8020c9c30fecda60b5a5ebdc9a1ea0",
-            strip_prefix = "zlib-f1f503da85d52e56aae11557b4d79a42bcaa2b86",
+            patch_strip = 1,
+            strip_prefix = "zlib-1.3.1",
+            integrity = "sha256-mpOyt9/ax3zrpaVYpYDnRmfdb+3kWFuR7vtg8Dty3yM=",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/madler/zlib/archive/f1f503da85d52e56aae11557b4d79a42bcaa2b86.tar.gz",
-                "https://github.com/madler/zlib/archive/f1f503da85d52e56aae11557b4d79a42bcaa2b86.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/madler/zlib/releases/download/v1.3.1/zlib-1.3.1.tar.gz",
+                "https://github.com/madler/zlib/releases/download/v1.3.1/zlib-1.3.1.tar.gz",
+            ],
+            patches = [
+                "@com_github_grpc_grpc//bazel/zlib:add_build_file.patch",
+                "@com_github_grpc_grpc//bazel/zlib:fix_windows.patch",
             ],
         )
 

@@ -3461,7 +3461,11 @@
     <file baseinstalldir="/" name="third_party/zlib/crc32.h" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/deflate.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/deflate.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/gzclose.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/gzguts.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/gzlib.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/gzread.c" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/gzwrite.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/infback.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/inffast.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/inffast.h" role="src" />
@@ -3475,6 +3479,17 @@
     <file baseinstalldir="/" name="third_party/zlib/uncompr.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/zconf.h" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/zlib.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/zlib/include/crc32.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/zlib/include/deflate.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/zlib/include/gzguts.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/zlib/include/inffast.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/zlib/include/inffixed.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/zlib/include/inflate.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/zlib/include/inftrees.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/zlib/include/trees.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/zlib/include/zconf.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/zlib/include/zlib.h" role="src" />
+    <file baseinstalldir="/" name="third_party/zlib/zlib/include/zutil.h" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/zutil.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/zutil.h" role="src" />
     <file name="LICENSE" role="doc" />
