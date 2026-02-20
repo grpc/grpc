@@ -20,7 +20,7 @@ from typing import Any, Iterator, List, Optional, Self, Sequence, Tuple, Union
 MetadataKey = str
 MetadataValue = Union[str, bytes]
 MetadatumType = Tuple[MetadataKey, MetadataValue]
-MetadataType = Union[Metadata, Sequence[MetadatumType]]
+MetadataType = Union["Metadata", Sequence[MetadatumType]]
 
 class Metadata(abc.Collection):  # noqa: PLW1641
     """Metadata abstraction for the asynchronous calls and interceptors.
