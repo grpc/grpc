@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.76.0</span>
+   &#160;<span id="projectnumber">1.78.1</span>
    </div>
   </td>
  </tr>
@@ -108,61 +108,69 @@ $(function() {
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <span class="keywordflow">return</span> channel_-&gt;<a class="code" href="classgrpc_1_1_channel_interface.html#a68e987e7b87ca5a2668419736f9ee9b1">GetState</a>(try_to_connect);</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;  }</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160; <span class="keyword">private</span>:</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;  <a class="code" href="classgrpc_1_1internal_1_1_intercepted_channel.html">InterceptedChannel</a>(<a class="code" href="classgrpc_1_1_channel_interface.html">ChannelInterface</a>* channel, <span class="keywordtype">size_t</span> pos)</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;      : channel_(channel), interceptor_pos_(pos) {}</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160; </div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;  Call CreateCall(<span class="keyword">const</span> RpcMethod&amp; method, <a class="code" href="classgrpc_1_1_client_context.html">grpc::ClientContext</a>* context,</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;                  <a class="code" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a>* cq)<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;    <span class="keywordflow">return</span> channel_-&gt;CreateCallInternal(method, context, cq, interceptor_pos_);</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;  }</div>
+<div class="line"><a name="l00045"></a><span class="lineno"><a class="line" href="classgrpc_1_1internal_1_1_intercepted_channel.html#adbc321e7b92ba914729621bb599a313f">   45</a></span>&#160;  <a class="code" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html">grpc_event_engine::experimental::MemoryAllocator</a>* <a class="code" href="classgrpc_1_1internal_1_1_intercepted_channel.html#adbc321e7b92ba914729621bb599a313f">memory_allocator</a>()<span class="keyword"></span></div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="keyword">      const override </span>{</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    <span class="keywordflow">return</span> channel_-&gt;<a class="code" href="classgrpc_1_1_channel_interface.html#aa0b31feb48aad6ccc4c45c9620aed4fc">memory_allocator</a>();</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;  }</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; <span class="keyword">private</span>:</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;  <a class="code" href="classgrpc_1_1internal_1_1_intercepted_channel.html">InterceptedChannel</a>(<a class="code" href="classgrpc_1_1_channel_interface.html">ChannelInterface</a>* channel, <span class="keywordtype">size_t</span> pos)</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;      : channel_(channel), interceptor_pos_(pos) {}</div>
 <div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160; </div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  <span class="keywordtype">void</span> PerformOpsOnCall(CallOpSetInterface* ops, Call* call)<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;    <span class="keywordflow">return</span> channel_-&gt;PerformOpsOnCall(ops, call);</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  }</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;  <span class="keywordtype">void</span>* RegisterMethod(<span class="keyword">const</span> <span class="keywordtype">char</span>* method)<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    <span class="keywordflow">return</span> channel_-&gt;RegisterMethod(method);</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;  }</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160; </div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;  <span class="keywordtype">void</span> NotifyOnStateChangeImpl(<a class="code" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a> last_observed,</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;                               <a class="code" href="structgpr__timespec.html">gpr_timespec</a> deadline, <a class="code" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a>* cq,</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;                               <span class="keywordtype">void</span>* tag)<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    <span class="keywordflow">return</span> channel_-&gt;NotifyOnStateChangeImpl(last_observed, deadline, cq, tag);</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;  }</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  <span class="keywordtype">bool</span> WaitForStateChangeImpl(<a class="code" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a> last_observed,</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;                              <a class="code" href="structgpr__timespec.html">gpr_timespec</a> deadline)<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    <span class="keywordflow">return</span> channel_-&gt;WaitForStateChangeImpl(last_observed, deadline);</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  }</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160; </div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;  <a class="code" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a>* CallbackCQ()<span class="keyword"> override </span>{</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <span class="keywordflow">return</span> channel_-&gt;CallbackCQ();</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;  }</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160; </div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;  ChannelInterface* channel_;</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;  <span class="keywordtype">size_t</span> interceptor_pos_;</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160; </div>
-<div class="line"><a name="l00078"></a><span class="lineno"><a class="line" href="classgrpc_1_1internal_1_1_intercepted_channel.html#a727024a430a919fd5294f685d1c5b36c">   78</a></span>&#160;  <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html">InterceptorBatchMethodsImpl</a>;</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;};</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;}  <span class="comment">// namespace internal</span></div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;}  <span class="comment">// namespace grpc</span></div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  Call CreateCall(<span class="keyword">const</span> RpcMethod&amp; method, <a class="code" href="classgrpc_1_1_client_context.html">grpc::ClientContext</a>* context,</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;                  <a class="code" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a>* cq)<span class="keyword"> override </span>{</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    <span class="keywordflow">return</span> channel_-&gt;CreateCallInternal(method, context, cq, interceptor_pos_);</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;  }</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160; </div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;  <span class="keywordtype">void</span> PerformOpsOnCall(CallOpSetInterface* ops, Call* call)<span class="keyword"> override </span>{</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <span class="keywordflow">return</span> channel_-&gt;PerformOpsOnCall(ops, call);</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;  }</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;  <span class="keywordtype">void</span>* RegisterMethod(<span class="keyword">const</span> <span class="keywordtype">char</span>* method)<span class="keyword"> override </span>{</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    <span class="keywordflow">return</span> channel_-&gt;RegisterMethod(method);</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;  }</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  <span class="keywordtype">void</span> NotifyOnStateChangeImpl(<a class="code" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a> last_observed,</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;                               <a class="code" href="structgpr__timespec.html">gpr_timespec</a> deadline, <a class="code" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a>* cq,</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;                               <span class="keywordtype">void</span>* tag)<span class="keyword"> override </span>{</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <span class="keywordflow">return</span> channel_-&gt;NotifyOnStateChangeImpl(last_observed, deadline, cq, tag);</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  }</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;  <span class="keywordtype">bool</span> WaitForStateChangeImpl(<a class="code" href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a> last_observed,</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;                              <a class="code" href="structgpr__timespec.html">gpr_timespec</a> deadline)<span class="keyword"> override </span>{</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    <span class="keywordflow">return</span> channel_-&gt;WaitForStateChangeImpl(last_observed, deadline);</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;  }</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160; </div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;  <a class="code" href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a>* CallbackCQ()<span class="keyword"> override </span>{</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    <span class="keywordflow">return</span> channel_-&gt;CallbackCQ();</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;  }</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160; </div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;  ChannelInterface* channel_;</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;  <span class="keywordtype">size_t</span> interceptor_pos_;</div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160; </div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;<span class="preprocessor">#endif  // GRPCPP_IMPL_INTERCEPTED_CHANNEL_H</span></div>
+<div class="line"><a name="l00083"></a><span class="lineno"><a class="line" href="classgrpc_1_1internal_1_1_intercepted_channel.html#a727024a430a919fd5294f685d1c5b36c">   83</a></span>&#160;  <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html">InterceptorBatchMethodsImpl</a>;</div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;};</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;}  <span class="comment">// namespace internal</span></div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;}  <span class="comment">// namespace grpc</span></div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160; </div>
+<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;<span class="preprocessor">#endif  // GRPCPP_IMPL_INTERCEPTED_CHANNEL_H</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_intercepted_channel_html_ab7073fa3f0de1369f7201c1ce1630970"><div class="ttname"><a href="classgrpc_1_1internal_1_1_intercepted_channel.html#ab7073fa3f0de1369f7201c1ce1630970">grpc::internal::InterceptedChannel::GetState</a></div><div class="ttdeci">grpc_connectivity_state GetState(bool try_to_connect) override</div><div class="ttdoc">Get the current channel state.</div><div class="ttdef"><b>Definition:</b> intercepted_channel.h:41</div></div>
 <div class="ttc" id="anamespacegrpc_html"><div class="ttname"><a href="namespacegrpc.html">grpc</a></div><div class="ttdoc">An Alarm posts the user-provided tag to its associated completion queue or invokes the user-provided ...</div><div class="ttdef"><b>Definition:</b> alarm.h:33</div></div>
 <div class="ttc" id="aclassgrpc_1_1_client_context_html"><div class="ttname"><a href="classgrpc_1_1_client_context.html">grpc::ClientContext</a></div><div class="ttdoc">A ClientContext allows the person implementing a service client to:</div><div class="ttdef"><b>Definition:</b> client_context.h:194</div></div>
 <div class="ttc" id="aconnectivity__state_8h_html_a065b65f5cdd062a67d82e2b6bcf68cf2"><div class="ttname"><a href="connectivity__state_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a></div><div class="ttdeci">grpc_connectivity_state</div><div class="ttdoc">Connectivity state of a channel.</div><div class="ttdef"><b>Definition:</b> connectivity_state.h:30</div></div>
 <div class="ttc" id="agrpcpp_2impl_2channel__interface_8h_html"><div class="ttname"><a href="grpcpp_2impl_2channel__interface_8h.html">channel_interface.h</a></div></div>
-<div class="ttc" id="aclassgrpc_1_1_channel_interface_html"><div class="ttname"><a href="classgrpc_1_1_channel_interface.html">grpc::ChannelInterface</a></div><div class="ttdoc">Codegen interface for grpc::Channel.</div><div class="ttdef"><b>Definition:</b> channel_interface.h:71</div></div>
+<div class="ttc" id="aclassgrpc_1_1_channel_interface_html"><div class="ttname"><a href="classgrpc_1_1_channel_interface.html">grpc::ChannelInterface</a></div><div class="ttdoc">Codegen interface for grpc::Channel.</div><div class="ttdef"><b>Definition:</b> channel_interface.h:72</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_intercepted_channel_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_intercepted_channel.html">grpc::internal::InterceptedChannel</a></div><div class="ttdoc">An InterceptedChannel is available to client Interceptors.</div><div class="ttdef"><b>Definition:</b> intercepted_channel.h:35</div></div>
 <div class="ttc" id="aclassgrpc_1_1_channel_interface_html_a68e987e7b87ca5a2668419736f9ee9b1"><div class="ttname"><a href="classgrpc_1_1_channel_interface.html#a68e987e7b87ca5a2668419736f9ee9b1">grpc::ChannelInterface::GetState</a></div><div class="ttdeci">virtual grpc_connectivity_state GetState(bool try_to_connect)=0</div><div class="ttdoc">Get the current channel state.</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_intercepted_channel_html_ac6c23faad6b1fe426e1092498790851e"><div class="ttname"><a href="classgrpc_1_1internal_1_1_intercepted_channel.html#ac6c23faad6b1fe426e1092498790851e">grpc::internal::InterceptedChannel::~InterceptedChannel</a></div><div class="ttdeci">~InterceptedChannel() override</div><div class="ttdef"><b>Definition:</b> intercepted_channel.h:37</div></div>
 <div class="ttc" id="aclassgrpc_1_1_completion_queue_html"><div class="ttname"><a href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a></div><div class="ttdoc">A thin wrapper around grpc_completion_queue (see src/core/lib/surface/completion_queue....</div><div class="ttdef"><b>Definition:</b> completion_queue.h:104</div></div>
+<div class="ttc" id="aclassgrpc__event__engine_1_1experimental_1_1_memory_allocator_html"><div class="ttname"><a href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html">grpc_event_engine::experimental::MemoryAllocator</a></div><div class="ttdef"><b>Definition:</b> memory_allocator.h:33</div></div>
+<div class="ttc" id="aclassgrpc_1_1internal_1_1_intercepted_channel_html_adbc321e7b92ba914729621bb599a313f"><div class="ttname"><a href="classgrpc_1_1internal_1_1_intercepted_channel.html#adbc321e7b92ba914729621bb599a313f">grpc::internal::InterceptedChannel::memory_allocator</a></div><div class="ttdeci">grpc_event_engine::experimental::MemoryAllocator * memory_allocator() const override</div><div class="ttdef"><b>Definition:</b> intercepted_channel.h:45</div></div>
 <div class="ttc" id="astructgpr__timespec_html"><div class="ttname"><a href="structgpr__timespec.html">gpr_timespec</a></div><div class="ttdoc">Analogous to struct timespec.</div><div class="ttdef"><b>Definition:</b> time.h:47</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_interceptor_batch_methods_impl_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_interceptor_batch_methods_impl.html">grpc::internal::InterceptorBatchMethodsImpl</a></div><div class="ttdef"><b>Definition:</b> interceptor_common.h:37</div></div>
+<div class="ttc" id="aclassgrpc_1_1_channel_interface_html_aa0b31feb48aad6ccc4c45c9620aed4fc"><div class="ttname"><a href="classgrpc_1_1_channel_interface.html#aa0b31feb48aad6ccc4c45c9620aed4fc">grpc::ChannelInterface::memory_allocator</a></div><div class="ttdeci">virtual grpc_event_engine::experimental::MemoryAllocator * memory_allocator() const</div><div class="ttdef"><b>Definition:</b> channel_interface.h:106</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Oct 24 2025 21:46:31 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 20 2026 17:27:58 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

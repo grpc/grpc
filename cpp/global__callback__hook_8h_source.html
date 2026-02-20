@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.76.0</span>
+   &#160;<span id="projectnumber">1.78.1</span>
    </div>
   </td>
  </tr>
@@ -117,7 +117,7 @@ $(function() {
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160; </div>
 <div class="line"><a name="l00046"></a><span class="lineno"><a class="line" href="classgrpc_1_1_default_global_callback_hook.html">   46</a></span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1_default_global_callback_hook.html">DefaultGlobalCallbackHook</a> final : <span class="keyword">public</span> <a class="code" href="classgrpc_1_1_global_callback_hook.html">GlobalCallbackHook</a> {</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160; <span class="keyword">public</span>:</div>
-<div class="line"><a name="l00048"></a><span class="lineno"><a class="line" href="classgrpc_1_1_default_global_callback_hook.html#a673ec204584aecf0dc1406707a033f42">   48</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_default_global_callback_hook.html#a673ec204584aecf0dc1406707a033f42">RunCallback</a>(<a class="code" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a>* call,</div>
+<div class="line"><a name="l00048"></a><span class="lineno"><a class="line" href="classgrpc_1_1_default_global_callback_hook.html#ae5f5dfdc0b2ea38411da110a870b90a0">   48</a></span>&#160;  <span class="keywordtype">void</span> <a class="code" href="classgrpc_1_1_default_global_callback_hook.html#ae5f5dfdc0b2ea38411da110a870b90a0">RunCallback</a>(<a class="code" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a>* <span class="comment">/* call */</span>,</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;                   absl::FunctionRef&lt;<span class="keywordtype">void</span>()&gt; callback)<span class="keyword"> override </span>{</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    <a class="code" href="classgrpc_1_1_global_callback_hook.html#a7ca7fbc4f38ef5b46730c2fc7885653e">CatchingCallback</a>(callback);</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;  }</div>
@@ -132,16 +132,16 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_default_global_callback_hook_html"><div class="ttname"><a href="classgrpc_1_1_default_global_callback_hook.html">grpc::DefaultGlobalCallbackHook</a></div><div class="ttdef"><b>Definition:</b> global_callback_hook.h:46</div></div>
 <div class="ttc" id="anamespacegrpc_html"><div class="ttname"><a href="namespacegrpc.html">grpc</a></div><div class="ttdoc">An Alarm posts the user-provided tag to its associated completion queue or invokes the user-provided ...</div><div class="ttdef"><b>Definition:</b> alarm.h:33</div></div>
 <div class="ttc" id="aclassgrpc_1_1_global_callback_hook_html_a7ca7fbc4f38ef5b46730c2fc7885653e"><div class="ttname"><a href="classgrpc_1_1_global_callback_hook.html#a7ca7fbc4f38ef5b46730c2fc7885653e">grpc::GlobalCallbackHook::CatchingCallback</a></div><div class="ttdeci">void CatchingCallback(Func &amp;&amp;func, Args &amp;&amp;... args)</div><div class="ttdef"><b>Definition:</b> global_callback_hook.h:33</div></div>
+<div class="ttc" id="aclassgrpc_1_1_default_global_callback_hook_html_ae5f5dfdc0b2ea38411da110a870b90a0"><div class="ttname"><a href="classgrpc_1_1_default_global_callback_hook.html#ae5f5dfdc0b2ea38411da110a870b90a0">grpc::DefaultGlobalCallbackHook::RunCallback</a></div><div class="ttdeci">void RunCallback(grpc_call *, absl::FunctionRef&lt; void()&gt; callback) override</div><div class="ttdef"><b>Definition:</b> global_callback_hook.h:48</div></div>
 <div class="ttc" id="aclassgrpc_1_1_global_callback_hook_html_aff7dd3c69b7f4c541cc9798304d0b864"><div class="ttname"><a href="classgrpc_1_1_global_callback_hook.html#aff7dd3c69b7f4c541cc9798304d0b864">grpc::GlobalCallbackHook::~GlobalCallbackHook</a></div><div class="ttdeci">virtual ~GlobalCallbackHook()=default</div></div>
 <div class="ttc" id="agrpc__types_8h_html_a122f8f4f0a585396d993d9b55848f222"><div class="ttname"><a href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a></div><div class="ttdeci">struct grpc_call grpc_call</div><div class="ttdoc">A Call represents an RPC.</div><div class="ttdef"><b>Definition:</b> grpc_types.h:68</div></div>
 <div class="ttc" id="aclassgrpc_1_1_global_callback_hook_html_a0b0eef739835dc7c668be6508cf5a0d9"><div class="ttname"><a href="classgrpc_1_1_global_callback_hook.html#a0b0eef739835dc7c668be6508cf5a0d9">grpc::GlobalCallbackHook::RunCallback</a></div><div class="ttdeci">virtual void RunCallback(grpc_call *call, absl::FunctionRef&lt; void()&gt; callback)=0</div></div>
 <div class="ttc" id="anamespacegrpc_html_a4d764b9d80dc40e3f6212b2b41a017d0"><div class="ttname"><a href="namespacegrpc.html#a4d764b9d80dc40e3f6212b2b41a017d0">grpc::SetGlobalCallbackHook</a></div><div class="ttdeci">void SetGlobalCallbackHook(GlobalCallbackHook *hook)</div></div>
-<div class="ttc" id="aclassgrpc_1_1_default_global_callback_hook_html_a673ec204584aecf0dc1406707a033f42"><div class="ttname"><a href="classgrpc_1_1_default_global_callback_hook.html#a673ec204584aecf0dc1406707a033f42">grpc::DefaultGlobalCallbackHook::RunCallback</a></div><div class="ttdeci">void RunCallback(grpc_call *call, absl::FunctionRef&lt; void()&gt; callback) override</div><div class="ttdef"><b>Definition:</b> global_callback_hook.h:48</div></div>
 <div class="ttc" id="anamespacegrpc_html_adc5e6feb4faad8810853590f39be6e84"><div class="ttname"><a href="namespacegrpc.html#adc5e6feb4faad8810853590f39be6e84">grpc::GetGlobalCallbackHook</a></div><div class="ttdeci">std::shared_ptr&lt; GlobalCallbackHook &gt; GetGlobalCallbackHook()</div></div>
 <div class="ttc" id="aclassgrpc_1_1_global_callback_hook_html"><div class="ttname"><a href="classgrpc_1_1_global_callback_hook.html">grpc::GlobalCallbackHook</a></div><div class="ttdef"><b>Definition:</b> global_callback_hook.h:24</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Oct 24 2025 21:46:31 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 20 2026 17:27:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

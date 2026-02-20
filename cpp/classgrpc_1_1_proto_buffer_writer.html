@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.76.0</span>
+   &#160;<span id="projectnumber">1.78.1</span>
    </div>
   </td>
  </tr>
@@ -82,9 +82,9 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a2197d65d98500d488c8edbca3d4e77e2"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_proto_buffer_writer.html#a2197d65d98500d488c8edbca3d4e77e2">ProtoBufferWriter</a> (<a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a> *byte_buffer, int block_size, int total_size)</td></tr>
-<tr class="memdesc:a2197d65d98500d488c8edbca3d4e77e2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor for this derived class.  <a href="classgrpc_1_1_proto_buffer_writer.html#a2197d65d98500d488c8edbca3d4e77e2">More...</a><br /></td></tr>
-<tr class="separator:a2197d65d98500d488c8edbca3d4e77e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abe822a7071286a431cc9d6c834441082"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_proto_buffer_writer.html#abe822a7071286a431cc9d6c834441082">ProtoBufferWriter</a> (<a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a> *byte_buffer, int block_size, int total_size, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html">grpc_event_engine::experimental::MemoryAllocator</a> *allocator=nullptr)</td></tr>
+<tr class="memdesc:abe822a7071286a431cc9d6c834441082"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor for this derived class.  <a href="classgrpc_1_1_proto_buffer_writer.html#abe822a7071286a431cc9d6c834441082">More...</a><br /></td></tr>
+<tr class="separator:abe822a7071286a431cc9d6c834441082"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af812e0ef5b16adce1c70b764f46b71c1"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_proto_buffer_writer.html#af812e0ef5b16adce1c70b764f46b71c1">~ProtoBufferWriter</a> () override</td></tr>
 <tr class="separator:af812e0ef5b16adce1c70b764f46b71c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad71ffbb8f1f6e5bfedba73fb8bcde0ff"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_proto_buffer_writer.html#ad71ffbb8f1f6e5bfedba73fb8bcde0ff">Next</a> (void **data, int *size) override</td></tr>
@@ -114,8 +114,8 @@ Friends</h2></td></tr>
 <p>The principle is to give the proto layer one buffer of bytes at a time that it can use to serialize the next portion of the message, with the option to "backup" if more buffer is given than required at the last buffer.</p>
 <p>Read more about ZeroCopyOutputStream interface here: <a href="https://developers.google.com/protocol-buffers/docs/reference/cpp/google.protobuf.io.zero_copy_stream#ZeroCopyOutputStream">https://developers.google.com/protocol-buffers/docs/reference/cpp/google.protobuf.io.zero_copy_stream#ZeroCopyOutputStream</a> </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a2197d65d98500d488c8edbca3d4e77e2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2197d65d98500d488c8edbca3d4e77e2">&#9670;&nbsp;</a></span>ProtoBufferWriter()</h2>
+<a id="abe822a7071286a431cc9d6c834441082"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abe822a7071286a431cc9d6c834441082">&#9670;&nbsp;</a></span>ProtoBufferWriter()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -139,7 +139,13 @@ Friends</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>total_size</em>&#160;</td>
+          <td class="paramname"><em>total_size</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html">grpc_event_engine::experimental::MemoryAllocator</a> *&#160;</td>
+          <td class="paramname"><em>allocator</em> = <code>nullptr</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -375,7 +381,7 @@ Friends</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Oct 24 2025 21:46:32 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 20 2026 17:27:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
