@@ -37,6 +37,7 @@ from grpc_observability._observability import OptionalLabelType
 from grpc_observability._observability import StatsData
 from grpc_observability._observability import TracingData
 from opentelemetry import trace
+from opentelemetry.trace import status as otel_status
 from opentelemetry.context.context import Context
 from opentelemetry.metrics import Counter
 from opentelemetry.metrics import Histogram
@@ -200,21 +201,22 @@ class _OpenTelemetryPlugin:
     def save_trace_context(
         self, trace_id: str, span_id: str, is_sampled: bool
     ) -> None:
-        if self.is_tracing_configured():
-            # Header formatting as per https://www.w3.org/TR/trace-context/#traceparent-header
-            traceparent = f"{TRACEPARENT_VERSION_ID}-{trace_id}-{span_id}-{is_sampled:02x}"
-            self._trace_ctx = self._text_map_propagator.extract(
-                carrier={"traceparent": traceparent}, context=self._trace_ctx
-            )
+        if not self.is_tracing_configured():
+            return
 
-    def _status_to_otel_status(self, status: str) -> trace.status.Status:
-        return trace.status.Status(
-            status_code=(
-                trace.status.StatusCode.OK
-                if status == "OK"
-                else trace.status.StatusCode.ERROR
-            ),
-            description=None if status == "OK" else status,
+        # Header formatting as per https://www.w3.org/TR/trace-context/#traceparent-header
+        traceparent = (
+            f"{TRACEPARENT_VERSION_ID}-{trace_id}-{span_id}-{is_sampled:02x}"
+        )
+        self._trace_ctx = self._text_map_propagator.extract(
+            carrier={"traceparent": traceparent}, context=self._trace_ctx
+        )
+
+    def _status_to_otel_status(self, status: str) -> otel_status.Status:
+        if status == "OK":
+            return otel_status.Status(status_code=otel_status.StatusCode.OK)
+        return otel_status.Status(
+            status_code=otel_status.StatusCode.ERROR, description=status
         )
 
     def _record_tracing_data(self, tracing_data: TracingData) -> None:
