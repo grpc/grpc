@@ -403,9 +403,10 @@ void PosixEventEngine::OnConnectFinishInternal(int connection_handle) {
   }
 }
 
-std::shared_ptr<PosixEventEngine> PosixEventEngine::MakePosixEventEngine() {
+std::shared_ptr<PosixEventEngine> PosixEventEngine::MakePosixEventEngine(
+    Options options) {
   // Can't use make_shared as ctor is private
-  std::shared_ptr<PosixEventEngine> engine(new PosixEventEngine());
+  std::shared_ptr<PosixEventEngine> engine(new PosixEventEngine(options));
   RegisterEventEngineForFork(engine, engine->executor_, engine->timer_manager_);
   return engine;
 }
@@ -416,20 +417,21 @@ PosixEventEngine::MakeTestOnlyPosixEventEngine(
         test_only_poller) {
   // Calling a private PosixEventEngine constructor - can't do make_shared
   std::shared_ptr<PosixEventEngine> engine(
-      new PosixEventEngine(std::move(test_only_poller)));
+      new PosixEventEngine(Options{}, std::move(test_only_poller)));
   RegisterEventEngineForFork(engine, engine->executor_, engine->timer_manager_);
   return engine;
 }
 
-PosixEventEngine::PosixEventEngine(std::shared_ptr<PosixEventPoller> poller)
-    : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
+PosixEventEngine::PosixEventEngine(const Options& options,
+                                   std::shared_ptr<PosixEventPoller> poller)
+    : connection_shards_(options.connection_shards),
       poller_(std::move(poller)),
-      executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
+      executor_(MakeThreadPool(options.reserve_threads)),
       timer_manager_(std::make_shared<TimerManager>(executor_)) {}
 
-PosixEventEngine::PosixEventEngine()
-    : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
-      executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
+PosixEventEngine::PosixEventEngine(const Options& options)
+    : connection_shards_(options.connection_shards),
+      executor_(MakeThreadPool(options.reserve_threads)),
       timer_manager_(std::make_shared<TimerManager>(executor_)) {
   if (ShouldUsePosixPoller()) {
     poller_ = grpc_event_engine::experimental::MakeDefaultPoller(executor_);
@@ -457,6 +459,17 @@ struct PosixEventEngine::ClosureData final : public EventEngine::Closure {
   }
 };
 
+void PosixEventEngine::CancelAllPendingTimers() {
+  {
+    grpc_core::MutexLock lock(&mu_);
+    auto pending_handles = known_handles_;
+    for (auto handle : pending_handles) {
+      CancelInternal(handle);
+    }
+    GRPC_CHECK(known_handles_.empty());
+  }
+}
+
 PosixEventEngine::~PosixEventEngine() {
   {
     grpc_core::MutexLock lock(&mu_);
@@ -478,6 +491,10 @@ PosixEventEngine::~PosixEventEngine() {
 
 bool PosixEventEngine::Cancel(EventEngine::TaskHandle handle) {
   grpc_core::MutexLock lock(&mu_);
+  return CancelInternal(handle);
+}
+
+bool PosixEventEngine::CancelInternal(EventEngine::TaskHandle handle) {
   if (!known_handles_.contains(handle)) return false;
   auto* cd = reinterpret_cast<ClosureData*>(handle.keys[0]);
   bool r = timer_manager_->TimerCancel(&cd->timer);
