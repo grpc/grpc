@@ -15,6 +15,9 @@
 setlocal
 
 cd /d %~dp0\..\..\..
+if exist generate_artifacts.sh (
+  bash generate_artifacts.sh || goto :error
+)
 mkdir cmake
 cd cmake
 mkdir install

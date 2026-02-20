@@ -24,6 +24,7 @@ apt-get update && apt-get install -y libssl-dev
 GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS=${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS:-4}
 
 # Install absl
+tools/codegen/core/gen_upb_api.sh
 mkdir -p "third_party/abseil-cpp/cmake/build"
 pushd "third_party/abseil-cpp/cmake/build"
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17 -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE ../..

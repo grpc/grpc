@@ -24,6 +24,9 @@ apt-get update && apt-get install -y libssl-dev
 # Use externally provided env to determine build parallelism, otherwise use default.
 GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS=${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS:-4}
 
+# Generate UPB API
+tools/codegen/core/gen_upb_api.sh
+
 # Build helloworld example.
 # This uses CMake's FetchContent module to download gRPC and its dependencies
 # and add it to the helloworld project as a subdirectory.
