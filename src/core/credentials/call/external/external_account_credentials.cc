@@ -452,6 +452,9 @@ struct WorkloadIdentityPoolFields {
 
 // Expression to match:
 // //iam.googleapis.com/projects/<project>/locations/global/workloadIdentityPools/<pool-id>/providers/.+
+//
+// Returns the project and pool ID within the WorkloadIdentityPoolFields struct if the audience matches
+// the Workload Identity Pool format, otherwise returns std::nullopt.
 std::optional<WorkloadIdentityPoolFields> MatchWorkloadIdentityPoolAudience(absl::string_view audience) {
   // Match "//iam.googleapis.com/projects/"
   if (!absl::ConsumePrefix(&audience, "//iam.googleapis.com/projects/")) {
@@ -462,21 +465,20 @@ std::optional<WorkloadIdentityPoolFields> MatchWorkloadIdentityPoolAudience(absl
   if (location_pos == absl::string_view::npos) return std::nullopt;
   auto project = audience.substr(0, location_pos);
   if (project.empty()) return std::nullopt;
-
   audience.remove_prefix(location_pos +
-                         strlen("/locations/global/workloadIdentityPools/"));
-
+                         sizeof("/locations/global/workloadIdentityPools/"));
   // Match "<pool-id>/providers/"
   auto provider_pos = audience.find("/providers/");
   if (provider_pos == absl::string_view::npos) return std::nullopt;
   auto pool_id = audience.substr(0, provider_pos);
   if (pool_id.empty()) return std::nullopt;
-
   return WorkloadIdentityPoolFields{project, pool_id};
 }
 
 // Expression to match:
 // //iam.googleapis.com/locations/[^/]+/workforcePools/[^/]+/providers/.+
+// Returns the workforce pool ID if the audience matches the Workforce Pool
+// format, otherwise returns an empty string view.
 absl::string_view MatchWorkforcePoolAudience(absl::string_view audience) {
   // Match "//iam.googleapis.com/locations/"
   if (!absl::ConsumePrefix(&audience, "//iam.googleapis.com")) return "";
@@ -635,8 +637,8 @@ ExternalAccountCredentials::Create(
   if (!error.ok()) return error;
   return creds;
 }
-
-static std::string BuildRegionalAccessBoundaryUrl(
+namespace {
+std::string BuildRegionalAccessBoundaryUrl(
     const ExternalAccountCredentials::Options& options) {
   if (!options.workforce_pool_id.empty()) {
     return absl::StrFormat(
@@ -651,6 +653,7 @@ static std::string BuildRegionalAccessBoundaryUrl(
         options.workload_pool_project, options.workload_pool_id);
   }
   return "";
+}
 }
 
 ExternalAccountCredentials::ExternalAccountCredentials(
