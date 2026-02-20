@@ -101,6 +101,9 @@ cdef void cancel_wrapper(void* py_cancel_user_fn) noexcept nogil:
 
 # To be called from the python layer when the user provides a signer function.
 cdef shared_ptr[PrivateKeySigner] build_private_key_signer(py_user_func):
+  # Run a non-daemon thread that waits for this event to be set. This ensures
+  # that the Python interpreter will stay alive long enough for these objects
+  # passed into C++ to be properly dereferenced and cleaned up.
   destroy_event = threading.Event()
   destroy_lambda = lambda event=destroy_event: event.wait()
   threading.Thread(target=destroy_lambda, daemon=False).start()

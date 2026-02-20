@@ -77,6 +77,7 @@ AsyncSigningHandlePyWrapper::~AsyncSigningHandlePyWrapper() {
 PrivateKeySignerPyWrapper::~PrivateKeySignerPyWrapper() {
   PyGILState_STATE state = PyGILState_Ensure();
   Py_DECREF(static_cast<PyObject*>(py_user_sign_fn));
+  // Python will stay alive until this event is set
   PyObject_CallMethod(destroy_event_, "set", "()");
   PyGILState_Release(state);
 }
