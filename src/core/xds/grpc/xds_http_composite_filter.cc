@@ -146,10 +146,11 @@ class ExecuteFilterActionFactory final : public XdsMatcherActionFactory {
         filters.push_back(
             ParseFilter(context, http_filter_registry, typed_config, errors));
       }
-    } else if (const auto* typed_config =
-                   envoy_extensions_filters_http_composite_v3_ExecuteFilterAction_typed_config(
-                       execute_filter);
-               typed_config != nullptr) {
+    } else if (
+        const auto* typed_config =
+            envoy_extensions_filters_http_composite_v3_ExecuteFilterAction_typed_config(
+                execute_filter);
+        typed_config != nullptr) {
       filters.push_back(
           ParseFilter(context, http_filter_registry, typed_config, errors));
     } else {
@@ -198,8 +199,8 @@ class ExecuteFilterActionFactory final : public XdsMatcherActionFactory {
         errors->AddError(
             "terminal filters may not be used under composite filter");
       } else {
-        config = filter_impl->ParseTopLevelConfig(name, context, *extension,
-                                                  errors);
+        config =
+            filter_impl->ParseTopLevelConfig(name, context, *extension, errors);
       }
     }
     return {filter_impl, std::move(config)};
@@ -213,9 +214,9 @@ std::unique_ptr<XdsMatcher> ParseMatcher(
   action_registry.AddActionFactory(std::make_unique<SkipFilterActionFactory>());
   action_registry.AddActionFactory(
       std::make_unique<ExecuteFilterActionFactory>());
-  return ParseXdsMatcher(
-      context, matcher, action_registry, RpcMatchContext::Type(),
-      /*allow_keep_matching=*/false, errors);
+  return ParseXdsMatcher(context, matcher, action_registry,
+                         RpcMatchContext::Type(),
+                         /*allow_keep_matching=*/false, errors);
 }
 
 }  // namespace

@@ -2220,8 +2220,9 @@ TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigSingleFilter) {
   input.set_header_name("header_name");
   matcher_tree->mutable_input()->mutable_typed_config()->PackFrom(input);
   ExecuteFilterAction execute_filter_action;
-  execute_filter_action.mutable_typed_config()->mutable_typed_config()->PackFrom(
-      HTTPFault());
+  execute_filter_action.mutable_typed_config()
+      ->mutable_typed_config()
+      ->PackFrom(HTTPFault());
   auto* map = matcher_tree->mutable_exact_match_map()->mutable_map();
   (*map)["header_value"].mutable_action()->mutable_typed_config()->PackFrom(
       execute_filter_action);
@@ -2249,8 +2250,10 @@ TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigFilterChain) {
   input.set_header_name("header_name");
   matcher_tree->mutable_input()->mutable_typed_config()->PackFrom(input);
   ExecuteFilterAction execute_filter_action;
-  execute_filter_action.mutable_filter_chain()->add_typed_config()->mutable_typed_config()->PackFrom(
-      HTTPFault());
+  execute_filter_action.mutable_filter_chain()
+      ->add_typed_config()
+      ->mutable_typed_config()
+      ->PackFrom(HTTPFault());
   auto* map = matcher_tree->mutable_exact_match_map()->mutable_map();
   (*map)["header_value"].mutable_action()->mutable_typed_config()->PackFrom(
       execute_filter_action);
@@ -2278,9 +2281,12 @@ TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigSamplePercentage) {
   input.set_header_name("header_name");
   matcher_tree->mutable_input()->mutable_typed_config()->PackFrom(input);
   ExecuteFilterAction execute_filter_action;
-  execute_filter_action.mutable_typed_config()->mutable_typed_config()->PackFrom(
-      HTTPFault());
-  execute_filter_action.mutable_sample_percent()->mutable_default_value()->set_numerator(25);
+  execute_filter_action.mutable_typed_config()
+      ->mutable_typed_config()
+      ->PackFrom(HTTPFault());
+  execute_filter_action.mutable_sample_percent()
+      ->mutable_default_value()
+      ->set_numerator(25);
   auto* map = matcher_tree->mutable_exact_match_map()->mutable_map();
   (*map)["header_value"].mutable_action()->mutable_typed_config()->PackFrom(
       execute_filter_action);
@@ -2310,8 +2316,9 @@ TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigInvalidNestedFilterConfig) {
   ExecuteFilterAction execute_filter_action;
   HTTPFault fault;
   fault.mutable_abort()->set_grpc_status(17);
-  execute_filter_action.mutable_typed_config()->mutable_typed_config()->PackFrom(
-      fault);
+  execute_filter_action.mutable_typed_config()
+      ->mutable_typed_config()
+      ->PackFrom(fault);
   auto* map = matcher_tree->mutable_exact_match_map()->mutable_map();
   (*map)["header_value"].mutable_action()->mutable_typed_config()->PackFrom(
       execute_filter_action);
@@ -2341,8 +2348,9 @@ TEST_F(XdsCompositeFilterTest, ParseTopLevelConfigTerminalFilter) {
   input.set_header_name("header_name");
   matcher_tree->mutable_input()->mutable_typed_config()->PackFrom(input);
   ExecuteFilterAction execute_filter_action;
-  execute_filter_action.mutable_typed_config()->mutable_typed_config()->PackFrom(
-      Router());
+  execute_filter_action.mutable_typed_config()
+      ->mutable_typed_config()
+      ->PackFrom(Router());
   auto* map = matcher_tree->mutable_exact_match_map()->mutable_map();
   (*map)["header_value"].mutable_action()->mutable_typed_config()->PackFrom(
       execute_filter_action);
