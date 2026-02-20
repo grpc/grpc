@@ -16,9 +16,8 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from collections import abc
-from typing import Any, Self, Sequence, Iterator, List, Optional, Tuple, Union
-
 from collections.abc import Iterable
+from typing import Any, Iterator, List, Optional, Self, Sequence, Tuple, Union
 
 MetadataKey = str
 MetadataValue = Union[str, bytes]
