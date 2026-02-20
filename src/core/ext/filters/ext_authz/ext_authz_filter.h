@@ -113,10 +113,10 @@ class ExtAuthzFilter : public ImplementChannelFilter<ExtAuthzFilter> {
    public:
     ServerMetadataHandle OnClientInitialMetadata(ClientMetadata& md,
                                                  ExtAuthzFilter* filter);
-    ServerMetadataHandle OnServerInitialMetadata(ServerMetadata& md,
-                                                 ExtAuthzFilter* filter);
-    ServerMetadataHandle OnServerTrailingMetadata(ServerMetadata& md,
-                                                  ExtAuthzFilter* filter);
+    absl::Status OnServerInitialMetadata(ServerMetadata& md,
+                                         ExtAuthzFilter* filter);
+    absl::Status OnServerTrailingMetadata(ServerMetadata& md,
+                                          ExtAuthzFilter* filter);
     static inline const NoInterceptor OnServerToClientMessage;
     static inline const NoInterceptor OnClientToServerMessage;
     static inline const NoInterceptor OnClientToServerHalfClose;

@@ -90,8 +90,7 @@ bool ExtAuthzFilter::Config::Equals(const FilterConfig& other) const {
 
 std::string ExtAuthzFilter::Config::ToString() const {
   // TODO(rishesh): fix this
-  return absl::StrCat("{instance_name=\"", instance_name,
-                      "\", cache_size=", "}");
+  return absl::StrCat("{instance_name=\"", instance_name, "\"}");
 }
 
 //
@@ -125,7 +124,7 @@ bool isHeaderMutationPossibleForHeaderValueOptions(
       if (!allowed && disallow_is_error) {
         return false;
       } else if (allowed) {
-        md.Remove(header.header.key);
+        md.Remove(absl::string_view(header.header.key));
         md.Append(
             header.header.key,
             Slice::FromCopiedString(header_value.append(header.header.value)),
@@ -145,7 +144,7 @@ bool isHeaderMutationPossibleForHeaderValueOptions(
       if (!header_value.empty() && !allowed && disallow_is_error) {
         return false;
       } else if (!header_value.empty() && allowed) {
-        md.Remove(header.header.key);
+        md.Remove(absl::string_view(header.header.key));
         md.Append(header.header.key,
                   Slice::FromCopiedString(header.header.value),
                   [](absl::string_view, const Slice&) {});
@@ -155,7 +154,7 @@ bool isHeaderMutationPossibleForHeaderValueOptions(
       if (!allowed && disallow_is_error) {
         return false;
       } else if (allowed) {
-        md.Remove(header.header.key);
+        md.Remove(absl::string_view(header.header.key));
         md.Append(header.header.key,
                   Slice::FromCopiedString(header.header.value),
                   [](absl::string_view, const Slice&) {});
@@ -176,8 +175,8 @@ ServerMetadataHandle ExtAuthzFilter::Call::OnClientInitialMetadata(
       // continue with ext authz filter
     } break;
     case ExtAuthz::CheckResult::kDeny: {
-      MalformedRequest("ExtAuthz filter is not enabled",
-                       filter->filter_config_->ext_authz.status_on_error);
+      return MalformedRequest("ExtAuthz filter is not enabled",
+                              filter->filter_config_->ext_authz.status_on_error);
     } break;
     case ExtAuthz::CheckResult::kPassThrough: {
       return nullptr;
@@ -239,7 +238,7 @@ ServerMetadataHandle ExtAuthzFilter::Call::OnClientInitialMetadata(
           "ExtAuthz header mutation is not allowed",
           filter->filter_config_->ext_authz.status_on_error);
     } else if (allowed) {
-      md.Remove(header);
+      md.Remove(absl::string_view(header));
     }
   }
   // response_headers_to_add
@@ -260,10 +259,10 @@ ServerMetadataHandle ExtAuthzFilter::Call::OnClientInitialMetadata(
   return nullptr;
 }
 
-ServerMetadataHandle ExtAuthzFilter::Call::OnServerInitialMetadata(
+absl::Status ExtAuthzFilter::Call::OnServerInitialMetadata(
     ServerMetadata& md, ExtAuthzFilter* filter) {
   if (!filter->response_headers_to_add.has_value()) {
-    return nullptr;
+    return absl::OkStatus();
   }
   auto& decoder_header_mutation_rules =
       filter->filter_config_->ext_authz.decoder_header_mutation_rules.value();
@@ -274,19 +273,19 @@ ServerMetadataHandle ExtAuthzFilter::Call::OnServerInitialMetadata(
             header, md, allowed,
             decoder_header_mutation_rules.disallow_is_error)) {
       filter->response_headers_to_add.reset();
-      return MalformedRequest(
-          "ExtAuthz header mutation is not allowed",
-          filter->filter_config_->ext_authz.status_on_error);
+      return absl::Status(static_cast<absl::StatusCode>(
+                              filter->filter_config_->ext_authz.status_on_error),
+                          "ExtAuthz header mutation is not allowed");
     }
   }
   filter->response_headers_to_add.reset();
-  return nullptr;
+  return absl::OkStatus();
 }
 
-ServerMetadataHandle ExtAuthzFilter::Call::OnServerTrailingMetadata(
+absl::Status ExtAuthzFilter::Call::OnServerTrailingMetadata(
     ServerMetadata& md, ExtAuthzFilter* filter) {
   if (!filter->response_trailer_to_add.has_value()) {
-    return nullptr;
+    return absl::OkStatus();
   }
   auto& decoder_header_mutation_rules =
       filter->filter_config_->ext_authz.decoder_header_mutation_rules.value();
@@ -297,13 +296,13 @@ ServerMetadataHandle ExtAuthzFilter::Call::OnServerTrailingMetadata(
             header, md, allowed,
             decoder_header_mutation_rules.disallow_is_error)) {
       filter->response_trailer_to_add.reset();
-      return MalformedRequest(
-          "ExtAuthz header mutation is not allowed",
-          filter->filter_config_->ext_authz.status_on_error);
+      return absl::Status(static_cast<absl::StatusCode>(
+                              filter->filter_config_->ext_authz.status_on_error),
+                          "ExtAuthz header mutation is not allowed");
     }
   }
   filter->response_trailer_to_add.reset();
-  return nullptr;
+  return absl::OkStatus();
 }
 
 //
