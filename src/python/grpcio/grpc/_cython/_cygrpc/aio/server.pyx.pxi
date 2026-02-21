@@ -894,12 +894,11 @@ cdef class _ConcurrentRpcLimiter:
 cdef class AioServer:
 
     def __init__(self, loop, thread_pool, generic_handlers, interceptors,
-                 options, maximum_concurrent_rpcs):
+                 options, maximum_concurrent_rpcs, xds):
         init_grpc_aio()
         # NOTE(lidiz) Core objects won't be deallocated automatically.
         # If AioServer.shutdown is not called, those objects will leak.
-        # TODO(rbellevi): Support xDS in aio server.
-        self._server = Server(options, False)
+        self._server = Server(options, xds)
         grpc_server_register_completion_queue(
             self._server.c_server,
             global_completion_queue(),
