@@ -100,7 +100,7 @@ class Oauth2TokenFetcherCredentials : public HttpTokenFetcherCredentials {
       Timestamp deadline,
       absl::AnyInvocable<
           void(absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
-          on_done) final;
+          on_done) override;
 
  private:
   int cmp_impl(const grpc_call_credentials* other) const override {

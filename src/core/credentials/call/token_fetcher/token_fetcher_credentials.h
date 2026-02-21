@@ -42,6 +42,8 @@
 
 namespace grpc_core {
 
+class RegionalAccessBoundaryFetcher;
+
 // A base class for credentials that fetch tokens via an HTTP request.
 // Subclasses must implement FetchToken().
 class TokenFetcherCredentials : public grpc_call_credentials {
@@ -54,12 +56,29 @@ class TokenFetcherCredentials : public grpc_call_credentials {
     // Returns the token's expiration time.
     Timestamp ExpirationTime() const { return expiration_; }
 
+    // Returns the token's value.
+    const Slice& token() const { return token_; }
+
     // Adds the token to the call's client initial metadata.
-    void AddTokenToClientInitialMetadata(ClientMetadata& metadata) const;
+    virtual void AddTokenToClientInitialMetadata(ClientMetadata& metadata);
+
+    virtual ~Token() = default;
 
    private:
     Slice token_;
     Timestamp expiration_;
+  };
+
+  class TokenWithRegionalAccessBoundary : public Token {
+   public:
+    TokenWithRegionalAccessBoundary(Slice token, Timestamp expiration,
+                                    RefCountedPtr<RegionalAccessBoundaryFetcher> regional_access_boundary_fetcher);
+    ~TokenWithRegionalAccessBoundary() override;
+    void AddTokenToClientInitialMetadata(ClientMetadata& metadata) override;
+
+   private:
+    grpc_core::RefCountedPtr<RegionalAccessBoundaryFetcher>
+        regional_access_boundary_fetcher_;
   };
 
   ~TokenFetcherCredentials() override;
@@ -68,7 +87,7 @@ class TokenFetcherCredentials : public grpc_call_credentials {
 
   ArenaPromise<absl::StatusOr<ClientMetadataHandle>> GetRequestMetadata(
       ClientMetadataHandle initial_metadata,
-      const GetRequestMetadataArgs* args) override;
+      const GetRequestMetadataArgs* args) override final;
 
  protected:
   // Base class for fetch requests.

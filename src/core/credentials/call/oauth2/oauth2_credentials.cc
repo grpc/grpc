@@ -37,12 +37,13 @@
 
 #include "src/core/call/metadata_batch.h"
 #include "src/core/credentials/call/json_util.h"
-#include "src/core/credentials/call/token_fetcher/token_fetcher_credentials.h"
+#include "src/core/credentials/call/regional_access_boundary_fetcher.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -55,6 +56,7 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/uri.h"
+#include <grpc/event_engine/event_engine.h>
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/numbers.h"
@@ -258,14 +260,28 @@ Oauth2TokenFetcherCredentials::FetchToken(
 
 namespace {
 
+constexpr char kComputeEngineDefaultSaEmailPath[] = "/computeMetadata/v1/instance/service-accounts/default/email";
+
 class grpc_compute_engine_token_fetcher_credentials
     : public grpc_core::Oauth2TokenFetcherCredentials {
  public:
-  grpc_compute_engine_token_fetcher_credentials() = default;
+  grpc_compute_engine_token_fetcher_credentials()
+      : regional_access_boundary_fetcher_(nullptr) {}
   explicit grpc_compute_engine_token_fetcher_credentials(
       std::vector<grpc_core::URI::QueryParam> query_params)
-      : query_params_(std::move(query_params)) {}
-  ~grpc_compute_engine_token_fetcher_credentials() override = default;
+      : query_params_(std::move(query_params)),
+        regional_access_boundary_fetcher_(nullptr) {}
+
+  ~grpc_compute_engine_token_fetcher_credentials() override {
+    grpc_core::MutexLock lock(&email_mu_);
+    if (email_http_request_ != nullptr) {
+      email_http_request_.reset();
+    }
+    if (regional_access_boundary_fetcher_ != nullptr) {
+      regional_access_boundary_fetcher_.reset();
+    }
+    grpc_http_response_destroy(&email_response_);
+  }
 
   std::string debug_string() override {
     return absl::StrFormat(
@@ -274,6 +290,8 @@ class grpc_compute_engine_token_fetcher_credentials
   }
 
  private:
+  grpc_core::RefCountedPtr<grpc_core::RegionalAccessBoundaryFetcher> regional_access_boundary_fetcher_ ABSL_GUARDED_BY(email_mu_);
+  
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> StartHttpRequest(
       grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
       grpc_http_response* response, grpc_closure* on_complete) override {
@@ -300,7 +318,252 @@ class grpc_compute_engine_token_fetcher_credentials
     return http_request;
   }
 
+  grpc_core::Mutex email_mu_;
+  std::string service_account_email_ ABSL_GUARDED_BY(email_mu_);
+  // Prevents multiple email fetches from being initiated.
+  bool email_fetch_in_progress_ ABSL_GUARDED_BY(email_mu_) = false;
+  // Differentiates between an empty email and an email fetch that has not
+  // completed.
+  bool email_fetch_completed_ ABSL_GUARDED_BY(email_mu_) = false;
+  grpc_http_response email_response_;
+  grpc_closure on_email_fetch_done_;
+  grpc_core::OrphanablePtr<grpc_core::HttpRequest> email_http_request_;
+
+  grpc_core::OrphanablePtr<FetchRequest> FetchToken(
+      grpc_core::Timestamp deadline,
+      absl::AnyInvocable<void(absl::StatusOr<grpc_core::RefCountedPtr<TokenFetcherCredentials::Token>>)> on_done) override {
+    return grpc_core::MakeOrphanable<GceFetchRequest>(this, deadline, std::move(on_done));
+  }
+
+ private:
+  // This class handles fetching all of the necessary information for a GCE
+  // token fetch which include both the authentication token as well as the
+  // regional access boundary (which requires fetching the compute engine's
+  // default service account email from the metadata server).
+  class GceFetchRequest : public TokenFetcherCredentials::FetchRequest {
+   public:
+    GceFetchRequest(
+        grpc_compute_engine_token_fetcher_credentials* creds,
+        grpc_core::Timestamp deadline,
+        absl::AnyInvocable<
+            void(absl::StatusOr<grpc_core::RefCountedPtr<TokenFetcherCredentials::Token>>)>
+            on_done)
+        : creds_(creds->WeakRef()), on_done_(std::move(on_done)) {
+      // 1. Start fetch of the access token immediately
+      token_fetch_request_ = creds->Oauth2TokenFetcherCredentials::FetchToken(
+          deadline,
+          // Capture Ref() to keep request alive
+          [self = Ref()](absl::StatusOr<grpc_core::RefCountedPtr<TokenFetcherCredentials::Token>> token) {
+            static_cast<GceFetchRequest*>(self.get())->OnTokenFetchDone(std::move(token));
+          });
+      // 2. Start fetch of the service account email immediately if not already in progress 
+      // or completed as this needs to happen only once for the entire lifecycle of the
+      // credential.
+      bool email_ready = false;
+      absl::Status email_status = absl::OkStatus();
+      {
+         grpc_core::MutexLock lock(&creds->email_mu_);
+         if (creds->email_fetch_completed_) {
+             email_ready = true;
+             if (creds->service_account_email_.empty()) {
+                 email_status = absl::InternalError("Email fetch failed previously");
+             }
+         } else {
+             if (!creds->email_fetch_in_progress_) {
+                 creds->email_fetch_in_progress_ = true;
+                 creds->StartEmailFetchLocked(grpc_core::MaybeGetContext<grpc_polling_entity>());
+             }
+             // Register callback
+             creds->email_callbacks_.push_back([self = Ref()](absl::Status status) {
+                 static_cast<GceFetchRequest*>(self.get())->OnEmailFetchDone(status);
+             });
+         }
+      }
+      if (email_ready) {
+          OnEmailFetchDone(email_status);
+      }
+    }
+
+    void Orphan() override {
+      token_fetch_request_.reset();
+      {
+          grpc_core::MutexLock lock(&mu_);
+          cancelled_ = true;
+      }
+      Unref();
+    }
+
+   private:
+    struct Result {
+        bool done = false;
+        absl::StatusOr<grpc_core::RefCountedPtr<TokenFetcherCredentials::Token>> token;
+        absl::Status email_status;
+        grpc_core::RefCountedPtr<grpc_core::RegionalAccessBoundaryFetcher> fetcher_ref;
+        absl::AnyInvocable<void(absl::StatusOr<grpc_core::RefCountedPtr<TokenFetcherCredentials::Token>>)> on_done;
+    };
+
+    Result CheckDoneLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+        if (pending_ops_ > 0 || already_processed_) return Result();
+        already_processed_ = true;
+        
+        Result result;
+        result.done = true;
+        result.token = std::move(token_);
+        result.email_status = email_status_;
+        result.fetcher_ref = std::move(fetcher_ref_);
+        result.on_done = std::move(on_done_);
+        return result;
+    }
+
+    void OnTokenFetchDone(absl::StatusOr<grpc_core::RefCountedPtr<TokenFetcherCredentials::Token>> token) {
+        Result result;
+        {
+            grpc_core::MutexLock lock(&mu_);
+            if (cancelled_) return;
+            token_ = std::move(token);
+            --pending_ops_;
+            result = CheckDoneLocked();
+        }
+        if (result.done) Finish(std::move(result));
+    }
+
+    void OnEmailFetchDone(absl::Status status) {
+        grpc_core::RefCountedPtr<grpc_core::RegionalAccessBoundaryFetcher> fetcher_ref;
+        absl::Status local_email_status = status;
+        if (status.ok()) {
+             // Upgrade weak ref to ensure creds stays alive
+             auto creds = creds_->RefIfNonZero();
+             if (creds == nullptr) {
+                 // Credentials destroyed, treat as cancellation/error
+                 local_email_status = absl::CancelledError("Credentials destroyed");
+             } else {
+                 auto* gce_creds = static_cast<grpc_compute_engine_token_fetcher_credentials*>(creds.get());
+                 grpc_core::MutexLock creds_lock(&gce_creds->email_mu_);
+                 if (gce_creds->regional_access_boundary_fetcher_ == nullptr && !gce_creds->service_account_email_.empty()) {
+                      std::string rab_url = absl::StrFormat(
+                          "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/%s/allowedLocations",
+                          gce_creds->service_account_email_);
+                      gce_creds->regional_access_boundary_fetcher_ = 
+                          grpc_core::MakeRefCounted<grpc_core::RegionalAccessBoundaryFetcher>(rab_url);
+                 }
+                 if (gce_creds->regional_access_boundary_fetcher_ != nullptr) {
+                      fetcher_ref = gce_creds->regional_access_boundary_fetcher_->Ref();
+                 } else if (local_email_status.ok()) {
+                      if (gce_creds->service_account_email_.empty()) {
+                          local_email_status = absl::InternalError("Email empty after fetch");
+                      }
+                 }
+             }
+        }
+        Result result;
+        {
+            grpc_core::MutexLock lock(&mu_);
+            if (cancelled_) return;
+            fetcher_ref_ = std::move(fetcher_ref);
+            if (!local_email_status.ok() && email_status_.ok()) {
+                 email_status_ = local_email_status;
+            }
+            --pending_ops_;
+            result = CheckDoneLocked();
+        }
+        if (result.done) Finish(std::move(result));
+    }
+
+    void Finish(Result result) {
+        if (!result.token.ok()) {
+            result.on_done(result.token);
+            return;
+        }
+        
+        if (!result.email_status.ok()) {
+            // If email fetch failed, we can't do RAB, but we can still return the token.
+            // Log at a lower severity since this might be expected in some environments.
+            LOG_EVERY_N_SEC(INFO, 60) 
+                << "Regional Access Boundary fetch skipped due to service account email fetch failure: " 
+                << result.email_status;
+            result.on_done(result.token);
+            return;
+        }
+        
+        if (result.fetcher_ref != nullptr) {
+             result.on_done(grpc_core::MakeRefCounted<grpc_core::TokenFetcherCredentials::TokenWithRegionalAccessBoundary>(
+                 (*result.token)->token().Ref(), (*result.token)->ExpirationTime(), std::move(result.fetcher_ref)));
+        } else {
+             result.on_done(result.token);
+        }
+    }
+
+    grpc_core::WeakRefCountedPtr<grpc_call_credentials> creds_;
+    absl::AnyInvocable<void(absl::StatusOr<grpc_core::RefCountedPtr<TokenFetcherCredentials::Token>>)> on_done_;
+    grpc_core::OrphanablePtr<TokenFetcherCredentials::FetchRequest> token_fetch_request_;
+    grpc_core::Mutex mu_;
+    // 2 pending operations: Token Fetch + Email Fetch
+    int pending_ops_ ABSL_GUARDED_BY(mu_) = 2;
+    bool cancelled_ ABSL_GUARDED_BY(mu_) = false;
+    bool already_processed_ ABSL_GUARDED_BY(mu_) = false;
+    
+    // Intermediate results
+    absl::StatusOr<grpc_core::RefCountedPtr<TokenFetcherCredentials::Token>> token_ ABSL_GUARDED_BY(mu_);
+    absl::Status email_status_ ABSL_GUARDED_BY(mu_);
+    grpc_core::RefCountedPtr<grpc_core::RegionalAccessBoundaryFetcher> fetcher_ref_ ABSL_GUARDED_BY(mu_);
+  };
+
+  void StartEmailFetchLocked(grpc_polling_entity* pollent) {
+    grpc_http_header header = {const_cast<char*>("Metadata-Flavor"),
+                               const_cast<char*>("Google")};
+    grpc_http_request request;
+    memset(&request, 0, sizeof(grpc_http_request));
+    request.hdr_count = 1;
+    request.hdrs = &header;
+
+    auto uri = grpc_core::URI::Create(
+        "http", /*user_info=*/"", GRPC_COMPUTE_ENGINE_METADATA_HOST,
+        kComputeEngineDefaultSaEmailPath, {}, "" /* fragment */);
+    GRPC_CHECK(uri.ok());
+
+    Ref().release();  // Ref taken for callback
+    grpc_http_response_destroy(&email_response_);
+    email_response_ = grpc_http_response();
+
+    GRPC_CLOSURE_INIT(&on_email_fetch_done_, OnEmailFetchDone, this,
+                      grpc_schedule_on_exec_ctx);
+
+    email_http_request_ = grpc_core::HttpRequest::Get(
+        std::move(*uri), /*args=*/nullptr, pollent, &request,
+        grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(60),
+        &on_email_fetch_done_, &email_response_,
+        grpc_core::RefCountedPtr<grpc_channel_credentials>(
+            grpc_insecure_credentials_create()));
+    email_http_request_->Start();
+  }
+
+  static void OnEmailFetchDone(void* arg, grpc_error_handle error) {
+    auto* self =
+        static_cast<grpc_compute_engine_token_fetcher_credentials*>(arg);
+    std::vector<absl::AnyInvocable<void(absl::Status)>> callbacks;
+    {
+      grpc_core::MutexLock lock(&self->email_mu_);
+      self->email_fetch_completed_ = true;
+      if (error.ok() && self->email_response_.status == 200) {
+        self->service_account_email_ = std::string(
+            self->email_response_.body, self->email_response_.body_length);
+      } else {
+        LOG(ERROR) << "Failed to fetch service account email: "
+                   << grpc_core::StatusToString(error) 
+                   << " status_code: " << self->email_response_.status;
+        error = GRPC_ERROR_CREATE("Failed to fetch service account email");
+      }
+      self->email_http_request_.reset();
+      callbacks = std::move(self->email_callbacks_);
+    }
+    for (auto& cb : callbacks) {
+        cb(error);
+    }
+    self->Unref();
+  }
+
   std::vector<grpc_core::URI::QueryParam> query_params_;
+  std::vector<absl::AnyInvocable<void(absl::Status)>> email_callbacks_ ABSL_GUARDED_BY(email_mu_);
 };
 }  // namespace
 

@@ -18,6 +18,7 @@
 
 #include "src/core/credentials/call/token_fetcher/token_fetcher_credentials.h"
 
+#include "src/core/credentials/call/regional_access_boundary_fetcher.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -49,9 +50,27 @@ TokenFetcherCredentials::Token::Token(Slice token, Timestamp expiration)
       expiration_(expiration - kTokenExpirationAdjustmentDuration) {}
 
 void TokenFetcherCredentials::Token::AddTokenToClientInitialMetadata(
-    ClientMetadata& metadata) const {
+    ClientMetadata& metadata) {
   metadata.Append(GRPC_AUTHORIZATION_METADATA_KEY, token_.Ref(),
                   [](absl::string_view, const Slice&) { abort(); });
+}
+
+TokenFetcherCredentials::TokenWithRegionalAccessBoundary::
+    TokenWithRegionalAccessBoundary(
+        Slice token, Timestamp expiration,
+        RefCountedPtr<RegionalAccessBoundaryFetcher>
+            regional_access_boundary_fetcher)
+    : Token(std::move(token), expiration),
+      regional_access_boundary_fetcher_(
+          std::move(regional_access_boundary_fetcher)) {}
+
+TokenFetcherCredentials::TokenWithRegionalAccessBoundary::
+    ~TokenWithRegionalAccessBoundary() = default;
+
+void TokenFetcherCredentials::TokenWithRegionalAccessBoundary::
+    AddTokenToClientInitialMetadata(ClientMetadata& metadata) {
+  Token::AddTokenToClientInitialMetadata(metadata);
+  regional_access_boundary_fetcher_->Fetch(token().as_string_view(), metadata);
 }
 
 //
