@@ -49,6 +49,16 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<CompositeFilter> {
     // true is GRPC, false is NONE
     bool send_request_body;
     bool send_response_body;
+
+    bool operator==(const ProcessingMode& other) const {
+      return send_request_headers == other.send_request_headers &&
+             send_response_headers == other.send_response_headers &&
+             send_response_trailers == other.send_response_trailers &&
+             send_request_body == other.send_request_body &&
+             send_response_body == other.send_response_body;
+    }
+
+    std::string ToString() const;
   };
 
   // Top-level filter config.
@@ -60,15 +70,31 @@ class ExtProcFilter final : public V3InterceptorToV2Bridge<CompositeFilter> {
 
     bool Equals(const FilterConfig& other) const override {
       const auto& o = DownCast<const Config&>(other);
-// FIXME: other fields
-      return grpc_service == o.grpc_service;
-    }
-    std::string ToString() const override {
-// FIXME: other fields
-      return absl::StrCat("{grpc_service=", grpc_service.ToString(), "}");
+      auto grpc_service_eq =
+          [](const std::shared_ptr<XdsGrpcService>& a,
+             const std::shared_ptr<XdsGrpcService>& b) {
+            if (a == nullptr) return b == nullptr;
+            if (b == nullptr) return false;
+            return *a == *b;
+          };
+      return grpc_service_eq(grpc_service, o.grpc_service) &&
+             failure_mode_allow == o.failure_mode_allow &&
+             processing_mode == o.processing_mode &&
+             allow_mode_override == o.allow_mode_override &&
+             allowed_override_modes == o.allowed_override_modes &&
+             request_attributes == o.request_attributes &&
+             response_attributes == o.response_attributes &&
+             mutation_rules == o.mutation_rules &&
+             forwarding_allowed_headers == o.forwarding_allowed_headers &&
+             forwarding_disallowed_headers == o.forwarding_disallowed_headers &&
+             disable_immediate_response == o.disable_immediate_response &&
+             observability_mode == o.observability_mode &&
+             deferred_close_timeout == o.deferred_close_timeout;
     }
 
-    XdsGrpcService grpc_service;
+    std::string ToString() const override;
+
+    std::shared_ptr<XdsGrpcService> grpc_service;
     bool failure_mode_allow;
     ProcessingMode processing_mode;
     bool allow_mode_override;

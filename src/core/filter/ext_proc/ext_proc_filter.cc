@@ -29,10 +29,77 @@
 
 namespace grpc_core {
 
-std::string ExtProcFilter::ExecuteFilterAction::ToString() const {
+std::string ExtProcFilter::ProcessingMode::ToString() const {
   std::vector<std::string> parts;
-  for (const auto& [_, config] : filter_chain_) {
-    parts.push_back(config == nullptr ? "<null>" : config->ToString());
+  if (send_request_headers.has_value()) {
+    parts.push_back(absl::StrCat("send_request_headers=",
+                                 *send_request_headers ? "true" : "false"));
+  }
+  if (send_response_headers.has_value()) {
+    parts.push_back(absl::StrCat("send_response_headers=",
+                                 *send_response_headers ? "true" : "false"));
+  }
+  if (send_response_trailers.has_value()) {
+    parts.push_back(absl::StrCat("send_response_trailers=",
+                                 *send_response_trailers ? "true" : "false"));
+  }
+  if (send_request_body) parts.push_back("send_request_body=true");
+  if (send_response_body) parts.push_back("send_response_body=true");
+  return absl::StrCat("{", absl::StrJoin(parts, ", "), "}");
+}
+
+std::string ExtProcFilter::Config::ToString() const {
+  std::vector<std::string> parts;
+  if (grpc_service != nullptr) {
+    parts.push_back(absl::StrCat("grpc_service=", grpc_service->ToString()));
+  }
+  if (failure_mode_allow) parts.push_back("failure_mode_allow=true");
+  parts.push_back(absl::StrCat("processing_mode=", processing_mode.ToString()));
+  if (allow_mode_override) parts.push_back("allow_mode_override=true");
+  if (!allowed_override_modes.empty()) {
+    std::vector<std::string> modes;
+    for (const auto& mode : allowed_override_modes) {
+      modes.push_back(mode.ToString());
+    }
+    parts.push_back(absl::StrCat("allowed_override_modes=[",
+                                 absl::StrJoin(modes, ", "), "]"));
+  }
+  if (!request_attributes.empty()) {
+    parts.push_back(absl::StrCat("request_attributes=[",
+                                 absl::StrJoin(request_attributes, ", "), "]"));
+  }
+  if (!response_attributes.empty()) {
+    parts.push_back(absl::StrCat("response_attributes=[",
+                                 absl::StrJoin(response_attributes, ", "),
+                                 "]"));
+  }
+  if (mutation_rules.has_value()) {
+    parts.push_back(absl::StrCat("mutation_rules=",
+                                 mutation_rules->ToString()));
+  }
+  if (!forwarding_allowed_headers.empty()) {
+    std::vector<std::string> matchers;
+    for (const auto& matcher : forwarding_allowed_headers) {
+      matchers.push_back(matcher.ToString());
+    }
+    parts.push_back(absl::StrCat("forwarding_allowed_headers=[",
+                                 absl::StrJoin(matchers, ", "), "]"));
+  }
+  if (!forwarding_disallowed_headers.empty()) {
+    std::vector<std::string> matchers;
+    for (const auto& matcher : forwarding_disallowed_headers) {
+      matchers.push_back(matcher.ToString());
+    }
+    parts.push_back(absl::StrCat("forwarding_disallowed_headers=[",
+                                 absl::StrJoin(matchers, ", "), "]"));
+  }
+  if (disable_immediate_response) {
+    parts.push_back("disable_immediate_response=true");
+  }
+  if (observability_mode) parts.push_back("observability_mode=true");
+  if (deferred_close_timeout != Duration::Zero()) {
+    parts.push_back(absl::StrCat("deferred_close_timeout=",
+                                 deferred_close_timeout.ToString()));
   }
   return absl::StrCat("{", absl::StrJoin(parts, ", "), "}");
 }
