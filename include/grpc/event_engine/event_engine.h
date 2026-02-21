@@ -14,6 +14,7 @@
 #ifndef GRPC_EVENT_ENGINE_EVENT_ENGINE_H
 #define GRPC_EVENT_ENGINE_EVENT_ENGINE_H
 
+#include <grpc/grpc.h>
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/extensible.h>
 #include <grpc/event_engine/internal/write_event.h>
@@ -732,6 +733,10 @@ template <typename Sink>
 void AbslStringify(Sink& out, const EventEngine::TaskHandle& handle) {
   out.Append(detail::FormatHandleString(handle.keys[0], handle.keys[1]));
 }
+
+/** Fetch a vtable for a grpc_channel_arg that points to a grpc_event_engine
+ */
+const grpc_arg_pointer_vtable* grpc_event_engine_arg_vtable(void);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
