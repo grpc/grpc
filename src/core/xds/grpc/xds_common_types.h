@@ -92,6 +92,20 @@ struct XdsGrpcService {
   std::vector<std::pair<std::string, std::string>> initial_metadata;
 };
 
+struct HeaderMutationRules {
+  bool disallow_all;
+  bool disallow_is_error;
+  StringMatcher allow_expression;
+  StringMatcher disallow_expression;
+
+  bool operator==(const HeaderMutationRules& other) const {
+    return disallow_all == other.disallow_all &&
+           disallow_is_error == other.disallow_is_error &&
+           allow_expression == other.allow_expression &&
+           disallow_expression == other.disallow_expression;
+  }
+};
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_XDS_GRPC_XDS_COMMON_TYPES_H

@@ -6579,6 +6579,7 @@ grpc_cc_library(
         "//:config",
         "//:debug_location",
         "//:endpoint_addresses",
+        "//:envoy_config_common_mutation_rules_upb",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_base",
