@@ -20,7 +20,7 @@ def install_context_from_request_call_event(RequestCallEvent event):
   maybe_save_server_trace_context(event)
 
 def install_context_from_request_call_event_aio(GrpcCallWrapper event):
-  pass
+  maybe_save_server_trace_context_aio(event)
 
 def uninstall_context():
   pass
