@@ -318,6 +318,7 @@ GPR_PUBLIC_HDRS = [
 GRPC_PUBLIC_HDRS = [
     "include/grpc/grpc_audit_logging.h",
     "include/grpc/grpc_crl_provider.h",
+    "include/grpc/private_key_signer.h",
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
     "include/grpc/compression.h",
@@ -503,6 +504,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/security/credentials.h",
     "include/grpcpp/security/server_credentials.h",
     "include/grpcpp/security/tls_certificate_provider.h",
+    "include/grpcpp/security/tls_private_key_signer.h",
     "include/grpcpp/security/authorization_policy_provider.h",
     "include/grpcpp/security/tls_certificate_verifier.h",
     "include/grpcpp/security/tls_credentials_options.h",
@@ -2677,6 +2679,7 @@ grpc_cc_library(
         "//src/core:json",
         "//src/core:json_reader",
         "//src/core:load_file",
+        "//src/core:match",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
         "//src/core:slice",
@@ -4553,6 +4556,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/functional:bind_front",
         "absl/log:log",
         "absl/status",
         "absl/status:statusor",
@@ -4564,6 +4568,7 @@ grpc_cc_library(
     deps = [
         "channel_arg_names",
         "config_vars",
+        "exec_ctx",
         "gpr",
         "grpc_base",
         "grpc_core_credentials_header",
@@ -4575,6 +4580,7 @@ grpc_cc_library(
         "tsi_base",
         "tsi_ssl_session_cache",
         "//src/core:channel_args",
+        "//src/core:default_event_engine",
         "//src/core:env",
         "//src/core:error",
         "//src/core:grpc_check",
