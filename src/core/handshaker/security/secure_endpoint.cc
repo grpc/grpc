@@ -807,9 +807,10 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       if (frame_protector_.MaybeCompleteReadImmediately()) {
         return MaybeFinishReadImmediately();
       }
-      if (frame_protector_.IsZeroCopyProtector()) {
-        args.set_read_hint_bytes(frame_protector_.min_progress_size());
-      }
+      // min_progress_size is always 1 for non-zero copy frame protectors. This
+      // effectively disables read coalescing, but this is necessary since it
+      // is not trivial to determine the encrypted payload size in advance.
+      args.set_read_hint_bytes(frame_protector_.min_progress_size());
       bool read_completed_immediately = wrapped_ep_->Read(
           [impl = Ref()](absl::Status status) mutable {
             grpc_core::ExecCtx exec_ctx;
