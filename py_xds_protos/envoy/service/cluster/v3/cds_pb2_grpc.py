@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class ClusterDiscoveryServiceStub(object):
+class ClusterDiscoveryServiceStub:
     """[#protodoc-title: CDS]
 
     Return list of all clusters this proxy will load balance to.
@@ -54,7 +54,7 @@ class ClusterDiscoveryServiceStub(object):
                 _registered_method=True)
 
 
-class ClusterDiscoveryServiceServicer(object):
+class ClusterDiscoveryServiceServicer:
     """[#protodoc-title: CDS]
 
     Return list of all clusters this proxy will load balance to.
@@ -104,7 +104,7 @@ def add_ClusterDiscoveryServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class ClusterDiscoveryService(object):
+class ClusterDiscoveryService:
     """[#protodoc-title: CDS]
 
     Return list of all clusters this proxy will load balance to.

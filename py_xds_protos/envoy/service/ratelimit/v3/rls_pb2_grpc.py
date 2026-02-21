@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class RateLimitServiceStub(object):
+class RateLimitServiceStub:
     """[#protodoc-title: Rate limit service (RLS)]
 
     """
@@ -43,7 +43,7 @@ class RateLimitServiceStub(object):
                 _registered_method=True)
 
 
-class RateLimitServiceServicer(object):
+class RateLimitServiceServicer:
     """[#protodoc-title: Rate limit service (RLS)]
 
     """
@@ -71,7 +71,7 @@ def add_RateLimitServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class RateLimitService(object):
+class RateLimitService:
     """[#protodoc-title: Rate limit service (RLS)]
 
     """

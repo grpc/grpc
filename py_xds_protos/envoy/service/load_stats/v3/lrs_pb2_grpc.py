@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class LoadReportingServiceStub(object):
+class LoadReportingServiceStub:
     """[#protodoc-title: Load reporting service (LRS)]
 
     Load Reporting Service is an Envoy API to emit load reports. Envoy will initiate a bi-directional
@@ -51,7 +51,7 @@ class LoadReportingServiceStub(object):
                 _registered_method=True)
 
 
-class LoadReportingServiceServicer(object):
+class LoadReportingServiceServicer:
     """[#protodoc-title: Load reporting service (LRS)]
 
     Load Reporting Service is an Envoy API to emit load reports. Envoy will initiate a bi-directional
@@ -114,7 +114,7 @@ def add_LoadReportingServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class LoadReportingService(object):
+class LoadReportingService:
     """[#protodoc-title: Load reporting service (LRS)]
 
     Load Reporting Service is an Envoy API to emit load reports. Envoy will initiate a bi-directional

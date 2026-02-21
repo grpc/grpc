@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class TapSinkServiceStub(object):
+class TapSinkServiceStub:
     """[#protodoc-title: Tap sink service]
 
     [#not-implemented-hide:] A tap service to receive incoming taps. Envoy will call
@@ -45,7 +45,7 @@ class TapSinkServiceStub(object):
                 _registered_method=True)
 
 
-class TapSinkServiceServicer(object):
+class TapSinkServiceServicer:
     """[#protodoc-title: Tap sink service]
 
     [#not-implemented-hide:] A tap service to receive incoming taps. Envoy will call
@@ -77,7 +77,7 @@ def add_TapSinkServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class TapSinkService(object):
+class TapSinkService:
     """[#protodoc-title: Tap sink service]
 
     [#not-implemented-hide:] A tap service to receive incoming taps. Envoy will call

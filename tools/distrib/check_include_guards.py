@@ -42,7 +42,7 @@ def save(fpath, contents):
         f.write(contents)
 
 
-class GuardValidator(object):
+class GuardValidator:
     def __init__(self):
         self.ifndef_re = re.compile(r"#ifndef ([A-Z][A-Z_0-9]*)")
         self.define_re = re.compile(r"#define ([A-Z][A-Z_0-9]*)")

@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class EventReportingServiceStub(object):
+class EventReportingServiceStub:
     """[#protodoc-title: gRPC Event Reporting Service]
 
     [#not-implemented-hide:]
@@ -46,7 +46,7 @@ class EventReportingServiceStub(object):
                 _registered_method=True)
 
 
-class EventReportingServiceServicer(object):
+class EventReportingServiceServicer:
     """[#protodoc-title: gRPC Event Reporting Service]
 
     [#not-implemented-hide:]
@@ -79,7 +79,7 @@ def add_EventReportingServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class EventReportingService(object):
+class EventReportingService:
     """[#protodoc-title: gRPC Event Reporting Service]
 
     [#not-implemented-hide:]

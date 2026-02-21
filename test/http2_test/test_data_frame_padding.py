@@ -23,7 +23,7 @@ _LARGE_PADDING_LENGTH = 255
 _SMALL_READ_CHUNK_SIZE = 5
 
 
-class TestDataFramePadding(object):
+class TestDataFramePadding:
     """
     In response to an incoming request, this test sends headers, followed by
     data, followed by a reset stream frame. Client asserts that the RPC failed.

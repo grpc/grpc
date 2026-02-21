@@ -124,7 +124,7 @@ def _next(handler):
     raise _RpcErrorCall(handler)
 
 
-class _HandlerExtras(object):
+class _HandlerExtras:
     def __init__(self):
         self.condition = threading.Condition()
         self.unary_response = _NOT_YET_OBSERVED

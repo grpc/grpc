@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class ClientStatusDiscoveryServiceStub(object):
+class ClientStatusDiscoveryServiceStub:
     """[#protodoc-title: Client status discovery service (CSDS)]
 
     CSDS is Client Status Discovery Service. It can be used to get the status of
@@ -51,7 +51,7 @@ class ClientStatusDiscoveryServiceStub(object):
                 _registered_method=True)
 
 
-class ClientStatusDiscoveryServiceServicer(object):
+class ClientStatusDiscoveryServiceServicer:
     """[#protodoc-title: Client status discovery service (CSDS)]
 
     CSDS is Client Status Discovery Service. It can be used to get the status of
@@ -92,7 +92,7 @@ def add_ClientStatusDiscoveryServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class ClientStatusDiscoveryService(object):
+class ClientStatusDiscoveryService:
     """[#protodoc-title: Client status discovery service (CSDS)]
 
     CSDS is Client Status Discovery Service. It can be used to get the status of

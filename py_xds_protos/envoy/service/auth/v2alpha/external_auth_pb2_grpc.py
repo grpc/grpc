@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class AuthorizationStub(object):
+class AuthorizationStub:
     """[#protodoc-title: Authorization Service ]
 
     The authorization service request messages used by external authorization :ref:`network filter
@@ -48,7 +48,7 @@ class AuthorizationStub(object):
                 _registered_method=True)
 
 
-class AuthorizationServicer(object):
+class AuthorizationServicer:
     """[#protodoc-title: Authorization Service ]
 
     The authorization service request messages used by external authorization :ref:`network filter
@@ -82,7 +82,7 @@ def add_AuthorizationServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class Authorization(object):
+class Authorization:
     """[#protodoc-title: Authorization Service ]
 
     The authorization service request messages used by external authorization :ref:`network filter

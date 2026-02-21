@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class AggregatedDiscoveryServiceStub(object):
+class AggregatedDiscoveryServiceStub:
     """[#protodoc-title: Aggregated Discovery Service (ADS)]
 
     Discovery services for endpoints, clusters, routes,
@@ -59,7 +59,7 @@ class AggregatedDiscoveryServiceStub(object):
                 _registered_method=True)
 
 
-class AggregatedDiscoveryServiceServicer(object):
+class AggregatedDiscoveryServiceServicer:
     """[#protodoc-title: Aggregated Discovery Service (ADS)]
 
     Discovery services for endpoints, clusters, routes,
@@ -109,7 +109,7 @@ def add_AggregatedDiscoveryServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class AggregatedDiscoveryService(object):
+class AggregatedDiscoveryService:
     """[#protodoc-title: Aggregated Discovery Service (ADS)]
 
     Discovery services for endpoints, clusters, routes,

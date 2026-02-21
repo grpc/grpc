@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class LocalityEndpointDiscoveryServiceStub(object):
+class LocalityEndpointDiscoveryServiceStub:
     """[#not-implemented-hide:]
     [#protodoc-title: LEDS]
     Locality-Endpoint discovery
@@ -47,7 +47,7 @@ class LocalityEndpointDiscoveryServiceStub(object):
                 _registered_method=True)
 
 
-class LocalityEndpointDiscoveryServiceServicer(object):
+class LocalityEndpointDiscoveryServiceServicer:
     """[#not-implemented-hide:]
     [#protodoc-title: LEDS]
     Locality-Endpoint discovery
@@ -82,7 +82,7 @@ def add_LocalityEndpointDiscoveryServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class LocalityEndpointDiscoveryService(object):
+class LocalityEndpointDiscoveryService:
     """[#not-implemented-hide:]
     [#protodoc-title: LEDS]
     Locality-Endpoint discovery
