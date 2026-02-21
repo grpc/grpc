@@ -477,11 +477,9 @@ grpc_cc_test(
     # TODO(yulin-liang): The test is not able to load the certificate files on
     # iOS. Figure out why.
     tags = [
-        "cpp_end2end_test",
-        # b/117517566.
-        "grpc:no-internal-poller",
-        "no_test_ios",
         "channelz_test",
+        "cpp_end2end_test",
+        "no_test_ios",
     ],
     deps = [
         ":end2end_test_utils",
@@ -529,8 +527,6 @@ grpc_cc_test(
     # iOS. Figure out why.
     tags = [
         "cpp_end2end_test",
-        # b/117517566.
-        "grpc:no-internal-poller",
         "no_test_ios",
     ],
     deps = [
