@@ -57,21 +57,6 @@ constexpr absl::string_view kAssemblerHpackError =
     "RFC9113 : A decoding error in a field block MUST be treated as a "
     "connection error of type COMPRESSION_ERROR.";
 
-constexpr absl::string_view kGrpcErrorMaxTwoHeaderFrames =
-    "Too many header frames sent by peer";
-
-// A gRPC server is permitted to send both initial metadata and trailing
-// metadata where initial metadata is optional. A gRPC C++ client is permitted
-// to send only initial metadata. However, other gRPC Client implementations may
-// send trailing metadata too. So we allow only a maximum of 2 metadata per
-// streams. Which means only 2 HEADER frames are legal per stream.
-constexpr uint8_t kMaxHeaderFrames = 2;
-
-// TODO(tjagtap) : [PH2][P3] : Handle the case where a Server receives two
-// header frames. Which means that the client sent trailing metadata. While we
-// dont expect a gRPC C++ peer to send trailing metadata, not handling it might
-// break interop tests and genuine interop cases.
-
 // RFC9113
 // https://www.rfc-editor.org/rfc/rfc9113.html#name-field-section-compression-a
 // A complete field section (which contains our gRPC Metadata) consists of
