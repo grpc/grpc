@@ -31,8 +31,8 @@ template <typename T>
 class Observable {
  public:
   // We need to assign a value initially.
-  explicit Observable(T initial)
-      : state_(MakeRefCounted<State>(std::move(initial))) {}
+  explicit Observable(T&& initial)
+      : state_(MakeRefCounted<State>(std::forward<T>(initial))) {}
 
   // Update the value to something new. Awakes any waiters.
   void Set(T value) { state_->Set(std::move(value)); }
@@ -41,8 +41,8 @@ class Observable {
   // that value.
   // is_acceptable is any invocable that takes a `const T&` and returns a bool.
   template <typename F>
-  auto NextWhen(F is_acceptable) {
-    return ObserverWhen<F>(state_, std::move(is_acceptable));
+  auto NextWhen(F&& is_acceptable) {
+    return ObserverWhen<F>(state_, std::forward<F>(is_acceptable));
   }
 
   // Returns a promise that resolves to a T when the value becomes != current.
@@ -157,9 +157,9 @@ class Observable {
   template <typename F>
   class ObserverWhen : public Observer {
    public:
-    ObserverWhen(RefCountedPtr<State> state, F is_acceptable)
+    ObserverWhen(RefCountedPtr<State> state, F&& is_acceptable)
         : Observer(std::move(state)),
-          is_acceptable_(std::move(is_acceptable)) {}
+          is_acceptable_(std::forward<F>(is_acceptable)) {}
 
     ObserverWhen(ObserverWhen&& other) noexcept
         : Observer(std::move(other)),
