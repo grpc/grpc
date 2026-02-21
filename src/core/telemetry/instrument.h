@@ -1118,6 +1118,9 @@ class InstrumentDomainImpl final : public QueryableDomain {
   RefCountedPtr<Storage> GetStorage(RefCountedPtr<CollectionScope> scope,
                                     Args&&... labels) {
     static_assert(sizeof...(Args) == N, "Incorrect number of labels provided");
+    if constexpr (sizeof...(Args) == 0) {
+      return nullptr;
+    }
     std::vector<std::string> label_values;
     label_values.reserve(N);
     (label_values.emplace_back(absl::StrCat(labels)), ...);

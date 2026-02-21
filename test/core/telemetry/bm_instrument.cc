@@ -46,7 +46,7 @@ void BM_IncrementLowContentionInstrument(benchmark::State& state) {
     storage->Increment(LowContentionDomain::kCounter);
   }
 }
-BENCHMARK(BM_IncrementLowContentionInstrument)->ThreadRange(1, 64);
+// BENCHMARK(BM_IncrementLowContentionInstrument)->ThreadRange(1, 64);
 
 void BM_IncrementHighContentionInstrument(benchmark::State& state) {
   auto storage =
@@ -55,7 +55,7 @@ void BM_IncrementHighContentionInstrument(benchmark::State& state) {
     storage->Increment(HighContentionDomain::kCounter);
   }
 }
-BENCHMARK(BM_IncrementHighContentionInstrument)->ThreadRange(1, 64);
+// BENCHMARK(BM_IncrementHighContentionInstrument)->ThreadRange(1, 64);
 
 }  // namespace
 }  // namespace grpc_core
