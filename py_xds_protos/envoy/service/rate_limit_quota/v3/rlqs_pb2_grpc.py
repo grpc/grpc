@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class RateLimitQuotaServiceStub:
+class RateLimitQuotaServiceStub(object):
     """[#protodoc-title: Rate Limit Quota Service (RLQS)]
 
     The Rate Limit Quota Service (RLQS) is a Envoy global rate limiting service that allows to
@@ -78,7 +78,7 @@ class RateLimitQuotaServiceStub:
                 _registered_method=True)
 
 
-class RateLimitQuotaServiceServicer:
+class RateLimitQuotaServiceServicer(object):
     """[#protodoc-title: Rate Limit Quota Service (RLQS)]
 
     The Rate Limit Quota Service (RLQS) is a Envoy global rate limiting service that allows to
@@ -142,7 +142,7 @@ def add_RateLimitQuotaServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class RateLimitQuotaService:
+class RateLimitQuotaService(object):
     """[#protodoc-title: Rate Limit Quota Service (RLQS)]
 
     The Rate Limit Quota Service (RLQS) is a Envoy global rate limiting service that allows to

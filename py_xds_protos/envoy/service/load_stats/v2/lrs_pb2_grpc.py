@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class LoadReportingServiceStub:
+class LoadReportingServiceStub(object):
     """[#protodoc-title: Load reporting service]
 
     """
@@ -43,7 +43,7 @@ class LoadReportingServiceStub:
                 _registered_method=True)
 
 
-class LoadReportingServiceServicer:
+class LoadReportingServiceServicer(object):
     """[#protodoc-title: Load reporting service]
 
     """
@@ -98,7 +98,7 @@ def add_LoadReportingServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class LoadReportingService:
+class LoadReportingService(object):
     """[#protodoc-title: Load reporting service]
 
     """

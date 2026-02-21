@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class RouteDiscoveryServiceStub:
+class RouteDiscoveryServiceStub(object):
     """[#protodoc-title: RDS]
 
     The resource_names field in DiscoveryRequest specifies a route configuration.
@@ -58,7 +58,7 @@ class RouteDiscoveryServiceStub:
                 _registered_method=True)
 
 
-class RouteDiscoveryServiceServicer:
+class RouteDiscoveryServiceServicer(object):
     """[#protodoc-title: RDS]
 
     The resource_names field in DiscoveryRequest specifies a route configuration.
@@ -112,7 +112,7 @@ def add_RouteDiscoveryServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class RouteDiscoveryService:
+class RouteDiscoveryService(object):
     """[#protodoc-title: RDS]
 
     The resource_names field in DiscoveryRequest specifies a route configuration.
@@ -204,7 +204,7 @@ class RouteDiscoveryService:
             _registered_method=True)
 
 
-class VirtualHostDiscoveryServiceStub:
+class VirtualHostDiscoveryServiceStub(object):
     """Virtual Host Discovery Service (VHDS) is used to dynamically update the list of virtual hosts for
     a given RouteConfiguration. If VHDS is configured a virtual host list update will be triggered
     during the processing of an HTTP request if a route for the request cannot be resolved. The
@@ -230,7 +230,7 @@ class VirtualHostDiscoveryServiceStub:
                 _registered_method=True)
 
 
-class VirtualHostDiscoveryServiceServicer:
+class VirtualHostDiscoveryServiceServicer(object):
     """Virtual Host Discovery Service (VHDS) is used to dynamically update the list of virtual hosts for
     a given RouteConfiguration. If VHDS is configured a virtual host list update will be triggered
     during the processing of an HTTP request if a route for the request cannot be resolved. The
@@ -265,7 +265,7 @@ def add_VirtualHostDiscoveryServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class VirtualHostDiscoveryService:
+class VirtualHostDiscoveryService(object):
     """Virtual Host Discovery Service (VHDS) is used to dynamically update the list of virtual hosts for
     a given RouteConfiguration. If VHDS is configured a virtual host list update will be triggered
     during the processing of an HTTP request if a route for the request cannot be resolved. The

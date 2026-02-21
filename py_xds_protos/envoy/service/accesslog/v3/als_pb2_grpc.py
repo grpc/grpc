@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class AccessLogServiceStub:
+class AccessLogServiceStub(object):
     """[#protodoc-title: gRPC access log service (ALS)]
 
     Service for streaming access logs from Envoy to an access log server.
@@ -44,7 +44,7 @@ class AccessLogServiceStub:
                 _registered_method=True)
 
 
-class AccessLogServiceServicer:
+class AccessLogServiceServicer(object):
     """[#protodoc-title: gRPC access log service (ALS)]
 
     Service for streaming access logs from Envoy to an access log server.
@@ -78,7 +78,7 @@ def add_AccessLogServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class AccessLogService:
+class AccessLogService(object):
     """[#protodoc-title: gRPC access log service (ALS)]
 
     Service for streaming access logs from Envoy to an access log server.

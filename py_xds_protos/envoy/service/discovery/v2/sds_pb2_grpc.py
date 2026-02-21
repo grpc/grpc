@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class SecretDiscoveryServiceStub:
+class SecretDiscoveryServiceStub(object):
     """[#protodoc-title: Secret Discovery Service (SDS)]
 
     """
@@ -53,7 +53,7 @@ class SecretDiscoveryServiceStub:
                 _registered_method=True)
 
 
-class SecretDiscoveryServiceServicer:
+class SecretDiscoveryServiceServicer(object):
     """[#protodoc-title: Secret Discovery Service (SDS)]
 
     """
@@ -102,7 +102,7 @@ def add_SecretDiscoveryServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class SecretDiscoveryService:
+class SecretDiscoveryService(object):
     """[#protodoc-title: Secret Discovery Service (SDS)]
 
     """

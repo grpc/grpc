@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class ExtensionConfigDiscoveryServiceStub:
+class ExtensionConfigDiscoveryServiceStub(object):
     """[#protodoc-title: Extension config discovery service (ECDS)]
 
     A service that supports dynamic configuration updates for a specific filter.
@@ -78,7 +78,7 @@ class ExtensionConfigDiscoveryServiceStub:
                 _registered_method=True)
 
 
-class ExtensionConfigDiscoveryServiceServicer:
+class ExtensionConfigDiscoveryServiceServicer(object):
     """[#protodoc-title: Extension config discovery service (ECDS)]
 
     A service that supports dynamic configuration updates for a specific filter.
@@ -152,7 +152,7 @@ def add_ExtensionConfigDiscoveryServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class ExtensionConfigDiscoveryService:
+class ExtensionConfigDiscoveryService(object):
     """[#protodoc-title: Extension config discovery service (ECDS)]
 
     A service that supports dynamic configuration updates for a specific filter.

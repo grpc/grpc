@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class ExternalProcessorStub:
+class ExternalProcessorStub(object):
     """[#protodoc-title: External processing service]
 
     A service that can access and modify HTTP requests and responses
@@ -70,7 +70,7 @@ class ExternalProcessorStub:
                 _registered_method=True)
 
 
-class ExternalProcessorServicer:
+class ExternalProcessorServicer(object):
     """[#protodoc-title: External processing service]
 
     A service that can access and modify HTTP requests and responses
@@ -128,7 +128,7 @@ def add_ExternalProcessorServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class ExternalProcessor:
+class ExternalProcessor(object):
     """[#protodoc-title: External processing service]
 
     A service that can access and modify HTTP requests and responses

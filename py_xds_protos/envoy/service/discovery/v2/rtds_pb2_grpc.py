@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class RuntimeDiscoveryServiceStub:
+class RuntimeDiscoveryServiceStub(object):
     """[#protodoc-title: Runtime Discovery Service (RTDS)]
     RTDS :ref:`configuration overview <config_runtime_rtds>`
 
@@ -55,7 +55,7 @@ class RuntimeDiscoveryServiceStub:
                 _registered_method=True)
 
 
-class RuntimeDiscoveryServiceServicer:
+class RuntimeDiscoveryServiceServicer(object):
     """[#protodoc-title: Runtime Discovery Service (RTDS)]
     RTDS :ref:`configuration overview <config_runtime_rtds>`
 
@@ -106,7 +106,7 @@ def add_RuntimeDiscoveryServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class RuntimeDiscoveryService:
+class RuntimeDiscoveryService(object):
     """[#protodoc-title: Runtime Discovery Service (RTDS)]
     RTDS :ref:`configuration overview <config_runtime_rtds>`
 
