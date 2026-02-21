@@ -90,6 +90,40 @@ struct XdsGrpcService {
   std::unique_ptr<GrpcXdsServerTarget> server_target;
   Duration timeout;
   std::vector<std::pair<std::string, std::string>> initial_metadata;
+
+  bool operator==(const XdsGrpcService& other) const {
+    if (timeout != other.timeout) return false;
+    if (initial_metadata != other.initial_metadata) return false;
+    if (server_target == nullptr) return other.server_target == nullptr;
+    if (other.server_target == nullptr) return false;
+    if (!server_target->Equals(*other.server_target)) return false;
+    return true;
+  }
+
+  std::string ToString() const;
+};
+
+struct XdsHeaderMutationRules {
+  bool disallow_all = false;
+  std::unique_ptr<RE2> disallow_expression;
+  std::unique_ptr<RE2> allow_expression;
+  bool disallow_is_error = false;
+
+  bool operator==(const XdsHeaderMutationRules& other) const {
+    auto is_re_equal = [](RE2* a, RE2* b) {
+      if (a == nullptr) return b == nullptr;
+      if (b == nullptr) return false;
+      return a->pattern() == b->pattern();
+    };
+    return disallow_all == other.disallow_all &&
+           disallow_is_error == other.disallow_is_error &&
+           is_re_equal(disallow_expression.get(),
+                       other.disallow_expression.get()) &&
+           is_re_equal(allow_expression.get(),
+                       other.allow_expression.get());
+  }
+
+  std::string ToString() const;
 };
 
 }  // namespace grpc_core
