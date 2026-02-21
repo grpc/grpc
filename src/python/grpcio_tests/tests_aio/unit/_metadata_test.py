@@ -18,6 +18,7 @@ import unittest
 import grpc
 from grpc.experimental import aio
 from grpc.experimental.aio import Metadata
+import typeguard
 
 from tests_aio.unit import _common
 from tests_aio.unit._test_base import AioTestBase
@@ -196,14 +197,45 @@ class TestTypeMetadata(unittest.TestCase):
 
     def test_metadata_from_tuple(self):
         scenarios = (
-            (Metadata(), Metadata()),
             (self._DEFAULT_DATA, Metadata(*self._DEFAULT_DATA)),
             (self._MULTI_ENTRY_DATA, Metadata(*self._MULTI_ENTRY_DATA)),
-            (Metadata(*self._DEFAULT_DATA), Metadata(*self._DEFAULT_DATA)),
         )
         for source, expected in scenarios:
             with self.subTest(raw_metadata=source, expected=expected):
                 self.assertEqual(expected, Metadata.from_tuple(source))
+
+    @typeguard.suppress_type_checks
+    def test_metadata_from_tuple_non_tuple(self):
+        scenarios = (
+            (None, Metadata()),
+            (Metadata(), Metadata()),
+            (Metadata(*self._DEFAULT_DATA), Metadata(*self._DEFAULT_DATA)),
+        )
+        for source, expected in scenarios:
+            with self.subTest(raw_metadata=source, expected=expected):
+                self.assertEqual(expected, Metadata.from_tuple(source))  # type: ignore
+
+    def test_create(self):
+        # 1. raw_metadata is None
+        self.assertEqual(Metadata._create(None), Metadata())
+
+        # 2. raw_metadata is Metadata
+        m = Metadata(("key", "value"))
+        self.assertIs(Metadata._create(m), m)
+
+        # 3. raw_metadata is tuple
+        t = (("key", "value"),)
+        self.assertEqual(Metadata._create(t), Metadata(("key", "value")))
+
+        # 4. raw_metadata is list
+        l = [("key", "value")]
+        self.assertEqual(Metadata._create(l), Metadata(("key", "value")))
+
+        # 5. raw_metadata is empty list
+        self.assertEqual(Metadata._create([]), Metadata())
+
+        # 6. raw_metadata is empty tuple
+        self.assertEqual(Metadata._create(()), Metadata())
 
     def test_keys_values_items(self):
         metadata = Metadata(*self._MULTI_ENTRY_DATA)
