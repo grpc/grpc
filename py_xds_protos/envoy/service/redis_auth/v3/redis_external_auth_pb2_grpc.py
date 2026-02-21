@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class RedisProxyExternalAuthStub:
+class RedisProxyExternalAuthStub(object):
     """[#protodoc-title: Redis external authentication service]
 
     The messages used by the redis_proxy filter when performing external authentication.
@@ -46,7 +46,7 @@ class RedisProxyExternalAuthStub:
                 _registered_method=True)
 
 
-class RedisProxyExternalAuthServicer:
+class RedisProxyExternalAuthServicer(object):
     """[#protodoc-title: Redis external authentication service]
 
     The messages used by the redis_proxy filter when performing external authentication.
@@ -78,7 +78,7 @@ def add_RedisProxyExternalAuthServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class RedisProxyExternalAuth:
+class RedisProxyExternalAuth(object):
     """[#protodoc-title: Redis external authentication service]
 
     The messages used by the redis_proxy filter when performing external authentication.

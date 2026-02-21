@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class ListenerDiscoveryServiceStub:
+class ListenerDiscoveryServiceStub(object):
     """[#protodoc-title: Listener]
     Listener :ref:`configuration overview <config_listeners>`
 
@@ -58,7 +58,7 @@ class ListenerDiscoveryServiceStub:
                 _registered_method=True)
 
 
-class ListenerDiscoveryServiceServicer:
+class ListenerDiscoveryServiceServicer(object):
     """[#protodoc-title: Listener]
     Listener :ref:`configuration overview <config_listeners>`
 
@@ -112,7 +112,7 @@ def add_ListenerDiscoveryServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class ListenerDiscoveryService:
+class ListenerDiscoveryService(object):
     """[#protodoc-title: Listener]
     Listener :ref:`configuration overview <config_listeners>`
 

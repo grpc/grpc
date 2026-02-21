@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class EndpointDiscoveryServiceStub:
+class EndpointDiscoveryServiceStub(object):
     """[#protodoc-title: EDS]
     Endpoint discovery :ref:`architecture overview <arch_overview_service_discovery_types_eds>`
 
@@ -54,7 +54,7 @@ class EndpointDiscoveryServiceStub:
                 _registered_method=True)
 
 
-class EndpointDiscoveryServiceServicer:
+class EndpointDiscoveryServiceServicer(object):
     """[#protodoc-title: EDS]
     Endpoint discovery :ref:`architecture overview <arch_overview_service_discovery_types_eds>`
 
@@ -106,7 +106,7 @@ def add_EndpointDiscoveryServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class EndpointDiscoveryService:
+class EndpointDiscoveryService(object):
     """[#protodoc-title: EDS]
     Endpoint discovery :ref:`architecture overview <arch_overview_service_discovery_types_eds>`
 

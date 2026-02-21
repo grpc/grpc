@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class HealthDiscoveryServiceStub:
+class HealthDiscoveryServiceStub(object):
     """[#protodoc-title: Health Discovery Service (HDS)]
 
     HDS is Health Discovery Service. It compliments Envoy’s health checking
@@ -53,7 +53,7 @@ class HealthDiscoveryServiceStub:
                 _registered_method=True)
 
 
-class HealthDiscoveryServiceServicer:
+class HealthDiscoveryServiceServicer(object):
     """[#protodoc-title: Health Discovery Service (HDS)]
 
     HDS is Health Discovery Service. It compliments Envoy’s health checking
@@ -133,7 +133,7 @@ def add_HealthDiscoveryServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class HealthDiscoveryService:
+class HealthDiscoveryService(object):
     """[#protodoc-title: Health Discovery Service (HDS)]
 
     HDS is Health Discovery Service. It compliments Envoy’s health checking

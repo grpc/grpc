@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class NetworkExternalProcessorStub:
+class NetworkExternalProcessorStub(object):
     """[#protodoc-title: Network External Processing Service]
 
     The Network External Processing filter allows an external service to dynamically
@@ -66,7 +66,7 @@ class NetworkExternalProcessorStub:
                 _registered_method=True)
 
 
-class NetworkExternalProcessorServicer:
+class NetworkExternalProcessorServicer(object):
     """[#protodoc-title: Network External Processing Service]
 
     The Network External Processing filter allows an external service to dynamically
@@ -127,7 +127,7 @@ def add_NetworkExternalProcessorServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class NetworkExternalProcessor:
+class NetworkExternalProcessor(object):
     """[#protodoc-title: Network External Processing Service]
 
     The Network External Processing filter allows an external service to dynamically

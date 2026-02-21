@@ -25,7 +25,7 @@ if _version_not_supported:
     )
 
 
-class ScopedRoutesDiscoveryServiceStub:
+class ScopedRoutesDiscoveryServiceStub(object):
     """[#protodoc-title: SRDS]
     * Routing :ref:`architecture overview <arch_overview_http_routing>`
 
@@ -61,7 +61,7 @@ class ScopedRoutesDiscoveryServiceStub:
                 _registered_method=True)
 
 
-class ScopedRoutesDiscoveryServiceServicer:
+class ScopedRoutesDiscoveryServiceServicer(object):
     """[#protodoc-title: SRDS]
     * Routing :ref:`architecture overview <arch_overview_http_routing>`
 
@@ -118,7 +118,7 @@ def add_ScopedRoutesDiscoveryServiceServicer_to_server(servicer, server):
 
 
  # This class is part of an EXPERIMENTAL API.
-class ScopedRoutesDiscoveryService:
+class ScopedRoutesDiscoveryService(object):
     """[#protodoc-title: SRDS]
     * Routing :ref:`architecture overview <arch_overview_http_routing>`
 
