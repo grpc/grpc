@@ -27,7 +27,7 @@ from grpc._cython import cygrpc as _cygrpc
 _EXPERIMENTAL_APIS_USED = set()
 
 
-class ChannelOptions(object):
+class ChannelOptions:
     """Indicates a channel option unique to gRPC Python.
 
     This enumeration is part of an EXPERIMENTAL API.

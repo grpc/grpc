@@ -65,7 +65,7 @@ class _GenericHandler(grpc.GenericRpcHandler):
             return None
 
 
-class _ChannelServerPair(object):
+class _ChannelServerPair:
     def __init__(self):
         # Server will enable channelz service
         self.server = grpc.server(

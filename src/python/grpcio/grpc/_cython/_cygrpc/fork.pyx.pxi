@@ -116,7 +116,7 @@ def fork_handlers_and_grpc_init():
                     _fork_state.fork_handler_registered = True
 
 
-class ForkManagedThread(object):
+class ForkManagedThread:
     def __init__(self, target, args=()):
         if _GRPC_ENABLE_FORK_SUPPORT:
             def managed_target(*args):
@@ -183,7 +183,7 @@ def fork_unregister_channel(channel):
         _fork_state.channels.discard(channel)
 
 
-class _ActiveThreadCount(object):
+class _ActiveThreadCount:
     def __init__(self):
         self._num_active_threads = 0
         self._condition = threading.Condition()
@@ -215,7 +215,7 @@ class _ActiveThreadCount(object):
                     return False
 
 
-class _ForkState(object):
+class _ForkState:
     def __init__(self):
         self.fork_in_progress_condition = threading.Condition()
         self.fork_in_progress = False

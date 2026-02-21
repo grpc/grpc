@@ -44,7 +44,7 @@ import os
 from shutil import copyfile
 
 
-class _FilePair(object):
+class _FilePair:
   """Represents a single (target, generated) file pair."""
 
   def __init__(self, target, generated):
@@ -52,7 +52,7 @@ class _FilePair(object):
     self.generated = generated
 
 
-class Config(object):
+class Config:
   """Represents the configuration for a single staleness test target."""
 
   def __init__(self, file_list):

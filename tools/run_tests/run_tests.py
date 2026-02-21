@@ -266,7 +266,7 @@ def _pypy_pattern_function(major):
         raise ValueError("Unknown PyPy major version")
 
 
-class CLanguage(object):
+class CLanguage:
     def __init__(self, lang_suffix, test_lang):
         self.lang_suffix = lang_suffix
         self.platform = platform_string()
@@ -620,7 +620,7 @@ class CLanguage(object):
         return self.lang_suffix
 
 
-class Php8Language(object):
+class Php8Language:
     def configure(self, config, args):
         self.config = config
         self.args = args
@@ -664,7 +664,7 @@ class PythonConfig(
     """Tuple of commands (named s.t. 'what it says on the tin' applies)"""
 
 
-class PythonLanguage(object):
+class PythonLanguage:
     _TEST_SPECS_FILE = {
         "native": ["src/python/grpcio_tests/tests/tests.json"],
         "asyncio": ["src/python/grpcio_tests/tests_aio/tests.json"],
@@ -911,7 +911,7 @@ class PythonLanguage(object):
         return "python"
 
 
-class RubyLanguage(object):
+class RubyLanguage:
     def configure(self, config, args):
         self.config = config
         self.args = args
@@ -1041,7 +1041,7 @@ class RubyLanguage(object):
         return "ruby"
 
 
-class CSharpLanguage(object):
+class CSharpLanguage:
     def __init__(self):
         self.platform = platform_string()
 
@@ -1147,7 +1147,7 @@ class CSharpLanguage(object):
         return "csharp"
 
 
-class ObjCLanguage(object):
+class ObjCLanguage:
     def configure(self, config, args):
         self.config = config
         self.args = args
@@ -1255,7 +1255,7 @@ class ObjCLanguage(object):
         return "objc"
 
 
-class Sanity(object):
+class Sanity:
     def __init__(self, config_file):
         self.config_file = config_file
 
@@ -1480,7 +1480,7 @@ def _calculate_num_runs_failures(list_of_results):
     return num_runs, num_failures
 
 
-class BuildAndRunError(object):
+class BuildAndRunError:
     """Represents error type in _build_and_run."""
 
     BUILD = object()
