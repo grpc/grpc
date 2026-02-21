@@ -56,6 +56,8 @@ class ClientCall final
     : public Call,
       public DualRefCounted<ClientCall, NonPolymorphicRefCount,
                             UnrefCallDestroy> {
+  friend class VirtualChannel;
+
  public:
   ClientCall(grpc_call* parent_call, uint32_t propagation_mask,
              grpc_completion_queue* cq, Slice path,
