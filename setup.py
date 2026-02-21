@@ -305,7 +305,7 @@ if BUILD_WITH_STATIC_LIBSTDCXX:
 
 CYTHON_EXTENSION_PACKAGE_NAMES = ()
 
-CYTHON_EXTENSION_MODULE_NAMES = ("grpc._cython.cygrpc",)
+CYTHON_EXTENSION_MODULE_NAMES = ("grpc._cython.cygrpc", "grpc._cython.cygrpc_absl_init")
 
 GRPCIO_CC_SRCS = ()
 
@@ -519,6 +519,7 @@ def cython_extensions_and_necessity():
                 + asm_files
                 + ["third_party/abseil-cpp/absl/log/initialize.cc"]
             ),
+            language="c++",
             include_dirs=list(EXTENSION_INCLUDE_DIRECTORIES),
             libraries=list(EXTENSION_LIBRARIES),
             define_macros=list(DEFINE_MACROS),

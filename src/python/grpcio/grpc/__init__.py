@@ -19,6 +19,9 @@ import enum
 import logging
 import sys
 
+# ensure _initialize_absl() gets called before anything else, c.f. #38703
+import grpc._cython.cygrpc_absl_init
+
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
 from grpc._runtime_protos import protos
