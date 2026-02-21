@@ -6,3 +6,4 @@ protobuf>=6.31.1,<7.0.0
 typing-extensions==4.12.2
 wheel>=0.29
 setuptools>=77.0.1
+cryptography>=46.0.0
