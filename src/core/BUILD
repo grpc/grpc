@@ -9015,6 +9015,7 @@ grpc_cc_library(
         "grpc_check",
         "grpc_insecure_credentials",
         "handshaker_registry",
+        "http2_server_transport",
         "iomgr_fwd",
         "match",
         "memory_quota",
