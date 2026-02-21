@@ -181,7 +181,7 @@ def which(filename):
     raise Exception("%s not found" % filename)
 
 
-class JobSpec(object):
+class JobSpec:
     """Specifies what to run for a job."""
 
     def __init__(
@@ -257,7 +257,7 @@ class JobSpec(object):
         )
 
 
-class JobResult(object):
+class JobResult:
     def __init__(self):
         self.state = "UNKNOWN"
         self.returncode = -1
@@ -274,7 +274,7 @@ def read_from_start(f):
     return f.read()
 
 
-class Job(object):
+class Job:
     """Manages one job."""
 
     def __init__(
@@ -477,7 +477,7 @@ class Job(object):
         self._suppress_failure_message = True
 
 
-class Jobset(object):
+class Jobset:
     """Manages one run of jobs."""
 
     def __init__(

@@ -64,21 +64,19 @@
   default: false
 - name: event_engine_listener
   default: true
-- name: event_engine_secure_endpoint
-  default: true
 - name: fail_recv_metadata_on_deadline_exceeded
   default: false
 - name: free_large_allocator
   default: false
 - name: fuse_filters
   default: false
-- name: graceful_external_connection_failure
-  default: true
 - name: keep_alive_ping_timer_batch
   default: false
 - name: local_connector_secure
   default: false
 - name: max_inflight_pings_strict_limit
+  default: true
+- name: metadata_publish_to_app_tag
   default: true
 - name: monitoring_experiment
   default: true
@@ -108,13 +106,11 @@
   default: false
 - name: tcp_rcv_lowat
   default: false
-- name: track_writes_in_resource_quota
-  default: false
-- name: track_zero_copy_allocations_in_resource_quota
-  default: false
 - name: tsi_frame_protector_without_locks
   default: false
 - name: unconstrained_max_quota_buffer_size
   default: false
 - name: use_call_event_engine_in_completion_queue
   default: false
+- name: xds_channel_filter_chain_per_route
+  default: true

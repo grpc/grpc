@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 52.0.0
+PROJECT_NUMBER         = 53.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1268,6 +1268,8 @@ src/core/ext/transport/chttp2/transport/transport_common.h \
 src/core/ext/transport/chttp2/transport/varint.cc \
 src/core/ext/transport/chttp2/transport/varint.h \
 src/core/ext/transport/chttp2/transport/writable_streams.h \
+src/core/ext/transport/chttp2/transport/write_cycle.cc \
+src/core/ext/transport/chttp2/transport/write_cycle.h \
 src/core/ext/transport/chttp2/transport/write_size_policy.cc \
 src/core/ext/transport/chttp2/transport/write_size_policy.h \
 src/core/ext/transport/chttp2/transport/writing.cc \
@@ -1507,6 +1509,15 @@ src/core/ext/upb-gen/envoy/extensions/filters/http/stateful_session/v3/stateful_
 src/core/ext/upb-gen/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h \
 src/core/ext/upb-gen/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb_minitable.c \
 src/core/ext/upb-gen/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb_minitable.h \
+src/core/ext/upb-gen/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.upb.h \
+src/core/ext/upb-gen/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.upb_minitable.c \
+src/core/ext/upb-gen/envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.upb_minitable.h \
+src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/tls/v3/tls_credentials.upb.h \
+src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/tls/v3/tls_credentials.upb_minitable.c \
+src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/tls/v3/tls_credentials.upb_minitable.h \
+src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/xds/v3/xds_credentials.upb.h \
+src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/xds/v3/xds_credentials.upb_minitable.c \
+src/core/ext/upb-gen/envoy/extensions/grpc_service/channel_credentials/xds/v3/xds_credentials.upb_minitable.h \
 src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.h \
 src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb_minitable.c \
 src/core/ext/upb-gen/envoy/extensions/http/stateful_session/cookie/v3/cookie.upb_minitable.h \
@@ -2159,7 +2170,6 @@ src/core/handshaker/proxy_mapper.h \
 src/core/handshaker/proxy_mapper_registry.cc \
 src/core/handshaker/proxy_mapper_registry.h \
 src/core/handshaker/security/GEMINI.md \
-src/core/handshaker/security/legacy_secure_endpoint.cc \
 src/core/handshaker/security/pipelined_secure_endpoint.cc \
 src/core/handshaker/security/secure_endpoint.cc \
 src/core/handshaker/security/secure_endpoint.h \
@@ -3001,6 +3011,7 @@ src/core/util/xxhash_inline.h \
 src/core/xds/GEMINI.md \
 src/core/xds/grpc/certificate_provider_store.cc \
 src/core/xds/grpc/certificate_provider_store.h \
+src/core/xds/grpc/certificate_provider_store_interface.h \
 src/core/xds/grpc/file_watcher_certificate_provider_factory.cc \
 src/core/xds/grpc/file_watcher_certificate_provider_factory.h \
 src/core/xds/grpc/xds_audit_logger_registry.cc \
@@ -3029,6 +3040,7 @@ src/core/xds/grpc/xds_health_status.cc \
 src/core/xds/grpc/xds_health_status.h \
 src/core/xds/grpc/xds_http_fault_filter.cc \
 src/core/xds/grpc/xds_http_fault_filter.h \
+src/core/xds/grpc/xds_http_filter.cc \
 src/core/xds/grpc/xds_http_filter.h \
 src/core/xds/grpc/xds_http_filter_registry.cc \
 src/core/xds/grpc/xds_http_filter_registry.h \

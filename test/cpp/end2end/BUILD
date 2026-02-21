@@ -161,7 +161,6 @@ grpc_cc_test(
     shard_count = 10,
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
         "no_test_ios",
         "thready_tsan",
     ],
@@ -201,7 +200,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
         "no_test_android",  # android_cc_test doesn't work with data dependency.
         "no_test_ios",
         "no_windows",
@@ -343,7 +341,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         ":end2end_test_utils",
@@ -376,7 +373,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         ":test_service_impl",
@@ -404,7 +400,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         ":end2end_test_utils",
@@ -483,7 +478,6 @@ grpc_cc_test(
     # iOS. Figure out why.
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
         # b/117517566.
         "grpc:no-internal-poller",
         "no_test_ios",
@@ -535,7 +529,6 @@ grpc_cc_test(
     # iOS. Figure out why.
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
         # b/117517566.
         "grpc:no-internal-poller",
         "no_test_ios",
@@ -574,7 +567,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         ":end2end_test_utils",
@@ -597,7 +589,6 @@ grpc_cc_test(
     shard_count = 30,
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
         "no_test_ios",
     ],
     deps = [
@@ -639,7 +630,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         ":end2end_test_utils",
@@ -666,7 +656,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
         # Will fail as sync health check service is enabled by default internally, which is however
         # disabled in OSS:
         # b/117623310.
@@ -699,7 +688,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         ":end2end_test_utils",
@@ -731,7 +719,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         ":end2end_test_utils",
@@ -764,7 +751,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         ":end2end_test_utils",
@@ -793,7 +779,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         "//:gpr",
@@ -825,7 +810,6 @@ grpc_cc_test(
     flaky = True,  # TODO(b/151315347)
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
         "cpp_lb_end2end_test",
         # b/117575949.
         "grpc:no-internal-poller",
@@ -897,7 +881,6 @@ grpc_cc_test(
     flaky = True,
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
         "no_test_ios",
     ],
     deps = [
@@ -954,7 +937,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         ":test_service_impl",
@@ -1006,7 +988,6 @@ grpc_cc_test(
     shard_count = 20,
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
         "cpp_lb_end2end_test",
         "no_windows",
     ],  # TODO(jtattermusch): fix test on windows
@@ -1092,7 +1073,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         ":test_service_impl",
@@ -1174,7 +1154,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         ":end2end_test_utils",
@@ -1201,7 +1180,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
         # TODO(b/264692543): Re-enable after fixing
         "grpc:broken-internally",
         "no_test_ios",
@@ -1264,7 +1242,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         "//:gpr",
@@ -1318,7 +1295,6 @@ grpc_cc_test(
     shard_count = 5,
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
         "no_windows",
     ],  # TODO(jtattermusch): fix test on windows
     deps = [
@@ -1375,7 +1351,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
         # This test only works with the open source protobuf.
         "grpc:broken-internally",
     ],
@@ -1405,7 +1380,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         ":test_service_impl",
@@ -1433,7 +1407,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         ":test_service_impl",
@@ -1463,7 +1436,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         "//:grpc++",
@@ -1490,7 +1462,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         ":test_service_impl",
@@ -1528,7 +1499,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         "//:gpr",
@@ -1555,7 +1525,6 @@ grpc_cc_test(
     ],
     tags = [
         "cpp_end2end_test",
-        "cpp_end2end_test_client_ph2",
     ],
     deps = [
         ":end2end_test_utils",

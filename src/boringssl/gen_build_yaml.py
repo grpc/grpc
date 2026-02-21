@@ -39,7 +39,7 @@ def map_dir(filename):
     return "third_party/boringssl-with-bazel/" + filename
 
 
-class Grpc(object):
+class Grpc:
     """Adapter for boring-SSL json sources files."""
 
     def __init__(self, sources):

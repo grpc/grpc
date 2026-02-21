@@ -18,7 +18,7 @@ import http2_base_server
 import hyperframe.frame
 
 
-class TestcaseSettingsMaxStreams(object):
+class TestcaseSettingsMaxStreams:
     """
     This test sets MAX_CONCURRENT_STREAMS to 1 and asserts that at any point
     only 1 stream is active.

@@ -24,6 +24,7 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 int main(int argc, char** argv) {
   int i;
@@ -31,6 +32,7 @@ int main(int argc, char** argv) {
   grpc_endpoint_pair p;
 
   grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;

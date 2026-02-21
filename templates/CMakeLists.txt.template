@@ -1160,13 +1160,15 @@
     "${" ".join(get_pkgconfig_libs_private("grpc++_unsecure"))}"
     "grpc++_unsecure.pc")
 
-  # grpcpp_otel_plugin .pc file
-  generate_pkgconfig(
-    "gRPC++ OpenTelemetry Plugin"
-    "OpenTelemetry Plugin for gRPC C++"
-    "<%text>${gRPC_CPP_VERSION}</%text>"
-    "${" ".join(get_pkgconfig_requires("grpcpp_otel_plugin"))}"
-    "${" ".join(get_pkgconfig_requires_private("grpcpp_otel_plugin"))}"
-    "${" ".join(get_pkgconfig_libs("grpcpp_otel_plugin"))}"
-    "${" ".join(get_pkgconfig_libs_private("grpcpp_otel_plugin"))}"
-    "grpcpp_otel_plugin.pc")
+  if(gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
+    # grpcpp_otel_plugin .pc file
+    generate_pkgconfig(
+      "gRPC++ OpenTelemetry Plugin"
+      "OpenTelemetry Plugin for gRPC C++"
+      "<%text>${gRPC_CPP_VERSION}</%text>"
+      "${" ".join(get_pkgconfig_requires("grpcpp_otel_plugin"))}"
+      "${" ".join(get_pkgconfig_requires_private("grpcpp_otel_plugin"))}"
+      "${" ".join(get_pkgconfig_libs("grpcpp_otel_plugin"))}"
+      "${" ".join(get_pkgconfig_libs_private("grpcpp_otel_plugin"))}"
+      "grpcpp_otel_plugin.pc")
+  endif()

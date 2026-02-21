@@ -3839,20 +3839,20 @@ def clean_up(gcp):
         delete_instance_template(gcp)
 
 
-class InstanceGroup(object):
+class InstanceGroup:
     def __init__(self, name, url, zone):
         self.name = name
         self.url = url
         self.zone = zone
 
 
-class GcpResource(object):
+class GcpResource:
     def __init__(self, name, url):
         self.name = name
         self.url = url
 
 
-class GcpState(object):
+class GcpState:
     def __init__(self, compute, alpha_compute, project, project_num):
         self.compute = compute
         self.alpha_compute = alpha_compute

@@ -51,12 +51,11 @@ void XdsHttpRouterFilter::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_router_v3_Router_getmsgdef(symtab);
 }
 
-std::optional<XdsHttpFilterImpl::FilterConfig>
-XdsHttpRouterFilter::GenerateFilterConfig(
+std::optional<Json> XdsHttpRouterFilter::GenerateFilterConfig(
     absl::string_view /*instance_name*/,
-    const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    ValidationErrors* errors) const {
-  absl::string_view* serialized_filter_config =
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) const {
+  const absl::string_view* serialized_filter_config =
       std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse router filter config");
@@ -68,16 +67,42 @@ XdsHttpRouterFilter::GenerateFilterConfig(
     errors->AddError("could not parse router filter config");
     return std::nullopt;
   }
-  return FilterConfig{ConfigProtoName(), Json()};
+  return Json();
 }
 
-std::optional<XdsHttpFilterImpl::FilterConfig>
-XdsHttpRouterFilter::GenerateFilterConfigOverride(
+std::optional<Json> XdsHttpRouterFilter::GenerateFilterConfigOverride(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& /*context*/,
-    XdsExtension /*extension*/, ValidationErrors* errors) const {
+    const XdsExtension& /*extension*/, ValidationErrors* errors) const {
   errors->AddError("router filter does not support config override");
   return std::nullopt;
+}
+
+RefCountedPtr<const FilterConfig> XdsHttpRouterFilter::ParseTopLevelConfig(
+    absl::string_view /*instance_name*/,
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) const {
+  const absl::string_view* serialized_filter_config =
+      std::get_if<absl::string_view>(&extension.value);
+  if (serialized_filter_config == nullptr) {
+    errors->AddError("could not parse router filter config");
+    return nullptr;
+  }
+  if (envoy_extensions_filters_http_router_v3_Router_parse(
+          serialized_filter_config->data(), serialized_filter_config->size(),
+          context.arena) == nullptr) {
+    errors->AddError("could not parse router filter config");
+    return nullptr;
+  }
+  return nullptr;
+}
+
+RefCountedPtr<const FilterConfig> XdsHttpRouterFilter::ParseOverrideConfig(
+    absl::string_view /*instance_name*/,
+    const XdsResourceType::DecodeContext& /*context*/,
+    const XdsExtension& /*extension*/, ValidationErrors* errors) const {
+  errors->AddError("router filter does not support config override");
+  return nullptr;
 }
 
 //
@@ -97,18 +122,27 @@ XdsHttpFilterRegistry::XdsHttpFilterRegistry(bool register_builtins) {
 void XdsHttpFilterRegistry::RegisterFilter(
     std::unique_ptr<XdsHttpFilterImpl> filter) {
   GRPC_CHECK(
-      registry_map_.emplace(filter->ConfigProtoName(), filter.get()).second);
+      top_level_config_map_.emplace(filter->ConfigProtoName(), filter.get())
+          .second);
   auto override_proto_name = filter->OverrideConfigProtoName();
   if (!override_proto_name.empty()) {
-    GRPC_CHECK(registry_map_.emplace(override_proto_name, filter.get()).second);
+    GRPC_CHECK(
+        override_config_map_.emplace(override_proto_name, filter.get()).second);
   }
   owning_list_.push_back(std::move(filter));
 }
 
-const XdsHttpFilterImpl* XdsHttpFilterRegistry::GetFilterForType(
+const XdsHttpFilterImpl* XdsHttpFilterRegistry::GetFilterForTopLevelType(
     absl::string_view proto_type_name) const {
-  auto it = registry_map_.find(proto_type_name);
-  if (it == registry_map_.end()) return nullptr;
+  auto it = top_level_config_map_.find(proto_type_name);
+  if (it == top_level_config_map_.end()) return nullptr;
+  return it->second;
+}
+
+const XdsHttpFilterImpl* XdsHttpFilterRegistry::GetFilterForOverrideType(
+    absl::string_view proto_type_name) const {
+  auto it = override_config_map_.find(proto_type_name);
+  if (it == override_config_map_.end()) return nullptr;
   return it->second;
 }
 
