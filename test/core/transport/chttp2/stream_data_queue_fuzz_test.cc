@@ -71,6 +71,7 @@ class SimpleQueueFuzzTest : public YodelTest {
   using YodelTest::YodelTest;
 
   Party* GetParty() { return party_.get(); }
+  Arena* GetArena() { return party_->arena(); }
 
   void InitParty() {
     auto party_arena = SimpleArenaAllocator(0)->MakeArena();
@@ -116,7 +117,7 @@ YODEL_TEST(SimpleQueueFuzzTest, EnqueueAndDequeueMultiPartyTest) {
   // dequeues 100 entries. This test asserts the following:
   // 1. All enqueues and dequeues are successful.
   // 2. The dequeue data is the same as the enqueue data.
-  SimpleQueue<int> queue(/*max_tokens=*/100);
+  SimpleQueue<int> queue(GetArena(), /*max_tokens=*/100);
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   StrictMock<MockFunction<void(absl::Status)>> on_dequeue_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
@@ -181,6 +182,7 @@ class StreamDataQueueFuzzTest : public YodelTest {
 
   Party* GetParty() { return party_.get(); }
   Party* GetParty2() { return party2_.get(); }
+  Arena* GetArena() { return party_->arena(); }
 
   void InitParty() {
     auto party_arena = SimpleArenaAllocator(0)->MakeArena();
@@ -344,6 +346,7 @@ YODEL_TEST(StreamDataQueueFuzzTest, EnqueueDequeueMultiParty) {
   EXPECT_CALL(on_dequeue_done, Call());
   HPackCompressor encoder;
   StreamDataQueue<ClientMetadataHandle> stream_data_queue(
+      GetArena(),
       /*is_client=*/true,
       /*queue_size=*/queue_size);
   stream_data_queue.SetStreamId(stream_id,
