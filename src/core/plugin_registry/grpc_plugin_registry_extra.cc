@@ -25,6 +25,8 @@ extern void RbacFilterRegister(CoreConfiguration::Builder* builder);
 extern void StatefulSessionFilterRegister(CoreConfiguration::Builder* builder);
 extern void GcpAuthenticationFilterRegister(
     CoreConfiguration::Builder* builder);
+extern void ExtAuthzFilterRegister(
+    CoreConfiguration::Builder* builder);
 extern void RegisterXdsChannelStackModifier(
     CoreConfiguration::Builder* builder);
 extern void RegisterChannelDefaultCreds(CoreConfiguration::Builder* builder);
@@ -51,6 +53,7 @@ void RegisterExtraFilters(CoreConfiguration::Builder* builder) {
   RbacFilterRegister(builder);
   StatefulSessionFilterRegister(builder);
   GcpAuthenticationFilterRegister(builder);
+  ExtAuthzFilterRegister(builder);
   RegisterXdsChannelStackModifier(builder);
   RegisterChannelDefaultCreds(builder);
   RegisterDefaultCallCreds(builder);

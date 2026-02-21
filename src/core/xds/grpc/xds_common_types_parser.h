@@ -19,6 +19,7 @@
 
 #include <optional>
 
+#include "envoy/config/common/mutation_rules/v3/mutation_rules.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/grpc_service.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
@@ -88,6 +89,12 @@ std::optional<XdsExtension> ExtractXdsExtension(
 XdsGrpcService ParseXdsGrpcService(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_core_v3_GrpcService* grpc_service,
+    ValidationErrors* errors);
+
+HeaderMutationRules ParseHeaderMutationRules(
+    const XdsResourceType::DecodeContext& context,
+    const envoy_config_common_mutation_rules_v3_HeaderMutationRules*
+        header_mutation_rules,
     ValidationErrors* errors);
 
 }  // namespace grpc_core

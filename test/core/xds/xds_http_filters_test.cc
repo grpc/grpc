@@ -30,14 +30,18 @@
 #include "envoy/config/core/v3/address.pb.h"
 #include "envoy/config/core/v3/base.pb.h"
 #include "envoy/config/core/v3/extension.pb.h"
+#include "envoy/config/core/v3/grpc_service.pb.h"
 #include "envoy/config/rbac/v3/rbac.pb.h"
 #include "envoy/config/route/v3/route.pb.h"
 #include "envoy/extensions/filters/common/fault/v3/fault.pb.h"
+#include "envoy/extensions/filters/http/ext_authz/v3/ext_authz.pb.h"
 #include "envoy/extensions/filters/http/fault/v3/fault.pb.h"
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.pb.h"
 #include "envoy/extensions/filters/http/rbac/v3/rbac.pb.h"
 #include "envoy/extensions/filters/http/router/v3/router.pb.h"
 #include "envoy/extensions/filters/http/stateful_session/v3/stateful_session.pb.h"
+#include "envoy/extensions/grpc_service/call_credentials/access_token/v3/access_token_credentials.pb.h"
+#include "envoy/extensions/grpc_service/channel_credentials/google_default/v3/google_default_credentials.pb.h"
 #include "envoy/extensions/http/stateful_session/cookie/v3/cookie.pb.h"
 #include "envoy/type/http/v3/cookie.pb.h"
 #include "envoy/type/matcher/v3/path.pb.h"
@@ -45,6 +49,8 @@
 #include "envoy/type/matcher/v3/string.pb.h"
 #include "envoy/type/v3/percent.pb.h"
 #include "envoy/type/v3/range.pb.h"
+#include "google/protobuf/wrappers.pb.h"
+#include "src/core/ext/filters/ext_authz/ext_authz_filter.h"
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 #include "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h"
 #include "src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h"
@@ -78,6 +84,8 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
+using ::envoy::config::core::v3::GrpcService;
+using ::envoy::extensions::filters::http::ext_authz::v3::ExtAuthz;
 using ::envoy::extensions::filters::http::fault::v3::HTTPFault;
 using ::envoy::extensions::filters::http::gcp_authn::v3::GcpAuthnFilterConfig;
 using ::envoy::extensions::filters::http::rbac::v3::RBAC;
@@ -88,7 +96,7 @@ using ::envoy::extensions::filters::http::stateful_session::v3::
     StatefulSessionPerRoute;
 using ::envoy::extensions::http::stateful_session::cookie::v3::
     CookieBasedSessionState;
-
+using ::envoy::type::v3::FractionalPercent;
 //
 // base class for filter tests
 //
@@ -100,19 +108,33 @@ class XdsHttpFilterTest : public ::testing::Test {
         decode_context_{xds_client_.get(), xds_server_, upb_def_pool_.ptr(),
                         upb_arena_.ptr()} {}
 
-  static RefCountedPtr<XdsClient> MakeXdsClient() {
-    grpc_error_handle error;
+  static RefCountedPtr<XdsClient> MakeXdsClient(
+      absl::string_view extra_bootstrap_text = "",
+      bool trusted_xds_server = false) {
     auto bootstrap = GrpcXdsBootstrap::Create(
-        "{\n"
-        "  \"xds_servers\": [\n"
-        "    {\n"
-        "      \"server_uri\": \"xds.example.com\",\n"
-        "      \"channel_creds\": [\n"
-        "        {\"type\": \"google_default\"}\n"
-        "      ]\n"
-        "    }\n"
-        "  ]\n"
-        "}");
+        absl::StrCat("{\n"
+                     "  \"xds_servers\": [\n"
+                     "    {\n"
+                     "      \"server_uri\": \"xds.example.com\",\n",
+                     trusted_xds_server ? "      \"server_features\": "
+                                          "[\"trusted_xds_server\"],\n"
+                                        : "",
+                     "      \"channel_creds\": [\n"
+                     "        {\"type\": \"google_default\"}\n"
+                     "      ]\n"
+                     "    }\n"
+                     "  ],\n",
+                     extra_bootstrap_text,
+                     "  \"certificate_providers\": {\n"
+                     "    \"provider1\": {\n"
+                     "      \"plugin_name\": \"file_watcher\",\n"
+                     "      \"config\": {\n"
+                     "        \"certificate_file\": \"/path/to/cert\",\n"
+                     "        \"private_key_file\": \"/path/to/key\"\n"
+                     "      }\n"
+                     "    }\n"
+                     "  }\n",
+                     "}"));
     if (!bootstrap.ok()) {
       Crash(absl::StrFormat("Error parsing bootstrap: %s",
                             bootstrap.status().ToString().c_str()));
@@ -137,6 +159,12 @@ class XdsHttpFilterTest : public ::testing::Test {
     extension.value = absl::string_view(serialized_storage_);
     extension.validation_fields.push_back(std::move(field));
     return extension;
+  }
+
+  XdsResourceType::DecodeContext MakeDecodeContext() {
+    return XdsResourceType::DecodeContext{
+        xds_client_.get(), *xds_client_->bootstrap().servers().front(),
+        upb_def_pool_.ptr(), upb_arena_.ptr()};
   }
 
   const XdsHttpFilterImpl* GetFilter(absl::string_view type) {
@@ -2138,6 +2166,218 @@ TEST_F(XdsGcpAuthnFilterTest, GenerateServiceConfig) {
   ASSERT_TRUE(service_config.ok()) << service_config.status();
   EXPECT_EQ(service_config->service_config_field_name, "gcp_authentication");
   EXPECT_EQ(service_config->element, "{\"foo\":\"bar\"}");
+}
+
+//
+// ExtAuthz Filter tests
+//
+
+class XdsExtAuthzFilterTest : public XdsHttpFilterTest {
+ protected:
+  XdsExtAuthzFilterTest() {
+    XdsExtension extension = MakeXdsExtension(ExtAuthz());
+    filter_ = GetFilter(extension.type);
+    GRPC_CHECK_NE(filter_, nullptr);
+  }
+
+  const XdsHttpFilterImpl* filter_;
+};
+
+TEST_F(XdsExtAuthzFilterTest, Accessors) {
+  EXPECT_EQ(filter_->ConfigProtoName(),
+            "envoy.extensions.filters.http.ext_authz.v3.ExtAuthz");
+  EXPECT_EQ(filter_->OverrideConfigProtoName(),
+            "envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute");
+  EXPECT_EQ(filter_->channel_filter(), &ExtAuthzFilter::kFilterVtable);
+  EXPECT_TRUE(filter_->IsSupportedOnClients());
+  EXPECT_FALSE(filter_->IsSupportedOnServers());
+  EXPECT_FALSE(filter_->IsTerminalFilter());
+}
+
+TEST_F(XdsExtAuthzFilterTest, GenerateFilterConfig) {
+  XdsExtension extension = MakeXdsExtension(ExtAuthz());
+  auto config = filter_->GenerateFilterConfig("", decode_context_,
+                                              std::move(extension), &errors_);
+  ASSERT_FALSE(errors_.ok());
+  ASSERT_TRUE(config.has_value());
+  EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
+  EXPECT_EQ(config->config,
+            Json::FromObject(
+                {{"filter_instance_name", Json::FromString("")},
+                 {"ext_authz",
+                  Json::FromObject({
+                      {"failure_mode_allow", Json::FromBool(false)},
+                      {"failure_mode_allow_header_add", Json::FromBool(false)},
+                      {"include_peer_certificate", Json::FromBool(false)},
+                  })}}))
+      << JsonDump(config->config);
+}
+
+TEST_F(XdsExtAuthzFilterTest, GenerateFilterConfigXdsGrpcService) {
+  ScopedExperimentalEnvVar env("GRPC_EXPERIMENTAL_XDS_EXT_PROC_ON_CLIENT");
+  xds_client_ = MakeXdsClient(
+      "  \"allowed_grpc_services\": {\n"
+      "    \"dns:server.example.com\": {\n"
+      "      \"channel_creds\": [{\"type\": \"insecure\"}],\n"
+      "      \"call_creds\": [\n"
+      "         {\"type\": \"jwt_token_file\",\n"
+      "          \"config\": {\"jwt_token_file\": \"/path/to/file\"}},\n"
+      "         {\"type\": \"jwt_token_file\",\n"
+      "          \"config\": {\"jwt_token_file\": \"/path/to/file\"}}\n"
+      "      ]\n"
+      "    }\n"
+      "  },\n");
+  ExtAuthz ext_authz;
+  auto* grpc_service = ext_authz.mutable_grpc_service();
+  grpc_service->mutable_timeout();
+  auto* md = grpc_service->add_initial_metadata();
+  md->set_key("foo");
+  md->set_value("bar");
+  md = grpc_service->add_initial_metadata();
+  md->set_key("foo");
+  md->set_value("bar");
+  auto* filter = ext_authz.mutable_filter_enabled();
+  auto* percent = filter->mutable_default_value();
+  percent->set_numerator(100);
+  percent->set_denominator(
+      envoy::type::v3::FractionalPercent_DenominatorType_TEN_THOUSAND);
+  auto* deny_at_disable = ext_authz.mutable_deny_at_disable();
+  auto* bool_value = deny_at_disable->mutable_default_value();
+  bool_value->set_value(true);
+  auto* allowed_header = ext_authz.mutable_allowed_headers()->add_patterns();
+  allowed_header->set_exact("foo");
+  allowed_header->set_ignore_case(true);
+  auto* disallowed_headers =
+      ext_authz.mutable_disallowed_headers()->add_patterns();
+  disallowed_headers->set_exact("foo");
+  disallowed_headers->set_ignore_case(true);
+  auto* google_grpc = grpc_service->mutable_google_grpc();
+  ext_authz.mutable_status_on_error();
+  google_grpc->set_target_uri("dns:server.example.com");
+  // Creds specified in proto will be ignored because xDS server is not trusted.
+  google_grpc->add_channel_credentials_plugin()->PackFrom(
+      envoy::extensions::grpc_service::channel_credentials::google_default::v3::
+          GoogleDefaultCredentials());
+  envoy::extensions::grpc_service::call_credentials::access_token::v3::
+      AccessTokenCredentials call_creds;
+  call_creds.set_token("foo");
+  google_grpc->add_call_credentials_plugin()->PackFrom(call_creds);
+  // HeaderMutationRules
+  auto* header_mutation_rules =
+      ext_authz.mutable_decoder_header_mutation_rules();
+  header_mutation_rules->mutable_allow_expression()->set_regex("foo");
+  header_mutation_rules->mutable_disallow_expression()->set_regex("bar");
+
+  XdsExtension extension = MakeXdsExtension(ext_authz);
+  auto config = filter_->GenerateFilterConfig("", MakeDecodeContext(),
+                                              std::move(extension), &errors_);
+  ASSERT_TRUE(config.has_value());
+  const Json& root = config->config;
+  ASSERT_EQ(root.type(), Json::Type::kObject);
+  EXPECT_EQ(root.object().at("filter_instance_name"), Json::FromString(""));
+
+  auto it = root.object().find("ext_authz");
+  ASSERT_NE(it, root.object().end());
+  const Json& ext_authz_json = it->second;
+  ASSERT_EQ(ext_authz_json.type(), Json::Type::kObject);
+
+  const auto& fields = ext_authz_json.object();
+
+  // deny_at_disable
+  auto field_it = fields.find("deny_at_disable");
+  ASSERT_NE(field_it, fields.end());
+  EXPECT_EQ(field_it->second, Json::FromBool(true));
+
+  // failure_mode_allow
+  field_it = fields.find("failure_mode_allow");
+  ASSERT_NE(field_it, fields.end());
+  EXPECT_EQ(field_it->second, Json::FromBool(false));
+
+  // failure_mode_allow_header_add
+  field_it = fields.find("failure_mode_allow_header_add");
+  ASSERT_NE(field_it, fields.end());
+  EXPECT_EQ(field_it->second, Json::FromBool(false));
+
+  // status_on_error
+  field_it = fields.find("status_on_error");
+  ASSERT_NE(field_it, fields.end());
+  EXPECT_EQ(field_it->second, Json::FromNumber(0));
+
+  // filter_enabled
+  field_it = fields.find("filter_enabled");
+  ASSERT_NE(field_it, fields.end());
+  EXPECT_EQ(field_it->second,
+            Json::FromObject({{"numerator", Json::FromNumber(100)},
+                              {"denominator", Json::FromNumber(10000)}}));
+
+  // allowed_headers
+  field_it = fields.find("allowed_headers");
+  ASSERT_NE(field_it, fields.end());
+  EXPECT_EQ(field_it->second, Json::FromArray({Json::FromObject(
+                                  {{"exact", Json::FromString("foo")},
+                                   {"ignoreCase", Json::FromBool(true)}})}));
+  // allowed_headers
+  field_it = fields.find("disallowed_headers");
+  ASSERT_NE(field_it, fields.end());
+  EXPECT_EQ(field_it->second, Json::FromArray({Json::FromObject(
+                                  {{"exact", Json::FromString("foo")},
+                                   {"ignoreCase", Json::FromBool(true)}})}));
+
+  // decoder_header_mutation_rules
+  field_it = fields.find("decoder_header_mutation_rules");
+  ASSERT_NE(field_it, fields.end());
+  EXPECT_EQ(field_it->second,
+            Json::FromObject({
+                {"disallow_all", Json::FromBool(false)},
+                {"disallow_is_error", Json::FromBool(false)},
+                {"allow_expression",
+                 Json::FromObject({{"regex", Json::FromString("foo")}})},
+                {"disallow_expression",
+                 Json::FromObject({{"regex", Json::FromString("bar")}})},
+            }));
+
+  // xds_grpc_service
+  field_it = fields.find("xds_grpc_service");
+  ASSERT_NE(field_it, fields.end());
+  const Json& xds_grpc_service = field_it->second;
+  ASSERT_EQ(xds_grpc_service.type(), Json::Type::kObject);
+
+  // Check xds_grpc_service fields
+  const auto& service_fields = xds_grpc_service.object();
+
+  // timeout
+  auto service_field_it = service_fields.find("timeout");
+  ASSERT_NE(service_field_it, service_fields.end());
+  EXPECT_EQ(service_field_it->second, Json::FromString("0.000000000s"));
+
+  // initial_metadata
+  service_field_it = service_fields.find("initial_metadata");
+  ASSERT_NE(service_field_it, service_fields.end());
+  EXPECT_EQ(service_field_it->second,
+            Json::FromArray(
+                {Json::FromObject({{"key", Json::FromString("foo")},
+                                   {"value", Json::FromString("bar")}}),
+                 Json::FromObject({{"key", Json::FromString("foo")},
+                                   {"value", Json::FromString("bar")}})}));
+
+  // server_target
+  service_field_it = service_fields.find("server_target");
+  ASSERT_NE(service_field_it, service_fields.end());
+  EXPECT_EQ(
+      service_field_it->second,
+      Json::FromObject(
+          {{"server_uri", Json::FromString("dns:server.example.com")},
+           {"channel_creds", Json::FromArray({Json::FromObject(
+                                 {{"type", Json::FromString("insecure")},
+                                  {"config", Json::FromObject({})}})})},
+           {"call_creds",
+            Json::FromArray(
+                {Json::FromObject(
+                     {{"type", Json::FromString("jwt_token_file")}}),
+                 Json::FromObject(
+                     {{"type", Json::FromString("jwt_token_file")}})})}}));
+
+  std::cout << JsonDump(config->config);
 }
 
 }  // namespace

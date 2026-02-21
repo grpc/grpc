@@ -16,6 +16,13 @@
 
 #include "src/core/xds/grpc/xds_common_types.h"
 
+#include <cstddef>
+#include <memory>
+#include <string>
+
+#include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/json/json_writer.h"
 #include "src/core/util/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -98,6 +105,229 @@ std::string CommonTlsContext::ToString() const {
 bool CommonTlsContext::Empty() const {
   return tls_certificate_provider_instance.Empty() &&
          certificate_validation_context.Empty();
+}
+
+//
+// SafeRegexMatch
+//
+
+const JsonLoaderInterface* SafeRegexMatch::JsonLoader(const JsonArgs&) {
+  static const auto* loader = JsonObjectLoader<SafeRegexMatch>()
+                                  .Field("regex", &SafeRegexMatch::regex)
+                                  .Finish();
+  return loader;
+}
+
+//
+// HeaderMutationRules
+//
+
+const JsonLoaderInterface* HeaderMutationRules::JsonLoader(const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<HeaderMutationRules>()
+          .OptionalField("disallow_is_error",
+                         &HeaderMutationRules::disallow_is_error)
+          .OptionalField("disallow_all", &HeaderMutationRules::disallow_all)
+          .Finish();
+  return loader;
+}
+
+void HeaderMutationRules::JsonPostLoad(const Json& json, const JsonArgs& args,
+                                       ValidationErrors* errors) {
+  auto createMatcherFromField =
+      [&](const std::string& field_name) -> StringMatcher {
+    auto expression = LoadJsonObjectField<SafeRegexMatch>(json.object(), args,
+                                                          field_name, errors,
+                                                          /*required=*/false);
+    if (!expression.has_value()) {
+      errors->AddError("no valid matcher found");
+      return StringMatcher();
+    }
+    auto matcher = StringMatcher::Create(StringMatcher::Type::kSafeRegex,
+                                         expression->regex);
+
+    if (matcher.ok()) {
+      return *matcher;
+    }
+    errors->AddError(matcher.status().message());
+    return StringMatcher();
+  };
+  disallow_expression = createMatcherFromField("disallow_expression");
+  allow_expression = createMatcherFromField("allow_expression");
+}
+
+std::string HeaderMutationRules::ToJsonString() const {
+  Json::Object obj;
+  if (disallow_is_error) {
+    obj["disallow_is_error"] = Json::FromBool(disallow_is_error);
+  }
+  if (disallow_all) {
+    obj["disallow_all"] = Json::FromBool(disallow_all);
+  }
+  auto dump_matcher = [&](const std::string& name,
+                          const StringMatcher& matcher) {
+    if (matcher.type() == StringMatcher::Type::kSafeRegex) {
+      Json::Object regex_match;
+      regex_match["regex"] =
+          Json::FromString(matcher.regex_matcher()->pattern());
+      obj[name] = Json::FromObject(std::move(regex_match));
+    }
+  };
+  dump_matcher("allow_expression", allow_expression);
+  dump_matcher("disallow_expression", disallow_expression);
+  return JsonDump(Json::FromObject(std::move(obj)));
+}
+
+//
+// StringMatch
+//
+
+const JsonLoaderInterface* StringMatch::JsonLoader(const JsonArgs&) {
+  // All fields handled in JsonPostLoad().
+  static const auto* loader = JsonObjectLoader<StringMatch>().Finish();
+  return loader;
+}
+
+void StringMatch::JsonPostLoad(const Json& json, const JsonArgs& args,
+                               ValidationErrors* errors) {
+  const size_t original_error_size = errors->size();
+  bool ignore_case =
+      LoadJsonObjectField<bool>(json.object(), args, "ignoreCase", errors,
+                                /*required=*/false)
+          .value_or(false);
+  auto set_string_matcher = [&](absl::StatusOr<StringMatcher> string_matcher) {
+    if (string_matcher.ok()) {
+      matcher = *string_matcher;
+    } else {
+      errors->AddError(string_matcher.status().message());
+    }
+  };
+  auto check_match = [&](absl::string_view field_name,
+                         StringMatcher::Type type) {
+    auto match = LoadJsonObjectField<std::string>(json.object(), args,
+                                                  field_name, errors,
+                                                  /*required=*/false);
+    if (match.has_value()) {
+      set_string_matcher(
+          StringMatcher::Create(type, *match, /*case_sensitive=*/!ignore_case));
+      return true;
+    }
+    return false;
+  };
+  if (check_match("exact", StringMatcher::Type::kExact) ||
+      check_match("prefix", StringMatcher::Type::kPrefix) ||
+      check_match("suffix", StringMatcher::Type::kSuffix) ||
+      check_match("contains", StringMatcher::Type::kContains)) {
+    return;
+  }
+  auto regex_match = LoadJsonObjectField<SafeRegexMatch>(json.object(), args,
+                                                         "safeRegex", errors,
+                                                         /*required=*/false);
+  if (regex_match.has_value()) {
+    set_string_matcher(StringMatcher::Create(StringMatcher::Type::kSafeRegex,
+                                             regex_match->regex));
+    return;
+  }
+  if (errors->size() == original_error_size) {
+    errors->AddError("no valid matcher found");
+  }
+}
+
+//
+// XdsGrpcService
+//
+
+namespace {
+
+struct InitialMetadata {
+  std::string key;
+  std::string value;
+
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
+    static const auto* loader = JsonObjectLoader<InitialMetadata>()
+                                    .Field("key", &InitialMetadata::key)
+                                    .Field("value", &InitialMetadata::value)
+                                    .Finish();
+    return loader;
+  }
+};
+
+}  // namespace
+
+std::unique_ptr<GrpcXdsServerTarget> ParseGrpcXdsServerTarget(
+    const Json& json, const JsonArgs& args, ValidationErrors* errors) {
+  auto server_target_itr = json.object().find("server_target");
+  if (server_target_itr != json.object().end()) {
+    ValidationErrors::ScopedField field(errors, ".server_target");
+    if (server_target_itr->second.type() != Json::Type::kObject) {
+      errors->AddError("is not an object");
+    } else {
+      const Json& target_json = server_target_itr->second;
+      std::string server_uri =
+          LoadJsonObjectField<std::string>(target_json.object(), args,
+                                           "server_uri", errors)
+              .value_or("");
+      auto channel_creds_config =
+          ParseXdsBootstrapChannelCreds(target_json, args, errors);
+      auto call_creds_configs =
+          ParseXdsBootstrapCallCreds(target_json, args, errors);
+      return std::make_unique<GrpcXdsServerTarget>(
+          std::move(server_uri), std::move(channel_creds_config),
+          std::move(call_creds_configs));
+    }
+  }
+  return nullptr;
+}
+
+std::vector<std::pair<std::string, std::string>> ParseInitialMetadata(
+    const Json& json, const JsonArgs& args, ValidationErrors* errors) {
+  std::vector<std::pair<std::string, std::string>> initial_metadata;
+  auto md = LoadJsonObjectField<std::vector<InitialMetadata>>(
+      json.object(), args, "initial_metadata", errors);
+  if (md.has_value()) {
+    ValidationErrors::ScopedField field(errors, ".initial_metadata");
+    for (const auto& metadata : md.value()) {
+      initial_metadata.emplace_back(metadata.key, metadata.value);
+    }
+  }
+  return initial_metadata;
+}
+
+const JsonLoaderInterface* XdsGrpcService::JsonLoader(const JsonArgs&) {
+  static const auto* loader = JsonObjectLoader<XdsGrpcService>()
+                                  .Field("timeout", &XdsGrpcService::timeout)
+                                  .Finish();
+  return loader;
+}
+
+void XdsGrpcService::JsonPostLoad(const Json& json, const JsonArgs& args,
+                                  ValidationErrors* errors) {
+  // parse server_target
+  server_target = ParseGrpcXdsServerTarget(json, args, errors);
+  // parse initial_medata
+  initial_metadata = ParseInitialMetadata(json, args, errors);
+}
+
+std::string XdsGrpcService::ToJsonString() const {
+  Json::Object root;
+  if (server_target != nullptr) {
+    auto target_json = JsonParse(server_target->ToJsonString());
+    if (target_json.ok()) {
+      root["server_target"] = *target_json;
+    }
+  }
+  root["timeout"] = Json::FromString(timeout.ToJsonString());
+  if (!initial_metadata.empty()) {
+    Json::Array metadata_array;
+    for (const auto& [key, value] : initial_metadata) {
+      metadata_array.push_back(Json::FromObject({
+          {"key", Json::FromString(key)},
+          {"value", Json::FromString(value)},
+      }));
+    }
+    root["initial_metadata"] = Json::FromArray(std::move(metadata_array));
+  }
+  return JsonDump(Json::FromObject(root));
 }
 
 }  // namespace grpc_core

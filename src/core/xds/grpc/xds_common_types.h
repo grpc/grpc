@@ -90,6 +90,107 @@ struct XdsGrpcService {
   std::unique_ptr<GrpcXdsServerTarget> server_target;
   Duration timeout;
   std::vector<std::pair<std::string, std::string>> initial_metadata;
+
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+  void JsonPostLoad(const Json& json, const JsonArgs& args,
+                    ValidationErrors* errors);
+
+  std::string ToJsonString() const;
+
+  bool operator==(const XdsGrpcService& other) const {
+    if ((server_target == nullptr) != (other.server_target == nullptr)) {
+      return false;
+    }
+    if (server_target != nullptr &&
+        !server_target->Equals(*other.server_target)) {
+      return false;
+    }
+    return timeout == other.timeout && initial_metadata == other.initial_metadata;
+  }
+};
+
+struct HeaderValueOption {
+  struct HeaderValue {
+    // Header name.
+    std::string key;
+    // Only one of ``value`` or ``raw_value`` can be set.
+    // Header value is encoded as string. This does not work for non-utf8
+    // characters.
+    std::string value;
+  };
+
+  enum class AppendAction {
+    // If the header doesn't exist then this will add new header with
+    // specified key and value.
+    kAppendIfExistsOrAdd = 0,
+    // This action will add the header if it doesn't already exist. If the
+    // header
+    // already exists then this will be a no-op.
+    kAddIfAbsent = 1,
+    // This action will overwrite the specified value by discarding any
+    // existing values if
+    // the header already exists. If the header doesn't exist then this will
+    // add the header
+    // with specified key and value.
+    kOverwriteIfExistsOrAdd = 2,
+    // This action will overwrite the specified value by discarding any
+    // existing values if
+    // the header already exists. If the header doesn't exist then this will
+    // be no-op.
+    kOverwriteIfExists = 3,
+    // Default if not specified
+    kDefault = kAppendIfExistsOrAdd
+  };
+
+  // Header name/value pair that this option applies to
+  HeaderValue header;
+  // Describes the action taken to append/overwrite the given value for an
+  // existing header
+  // or to only add this header if it's absent.
+  // Value defaults to :ref:`APPEND_IF_EXISTS_OR_ADD
+  // <envoy_v3_api_enum_value_config.core.v3.HeaderValueOption.HeaderAppendAction.APPEND_IF_EXISTS_OR_ADD>`.
+  AppendAction append_action;
+  // Is the header value allowed to be empty? If false (default), custom
+  // headers with empty values are dropped, otherwise they are added.
+  bool keep_empty_value;
+};
+
+struct SafeRegexMatch {
+  std::string regex;
+
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+};
+
+struct StringMatch {
+  StringMatcher matcher;
+
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+  void JsonPostLoad(const Json& json, const JsonArgs& args,
+                    ValidationErrors* errors);
+
+  bool operator==(const StringMatch& other) const {
+    return matcher == other.matcher;
+  }
+};
+
+struct HeaderMutationRules {
+  bool disallow_all;
+  bool disallow_is_error;
+  StringMatcher allow_expression;
+  StringMatcher disallow_expression;
+
+  std::string ToJsonString() const;
+
+  bool operator==(const HeaderMutationRules& other) const {
+    return disallow_all == other.disallow_all &&
+           disallow_is_error == other.disallow_is_error &&
+           allow_expression == other.allow_expression &&
+           disallow_expression == other.disallow_expression;
+  }
+
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+  void JsonPostLoad(const Json& json, const JsonArgs& args,
+                    ValidationErrors* errors);
 };
 
 }  // namespace grpc_core
