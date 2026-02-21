@@ -994,8 +994,6 @@ grpc_cc_library(
         "//src/core:gpr_atm",
         "//src/core:grpc_check",
         "@com_google_protobuf//:any_cc_proto",
-        "@com_google_protobuf//:protobuf",
-        "@com_google_protobuf//src/google/protobuf/io",
     ],
 )
 
@@ -2816,10 +2814,6 @@ grpc_cc_library(
     ],
     tags = ["nofixdeps"],
     visibility = ["//visibility:public"],
-    deps = [
-        "@com_google_protobuf//:protobuf",
-        "@com_google_protobuf//src/google/protobuf/io",
-    ],
 )
 
 grpc_cc_library(
