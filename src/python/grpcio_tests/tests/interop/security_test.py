@@ -12,27 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import faulthandler
+from functools import partial
 import sys
+import threading
+
+# from grpc._cython import cygrpc as _cygrpc
+import time
 import unittest
+import weakref
 
 import grpc
 import grpc.experimental
 
-from src.proto.grpc.testing import test_pb2_grpc
 from src.proto.grpc.testing import empty_pb2
 from src.proto.grpc.testing import messages_pb2
+from src.proto.grpc.testing import test_pb2_grpc
 from tests.interop import _intraop_test_case
+from tests.interop import methods
 from tests.interop import resources
 from tests.interop import service
-from tests.interop import methods
 from tests.unit import test_common
-
-# from grpc._cython import cygrpc as _cygrpc
-import time
-import faulthandler
-from functools import partial
-import threading
-import weakref
 
 faulthandler.enable()
 

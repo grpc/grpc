@@ -19,8 +19,8 @@ These APIs are subject to be removed during any minor version release.
 import copy
 import functools
 import sys
-import warnings
 from typing import Callable, Optional, Union
+import warnings
 
 import grpc
 from grpc._cython import cygrpc as _cygrpc
