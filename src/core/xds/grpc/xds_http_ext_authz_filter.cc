@@ -42,62 +42,62 @@
 
 namespace grpc_core {
 
-absl::string_view XdsExtAuthzFilter::ConfigProtoName() const {
+absl::string_view XdsHttpExtAuthzFilter::ConfigProtoName() const {
   return "envoy.extensions.filters.http.ext_authz.v3.ExtAuthz";
 }
 
-absl::string_view XdsExtAuthzFilter::OverrideConfigProtoName() const {
+absl::string_view XdsHttpExtAuthzFilter::OverrideConfigProtoName() const {
   return "envoy.extensions.filters.http.ext_authz.v3.ExtAuthzPerRoute";
 }
 
-void XdsExtAuthzFilter::PopulateSymtab(upb_DefPool* symtab) const {
+void XdsHttpExtAuthzFilter::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_ext_authz_v3_ExtAuthz_getmsgdef(symtab);
 }
 
-std::optional<Json> XdsExtAuthzFilter::GenerateFilterConfig(
+std::optional<Json> XdsHttpExtAuthzFilter::GenerateFilterConfig(
     absl::string_view instance_name,
     const XdsResourceType::DecodeContext& context,
     const XdsExtension& extension, ValidationErrors* errors) const {
   return std::nullopt;
 }
 
-std::optional<Json> XdsExtAuthzFilter::GenerateFilterConfigOverride(
+std::optional<Json> XdsHttpExtAuthzFilter::GenerateFilterConfigOverride(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& /*context*/,
     const XdsExtension& /*extension*/, ValidationErrors* errors) const {
   return std::nullopt;
 }
 
-const grpc_channel_filter* XdsExtAuthzFilter::channel_filter() const {
+const grpc_channel_filter* XdsHttpExtAuthzFilter::channel_filter() const {
   return &ExtAuthzFilter::kFilterVtable;
 }
 
-void XdsExtAuthzFilter::AddFilter(
+void XdsHttpExtAuthzFilter::AddFilter(
     FilterChainBuilder& builder,
     RefCountedPtr<const FilterConfig> config) const {
   builder.AddFilter<ExtAuthzFilter>(std::move(config));
 }
 
-ChannelArgs XdsExtAuthzFilter::ModifyChannelArgs(
+ChannelArgs XdsHttpExtAuthzFilter::ModifyChannelArgs(
     const ChannelArgs& args) const {
   // TODO(rishesh): revist this
   return args;
 }
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
-XdsExtAuthzFilter::GenerateMethodConfig(
+XdsHttpExtAuthzFilter::GenerateMethodConfig(
     const Json& /*hcm_filter_config*/,
     const Json* /*filter_config_override*/) const {
   return ServiceConfigJsonEntry{"", ""};
 }
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
-XdsExtAuthzFilter::GenerateServiceConfig(
+XdsHttpExtAuthzFilter::GenerateServiceConfig(
     const Json& /*hcm_filter_config*/) const {
   return ServiceConfigJsonEntry{"", ""};
 }
 
-void XdsExtAuthzFilter::UpdateBlackboard(const Json& hcm_filter_config,
+void XdsHttpExtAuthzFilter::UpdateBlackboard(const Json& hcm_filter_config,
                                          const Blackboard* old_blackboard,
                                          Blackboard* new_blackboard) const {}
 
@@ -128,7 +128,7 @@ bool isCacheRequriedToChange(
   return true;
 }
 
-void XdsExtAuthzFilter::UpdateBlackboard(const FilterConfig& config,
+void XdsHttpExtAuthzFilter::UpdateBlackboard(const FilterConfig& config,
                                          const Blackboard* old_blackboard,
                                          Blackboard* new_blackboard) const {
   const auto& filter_config = DownCast<const ExtAuthzFilter::Config&>(config);
@@ -149,7 +149,7 @@ void XdsExtAuthzFilter::UpdateBlackboard(const FilterConfig& config,
   new_blackboard->Set(filter_config.instance_name, std::move(cache));
 }
 
-RefCountedPtr<const FilterConfig> XdsExtAuthzFilter::ParseTopLevelConfig(
+RefCountedPtr<const FilterConfig> XdsHttpExtAuthzFilter::ParseTopLevelConfig(
     absl::string_view instance_name,
     const XdsResourceType::DecodeContext& context,
     const XdsExtension& extension, ValidationErrors* errors) const {
@@ -323,7 +323,7 @@ RefCountedPtr<const FilterConfig> XdsExtAuthzFilter::ParseTopLevelConfig(
   return config;
 }
 
-RefCountedPtr<const FilterConfig> XdsExtAuthzFilter::ParseOverrideConfig(
+RefCountedPtr<const FilterConfig> XdsHttpExtAuthzFilter::ParseOverrideConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& /*context*/,
     const XdsExtension& /*extension*/, ValidationErrors* errors) const {

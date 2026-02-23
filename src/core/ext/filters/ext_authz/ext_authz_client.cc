@@ -153,7 +153,6 @@ envoy_service_auth_v3_AttributeContext_Request* CreateRequest(
   // set method
   envoy_service_auth_v3_AttributeContext_HttpRequest_set_method(
       http_request, upb_StringView_FromString("POST"));
-  // TODO(rishesh)
   // set path
   envoy_service_auth_v3_AttributeContext_HttpRequest_set_path(
       http_request, upb_StringView_FromString(params.path.data()));

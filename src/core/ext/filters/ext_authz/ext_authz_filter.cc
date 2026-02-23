@@ -349,6 +349,7 @@ ServerMetadataHandle ExtAuthzFilter::Call::OnClientInitialMetadata(
 
 absl::Status ExtAuthzFilter::Call::OnServerInitialMetadata(
     ServerMetadata& md, ExtAuthzFilter* filter) {
+      // TODO(rishesh): handle trailer only response 
   if (!filter->response_headers_to_add.has_value()) {
     return absl::OkStatus();
   }
@@ -373,6 +374,7 @@ absl::Status ExtAuthzFilter::Call::OnServerInitialMetadata(
 
 absl::Status ExtAuthzFilter::Call::OnServerTrailingMetadata(
     ServerMetadata& md, ExtAuthzFilter* filter) {
+      // TODO(rishesh): handle trailer only response 
   if (!filter->response_trailer_to_add.has_value()) {
     return absl::OkStatus();
   }
@@ -449,7 +451,5 @@ ExtAuthzFilter::ExtAuthzFilter(RefCountedPtr<const Config> filter_config,
                                RefCountedPtr<const ChannelCache> channel_cache)
     : filter_config_(std::move(filter_config)),
       channel_cache_(std::move(channel_cache)) {}
-
-// TODO(rishesh): add the filter in the chain
 
 }  // namespace grpc_core
