@@ -30,7 +30,10 @@
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
-    
+
+// TODO(rishesh): Remove this once the feature passes interop tests.
+bool XdsExtAuthzOnClientEnabled();
+
 class XdsHttpExtAuthzFilter : public XdsHttpFilterImpl {
  public:
   absl::string_view ConfigProtoName() const override;
@@ -67,7 +70,9 @@ class XdsHttpExtAuthzFilter : public XdsHttpFilterImpl {
   void UpdateBlackboard(const FilterConfig& config,
                         const Blackboard* old_blackboard,
                         Blackboard* new_blackboard) const override;
-  bool IsSupportedOnClients() const override { return true; }
+  bool IsSupportedOnClients() const override {
+    return XdsExtAuthzOnClientEnabled();
+  }
   bool IsSupportedOnServers() const override { return false; }
 };
 

@@ -32,6 +32,7 @@
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
+#include "src/core/xds/grpc/xds_http_ext_authz_filter.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -134,7 +135,9 @@ absl::StatusOr<std::unique_ptr<GrpcXdsBootstrap>> GrpcXdsBootstrap::Create(
    public:
     bool IsEnabled(absl::string_view key) const override {
       if (key == "federation") return XdsFederationEnabled();
-      if (key == "grpc_service") return XdsExtProcOnClientEnabled();
+      if (key == "grpc_service") {
+        return XdsExtProcOnClientEnabled() || XdsExtAuthzOnClientEnabled();
+      }
       return true;
     }
   };

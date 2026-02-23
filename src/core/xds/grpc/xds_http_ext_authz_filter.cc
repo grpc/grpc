@@ -39,8 +39,18 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "src/core/util/env.h"
 
 namespace grpc_core {
+
+// TODO(rishesh): Remove this once the feature passes interop tests.
+bool XdsExtAuthzOnClientEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_EXT_AUTHZ_ON_CLIENT");
+  if (!value.has_value()) return false;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
 
 absl::string_view XdsHttpExtAuthzFilter::ConfigProtoName() const {
   return "envoy.extensions.filters.http.ext_authz.v3.ExtAuthz";
@@ -98,8 +108,9 @@ XdsHttpExtAuthzFilter::GenerateServiceConfig(
 }
 
 void XdsHttpExtAuthzFilter::UpdateBlackboard(const Json& hcm_filter_config,
-                                         const Blackboard* old_blackboard,
-                                         Blackboard* new_blackboard) const {}
+                                             const Blackboard* old_blackboard,
+                                             Blackboard* new_blackboard) const {
+}
 
 bool isCacheRequriedToChange(
     const ExtAuthzFilter::Config& filter_config,
@@ -129,8 +140,8 @@ bool isCacheRequriedToChange(
 }
 
 void XdsHttpExtAuthzFilter::UpdateBlackboard(const FilterConfig& config,
-                                         const Blackboard* old_blackboard,
-                                         Blackboard* new_blackboard) const {
+                                             const Blackboard* old_blackboard,
+                                             Blackboard* new_blackboard) const {
   const auto& filter_config = DownCast<const ExtAuthzFilter::Config&>(config);
   ValidationErrors errors;
   RefCountedPtr<ExtAuthzFilter::ChannelCache> cache;
