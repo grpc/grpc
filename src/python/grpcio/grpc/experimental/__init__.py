@@ -170,8 +170,8 @@ __all__ = (
     "ExperimentalApiWarning",
     "UsageError",
     "insecure_channel_credentials",
-    "wrap_server_method_handler",
     "ssl_channel_credentials_with_custom_signer",
+    "wrap_server_method_handler",
 )
 
 if sys.version_info > (3, 6):
