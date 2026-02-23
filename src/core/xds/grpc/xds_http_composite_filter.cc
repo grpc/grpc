@@ -299,4 +299,23 @@ RefCountedPtr<const FilterConfig> XdsHttpCompositeFilter::ParseOverrideConfig(
   return config;
 }
 
+void XdsHttpCompositeFilter::UpdateBlackboard(
+    const FilterConfig& config, const Blackboard* old_blackboard,
+    Blackboard* new_blackboard) const {
+  auto& composite_config = DownCast<const CompositeFilter::Config&>(config);
+  composite_config.matcher->ForEachAction(
+      [&](const XdsMatcher::Action& action) {
+        if (action.type() != CompositeFilter::ExecuteFilterAction::Type()) {
+          return;
+        }
+        const auto& execute_filter_action =
+            DownCast<const CompositeFilter::ExecuteFilterAction&>(action);
+        for (const auto& [filter_impl, filter_config] :
+             execute_filter_action.filter_chain()) {
+          filter_impl->UpdateBlackboard(*filter_config, old_blackboard,
+                                        new_blackboard);
+        }
+      });
+}
+
 }  // namespace grpc_core

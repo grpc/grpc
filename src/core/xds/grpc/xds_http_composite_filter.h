@@ -72,6 +72,9 @@ class XdsHttpCompositeFilter final : public XdsHttpFilterImpl {
       absl::string_view instance_name,
       const XdsResourceType::DecodeContext& context,
       const XdsExtension& extension, ValidationErrors* errors) const override;
+  void UpdateBlackboard(const FilterConfig& config,
+                        const Blackboard* old_blackboard,
+                        Blackboard* new_blackboard) const override;
   bool IsSupportedOnClients() const override { return true; }
   bool IsSupportedOnServers() const override { return false; }
 };
