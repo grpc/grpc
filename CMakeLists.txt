@@ -3024,6 +3024,7 @@ add_library(grpc
   src/core/telemetry/tcp_tracer.cc
   src/core/transport/auth_context.cc
   src/core/transport/endpoint_transport_client_channel_factory.cc
+  src/core/transport/session_endpoint.cc
   src/core/tsi/alts/crypt/aes_gcm.cc
   src/core/tsi/alts/crypt/gsec.cc
   src/core/tsi/alts/frame_protector/alts_counter.cc
@@ -3834,6 +3835,7 @@ add_library(grpc_unsecure
   src/core/telemetry/tcp_tracer.cc
   src/core/transport/auth_context.cc
   src/core/transport/endpoint_transport_client_channel_factory.cc
+  src/core/transport/session_endpoint.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/tsi/fake_transport_security.cc
   src/core/tsi/local_transport_security.cc
@@ -4929,7 +4931,6 @@ endif()
 
 add_library(grpc++
   src/core/client_channel/virtual_channel.cc
-  src/core/transport/session_endpoint.cc
   src/cpp/client/call_context_registry.cc
   src/cpp/client/call_credentials.cc
   src/cpp/client/channel_cc.cc
@@ -5687,7 +5688,6 @@ endif()
 
 add_library(grpc++_unsecure
   src/core/client_channel/virtual_channel.cc
-  src/core/transport/session_endpoint.cc
   src/cpp/client/call_context_registry.cc
   src/cpp/client/call_credentials.cc
   src/cpp/client/channel_cc.cc
@@ -32099,7 +32099,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(session_endpoint_test
-  src/core/transport/session_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/transport/session_endpoint_test.cc
 )
