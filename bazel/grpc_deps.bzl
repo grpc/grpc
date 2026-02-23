@@ -46,7 +46,7 @@ def grpc_deps():
     if "zlib" not in native.existing_rules():
         http_archive(
             name = "zlib",
-            patch_strip = 1,
+            patch_args = ["-p1"],
             patches = [
                 "//bazel/zlib:add_custom_build_file.patch",
             ],
