@@ -36,9 +36,8 @@ from grpc_observability._cyobservability import PLUGIN_IDENTIFIER_SEP
 from grpc_observability._observability import OptionalLabelType
 from grpc_observability._observability import StatsData
 from grpc_observability._observability import TracingData
+from opentelemetry import context as otel_context
 from opentelemetry import trace
-from opentelemetry.trace import status as otel_status
-from opentelemetry.context.context import Context
 from opentelemetry.metrics import Counter
 from opentelemetry.metrics import Histogram
 from opentelemetry.metrics import Meter
@@ -109,7 +108,7 @@ class _OpenTelemetryPlugin:
     _plugin: OpenTelemetryPlugin
     _metric_to_recorder: Dict[MetricsName, Union[Counter, Histogram]]
     _tracer: Optional[sdk_trace.Tracer]
-    _trace_ctx: Optional[Context]
+    _trace_ctx: Optional[otel_context.Context]
     _text_map_propagator: Optional[TraceContextTextMapPropagator]
     _enabled_client_plugin_options: Optional[List[OpenTelemetryPluginOption]]
     _enabled_server_plugin_options: Optional[List[OpenTelemetryPluginOption]]
@@ -136,6 +135,13 @@ class _OpenTelemetryPlugin:
         tracer_provider = self._plugin.tracer_provider
         text_map_propagator = self._plugin.text_map_propagator
         if tracer_provider and text_map_propagator:
+            id_generator_type = type(tracer_provider.id_generator)
+            if id_generator_type is not sdk_trace.RandomIdGenerator:
+                raise ValueError(
+                    f"User-defined IdGenerators are not allowed. "
+                    f"Detected type: {id_generator_type.__name__}"
+                )
+
             self._tracer = tracer_provider.get_tracer(
                 "grpc-python", grpc.__version__
             )
@@ -212,11 +218,11 @@ class _OpenTelemetryPlugin:
             carrier={"traceparent": traceparent}, context=self._trace_ctx
         )
 
-    def _status_to_otel_status(self, status: str) -> otel_status.Status:
+    def _status_to_otel_status(self, status: str) -> trace.Status:
         if status == "OK":
-            return otel_status.Status(status_code=otel_status.StatusCode.OK)
-        return otel_status.Status(
-            status_code=otel_status.StatusCode.ERROR, description=status
+            return trace.Status(status_code=trace.StatusCode.OK)
+        return trace.Status(
+            status_code=trace.StatusCode.ERROR, description=status
         )
 
     def _record_tracing_data(self, tracing_data: TracingData) -> None:
@@ -258,16 +264,10 @@ class _OpenTelemetryPlugin:
         span.set_status(self._status_to_otel_status(tracing_data.status))
         span.end(end_time=tracing_data.end_time)
 
-    def maybe_record_tracing_data(
-        self, tracing_data: List[_observability.TracingData]
-    ) -> None:
+    def maybe_record_tracing_data(self, tracing_data: TracingData) -> None:
         """Records tracing data to SpanExporter configured for given TracerProvider."""
         if self.is_tracing_configured():
-            id_generator = self._tracer.id_generator
-            for data in tracing_data:
-                self._record_tracing_data(data)
-            # restore original `id_generator` after data collection
-            self._tracer.id_generator = id_generator
+            self._record_tracing_data(tracing_data)
 
     def get_client_exchange_labels(self) -> Dict[str, AnyStr]:
         """Get labels used for client side Metadata Exchange."""
@@ -442,8 +442,9 @@ class _OpenTelemetryExporterDelegator(_observability.Exporter):
     def export_tracing_data(
         self, tracing_data: List[_observability.TracingData]
     ) -> None:
-        for plugin in self._plugins:
-            plugin.maybe_record_tracing_data(tracing_data)
+        for data in tracing_data:
+            for plugin in self._plugins:
+                plugin.maybe_record_tracing_data(data)
 
 
 # pylint: disable=no-self-use

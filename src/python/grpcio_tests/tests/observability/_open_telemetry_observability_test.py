@@ -35,8 +35,7 @@ from opentelemetry.sdk.metrics.export import MetricExportResult
 from opentelemetry.sdk.metrics.export import MetricExporter
 from opentelemetry.sdk.metrics.export import MetricsData
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
-from opentelemetry.sdk.trace import ReadableSpan
-from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk import trace as sdk_trace
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.sdk.trace.export import SpanExporter
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
@@ -131,7 +130,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             export_interval_millis=OTEL_EXPORT_INTERVAL_S * 1000,
         )
         self._meter_provider = MeterProvider(metric_readers=[metric_reader])
-        otel_tracer_provider = TracerProvider()
+        otel_tracer_provider = sdk_trace.TracerProvider()
         self._span_exporter = InMemorySpanExporter()
         span_processor = SimpleSpanProcessor(self._span_exporter)
         otel_tracer_provider.add_span_processor(span_processor)
@@ -864,6 +863,26 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         self.assertTrue(GRPC_OTHER_LABEL_VALUE in server_method_values)
         self.assertTrue(UNARY_METHOD_NAME not in server_method_values)
 
+    def testWrongPluginConfigurationForTracing(self):
+        class UserDefinedIdGenerator(sdk_trace.IdGenerator):
+            def generate_span_id(self) -> int:
+                return 0
+
+            def generate_trace_id(self) -> int:
+                return 0
+
+        otel_tracer_provider = sdk_trace.TracerProvider(
+            id_generator=UserDefinedIdGenerator()
+        )
+        with self.assertRaisesRegex(
+            ValueError,
+            "User-defined IdGenerators are not allowed."
+        ):
+            grpc_observability.OpenTelemetryPlugin(
+                tracer_provider=otel_tracer_provider,
+                text_map_propagator=TraceContextTextMapPropagator(),
+            )
+
     def assert_eventually(
         self,
         predicate: Callable[[], bool],
@@ -917,7 +936,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
 
     def _validate_spans(
         self,
-        spans: Sequence[ReadableSpan],
+        spans: Sequence[sdk_trace.ReadableSpan],
         expected_span_size: int,
         expected_server_events: Sequence[Tuple[str, Dict[str, str]]],
         expected_attempt_events: Sequence[Tuple[str, Dict[str, str]]],
