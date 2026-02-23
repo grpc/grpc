@@ -55,7 +55,7 @@ namespace grpc_core {
 
 ExtAuthzClient::ExtAuthzClient(
     RefCountedPtr<XdsTransportFactory> transport_factory,
-    std::shared_ptr<const XdsBootstrap::XdsServerTarget> server)
+    std::unique_ptr<const XdsBootstrap::XdsServerTarget> server)
     : DualRefCounted<ExtAuthzClient>(
           GRPC_TRACE_FLAG_ENABLED(xds_client_refcount) ? "ExtAuthzClient"
                                                        : nullptr),
@@ -90,6 +90,10 @@ void ExtAuthzClient::ResetBackoff() {
   if (transport_ != nullptr) {
     transport_->ResetBackoff();
   }
+}
+
+std::string ExtAuthzClient::server_uri() const {
+  return server_->server_uri();
 }
 
 absl::StatusOr<ExtAuthzClient::ExtAuthzResponse> ExtAuthzClient::Check(

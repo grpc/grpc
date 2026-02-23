@@ -32,11 +32,13 @@ namespace grpc_core {
 class ExtAuthzClient : public DualRefCounted<ExtAuthzClient> {
  public:
   ExtAuthzClient(RefCountedPtr<XdsTransportFactory> transport_factory,
-                 std::shared_ptr<const XdsBootstrap::XdsServerTarget> server);
+                 std::unique_ptr<const XdsBootstrap::XdsServerTarget> server);
   ~ExtAuthzClient() override;
 
   // Resets connection backoff state.
   void ResetBackoff();
+
+  std::string server_uri() const;
 
   struct ExtAuthzResponse {
     struct OkResponse {
@@ -77,7 +79,7 @@ class ExtAuthzClient : public DualRefCounted<ExtAuthzClient> {
       absl::string_view encoded_response) ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
   RefCountedPtr<XdsTransportFactory> transport_factory_;
-  std::shared_ptr<const XdsBootstrap::XdsServerTarget> server_;
+  std::unique_ptr<const XdsBootstrap::XdsServerTarget> server_;
   RefCountedPtr<XdsTransportFactory::XdsTransport> transport_;
 
   Mutex mu_;
