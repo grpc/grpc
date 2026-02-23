@@ -12,16 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@bazel_skylib//lib:selects.bzl", "selects")
 load(
     "//bazel:grpc_build_system.bzl",
-    "grpc_add_well_known_proto_upb_targets",
     "grpc_cc_library",
-    "grpc_cc_proto_library",
-    "grpc_generate_one_off_internal_targets",
-    "grpc_internal_proto_library",
-    "grpc_upb_proto_library",
-    "grpc_upb_proto_reflection_library",
 )
 
 licenses(["reciprocal"])
