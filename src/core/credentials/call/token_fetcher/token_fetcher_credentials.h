@@ -42,8 +42,6 @@
 
 namespace grpc_core {
 
-class RegionalAccessBoundaryFetcher;
-
 // A base class for credentials that fetch tokens via an HTTP request.
 // Subclasses must implement FetchToken().
 class TokenFetcherCredentials : public grpc_call_credentials {
@@ -56,29 +54,15 @@ class TokenFetcherCredentials : public grpc_call_credentials {
     // Returns the token's expiration time.
     Timestamp ExpirationTime() const { return expiration_; }
 
-    // Returns the token's value.
-    const Slice& token() const { return token_; }
-
     // Adds the token to the call's client initial metadata.
     virtual void AddTokenToClientInitialMetadata(ClientMetadata& metadata);
 
-    virtual ~Token() = default;
-
+   protected:
+    // Returns the token's value.
+    const Slice& token() const { return token_; }
    private:
     Slice token_;
     Timestamp expiration_;
-  };
-
-  class TokenWithRegionalAccessBoundary : public Token {
-   public:
-    TokenWithRegionalAccessBoundary(Slice token, Timestamp expiration,
-                                    RefCountedPtr<RegionalAccessBoundaryFetcher> regional_access_boundary_fetcher);
-    ~TokenWithRegionalAccessBoundary() override;
-    void AddTokenToClientInitialMetadata(ClientMetadata& metadata) override;
-
-   private:
-    grpc_core::RefCountedPtr<RegionalAccessBoundaryFetcher>
-        regional_access_boundary_fetcher_;
   };
 
   ~TokenFetcherCredentials() override;
@@ -130,11 +114,15 @@ class TokenFetcherCredentials : public grpc_call_credentials {
     // annotations.
     void Orphan() override ABSL_NO_THREAD_SAFETY_ANALYSIS;
 
+    friend class TokenFetcherCredentials;
+
     // Returns non-OK when we're in backoff.
     absl::Status status() const;
 
     RefCountedPtr<QueuedCall> QueueCall(ClientMetadataHandle initial_metadata)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&TokenFetcherCredentials::mu_);
+
+    void CancelCall(QueuedCall* queued_call);
 
    private:
     class BackoffTimer : public InternallyRefCounted<BackoffTimer> {
@@ -176,6 +164,17 @@ class TokenFetcherCredentials : public grpc_call_credentials {
         ABSL_GUARDED_BY(&TokenFetcherCredentials::mu_);
     // Backoff state.
     BackOff backoff_ ABSL_GUARDED_BY(&TokenFetcherCredentials::mu_);
+  };
+
+  struct CancellationHandler {
+    CancellationHandler(RefCountedPtr<FetchState> fetch_state,
+                        RefCountedPtr<QueuedCall> queued_call);
+    ~CancellationHandler();
+    CancellationHandler(CancellationHandler&&) = default;
+    CancellationHandler& operator=(CancellationHandler&&) = default;
+
+    RefCountedPtr<FetchState> fetch_state;
+    RefCountedPtr<QueuedCall> queued_call;
   };
 
   int cmp_impl(const grpc_call_credentials* other) const override {

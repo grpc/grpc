@@ -827,8 +827,7 @@ TEST_F(CredentialsTest, TestComputeEngineCredsSuccess) {
   ExecCtx exec_ctx;
   std::string emd = "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_";
   const char expected_creds_debug_string[] =
-      "GoogleComputeEngineTokenFetcherCredentials{"
-      "OAuth2TokenFetcherCredentials}";
+      "GoogleComputeEngineTokenFetcherCredentials";
   grpc_call_credentials* creds =
       grpc_google_compute_engine_credentials_create(nullptr);
   // Check security level.
@@ -862,8 +861,7 @@ TEST_F(CredentialsTest, TestComputeEngineCredsWithAltsSuccess) {
   ExecCtx exec_ctx;
   std::string emd = "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_";
   const char expected_creds_debug_string[] =
-      "GoogleComputeEngineTokenFetcherCredentials{"
-      "OAuth2TokenFetcherCredentials}";
+      "GoogleComputeEngineTokenFetcherCredentials";
   grpc_google_compute_engine_credentials_options options;
   options.alts_hard_bound = true;
   grpc_call_credentials* creds =
@@ -898,8 +896,7 @@ TEST_F(CredentialsTest, TestComputeEngineCredsWithAltsSuccess) {
 TEST_F(CredentialsTest, TestComputeEngineCredsFailure) {
   ExecCtx exec_ctx;
   const char expected_creds_debug_string[] =
-      "GoogleComputeEngineTokenFetcherCredentials{"
-      "OAuth2TokenFetcherCredentials}";
+      "GoogleComputeEngineTokenFetcherCredentials";
   auto state = RequestMetadataState::NewInstance(
       absl::UnauthenticatedError("HTTP token fetch failed with status 403"),
       {});
@@ -920,8 +917,7 @@ TEST_F(CredentialsTest, TestComputeEngineCredsFailure) {
 TEST_F(CredentialsTest, TestComputeEngineCredsWithAltsFailure) {
   ExecCtx exec_ctx;
   const char expected_creds_debug_string[] =
-      "GoogleComputeEngineTokenFetcherCredentials{"
-      "OAuth2TokenFetcherCredentials}";
+      "GoogleComputeEngineTokenFetcherCredentials";
   auto state = RequestMetadataState::NewInstance(
       absl::UnauthenticatedError("HTTP token fetch failed with status 403"),
       {});

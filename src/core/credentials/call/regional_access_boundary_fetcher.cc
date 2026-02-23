@@ -16,6 +16,7 @@
 
 #include "src/core/credentials/call/regional_access_boundary_fetcher.h"
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/util/host_port.h"
@@ -25,6 +26,8 @@
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc_core {
 
@@ -45,6 +48,8 @@ namespace {
   const int kRetryableStatusCodes[] = {
     kInternalServerErrorCode, kBadGatewayErrorCode,
     kServiceUnavailableErrorCode, kGatewayTimeoutErrorCode};
+  constexpr char kComputeEngineDefaultSaEmailPath[] =
+    "/computeMetadata/v1/instance/service-accounts/default/email";
 }
 
 RegionalAccessBoundaryFetcher::RegionalAccessBoundaryFetcher(
@@ -277,6 +282,7 @@ void RegionalAccessBoundaryFetcher::Fetch(absl::string_view access_token,
     }
     // If we have a cached non-expired token, use it.
     if (cache_.has_value() && cache_->expiration > now) {
+      std::cout << "Using cached regional access boundary: " << cache_->encoded_locations << std::endl;
       initial_metadata.Append(
           kAllowedLocationsKey,
           Slice::FromCopiedString(
@@ -290,6 +296,145 @@ void RegionalAccessBoundaryFetcher::Orphaned() {
   grpc_core::MutexLock lock(&cache_mu_);
   if (pending_request_ != nullptr) {
     pending_request_.reset();
+  }
+}
+
+class EmailFetcher::EmailRequest : public InternallyRefCounted<EmailRequest> {
+ public:
+  EmailRequest(WeakRefCountedPtr<EmailFetcher> fetcher,
+               grpc_polling_entity* pollent)
+      : pollent_(*pollent), fetcher_(std::move(fetcher)) {}
+
+  ~EmailRequest() override { grpc_http_response_destroy(&response_); }
+
+  void Start() {
+    grpc_http_header header = {const_cast<char*>("Metadata-Flavor"),
+                               const_cast<char*>("Google")};
+    grpc_http_request request;
+    memset(&request, 0, sizeof(grpc_http_request));
+    request.hdr_count = 1;
+    request.hdrs = &header;
+    auto uri = URI::Create("http", /*user_info=*/"",
+                           GRPC_COMPUTE_ENGINE_METADATA_HOST,
+                           kComputeEngineDefaultSaEmailPath, /*query_params=*/{},
+                           /*fragment=*/"");
+    if (!uri.ok()) {
+      LOG_EVERY_N_SEC(ERROR, 60) << "Failed to create URI for service account email fetch: "
+                 << uri.status();
+      return;
+    }
+    GRPC_CLOSURE_INIT(&closure_, OnResponseWrapper, this,
+                      grpc_schedule_on_exec_ctx);
+    http_request_ = HttpRequest::Get(
+        std::move(*uri), /*args=*/nullptr, &pollent_, &request,
+        Timestamp::Now() + Duration::Seconds(60), &closure_, &response_,
+        RefCountedPtr<grpc_channel_credentials>(
+            grpc_insecure_credentials_create()));
+    Ref().release();  // Ref held by HTTP request callback.
+    http_request_->Start();
+  }
+
+  void Orphan() override {
+    http_request_.reset();
+    Unref();
+  }
+
+ private:
+  static void OnResponseWrapper(void* arg, grpc_error_handle error) {
+    RefCountedPtr<EmailRequest> req(static_cast<EmailRequest*>(arg));
+    // RefCountedPtr adopts the reference from Start().
+    req->OnResponse(error);
+  }
+
+  void OnResponse(grpc_error_handle error) {
+    auto fetcher = fetcher_->RefIfNonZero();
+    if (fetcher == nullptr) return;
+    if (error.ok() && response_.status == 200) {
+      fetcher->OnEmailFetchComplete(
+          absl::string_view(response_.body, response_.body_length));
+    } else {
+      if (!error.ok()) {
+         fetcher->OnEmailFetchError(error);
+      } else {
+         fetcher->OnEmailFetchError(GRPC_ERROR_CREATE(
+             absl::StrCat("Failed to fetch service account email: HTTP ",
+                          response_.status)));
+      }
+    }
+  }
+
+  grpc_http_response response_;
+  OrphanablePtr<HttpRequest> http_request_;
+  grpc_polling_entity pollent_;
+  WeakRefCountedPtr<EmailFetcher> fetcher_;
+  grpc_closure closure_;
+};
+
+EmailFetcher::EmailFetcher(
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
+    : event_engine_(event_engine == nullptr
+                        ? grpc_event_engine::experimental::GetDefaultEventEngine()
+                        : std::move(event_engine)),
+      backoff_(BackOff::Options()
+                   .set_initial_backoff(Duration::Seconds(1))
+                   .set_multiplier(1.6)
+                   .set_jitter(0.2)
+                   .set_max_backoff(Duration::Seconds(60))),
+      next_fetch_earliest_time_(Timestamp::InfPast()) {}
+
+void EmailFetcher::StartEmailFetch(grpc_polling_entity* pollent) {
+  MutexLock lock(&mu_);
+  if (Timestamp::Now() < next_fetch_earliest_time_) {
+    return;
+  }
+  if (!std::holds_alternative<std::monostate>(state_)) {
+    return;  // Already started or completed
+  }
+  auto request = MakeOrphanable<EmailRequest>(WeakRef(), pollent);
+  // We keep a temporary ref to start it, but transfer ownership to state_ first.
+  auto* request_ptr = request.get();
+  state_ = std::move(request);
+  request_ptr->Start();
+}
+
+void EmailFetcher::Fetch(absl::string_view token,
+                         ClientMetadata& initial_metadata) {
+  MutexLock lock(&mu_);
+  if (auto* rab_fetcher =
+          std::get_if<RefCountedPtr<RegionalAccessBoundaryFetcher>>(&state_)) {
+    (*rab_fetcher)->Fetch(token, initial_metadata);
+  }
+}
+
+EmailFetcher::~EmailFetcher() = default;
+
+void EmailFetcher::Orphaned() {
+  MutexLock lock(&mu_);
+  state_ = std::monostate();
+}
+
+void EmailFetcher::OnEmailFetchComplete(absl::string_view email) {
+  MutexLock lock(&mu_);
+  if (std::holds_alternative<OrphanablePtr<EmailRequest>>(state_)) {
+      std::string rab_url = absl::StrFormat(
+          "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/"
+          "%s/allowedLocations",
+          email);
+      state_ = MakeRefCounted<RegionalAccessBoundaryFetcher>(
+          rab_url, event_engine_);
+      backoff_.Reset();
+  }
+}
+
+void EmailFetcher::OnEmailFetchError(grpc_error_handle error) {
+  MutexLock lock(&mu_);
+  if (std::holds_alternative<OrphanablePtr<EmailRequest>>(state_)) {
+    LOG_EVERY_N_SEC(ERROR, 60)
+        << "Regional Access Boundary fetch skipped due to service account email "
+           "fetch failure: "
+        << StatusToString(error);
+    state_ = std::monostate();  // Reset to allow retry on next token fetch.
+    next_fetch_earliest_time_ = Timestamp::Now() + backoff_.NextAttemptDelay();
   }
 }
 }  // namespace grpc_core

@@ -74,6 +74,32 @@ namespace grpc_core {
 // ExternalAccountCredentials::NoOpFetchBody
 //
 
+namespace {
+
+class TokenWithRegionalAccessBoundary
+    : public TokenFetcherCredentials::Token {
+ public:
+  TokenWithRegionalAccessBoundary(
+      grpc_core::Slice token, grpc_core::Timestamp expiration,
+      grpc_core::RefCountedPtr<RegionalAccessBoundaryFetcher>
+          regional_access_boundary_fetcher)
+      : Token(std::move(token), expiration),
+        regional_access_boundary_fetcher_(
+            std::move(regional_access_boundary_fetcher)) {}
+
+  void AddTokenToClientInitialMetadata(ClientMetadata& metadata) override {
+    Token::AddTokenToClientInitialMetadata(metadata);
+    regional_access_boundary_fetcher_->Fetch(token().as_string_view(),
+                                             metadata);
+  }
+
+ private:
+  grpc_core::RefCountedPtr<RegionalAccessBoundaryFetcher>
+      regional_access_boundary_fetcher_;
+};
+
+}  // namespace
+
 ExternalAccountCredentials::NoOpFetchBody::NoOpFetchBody(
     grpc_event_engine::experimental::EventEngine& event_engine,
     absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done,
@@ -466,7 +492,7 @@ std::optional<WorkloadIdentityPoolFields> MatchWorkloadIdentityPoolAudience(absl
   auto project = audience.substr(0, location_pos);
   if (project.empty()) return std::nullopt;
   audience.remove_prefix(location_pos +
-                         sizeof("/locations/global/workloadIdentityPools/"));
+                         sizeof("/locations/global/workloadIdentityPools/") - 1);
   // Match "<pool-id>/providers/"
   auto provider_pos = audience.find("/providers/");
   if (provider_pos == absl::string_view::npos) return std::nullopt;

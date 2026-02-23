@@ -110,6 +110,36 @@ class RegionalAccessBoundaryFetcher::Request final
   grpc_closure closure_;
 };
 
+class EmailFetcher : public DualRefCounted<EmailFetcher> {
+ public:
+  explicit EmailFetcher(
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine = nullptr);
+
+  void StartEmailFetch(grpc_polling_entity* pollent);
+
+  // Wrapper for RAB fetcher.
+  void Fetch(absl::string_view token, ClientMetadata& metadata);
+
+  ~EmailFetcher() override;
+
+  void Orphaned() override;
+
+ private:
+  class EmailRequest;
+
+  void OnEmailFetchComplete(absl::string_view email);
+  void OnEmailFetchError(grpc_error_handle error);
+
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+  grpc_core::Mutex mu_;
+
+  // Either a pending email request or an RAB fetcher.
+  std::variant<std::monostate, OrphanablePtr<EmailRequest>, RefCountedPtr<RegionalAccessBoundaryFetcher>> state_
+      ABSL_GUARDED_BY(&mu_);
+  BackOff backoff_ ABSL_GUARDED_BY(&mu_);
+  Timestamp next_fetch_earliest_time_ ABSL_GUARDED_BY(&mu_);
+};
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_CREDENTIALS_CALL_REGIONAL_ACCESS_BOUNDARY_FETCHER_H

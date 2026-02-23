@@ -527,6 +527,147 @@ TEST_F(RegionalAccessBoundaryFetcherTest, CacheSoftExpirationTriggersRefresh) {
   EXPECT_EQ(cached_encoded_locations(), "us-west1");
 }
 
+
+class EmailFetcherTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    grpc_init();
+    email_fetcher_ = MakeRefCounted<EmailFetcher>(
+        grpc_event_engine::experimental::GetDefaultEventEngine());
+    arena_ = SimpleArenaAllocator()->MakeArena();
+    metadata_ = arena_->MakePooled<ClientMetadata>();
+    HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+  }
+
+  void TearDown() override {
+    HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+    email_fetcher_.reset(); // Ensure cleanup before grpc_shutdown
+    grpc_shutdown();
+  }
+
+  RefCountedPtr<EmailFetcher> email_fetcher_;
+  RefCountedPtr<Arena> arena_;
+  ClientMetadataHandle metadata_;
+};
+
+int httpcli_get_email_success(const grpc_http_request* /*request*/,
+                              const URI& uri, Timestamp /*deadline*/,
+                              grpc_closure* on_done,
+                              grpc_http_response* response) {
+  if (uri.path() == "/computeMetadata/v1/instance/service-accounts/default/email") {
+    *response = http_response(200, "foo@bar.com");
+  } else {
+    // RAB fetch
+    *response = http_response(200, "{\"encodedLocations\": \"us-west1\", \"locations\": [\"us-west1\"]}");
+  }
+  ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
+  return 1;
+}
+
+TEST_F(EmailFetcherTest, FetchesEmailAndThenRab) {
+  ExecCtx exec_ctx;
+  HttpRequest::SetOverride(httpcli_get_email_success, nullptr, nullptr);
+  
+  // Start email fetch
+  grpc_polling_entity pollent = grpc_polling_entity_create_from_pollset(nullptr);
+  email_fetcher_->StartEmailFetch(&pollent);
+  
+  // Fetch should trigger RAB fetch if email fetch succeeded
+  // We need to wait for email fetch to complete.
+  // Since we use ExecCtx::Run in mock, flushing ExecCtx should handle it.
+  ExecCtx::Get()->Flush();
+
+  // Now call Fetch. It should allow RAB fetch to proceed.
+  metadata_->Append("authorization", Slice::FromStaticString("Bearer token"), [](absl::string_view, const Slice&) { abort(); });
+  metadata_->Append(":authority", Slice::FromStaticString("foo.googleapis.com"), [](absl::string_view, const Slice&) { abort(); });
+  email_fetcher_->Fetch("token", *metadata_);
+  
+  // RAB fetch should happen (async).
+  ExecCtx::Get()->Flush();
+  
+  // First fetch won't have metadata (cache miss).
+  std::string buffer;
+  std::optional<absl::string_view> value = metadata_->GetStringValue("x-allowed-locations", &buffer);
+  EXPECT_FALSE(value.has_value());
+  
+  // Verify cache is populated by fetching again.
+  metadata_ = arena_->MakePooled<ClientMetadata>();
+  metadata_->Append("authorization", Slice::FromStaticString("Bearer token"), [](absl::string_view, const Slice&) { abort(); });
+  metadata_->Append(":authority", Slice::FromStaticString("foo.googleapis.com"), [](absl::string_view, const Slice&) { abort(); });
+  email_fetcher_->Fetch("token", *metadata_);
+
+  std::string buffer2;
+  std::optional<absl::string_view> value2 = metadata_->GetStringValue("x-allowed-locations", &buffer2);
+  EXPECT_TRUE(value2.has_value());
+  if (value2.has_value()) {
+    EXPECT_EQ(*value2, "us-west1");
+  }
+}
+
+int httpcli_get_email_failure(const grpc_http_request* /*request*/,
+                              const URI& /*uri*/, Timestamp /*deadline*/,
+                              grpc_closure* on_done,
+                              grpc_http_response* response) {
+  *response = http_response(404, "Not Found");
+  ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
+  return 1;
+}
+
+TEST_F(EmailFetcherTest, EmailFetchFailureSkipsRab) {
+  ExecCtx exec_ctx;
+  HttpRequest::SetOverride(httpcli_get_email_failure, nullptr, nullptr);
+  
+  grpc_polling_entity pollent = grpc_polling_entity_create_from_pollset(nullptr);
+  email_fetcher_->StartEmailFetch(&pollent);
+  ExecCtx::Get()->Flush();
+
+  metadata_->Append("authorization", Slice::FromStaticString("Bearer token"), [](absl::string_view, const Slice&) { abort(); });
+  email_fetcher_->Fetch("token", *metadata_);
+  
+  ExecCtx::Get()->Flush();
+  
+  std::string buffer;
+  std::optional<absl::string_view> value = metadata_->GetStringValue("x-allowed-locations", &buffer);
+  EXPECT_FALSE(value.has_value());
+}
+
+
+int httpcli_get_email_failure_counted(const grpc_http_request* /*request*/,
+                              const URI& /*uri*/, Timestamp /*deadline*/,
+                              grpc_closure* on_done,
+                              grpc_http_response* response) {
+  g_mock_get_count++;
+  *response = http_response(404, "Not Found");
+  ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
+  return 1;
+}
+
+TEST_F(EmailFetcherTest, EmailFetchBackoffRespected) {
+  ExecCtx exec_ctx;
+  g_mock_get_count = 0;
+  HttpRequest::SetOverride(httpcli_get_email_failure_counted, nullptr, nullptr);
+  
+  grpc_polling_entity pollent = grpc_polling_entity_create_from_pollset(nullptr);
+  
+  // 1. First failure triggers backoff.
+  email_fetcher_->StartEmailFetch(&pollent);
+  ExecCtx::Get()->Flush();
+  EXPECT_EQ(g_mock_get_count, 1);
+
+  // 2. Immediate second attempt should be skipped due to backoff.
+  email_fetcher_->StartEmailFetch(&pollent);
+  ExecCtx::Get()->Flush();
+  EXPECT_EQ(g_mock_get_count, 1);
+
+  // 3. Advance time past initial backoff (1s with jitters, say 2s to be safe).
+  exec_ctx.TestOnlySetNow(grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(2));
+  
+  // 4. Retry should proceed.
+  email_fetcher_->StartEmailFetch(&pollent);
+  ExecCtx::Get()->Flush();
+  EXPECT_EQ(g_mock_get_count, 2);
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
