@@ -36,7 +36,12 @@ class SecureIntraopTest(_intraop_test_case.IntraopTestCase, unittest.TestCase):
         port = self.server.add_secure_port(
             "[::]:0",
             grpc.ssl_server_credentials(
-                [(resources.server_private_key(), resources.certificate_chain())]
+                [
+                    (
+                        resources.server_private_key(),
+                        resources.certificate_chain(),
+                    )
+                ]
             ),
         )
         self.server.start()
@@ -70,7 +75,12 @@ class SecureInteropWithSyncPrivateKeyOffloadingTest(
         port = self.server.add_secure_port(
             "[::]:0",
             grpc.ssl_server_credentials(
-                [(resources.server_private_key(), resources.certificate_chain())],
+                [
+                    (
+                        resources.server_private_key(),
+                        resources.certificate_chain(),
+                    )
+                ],
                 resources.test_root_certificates(),
                 require_client_auth=True,
             ),
@@ -110,7 +120,12 @@ class SecureInteropWithAsyncPrivateKeyOffloadingTest(
         port = self.server.add_secure_port(
             "[::]:0",
             grpc.ssl_server_credentials(
-                [(resources.server_private_key(), resources.certificate_chain())],
+                [
+                    (
+                        resources.server_private_key(),
+                        resources.certificate_chain(),
+                    )
+                ],
                 resources.test_root_certificates(),
                 require_client_auth=True,
             ),

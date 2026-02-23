@@ -26,6 +26,7 @@ from tests.interop import resources
 from tests.interop import service
 from tests.interop import methods
 from tests.unit import test_common
+
 # from grpc._cython import cygrpc as _cygrpc
 import time
 import faulthandler
@@ -37,10 +38,12 @@ faulthandler.enable()
 
 _SERVER_HOST_OVERRIDE = "foo.test.google.fr"
 
+
 class SecurityTest(unittest.TestCase):
     """setUp and tearDown start and stop a test server with valid server credentials.
     This server can be called by each `def test_*` function in this class.
     Each test tests a variety of different security configurations."""
+
     def setUp(self):
         self.server = test_common.test_server()
         test_pb2_grpc.add_TestServiceServicer_to_server(
@@ -50,7 +53,12 @@ class SecurityTest(unittest.TestCase):
         self.port = self.server.add_secure_port(
             "[::]:0",
             grpc.ssl_server_credentials(
-                [(resources.server_private_key(), resources.certificate_chain())],
+                [
+                    (
+                        resources.server_private_key(),
+                        resources.certificate_chain(),
+                    )
+                ],
                 resources.test_root_certificates(),
                 require_client_auth=True,
             ),
@@ -234,10 +242,12 @@ class SecurityTest(unittest.TestCase):
         def create_channel():
             signer = TrackedSigner()
             ref = weakref.ref(signer)
-            creds = grpc.experimental.ssl_channel_credentials_with_custom_signer(
-                private_key_sign_fn=signer,
-                root_certificates=resources.test_root_certificates(),
-                certificate_chain=resources.client_certificate_chain(),
+            creds = (
+                grpc.experimental.ssl_channel_credentials_with_custom_signer(
+                    private_key_sign_fn=signer,
+                    root_certificates=resources.test_root_certificates(),
+                    certificate_chain=resources.client_certificate_chain(),
+                )
             )
 
             secure_channel = grpc.secure_channel(
@@ -247,7 +257,10 @@ class SecurityTest(unittest.TestCase):
 
         channel, signer_ref = create_channel()
 
-        self.assertIsNotNone(signer_ref(), "Signer was garbage collected prematurely!")
+        self.assertIsNotNone(
+            signer_ref(), "Signer was garbage collected prematurely!"
+        )
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -112,6 +112,7 @@ def wrap_server_method_handler(wrapper, handler):
         return handler._replace(stream_unary=wrapper(handler.stream_unary))
     return handler._replace(stream_stream=wrapper(handler.stream_stream))
 
+
 # A Callable to return in the async case
 PrivateKeySignCancel = Callable[[], None]
 PrivateKeySignatureAlgorithm = _cygrpc.SignatureAlgorithm

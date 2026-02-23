@@ -61,7 +61,10 @@ def check_key_cert_match(key_bytes, cert_bytes):
         cert = x509.load_pem_x509_certificate(cert_bytes, default_backend())
         public_key = cert.public_key()
 
-        return private_key.public_key().public_numbers() == public_key.public_numbers()
+        return (
+            private_key.public_key().public_numbers()
+            == public_key.public_numbers()
+        )
     except Exception as e:
         return False
 
@@ -70,7 +73,9 @@ def sign_private_key(data_to_sign, private_key_bytes, signature_algorithm):
     # Determine the key type and apply appropriate padding and algorithm.
     # This example assumes an RSA key. Different logic is needed for other key types (e.g., EC).
     try:
-        success = check_key_cert_match(client_private_key(), client_certificate_chain())
+        success = check_key_cert_match(
+            client_private_key(), client_certificate_chain()
+        )
         if not success:
             return ValueError("provided key and certificate do not match.")
         private_key = serialization.load_pem_private_key(
@@ -116,7 +121,9 @@ def sync_client_private_key_signer(
     Takes in data_to_sign and signs it using the test private key with a sync return
     """
     private_key_bytes = client_private_key()
-    signature = sign_private_key(data_to_sign, private_key_bytes, signature_algorithm)
+    signature = sign_private_key(
+        data_to_sign, private_key_bytes, signature_algorithm
+    )
     return signature
 
 
@@ -128,11 +135,15 @@ def bad_async_signer_worker(data_to_sign, signature_algorithm, on_complete):
     """
     # Use the server private key and expect failure
     private_key_bytes = server_private_key()
-    signature = sign_private_key(data_to_sign, private_key_bytes, signature_algorithm)
+    signature = sign_private_key(
+        data_to_sign, private_key_bytes, signature_algorithm
+    )
     on_complete(signature)
 
 
-def bad_async_client_private_key_signer(data_to_sign, signature_algorithm, on_complete):
+def bad_async_client_private_key_signer(
+    data_to_sign, signature_algorithm, on_complete
+):
     """
     Of type CustomPrivateKeySign - Callable[[bytes, SignatureAlgorithm], bytes]
     Takes in data_to_sign and signs it using the wrong private key, resulting in handshake failure
@@ -149,13 +160,19 @@ def async_signer_worker(data_to_sign, signature_algorithm, on_complete):
     Meant to be used as an async function for a thread, for example
     """
     private_key_bytes = client_private_key()
-    signature = sign_private_key(data_to_sign, private_key_bytes, signature_algorithm)
+    signature = sign_private_key(
+        data_to_sign, private_key_bytes, signature_algorithm
+    )
     on_complete(signature)
+
 
 def no_op_cancel():
     pass
 
-def async_client_private_key_signer(data_to_sign, signature_algorithm, on_complete):
+
+def async_client_private_key_signer(
+    data_to_sign, signature_algorithm, on_complete
+):
     """
     Of type CustomPrivateKeySign - Callable[[bytes, SignatureAlgorithm], bytes]
     Takes in data_to_sign and signs it using the test private key
@@ -168,15 +185,20 @@ def async_client_private_key_signer(data_to_sign, signature_algorithm, on_comple
     return no_op_cancel
 
 
-def sync_bad_client_private_key_signer(data_to_sign, signature_algorithm, on_complete):
+def sync_bad_client_private_key_signer(
+    data_to_sign, signature_algorithm, on_complete
+):
     """
     Of type CustomPrivateKeySign - Callable[[bytes, SignatureAlgorithm], bytes]
     Takes in data_to_sign and signs it using the wrong private key and returns synchronously
     """
     # use the server's private key
     private_key_bytes = server_private_key()
-    signature = sign_private_key(data_to_sign, private_key_bytes, signature_algorithm)
+    signature = sign_private_key(
+        data_to_sign, private_key_bytes, signature_algorithm
+    )
     return signature
+
 
 class CancelCallable:
     def __init__(self):
