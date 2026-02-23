@@ -63,6 +63,7 @@ std::shared_ptr<PrivateKeySigner> BuildPrivateKeySigner(
     PyObject* destroy_event) {
   PyGILState_STATE state = PyGILState_Ensure();
   Py_INCREF(static_cast<PyObject*>(py_user_sign_fn));
+  Py_INCREF(static_cast<PyObject*>(destroy_event));
   PyGILState_Release(state);
   return std::make_shared<PrivateKeySignerPyWrapper>(
       sign_py_wrapper, py_user_sign_fn, destroy_event);
@@ -79,6 +80,7 @@ PrivateKeySignerPyWrapper::~PrivateKeySignerPyWrapper() {
   Py_DECREF(static_cast<PyObject*>(py_user_sign_fn));
   // Python will stay alive until this event is set
   PyObject_CallMethod(destroy_event_, "set", "()");
+  Py_DECREF(static_cast<PyObject*>(destroy_event_));
   PyGILState_Release(state);
 }
 
