@@ -76,6 +76,8 @@ template <class RequestType, class ResponseType>
 class CallbackServerStreamingHandler;
 template <class RequestType, class ResponseType>
 class CallbackBidiHandler;
+template <class RequestType>
+class CallbackSessionHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class ClientStreamingHandler;
 template <class ResponseType>
@@ -403,6 +405,8 @@ class ServerContextBase {
   friend class grpc::internal::CallbackServerStreamingHandler;
   template <class RequestType, class ResponseType>
   friend class grpc::internal::CallbackBidiHandler;
+  template <class RequestType>
+  friend class grpc::internal::CallbackSessionHandler;
   template <grpc::StatusCode code>
   friend class grpc::internal::ErrorMethodHandler;
   template <class Base>

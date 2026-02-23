@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_grpc_library", "grpc_cc_library", "grpc_cc_proto_library", "grpc_cc_test", "grpc_internal_proto_library", "grpc_package")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 licenses(["notice"])
@@ -1510,5 +1510,58 @@ grpc_cc_test(
         "//src/core:write_cycle",
         "//src/core:write_size_policy",
         "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_internal_proto_library(
+    name = "tunnel_proto",
+    srcs = ["tunnel.proto"],
+    has_services = True,
+)
+
+grpc_cc_proto_library(
+    name = "tunnel_cc_proto",
+    deps = ["tunnel_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "tunnel_cc_grpc",
+    srcs = ["tunnel_proto"],
+    deps = ["tunnel_cc_proto"],
+)
+
+grpc_cc_test(
+    name = "http2_tunnel_test",
+    timeout = "short",
+    srcs = ["http2_tunnel_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/log:log",
+        "absl/log:check",
+        "absl/status",
+        "absl/strings",
+        "absl/synchronization",
+    ],
+    deps = [
+        ":tunnel_cc_grpc",
+        ":tunnel_cc_proto",
+        "//:channel_arg_names",
+        "//:debug_location",
+        "//:exec_ctx",
+        "//:generic_stub_session_hdrs",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc++_public_hdrs",
+        "//:grpc_transport_chttp2",
+        "//:iomgr",
+        "//:ref_counted_ptr",
+        "//:server",
+        "//src/core:channel_args",
+        "//src/core:resource_quota",
+        "//src/core:slice",
+        "//test/core/test_util:grpc_test_util",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
     ],
 )

@@ -11814,4 +11814,68 @@ WELL_KNOWN_PROTO_TARGETS = [
 
 grpc_add_well_known_proto_upb_targets(targets = WELL_KNOWN_PROTO_TARGETS)
 
+grpc_cc_library(
+    name = "session_endpoint",
+    srcs = ["transport/session_endpoint.cc"],
+    hdrs = ["transport/session_endpoint.h"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/strings:string_view",
+    ],
+    deps = [
+        "arena",
+        "channel_args",
+        "closure",
+        "error",
+        "grpc_check",
+        "map",
+        "message",
+        "slice_buffer",
+        "//:exec_ctx",
+        "//:gpr_platform",
+        "//:grpc_base",
+        "//:grpc_public_hdrs",
+        "//:iomgr",
+    ],
+)
+
+grpc_cc_library(
+    name = "virtual_channel",
+    srcs = [
+        "client_channel/virtual_channel.cc",
+    ],
+    hdrs = [
+        "client_channel/virtual_channel.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    deps = [
+        "1999",
+        "activity",
+        "call_spine",
+        "channel_args",
+        "channel_stack_type",
+        "direct_channel",
+        "grpc_promise_endpoint",
+        "http2_client_transport",
+        "map",
+        "message",
+        "slice_buffer",
+        ":default_event_engine",
+        ":session_endpoint",
+        "//:channel",
+        "//:channel_arg_names",
+        "//:channel_create",
+        "//:config",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_transport_chttp2",
+        "//:promise",
+        "//:ref_counted_ptr",
+    ],
+)
+
 grpc_generate_one_off_internal_targets()
