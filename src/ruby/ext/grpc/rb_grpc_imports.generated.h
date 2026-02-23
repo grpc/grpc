@@ -23,6 +23,8 @@
 
 #ifdef GPR_WINDOWS
 
+#include <windows.h>
+
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
 #include <grpc/credentials.h>
@@ -39,7 +41,6 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
 #include <grpc/support/time.h>
-#include <windows.h>
 
 typedef grpc_byte_buffer*(*grpc_raw_byte_buffer_create_type)(grpc_slice* slices, size_t nslices);
 extern grpc_raw_byte_buffer_create_type grpc_raw_byte_buffer_create_import;
@@ -583,8 +584,7 @@ extern grpc_authorization_policy_provider_file_watcher_create_type grpc_authoriz
 #define grpc_authorization_policy_provider_file_watcher_create grpc_authorization_policy_provider_file_watcher_create_import
 typedef void(*grpc_authorization_policy_provider_release_type)(grpc_authorization_policy_provider* provider);
 extern grpc_authorization_policy_provider_release_type grpc_authorization_policy_provider_release_import;
-#define grpc_authorization_policy_provider_release \
-  grpc_authorization_policy_provider_release_import
+#define grpc_authorization_policy_provider_release grpc_authorization_policy_provider_release_import
 typedef grpc_slice(*grpc_slice_ref_type)(grpc_slice s);
 extern grpc_slice_ref_type grpc_slice_ref_import;
 #define grpc_slice_ref grpc_slice_ref_import
