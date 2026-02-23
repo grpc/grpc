@@ -34,6 +34,8 @@ class ServerContext;
 class ServerInterface;
 
 namespace internal {
+template <class RequestType>
+class CallbackSessionHandler;
 class Call;
 class ServerAsyncStreamingInterface {
  public:
@@ -216,6 +218,8 @@ class Service {
         internal::RpcServiceMethod::ApiType::RAW_CALL_BACK);
   }
 
+  void SetVirtualService() { is_virtual_service_ = true; }
+
   internal::MethodHandler* GetHandler(int index) {
     size_t idx = static_cast<size_t>(index);
     return methods_[idx]->handler();
@@ -224,7 +228,10 @@ class Service {
  private:
   friend class Server;
   friend class ServerInterface;
+  template <class RequestType>
+  friend class internal::CallbackSessionHandler;
   ServerInterface* server_;
+  bool is_virtual_service_ = false;
   std::vector<std::unique_ptr<internal::RpcServiceMethod>> methods_;
 };
 
