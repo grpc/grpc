@@ -35,6 +35,35 @@ typedef HeaderValueOption::AppendAction AppendAction;
 // ExtAuthz
 //
 
+bool ExtAuthz::operator==(const ExtAuthz& other) const {
+  if ((xds_grpc_service->server_target == nullptr) !=
+      (other.xds_grpc_service->server_target == nullptr)) {
+    return false;
+  }
+  if (xds_grpc_service->server_target != nullptr &&
+      !xds_grpc_service->server_target->Equals(
+          *other.xds_grpc_service->server_target)) {
+    return false;
+  }
+  if (xds_grpc_service->timeout != other.xds_grpc_service->timeout) {
+    return false;
+  }
+  if (xds_grpc_service->initial_metadata !=
+      other.xds_grpc_service->initial_metadata) {
+    return false;
+  }
+  return server_uri == other.server_uri &&
+         filter_enabled == other.filter_enabled &&
+         deny_at_disable == other.deny_at_disable &&
+         failure_mode_allow == other.failure_mode_allow &&
+         failure_mode_allow_header_add == other.failure_mode_allow_header_add &&
+         status_on_error == other.status_on_error &&
+         allowed_headers == other.allowed_headers &&
+         disallowed_headers == other.disallowed_headers &&
+         decoder_header_mutation_rules == other.decoder_header_mutation_rules &&
+         include_peer_certificate == other.include_peer_certificate;
+}
+
 bool ExtAuthz::isHeaderAllowed(std::string key) const {
   for (auto& disallow : disallowed_headers) {
     if (disallow.Match(key)) {
@@ -83,9 +112,8 @@ ExtAuthz::CheckResult ExtAuthz::CheckRequestAllowed() const {
 //
 
 bool ExtAuthzFilter::Config::Equals(const FilterConfig& other) const {
-  //   const auto& o = DownCast<const Config&>(other);
-  // TODO(rishesh): fix this
-  return true;
+  const auto& o = static_cast<const Config&>(other);
+  return instance_name == o.instance_name && *ext_authz == *o.ext_authz;
 }
 
 std::string ExtAuthzFilter::Config::ToString() const {
@@ -170,13 +198,14 @@ ServerMetadataHandle ExtAuthzFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, ExtAuthzFilter* filter) {
   // check if the rpc is allowed based on whether ext_authz_filter is enabled or
   // not
-  switch (filter->filter_config_->ext_authz.CheckRequestAllowed()) {
+  switch (filter->filter_config_->ext_authz->CheckRequestAllowed()) {
     case ExtAuthz::CheckResult::kSendRequestToExtAuthzService: {
       // continue with ext authz filter
     } break;
     case ExtAuthz::CheckResult::kDeny: {
-      return MalformedRequest("ExtAuthz filter is not enabled",
-                              filter->filter_config_->ext_authz.status_on_error);
+      return MalformedRequest(
+          "ExtAuthz filter is not enabled",
+          filter->filter_config_->ext_authz->status_on_error);
     } break;
     case ExtAuthz::CheckResult::kPassThrough: {
       return nullptr;
@@ -186,7 +215,7 @@ ServerMetadataHandle ExtAuthzFilter::Call::OnClientInitialMetadata(
   md.Log([&](absl::string_view key, absl::string_view value) {
     //  if the header is matched by the disallowed_headers config field, it will
     //  not be added to this map
-    if (filter->filter_config_->ext_authz.isHeaderAllowed(std::string(key))) {
+    if (filter->filter_config_->ext_authz->isHeaderAllowed(std::string(key))) {
       metadata_list.emplace_back(std::string(key), std::string(value));
     }
   });
@@ -199,8 +228,8 @@ ServerMetadataHandle ExtAuthzFilter::Call::OnClientInitialMetadata(
   // params.headers is vector of pairs of strings.
   params.path = std::move(path_str);
   params.is_client_call = true;
-  auto key = filter->filter_config_->ext_authz.server_uri;
-  auto channel = filter->channel_cache_->Get(key);
+  auto key = filter->filter_config_->ext_authz->server_uri;
+  auto channel = filter->channel_cache_->Get();
   if (channel == nullptr) {
     // If we can't get a channel, we probably can't auth.
     return MalformedRequest("ExtAuthz channel not found");
@@ -208,12 +237,12 @@ ServerMetadataHandle ExtAuthzFilter::Call::OnClientInitialMetadata(
   auto result = channel->Check(params);
   if (!result.ok()) {
     // Check failure_mode_allow
-    if (!filter->filter_config_->ext_authz.failure_mode_allow) {
+    if (!filter->filter_config_->ext_authz->failure_mode_allow) {
       return MalformedRequest(
           result.status().message(),
-          filter->filter_config_->ext_authz.status_on_error);
+          filter->filter_config_->ext_authz->status_on_error);
     } else if (filter->filter_config_->ext_authz
-                   .failure_mode_allow_header_add) {
+                   ->failure_mode_allow_header_add) {
       md.Set(XEnvoyAuthFailureModeAllowedMetadata(),
              Slice::FromStaticString("true"));
     }
@@ -227,7 +256,7 @@ ServerMetadataHandle ExtAuthzFilter::Call::OnClientInitialMetadata(
                             response.denied_response.status);
   }
   auto& decoder_header_mutation_rules =
-      filter->filter_config_->ext_authz.decoder_header_mutation_rules.value();
+      filter->filter_config_->ext_authz->decoder_header_mutation_rules.value();
   // header_to_remove
   for (auto& header : response.ok_response.headers_to_remove) {
     auto allowed =
@@ -236,7 +265,7 @@ ServerMetadataHandle ExtAuthzFilter::Call::OnClientInitialMetadata(
         decoder_header_mutation_rules.disallow_is_error) {
       return MalformedRequest(
           "ExtAuthz header mutation is not allowed",
-          filter->filter_config_->ext_authz.status_on_error);
+          filter->filter_config_->ext_authz->status_on_error);
     } else if (allowed) {
       md.Remove(absl::string_view(header));
     }
@@ -253,7 +282,7 @@ ServerMetadataHandle ExtAuthzFilter::Call::OnClientInitialMetadata(
             decoder_header_mutation_rules.disallow_is_error)) {
       return MalformedRequest(
           "ExtAuthz header mutation is not allowed",
-          filter->filter_config_->ext_authz.status_on_error);
+          filter->filter_config_->ext_authz->status_on_error);
     }
   }
   return nullptr;
@@ -265,7 +294,7 @@ absl::Status ExtAuthzFilter::Call::OnServerInitialMetadata(
     return absl::OkStatus();
   }
   auto& decoder_header_mutation_rules =
-      filter->filter_config_->ext_authz.decoder_header_mutation_rules.value();
+      filter->filter_config_->ext_authz->decoder_header_mutation_rules.value();
   for (auto& header : filter->response_headers_to_add.value()) {
     auto allowed = decoder_header_mutation_rules.IsHeaderMutationAllowed(
         header.header.key);
@@ -273,9 +302,10 @@ absl::Status ExtAuthzFilter::Call::OnServerInitialMetadata(
             header, md, allowed,
             decoder_header_mutation_rules.disallow_is_error)) {
       filter->response_headers_to_add.reset();
-      return absl::Status(static_cast<absl::StatusCode>(
-                              filter->filter_config_->ext_authz.status_on_error),
-                          "ExtAuthz header mutation is not allowed");
+      return absl::Status(
+          static_cast<absl::StatusCode>(
+              filter->filter_config_->ext_authz->status_on_error),
+          "ExtAuthz header mutation is not allowed");
     }
   }
   filter->response_headers_to_add.reset();
@@ -288,7 +318,7 @@ absl::Status ExtAuthzFilter::Call::OnServerTrailingMetadata(
     return absl::OkStatus();
   }
   auto& decoder_header_mutation_rules =
-      filter->filter_config_->ext_authz.decoder_header_mutation_rules.value();
+      filter->filter_config_->ext_authz->decoder_header_mutation_rules.value();
   for (auto& header : filter->response_trailer_to_add.value()) {
     auto allowed = decoder_header_mutation_rules.IsHeaderMutationAllowed(
         header.header.key);
@@ -296,9 +326,10 @@ absl::Status ExtAuthzFilter::Call::OnServerTrailingMetadata(
             header, md, allowed,
             decoder_header_mutation_rules.disallow_is_error)) {
       filter->response_trailer_to_add.reset();
-      return absl::Status(static_cast<absl::StatusCode>(
-                              filter->filter_config_->ext_authz.status_on_error),
-                          "ExtAuthz header mutation is not allowed");
+      return absl::Status(
+          static_cast<absl::StatusCode>(
+              filter->filter_config_->ext_authz->status_on_error),
+          "ExtAuthz header mutation is not allowed");
     }
   }
   filter->response_trailer_to_add.reset();
@@ -314,32 +345,14 @@ UniqueTypeName ExtAuthzFilter::ChannelCache::Type() {
   return factory.Create();
 }
 
-RefCountedPtr<ExtAuthzClient> ExtAuthzFilter::ChannelCache::Get(
-    const std::string& key) const {
+RefCountedPtr<ExtAuthzClient> ExtAuthzFilter::ChannelCache::Get() const {
   MutexLock lock(&mu_);
-  auto it = cache_.find(key);
-  if (it != cache_.end()) {
-    return it->second;
-  }
-  return nullptr;
+  return client_;
 }
 
-void ExtAuthzFilter::ChannelCache::CreateAndSet(
-    std::shared_ptr<const XdsBootstrap::XdsServerTarget> server) {
-  std::string key = server->Key();
+void ExtAuthzFilter::ChannelCache::Remove() {
   MutexLock lock(&mu_);
-  auto it = cache_.find(key);
-  if (it != cache_.end()) {
-    return;
-  }
-  auto ext_authz_client =
-      MakeRefCounted<ExtAuthzClient>(transport_factory_, std::move(server));
-  cache_.emplace(std::move(key), std::move(ext_authz_client));
-}
-
-void ExtAuthzFilter::ChannelCache::Remove(const std::string& key) {
-  MutexLock lock(&mu_);
-  cache_.erase(key);
+  client_->Unref();
 }
 
 //

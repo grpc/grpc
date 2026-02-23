@@ -17,6 +17,7 @@
 #ifndef GRPC_SRC_CORE_EXT_FILTERS_EXT_AUTHZ_EXT_AUTHZ_FILTER_H
 #define GRPC_SRC_CORE_EXT_FILTERS_EXT_AUTHZ_EXT_AUTHZ_FILTER_H
 
+#include <memory>
 #include <optional>
 
 #include "src/core/ext/filters/ext_authz/ext_authz_client.h"
@@ -30,8 +31,9 @@
 namespace grpc_core {
 
 struct ExtAuthz : public RefCounted<ExtAuthz> {
-  XdsGrpcService xds_grpc_service;
+  std::shared_ptr<XdsGrpcService> xds_grpc_service;
   std::string server_uri;
+  RefCountedPtr<XdsTransportFactory> transport_factory;
 
   struct FilterEnabled {
     uint32_t numerator;
@@ -80,26 +82,26 @@ class ExtAuthzFilter : public ImplementChannelFilter<ExtAuthzFilter> {
     std::string ToString() const override;
 
     std::string instance_name;
-    ExtAuthz ext_authz;
+    RefCountedPtr<ExtAuthz> ext_authz;
   };
 
   class ChannelCache : public Blackboard::Entry {
    public:
-    explicit ChannelCache(RefCountedPtr<XdsTransportFactory> transport_factory)
-        : transport_factory_(std::move(transport_factory)), cache_({}) {}
+    ChannelCache(RefCountedPtr<ExtAuthzClient> client,
+                 std::shared_ptr<XdsGrpcService> server)
+        : client_(client), server_(server) {}
 
     static UniqueTypeName Type();
 
-    RefCountedPtr<ExtAuthzClient> Get(const std::string& key) const;
-    void CreateAndSet(
-        std::shared_ptr<const XdsBootstrap::XdsServerTarget> server);
-    void Remove(const std::string& key);
+    RefCountedPtr<ExtAuthzClient> Get() const;
+    void Remove();
+
+    std::shared_ptr<XdsGrpcService> server() const { return server_; }
 
    private:
-    RefCountedPtr<XdsTransportFactory> transport_factory_;
     mutable Mutex mu_;
-    mutable std::map<std::string /*key*/, RefCountedPtr<ExtAuthzClient>> cache_
-        ABSL_GUARDED_BY(&mu_);
+    mutable RefCountedPtr<ExtAuthzClient> client_ ABSL_GUARDED_BY(&mu_);
+    mutable std::shared_ptr<XdsGrpcService> server_;
   };
 
   static const grpc_channel_filter kFilterVtable;
