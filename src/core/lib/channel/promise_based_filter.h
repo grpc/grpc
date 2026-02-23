@@ -1313,7 +1313,8 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                     next_promise_factory(std::move(call_args)),
                     [handler,
                      initiator](ServerMetadataHandle metadata) mutable {
-                      handler.PushServerTrailingMetadata(std::move(metadata));
+                      handler.SpawnPushServerTrailingMetadata(
+                          std::move(metadata));
                       return initiator.PullServerTrailingMetadata();
                     });
               });
