@@ -87,7 +87,7 @@ def sign_private_key(data_to_sign, private_key_bytes, signature_algorithm):
         if not isinstance(private_key, rsa.RSAPrivateKey):
             return ValueError("The provided key is not an RSA private key.")
     except Exception as e:
-        return
+        return e
 
     if isinstance(private_key, rsa.RSAPrivateKey):
         try:
@@ -149,7 +149,7 @@ def bad_async_client_private_key_signer(
     Of type CustomPrivateKeySign - Callable[[bytes, SignatureAlgorithm], bytes]
     Takes in data_to_sign and signs it using the wrong private key, resulting in handshake failure
     """
-    signer_thread = threading.Thread(
+    threading.Thread(
         target=bad_async_signer_worker,
         args=(data_to_sign, signature_algorithm, on_complete),
     ).start()
@@ -178,7 +178,7 @@ def async_client_private_key_signer(
     Of type CustomPrivateKeySign - Callable[[bytes, SignatureAlgorithm], bytes]
     Takes in data_to_sign and signs it using the test private key
     """
-    signer_thread = threading.Thread(
+    threading.Thread(
         target=async_signer_worker,
         args=(data_to_sign, signature_algorithm, on_complete),
     ).start()
@@ -226,7 +226,7 @@ def async_signer_worker_until_cancel(
             # Use wait() with a timeout to make the thread responsive to cancellation
             cancellation_event.wait(timeout=1)
         except Exception as e:
-            raise
+            on_complete(e)
 
 
 def async_signer_with_cancel_injection(
@@ -238,7 +238,7 @@ def async_signer_with_cancel_injection(
     Runs infinitely until cancelled, and the passed handle should then have the
     handle.cancel_event set
     """
-    signer_thread = threading.Thread(
+    threading.Thread(
         target=async_signer_worker_until_cancel,
         args=(
             data_to_sign,
@@ -260,7 +260,7 @@ def async_client_private_key_signer_with_cancel(
     Runs infinitely until cancelled
     """
     cancel = CancelCallable()
-    signer_thread = threading.Thread(
+    threading.Thread(
         target=async_signer_worker_until_cancel,
         args=(
             data_to_sign,
