@@ -816,7 +816,7 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
             << "Http2ClientTransport::ReadAndProcessOneFrame Read Frame ";
         return AssertResultType<absl::Status>(Map(
             EndpointRead(current_frame_header_.length),
-            [this](absl::StatusOr<SliceBuffer> payload) {
+            [this](absl::StatusOr<SliceBuffer>&& payload) {
               if (GPR_UNLIKELY(!payload.ok())) {
                 return payload.status();
               }

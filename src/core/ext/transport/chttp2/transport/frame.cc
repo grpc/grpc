@@ -725,7 +725,7 @@ SerializeReturn Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out) {
 }
 
 http2::ValueOrHttp2Status<Http2Frame> ParseFramePayload(
-    const Http2FrameHeader& hdr, SliceBuffer payload) {
+    const Http2FrameHeader& hdr, SliceBuffer&& payload) {
   GRPC_CHECK(payload.Length() == hdr.length);
 
   switch (static_cast<FrameType>(hdr.type)) {
