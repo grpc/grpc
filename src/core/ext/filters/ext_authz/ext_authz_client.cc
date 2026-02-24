@@ -40,6 +40,7 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/xds_utils.h"
+#include "src/core/util/status_helper.h"
 #include "src/core/xds/xds_client/xds_transport.h"
 #include "upb/base/string_view.h"
 #include "absl/base/thread_annotations.h"
@@ -98,11 +99,7 @@ std::string ExtAuthzClient::server_uri() const {
 
 absl::StatusOr<ExtAuthzClient::ExtAuthzResponse> ExtAuthzClient::Check(
     const ExtAuthzRequestParams& params) {
-  std::string payload;
-  {
-    MutexLock lock(&mu_);
-    payload = CreateExtAuthzRequest(params);
-  }
+  std::string payload = CreateExtAuthzRequest(params);
   const char* method = "/envoy.service.auth.v3.Authorization/Check";
   auto call = transport_->CreateUnaryCall(method);
   if (call == nullptr) {
@@ -116,7 +113,6 @@ absl::StatusOr<ExtAuthzClient::ExtAuthzResponse> ExtAuthzClient::Check(
   if (!status.ok()) {
     return status.status();
   }
-  MutexLock lock(&mu_);
   return ParseExtAuthzResponse(*status);
 }
 
@@ -198,6 +194,7 @@ envoy_service_auth_v3_AttributeContext_Peer* CreateDestination(
 
 std::string ExtAuthzClient::CreateExtAuthzRequest(
     const ExtAuthzRequestParams& params) {
+  MutexLock lock(&mu_);
   upb::Arena arena;
   const ExtAuthzApiContext context = {this, def_pool_.ptr(), arena.ptr()};
   envoy_service_auth_v3_AttributeContext* attribute_context =
@@ -221,21 +218,22 @@ std::string ExtAuthzClient::CreateExtAuthzRequest(
 
 absl::StatusOr<ExtAuthzClient::ExtAuthzResponse>
 ExtAuthzClient::ParseExtAuthzResponse(absl::string_view encoded_response) {
+  MutexLock lock(&mu_);
   upb::Arena arena;
-  const envoy_service_auth_v3_CheckResponse* decoded_response =
+  envoy_service_auth_v3_CheckResponse* decoded_response =
       envoy_service_auth_v3_CheckResponse_parse(
           encoded_response.data(), encoded_response.size(), arena.ptr());
   if (decoded_response == nullptr) {
     return absl::UnavailableError("Can't decode response.");
   }
   // const ExtAuthzApiContext context = {this, def_pool_.ptr(), arena.ptr()};
-  const auto* status =
-      envoy_service_auth_v3_CheckResponse_status(decoded_response);
-  const int32_t status_code = google_rpc_Status_code(status);
+  auto* status =
+      envoy_service_auth_v3_CheckResponse_mutable_status(decoded_response, arena.ptr());
+  absl::Status s = internal::StatusFromProto(status);
   ExtAuthzResponse result;
-  result.status_code = grpc_http2_status_to_grpc_status(status_code);
+  result.status_code = static_cast<grpc_status_code>(s.code());
   ValidationErrors errors;
-  if (status_code == 200) {
+  if (s.ok()) {
     const auto* ok_resp =
         envoy_service_auth_v3_CheckResponse_ok_response(decoded_response);
     ExtAuthzResponse::OkResponse ok_struct;

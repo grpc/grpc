@@ -65,18 +65,17 @@ class ExtAuthzClient : public DualRefCounted<ExtAuthzClient> {
 
   absl::StatusOr<ExtAuthzResponse> Check(const ExtAuthzRequestParams& params);
 
+  std::string CreateExtAuthzRequest(const ExtAuthzRequestParams& params);
+
+  absl::StatusOr<ExtAuthzResponse> ParseExtAuthzResponse(
+      absl::string_view encoded_response);
+
   XdsTransportFactory* transport_factory() const {
     return transport_factory_.get();
   }
 
  private:
   void Orphaned() override;
-
-  std::string CreateExtAuthzRequest(const ExtAuthzRequestParams& params)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
-
-  absl::StatusOr<ExtAuthzResponse> ParseExtAuthzResponse(
-      absl::string_view encoded_response) ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
   RefCountedPtr<XdsTransportFactory> transport_factory_;
   std::unique_ptr<const XdsBootstrap::XdsServerTarget> server_;

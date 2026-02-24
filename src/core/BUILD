@@ -5657,6 +5657,7 @@ grpc_cc_library(
         "dual_ref_counted",
         "grpc_check",
         "status_conversion",
+        "status_helper",
         "sync",
         "upb_utils",
         "xds_common_types",
