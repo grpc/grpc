@@ -66,6 +66,7 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/sleep.h"
+#include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -1896,6 +1897,10 @@ absl::StatusOr<uint32_t> Http2ClientTransport::NextStreamId() {
   // starting new streams instead of failing them. This needs to be
   // implemented.
   {
+    // TODO(tjagtap) : [PH2][P1] : For a server we will have to do
+    // this for incoming streams only. If a server receives more
+    // streams from a client than is allowed by the clients settings,
+    // whether or not we should fail is debatable.
     MutexLock lock(&transport_mutex_);
     if (GetActiveStreamCountLocked() >=
         settings_->peer().max_concurrent_streams()) {
@@ -1924,6 +1929,8 @@ absl::Status Http2ClientTransport::MaybeAddStreamToWritableStreamList(
         << "Http2ClientTransport::MaybeAddStreamToWritableStreamList Stream "
            "id: "
         << stream->GetStreamId() << " became writable";
+    // TODO(akshitpatel) [Perf]: Might be worth exploring if this funciton
+    // should take a raw stream ptr and take a ref here.
     absl::Status status =
         writable_stream_list_.Enqueue(std::move(stream), result.priority);
     if (!status.ok()) {
@@ -1988,7 +1995,7 @@ bool Http2ClientTransport::SetOnDone(CallHandler call_handler,
                              << enqueue_result.status();
     }
 
-    if (enqueue_result.ok()) {
+    if (GPR_LIKELY(enqueue_result.ok())) {
       GRPC_HTTP2_CLIENT_DLOG
           << "Http2ClientTransport::SetOnDone "
              "MaybeAddStreamToWritableStreamList for stream= "
@@ -2008,7 +2015,7 @@ std::optional<RefCountedPtr<Stream>> Http2ClientTransport::MakeStream(
   RefCountedPtr<Stream> stream;
   stream = MakeRefCounted<Stream>(call_handler, flow_control_,
                                   /*is_client=*/kIsClient);
-  const bool on_done_added = SetOnDone(call_handler, stream);
+  const bool on_done_added = SetOnDone(std::move(call_handler), stream);
   if (!on_done_added) return std::nullopt;
   return std::move(stream);
 }
@@ -2046,9 +2053,7 @@ void Http2ClientTransport::SetMaxAllowedStreamId(
 ///////////////////////////////////////////////////////////////////////////////
 // Http2ClientTransport - Call Spine related operations
 
-auto Http2ClientTransport::CallOutboundLoop(CallHandler call_handler,
-                                            RefCountedPtr<Stream> stream,
-                                            ClientMetadataHandle metadata) {
+auto Http2ClientTransport::CallOutboundLoop(RefCountedPtr<Stream> stream) {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::CallOutboundLoop";
   GRPC_DCHECK(stream != nullptr);
 
@@ -2062,18 +2067,19 @@ auto Http2ClientTransport::CallOutboundLoop(CallHandler call_handler,
         });
   };
 
-  auto send_initial_metadata = [this, stream,
-                                metadata = std::move(metadata)]() mutable {
-    absl::StatusOr<StreamWritabilityUpdate> enqueue_result =
-        stream->EnqueueInitialMetadata(std::move(metadata));
-    if (GPR_UNLIKELY(!enqueue_result.ok())) {
-      return enqueue_result.status();
-    }
-    GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop "
-                              "Enqueued Initial Metadata";
-    return MaybeAddStreamToWritableStreamList(std::move(stream),
-                                              enqueue_result.value());
-  };
+  auto send_initial_metadata =
+      [this, stream](ClientMetadataHandle&& metadata) mutable {
+        absl::StatusOr<StreamWritabilityUpdate> enqueue_result =
+            stream->EnqueueInitialMetadata(
+                std::forward<ClientMetadataHandle>(metadata));
+        if (GPR_UNLIKELY(!enqueue_result.ok())) {
+          return enqueue_result.status();
+        }
+        GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop "
+                                  "Enqueued Initial Metadata";
+        return MaybeAddStreamToWritableStreamList(std::move(stream),
+                                                  enqueue_result.value());
+      };
 
   auto send_half_closed = [this, stream]() mutable {
     absl::StatusOr<StreamWritabilityUpdate> enqueue_result =
@@ -2090,15 +2096,22 @@ auto Http2ClientTransport::CallOutboundLoop(CallHandler call_handler,
   return GRPC_LATENT_SEE_PROMISE(
       "Ph2CallOutboundLoop",
       TrySeq(
-          [send_initial_metadata = std::move(send_initial_metadata)]() mutable {
-            return std::move(send_initial_metadata)();
-          },
-          ForEach(MessagesFrom(call_handler), std::move(send_message)),
+          Map(stream->call.PullClientInitialMetadata(),
+              [send_initial_metadata = std::move(send_initial_metadata)](
+                  ValueOrFailure<ClientMetadataHandle> metadata) mutable {
+                if (GPR_UNLIKELY(!metadata.ok())) {
+                  return absl::InternalError(
+                      "Failed to pull client initial metadata");
+                }
+                return std::move(send_initial_metadata)(
+                    TakeValue(std::move(metadata)));
+              }),
+          ForEach(MessagesFrom(stream->call), std::move(send_message)),
           [send_half_closed = std::move(send_half_closed)]() mutable {
             return std::move(send_half_closed)();
           },
-          [call_handler]() mutable {
-            return Map(call_handler.WasCancelled(), [](bool cancelled) {
+          [stream]() mutable {
+            return Map(stream->call.WasCancelled(), [](bool cancelled) {
               GRPC_HTTP2_CLIENT_DLOG
                   << "Http2ClientTransport::CallOutboundLoop End with "
                      "cancelled="
@@ -2110,40 +2123,21 @@ auto Http2ClientTransport::CallOutboundLoop(CallHandler call_handler,
 
 void Http2ClientTransport::StartCall(CallHandler call_handler) {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::StartCall Begin";
+
   call_handler.SpawnGuarded(
       "OutboundLoop",
-      TrySeq(call_handler.PullClientInitialMetadata(),
-             [self = RefAsSubclass<Http2ClientTransport>(),
-              call_handler](ClientMetadataHandle metadata) mutable {
-               // For a gRPC Client, we only need to check the
-               // MAX_CONCURRENT_STREAMS setting compliance at the time of
-               // sending (that is write path). A gRPC Client will never
-               // receive a stream initiated by a server, so we dont have to
-               // check MAX_CONCURRENT_STREAMS compliance on the Read-Path.
-               //
-               // TODO(tjagtap) : [PH2][P1] Check for MAX_CONCURRENT_STREAMS
-               // sent by peer before making a stream. Decide behaviour if we
-               // are crossing this threshold.
-               //
-               // TODO(tjagtap) : [PH2][P1] : For a server we will have to do
-               // this for incoming streams only. If a server receives more
-               // streams from a client than is allowed by the clients settings,
-               // whether or not we should fail is debatable.
-               std::optional<RefCountedPtr<Stream>> stream =
-                   self->MakeStream(call_handler);
-               return If(
-                   stream.has_value(),
-                   [self = std::move(self), call_handler, stream,
-                    initial_metadata = std::move(metadata)]() mutable {
-                     return Map(self->CallOutboundLoop(
-                                    call_handler, std::move(stream.value()),
-                                    std::move(initial_metadata)),
-                                [self](absl::Status status) { return status; });
-                   },
-                   []() {
-                     return absl::InternalError("Failed to make stream");
-                   });
-             }));
+      [self = RefAsSubclass<Http2ClientTransport>(), call_handler]() mutable {
+        std::optional<RefCountedPtr<Stream>> stream =
+            self->MakeStream(std::move(call_handler));
+
+        return If(
+            stream.has_value(),
+            [self = std::move(self), stream]() mutable {
+              return Map(self->CallOutboundLoop(std::move(stream.value())),
+                         [self](absl::Status status) { return status; });
+            },
+            []() { return absl::InternalError("Failed to make stream"); });
+      });
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::StartCall End";
 }
 

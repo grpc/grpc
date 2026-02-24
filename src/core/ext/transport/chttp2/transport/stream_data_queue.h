@@ -271,7 +271,14 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     GRPC_DCHECK(!is_initial_metadata_queued_);
     GRPC_DCHECK(!is_trailing_metadata_or_half_close_queued_);
     GRPC_DCHECK(metadata != nullptr);
-    GRPC_DCHECK(reset_stream_state_ == RstStreamState::kNotQueued);
+
+    // Stream closed before initial metadata is enqueued. This is possible
+    // if the stream is cancelled between stream creation and
+    // PullClientInitialMetadata resolving.
+    if (IsEnqueueClosed()) {
+      return StreamWritabilityUpdate{/*became_writable=*/false,
+                                     WritableStreamPriority::kStreamClosed};
+    }
 
     is_initial_metadata_queued_ = true;
     absl::StatusOr<bool> result = queue_.ImmediateEnqueue(
@@ -388,12 +395,14 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   }
 
   // Enqueue Reset Stream.
-  // 1. MUST be called at most once.
-  // 3. This function is thread safe.
+  // 1. This function is thread safe.
+  // 2. ResetStream frame can be enqueued at any point after the creation of the
+  //    stream.
+  // 3. Once ResetStream is enqueued, any enqueue calls after this will be
+  //    ignored.
   absl::StatusOr<StreamWritabilityUpdate> EnqueueResetStream(
       const uint32_t error_code) {
     MutexLock lock(&mu_);
-    GRPC_DCHECK(is_initial_metadata_queued_);
 
     // This can happen when the transport tries to close the stream and the
     // stream is cancelled from the call stack.
