@@ -79,6 +79,7 @@ grpc_cc_test(
         "//:exec_ctx",
         "//:gpr",
         "//src/core:memory_quota",
+        "//src/core:resource_quota",
         "//src/core:resource_tracker",
         "//src/core:slice_refcount",
         "//test/core/test_util:grpc_test_util_unsecure",
@@ -114,7 +115,10 @@ grpc_cc_test(
     external_deps = ["gtest"],
     uses_event_engine = False,
     uses_polling = False,
-    deps = ["//src/core:stream_quota"],
+    deps = [
+        "//:ref_counted_ptr",
+        "//src/core:stream_quota",
+    ],
 )
 
 grpc_cc_test(

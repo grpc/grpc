@@ -59,7 +59,13 @@ class PythonGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     return grpc::protobuf::Edition::EDITION_PROTO2;
   }
   grpc::protobuf::Edition GetMaximumEdition() const override {
+    // TODO(yuanweiz): Remove when the protobuf is updated to a version
+    //      that supports edition 2024.
+#if !defined(GOOGLE_PROTOBUF_VERSION) || GOOGLE_PROTOBUF_VERSION >= 6032000
     return grpc::protobuf::Edition::EDITION_2024;
+#else
+    return grpc::protobuf::Edition::EDITION_2023;
+#endif
   }
 #endif
 

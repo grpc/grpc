@@ -39,12 +39,10 @@
 #define GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION \
   "grpc.http.overload_protection"
 
-// EXPERIMENTAL: Fail requests at the client if the client is over max
-// concurrent streams, so they may be retried elsewhere.
-#define GRPC_ARG_MAX_CONCURRENT_STREAMS_REJECT_ON_CLIENT \
-  "grpc.http.max_concurrent_streams_reject_on_client"
-
 #define KEEPALIVE_TIME_BACKOFF_MULTIPLIER 2
+
+#define GRPC_CHTTP2_PING_TIMEOUT_STR "ping timeout"
+#define GRPC_CHTTP2_KEEPALIVE_TIMEOUT_STR "keepalive timeout"
 
 namespace grpc_core {
 

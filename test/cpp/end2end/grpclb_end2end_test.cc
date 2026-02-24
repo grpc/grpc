@@ -57,6 +57,7 @@
 #include "test/core/test_util/test_call_creds.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/counted_service.h"
+#include "test/cpp/end2end/end2end_test_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/credentials.h"
 #include "test/cpp/util/test_config.h"
@@ -93,6 +94,9 @@ using grpc::lb::v1::LoadBalanceResponse;
 
 using grpc_core::SourceLocation;
 
+// TODO(tjagtap) [PH2][P3][OSS] grpclb is used only by OSS customers. This
+// entire test suite will need to pass before PH2 can be enabled for OSS users.
+
 namespace grpc {
 namespace testing {
 namespace {
@@ -124,15 +128,15 @@ class BackendServiceImpl : public BackendService {
               EchoResponse* response) override {
     // The backend should not see a test user agent configured at the client
     // using GRPC_ARG_GRPCLB_CHANNEL_ARGS.
-    auto it = context->client_metadata().find("user-agent");
-    if (it != context->client_metadata().end()) {
+    auto [it, end] = context->client_metadata().equal_range("user-agent");
+    if (it != end) {
       EXPECT_FALSE(it->second.starts_with(kGrpclbSpecificUserAgentString));
     }
     // Backend should receive the call credentials metadata.
-    auto call_credentials_entry =
-        context->client_metadata().find(kCallCredsMdKey);
-    EXPECT_NE(call_credentials_entry, context->client_metadata().end());
-    if (call_credentials_entry != context->client_metadata().end()) {
+    auto [call_credentials_entry, call_credentials_end] =
+        context->client_metadata().equal_range(kCallCredsMdKey);
+    EXPECT_NE(call_credentials_entry, call_credentials_end);
+    if (call_credentials_entry != call_credentials_end) {
       EXPECT_EQ(call_credentials_entry->second, kCallCredsMdValue);
     }
     IncreaseRequestCount();
@@ -297,15 +301,14 @@ class BalancerServiceImpl : public BalancerService {
     // The loadbalancer should see a test user agent because it was
     // specifically configured at the client using
     // GRPC_ARG_GRPCLB_CHANNEL_ARGS
-    auto it = context->client_metadata().find("user-agent");
-    EXPECT_TRUE(it != context->client_metadata().end());
-    if (it != context->client_metadata().end()) {
+    auto [it, end] = context->client_metadata().equal_range("user-agent");
+    EXPECT_TRUE(it != end);
+    if (it != end) {
       EXPECT_THAT(std::string(it->second.data(), it->second.length()),
                   ::testing::StartsWith(kGrpclbSpecificUserAgentString));
     }
     // Balancer shouldn't receive the call credentials metadata.
-    EXPECT_EQ(context->client_metadata().find(kCallCredsMdKey),
-              context->client_metadata().end());
+    EXPECT_EQ(context->client_metadata().count(kCallCredsMdKey), 0);
     // Read initial request.
     LoadBalanceRequest request;
     if (!stream->Read(&request)) {
@@ -507,10 +510,6 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc_core::ConfigVars::Overrides overrides;
     overrides.client_channel_backup_poll_interval_ms = 1;
     grpc_core::ConfigVars::SetOverrides(overrides);
-#if TARGET_OS_IPHONE
-    // Workaround Apple CFStream bug
-    grpc_core::SetEnv("grpc_cfstream", "0");
-#endif
     grpc_init();
   }
 
@@ -565,6 +564,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpclb_channel_args = grpclb_channel_args.Set(
         GRPC_ARG_PRIMARY_USER_AGENT_STRING, kGrpclbSpecificUserAgentString);
     ChannelArguments args;
+    ApplyCommonChannelArguments(args);
     if (fallback_timeout_ms > 0) {
       args.SetGrpclbFallbackTimeout(fallback_timeout_ms *
                                     grpc_test_slowdown_factor());
@@ -936,6 +936,7 @@ TEST_F(GrpclbEnd2endTest,
 }
 
 TEST_F(GrpclbEnd2endTest, UsePickFirstChildPolicy) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   const size_t kNumBackends = 2;
   const size_t kNumRpcs = kNumBackends * 2;
   CreateBackends(kNumBackends);
@@ -973,6 +974,7 @@ TEST_F(GrpclbEnd2endTest, UsePickFirstChildPolicy) {
 }
 
 TEST_F(GrpclbEnd2endTest, SwapChildPolicy) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   const size_t kNumBackends = 2;
   const size_t kNumRpcs = kNumBackends * 2;
   CreateBackends(kNumBackends);
@@ -1035,6 +1037,7 @@ TEST_F(GrpclbEnd2endTest, SameBackendListedMultipleTimes) {
 }
 
 TEST_F(GrpclbEnd2endTest, InitiallyEmptyServerlist) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   CreateBackends(1);
   SetNextResolutionDefaultBalancer();
   // First response is an empty serverlist.  RPCs should fail.
@@ -1164,6 +1167,8 @@ TEST_F(GrpclbEnd2endTest,
 
 TEST_F(GrpclbEnd2endTest,
        FallbackAfterStartupLoseContactWithBackendsThenBalancer) {
+  SKIP_TEST_FOR_PH2_CLIENT(
+      "TODO(tjagtap) [PH2][P3][Client] Fix. Flakes 10% of the time.");
   // First two backends are fallback, last two are pointed to by balancer.
   const size_t kNumBackends = 4;
   const size_t kNumFallbackBackends = 2;
@@ -1262,6 +1267,8 @@ TEST_F(GrpclbEnd2endTest, FallbackControlledByBalancerAfterFirstServerlist) {
 }
 
 TEST_F(GrpclbEnd2endTest, BackendsRestart) {
+  SKIP_TEST_FOR_PH2_CLIENT(
+      "TODO(tjagtap) [PH2][P3][Client] Flaking 2 out of 100 times.");
   CreateBackends(2);
   SetNextResolutionDefaultBalancer();
   SendBalancerResponse(BuildResponseForBackends(GetBackendPorts(), {}));
@@ -1297,6 +1304,7 @@ TEST_F(GrpclbEnd2endTest, ServiceNameFromLbPolicyConfig) {
 
 TEST_F(GrpclbEnd2endTest,
        NewBalancerAddressNotUsedIfOriginalStreamDoesNotFail) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   CreateBackends(3);
   // Default balancer sends backend 0.
   SendBalancerResponse(BuildResponseForBackends({backends_[0]->port()}, {}));
@@ -1575,6 +1583,7 @@ TEST_F(GrpclbEnd2endTest, DropAll) {
 }
 
 TEST_F(GrpclbEnd2endTest, ClientLoadReporting) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   const size_t kNumBackends = 3;
   CreateBackends(kNumBackends);
   balancer_->service().set_client_load_reporting_interval_seconds(3);
@@ -1614,6 +1623,7 @@ TEST_F(GrpclbEnd2endTest, ClientLoadReporting) {
 }
 
 TEST_F(GrpclbEnd2endTest, LoadReportingWithBalancerRestart) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   const size_t kNumBackends = 4;
   const size_t kNumBackendsFirstPass = 2;
   const size_t kNumBackendsSecondPass = kNumBackends - kNumBackendsFirstPass;
@@ -1671,6 +1681,7 @@ TEST_F(GrpclbEnd2endTest, LoadReportingWithBalancerRestart) {
 }
 
 TEST_F(GrpclbEnd2endTest, LoadReportingWithDrops) {
+  SKIP_TEST_FOR_PH2_CLIENT("TODO(tjagtap) [PH2][P3][Client] Fix bug");
   const size_t kNumBackends = 3;
   const size_t kNumRpcsPerAddress = 3;
   const int kNumDropRateLimiting = 2;

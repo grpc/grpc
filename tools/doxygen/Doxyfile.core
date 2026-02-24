@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 51.0.0
+PROJECT_NUMBER         = 53.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -818,6 +818,7 @@ include/grpc/census.h \
 include/grpc/compression.h \
 include/grpc/create_channel_from_endpoint.h \
 include/grpc/credentials.h \
+include/grpc/credentials_cpp.h \
 include/grpc/event_engine/endpoint_config.h \
 include/grpc/event_engine/event_engine.h \
 include/grpc/event_engine/extensible.h \

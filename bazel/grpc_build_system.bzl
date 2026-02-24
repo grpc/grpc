@@ -32,8 +32,13 @@ load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl", "ios_test_runner")
 load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
 load("@com_google_protobuf//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("//bazel:copts.bzl", "GRPC_DEFAULT_COPTS")
 load("//bazel:experiments.bzl", "EXPERIMENTS", "EXPERIMENT_ENABLES", "EXPERIMENT_POLLERS")
@@ -151,7 +156,7 @@ def grpc_cc_library(
     # See b/391433873.
     if "fuzztest" in external_deps and "grpc-fuzztest" not in tags:
         tags = tags + ["grpc-fuzztest"]
-    native.cc_library(
+    cc_library(
         name = name,
         srcs = srcs,
         defines = defines +
@@ -186,7 +191,7 @@ def grpc_cc_library(
     )
 
 def grpc_proto_plugin(name, srcs = [], deps = []):
-    native.cc_binary(
+    cc_binary(
         name = name + "_native",
         srcs = srcs,
         deps = deps,
@@ -263,7 +268,7 @@ def grpc_cc_grpc_library(
     cc_grpc_library(
         name = name,
         srcs = srcs,
-        deps = deps,
+        deps = deps + ["//:grpc++"],
         visibility = visibility,
         generate_mocks = generate_mocks,
         allow_deprecated = allow_deprecated,
@@ -582,7 +587,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             **test_args
         )
 
-    native.cc_library(
+    cc_library(
         name = "%s_TEST_LIBRARY" % name,
         testonly = 1,
         srcs = srcs,
@@ -596,7 +601,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             fail("srcs changed")
         if poller_config["deps"] != core_deps:
             fail("deps changed: %r --> %r" % (deps, poller_config["deps"]))
-        native.cc_test(
+        cc_test(
             name = poller_config["name"],
             deps = ["%s_TEST_LIBRARY" % name],
             tags = poller_config["tags"],
@@ -606,7 +611,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             **test_args
         )
 
-def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], testonly = False, linkshared = False, linkopts = [], tags = [], features = [], visibility = None):
+def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], testonly = False, linkshared = False, linkopts = [], tags = [], target_compatible_with = [], features = [], visibility = None):
     """Generates a cc_binary for use in the gRPC repo.
 
     Args:
@@ -620,12 +625,13 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
       linkshared: Enables linkshared on the binary.
       linkopts: linkopts to supply to the cc_binary.
       tags: Tags to apply to the target.
+      target_compatible_with: Constraint values that must be present in the target platform
       features: features to be supplied to the cc_binary.
       visibility: The visibility of the target.
     """
     visibility = _update_visibility(visibility)
     copts = []
-    native.cc_binary(
+    cc_binary(
         name = name,
         srcs = srcs,
         args = args,
@@ -636,6 +642,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
         copts = GRPC_DEFAULT_COPTS + copts,
         linkopts = if_not_windows(["-pthread"]) + linkopts,
         tags = tags,
+        target_compatible_with = target_compatible_with,
         features = features,
         visibility = visibility,
     )
@@ -691,7 +698,7 @@ def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, siz
     }
 
     for poller_config in expand_tests(name, srcs, [], tags, args, exclude_pollers, uses_polling, uses_event_engine, flaky):
-        native.sh_test(
+        sh_test(
             name = poller_config["name"],
             srcs = poller_config["srcs"],
             deps = poller_config["deps"],
@@ -703,7 +710,7 @@ def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, siz
         )
 
 def grpc_sh_binary(name, srcs, data = []):
-    native.sh_binary(
+    sh_binary(
         name = name,
         srcs = srcs,
         data = data,

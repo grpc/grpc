@@ -137,8 +137,6 @@ build:ubsan --action_env=UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1:suppre
 
 build:python_single_threaded_unary_stream --test_env="GRPC_SINGLE_THREADED_UNARY_STREAM=true"
 
-build:python_poller_engine --test_env="GRPC_ASYNCIO_ENGINE=poller"
-
 build:python --copt=-DGRPC_PYTHON_BUILD
 
 # Compile database generation config
@@ -153,4 +151,4 @@ build --@io_opentelemetry_cpp//api:with_abseil
 test --nozip_undeclared_test_outputs
 
 # Custom checks
-test:postmortem --copt=-DGRPC_POSTMORTEM_CHECKS
+test:postmortem --//:postmortem_checks=true

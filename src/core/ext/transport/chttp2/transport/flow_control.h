@@ -37,9 +37,11 @@
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/functional/function_ref.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -103,6 +105,8 @@ class GRPC_MUST_USE_RESULT FlowControlAction {
            preferred_rx_crypto_frame_size_update_ ==
                Urgency::UPDATE_IMMEDIATELY;
   }
+
+  std::string ImmediateUpdateReasons() const;
 
   // Returns the value of SETTINGS_INITIAL_WINDOW_SIZE that we will send to the
   // peer.
@@ -401,6 +405,14 @@ class TransportFlowControl final {
     return stats;
   }
 
+  void AddStreamToWindowUpdateList(const uint32_t stream_id) {
+    window_update_list_.insert(stream_id);
+  }
+  absl::flat_hash_set<uint32_t> DrainWindowUpdateList() {
+    return std::exchange(window_update_list_, {});
+  }
+  size_t window_update_list_size() const { return window_update_list_.size(); }
+
  private:
   friend class StreamFlowControl;
 
@@ -458,6 +470,7 @@ class TransportFlowControl final {
   int64_t announced_window_ = kDefaultWindow;
   uint32_t acked_init_window_ = kDefaultWindow;
   uint32_t sent_init_window_ = kDefaultWindow;
+  absl::flat_hash_set<uint32_t> window_update_list_;
 };
 
 // Implementation of flow control that abides to HTTP/2 spec and attempts
@@ -510,8 +523,16 @@ class StreamFlowControl final {
     // for application to read. Call this when a complete message is assembled
     // but not yet pulled by the application. This helps flow control decide
     // whether to send a WINDOW_UPDATE to the peer.
-    // TODO(tjagtap) [PH2][P2] Plumb with PH2 flow control.
+    // TODO(tjagtap) [PH2][P1] Plumb with PH2 flow control.
     void SetPendingSize(int64_t pending_size);
+
+    // This is a hack in place till SetPendingSize is fully plumbed. This hack
+    // function just pretends that the application needs more bytes. Since we
+    // dont actually know how many bytes the application needs, we just want to
+    // refill the used up tokens. The only way to refill used up tokens is to
+    // call this function for each DATA frame.
+    // TODO(tjagtap) [PH2][P1] Remove hack after SetPendingSize is plumbed.
+    void HackIncrementPendingSize(int64_t pending_size);
 
    private:
     TransportFlowControl::IncomingUpdateContext tfc_upd_;
@@ -588,7 +609,7 @@ class StreamFlowControl final {
     return stats;
   }
 
-  void ReportIfStalled(bool is_client, uint32_t stream_id,
+  void ReportIfStalled(const bool is_client, const uint32_t stream_id,
                        const Http2Settings& peer_settings) const {
     if (remote_window_delta() + peer_settings.initial_window_size() <= 0 ||
         tfc_->remote_window_ == 0) {

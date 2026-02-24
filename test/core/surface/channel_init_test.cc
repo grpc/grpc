@@ -243,7 +243,7 @@ TEST(ChannelInitTest, OrderingConstraintsAreSatisfied) {
             std::vector<std::string>({"c", "b", "a", "terminator"}));
 }
 
-TEST(ChannelInitTest, AmbiguousTopCrashes) {
+TEST(ChannelInitDeathTest, AmbiguousTopCrashes) {
   ChannelInit::Builder b;
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("c")).FloatToTop();
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("b")).FloatToTop();
@@ -262,7 +262,7 @@ TEST(ChannelInitTest, ExplicitOrderingBetweenTopResolvesAmbiguity) {
             std::vector<std::string>({"c", "b", "terminator"}));
 }
 
-TEST(ChannelInitTest, AmbiguousBottomCrashes) {
+TEST(ChannelInitDeathTest, AmbiguousBottomCrashes) {
   ChannelInit::Builder b;
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("c")).SinkToBottom();
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("b")).SinkToBottom();
@@ -404,6 +404,9 @@ class TestFilter1 {
     static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnServerToClientMessage;
     static const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList().Set("filter_id", 1);
+    }
   };
 
  private:

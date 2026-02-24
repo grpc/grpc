@@ -14,7 +14,7 @@
 """Tests of grpc_channelz.v1.channelz."""
 
 from concurrent import futures
-import sys
+import ipaddress
 import unittest
 
 import grpc
@@ -92,9 +92,6 @@ def _close_channel_server_pairs(pairs):
         pair.channel.close()
 
 
-@unittest.skipIf(
-    sys.version_info[0] < 3, "ProtoBuf descriptor has moved on from Python2"
-)
 class ChannelzServicerTest(unittest.TestCase):
     def _send_successful_unary_unary(self, idx):
         _, r = (
@@ -451,8 +448,46 @@ class ChannelzServicerTest(unittest.TestCase):
                 server_id=gs_resp.server[0].ref.server_id, start_socket_id=0
             )
         )
-        # If the RPC call failed, it will raise a grpc.RpcError
-        # So, if there is no exception raised, considered pass
+
+        self.assertEqual(len(gss_resp.socket_ref), 1)
+
+        gs_resp: channelz_pb2.GetSocketResponse = self._channelz_stub.GetSocket(
+            channelz_pb2.GetSocketRequest(
+                socket_id=gss_resp.socket_ref[0].socket_id
+            )
+        )
+
+        # Verify the client socket contains valid TCP/IP addresses.
+        client_socket: channelz_pb2.Socket = gs_resp.socket
+
+        # Verify server's local address is a valid TCP/IP addresses.
+        local_address: channelz_pb2.Address = client_socket.local
+        self.assertEqual(
+            local_address.WhichOneof("address"),
+            "tcpip_address",
+            msg="Expected the socket to contain local TCP/IP address",
+        )
+        address_str = self.tcpip_address_to_str(local_address.tcpip_address)
+        self.assertNotIn(
+            address_str,
+            ("", ":"),
+            msg="Server address string must not be empty",
+        )
+
+        # Verify server's remote address (to the client) is
+        # a valid TCP/IP addresses.
+        remote_address: channelz_pb2.Address = client_socket.remote
+        self.assertEqual(
+            remote_address.WhichOneof("address"),
+            "tcpip_address",
+            msg="Expected the socket to contain remote TCP/IP address",
+        )
+        address_str = self.tcpip_address_to_str(remote_address.tcpip_address)
+        self.assertNotIn(
+            address_str,
+            ("", ":"),
+            msg="Client address string must not be empty",
+        )
 
     def test_server_listen_sockets(self):
         self._pairs = _generate_channel_server_pairs(1)
@@ -463,14 +498,40 @@ class ChannelzServicerTest(unittest.TestCase):
         self.assertEqual(len(gss_resp.server), 1)
         self.assertEqual(len(gss_resp.server[0].listen_socket), 1)
 
-        gs_resp = self._channelz_stub.GetSocket(
+        gs_resp: channelz_pb2.GetSocketResponse = self._channelz_stub.GetSocket(
             channelz_pb2.GetSocketRequest(
                 socket_id=gss_resp.server[0].listen_socket[0].socket_id
             )
         )
 
-        # If the RPC call failed, it will raise a grpc.RpcError
-        # So, if there is no exception raised, considered pass
+        # Verify the listen socket contains a valid TCP/IP address.
+        listen_address: channelz_pb2.Address = gs_resp.socket.local
+        self.assertEqual(
+            listen_address.WhichOneof("address"),
+            "tcpip_address",
+            msg="Expected the server listen socket to contain a TCP/IP address",
+        )
+        address_str = self.tcpip_address_to_str(listen_address.tcpip_address)
+        self.assertNotIn(
+            address_str, ("", ":"), msg="Address string must not be empty"
+        )
+
+    @staticmethod
+    def is_ipv4(tcpip_address: channelz_pb2.Address.TcpIpAddress):
+        # According to proto, tcpip_address.ip_address is either IPv4 or IPv6.
+        # Correspondingly, it's either 4 bytes or 16 bytes in length.
+        return len(tcpip_address.ip_address) == 4
+
+    @classmethod
+    def tcpip_address_to_str(
+        cls, tcpip_address: channelz_pb2.Address.TcpIpAddress
+    ):
+        # This will throw AddressValueError when the address is invalid.
+        if cls.is_ipv4(tcpip_address):
+            ip = ipaddress.IPv4Address(tcpip_address.ip_address)
+        else:
+            ip = ipaddress.IPv6Address(tcpip_address.ip_address)
+        return f"{ip}:{tcpip_address.port}"
 
     def test_invalid_query_get_server(self):
         try:
