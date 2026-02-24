@@ -8526,6 +8526,7 @@ grpc_cc_library(
         "absl/status",
     ],
     deps = [
+        "arena",
         "call_spine",
         "grpc_check",
         "header_assembler",
@@ -8610,6 +8611,7 @@ grpc_cc_library(
         "race",
         "resource_quota",
         "sleep",
+        "status_flag",
         "stream_data_queue",
         "sync",
         "time",

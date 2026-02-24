@@ -1163,22 +1163,26 @@ class InstrumentDomain {
   template <typename... Label>
   static FixedInstrumentLabelList<sizeof...(Label)> MakeLabels(
       Label... labels) {
-    InstrumentLabel l[] = {InstrumentLabel(labels)...};
-    for (size_t i = 0; i < sizeof...(Label); ++i) {
-      for (size_t j = i + 1; j < sizeof...(Label); ++j) {
-        GRPC_CHECK_NE(l[i], l[j]);
+    if constexpr (sizeof...(Label) == 0) {
+      return FixedInstrumentLabelList<0>();
+    } else {
+      InstrumentLabel l[] = {InstrumentLabel(labels)...};
+      for (size_t i = 0; i < sizeof...(Label); ++i) {
+        for (size_t j = i + 1; j < sizeof...(Label); ++j) {
+          GRPC_CHECK_NE(l[i], l[j]);
+        }
       }
-    }
-    auto list = FixedInstrumentLabelList<sizeof...(Label)>(
-        std::forward<Label>(labels)...);
-    const std::vector<std::string> label_names{std::string(labels)...};
-    for (size_t i = 0; i < sizeof...(Label); ++i) {
-      CHECK_EQ(label_names[i], list[i].label());
-      for (size_t j = i + 1; j < sizeof...(Label); ++j) {
-        GRPC_CHECK_NE(list[i], list[j]);
+      auto list = FixedInstrumentLabelList<sizeof...(Label)>(
+          std::forward<Label>(labels)...);
+      const std::vector<std::string> label_names{std::string(labels)...};
+      for (size_t i = 0; i < sizeof...(Label); ++i) {
+        CHECK_EQ(label_names[i], list[i].label());
+        for (size_t j = i + 1; j < sizeof...(Label); ++j) {
+          GRPC_CHECK_NE(list[i], list[j]);
+        }
       }
+      return list;
     }
-    return list;
   }
 
   static auto RegisterCounter(absl::string_view name,
@@ -1270,6 +1274,13 @@ RefCountedPtr<CollectionScope> GlobalCollectionScope();
       GRPC_INSTRUMENT_DOMAIN_LABELS_NUM_LABELS(__VA_ARGS__)> \
   Labels() {                                                 \
     return MakeLabels(__VA_ARGS__);                          \
+  }
+
+// GCC-8 has trouble compiling `GRPC_INSTRUMENT_DOMAIN_LABELS()`, so use this
+// instead if there are no labels for a domain.
+#define GRPC_EMPTY_INSTRUMENT_DOMAIN_LABELS()              \
+  static grpc_core::FixedInstrumentLabelList<0> Labels() { \
+    return grpc_core::FixedInstrumentLabelList<0>();       \
   }
 
 #endif  // GRPC_SRC_CORE_TELEMETRY_INSTRUMENT_H

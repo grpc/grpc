@@ -94,7 +94,8 @@ constexpr Duration kServerKeepaliveTime = Duration::Hours(2);
 void InitLocalSettings(Http2Settings& settings, const bool is_client) {
   if (is_client) {
     // gRPC has never supported PUSH_PROMISE and we have no plan to do so in the
-    // future.
+    // future. We are not setting this to false for Server to be consistent
+    // with the legacy CHTTP2 transport.
     settings.SetEnablePush(false);
     // This is to make it double-sure that server cannot initiate a stream.
     settings.SetMaxConcurrentStreams(0);

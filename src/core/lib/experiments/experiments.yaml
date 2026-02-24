@@ -303,6 +303,17 @@
       "event_engine_client",
       "event_engine_listener",
     ]
+- name: secure_endpoint_read_coalescing
+  description:
+    Coalesce decrypted bytes in SecureEndpoint if a read_hint is provided.
+  expiry: 2026/06/01
+  owner: aananthv@google.com
+  test_tags: ["core_end2end_test"]
+  requires:
+    [
+      "event_engine_client",
+      "event_engine_listener",
+    ]
 - name: skip_clear_peer_on_cancellation
   description: If set, skips clearing of peer string on call cancellation.
   expiry: 2026/05/01
