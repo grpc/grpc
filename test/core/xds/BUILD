@@ -831,3 +831,27 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "ext_authz_client_test",
+    srcs = ["ext_authz_client_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/status",
+        "absl/strings",
+    ],
+    tags = ["xds_test"],
+    uses_event_engine = True,
+    uses_polling = False,
+    deps = [
+        ":xds_transport_fake",
+        "//:gpr",
+        "//:grpc",
+        "//:ref_counted_ptr",
+        "//:xds_client",
+        "//src/core:ext_authz_client",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/test_util:grpc_test_util",
+        "@envoy_api//envoy/service/auth/v3:pkg_cc_proto",
+    ],
+)
