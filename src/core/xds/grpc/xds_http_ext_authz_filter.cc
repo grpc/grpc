@@ -31,6 +31,7 @@
 #include "src/core/ext/filters/ext_authz/ext_authz_filter.h"
 #include "src/core/filter/filter_args.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/util/env.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "upb/reflection/def.h"
@@ -39,7 +40,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "src/core/util/env.h"
 
 namespace grpc_core {
 
@@ -196,14 +196,24 @@ RefCountedPtr<const FilterConfig> XdsHttpExtAuthzFilter::ParseTopLevelConfig(
   // server_uri
   {
     // TODO(rishesh): add error handling
-    ext_authz_obj->server_uri =
-        ext_authz_obj->xds_grpc_service->server_target->server_uri();
+    if (ext_authz_obj->xds_grpc_service == nullptr ||
+        ext_authz_obj->xds_grpc_service->server_target == nullptr) {
+      ValidationErrors::ScopedField field(errors, ".ext_authz.client");
+      errors->AddError("ext_authz.client field must be present");
+    } else {
+      ext_authz_obj->server_uri =
+          ext_authz_obj->xds_grpc_service->server_target->server_uri();
+    }
   }
   // transport_factory
   {
-    // TODO(rishesh): add error handling
     auto client = context.client;
-    ext_authz_obj->transport_factory = client->transport_factory()->Ref();
+    if (client == nullptr || client->transport_factory() == nullptr) {
+      ValidationErrors::ScopedField field(errors, ".context.client");
+      errors->AddError("context.client field must be present");
+    } else {
+      ext_authz_obj->transport_factory = client->transport_factory()->Ref();
+    }
   }
   // FilterEnabled
   {
