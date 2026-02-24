@@ -129,6 +129,33 @@ class BuildExt(build_ext.build_ext):
             filename = filename[: -len(orig_ext_suffix)] + new_ext_suffix
         return filename
 
+    def build_extensions(self):
+        # This is to let UnixCompiler get either C or C++ compiler options depending on the source.
+        # Note that this doesn't work for MSVCCompiler.
+        old_compile = self.compiler._compile
+
+        def new_compile(obj, src, ext, cc_args, extra_postargs, pp_opts):
+            cpp_specific_args = {"-std=c++17", "-stdlib=libc++"}
+            c_specific_args = {"-std=c11"}
+
+            args_to_remove = set()
+            if src.endswith(".c"):
+                # Remove cpp-specific args when compiling c.
+                args_to_remove = cpp_specific_args
+            elif src.endswith((".cc", ".cpp")):
+                # Remove c-specific args when compiling c++.
+                args_to_remove = c_specific_args
+
+            if args_to_remove:
+                extra_postargs = [
+                    arg for arg in extra_postargs if arg not in args_to_remove
+                ]
+
+            return old_compile(obj, src, ext, cc_args, extra_postargs, pp_opts)
+
+        self.compiler._compile = new_compile
+        build_ext.build_ext.build_extensions(self)
+
 
 # When building extensions for macOS on a system running macOS 11.0 or newer,
 # make sure they target macOS 11.0 or newer to use C++17 stdlib properly.
