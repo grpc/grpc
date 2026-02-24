@@ -12,3 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+exports_files([
+    "add_custom_build_file.patch",
+    "add_module_dot_bazel.patch",
+])
