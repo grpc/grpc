@@ -43,6 +43,7 @@ grpc_cc_test(
         "absl/strings",
         "absl/strings:str_format",
     ],
+    tags = ["xds_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -75,6 +76,7 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
+    tags = ["xds_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -98,6 +100,7 @@ grpc_cc_test(
         "absl/strings:str_format",
         "gtest",
     ],
+    tags = ["xds_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -123,6 +126,7 @@ grpc_cc_test(
         "absl/base:no_destructor",
         "absl/status",
     ],
+    tags = ["xds_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -149,6 +153,7 @@ grpc_cc_test(
         "absl/status",
         "absl/status:statusor",
     ],
+    tags = ["xds_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -192,6 +197,7 @@ grpc_cc_test(
         "@com_google_protobuf//upb/mem",
         "@com_google_protobuf//upb/reflection",
     ],
+    tags = ["xds_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -262,6 +268,7 @@ grpc_cc_test(
         "absl/time",
         "@com_google_protobuf//upb/reflection",
     ],
+    tags = ["xds_test"],
     uses_event_engine = True,
     uses_polling = False,
     deps = [
@@ -374,6 +381,7 @@ grpc_cc_test(
         "@com_google_protobuf//upb/mem",
         "@com_google_protobuf//upb/reflection",
     ],
+    tags = ["xds_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -418,6 +426,7 @@ grpc_cc_test(
         "absl/status:statusor",
         "absl/strings:str_format",
     ],
+    tags = ["xds_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -480,6 +489,7 @@ grpc_cc_test(
         "@com_google_protobuf//upb/mem",
         "@com_google_protobuf//upb/reflection",
     ],
+    tags = ["xds_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -514,6 +524,7 @@ grpc_cc_test(
         "@com_google_protobuf//upb/mem",
         "@com_google_protobuf//upb/reflection",
     ],
+    tags = ["xds_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -571,6 +582,7 @@ grpc_cc_test(
         "@com_google_protobuf//upb/mem",
         "@com_google_protobuf//upb/reflection",
     ],
+    tags = ["xds_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -618,6 +630,7 @@ grpc_cc_test(
         "@com_google_protobuf//upb/mem",
         "@com_google_protobuf//upb/reflection",
     ],
+    tags = ["xds_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -662,6 +675,7 @@ grpc_cc_test(
         "absl/strings:str_format",
         "gtest",
     ],
+    tags = ["xds_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -712,6 +726,7 @@ grpc_cc_test(
         "@com_google_protobuf//upb/mem",
         "@com_google_protobuf//upb/reflection",
     ],
+    tags = ["xds_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -735,5 +750,31 @@ grpc_cc_test(
         "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/endpoint/v3:pkg_cc_proto",
         "@envoy_api//envoy/type/v3:pkg_cc_proto",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_routing_test",
+    srcs = ["xds_routing_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    tags = ["xds_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:grpc",
+        "//:grpc_base",
+        "//src/core:blackboard",
+        "//src/core:channel_args",
+        "//src/core:filter_chain",
+        "//src/core:grpc_xds_client",
+        "//src/core:unique_type_name",
+        "//src/core:xds_listener",
+        "//src/core:xds_route_config",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

@@ -351,9 +351,6 @@ class PosixSecureEndpointTest
       public ::testing::TestWithParam<PosixSecureEndpointTestParams> {
  public:
   void SetUp() override {
-    if (!grpc_core::IsEventEngineSecureEndpointEnabled()) {
-      GTEST_SKIP() << "EventEngineSecureEndpoint is not enabled";
-    }
     PosixEndpointTestBase::SetUp();
     if (GetParam().has_leftover_bytes) {
       grpc_slice leftover_slice =

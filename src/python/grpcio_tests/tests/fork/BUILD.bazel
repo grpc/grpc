@@ -27,7 +27,6 @@ pyx_library(
 py_test(
     name = "fork_test",
     srcs = glob(["*.py"]),
-    # TODO(yijiem): remove this to test EventEngine fork support
     imports = ["../.."],
     main = "_fork_interop_test.py",
     python_version = "PY3",

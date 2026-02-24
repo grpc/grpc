@@ -369,6 +369,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/transport_common.h
   - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/transport/chttp2/transport/writable_streams.h
+  - src/core/ext/transport/chttp2/transport/write_cycle.h
   - src/core/ext/transport/chttp2/transport/write_size_policy.h
   - src/core/ext/transport/inproc/inproc_transport.h
   - src/core/ext/transport/inproc/legacy_inproc_transport.h
@@ -1523,6 +1524,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/stream_lists.cc
   - src/core/ext/transport/chttp2/transport/transport_common.cc
   - src/core/ext/transport/chttp2/transport/varint.cc
+  - src/core/ext/transport/chttp2/transport/write_cycle.cc
   - src/core/ext/transport/chttp2/transport/write_size_policy.cc
   - src/core/ext/transport/chttp2/transport/writing.cc
   - src/core/ext/transport/inproc/inproc_transport.cc
@@ -1880,7 +1882,6 @@ libs:
   - src/core/handshaker/http_connect/http_proxy_mapper.cc
   - src/core/handshaker/http_connect/xds_http_proxy_mapper.cc
   - src/core/handshaker/proxy_mapper_registry.cc
-  - src/core/handshaker/security/legacy_secure_endpoint.cc
   - src/core/handshaker/security/pipelined_secure_endpoint.cc
   - src/core/handshaker/security/secure_endpoint.cc
   - src/core/handshaker/security/security_handshaker.cc
@@ -2231,6 +2232,7 @@ libs:
   - src/core/xds/grpc/xds_endpoint_parser.cc
   - src/core/xds/grpc/xds_health_status.cc
   - src/core/xds/grpc/xds_http_fault_filter.cc
+  - src/core/xds/grpc/xds_http_filter.cc
   - src/core/xds/grpc/xds_http_filter_registry.cc
   - src/core/xds/grpc/xds_http_gcp_authn_filter.cc
   - src/core/xds/grpc/xds_http_rbac_filter.cc
@@ -2566,6 +2568,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/transport_common.h
   - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/transport/chttp2/transport/writable_streams.h
+  - src/core/ext/transport/chttp2/transport/write_cycle.h
   - src/core/ext/transport/chttp2/transport/write_size_policy.h
   - src/core/ext/transport/inproc/inproc_transport.h
   - src/core/ext/transport/inproc/legacy_inproc_transport.h
@@ -3115,6 +3118,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/stream_lists.cc
   - src/core/ext/transport/chttp2/transport/transport_common.cc
   - src/core/ext/transport/chttp2/transport/varint.cc
+  - src/core/ext/transport/chttp2/transport/write_cycle.cc
   - src/core/ext/transport/chttp2/transport/write_size_policy.cc
   - src/core/ext/transport/chttp2/transport/writing.cc
   - src/core/ext/transport/inproc/inproc_transport.cc
@@ -3159,7 +3163,6 @@ libs:
   - src/core/handshaker/http_connect/http_connect_client_handshaker.cc
   - src/core/handshaker/http_connect/http_proxy_mapper.cc
   - src/core/handshaker/proxy_mapper_registry.cc
-  - src/core/handshaker/security/legacy_secure_endpoint.cc
   - src/core/handshaker/security/pipelined_secure_endpoint.cc
   - src/core/handshaker/security/secure_endpoint.cc
   - src/core/handshaker/security/security_handshaker.cc
@@ -5088,7 +5091,6 @@ libs:
   - src/core/handshaker/handshaker.cc
   - src/core/handshaker/handshaker_registry.cc
   - src/core/handshaker/proxy_mapper_registry.cc
-  - src/core/handshaker/security/legacy_secure_endpoint.cc
   - src/core/handshaker/security/pipelined_secure_endpoint.cc
   - src/core/handshaker/security/secure_endpoint.cc
   - src/core/handshaker/security/security_handshaker.cc
@@ -5460,18 +5462,6 @@ libs:
   - grpc++
   - opentelemetry-cpp::api
 targets:
-- name: fd_conservation_posix_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/fd_conservation_posix_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
 - name: multiple_server_queues_test
   build: test
   language: c
@@ -12603,6 +12593,20 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: fd_conservation_posix_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/fd_conservation_posix_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: fd_posix_test
   gtest: true
   build: test
@@ -27002,6 +27006,16 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
+- name: write_cycle_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/chttp2/write_cycle_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: write_size_policy_test
   gtest: true
   build: test
@@ -31317,6 +31331,17 @@ targets:
   - linux
   - posix
   - mac
+- name: xds_routing_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/xds/xds_routing_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  uses_polling: false
 - name: xds_security_end2end_test
   gtest: true
   build: test

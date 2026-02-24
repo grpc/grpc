@@ -167,7 +167,7 @@ static void Drainer(ClientReaderWriter<EchoRequest, EchoResponse>* reader) {
 }
 
 TEST_F(End2endTest, StreamingThroughput) {
-  SKIP_TEST_FOR_PH2(
+  SKIP_TEST_FOR_PH2_CLIENT(
       "TODO(tjagtap) [PH2][P3][Client][CPPE2E] Fails 2/100 times ");
   ResetStub();
   grpc::ClientContext context;

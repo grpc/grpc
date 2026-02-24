@@ -40,13 +40,12 @@ class XdsHttpFaultFilter final : public XdsHttpFilterImpl {
   void PopulateSymtab(upb_DefPool* symtab) const override;
   std::optional<Json> GenerateFilterConfig(
       absl::string_view /*instance_name*/,
-      const XdsResourceType::DecodeContext& context, XdsExtension extension,
-      ValidationErrors* errors) const override;
+      const XdsResourceType::DecodeContext& context,
+      const XdsExtension& extension, ValidationErrors* errors) const override;
   std::optional<Json> GenerateFilterConfigOverride(
       absl::string_view /*instance_name*/,
-      const XdsResourceType::DecodeContext& context, XdsExtension extension,
-      ValidationErrors* errors) const override;
-  void AddFilter(FilterChainBuilder& builder) const override;
+      const XdsResourceType::DecodeContext& context,
+      const XdsExtension& extension, ValidationErrors* errors) const override;
   const grpc_channel_filter* channel_filter() const override;
   ChannelArgs ModifyChannelArgs(const ChannelArgs& args) const override;
   absl::StatusOr<ServiceConfigJsonEntry> GenerateMethodConfig(
@@ -54,6 +53,16 @@ class XdsHttpFaultFilter final : public XdsHttpFilterImpl {
       const Json* filter_config_override) const override;
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
       const Json& hcm_filter_config) const override;
+  void AddFilter(FilterChainBuilder& builder,
+                 RefCountedPtr<const FilterConfig> config) const override;
+  RefCountedPtr<const FilterConfig> ParseTopLevelConfig(
+      absl::string_view instance_name,
+      const XdsResourceType::DecodeContext& context,
+      const XdsExtension& extension, ValidationErrors* errors) const override;
+  RefCountedPtr<const FilterConfig> ParseOverrideConfig(
+      absl::string_view instance_name,
+      const XdsResourceType::DecodeContext& context,
+      const XdsExtension& extension, ValidationErrors* errors) const override;
   bool IsSupportedOnClients() const override { return true; }
   bool IsSupportedOnServers() const override { return false; }
 };

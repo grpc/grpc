@@ -419,7 +419,7 @@ class ArenaSpsc {
     T result = std::move(next->value);
     Destruct(&next->value);
     tail_.store(next, std::memory_order_release);
-    return result;
+    return std::move(result);
   }
 
   T* Peek() {
