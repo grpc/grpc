@@ -88,12 +88,6 @@ void XdsHttpExtAuthzFilter::AddFilter(
   builder.AddFilter<ExtAuthzFilter>(std::move(config));
 }
 
-ChannelArgs XdsHttpExtAuthzFilter::ModifyChannelArgs(
-    const ChannelArgs& args) const {
-  // TODO(rishesh): revist this
-  return args;
-}
-
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpExtAuthzFilter::GenerateMethodConfig(
     const Json& /*hcm_filter_config*/,
@@ -195,7 +189,6 @@ RefCountedPtr<const FilterConfig> XdsHttpExtAuthzFilter::ParseTopLevelConfig(
   }
   // server_uri
   {
-    // TODO(rishesh): add error handling
     if (ext_authz_obj->xds_grpc_service == nullptr ||
         ext_authz_obj->xds_grpc_service->server_target == nullptr) {
       ValidationErrors::ScopedField field(errors, ".ext_authz.client");
@@ -348,9 +341,10 @@ RefCountedPtr<const FilterConfig> XdsHttpExtAuthzFilter::ParseOverrideConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& /*context*/,
     const XdsExtension& /*extension*/, ValidationErrors* errors) const {
-  // TODO(rishesh): fix this
+  // TODO(rishesh): add handling for ParseOverrideConfig
   errors->AddError("GCP auth filter does not support config override");
-  return nullptr;
+  // Return an empty config.  This is used to disable the filter.
+  return MakeRefCounted<ExtAuthzFilter::Config>();
 }
 
 }  // namespace grpc_core

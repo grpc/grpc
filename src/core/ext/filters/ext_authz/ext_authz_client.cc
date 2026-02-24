@@ -174,12 +174,12 @@ envoy_service_auth_v3_AttributeContext_Request* CreateRequest(
   // TODO(rishesh): correct header logic for value and raw-value
   auto header_map = envoy_config_core_v3_HeaderMap_new(context.arena);
   for (auto& [key, value] : params.headers) {
-    auto* header_to_assign =
-        envoy_config_core_v3_HeaderMap_add_headers(header_map, context.arena);
-    envoy_config_core_v3_HeaderValue_set_key(
-        header_to_assign, upb_StringView_FromString(key.data()));
-    envoy_config_core_v3_HeaderValue_set_value(
-        header_to_assign, upb_StringView_FromString(value.data()));
+    auto header = ParseEnvoyHeader(key, value, context.arena);
+    if (header != nullptr) {
+      auto* header_to_assign =
+          envoy_config_core_v3_HeaderMap_add_headers(header_map, context.arena);
+      *header_to_assign = *header;
+    }
   }
   envoy_service_auth_v3_AttributeContext_Request_set_time(request, timestamp);
   return request;

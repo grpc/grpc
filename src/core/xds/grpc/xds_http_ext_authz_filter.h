@@ -48,8 +48,6 @@ class XdsHttpExtAuthzFilter : public XdsHttpFilterImpl {
       const XdsResourceType::DecodeContext& context,
       const XdsExtension& extension, ValidationErrors* errors) const override;
   const grpc_channel_filter* channel_filter() const override;
-  // do we need this ??
-  ChannelArgs ModifyChannelArgs(const ChannelArgs& args) const override;
   absl::StatusOr<ServiceConfigJsonEntry> GenerateMethodConfig(
       const Json& hcm_filter_config,
       const Json* filter_config_override) const override;
