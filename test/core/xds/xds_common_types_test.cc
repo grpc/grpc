@@ -70,6 +70,8 @@ using envoy::config::core::v3::GrpcService;
 using CommonTlsContextProto =
     envoy::extensions::transport_sockets::tls::v3::CommonTlsContext;
 using xds::type::v3::TypedStruct;
+using HeaderMutationRulesProto =
+    envoy::config::common::mutation_rules::v3::HeaderMutationRules;
 
 namespace grpc_core {
 namespace testing {
@@ -1280,13 +1282,10 @@ TEST_F(ParseXdsGrpcServiceTest, InvalidTargetUri) {
 // ParseHeaderMutationRules() tests
 //
 
-using HeaderMutationRulesProto =
-    envoy::config::common::mutation_rules::v3::HeaderMutationRules;
-
 class ParseHeaderMutationRulesTest : public XdsCommonTypesTest {
  protected:
   const envoy_config_common_mutation_rules_v3_HeaderMutationRules* ConvertToUpb(
-      const HeaderMutationRulesProto proto) {
+      const HeaderMutationRulesProto& proto) {
     std::string serialized_proto;
     if (!proto.SerializeToString(&serialized_proto)) {
       EXPECT_TRUE(false) << "protobuf serialization failed";
@@ -1320,10 +1319,8 @@ TEST_F(ParseHeaderMutationRulesTest, Empty) {
                                             "unexpected errors");
   EXPECT_FALSE(rules.disallow_all);
   EXPECT_FALSE(rules.disallow_is_error);
-  EXPECT_EQ(rules.allow_expression.type(), StringMatcher::Type::kExact);
-  EXPECT_TRUE(rules.allow_expression.string_matcher().empty());
-  EXPECT_EQ(rules.disallow_expression.type(), StringMatcher::Type::kExact);
-  EXPECT_TRUE(rules.disallow_expression.string_matcher().empty());
+  EXPECT_EQ(rules.allow_expression, nullptr);
+  EXPECT_EQ(rules.disallow_expression, nullptr);
 }
 
 TEST_F(ParseHeaderMutationRulesTest, Basic) {
@@ -1340,10 +1337,10 @@ TEST_F(ParseHeaderMutationRulesTest, Basic) {
                                             "unexpected errors");
   EXPECT_TRUE(rules.disallow_all);
   EXPECT_TRUE(rules.disallow_is_error);
-  EXPECT_EQ(rules.allow_expression.type(), StringMatcher::Type::kSafeRegex);
-  EXPECT_EQ(rules.allow_expression.regex_matcher()->pattern(), "allow");
-  EXPECT_EQ(rules.disallow_expression.type(), StringMatcher::Type::kSafeRegex);
-  EXPECT_EQ(rules.disallow_expression.regex_matcher()->pattern(), "disallow");
+  ASSERT_NE(rules.allow_expression, nullptr);
+  EXPECT_EQ(rules.allow_expression->pattern(), "allow");
+  ASSERT_NE(rules.disallow_expression, nullptr);
+  EXPECT_EQ(rules.disallow_expression->pattern(), "disallow");
 }
 
 TEST_F(ParseHeaderMutationRulesTest, InvalidRegex) {

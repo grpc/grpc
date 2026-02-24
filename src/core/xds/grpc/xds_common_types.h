@@ -93,16 +93,28 @@ struct XdsGrpcService {
 };
 
 struct HeaderMutationRules {
-  bool disallow_all;
-  bool disallow_is_error;
-  StringMatcher allow_expression;
-  StringMatcher disallow_expression;
+  bool disallow_all = false;
+  bool disallow_is_error = false;
+  std::unique_ptr<RE2> allow_expression;
+  std::unique_ptr<RE2> disallow_expression;
+
+  bool IsMutationAllowed(absl::string_view header_name) const;
+
+  std::string ToString() const;
 
   bool operator==(const HeaderMutationRules& other) const {
     return disallow_all == other.disallow_all &&
            disallow_is_error == other.disallow_is_error &&
-           allow_expression == other.allow_expression &&
-           disallow_expression == other.disallow_expression;
+           (allow_expression == nullptr
+                ? other.allow_expression == nullptr
+                : (other.allow_expression != nullptr &&
+                   allow_expression->pattern() ==
+                       other.allow_expression->pattern())) &&
+           (disallow_expression == nullptr
+                ? other.disallow_expression == nullptr
+                : (other.disallow_expression != nullptr &&
+                   disallow_expression->pattern() ==
+                       other.disallow_expression->pattern()));
   }
 };
 
