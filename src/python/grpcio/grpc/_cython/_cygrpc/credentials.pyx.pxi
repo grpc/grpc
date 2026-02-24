@@ -219,7 +219,7 @@ cdef class SSLChannelCredentials(ChannelCredentials):
       c_cert_chain = self._certificate_chain or <const char*>NULL
       if self._private_key_signer:
         c_private_key_signer = build_private_key_signer(self._private_key_signer)
-        grpc_tls_identity_pairs_add_pair_with_signer(c_tls_identity_pairs, c_private_key_signer, c_cert_chain)
+        _ = grpc_tls_identity_pairs_add_pair_with_signer(c_tls_identity_pairs, c_private_key_signer, c_cert_chain)
       else:
         grpc_tls_identity_pairs_add_pair(c_tls_identity_pairs, c_private_key, c_cert_chain)
 
