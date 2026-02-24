@@ -41,6 +41,10 @@ def server_private_key():
     return pkgutil.get_data(__name__, _PRIVATE_KEY_RESOURCE_PATH)
 
 
+def private_key():
+    return server_private_key()
+
+
 def certificate_chain():
     return pkgutil.get_data(__name__, _CERTIFICATE_CHAIN_RESOURCE_PATH)
 
