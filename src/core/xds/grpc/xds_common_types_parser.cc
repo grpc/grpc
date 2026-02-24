@@ -791,9 +791,8 @@ std::unique_ptr<RE2> ParseRegexMatcher(
       envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
   auto regex = std::make_unique<RE2>(matcher);
   if (!regex->ok()) {
-    errors->AddError(
-        absl::StrCat("Invalid regex string specified in matcher: ",
-                     regex->error()));
+    errors->AddError(absl::StrCat("Invalid regex string specified in matcher: ",
+                                  regex->error()));
     return nullptr;
   }
   return regex;
