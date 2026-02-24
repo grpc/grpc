@@ -358,7 +358,6 @@ class ServerHandlerBackgroundThreadTest(unittest.TestCase):
             # To release any resources held by _blockingRequestIterator()
             done.set()
 
-
     def test_fail_via_cancel(self):
         self._run_background_fail_test(lambda ctx: ctx.cancel())
 
