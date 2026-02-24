@@ -244,6 +244,7 @@ grpc_cc_library(
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/test_util:grpc_test_util",
     ],
+    visibility = ["//test/core/ext/filters/ext_authz:__pkg__"],
 )
 
 grpc_cc_library(
