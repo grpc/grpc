@@ -26,6 +26,7 @@ cdef extern from "absl/status/status.h" namespace "absl":
     cdef cppclass Status:
         Status(AbslStatusCode, string)
         Status()
+        bint ok()
 
     # Status InternalError(const string& message)
 
@@ -60,7 +61,7 @@ cdef extern from "grpc/private_key_signer.h" namespace "grpc_core":
         kRsaPssRsaeSha512
 
 cdef extern from "grpc/private_key_signer.h":
-    cdef void grpc_tls_identity_pairs_add_pair_with_signer(
+    cdef Status grpc_tls_identity_pairs_add_pair_with_signer(
         grpc_tls_identity_pairs* pairs,
         shared_ptr[PrivateKeySigner] private_key_signer,
         const char* cert_chain)

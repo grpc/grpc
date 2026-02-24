@@ -210,6 +210,7 @@ cdef class SSLChannelCredentials(ChannelCredentials):
     cdef grpc_tls_credentials_options* c_tls_credentials_options
     cdef grpc_tls_identity_pairs* c_tls_identity_pairs = NULL
     cdef grpc_tls_certificate_provider* c_tls_certificate_provider
+    cdef Status private_key_status
 
     c_tls_credentials_options = grpc_tls_credentials_options_create()
     c_pem_root_certificates = self._pem_root_certificates or <const char*>NULL
@@ -219,7 +220,9 @@ cdef class SSLChannelCredentials(ChannelCredentials):
       c_cert_chain = self._certificate_chain or <const char*>NULL
       if self._private_key_signer:
         c_private_key_signer = build_private_key_signer(self._private_key_signer)
-        _ = grpc_tls_identity_pairs_add_pair_with_signer(c_tls_identity_pairs, c_private_key_signer, c_cert_chain)
+        private_key_status = grpc_tls_identity_pairs_add_pair_with_signer(c_tls_identity_pairs, c_private_key_signer, c_cert_chain)
+        if not private_key_status.ok():
+          return NULL
       else:
         grpc_tls_identity_pairs_add_pair(c_tls_identity_pairs, c_private_key, c_cert_chain)
 
