@@ -235,7 +235,7 @@
     Use promises for the http2 client transport. We have kept client and
     server transport experiments separate to help with smoother roll outs
     and also help with interop testing.
-  expiry: 2026/11/30
+  expiry: 2027/01/16
   owner: tjagtap@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test"]
   allow_in_fuzzing_config: true
@@ -244,7 +244,7 @@
     Use promises for the http2 server transport. We have kept client and
     server transport experiments separate to help with smoother roll outs
     and also help with interop testing.
-  expiry: 2026/11/30
+  expiry: 2027/01/16
   owner: tjagtap@google.com
   test_tags: []
   allow_in_fuzzing_config: true
