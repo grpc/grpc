@@ -171,7 +171,6 @@ envoy_service_auth_v3_AttributeContext_Request* CreateRequest(
   google_protobuf_Timestamp_set_nanos(
       timestamp, now.milliseconds_after_process_epoch() * 1000000);
   // set headers
-  // TODO(rishesh): correct header logic for value and raw-value
   auto header_map = envoy_config_core_v3_HeaderMap_new(context.arena);
   for (auto& [key, value] : params.headers) {
     auto header = ParseEnvoyHeader(key, value, context.arena);
