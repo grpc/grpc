@@ -256,13 +256,9 @@ TEST_F(ParseEnvoyHeaderTest, InvalidValue) {
 }
 
 TEST_F(ParseEnvoyHeaderTest, ValidBinaryValue) {
-  // Binary value can contain anything, only length is checked
-  // But wait, ParseEnvoyHeader checks length for binary too.
   std::string long_value(16385, 'a');
   EXPECT_EQ(grpc_core::ParseEnvoyHeader("foo-bin", long_value, arena_), nullptr);
   
-  // Binary value with newline should be fine?
-  // ValidateNonBinaryHeaderValueIsLegal is NOT called for -bin.
   auto* header = grpc_core::ParseEnvoyHeader("foo-bin", "bar\n", arena_);
   EXPECT_NE(header, nullptr);
   EXPECT_EQ(grpc_core::UpbStringToAbsl(envoy_config_core_v3_HeaderValue_raw_value(header)), "bar\n");
